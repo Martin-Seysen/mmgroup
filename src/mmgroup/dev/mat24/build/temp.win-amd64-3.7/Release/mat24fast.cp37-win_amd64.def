@@ -1,3 +1,0 @@
-LIBRARY mat24fast.cp37-win_amd64.pyd
-EXPORTS
-PyInit_mat24fast
