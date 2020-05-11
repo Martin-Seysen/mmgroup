@@ -1,0 +1,334 @@
+// %%COMMENT
+// %%PY_DOCSTR  MM_RANDOM_DOC
+
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+
+/******************************************************************
+*** The following #defines determine which volatile input sources
+*** are used for seeding the volatile random genertor number 0
+******************************************************************/
+
+#define INT_BITS  {INT_BITS} // must be 32 of 64
+
+// The following funtions are standard C functions.
+// They should usually be available on any operating system
+#define HAS_TIME  // function time() is present if #defined
+#define HAS_CLOCK // function clock() is present if #defined
+#define HAS_RAND  // function rand() is present if #defined
+
+
+// __sync_fetch_and_add is avaibale in GNU C  only
+#ifdef __GNUC__
+#define HAS_SYNC_FETCH_AND_ADD
+#endif
+
+
+
+
+
+#if (defined HAS_TIME) | (defined HAS_CLOCK)
+#include <time.h>
+#endif
+
+static volatile  int call_number;
+
+// %%GEN h
+#define MM_RNG_SIZE 266
+// %%GEN c
+
+
+/*****************************************************************************
+*** Expanding the seeding data to a 256-bit RC4 key
+*****************************************************************************/
+
+static void mm_rng_expand_key(uint32_t no, uint8_t *key, uint32_t len, uint8_t *res)
+// Expand seeding data to a 256-bit RC4 key
+// The input for the seeding process is a generator number 'no' of 
+// type uint32_t, and an optional byte array 'key' of length 'len'.
+// The function compute a 256-byte string from these input data and
+// stores the result in the array 'res'. 
+//
+// In case no = 0, the some volatile input, such as the time is entered
+// into the result. In case no > 0 we compute a repreoducible result.
+// At most 250 bytes of the input key will be used. In case no=0
+// fewer input bytes may be used.
+//
+// Some tricks are used to avoid periods dividing 256 in the output.  
+{
+    uint_fast32_t i, j, rlen;
+    for (i = 0; i < 4; ++i) res[i] = (uint8_t)(no >> (i << 3));
+    len = len > 250 ? 250 : len;
+    res[4] = (uint8_t)(len + 1);
+    rlen =  5;
+    if (no == 0) {
+       {
+          int k;
+          #ifdef HAS_SYNC_FETCH_AND_ADD
+             k = __sync_fetch_and_add(&call_number, 1); 
+          #else
+             k = ++call_number;
+          #endif
+          memcpy(res + 5, &k, sizeof(k));
+          rlen = 5 + sizeof(k);
+       }
+       #ifdef HAS_TIME
+       {
+          time_t tm;
+          time(&tm);
+          memcpy(res + rlen, &tm, sizeof(tm));
+          rlen += sizeof(tm); 
+       }
+       #endif
+       #ifdef HAS_CLOCK
+       {
+          clock_t clk = clock();
+          memcpy(res + rlen, &clk, sizeof(clk));
+          rlen += sizeof(clk);
+       } 
+       #endif
+       #ifdef HAS_RAND
+       {
+          int rnd = rand();
+          memcpy(res + rlen, &rnd, sizeof(rnd));
+          rlen += sizeof(rnd);
+       } 
+       #endif
+       if (len > 255 - rlen) len = 255 - rlen;
+    }
+    for (i = 1; i < len; ++i) res[i + rlen] = key[i];
+    len += rlen; 
+    // We want the length to be odd
+    if ((len & 1) == 0) res[++len] = 0; 
+    for (i = len; i < 256 - len; i += len) {
+       for (j = 0; j < len; ++j) 
+          res[i + j] = (uint8_t)((i + res[j]) & 0xff);
+    }
+    len = 256 - i;
+    for (j = 0; j < len; ++j) 
+       res[i + j] = (uint8_t)((i + res[j]) & 0xff);
+    // for (i=0;i<256;++i) printf("%02x ", res[i]);printf("\n\n");
+}
+
+
+
+/*****************************************************************************
+*** Seeding the random generator
+*****************************************************************************/
+
+
+#define POS_I 256      // position of counter i for RC4 generator 
+#define POS_J 257      // position of counter j for RC4 generator 
+#define POS_LFSR 258   // position of 63-bit LFSR (8 bytes long)
+
+
+// %%EXPORT p
+void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
+// Seed the random generator in the variable 'seed' ot type
+// uint8_t[MM_RNG_SIZE]. Inputs are:
+// no:     Number of the random generator.
+//         0 means a voaltile generator, seeded from the time.
+//         Any other number means a reproducible generator
+// key:    An array of 'len' data bytes that enter into the seed
+//         No more than 250 bytes are used
+{
+   uint_fast32_t i, j, temp, sum;
+   uint8_t ekey[256];
+ 
+   // Expand the given key data to the input key stream ekey
+   mm_rng_expand_key(no, key, len, ekey); 
+ 
+   //Initialize seed array with a fixed permutation
+   for(i = 0; i < 256; i++) seed[i] = (uint8_t)(3 * i);
+ 
+   // Initialize with expanded key for 256 iterations
+   for(i = j = 0; i < 256; i++)
+   {
+      // Randomize the permutations using the expanded key
+      j = (j + seed[i] + ekey[i]) & 0xff;
+
+      //Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = (uint8_t)temp;
+   }
+ 
+   // Discard the first 256 bytes of the RC4 generator
+   for (i = 0; i < 256; ++i) {
+
+      // adjust index
+      j = (j + seed[i]) & 0xff;
+ 
+      //Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = (uint8_t)temp;
+   }
+
+   // Initialize the LFSR from the RC4 generator
+   sum = 0;
+   for (i = 0; i < 8; ++i) {
+      // Adjust index
+      j = (j + seed[i]) & 0xff;
+ 
+      // Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = (uint8_t)temp;
+
+      // Store RC4 stream to the LFSR
+      seed[POS_LFSR + i] = seed[(seed[i] + seed[j]) & 0xff];
+      sum |= seed[POS_LFSR + i];
+   }
+   seed[POS_LFSR] &= 0xfe; // for 63-bit LFSR
+
+   // Save counters i and j
+   seed[POS_I] = (uint8_t)(i);
+   seed[POS_J] = (uint8_t)(j);
+
+   // Abuse RC4 seed to make sure that the LFSR is not zero
+   if ((sum & 0xfe) == 0) {
+      for (i = 0; i < 8; ++i) seed[i + POS_LFSR] ^= seed[i] & 0xfe;
+   }  
+   // for (i=0;i<266;++i) printf("%02x ", seed[i]); printf("\n\n");
+}
+
+
+
+/*****************************************************************************
+*** Generating a random array of integers modulo p, p < 256
+*****************************************************************************/
+
+
+// %%EXPORT p
+void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
+// Generate an array of random 'len' integers modulo p, 1 < p < 256.
+// These random integers are written to the array referred by 'out'. 
+// 'seed' is the seed for the random generator. It must have been 
+// created by function  mm_rng_seed().
+{
+   uint_fast8_t i, j, temp;                       // for RC4
+   #if INT_BITS == 64
+      uint_fast64_t l = 0, temp64;                // for LFSR
+   #else
+      uint_fast32_t h = 0, l = 0, temp32;         // for LFSR  
+   #endif 
+
+   // Restore LFSR from seed
+   #if INT_BITS == 64
+      for (i = 0; i < 8; ++i) {
+         l += (uint_fast64_t)seed[POS_LFSR + i] << (i << 3);
+      }
+      l >>= 1;
+   #else
+      for (i = 0; i < 4; ++i) {
+         l += (uint_fast32_t)seed[POS_LFSR + i] << (i << 3);
+         h += (uint_fast32_t)seed[POS_LFSR + i + 4] << (i << 3);
+      }
+   #endif
+
+   // Restore RC4 counters from seed
+   i = seed[POS_I];
+   j = seed[POS_J];
+
+   // Random generation loop
+   while(len-- > 0)
+   {
+      // Adjust indices of RC4 generator
+      i = (i + 1) &  0xff;
+      j = (j + seed[i]) &  0xff;
+ 
+      // Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = temp;
+
+      #if INT_BITS == 64
+         // Update the LFSR
+         temp64 = l >> 31;
+         l = ((l & 0x7fffffff) << 32) ^ temp64 ^ (temp64 << 31);
+
+         // Combine random output from RC4 and LFSR
+         temp64 = seed[(seed[i] + seed[j]) & 0xff];
+         temp64 = (temp64 << 40) + (l >> 15);
+         temp64 = (temp64 & 0xffffffffffffULL) * p;
+           
+         // store random number < p to output stream
+         *out++ = (temp64 >> 48) & 0xff;
+      #else
+         // Update the LFSR
+         temp32 = h ^ l ^ (h >> 31);
+         l = h << 1;
+         h = temp32;
+
+         // Combine random output from RC4 and LFSR
+         temp32 = seed[(seed[i] + seed[j]) & 0xff];
+         temp32 = (((temp32 << 16) + (h >> 8)) & 0xffffff) * p; 
+         temp32 += ((((h & 0xff) << 16) + (l >> 16)) * p) >> 24;  
+           
+         // store random number < p to output stream
+         *out++ = (temp32 >> 24) & 0xff;
+      #endif
+   }
+
+   // Restore RC4 counters to seed
+   seed[POS_I] = i;
+   seed[POS_J] = j;
+
+   // Restore LFSR form seed
+   #if INT_BITS == 64
+      l <<= 1;
+      for (i = 0; i < 8; ++i) 
+         seed[POS_LFSR + i] = (l >> (i << 3)) & 0xff;
+   #else
+      for (i = 0; i < 4; ++i) {
+         seed[POS_LFSR + i] = (l >> (i << 3)) & 0xff;
+         seed[POS_LFSR + i + 4] = (h >> (i << 3)) & 0xff;
+      }
+   #endif
+}
+
+/*****************************************************************************
+*** Generating a random array of bytes
+*****************************************************************************/
+
+
+// %%EXPORT p
+void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
+// Generate an array of random 'len' bytes.
+// These random bytes are written to the array referred by 'out'. 
+// 'seed' is the seed for the random generator. It must have been 
+// created by function  mm_rng_seed().
+{
+   uint_fast8_t i, j, temp;                       // for RC4
+
+   // Restore RC4 counters from seed
+   i = seed[POS_I];
+   j = seed[POS_J];
+
+   // Random generation loop
+   while(len-- > 0)
+   {
+      // Adjust indices of RC4 generator
+      i = (i + 1) &  0xff;
+      j = (j + seed[i]) &  0xff;
+ 
+      // Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = temp;
+
+      // Compute random output byte from RC4 
+      *out++ = seed[(seed[i] + seed[j]) & 0xff];
+   }
+
+   // Restore RC4 counters to seed
+   seed[POS_I] = i;
+   seed[POS_J] = j;
+}
+
+
+

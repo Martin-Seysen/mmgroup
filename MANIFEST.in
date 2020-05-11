@@ -1,0 +1,13 @@
+recursive-include . *.ske *.pyx *.ini *.rst *.bat
+include .gitignore
+include *.py
+include docs/source/*.rst
+include docs/source/*.inc
+include docs/source/*.py
+include docs/source/*.bib
+include src/mmgroup/*.pyd
+include src/mmgroup/*.dll
+
+
+
+

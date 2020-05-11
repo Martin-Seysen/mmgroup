@@ -1,0 +1,480 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// This is a fast little calculator for the subgroup N_0 of the monster.
+//
+// That group N_0 is described in [Conw85] and [Seys19]. More precisely, 
+// we actually calculate in the fourfold cover N of N_0 structure
+// 2**2 . 2**2 . 2**11 . 2**(11+11) . (Sym3 \times Mat24),
+// using the notation in [Seys19]. Here Sym3 is the symmetric permutation
+// group of 3 elements and Mat24 is the Mathieu group acting on 24 elements. 
+// An element of N is representd as a 5-tuple (exp, f, e, delta, pi) of 
+// integers of type uint32_t. Here
+// 
+// exp    represents the element t**exp for the triality element t;
+// f      represents the element y_f, 0 <= f < 0x2000 an element of Pl;   
+// e      represents the element x_e, 0 <= e < 0x2000 an element of Pl;   
+// delta  represents the element x_delta, 0 <= delta < 0x1000 an element 
+//        of the Golay cocode C*;
+// pi     represents the element (pi) of Mat24 with number pi.  
+//        More precisely, pi represents the preimage of (pi) in the 
+//        automorphism group AutPl of the Parker loop Pl that maps all 
+//        basis vectors of Pl to positive elements of Pl.
+//        
+//
+// For the numbering of the elements of the Parker loop Pl, the Golay
+// cocode C*, and the Mathieu group Mat24, see module mat24_functions.c.
+// The basis of the Parker loop Pl is also given in that module.
+// For the notion of a positive element of the Parker loop (with 
+// respect to a certain cocycle) of the Parker loop see [Seys19]. The 
+// cocycle selected for PL is also given in mat24_functions.c.
+// The elements of N are multiplied in the order given by the 5-tuple.
+//
+// Almost all functions in this module take a pointer to a 5-tuple
+// (exp, f, e, delta, pi) representing an element g of the group N
+// as their first argument. The tuple representing g is modified 
+// to a tuple representing an element g2 = g * g1, with the element 
+// g1 of N given by one or more subsequent arguments of the function.
+// All these 5-tuples are implemented as arrays of type uint32_t[5].
+//
+// The functions in this module cause some overhead mainly due to 
+// the fact that a permutation in Mat24 is reresented as an integer.
+// But compared to an operation of the monster on its 196884-
+// dimensional the cost for such a function is negligible. 
+//
+// The correctness of the functions in this module follows directly
+// from Theorem 5.1 in [Seys19] and from the representation of
+// Pl, C*, and Mat24 in module mat24_functions.c
+
+#include "mat24_functions.h"
+
+#define I_t 0
+#define I_y 1
+#define I_x 2
+#define I_d 3
+#define I_pi 4
+
+
+
+static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi)
+// Return the value f representing an element of PL with 
+// f =  (x_delta * (pi))**(-1) * e * (x_delta * (pi)) for 
+// delta in C*, e in Pl, (pi) in AutPl as described above.
+// The equation above is also valid if we replace (e, f) by 
+// (x_e, x_f) or by (y_e, y_f).
+{
+    uint8_t perm[24], inv_perm[24];
+    uint32_t inv_autpl[12];
+    e &= 0x1fff;
+    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
+        return e ^ (mat24_scalar_prod(e, delta) << 12);
+    }
+    mat24_perm_to_iautpl(delta, perm, inv_perm, inv_autpl);
+    return mat24_op_ploop_autpl(e, inv_autpl);
+}
+
+
+// %%EXPORT p
+void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
+// Put g = g * x_delta * (pi), delta in C*, (pi) in AutPl as 
+// above. Here g is given as an array of five 32-bit integers.
+{
+    if (pi >= MAT24_ORDER) pi = 0;
+    delta &= 0xfff;
+    if (g[I_pi] == 0) {
+        g[I_pi] = pi;  
+        g[I_d] ^= delta;
+    } else if (pi == 0) {
+        uint8_t perm[24], inv_perm[24];
+        mat24_m24num_to_perm(g[I_pi], perm);
+        mat24_inv_perm(perm, inv_perm);
+        delta = mat24_op_cocode_perm(delta, inv_perm);
+        g[I_d] ^= delta;
+    } else {
+        uint8_t perm1[24], perm2[24];
+        uint32_t aut1[12], aut2[12], aut3[12];
+        mat24_m24num_to_perm(g[I_pi], perm1);
+        mat24_perm_to_autpl(g[I_d], perm1, aut1);
+        mat24_m24num_to_perm(pi, perm2);
+        mat24_perm_to_autpl(delta, perm2, aut2);
+        mat24_mul_autpl(aut1, aut2, aut3);
+        g[I_d] = mat24_autpl_to_cocode(aut3);
+        mat24_autpl_to_perm(aut3, perm1);
+        g[I_pi] =  mat24_perm_to_m24num(perm1);
+    }
+}
+
+
+// %%EXPORT p
+void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
+// Put g = g * (x_delta * (pi))**(-1), delta in C*, (pi) in AutPl as 
+// above. Here g is given as an array of five 32-bit integers.
+{
+    if (pi >= MAT24_ORDER) pi = 0;
+    delta &= 0xfff;
+    if  (pi == 0) {
+        uint8_t perm[24], inv_perm[24];
+        if (g[I_pi] != 0) {
+            mat24_m24num_to_perm(g[I_pi], perm);
+            mat24_inv_perm(perm, inv_perm);
+            delta = mat24_op_cocode_perm(delta, inv_perm);
+        }
+        g[I_d] ^= delta;
+    } else {
+        uint8_t perm1[24], perm2[24], inv_perm2[24];
+        uint32_t aut1[12], aut2[12], aut3[12];
+        mat24_m24num_to_perm(pi, perm2);
+        mat24_perm_to_iautpl(delta, perm2, inv_perm2, aut2);
+        if (g[I_pi] == 0) {
+            g[I_d] ^= mat24_autpl_to_cocode(aut2);
+            mat24_autpl_to_perm(aut2, perm1);
+        } else {
+            mat24_m24num_to_perm(g[I_pi], perm1);
+            mat24_perm_to_autpl(g[I_d], perm1, aut1);
+            mat24_mul_autpl(aut1, aut2, aut3);
+            g[I_d] = mat24_autpl_to_cocode(aut3);
+            mat24_autpl_to_perm(aut3, perm1);
+        }
+        g[I_pi] =  mat24_perm_to_m24num(perm1);
+    }
+}
+
+
+
+// %%EXPORT p
+void mm_group_n_mul_x(uint32_t * g, uint32_t e)
+// Put g = g * x_e. 
+// Here g is given as an array of five 32-bit integers.
+{
+    e = mm_group_op_pl_inv_autpl(e, g[I_d], g[I_pi]);
+    // Assuming g = g0 * x_a * g1  we now have:
+    // g * x_e = g0 * x_a * x_e * g1.
+    g[I_d] ^= mat24_ploop_cap(g[I_x], e);
+    g[I_x] ^= e ^ (mat24_ploop_cocycle(g[I_x], e) << 12);
+}
+
+
+// %%EXPORT p
+void mm_group_n_mul_y(uint32_t * g, uint32_t f)
+// Put g = g * y_f.
+// Here g is given as an array of five 32-bit integers.
+{
+    uint_fast32_t sign_c, sign_x, sign_y;
+    f = mm_group_op_pl_inv_autpl(f, g[I_d], g[I_pi]);
+    // Assuming g = g0 * y_b * x_a * g1  we now have:
+    // g * y_f = g0 * y_b * x_a * y_f * g1 if g1 is even,
+    // g * y_f = g0 * y_b * x_a * z_f * g1 if g1 is odd.
+    sign_c = mat24_ploop_comm(g[I_x], f);
+    sign_y = mat24_ploop_cocycle(g[I_y], f) ^ sign_c;
+    sign_x = mat24_ploop_assoc(g[I_x], g[I_y], f)^ sign_c;
+    if (g[I_d] & 0x800) {  // case g1 is odd
+        sign_x ^=  mat24_ploop_cocycle(g[I_x], f);
+        f ^= MAT24_THETA_TABLE[f & 0x7ff] & 0x1000;
+        // put f1 = f**(-1) and store f1 in f. Then
+        // g * y_f = g0 * y_b * x_a * y_f1 * x_f1 * g1
+        g[I_d] ^= mat24_ploop_cap(g[I_y], f);
+        g[I_x] ^= f ^ (sign_x << 12);
+    } else {          // case g1 is even
+        g[I_d] ^= mat24_ploop_cap(g[I_x] ^ g[I_y], f);
+        g[I_x] ^= (sign_x << 12);
+    }
+    g[I_y] ^= f ^ (sign_y << 12);
+}
+
+// %%EXPORT p
+void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
+// Put g = g * t**exp, for the triality element t.
+// Here g is given as an array of five 32-bit integers.
+{
+    uint_fast32_t a1, b1;
+    exp %= 3;
+    if (exp == 0) return;  // No action if t == 0 (mod 3)
+    exp = (exp ^ (g[I_d] >> 11)) & 1;
+    // Assume g = g0 * y_b * x_a * g1, 1 <= exp <= 2. Put 
+    //    exp1 = 2 - exp  if g1 is even
+    //    exp1 = exp - 1 if g1 is odd
+    // and store exp1 with 0 <= exp1 <= 1 in exp. Thus
+    // 2 - exp1 = (-1)**parity(g1) * exp  (mod 3). Then
+    // g * t**exp = g0 * z_b * y_a * t**(2-exp1) * g1
+    // g * t**exp = t**(2-exp1) * g0 * z_b * y_a * g1 if exp1 == 1 
+    // g * t**exp = t**(2-exp1) * g0 * x_b * z_a * g1 if exp1 == 0
+    if (exp) {  // case (-1)**parity(g1) * exp = 1 (mod 3)
+        a1 = g[I_y];
+        a1 ^=  MAT24_THETA_TABLE[a1 & 0x7ff] & 0x1000;
+        // Now z_b * y_a = y_a1 * x_a1 * y_a
+        b1 = g[I_x] ^ a1;
+        a1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
+        b1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
+        // Now z_b * y_a = y_b1 * x_a1
+    } else {    // case (-1)**parity(g1) * exp = 2 (mod 3)
+        b1 = g[I_x];
+        b1 ^=  MAT24_THETA_TABLE[b1  & 0x7ff] & 0x1000;
+        // Now x_b * z_a = x_b * y_b1 * x_b1
+        a1 = g[I_y] ^ b1;
+        b1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
+        a1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
+    }      
+    exp = g[I_t] + 3 - exp;  
+    g[I_t] = ((exp + (exp >> 2)) & 3) - 1;
+    g[I_y] = b1;
+    g[I_x] = a1;
+}
+
+
+
+// %%EXPORT p
+void mm_group_n_mul_element(uint32_t *g, uint32_t *g1)
+// Put g = g * g1.
+// Here g and g1 are given as arrays of five 32-bit integers.
+// These two arrays may overlap.
+{
+    uint32_t g2[5], i;   // beware of overlapping of g and g1.
+    for (i = 0; i < 5; ++i) g2[i] = g1[i];
+    mm_group_n_mul_t(g, g2[I_t]);
+    mm_group_n_mul_y(g, g2[I_y]);
+    mm_group_n_mul_x(g, g2[I_x]);
+    mm_group_n_mul_delta_pi(g, g2[I_d], g2[I_pi]);
+}
+
+
+// %%EXPORT p
+void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g1)
+// Put g = g * g1**(-1).
+// Here g and g1 are given as arrays of five 32-bit integers.
+// These two arrays may overlap.
+{
+    uint32_t g2[5], i;   // beware of overlapping of g and g1.
+    for (i = 0; i < 5; ++i) g2[i] = g1[i];
+    mm_group_n_mul_inv_delta_pi(g, g2[I_d], g2[I_pi]);
+    mm_group_n_mul_x(g, g2[I_x] 
+        ^ (MAT24_THETA_TABLE[(g2[I_x]) & 0x7ff] & 0x1000));
+    mm_group_n_mul_y(g, g2[I_y] 
+        ^ (MAT24_THETA_TABLE[(g2[I_y]) & 0x7ff] & 0x1000));
+    mm_group_n_mul_t(g, 3 - g2[I_t]);
+}
+
+
+// %%EXPORT p
+void mm_group_n_clear(uint32_t *g)
+// Set g to neutral element of the group N.
+{
+    g[0] = g[1] = g[2] = g[3] = g[4] = 0; 
+}
+
+
+// %%EXPORT p
+uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
+// Multiply the element g of the group MM with an atom.
+// An atom is interpreted as follows:
+// Bit 31:      sign 
+// Bit 30..28   tag
+// Bit 27..0    operarand
+// Tag are as follows:
+//
+//                bit
+// Tag  word     length   operand
+//  0:  1         -       unit of the group, no operand
+//  1:  x_delta   12      delta in C* in 'cocode' rep
+//  2:  x_pi      28      pi a permutation number  
+//  3:  x_d       13      d an element of the parker loop
+//  4:  y_d       13      d an element of the parker loop
+//  5:  t**e      28      exponent e
+//  6:  xi**e     28      exponent e
+//  7   illegal                  
+// If the sign bit is set, the operand is inverted.
+// 
+// The function updates g with g * atom and returns 0 if possible.
+// If this is not possible the function does not change g and it
+// returns the (possibly modified) atom. Tags 6 and 7 are
+// not processed.
+{
+    uint_fast32_t tag, op;
+    tag = (atom >> 28) & 0xf;
+    op = atom & 0xfffffff;
+    switch(tag) {
+        case 8 + 1:
+        case 1:
+           mm_group_n_mul_delta_pi(g, op & 0xfff, 0);
+           return 0;
+        case 8 + 2:
+           mm_group_n_mul_inv_delta_pi(g, 0, op);
+           return 0;
+        case 2:
+           mm_group_n_mul_delta_pi(g, 0, op);
+           return 0;
+        case 8 + 3:
+           op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
+        case 3:
+           mm_group_n_mul_x(g, op & 0x1fff);
+           return 0;
+        case 8 + 4:
+           op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
+        case 4:
+           mm_group_n_mul_y(g, op & 0x1fff);
+           return 0;
+        case 8 + 5:
+           op ^= 0xfffffff;
+        case 5:
+           mm_group_n_mul_t(g, op);
+           return 0;
+        case 8 + 6:
+           op ^= 0xfffffff;
+        case 6:
+           op %= 3;
+           return 0x60000000 + op;
+        default:
+           return atom;
+    }
+}
+
+
+// map x_(d >> 11) to y_e, where e = ker_table_xy[d]
+static uint16_t ker_table_xy[4] = {
+    0, 0x1800, 0x800, 0x1000
+};
+
+// map y_(d >> 11) to x_e, where e = ker_table_yx[d]
+static uint16_t ker_table_yx[4] = {
+    0, 0x1000, 0x1800, 0x800
+};
+
+// %%EXPORT p
+void mm_group_n_reduce_word(uint32_t *g)
+// Reduce the element g of the group N.
+// We reduce g modulo the kernel K_0 using the relations
+// y_Omega = x_(-1), y_(-1) = x_(-Omega).
+{
+    g[0] %= 3; g[1] &= 0x1fff; g[2] &= 0x1fff; g[3] &= 0xfff;
+    if (((g[1] & 0x7ff) + 0x7ff) & ((g[2] & 0x7ff) - 1) & 0x800) {
+        // case (y & 0x7ff) != 0 and (x & 0x7ff) == 0
+        g[1] ^= ker_table_xy[g[2] >> 11];
+        g[2] = 0;
+    } else {
+        // case (y & 0x7ff) == 0 or (x & 0x7ff) != 0
+        g[2] ^= ker_table_yx[g[1] >> 11];
+        g[1] &= 0x7ff;
+    }
+}
+
+
+// %%EXPORT p
+uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
+// Convert the element g of the group N to an array 'word' of atoms
+// as specififed in function mm_group_n_mul_atom() and return the
+// length of that array. That array may have length up to 5.
+// The word g is reduced with function mm_group_n_reduce_word()
+{
+   uint_fast32_t len = 0;
+   if (g[0]) word[len++] = (g[0] & 0xfffffff) | 0x50000000;
+   if (g[1]) word[len++] = (g[1] & 0x1fff) | 0x40000000;
+   if (g[2]) word[len++] = (g[2] & 0x1fff) | 0x30000000;
+   if (g[3]) word[len++] = (g[3] & 0xfff) | 0x10000000;
+   if (g[4]) word[len++] = (g[4] & 0xfffffff) | 0x20000000;
+   return len;
+
+}
+
+
+
+// %%EXPORT p
+uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
+// Given a array 'word' of atoms of a given 'length', that word is split 
+// into a possibly shorter word 'word1' and an element g of the group N such 
+// that 'word' =  'word1' * g. Then 'word1' is a prefix of 'word'. 
+// The function returns the length of the prefix 'word1' of 
+// 'word'. It does not change 'word'.
+// Here we just scan the word from the right, checking for
+// atoms ordered in a way compatible to our representation of N.
+{
+    unsigned int status = 0;
+    g[0] = g[1] = g[2] = g[3] = g[4] = 0;
+    while (length) {
+        uint32_t atom = word[length - 1];
+        switch ((atom >> 28) & 0xf) {
+            case 2:
+                if (status < 1) g[4] = atom & 0xfffffff;
+                else return length;
+                status = 1; --length;
+                break;
+            case 1:
+                if (status < 2) g[3] = atom & 0xfff;
+                else return length;
+                status = 2; --length;
+                break;
+            case 3:
+                if (status < 3) g[2] = atom & 0x1fff;
+                else return length;
+                status = 3; --length;
+                break;
+            case 4:
+                if (status < 4) g[1] = atom & 0x1fff;
+                else return length;
+                status = 4; --length;
+                break;
+            case 5:
+                if (status < 5) g[0] = atom & 0xfffffff;
+                else return length;
+                status = 5; --length;
+                break;
+            default:
+                return length;
+        }
+    } 
+    return 0;    
+}
+
+
+// %%EXPORT p
+uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, int32_t e)
+// Compute w1 = w1 * w2**e. Here w1 and w2 are words of the group 
+// MM of length l1 and l2, respectively. A word of the group MM is 
+// implemented as an array of uint32_t, with each entry of the 
+// array as described in function mm_group_n_mul_atom().
+// A word representing w2**e is appended to word w1 and then  
+// the resulting word is simplified using the relations inside 
+// the group N_0.
+// The function stores w3 = w1 * w2**e in the buffer for w1 and 
+// returns the length of the simplified word w3.
+// The result w3 is reduced (modulo the relations in N_0) if
+// input w1 is reduced.
+// Caution:
+// The buffer for word w1 referred by pointer w1 must be able  
+// to store at least   l1 + 2 * abs(e) * l2   entries of type 
+// uint32_t. Here the user must provide sufficient space!
+{
+
+    uint_fast32_t round, i;
+    int32_t i_start = 0, i_stop = l2, i_step = 1;
+    uint32_t sign = 0;
+    uint32_t gn[5], pending;
+    l1 =  mm_group_split_word_n(w1, l1, gn);
+    if (e < 0) {
+        i_start = l2 - 1; i_stop = i_step = -1;
+        sign = 0x80000000; e = -e; 
+    }
+    for (round = 0; round < e; ++round) {
+        for (i = i_start; i != i_stop; i += i_step) {
+            pending = mm_group_n_mul_atom(gn, w2[i] ^ sign);
+            if (pending) {
+                mm_group_n_reduce_word(gn);
+                l1 +=  mm_group_n_to_word(gn, w1 + l1);
+                mm_group_n_clear(gn);
+                if ((pending & 0x70000000) == 0x60000000 && l1
+                    && (w1[l1-1] & 0x70000000) == 0x60000000) {
+                    // multiply two powers of group element xi
+                    uint32_t exp = ((w1[l1-1] & 0xfffffff) 
+                                 + (pending & 3)) % 3;
+                    if (exp)  w1[l1-1] = 0x60000000 + exp;
+                    else --l1; 
+                } else {
+                    // append the entry 'pending' to word w1
+                    w1[l1++] = pending; 
+                }
+            }
+        }
+    }
+    mm_group_n_reduce_word(gn);
+    l1 +=  mm_group_n_to_word(gn, w1 + l1);
+    return l1;
+}
+
+

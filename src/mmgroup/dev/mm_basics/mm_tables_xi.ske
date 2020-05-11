@@ -1,0 +1,141 @@
+
+#include <stdint.h>
+
+#include "mat24_functions.h"
+#include "mat24_xi_functions.h"
+
+
+#include "mm_basics.h"
+
+
+// %%GEN h
+// Structure used for referring to tables for operator xi
+// See corresponding comment in file mm_tables_xi.c
+typedef struct {
+   uint16_t *p_perm;
+   uint32_t *p_sign;
+} mm_sub_table_xi_type;
+
+extern mm_sub_table_xi_type mm_sub_table_xi[2][5];
+// %%GEN c
+
+
+
+// Sign table for xi**1: map tag BC to tag BC
+static uint32_t TAB_SIGN_XI_11[] = {
+// %%TABLE MM_TABLE_SIGN_XI_11, uint32
+};
+
+// Permutation table for xi**1: map tag BC to tag BC
+static uint16_t TAB_PERM_XI_11[] = {
+// %%TABLE MM_TABLE_PERM_XI_11, uint16
+};
+
+// Sign table for xi**1: map tag T0 to tag T0
+static uint32_t TAB_SIGN_XI_12[] = {
+// %%TABLE MM_TABLE_SIGN_XI_12, uint32
+};
+
+// Permutation table for xi**1: map tag T0 to tag T0
+static uint16_t TAB_PERM_XI_12[] = {
+// %%TABLE MM_TABLE_PERM_XI_12, uint16
+};
+
+
+// Sign table for xi**1: map tag T1 to tag X0
+static uint32_t TAB_SIGN_XI_13[] = {
+// %%TABLE MM_TABLE_SIGN_XI_13, uint32
+};
+
+// Permutation table for xi**1: map tag T1 to tag X0
+static uint16_t TAB_PERM_XI_13[] = {
+// %%TABLE MM_TABLE_PERM_XI_13, uint16
+};
+
+// Sign table for xi**1: map tag X0 to tag X1
+static uint32_t TAB_SIGN_XI_14[] = {
+// %%TABLE MM_TABLE_SIGN_XI_14, uint32
+};
+
+// Permutation table for xi**1: map tag X0 to tag X1
+static uint16_t TAB_PERM_XI_14[] = {
+// %%TABLE MM_TABLE_PERM_XI_14, uint16
+};
+
+// Sign table for xi**1: map tag X1 to tag T0
+static uint32_t TAB_SIGN_XI_15[] = {
+// %%TABLE MM_TABLE_SIGN_XI_15, uint32
+};
+
+// Permutation table for xi**1: map tag X1 to tag X0
+static uint16_t TAB_PERM_XI_15[] = {
+// %%TABLE MM_TABLE_PERM_XI_15, uint16
+};
+
+
+
+
+// Sign table for xi**2: map tag BC to tag BC
+static uint32_t TAB_SIGN_XI_21[] = {
+// %%TABLE MM_TABLE_SIGN_XI_21, uint32
+};
+
+// Permutation table for xi**2: map tag BC to tag BC
+static uint16_t TAB_PERM_XI_21[] = {
+// %%TABLE MM_TABLE_PERM_XI_21, uint16
+};
+
+// Sign table for xi**2: map tag T0 to tag T0
+static uint32_t TAB_SIGN_XI_22[] = {
+// %%TABLE MM_TABLE_SIGN_XI_22, uint32
+};
+
+// Permutation table for xi**2: map tag T0 to tag T0
+static uint16_t TAB_PERM_XI_22[] = {
+// %%TABLE MM_TABLE_PERM_XI_22, uint16
+};
+
+
+// Sign table for xi**2: map tag T1 to tag X1
+static uint32_t TAB_SIGN_XI_23[] = {
+// %%TABLE MM_TABLE_SIGN_XI_23, uint32
+};
+
+// Permutation table for xi**2: map tag T1 to tag X1
+static uint16_t TAB_PERM_XI_23[] = {
+// %%TABLE MM_TABLE_PERM_XI_23, uint16
+};
+
+// Sign table for xi**2: map tag X0 to tag T0
+static uint32_t TAB_SIGN_XI_24[] = {
+// %%TABLE MM_TABLE_SIGN_XI_24, uint32
+};
+
+// Permutation table for xi**2: map tag X0 to tag T0
+static uint16_t TAB_PERM_XI_24[] = {
+// %%TABLE MM_TABLE_PERM_XI_24, uint16
+};
+
+// Sign table for xi**2: map tag X1 to tag X0
+static uint32_t TAB_SIGN_XI_25[] = {
+// %%TABLE MM_TABLE_SIGN_XI_25, uint32
+};
+
+
+// Permutation table for xi**2: map tag X1 to tag X0
+static uint16_t TAB_PERM_XI_25[] = {
+// %%TABLE MM_TABLE_PERM_XI_25, uint16
+};
+
+
+mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
+    // %%CODE_XI_POINTERS   TAB_PERM_XI_, TAB_SIGN_XI_
+};
+
+// %%EXPORT p
+uint32_t mm_sub_get_table_xi(uint32_t e, uint32_t i, uint32_t j, uint32_t k)
+{
+    if (k) return mm_sub_table_xi[e][i].p_sign[j];
+    return mm_sub_table_xi[e][i].p_perm[j];
+}
+

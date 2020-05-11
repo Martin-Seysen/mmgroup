@@ -1,0 +1,1833 @@
+// %%COMMENT
+// This is a C implementation of the functionality of Python class
+// Mat24 as described in the sequel. Note that all exported funtions
+// in this module are prefixed with 'mat24_'
+
+// %%COMMENT
+// %%PY_DOCSTR Mat24_doc
+
+
+// %%COMMENT
+// %%PY_DOCSTR  Mat24_doc_basis
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+
+
+
+#include <stdint.h>
+// #include <stdio.h>
+#include <string.h>
+#include "mat24_functions.h"
+
+
+// %%EXPORT_KWD MAT24_API
+
+
+// %%GEN h
+#ifndef MAT24_FUNCTIONS_H
+#define MAT24_FUNCTIONS_H
+
+#include <stdint.h>
+
+#define MAT24_DLL  // We want a DLL!!
+
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+  #define MAT24_HELPER_DLL_IMPORT __declspec(dllimport)
+  #define MAT24_HELPER_DLL_EXPORT __declspec(dllexport)
+  #define MAT24_HELPER_DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define MAT24_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define MAT24_HELPER_DLL_IMPORT
+    #define MAT24_HELPER_DLL_EXPORT
+    #define MAT24_HELPER_DLL_LOCAL
+  #endif
+#endif
+
+
+// Now we use the generic helper definitions above to define MAT24_API 
+// and MAT24_LOCAL.
+// MAT24_API is used for the public API symbols. It either DLL imports 
+// or DLL exports (or does nothing for static build). 
+// MAT24_LOCAL is used for non-api symbols.
+
+#ifdef MAT24_DLL // defined if FOX is compiled as a DLL
+  #ifdef MAT24_DLL_EXPORTS // defined if we are building the FOX DLL 
+                           // (instead of using it)
+    #define MAT24_API MAT24_HELPER_DLL_EXPORT
+  #else
+    #define MAT24_API MAT24_HELPER_DLL_IMPORT
+  #endif // MAT24_DLL_EXPORTS
+  #define MAT24_LOCAL MAT24_HELPER_DLL_LOCAL
+#else // MAT24_DLL is not defined: this means FOX is a static lib.
+  #define MAT24_API
+  #define MAT24_LOCAL
+#endif // MAT24_DLL
+
+
+
+#define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+// %%COMMENT
+/*************************************************************************
+*** Some general bit operations
+*************************************************************************/
+
+// %%USE_TABLE
+static const uint8_t MAT24_LSBIT_TABLE[32] = { 
+// %%TABLE Mat24_lsbit_table, uint8
+};
+
+
+// Commpute index of least significant bit of an integer v1
+// If v1 & 0xffffff is zero then 24 is computed  
+#define mat24_def_lsbit24(x) {MAT24_LSBIT:x}
+
+
+// Same as mat24_def_lsbit24(x), assuming that x is a power of two
+#define mat24_def_lsbit24_pwr2(x)  {MAT24_LSBIT:x,1}
+
+
+// %%EXPORT p
+uint32_t mat24_lsbit24(uint32_t v1)
+// Return index of least significant bit of an integer v1.
+// If v1 & 0xffffff is zero then 24 is returned.  
+{
+    // This is a modification of
+    // http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
+    // which returns 24 if v1 & 0xffffff is zero.
+    // return MAT24_LSBIT_TABLE[(((v1 & -v1) * 0x077CB531L) >> 26) & 0x1f];
+    return {MAT24_LSBIT:v1};
+}
+        
+// %%EXPORT p
+uint32_t mat24_bw24(uint32_t v1)
+// returns the bit weight of the lowest 24 bits of v1
+{
+   v1 = (v1 & 0x555555) + ((v1 & 0xaaaaaa) >> 1); 
+   v1 = (v1 & 0x333333) + ((v1 & 0xcccccc) >> 2);
+   v1 = (v1 + (v1 >> 4)) & 0xf0f0f;
+   return (v1 + (v1 >> 8) + (v1 >> 16)) & 0x1f; 
+}    
+
+
+
+/*************************************************************************
+*** Conversion between bit vectors of GF(2)**24
+*************************************************************************/
+
+
+
+// %%EXPORT p
+uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
+// Stores the positions of 1-bits of v to the array referred by a_out).
+// 
+// Let w be the bit weight of v & 0xffffff, i.e. number n of bits 
+// of v at positions < 24 equal  to one. Then the ordered bit
+// positions where the corrsponding bit of v is 1 are stored in
+// a_out[0],...,a_out[w-1]. 
+// Then v & 0xffffff has 24 - w zero bits. The ordered list of the
+// positions of these zero bits is stored in a_out[w],...,a_out[23]. 
+// 
+// The function returns w.
+{
+    uint_fast32_t w, i, j;
+
+    // put w = bit_weight(v1 & 0xffffff)
+    w = (v1 & 0x555555) + ((v1 & 0xaaaaaa) >> 1);
+    w = (w & 0x333333) + ((w & 0xcccccc) >> 2);
+    w = (w + (w >> 4)) & 0xf0f0f;
+    w = (w + (w >> 8) + (w >> 16)) & 0x1f; 
+  
+    // Separate bits:
+    // i is the position and  o  is the value of the current bit of
+    // the input vector v being processed (0 coded as 0, 1 coded as 8).
+    // j & 0x1f is the position of the next index of the output vector 
+    // where to write the position i in case o = 0.
+    // (j >> 8) & 0x1f is the position of the next index of the output 
+    // vector where to write the position i in case o != 0.
+    v1 <<= 3;  // bit 0 of v1 is now at bit position 3
+    j = w;    // start writing to pos. 0 if o = 0, to pos. w if o != 0
+    for (i = 0; i < 24; ++i) {
+        uint_fast32_t  o = v1 & 8;   // o = value of current bit of v1
+        a_out[(j >> o) & 0x1f] = i;  // write index i to the
+                                     // appropriate output position
+        j += 1 << o;                 // update both output positions
+        v1 >>= 1;                    // process next bit of v1
+    }
+    return w;
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_extract_b24(uint32_t v1, uint32_t u_mask)
+// Extract the bits of 24-bit vector v1 given by the mask u_mask
+// 
+// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k
+// (in ascending order) then the bit of v1 at position i_j is copied 
+// to the bit at position j of the return value for j = 0,...,k.
+{
+    uint_fast32_t res = 0, sh = 0, i;
+    v1 &= u_mask;
+    for (i = 0; i < 24; ++i) {
+        res |= ((v1 >> i) & 1) << sh;
+        sh += (u_mask >> i) & 1;
+    } 
+    return res;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_spread_b24(uint32_t v1, uint32_t u_mask)
+// Spread the bits of 24-bit vector v1 according to the mask u_mask
+// 
+// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k,
+// (in ascending order) then the bit of v1 at position i is copied 
+// to the bit at position i_j of the return value for j = 0,...,k.
+{
+    uint_fast32_t res = 0, sh = 0, i;
+    for (i = 0; i < 24; ++i) {
+        res |= (((v1 >> sh) & 1) << i) & u_mask;
+        sh += (u_mask >> i) & 1;
+    } 
+    return res;
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Conversion between representations of GF(2)**24, Golay code, etc.
+*************************************************************************/
+
+
+// %%USE_TABLE
+static const uint32_t MAT24_ENC_TABLE0[256] = {
+// %%TABLE Mat24_enc_table0, uint32
+};
+
+// %%USE_TABLE
+static const uint32_t MAT24_ENC_TABLE1[256] = {
+// %%TABLE Mat24_enc_table1, uint32
+};
+
+// %%USE_TABLE
+static const uint32_t MAT24_ENC_TABLE2[256] = {
+// %%TABLE Mat24_enc_table2, uint32
+};
+
+// %%USE_TABLE
+static const uint32_t MAT24_DEC_TABLE0[256] = {
+// %%TABLE Mat24_dec_table0, uint32
+};
+
+// %%USE_TABLE
+static const uint32_t MAT24_DEC_TABLE1[256] = {
+// %%TABLE Mat24_dec_table1, uint32
+};
+
+// %%USE_TABLE
+static const uint32_t MAT24_DEC_TABLE2[256] = {
+// %%TABLE Mat24_dec_table2, uint32
+};
+
+
+// %%COMMENT
+// The following table MAT24_BASIS contains the used basis of the 
+// Golay cocode (12 bit vectors of type uint32_t) followed by the 
+// used basis of the Golay code (12 bit vectors).
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_BASIS[24] = { 
+// %%TABLE Mat24_basis, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_RECIP_BASIS[24+8] = { 
+// %%TABLE Mat24_recip_basis, uint32
+};
+
+// %%USE_TABLE
+static const uint16_t MAT24_SYNDROME_TABLE[0x800] = { 
+// %%TABLE Mat24_syndrome_table, uint16
+};
+
+
+
+// %%COMMENT
+// The #define macro mat24_def_octad_to_gcode(o) returns the  number 
+// of the Golay code word corresponding to octad o. This is equivalent
+// to mat24_octad_to_gcode(o) without parameter check.
+//
+// The #define macro mat24_def_gcode_to_octad(v) return the number
+// of the octad corresponding to Golay code vector v, with v in 'gcode'
+// representation. It returns garbage if v is not an octad.
+//
+// These macros use the public tables MAT24_OCT_DEC_TABLE and
+// MAT24_OCT_ENC_TABLE.
+
+// %%GEN h
+#define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
+#define mat24_def_gcode_to_octad(v) \
+  ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
+    + 3 * ((v & 0x7ff) >> 3) - {Mat24_oct_enc_offset})
+// %%GEN c
+
+
+// %%EXPORT_TABLE p
+const uint16_t MAT24_OCT_DEC_TABLE[759] = { 
+// %%TABLE Mat24_oct_dec_table, uint16
+};
+
+// %%EXPORT_TABLE p
+const uint8_t MAT24_OCT_ENC_TABLE[2048] = { 
+// %%TABLE Mat24_oct_enc_table, uint8
+};
+
+
+
+
+
+
+
+
+// %%COMMENT:
+// The public table MAT24_THETA_TABLE contains data about the Golay 
+// code. Entry i contains the following information the code word d,
+// (with d = i in 'gcode' representation):
+// Bit 11,...,0:   mat24_ploop_theta(d)
+// Bit 14,...,12:  Bit weight of code word d in GF(2)**24 divided by 4
+// Bit 15:         reserved
+// 
+// We have d**2 = (-1)**<Bit 12 of i> for d = 2*i in the Parker loop.
+
+// %%EXPORT_TABLE
+const uint16_t MAT24_THETA_TABLE[] = { 
+// %%TABLE Mat24_theta_table, uint16
+};
+
+
+// %%EXPORT p
+uint32_t mat24_vect_to_vintern(uint32_t v1)
+// Convert bit vector v1 in GF(2)^24 from vector to vintern rep.
+{
+    return  MAT24_ENC_TABLE0[v1 & 0xff]
+          ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+          ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
+}
+
+// %%EXPORT p
+uint32_t mat24_vintern_to_vect(uint32_t v1)
+// Convert bit vector v1 in GF(2)^24 from vintern to vector rep.
+{
+    return  MAT24_DEC_TABLE0[v1 & 0xff]
+           ^ MAT24_DEC_TABLE1[(v1 >> 8) & 0xff]
+           ^ MAT24_DEC_TABLE2[(v1 >> 16) & 0xff];
+}
+
+// %%EXPORT p
+uint32_t mat24_vect_to_cocode(uint32_t v1)
+// Return number of Golay cocode element for a vector v1 in GF(2)^24
+{
+    return  (MAT24_ENC_TABLE0[v1 & 0xff]
+          ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+          ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]) & 0xfff;
+}
+
+// %%EXPORT p
+uint32_t mat24_gcode_to_vect(uint32_t v1)
+// Convert Golay code element number v1 to a vector in GF(2)^24
+{
+    return  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+          ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff];
+}
+
+// %%EXPORT p
+uint32_t mat24_cocode_to_vect(uint32_t c1)
+// Return vector in GF(2)^24 corresponding to cocode element number 
+// c1. One of 2**12 possible vectors with this property is returned.
+{
+    return mat24_vintern_to_vect(c1);
+}
+
+// %%EXPORT p
+uint32_t mat24_vect_to_gcode(uint32_t v1)
+// Return gcode(v1) if v1 is a Golay code word. 
+// Here 0 <= gcode(v1) < 4096 is the number of a Golay code word.
+//
+// The function fails if v1 is not a Golay code word.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    uint_fast32_t  cn =  mat24_vect_to_vintern(v1);
+    return cn & 0xfff ? (uint32_t)(-1)   : cn >> 12;
+}
+
+
+
+
+// %%EXPORT p
+uint32_t mat24_gcode_to_octad(uint32_t v1, uint32_t u_strict)
+// Return octad(v1) if v1 is an octad.
+// Here 0 <= v1 < 4096 is the number of a Golay code element
+// and 0 <= octad(v1) < 759 is the number of an octad. 
+// If u_strict is 0 (mod 2) then complements of octads are taken
+// as octads; otherwise the function fails for a complemented octad.
+// 
+// The function fails if v1 is not an octad.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    uint_fast32_t y;
+    u_strict = (u_strict & 1) + 0x100;
+    v1 &= 0xfff;
+    y = MAT24_OCT_ENC_TABLE[v1 & 0x7ff];
+    if (((y ^ ((v1 >> 11) & 1)) + 2) & u_strict) return  (uint32_t)(-1);
+    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - {Mat24_oct_enc_offset};
+}
+
+
+// %%EXPORT p
+uint32_t mat24_vect_to_octad(uint32_t v1, uint32_t u_strict)
+// Return octad(v1) if v1 is an octad.
+// Here v1 is a vector in GF(2)**24 and
+// 0 <= octad(v1) < 759 is the number of an octad. 
+// If u_strict is 0 (mod 2) then complements of octads are taken
+// as octads; otherwise the function fails for a complemented octad.
+// 
+// The function fails if v1 is not an octad.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    uint_fast32_t y, err;
+    u_strict = (u_strict & 1) + 0x100;
+    err = MAT24_ENC_TABLE0[v1 & 0xff]
+             ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
+    v1 = err >> 12;
+    err &= 0xfff;
+    y = MAT24_OCT_ENC_TABLE[v1 & 0x7ff];
+    err |=  (((y ^ ((v1 >> 11) & 1)) + 2) & u_strict);
+    if (err) return  (uint32_t)(-1);
+    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - {Mat24_oct_enc_offset};
+}
+
+// %%EXPORT p
+uint32_t mat24_octad_to_gcode(uint32_t u_octad)
+// Return number of Golay code word corresponding to octad u_octad.
+// 
+// The function succeds if 0 <= u_octad < 759 and fails otherwise.
+// It returns (uint32_t)(-1) in case of failure.
+{   
+    return u_octad < 759 ? MAT24_OCT_DEC_TABLE[u_octad] & 0xfff 
+                         : (uint32_t)(-1);
+}
+
+// %%EXPORT p
+uint32_t mat24_octad_to_vect(uint32_t u_octad)
+// Return vector in GF(2)**24 corresponding to octad u_octad.
+// 
+// The function succeds if 0 <= u_octad < 759 and fails otherwise.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    uint_fast32_t u;
+    if (u_octad >= 759) return (uint32_t)(-1);
+    u = MAT24_OCT_DEC_TABLE[u_octad] & 0xfff;
+    return  MAT24_DEC_TABLE1[(u << 4) & 0xf0]
+          ^ MAT24_DEC_TABLE2[(u >> 4) & 0xff];
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Golay code syndoms and weights
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
+// Same as mat24_syndrome(mat24_cocode_to_vect(c1), u_tetrad). 
+// The function may fail as indicated in the description of
+// function  mat24_syndrome(). 
+{
+        uint_fast32_t  y, syn, bad; 
+        if (u_tetrad > 24) return (uint32_t)(-1L);
+        bad = (u_tetrad + 8) >> 5;       // bad = (u_tetrad >= 24)
+        u_tetrad -= bad;                 // change 24 to 23
+        y = - (((c1 >> 11) + 1) & 1);    // y = 0 if c1 is odd else -1
+        bad &= y;                        // bad  &= (weight(c1) even)
+        c1 ^= MAT24_RECIP_BASIS[u_tetrad & 31] & y;
+            // if even: flip bit 'u_tetrad' in cocode repr. 'c1'
+        y  &=  1 << u_tetrad;            // y = 1 << u_tetrad if even
+        syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+        syn = (1 << (syn & 31)) | (1 << ((syn >> 5) & 31))   
+                               | (1 << ((syn >> 10) & 31));
+        // Now syn is the syndrome of the odd word c1. Thus syn has
+        // odd parity. Bit 24 of syn is set if weight(syn) == 1.
+        bad &= ((syn & (y | 0x1000000)) - 1) >> 25; 
+            // bad &= weight(syn) > 1 and y & syn == 0
+        syn ^= y;                        // the final syndrome
+        return (syn & 0xffffff) | -(bad & 1);
+            // clear high bits, return syndrome of ok, else -1
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_syndrome(uint32_t v1, uint32_t u_tetrad)
+// Return Golay code syndrome of word 'v1'.
+//
+// Here 'v1' is an arbitrary word in GF(2)**24. The function 
+// returns a Golay code syndrome of v1 of bit weight at most four.
+// The returned syndrome is an integer representing a bit vector.
+// That syndrome is unique if it has weight < 4. 
+//
+// The function returns (uint32_t)(-1) in case of failure.
+// 
+// Input 'u_tetrad' must satisfy 0 <= u_tetrad <= 24; otherwise the
+// function fails. The function succeeds if the weight of the
+// syndrome is less than 4. If that weight is equal to 4, we have:
+//
+// If 'u_tetrad' < 24 the function succeeds and returns the unique 
+// syndrome of bit weight 4 where the bit at position 'u_tetrad' is 
+// set. If 'u_tetrad' >= 24 the function fails.
+{
+        uint_fast32_t as_cocode;
+
+        as_cocode = MAT24_ENC_TABLE0[v1 & 0xff]
+                  ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+                  ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
+                  // This is  mat24_vect_to_vintern(v1)
+        return  mat24_cocode_syndrome(as_cocode, u_tetrad);
+}
+
+
+
+
+// %%EXPORT p
+uint32_t mat24_gcode_weight(uint32_t v1)
+// returns bit weight of Golay code word v1 divided by 4
+//
+// Here 0 <= v1 < 4096 is the number of a Golay code word.
+{
+   register uint_fast32_t  t = - ((v1 >> 11) & 1);
+   return (((MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7) ^ t) 
+                 + (t & 7);  
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_gcode_to_bit_list(uint32_t v1, uint8_t *a_out)
+// Store Golay code 'v1' in array a_out as a list of bit positions.
+//
+// Here 0 <= v1 < 4096 is the number of a Golay code word in 
+// 'gcode' representation. The array referred by 'a_out' must have
+// physical length at least 24. The function stores the bit
+// positions of the word 'v1' in 'a_out'.
+//
+// The function returns the length of the list 'a_out'.
+// That length is equal to the weight of the word 'v1'.
+{
+   v1 = MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+          ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff];
+   return mat24_vect_to_bit_list(v1, a_out);
+}
+
+
+// %%EXPORT p
+uint32_t mat24_cocode_weight(uint32_t c1)
+// Return minimum possible weight of cocode vector c1.  
+//
+// Here c1 is a cocode vector in cocode representation.
+
+{
+        uint_fast32_t  y, syn, w; 
+        y = - (((c1 >> 11) + 1) & 1);    // y = 0 if c1 is odd else -1
+        c1 ^= MAT24_RECIP_BASIS[0] & y;
+            // if even: flip bit 0 in cocode repr. 'c1'
+        syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+        w = 3 - (((syn + 0x2000) >> 15) << 1);
+           // weight of odd syndrome (syn >= 0x6000 iff weight == 1)
+        w -= y;                         // weight of complete syndrome
+        y &= (((syn & 31) - 1) >> 5) & 1;
+           // y = 1 if bit 0 has been counted twice in syndrome
+           // (syn & 31 == 0 iff bit 0 is set in syndrome)
+        w -= y << 1;                    // correct if counted twice 
+        return w;
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_cocode_to_bit_list(uint32_t c1, uint32_t u_tetrad, uint8_t *a_out)
+// Store Golay code syndrome of cocode word 'c1' in array a_out.
+//
+// Here 'c1' is an cocode word in cocode representation. The function 
+// stores the sorted  bit positions of the syndrome of c1 in the array
+// referred by a_out and returns the length of that array. The array
+// referred by a_out must have physical length at least 4. 
+// That syndrome is unique if it has length < 4. 
+//
+// The function returns the length of the list a_out, which is <= 4.
+// It returns (uint32_t)(-1) in case of failure.
+// 
+// Input 'u_tetrad' must satisfy 0 <= u_tetrad <= 24; otherwise the
+// function fails. The function succeeds if the length of the
+// syndrome is less than 4. If that length is equal to 4, we have:
+//
+// If 'u_tetrad' < 24 the function succeeds and computes the unique 
+// syndrome of length 4 where the bit at position 'u_tetrad' is set.
+// If 'u_tetrad' >= 24 the function fails.
+{
+        uint_fast32_t  syn, bad, len, i, tmp, a[6]; 
+        if (u_tetrad > 24) return (uint32_t)(-1L);
+        if ((c1 & 0x800) == 0) {             // case even cocode word
+            bad = u_tetrad == 24;       
+            u_tetrad -= bad;                 // change 24 to 23
+            c1 ^= MAT24_RECIP_BASIS[u_tetrad & 31];
+                          // flip bit 'u_tetrad' in cocode repr. 'c1'
+            syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+            a[3] = a[4] = a[5] = 24;      
+            a[0] =  syn & 31; 
+            a[1] =  (syn >> 5) & 31; 
+            len = a[1] == 24 ? 2 : 4;
+            a[2] =  (syn >> 10) & 31; 
+            a[len-1] = u_tetrad;
+            i = len - 1;
+            while (i > 0 && a[i] < a[i-1]) {
+                tmp = a[i]; a[i] = a[i-1]; a[i-1] = tmp;
+                --i;
+            }
+            if (i > 0 &&  a[i] == a[i-1]) {
+                 a[i-1] = a[i+1]; a[i] = a[i+2]; len -= 2;
+            }
+            a_out[0] = a[0]; a_out[1] = a[1]; 
+            a_out[2] = a[2]; a_out[3] = a[3]; 
+            return  (bad && len == 4) ? (uint32_t)(-1) : len;
+        } else{                             // case odd cocode word
+            syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+            a_out[0] =  syn & 31; 
+            a_out[1] =  (syn >> 5) & 31; 
+            len = a_out[1] == 24 ? 1 : 3;            
+            a_out[2] =  (syn >> 10) & 31;
+            a_out[3] = 24; 
+            return len;
+        }
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Scalar product of Golay code and cocode
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
+// Return scalar product (v1,c1) of Golay code and cocode vector
+//
+// v1 is a Golay code vector in 'gcode' representation, c1 is a
+// cocode vector in cocode representation.
+{
+    v1 &= c1;
+    v1 ^= v1 >> 6;  v1 ^= v1 >> 3;
+    return (0x96 >> (v1 & 7)) & 1;
+}
+
+
+
+// %%COMMENT
+/*************************************************************************
+*** Conversion from and to suboctads
+*************************************************************************/
+
+// %%EXPORT p
+uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
+// Convert even suboctad u_sub of octad v1 to cocode representation
+//
+// Each octad v1 has 64 even subsets, when a subset x of v1 is identified
+// with its complement v1 \ x. These subsets are called suboctads.
+// Let b_0,...,b_7 be the elements of the octad v1 in natural order. 
+// Then the even subset (b_0 , b_i)  has suboctad number 2**(i-1) for 
+// i = 1,...,6. Combining suboctads by disjoint union corresponds to 
+// combining their numbers by xor. The empty subocatad has number 0.
+// This yields a 1:1 correspondence between the integers 0,...,63 and
+// the suboctads of a fixed octad v1, when identifying a suboctad with
+// its complement. 
+//
+// The function returns the suboctad of v1 with number u_sub in 'cocode'
+// representation. Octad v1 must be given in 'gcode' representation. 
+//
+// The function fails if v1 does not represent an octad.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    // Let oct = vector of v1 in 'vect' representation
+    uint_fast32_t oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+                       ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
+    // Abort if w = gcode_to_vect(v1) is not an octad. 
+    uint_fast32_t l = (MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7;
+        // Now l =  weight(w0)/4,  w = w0 + w1,  w1 = Omega * (v1 & 1)
+    if (l != 2 << ((v1 >> 11) & 1)) return (uint32_t)(-1);
+    // Put l = parity of u_sub
+    l =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1;  
+    // Let u_sub be a vector representing the suboctad of w with No u_sub
+    u_sub = l + ((u_sub & 0x3f) << 1); 
+    u_sub = mat24_spread_b24(u_sub, oct);
+    // Finally, convert that vector to cocode representation
+    return  (MAT24_ENC_TABLE0[u_sub & 0xff]
+          ^ MAT24_ENC_TABLE1[(u_sub >> 8) & 0xff]
+          ^ MAT24_ENC_TABLE2[(u_sub >> 16) & 0xff]) & 0xfff;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
+// Convert cocode element c1 to suboctad of octad v1.
+//
+// This is an inverse of function mat24_suboctad_to_cocode().
+// The function returns the suboctad number corresponding to the
+// cocode element c1, if v1 is an octad and c1 is an even subset 
+// of v1. c1 and v1 must be given in 'cocode' and 'gcode'
+// representation, respectively. 
+//
+// The function fails if v1 is not an octad or c1 cannot be 
+// represented as an even subset of v1.
+// It returns (uint32_t)(-1) in case of failure.
+{
+    // Let oct = vector of v1 in 'vect' representation
+    uint_fast32_t syn, oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+                       ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
+    // Abort if w = gcode_to_vect(v1) is not an octad. 
+    uint_fast32_t l = (MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7;
+        // Now l =  weight(w0)/4,  w = w0 + w1,  w1 = Omega * (v1 & 1)
+    if (l != 2 << ((v1 >> 11) & 1)) return (uint32_t)(-1);
+    // Abort if c1 is not even
+    if (c1 & 0x800) return (uint32_t)(-1);
+    // l = lsbit of oct
+    l = mat24_def_lsbit24(oct);
+    // compute syndrome of (odd) vector w ^ 2**l, w = gcode_to_vect(v1)
+    c1 ^= MAT24_RECIP_BASIS[l];
+    syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+    syn = (1 << (syn & 31)) ^ (1 << ((syn>>5) & 31))   
+                               ^ (1 << ((syn>>10) & 31));
+    // Abort if syndrome is not a sbset of the octad oct
+    if ((syn & oct) != syn) return (uint32_t)(-1);
+    // compress syndrome to suboctad number
+    syn = mat24_extract_b24(syn, oct) >> 1;
+    // complement suboctad number if highest bit is set
+    l = (syn >> 6) & 1;
+    return (syn ^ (-l)) & 0x3f;
+}    
+
+
+// %%EXPORT p
+uint32_t mat24_suboctad_weight(uint32_t u_sub)
+// Return parity of halved bit weight ofthe even suboctad u_sub
+//    
+// See member function mat24_suboctad_to_cocode for documentation of 
+// suboctads. The function returns 0 is the bit weight of a suboctad 
+// with number u_sub is divisible by four and 1 othewise.
+{
+   uint_fast32_t w = (u_sub & 0x15) + ((u_sub & 0x2a) >> 1);
+   w = w + (w >> 2) + (w >> 4) + 1;
+   return (w >> 1) & 1; 
+}
+
+// %%EXPORT p
+uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
+// Return scalar product of suboctads u_sub1, u_sub2
+//    
+// Here the scalar product is the parity of the vector  u_sub1 & u_sub2 
+// when u_sub1 and u_sub2 are given as subsets of an octad in vector 
+// notation.
+//
+// But in this functions parameters u_sub1, u_sub2 are suboctad 
+// numbers as described in function suboctad_to_cocode.
+{
+   uint_fast32_t wp = (0x96 >> ((u_sub1 ^ (u_sub1 >> 3)) & 7)) 
+                    & (0x96 >> ((u_sub2 ^ (u_sub2 >> 3)) & 7));
+   u_sub1 &= u_sub2;
+   wp ^= (0x96 >> ((u_sub1 ^ (u_sub1 >> 3)) & 7));
+   return wp & 1;
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Parker Loop
+*************************************************************************/
+
+// %%EXPORT p
+uint32_t mat24_ploop_theta(uint32_t v1)
+// returns the theta function for the Parker loop as given in [SPLG]:
+//
+// theta is a quadratic from from the Golay code C to the cocode C*.
+// Here parameter v1 of function theta is represented as a Golay code 
+// word. The result of the function is represented as a Golay cocode 
+// word. The cocycle of the Parker loop is given by:
+//
+//          cocycle(v1,v2) =   scalar_prod(theta(v1), v2)
+//        
+// with  scalar_prod(.,.) the scalar product.
+{
+   return MAT24_THETA_TABLE[v1 & 0x7ff] & 0xfff;
+}
+
+// %%EXPORT p
+uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
+// Returns the cocycle of the Parker loop.
+//
+// Then the Parker Loop product is given by
+//
+//      v1 (*) v2  =  v1 ^ v2 * (-1)**cocycle(v1, v2) . 
+{
+    uint_fast32_t s;
+    s = MAT24_THETA_TABLE[v1 & 0x7ff] & v2 & 0xfff;
+    s ^= s >> 6;
+    s ^= s >> 3;
+    s = 0x96 >> (s & 7);
+    return s & 1; 
+}
+
+
+// %%EXPORT p
+uint32_t mat24_mul_ploop(uint32_t v1, uint32_t v2)
+// Returns the Parker loop product v1 (*) v2
+//
+// Here v1 and v2 are integers coded as follows:
+// bit 0,...,11:   representation as Golay code word
+// bit 12:         Parker loop sign
+// otther bits:    ignored
+{
+   return v1 ^ v2 ^ (mat24_ploop_cocycle(v1, v2) << 12);
+}
+
+
+// %%EXPORT p
+uint32_t mat24_pow_ploop(uint32_t v1, uint32_t u_exp)
+// Return power v1 ** u_exp of the Parker loop element v1
+//
+// Here mat24_pow_ploop(v1, 3) is the inverse of v1.
+{
+    return (v1 & -(u_exp & 1)) 
+      ^ (MAT24_THETA_TABLE[v1 & 0x7ff] & ((u_exp & 2) << 11));
+}
+
+
+// %%EXPORT p
+uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
+// Return commutator of Golay code word v1 and v2
+//
+// This is 0 if the intersection of the vectors v1 and v2 has
+// bit weight 0 mod 4 and 1 is that intersection has bit weight 
+// 2 mod 4. v1 and v2 are in 'gvect' or 'ploop' representation.
+{   
+    uint_fast32_t r;
+    r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v2)
+      ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v1);
+    r ^= r >> 6; r ^= r >> 3;
+    return (0x96 >> (r & 7)) & 1;      
+} 
+
+
+// %%EXPORT p
+uint32_t mat24_ploop_cap(uint32_t v1, uint32_t v2)
+// Return intersection of two Golay code words as cocode word.
+//
+// v1 and v2 are in 'gvect' or 'ploop' representation, the result
+// is returned in 'cocode' representation.
+{
+    v1 &= 0x7ff; v2 &= 0x7ff;
+    return (MAT24_THETA_TABLE[v1]  ^  MAT24_THETA_TABLE[v2] 
+              ^ MAT24_THETA_TABLE[v1 ^ v2]) & 0xfff ;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
+// Return associator of Golay code words v1, v2 and v3
+//
+// This the parity of the intersection of the vectors v1, v2 and 
+// v3.  v1, v2 and v3 are in 'gvect' or 'ploop' representation.
+{
+    uint_fast32_t r;
+    r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v3)
+      ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v3)
+      ^ (MAT24_THETA_TABLE[(v1 ^ v2) & 0x7ff] & v3);
+    r ^= r >> 6; r ^= r >> 3;
+    return (0x96 >> (r & 7)) & 1;      
+}
+
+
+// %%EXPORT p
+uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
+// Return cocode element that kills signs of Parker loop elements
+// 
+// Here 'p_io' is an array of 'u_len' Parker loop elements. The
+// function tries to find a cocode element that makes all these
+// Parker loop elements positive, when operating on them as a
+// diagonal automorphism. The function returns the least cocode 
+// element in lexical order satisfying that condition in bits
+// 0,...,11 of the return value. For that order we assume that 
+// lower bits have higher valence. If no such cocode element  
+// exists, the function fails.
+//
+// We set bit 12 of the return value to indicate a failure.
+//
+// The array p_io is destroyed. More specifically, the first 
+// k entries of that array are changed to an array of linear
+// independent Parker loop elements. When these k elements are
+// mapped to positive Parker loop elements, this also yields a
+// solution of the original problem. If the problem cannot be 
+// solved then we put p_io[k-1] = 0x1000. 
+//
+// The function returns the value k in bits 31..16 of the result.
+{
+    uint_fast32_t col, row, nrows, mask, piv, piv_col[13], res;
+    nrows = 0;
+    for (col = 0; col <= 12; ++col) {
+        mask = 1 << col;
+        for (row = nrows; row < u_len; ++row) {
+            if (p_io[row] & mask) {
+                piv = p_io[row];  
+                p_io[row] = p_io[nrows];
+                for (row = 0; row < u_len; ++row) {
+                    p_io[row] ^= piv & -((p_io[row] >> col) & 1); 
+                } 
+                p_io[nrows] = piv;
+                piv_col[nrows++] = col;
+                break;
+            }
+        }
+    }
+    res = 0;
+    for (row = 0; row < nrows; ++row) {
+        res |= ((p_io[row] >> 12) & 1) << piv_col[row];
+    }
+    return res + (nrows << 16);  
+}
+
+
+
+// %%COMMENT
+/*************************************************************************
+*** Mathieu group Mat24
+*************************************************************************/
+
+
+
+#define heptad_encode(x) \
+         x = MAT24_ENC_TABLE0[(x) & 0xff] \
+           ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  \
+           ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
+
+#define heptad_syndrome(x)    \
+     x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; \
+      x = (1 << ((x) & 31)) ^ (1 << (((x) >> 5) & 31))  \
+              ^ (1 << (((x) >> 10) & 31));
+
+
+
+
+// %%EXPORT p
+uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
+// Complete a permutation p given by p_io to an element of  Mat24.
+//
+// p must have length 24. Entries p[i], i = 0,1,2,3,4,5,8 must make 
+// up a valid umbral heptad, i.e. a heptad not contained in an octad.
+// p[0],...,p[5] must be contained in an octad, p[8] must not be 
+// contained in that octad. The other entries of input p are ignored.
+//
+// It can be shown that such a permutation p can be completed to 
+// a unique element of Mat24.
+//
+// If a suitable permutation p an be found, the array p_io is 
+// completed so that it contains permutation p, and the function
+// returns 0.
+//  
+// Otherwise array p_io is not changed and the function returns 
+// and (uint32_t)(-1). This case is not considered as a failure.
+{
+   uint_fast32_t st, err, t;
+   uint_fast32_t r0, r1, r2, r3, r4, r5, r6, r7, r8, r9;
+
+   // We complete a permutation p in Mat24 from p[i], i = 0,1,2,3,4,5,8.
+   // These p[i] must make up a valid umbral heptad, i.e. a heptad not
+   // contained in an octad. p[0],...,p[5] must be contained in an octad.
+   // At the end we'll have err = 0 iff the completion has succeded. 
+
+   // Compute the heptad  obtained from the inputs in st
+   st = (1 << p_io[8]) | (1 << p_io[0]) | (1 << p_io[1]) | (1 << p_io[2]) 
+      | (1 << p_io[3]) | (1 << p_io[4]) | (1 << p_io[5]);
+
+   // %%FOR i, j1, j2 in Mat24_heptad_index_table
+   // Compute a pentad in r{i} from st and the inputs
+   r{i} = st ^ (1 <<  p_io[{j1}]) ^ (1 <<  p_io[{j2}]);
+   // Compute the syndrome of that pentad in r{i}
+   heptad_encode(r{i});
+   heptad_syndrome(r{i});
+   // %%END FOR
+
+   // Compute p_io[9,...,23] by intersecting pairs of r<i>, r<j> of syndromes.
+   // %%FOR i, j1, j2 in Mat24_heptad_find_table
+   t = r{j1} & r{j2};
+   p_io[{i}] = mat24_def_lsbit24_pwr2(t); 
+   // %%END FOR
+
+   // Now it remains to compute  p_io[6] and  p_io[7].
+   // Compute a syndrome containing p_io[6] but not p_io[7]
+   r0 = (1 << p_io[{Mat24_heptad_const[0]}]) 
+          ^ (1 << p_io[{Mat24_heptad_const[1]}])
+          ^ r{Mat24_heptad_const[2]};
+   heptad_encode(r0);
+   heptad_syndrome(r0);
+
+   // Compute a syndrome containong ecactly  p_io[6] and p_io[7]
+   r1 = st;
+   heptad_encode(r1);
+   err = ((r1 >> 11) & 1) ^ 1;    // error if st is not odd
+   heptad_syndrome(r1);
+   r1 ^=  (1 << p_io[8]); // should be (1 << p_io[6]) | (1 << p_io[7])
+   
+   // Compute  p_io[6] and p_io[7] from the last two syndromes
+   r2 = r1 & r0;          //  should be  1 << p_io[6] 
+   p_io[6] = mat24_def_lsbit24_pwr2(r2); 
+   r2 = r1 & ~r0;         //  should be  1 << p_io[7]   
+   p_io[7] = mat24_def_lsbit24_pwr2(r2); 
+  
+   // Put err = 0 if ok, err != 0 in case of any error
+   err |= (uint_fast32_t)(-32) &
+     (p_io[8] | p_io[0] | p_io[1] | p_io[2] | p_io[3] | p_io[4] | p_io[5]);
+   err |= st & (0xff000000 | (1 << p_io[6]) | (1 << p_io[7]) | r1);
+   err |= (r1 - 1) & 0xff000000;
+   return err;
+}
+
+// %%EXPORT p
+uint32_t mat24_perm_check(uint8_t *p1)
+// Check if permutation p1 is in in the Mathieu group Mat24.
+//
+// The function returns zero if this is the case and a nonzero
+// value otherwise.
+{
+    uint8_t p2[24];
+    memcpy(p2, p1, 9*sizeof(uint8_t));
+    return mat24_perm_complete_heptad(p2) || memcmp(p1, p2, 24);
+}        
+
+
+// %%EXPORT p
+uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
+// Try to find a permutation p that maps heptad h1 to h2
+//
+// h1 and h2 are arrays of length 7 defining two umbral heptads,
+// i.e. heptads not contained in an octad. If a permutation p in
+// the Mathieu group Mat24 that maps h1 to h2 exists, it is unique. 
+//
+// The function stores p in the array referred by p_out if such a p  
+// has been found. Otherwise it fails. 
+//
+// The function returns 0 in case of success and  (uint32_t)(-1) 
+// in case of failure.
+{
+    uint8_t p1[24], p2[24];
+    uint_fast32_t v, y, i;
+ 
+    // First find the special element v of h1 not contained in the octad
+    v = 0;
+    for (i = 0; i < 7; ++i)  v |= 1 << (h1[i] & 31);
+
+    // Put y = mat24_syndrome(v).
+    y = MAT24_ENC_TABLE0[v & 0xff]
+           ^ MAT24_ENC_TABLE1[(v >> 8) & 0xff]
+           ^ MAT24_ENC_TABLE2[(v >> 16) & 0xff];
+    y = MAT24_SYNDROME_TABLE[y & 0x7ff];
+    y = (1 << (y & 31)) ^ (1 << ((y >> 5) & 31)) 
+                              ^ (1 << ((y >> 10) & 31));  
+    
+    // Put v = lsbit(v & y). Then v is the special element of h1
+    v &= y; 
+    v =  mat24_def_lsbit24(v); 
+  
+    // Find position y of element v in h1
+    y = 0; 
+    for (i = 0; i < 7; ++i)   y |= ((h1[i] != v) - 1) & i;
+
+    // Copy special element of h1 to position 8 of p1 and copy the other
+    // elements of h1 to positions 0,...,6. Copy h2 similarly to p2
+    memcpy(p1, h1, 7*sizeof(uint8_t));
+    memcpy(p2, h2, 7*sizeof(uint8_t));
+    p1[8] = p1[y];   p1[y] = p1[6];
+    p2[8] = p2[y];   p2[y] = p2[6];
+
+    // Complete p1 and p2 from heptad. Return error if any completion fails
+    if (mat24_perm_complete_heptad(p1)) return (uint32_t)(-1);
+    if (mat24_perm_complete_heptad(p2)) return (uint32_t)(-1);
+
+    //  If success, put p = p1**(-1) * p2
+    for (i = 0; i < 24; ++i)  p_out[p1[i]] = p2[i];
+    return 0;
+}        
+
+
+
+#define  STD_OCTAD {MAT24_STD_OCTAD[0]}
+
+
+// %%EXPORT p
+uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
+// Return permutation with number u_m24 in the Mathieu group Mat24.
+//
+// The inverse of this function is member function mat24_perm_to_int()
+// This is just a short and convenient way to number elements of Mat24.
+// Input u_m24 = 0 gives the identity permutation.
+//
+// 0 <= u_m24 < 244823040 = order(Mat24) must hold, otherwise the
+// function fails.
+//
+// The function returns 0 in case of success and (uint32_t)(-1)
+// in case of failure. 
+{
+    uint_fast32_t oct, i, j, k = u_m24, k1;
+    uint8_t p1[32];
+  
+    // Let k be the input u_m24
+    // Integer 0 <= k < 244823040 is evaluated in mixed-radix with bases
+    // 759, 8, 7, 6, 5, 4, 3, 16, with valence decreasing from left to right. 
+    // In the sequel these digits of k are named:
+    //
+    //   oct  k_0  k_1  k_2  k_3  k_4  k_5   k'
+    //   759   8    7    6    5    4    3    16 
+
+    oct =  k/322560;            // number of image of standard octad 0..7   
+    if (oct >= 759) return (uint32_t)(-1); // check if input k is correct 
+    k -= 322560 * oct;  // remove digit 'oct' from input k
+    oct -= 759 - STD_OCTAD;   // Manipulate oct so that input oct=0
+    oct += (oct >> 12) & 759;   //   corresponds to the standard octad 
+    oct = mat24_octad_to_vect(oct); // get bit vector for octad
+
+    // p1[0..7]  will be the sorted entries of the octad oct.
+    // p1[8..23] will be the sorted remaining entries. 
+    // This trick is documented in function mat24_vect_to_bit_list.
+    oct <<= 3; j = 0x8;
+    for (i = 0; i < 24; ++i) {
+        uint_fast32_t  o = oct & 8;
+        p1[(j >> o) & 0x1f] = i;
+        j += 1 << o;
+        oct >>= 1;
+    }
+
+    // Let p1[8] be the k'-th smallest entry outside octad  oct,
+    // where 0 < k' < 16 is the lowest digit of k.
+    p1[8] = p1[8 + (k & 15)]; 
+
+    // Format k such that original k/8 is at bit positions 28..30 
+    k >>= 4;
+    k *= (1 << 28) / 2520 + 1;
+
+    // For i = 0,...,5: exchange element at pos. i with element 
+    //                 at pos i + k_i, where 0 <= k_i < 8 - i. 
+
+    // %%FOR i in range(6)
+    k1 = {i} + (k >> 28);  // this is k[{i}]
+        j = p1[{i}];  p1[{i}] = p1[k1]; p1[k1] = j; 
+        k = (k & 0xfffffff) * {int:7-i};  // remove digit k_{i} from k
+    // %%END FOR
+
+    // Now entries at pos. 0,1,2,3,4,5,8 are valid. use
+    // mat24_perm_complete_heptad() to compute the remaining entries
+    mat24_perm_complete_heptad(p1);
+    memcpy(p_out, p1, 24 * sizeof(uint8_t));
+    return 0;
+}
+
+
+
+
+
+
+// %%EXPORT p
+uint32_t mat24_perm_to_m24num(uint8_t  *p1)
+// Convert the permutation p1 in the Mathieu group mat24 to an integer.
+//
+// This reverses function mat24_int_to_perm. The result is undefined
+// (without any indication of failure) if p1 is not in Mat24.
+{
+    uint_fast32_t oct, i, j, res;
+    uint_fast8_t p2[32], q[8], q_inv[8];
+
+    // let oct be the octad formed by p1[0],...,p1[7]
+    oct = (1 << p1[0]) | (1 << p1[1]) | (1 << p1[2]) | (1 << p1[3]) 
+        | (1 << p1[4]) | (1 << p1[5]) | (1 << p1[6]) | (1 << p1[7]);
+
+    // put res = mat24_vect_to_octad(oct)
+    res = MAT24_ENC_TABLE0[oct & 0xff]
+          ^ MAT24_ENC_TABLE1[(oct >> 8) & 0xff]
+          ^ MAT24_ENC_TABLE2[(oct >> 16) & 0xff];
+    res =  mat24_gcode_to_octad(res >> 12, 1) & 0xfff;
+    // put res = (res - STD_OCTAD) mod 759
+    res -=  STD_OCTAD;
+    res += (res >> 12) & 759;
+
+    oct <<= 3; j = 0;
+    for (i = 0; i < 24; ++i) {
+        uint_fast32_t  o = oct & 8;
+        p2[i] = (j >> o) & 0x1f;
+        j += 1 << o;
+        oct >>= 1;
+    }
+
+    // %%FOR i in range(8)
+    j = p2[p1[{i}] & 0x1f] & 7;
+    q[j] = {i};
+    q_inv[{i}] = j;
+    // %%END FOR
+
+    // %%FOR i in range(6)
+    j = q_inv[{i}];
+    q_inv[q[{i}]] = q_inv[q[j]];
+    q[j] = q[{i}];
+    res = res * {int:8-i} + j - {i};
+    // %%END FOR
+
+    return  16 * res + p2[p1[8] & 0x1f];
+}
+
+#undef  STD_OCTADNO   
+            
+
+
+// %%EXPORT p
+void mat24_perm_to_matrix(uint8_t  *p1, uint32_t *m_out)
+// Convert the permutation p1 in the Mathieu group Mat24 to a matrix.
+//
+// The matrix is a 12 x 12 bit matrix acting on the Golay code
+// vectors by right multiplication. It is stored at m_out.
+//
+// Permutation p1 is not checked to be a member of the Mathieu group.
+{
+   int i;
+   uint32_t a[24]; 
+   for (i=0; i<24; ++i) a[i] = MAT24_RECIP_BASIS[p1[i] & 0x1f] >> 12;
+   // %%BITMATMUL Mat24_basis[12:23], uint32_t, a, m_out   
+   m_out[11] = 0x800;
+}
+
+
+// %%EXPORT p
+void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
+// Convert Mathieu group element m1 from matrix to permutation.
+//
+// The matrix m1 is a 12 x 12 bit matrix acting on the Golay code
+// vectors by right multiplication. The matrix is not checked.
+//    
+// The output permutation is stored to p_out.
+{
+   // %%MAT24_MATRIX_TO_PERM   m1, p_out
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Mathieu group M24: operation of group elements
+*************************************************************************/
+
+// %%EXPORT p
+uint32_t mat24_op_vect_perm(uint32_t v1, uint8_t *p1)
+// Apply a permutation p1 to a vector v1 in GF(2)**24
+//
+// Here p1 is the permutation that maps i to p1[i]  for i=0,...,23.
+// The function returns the result v1 * p1.
+{
+   uint_fast32_t i, w = 0;
+   for (i = 0; i < 24; ++i) w |=  ((v1 >> i) & 1) << p1[i];
+   return w;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_op_gcode_matrix(uint32_t v1, uint32_t *m1)
+// Apply the 12 x 12 bit matrix m to a Golay code vector
+//
+// The code vector v1 is given in 'gcode' representation.
+// Here application means right multiplication v1 * m1. 
+// The funtion returns the result v1 * m1.
+{
+    uint_fast32_t w = 0;
+    register int i;
+    for (i=0; i< 12; ++i) w ^= *m1++ & (-((v1 >> i) & 1)); 
+    return w;
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_op_gcode_perm(uint32_t v1, uint8_t *p1)
+// Apply a permutation p1 to a Golay code vector v1
+//
+// Here p1 is the permutation that maps i to p1[i], i=0,...,23,
+// representing an element of the Mathieu group M24.
+//
+// Golay code vector v1 is given in gcode representation.
+// The function returns the result v1 * p1.
+{
+    uint_fast32_t i, w = 0;
+    v1 =   MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+           ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff];
+    for (i = 0; i < 24; ++i) w |=  ((v1 >> i) & 1) << p1[i];
+    v1 =  MAT24_ENC_TABLE0[w & 0xff]
+           ^ MAT24_ENC_TABLE1[(w >> 8) & 0xff]
+           ^ MAT24_ENC_TABLE2[(w >> 16) & 0xff];
+    return v1 >> 12;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_op_cocode_perm(uint32_t c1, uint8_t *p1)
+// Apply a permutation p to a Golay cocode vector v
+//
+// Here p1 is the permutation that maps i to p1[i], i=0,...,23,
+// representing an element of the Mathieu group M24.
+//
+// Golay cocode vector c1 is given in cocode representation.
+// The function returns the result v1 * c1.
+{
+   uint_fast32_t res;
+   res = - (((c1 >> 11) + 1) & 1);       // res = 0 if c1 is odd else -1
+   c1 ^= MAT24_RECIP_BASIS[0] & res;    // make c1 odd
+   res &= MAT24_RECIP_BASIS[p1[0] & 31]; // .. and adjust result
+   c1 = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ]; // get syndrome
+   res ^= MAT24_RECIP_BASIS[p1[c1 & 31] & 31]
+        ^ MAT24_RECIP_BASIS[p1[(c1 >> 5) & 31] & 31]
+        ^ MAT24_RECIP_BASIS[p1[(c1 >> 10) & 31] & 31];
+   return res & 0xfff;
+}
+
+
+
+// %%EXPORT p
+void mat24_mul_perm(uint8_t *p1, uint8_t *p2, uint8_t *p_out)
+// Return p1 * p2 in array p_out
+//
+// p1, p2, p_out  are elements of the  Mathieu group Mat24 
+// represented as permutations.  Any overlap is possible.
+{
+    uint8_t p[32];
+    uint_fast8_t i;
+    for (i = 0; i < 24; ++i) p[i] = p2[p1[i] & 31];
+    memcpy(p_out, p, 24); 
+}
+
+
+// %%EXPORT p
+void mat24_inv_perm(uint8_t *p1, uint8_t *p_out)
+// Return inverse of p1 in array p_out
+//
+// p1, p_out  are elements of the  Mathieu group Mat24 
+// represented as permutations.  Any overlap is possible.
+{
+    uint8_t p[32];
+    uint_fast8_t i;
+    for (i = 0; i < 24; ++i)  p[p1[i] & 31] = i;
+    memcpy(p_out, p, 24); 
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Automorphisms of the Parker Loop
+*************************************************************************/
+
+
+static const uint32_t MAT24_AUTPL_QF_TABLE[] = {
+  // %%TABLE Mat24_autpl_qf_table, uint32   
+};
+
+
+// %%EXPORT p
+void mat24_autpl_set_qform(uint32_t *m_io)
+// Recompute quadratic form on a Parker loop automorphism  m_io
+//
+// This functions augments the Parker loop automorphism m_io by
+// a quadratic form qf. The form qf simplifies the application
+// of m_io to Parker loop elements and also the multiplication
+// of  Parker loop automorphisms. The quadratic form qf is stored 
+// in bits 13,...,24 of the entries of m_io. 
+{
+    uint_fast32_t i, v,  m2[10];
+
+    // The quadratic form qf on the Golay code is defined as follows:
+    // qf(b[i]) = 0 for all basis vectors b[i] of the standard
+    // basis of the Golay code. Furthermore
+    //   qf(v1+v2) = qf(v1) + qf(v2) + v1 * q * transpose(v2),
+    // with matrix q as defined below.
+ 
+    // First compute the 12 x 12  matrix q with
+    // q[i,j] = theta(m[i], m[j])  ^  theta(b[i],b[j]).
+    // Here b[i] is the i-th standard basis vector of the Golay code
+    // and m[i] is it image under the automorphism given by m_io.
+    // So m[i] = m_io[i] & 0xfff.
+    // The matrix q is alternating by [Seysen20], Lemma 4.1.
+    // We just compute the lower triangle of q in order to evaluate a
+    // quadratic form associated with q. Our last basis vector b[11] is 
+    // is Omega, so q[i,11] = q[11,i] = 0, and hence for the lower 
+    // triangle it suffices to compute q[i,j] for i=0,...,10; 
+    // j=0,...,i-1.We store q[i,j] in bit (j+13) of m[i].
+
+    // Internal operation:
+    // Most of the work is the computation of  theta(m[i], m[j]).
+    // We read theta(b[i],b[j]) from table MAT24_AUTPL_QF_TABLE.
+
+    // Store m[i], bit 0..10, in m2[i], bit 0..10,
+    // and a copy of that value in m2[i], bit 16..26  
+    for (i = 0; i < 10; ++i)  {
+        v =  (m_io[i] & 0x7ff); 
+        m2[i] = v + (v << 16);
+    }
+
+    // Put v = (theta(m[i], bit 0..10,  theta(m[i+1]), bit 0..10)
+    // and compute the matrix product v * transpose(m2) 
+    // for i = 1,3,5,7,9.
+    // The result is theta(m[i], m[j]), j= 0..10 and
+    // theta(m[i+1], m[j]), j= 0..10. 
+    // Then compute q[i,j] and q[i+1,j] for j < i from these results
+    // and constants theta(b[i],b[j]) in table MAT24_AUTPL_QF_TABLE.
+    for (i = 1; i < 11; i += 2) {
+        v = (MAT24_THETA_TABLE[m_io[i] & 0x7ff] & 0x7ff)
+            ^ ((MAT24_THETA_TABLE[m_io[i+1] & 0x7ff] & 0x7ff) << 16);
+        // %%BITVMULTRANSP v, m2, 16, 10, 2
+        v = (v ^ MAT24_AUTPL_QF_TABLE[i-1]) & MAT24_AUTPL_QF_TABLE[i];
+        m_io[i] = (m_io[i] & 0x1fff) ^ ((v & 0x7ff) << 13);
+        m_io[i+1] = (m_io[i+1] & 0x1fff) ^ ((v & 0x7ff0000) >> 3);
+    }
+    // Clear rows 0 and 11 of the quadratic form
+    m_io[0] &= 0x1fff; m_io[11] &= 0x1fff;
+}
+
+
+// %%EXPORT p
+void mat24_perm_to_autpl(uint32_t c1, uint8_t *p1, uint32_t *m_out)
+// Combine Mat24 and cocode element to Parker loop automorphism
+//
+// Given an element p1 of the Mathieu group Mat24 (in permutation 
+// representation) and a Golay cocode element c1 (in cocode 
+// representation), the function returns a Parker loop automorphism 
+// m_out as a 12 x (12+13) matrix.
+// m_out contains the 12 images of the basis vectors of the Parker loop
+// and a quadratic form for simplfying its operation on Pl.
+// m_out is an array of type uint32_t[12]
+{
+    uint_fast32_t i;
+    mat24_perm_to_matrix(p1, m_out);
+    for (i = 0; i < 12; ++i) m_out[i] ^= ((c1 >> i) & 1) << 12;
+    mat24_autpl_set_qform(m_out);
+}
+
+
+// %%EXPORT p
+void mat24_cocode_to_autpl(uint32_t c1, uint32_t *m_out)
+// Convert cocode element c1 to Parker loop automorphism m_out.
+//
+// Same as perm_to_autpl(c1, p), with p the identity permutation.
+{
+    uint_fast32_t i;
+    for (i = 0; i < 12; ++i) {
+        m_out[i] = (1 << i) + (((c1 >> i) & 1) << 12);
+    }
+}
+
+
+// %%EXPORT p
+void mat24_autpl_to_perm(uint32_t *m1, uint8_t  *p_out)
+// Convert Parker loop automprohism to Mat24 permutation
+// The resulting permutation is stored in p_out.
+{
+    mat24_matrix_to_perm(m1, p_out);
+}
+
+// %%EXPORT p
+uint32_t mat24_autpl_to_cocode(uint32_t *m1)
+// Extract cocode vector c from Parker loop automorphism m1
+//
+// Then m1 = perm_to_autpl(c, p), where p is the permutation
+// obtained by calling autpl_to_perm(m1).
+//
+// Note that m1 = cocode_to_autpl(c) *  perm_to_autpl(0, p).
+{
+    uint_fast32_t i, v = 0;
+    for (i = 0; i < 12; ++i)  v += ((m1[i] >> 12) & 1) << i;
+    return v;
+}
+
+
+// The following macro computes t = mat24_op_ploop_autpl(v1, m1).
+// It destroys v1. Description see function mat24_op_ploop_autpl().
+#define inline_op_ploop_autpl(v1, m1, t) \
+    t = (v1 & 0x1000) \
+          ^ (m1[0] & -(v1 & 1)) ^ (m1[1] & -((v1 >> 1) & 1)) \
+          ^ (m1[2] & -((v1 >> 2) & 1))  ^ (m1[3] & -((v1 >> 3) & 1)) \
+          ^ (m1[4] & -((v1 >> 4) & 1))  ^ (m1[5] & -((v1 >> 5) & 1)) \
+          ^ (m1[6] & -((v1 >> 6) & 1))  ^ (m1[7] & -((v1 >> 7) & 1)) \
+          ^ (m1[8] & -((v1 >> 8) & 1))  ^ (m1[9] & -((v1 >> 9) & 1)) \
+          ^ (m1[10] & -((v1 >> 10) & 1)) ^ (m1[11] & -((v1 >> 11) & 1));\
+    v1 = (t >> 13) & v1;  v1 ^= v1 >> 6;  v1 ^= v1 >> 3; \
+    v1 = (0x96 >> (v1 & 7)) & 1; \
+    t = (t & 0x1fff) ^ (v1 << 12);     
+
+
+// %%EXPORT p
+uint32_t mat24_op_ploop_autpl(uint32_t v1, uint32_t *m1)
+// Apply Parker loop automorphism m1 to Parker Loop element v1
+//
+// Here m1 is a Parker loop autmorphism (in autpl representation)
+// and v1 is an element of the Parker loop, encoded as in function
+// mat24_mul_ploop().
+// The function returns the resulting cocode vector  v1 * m1.
+{
+    // Operation:
+    // Matrix m1 contains a quadratic form qf and the images of the
+    // basis vectors, as described in function mat24_autpl_set_qform().
+    // Let m = (m[0],...,m[1]), with row vector m[i] the image of the 
+    // i-th basis vector b[i]. Then we compute the product binary 
+    // matrix product:
+    //    t0 = v_12 * m,
+    // where v_12 is the vector containing the lower 12 bits of v, 
+    // excluding the sign bit. t0 is the correct result up to sign.
+    // Then we asjust the sign as follows:
+    //   t = t0  ^  (v1 & 0x1000) ^ (s << 12),  
+    // where (v1 & 0x1000) is the sign bit of v1 and s is defined by
+    // s = qf(v_12) =  v_12 *  q  * transpose(v_12),
+    // and q is the 12 x 12 matrix representing the quadratic form qf 
+    // as in function mat24_autpl_set_qform().  
+
+    uint_fast32_t  t;
+    inline_op_ploop_autpl(v1, m1, t);
+    return t;
+}
+
+
+// %%EXPORT p
+void mat24_mul_autpl(uint32_t *m1, uint32_t *m2, uint32_t *m_out)
+// Put m_out = m1 * m2 for Parker loop automorphisms m1, m2
+//
+// Here all automorphisms are in 'autpl' representation.
+{
+    uint_fast32_t  i, v, t;
+    uint32_t m[12];
+    // Compute images of the vectors m[i] in m1 under the
+    // automorphism m2 of the parker loop,
+    for (i = 0; i < 12; ++i) {
+        v = m1[i];
+        inline_op_ploop_autpl(v, m2, t);
+        m[i] = t;
+    }
+    // Store the images of the vectors m[i]  in output matrix m_out
+    for (i = 0; i < 12; ++i) m_out[i] = m[i];
+    // Compute the quadratic form for m_out.
+    mat24_autpl_set_qform(m_out);
+}
+
+
+// %%EXPORT p
+void mat24_inv_autpl(uint32_t *m1, uint32_t *m_out)
+// Put m_out = m1**(-1) for a Parker loop automorphisms m1
+//
+// Here all automorphisms are in 'autpl' representation.
+{
+    uint_fast32_t  i, v, t;
+    uint8_t p[32], p_inv[32];
+    uint32_t mi[12];
+
+    mat24_matrix_to_perm(m1, p); 
+    for (i = 0; i < 24; ++i) p_inv[p[i] & 31] = i;
+    mat24_perm_to_matrix(p_inv, mi);
+    for (i = 0; i < 12; ++i) {
+         v = mi[i];
+         inline_op_ploop_autpl(v, m1, t);
+         mi[i] ^= (t & 0x1000);
+    }
+    for (i = 0; i < 12; ++i) m_out[i] = mi[i]; 
+    mat24_autpl_set_qform(m_out);
+}
+
+
+//345678901234567890123456789012345678901234567890123456789012345678901234567890  
+
+// %%EXPORT p
+void mat24_perm_to_iautpl(uint32_t c1, uint8_t *p1, uint8_t *p_out, uint32_t *m_out)
+// Saving some intermediate steps, this is equivalent to:
+//     mat24_inv_perm(p1, p_out);
+//     mat24_perm_to_autpl(c1, p1, m_temp);  
+//     mat24_inv_autpl(m_temp, m_out);
+{
+    uint_fast32_t i, v, t;
+    uint32_t m1[16];
+    uint8_t p_inv[32];
+    mat24_perm_to_matrix(p1, m1);
+    for (i = 0; i < 12; ++i) m1[i] ^= ((c1 >> i) & 1) << 12;
+    mat24_autpl_set_qform(m1);
+
+    for (i = 0; i < 24; ++i) p_inv[p1[i] & 31] = i;
+    for (i = 0; i < 24; ++i) p_out[i] = p_inv[i];
+    mat24_perm_to_matrix(p_inv, m_out);
+    for (i = 0; i < 12; ++i) {
+        v = m_out[i];
+        inline_op_ploop_autpl(v, m1, t);
+        m_out[i]  ^= (t & 0x1000);
+    }
+    mat24_autpl_set_qform(m_out);
+}
+
+
+
+// %%COMMENT
+/*************************************************************************
+*** Auxiliary functions for the Monster group
+*************************************************************************/
+
+
+// %%EXPORT p
+void mat24_perm_to_net(uint8_t *p1, uint32_t *a_out)
+// Compute modified Benes network for permutation of 24 entries
+//
+// The network consists of 9 layers. The returned array 'a_out' of 
+// length 9 describes that network. In layer i, entry j is to be
+// exchanged with entry  j + d[i], if bit j of the value a_out[i]
+// is set. Here d[i] = 1,2,4,8,16,8,4,2,1 for i = 0,...,8. In layers 
+// i with d[i] >= 8 we assert that bit j of a_out[i] is set for j < 8
+// only.
+{
+    uint_fast8_t p[32], q[32];
+    uint_fast32_t i, j, sh, d, done;
+    uint_fast32_t res0, res1, res2;
+
+    for (i = 0; i < 24; ++i) 
+        p[i] = p1[i] & 31; // copy permutation p1 to p
+
+    // The first and the last three layers are a standard Benes network. 
+    // Do Benes network looping algorithm steps for d = 1, 2, 4
+    for (sh = 0; sh < 3; ++sh)
+    {      
+        d = 1 << sh;
+        for (i = 0; i < 24; ++i)
+            q[p[i]] = i;     // q := inverse of p
+        done = 0;            // bit i marks that step i->p[i] is done
+        res0 = 0;            // initial looping transpositions
+        res1 = 0;            // final looping transpositions
+        for (i = 0; i < 24; ++i)  // Looping step for Benes network
+        {
+            j = i;           // j is a node not yet processed
+            while (!(done & (1 << j))) // while node j not done
+            {
+                done |= 1 << j;        // delare node j done
+                j = p[j];              // j := permutation result p[j]
+                // route node p[j] thru '0' part of inner Benes network
+                // so we do: if (j & d): res1 |=  1 << (j & ~d)
+                res1 |= ((j & d) >> sh) << (j & ~d);
+                j = q[j ^ d];          // j = origin of buddy of p[j]
+                done |= 1 << j;        // declare that buddy done
+                // route buddy thru '1' part of inner Benes network
+                // so we do: if (~j & d): res0 |=  1 << (j & ~d)
+                res0 |= ((~j & d) >> sh) << (j & ~d);
+                j = j ^ d;             // j = buddy of that origin
+            }
+        }
+        a_out[sh] = res0;    // save initial looping transposition
+        a_out[8-sh] = res1;  // save final looping transposition
+        res0 |= res0 << d;   // initial: exchange i with i^d if bit i set
+        res1 |= res1 << d;   // final: exchange i with i^d if bit i set
+        for (i = 0; i < 24; ++i)  // compute q = (initial) * p * (final)
+        {
+            j = p[i ^ (((res0 >> i) & 1) << sh)];
+            q[i] = j ^ (((res1 >> j) & 1) << sh);
+        }
+        for (i = 0; i < 24; ++i) // copy (initial) * p * (final) to p
+            p[i] = q[i];
+    }
+    // It remains to compute the 3 middle layers. They must compute
+    // the permutation i -> p[i] with p[i] = i (mod 8). E.g. for i=0
+    // we do the following transpositions, if (0, 8, 16) maps to
+    //
+    //   ( 0,  8, 16):          (id)  *   (id)   *   (id)  // [1]
+    //   ( 0, 16,  8):         (0,8)  *  (0,16)  *  (0,8)  // [0]     
+    //   ( 8,  0, 16):         (0,8)  *   (id)   *   (id)  // [2]  
+    //   ( 8, 16,  0):         (0,8)  *  (0,16)  *   (id)  // [3]
+    //   (16,  0,  8):          (id)  *  (0,16)  *  (0,8)  // [4]  
+    //   (16,  8,  0):          (id)  *  (0,16)  *   (id)  // [5]
+    //          
+    // For each permutation of (i, i+8, i+16) we compute a number j,
+    // as indicated in square brackets above, from the bits 3 and 4 of
+    // p[i] and p[i+8]. Then we use table look up for obtaining the
+    // correct transpostions as given in the list above.   
+    res0 = res1 = res2 = 0;
+    for (i = 0; i < 8; ++i)
+    {
+        j = p[i] >> 3;
+        j = 2 * j + ((p[i+8] >> (3 + (j & 1))) & 1);
+        j = (0x236407 >> (j << 2)) & 0xf;
+        res2 |=  (j & 1) << i;
+        res1 |=  ((j >> 1) & 1) << i;
+        res0 |=  ((j >> 2) & 1) << i;
+    }
+    a_out[3] = res0; a_out[4] = res1; a_out[5] = res2;
+}
+
+
+
+
+
+
+
+// %%EXPORT p
+void mat24_op_all_autpl(uint32_t *m1, uint16_t *a_out)
+// Auxiliary function for the rep 196884x of the monster.
+// Apply Parker loop automorphism  m1  to all Parker Loop elements.
+// The function computes a table a_out[i], i = 0,...,0x7ff, such  
+// that (a_out[i] & 0x7ff) is the image m1(i) of the Parker 
+// loop element i modulo the center of the Parker loop.
+// Signs are stored in bits 12...14 of a_out[i] as follows:
+// Bit 12: (sign of m1(i)) ^ (odd &  P(i))
+// Bit 13: (sign of m1(i))
+// Bit 14: (sign of m1(i)) ^ (bit 11 of m1(i))
+// Here odd is 1 iff m1 is an odd automorphism, and P() is the
+// Power map of the Parker loop.
+{
+    uint_fast32_t i;   // exponential counter: 1, 2, 4, 8,...,0x400
+    uint_fast32_t j;   // counter from 1 to i-1
+    uint_fast32_t ri;  // accumulator for computing a_out[i]
+    uint_fast32_t q;   // q is row log2(i) of bilinear form in m1
+    uint_fast32_t qq, qq1, qq2;  // used for computing a sign bit
+    uint_fast32_t odd; // set to a nonzero value if m1 is odd
+    odd = m1[11] & 0x1000;
+    // We have to to the following:
+    a_out[0] = 0; 
+    // But we also don't like dummy operations with undefined input
+    a_out[1] = a_out[2] = a_out[3] = 0;
+    for (i = 1; i < 0x800; i += i) {
+        // First compute ri = a_out[i] and copy the (halved) 
+        // corresponding row of bilinear form from m1 to q. 
+        ri = *m1++;                 // row  log2(i)   of  m1
+        q = (ri >> 13) & 0x7ff;     // row of bilinear form B
+        // m1[log2(i)], bit 0,..12 is the Parker loop element i,
+        // with bit 12 the sign bit. Store sign bit to bits 12...14
+        // of ri. Store image of element i in bits 11...0.
+        // of ri. xor bit 11 of that image to bit 14 of ri. Note that 
+        // the Power map bit is 0 for all basis vectors.
+        ri = -(ri & 0x1000) ^ (ri & 0xfff) ^ ((ri & 0x800) << 3);
+        a_out[i] = ri;   // Save result ri in a_out.
+        qq1 = -((q & 1) << 12);
+        a_out[i+1] = ri ^ a_out[1] ^ qq1;   
+        qq2 =  -((q & 2) << 11);     
+        a_out[i+2] = ri ^ a_out[2] ^ qq2;   
+        a_out[i+3] = ri ^ a_out[3] ^ qq1 ^ qq2;   
+        // Next compute a_out[i+j], 1 <= j < i.
+        // We do cases j,..j+3 in a single iteration for j = 0 mod 4
+        for (j = 4; j < i; j += 4) {
+            // Store bit dsign = B(i, j) = parity(j & q) in 
+            // qq, bits 12..14. We have 
+            //  sign(i+j) = sign(i) ^ sign(j) ^ dsign
+            qq = j & q;
+            qq ^= qq >> 6;
+            qq ^= qq >> 3;
+            qq = -((0xD20 << (qq & 7)) & 0x1000); 
+            // Put a_out[i+j] = a_out[i] ^ a_out[j] ^ dsign
+            a_out[i+j] = ri ^ a_out[j] ^ qq; 
+            qq1 = qq ^ -((q & 1) << 12); // qq1[12..14] = qq0^B(i,1) 
+            a_out[i+j+1] = ri ^ a_out[j+1] ^ qq1; 
+            qq2 =  -((q & 2) << 11);     // qq2[12..14] =  B(i,2) 
+            a_out[i+j+2] = ri ^ a_out[j+2] ^ qq ^ qq2; 
+            a_out[i+j+3] = ri ^ a_out[j+3] ^ qq1 ^ qq2; 
+        }
+    }
+    if (odd) for (i = 0; i < 0x800; i += 4) {
+        // Adjust bit 12  for power map if m1 is odd   
+        a_out[i] ^= MAT24_THETA_TABLE[i] & 0x1000;
+        a_out[i+1] ^= MAT24_THETA_TABLE[i+1] & 0x1000;
+        a_out[i+2] ^= MAT24_THETA_TABLE[i+2] & 0x1000;
+        a_out[i+3] ^= MAT24_THETA_TABLE[i+3] & 0x1000;
+    }
+}
+
+
+
+
+
+// %%EXPORT p
+void mat24_op_all_cocode(uint32_t c1, uint8_t *a_out)
+// Auxiliary function for the rep 196884x of the monster.
+// Apply cocode element c1 (interpreted as a Parker loop 
+// automorphism) to all Parker Loop elements.
+// The function computes a table a_out[i], i= 0,...,0x7ff, 
+// containing the signs related to this operation as follows:
+// Bit 0:  (sign of c1(i)) ^ (odd &  P(i))
+// Bit 1:  (sign of c1(i))
+// Bit 2:  same as bit 1
+// Here odd is 1 iff m1 is an odd automorphism, and P() is the
+// power map of the Parker loop.
+// This ia a simplified version of function mat24_op_all_autpl().
+{
+    uint_fast32_t i;      // exponential counter: 1, 2, 3, 8,...,0x400
+    uint_fast32_t j;      // counter from 1 to i-1
+    uint_fast32_t sh = 0; // shift factor: i = 2 << sh
+    uint_fast32_t ri;     // accumulator for computing a_out[i]
+    // We have to to the following:
+    a_out[0] = 0; 
+    // But we also don't like dummy operations with undefined input
+    a_out[1] = a_out[2] = a_out[3] = 0;
+    for (i = 1; i < 0x800; i += i) {
+        // First compute ri = a_out[i]. ri is equal to the scalar 
+        // product of the Golay code element i and  the cocode 
+        // element c1.  Note that the Power map bit is 0 for all 
+        // basis vectors.
+        a_out[i] = ri = -((c1 >> sh++) & 1);
+        a_out[i+1] = ri ^ a_out[1];
+        a_out[i+2] = ri ^ a_out[2];
+        a_out[i+3] = ri ^ a_out[3];
+        // Next compute a_out[i+j], 1 <= j < i.
+        for (j = 4; j < i; j += 4) {
+            // Put a_out[i+j] = a_out[i] ^ a_out[j]
+            a_out[i+j] = ri ^ a_out[j];      
+            a_out[i+j+1] = ri ^ a_out[j+1];      
+            a_out[i+j+2] = ri ^ a_out[j+2];      
+            a_out[i+j+3] = ri ^ a_out[j+3];      
+        }
+    }
+    if (c1 & 0x800) for (i = 0; i < 0x800;  i += 4) {
+        // Adjust bit 12  for power map if c1 is odd   
+        a_out[i] ^= (MAT24_THETA_TABLE[i] >> 12) & 0x1;
+        a_out[i+1] ^= (MAT24_THETA_TABLE[i+1] >> 12) & 0x1;
+        a_out[i+2] ^= (MAT24_THETA_TABLE[i+2] >> 12) & 0x1;
+        a_out[i+3] ^= (MAT24_THETA_TABLE[i+3] >> 12) & 0x1;
+    }
+}
+
+
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+// %%GEN h
+#endif  // #ifndef MAT24_FUNCTIONS_H
+
+
+

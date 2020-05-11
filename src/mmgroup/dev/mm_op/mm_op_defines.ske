@@ -1,0 +1,15 @@
+// %%GEN h
+
+
+// Offsets for tags A,B,C,T,X,Z,Y in the internal representation
+// in integers of type uint_mmv_t.
+// Compare corresponding offsets in file mm_basics.h
+#define MM_OP{P}_OFS_A  (MM_AUX_OFS_A >> {LOG_INT_FIELDS})
+#define MM_OP{P}_OFS_B  (MM_AUX_OFS_B >> {LOG_INT_FIELDS})   
+#define MM_OP{P}_OFS_C  (MM_AUX_OFS_C >> {LOG_INT_FIELDS})    
+#define MM_OP{P}_OFS_T  (MM_AUX_OFS_T >> {LOG_INT_FIELDS})  
+#define MM_OP{P}_OFS_X  (MM_AUX_OFS_X >> {LOG_INT_FIELDS})   
+#define MM_OP{P}_OFS_Z  (MM_AUX_OFS_Z >> {LOG_INT_FIELDS})   
+#define MM_OP{P}_OFS_Y  (MM_AUX_OFS_Y >> {LOG_INT_FIELDS})    
+#define MM_OP{P}_OFS_E  (MM_AUX_OFS_E >> {LOG_INT_FIELDS})    
+                                  

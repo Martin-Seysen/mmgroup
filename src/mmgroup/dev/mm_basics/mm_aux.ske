@@ -1,0 +1,1156 @@
+// %%COMMENT
+// %%PY_DOCSTR MM_DOC
+
+// %%COMMENT
+// %%PY_DOCSTR MM_BASICS_DOC
+
+// %%COMMENT
+// %%PY_DOCSTR MM_AUX
+
+
+#include <stdlib.h>
+#include "mm_basics.h"
+
+
+
+// %%USE_TABLE
+static const uint32_t MMV_CONST_TABLE[] = {
+// %%TABLE MMV_CONST_TAB, uint32
+};
+
+
+// %%COMMENT
+// %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
+static const uint16_t MM_AUX_TBL_ABC[] = {
+// %%TABLE MM_AUX_TBL_ABC, uint16
+};
+
+
+
+// %%COMMENT
+// %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
+static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
+// %%TABLE MM_AUX_TBL_REDUCE, uint{INT_BITS}
+};
+
+
+
+
+// %%COMMENT
+// The order of the parameters of functions in this file is:
+//
+// 1. Modulus p, if present
+// 2. The input data array
+// 3. Any parameters that do not affect the positions in the output array
+// 4. The output data array
+// 5. Parameters (e.g. lengths, indices) that affect the positions of the 
+//    data being modified in the output array
+
+
+/**********************************************************************
+*** Some macros
+**********************************************************************/
+
+// %%GEN h
+// Return nonzero value if p is a bad modulus,  
+// i.e. not p = 2**k - 1 for some 2 <= k <= 8
+#define mm_aux_bad_p(p) (((p) & ((p)+1)) | (((p)-3) & ((0UL-256UL))))
+
+// Offsets for tags A,B,C,T,X,Z,Y in the internal representation
+#define MM_AUX_OFS_A       0UL
+#define MM_AUX_OFS_B     768UL    //    24*32
+#define MM_AUX_OFS_C    1536UL    //  2*24*32
+#define MM_AUX_OFS_T    2304UL    //  3*24*32
+#define MM_AUX_OFS_X   50880UL    //  MM_AUX_OFS_T +    759*64
+#define MM_AUX_OFS_Z  116416UL    //  MM_AUX_OFS_X +   2048*32
+#define MM_AUX_OFS_Y  181952UL    //  MM_AUX_OFS_X + 2*2048*32
+#define MM_AUX_OFS_E  247488UL    //  MM_AUX_OFS_X + 3*2048*32. i.e
+                                  //  total length of internal rep
+
+// Offsets for tags A,B,C,T,X,Z,Y in the external representation
+#define MM_AUX_XOFS_A      24UL
+#define MM_AUX_XOFS_B     300UL    //  24 + 1*276
+#define MM_AUX_XOFS_C     576UL    //  24 + 2*276
+#define MM_AUX_XOFS_T     852UL    //  24 + 3*276
+#define MM_AUX_XOFS_X   49428UL    //  MM_AUX_XOFS_T +    759*64
+#define MM_AUX_XOFS_Z   98580UL    //  MM_AUX_XOFS_X +   2048*24
+#define MM_AUX_XOFS_Y  147732UL    //  MM_AUX_XOFS_X + 2*2048*24
+#define MM_AUX_XOFS_E  196884UL    //  MM_AUX_XOFS_X + 3*2048*24. i.e
+                                   //  total length of external rep
+
+
+// Tags for labels and values of vectors in the representation space
+// A multiple of a unit vector with coordinate 'coord' is encoded
+// in the bit fields of a 32-bit integers in the form. 
+//   coord (tag, par1, par2) 
+#define MM_SPACE_TAG_A      0x2000000
+#define MM_SPACE_TAG_B      0x4000000
+#define MM_SPACE_TAG_C      0x6000000
+#define MM_SPACE_TAG_T      0x8000000
+#define MM_SPACE_TAG_X      0xA000000
+#define MM_SPACE_TAG_Z      0xC000000
+#define MM_SPACE_TAG_Y      0xE000000 
+// Mask for all tags:
+// Use y = (x & MM_SPACE_MASK_PAR1) << MM_SPACE_SHIFT_PAR1
+// to set parameter par1 in y to the value x.
+#define MM_SPACE_MASK_TAG     0xE000000 
+// Mask and shift factor for parameter par1  
+// Use y = (x << MM_SPACE_SHIFT_PAR1) & MM_SPACE_MASK_PAR1
+// to set parameter par1 in y to the value x.
+#define MM_SPACE_MASK_PAR1    0x1FFC000   
+#define MM_SPACE_SHIFT_PAR1          14   
+// Mask and shift factor for parameter par12  
+// Use y = (x << MM_SPACE_SHIFT_PAR2) & MM_SPACE_MASK_PAR2
+// to set parameter par2 in y to the value x.
+#define MM_SPACE_MASK_PAR2       0x3F00   
+#define MM_SPACE_SHIFT_PAR2           8 
+// Mask for coordinate:  
+// Use y = x  & MM_SPACE_MASK_COORD
+// to set the coordiante in y to the value x.
+// Caution: some special routines for modulus p = 2**k - 1
+// use only th lowest k bits of the coordinate.
+#define MM_SPACE_COORD_PAR1    0x1FFC000   
+
+// %%GEN c
+
+
+// %%COMMENT
+/**********************************************************************
+*** Low-level functions supporting vectors of type uint_mmv_t[]
+**********************************************************************/
+
+
+
+
+// %%EXPORT p
+void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
+// Read entries of vector mv with modulus p and store these entries
+// in the array b. len is the number of entries to be read.
+// len must be a multiple of the number of entries in an integer
+// of type uint_mmv_t. It is ok if len is a multiple of 32. 
+// Vector b is reduced modulo p.
+{
+    uint_fast32_t i, sh, tmp;  
+    uint_mmv_t source;
+    // %%MMV_LOAD_CONST  p, i
+    sh = {MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= {LOG_INT_BITS} - i;
+
+    switch (i) {
+        // %%FOR LOG_F in [1, 2, 3]
+        case {LOG_F}:
+            while (len--) {
+                source = *mv++;
+                // %%FOR jj in range(0, INT_BITS, 1 << LOG_F)
+                tmp = (source >> {jj}) & p;
+                b[{int:jj >> LOG_F}] = (tmp + ((tmp + 1) >> sh)) & p;
+                // %%END FOR
+                b += {int:INT_BITS >> LOG_F};
+            }
+            break;
+        // %%END FOR
+    }
+}
+
+// %%EXPORT p
+void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
+// Same operation as mm_aux_read_mmv1(), but vector b is not reduced.
+// This is for debugging and less optimized than mm_aux_read_mmv1(). 
+{
+    uint_fast32_t i, j;  
+    uint_mmv_t source;
+    // %%MMV_LOAD_CONST  p, i
+    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= {LOG_INT_BITS} - i;
+    i = 1 << i;                       // This is FIELD_BITS
+
+    while (len--) {
+        source = *mv++;
+        for (j = 0; j < {INT_BITS}; j += i) *b++ = (source >> j) & p;
+    }
+}
+
+
+
+// %%EXPORT p
+void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
+// Write data from the array b to the vector mv with modulus p. 
+// len is the number of entries to be written.
+// len must be a multiple of the number of entries in an integer
+// of type uint_mmv_t. It is ok if len is a multiple of 32. 
+{
+    uint_fast32_t i;  
+    uint_mmv_t dest;
+    // %%MMV_LOAD_CONST  p, i
+    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= {LOG_INT_BITS} - i;
+    
+    switch(i) {
+        // %%FOR LOG_F in [1, 2, 3]
+        case {LOG_F}:
+            while (len--) {
+                dest =  0;
+                // %%FOR jj in range(0, INT_BITS, 1 << LOG_F)
+                dest +=  (uint_mmv_t)(b[{int:jj >> LOG_F}]) << {jj};
+                // %%END FOR
+                *mv++ = dest;
+                b += {int:INT_BITS >> LOG_F};
+            }
+            break;
+        // %%END FOR
+    }
+}
+
+
+// %%EXPORT p
+void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
+// Read entries of vector mv with modulus p and store these entries in
+// the array b. mv is a vector of contigous small arrays with 24 
+// entries. len is the number of small arrays to be read. So
+// altogether 24 * len entries are read from mv and written to array b.
+// Vector b is reduced modulo p.
+{
+    uint_fast32_t i, sh, tmp;  
+    uint_mmv_t source;
+    // %%MMV_LOAD_CONST  p, i
+    sh = {MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+
+    switch(i) {
+        // %%FOR LOG_F in [1, 2, 3]
+        case {LOG_F}:
+            while (len--) {
+                // %%FOR j in range(0, 24)         
+                // %%IF* (j << LOG_F) % INT_BITS == 0  # then reload source
+                source = *mv++;                 
+                // %%END IF
+                tmp = (source >> {int:(j << LOG_F) % INT_BITS}) & p;
+                b[{int:j}] = (tmp + ((tmp + 1) >> sh)) & p;
+                // %%END FOR                           
+                b += 24;
+                // %%IF* (24 << LOG_F) % INT_BITS == 0  # then adjust mv
+                mv += {int: (8 << LOG_F) / INT_BITS};
+                // %%END IF
+            }
+            break;
+        // %%END FOR
+    }
+}    
+
+
+
+// %%EXPORT p
+void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
+// Write data from the array b to the vector mv with modulus p. 
+// mv is a vector of contiguous small arrays with 24 entries. 
+// len is the number of small arrays to be written. So altogether 
+// 24 * len entries are read from b and written to the vector mv.
+{
+    uint_fast32_t i;  
+    uint_mmv_t dest;
+    // %%MMV_LOAD_CONST  p, i
+    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+
+
+    switch(i) {
+        // %%FOR LOG_F in [1, 2, 3]
+        case {LOG_F}:
+            while (len--) {
+                // %%FOR j in range(0, 24)             
+                // %%IF* (j << LOG_F) % INT_BITS == 0  # then clear buffer
+                // %%IF* (j > 0)                       # then write back data
+                *mv++ = dest;                
+                // %%END IF
+                dest = 0;
+                // %%END IF
+                dest += (uint_mmv_t)(b[{j}] & p) << {int:(j<<LOG_F) % INT_BITS};
+                // %%END FOR                           
+                *mv++ = dest;                
+                // %%FOR* k in range((8 << LOG_F) // INT_BITS)
+                *mv++ = 0;
+                // %%END FOR                              
+                b += 24;
+            }
+            break;
+        // %%END FOR
+    }
+
+} 
+
+
+
+// %%EXPORT p
+uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
+// Return the entry with given index of vector mv with modulus p.
+// The result is reduced modulo p.
+{
+    uint_fast32_t  c, j, res;
+
+    // %%MMV_LOAD_CONST p, c
+    j = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    mv += i >> j;
+    i &= (1 << j) - 1;
+    j = {LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
+    res = (mv[0] >> (i << j)) & p;    // This is the result
+    j = {MMV_CONST:P_BITS,c};         // This is P_BITS
+    // return result reduced modulo p
+    return (uint8_t) ( (res + ((res + 1) >> j)) & p );
+}
+
+
+// %%EXPORT p
+void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
+// Set the entry of the vector mv with modulus p at the  index i  
+// to the given value. 0 <= value <= p must hold.
+{
+    uint_fast32_t  j;
+
+    // %%MMV_LOAD_CONST  p, j
+    j = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+    mv += i >> j;
+    i &= (1 << j) - 1;
+    j = {LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
+    i <<= j;
+    mv[0] &= ~(((uint_mmv_t)p) << i);
+    mv[0] |= ((uint_mmv_t)(value & p)) << i;
+}
+
+
+// %%COMMENT
+/**********************************************************************
+*** Functions for data transfer from and to vectors in R_p.
+*** Here such a vector is given in internal representation and of type 
+*** uint_mmv_t[]. For modulus p, p + 1 must be a power of two.
+**********************************************************************/
+
+
+// %%EXPORT p
+uint32_t mm_aux_mmv_size(uint32_t p)
+// Return number of integers of type uint_mmv_t required to store
+// a vector of the representation R_p for a given p.
+{
+    uint_fast32_t tbl;
+    // %%MMV_LOAD_CONST  p, tbl
+    // return the value MMV_INTS for the specified p
+    return{MMV_CONST:MMV_INTS,tbl};
+}
+
+
+// %%EXPORT p
+void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
+// Zero the vector of the representation R_p referred by mv,
+{
+    uint_fast32_t j;
+    if (mm_aux_bad_p(p)) return;
+    // %%MMV_LOAD_CONST  p, j
+    j = {MMV_CONST:MMV_INTS,j};
+    do {
+        *mv++ = 0;
+    } while(--j);
+}
+
+
+
+// %%EXPORT p
+uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
+// Return the entry of the vector mv in R_p at  index  i.
+{
+    uint_fast32_t  j, c, res;
+    if (mm_aux_bad_p(p)) return 0;
+    if (i <  MM_AUX_XOFS_X) {
+        if (i <  MM_AUX_XOFS_T) {
+            // Tags A, B, C
+            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
+        } else {
+            // Tag T
+            i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
+        } 
+    } else {
+        if (i >=  MM_AUX_XOFS_E) return 0;
+        // Tags X, Z, Y
+        i -=  MM_AUX_XOFS_X;
+        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
+        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
+        i += MM_AUX_OFS_X;
+    }
+
+    // %%MMV_LOAD_CONST  p, c
+    j = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    mv += i >> j;
+    i = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+    res = (mv[0] >> i) & p;             // This is the result
+    //Reduce reult modulo p
+    c = {MMV_CONST:P_BITS,c}; // This is P_BITS
+    return (uint8_t)((res + ((res + 1) >> c)) & p);
+}
+
+
+
+
+
+
+
+
+
+
+
+// %%EXPORT p
+void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
+// Set the entry of the vector mv in R_p at index i to the 
+// given value. 0 <= value <= p must hold.
+{
+
+    uint_fast32_t  j, sh, diff;
+    if (mm_aux_bad_p(p)) return;
+    value &= p;
+
+    // %%MMV_LOAD_CONST  p, j
+    j = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+
+    if (i <  MM_AUX_XOFS_X) {
+        if (i <  MM_AUX_XOFS_T) {
+            // Tags A, B, C
+            diff = 31 * (MM_AUX_TBL_ABC[i] >> 11);
+            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
+            sh = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+            mv[i >> j] = (mv[i >> j] &  ~(((uint_mmv_t)p) << sh))
+                  |   ((uint_mmv_t)(value)) << sh;
+            i -= diff;
+        } else {
+            // Tag T
+            i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
+        } 
+    } else {
+        if (i >=  MM_AUX_XOFS_E) return;
+        // Tags X, Z, Y
+        i -=  MM_AUX_XOFS_X;
+        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
+        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
+        i += MM_AUX_OFS_X;
+    }
+
+    mv += i >> j;
+    sh = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+    mv[0] = (mv[0] &  ~(((uint_mmv_t)p) << sh))
+              |   ((uint_mmv_t)(value)) << sh;
+}
+
+
+
+// %%EXPORT p
+void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
+// Randomize the vector mv in R_p with the internal random generator.
+// The random generator must be seeded by function mm_rng_seed().
+{
+    uint8_t b1[3072];
+    uint_fast32_t i, c;
+
+    if (mm_aux_bad_p(p)) return;
+    // %%MMV_LOAD_CONST p, c
+    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+
+    // Do the small part
+    mm_rng_gen_modp(p, seed, (uint8_t *)(mv), 24 + 3 * 276);
+    mm_aux_small24_expand((uint8_t *)(mv), b1);
+    mm_aux_write_mmv24(p, b1, mv, 72);
+    mv += MM_AUX_OFS_T >> c;
+
+    // Do the 759 * 64 vector; note that 759 = 11 * 69
+    for (i = 0; i < 22; ++i) {
+        mm_rng_gen_modp(p, seed, b1, 69 * 32);
+        mm_aux_write_mmv1(p, b1, mv, 69 * 32);
+        mv += (69 * 32) >> c;
+    } 
+
+    // Do the 6144 * 24 vector
+    for (i = 0; i < 48; ++i) {  
+        mm_rng_gen_modp(p, seed, b1, 3072);
+        mm_aux_write_mmv24(p, b1, mv, 128);
+        mv += 4096 >> c;
+    } 
+}
+
+
+// %%COMMENT
+/**********************************************************************
+*** Reducing and checking a vector in R_p
+**********************************************************************/
+
+
+// %%EXPORT p
+int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
+// Reduce the vector mv in R_p modulo p. Note that a zero entry
+// is represented either by 0...0 or by 1...1. This functions sets 
+// all zero entries of the vector mv to 0...0.
+// The function returns 0 if it detects no error.
+// It may return the following error codes:
+//  -1: Bad input value p
+//  -2: A one bit outside a field has been found
+{
+    uint_fast32_t i, sh;
+    uint_mmv_t data, cy, mask_1, mask_p, acc;
+
+    if (mm_aux_bad_p(p)) return -1;
+    // %%MMV_LOAD_CONST  p, i
+    sh = {MMV_CONST:P_BITS, i};          // This is P_BITS
+    i = {MMV_CONST:LOG_INT_FIELDS, i};   // This is LOG_INT_FIELDS
+    i = MM_AUX_OFS_E >> i;               // No of unit_mmv_t to process
+    mask_1 =  MM_AUX_TBL_REDUCE[2*sh-4];
+    mask_p =  MM_AUX_TBL_REDUCE[2*sh-3];
+    if (sh & (sh - 1)) {
+        // case P_BITS is not a power of two
+        acc = 0;      // use acc for accumulating error bits
+        do {
+            data = *mv;
+            acc |= data;
+            data &= mask_p;
+            cy = (data + mask_1) & ~mask_p;
+            data += (cy >> sh) - cy;
+            *mv++ = data;
+        } while (--i);
+        if (acc & ~mask_p) return -2;
+    } else {
+        // case P_BITS is a power of two
+        // use acc for  (<high half> & <low half>) of fields
+        sh >>= 1;   // halved P_BITS
+        do {
+            data = *mv;
+            acc = data & (data >> sh) & mask_p;
+            cy = (acc + mask_1) & ~mask_p;
+            data += (cy >> sh) - (cy << sh);
+            *mv++ = data;
+        } while (--i);
+    }
+    return 0;
+}
+
+
+
+
+static int32_t check24(uint32_t p, uint_mmv_t *mv, uint32_t length)
+{
+    uint_fast32_t d;
+    uint_mmv_t  acc = 0, mask;
+
+    // %%MMV_LOAD_CONST  p, d
+    // Put d =  5 - LOG_INT_FIELDS
+    d = 5 - {MMV_CONST:LOG_INT_FIELDS, d}; 
+    switch (d) {
+        // %%IF {INT_BITS} == 64
+        case 0:
+            mask = {hex: -1 << (3*INT_BITS//4)};
+            while (length--) acc |= *mv++ & mask;
+            break;
+        // %%END IF
+        case 1:
+            mask = {hex: -1 << (INT_BITS//2)};
+            while (length--) {
+                acc |= mv[1] & mask; mv += 2;
+            }
+            break;
+        case 2:
+            while (length--) {
+                acc |= mv[3]; mv += 4;
+            }
+            break;
+        // %%IF {INT_BITS} == 32
+        case 3:
+            while (--length) {
+                acc |= mv[6] | mv[7]; mv += 8;
+            }
+        // %%END IF
+        break;
+    }
+    return acc ? -3 : 0;
+}
+
+
+static int32_t check_sym(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
+// buffer is a work buffer of size at least 72 * 32
+// Side effect: Tmv entries with tags A, B, C are read to the buffer
+{
+    uint_fast32_t i, acc = 0;
+    uint8_t  *p_row, *p_col;
+    mm_aux_read_direct_mmv1(p, mv, buffer, 72*32);
+    for(i = 768; i < 1536; i += 33)  
+        acc |= buffer[i] | buffer[i + 768];
+    if (acc) return -4;
+    p_row = buffer;
+    acc = 0;
+    for (p_col = buffer; p_col < buffer + 24; ++p_col) {
+         for (i = 0; i < 24; ++i)
+             acc |= (p_row[i] ^ p_col[i << 5]) 
+                  | (p_row[i + 768] ^ p_col[(i << 5) + 768])
+                  | (p_row[i + 1536] ^ p_col[(i << 5) + 1536]);
+         p_row+= 32;
+    }
+    return acc ? -5 : 0;
+}
+
+
+
+static int32_t check_mmv_buffer(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
+// Workhorse for function mm_aux_check_mmv. buffer must have size 72*32.
+// Side effect: mv entries with tags A, B, C are read to the buffer
+{
+    uint_fast32_t i;
+    i = mm_aux_reduce_mmv(p, mv);
+    if (i) return i;                 // Errors -1, -2 may occur here
+    i = check24(p, mv, 72);          // check tags A,B,C
+    if (i) return i;                 // Error -3 may occur here
+    // %%MMV_LOAD_CONST  p, i
+    i = {MMV_CONST:LOG_INT_FIELDS, i}; //  LOG_INT_FIELDS
+    i = check24(p, mv + (MM_AUX_OFS_X >> i), 6144); // check tags X,Y,Z
+    if (i) return i - 100;                 // Error -3 may occur here
+    return check_sym(p, mv, buffer); // Errors -4, -5 may occur here
+}
+
+
+// %%EXPORT p
+int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
+// Check the vector mv in R_p modulo p. 
+// The function returns 0 if it detects no error.
+// It may return the following error codes:
+//  -1: Bad input value p
+//  -2: A one bit outside a field has been found
+//  -3: A subfield has an illegal nonzero entry at index >= 24
+//  -4: Illegal nonzero diagonal entry 
+//  -5: Symmetric part of vector is not symmetric 
+// As a side effect, mv is reduced with mm_aux_reduce_mmv(p, mv).
+{
+    uint8_t buffer[72*32];
+    return check_mmv_buffer(p, mv, buffer);
+}
+
+// %%COMMENT
+/**********************************************************************
+*** Low-level functions supperting external rep of vectors in R_p
+**********************************************************************/
+
+// %%EXPORT p
+void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
+//
+{
+    uint_fast16_t j0, j1t, j1e;
+    uint8_t *b_transpose = b_dest;
+    for (j0 = 0; j0 < 24 * 25; j0 += 25) {
+        b_dest[j0] = *b_src++;
+        b_dest[j0 + 1152] =  b_dest[j0 + 576] = 0;
+    }
+
+    for (j0 = 0; j0 < 24; ++j0)  {
+        j1e = 24 * j0;
+        for (j1t = 0; j1t < j1e; j1t += 24) {
+            b_transpose[j1t] = b_dest[0] = b_src[0];
+            b_transpose[j1t + 576] = b_dest[576] = b_src[276];
+            b_transpose[j1t + 1152] = b_dest[1152] = b_src[552];
+            ++b_dest; ++b_src;
+        }
+        b_dest += 24 - j0;
+        ++b_transpose;
+    }
+}
+
+
+
+// %%EXPORT p
+void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
+//
+{
+    uint_fast16_t  j0, j1;
+    for (j0 = 0; j0 < 24 * 25; j0 += 25) 
+        *b_dest++ = b_src[j0];
+    for (j0 = 0; j0 < 24; ++j0)  {
+        for (j1 = j0; j1; --j1) {
+            b_dest[0] = b_src[0];
+            b_dest[276] = b_src[576];
+            b_dest[552] = b_src[1152];
+            ++b_dest; ++b_src;
+        } 
+        b_src += 24 - j0;
+    }
+}
+
+
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Conversion between internal and external rep of vectors in R_p
+**********************************************************************/
+
+
+
+
+
+
+
+
+// %%EXPORT p
+void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
+// Convert the vector mv in R_p to an array b of bytes. p is the
+// modulus for mv. b must have length 196884.  
+{
+    uint8_t b1[3*576]; 
+    uint_fast32_t c;
+
+    // %%MMV_LOAD_CONST  p, c
+    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    
+    mm_aux_read_mmv24(p, mv, b1, 72);
+    mm_aux_small24_compress(b1, b);
+    mv += MM_AUX_OFS_T >> c;
+    b +=  MM_AUX_XOFS_T;
+    mm_aux_read_mmv1(p, mv, b,  759*64);
+    mv += (MM_AUX_OFS_X - MM_AUX_OFS_T) >> c;
+    b +=  (MM_AUX_XOFS_X - MM_AUX_XOFS_T);
+    mm_aux_read_mmv24(p, mv, b, 6144);
+}
+
+
+
+// %%EXPORT p
+void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
+// Convert the array b of 196884 bytes to the vector mv in R_p to.
+// p is the modulus for mv.  
+{
+    uint8_t b1[3*576];
+    uint_fast32_t  c;
+
+    // %%MMV_LOAD_CONST  p, c
+    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+
+    mm_aux_small24_expand(b, b1);   
+    mm_aux_write_mmv24(p, b1, mv, 72);
+    mv += MM_AUX_OFS_T >> c;
+    b +=  MM_AUX_XOFS_T;
+    mm_aux_write_mmv1(p, b, mv, 759*64);
+    mv += (MM_AUX_OFS_X - MM_AUX_OFS_T) >> c;
+    b +=  (MM_AUX_XOFS_X - MM_AUX_XOFS_T);
+    mm_aux_write_mmv24(p, b, mv, 6144);
+}
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Conversion between internal and sparse rep of vectors in R_p
+**********************************************************************/
+
+// %%EXPORT p
+int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
+// Convert the vector 'mv' in the representation R_p of the monster, 
+// with 'mv' given in internal representation, to sparse format. The
+// function writes the entries of the vector in sparse format to the
+// array referred by 'sp' and returns the number of entries written
+// to 'sp'. The array 'sp' may have up to 196884 entries.
+{
+    int32_t status;
+    uint_fast32_t row, row_end,i, j, isp = 0, value;
+    uint_fast32_t field_bits, lg_int_fields, ofs, sh;
+    uint_mmv_t source;
+    uint8_t b[72*32], *p_row;
+
+    if ((status = check_mmv_buffer(p, mv, b)) != 0) return status;
+    
+    // %%MMV_LOAD_CONST  p, j
+    field_bits = {MMV_CONST:FIELD_BITS,j}; // This is FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+    sh = 8 - {LOG_INT_BITS} + lg_int_fields; // This is 8 - LOG_FIELD_BITS; 
+ 
+    // Do tags A, B, C
+    p_row = b;
+    for (row = 0; row < 3; ++row) for (i = 0; i < 24; ++i) {
+         for (j = 0; j <= i; ++j) {
+            if ((value = p_row[j]) != 0)  sp[isp++] =
+                0x2000000 + (row << 25) + (i << 14) + (j << 8) + value; 
+        } 
+        p_row += 32;
+    }
+    
+    // Do tag T
+    mv += MM_AUX_OFS_T >> lg_int_fields;
+    row_end = (MM_AUX_OFS_X - MM_AUX_OFS_T) >> lg_int_fields;
+    for (row = 0; row < row_end; ++row) if ((source = *mv++) != 0) {
+        ofs = 0x8000000 + (row << (8 + lg_int_fields));
+        for (j = 0; j < {INT_BITS}; j += field_bits) {
+            if ((value = (source >> j) & p) != 0)  {
+                sp[isp++] = ofs + (j << sh) + value;
+            } 
+        }           
+    }
+
+    row_end = (MM_AUX_OFS_E - MM_AUX_OFS_X) >> lg_int_fields;
+    for (row = 0; row < row_end; ++row) if ((source = *mv++) != 0) {
+        ofs = 0x5000000 + (row << (8 + lg_int_fields));
+        ofs += ofs & 0xfffe000;
+        for (j = 0; j < {INT_BITS}; j += field_bits) {
+            if ((value = (source >> j) & p) != 0)  {
+                 sp[isp++] = ofs + (j << sh) + value;
+            } 
+        }           
+    }
+
+    return (int32_t)isp; 
+}
+
+// %%EXPORT p
+void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
+// Extract certain entries of the vector  'mv' depending on the 
+// vector 'sp'. The entries of vector 'sp' are updated with the
+// corresponding entries of 'mv'. Here 'mv'  and 'sp' are vectors 
+// in the representation R_p of the monster, with 'mv' given in 
+// internal representation and 'sp' given in sparse format. 'sp' 
+// has  length 'length'. If 'sp' has an entry with a certain label
+// then the coordinate of that entry is set to the corresponding 
+// coordinate of vector 'mv'. If several entries of 'sp' have the 
+// same label then the same coordinate is taken from 'mv' 
+// several times.
+// Bit 7,...,0 of any entry of 'sp' must be either 0 or p. If the
+// entry is 0, the coordinate is read to bits 7,...,0 of that entry. 
+// If the entry is p the negative coordinate is read instead. In 
+// other case that entry of 'sp' contains garbage.
+{
+    uint_fast32_t i, lg_int_fields, lg_field_bits, p_bits, index_mask;
+
+    if (mm_aux_bad_p(p)) return;
+    // %%MMV_LOAD_CONST  p, i
+    p_bits = {MMV_CONST:P_BITS,i}; // This is P_BITS
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
+    index_mask = (1 << lg_int_fields) - 1;
+
+    for ( ;length--; ++sp) {
+        uint_fast32_t v = *sp, index;
+        uint_fast32_t tag = v >> 25,i = (v >> 14) & 0x7ff, j = (v >> 8) & 0x3f;
+        switch (tag) {
+            case 2:  // tag B
+            case 3:  // tag C
+                if (i == j) continue;
+                // Fall trough to case tag A
+            case 1:  // tag A
+                if (i >= 24 || j >= 24) continue;
+                index = (tag - 1) * 768  + (i << 5) + j;
+                break;
+            case 4:  // tag T
+                if (i >= 759) continue;
+                index = MM_AUX_OFS_T + (i << 6) + j;
+                break;
+            case 5:  // tag X
+            case 6:  // tag Z
+            case 7:  // tag Y
+                if (j >= 24) continue;
+                index = ((v >> 14) << 5) + j - 0x50000 + MM_AUX_OFS_X;
+                break;
+            default:
+                continue;
+        }
+        i = ((index) & index_mask) << lg_field_bits; 
+        i = ((mv[index >> lg_int_fields] >> i) ^ v) & p; 
+        // i is the (possibly negated) entry of vector mv. reduce i mod p.
+        i = (i + ((i + 1) >> p_bits)) & p;
+        *sp = (v & 0xffffff00) + i; 
+    }
+}
+
+
+
+
+#define add_sparse_value(index, value) \
+    { \
+        uint_fast32_t idx = (index) >> lg_int_fields; \
+        uint_fast32_t sh = ((index) & index_mask) << lg_field_bits; \
+        uint_mmv_t old_value = (mv[idx] >> sh)  & p; \
+        uint_mmv_t new_value = old_value + (value & p); \
+        new_value = (new_value + (new_value >> p_bits)) & p; \
+        mv[idx]  ^=  (old_value ^ new_value) << sh; \
+    }
+        
+
+// %%EXPORT p
+void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t *mv)
+// Add vector 'sp' to vector 'mv'. Here 'mv' in and 'sp' are vectors 
+// in the representation R_p of the monster, with 'mv' given in internal
+// representation and 'sp' given in sparse format. 'sp' has length 
+// 'length'. Entries in 'sp' with the same index are added up.
+{
+    uint_fast32_t i, lg_int_fields, lg_field_bits, p_bits, index_mask;
+
+    if (mm_aux_bad_p(p)) return;
+    // %%MMV_LOAD_CONST  p, i
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
+    p_bits = {MMV_CONST:P_BITS,i};               // This is P_BITS
+    index_mask = (1 << lg_int_fields) - 1;
+
+    for ( ;length--; ++sp) {
+        uint_fast32_t v = *sp, index;
+        uint_fast32_t tag = v >> 25,i = (v >> 14) & 0x7ff, j = (v >> 8) & 0x3f;
+        switch (tag) {
+            case 2:  // tag B
+            case 3:  // tag C
+                if (i == j) continue;
+                // Fall trough to case tag A
+            case 1:  // tag A
+                if (i >= 24 || j >= 24) continue;
+                index = (tag - 1) * 768 + (i << 5) + j;
+                if (i != j) add_sparse_value(index, v);
+                index += 31 * (j - i);
+                break;
+            case 4:  // tag T
+                if (i >= 759) continue;
+                index = MM_AUX_OFS_T + (i << 6) + j;
+                break;
+            case 5:  // tag X
+            case 6:  // tag Z
+            case 7:  // tag Y
+                if (j >= 24) continue;
+                index = ((v >> 14) << 5) + j - 0x50000 + MM_AUX_OFS_X;
+                break;
+            default:
+                continue;
+        }
+        add_sparse_value(index, v);
+    }
+}
+
+
+
+    
+
+#define set_sparse_value(index, v) \
+    { \
+        uint_fast32_t idx = (index) >> lg_int_fields; \
+        uint_fast32_t sh = ((index) & index_mask) << lg_field_bits; \
+        uint_mmv_t value = ((mv[idx] >> sh)  ^ v) & p; \
+        mv[idx]  ^= value << sh; \
+    }
+
+
+
+
+// %%EXPORT p
+void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
+// Set certain entries of the vector  'mv' depending on the vector
+// 'sp'. Here 'mv' in and 'sp' are vectors in the representation R_p 
+// of the monster, with 'mv' given in internal representation and 
+// 'sp' given in sparse format. 'sp' has  length 'length'.
+// If 'sp' has an entry with label 'l' then the corresponding entry 
+// of 'mv' is set to to the value coded in the entry of 'sp'.
+{
+    uint_fast32_t i, lg_int_fields, lg_field_bits, index_mask;
+
+    if (mm_aux_bad_p(p)) return;
+    // %%MMV_LOAD_CONST  p, i
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
+    index_mask = (1 << lg_int_fields) - 1;
+
+    for ( ;length--; ++sp) {
+        uint_fast32_t v = *sp, index;
+        uint_fast32_t tag = v >> 25, i = (v >> 14) & 0x7ff, j = (v >> 8) & 0x3f;
+        switch (tag) {
+            case 2:  // tag B
+            case 3:  // tag C
+                if (i == j) continue;
+                // Fall trough to case tag A
+            case 1:  // tag A
+                if (i >= 24 || j >= 24) continue;
+                index = (tag - 1) * 768 + (i << 5) + j;
+                set_sparse_value(index, v);
+                index += 31 * (j - i);
+                break;
+            case 4:  // tag T
+                if (i >= 759) continue;
+                index = MM_AUX_OFS_T + (i << 6) + j;
+                break;
+            case 5:  // tag X
+            case 6:  // tag Z
+            case 7:  // tag Y
+                if (j >= 24) continue;
+                index = ((v >> 14) << 5) + j - 0x50000 + MM_AUX_OFS_X;
+                break;
+            default:
+                continue;
+        }
+        set_sparse_value(index, v);
+    }
+}
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Index conversion between external and sparse rep of vectors in R_p
+**********************************************************************/
+
+
+
+// %%EXPORT p
+uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
+// Convert external index i to sparse index.
+// Return 0 if index i is bad
+{
+    if (i <  MM_AUX_XOFS_X) {
+        if (i <  MM_AUX_XOFS_T) {
+            // Tags A, B, C
+            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
+            // put i += (i / 0x300) * 0x100; assuming 0 <= i < 0x900 
+            i += (0x2A54000 >> ((i >> 8) << 1)) & 0x300;
+            // now 0 <= i < 0xc00. output bits of old i as 
+            // (tag - 1) = bits 11..10, i = bits 9..5, j = bits 4..0
+            return 0x2000000 + ((i & 0xc00) << 15) +
+                   ((i & 0x3e0) << 9) + ((i & 0x1f) << 8);
+        } else {
+            // Tag T
+            i += 0x80000 - MM_AUX_XOFS_T;
+            return i << 8;
+        } 
+    } else if (i <  MM_AUX_XOFS_E) {
+        // Tags X, Z, Y
+        i -=  MM_AUX_XOFS_X;
+        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
+        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
+        // shift bits 17..5 of i to bit positions 18...6
+        i += i & 0x3ffe0;
+        i += 0xA0000;
+        return i << 8;
+    } else return 0;
+}
+
+
+
+// %%EXPORT p
+void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
+// Convert array a of external indices to sparse indices in place.
+// Each index is converted using mm_aux_index_extern_to_sparse() 
+{
+    for(; len--; ++a) *a = mm_aux_index_extern_to_sparse(*a); 
+}
+
+
+
+// %%EXPORT p
+int32_t mm_aux_index_sparse_to_extern(uint32_t i)
+// Convert sparse index i to external index.
+// Return -1 if index i is bad
+{
+    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f;
+    i = (i >> 14) & 0x7ff;
+    switch (tag) {
+        case 2:  // tag B
+        case 3:  // tag C
+            if (i == j) return -1;
+            // Fall trough to case tag A
+        case 1:  // tag A
+            if (i >= 24 || j >= 24) return -1;
+            if (i == j) return i;
+            return  MM_AUX_XOFS_A - 276 + tag * 276 
+                  + ((i * i - i) >> 1) + j;
+        case 4:  // tag T
+            if (i >= 759) return -1;
+            return MM_AUX_XOFS_T + (i << 6) + j;
+        case 5:  // tag X
+        case 6:  // tag Z
+        case 7:  // tag Y
+            if (j >= 24) return -1;
+            return  MM_AUX_XOFS_X - 0x3c000
+                + 24 * ((tag << 11) + i) + j; 
+        default:
+            return -1;
+    }
+}
+
+
+// %%EXPORT p
+int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
+// Convert sparse index i to a short vector v in the Leech lattice.
+// Vector v has norm 32. The sign of v is implementation dependent.
+// Return -1 if index i is bad or does not map to a short vector
+{
+    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f, k, w, u_sub;
+    i = (i >> 14) & 0x7ff;
+    switch (tag) {
+        case 2:  // tag B
+        case 3:  // tag C
+            if (i == j || i >= 24 || j >= 24) return -1;
+            for (k = 0; k < 24; ++k) v[k] = 0;
+            v[i] = v[j] = 4;
+            if (i < j) i = j;
+            if ((tag & 1) == 0) v[i] = -4;
+            return 0;
+        case 4:  // tag T
+            if (i >= 759) return -1;
+            w = mat24_octad_to_vect(i);
+            // Put k = parity of j
+            k = (0x96 >> ((j ^ (j >> 3)) & 7)) & 1;  
+            // Let u_sub be a vector representing suboctad j of w 
+            j = k + (j << 1);  // even-parity adjusted j
+            u_sub = mat24_spread_b24(j, w);
+            for (k = 0; k < 24; ++k) v[k] = 
+                 2 * ((w >> k) & 1) - 4 * ((u_sub >> k) & 1);
+            return 0;
+        case 5:  // tag X
+            if (j >= 24) return -1;
+            w = mat24_gcode_to_vect(i);
+            for (k = 0; k < 24; ++k) v[k] = 1 - 2 * ((w >> k) & 1);
+            v[j] = v[j] < 0 ? 3 : -3;
+            return  0; 
+        default:
+            return -1;
+    }
+}
+
+
+
+// %%EXPORT p
+int32_t mm_aux_index_sparse_to_leech2(uint32_t i)
+// Convert sparse index i to a short vector v in the Leech lattice
+// modulo 2 in "Leech lattice coding"
+// Return 0 if index i is bad or does not map to a short vector
+{
+    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f,  res = 0;
+    i = (i >> 14) & 0x7ff;
+    switch (tag) {
+        case 3:  // tag C
+            res = 0x800000;
+        case 2:  // tag B
+            if (i == j || i >= 24 || j >= 24) return 0;
+            return res + mat24_vect_to_cocode((1 << i) ^ (1 << j));
+        case 4:  // tag T
+            if (i >= 759) return 0;
+            {
+                uint_fast32_t w, gcode, cocode, v;
+                w = (0x96 >> ((j ^ (j >> 3)) & 7)) & 1;  
+                j = (j << 1) + w;
+                gcode = MAT24_OCT_DEC_TABLE[i] & 0xfff;
+                v = mat24_gcode_to_vect(gcode);
+                cocode = mat24_vect_to_cocode(mat24_spread_b24(j, v));
+                w += w & 1;
+                gcode ^=  ((w >> 1) & 1) << 11;
+                cocode ^= MAT24_THETA_TABLE[gcode] & 0xfff;
+                res = (gcode << 12) + cocode;
+            }
+            return res;
+        case 5:  // tag X
+            if (j >= 24) return 0;
+            {
+                uint_fast32_t w, gcode, cocode;
+                cocode = mat24_vect_to_cocode(1 << j);
+                w = ((MAT24_THETA_TABLE[i] >> 12) & 1) ^ (i & cocode);
+                w ^= w >> 6; 
+                w = (0x96 >> ((w ^ (w >> 3)) & 7)) & 1; 
+                gcode = i ^ (w << 11); 
+                cocode ^= MAT24_THETA_TABLE[gcode] & 0xfff;
+                res = (gcode << 12) + cocode;
+            }
+            return res;
+        default:
+            return 0;
+    }
+}

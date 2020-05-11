@@ -1,0 +1,5 @@
+numpy
+Cython
+pytest
+sphinx>=2.0
+sphinxcontrib.bibtex

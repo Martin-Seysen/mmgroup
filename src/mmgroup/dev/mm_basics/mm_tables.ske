@@ -1,0 +1,445 @@
+
+#include <stdint.h>
+
+#include "mat24_functions.h"
+#include "mm_basics.h"
+
+
+// %%GEN h
+
+// Auxiliary structure for mm_sub_op_pi_type
+typedef struct {
+   uint16_t preimage;
+   uint8_t perm[6];
+} mm_sub_op_pi64_type;
+
+
+
+// Structure used for preparing an operation x_delta * x_pi
+// See corresponding comment in file mm_tables.c.
+typedef struct {
+    uint32_t d;            
+    uint32_t pi;
+    uint8_t perm[24];
+    uint8_t inv_perm[24];
+    uint32_t benes_net[9];
+    uint16_t tbl_perm24_big[2048+72];
+    mm_sub_op_pi64_type tbl_perm64[759];
+} mm_sub_op_pi_type;
+
+// %%GEN c
+
+
+
+// %%GEN h
+// Structure used for preparing an operation y_f * x_e *x_eps
+// See corresponding comment in file mm_tables.c.
+typedef struct {
+    uint32_t f;            
+    uint32_t e;
+    uint32_t eps;
+    uint32_t f_i;
+    uint32_t ef_i;
+    uint32_t lin_i[3];
+    uint32_t lin_d[3];
+    uint8_t sign_XYZ[2048];
+    uint16_t s_T[759];
+} mm_sub_op_xy_type;
+// %%GEN c
+
+
+
+
+
+
+
+// Entries 8*i,...8*i+7 in the following table are the
+// bit positions of octad with the number i.
+// %%EXPORT_TABLE
+const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = { 
+    // %%TABLE MM_OctadElementsTable, uint8
+};
+
+
+// Let o be an octad. Let {{i},{j}}, i != j be the even cocode word 
+// which is a subset of octad  o,  such that precisely the i1-th and 
+// the i2-th bit  of octad  o  is set, as in module mm_aux.c. Then 
+// entry  8 * i + j  in the folllowing table is the number of the
+// subocatad  {{i},{j}} in the standard numbering given in module
+// mm_aux.c.
+const uint8_t MM_SUB_PERM64_TABLE[64] = { 
+    // %%TABLE MM_PERM64_TABLE, uint8
+};
+
+
+// Let o be an octad. Let b_0,...,b_7 be the elements of octad 
+// o in natural order. Let x = sum 2**i * x_i, i = 0,...,7.
+// Then sum (x_i * b_i) is a suboctad as defined in function
+// mat24_suboctad_to_cocode() in module mat24_functions.c.  
+// In that function we also define a natural numbering of the
+// suboctads of an octad. Entry x of following table is the
+// number of the suboctad sum (x_i * b_i) for 0 <= x < 128.
+// Note that bit b_7 can be computed from bits b_0,...,b_6
+// as the even parity bit.
+const uint8_t MM_SUBOCTAD_TABLE[128] = { 
+    // %%TABLE MM_SUBOCTAD_TABLE, uint8
+};
+
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Subroutines for mm*_op_pi
+**********************************************************************/
+
+// %%COMMENT
+/**********************************************************************
+Preparing an operation x_delta * x_pi
+
+In [Seysen20] we define monomial operations x_delta * x_pi acting on
+the 196884-dimensional rep of the monster. The operations 
+x_delta * x_pi make up a sugroup N_x0 of structure 2**12.Mat24, which 
+is also an automorphsism group of the Parker loop. The exact 
+definition of the element x_delta * x_pi of N_x0 is given in module 
+mat24_functions.c.
+
+Function mm_sub_prep_pi() computes some tables required for the
+operation x_delta * x_pi on that rep in a structure of type 
+mm_sub_op_pi_type. The data in that structure are independent of 
+the modulus p of the representation.
+
+The structure of type mm_sub_op_pi_type has the following members:
+
+uint32_t d
+----------
+A copy of the 12-bit integer delta describing an element of the
+Golay cocode.
+            
+uint32_t pi
+-----------
+and integer 0 <= pi < Order(Mat24) describing an element of the
+Mathieu group Mat24 as in module mat24_functions.c. In that
+module we also define a non-canonical bijection from Mat24 to 
+representatives of the cosets of the normal subgroup 2**12 of 
+N_x0.
+
+uint8_t perm[24]
+----------------
+The permutation 0..23 -> 0..23 given by the element pi of Mat24.
+
+uint8_t inv_perm[24]
+Ihe inverse permutation of pi, so inv_perm[perm[i]] = i.
+
+benes_net[9]
+------------
+A representation of Benes network for computing permutation pi,
+see function mat24_perm_to_net() in mat24_functions.c.
+
+
+
+uint16_t tbl_perm24_big[2048+72]
+--------------------------------
+An entry (tag, i, j) of the rep of the monster is mapped to entry
+(tag1, i1, j1), with i1 depending on i (and the tag), and j1 
+depending on j only, for tags A, B, C, X, Y, Z. If 
+tbl_perm24_big[i1] & 0x7ff = i for 0 <= i1 < 2048 then 
+(tag, i, j) ia mapped to (Tag, i1, perm[j]), up to sign, for
+tags X, Y and Z. In case of odd delta, tags Y and Z are exchanged.
+The value tbl_perm24_big[2048 + 24*k + i1] & 0x7ff describes the
+preimage if (tag, i1, j1) in a similar way, where tag = A, B, C
+for k = 0, 1, 2.
+
+Bits 12,...,15 of tbl_perm24_big[i1] encode the signs of the 
+preimages of the corresponding entry of the rep. Bits 12, 13 and
+14 refer to the signs for the preimages for the tags X, Z and Y,
+respectively. Bit 15 refers to the signs for the preimages for 
+tags A, B and C. If the corresponding bit is set, the preimage has
+to be negated. 
+
+Note that function mat24_op_all_autpl() in module 
+mat24_functions.c computes the first 2018 entries of the table.
+
+We remark that in case of odd delta the mapping for tag X requires 
+a postprocessing step that cannot be drived from tables   
+tbl_source24_big and tbl_perm24_big. Then entry (X, i, j) has
+to be negated if the scalar product of i (which is a Golay code
+element) and j (which can be interpreted as a cocode element) is 
+equal to 1.
+
+Similarly, entries with tags Y and Z must be exchanged in case of
+odd delta.
+
+
+
+mm_sub_op_pi64_type tbl_perm64[759]
+----------------------------------
+This table encodes operation of x_delta *x_pi on the rep of the 
+monster for entries with tag T. Assume that (T, i, j) is mapped to 
++-(T, i1, j1). Then i1 depends on i only and j1 depends on i and j. 
+For fixed i the mapping j -> j1 is linear if we consider the 
+binary numbers j and j1 as bit fields. 
+
+Entries i1 of the table tbl_perm64 describe the 
+preimage of (T, i1, j1) for all 0 <= j1 < 64 as follows:
+
+component "preimage"
+Bits  9... 0    preimage i such that (T, i, .) maps to +-(T, i1, .)
+Bit  12         sign of mapping: (T, i, .) maps to -(T, i1, .)
+                if that bit is set
+
+component "perm[k]", 0 <= k < 6
+value v such that (T, i, v) maps to +-(T, i1,  2 * 2**k - 1)
+
+
+Note that the values 1, 3, 7, 15, 31, 63 occur as differences 
+j1 ^ (j1 - 1) when counting j1 from 0 up to 63. So the preimage of
+(T, i1, j1) can be computed from the preimage of (T, i1, j1 - 1)
+using linearity and the approprate field in the table above.
+
+We remark that in case of odd delta the mapping for tag T requires 
+a postprocessing step that cannot be drived from table above.   
+Then entry (T, i, j) has to be negated if the bit weight of the 
+subset of octade i corresponding to j has bit weight 2 mod 4,
+see e.g. [Con85], [Seysen20].
+
+ 
+
+References
+----------
+see file mmgroup.pdf
+
+**********************************************************************/
+
+// %%EXPORT 
+void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
+// Prepare operation x_delta * x_pi, see comment above, with input
+// parameters delta and pi. It fills the stucture of type 
+// mm_sub_op_pi_type referred by p_op with data required for that
+// operation.
+{
+    uint16_t *p_24big = p_op->tbl_perm24_big;
+
+
+    // Prepare permutation of the 2048 rows of 24 entries for tags X, Z, Y
+    {
+        uint32_t rep_autpl[12];
+        p_op->d = delta & 0xfff;
+        p_op->pi = pi % MAT24_ORDER;
+        mat24_m24num_to_perm(p_op->pi, p_op->perm);
+        mat24_perm_to_iautpl(p_op->d, p_op->perm, p_op->inv_perm, rep_autpl);
+        mat24_op_all_autpl(rep_autpl, p_24big); 
+    }
+
+    // Prepare permutation of the 3 * 24 rows of 24 entries for tags A, B, C
+    {
+        uint_fast16_t i;
+        for (i = 0; i < 24; ++i) {
+            uint_fast16_t t = p_op->inv_perm[i];
+            p_24big[i + 2048] = t;   
+            p_24big[i + 2048 + 24] = t + 24;   
+            p_24big[i + 2048 + 48] = (t + 48) | ((delta & 0x800) << 4);  
+        }
+    }
+
+    // Compute Benes network
+    mat24_perm_to_net(p_op->perm, p_op->benes_net); 
+
+
+    // Next deal with rows of 64 entries 
+    {
+        uint_fast16_t i, src;
+        uint_fast8_t p_inv[24];
+        mm_sub_op_pi64_type *p_out;
+        const uint8_t *p0 = MM_SUB_OCTAD_ELEMENT_TABLE;
+
+        p_out = p_op->tbl_perm64;
+        for (i = 0; i < 24; ++i) p_inv[i] = p_op->inv_perm[i];
+        delta &= 0x800;
+        for (i = 0; i < 759; ++i) {
+            {
+                uint_fast16_t sign, dest;
+                dest = mat24_def_octad_to_gcode(i);
+                src =  ((dest & delta) << 1)
+                      ^ p_24big[dest & 0x7ff];
+                sign = src & 0x1000;
+                src = src  & 0xfff;
+                src = mat24_def_gcode_to_octad(src);
+                p_out->preimage = src | sign;
+            }
+            {  // deal with permutation inside a row of 64 entries
+                uint_fast8_t qi[24], acc;
+                const uint8_t *p1 = MM_SUB_OCTAD_ELEMENT_TABLE + (src << 3);
+                qi[p1[0]] = 0; qi[p1[1]] = 1; 
+                qi[p1[2]] = 2; qi[p1[3]] = 3;
+                qi[p1[4]] = 4; qi[p1[5]] = 5; 
+                qi[p1[6]] = 6; qi[p1[7]] = 7;
+                p1 = MM_SUB_PERM64_TABLE + (qi[p_inv[p0[0]]] << 3);
+                acc =  p1[qi[p_inv[p0[1]]]];
+                p_out->perm[0] = acc;
+                acc ^=  p1[qi[p_inv[p0[2]]]];
+                p_out->perm[1] = acc;
+                acc ^=  p1[qi[p_inv[p0[3]]]];
+                p_out->perm[2] = acc;
+                acc ^=  p1[qi[p_inv[p0[4]]]];
+                p_out->perm[3] = acc;
+                acc ^=  p1[qi[p_inv[p0[5]]]];
+                p_out->perm[4] = acc;
+                acc ^=  p1[qi[p_inv[p0[6]]]];
+                p_out->perm[5] = acc;
+            }
+            p0 += 8;
+            ++p_out;
+        }
+    }
+
+}
+
+// %%EXPORT p
+void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
+// Auxiliary function for debugging. Given delta and pi as in 
+// function mm_sub_prep_pi(), components of tbl_perm64 (of length 
+// 759 * 7) in structure mm_sub_prep_p  is stored to p_tbl[]. 
+{
+    mm_sub_op_pi_type op_pi;
+    uint_fast32_t i,j;
+    mm_sub_prep_pi(delta, pi, &op_pi);
+    for (i = 0; i < 759; ++i) {
+        p_tbl[0] = op_pi.tbl_perm64[i].preimage;
+        for (j = 0; j < 6; ++j)  p_tbl[j+1] = op_pi.tbl_perm64[i].perm[j];
+        p_tbl += 7;
+    }
+}
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Subroutines for mm*_op_pi
+**********************************************************************/
+
+
+#define PwrMapH(d) (MAT24_THETA_TABLE[d])
+#define PwrMap(d) ((MAT24_THETA_TABLE[(d) & 0x7ff] >> 12) & 1)
+    
+
+#define to_suboctad(v, po) MM_SUBOCTAD_TABLE[ \
+    ((v >> po[0]) & 1) + ((v >> (po[1] - 1)) & 2) \
+    + ((v >> (po[2] - 2)) & 4) + ((v >> (po[3] - 3)) & 8) \
+    + ((v >> (po[4] - 4)) & 16) + ((v >> (po[5] - 5)) & 32) \
+    + ((v >> (po[6] - 6)) & 64) ]
+
+
+
+// %%EXPORT 
+void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_op)
+// Prepare operation y_f *x_e * x_eps, see comment above, with 
+// input parameters f, e and eps. It fills the stucture of type 
+// mm_sub_op_pi_type referred by p_op with data required for that
+// operation.
+{
+    p_op->f = f = f & 0x1fff;            
+    p_op->e = e = e & 0x1fff; 
+    p_op->eps = eps = eps & 0xfff; 
+
+    {
+        uint_fast16_t ld0 = eps ^ mat24_ploop_cap(e, f) 
+                                ^ mat24_ploop_theta(f);
+        uint_fast16_t ld2 = eps ^ mat24_ploop_theta(e);
+        uint_fast16_t ld1 = ld2 ^ mat24_ploop_theta(f);
+        uint_fast8_t *p_XYZ = p_op->sign_XYZ;
+        uint_fast16_t li, i, v, j;
+
+        p_op->lin_i[0] = mat24_gcode_to_vect(e);
+        p_op->lin_i[1] = p_op->lin_i[2] = p_op->f_i
+                       = mat24_gcode_to_vect(f);
+        p_op->ef_i = p_op->lin_i[0] ^ p_op->f_i;
+        p_XYZ[0] = (PwrMap(f) ^ PwrMap(e ^ f) ^ (f >> 12) ) 
+           ^ ((mat24_ploop_cocycle(f, e) ^ ((e ^ f) >> 12)) << 1)
+           ^ (((PwrMap(f) ^ (e >> 12) ^ (e >> 11)) & 1) << 2) ;
+
+        for (li = 0; li < 11; ++li) {
+            i = 1 << li ;
+            v = ((ld0 >> li) & 1) + (((ld1 >> li) & 1) << 1)
+              + (((ld2 >> li) & 1) << 2);
+            for (j = 0; j < i; ++j) {
+                p_XYZ[i + j] = p_XYZ[j] ^ v;
+            }
+        }
+    }
+
+    {
+        uint_fast16_t e1 = (e & 0x7ff);
+        uint_fast16_t ef1 = ((e ^ f) & 0x7ff);
+        uint_fast16_t eps1 = ((eps & 0x800) ^ 0x800) << 1; 
+        uint_fast8_t *p_XYZ = p_op->sign_XYZ;
+        uint_fast16_t d;
+
+        for (d = 0; d < 2048; ++d) {
+            p_XYZ[d] ^= ((-(PwrMapH(d ^ ef1) & 0x1000)) >> 12)
+                     ^ ((-(PwrMapH(d ^ e1) & 0x1000)) >> 11) 
+                     ^  ((PwrMapH(d) & eps1) >> 12);
+        }
+        p_op->lin_d[0] = e1 ^ ef1;
+        p_op->lin_d[1] = ef1;
+        p_op->lin_d[2] = e1;
+    }
+
+    {
+        uint_fast32_t vf =  p_op->lin_i[1]; 
+        uint_fast32_t vef = vf ^ p_op->lin_i[0];
+        uint_fast16_t sign_e = PwrMap(e);
+        uint_fast16_t oct, d, res, sign;
+        const uint8_t* p_oct = MM_SUB_OCTAD_ELEMENT_TABLE;
+        uint16_t* p_res = p_op->s_T;
+
+        for (oct = 0; oct < 759; ++oct) {
+            d = mat24_def_octad_to_gcode(oct);
+            res = to_suboctad(vf, p_oct); 
+            res ^= (to_suboctad(vef, p_oct)) << 8;
+            sign = d & eps;
+            sign ^= sign >> 6; sign ^= sign >> 3; 
+            sign = (0x96 >> (sign & 7)) & 1;
+            sign ^= sign_e ^ PwrMap(d ^ e);
+            *p_res++ = res + (sign << 14) + ((eps & 0x800) << (15-11));
+            p_oct += 8;
+        }
+    }
+}
+
+
+
+
+
+// %%EXPORT p
+void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint32_t *p_tbl)
+// Auxiliary function for debugging. Given delta and pi as in 
+// function mm_sub_prep_pi(), various components (dependding
+// on n) in structure mm_sub_prep_p are stored to p_tbl[]. 
+{
+    mm_sub_op_xy_type op_xy;
+    uint_fast32_t i;
+    mm_sub_prep_xy(f, e, eps, &op_xy);
+    switch(n) {
+        case 1:
+            for (i = 0; i < 3; ++i) {
+                p_tbl[i] = op_xy.lin_i[i];
+                p_tbl[i + 3] = op_xy.lin_d[i];
+            }
+            break;
+        case 2:
+            for (i = 0; i < 2048; ++i) p_tbl[i] = op_xy.sign_XYZ[i];
+            break;
+        case 3:
+            for (i = 0; i < 759; ++i) p_tbl[i] = op_xy.s_T[i];
+            break;
+        default:
+            break;
+    } 
+}
+
+
+
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890

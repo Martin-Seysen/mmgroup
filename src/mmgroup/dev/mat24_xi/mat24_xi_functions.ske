@@ -1,0 +1,363 @@
+// %%COMMENT
+// This is a C implementation of the functionality of Python class
+// Mat24Xi as described in the sequel. Note that all exported funtions
+// in this module are prefixed with 'mat24_xi'
+
+// %%COMMENT
+// %%PY_DOCSTR Mat24_xi_module_doc
+
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+
+
+#include <stdint.h>
+// #include <stdio.h>
+#include <string.h>
+#include "mat24_functions.h"
+#include "mat24_xi_functions.h"
+
+
+// %%GEN h
+#ifndef MAT24_XI_FUNCTIONS_H
+#define MAT24_XI_FUNCTIONS_H
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+// %%COMMENT
+/*************************************************************************
+*** tables
+*************************************************************************/
+
+// // %%USE_TABLE
+static const uint8_t MAT24_XI_G_GRAY_TABLE[64] = { 
+// %%TABLE Mat24_xi_g_gray_table , uint8
+};
+
+
+// // %%USE_TABLE
+static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = { 
+// %%TABLE Mat24_xi_g_cocode_table , uint8
+};
+
+
+#define compress_gray(x) (((x) & 0x0f) + (((x) >> 6) & 0x30))
+
+#define expand_gray(x)  (((x) & 0x0f) + (((x) & 0x30) << 6))
+
+// %%EXPORT p
+uint32_t mat24_xi_g_gray(uint32_t v1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_g_gray
+{
+    return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v1)]);
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_w2_gray(uint32_t v1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_w2_gray
+{
+    return MAT24_XI_G_GRAY_TABLE[compress_gray(v1)] >> 7;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_g_cocode(uint32_t v1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_g_cocode
+{
+    return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(v1)]);
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_w2_cocode(uint32_t v1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_w2_cocode
+{
+    return MAT24_XI_G_COCODE_TABLE[compress_gray(v1)] >> 7;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_op_leech(uint32_t x1, uint32_t u_exp)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_op_leech
+{
+    uint_fast32_t tv, tc; 
+    // reduce u_exp mod 3, no action if u_exp is 0 (mod 3)
+    if ((u_exp = u_exp % 3) == 0) return x1;
+    // map u_exp = 1, 2   to  u_exp = -1,  0
+    u_exp -= 2;   
+    // transform standard to internal Leech lattice rep
+    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
+    // put tv = scalar product of gray parts of code and cocode
+    tv = (x1 >> 12) & x1 & 0xc0f;
+    tv = 0x6996UL >> ((tv ^ (tv >> 10)) & 0xf);
+    // xor scalar product to sign
+    x1 ^= (tv & 1)  << 24; 
+    // tv = w2(code), g(code);   tc = w2(cocode), g(cocode);      
+    tv = MAT24_XI_G_GRAY_TABLE[compress_gray(x1 >> 12)]; 
+    tc = MAT24_XI_G_COCODE_TABLE[compress_gray(x1)];
+    // if old u_exp = 1: x1 &= ~0xc0f000, i.e. kill gray code part
+    // if old u_exp = 2: x1 &= ~0xc0f, i.e. kill gray cocode part
+    x1 &= ~(0xc0fUL << (u_exp & 12)); 
+    // xor g(code) to cocode and g(cocode) to code
+    x1 ^= expand_gray(tv);       // xor g(code) to cocode
+    x1 ^= expand_gray(tc) << 12; // xor g(cocode) to code
+    // if old u_exp = 1: x1 ^= (tc>>7)<<24 // xor w2(cocode) to sign
+    // if old u_exp = 2: x1 ^= (tv>>7)<<24 // xor w2(code) to sign
+    tv ^= (tc ^ tv) & u_exp; 
+    x1 ^= (tv >> 7) << 24;
+    // transform back to standard  Leech lattice rep
+    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
+    return x1;
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
+{
+    uint_fast32_t scalar;      
+    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff;
+    x2 ^= MAT24_THETA_TABLE[(x2 >> 12) & 0x7ff] & 0xfff;
+    scalar = (x2 >> 12) &  x1 & 0xfff;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    scalar = (0x96 >> (scalar & 7)) & 1;
+    x1 ^= x2 ^ (scalar << 24);
+    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff;
+    return x1;
+}
+
+// %%EXPORT p
+uint32_t mat24_xi_leech_to_short(uint32_t x1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_leech_to_short
+{
+    uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
+    sign = (x1 >> 24) & 1;
+    gcodev = mat24_gcode_to_vect(x1 >> 12);
+    cocodev = mat24_cocode_syndrome(x1, mat24_lsbit24(gcodev));
+    // put w = weight(code word gcodev) / 4
+    w = - ((x1 >> 23) & 1);
+    w = (((MAT24_THETA_TABLE[(x1>>12) & 0x7ff] >> 12) & 7) ^ w) 
+                 + (w & 7);  
+    if (x1 & 0x800) {  // case odd cocode
+        uint_fast32_t scalar;      
+        if (cocodev & (cocodev - 1)) return 0;
+        scalar = (x1 >> 12) &  x1 & 0xfff;
+        scalar ^= scalar >> 6;
+        scalar ^= scalar >> 3;
+        scalar = (0x96 >> (scalar & 7));
+        if ((scalar ^ w) & 1) return 0;
+        code = ((x1 & 0x7ff000) >> 7) | mat24_lsbit24(cocodev);
+        box = 4 + (code >> 15);
+        code &= 0x7fff;
+    } else {       // case even cocode
+        uint_fast32_t  c, y1, y2;
+        switch (w) {
+            case 4:
+                gcodev ^= 0xffffff;
+                x1 ^= 0x800000;
+                // fall through to case 2
+            case 2:
+                c =  mat24_extract_b24(cocodev, gcodev);
+                // put y2 = bitweight(c) (mod 4); here c < 256
+                y2 = (c & 0x55) + ((c & 0xaa) >> 1);
+                y2 = (y2 & 0x33) + ((y2 & 0xcc) >> 2);
+                y2 = (y2 + (y2 >> 4));
+                if ( (cocodev & gcodev) != cocodev
+                    ||  (y2 ^ 2 ^ w) & 3 ) return 0;
+                c ^=  (-(c >> 7)) & 0xff; 
+                code = (c >> 1) | (mat24_gcode_to_octad(x1 >> 12, 1) << 6);
+                if (code >= 24000) { 
+                    //  24000 = (15 + 360) * 64
+                    code -= 24000; box = 3;
+                } else if (code >= 960) {
+                    //  960 = 15 * 64
+                    code -= 960; box = 2;
+                } else {
+                    code += 1536;  box = 1;
+                }
+                break;
+            case 3:
+                return 0;
+            default:  // can be case 0 or 6 only
+                y1 = mat24_lsbit24(cocodev); 
+                cocodev ^= 1 << y1;  
+                y2 = mat24_lsbit24(cocodev); 
+                if (cocodev != (1 << y2) || y1 >= 24)  return 0;
+                code = 384 * (w & 2) + (y2 << 5) + y1;
+                box = 1;
+                break;
+        }
+    } 
+    return (sign << 15) + (box << 16) + code;
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_short_to_leech(uint32_t x1)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_short_to_leech
+{
+    uint_fast32_t sign = (x1 >> 15) & 1;
+    uint_fast32_t code = x1 & 0x7fff;
+    uint_fast32_t gcode = 0, cocode = 0, octad = 0xffff;
+    switch(x1 >> 16) {
+        case 1:
+            if (code < 1536) {  
+                //  1536 = 2 * 24 * 32 
+                uint_fast32_t i, j;
+                gcode = code >= 768;
+                code -= -gcode & 768;
+                gcode <<= 11; // gecode = code >= 768 ? 0x800 : 0
+                i = code >> 5; j = code & 31;
+                cocode = mat24_vect_to_cocode((1 << i) ^ (1 << j));
+                if (cocode == 0  || cocode & 0x800) return 0;
+            } else if (code < 2496) { 
+                // 2496 = 2 * 24 * 32 + 15 * 64 
+                octad = code - 1536;
+            } else return 0;
+            break;
+        case 2:
+            if (code >= 23040) return 0; // 23040 = 360 * 64     
+            octad = code + 960;  //  960 = 15 * 64  
+            break;
+        case 3:
+            if (code >= 24576) return 0; // 24576 = 384 * 64     
+            octad = code + 24000;  //  24000 = (15 + 360) * 64  
+            break;
+        case 5:
+            code += 0x8000;
+            // fall through to case 3
+        case 4:
+            {
+                uint_fast32_t w;
+                cocode = mat24_vect_to_cocode(1 << (code & 31));
+                if (cocode == 0) return 0;
+                gcode = (code >> 5) & 0x7ff;
+                //w =  mat24_gcode_weight(gcode) 
+                //        ^ mat24_scalar_prod(gcode, cocode); 
+                w = ((MAT24_THETA_TABLE[gcode] >> 12) & 1)
+                 ^ (gcode & cocode);
+                w ^= w >> 6;
+                w ^= w >> 3;
+                w = 0x96 >> (w & 7);
+                gcode ^= (w & 1) << 11;
+            }
+            break;
+        default:
+            return 0;
+    }
+    if (octad < 48576) {
+        // 48756 = 759 * 64 
+        uint_fast32_t cc, w, gcodev;
+        cc = octad & 0x3f;
+        w = (cc & 0x55) + ((cc & 0xaa) >> 1);
+        w = (w & 0x33) + ((w & 0xcc) >> 2);
+        w = (w + (w >> 4)) & 0xf;
+        cc = (cc << 1) ^ (w & 1);
+        w += w & 1;
+        gcode = MAT24_OCT_DEC_TABLE[octad >> 6] & 0xfff;
+        gcodev = mat24_gcode_to_vect(gcode);
+        cocode = mat24_vect_to_cocode(mat24_spread_b24(cc, gcodev));
+        gcode ^=  ((w >> 1) & 1) << 11;
+    }
+    return (sign << 24) | (gcode << 12) | cocode; 
+}
+
+
+// %%EXPORT p
+uint32_t mat24_xi_op_short(uint32_t x1, uint32_t u_exp)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_op_short
+{
+    uint_fast32_t y = mat24_xi_short_to_leech(x1);
+    if (y == 0) return x1;
+    y = mat24_xi_op_leech(y, u_exp);
+    if (y == 0) return x1;
+    y = mat24_xi_leech_to_short(y);
+    return y ? y : x1;
+}
+
+
+
+// %%EXPORT p
+uint32_t mat24_xi_make_table(uint32_t u_box, uint32_t u_exp, uint16_t *ptab)
+// generate table, yet to be documented!!
+{
+    static uint16_t t_size[6] = {
+        0, 2496, 23040, 24576, 32768, 32768
+    };
+    uint_fast32_t i, len = u_box < 6 ? t_size[u_box] : 0;
+    u_box <<= 16;
+    for (i = 0; i < len; ++i) ptab[i] = 
+         (uint16_t)(mat24_xi_op_short(u_box + i, u_exp) & 0xffff);
+    return len;
+}
+
+
+// %%EXPORT p
+void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_t *pres, uint32_t len_res)
+// invert table, yet to be documented!!
+{
+    uint_fast32_t i, r;
+    for (i = 0; i < len_res; ++i) pres[i] = 0;
+
+    for (i = 0; i < len; ++i) {
+        r = ptab[i];
+        if ((i & 31) < ncols && (r & 0x7fff) < len_res) {
+            pres[r & 0x7fff] = i | (r & 0x8000);
+        }
+    }
+}
+
+
+
+// %%EXPORT p
+void mat24_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *psign)
+// split table, yet to be documented!!
+{
+    uint_fast32_t i, j, r, sign;
+    len >>= 5;
+    for (i = 0; i < len; ++i) {
+         sign = 0;
+         for (j = 0; j < 32; ++j) {
+             r = *ptab;
+             *ptab++ = (uint16_t)((r & 0x7fff) % mod); 
+             sign += ((r >> 15) & 1) << j;
+         }
+         *psign++ = sign;
+    }
+}
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+// %%GEN h
+#endif  // #ifndef MAT24_FUNCTIONS_H
+
+
+
+
