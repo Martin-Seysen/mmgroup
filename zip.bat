@@ -1,0 +1,2 @@
+python zipme.py
+pause

@@ -1,0 +1,44 @@
+
+// %%GEN h
+// comment for header
+// %%GEN c
+
+// %%EXPORT_TABLE 
+uint{TABLE_SIZE}_t my_table[{int:len(y)}] = {
+  // %%TABLE y, uint{TABLE_SIZE}
+};
+
+// %%EXPORT
+void int f1(int a, int b)
+{
+    // %%AddTo a,  {mult}*3 
+    a +=  {y}[b % {int:len(y)}] ;
+    // %%FOR i in range(3)
+       // %%IF {i} % 2
+          // Add an odd number to variable a
+       // %%ELSE IF {i} > 0
+          // Add an even number to variable a
+       // %%ELSE 
+          // Add zero to variable a
+       // %%END IF 
+       a += {i};
+
+       // %%FOR j in range(4)
+          a += {int:i*j};
+       // %%END FOR # loop j
+    // %%END FOR  # loop i
+    // %%FOR t0, t1 in pair_list 
+        a += my_table[{t0}] * {t1};
+    // %%END FOR
+    // %%FOR k in range(1,3)
+        a += 
+    // %%JOIN*  " + ", ";"
+    // %%FOR* i in range(3)
+            {int:2*i*k} * y_table[{i}]
+    // %%END FOR
+    // %%END FOR
+    return a;
+}
+
+
+   

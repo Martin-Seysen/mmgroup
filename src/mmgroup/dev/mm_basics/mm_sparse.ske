@@ -1,0 +1,383 @@
+// Support for sparse vectors of the rep of the monster
+// See module mm_aux.c for background
+// TODO: Yet to be documented!!!!
+
+#include <stdlib.h>
+#include <string.h>
+#include "mm_basics.h"
+
+
+
+
+
+
+// %%COMMENT
+// The order of the parameters of functions in this file is:
+//
+// 1. Modulus p, if present
+// 2. pointer to sparse vector
+// 3. length of the sparse vector
+// 4. any other parameters
+
+
+
+/**********************************************************************
+*** purge
+**********************************************************************/
+
+
+// %%EXPORT p
+uint32_t mm_sparse_purge(uint32_t *sp, uint32_t length)
+// Eliminate illegal entries of array sp of entries in sparse format
+// in place. sp has length 'length'. Indices for tags A, B, C are  
+// sorted to correct order. 
+// The function returns the length of the purged array. 
+{
+    uint_fast32_t len_in, len_out = 0, v, tag, i, j;
+
+    // drop bad entries of sp and change good entries to standard form
+    for (len_in = 0;  len_in < length; ++len_in) {
+        v = sp[len_in];
+        tag = v >> 25; i = (v >> 14) & 0x7ff; j = (v >> 8) & 0x3f;
+        switch (tag) {
+            case 2:  // tag B
+            case 3:  // tag C
+                if (i == j) continue;
+                // Fall trough to case tag A
+            case 1:  // tag A
+                if (i >= 24 || j >= 24) continue;
+                if (i < j) v = (v & 0xE0000FF) + (j << 14) + (i << 8);
+                break;
+            case 4:  // tag T
+                if (i >= 759) continue;
+                break;
+            case 5:  // tag X
+            case 6:  // tag Z
+            case 7:  // tag Y
+                if (j >= 24) continue;
+                break;
+            default:
+                continue;
+        }
+        sp[len_out++] = v;
+    }
+    return len_out;
+}
+
+
+
+/**********************************************************************
+*** bitsort
+**********************************************************************/
+
+
+#define ALL1 0xffffffff
+
+
+// %%EXPORT p
+uint32_t mm_sparse_bitsort(uint32_t *a, uint32_t len, uint32_t mask)
+// Sort the entries of the array 'a ' of length 'len'. The key is
+// given by 'mask': Sort the entries of 'a', masked by 'mask', in 
+// ascending order. This means that the bits of the entries in 
+// positions, where 'mask' has a zero bit, are ignored.
+// The function returns the index of the first entry in the sorted 
+// array, which has a one bit at the position of the most 
+// significant bit of the 'mask'.
+{
+    uint32_t *st_p_lo[32];   // stack for pointers p_lo
+    uint32_t *st_p_hi[32];   // stack for pointers p_hi
+    uint32_t st_bmask[32];    // stack for bit masks
+    int_fast32_t sp = 0;      // pointer to 1st empty stack entry
+    uint_fast32_t fst_bmask;  // for statistics at and of program
+    uint32_t *p_lo = a;       // pointer to start of subarray
+    uint32_t *p_hi = a + len; // pointer behind end of subarray
+    uint_fast32_t bmask = 0x80000000;  // current bit mask
+    if ((mask & ALL1) == 0 || len == 0) return len;
+    while ((bmask & mask) == 0) bmask >>= 1;
+    fst_bmask = bmask; 
+    do {
+        uint32_t *p0 = p_lo;  // point to 1st unprocessed low entry
+        uint32_t *p1 = p_hi;  // point behind 1st unproc. high entry
+        uint_fast32_t a_lo;   // currently processed low entry 
+        uint_fast32_t a_hi;   // currently processed high entry 
+        uint_fast32_t lo0 = 0;    // 'or' of all entries in low part
+        uint_fast32_t lo1 = ALL1; // 'and' of all entries in low part
+        uint_fast32_t hi0 = 0;    // 'or' of all entries in hi part
+        uint_fast32_t hi1 = ALL1; // 'and' of all entries in hi part
+
+        // Sort list by the bit set in bmask, exchanging entries 
+        // in necessary. Accumulate bit inversions for low and 
+        // high sublist in d0 and d1.
+        //  printf("P %d %d %d %d\n", (int)(p_lo-a), (int)(p_hi-a), 
+        //          (int)bmask, (int)sp);
+        while (p0 < p1) {
+            a_lo = *p0;   // next unprocessed value in low sublist
+            if ((a_lo & bmask) == 0) { // relevant bit in a_lo is low
+                ++p0; 
+                lo0 |= a_lo; lo1 &= a_lo; // adjust and/or sum
+                continue;
+            }
+            a_hi = *--p1;  // a1 = next unprocessed value in low sublist
+            if ((a_hi & bmask) != 0) { // relevant bit in a_hi is high
+                hi0 |= a_hi; hi1 &= a_hi; // adjust and/or sum
+                continue;
+            }
+            // a_lo and a_hi  are unorderd: exchange them!
+            *p0 = a_hi; *p1 = a_lo; ++p0; 
+            lo0 |= a_hi; lo1 &= a_hi;    // adjust and/or sum
+            hi0 |= a_lo; hi1 &= a_lo;    // adjust and/or sum
+        }
+        lo0 &= mask & ~lo1;  // changing bits in low sublist
+        hi0 &= mask & ~hi1;  // changing bits in high sublist
+        //  printf("chg %d, %d %d\n", (int)(p_lo-a), lo0, hi0);
+        if (lo0 == 0) {
+            if (hi0 == 0) {   // case: both sublists are sorted
+                // Done if sp == 0
+                if (sp-- == 0) break;  
+                // Otherwise pop (p_lo, p_hi, pmask) from stack
+                p_lo = st_p_lo[sp];    
+                p_hi = st_p_hi[sp];   
+                bmask = st_bmask[sp];
+            } else {        // case: only low sublist is sorted
+                // set bmask to the bit mask for (p_0,p_hi) 
+                while ((bmask & hi0) == 0) bmask >>= 1;
+                // (p_lo,p_hi) = (p0,p_hi)
+                p_lo = p0;             
+            }
+        } else {
+            if (hi0 == 0) {   // case: only high sublist is sorted
+                // set bmask to the bit mask for (p_lo,p0) 
+                while ((bmask & lo0) == 0) bmask >>= 1;
+                // put (p_lo,p_hi) = (p_lo,p0)
+                p_hi = p0;             
+            } else {         // case: none of the sublists sorted
+                uint_fast32_t bmask_hi = bmask;
+                // put (p0,p_hi) on the stack
+                st_p_lo[sp] = p0;
+                st_p_hi[sp] = p_hi;
+                // put also the bit mask for (p0,p_hi) on the stack 
+                while ((bmask_hi & hi0) == 0) bmask_hi >>= 1;
+                st_bmask[sp] = bmask_hi;
+                // set bmask to the bit mask for (p_lo,0) 
+                while ((bmask & lo0) == 0) bmask >>= 1;
+                // put (p_lo,p_hi) = (p_lo,p0)
+                p_hi = p0;
+                // increment stack pointer
+                ++sp;
+            }
+        }
+    } while (1);
+
+    // Return index of 1st entry with highest bit of 'mask' set.
+    if ((a[0] & fst_bmask) != 0) return 0;       // all entries high
+    if ((a[len-1] & fst_bmask) == 0) return len; // all entries low
+    return st_p_lo[0] - a; // st_p_lo[0] points to 1st high entry
+}
+
+
+#undef ALL1
+
+
+/**********************************************************************
+*** sorting by alllocating memory for a vector
+**********************************************************************/
+
+// %%EXPORT p
+uint32_t mm_sparse_alloc_reduce(uint32_t p, uint32_t *sp, uint32_t length)
+{
+    #define MIN_IDX ((uint_fast32_t)(0x1000))
+    #define MAX_IDX ((uint_fast32_t)(0x8000))
+    #define MAX_DATA 0x8000
+    uint32_t *old_sp = sp;
+    typedef struct {
+        uint16_t idx[MAX_IDX - MIN_IDX];
+        uint8_t data[MAX_DATA][32];
+    } abuf_type;
+    abuf_type *p_abuf;
+    uint8_t (*p_data)[32];
+    uint16_t *p_idx;
+    uint_fast32_t idx_pos = 1;
+    uint_fast32_t i, a_hi, a_lo, a_idx0;
+    uint32_t bitmap[(MAX_IDX - MIN_IDX) >> 10];
+
+    // printf("alloc_pre_malloc %d\n", (int)sizeof(p_abuf->idx));
+    if (p >= 0x100) return (uint32_t)(-1);
+    p_abuf = malloc(sizeof(abuf_type));
+    if (p_abuf == NULL) return(uint32_t)(-1);
+    p_data = p_abuf->data;
+    p_idx = p_abuf->idx;    
+    memset(p_idx, 0, sizeof(p_abuf->idx));
+    memset(bitmap, 0, sizeof(bitmap));
+    // printf("alloc_post_malloc_chk2\n");
+
+    for (i = 0; i < length; ++i) {
+        uint_fast32_t a = sp[i];
+        uint_fast32_t a_value;
+        a_hi = (a >> (5 + 8)) - MIN_IDX;
+        if (a_hi >= MAX_IDX - MIN_IDX) {
+            // printf("sparse_alloc_reduce failed, a_hi=0x%x\n", (int)a_hi);
+            goto failure;
+        }
+        a_lo = (a >> 8) & 0x1f;
+        a_idx0 = p_idx[a_hi];
+        if (a_idx0 == 0) {
+            if (idx_pos >= MAX_DATA) {
+                // printf("sparse_alloc_reduce failed, pos=0x%x\n", (int)idx_pos);
+                goto failure;
+            }
+            p_idx[a_hi] = a_idx0 = idx_pos++;
+            memset(p_data[a_idx0], 0, 32*sizeof(uint8_t));
+            bitmap[a_hi >> 10] |= 1 << ((a_hi >> 5) & 0x1f);
+        }
+        a_value = p_data[a_idx0][a_lo] + (a & 0xff) - p;
+        a_value += (a_value >> 9) & p;
+        p_data[a_idx0][a_lo] = (uint8_t) a_value;
+    }
+
+    for (i = 0; i < (MAX_IDX - MIN_IDX) >> 5; ++i) {
+        if ((bitmap[i >> 5] & (1 << (i & 0x1f))) == 0) continue;
+        for (a_hi = i << 5; a_hi < (i << 5) + 32; ++a_hi)  {
+            uint8_t *p_data_lo;
+            uint_fast32_t tag_hi, value;
+            a_idx0 = p_idx[a_hi];
+            if (a_idx0  == 0) continue;
+            p_data_lo = p_data[a_idx0];
+            tag_hi = (a_hi + MIN_IDX) << (5 + 8);
+            for (a_lo = 0; a_lo < 32; ++a_lo) { 
+                value = (uint_fast32_t)(p_data_lo[a_lo]) - p;
+                value += (value >> 9) & p;
+                if (value) *sp++ = tag_hi + (a_lo << 8) + (value & 0xff);
+            }
+        }
+    }
+    free(p_abuf);
+    return sp - old_sp;
+
+failure:
+    free(p_abuf);
+    return(uint32_t)(-1); 
+
+    #undef MIN_IDX 
+    #undef MAX_IDX 
+    #undef MAX_DATA
+}
+
+
+
+
+// %%COMMENT
+/**********************************************************************
+*** Dealing with vectors in R_p in sparse format
+**********************************************************************/
+
+
+
+
+
+// %%EXPORT p
+uint32_t mm_sparse_reduce(uint32_t p, uint32_t *sp, uint32_t length)
+{
+    uint_fast32_t len_in = 0, len_out = 0, sum, last_label, v;
+
+    if (p >= 0x100) return length;
+    length =  mm_sparse_purge(sp, length);
+
+    // sort standardized array sp
+    len_out = (uint_fast32_t)(-1);
+    // use mm_sparse_alloc_reduce for large arrays
+    if (length >= 256) {  
+        len_out = mm_sparse_alloc_reduce(p, sp, length);
+    }
+    // use mm_sparse_bitsort for small arrays or as fallback
+    if (len_out == (uint_fast32_t)(-1)) {
+        mm_sparse_bitsort(sp, length, 0xfffff00);
+        len_out = length;
+    }
+    length = len_out;
+
+    // Sum up terms in array sp with the same label
+    if (length == 0) return 0;
+    len_out = 0;
+    v = sp[0];
+    last_label = v & 0xffffff00;
+    sum = v & 0xff; 
+    
+    for (len_in = 1; len_in < length; ++len_in) {
+        v = sp[len_in];
+        if ((v & 0xffffff00) == last_label) {
+            sum += (v & 0xff) - p;  // sum += v.value % p if
+            sum += (sum >> 9) & p;  // 0 <= sum + v.value <= 2*p
+        }
+        else {
+            sum -= p; sum += (sum >> 9) & p; // sum %= p
+            if (sum != 0) sp[len_out++] = last_label + (sum & 0xff);
+            sum = v & 0xff; last_label = v & 0xffffff00;
+        }
+    }
+    sum -= p; sum += (sum >> 9) & p; // sum %= p
+    if (sum != 0) sp[len_out++] = last_label + (sum & 0xff);
+    return len_out;
+}
+
+
+/**************************************************************************
+// Deprecated stuff, use numpy.searchsorted() instead!
+
+static int comp_uint32_t(const void* pa, const void* pb)
+{
+    uint32_t a = *((uint32_t *) pa);
+    uint32_t b = *((uint32_t *) pb);
+    if (a > b) return 1;
+    if (a < b) return -1;
+    return 0;
+}
+
+// // %%EXPORT p
+uint32_t mm_sparse_get_item(uint32_t *sp, uint32_t length, uint32_t label)
+{
+    uint32_t *item;
+    label &= 0xffffff00;
+    if (label >= 0x2000000 && label < 0x8000000) {
+        // tags A, B, C
+        uint_fast32_t i = (label >> 14) & 0x1f;  
+        uint_fast32_t j = (label >> 8) & 0x1f;  
+        label = (label & 0xe0000ff) + (j << 14) + (i << 8);
+    }
+    item = (uint32_t*) bsearch (&label, sp, length, 
+          sizeof (uint32_t), comp_uint32_t);
+    return item == NULL ? 0 : (*item) & 0xff;
+}
+
+// // %%EXPORT p
+void mm_sparse_zero_item(uint32_t *sp, uint32_t length, uint32_t label)
+{
+    uint32_t *item;
+    label &= 0xffffff00;
+    if (label >= 0x2000000 && label < 0x8000000) {
+        // tags A, B, C
+        uint_fast32_t i = (label >> 14) & 0x1f;  
+        uint_fast32_t j = (label >> 8) & 0x1f;  
+        label = (label & 0xe0000ff) + (j << 14) + (i << 8);
+    }
+    item = (uint32_t*) bsearch (&label, sp, length, 
+          sizeof (uint32_t), comp_uint32_t);
+    if (item) (*item) &= 0xffffff00;
+}
+
+// End of deprecated stuff.
+**************************************************************************/
+
+
+// %%EXPORT p
+void mm_sparse_mul(uint32_t p, uint32_t *sp, uint32_t length, int32_t factor)
+{
+    if (p >= 0x100) return;
+
+    factor %= p;
+    if (factor < 0) factor += p;
+    for ( ; length--; ++sp) {
+        uint_fast32_t v = *sp;
+        *sp = (v & 0xffffff00) +  (v & 0xff) * factor % p; 
+    }
+}
+

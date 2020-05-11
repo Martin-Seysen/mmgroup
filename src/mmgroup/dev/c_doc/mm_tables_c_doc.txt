@@ -1,0 +1,161 @@
+/**********************************************************************
+*** Subroutines for mm*_op_pi
+**********************************************************************/
+
+
+
+/**********************************************************************
+Preparing an operation x_delta * x_pi
+
+In [Seys19] we define monomial operations x_delta * x_pi acting on
+the 196884-dimensional rep of the monster. The operations 
+x_delta * x_pi make up a sugroup N_x0 of structure 2**12.Mat24, which 
+is also an automorphsism group of the Parker loop. The exact 
+definition of the element x_delta * x_pi of N_x0 is given in module 
+mat24_functions.c.
+
+Function mm_sub_prep_pi() computes some tables required for the
+operation x_delta * x_pi on that rep in a structure of type 
+mm_sub_op_pi_type. The data in that structure are independent of 
+the modulus p of the representation.
+
+The structure of type mm_sub_op_pi_type has the following members:
+
+uint32_t d
+----------
+A copy of the 12-bit integer delta describing an element of the
+Golay cocode.
+            
+uint32_t pi
+-----------
+and integer 0 <= pi < Order(Mat24) describing an element of the
+Mathieu group Mat24 as in module mat24_functions.c. In that
+module we also define a non-canonical bijection from Mat24 to 
+representatives of the cosets of the normal subgroup 2**12 of 
+N_x0.
+
+uint8_t perm[24]
+----------------
+The pernutation 0..23 -> 0..23 given by the element pi of Mat24.
+
+uint8_t inv_perm[24]
+Ihe inverse permutation of pi, so inv_perm[perm[i]] = i.
+
+benes_net[9]
+------------
+A representation of Benes network for computing permutation pi,
+see function mat24_perm_to_net() in mat24_functions.c.
+
+
+
+uint16_t tbl_perm24_big[2048+72]
+--------------------------------
+An entry (tag, i, j) of the rep of the monster is mapped to entry
+(tag1, i1, j1), with i1 depending on i (and the tag), and j1 
+depending on j only, for tags A, B, C, X, Y, Z. If 
+tbl_perm24_big[i1] & 0x7ff = i for 0 <= i1 < 2048 than 
+(tag, i, j) ia mapped to (Tag, i1, perm[j]), up to sign, for
+tags X, Y and Z. In case of odd delta, tags Y and Z are exchanged.
+The value tbl_perm24_big[2048 + 24*k + i1] & 0x7ff describes the
+preimage if (tag, i1, j1) in a similar way, where tag = A, B, C
+for k = 0, 1, 2.
+
+Bits 12,...,15 of tbl_perm24_big[i1] encode the signs of the 
+preimages of the corresponding entry of the rep. Bits 12, 13 and
+14 refer to the signs for the preimages for the tags X, Z and Y,
+respectively. Bit 15 refers to the signs for the preimages for 
+tags A, B and C. If the corresponding bit is set, the preimage has
+to be negated. 
+
+Note that function mat24_op_all_autpl() in module 
+mat24_functions.c computes the first 20148 entries of the table.
+
+We remark that in case of odd delta the mapping for tag X requires 
+a postprocessing step that cannot be drived from tables   
+tbl_source24_big and tbl_perm24_big. Then entry (X, i, j) has
+to be negated if the scalar product of i (which is a Golay code
+element) and j (which can be interpreted as a cocode element) is 
+equal to 1.
+
+Similarly, entries with tags Y and Z must be exchanged in case of
+odd delta.
+
+
+
+mm_sub_op_pi64_type tbl_perm64[759]
+----------------------------------
+This table encodes operation of x_delta *x_pi on the rep of the 
+monster for entries with tag T. Assume that (T, i, j) is mapped to 
++-(T, i1, j1). Then i1 depends on i only and j1 depends on i and j. 
+For fixed i the mapping j -> j1 is linear if we consider the 
+binary numbers j and j1 as bit fields. 
+
+Entries i1 of the table tbl_perm64 describe the 
+preimage of (T, i1, j1) for all 0 <= j1 < 64 as follows:
+
+compionent "preimage"
+Bits  9... 0    preimage i such that (T, i, .) maps to +-(T, i1, .)
+Bit  12         sign of mapping: (T, i, .) maps to -(T, i1, .)
+                if that bit is set
+
+component "perm[k]", 0 <= k < 6
+value v such that (T, i, v) maps to +-(T, i1,  2 * 2**k - 1)
+
+
+Note that the values 1, 3, 7, 15, 31, 63 occur as differences 
+j1 ^ (j1 - 1) when counting j1 from 0 up to 63. So the preimage of
+(T, i1, j1) can be computed from the preimage of (T, i1, j1 - 1)
+using linearity and the approprate field in the table above.
+
+We remark that in case of odd delta the mapping for tag T requires 
+a postprocessing step that cannot be drived from table above.   
+Then entry (T, i, j) has to be negated if the bit weight of the 
+subset of octade i corresponding to j has bit weight 2 mod 4,
+see e.g. [Conw85], [Seys19].
+
+ 
+
+References
+----------
+see file references.txt
+
+**********************************************************************/
+
+
+
+void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
+// Prepare operation x_delta * x_pi, see comment above, with input
+// parameters delta and pi. It fills the stucture of type 
+// mm_sub_op_pi_type referred by p_op with data required for that
+// operation.
+
+
+
+void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
+// Auxiliary function for debugging. Given delta and pi as in 
+// function mm_sub_prep_pi(), components of tbl_perm64 (of length 
+// 759 * 7) in structure mm_sub_prep_p  is stored to p_tbl[]. 
+
+
+
+/**********************************************************************
+*** Subroutines for mm*_op_pi
+**********************************************************************/
+
+
+
+void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_op)
+// Prepare operation y_f *x_e * x_eps, see comment above, with 
+// input parameters f, e and eps. It fills the stucture of type 
+// mm_sub_op_pi_type referred by p_op with data required for that
+// operation.
+
+
+
+void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint32_t *p_tbl)
+// Auxiliary function for debugging. Given delta and pi as in 
+// function mm_sub_prep_pi(), various components (dependding
+// on n) in structure mm_sub_prep_p are stored to p_tbl[]. 
+
+
+

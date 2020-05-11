@@ -1,0 +1,244 @@
+
+// %%COMMENT
+// TODO: Adjust this to new order of basis vectors rep!!!
+
+#include <string.h>
+#include "mm_op{P}.h"   
+   
+static const uint_mmv_t MM{P}_TBL_SCALPROD_HIGH[] = { 
+// %%TABLE MMV_TBL_SCALPROD_HIGH, uint{INT_BITS}
+};
+
+static const uint_mmv_t MM{P}_TBL_SCALPROD_LOW[] = { 
+// %%TABLE MMV_TBL_SCALPROD_LOW, uint{INT_BITS}
+};
+
+
+
+// %%EXPORT
+void mm{P}_neg_scalprod_d_i(uint_mmv_t* v)
+// negate entries d (x) i with sclar product equal to 1
+{
+    const uint_mmv_t* p0 = MM{P}_TBL_SCALPROD_HIGH;
+    const uint_mmv_t* p0_end = p0 + 32 * {V24_INTS};
+
+    // inversion of entries (d (x) i) with scalar product 1
+    for (; p0 < p0_end; p0 += {V24_INTS}) {
+        const uint_mmv_t* p1 = MM{P}_TBL_SCALPROD_LOW;
+        const uint_mmv_t* p1_end = p1 + 16 * {V24_INTS};
+        for (; p1 < p1_end; p1 += {V24_INTS}) {
+            // %%SCALAR_PROD_2048_UNROLL p0, p1, v 
+            v +=   4 * {V24_INTS};
+        }
+    }
+}
+
+
+
+
+
+static uint32_t TABLE24_START[4] = {
+   MM_OP{P}_OFS_X, MM_OP{P}_OFS_Z, MM_OP{P}_OFS_Y, MM_OP{P}_OFS_A
+};
+
+
+
+//TODO: Adjust this to new function mat24_op_all_autpl!!!
+
+// %%EXPORT
+void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t *v_out)
+{
+    uint_fast32_t i;
+    uint32_t table24_dest[4];
+
+    // %%IF PERM24_USE_BENES_NET
+    // The following mask is used by the actual permutation code
+    // %%PERM24_BENES_DECLARE "v"
+    uint_mmv_t benes_mask[{PERM24_BENES_MASK_LEN}]; 
+
+    // Prepare mask array from Benes network
+    // %%PERM24_BENES_PREPARE "p_op->benes_net", benes_mask
+    // %%ELSE
+    // The following array will store an version of that permutation 
+    // optimized for fast operation on a vector of 24 small integers: 
+    uint8_t pf[48];
+    {
+        uint_fast8_t i, j;
+        for(i = 0; i < 24; ++i) {
+            j = p_op->perm[i];
+            pf[j+j] = (i >> {LOG_INT_FIELDS});
+            pf[j+j+1] = (i & {hex:INT_FIELDS-1}) << {LOG_FIELD_BITS};
+        }
+    }    
+    // %%END IF
+    
+    // Step 1: do rows with 24 entries 
+    // TODO: comment properly!!!!
+    for (i = 0; i < 4; ++i) table24_dest[i] = TABLE24_START[i];
+    i = (TABLE24_START[1] ^ TABLE24_START[2]) & -(p_op->d & 1);
+    table24_dest[1] ^= i;  table24_dest[2] ^= i; 
+
+    for (i = 0; i < 4; ++i)  {
+        uint16_t *p_perm  = p_op->tbl_perm24_big +  (i < 3 ? 0 : 2048);
+        uint_mmv_t *p_src = v_in + TABLE24_START[i];
+        uint_mmv_t *p_dest = v_out + table24_dest[i];
+        uint_fast32_t i1, len = i < 3 ? 2048 : 72;
+        for (i1 = 0; i1 < len; ++i1) {
+            uint_mmv_t sgn_perm = p_perm[i1];
+            uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
+            
+            sgn_perm >>= (i + 12);  // sign for permutation
+            // %%IF PERM24_USE_BENES_NET
+            // Load 'ps' to temporary variables v0,...
+            // %%PERM24_BENES_LOAD ps
+            // Permute and possibly negate data in temp. variables
+            // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm
+            // Store temporary variables to 'p_dest'
+            // %%PERM24_BENES_STORE p_dest
+            // %%ELSE
+            sgn_perm = -(sgn_perm & 1);
+            // %%FOR i in range(V24_INTS_USED)  
+            // %%IF* i == 0
+            sgn_perm &= {smask:P};
+            // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+            sgn_perm &= {smask:P, range(24 % INT_FIELDS)};
+            // %%END IF
+            p_dest[{i}] = sgn_perm  ^ (
+            // %%JOIN*  " |", ");"
+            // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
+            // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+                (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
+            // %%END FOR   #  FOR j2, j_mod
+            // %%END FOR   #  FOR j
+            // %%END FOR   #  FOR i
+            // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+            p_dest[{i}] = 0;
+            // %%END FOR
+            // %%END IF
+            p_dest +=  {V24_INTS};      
+        }
+        
+    }    
+
+    // Step 2: do rows with 64 entries // TODO: comment properly!!!!
+    {
+        // TODO: check this !!!!!!!!!!!!
+        mm_sub_op_pi64_type *p_perm = p_op->tbl_perm64;
+        uint8_t bytes[64];
+        uint_mmv_t *p_out = v_out + MM_OP{P}_OFS_T;
+        uint_mmv_t *p_end = p_out + 759 * {V64_INTS};
+        v_in +=  MM_OP{P}_OFS_T;
+        for (; p_out < p_end; p_out += {V64_INTS}) {
+            {
+               uint_mmv_t v = p_perm->preimage;
+               uint_mmv_t *p_in = v_in + ((v & 0x3ff) << {LOG_V64_INTS});
+               // %%LOAD_PERM64 p_in, bytes, v
+            }
+            {
+               // %%STORE_PERM64 bytes, p_out, "(p_perm->perm)"
+            }
+            ++p_perm;
+        } 
+    }
+
+    // If d is odd: negate some entries    
+    if (p_op->d & 1) {
+        uint_fast16_t i;
+        uint_mmv_t *v = v_out + MM_OP{P}_OFS_T;
+
+        // Step odd 1:  negate suboctads of weight 4n+2 for tag T
+        for (i = 0; i < 759; ++i) {
+            // %%INVERT_PERM64 v
+            v += {V64_INTS};
+        }
+
+        mm{P}_neg_scalprod_d_i(v); 
+    }
+} 
+
+
+
+
+
+// %%EXPORT p
+void mm_op{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t *v_out)
+{
+    mm_sub_op_pi_type s_op;
+    mm_sub_prep_pi(delta, pi, &s_op);
+    mm_op{P}_do_pi(v_in, &s_op, v_out);
+}
+
+
+// %%EXPORT p
+void mm_op{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t *v_out)
+{
+    uint_fast32_t i;
+    uint8_t signs[2048];
+    uint32_t table24_dest[4];
+
+    mat24_op_all_cocode(delta, signs);
+    for (i = 0; i < 72; ++i) signs[i] &= 7;
+    for (i = 48; i < 72; ++i) signs[i] |= delta << 3;
+    for (i = 0; i < 4; ++i) table24_dest[i] = TABLE24_START[i];
+    i = (TABLE24_START[1] ^ TABLE24_START[2]) & -(delta & 1);
+    table24_dest[1] ^= i;  table24_dest[2] ^= i; 
+
+    // Step 1: do rows with 24 entries 
+    // TODO: comment properly!!!!
+    for (i = 0; i < 4; ++i)  {
+        uint_mmv_t *p_src = v_in + TABLE24_START[i];
+        uint_mmv_t *p_dest = v_out + table24_dest[i];
+        uint_fast32_t i1, len = i < 3 ? 2048 : 72;
+        for (i1 = 0; i1 < len; ++i1) {
+            uint_mmv_t sgn = -((signs[i1] >> i) & 1);
+            // %%FOR i in range(V24_INTS_USED)
+            // %%IF* i == 0
+            sgn &= {smask:P};
+            // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+            sgn &= {smask:P, range(24 % INT_FIELDS)};
+            // %%END IF
+            p_dest[{i}] = p_src[{i}]  ^ sgn;
+            // %%END FOR
+            // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+            p_dest[{i}] = 0;
+            // %%END FOR
+            p_src +=  {V24_INTS};      
+            p_dest +=  {V24_INTS};      
+        }        
+    }    
+
+    // Step 2: do rows with 64 entries 
+    // TODO: comment properly!!!!
+    {
+        v_in +=  MM_OP{P}_OFS_T;
+        v_out += MM_OP{P}_OFS_T;
+        for (i = 0; i < 759; ++i) {
+            uint_mmv_t  sign = mat24_def_octad_to_gcode(i) & delta;
+            sign ^=  sign >> 6; sign ^=  sign >> 3;
+            sign = -((0x96 >> (sign & 7)) & 1);
+            sign &= {smask:P};
+            // %%FOR i in range({V64_INTS})
+            v_out[{i}] = v_in[{i}]  ^  sign;
+            // %%END FOR
+            v_in += {V64_INTS};
+            v_out += {V64_INTS};
+        } 
+        v_out -= 759 * {V64_INTS} +  MM_OP{P}_OFS_T; // restore v_out
+    }
+
+    // If d is odd: negate some entries    
+    if (delta & 1) {
+        uint_fast16_t i;
+        uint_mmv_t *v = v_out + MM_OP{P}_OFS_T;
+
+        // Step odd 1:  negate suboctads of weight 4n+2 for tag T
+        for (i = 0; i < 759; ++i) {
+            // %%INVERT_PERM64 v
+            v += {V64_INTS};
+        }
+
+        mm{P}_neg_scalprod_d_i(v); 
+    }
+}
+
+

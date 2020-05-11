@@ -1,0 +1,1056 @@
+// This is a C implementation of the functionality of Python class
+// Mat24 as described in the sequel. Note that all exported funtions
+// in this module are prefixed with 'mat24_'
+
+
+
+// Provide functions for the Mathieu group Mat24 and the Parker loop.
+// 
+// The Golay code C and its codode C*
+// ----------------------------------
+// 
+// The Mathieu group Mat24 operates as a permutation group on a set of
+// 24 elements which we label with numbers 0,...,23 for use in Python
+// and C. So it also operates on a vector space V = GF(2)**24, with
+// GF(2) = {0,1}.
+// 
+// A vector v in a vector space over GF(2) is called a bit vector. We
+// represent a bit vector as an integer, so that the i-th bit of v
+// (with valence 2**i) is the i-th component of v.
+// 
+// Mat24 is the automorphism group of the binary [24,12,8] Golay code C
+// So C is a 12-dimensional subspace of V. Code words in C have weight
+// 0, 8, 12, 16 or 24. Up to isomorphism there is only one such Golay
+// code. Our Golay code in V is compatible to the 'MOG' in [CoSl99],
+// Ch. 11 with numbering of the unit vectors in V as follows:
+// 
+//                      +------------------------+
+//                      |  0   4   8  12  16  20 |
+//                      |  1   5   9  13  17  21 |
+//                      |  2   6  10  14  18  22 |
+//                      |  3   7  11  15  19  23 |
+//                      +------------------------+
+// 
+// 
+// There are member functions for checking and completing codewords and
+// for getting the syndrome or the type (i.e. the orbit under Mat24) of
+// a 24-bit vector.
+// 
+// All relevant functions in this python class are implemented as
+// class methods. There are also corresponding funtions implemented
+// in C.
+// 
+// We internally use a basis of GF(2**24) such that the first 12 basis
+// vectors are a transversal of the Golay cocode and the last 12 basis
+// vectors span the Golay code. Here '**' means exponentiation. Our
+// cocode basis is the reciprocal basis of the Golay code basis.
+// 
+// The assured properties of the (transversal of the) cocode basis are:
+// 
+//     - All basis vectors except vector 0 have an even number of ones.
+//     - Basis vector 0 has a one in row 0, column 0 only.
+//     - Basis vectors 0,...,4 and 11 have ones in row 0 only.
+//     - The other basis have two nonzero entries in the last 3 rows
+//       of exactly one column and zero entries everywhere else.
+//     - Basis vector 11 (i.e. the last one) has ones precisely in all
+//       six columns of row 1
+// 
+// The assured properties of the basis of the Golay code are:
+// 
+//     - Basis vector 0 has 24 ones, all other basis vectors have
+//       weight 8 or 16.
+//     - All but basis vector 11 are even interpretations of the MOG,
+//       i.e. the first MOG row and all MOG columns have even bit weight.
+//     - In the first five basis vectors the entries in each column
+//       are equal.
+//     - Basis vectors 5,...,10  have zero entries in row 0.
+//     - Basis vector 11 has ones precisely in row and column 0, except
+//       for intersection of row and column 0, where it is zero.
+// 
+// The user may rely on these properties for operations on the vectors.
+// 
+// We represent vector in V, C and V* and in sthe subspace of
+// octads of C as follows:
+// 
+// The 759 octads are numbered from 0 to 758. This is not a vector space.
+// The 2**12 code words are represented as binary numbers 0 to 4095.
+// The 2**12 cocode words are represented as binary numbers 0 to 4095.
+// 
+// As usual, binary numbers representing bit vectors are added with the
+// XOR operation '^'. Unused high bits are ignored. The 2**12 code words
+// and the 2**12 cocode words mentioned above can be added with '^'.
+// 
+// Member functions changing from one representation xxx to another
+// representation yyy are named xxx_to_yyy, where xxx, yyy is as follows:
+// 
+// vect :     standard representation of a bit vector in V = GF(2)**24
+//            coded as a 24-bit integer.
+// vintern:   internal representation a bit vector in V as a vector in
+//            the basis given above, coded as 24-bit integer.
+// gcode:     representation of a Golay code word in the basis given
+//            given above, coded as 12-bit integer. Here we simply take
+//            the upper 12 bits of the internal representation.
+// octad:     representation as an octad numbered from 0 to 758
+//            (in lexical order given by representation  'gcode')
+// cocode:    representation as a cocode word in the basis given above,
+//            coded as 12-bit integer. Here we simply take the lower
+//            12 bits of the internal representation.
+// 
+// 
+// All these representations are given as integers.
+// 
+// We implement the following conversion functions:
+// 
+//     vect_to_vintern, vintern_to_vect, vect_to_cocode,
+//     vintern_to_vect, gcode_to_vect, cocode_to_vect.
+// 
+// Here irrelevant bits of the input are ignored. cocode_to_vect
+// returns one of many possible solutions.
+// 
+// In the following functions the input is checked and an exception
+// is raised in case of an error:
+// 
+//     vect_to_gcode,   vect_to_octad,   gcode_to_octad,
+//     octad_to_vect, octad_to_gcode
+// 
+// Here we raise an exception if the given input is not a code word
+// or an octad, as required by the member function. The correspinding
+// C functions returns -1 (casted to the appropriate unsigned integer
+// type) in case of any error.
+// 
+// Function syndrome() takes a vector v and calculates its syndrome,
+// which is a vector of minimum weight equivalent to v modulo the
+// Golay code. Function cocode_syndrome() takes a 'cocode'
+// representation as a cocode word instead.
+// 
+// Function scalar_prod() returns the scalar product of a Golay code
+// vector in 'gcode' and a cocode vector in 'cocode' representation.
+// 
+// 
+// The Mathieu group Mat24
+// -----------------------
+// 
+// This class also contains support for the Mathieu group Mat24.
+// An element of Mat24 can be represented in one of the following ways:
+// 
+// perm:     Representation as a array of length 24 encoding a
+//           permutation of the integers 0,...,23 as a mapping.
+// 
+// m24num:   Representation as an integer 0 <= i < 244823040. The
+//           identity permutation is coded as 0. Other codes are
+//           more or less arbitrary, see function m24num_to_perm().
+// 
+// matrix:   Representation as a 12 x 12 bit matrix acting on the Golay
+//           code by right multiplication. This matrix acts on a Golay
+//           code vectors (given in the 'gcode' representation) by
+//           right multiplication.
+//           Such a matrix is implemented as an array of integers with
+//           each integer corresponding to a row vector of the matrix.
+//           The raison d'etre of this representation is to support
+//           the Parker loop and its automorphism group. Therefore a
+//           row vector is implemented as a 32-bit integer.
+// 
+// We implement the following conversion functions
+// 
+//     m24num_to_perm, perm_to_m24num, perm_to_matrix, matrix_to_perm.
+// 
+// There is a function perm_check() for checking if an array of
+// length 24 really represents an element of the Mathieu group Mat24.
+// All other function operating on Mat24 in any way do not check if
+// their inputs are really in Mat24. They will output garbage on bad
+// input, but they are not suppused to crash.
+// 
+// The easiest way to create a random element of Mat24 is to create
+// a random integer 0 <= n < 244823040, and to call function
+// m24num_to_perm(x). You can use functions perm_from_heptads() or
+// perm_complete_heptad() to create specific elements, see
+// documentation of these function for details. The group Mat24 is
+// discussed in detail in [CoSl99] Ch. 11.
+// 
+// 
+// Operation of the group Mat24 on vectors
+// ---------------------------------------
+// 
+// Elements of Mat24 operate from the right on vectors in V = (2)**24
+// or on Golay code or cocode vectors, as usual in finite group theory.
+// A function performing such an operation has the name
+// 
+//         op_<vector>_<group>
+// 
+// where <vector> indicates the representation of the vector space and
+// <group> indicates the representation of the group. We implement the
+// functions
+// 
+//     op_vect_perm, op_gcode_matrix, op_gcode_perm, op_cocode_perm.
+// 
+// E.g. op_gcode_matrix operates on a Golay code word (in 'gcode'
+// representation) by right multiplying an element m of Mat24 with it.
+// Here element m is a 12 x 12 matrix (in 'matrix' representation').
+// 
+// 
+// Group operation in the group Mat24
+// ----------------------------------
+// 
+// Multiplication and inversion in the group mat2 is supported for
+// the permutation representation 'perm'. Therefore we have functions
+// 
+//      mul_perm, inv_perm
+// 
+// 
+// 
+// The Parker loop Pl
+// ------------------
+// 
+// We support the Parker loop Pl and also its automorphism group.
+// 
+// The Parker loop Pl is nonassociative loop with a central element
+// -1 such that Pl/{1,-1} = C, with C the Golay code. We choose a
+// transversal of C in Pl and write the elements of Pl as pairs
+// (v, s) with v in C and s in {1,-1} and multiplication rule
+// 
+//   (v1, s1) * (v2, s2) = (v1 + v2, s1 * s2 * (-1)**theta(v1, v2)),
+// 
+// where the cocycle theta is quadratic in the first and linear in
+// the second element. So theta can also be considered as a
+// quadratic form on the Golay code C with values in the cocode C*.
+// 
+// An element (v, (-1)**i) of the Parker loop Pl is represented as
+// a 13-bit integer, with bits 0,...,11 the Golay code word in
+// 'gcode' representation, and bit 12 the sign bit s. We call this
+// representation of the Parker loo the 'ploop' representation.
+// So we can convert and element of C in 'gcode' representation
+// to an element pf Pl in 'ploop' representation by adjusting the
+// sign in bit 12.
+// 
+// Function ploop_theta(v) returns the element theta(v) of C* in
+// 'cocode' representation. Parameter v must be an element of C
+// or Pl in 'gcode' or 'ploop' representation. Similarly, function
+// ploop_cocode(v1, v2) returns the value of the coycle
+// theta(v1, v2), which is 0 or 1.
+// 
+// Function mul_ploop() returns the product of two elements of
+// the Parker Loop. Function inv_ploop() returns the inverse of
+// ab element of the Parker loop.
+// 
+// 
+// The group AutPl of standard automorphisms of the Parker loop Pl
+// ---------------------------------------------------------------
+// 
+// An automorphism of the Parker loop is implemented as an array a
+// of twelve 32-bit integers. The lowest 13 bits of a[i] encode the
+// image of the i-th basis vector of the Parker loop. Here the basis
+// of Parker Loop corresponds to the basis of the Golay code, and
+// each basis vector has positive sign.
+// 
+// The bits 13..24 of the vectors a[i] ancode a quadratic form which
+// faciliates computations in AutPl. A description of the quadratic
+// form is out of the scope of this document.
+// 
+// This representation of AutPl is called the 'autpl' representation.
+// We only use the 'autpl' representaion for elements of AutPl.
+// 
+// Function perm_to_autpl(c, p) returns an automorphism of the
+// Parker loop created from a element p of Mat24 in 'perm'
+// representation and a cocode element c in 'cocode' representation.
+// 
+// For m = perm_to_autpl(c, p) we can get back p and c be computing
+// p = autpl_to_perm(m) and c = autpl_to_cocode(m).
+// 
+// m = cocode_to_autpl(c) returns the same result as
+// m = perm_to_autpl(c, p) with the identity permutation p.
+// Note that
+// 
+//  perm_to_autpl(c, p) = cocode_to_autpl(c) * perm_to_autpl(0, p).
+// 
+// The automorphism perm_to_autpl(0, p) maps the basis vectors
+// (b_i, 0) of the Parker loop to some elements (b'_i, 0) of the
+// Parker loop, with the Golay code automorphism b_i -> b'_i given
+// by the permutation p.
+// 
+// Function op_ploop_autpl(v, m) applies Parker loop automorphism m
+// to cocode vector v and returns the result. Here all cocode
+// vectors are given in 'cocode' representation. We assume that
+// Parker loop automorphisms operate by right multiplication on Pl.
+// 
+// Function mul_autpl(m1, m2) returns the product m1 * m2 of the
+// Parker loop automorphisms m1 and m2. Function inv_autpl(m1)
+// returns the inverse of the Parker loop automorphism m1.
+// 
+// 
+// Auxiliary functions
+// ------------------
+// Here is an overview of some auxiliary functions in this class.
+// They are described in the corresponding function documentation.
+// 
+// bw24          bit weight of the lowest 24 bits of an integer
+// lsbit24       min(24, least significant bit pos.) for an integer
+// gcode_weight  weight of a Golay code word in 'gtype' representation
+// vect_type     orbit of a vector in V under the group Mat24
+// vect_to_bit_list
+//               given a bit vector in V, it returns the lists of
+//               the positions of the 0 bits and of the 1 bits of v.
+// extract_b24   extract bits from bit vector using a 24-bit mask
+// spread_b24    spread bit vector according to a 24-bit mask
+// 
+// 
+// Internal operation
+// ------------------
+// 
+// For switching from the standard representation to the internal
+// representation we use 3 tables with 2**8 entries of 24 bit length.
+// For switching back from internal to standard representation we use
+// 3 other tables of the same format. There are also tables for
+// computing the syndrome of a vector in V with respect to the Golay
+// code.
+// 
+// 
+// Abbreviations for functions and parameters in this class
+// --------------------------------------------------------
+// 
+// The following list of abbreviations used in names of functions
+// allows to guess the action of most functions in this module:
+// 
+// abbreviation  meaning                                   data type
+// 
+// assoc         associator (in Golay code or Pl)
+// autpl         autmorphism of the Parker loop Pl         uint32_t[12]
+// bw24          bit weight of the lowest 24 bits of an int
+// cap           intersection (of Golay code elements)
+// cocode        element of Golay cocode C*                uint32_t
+// cocycle       cocycle:  Pl times Pl  ->  {0,1}
+// comm          commutator (in Golay code or Pl)
+// gcode         element of Golay code C                   uint32_t
+// inv           inversion (in Mat24, Pl, or AutPl)
+// lsbit24       least significant bit of an integer,
+//               counting bits 0,...,23 only
+// m24num        number of an element of Mat24             uint32_t
+// matrix        element of Mat24 as binary matrix
+//               acting on the Golay code C                uint32_t[12]
+// mul           multiplication (in Mat24, Pl, or AutPl)
+// net           Benes network for an element of Mat24     uint32_t[9]
+// octad         number of an octad, i.e. a Golay code
+//               element of weight 8                       uint32_t
+// op            op_<vector>_<operation> means:
+//               apply <operation> to <vector>
+// op_all        apply operation to all vectors
+// perm          element of Mat24 as a permutation         uint8_t[24]
+// ploop         element of the Parker loop Pl             uint32_t
+// pow           power operator (in Pl)
+// scalar_prod   scalar product (of Golay code and cocode)
+// suboctad      suboctad, see function suboctad_to_cocode
+// syndrome      syndrome (after decoding Golay code)      uint32_t
+// theta         cocycle theta: Pl -> C^* in Parker loop
+// to            <x>_to_<y> means: return representation <y>
+//               of an object given in representation <x>
+// vect          vector in V = GF(2)**24                   uint32_t
+// vintern       vector in V, in internal representation   uint32_t
+// 
+// 
+// Parameters of functions are either integers or arrays of integers.
+// Here all integer types are unsigned and of fixed length, such as
+// uint8_t, uint16_t or uint32_t.
+// 
+// The type of a parameter is given by a single letter in the name
+// of the parameter:
+// 
+// name  meaning                                           type
+// a     array specified in documentation of function      unspecified
+// c     Golay cocode element, represented as 'cocode'     uint32_t
+// m     permutation in Mat24 or automorphism of Pl
+//       represented as a bit matrix                       uint32_t[12]
+// p     permutation in Mat24 represented as 'perm'        uint8_t[24]
+// u_<x> unsigned integer, e.g.                            unspecified
+//        u_exp:   integer denoting an exponent
+//        u_m24:   number of a permutation in Mat24
+//        u_octad: number of octad, 0 < u_octad < 259
+//        u_width: integer denoting a bit width
+// v     vector in V, Golay code C or Parker loop Pl
+//       represented as vect, vintern, gcode or ploop      uint32_t
+// 
+// Integer input parameters have shape u_<x>, e.g. u_m24, u_exp.
+// An integer computed by a function is returned as return value.
+// Input array parameters have a digit as a suffix, e.g.: v1, v2, m1.
+// Output array parameters have the suffix _out, e.g.: p_out.
+// Input/output array parameters  have the suffix _io, e.g.: m_io.
+// 
+// References
+// ----------
+// 
+// See file references.txt
+
+
+
+// We list the basis vectors of the Golay code and of its cocode.
+// 
+// Basis vectors have indices 0,...,11. Each basis vector is displayed
+// as a hexadecimal number with bit i (of valence 2**i) corresponding
+// to component i of the basis vector in GF(2)^24 for i = 0,...,23.
+// Golay cocode vectors are to be understood modulo the Golay code.
+// 
+// Golay cocode basis
+//     000001 000110 001010 010010 100010 000600
+//     000a00 000060 0000a0 000006 00000a 111111
+// Golay code basis
+//     ffffff fff0f0 ff0ff0 f0fff0 0ffff0 aaaa00
+//     666600 c6a0a0 ac6060 6ca00a ca6006 11111e
+
+
+
+/*************************************************************************
+*** Some general bit operations
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_lsbit24(uint32_t v1)
+// Return index of least significant bit of an integer v1.
+// If v1 & 0xffffff is zero then 24 is returned.  
+
+
+
+MAT24_API
+uint32_t mat24_bw24(uint32_t v1)
+// returns the bit weight of the lowest 24 bits of v1
+
+
+
+MAT24_API
+uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
+// Stores the positions of 1-bits of v to the array referred by a_out).
+// 
+// Let w be the bit weight of v & 0xffffff, i.e. number n of bits 
+// of v at positions < 24 equal  to one. Then the ordered bit
+// positions where the corrsponding bit of v is 1 are stored in
+// a_out[0],...,a_out[w-1]. 
+// Then v & 0xffffff has 24 - w zero bits. The ordered list of the
+// positions of these zero bits is stored in a_out[w],...,a_out[23]. 
+// 
+// The function returns w.
+
+
+
+MAT24_API
+uint32_t mat24_extract_b24(uint32_t v1, uint32_t u_mask)
+// Extract the bits of 24-bit vector v1 given by the mask u_mask
+// 
+// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k
+// (in ascending order) then the bit of v1 at position i_j is copied 
+// to the bit at position j of the return value for j = 0,...,k.
+
+
+
+MAT24_API
+uint32_t mat24_spread_b24(uint32_t v1, uint32_t u_mask)
+// Spread the bits of 24-bit vector v1 according to the mask u_mask
+// 
+// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k,
+// (in ascending order) then the bit of v1 at position i is copied 
+// to the bit at position i_j of the return value for j = 0,...,k.
+
+
+
+/*************************************************************************
+*** Conversion between representations of GF(2)**24, Golay code, etc.
+*************************************************************************/
+
+
+
+// The following table MAT24_BASIS contains the used basis of the 
+// Golay cocode (12 bit vectors of type uint32_t) followed by the 
+// used basis of the Golay code (12 bit vectors).
+
+
+
+// The #define macro mat24_def_octad_to_gcode(o) returns the  number 
+// of the Golay code word corresponding to octad o. This is equivalent
+// to mat24_octad_to_gcode(o) without parameter check.
+//
+// The #define macro mat24_def_gcode_to_octad(v) return the number
+// of the octad corresponding to Golay code vector v, with v in 'gcode'
+// representation. It returns garbage if v is not an octad.
+//
+// These macros use the public tables MAT24_OCT_DEC_TABLE and
+// MAT24_OCT_ENC_TABLE.
+
+
+
+// The public table MAT24_THETA_TABLE contains data about the Golay 
+// code. Entry i contains the following information the code word d,
+// (with d = 2*i in 'gcode' representation):
+// Bit 11,...,0:   mat24_ploop_theta(d)
+// Bit 14,...,12:  Bit weight of code word d in GF(2)**24 divided by 4
+// Bit 15:         reserved
+// 
+// We have d**2 = (-1)**<Bit 12 of i> for d = 2*i in the Parker loop.
+
+
+
+MAT24_API
+uint32_t mat24_vect_to_vintern(uint32_t v1)
+// Convert bit vector v1 in GF(2)^24 from vector to vintern rep.
+
+
+
+MAT24_API
+uint32_t mat24_vintern_to_vect(uint32_t v1)
+// Convert bit vector v1 in GF(2)^24 from vintern to vector rep.
+
+
+
+MAT24_API
+uint32_t mat24_vect_to_cocode(uint32_t v1)
+// Return number of Golay cocode element for a vector v1 in GF(2)^24
+
+
+
+MAT24_API
+uint32_t mat24_gcode_to_vect(uint32_t v1)
+// Convert Golay code element number v1 to a vector in GF(2)^24
+
+
+
+MAT24_API
+uint32_t mat24_cocode_to_vect(uint32_t c1)
+// Return vector in GF(2)^24 corresponding to cocode element number 
+// c1. One of 2**12 possible vectors with this property is returned.
+
+
+
+MAT24_API
+uint32_t mat24_vect_to_gcode(uint32_t v1)
+// Return gcode(v1) if v1 is a Golay code word and (uint32_t)(-1) 
+// otherwise.
+// Here 0 <= gcode(v1) < 4096 is the number of a Golay code word.
+
+
+
+MAT24_API
+uint32_t mat24_gcode_to_octad(uint32_t v1)
+// Return octad(v1) if v1 is an octad and (uint32_t)(-1) otherwise.
+// Here 0 <= v1 < 4096 is the number of a Golay code element
+// and 0 <= octad(v1) < 759 is the number of an octad. 
+
+
+
+MAT24_API
+uint32_t mat24_vect_to_octad(uint32_t v1)
+// Return octad(v1) if v1 is an octad and (uint32_t)(-1) otherwise.
+// Here v1 is a vector in GF(2)**24 and
+// 0 <= octad(v1) < 759 is the number of an octad. 
+
+
+
+MAT24_API
+uint32_t mat24_octad_to_gcode(uint32_t u_octad)
+// Return number of Golay code word corresponding to octad u_octad.
+// Return (uint32_t)(-1) if not 0 <= v1 < 759.
+
+
+
+MAT24_API
+uint32_t mat24_octad_to_vect(uint32_t u_octad)
+// Return vector in GF(2)**24 corresponding to octad u_octad.
+// Return (uint32_t)(-1) if not 0 <= u_octad < 759.
+
+
+
+/*************************************************************************
+*** Golay code syndoms and weights
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
+// Same as mat24_syndrome(mat24_cocode_to_vect(c1), u_tetrad).  
+
+
+
+MAT24_API
+uint32_t mat24_syndrome(uint32_t v1, uint32_t u_tetrad)
+// Return Golay code syndrome of word 'v1'.
+//
+// Here 'v1' is an arbitrary word in GF(2)**24. The function 
+// returns a Golay code syndrome of v1 of length at most four.
+// That syndrome is unique if it has langth < 4. If the syndrome
+// has length four then we return the following value:
+//  - A sydnrome with bit 'u_tetrad' set if  0 <= u_tetrad < 24, 
+//  - The value uint32_t(-1)  if  'u_tetrad' == 24.
+// It is illegal to put 'u_tetrad' >= 24.
+
+
+
+MAT24_API
+uint32_t mat24_gcode_weight(uint32_t v1)
+// returns bit weight of Golay code word v1 divided by 4
+//
+// Here 0 <= v1 < 4096 is the number of a Golay code word.
+
+
+
+MAT24_API
+uint32_t mat24_cocode_weight(uint32_t c1)
+// Return minimum possible weight of cocode vector c1.  
+//
+// Here c1 is a cocode vector in cocode representation.
+
+
+
+/*************************************************************************
+*** Scalar product of Golay code and cocode
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
+// Return scalar product (v1,c1) of Golay code and cocode vector
+//
+// v1 is a Golay code vector in 'gcode' representation, c1 is a
+// cocode vector in cocode representation.
+
+
+
+/*************************************************************************
+*** Conversion from and to suboctads
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
+// Convert even suboctad u_sub of octad v1 to cocode representation
+//
+// Each octad v1 has 64 even subsets, when a subset x of v1 is identified
+// with its complement v1 \ x. These subsets are called suboctads.
+// Let b_0,...,b_7 be the elements of the octad v1 in natural order. 
+// Then the even subset (b_0 , b_i)  has suboctad number 2**(i-1) for 
+// i = 1,...,6. Combining suboctads by disjoint union corresponds to 
+// combining their numbers by xor. The empty subocatad has number 0.
+// This yields a 1:1 correspondence between the integers 0,...,63 and
+// the suboctads of a fixed octad v1, when identifying a suboctad with
+// its complement. 
+//
+// The function returns the suboctad of v1 with number u_sub in 'cocode'
+// representation. Octad v1 must be given in 'gcode' representation. The 
+// function returns (uint32_t)(-1) if v1 does not represent an octad.
+
+
+
+MAT24_API
+uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
+// Convert cocode element c1 to suboctad of octad v1.
+//
+// This is an inverse of function mat24_suboctad_to_cocode().
+// The function returns the suboctad number corresponding to the
+// cocode element c1, if v1 is an octad and c1 is an even subset 
+// of v1. c1 and v1 must be given in 'cocode' and 'gcode'
+// representation, respectively. The function returns (uint32_t)(-1)
+// if v1 is not an octad or c1 cannot be represented as an even
+// subset of v1.
+
+
+
+MAT24_API
+uint32_t mat24_suboctad_weight(uint32_t u_sub)
+// Return parity of halved bit weight ofthe even suboctad u_sub
+//    
+// See member function mat24_suboctad_to_cocode for documentation of 
+// suboctads. The function returns 0 is the bit weight of a suboctad 
+// with number u_sub is divisible by four and 1 othewise.
+
+
+
+MAT24_API
+uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
+// Return scalar product of suboctads u_sub1, u_sub2
+//    
+// Here the scalar product is the parity of the vector  u_sub1 & u_sub2 
+// when u_sub1 and u_sub2 are given as subsets of an octad in vector 
+// notation.
+//
+// But in this functions parameters u_sub1, u_sub2 are suboctad 
+// numbers as described in function suboctad_to_cocode.
+
+
+
+/*************************************************************************
+*** Parker Loop
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_ploop_theta(uint32_t v1)
+// returns the theta function for the Parker loop as given in [SPLG]:
+//
+// theta is a quadratic from from the Golay code C to the cocode C*.
+// Here parameter v1 of function theta is represented as a Golay code 
+// word. The result of the function is represented as a Golay cocode 
+// word. The cocycle of the Parker loop is given by:
+//
+//          cocycle(v1,v2) =   scalar_prod(theta(v1), v2)
+//        
+// with  scalar_prod(.,.) the scalar product.
+
+
+
+MAT24_API
+uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
+// Returns the cocycle of the Parker loop.
+//
+// Then the Parker Loop product is given by
+//
+//      v1 (*) v2  =  v1 ^ v2 * (-1)**cocycle(v1, v2) . 
+
+
+
+MAT24_API
+uint32_t mat24_mul_ploop(uint32_t v1, uint32_t v2)
+// Returns the Parker loop product v1 (*) v2
+//
+// Here v1 and v2 are integers coded as follows:
+// bit 0,...,11:   representation as Golay code word
+// bit 12:         Parker loop sign
+// otther bits:    ignored
+
+
+
+MAT24_API
+uint32_t mat24_pow_ploop(uint32_t v1, uint32_t u_exp)
+// Return power v1 ** u_exp of the Parker loop element v1
+//
+// Here mat24_pow_ploop(v1, 3) is the inverse of v1.
+
+
+
+MAT24_API
+uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
+// Return commutator of Golay code word v1 and v2
+//
+// This is 0 if the intersection of the vectors v1 and v2 has
+// bit weight 0 mod 4 and 1 is that intersection has bit weight 
+// 2 mod 4. v1 and v2 are in 'gvect' or 'ploop' representation.
+
+
+
+MAT24_API
+uint32_t mat24_ploop_cap(uint32_t v1, uint32_t v2)
+// Return intersection of two Golay code words as cocode word.
+//
+// v1 and v2 are in 'gvect' or 'ploop' representation, the result
+// is returned in 'cocode' representation.
+
+
+
+MAT24_API
+uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
+// Return associator of Golay code words v1, v2 and v3
+//
+// This the parity of the intersection of the vectors v1, v2 and 
+// v3.  v1, v2 and v3 are in 'gvect' or 'ploop' representation.
+
+
+
+/*************************************************************************
+*** Mathieu group Mat24
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
+// Complete a permutation p given by p_io to an element of  Mat24.
+//
+// p must have length 24. Entries p[i], i = 0,1,2,3,4,5,8 must make 
+// up a valid umbral heptad, i.e. a heptad not contained in an octad.
+// p[0],...,p[5] must be contained in an octad, p[8] must not be 
+// contained in that octad. The other entries of input p are ignored.
+//
+// It can be shown that such a permutation p can be completed to 
+// a unique element of Mat24.
+//
+// The function returns 0 in case of success and a nonzero value
+// otherwise. In case of success, p is completed to an element of
+// the Mathieu group Mat24. 
+
+
+
+MAT24_API
+uint32_t mat24_perm_check(uint8_t *p1)
+// Check if permutation p1 is in in the Mathieu group Mat24.
+//
+// The function returns zero iff this is the case.
+
+
+
+MAT24_API
+uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
+// Try to find a permutation p that maps heptad h1 to h2
+//
+// h1 and h2 are arrays of length 7 defining two umbral heptads,
+// i.e. heptads not contained in an octad. If a permutation p in
+// the Mathieu group Mat24 that maps h1 to h2 exists, it is unique. 
+//
+// The function returns zero and stores p in the array referred by p
+// if such a p has been found. It returns (uint32_t)(-1) otherwise.
+
+
+
+MAT24_API
+uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
+// Return permutation with number u_m24 in the Mathieu group Mat24.
+//
+// The inverse of this function is member function mat24_perm_to_int()
+// This is just a short and convenient way to number elements of Mat24.
+// Input u_m24 = 0 gives the identity permutation.
+//
+//  0 <= u_m24 < 244823040 = order(Mat24) must hold.
+//
+
+
+
+MAT24_API
+uint32_t mat24_perm_to_m24num(uint8_t  *p1)
+// Convert the permutation p1 in the Mathieu group mat24 to an integer.
+//
+// This reverses function mat24_int_to_perm. The result is undefined
+// if p1 is not in Mat24.
+
+
+
+MAT24_API
+void mat24_perm_to_matrix(uint8_t  *p1, uint32_t *m_out)
+// Convert the permutation p1 in the Mathieu group Mat24 to a matrix.
+//
+// The matrix is a 12 x 12 bit matrix acting on the Golay code
+// vectors by right multiplication. It is stored at m_out.
+//
+// Permutation p1 is not checked to be a member of the Mathieu group.
+
+
+
+MAT24_API
+void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
+// Convert Mathieu group element m1 from matrix to permutation.
+//
+// The matrix m1 is a 12 x 12 bit matrix acting on the Golay code
+// vectors by right multiplication. The matrix is not checked.
+//    
+// The output permutation is stored to p_out.
+
+
+
+/*************************************************************************
+*** Mathieu group M24: operation of group elements
+*************************************************************************/
+
+
+
+MAT24_API
+uint32_t mat24_op_vect_perm(uint32_t v1, uint8_t *p1)
+// Apply a permutation p1 to a vector v1 in GF(2)**24
+//
+// Here p1 is the permutation that maps i to p1[i]  for i=0,...,23.
+// The function returns the result v1 * p1.
+
+
+
+MAT24_API
+uint32_t mat24_op_gcode_matrix(uint32_t v1, uint32_t *m1)
+// Apply the 12 x 12 bit matrix m to a Golay code vector
+//
+// The code vector v1 is given in 'gcode' representation.
+// Here application means right multiplication v1 * m1. 
+// The funtion returns the result v1 * m1.
+
+
+
+MAT24_API
+uint32_t mat24_op_gcode_perm(uint32_t v1, uint8_t *p1)
+// Apply a permutation p1 to a Golay code vector v1
+//
+// Here p1 is the permutation that maps i to p1[i], i=0,...,23,
+// representing an element of the Mathieu group M24.
+//
+// Golay code vector v1 is given in gcode representation.
+// The function returns the result v1 * p1.
+
+
+
+MAT24_API
+uint32_t mat24_op_cocode_perm(uint32_t c1, uint8_t *p1)
+// Apply a permutation p to a Golay cocode vector v
+//
+// Here p1 is the permutation that maps i to p1[i], i=0,...,23,
+// representing an element of the Mathieu group M24.
+//
+// Golay cocode vector c1 is given in cocode representation.
+// The function returns the result v1 * c1.
+
+
+
+MAT24_API
+void mat24_mul_perm(uint8_t *p1, uint8_t *p2, uint8_t *p_out)
+// Return p1 * p2 in array p_out
+//
+// p1, p2, p_out  are elements of the  Mathieu group Mat24 
+// represented as permutations.  Any overlap is possible.
+
+
+
+MAT24_API
+void mat24_inv_perm(uint8_t *p1, uint8_t *p_out)
+// Return inverse of p1 in array p_out
+//
+// p1, p_out  are elements of the  Mathieu group Mat24 
+// represented as permutations.  Any overlap is possible.
+
+
+
+/*************************************************************************
+*** Automorphisms of the Parker Loop
+*************************************************************************/
+
+
+
+MAT24_API
+void mat24_autpl_set_qform(uint32_t *m_io)
+// Recompute quadratic form on a Parker loop automorphism  m_io
+//
+// This functions augments the Parker loop automorphism m_io by
+// a quadratic form qf. The form qf simplifies the application
+// of m_io to Parker loop elements and also the multiplication
+// of  Parker loop automorphisms. The quadratic form qf is stored 
+// in bits 13,...,24 of the entries of m_io. 
+
+
+
+MAT24_API
+void mat24_perm_to_autpl(uint32_t c1, uint8_t *p1, uint32_t *m_out)
+// Combine Mat24 and cocode element to Parker loop automorphism
+//
+// Given an element p1 of the Mathieu group Mat24 (in permutation 
+// representation) and a Golay cocode element c1 (in cocode 
+// representation), the function returns a Parker loop automorphism 
+// m_out as a 12 x (12+13) matrix.
+// m_out contains the 12 images of the basis vectors of the Parker loop
+// and a quadratic form for simplfying its operation on Pl.
+// m_out is an array of type uint32_t[12]
+
+
+
+MAT24_API
+void mat24_cocode_to_autpl(uint32_t c1, uint32_t *m_out)
+// Convert cocode element c1 to Parker loop automorphism m_out.
+//
+// Same as perm_to_autpl(c1, p), with p the identity permutation.
+
+
+
+MAT24_API
+void mat24_autpl_to_perm(uint32_t *m1, uint8_t  *p_out)
+// Convert Parker loop automprohism to Mat24 permutation
+// The resulting permutation is stored in p_out.
+
+
+
+MAT24_API
+uint32_t mat24_autpl_to_cocode(uint32_t *m1)
+// Extract cocode vector c from Parker loop automorphism m1
+//
+// Then m1 = perm_to_autpl(c, p), where p is the permutation
+// obtained by calling autpl_to_perm(m1).
+//
+// Note that m1 = cocode_to_autpl(c) *  perm_to_autpl(0, p).
+
+
+
+MAT24_API
+uint32_t mat24_op_ploop_autpl(uint32_t v1, uint32_t *m1)
+// Apply Parker loop automorphism m1 to Parker Loop element v1
+//
+// Here m1 is a Parker loop autmorphism (in autpl representation)
+// and v1 is an element of the Parker loop, encoded as in function
+// mat24_mul_ploop().
+// The function returns the resulting cocode vector  v1 * m1.
+
+
+
+MAT24_API
+void mat24_mul_autpl(uint32_t *m1, uint32_t *m2, uint32_t *m_out)
+// Put m_out = m1 * m2 for Parker loop automorphisms m1, m2
+//
+// Here all automorphisms are in 'autpl' representation.
+
+
+
+MAT24_API
+void mat24_inv_autpl(uint32_t *m1, uint32_t *m_out)
+// Put m_out = m1**(-1) for a Parker loop automorphisms m1
+//
+// Here all automorphisms are in 'autpl' representation.
+
+
+
+MAT24_API
+void mat24_perm_to_iautpl(uint32_t c1, uint8_t *p1, uint8_t *p_o, uint32_t *m_o)
+// Saving some intermediate steps, this is equivalent to:
+//     mat24_inv_perm(p1, p_o);
+//     mat24_perm_to_autpl(c1, p1, m_temp);  
+//     mat24_inv_autpl(m_temp, m_o);
+
+
+
+/*************************************************************************
+*** Auxiliary functions for the Monster group
+*************************************************************************/
+
+
+
+MAT24_API
+void mat24_perm_to_net(uint8_t *p1, uint32_t *a_out)
+// Compute modified Benes network for permutation of 24 entries
+//
+// The network consists of 9 layers. The returned array 'a_out' of 
+// length 9 describes that network. In layer i, entry j is to be
+// exchanged with entry  j + d[i], if bit j of the value a_out[i]
+// is set. Here d[i] = 1,2,4,8,16,8,4,2,1 for i = 0,...,8. In layers 
+// i with d[i] >= 8 we assert that bit j of a_out[i] is set for j < 8
+// only.
+
+
+
+MAT24_API
+void mat24_op_all_autpl(uint32_t *m1, uint16_t *a_out)
+// Auxiliary function for the rep 196884x of the monster.
+// Apply Parker loop automorphism  m1  to all Parker Loop elements.
+// The function computes a table a_out[i], i= 0,...,0x7ff, such  
+// that 2 * (a_out[i] & 0x7ff) is the image m1(2*i) of the Parker 
+// loop element 2*i modulo the center of the Parker loop.
+// Signs are stored in bits 12...14 of a_out[i] as follows:
+// Bit 12: (sign of m1(2*i)) ^ (odd &  P(2*i))
+// Bit 13: (sign of m1(2*i))
+// Bit 14: (sign of m1(2*i)) ^ (bit 0 of m1(2*i))
+// Here odd is 1 iff m1 is an odd automorphism, and P() is the
+// Power map of the Parker loop.
+
+
+
+MAT24_API
+void mat24_op_all_cocode(uint32_t c1, uint8_t *a_out)
+// Auxiliary function for the rep 196884x of the monster.
+// Apply cocode element c1 (interpreted as a Parker loop 
+// automorphism) to all Parker Loop elements.
+// The function computes a table a_out[i], i= 0,...,0x7ff, 
+// containing the signs related to this operation as follows:
+// Bit 0:  (sign of c1(2*i)) ^ (odd &  P(2*i))
+// Bit 1:  (sign of c1(2*i))
+// Bit 2:  same as bit 1
+// Here odd is 1 iff m1 is an odd automorphism, and P() is the
+// power map of the Parker loop.
+// This ia a simplified version of function mat24_op_all_autpl().
+
+
+
