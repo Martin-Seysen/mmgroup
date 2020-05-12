@@ -9,10 +9,11 @@
 
 static void mm_op{P}_xi_mon(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 {
+    // Caution: this uses v_out[MM_OP{P}_OFS_Z:] as temporary storage
     uint_mmv_t *p_src, *p_dest;
     uint_fast32_t i, j;
     uint_fast32_t diff = exp1 ? {OP_XI_TABLE_DIFF} : 0;
-    uint8_t b[2496], *p_b;
+    uint_fast8_t *b =  (uint_fast8_t*)(v_out + MM_OP{P}_OFS_Z), *p_b;
     mm_sub_table_xi_type *p_tables = mm_sub_table_xi[exp1];
     uint16_t *p_perm;
     uint32_t *p_sign;
@@ -112,6 +113,7 @@ void mm_op{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     exp1 =  (uint_mmv_t)exp - {hex:1};
 
     // Do monomial part, i.e. tags B, C, T, X
+    // Caution: this uses v_out[MM_OP{P}_OFS_Z:] as temporary storage
     mm_op{P}_xi_mon(v_in, exp1, v_out);
 
     // Do tag A

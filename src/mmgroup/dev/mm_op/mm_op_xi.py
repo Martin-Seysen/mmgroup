@@ -28,8 +28,8 @@ class MonomialOpTableInfo:
         self.OP_DIFF = op_diff
 
 
-class MonomialOp_xi(MM_Op):
-    """Standard implementation to class MonomialOp_xi
+class MonomialOp_xi_uint8_t(MM_Op):
+    """Standard implementation for class MonomialOp_xi
 
     This is the standard implementation for the monomial cases
     of operation xi.
@@ -57,7 +57,7 @@ class MonomialOp_xi(MM_Op):
     """
 
     def __init__(self, p):
-        super(MonomialOp_xi, self).__init__(p)
+        super(MonomialOp_xi_uint8_t, self).__init__(p)
         self.make_table_info()
         # make tables and directives for code generation
         self.tables.update(self.make_tables())
@@ -82,6 +82,7 @@ class MonomialOp_xi(MM_Op):
         return s;
 
 
+
     def store_bytes(self, bytes, perm, sign, dest, n_bytes):
         s = "uint_mmv_t r0, r1;\n"
 
@@ -96,8 +97,6 @@ class MonomialOp_xi(MM_Op):
             s += "r1 = (%s)[0] >> %s;\n" % (sign, start)
             s += self.gen_mmv_uint_spread("r1", "r1")
             s += "(%s)[%d] = r0 ^ r1;\n" % (dest, i)
-
-
 
         #s +=("// i=%d\n" % i)
         for j in range(i+1, 32 // self.INT_FIELDS):
@@ -144,6 +143,70 @@ class MonomialOp_xi(MM_Op):
             "OP_XI_LOAD": UserDirective(self.load_bytes, "ssi"),
             "OP_XI_STORE": UserDirective(self.store_bytes, "ssssi"),
         }
+
+
+
+class MonomialOp_xi_uint_fast8_t(MonomialOp_xi_uint8_t):
+    """This is a variant of class MonomialOp_xi_uint8_t
+
+    Here the main loop is as in class ``MonomialOp_xi_uint8_t``.
+    But the variable ``b`` may also be integer type.
+ 
+    It might save a *partial register stall* when storing data to a
+    variable of type ``uint_fast8_t`` instead of type ``uint8_t``
+    """
+    n_regs = {1:1, 2:2, 4:2, 8:2, 16:4, 32:4, 64:8}
+
+    def __init__(self, p):
+        super(MonomialOp_xi_uint_fast8_t, self).__init__(p)
+        self.n_registers = self.n_regs[self.INT_FIELDS]
+
+    def load_bytes(self, source, bytes, n_bytes):
+        s = ""
+        n_registers = self.n_registers
+        registers =  ", ".join(["r%d" % i for i in range(n_registers)])
+        s = "uint_mmv_t %s;\n"% registers
+        WIDTH = n_registers * self.FIELD_BITS
+        LOAD_MASK = self.hex(self.smask(self.P, -1, WIDTH))
+        for i, start in enumerate(range(0, n_bytes, self.INT_FIELDS)):
+            s += "r0 =  (%s)[%d];\n" % (source, i)
+            for j in range(1, n_registers):
+                s += "r%d = (r0 >> %d) & %s;\n" % (
+                   j, j * self.FIELD_BITS, LOAD_MASK)
+            s += "r0 &= %s;\n" % LOAD_MASK
+            for j in range(self.INT_FIELDS):
+                if start + j < n_bytes:
+                    s += "(%s)[%d] = r%d >> %d;\n" % (bytes,  start + j, 
+                        j % n_registers, WIDTH * (j // n_registers))
+        return s;
+
+    def store_bytes(self, bytes, perm, sign, dest, n_bytes):
+        s = "uint_mmv_t r0, r1;\n"
+
+        d = ["((uint_mmv_t)(%s[%s[%d]]) << %d)" % (bytes, perm, i, 
+                  self.FIELD_BITS * (i % self.INT_FIELDS)) 
+                  for i in range(n_bytes)
+            ]
+        n_registers = self.n_registers
+
+        for i, start in enumerate(range(0, n_bytes, self.INT_FIELDS)):
+            reg = "r0 = ("
+            d1 = d[start:start+self.INT_FIELDS]
+            M = self.smask(self.P, range(n_registers))
+            while len(d1):
+                hd, d1 = d1[:n_registers], d1[n_registers:]
+                s += reg + "\n  + ".join(hd) + ") & %s;\n" % self.hex(M)
+                reg = "r0 += ("
+                M <<= n_registers * self.FIELD_BITS
+
+            s += "r1 = (%s)[0] >> %s;\n" % (sign, start)
+            s += self.gen_mmv_uint_spread("r1", "r1")
+            s += "(%s)[%d] = r0 ^ r1;\n" % (dest, i)
+
+        #s +=("// i=%d\n" % i)
+        for j in range(i+1, 32 // self.INT_FIELDS):
+            s += "%s[%d] = 0;\n" % (dest,j)
+        return s
 
 
 
@@ -235,28 +298,8 @@ class MonomialOp_xi_alternative(MM_Op):
 
 
  
-                
-#234567890123456789012345678901234567890123456789012345678901234567890
 
-if __name__ == "__main__":
-    print("#include <stdint.h>")
-    print("typedef uint%d_t uint_mmv_t;\n\n" % MM_Op.INT_BITS)
-    primes = [3, 7, 15, 255]
-    for p in primes:
-        for n in [24, 32]:
-            mot = MonomialOp_xi(p)
-            s = """void f_%d_%d(uint_mmv_t *src, uint32_t *signs, uint8_t *b)
-{"""
-            print(s % (p, n)) 
-            print(mot.load_bytes("src", "signs", "b", n))
-            print("}\n")
+MonomialOp_xi =  MonomialOp_xi_uint8_t
 
-    for p in primes:
-        for n in [24, 32]:
-            mot = MonomialOp_xi(p)
-            s = """void g_%d_%d(uint8_t *b, uint16_t *perm, uint_mmv_t *dest)
-{"""
-            print(s % (p, n)) 
-            print(mot.store_bytes("b", "perm", "dest", n))
-            print("}\n")
-         
+
+        
