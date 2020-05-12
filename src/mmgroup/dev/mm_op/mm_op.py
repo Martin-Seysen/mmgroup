@@ -36,7 +36,7 @@ Class ``MM_Op`` also provides the following directives:
   an integer. It is reduced modulo the bit length of ``p``.
   So ``count`` may also be negative. The result of the 
   rotation is written to the variable ``dest`` which should
-  also be of type ``uint_mmv_t``. ``dest`` deaults to ``src``.
+  also be of type ``uint_mmv_t``. ``dest`` defaults to ``src``.
 
 ``MMV_UINT_SPREAD src, dest, value``
   

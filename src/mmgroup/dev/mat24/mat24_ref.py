@@ -1,7 +1,7 @@
 r"""Module ``mat24_ref`` contains the class ``Mat24.`` 
 
 Class ``Mat24`` in module ``mmgroup.dev.mat24.mat24_ref`` is the 
-table-provding class used by the code generator to generate the C 
+table-providing class used by the code generator to generate the C 
 file ``mat24_functions.c``. That C file contains the functionality
 of the python extension ``mmgroup.mat24``.
 Class ``Mat24`` may also be used as a table-providing class for 

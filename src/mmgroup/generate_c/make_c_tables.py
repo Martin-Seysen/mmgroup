@@ -58,7 +58,7 @@ class TableGenerator(object):
  
     Basic idea: We copy a *source* file to the .c file. The source 
     contains directives to enter precomputed tables, code  snippets 
-    or constants into the .c file, and protoypes into the .h file.
+    or constants into the .c file, and prototypes into the .h file.
 
     We copy the content of the *source* file directly to the .c
     file.   In the *source* file we also parse certain directives 
@@ -75,7 +75,7 @@ class TableGenerator(object):
 
         Here ``tables`` is a dictionary of with entries of shape:: 
 
-             name : table .
+             ``name`` : ``table`` .
 
         ``name`` is a string that is a valid python identifier.
         ``table`` is the python object to be referred by
@@ -86,16 +86,16 @@ class TableGenerator(object):
 
         Here ``directives`` is a dictionary of shape::
 
-            function_name : function  .
+            ``function_name`` : ``function``  .
 
-        The function ``function`` a directive is executed when a
-        direcrive of shape::
+        The function ``function`` is executed when a
+        directive of shape::
 
              // %%function_name
 
-        occurs as keyword in a directive in the *soure* file.
-        The following arguments are evaluated and passed to  
-        function ``function``. The function should return a
+        occurs as a directive in the *source* file. The arguments 
+        following the directive are evaluated and passed to the 
+        function ``function``. That function should return a
         string. This string is merged into the output .c file.
 
     :param verbose: 
@@ -656,10 +656,10 @@ class TableGenerator(object):
                of the source.
 
              * Any other string. 
-               Then that string is intepreted as a name of a file
+               Then that string is interpreted as a name of a file
 
              * A list of strings.
-               This is intepreted as a sequence of strings or file names
+               This is interpreted as a sequence of strings or file names
                according to the last two rules. Then the items given by
                the entries of that sequence are concatenated.      
 
@@ -706,7 +706,7 @@ class TableGenerator(object):
         """Create .pxd file 'pxd_file' from last call to generate().
 
         After calling method generate(), all exported functions 
-        preceeded by an ``EXPORT`` directive are collected automatically. 
+        preceded by an ``EXPORT`` directive are collected automatically. 
 
         Method ``generate_pxd`` creates a .pxd file with name ``pxd_file`` 
         that contains information about these exported function.
@@ -729,7 +729,7 @@ class TableGenerator(object):
         :param h_file_name:
 
             Name of the .h file to be placed in the
-            ``cdef extern from`` statment.
+            ``cdef extern from`` statement.
     
         :param source:
      
@@ -784,18 +784,18 @@ def make_doc(source_file, output_file, tables = None):
     of the C functions are dropped.
 
     The source file is processed essentially in the same way as a
-    source file is procesed by an instance of class  ``TableGenerator``.
+    source file is processed by an instance of class  ``TableGenerator``.
 
     If one of the ``TableGenerator`` directives ``EXPORT`` or ``COMMENT``
     is found in the source file then everything of the source file is 
     copied into the  output file up to and including the first comment.
  
-    Here a comment line must begin with ``/*`` (preceeded by white
-    space only) and end with ``*/``, or it must be as sequence of lines
-    containing  ``//`` preceeded by white  space only. 
+    Here a comment line must begin with ``'/*'`` (preceded by white
+    space only) and end with ``'*/'``, or it must be as sequence of lines
+    containing  ``'//'`` preceded by white  space only. 
 
     Parameter ``tables`` is an optional dictionary that plays the same 
-    role as in the constructor of class TableGenerator.
+    role as in the constructor of class ``TableGenerator``.
     """
     def iter_source(source_file):
         if isinstance(source_file, list):
@@ -879,17 +879,17 @@ def c_snippet(source, *args, **kwds):
     passed to to the standard string formatting method ``.format()``,
     with the following exceptions: 
  
-       - A opening curly bracket not followed by a closing one or a 
-         closing curly bracket not preceeded by an opening one is not 
+       - An opening curly bracket not followed by a closing one or a 
+         closing curly bracket not preceded by an opening one is not 
          passed to the formatting method. So we may write the string  
          *source*  almost in usual C syntax, but expressions in curly 
          braces inside a line are passed to the formatting method.
 
-       - A line starting with ``// %%`` is interpreted as in class
-         TableGenerator.
+       - A line starting with ``'// %%'`` is interpreted as in class
+         ``TableGenerator``.
 
        - keyword ``directives`` is reserved for passing a list of
-         directives as in class TableGenerator.
+         directives as in class ``TableGenerator``.
 
     In order to achieve a similar effect as generating C code with::
 

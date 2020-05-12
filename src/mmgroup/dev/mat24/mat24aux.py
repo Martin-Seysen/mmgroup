@@ -9,7 +9,7 @@ table-providing class.
 Class ``MatrixToPerm`` contains a directive that generates highly 
 optimized code for converting a bit matrix acting on a Golay code 
 word to a permutation in the Mathieu group ``Mat_24``. Here we 
-assume the the bit matrix actually encodes an element of the  
+assume the bit matrix actually encodes an element of the  
 Mathieu group; otherwise garbage is returned. The Golay code
 word must be given as an integer in ``gcode`` representation.
 """

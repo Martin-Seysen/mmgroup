@@ -5,13 +5,13 @@ Class ``Mat24Tables`` is a base for class ``Mat24`` in module
 and of (a set of representatives of) the Golay cocode. It also contains 
 tables for fast conversion of a vector in ``V = GF(2)**24`` from the 
 standard to the internal representation and vice versa. That class also 
-contains a table of the syndomes of all ``2048`` odd elements of the 
+contains a table of the syndromes of all ``2048`` odd elements of the 
 cocode. The ``759`` octads, i.e. Golay code word of length ``8`` are 
 numbered from ``0`` to ``758``. Class ``Mat24Tables`` provides tables
 for computing the number of a octad from a Golay code word representing
 an octad and vice versa. 
 
-Calls ``Mat24Tables`` also contains python versions of some C functions
+Class ``Mat24Tables`` also contains python versions of some C functions
 in file ``mat24_functions.c`` using these tables.
 
 """

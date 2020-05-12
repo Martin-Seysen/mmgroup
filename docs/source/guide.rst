@@ -135,14 +135,14 @@ Module ``make_mul_transp``
 Description of the ``mmgroup.mat24_xi`` extension
 =================================================
 
-This extension is used for computing tables containing the monnomial
+This extension is used for computing tables containing the monomial
 part of the operation of the generators :math:`\xi^i, i=1,2`.
 These elements operate monomially on the ``98280`` entries of the 
 representation :math:`\rho_p` with tags ``B``, ``C``, ``T``, and ``X``. 
 One table is generated for each exponent :math:`i`.
 
 Module ``mmgroup.dev.mat24_xi.mat24_xi_ref`` is a pure python 
-subsitute for this extension; but calculating the tables for the
+substitute for this extension; but calculating the tables for the
 generators :math:`\xi^i` with that extension takes a rather long time.
 
 More details will be documented in a future version of this project.
@@ -183,16 +183,16 @@ Description of the ``mmgroup.mm<p>`` extensions
 ===============================================
 
 
-Module ``mmgroup.mm<p>`` implements the rpresentation :math:`\rho_p`
+Module ``mmgroup.mm<p>`` implements the representation :math:`\rho_p`
 for a fixed modulus :math:`p = 2^k-1`. E.g  module ``mmgroup.mm3`` 
 implements :math:`\rho_3`. 
 
 Module ``mmgroup.mm<p>`` is implemented as an extension with 
-``Cython``. The main source file for extension is  ``mmgroup.mm<p>``
+``Cython``. The main source file for the ``mmgroup.mm<p>`` extension
 is the automatically generated file ``mm_op<p>.pyx`` in directory 
-``src.mmgroup.dev.mm_basics``. Each function exported by
-such an extension are in one-to-one correspondence with a certain 
-C function  exported from an automatically generated .c file.
+``src.mmgroup.dev.pxd_files``. Each function exported by such an 
+extension corresponds to a certain C function  exported from an 
+automatically generated .c file.
 
 For reasons of efficiency a dedicated set of C files is generated for 
 each modulus ``p``. Corresponding C files for different moduli are 

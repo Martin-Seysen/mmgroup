@@ -71,7 +71,7 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
 
         cimport <module>
     
-    Here <module> is given by the parmeter ``module``, By default,
+    Here <module> is given by the parameter ``module``, By default,
     ``module`` is constructed from the name ``pxd_file`` of the .
     pxd file.
 
@@ -90,7 +90,7 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
           return ret_
 
     ``<translated_function>`` is the string computed as 
-    ``translate(<function>)``, if the agrument ``translate`` is given.
+    ``translate(<function>)``, if the argument ``translate`` is given.
     Otherwise is ``<translated_function>`` is equal to ``<function>``.
     
     ``<return_type>`` and ``<type1>, <type2>, ...`` must be valid types 
@@ -128,7 +128,7 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
             int <function> (int a, int *b)
       
     This feature releases the GIL (Global Interpreter Lock) when
-    callling the function.
+    calling the function.
     """
     if not module:
         module = os.path.splitext(os.path.basename(pxd_file))[0]

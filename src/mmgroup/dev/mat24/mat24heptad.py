@@ -1,7 +1,7 @@
 r"""Module ``mat24heptad`` contains the class ``HeptadCompleter``
 
 Class ``HeptadCompleter`` is a table-providing class that is used
-for completing a pemutation in the Mathieu group ``Mat_24``.
+for completing a permutation in the Mathieu group ``Mat_24``.
 
 A *heptad* is s subset of seven elements of the set on which that
 Mathieu group acts. Under certain circumstances a mapping from one
@@ -11,8 +11,8 @@ heptad to another heptad can be completed to a unique element of
 function ``mat24_perm_complete_heptad`` in that file which 
 completes a mapping from a fixed heptad to variable heptad. 
 
-Class ``HeptadCompleter`` provides tables used for genrerating
-highy-optimzed code for function ``mat24_perm_complete_heptad``.
+Class ``HeptadCompleter`` provides tables used for generating
+highly-optimized code for function ``mat24_perm_complete_heptad``.
 It also contains a pure-python implementation of that function.
 
 The C function ``mat24_perm_to_m24num`` maps the elements of the 

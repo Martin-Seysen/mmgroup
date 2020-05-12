@@ -76,7 +76,7 @@ obtain these values for any legal ``p`` as in the following example:
        uint32_t modulus_data, p_bits, field_bits;
        // Reject any illegal modulus p
        if (mm_aux_bad_p(p)) return -1;
-       // Load the costants for modulus p to variable modulus_data
+       // Load the constants for modulus p to variable modulus_data
        // %%MMV_LOAD_CONST  p, modulus_data;
        // Load value P_BITS for modulus P to p_bits (using modulus_data)
        p_bits = {MMV_CONST:P_BITS,modulus_data};
@@ -251,7 +251,7 @@ class MM_Basics(object):
 
 
 class MM_Const(MM_Basics):
-    """The basic table-providing class for module ``mmgroup.mm``
+    """This is the basic table-providing class for module ``mmgroup.mm``
 
     The main purpose of this class is to provide the constants 
     defined in class ``MM_Basics, for a variable modulus ``p`` as
@@ -259,9 +259,9 @@ class MM_Const(MM_Basics):
 
     This class provides the directive ``MMV_CONST_TAB`` for generating
     all tables, and the directive ``MMV_LOAD_CONST`` for storing the 
-    table of constants for a spcific modulus ``p`` in an integer 
-    variable. The string foratting function ``MMV_CONST`` can be
-    used for extracting a specific contant from that variable, as 
+    table of constants, for a specific modulus ``p``, in an integer 
+    variable. The string formatting function ``MMV_CONST`` can be
+    used for extracting a specific constant from that variable, as 
     indicated in the example above.
 
     Internally, we use a deBruijn sequence to translate the value ``p``
@@ -269,7 +269,7 @@ class MM_Const(MM_Basics):
     ``MMV_CONST_TAB``. 
 
     Constants not depending on the modulus ``p``, such as ``INT_BITS``, 
-    ``LOG_INT_BITS``, and ``MMV_ENTRIES`` are availabe as attribute of
+    ``LOG_INT_BITS``, and ``MMV_ENTRIES`` are available as attribute of
     class ``MM_Basics``. They can also be coded with the code 
     generator directly via string formatting, e.g.::
 
@@ -291,7 +291,7 @@ class MM_Const(MM_Basics):
     
     Any of the arguments ``value`` and ``fields`` may either be an 
     integer or anything iterable that yields a list of integers. 
-    Then this list is intepreted as a list of bit positions. A bit 
+    Then this list is interpreted as a list of bit positions. A bit 
     of that argument is set if its position occurs in that list and 
     cleared otherwise.
   

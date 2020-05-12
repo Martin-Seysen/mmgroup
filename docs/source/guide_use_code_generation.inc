@@ -6,7 +6,7 @@ arguments ``tables`` and ``directives`` as described in section
 
 There are many tables and directives needed for different purposes. By 
 convention we provide a variety of classes, where each class provides 
-two attributes ``tables`` and ``directives`` providing dictionries of 
+two attributes ``tables`` and ``directives`` providing dictionaries of 
 tables and directives, respectively. These dictionaries  are suitable
 for creating instances of classes ``TableGenerator``. Such classes
 are called *table-providing classes*. Attributes ``tables`` and 

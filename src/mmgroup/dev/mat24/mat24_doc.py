@@ -21,7 +21,7 @@ modules. Therefore we store the binary code for these functions in
 a shared library. For some of these functions there are also
 macros (defined with ``#define``), starting with ``mat24_def_``.
 
-There is a one-to-one correspodence between the functions in
+There is a one-to-one correspondence between the functions in
 ``mat24_functions.c`` and the function exported from the python
 extension ``mmgroup.mat24``, see subsection
 *Mapping C functions to python functions* for details.
@@ -36,9 +36,9 @@ In the following subsections the term *C functions* refers to the
 C functions in file ``mat24_functions.c``. In the documentation, the 
 names of the C functions  are given without the ``mat24_`` prefix.
 The term *API reference* means the main document
-*The mmgroup API reference* of this poject.
+*The mmgroup API reference* of this project.
 
-The Golay code ``C`` and its codode ``C*``
+The Golay code ``C`` and its cocode ``C*``
 .......................................... 
 
 The Mathieu group ``Mat24`` operates as a permutation group on a set 
@@ -67,7 +67,7 @@ The 759 octads are numbered from 0 to 758. They do not form a vector
 space.
 The 2**12 Golay code words are represented as binary numbers 0 to 4095.
 The 2**12 cocode words are represented as binary numbers 0 to 4095.
-A more detailed description is given in the API referrence.
+A more detailed description is given in the API reference.
 
 As usual, binary numbers representing bit vectors are added with the 
 XOR operation ``^``. Unused high bits in input bit vectors are ignored. 
@@ -98,7 +98,7 @@ We implement the following conversion functions::
 Here irrelevant bits of the input are ignored. Function
 ``cocode_to_vect`` returns one of many possible solutions.
 
-In the following functions the input is checked and and the function
+In the following functions the input is checked and the function
 fails in case of an error::
 
     vect_to_gcode, vect_to_octad, gcode_to_octad,
@@ -113,7 +113,7 @@ of failure.
 Function ``syndrome()`` takes a vector ``v and`` calculates its 
 syndrome, which is a vector of minimum weight equivalent to ``v`` 
 modulo the Golay code. Function ``cocode_syndrome()`` takes a 
-``cocode`` representation os a cocode word instead.
+``cocode`` representation of a cocode word instead.
 
 Function ``scalar_prod()`` returns the scalar product of a Golay code
 vector in ``gcode`` and a cocode vector in ``cocode`` representation.
@@ -127,7 +127,7 @@ The Mathieu group Mat24
 This class also contains support for the Mathieu group ``Mat24``.
 An element of ``Mat24`` can be represented in one of the following ways::
 
-  perm:    Representation as a array of length 24 encoding a 
+  perm:    Representation as an array of length 24 encoding a 
            permutation of the integers 0,...,23 as a mapping.
 
   m24num:  Representation as an integer 0 <= i < 244823040. The
@@ -152,7 +152,7 @@ There is a function ``perm_check()`` for checking if an array of
 length 24 really represents an element of the Mathieu group ``Mat24``.
 All other function operating on ``Mat24`` in any way do not check if
 their inputs are really in ``Mat24``. They will output garbage on bad
-input, but they are not suppused to crash.
+input, but they are not supposed to crash.
 
 The easiest way to create a random element of ``Mat24`` is to create 
 a random integer ``0 <= x < 244823040``, and to call function
@@ -222,22 +222,23 @@ The group ``AutPl`` of standard automorphisms of the ``Pl``
 ...........................................................
 
 
-An automorphism of the Parker loop is implemented as an array a
-of twelve 32-bit integers. The lowest 13 bits of a[i] encode the 
-image of the i-th basis vector of the Parker loop. Here the basis
-of Parker loop corresponds to the selected basis of the Golay code, 
-and each basis vector has positive sign.
+An automorphism of the Parker loop is implemented as an array ``a``
+of twelve 32-bit integers. The lowest 13 bits of ``a[i]`` encode 
+the image of the i-th basis vector of the Parker loop. Here the 
+basis of the Parker loop corresponds to the selected basis of the 
+Golay code, and each basis vector has positive sign.
 
-The bits 13,...,24 of the vectors ``a[i]`` encode a quadratic form 
-which faciliates computations in ``AutPl``. A description of the 
-quadratic form is out of the scope of this document. 
+The bits ``13,...,24`` of the vectors ``a[i]`` encode a quadratic 
+form which facilitates computations in ``AutPl``, as described 
+in  section :ref:`implement-autpl-label` in the 
+*Guide for developers*.
 
 This representation of ``AutPl`` is called the ``autpl`` 
 representation. We only use the ``autpl`` representation for 
 elements of ``AutPl``.
 
 Function ``perm_to_autpl(c, p)`` computes an automorphism ``m``
-of the Parker loop created from a element ``p`` of ``Mat24``
+of the Parker loop created from an element ``p`` of ``Mat24``
 (given in ``perm`` representation) and a cocode element ``c`` 
 (given in ``cocode`` representation). If ``m`` is equal to
 the result of ``perm_to_autpl(c, p)``, then we can get back 
@@ -245,7 +246,7 @@ the result of ``perm_to_autpl(c, p)``, then we can get back
 ``c = autpl_to_cocode(m)``. 
 
 Function ``cocode_to_autpl(c)`` is equivalent to function
-``perm_to_autpl(c, p0)``,  where ``p0`` is the the identity 
+``perm_to_autpl(c, p0)``,  where ``p0`` is the identity 
 permutation. Note that::
 
    perm_to_autpl(c, p) = cocode_to_autpl(c) * perm_to_autpl(0, p).   
@@ -274,7 +275,7 @@ They are described in the corresponding function documentation:::
   bw24              bit weight of the lowest 24 bits of an integer
   lsbit24           min(24, least significant bit pos.) for an integer 
   gcode_weight      weight of a Golay code word in 'gtype' representation
-  vect_to_bit_list  given a bit vector in V, it computess the lists of
+  vect_to_bit_list  given a bit vector in V, it computes the lists of
                     the positions of the 0 bits and of the 1 bits of v.
   extract_b24       extract bits from bit vector using a 24-bit mask
   spread_b24        spread bit vector according to a 24-bit mask
@@ -298,10 +299,10 @@ Abbreviations for functions and parameters in this class
 The following list of abbreviations used in names of functions
 allows to infer the action of most functions in this module::
 
-    abbreviation  meaning                                   data type
+    Abbreviation  Meaning                                   Data type
 
     assoc         associator (in Golay code or Parker loop)
-    autpl         autmorphism of the Parker loop Pl         uint32_t[12]
+    autpl         automorphism of the Parker loop Pl        uint32_t[12]
     bw24          bit weight of the lowest 24 bits of an int
     cap           intersection (of Golay code elements)
     cocode        element of Golay cocode C*                uint32_t
@@ -344,7 +345,7 @@ Here all integer types are unsigned and of fixed length, such as
 The type of a parameter is given by a single letter in the name
 of the parameter::
 
-    name  meaning                                           type
+    Name  Meaning                                           Type
     a     array specified in documentation of function      unspecified 
     c     Golay cocode element, represented as 'cocode'     uint32_t
     m     permutation in Mat24 or automorphism of Pl
