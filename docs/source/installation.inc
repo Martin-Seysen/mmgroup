@@ -1,12 +1,17 @@
 
-Dependencies
-------------
 
 The current version of the ``mmgroup`` package is a source distribution that has 
 been tested on a 64-bit Windows platform only. It runs with python 3.6 or higher. 
+The source distribution can be downloaded from
+
+https://github.com/Martin-Seysen/mmgroup . 
+
 The distribution contains a number of extensions written
 in ``C`` which have to be built before use. At present there is no binary 
 distribution for Windows.
+
+Dependencies
+------------
 
 Before you can use this package or build its extensions you should install 
 the following python packages:

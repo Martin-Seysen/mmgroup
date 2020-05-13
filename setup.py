@@ -280,15 +280,19 @@ if on_readthedocs:
 
    
 
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
 setup(
     name = 'mmgroup',    
     version = '0.0.1',    
     license='BSD-2-Clause',
-    description='Construction of the sporadic simple monster group.',
-    long_description='yet to be done',
+    description='Implementation of the sporadic simple monster group.',
+    long_description=read('README.rst'),
     author='Martin Seysen',
     author_email='m.seysen@gmx.de',
-    url='yet unknown',
+    url='https://github.com/Martin-Seysen/mmgroup',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
@@ -305,8 +309,8 @@ setup(
         'Programming Language :: Python',
         #Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        #'Programming Language :: Python :: 3.4',
+        #'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
