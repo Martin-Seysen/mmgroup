@@ -36,35 +36,174 @@ void mm{P}_neg_scalprod_d_i(uint_mmv_t* v)
 
 
 
+// %%IF PERM24_USE_BENES_NET
+
+static void pi24_2048(
+   uint_mmv_t * restrict p_src,
+   uint16_t * restrict p_perm,
+   uint_mmv_t * restrict benes_mask,
+   uint_fast32_t sign_shift,
+   uint_mmv_t * restrict p_dest
+)
+{
+    uint_fast32_t i1;
+    for (i1 = 0; i1 < 2048; i1 += 4) {
+        // %%FOR* i in range(4)
+        uint_mmv_t sgn_perm{i} = p_perm[{i}];
+        uint_mmv_t *ps{i} = p_src + ((sgn_perm{i} & 0x7ff) << {LOG_V24_INTS});
+        // %%PERM24_BENES_DECLARE "v{i}"
+        // %%END FOR
+
+        // %%FOR* i in range(4)
+        // Load 'ps' to temporary variables v{i}0,...
+        // %%PERM24_BENES_LOAD ps{i}, v{i}
+        // %%END FOR
+
+        // %%FOR* i in range(4)
+        sgn_perm{i} >>= sign_shift;  // sign for permutation
+        // Permute and possibly negate data in temp. variables
+        // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm{i}, v{i}
+        // Store temporary variables to 'p_dest'
+        // %%PERM24_BENES_STORE "p_dest + {int: i * V24_INTS}", v{i}
+        // %%END FOR
+
+        p_perm += 4;
+        p_dest += {int: 4 * V24_INTS};
+        }
+}
+
+
+static void pi24_72(
+   uint_mmv_t * restrict p_src,
+   uint16_t * restrict p_perm,
+   uint_mmv_t * restrict benes_mask,
+   uint_mmv_t * restrict p_dest
+)
+{
+    uint_fast32_t i1;
+    for (i1 = 0; i1 < 72; ++i1) {
+        uint_mmv_t sgn_perm = p_perm[i1];
+        uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
+        // The following mask is used by the actual permutation code
+        // %%PERM24_BENES_DECLARE "v"
+
+        sgn_perm >>= 15;  // sign for permutation
+        // Load 'ps' to temporary variables v0,...
+        // %%PERM24_BENES_LOAD ps
+        // Permute and possibly negate data in temp. variables
+        // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm
+        // Store temporary variables to 'p_dest'
+        // %%PERM24_BENES_STORE p_dest
+        p_dest +=  {V24_INTS};      
+        }
+}
+
+// %%ELSE
+
+static void pi24_2048(
+   uint_mmv_t * restrict p_src,
+   uint16_t * restrict p_perm,
+   uint8_t * restrict pf,
+   uint_fast32_t sign_shift,
+   uint_mmv_t * restrict p_dest
+)
+{
+    uint_fast32_t i1;
+    for (i1 = 0; i1 < 2048; ++i1) {
+        uint_mmv_t sgn_perm = p_perm[i1];
+        uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
+
+        sgn_perm >>= sign_shift;  // sign for permutation
+        sgn_perm = -(sgn_perm & 1);
+        // %%FOR i in range(V24_INTS_USED)  
+        // %%IF* i == 0
+        sgn_perm &= {smask:P};
+        // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+        sgn_perm &= {smask:P, range(24 % INT_FIELDS)};
+        // %%END IF
+        p_dest[{i}] = sgn_perm  ^ (
+        // %%JOIN*  " |", ");"
+        // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
+        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+            (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
+        // %%END FOR   #  FOR j2, j_mod
+        // %%END FOR   #  FOR j
+        // %%END FOR   #  FOR i
+        // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+        p_dest[{i}] = 0;
+        // %%END FOR
+        p_dest +=  {V24_INTS};      
+        }
+}
+
+
+static void pi24_72(
+   uint_mmv_t * restrict p_src,
+   uint16_t * restrict p_perm,
+   uint8_t * restrict pf,
+   uint_mmv_t * restrict p_dest
+)
+{
+    uint_fast32_t i1;
+    for (i1 = 0; i1 < 72; ++i1) {
+        uint_mmv_t sgn_perm = p_perm[i1];
+        uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
+
+        sgn_perm >>= 15;  // sign for permutation
+        sgn_perm = -(sgn_perm & 1);
+        // %%FOR i in range(V24_INTS_USED)  
+        // %%IF* i == 0
+        sgn_perm &= {smask:P};
+        // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+        sgn_perm &= {smask:P, range(24 % INT_FIELDS)};
+        // %%END IF
+        p_dest[{i}] = sgn_perm  ^ (
+        // %%JOIN*  " |", ");"
+        // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
+        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+            (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
+        // %%END FOR   #  FOR j2, j_mod
+        // %%END FOR   #  FOR j
+        // %%END FOR   #  FOR i
+        // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+        p_dest[{i}] = 0;
+        // %%END FOR
+        p_dest +=  {V24_INTS};      
+        }
+}
+
+
+// %%END IF
 
 
 
 
 
-//TODO: Adjust this to new function mat24_op_all_autpl!!!
+
 
 // %%EXPORT
 void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_out)
 {
     uint_fast32_t i;
     uint_mmv_t *a_src[3], *a_dest[3];
-    uint16_t *p_perm;
+    uint16_t *p_perm = p_op->tbl_perm24_big;
 
     // %%IF PERM24_USE_BENES_NET
-    uint_mmv_t benes_mask[{PERM24_BENES_MASK_LEN}]; 
+    uint_mmv_t small_perm[{PERM24_BENES_MASK_LEN}]; 
 
     // Prepare mask array from Benes network
-    // %%PERM24_BENES_PREPARE "p_op->benes_net", benes_mask
+    // %%PERM24_BENES_PREPARE "p_op->benes_net", small_perm
     // %%ELSE
-    // The following array will store an version of that permutation 
+    // The following array will store a version of the permutation 
     // optimized for fast operation on a vector of 24 small integers: 
-    uint8_t pf[48];
+    uint8_t small_perm[48];
     {
         uint_fast8_t i, j;
         for(i = 0; i < 24; ++i) {
             j = p_op->perm[i];
-            pf[j+j] = (i >> {LOG_INT_FIELDS});
-            pf[j+j+1] = (i & {hex:INT_FIELDS-1}) << {LOG_FIELD_BITS};
+            small_perm[j+j] = (i >> {LOG_INT_FIELDS});
+            small_perm[j+j+1] 
+                   = (i & {hex:INT_FIELDS-1}) << {LOG_FIELD_BITS};
         }
     }    
     // %%END IF
@@ -83,129 +222,10 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
         a_dest[2] = v_out + MM_OP{P}_OFS_Y;
     }
 
-    p_perm  = p_op->tbl_perm24_big;
-   
-    // %%IF* PERM24_USE_BENES_NET
+    for (i = 0; i < 3; ++i) 
+        pi24_2048(a_src[i], p_perm, small_perm, i + 12, a_dest[i]);
+    pi24_72(v_in, p_perm + 2048, small_perm, v_out);
 
-    for (i = 0; i < 3; ++i)  {
-         uint_fast32_t i1;
-         // %%PERM24_BENES_DECLARE "v0_next"
-         // %%PERM24_BENES_DECLARE "v1_next"
-         uint_mmv_t sgn_perm0_next = p_perm[0];
-         uint_mmv_t sgn_perm1_next = p_perm[1];
-         uint_mmv_t *ps0 = a_src[i] 
-                        + ((sgn_perm0_next & 0x7ff) << {LOG_V24_INTS});
-         uint_mmv_t *ps1 = a_src[i] 
-                        + ((sgn_perm1_next & 0x7ff) << {LOG_V24_INTS});
-         // Load 'ps' to temporary variables v_next0,...
-         // %%PERM24_BENES_LOAD ps0, v0_next
-         // %%PERM24_BENES_LOAD ps1, v1_next
-
-         for (i1 = 0; i1 < 2048; i1 += 2) {
-            // %%PERM24_BENES_DECLARE "v0"
-            // %%PERM24_BENES_DECLARE "v1"
-            uint_mmv_t *p_dest = a_dest[i] + (i1 <<  {LOG_V24_INTS});
-            uint_mmv_t sgn_perm0 = sgn_perm0_next >> (i + 12);
-            uint_mmv_t sgn_perm1 = sgn_perm1_next >> (i + 12);
-            sgn_perm0_next = p_perm[i1+2];
-            sgn_perm1_next = p_perm[i1+3];
-            ps0 = a_src[i] + ((sgn_perm0_next & 0x7ff) << {LOG_V24_INTS});
-            ps1 = a_src[i] + ((sgn_perm1_next & 0x7ff) << {LOG_V24_INTS});
-
-            // Load temporary variables v00,...  ,  v10,...
-            // %%PERM24_BENES_COPY v0_next, v0
-            // %%PERM24_BENES_LOAD ps0, v0_next
-            // %%PERM24_BENES_COPY v1_next, v1
-            // %%PERM24_BENES_LOAD ps1, v1_next
-
-            // Permute and possibly negate data in temp. variables v00...
-            // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm0, v0
-            // Store temporary variables to 'p_dest'
-            // %%PERM24_BENES_STORE p_dest, v0
-
-            // Permute and possibly negate data in temp. variables v10...
-            // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm1, v1
-            // Store temporary variables to 'p_dest'
-            p_dest += {V24_INTS};
-            // %%PERM24_BENES_STORE p_dest, v1
-        }       
-    }    
-    // %%ELSE      #  IF* PERM24_USE_BENES_NET
-    for (i = 0; i < 3; ++i)  {
-        uint_fast32_t i1;
-        for (i1 = 0; i1 < 2048; ++i1) {
-            uint_mmv_t sgn_perm = p_perm[i1];
-            uint_mmv_t *ps = a_src[i] + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
-            uint_mmv_t *p_dest = a_dest[i] + (i1 <<  {LOG_V24_INTS});
-            sgn_perm >>= (i + 12);  // sign for permutation
-            sgn_perm = -(sgn_perm & 1);
-            // %%FOR i in range(V24_INTS_USED)  
-            // %%IF* i == 0
-            sgn_perm &= {smask:P};
-            // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
-            sgn_perm &= {smask:P, range(24 % INT_FIELDS)};
-            // %%END IF
-            p_dest[{i}] = sgn_perm  ^ (
-            // %%JOIN*  " |", ");"
-            // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
-            // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
-                (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
-            // %%END FOR   #  FOR j2, j_mod
-            // %%END FOR   #  FOR j
-            // %%END FOR   #  FOR i
-
-            // %%FOR* i in range(V24_INTS_USED, V24_INTS)
-            p_dest[{i}] = 0;
-            // %%END FOR   #  FOR i
-        }        
-    }    
-    // %%END IF     #  IF* PERM24_USE_BENES_NET
-
-    {
-        uint_fast32_t i1;
-        uint16_t *p_perm  = p_op->tbl_perm24_big +  2048;
-        uint_mmv_t *p_src = v_in +  MM_OP{P}_OFS_A;
-        uint_mmv_t *p_dest = v_out +  MM_OP{P}_OFS_A;
-        for (i1 = 0; i1 < 72; ++i1) {
-            // %%IF* PERM24_USE_BENES_NET
-            // The following mask is used by the actual permutation code
-            // %%PERM24_BENES_DECLARE "v"
-            // %%END IF
-            uint_mmv_t sgn_perm = p_perm[i1];
-            uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << {LOG_V24_INTS});
-            
-            sgn_perm >>= 15;  // sign for permutation
-            // %%IF PERM24_USE_BENES_NET
-            // Load 'ps' to temporary variables v0,...
-            // %%PERM24_BENES_LOAD ps
-            // Permute and possibly negate data in temp. variables
-            // %%PERM24_BENES_PERMUTE benes_mask, sgn_perm
-            // Store temporary variables to 'p_dest'
-            // %%PERM24_BENES_STORE p_dest
-            // %%ELSE
-            sgn_perm = -(sgn_perm & 1);
-            // %%FOR i in range(V24_INTS_USED)  
-            // %%IF* i == 0
-            sgn_perm &= {smask:P};
-            // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
-            sgn_perm &= {smask:P, range(24 % INT_FIELDS)};
-            // %%END IF
-            p_dest[{i}] = sgn_perm  ^ (
-            // %%JOIN*  " |", ");"
-            // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
-            // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
-                (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
-            // %%END FOR   #  FOR j2, j_mod
-            // %%END FOR   #  FOR j
-            // %%END FOR   #  FOR i
-            // %%FOR* i in range(V24_INTS_USED, V24_INTS)
-            p_dest[{i}] = 0;
-            // %%END FOR
-            // %%END IF
-            p_dest +=  {V24_INTS};      
-        }
-        
-    }    
 
     // Step 2: do rows with 64 entries // TODO: comment properly!!!!
     {
