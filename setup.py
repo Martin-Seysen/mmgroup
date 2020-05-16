@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import os
+import re
 import subprocess
 import numpy as np
 from glob import glob
@@ -91,6 +92,37 @@ def extend_path():
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
+####################################################################
+# Set path for shared libraries in linux
+####################################################################
+
+if not on_readthedocs and os.name == "posix":    
+    old_ld_path = os.getenv("LD_LIBRARY_PATH")
+    old_ld_path = old_ld_path + ";" if old_ld_path else ""
+    new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
+    os.environ["LD_LIBRARY_PATH"] =  old_ld_path + new_LD_LIBRARY_PATH 
+
+
+####################################################################
+# Add extensions and shared libraries to package data
+####################################################################
+
+
+if os.name in ["nt"]:
+    extension_wildcards =  ["*.pyd", "*.dll"]     
+elif os.name in ["posix"]:
+    extension_wildcards =  ["*.so"]  
+else:   
+    extension_wildcards =  []  
+
+
+package_data = {
+        # If any package contains *.txt or *.rst files, include them:
+        "mmgroup": extension_wildcards
+}
+
+
+
 
 ####################################################################
 # Desription of the list 'mat24_presteps'.
@@ -108,6 +140,9 @@ on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 # interpreted as a function to be called with the arguments
 # given by the subsequent entries of that list.
 ####################################################################
+
+
+
 
 
 pyx_sources = [
@@ -132,6 +167,22 @@ mat24_presteps = CustomBuildStep("Starting code generation",
 
 
 
+if on_readthedocs:
+    shared_libs_stage1 = shared_libs_stage2 = []
+elif os.name in ["nt"]:
+    shared_libs_stage1 = ["libmmgroup_mat24"]
+    shared_libs_stage2 = shared_libs_stage1 + [
+                "libmmgroup_mm_basics"]
+elif os.name in ["posix"]:
+    shared_libs_stage1 = ["mmgroup_mat24"]
+    shared_libs_stage2 = shared_libs_stage1 + [
+                "mmgroup_mm_basics"]
+else:
+    raise DistutilsPlatformError(
+        "I don't know how to build to the shared libraries "
+        "in the '%s' operating system" % os.name
+    )
+
 
 mat24_shared = SharedExtension(
     name = "mmgroup.mmgroup_mat24", 
@@ -154,12 +205,11 @@ mat24_extension = Extension("mmgroup.mat24",
         #libraries=["m"] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, C_DIR ],
-        libraries = ["libmmgroup_mat24"], 
+        libraries = shared_libs_stage1, 
         #runtime_library_dirs = ["."],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
 )
-
 
 mat24_xi_extension = Extension("mmgroup.mat24_xi",
         sources=[
@@ -169,11 +219,12 @@ mat24_xi_extension = Extension("mmgroup.mat24_xi",
         #libraries=["m"] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, C_DIR ],
-        libraries = ["libmmgroup_mat24"], 
+        libraries = shared_libs_stage1, 
         #runtime_library_dirs = ["."],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
-    )
+)
+
 
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
   [sys.executable, "codegen_mm.py"],
@@ -188,7 +239,7 @@ mm_shared =  SharedExtension(
           "mm_tables.c","mm_tables_xi.c",
         ]
     ],    
-    libraries = ["libmmgroup_mat24"], 
+    libraries = shared_libs_stage1, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
@@ -203,7 +254,7 @@ mm_extension = Extension("mmgroup.mm",
     #libraries=["m"] # Unix-like specific
     include_dirs = [ C_DIR ],
     library_dirs = [ PACKAGE_DIR, C_DIR ],
-    libraries = ["libmmgroup_mm_basics", "libmmgroup_mat24"], 
+    libraries = shared_libs_stage2, 
             # for openmp add "libgomp" 
     #runtime_library_dirs = ["."],
     extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -253,7 +304,7 @@ for p in PRIMES:
             #libraries=["m"] # Unix-like specific
             include_dirs = [ C_DIR ], 
             library_dirs = [PACKAGE_DIR, C_DIR ],
-            libraries = ["libmmgroup_mm_basics", "libmmgroup_mat24"], 
+            libraries = shared_libs_stage2, 
                 # for openmp add "libgomp" 
             #runtime_library_dirs = ["."],
             extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -331,7 +382,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-         'numpy', 'scipy', 
+         'numpy',
     ],
     extras_require={
         # eg:
@@ -339,18 +390,34 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     setup_requires=[
-        'numpy', 'scipy', 'pytest-runner', 'Cython',
+        'numpy', 'scipy', 'pytest-runner', 'cython',
         # 'sphinx',  'sphinxcontrib-bibtex',
     ],
     tests_require=[
-        'pytest',
+        'pytest', 'scipy', 
     ],
     cmdclass={
         'build_ext': BuildExtCmd,
     },
     ext_modules = ext_modules,
+    package_data = package_data,
     include_dirs=[np.get_include()],  # This gets all the required Numpy core files
 )
+
+
+if not on_readthedocs and os.name == "posix":    
+    if "bdist_wheel" in sys.argv:
+        PROJECT_NAME = r"mmgroup"
+        SUFFIX_MATCH = r"[-0-9A-Za-z._]+linux[-0-9A-Za-z._]+\.whl"
+        DIST_DIR = "dist"
+        w_match = re.compile(PROJECT_NAME + SUFFIX_MATCH)
+        wheels = [s for s in os.listdir(DIST_DIR) if w_match.match(s)]
+        for wheel in wheels:
+            wheel_path = os.path.join(DIST_DIR, wheel)
+            args = ["auditwheel", "-v", "repair", wheel_path]
+            print(" ".join(args))
+            subprocess.call(args)
+
 
 
 

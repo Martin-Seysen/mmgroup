@@ -439,14 +439,19 @@ class  BuildExtCmd(_build_ext):
         """ 
         compiler = self.compiler_name
         if os.name == "posix":
-            pass 
+            if compiler == 'unix':
+                make_so_posix_gcc(self, ext)
+            else:
+                raise DistutilsPlatformError(
+                  "I don't know how to build a posix shared library "
+                  "with the '%s' compiler" % compiler)
         elif os.name == "nt":
             if compiler == 'mingw32':
                 make_dll_nt_mingw32(self, ext)
             else:
                 raise DistutilsPlatformError(
                   "I don't know how to build a Windows DLL "
-                  "with the '%s' compiler" % compilier)
+                  "with the '%s' compiler" % compiler)
         else:
             raise DistutilsPlatformError(
                   "I don't know how to build a shared library "
@@ -552,7 +557,7 @@ def make_dll_nt_mingw32(cmd, ext):
 
     # Link
     largs = link_args[:] + objects 
-    for inc_dir in ext.include_dirs:
+    for inc_dir in ext.library_dirs:
         # same search path for include files an libraries
         largs.append("-L" + inc_dir)
     for library in ext.libraries: 
@@ -579,6 +584,61 @@ def make_dll_nt_mingw32(cmd, ext):
 
     #Todo: copy dll to build path if requested
     
+
+
+def make_so_posix_gcc(cmd, ext):
+    """Create a posix shared library with gcc"""
+    compile_args = [ "-c", "-Wall"] + ext.extra_compile_args 
+    for ipath in ext.include_dirs:
+        compile_args.append("-I" + os.path.realpath(ipath))
+    link_args = ["-shared",  "-Wall"] + ext.extra_link_args 
+    objects = []
+
+    # add define macros
+    for name, value in ext.define_macros:
+        if value is None:
+            compile_args.append("-D" + name)
+        else:
+            compile_args.append("-D" + name + "=" + value)
+
+    # add undef macros
+    for name in ext.undef_macros:
+        compile_args.append("-U" + name)
+
+    # Compile sources and add objects to list 'objects'
+    for source in ext.sources:
+        args = compile_args[:] + ["-fPIC"]
+        args.append(os.path.realpath(source))
+        args.append("-o")
+        obj = os.path.realpath(os.path.splitext(source)[0] + ".o")
+        args.append(obj)
+        objects.append(obj)
+        print("gcc " + " ".join(args))
+        subprocess.call(["cc"] + args) 
+
+    # Link
+    largs = link_args[:] + objects 
+    for inc_dir in ext.library_dirs:
+        # same search path for include files an libraries
+        largs.append("-L" + inc_dir)
+    for library in ext.libraries: 
+        largs.append("-l" + library )
+    dll_name = cmd.get_shared_ext_filename(ext.name).split("/")
+    dll_name[-1] =  "lib" + dll_name[-1]  
+    dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
+    largs +=  ["-o",  dll_path ]
+    subprocess.call(["cc"] + largs) 
+
+    print("removing object files...")
+    for obj in objects:
+        os.remove(obj)
+    print(dll_path + "\nhas been generated.\n")
+
+    #Todo: copy dll to build path if requested
+    
+
+
+
 
 
 

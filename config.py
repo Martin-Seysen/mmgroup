@@ -7,7 +7,7 @@ from collections import defaultdict
 ###############################################################################
 # Set NATIVE = True for a version optimized for your PC
 # Set NATIVE = False for a generic version
-NATIVE = True
+NATIVE = False
 
 ###############################################################################
 # Bit length of an integer used in the representation of the monster 
