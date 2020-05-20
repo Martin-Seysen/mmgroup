@@ -22,6 +22,12 @@ Directory structure
 .. include:: guide_directory.inc
 
 
+Installation from a source distribution
+=======================================
+
+
+.. include:: installation_from_source.inc
+
 
 The build process
 =================
