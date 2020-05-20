@@ -771,8 +771,37 @@ def eval_codegen_assign(tables, expression):
     return name, safe_eval(value, tables)
     
  
-codegen_assign_for = re.compile(r"\s*([,\w\s]+)\s+in\s+(.+)$")
 
+
+def eval_codegen_m(tables, expression, match_pattern, name):
+    """Evaluate 'expression' in a 'FOR' or "WITH" directive.
+
+    Here 'expression'  must "match_pattern" which is of shape 
+
+        '<name> in <value>'    or '<name> = <value>' 
+
+    and <value> is evaluated to a python object <py_value> which 
+    should be iterable. 
+
+    'tables' is a list of local variables used for evaluating the
+    expression. 
+
+    The function returns the pair (<name>, <py_value>).
+    """ 
+    try:
+        names, value = match_pattern.match(expression).groups()
+        names = tuple(s.strip() for s in names.split(","))
+        for s in names: 
+            assert s[:1].isalpha()
+        assert len(names) > 0
+        if len(names) == 1: 
+            names = names[0]
+    except:
+        err = "Syntax error in %d directive in code generator"
+        raise TypeError(err % name) 
+    return names, safe_eval(value, tables)
+
+codegen_assign_for = re.compile(r"\s*([,\w\s]+)\s+in\s+(.+)$")
 
 def eval_codegen_for(tables, expression):
     """Evaluate 'expression' in a 'FOR' directive.
@@ -789,17 +818,28 @@ def eval_codegen_for(tables, expression):
 
     The function returns the pair (<name>, <py_value>).
     """ 
-    try:
-        names, value = codegen_assign_for.match(expression).groups()
-        names = tuple(s.strip() for s in names.split(","))
-        for s in names: 
-            assert s[:1].isalpha()
-        assert len(names) > 0
-        if len(names) == 1: 
-            names = names[0]
-    except:
-        raise TypeError("Syntax error in FOR directive in code generator") 
-    return names, safe_eval(value, tables)
+    return eval_codegen_m(tables, expression, codegen_assign_for, "FOR")
+
+codegen_assign_with = re.compile(r"\s*([,\w\s]+)=(.+)$")
+
+def eval_codegen_with(tables, expression):
+    """Evaluate 'expression' in a 'WITH' directive.
+
+    Here 'expression'  must be a string of the form 
+
+        <name> = <value>
+
+    and <value> is evaluated to a python object  <py_value>. If 
+    <name> is a tuple of names then <value> should evaluate to
+    a tuple <py_value> of the same length. 
+
+    The function returns the pair (<name>, <py_value>). Operation
+    is similar to function eval_codegen_for().
+    """ 
+    return eval_codegen_m(tables, expression, 
+        codegen_assign_with, "WITH")
+
+
 
 
 codegen_assign_if = re.compile(r"\s*(IF\s+)?(.+)$")

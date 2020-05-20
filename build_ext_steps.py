@@ -617,7 +617,7 @@ def make_so_posix_gcc(cmd, ext):
         subprocess.call(["cc"] + args) 
 
     # Link
-    largs = link_args[:] + objects 
+    largs = link_args[:] + ext.extra_link_args + objects 
     for inc_dir in ext.library_dirs:
         # same search path for include files an libraries
         largs.append("-L" + inc_dir)

@@ -279,6 +279,28 @@ r"""The C code generator generates code from a source file automatically.
         the form ``python_table[i]`` as before. ``python_table[:]`` 
         evaluates to  the whole table as before.
 
+     * ``WITH``  <variable> = <value>
+        Temporarily assign  <value> to <variable>. A sequence of 
+        arbitrary lines follows, terminated by an ``END WITH`` 
+        directive. Both, <variable> and <value>, may be tuples of 
+        equal length; a nested tuple <variable> is illegal. 
+        The <variable>, or the variables contained in the tuple
+        <variable>, are temporarily added to the dictionary ``names`` 
+        as keys, to that they can be used via string formatting.
+
+        Nesting of WITH and other directives is possible. 
+  
+        Example::   
+
+          // %WITH square, cube = int((x+1)**2), int((x+1)**3)
+          i += {cube} + {square} + {x};
+          // %%END WITH
+
+        Assuming ``x`` has value ``9``, this evaluates to::
+
+          i += 1000 + 100 + 9;
+         
+            
 
 
 

@@ -29,13 +29,19 @@ EXTRA_COMPILE_ARGS = defaultdict(list)
 # Here 'compiler' is a string. For a list of available compilers, run:
 #     python setup.py build_ext --help-compiler
 
-mingw32_args =  ["-m64", "-Ofast", "-flto", "-funroll-loops"]
+mingw32_compile_args =  ["-m64", "-Ofast", "-flto", "-funroll-loops"]
+unix_compile_args = ["-static-libgcc",  
+             "-Ofast", "-flto", "-funroll-loops"
+            ]
 if NATIVE:
-     mingw32_args.append("-march=native") 
+     mingw32_compile_args.append("-march=native") 
+     unix_compile_args.append("-march=native") 
 
 EXTRA_COMPILE_ARGS.update({
-    'mingw32' : mingw32_args,
+    'mingw32' : mingw32_compile_args,
+    'unix' : unix_compile_args,
 })
+
 
 ###############################################################################
 # Extra link arguments for .c files to be used in setup.py
@@ -44,6 +50,12 @@ EXTRA_LINK_ARGS = defaultdict(list)
 # the EXTRA_LINK_ARGS dictionary with a list of pairs
 #     compiler : <list of options> .
 
+
+unix_link_args = ["-static-libgcc"]
+
+EXTRA_LINK_ARGS.update({
+    'unix' : unix_link_args,
+})
 
 ###############################################################################
 # Directories
