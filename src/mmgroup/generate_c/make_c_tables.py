@@ -42,6 +42,7 @@ from mmgroup.generate_c.generate_functions import named_table
 from mmgroup.generate_c.generate_functions import eval_codegen_args
 from mmgroup.generate_c.generate_functions import eval_codegen_table
 from mmgroup.generate_c.generate_functions import eval_codegen_for
+from mmgroup.generate_c.generate_functions import eval_codegen_with
 from mmgroup.generate_c.generate_functions import eval_codegen_else
 from mmgroup.generate_c.generate_functions import SaveDictFor
 from mmgroup.generate_c.generate_functions import safe_eval
@@ -104,7 +105,7 @@ class TableGenerator(object):
     """
 
     m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)(\*|\b)(.*)?")
-    block_kwds = set(["FOR", "IF"])
+    block_kwds = set(["FOR", "IF", "WITH"])
     ILLEGAL_INSIDE_BLOCK = "%s directive is illegal inside a codegen block"
 
 
@@ -151,9 +152,10 @@ class TableGenerator(object):
              "COMMENT":      self.comment,
              "PY_DOCSTR":    self.docstr,
              "PYX":          self.pyx,
-             "FOR":          self.loop_for,
+             "FOR":          self.block_for,
+             "WITH":         self.block_with,
              "JOIN":         self.do_join,
-             "IF":           self.loop_if,
+             "IF":           self.block_if,
         } )
         self.directives.update(builtin_directives)
 
@@ -163,7 +165,7 @@ class TableGenerator(object):
         self.export_kwd = ""
         self.args = ()       # positional arguments passed to formatting
                              # function, not used for C files
-        self.loop_stack = [] # stack for loop keywords such as FOR, IF, ..
+        self.block_stack = [] # stack for loop keywords such as FOR, IF, ..
 
         self.source_name = None  # name of C skeleteon file
         self.current_line = ""
@@ -214,7 +216,7 @@ class TableGenerator(object):
 
     def use_table(self, args, *_):
         """built-in function USE_TABLE"""
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "USE_TABLE")
         self.use_table_pending = 1 + self.export_pending
         self.export_pending = 0
@@ -223,7 +225,7 @@ class TableGenerator(object):
 
     def export_table(self, args, *_): 
         """built-in function EXPORT_TABLE"""
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "EXPORT_TABLE")
         self.use_table_pending = 2
         self.export_pending = 0
@@ -238,7 +240,7 @@ class TableGenerator(object):
 
     def export_(self, args, *_):
         """built-in function EXPORT"""
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "EXPORT")
         self.export_pending = True
         self.pxd_export_pending = len(args) and 'p' in args
@@ -247,7 +249,7 @@ class TableGenerator(object):
     def set_export(self, args, *_):
         """built-in function SET_EXPORT, deprecated!!!!"""
         raise ValueError("Function no longer supported")
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "SET_EXPORT")
         #args = format_line(args, self.names, self.args)
         args = tuple(s.strip() for s in args.split("=")) 
@@ -265,7 +267,7 @@ class TableGenerator(object):
 
     def gen(self, args, *_):
         """built-in function GEN"""
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "GEN")
         arg = direct_single_arg(args, "GEN") 
         self.gen_h =  arg.find('h') >= 0
@@ -276,7 +278,7 @@ class TableGenerator(object):
 
     def pyx(self, args, *_):
         """built-in function PYX"""
-        if len(self.loop_stack):
+        if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "PYX")
         #args = format_line(args, self.names, self.args)
         self.pxd_entries.append("# PYX " + args.strip())
@@ -295,7 +297,7 @@ class TableGenerator(object):
 
 
 
-    def parse_loop(self, kwd, source):
+    def parse_block(self, kwd, source):
         """General parser for reading a block from the source 
 
         Block must nested in the form:
@@ -341,7 +343,7 @@ class TableGenerator(object):
         out_source = []
         for l in source:
             if self.verbose:
-                level = len(self.loop_stack) + len(kwd_stack) 
+                level = len(self.block_stack) + len(kwd_stack) 
                 print("%d. %s" % (level, l), end = "")
             out_source.append(l)
             m = self.m_kwd.match(l)
@@ -376,14 +378,14 @@ class TableGenerator(object):
             c_out[-1] = suffix
 
 
-    def loop_for(self, args, quiet, source):
+    def block_for(self, args, quiet, source):
         """built-in function FOR"""
         local_vars, arg_list = eval_codegen_for(self.names, args)
-        c_out, source, end_comment = self.parse_loop("FOR", source)
+        c_out, source, end_comment = self.parse_block("FOR", source)
         if quiet:
-             c_out, end_comment = [], []
+            c_out, end_comment = [], []
         save_names = SaveDictFor(self.names, local_vars)
-        self.loop_stack.append("FOR")
+        self.block_stack.append("FOR")
         if self.join_pending:
             self.do_for_with_join(arg_list, source, save_names, c_out)
             self.join_pending = False
@@ -392,7 +394,22 @@ class TableGenerator(object):
                 save_names.set_local(entry) # enter entry into self.names
                 for c_out1, _ in self.iter_generate_lines(iter(source)):
                     c_out.append(c_out1)
-        self.loop_stack.pop()
+        self.block_stack.pop()
+        save_names.restore()   # restore self.names
+        return "".join(c_out + end_comment) , ""
+
+    def block_with(self, args, quiet, source):
+        """built-in function WITH"""
+        local_vars, values = eval_codegen_with(self.names, args)
+        c_out, source, end_comment = self.parse_block("WITH", source)
+        if quiet:
+            c_out, end_comment = [], []
+        save_names = SaveDictFor(self.names, local_vars)
+        self.block_stack.append("WITH")
+        save_names.set_local(values) # enter entry into self.names
+        for c_out1, _ in self.iter_generate_lines(iter(source)):
+            c_out.append(c_out1)
+        self.block_stack.pop()
         save_names.restore()   # restore self.names
         return "".join(c_out + end_comment) , ""
 
@@ -404,17 +421,17 @@ class TableGenerator(object):
 
 
 
-    def parse_loop_if(self, args, source):
+    def parse_block_if(self, args, source):
         """Parser for reading an IF block from the source
 
-        This is a variant of method parse_loop() that also processes
+        This is a variant of method parse_block() that also processes
         the 'ELSE' statementd appropriately.
 
         The function returns a triple
 
             (prefix_lines, code_lines, postfix_lines)
 
-        similar to method parse_loop(). List 'code_lines' contains
+        similar to method parse_block(). List 'code_lines' contains
         only the lines not excluded by IF or ELSE clauses. List
         'prefix_lines' contains the ELSE clause after which valid
         lines follow (if any).
@@ -426,7 +443,7 @@ class TableGenerator(object):
         else_done = condition = bool(safe_eval(args, self.names))
         for l in source:
             if self.verbose:
-                level = len(self.loop_stack) + len(kwd_stack) 
+                level = len(self.block_stack) + len(kwd_stack) 
                 print("%d. %s" % (level, l), end = "")
             new_condition = condition
             m = self.m_kwd.match(l)
@@ -462,15 +479,15 @@ class TableGenerator(object):
         raise TypeError("Missing END IF directive in codegen")
 
 
-    def loop_if(self, args, quiet, source):
+    def block_if(self, args, quiet, source):
         """built-in function IF"""
-        c_out, source, end_comment = self.parse_loop_if(args, source)
+        c_out, source, end_comment = self.parse_block_if(args, source)
         if quiet:
             c_out, end_comment = [], []
-        self.loop_stack.append("IF")
+        self.block_stack.append("IF")
         for c_out1, _ in self.iter_generate_lines(iter(source)):
              c_out.append(c_out1)
-        self.loop_stack.pop()
+        self.block_stack.pop()
         return "".join(c_out + end_comment) , ""
 
 
@@ -539,7 +556,7 @@ class TableGenerator(object):
         self.join_pending = False           # set when JOIN action is pending
         for l in source:
             if self.verbose:
-                print("%d: %s" % (len(self.loop_stack), l), end = "")
+                print("%d: %s" % (len(self.block_stack), l), end = "")
             m = self.m_kwd.match(l)
             self.current_line = l
             if m:

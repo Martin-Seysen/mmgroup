@@ -124,9 +124,9 @@ static void pi24_2048(
         p_dest[{i}] = sgn_perm  ^ (
         // %%JOIN*  " |", ");"
         // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
-        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+        // %%WITH* j2, j_mod = 2 * j, j * FIELD_BITS % INT_BITS
             (((ps[pf[{j2}]] >> pf[{int:j2+1}]) & {P}) << {j_mod})
-        // %%END FOR   #  FOR j2, j_mod
+        // %%END WITH
         // %%END FOR   #  FOR j
         // %%END FOR   #  FOR i
         // %%FOR* i in range(V24_INTS_USED, V24_INTS)

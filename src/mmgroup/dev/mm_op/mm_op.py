@@ -14,13 +14,14 @@ have fixed values. So they are available as attributes of an
 instance of class ``MM_Op`` and they may also be used by the code 
 generator directly via string formatting.
  
-The string formatting function ``{smask:value, fields, width}``
-works as in class ``MM_Op``. In addition, parameter ``fields`` 
-defaults to ``-1`` (i.e. the mask is set in all bit fields) and 
-``width`` defaults to the constant ``FIELD_BITS``. i.e. the number 
-of bits used to store an integer modulo ``p``. E.g. for ``p = 7``
-we have ``FIELD_BITS = 4``, and ``{smask:1}`` evaluates to the
-``64``-bit integer constant ``0x1111111111111111``.
+The string formatting functions ``{shl:expression,i}`` and 
+``{smask:value, fields, width}`` work as in class ``MM_Op``. In 
+addition, parameter ``fields`` defaults to ``-1`` (i.e. the mask 
+is set in all bit fields) and ``width`` defaults to the constant 
+``FIELD_BITS``. i.e. the number of bits used to store an integer 
+modulo ``p``. E.g. for ``p = 7`` we have ``FIELD_BITS = 4``, and 
+``{smask:1}`` evaluates to the ``64``-bit integer constant 
+``0x1111111111111111``.
 
 Class ``MM_Op`` also provides the following directives:
 

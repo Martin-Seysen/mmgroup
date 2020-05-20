@@ -163,6 +163,25 @@ def smask_default(default_width, value, fields = -1, width = None):
     return smask(value, fields, width)
 
 
+def shl_fix(data, i):
+    """Generate expression <data> << i for a fixed signed int i
+
+    Generate <data> >> (-i)  in case i < 0.
+    """ 
+    data = str(data)
+    try:
+       d = int(data)
+       return c_hex(d >> -i if i < 0 else d << i) 
+    except:
+        if i == 0:
+            return "({0})".format(data)
+        if i > 0:
+            return "(({0}) << {1})".format(data, i)
+        if i < 0:
+            return "(({0}) >> {1})".format(data, -i)
+          
+
+
 
 class MM_Basics(object):
     """The basic table-providing class for vectors in :math:`\rho_p` 
@@ -182,6 +201,7 @@ class MM_Basics(object):
         "LOG_INT_BITS": LOG_INT_BITS,
         "MMV_ENTRIES" : MMV_ENTRIES,
         "hex": UserFormat(hex, arg_fmt = c_hex),
+        "shl": UserFormat(shl_fix, "si"),
     }
     table_dict = {}
     _sizes = {}
@@ -275,6 +295,16 @@ class MM_Const(MM_Basics):
 
         uint_8_t  a[{MMV_ENTRIES}];
 
+
+    Class ``MM_Const`` provides a string-formatting function ``shl`` 
+    which generates a shift expression  Here::
+
+         {shl:expression, i}
+
+    generates an expression equivalent to ``((expression) << i)``. 
+    Here ``i`` must be an integer. In case ``i < 0`` we generate 
+    ``((expression) >> -i)`` instead. E.g. ``{shl:'x',-3}``
+    evaluates to ``x >> 3``.
 
     Class ``MM_Const`` provides another string-formatting function
     ``smask`` which generates an integer constant to be used as a 
