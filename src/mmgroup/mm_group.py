@@ -423,7 +423,7 @@ class MMGroup(AbstractGroup):
         Cocode: cocode_to_mmgroup,
         #AutPlElement: autpl_to_mmgroup,
     }
-    FRAME = re.compile(r"^M?\<(\w*)\>$") # see method parse()
+    FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
 
     def __init__(self):

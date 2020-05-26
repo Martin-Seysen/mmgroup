@@ -975,7 +975,7 @@ def sparse_to_str(p, a_indices):
         if tag and v:
             s = "-" if v == p - 1 else "+"
             if  1 < v < p - 1:  
-                s += str(p)
+                s += str(v) + "*"
             names.append("%s%s_%s_%s" % (s, tag, fmt0(i0), fmt1(i1)))            
     if len(names): 
         if names[0][:1] == "+": 
