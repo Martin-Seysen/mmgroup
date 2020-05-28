@@ -520,3 +520,48 @@ uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
 }
 
 
+// %%EXPORT p
+uint32_t mm_group_words_equ(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, uint32_t *work)
+// Check if the words w1 and w2 of the group MM of length l1 and
+// l2 are equal. The function returns the following status 
+// information:
+//
+//   0:    w1 == w2
+//   1:    w1 != w2
+//   >= 2: equality of w1 and w2 is not known
+//
+//  If the function cannot check the equality of w1 and w2
+//  then it returns a number 2+l3 and a word w of length l3
+//  in buffer ``work``. In that case we have
+//  
+//     w1 == w2  if an only if w == 0.
+//
+//  The work buffer must have size at least 
+//  max(2 * l1, l1 + 2 * l2). 
+{
+    uint_fast32_t  minlen, minlen0, status = 0;
+    uint32_t *we1, *we2, gn[5];
+    minlen0 = minlen = l1 < l2 ? l1 : l2;
+    // Delete common initial segment of w1 and w2
+    while (minlen > 0 && *w1 == *w2) {
+        --minlen; ++w1; ++w2;
+    }
+    minlen0 -= minlen;
+    l1 -= minlen0; l2 -= minlen0; 
+    if ((l1 | l2) == 0) return 0; // words are equal
+    minlen0 = minlen;
+    // Delete common terminal segment of w1 and w2
+    we1 = w1 + l1; we2 = w2 + l2;
+    while (minlen > 0 && *--we1 == *--we2) --minlen;
+    minlen0 -= minlen;
+    l1 -= minlen0; l2 -= minlen0; 
+    // Store  reduced(w1) in work
+    l1 = mm_group_mul_words(work, 0, w1, l1, 1);
+    // Store w = reduced(w1 * w2**(-1)) in work
+    l1 = mm_group_mul_words(work, l1, w2, l2, -1);
+    // check word w
+    status = mm_group_check_word_n(work, l1, gn);
+    if (status < 3) return status != 0;  
+    // Here we don't know if w1 == w2
+    return l1 + 2;    
+}

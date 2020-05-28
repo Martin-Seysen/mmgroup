@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 }}
 """.format(generate("v", "a", lv, lm, n)), file = f)
         f.close()
-        subprocess.check_output("gcc %s -o %s" % (C_NAME, EXE_NAME))
+        subprocess.check_output(["gcc", C_NAME, "-o", EXE_NAME])
         checker = BitMatrixMulTransp()
         checker.set_matrix(lv, lm, n)
         return checker

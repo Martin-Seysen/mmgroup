@@ -1,4 +1,22 @@
-# this is just a placeholder
+"""This is the *mmgroup* package for computing in the monster group.
+
+In mathematics the *monster group* is the largest sporadic 
+finite simple group.  
+
+For documentation see:
+
+https://mmgroup.readthedocs.io/en/latest/
+
+The most important classes in this module are
+
+  =================  =============================================
+  ``class MMGroup``  Models an instance of the monster group.
+  ``class MMSpace``  Models an instance of the 196884-dimensional
+                     representation of the monster group
+                     (modulo some small odd numbers).
+  =================  =============================================
+
+"""
 
 import warnings 
 

@@ -9,10 +9,10 @@ The mmgroup API reference
 Introduction
 ============
 
-The *mmgroup* package a python implementation of Conway's 
-construction :cite:`Con85` of the 
-monster group :math:`\mathbb{M}` which is the largest sporadic 
-finite simple group. The group :math:`\mathbb{M}` has order
+The *mmgroup* package is a python implementation of Conway's 
+construction :cite:`Con85` of the monster group :math:`\mathbb{M}`. 
+In mathematics the *monster group* :math:`\mathbb{M}` is the largest 
+sporadic finite simple group. The group :math:`\mathbb{M}` has order
 
    :math:`2^{46} \cdot 3^{20} \cdot 5^9 \cdot 7^6 \cdot 11^2 \cdot 13^3 \cdot 17 \cdot 19 \cdot 23 \cdot 29 \cdot 31 \cdot 41 \cdot 47 \cdot 59 \cdot 71` 
    = :math:`\small 808.017.424.794.512.875.886.459.904.961.710.757.005.754.368.000.000.000` . 

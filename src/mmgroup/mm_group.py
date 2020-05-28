@@ -146,10 +146,6 @@ strategies for words of generators of :math:`\mathbb{M}` :
  * Sufficiently long words of generators of :math:`\mathbb{M}` may
    be shortened with high probability, see :cite:`Wilson13`.
 
- * Two words of  generators of :math:`\mathbb{M}`  can be tested
-   for equality using the representation  :math:`\rho` of 
-   :math:`\mathbb{M}`, see :cite:`Wil03`.
-
 """
 # References in the __docstr__ see file docs/source/references.bib
 
@@ -190,6 +186,26 @@ from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj
 
 from mmgroup.mm import mm_group_mul_words
 
+# Functions to be imported from module mmgroup.mm_order
+check_mm_order = None
+check_mm_equal = None
+
+
+###########################################################################
+# Importing functions check_mm_order and check_mm_equal 
+###########################################################################
+
+def import_mm_order_functions():
+    """Import functions ``check_mm_order, check_mm_equal``.
+
+    We import these functions from module ``mmgroup.mm_order``
+    on demand. This avoids an infinite recursion of imports.
+    """
+    global check_mm_order, check_mm_equal
+    from mmgroup.mm_order import check_mm_order as f
+    check_mm_order = f
+    from mmgroup.mm_order import check_mm_equal as f
+    check_mm_equal = f
 
 ###########################################################################
 # Word class for the group MM
@@ -263,6 +279,21 @@ class MMGroupWord(AbstractGroupWord):
         ``g.reduce()``.
         """
         return self.length == self.reduced
+
+    def order(self, max_order = 119):
+        """Return the order of the element of the monster group
+
+        We use the method in :cite:`Wil03` for computing
+        the order of an element of the monster.
+
+        If ``max order`` is set then the order of the element is checked
+        uo to (and including) ``max order`` only.  Then the function
+        return 0 if the order is greater than ``max order``. By
+        default, the function returns the exact order of an element.
+        """
+        if check_mm_order is None:
+            import_mm_order_functions()
+        return check_mm_order(self, max_order)
 
 ###########################################################################
 # Atoms for the group M
@@ -415,6 +446,13 @@ class MMGroup(AbstractGroup):
 
     See class |MMGroupWord| for the group operation on an instance
     ``M`` of  class |MMGroup|.
+
+    Two elements ``g1, g2`` of the monster group can be tested for 
+    equality with the ``==`` operator as usual. Here we use the 
+    method given in :cite:`Wil03` for checking ``g1 * g2**(-1) == 1``.
+
+    Elements ``g1``, ``g2`` that belong to different instances of
+    class |MMGroup| are considered unequal.
     """
     word_type = MMGroupWord
     tags, formats = " dpxytl", [None, ihex, str, ihex, ihex, str, str]
@@ -547,14 +585,14 @@ class MMGroup(AbstractGroup):
 
     def _imul_nonreduced(self, g1, g2):
         l1, l2 = g1.length, g2.length
-        g1._extend(l1 + l2)
+        g1._extend(l1 + l2 + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
         g1.length = l1 + l2
         return g1
         
     def _imul(self, g1, g2):
         l1, l2 = g1.length, g2.length
-        g1._extend(l1 + 2 * l2 + 1)
+        g1._extend(2*(l1 + l2) + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
         l1 += l2
         l_tail = l1 - g1.reduced
@@ -574,8 +612,9 @@ class MMGroup(AbstractGroup):
         return result
 
     def _equal_words(self, g1, g2):
-        d1, d2 = g1.reduce(True).data, g2.reduce(True).data
-        return len(d1) == len(d2) and (d1 == d2).all()
+        if check_mm_equal is None:
+            import_mm_order_functions()
+        return g1.group == g2.group and check_mm_equal(g1, g2)
 
 
 
