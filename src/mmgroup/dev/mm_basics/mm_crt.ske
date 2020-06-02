@@ -1,0 +1,328 @@
+
+#include <stdlib.h>
+#include "mat24_functions.h"
+#include "mm_basics.h"
+
+// Entry 32 * i7 + i31 of the following table is equal to
+// (i7 * INV[7] + i31 * INV[31] + NMAX) % N
+// Here INV[i] is 1 (mod i) and 0 (mod N/i)
+// We have N = 7 * 31 * 127 * 255 and NMAX = N // 2.
+static const uint32_t TAB_7_31[256] = { 
+// %%TABLE  CRT_TAB_7_31, uint32
+};
+
+// Entry i of the following table is equal to
+// uint32_t(i * INV[127] % N - N) 
+// with N, INV[i] as above.
+static const uint32_t TAB_127[128] = { 
+// %%TABLE  CRT_TAB_127, uint32
+};
+
+// Entry i of the following table is equal to
+// uint32_t(i * INV[255] % N - N) 
+// with N, INV[i] as above.
+static const uint32_t TAB_255[256] = { 
+// %%TABLE  CRT_TAB_255, uint32
+};
+
+
+
+// Function mm_crt_combine_24() combines vectors p7, p31, p127, p255 
+// of numbers modulo 7, 31, 127 and 255 (each input vector in 
+// internal representation) to a vector p_out of integers via Chinese 
+// remaindering. Each entry of the vector p_out is of type int32_t; 
+// and it set to the smallest possible absolute value modulo 
+// 7*31*127*255. Thus an entry of p_out may be negative.
+// Each input vector has nrounds * 32 entries. Entry 32 * i0 + i1
+// of the output vector is computed in case 0 <= i1 < 24 only.
+// Entries 32 * i0 + i1 with 24 <= i1 < 32 are set to zero.
+// The function returns min(24, v2(p_out)). Here v2(p_out) is
+// the minmum positions of the least significant bits of all
+// entries of the vector p_out. 
+//
+// Function mm_crt_v2_24() returns the same value as function 
+// mm_crt_combine_24(), but does not compute any output vector.
+
+// %%FOR* op in ["combine", "v2"]
+static uint32_t mm_crt_{op}_24(
+    uint32_t nrounds,
+    uint_mmv_t * restrict p7,
+    uint_mmv_t * restrict p31,
+    uint_mmv_t * restrict p127,
+    // %%IF* op == "combine"
+    uint_mmv_t * restrict p255,
+    int32_t * restrict pout
+    // %%ELSE
+    uint_mmv_t * restrict p255
+    // %%END IF
+)
+{
+    uint_fast32_t i, res = 0xFF000000;
+    for (i = 0; i < nrounds; ++i) {
+        uint_mmv_t  a7, a31, a127, a255;
+        uint_fast32_t a;
+        // %%FOR* j in range(32)
+        // %%IF* j % INT_FIELDS(7) == 0
+        a7 = *p7++;
+        // %%END IF  
+        // %%IF* j % INT_FIELDS(31) == 0
+        a31 = *p31++;
+        a127 = *p127++;
+        a255 = *p255++;
+        // %%END IF  
+        // %%IF* j < 24
+        a = TAB_7_31[
+             ({shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
+           + ((a31 >> {int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
+        ];
+        a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
+        a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
+        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        res |= a + {int:0x10000000-CRT_NPROD//2}L;
+        // %%END IF
+        // %%IF* op == "combine" and j < 24
+        *pout++ = a - {int:CRT_NPROD//2}L;        
+        // %%ELSE IF op == "combine"  
+        *pout++ = 0;  
+        // %%END IF  
+        // %%END FOR
+    }
+    return res;
+}
+// %%END FOR
+
+
+
+
+
+// Function mm_crt_combine_T() combines vectors p7, p31, p127, p255 
+// to a vector p_out in the same way as function mm_crt_combine_24().
+// But here all vector have length 759 * 64, and all entries of the
+// output vector are computed. The return value is computed from
+// all these output vectors in the same way as in function 
+// mm_crt_combine_24().
+//
+// Function mm_crt_v2_T() returns the same value as function 
+// mm_crt_combine_T(), but does not compute any output vector.
+
+// %%FOR* op in ["combine", "v2"]
+static uint32_t mm_crt_{op}_T(
+    uint_mmv_t * restrict p7,
+    uint_mmv_t * restrict p31,
+    uint_mmv_t * restrict p127,
+    // %%IF* op == "combine"
+    uint_mmv_t * restrict p255,
+    int32_t * restrict pout
+    // %%ELSE
+    uint_mmv_t * restrict p255
+    // %%END IF
+)
+{
+    uint_fast32_t i, res = 0x1000000;
+    for (i = 0; i < 64 * 759 / {INT_FIELDS:7}; ++i) {
+        uint_mmv_t  a7, a31, a127, a255;
+        uint_fast32_t a;
+        a7 = *p7++;
+        // %%FOR* j in range(INT_FIELDS(7))
+        // %%IF* j % INT_FIELDS(31) == 0
+        a31 = *p31++;
+        a127 = *p127++;
+        a255 = *p255++;
+        // %%END IF  
+        a = TAB_7_31[
+             ({shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
+           + ((a31 >> {int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
+        ];
+        a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
+        a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
+        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        res |= a + {int:0x10000000-CRT_NPROD//2}L;
+        // %%IF* op == "combine"
+        *pout++ = a - {int:CRT_NPROD//2}L;
+        // %%END IF 
+        // %%END FOR
+    }
+    return res;
+}
+
+
+// %%END FOR
+
+
+// %%EXPORT p
+uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255, int32_t *p_out)
+// Combine a vector from the vectors  p7, p31, p127, p255  of the
+// 198884 dimensional representation modulo 7, 31, 127, and 255
+// of the monster via Chinese remaindering. Input vectors  p7, p31,
+// p127, p255  must be given in internal representation.
+// The function computes the array p_out of type int32_t[247488].
+// Entries of the output array are arranged redundantly in the same 
+// way as in the internal representation, see file mm_auy.c for
+// details.
+// Each entry of the vector p_out is of type int32_t; and it set to 
+// the smallest possible absolute value modulo 7*31*127*255. Thus 
+// an entry of p_out may be negative.
+// The function returns min(24, v2(p_out)). Here v2(p_out) is the
+// minmum positions of the least significant bits of all entries 
+// of the vector p_out.   
+{
+    uint_fast32_t res = 0;
+    res |= mm_crt_combine_24(72, p7, p31, p127, p255, p_out);
+    res |= mm_crt_combine_T( 
+        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / {INT_FIELDS:255}, 
+        p_out + MM_AUX_OFS_T 
+    );
+    res |= mm_crt_combine_24(3*2048, 
+        p7 + MM_AUX_OFS_X / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_X / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_X / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_X / {INT_FIELDS:255}, 
+        p_out + MM_AUX_OFS_X 
+    );
+    return mat24_lsbit24(res);       
+}
+
+
+
+// %%EXPORT p
+uint32_t mm_crt_check_v2(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
+// For a given tuple of input vectors  p7, p31, p127, p255,  the 
+// function mm_crt_check_v2() returns the same value as function
+// mm_crt_combine(). But function mm_crt_check_v2() does not 
+// compute any output vector p_out.
+{
+    uint_fast32_t res = 0;
+    res |= mm_crt_v2_24(72, p7, p31, p127, p255);
+    res |= mm_crt_v2_T( 
+        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / {INT_FIELDS:255} 
+    );
+    res |= mm_crt_v2_24(3*2048, 
+        p7 + MM_AUX_OFS_X / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_X / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_X / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_X / {INT_FIELDS:255} 
+    );
+    return mat24_lsbit24(res);       
+}
+
+
+static uint32_t crt_check_t(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
+// Auxiliary function for function mm_crt_check_g()
+{
+    uint_fast32_t res;
+    res = mm_crt_v2_24(72, p7, p31, p127, p255) & 1;
+    res |= mm_crt_v2_T(
+        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / {INT_FIELDS:255}
+    ) & 7;
+    return res != 0;    
+}
+
+static uint32_t crt_check_l(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
+// Auxiliary function for function mm_crt_check_g()
+{
+    uint_fast32_t res;
+    res = mm_crt_v2_24(24, p7, p31, p127, p255) & 3;
+    res |= mm_crt_v2_24(4096, 
+        p7 + MM_AUX_OFS_Z / {INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_Z / {INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_Z / {INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_Z / {INT_FIELDS:255}
+    ) & 7;
+    return res != 0;    
+}
+
+// %%EXPORT p
+uint32_t mm_crt_check_g(uint32_t g, uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
+{
+     switch ((g >> 25) & 7) {
+         case 7:
+             return 1;
+         case 5:
+             if ((g & 0x1ffffff) % 3 == 0) return 0;
+             return crt_check_t(p7, p31, p127, p255);
+         case 6:
+             if ((g & 0x1ffffff) % 3 == 0) return 0;
+             return crt_check_l(p7, p31, p127, p255);
+         default:
+             return 0;
+     }
+}
+
+
+
+
+
+
+// %%EXPORT p
+int64_t mm_crt_norm_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
+{
+    uint_fast32_t j0, j1, dp;
+    int64_t norm = 0;
+    i1 >>= 3;
+    dp = 32 - (i1 << 3);
+    for (j0 = 0; j0 < i0; ++j0) {
+        for  (j1 = 0; j1 < i1; ++j1) {
+             norm += (int64_t)pv[0] * (int64_t)pv[0]
+                  +  (int64_t)pv[1] * (int64_t)pv[1]
+                  +  (int64_t)pv[2] * (int64_t)pv[2]
+                  +  (int64_t)pv[3] * (int64_t)pv[3]
+                  +  (int64_t)pv[4] * (int64_t)pv[4]
+                  +  (int64_t)pv[5] * (int64_t)pv[5]
+                  +  (int64_t)pv[6] * (int64_t)pv[6]
+                  +  (int64_t)pv[7] * (int64_t)pv[7];
+             pv += 8;
+        }
+        pv += dp;
+    }
+    return norm;
+}
+
+
+// %%EXPORT p
+int64_t mm_crt_norm_int32(int32_t *pv)
+{
+    return mm_crt_norm_int32_32(pv, 24, 24)
+        + (mm_crt_norm_int32_32(pv + MM_AUX_OFS_B, 48, 24) >> 1)
+        + mm_crt_norm_int32_32(pv + MM_AUX_OFS_T, 2 * 759, 32)
+        + mm_crt_norm_int32_32(pv + MM_AUX_OFS_X, 3 * 2048, 24);
+}
+
+
+// %%EXPORT p
+uint32_t mm_crt_v2_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
+{
+    uint_fast32_t j0, j1, dp, res = 0x1000000;
+    i1 >>= 3;
+    dp = 32 - (i1 << 3);
+    for (j0 = 0; j0 < i0; ++j0) {
+        for  (j1 = 0; j1 < i1; ++j1) {
+             res |=  pv[0] | pv[1] | pv[2] | pv[3] 
+                  |  pv[4] | pv[5] | pv[6] | pv[7];
+             pv += 8;
+        }
+        pv += dp;
+    }
+    return res;
+}
+
+
+
+// %%EXPORT p
+uint32_t mm_crt_v2_int32(int32_t *pv)
+{
+    uint_fast32_t  res =  mm_crt_v2_int32_32(pv, 72, 24)
+        | mm_crt_v2_int32_32(pv + MM_AUX_OFS_T, 2 * 759, 32)
+        | mm_crt_v2_int32_32(pv + MM_AUX_OFS_X, 3 * 2048, 24);
+    return mat24_lsbit24(res);  
+}

@@ -134,7 +134,7 @@ The Monster Group
 
 
 .. autoclass:: mmgroup.MMGroupWord
-   :members:  as_tuples, copy,  is_reduced, reduce 
+   :members:  as_tuples, copy,  is_reduced, reduce, order 
 
 
 .. _mmrep-label:

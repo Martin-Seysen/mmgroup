@@ -150,7 +150,7 @@ from mmgroup.dev.mat24_xi.mat24_xi_ref import Mat24Xi
 
 import mmgroup.dev.mm_basics
 from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
-from mmgroup.dev.mm_basics import mm_tables_xi, mm_random
+from mmgroup.dev.mm_basics import mm_tables_xi, mm_random, mm_crt
 
 
 
@@ -169,6 +169,7 @@ C_BASICS_SKELETONS = [
    "mm_tables",
    "mm_group_n",
    "mm_tables_xi",
+   "mm_crt",
 ]
 
 
@@ -268,8 +269,8 @@ H_BASICS_END = """
 
 PXD_DECLARATIONS = """
 
-from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t
-from libc.stdint cimport uint16_t
+from libc.stdint cimport uint64_t, uint32_t, uint16_t, uint8_t
+from libc.stdint cimport int64_t, int32_t
 from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t
 
 INT_BITS = {INT_BITS}
@@ -289,6 +290,7 @@ BASIC_TABLE_CLASSES = [
     mm_tables.MM_OctadTable,
     mm_random.MM_Random_Doc,
     mm_tables_xi.MM_TablesXi,  
+    mm_crt.MM_CrtCombine,  
 ]
 
 

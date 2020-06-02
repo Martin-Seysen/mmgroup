@@ -286,10 +286,11 @@ class MMGroupWord(AbstractGroupWord):
         We use the method in :cite:`Wil03` for computing
         the order of an element of the monster.
 
-        If ``max order`` is set then the order of the element is checked
-        uo to (and including) ``max order`` only.  Then the function
-        return 0 if the order is greater than ``max order``. By
-        default, the function returns the exact order of an element.
+        If the argument ``max_order`` is present then the order of the 
+        element is checked up to (and including) ``max_order`` only.  
+        Then the function returns ``0`` if the order is greater than 
+        ``max_order``. By default, the function returns the exact 
+        order of the element.
         """
         if check_mm_order is None:
             import_mm_order_functions()

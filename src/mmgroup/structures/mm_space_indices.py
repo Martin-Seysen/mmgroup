@@ -48,10 +48,11 @@ from mmgroup.structures.cocode import Cocode
 from mmgroup.structures.ploop import PLoop
 from mmgroup.structures.suboctad import Octad, SubOctad
 
+ERR_MM_LIN = "Linear access to MM vectors not supported"
+
 try:
     from mmgroup.mm import mm_aux_array_extern_to_sparse
 except (ImportError, ModuleNotFoundError):
-    ERR_MM_LIN = "Linear access to MM vectors not supported"
     warnings.warn(ERR_MM_LIN, UserWarning)   
 
 
@@ -151,7 +152,7 @@ def a_slice(i_slice, max_index):
     returns the indices contained in that slice when applied
     to a one-dimensional numpy array.
 
-    Thf function returns numpy arrray of shape np.uint32.
+    The function returns a numpy arrray of shape np.uint32.
     """
     return np.arange(*i_slice.indices(max_index), dtype = U32)
 
@@ -565,7 +566,7 @@ def gen_unit_numeric(p, scalar, tag, i0 = 'r'):
         raise TypeError(INDEX_ERROR_SLICE)
     a = np.array([i0], dtype = U32)
     try:
-        mm_aux_index_extern_to_sparse(a, 1)
+        mm_aux_array_extern_to_sparse(a, 1)
     except NameError:
         raise NotImplementedError(ERR_MM_LIN)   
     a[0] += scalar % p

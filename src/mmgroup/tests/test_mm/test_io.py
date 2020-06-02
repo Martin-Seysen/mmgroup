@@ -90,6 +90,7 @@ def do_test_rep_conversion(v):
     for  start, stop, step in ranges:
         data_sparse =  v.as_bytes()[start:stop:step] 
         data = v[start:stop:step]
+        assert len(data_sparse) == len(data), (len(data_sparse), len(data))
         assert (data_sparse == data).all(), (data_sparse, data)
         a = np.zeros(len(data), dtype = np.uint32)
         for i, index in enumerate(range(start,stop,step)):

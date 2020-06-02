@@ -270,6 +270,10 @@ class MM_Basics(object):
 ########################################################################
 
 
+# Auxilary function for defining methods like MM_Const().P_BITS(p) etc.
+_attr_from_table = lambda name, p : MM_Basics.sizes(p)[name]
+
+
 class MM_Const(MM_Basics):
     """This is the basic table-providing class for module ``mmgroup.mm``
 
@@ -289,11 +293,18 @@ class MM_Const(MM_Basics):
     ``MMV_CONST_TAB``. 
 
     Constants not depending on the modulus ``p``, such as ``INT_BITS``, 
-    ``LOG_INT_BITS``, and ``MMV_ENTRIES`` are available as attribute of
-    class ``MM_Basics``. They can also be coded with the code 
+    ``LOG_INT_BITS``, and ``MMV_ENTRIES`` are available as attributes 
+    of class ``MM_Const``. They can also be coded with the code 
     generator directly via string formatting, e.g.::
 
         uint_8_t  a[{MMV_ENTRIES}];
+
+    For a fixed modulus ``p`` the constants depending on ``p`` can also
+    be coded with the code generator via string formatting, e.g.::
+
+        a >>= {P_BITS:3};
+
+    That constant also availble in the form ``MM_Const().P_BITS(3)``.
 
 
     Class ``MM_Const`` provides a string-formatting function ``shl`` 
@@ -373,6 +384,9 @@ class MM_Const(MM_Basics):
         "MMV_INTS" : MM_Basics.MMV_ENTRIES,
     }
 
+    
+
+ 
     def __init__(self):
         new_tables = {
            self.T_NAME : self.table,
@@ -386,6 +400,15 @@ class MM_Const(MM_Basics):
           "MMV_LOAD_CONST" : 
               UserDirective(self.gen_get_const_table, "ss", "NAMES"),
         }
+        for name in [
+            "P", "P_BITS", "FIELD_BITS", "LOG_FIELD_BITS", 
+            "INT_FIELDS", "LOG_INT_FIELDS", "V24_INTS", "LOG_V24_INTS",
+            "V24_INTS_USED", "V64_INTS", "LOG_V64_INTS",
+            ]:
+            f = partial(_attr_from_table, name)
+            setattr(self, name, f)
+            self.tables[name] = UserFormat(f, "i")
+
 
     @classmethod
     def gen_get_const_table(cls, names, p,  const_p):

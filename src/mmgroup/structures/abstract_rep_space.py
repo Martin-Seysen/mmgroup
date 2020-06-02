@@ -325,7 +325,7 @@ class AbstractRepSpace(object):
 
 
     def parse(self, s):
-        """Convert the string 's' to a group element
+        """Convert the string 's' to a vector
         
         Here 's' may ba any valid python expression. Then certain 
         identifiers are recognized e.g. as unit vectors of the 
