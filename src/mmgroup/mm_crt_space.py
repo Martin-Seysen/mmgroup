@@ -509,6 +509,8 @@ class MMSpaceCRT(MMSpace):
     
     def vector_get_item(self, v, index):
         v.expand()
+        if not isinstance(index, tuple):
+            index = (index,)
         try:
             start, max0, stride0, max1 = _index_dict[index[0]]
             a = v.data_int[start : start + max0 * stride0]

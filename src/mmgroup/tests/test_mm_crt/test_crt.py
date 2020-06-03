@@ -96,9 +96,7 @@ def test_random_io(verbose = 0):
              for p in (7,31, 127, 255):
                  vp =  (v % p) 
                  for tag in "A": # "ABCTXZY":
-                     #print(p, tag, v[tag,:4,:4]) 
-                     #print(p, tag, vp[tag,:4,:4]) 
-                     assert np.all(v[tag,:,:] % p == vp[tag,:,:])
+                     assert np.all(v[tag] % p == vp[tag])
              v2_2 = v.v2()
              assert v2_2 >= v2_1 - g_shift(g)
              n += 1
