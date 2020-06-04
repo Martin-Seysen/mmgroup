@@ -1,5 +1,20 @@
 from __future__ import absolute_import, division, print_function
 
+
+####################################################################
+# History
+####################################################################
+
+
+
+VERSION = '0.0.2' # 2020-06-04. Order oracle added; bugfixes
+# VERSION = '0.0.1' # 2020-05-20. First releae
+
+####################################################################
+# Imports
+####################################################################
+
+
 import sys
 import os
 import re
@@ -337,7 +352,7 @@ def read(fname):
 
 setup(
     name = 'mmgroup',    
-    version = '0.0.1',    
+    version = VERSION,    
     license='BSD-2-Clause',
     description='Implementation of the sporadic simple monster group.',
     long_description=read('README.rst'),
