@@ -44,12 +44,12 @@ from random import randint
 import types
 from operator import __or__ , __xor__
 from functools import reduce
-
+from collections.abc import Iterable
+from numbers import Integral
 
 import numpy
 from numpy import array, zeros, uint8, uint16, uint32, uint64, int64
 
-from numbers import Integral
 
 def isinteger(x):
     """Deprecated, use numbers.Integral() instead!"""
@@ -93,24 +93,43 @@ def hibit(x):
 
 
 
-DE_BRUIJN_TABLE32 = [
-    0, 1, 28,  2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
-  31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5,  10, 9
-]
 
+def v2(*args):
+   """Return the 2-adic value of an integer or of a set of integers.
 
-def v2(x):
-   """return the position of the lowest bit of an integer
+   For an integer ``i = o * 2**k``, ``o`` odd, we have ``v2(i) = k``.
 
-   see
-   http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
+   If ``x`` is iterable or a numpy array then ``v2(x)`` is the 
+   minimum of the values ``v2(i)`` for all entries of ``i`` of ``x``.
+
+   If several arguments ``x_1,...,x_n`` are given then 
+   ``v2(x_1,...,x_n)`` is the minimum of all values ``v2(x_i)``.
+
+   The function raises ZeroDivisionError if all integers occuring as 
+   arguments (or contained in an argument) are zero.
    """
-   if x==0: raise ZeroDivisionError("Zero has no lowest bit 1")
-   l = 0
-   while x & 0xffffffff == 0:  x, l = x>>32, l+32
-   return l + DE_BRUIJN_TABLE32[
-        ((int(x & -x & 0xffffffff) * 0x077CB531) >> 27)  & 0x1f]
-
+   x = 0
+   for a in args:
+       if isinstance(a, Integral):
+           x |= int(a) 
+       elif isinstance(a, numpy.ndarray):
+           try:
+               x |= int(reduce(__or__, a.reshape(-1), 0))
+           except TypeError:
+               if issubclass(a.dtype.type, np.integer):
+                    # workaround for the case a.dtype == numpy.uint64
+                    x |= reduce(__or__, map(int,a.reshape(-1)), 0)
+               else:
+                   raise
+       elif isinstance(a, Iterable):
+           x |= int(reduce(__or__, a, 0))
+       else:
+          err = "Function v2() undefined for a %s object"
+          raise TypeError(err % type(a))
+   l = (x & -x).bit_length() - 1
+   if l >= 0:
+       return l
+   raise ZeroDivisionError("Function v2(x) is undefined for x = 0")
 
 
 

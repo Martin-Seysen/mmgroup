@@ -150,7 +150,7 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         for p in (7, 31, 127, 255):
             self.data[p] = mm_vector(p)
         self.data_int = np.zeros(247488, dtype = np.int32)
-        self.shift = 0
+        self.shift = space.shift
         self.expanded = False
 
     def check(self):
