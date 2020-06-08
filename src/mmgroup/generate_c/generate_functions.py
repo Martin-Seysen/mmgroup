@@ -435,7 +435,7 @@ good_ast_nodes = set([
    ast.Expression,
    ast.Num, ast.Str, ast.List, ast.Ellipsis, ast.Expr,
    ast.Load,
-   ast.NameConstant,
+   ast.Constant,
    ast.Tuple,
 
    ast.UnaryOp,
