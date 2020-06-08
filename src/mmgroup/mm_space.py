@@ -200,7 +200,6 @@ from mmgroup.mm import mm_rng_make_seed
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 from mmgroup.mm import mm_aux_check_mmv
 from mmgroup.mm import mm_aux_get_mmv1
-from mmgroup.mm import mm_sparse_purge
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_sparse_to_leech

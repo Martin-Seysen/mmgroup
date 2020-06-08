@@ -164,7 +164,7 @@ VERBOSE = 0
 
 C_BASICS_SKELETONS = [
    "mm_aux",
-   "mm_sparse",
+ #  "mm_sparse",  # deprecated!
    "mm_random",
    "mm_tables",
    "mm_group_n",
