@@ -122,7 +122,7 @@ Before typing ``python setup.py bdist_wheel`` in a Windows command
 line the author had to type::
 
 
-  C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat
+  "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 Here the path my be different on the user's Windows system.
 
