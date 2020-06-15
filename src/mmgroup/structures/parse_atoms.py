@@ -199,6 +199,7 @@ good_ast_nodes = set([
    ast.Expression,
    ast.Num, ast.Str, ast.Expr,
    ast.Load,
+   ast.Constant,
 
    ast.UnaryOp,
    ast.UAdd, ast.USub, ast.Not, ast.Invert,

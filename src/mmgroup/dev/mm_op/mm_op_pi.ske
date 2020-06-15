@@ -4,6 +4,10 @@
 
 #include <string.h>
 #include "mm_op{P}.h"   
+
+
+
+
    
 static const uint_mmv_t MM{P}_TBL_SCALPROD_HIGH[] = { 
 // %%TABLE MMV_TBL_SCALPROD_HIGH, uint{INT_BITS}
@@ -39,11 +43,11 @@ void mm{P}_neg_scalprod_d_i(uint_mmv_t* v)
 // %%IF PERM24_USE_BENES_NET
 
 static void pi24_2048(
-   uint_mmv_t * restrict p_src,
-   uint16_t * restrict p_perm,
-   uint_mmv_t * restrict benes_mask,
+   uint_mmv_t * p_src,
+   uint16_t * p_perm,
+   uint_mmv_t * benes_mask,
    uint_fast32_t sign_shift,
-   uint_mmv_t * restrict p_dest
+   uint_mmv_t * p_dest
 )
 {
     uint_fast32_t i1;
@@ -74,10 +78,10 @@ static void pi24_2048(
 
 
 static void pi24_72(
-   uint_mmv_t * restrict p_src,
-   uint16_t * restrict p_perm,
-   uint_mmv_t * restrict benes_mask,
-   uint_mmv_t * restrict p_dest
+   uint_mmv_t * p_src,
+   uint16_t * p_perm,
+   uint_mmv_t * benes_mask,
+   uint_mmv_t * p_dest
 )
 {
     uint_fast32_t i1;
@@ -101,11 +105,11 @@ static void pi24_72(
 // %%ELSE
 
 static void pi24_2048(
-   uint_mmv_t * restrict p_src,
-   uint16_t * restrict p_perm,
-   uint8_t * restrict pf,
+   uint_mmv_t * p_src,
+   uint16_t * p_perm,
+   uint8_t * pf,
    uint_fast32_t sign_shift,
-   uint_mmv_t * restrict p_dest
+   uint_mmv_t * p_dest
 )
 {
     uint_fast32_t i1;
@@ -138,10 +142,10 @@ static void pi24_2048(
 
 
 static void pi24_72(
-   uint_mmv_t * restrict p_src,
-   uint16_t * restrict p_perm,
-   uint8_t * restrict pf,
-   uint_mmv_t * restrict p_dest
+   uint_mmv_t * p_src,
+   uint16_t * p_perm,
+   uint8_t * pf,
+   uint_mmv_t * p_dest
 )
 {
     uint_fast32_t i1;

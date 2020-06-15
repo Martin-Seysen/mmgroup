@@ -33,6 +33,8 @@ mingw32_compile_args =  ["-m64", "-Ofast", "-flto", "-funroll-loops"]
 unix_compile_args = ["-static-libgcc",  
              "-Ofast", "-flto", "-funroll-loops"
             ]
+msvc_compile_args = ["/O2"]
+
 if NATIVE:
      mingw32_compile_args.append("-march=native") 
      unix_compile_args.append("-march=native") 
@@ -40,6 +42,7 @@ if NATIVE:
 EXTRA_COMPILE_ARGS.update({
     'mingw32' : mingw32_compile_args,
     'unix' : unix_compile_args,
+    'msvc': msvc_compile_args,
 })
 
 

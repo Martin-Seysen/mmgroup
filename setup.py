@@ -5,8 +5,8 @@ from __future__ import absolute_import, division, print_function
 # History
 ####################################################################
 
-
-VERSION = '0.0.3' # 2020-06-10. bugfixes in code generator
+VERSION = '0.0.4' # 2020-06-15. MSVC compiler is now supported
+# VERSION = '0.0.3' # 2020-06-10. bugfixes in code generator
 # VERSION = '0.0.2' # 2020-06-04. Order oracle added; bugfixes
 # VERSION = '0.0.1' # 2020-05-20. First releae
 

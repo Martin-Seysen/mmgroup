@@ -7,6 +7,8 @@
 
 #include "mm_basics.h"
 
+// %%EXPORT_KWD MM_BASICS_API
+
 
 // %%GEN h
 // Structure used for referring to tables for operator xi
@@ -16,7 +18,6 @@ typedef struct {
    uint32_t *p_sign;
 } mm_sub_table_xi_type;
 
-extern mm_sub_table_xi_type mm_sub_table_xi[2][5];
 // %%GEN c
 
 
@@ -128,6 +129,7 @@ static uint16_t TAB_PERM_XI_25[] = {
 };
 
 
+// %%EXPORT_TABLE 
 mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
     // %%CODE_XI_POINTERS   TAB_PERM_XI_, TAB_SIGN_XI_
 };

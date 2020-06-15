@@ -60,15 +60,15 @@
 // or DLL exports (or does nothing for static build). 
 // MAT24_LOCAL is used for non-api symbols.
 
-#ifdef MAT24_DLL // defined if FOX is compiled as a DLL
-  #ifdef MAT24_DLL_EXPORTS // defined if we are building the FOX DLL 
+#ifdef MAT24_DLL // defined if MAT24 is compiled as a DLL
+  #ifdef MAT24_DLL_EXPORTS // defined if we are building the MAT24 DLL 
                            // (instead of using it)
     #define MAT24_API MAT24_HELPER_DLL_EXPORT
   #else
     #define MAT24_API MAT24_HELPER_DLL_IMPORT
   #endif // MAT24_DLL_EXPORTS
   #define MAT24_LOCAL MAT24_HELPER_DLL_LOCAL
-#else // MAT24_DLL is not defined: this means FOX is a static lib.
+#else // MAT24_DLL is not defined: this means MAT24 is a static lib.
   #define MAT24_API
   #define MAT24_LOCAL
 #endif // MAT24_DLL

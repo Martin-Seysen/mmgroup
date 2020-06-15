@@ -4,6 +4,8 @@
 #include "mat24_functions.h"
 #include "mm_basics.h"
 
+// %%EXPORT_KWD MM_BASICS_API
+
 
 // %%GEN h
 
@@ -442,4 +444,3 @@ void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint
 
 
 
-#2345678901234567890123456789012345678901234567890123456789012345678901234567890

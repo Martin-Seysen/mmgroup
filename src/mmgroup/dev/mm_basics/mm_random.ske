@@ -7,6 +7,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "mm_basics.h"
+
+// %%EXPORT_KWD MM_BASICS_API
+
+
+
 /******************************************************************
 *** The following #defines determine which volatile input sources
 *** are used for seeding the volatile random genertor number 0

@@ -11,6 +11,7 @@ src/mmgroup.egg-info
 temp/
 PKG-INFO
 zip.bat
+msvc.bat
 
 
 __pycache__

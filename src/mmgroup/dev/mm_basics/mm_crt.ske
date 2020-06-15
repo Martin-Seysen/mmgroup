@@ -3,6 +3,10 @@
 #include "mat24_functions.h"
 #include "mm_basics.h"
 
+// %%EXPORT_KWD MM_BASICS_API
+
+
+
 // Entry 32 * i7 + i31 of the following table is equal to
 // (i7 * INV[7] + i31 * INV[31] + NMAX) % N
 // Here INV[i] is 1 (mod i) and 0 (mod N/i)
@@ -46,14 +50,14 @@ static const uint32_t TAB_255[256] = {
 // %%FOR* op in ["combine", "v2"]
 static uint32_t mm_crt_{op}_24(
     uint32_t nrounds,
-    uint_mmv_t * restrict p7,
-    uint_mmv_t * restrict p31,
-    uint_mmv_t * restrict p127,
+    uint_mmv_t * p7,
+    uint_mmv_t * p31,
+    uint_mmv_t * p127,
     // %%IF* op == "combine"
-    uint_mmv_t * restrict p255,
-    int32_t * restrict pout
+    uint_mmv_t * p255,
+    int32_t * pout
     // %%ELSE
-    uint_mmv_t * restrict p255
+    uint_mmv_t * p255
     // %%END IF
 )
 {
@@ -108,14 +112,14 @@ static uint32_t mm_crt_{op}_24(
 
 // %%FOR* op in ["combine", "v2"]
 static uint32_t mm_crt_{op}_T(
-    uint_mmv_t * restrict p7,
-    uint_mmv_t * restrict p31,
-    uint_mmv_t * restrict p127,
+    uint_mmv_t * p7,
+    uint_mmv_t * p31,
+    uint_mmv_t * p127,
     // %%IF* op == "combine"
-    uint_mmv_t * restrict p255,
-    int32_t * restrict pout
+    uint_mmv_t * p255,
+    int32_t * pout
     // %%ELSE
-    uint_mmv_t * restrict p255
+    uint_mmv_t * p255
     // %%END IF
 )
 {

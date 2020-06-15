@@ -200,7 +200,7 @@ H_BASICS_BEGIN = """
 #include <stdint.h>
 #include "mat24_functions.h"
 
-// #define MM_BASICS_DLL  // We want a DLL!!
+#define MM_BASICS_DLL  // We want a DLL!!
 
 
 // Generic helper definitions for shared library support
@@ -227,15 +227,15 @@ H_BASICS_BEGIN = """
 // or DLL exports (or does nothing for static build). 
 // MM_BASICS_LOCAL is used for non-api symbols.
 
-#ifdef MM_BASICS_DLL // defined if FOX is compiled as a DLL
-  #ifdef MM_BASICS_DLL_EXPORTS // defined if we are building the FOX DLL 
+#ifdef MM_BASICS_DLL // defined if MM_BASICS is compiled as a DLL
+  #ifdef MM_BASICS_DLL_EXPORTS // defined if we are building the MM_BASICS DLL 
                            // (instead of using it)
     #define MM_BASICS_API MM_BASICS_HELPER_DLL_EXPORT
   #else
     #define MM_BASICS_API MM_BASICS_HELPER_DLL_IMPORT
   #endif // MM_BASICS_DLL_EXPORTS
   #define MM_BASICS_LOCAL MM_BASICS_HELPER_DLL_LOCAL
-#else // MM_BASICS_DLL is not defined: this means FOX is a static lib.
+#else // MM_BASICS_DLL is not defined: this means MM_BASICS is a static lib.
   #define MM_BASICS_API
   #define MM_BASICS_LOCAL
 #endif // MM_BASICS_DLL

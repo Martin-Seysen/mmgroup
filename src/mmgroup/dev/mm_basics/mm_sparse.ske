@@ -13,6 +13,8 @@
 #include "mm_basics.h"
 
 
+// %%EXPORT_KWD MM_BASICS_API
+
 
 
 

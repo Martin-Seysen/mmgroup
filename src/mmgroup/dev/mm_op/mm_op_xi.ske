@@ -8,9 +8,9 @@
 
 
 static void mm_op{P}_xi_mon(
-    uint_mmv_t * restrict v_in,  
+    uint_mmv_t * v_in,  
     uint32_t exp1, 
-    uint_mmv_t * restrict v_out
+    uint_mmv_t * v_out
 )
 {
     // Caution: this uses v_out[MM_OP{P}_OFS_Z:] as temporary storage

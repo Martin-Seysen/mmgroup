@@ -46,6 +46,11 @@
 // Pl, C*, and Mat24 in module mat24_functions.c
 
 #include "mat24_functions.h"
+#include "mm_basics.h"
+
+
+// %%EXPORT_KWD MM_BASICS_API
+
 
 #define I_t 0
 #define I_y 1
