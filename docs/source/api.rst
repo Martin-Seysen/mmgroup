@@ -159,6 +159,8 @@ The Representation of the Monster Group
 
 
 
+
+
 .. only:: html
 
    .. rubric:: **References**

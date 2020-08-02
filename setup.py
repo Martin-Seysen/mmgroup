@@ -140,11 +140,11 @@ package_data = {
 
 
 ####################################################################
-# Desription of the list 'mat24_presteps'.
+# Desription of the list 'general_presteps'.
 #
 # This is a list of programs to be run before executing the 'build_ext' 
 # command. Each entry of list 'custom_presteps' is a list which we call 
-# a program lists. A program list ia a list of strings corresponding to 
+# a program list. A program list ia a list of strings corresponding to 
 # a program to be executed with:
 #     subprocess.call(program_list) . 
 # The first entry of a program list is the name of the program to be 
@@ -164,32 +164,44 @@ pyx_sources = [
     os.path.join(DEV_DIR, "mat24", "mat24fast.pyx"),
     os.path.join(DEV_DIR, "mat24_xi", "mat24_xi.pyx"),
     os.path.join(DEV_DIR, "mm_basics", "mm_basics.pyx"),
+    os.path.join(DEV_DIR, "clifford12", "clifford12.pyx"),
 ]
 
 def copy_pyx_sources():
     for filename in pyx_sources:
         shutil.copy(filename, PXD_DIR)
 
-mat24_presteps = CustomBuildStep("Starting code generation",
+general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "c_files"],
   [make_dir, "src", "mmgroup", "dev", "c_doc"],
   [make_dir, "src", "mmgroup", "dev", "pxd_files"],
   [force_delete],
   [copy_pyx_sources],
   [extend_path],
-  [sys.executable, "codegen_mat24.py"],
 )
 
+
+
+####################################################################
+# List of libraries to be used an a code generation stage.
+#
+# This list contains the shared libraries to be used in a code
+# generation stage. We have to divide the code generation process 
+# into stages, since a library built in a certain stage may be 
+# for generating the code used in a subsequent stage.
+#
+# For windows we list the import libraries instead.
+####################################################################
 
 
 if on_readthedocs:
     shared_libs_stage1 = shared_libs_stage2 = []
 elif os.name in ["nt"]:
-    shared_libs_stage1 = ["libmmgroup_mat24"]
+    shared_libs_stage1 = ["libmmgroup_mat24", "libmmgroup_clifford12"]
     shared_libs_stage2 = shared_libs_stage1 + [
                 "libmmgroup_mm_basics"]
 elif os.name in ["posix"]:
-    shared_libs_stage1 = ["mmgroup_mat24"]
+    shared_libs_stage1 = ["mmgroup_mat24", "libmmgroup_clifford12"]
     shared_libs_stage2 = shared_libs_stage1 + [
                 "mmgroup_mm_basics"]
 else:
@@ -198,6 +210,17 @@ else:
         "in the '%s' operating system" % os.name
     )
 
+
+####################################################################
+# Building the extenstions at stage 1
+####################################################################
+
+
+
+mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
+  [sys.executable, "codegen_mat24.py"],
+  [sys.executable, "codegen_clifford12.py"],
+)
 
 mat24_shared = SharedExtension(
     name = "mmgroup.mmgroup_mat24", 
@@ -212,6 +235,20 @@ mat24_shared = SharedExtension(
     define_macros = [ ("MAT24_DLL_EXPORTS", None)],
 )
 
+
+clifford12_shared = SharedExtension(
+    name = "mmgroup.mmgroup_clifford12", 
+    sources = [
+        os.path.join(C_DIR, "qstate12.c"),
+        os.path.join(C_DIR, "qmatrix12.c"),
+    ],
+    libraries = [], 
+    include_dirs = [PACKAGE_DIR, C_DIR],
+    library_dirs = [PACKAGE_DIR, C_DIR],
+    extra_compile_args = EXTRA_COMPILE_ARGS,
+    implib_dir = C_DIR,
+    define_macros = [ ("CLIFFORD12_DLL_EXPORTS", None)],
+)
 
 mat24_extension = Extension("mmgroup.mat24",
         sources=[
@@ -239,6 +276,26 @@ mat24_xi_extension = Extension("mmgroup.mat24_xi",
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
 )
+
+
+clifford12_extension =  Extension("mmgroup.clifford12",
+        sources=[
+            os.path.join(PXD_DIR, "clifford12.pyx"),
+        ],
+        #libraries=["m"] # Unix-like specific
+        include_dirs = [ C_DIR ],
+        library_dirs = [PACKAGE_DIR, C_DIR ],
+        libraries = shared_libs_stage1, 
+        #runtime_library_dirs = ["."],
+        extra_compile_args = EXTRA_COMPILE_ARGS, 
+        extra_link_args = EXTRA_LINK_ARGS, 
+)
+
+
+####################################################################
+# Building the extenstions at stage 2
+####################################################################
+
 
 
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
@@ -281,10 +338,13 @@ mm_extension = Extension("mmgroup.mm",
 
 
 ext_modules = [
+    general_presteps,
     mat24_presteps,
-    mat24_shared, 
+    mat24_shared,
+    clifford12_shared, 
     mat24_extension,
     mat24_xi_extension,
+    clifford12_extension,
     mm_presteps,
     mm_shared, 
     mm_extension, 
@@ -292,6 +352,12 @@ ext_modules = [
 
 
 
+####################################################################
+# Adding the extension for the final stage.
+#
+# Here we build the representation of the monster modulo
+# all small primes P in the set PRIMES. 
+####################################################################
 
 
 PYX_SOURCE_P = "mm_op{P}.pyx"
@@ -330,6 +396,10 @@ for p in PRIMES:
     )
 
 
+####################################################################
+# After building the externals we add a tiny little test step.
+####################################################################
+
 
 
 test_step = CustomBuildStep("import_all",
@@ -341,14 +411,35 @@ test_step = CustomBuildStep("import_all",
 ext_modules.append(test_step)
 
 
+
+####################################################################
+# Don't build any externals when building the documentation.
+####################################################################
+
+
 if on_readthedocs:
     ext_modules = [ ]
 
    
 
 def read(fname):
+    """Return the text in the file with name 'fname'""" 
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
+####################################################################
+# The main setup program.
+####################################################################
+
+
+### Prelimiary!!!
+"""
+ext_modules = [
+    mat24_presteps,
+    clifford12_shared, 
+    clifford12_extension,
+]
+"""
 
 setup(
     name = 'mmgroup',    
@@ -418,6 +509,14 @@ setup(
     package_data = package_data,
     include_dirs=[np.get_include()],  # This gets all the required Numpy core files
 )
+
+
+####################################################################
+# In linux, use 'auditwheel' afterwards, to build the final wheel.
+#
+# The current version is still erroneous.
+####################################################################
+
 
 
 if not on_readthedocs and os.name == "posix":    

@@ -1,0 +1,184 @@
+// %%COMMENT
+// For this module we refer to the section
+// 'Computation in the Clifford group' in the guide, see
+// https://mmgroup.readthedocs.io/en/latest/
+
+
+// %%COMMENT
+// Negative return values of functions in this module are error codes.
+// Their meaning is the same as in module qstate12.c
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+#include <string.h>
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+/*************************************************************************
+*** Construction of a state matrix
+*************************************************************************/
+
+
+
+
+// %%EXPORT p
+int32_t qmatrix12_std_matrix(qstate12_type *pqs, uint32_t nrows, uint32_t ncols, uint32_t rk) 
+// Create a standard matrix (as a C-strided array) with 'nrows' rows,
+// 'ncols' columns, of rank 2**rk. Considering row operations as inputs 
+// and column peration as outputs, we connect the first 'rk' input 
+// qubits to the first 'rk' output qubits.  Note that the distinction 
+// between input and output qubits is out of the scope of this module. 
+// So we just connect input qubit j (corresponding to column j + ncols
+// of submatrix A) to output qubit j (corresponding to column j of 
+// submatrix A). 0 <= rk < min(nows, ncols) must hold.
+{
+    uint64_t mask = (ONE << ncols) + ONE;
+    uint32_t i;
+
+    pqs->nrows = rk + 1;
+    pqs->ncols = nrows + ncols;
+    pqs->factor = 0;
+    pqs->data[0] = 0;
+    if (bad_state(pqs) < 0) return -4;
+    if (rk > nrows || rk > ncols ) {
+        pqs->nrows = pqs->ncols = 0;
+        return -3;
+    }
+    for (i = 1; i < pqs->nrows; ++i) {
+        pqs->data[i] = mask; mask <<= 1;
+    } 
+    return 0;  
+}
+
+
+
+/*********************
+int32_t qmat12_unit_matrix(qbstate12_type *pqs, uint32_t nqb) 
+// Set the state referred by *pqs to the unit transformation with nqb
+// input and nqb output qubits. Note that the distinction beteween input  
+// and output qubits is out of the scope of this module. So we just set a
+// state for 2*nqb qubits, where (input) qubit j is connected to (output)
+// qubit  (j + nqb). 
+{  
+    return  qmatrix12__std_matrix(pqs, nqb, nqb, nqb);
+}
+**********************/
+
+
+// %%EXPORT p
+int32_t qmatrix12_monomial_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
+// Set the state referred by *pqs to a monomial 2**nqb times 2**nqb
+// transformation matrix T that transforms a state of nqb input bits
+// to a state of and nqb output qubits. Here right multiplication with
+// T maps unit vectors to (possibly negated) unit vectors. 
+//
+// pa refers to an array a of integers a[i] of length nqb + 1. Each 
+// integer a[i] is interpreted as a bit field via its binary 
+// representation. So a[i,j] means (a[i] >> j) & 1. 
+// a[i, j1:j2] means the bit field  a[i,j1],...,a[i,j2-1].
+//   
+// T is a 2**n times 2**n matrix which is monomial in the sense 
+// that each row contains exactly one nonzero entry 1 or -1. So 
+// right multiplication with that matrix maps unit vectors to 
+// (possibly negated) unit vectors as described below.
+//
+// For any bit vector v of length nqb let |v> be the unit vector
+// with index v. For any bit vector v of length nqb + 1 let 
+// |v> be the (possibly negated) unit vector 
+// (-1)**v[nqb] * |v[0:nqb]>.  |v1 ^ v2> and |1 << v1> are
+// defined via the corrresponding operators '<<' and '^' in C.
+//
+// Then T maps
+//    |0>       to  |a[0, 0:nqb+1]>
+//    |1 << i>  to  |a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>    (1)
+//
+// T maps unit vectors to (possibly negated) unit vectors, so 
+// T(v) is well defined by |T(v)> = T(|v>) for a bit field v
+// of length nqb + 1. We have
+//
+//    |T(v1 ^ v2)> =  (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)> ,
+//
+// for bit fields v1, v2 of length nqb + 1 and a bilinear form
+// Q depending on the first nqb bits of v1 and v2 only. Thus T is 
+// defined by (1) and Q. The bilinear form Q is defined by:
+//  
+// Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0,  and
+//
+// Q(1 << i, 1 << j) =  m[i + 1, j + nqb + 1],  0 <= j < i < nqb.
+//
+{
+    uint64_t *m = pqs->data, mask1;
+    uint_fast32_t i, j;
+    pqs->nrows = nqb + 1;
+    pqs->ncols = nqb << 1;
+    pqs->factor = ((pa[0] >> nqb) & 1) << 2;
+    if (bad_state(pqs)) return -4;
+ 
+    mask1 = (ONE << nqb) - 1;
+    m[0] = (pa[0] & mask1) << nqb;
+    mask1 = (ONE << (nqb + nqb + 1)) - 1;
+    for (i = 1; i <= nqb; ++i) {
+        m[i] = (ONE << (i - 1)) | ((pa[i] & mask1) << nqb);
+    } 
+    for (i = 0; i < pqs->nrows; ++i) 
+        m[i] &= (ONE << (pqs->ncols + i)) - 1;
+    for (i = 0; i < pqs->nrows; ++i) {
+        for (j = i + 1; j <= pqs->nrows; ++j) m[i] |=
+            ((m[j] >> (i + pqs->ncols)) & ONE) << (j + pqs->ncols);
+    }
+    return 0; 
+}
+
+
+/*************************************************************************
+*** Matrix multiplication
+*************************************************************************/
+
+
+// %%EXPORT p
+int32_t qmatrix12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
+// Performs a matrix multiplication.
+// Given a state ``qs`` with ``qs->ncols = m + n`` we
+// may interpret ``qs`` as an ``2**m`` times ``2**n`` matrix, 
+// where the ``2**m`` rows of the matrix correspond to the
+// higher ``m`` qubits and the ``2**n`` columns corrspond to 
+// the lower ``n`` qubits.
+// Then we consider the state ``qs1`` referred by ``pqs1``
+// as a ``qs1->ncols - nqb`` times ``nqb`` matrix ``m1``and 
+// the state ``qs2`` referred by ``pqs2`` as a  ``nqb`` times 
+// ``qs2->ncols - nqb`` matrix m2.
+//
+// We compute the matrix product ``m3 = m1 * m2``  as a 
+// ``qs1->ncols - nqb`` times ``qs2->ncols - nqb`` matrix
+// and we store the state corresponding to matrix ``m3``
+// in ``qs1``.  The state ``qs2`` is destroyed.
+{
+    int32_t res;
+    res = qstate12_rot_bits(pqs2, nqb, pqs2->ncols, 0);
+    if (res < 0) return res;
+    return qstate12_product(pqs1, pqs2, nqb, nqb);
+}
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

@@ -143,6 +143,11 @@ strategies for words of generators of :math:`\mathbb{M}` :
    is considerably more difficult than reducing elements of
    the subgroup :math:`N_0`.
 
+   Here we will use a fast algorithm for computing in the real
+   Clifford group :math:`\mathcal{C}_{12}`,
+   see :cite:`NRS01`  and  :cite:`AG04`.
+
+
  * Sufficiently long words of generators of :math:`\mathbb{M}` may
    be shortened with high probability, see :cite:`Wilson13`.
 
