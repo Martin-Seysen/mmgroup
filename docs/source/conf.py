@@ -76,6 +76,7 @@ latex_elements = {
 autodoc_mock_imports = [
   #  "mmgroup.mat24",   # We cannot mock up this extension, see below
     "mmgroup.mat24_xi",
+    "mmgroup.clifford12",
     "mmgroup.mm",
     "mmgroup.mm3",
     "mmgroup.mm7",

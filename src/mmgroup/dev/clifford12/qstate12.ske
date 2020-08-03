@@ -112,6 +112,40 @@ extern "C" {
 // %%GEN c
 
 
+
+/*************************************************************************
+*** Checking a state for consistency
+*************************************************************************/
+
+
+
+// %%EXPORT p
+int32_t qstate12_check(qstate12_type *pqs) 
+// Return 0 if ok, or an error code if there is any error in the matrix 
+// data.  Q[i,0] is set to Q[0, i].  Q[0,0] is set ot 0.
+// Irrelevant data bits in valid rows are zeroed. 
+{
+    uint_fast32_t i, j, c, err=0;
+    uint64_t *m = pqs->data;
+    uint64_t mask;
+    if (bad_state(pqs)) return -2;
+    pqs->factor &= FACTOR_MASK;
+    if (pqs->nrows == 0) pqs->factor = 0;
+    c = pqs->ncols;
+    mask = ((ONE << c) << pqs->nrows) - 1;
+    mask &= ~(ONE << c);
+    m[0] &= mask;
+    for (i = 1; i < pqs->nrows; ++i) {
+        m[i] &= mask;
+        m[i] |= (m[0] >> i) & (ONE << c);
+        for (j = 0; j < i; ++j) {
+            err |= (m[i] >> (c + j)) ^ (m[j] >> (c + i));   
+        }
+    }
+    for (i = pqs->nrows; i < pqs->maxrows; ++i) m[i] = 0;
+    return (err & 1) ? -6 : 0;    
+} 
+
 /*************************************************************************
 *** Construction of a state
 *************************************************************************/
@@ -168,7 +202,44 @@ int32_t qstate12_vector_state(qstate12_type *pqs, uint32_t nqb, uint64_t v)
 }
 
 
-
+// %%EXPORT p
+int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t *data, uint32_t mode)
+// Set state *pqs as given by ``data`` for ``nqb`` qubits. Here
+// the array ``data`` is a bit matrix with ``nrows`` rows.
+// If ``mode == 1`` the lower triangular part ``Q`` of the
+// data matrix is taken.
+// If ``mode == 2`` the upper triangular part ``Q`` of the
+// data matrix is taken.
+// Otherwise the part ``Q`` of the data matrix must be symmetric.
+{
+    uint_fast32_t i, j;
+    uint64_t *m = pqs->data, mask;
+    
+    if (nqb + nrows > MAXCOLS || nrows > pqs->maxrows) return -4;
+    pqs->nrows = nrows;
+    pqs->ncols = nqb;
+    pqs->factor = 0;
+    mask = ((ONE << nqb) << nrows) - 1;
+    for (i = 0; i < nrows; ++i) m[i] = data[i] & mask;
+    mask = ONE << nqb;
+    if (mode == 1) {
+        for (i = 0; i < nrows; ++i) {
+            m[i] &= (mask << (i + 1)) - 1;
+            for (j = i+1; j < nrows; ++j) 
+                m[i] ^= ((m[j] >> i) & mask) << j;
+        }
+        return 0;
+    }
+    if (mode == 2) {
+        for (i = 0; i < nrows; ++i) {
+            m[i] &= -(mask << (i + 1));
+            for (j = 0; j < i; ++j) 
+                m[i] ^= ((m[j] >> i) & mask) << j;
+        }
+        return 0;
+    }    
+    return qstate12_check(pqs);
+}
 
 
 // %%EXPORT p
@@ -189,38 +260,6 @@ int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2)
 
 
 
-/*************************************************************************
-*** Checking a state for consistency
-*************************************************************************/
-
-
-
-// %%EXPORT p
-int32_t qstate12_check(qstate12_type *pqs) 
-// Return 0 if ok, or an error code if there is any error in the matrix 
-// data.  Q[i,0] is set to Q[0, i].  Q[0,0] is set ot 0.
-// Irrelevant data bits in valid rows are zeroed. 
-{
-    uint_fast32_t i, j, c, err=0;
-    uint64_t *m = pqs->data;
-    uint64_t mask;
-    if (bad_state(pqs)) return -2;
-    pqs->factor &= FACTOR_MASK;
-    if (pqs->nrows == 0) pqs->factor = 0;
-    c = pqs->ncols;
-    mask = ((ONE << c) << pqs->nrows) - 1;
-    mask &= ~(ONE << c);
-    m[0] &= mask;
-    for (i = 1; i < pqs->nrows; ++i) {
-        m[i] &= mask;
-        m[i] |= (m[0] >> i) & (ONE << c);
-        for (j = 0; j < i; ++j) {
-            err |= (m[i] >> (c + j)) ^ (m[j] >> (c + i));   
-        }
-    }
-    for (i = pqs->nrows; i < pqs->maxrows; ++i) m[i] = 0;
-    return (err & 1) ? -6 : 0;    
-} 
 
 
 /*************************************************************************
@@ -599,7 +638,7 @@ int32_t qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
 
     // Finally, process row 0
     if (v & 1) {
-        // Put factor *= exp(pi/2 * i * k), k = 2 * Q[0,i] + Q[i,i]
+        // Put factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
         // see guide, section 'Implementation of quadratic mappings'
         k = ((m[0] >> sh) & 1) << 1;
         k += (m[i] >> sh) & 1;
@@ -629,9 +668,13 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
     // 'Reducing the representation of a quadratic mapping' of the guide.
     // Here in each iteration we delete the last row of the kernel. We 
     // may also mark more rows deleted in the bits of variable del_rows.
-    for (n = pqs->nrows - 1; n > 0 && (m[n] & mask) == 0; --n) {
+    while (pqs->nrows > 1 && (m[pqs->nrows - 1] & mask) == 0) {
+        n = pqs->nrows - 1;
         // Ignore all rows marked as deleted
-        if (del_rows & (ONE << n)) continue;
+        if (del_rows & (ONE << n)) {
+             --pqs->nrows;
+             continue;
+        }     
         // find highest row i with Q[i,n] = 0
         i = qstate12_find_pivot(pqs, pqs->ncols + n, &v);
         if (i <= 0) {
@@ -650,33 +693,37 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
             if (i == n) {
                 // Last diagonal element of Q is one
                 // Multiply state vector with (1 + sqrt(-1))
-                pqs->factor = ADD_FACTORS(pqs->factor, 0x12);
+                pqs->factor = ADD_FACTORS(pqs->factor, 0x11);
             } else {
                 // Compute row i of Q in v
                 v =  (m[i] >> pqs->ncols) & (uint64_t)(-2LL);
                 v |= (m[0] >> (pqs->ncols + i)) & 1;
                 // Pivot so that Q[k,i] will be 0 for k != n 
                 if ((res = qstate12_pivot(pqs, n, v)) < 0) return res;
-                // Delete row i
+                // Mark row i to be deleted
                 del_rows ^= ONE << i;
-                m[i] = 0;
+                m[i] = 0;  // We don't want to find anything in row i
                 // Double the state vector
                 pqs->factor += 32;
             }
         }
+        --pqs->nrows;  // delete row n
     }
-    pqs->nrows = n;                   // adjust No of rows
-    qstate12_del_rows(pqs, del_rows); // delete marked rows
-    return 0;                         // success
+    // Delete marked rows
+    if (del_rows) qstate12_del_rows(pqs, del_rows); 
+    return 0; 
 }
 
 
 
 // %%EXPORT p
-int32_t qstate12_reduce(qstate12_type *pqs)
-// The state referred by pqs is reduced as described in the guide, 
+int32_t qstate12_echelon(qstate12_type *pqs)
+// The state referred by pqs is converted to reduced echelon form
+// as described in the guide, 
 // section 'Reducing the representation of a quadratic mapping'. 
 // This does not change the state.
+// This functio is mainly used for testing. In a live system one 
+// should call function qstate12_reduce() instead.
 {
     int_fast32_t col_pos = 0, row_pos = 1; 
     uint64_t v;
@@ -699,8 +746,20 @@ int32_t qstate12_reduce(qstate12_type *pqs)
         }
         ++col_pos;
     }
+    return 0;
+}
 
-    // printf("Sum up kernel of A\n");     
+
+
+// %%EXPORT p
+int32_t qstate12_reduce(qstate12_type *pqs)
+// The state referred by pqs is reduced as described in the guide, 
+// section 'Reducing the representation of a quadratic mapping'. 
+// This does not change the state.
+{
+    int32_t res;
+    // Convert part A of the data matrix to reduced echelon form
+    if ((res == qstate12_echelon(pqs)) < 0) return res;
     return qstate12_sum_up_kernel(pqs);
 }
 
@@ -1302,12 +1361,13 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
     uint64_t ncols = pqs->ncols; 
     uint64_t n_iterations = ONE << (pqs->nrows - 1); 
     uint64_t mask = (ONE << ncols) - 1; 
-    uint64_t assoc = m[0]; 
-    uint64_t sum_diag = 0;
+    uint64_t assoc; 
     uint64_t i;
     double freal[4], fimag[4];
+    int32_t res;
 
-    if (bad_state(pqs)) return -2;
+    if ((res = qstate12_check(pqs)) < 0) return res;
+    assoc = m[0]; 
     for (i = 0; i < 2LL << ncols; ++i) pc[i] = 0.0;
     if (pqs->nrows == 0) return 0;
     set_complex_factors(pqs->factor, freal, fimag);
@@ -1322,10 +1382,9 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
             i1 >>= 6;
             d += (d1 = qstate12_lsbtab[i1 & 63]);
         } 
+        diag = (m[d+1] >> (ncols + d + 1)) & 1;
+        qf += ((assoc >> (ncols + d)) & 2) + diag;
         assoc ^= m[d+1];
-        diag = (m[d+1] >> (ncols + d)) & 2;
-        qf += ((((assoc >> ncols) + sum_diag) >> d) & 2) + (diag >> 1);
-        sum_diag ^= (2LL & diag) << d;      
     } 
     return 0;       
 }

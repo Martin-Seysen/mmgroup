@@ -7,15 +7,16 @@ from __future__ import  unicode_literals
 import re
 from collections.abc import Iterable
 from numbers import Integral
+from random import randint
 
 import numpy as np
-from mmgroup.clifford12 import QState12 
+from mmgroup.clifford12 import QState12, as_qstate12, qstate12_unit_matrix 
 
 
 
 
 class QStateMatrix(QState12):
-    def __init__(self, rows, cols = None, data = None):
+    def __init__(self, rows, cols = None, data = None, mode = 0):
         """Create a 2**rows times 2**cols quadratic state matrix
 
         If ``rows`` and ``cols`` are integers then ``data``
@@ -32,17 +33,24 @@ class QStateMatrix(QState12):
 
             * A list of integers. Then that list of integers must 
               encode a valid pair ``(A, Q)`` of bit matrices that 
-              make up a state as in class ``QState``. 
+              make up a state as in class ``QState``. In this case 
+              parameter ``mode`` is evaluated as follows:
+              
+               * 1: create matrix ``Q`` from lower triangular part
+              
+               * 2: create matrix ``Q`` from upper triangular part
+               
+               * Anything else: matrix ``Q`` must be symmetric.
 
         So ``rows, cols = 0, n`` creates a column vector or a *-ket*
         ``|v>`` corresponding to a state of of ``n`` qubits, and 
         ``rows, cols = n, 0`` creates a row vector or a *-bra* ``<v|`` 
         corresponding to a linear function on a state of ``n`` qubits.
 
-        If ``source`` is an instance of this class then a copy of 
+        If ``rows`` is an instance of this class then a copy of 
         that instance is created.
 
-        If ``source`` an instance class ``QState`` then that source
+        If ``rows`` an instance class ``QState`` then that source
         is interpreted as a *-ket* and a copy of that *-ket* is 
         created.
         """
@@ -50,13 +58,12 @@ class QStateMatrix(QState12):
             if isinstance(rows, Integral):
                 self.rows, self.cols, n = rows, cols, rows + cols
                 if data is None or isinstance(data, Iterable):
-                    super(QStateMatrix, self).__init__(n, data)
+                    super(QStateMatrix, self).__init__(n, data, mode)
                 elif isinstance(data, Integral):
                     if rows * cols == 0:
                         super(QStateMatrix, self).__init__(n, data)
-                    elif data == 1:
-                        err = "Unit matrix not implemented"
-                        raise ValueError(err)
+                    elif rows == cols and data == 1:
+                        qstate12_unit_matrix(self, rows)
                 else:
                     err = "Bad data type for  QStateMatrix"
                     raise TypeError(err) 
@@ -64,22 +71,53 @@ class QStateMatrix(QState12):
             source = rows
             if isinstance(source, QStateMatrix):
                 self.rows, self.cols = source.rows, source.cols
-                super(QStateMatrix, self).__init__(source)
+                super(QStateMatrix, self).__init__(as_qstate12(source))
             elif isinstance(source, QState):
                 self.rows, self.cols = 0, source.ncols
-                super(QStateMatrix, self).__init__(source)
+                super(QStateMatrix, self).__init__(as_qstate12(source))
             else:
                 err = "Illegal source type for QStateMatrix"
                 raise TypeError(err) 
         else:
             err = "Cannot construct QStateMatrix from given objects" 
             raise TypeError(err) 
-                
-              
+    
+    @property
+    def shape(self):
+        return (self.rows, self.cols)    
+     
+    def complex(self):
+        """Return complex matrix of state as numpy array"""
+        a = super(QStateMatrix, self).complex()
+        a = a.reshape((1 << self.rows, 1 << self.cols)) 
+        return a        
+
+    def complex_unreduced(self):
+        """For tests only: Return complex matrix of state 
+        
+        Returns same result as method reduce().
+
+        The standard method reduce() creates a reduced copy before 
+        calculating the complex matrix, which is usually much 
+        faster. This method does not reduce the matrix.
+        """
+        a = super(QStateMatrix, self).complex_unreduced()
+        a = a.reshape((1 << self.rows, 1 << self.cols)) 
+        return a        
 
     def __str__(self):
         return format_state(self)
 
+
+
+####################################################################
+# Creating a random a QStateMatrix object
+####################################################################
+
+def rand_qs_matrix(row, cols, data_rows):
+    limit = (1 << (row  + cols + data_rows)) - 1 
+    data = [randint(0, limit) for i in range(data_rows)]
+    return QStateMatrix(row, cols, data, mode = 1)
 
 ####################################################################
 # Formatting a QStateMatrix object

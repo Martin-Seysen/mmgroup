@@ -60,7 +60,7 @@ cdef class QState12(object):
         cl.qstate12_set_mem(&self.qs, &(self.data_[0]), QSTATE12_MAXROWS);
         cl.qstate12_zero(&self.qs, 0)
 
-    def __init__(self, source = 0, data = None):
+    def __init__(self, source = 0, data = None, mode = 0):
         """Intitalize a state with ``ncols`` qubits
 
         If ``source`` is given, it may be another state or an integer
@@ -75,9 +75,16 @@ cdef class QState12(object):
               
             * A list of integers. Then that list of integers must 
               encode a valid pair ``(A, Q)`` of bit matrices that make
-              up the state. 
+              up the state. In this case parameter ``mode`` is
+              evaluated as follows:
+              
+               * 1: create matrix ``Q`` from lower triangular part
+              
+               * 2: create matrix ``Q`` from upper triangular part
+               
+               * Anything else: matrix ``Q`` must be symmetric.
         """
-        cdef uint64_t ncols, nrows,i
+        cdef uint64_t ncols, nrows, i
         cdef p_qstate12_type source_pqs
         if isinstance(source, Integral):
             ncols = source
@@ -87,20 +94,14 @@ cdef class QState12(object):
                 chk_qstate12(cl.qstate12_vector_state(&self.qs, ncols, data))
             elif isinstance(data, Iterable):
                 nrows = len(data)
-                if ncols + nrows > QSTATE12_MAXCOLS:
-                    chk_qstate12(-4)
-                if nrows > QSTATE12_MAXROWS:
-                    chk_qstate12(-5)
-                for i in range(nrows):
+                for i in range(min(nrows, QSTATE12_MAXROWS)):
                     self.data_[i] = data[i]
-                self.qs.factor = 0
-                self.qs.nrows = nrows
-                self.qs.ncols = ncols
-                chk_qstate12(cl.qstate12_check(&self.qs))
+                chk_qstate12(cl.qstate12_set(
+                    &self.qs, ncols, nrows, &self.data_[0], mode))
             else:
                 err = "Bad type of data for creating instance of class  QState12"
                 raise TypeError(err)
-        elif isinstance(data, QState12):
+        elif isinstance(source, QState12):
             source_pqs = pqs12(source)
             chk_qstate12(cl.qstate12_copy(source_pqs, &self.qs))
         else:
@@ -204,6 +205,14 @@ cdef class QState12(object):
 
     #########################################################################
     # Reducing a state to a standard form and checking euality of states
+
+    def echelon(self):
+        """Convert a state to reduce echelon form form
+
+        To be used for testing only!        
+        """
+        chk_qstate12(cl.qstate12_echelon(&self.qs))
+        return self 
 
     def reduce(self):
         """Reduce a state to a standard form
@@ -517,7 +526,7 @@ cdef class QState12(object):
         cl.qstate12_set_mem(&qs, &(data[0]), QSTATE12_MAXROWS)
         chk_qstate12(cl.qstate12_copy(&self.qs, &qs))
         chk_qstate12(cl.qstate12_reduce(&qs))
-        a = np.empty(2 << self.ncols, dytpe = np.double)
+        a = np.empty(2 << self.ncols, dtype = np.double)
         cdef double[:] a_view = a
         chk_qstate12(cl.qstate12_complex_test(&qs, &a_view[0]))
         c = a[0::2] + 1j * a[1::2]
@@ -529,7 +538,7 @@ cdef class QState12(object):
        
         To be used for testing only!
         """
-        a = np.empty(2 << self.ncols, dytpe = np.double)
+        a = np.empty(2 << self.ncols, dtype = np.double)
         cdef double[:] a_view = a
         chk_qstate12(cl.qstate12_complex_test(&self.qs, &a_view[0]))
         c = a[0::2] + 1j * a[1::2]
@@ -545,24 +554,26 @@ cdef p_qstate12_type pqs12(QState12 state):
     return &state.qs
  
     
-
+def as_qstate12(QState12 state):
+    """Retturn an object as an instance of class QState12"""
+    return state
  
-def qstate12_unit_matrix(uint32_t n):
-    """Return 2**n times 2**n unit matrix of type QState12"""
-    m = QState12(n+n)
-    cdef p_qstate12_type m_pqs = pqs12(m)
+def qstate12_unit_matrix(QState12 qs, uint32_t n):
+    """Change state qs to a  2**n times 2**n unit matrix"""
+    cdef p_qstate12_type m_pqs = pqs12(qs)
     cl.qmatrix12_std_matrix(m_pqs, n, n, n) 
+    return qs
 
-def qstate12_monomial_matrix(uint32_t n, a):
-    """Return 2**n times 2**n monomial matrix of type QState12
+def qstate12_monomial_matrix(QState12 qs, uint32_t n, a):
+    """"Change state qs to a 2**n times 2**n monomial matrix
     
     Yet to be documented!!!
     """
-    m = QState12(n+n)
-    cdef p_qstate12_type m_pqs = pqs12(m)
+    cdef p_qstate12_type m_pqs = pqs12(qs)
     cdef uint64_t aa[QSTATE12_MAXROWS+1]
     cdef int i
     for i in range(n):
         aa[i] = a[i]
     cl.qmatrix12_monomial_matrix(m_pqs, n, &aa[0]) 
+    return qs
 
