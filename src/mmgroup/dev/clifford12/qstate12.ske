@@ -661,8 +661,7 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
 {
     uint64_t *m = pqs->data, mask = (ONE << pqs->ncols) - 1; 
     uint64_t v, del_rows = 0;
-    uint_fast32_t i, n;
-    int32_t res;
+    int_fast32_t i, n, res;
 
     // Sum up rows where A is zero. We use the algorithm in section
     // 'Reducing the representation of a quadratic mapping' of the guide.

@@ -30,7 +30,7 @@ QSTATE12_ERROR_STRINGS = {
 }
 
 
-cdef int32_t chk_qstate12(int32_t code):
+cdef int32_t chk_qstate12(int32_t code) except -1:
     """Check the return code of a function in module qstate12.c
     
     The function raises ValueError with a suitable error message if
@@ -45,6 +45,7 @@ cdef int32_t chk_qstate12(int32_t code):
     except KeyError:
         err = "Internal error in processing QState12 instance"
     raise ValueError(err)
+    return -1
 
 cdef class QState12(object):
     """TODO: Yet to be documented!!!"""
