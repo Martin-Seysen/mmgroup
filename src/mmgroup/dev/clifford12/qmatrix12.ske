@@ -36,25 +36,25 @@ extern "C" {
 
 
 // %%EXPORT p
-int32_t qmatrix12_std_matrix(qstate12_type *pqs, uint32_t nrows, uint32_t ncols, uint32_t rk) 
-// Create a standard matrix (as a C-strided array) with 'nrows' rows,
-// 'ncols' columns, of rank 2**rk. Considering row operations as inputs 
+int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, uint32_t rk) 
+// Create a standard matrix (as a C-strided array) with 'rows' rows,
+// 'cols' columns, of rank 2**rk. Considering row operations as inputs 
 // and column peration as outputs, we connect the first 'rk' input 
 // qubits to the first 'rk' output qubits.  Note that the distinction 
 // between input and output qubits is out of the scope of this module. 
-// So we just connect input qubit j (corresponding to column j + ncols
+// So we just connect input qubit j (corresponding to column j + cols
 // of submatrix A) to output qubit j (corresponding to column j of 
-// submatrix A). 0 <= rk < min(nows, ncols) must hold.
+// submatrix A). 0 <= rk < min(nows, cols) must hold.
 {
-    uint64_t mask = (ONE << ncols) + ONE;
+    uint64_t mask = (ONE << cols) + ONE;
     uint32_t i;
 
     pqs->nrows = rk + 1;
-    pqs->ncols = nrows + ncols;
+    pqs->ncols = rows + cols;
     pqs->factor = 0;
     pqs->data[0] = 0;
     if (bad_state(pqs) < 0) return -4;
-    if (rk > nrows || rk > ncols ) {
+    if (rk > rows || rk > cols ) {
         pqs->nrows = pqs->ncols = 0;
         return -3;
     }
@@ -67,81 +67,286 @@ int32_t qmatrix12_std_matrix(qstate12_type *pqs, uint32_t nrows, uint32_t ncols,
 
 
 /*********************
-int32_t qmat12_unit_matrix(qbstate12_type *pqs, uint32_t nqb) 
+int32_t qstate12_unit_matrix(qbstate12_type *pqs, uint32_t nqb) 
 // Set the state referred by *pqs to the unit transformation with nqb
 // input and nqb output qubits. Note that the distinction beteween input  
 // and output qubits is out of the scope of this module. So we just set a
 // state for 2*nqb qubits, where (input) qubit j is connected to (output)
 // qubit  (j + nqb). 
 {  
-    return  qmatrix12__std_matrix(pqs, nqb, nqb, nqb);
+    return  qstate12__std_matrix(pqs, nqb, nqb, nqb);
 }
 **********************/
 
-
 // %%EXPORT p
-int32_t qmatrix12_monomial_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
-// Set the state referred by *pqs to a monomial 2**nqb times 2**nqb
-// transformation matrix T that transforms a state of nqb input bits
-// to a state of and nqb output qubits. Here right multiplication with
-// T maps unit vectors to (possibly negated) unit vectors. 
+int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
+// Set the state ``qs`` referred by ``pqs`` to a real monomial 
+// ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` that 
+// transforms a  state ``<v|`` of ``nqb`` input bits to a state 
+// ``<v|  * T`` of ``nqb`` output qubits. Here right multiplication
+//  with ``T`` maps unit vectors to (possibly negated) unit vectors. 
+// ``<v|`` is considered as a row vector.
 //
-// pa refers to an array a of integers a[i] of length nqb + 1. Each 
-// integer a[i] is interpreted as a bit field via its binary 
-// representation. So a[i,j] means (a[i] >> j) & 1. 
-// a[i, j1:j2] means the bit field  a[i,j1],...,a[i,j2-1].
+// ``pa`` refers to an array a of integers ``a[i]`` of length 
+// ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
+// field  via its binary  representation. So ``a[i,j]`` means 
+// ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
+// ``a[i,j1],...,a[i,j2-1]``.
 //   
-// T is a 2**n times 2**n matrix which is monomial in the sense 
-// that each row contains exactly one nonzero entry 1 or -1. So 
-// right multiplication with that matrix maps unit vectors to 
-// (possibly negated) unit vectors as described below.
+// ``T`` is a ``2**n`` times ``2**n`` matrix which is monomial in 
+// the sense that each row contains exactly one nonzero entry 
+// ``1`` or ``-1``. So right multiplication with that matrix maps 
+// unit vectors to  (possibly negated) unit vectors as described 
+// below.
 //
-// For any bit vector v of length nqb let |v> be the unit vector
-// with index v. For any bit vector v of length nqb + 1 let 
-// |v> be the (possibly negated) unit vector 
-// (-1)**v[nqb] * |v[0:nqb]>.  |v1 ^ v2> and |1 << v1> are
-// defined via the corrresponding operators '<<' and '^' in C.
+// For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
+// unit vector with index ``v``. For any bit vector ``v`` of 
+// length ``nqb + 1`` let ``<v|`` be the (possibly negated) unit 
+// vector ``(-1)**v[nqb] * <v[0:nqb]|``.  ``<v1 ^ v2|`` and 
+// ``<1 << v1|`` are defined via the corrresponding operators 
+// ``<<`` and ``^`` in C.
 //
-// Then T maps
-//    |0>       to  |a[0, 0:nqb+1]>
-//    |1 << i>  to  |a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>    (1)
+// Then ``T``  maps
 //
-// T maps unit vectors to (possibly negated) unit vectors, so 
-// T(v) is well defined by |T(v)> = T(|v>) for a bit field v
-// of length nqb + 1. We have
+//   *  ``<0|``     to  ``<a[0, 0:nqb+1|``
 //
-//    |T(v1 ^ v2)> =  (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)> ,
+//   *  ``<1 << i|``  to  ``<a[i+1, 0:nqb+1]|``
 //
-// for bit fields v1, v2 of length nqb + 1 and a bilinear form
-// Q depending on the first nqb bits of v1 and v2 only. Thus T is 
-// defined by (1) and Q. The bilinear form Q is defined by:
+// ``T`` maps unit vectors to (possibly negated) unit vectors, 
+//  so ``T(v)`` is well defined by ``<T(v)| = T(<v|)`` for a bit 
+// field ``v`` of length ``nqb + 1``. We have
+//
+//   * ``<T(v1 ^ v2)| = (-1)**Q(v1,v2) * <T(v1) ^ T(v2) ^ T(0)|``,
+//
+// for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
+// alternating bilinear form ``Q`` depending on the first ``nqb`` 
+// bits of ``v1`` and ``v2`` only. Thus ``T`` is  defined by the 
+// above equation and ``Q``. The bilinear form ``Q`` is defined by:
 //  
-// Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0,  and
+//   * ``Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0``,  and
 //
-// Q(1 << i, 1 << j) =  m[i + 1, j + nqb + 1],  0 <= j < i < nqb.
+//   * ``Q(1 << i, 1 << j) =  m[i + 1, j + nqb + 1]``,  
+//     for ``0 <= j < i < nqb``.
 //
 {
-    uint64_t *m = pqs->data, mask1;
-    uint_fast32_t i, j;
+    uint64_t *m = pqs->data, mask1, m0;
+    uint_fast32_t i;
     pqs->nrows = nqb + 1;
     pqs->ncols = nqb << 1;
     pqs->factor = ((pa[0] >> nqb) & 1) << 2;
     if (bad_state(pqs)) return -4;
  
     mask1 = (ONE << nqb) - 1;
-    m[0] = (pa[0] & mask1) << nqb;
-    mask1 = (ONE << (nqb + nqb + 1)) - 1;
+    m[0] = m0 = (pa[0] & mask1) << nqb;
     for (i = 1; i <= nqb; ++i) {
-        m[i] = (ONE << (i - 1)) | ((pa[i] & mask1) << nqb);
+        mask1 += mask1 + 1;
+        m[i] = ((ONE << (i - 1)) | ((pa[i] & mask1) << nqb)) ^ m0;
     } 
-    for (i = 0; i < pqs->nrows; ++i) 
-        m[i] &= (ONE << (pqs->ncols + i)) - 1;
-    for (i = 0; i < pqs->nrows; ++i) {
-        for (j = i + 1; j <= pqs->nrows; ++j) m[i] |=
-            ((m[j] >> (i + pqs->ncols)) & ONE) << (j + pqs->ncols);
-    }
-    return 0; 
+    return qstate12_set(pqs, nqb << 1, nqb + 1, m, 1); 
 }
+
+
+
+
+/*************************************************************************
+*** 'Multiplying' states and matrices of states
+*************************************************************************/
+
+
+
+// %%EXPORT
+int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
+// Auxiliary low-level function for qstate12_product().
+// Prepare the states qs1 and qs2 referred by pqs1 and pqs2 for 
+// multiplication. Here the first nqb columns of qs1 and qs2 are to 
+// be multiplieded. The function returns a number 'row_pos', so that, 
+// after preparation, the first nqb columns of submatrices A1 and A2 
+// of the matrices M1 and M2corresponding to qs1 and qs2 will be equal 
+// in the following sense: 
+// A1[i,j] = A2[i,j]       for i <  'row_pos', j < 'nqb' ,   (QS1)
+// A1[i,j] = A2[i,j] = 0   for i >= 'row_pos', j < 'nqb' ,   (QS2)
+// and matrices A1 and A2 both have rank 'row_pos' - 1, when excluding
+// row 0 of the two matrices.
+// Some rows of A1 or A2 may be deleted to achieve this situation.
+// The result of the multiplication of the states qs1 and qs2 over 
+// the first nqb columns of is not changed by this operation.
+// Apart from this assertion, both states are changed, and they may
+// have less rows than before. They may even be changed to zero, if the 
+// result of the multiplication is zero.
+//
+// The algorithm used here is explained in the guide in section
+// 'Multiplication of quadratic mappings'. 
+// In the notation in that section the algorithm computes
+// states qs1', qs2' with  (qs1' (*) qs2')_n = (qs1 (*) qs2)_n 
+// where n = nqb, and (*) denotes the '\odot' operation defined in
+// section 'Products and tensor products of quadratic mappings'
+// of the guide.
+{
+    int_fast32_t i1, i2, col_pos, n_deleted = 0;
+    int_fast32_t row_pos = 1, row_pos1 = 1, row_pos2 = 1;
+    uint64_t v1, v2, deleted = 0;
+    uint64_t *m1 = pqs1->data, *m2 = pqs2->data;
+    int32_t res;
+
+    // check and reduce input matrices
+    // printf("<prep_mul>");
+    if ((res = qstate12_reduce(pqs1)) < 0) return res;
+    if ((res = qstate12_reduce(pqs2)) < 0) return res;
+    if (nqb > pqs1->ncols || nqb > pqs2->ncols) return -3;
+    // 
+    if (pqs1->nrows == 0 || pqs2->nrows == 0)  {
+        return  pqs1->nrows = pqs2->nrows = 0;
+    }
+    // Equalize the first 'ncols' columns of m1 and m2
+    for (col_pos = 0; col_pos < nqb; ++col_pos) {
+        // pivot with column col_pos, advance row_pos if success
+        v1 = qstate12_get_col(m1, col_pos, MIN(row_pos1 + 1, pqs1->nrows));
+        v2 = qstate12_get_col(m2, col_pos, MIN(row_pos2 + 1, pqs2->nrows));
+        i1 = (v1 >> row_pos1) & 1;
+        i2 = (v2 >> row_pos2) & 1;
+        if (i1) {
+            qstate12_copy_row(pqs1, row_pos1++, row_pos);
+            if (i2) {
+                qstate12_copy_row(pqs2, row_pos2++, row_pos);
+                qstate12_pivot(pqs1, row_pos, v1);
+                qstate12_pivot(pqs2, row_pos, v2);
+                ++row_pos;
+            } else {          
+                qstate12_pivot(pqs1, row_pos, v1 ^ v2);
+            }
+        } else {
+            if (i2) {
+                qstate12_copy_row(pqs2, row_pos2++, row_pos);
+                qstate12_pivot(pqs2, row_pos, v1 ^ v2);
+            } else {
+                int32_t i = row_pos-1;
+                v1 ^= v2;
+                while (i >= 0 && ((ONE << i) & v1) == 0) --i;
+                if (i > 0) {
+                    qstate12_pivot(pqs1, i, v1);
+                    qstate12_pivot(pqs2, i, v1);
+                    deleted |= ONE << i; ++n_deleted;
+                    pqs1->data[i] =  pqs2->data[i] = 0; 
+                } else if (i == 0) {
+                    return  pqs1->nrows = pqs2->nrows = 0;  
+                }                
+            }
+        } 
+    }
+
+    // printf("<almost>");
+    v1 = deleted + (ONE << row_pos1) - (ONE << row_pos);
+    v2 = deleted + (ONE << row_pos2) - (ONE << row_pos);
+    if ((res = qstate12_del_rows(pqs1, v1)) < 0) return res;
+    if ((res = qstate12_del_rows(pqs2, v2)) < 0) return res;
+    row_pos -= n_deleted;
+
+  #ifdef CHECK_qstate12_PREP_MUL
+    // The preparation algorithm is a bit involved. So we may check the 
+    // conditions for matrices A1, A2 after preparation here.
+    {
+        uint64_t err = 0;
+        // printf("<check>\n");
+        for (i1 = 0; i1 < row_pos; ++i1) 
+            err |= pqs1->data[i1] ^ pqs2->data[i1];
+        for (i1 = row_pos; i1 < pqs1->nrows; ++i1) err |= pqs1->data[i1];
+        for (i1 = row_pos; i1 < pqs2->nrows; ++i1) err |= pqs2->data[i1];
+        if (err & ((ONE << nqb) - 1)) return -99; 
+        // printf("<done, return %d>\n", row_pos);
+    }
+  #endif
+   
+    return row_pos ;
+}
+
+
+
+// %%EXPORT
+int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t mask)
+// Auxiliary low-level function for qstate12_product().
+// For the submatrices A1, Q1 and A2, Q2 of the matrices M1 and M2 
+// corresponding to qs1 and qs2 we put A1 = A1 + A2, B1 = B1 + B2.
+// The pair (A2, B2) is masked with the Mask beforit is added.
+// The number of rows or columns of A2 may not be larger than the
+// number of row2 or columns of A2. 
+{
+    uint64_t *m1 = pqs1->data, *m2 = pqs2->data, c = ONE << pqs1->ncols;
+    int32_t k;
+    if (bad_state(pqs1) || bad_state(pqs2)) return -2;
+    if (pqs2->nrows != pqs1->nrows || pqs2->ncols != pqs1->ncols) return -99; 
+    m1[0] ^= m2[0];
+    for (k = 1; k < pqs1->nrows; ++k)  {
+       m1[0] ^= m1[k] & m2[k] & (c << k);
+       m1[k] ^= m2[k] & mask;
+    }
+    pqs1->factor = ADD_FACTORS(pqs1->factor, pqs2->factor);
+    return 0;
+}
+
+
+
+
+
+
+// %%EXPORT p
+int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nc, uint32_t nqb)
+// Compute a certain product ``qs3`` of the states ``qs1`` 
+// and ``qs2`` referred by ``pqs1`` and ``pqs2``. 
+// Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
+// Put ``qs1a =  qstate12_extend(qs, n1, n2-nqb)``,
+// ``qs2a =  qstate12_extend(qs, nqb, n1-nqb)``. Then ``qs1a``
+// and ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
+// bits. Let ``qs3a`` be the complex function which is the 
+// product of the functions  ``qs1a`` and ``qs2a``. Then we 
+// have ``qs3 = qstate12_sum_cols(qs23, 0, nc)``.
+// The result ``qs3`` is computed in the state referred by 
+// ``qs1``. It is reduced. ``qs2`` is destoyed. 
+//
+// E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
+// contraction over the first ``nc`` qubits of ``qs1`` and 
+// ``qs2``. ``In case pqs1->ncols = pqs2->ncols = n``, the 
+// function ``qstate12_product(pqs1, pqs2, 0, n)`` returns the 
+// product of ``qs1`` and ``qs2`` (considered as functions); 
+// and ``qstate12_product(pqs1, pqs2, n, n)`` returns the scalar
+// product of ``qs1`` and ``qs2`` (considered as vectors).
+//
+// ``qstate12_product(pqs1, pqs2, 0, n)`` corresponds to the 
+// function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
+// ``'\odot'`` operation defined in section 
+// 'Products and tensor products of quadratic mappings'
+// of the guide.
+{
+    int32_t row_pos = qstate12_prep_mul(pqs1, pqs2, nqb);
+    int32_t rows1, rows2; 
+    int32_t res;
+
+    if (row_pos < 0) return row_pos; // Then row_pos is an error code
+    if (nc > nqb) return -3;
+
+    if ((res = qstate12_sum_cols(pqs1, 0, nc)) < 0) return res; 
+    if ((res = qstate12_sum_cols(pqs2, 0, nc)) < 0) return res; 
+    nqb -= nc;
+    
+    if ((res = qstate12_extend(pqs1, pqs1->ncols, pqs2->ncols - nqb)) < 0)
+        return res;
+    if ((res = qstate12_extend(pqs2, nqb, pqs1->ncols - nqb)) < 0) 
+        return res;
+
+    if (pqs1->nrows == 0 || pqs2->nrows == 0)
+        return pqs1->nrows = pqs1->factor = 0; 
+
+    rows1 = pqs1->nrows - row_pos;  rows2 = pqs2->nrows;
+    if ((res = qstate12_insert_rows(pqs1, pqs1->nrows, rows2)) < 0) 
+        return res;  
+    if ((res = qstate12_insert_rows(pqs2, row_pos, rows1)) < 0) 
+        return res; 
+    if ((res = qstate12_mul_elements(pqs1, pqs2, -(ONE << nqb))) < 0) 
+        return res; 
+    if ((res = qstate12_reduce(pqs1)) < 0) return res; 
+    return 0;
+}
+
+
 
 
 /*************************************************************************
@@ -150,7 +355,7 @@ int32_t qmatrix12_monomial_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa
 
 
 // %%EXPORT p
-int32_t qmatrix12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
+int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 // Performs a matrix multiplication.
 // Given a state ``qs`` with ``qs->ncols = m + n`` we
 // may interpret ``qs`` as an ``2**m`` times ``2**n`` matrix, 

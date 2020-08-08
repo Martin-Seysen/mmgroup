@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from numbers import Integral
 
 import numpy as np
-from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t
+from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t, int8_t
 
 include "../pxd_files/clifford12.pxi"
 cimport clifford12 as cl
@@ -167,9 +167,7 @@ cdef class QState12(object):
     def column(self, uint32_t j):  
         """Return column j of the bit matrix of the state"""
         self.check()
-        cdef uint64_t v
-        chk_qstate12(cl.qstate12_get_col(&self.qs, j, self.qs.nrows, &v))
-        return int(v)
+        return int(cl.qstate12_get_column(&self.qs, j))
             
     def mul_av(self, uint64_t v):
         """Return matrix product ``A * transposed(v)``
@@ -208,12 +206,17 @@ cdef class QState12(object):
     # Reducing a state to a standard form and checking euality of states
 
     def echelon(self):
-        """Convert a state to reduce echelon form form
+        """Convert state to (not reduced) echelon form
 
-        To be used for testing only!        
+        Only the first  ``n_reduce`` colums are converted to reduced
+        echelon form
+
+        The function reutrns a list ``table`` with ``table[j] = i``
+        if the leading coefficient of row ``i`` is in columng ``j``.
+        We have  ``table[j] = -1``  if no such row exists.
         """
-        chk_qstate12(cl.qstate12_echelon(&self.qs))
-        return self 
+        chk_qstate12(cl.qstate12_echelonize(&self.qs))
+        return self
 
     def reduce(self):
         """Reduce a state to a standard form
@@ -241,6 +244,9 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_reduce(&qs2))
         return chk_qstate12(cl.qstate12_equal(&qs1, &qs2))
 
+
+
+
     #########################################################################
     # Permuting the qubits of the state
 
@@ -264,8 +270,6 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_rot_bits(&self.qs, rot, nrott, n0))
         return self
         
-    #########################################################################
-    # Extending and restricting a state
 
     def xch_bits(self, uint32_t sh, uint64_t mask):
         """Exchange qubit arguments the state
@@ -284,6 +288,8 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_xch_bits(&self.qs, sh, mask))
         return self
         
+    #########################################################################
+    # Extending and restricting a state
 
     def extend_zero(self, uint32_t j, uint32_t nqb):
         """Insert ``nqb`` zero qubits at position ``j``. 
@@ -435,7 +441,7 @@ cdef class QState12(object):
         cdef qstate12_type qs2
         cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
         chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-        chk_qstate12(cl.qmatrix12_matmul(&self.qs, &qs2, nqb))
+        chk_qstate12(cl.qstate12_matmul(&self.qs, &qs2, nqb))
         return self
 
      
@@ -546,6 +552,45 @@ cdef class QState12(object):
         del a
         return c
 
+    #########################################################################
+    # Obtain complex entries of a state
+    
+        
+    def entries(self, indices):
+        """Return complex entries of a state.
+        
+        Here ``indices`` must be an numpy array of indices of
+        dtype = np.uint32 and of any shape. Unused bits of the 
+        indices are ignored.
+        
+        The function returns a complex numpy array ``c`` of the same 
+        shape as the input so that ``c[i]`` is the complex value
+        of entry ``indices[i]`` of the state.
+              
+        This function does not change the state. It uses method 
+        ``echelonize`` to bring the representation of the
+        state to echelon form.
+
+        You may use function ``as_index_array`` for converting
+        in index to a suitable numpy array. 
+        """
+        old_shape = indices.shape()
+        ind = np.ravel(indices, order = 'C')
+        cdef uint32_t[:] ind_view = ind
+        cdef unsigned int n = len(ind)
+        a = np.empty(2 * n, dtype = np.double, order = 'C')
+        cdef double[:] a_view = a
+        if n:
+            chk_qstate12(cl.qstate12_entries(
+                &self.qs, n, &ind_view[0], &a_view[0]))
+        c = a[0::2] + 1j * a[1::2]
+        if len(old_shape) == 0:
+            return c[0]
+        c.reshape(old_shape)
+        del a
+        return c
+
+
  
 cdef p_qstate12_type pqs12(QState12 state):
     """Return pointer to the structure of a ``state`` 
@@ -554,7 +599,24 @@ cdef p_qstate12_type pqs12(QState12 state):
     """
     return &state.qs
  
-    
+ 
+
+def as_index_array(data, uint32_t nqb):
+    cdef uint32_t mask = (1 << nqb) - 1
+    if isinstance(data, Integral):
+        return np.array(data, dype = np.uint32, order = 'C')
+    if data is None:
+        return np.arange(1 << nqb, dtype = np.uint32, order = 'C')
+    if isinstance(data, slice):
+        return np.arange(*data.indices(1 << nqb), 
+            dtype = np.uint32, order = 'C')
+    ind = np.array(data, dype = np.uint32, copy = False, 
+        order = 'C') 
+    if len(ind.shape) > 1:
+        err = "Bad index type for QState12 array"
+        raise TypeError(err)
+    return  ind & mask   
+   
 def as_qstate12(QState12 state):
     """Retturn an object as an instance of class QState12"""
     return state
@@ -562,19 +624,21 @@ def as_qstate12(QState12 state):
 def qstate12_unit_matrix(QState12 qs, uint32_t n):
     """Change state qs to a  2**n times 2**n unit matrix"""
     cdef p_qstate12_type m_pqs = pqs12(qs)
-    cl.qmatrix12_std_matrix(m_pqs, n, n, n) 
+    chk_qstate12(cl.qstate12_std_matrix(m_pqs, n, n, n))
     return qs
 
-def qstate12_monomial_matrix(QState12 qs, uint32_t n, a):
+def qstate12_row_monomial_matrix(QState12 qs, uint32_t n, a):
     """"Change state qs to a 2**n times 2**n monomial matrix
     
     Yet to be documented!!!
     """
     cdef p_qstate12_type m_pqs = pqs12(qs)
     cdef uint64_t aa[QSTATE12_MAXROWS+1]
+    if n > QSTATE12_MAXROWS:
+        return chk_qstate12(-4) 
     cdef int i
-    for i in range(n):
+    for i in range(n+1):
         aa[i] = a[i]
-    cl.qmatrix12_monomial_matrix(m_pqs, n, &aa[0]) 
+    chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, n, &aa[0])) 
     return qs
 
