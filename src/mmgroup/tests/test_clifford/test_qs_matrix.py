@@ -4,6 +4,8 @@ from __future__ import  unicode_literals
 
 
 from random import randint #, shuffle, sample
+from functools import reduce
+from operator import __or__
 
 import numpy as np
 import pytest
@@ -103,6 +105,48 @@ def slow_complex(m):
     return a.reshape((1 << m.rows, 1 << m.cols))
 
 
+
+#####################################################################
+# Check echelon form  matrix of type QStateMatrix
+#####################################################################
+
+
+def check_echelon(m, reduced = False):
+    """Check if a matrix ``m`` is in echelon form
+
+    ``m`` must be a matrix of type ``QStateMatrix``.
+    If ``reduced`` is True them the matrix is checked to be
+    in reduced echelon form.
+
+    Raise ``ValueError`` if matrix ``m`` is not in correct
+    echelon form.
+    """
+    err = "Bad vector in row % of part A of QSMatrix"
+    data = m.data
+    mask = (1 << m.ncols) - 1
+    index = 0
+    for i, v in enumerate(data[1:]):
+        v &= mask
+        new_index = (v & -v).bit_length()
+        if new_index <= index:
+            print("\nError: " + err % i)
+            print(m)
+            err1 = "QSMatrix is not in echelon form"
+            raise ValueError(err1)
+        index = new_index
+        if reduced:
+            v = reduce(__or__, data[:i], 0) 
+            if (v & (1 << (index - 1))):
+                print("\nError: " + err % i)
+                print(m)
+                err1 = "QSMatrix is not in reduced echelon form"
+                raise ValueError(err1)
+                
+            
+        
+        
+
+
 #####################################################################
 # Check that states are approcimately equal
 #####################################################################
@@ -121,7 +165,7 @@ def check_eq_qstate(m1, m2, text = None):
     an error.    
     """
     c1, c2 = m1.complex_unreduced(), m2.complex_unreduced()
-    eq = np.amax(abs(c1 - c2)) < EPS
+    eq = np.amax(abs(c1 - c2), initial = 0.0) < EPS
     if not eq:
         err = "Error in comparing instances of QStateMatrix"
         print("\n" + (text if text else err) + "\n")
@@ -139,7 +183,12 @@ def compare_complex(c1, c2, text, qstate = None):
     ``c1`` is the expectd and ``c2`` is the obtained complex matrix.
     ``qstate`` is an optiona state representing the matrix.
     """
-    diff = np.amax(abs(c1 - c2))
+    try:
+        diff = np.amax(abs(c1 - c2), initial = 0.0)
+    except:
+        err = "\nCannot compare arrays of shapes %s and %s\n"
+        print(err % (c1.shape, c2.shape))
+        raise
     if diff > EPS:
         err = text if text else "Error in comparing complex matrices"
         print("\n" + err + "\n")
@@ -171,7 +220,26 @@ def check_complex(m):
 
 
 #####################################################################
-# display some matrices
+# Create ranom indices
+#####################################################################
+
+def random_slice(length):
+    """Return data for indexing a random slice of a vector
+
+    Let ``v`` be a one-dimensional numpy array of a given ``length``.
+    
+    We return a random triple ``(start, stop, step)`` for indexing a 
+    the array ``v`` in the form ``v[start:stop:step]``.
+    """
+    start = randint(-length, length-1)
+    stop = randint(-length, length-1)
+    down = stop % length < start % length
+    step = max(1, randint(0, abs(start - stop)//2))
+    step *= (-1)**down 
+    return start, stop, step    
+
+#####################################################################
+# Display and check some matrices
 #####################################################################
 
 qs_matrix_data = [
@@ -210,35 +278,70 @@ def test_qs_matrix(verbose = 0):
     """Basic test for class ``QStateMatrix`` 
     
     It tests the ``__str__ `` method, the conversion to a
-    complex matrix and the reduction of an instance of class
-    ``QStateMatrix``.
+    complex matrix and the echelonization and the reduction of 
+    an instance of class ``QStateMatrix``.
     """
     for ntest, m in enumerate(create_display_testvectors()):
         if verbose or ntest < len(qs_matrix_data):
             print("TEST %s" % (ntest+1))
             print(m)
-            m2 = QStateMatrix(m)
-            print("Echelon")
-            print(m2.echelon())
-            print(m2)
         check_complex(m)
-        m2 = QStateMatrix(m)
-        if verbose: 
-            print("Echelonize....")
-            m2.echelon()
+        m2 = QStateMatrix(m).echelon()
+        check_echelon(m2)
+        check_eq_qstate(m,m2, "Echelonized")
+        if verbose:
+            print("Echelonized")
             print(m2)
-            check_eq_qstate(m,m2)
-            m2 = QStateMatrix(m)
-        if verbose: print("Reducing....")
-        m2.reduce()
-        if verbose: print(m2)
-        check_eq_qstate(m,m2)
+        m2 = QStateMatrix(m).reduce()
+        check_echelon(m2, reduced = True)
+        check_eq_qstate(m,m2, "Reduced")
+        if verbose: 
+            print("Reduced")
+            print(m2)
 
+ 
 
+@pytest.mark.qstate
+def test_getitem(verbose = 0):
+    for ntest, m in enumerate(create_display_testvectors()):
+        if verbose:
+            print("TEST %s" % (ntest+1))
+            print(m)
+        c = m.complex()
+        f0, t0, d0 = random_slice(1 << m.shape[0])
+        f1, t1, d1 = random_slice(1 << m.shape[1])
+        c1_ref = c[f0:t0:d0, f1:t1:d1] 
+        c1 =  m[f0:t0:d0, f1:t1:d1] 
+        s = "index m[%d:%d:%d, %d:%d:%d]" % (f0, t0, d0, f1, t1, d1)
+        if verbose:
+            print(s)
+            print(c1)
+        compare_complex(c1_ref, c1, s, m) 
+        
+        i0 = randint(-1 <<  m.shape[0], (1 <<  m.shape[0]) - 1 )     
+        i1 = randint(-1 <<  m.shape[1], (1 <<  m.shape[1]) - 1 ) 
+        c1_ref = c[f0:t0:d0, i1] 
+        c1 =  m[f0:t0:d0, i1] 
+        s = "index m[%d:%d:%d, %s]" % (f0, t0, d0, i1)        
+        if verbose:
+            print(s)
+            print(c1)
+        compare_complex(c1_ref, c1, s, m)  
 
+        c1_ref = c[i0, f1:t1:d1] 
+        c1 =  m[i0, f1:t1:d1] 
+        s = "index m[%d, %d:%d:%d]" % (i0, f1, t1, d1)
+        if verbose:
+            print(s)
+            print(c1)
+        compare_complex(c1_ref, c1, s, m)  
 
-
-
-
+        c1_ref = c[i0, i1] 
+        c1 =  m[i0, i1] 
+        s = "index m[%d, %d]" % (i0, i1)
+        if verbose:
+            print(s)
+            print(c1)
+        compare_complex(np.array(c1_ref), np.array(c1), s, m)  
 
         

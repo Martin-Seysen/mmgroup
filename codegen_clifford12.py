@@ -163,6 +163,7 @@ from libc.stdint cimport int64_t, int32_t
 cdef extern from "clifford12.h":
     enum: QSTATE12_MAXCOLS
     enum: QSTATE12_MAXROWS
+    enum: QSTATE12_UNDEF_ROW
     ctypedef struct qstate12_type:
         uint32_t maxrows
         uint32_t nrows

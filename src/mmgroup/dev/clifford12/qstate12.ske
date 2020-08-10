@@ -34,6 +34,9 @@
 #define QSTATE12_MAXCOLS     (64)
 #define QSTATE12_MAXROWS     (QSTATE12_MAXCOLS+1)
 
+// Marker for an undefined row index
+#define QSTATE12_UNDEF_ROW 0xff
+
 
 typedef struct {
     uint32_t maxrows;
@@ -60,8 +63,6 @@ typedef struct {
 // when  MAXCOLS bolumns are present.
 #define MAXROWS QSTATE12_MAXROWS
 
-// Marker for an undefined row index
-#define QSTATE12_UNDEF_ROW 0xff
 
 
 // Use this for the number 1 as an uint64_t
@@ -87,20 +88,17 @@ typedef struct {
     ((pqs)->nrows + (pqs)->ncols > MAXCOLS  \
       || (pqs)->nrows  > (pqs)->maxrows)
 
+// Deprecated!!!
 // Return True if i is an illegal row index for the object
 // of type qstate12_type referred by pqs.
-#define bad_row(pqs, i) ((i) >= (pqs)->nrows) 
+// #define bad_row(pqs, i) ((i) >= (pqs)->nrows) 
 
+// Deprecated!!!
 // Return True if j is an illegal column index for the object
 // of type qstate12_type referred by pqs.
-#define bad_col(pqs, j) ((j) >= MAXCOLS) 
+// #define bad_col(pqs, j) ((j) >= MAXCOLS) 
 
    
-   
-   
-// Generate C code to check that the result of qstate12_prep_mul()
-// if CHECK_qstate12_PREP_MUL is #defined. 
-#define CHECK_qstate12_PREP_MUL
 
 // The 'bad' maximum and minimum functions in C, use them with care!!
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -114,8 +112,8 @@ typedef struct {
 
 static inline 
 uint64_t qstate12_get_col(uint64_t *m, uint32_t j, uint32_t len)
-// read column j from the bit matrix referred by m
-// upto and exlcuding line ``len``, write the result to *pa.
+// Return column ``j`` of the bit matrix ``m``
+// upto and exlcuding line ``len``.
 {
     uint_fast32_t i;
     uint64_t a = 0;
@@ -139,6 +137,23 @@ int32_t qstate12_find_pivot(uint64_t *m, uint32_t nrows, uint32_t j)
     while (i >= 0  && ((m[i] & mask) == 0)) -- i;
     return i;
 }
+
+
+static inline
+void qstate12_xch_rows(qstate12_type *pqs, uint32_t i1, uint32_t i2)
+// Exchange row i1 of the state matrix M referred by *pqs with row i2. 
+// Also, adjust the quadratic form Q inside M. 1 <= i1, i2 < pqs->nrows 
+// must hold. This does not change the state.
+{ 
+    uint64_t *m = pqs->data, v; 
+    int_fast32_t k;
+    v = m[i1]; m[i1] = m[i2];  m[i2] = v;
+    i1 +=  pqs->ncols; i2 +=  pqs->ncols; 
+    v = (ONE << i1) ^ (ONE << i2);
+    if (v) for (k = 0; k < pqs->nrows; ++k) 
+        m[k] ^= v & -(((m[k] >> i1) ^ (m[k] >> i2)) & ONE);
+} 
+
 
 #endif // #ifdef CLIFFORD12_INTERN
 
@@ -402,54 +417,12 @@ int32_t qstate12_set_cols(qstate12_type *pqs, uint32_t c0, uint32_t len, uint32_
 }
 
 
-// %%EXPORT
-int32_t qstate12_copy_row(qstate12_type *pqs, uint32_t i1, uint32_t i2)
-// Copy row i1 of the state matrix M referred by *pqs to row i2. 
-// Also, adjust the quadratic form Q inside M. 1 <= i1, i2 < pqs->nrows 
-// must hold. 
-{ 
-    uint64_t *m = pqs->data, mask; 
-    int_fast32_t k, sh;
-    if (bad_state(pqs)) return -2;
-    if (bad_row(pqs, i1) || bad_row(pqs, i2) || i1 == 0 || i2 == 0)  
-        return -7;
-    m[i2] = m[i1]; 
-    mask = ONE <<  (pqs->ncols + i2);
-    if (i1 < i2) {
-        sh = i2 - i1;
-        for (k = 0; k < pqs->nrows; ++k)  {
-            m[k] = (m[k] & ~mask) | ((m[k] << sh) & mask);
-        }
-    } else if (i1 > i2) {
-        sh = i1 - i2;
-        for (k = 0; k < pqs->nrows; ++k)  {
-           m[k] = (m[k] & ~mask) | ((m[k] >> sh) & mask);
-        }
-    }
-    return 0; 
-} 
 
 
 
 
-// %%EXPORT
-int32_t qstate12_xch_rows(qstate12_type *pqs, uint32_t i1, uint32_t i2)
-// Exchange row i1 of the state matrix M referred by *pqs with row i2. 
-// Also, adjust the quadratic form Q inside M. 1 <= i1, i2 < pqs->nrows 
-// must hold. This does not change the state.
-{ 
-    uint64_t *m = pqs->data, v; 
-    int_fast32_t k;
-    if (bad_state(pqs)) return -2;
-    if (bad_row(pqs, i1) || bad_row(pqs, i2) || i1 == 0 || i2 == 0)  
-        return -7;
-    v = m[i1]; m[i1] = m[i2];  m[i2] = v;
-    i1 +=  pqs->ncols; i2 +=  pqs->ncols; 
-    v = (ONE << i1) ^ (ONE << i2);
-    if (v) for (k = 0; k < pqs->nrows; ++k) 
-        m[k] ^= v & -(((m[k] >> i1) ^ (m[k] >> i2)) & ONE);
-    return 0; 
-} 
+
+
 
 
 
@@ -756,8 +729,8 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
         if (i > row_pos) {
             for (i1 = row_pos; i1 < i; ++i1) 
-                v |= ((m[i] >> col) & 1) << i1; 
-            qstate12_pivot(pqs, i, v);
+                v |= ((m[i1] >> col) & 1) << i1; 
+            if (v) qstate12_pivot(pqs, i, v);
             qstate12_xch_rows(pqs, i, row_pos);
         }
         row_pos += i >= row_pos;
@@ -776,7 +749,7 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 // arleady the case.
 // This does not change the state. 
 {
-    int_fast32_t row_pos = 1, col, i, i1; 
+    int_fast32_t row_pos = 1, col, i; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return -2;  // abort if state is bad
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
@@ -786,18 +759,12 @@ int32_t qstate12_reduce(qstate12_type *pqs)
         // pivot with column col, advance row_pos if success
         i = pqs->nrows - 1; 
         mask = ONE << col;
-        v = 0;
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
-        if (i > row_pos) {
-            for (i1 = row_pos; i1 < i; ++i1) 
-                v |= ((m[i] >> col) & 1) << i1; 
-            qstate12_pivot(pqs, i, v);
-            qstate12_xch_rows(pqs, i, row_pos);
-        }
         if  (i >= row_pos) {
-            ++row_pos;
             v = qstate12_get_col(m, col, i);
             if (v) qstate12_pivot(pqs, i, v);
+            if (i > row_pos) qstate12_xch_rows(pqs, i, row_pos);
+            ++row_pos;
         }    
     }    
     return qstate12_sum_up_kernel(pqs);
@@ -807,8 +774,14 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 
 // %%EXPORT p
 int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
-// Cmpute a row tble for the state 
-// Yet to be ddocumented!!!!
+// Compute a row table for the state ``qs`` referred by ``pqs``. 
+// `qs`` must be in (not necessarily reduced) echelon form. 
+// The function computes ``row_table[j] = i`` if the leading
+// bit of row ``i`` of part ``A`` of the data matrix of ``qs``
+// is in column ``j``, for ``0 <= j < pqs->ncols`` and
+// ``1 <= i < pqs->nrows``. If now such row exists for column
+// ``j`` we put  ``row_table[j] = QSTATE12_UNDEF_ROW``
+// 
 // The representation of the state is not changed.
 {
     int_fast32_t row_pos = 1, col, i; 
@@ -816,8 +789,8 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
     if (bad_state(pqs)) return -2;  // abort if state is bad
  
     // Convert submatrix A of M to (non-reduced) echelon form
-    for (col = 0; col < pqs->ncols && row_pos < pqs->nrows; ++col) {
-        // find pivotin row ``i`` for culumn ``col``
+    for (col = 0; col < pqs->ncols; ++col) {
+        // find pivoting row ``i`` for column ``col``
         i = pqs->nrows - 1; 
         mask = ONE << col;
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
@@ -825,7 +798,7 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
             row_table[col] = row_pos = i;
             ++row_pos;
         }
-        else row_table[col] =QSTATE12_UNDEF_ROW;
+        else row_table[col] = QSTATE12_UNDEF_ROW;
     }
     return 0;    
 }
@@ -1276,6 +1249,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
     uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
     double freal[5], fimag[5];
     
+    if ((res = qstate12_echelonize(pqs)) < 0) return res;
     if (pqs->nrows == 0) {
         while (n--) {
             *pc++ = 0.0; *pc++ = 0.0;
@@ -1285,8 +1259,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 
     set_complex_factors(pqs->factor, freal, fimag);
     freal[4] = fimag[4] = 0.0;
-    if ((res = qstate12_echelonize(pqs)) < 0) return res;
-    qstate12_row_table(pqs, row_table);
+     qstate12_row_table(pqs, row_table);
     while (n--) {
         factor = 0;
         m0 = m[0] ^ (vmask & *v++);
@@ -1294,7 +1267,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
         for (j = 0; j < pqs->ncols; ++j) {
             if ((m0 >> j) & 1) {
                 i = row_table[j];
-                if (j == pqs->ncols) {
+                if (i == QSTATE12_UNDEF_ROW) {
                     // Then the entry is 0
                     factor = 4;
                     goto factor_done;

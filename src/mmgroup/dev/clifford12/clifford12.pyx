@@ -244,8 +244,17 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_reduce(&qs2))
         return chk_qstate12(cl.qstate12_equal(&qs1, &qs2))
 
-
-
+    def row_table(self):
+        """Return row table
+        
+        Yet to be documented!!!
+        """
+        cdef uint8_t table[QSTATE12_MAXCOLS] 
+        chk_qstate12(cl.qstate12_echelonize(&self.qs))
+        chk_qstate12(cl.qstate12_echelonize(&self.qs))
+        
+        
+                
 
     #########################################################################
     # Permuting the qubits of the state
@@ -559,8 +568,8 @@ cdef class QState12(object):
     def entries(self, indices):
         """Return complex entries of a state.
         
-        Here ``indices`` must be an numpy array of indices of
-        dtype = np.uint32 and of any shape. Unused bits of the 
+        Here ``indices`` must be a one-dimensional numpy array of 
+        indices of ``dtype = np.uint32``. Unused bits of the 
         indices are ignored.
         
         The function returns a complex numpy array ``c`` of the same 
@@ -570,23 +579,15 @@ cdef class QState12(object):
         This function does not change the state. It uses method 
         ``echelonize`` to bring the representation of the
         state to echelon form.
-
-        You may use function ``as_index_array`` for converting
-        in index to a suitable numpy array. 
         """
-        old_shape = indices.shape()
-        ind = np.ravel(indices, order = 'C')
-        cdef uint32_t[:] ind_view = ind
-        cdef unsigned int n = len(ind)
+        cdef uint32_t[:] ind_view = indices
+        cdef unsigned int n = len(indices)
         a = np.empty(2 * n, dtype = np.double, order = 'C')
         cdef double[:] a_view = a
         if n:
             chk_qstate12(cl.qstate12_entries(
                 &self.qs, n, &ind_view[0], &a_view[0]))
         c = a[0::2] + 1j * a[1::2]
-        if len(old_shape) == 0:
-            return c[0]
-        c.reshape(old_shape)
         del a
         return c
 
@@ -601,21 +602,6 @@ cdef p_qstate12_type pqs12(QState12 state):
  
  
 
-def as_index_array(data, uint32_t nqb):
-    cdef uint32_t mask = (1 << nqb) - 1
-    if isinstance(data, Integral):
-        return np.array(data, dype = np.uint32, order = 'C')
-    if data is None:
-        return np.arange(1 << nqb, dtype = np.uint32, order = 'C')
-    if isinstance(data, slice):
-        return np.arange(*data.indices(1 << nqb), 
-            dtype = np.uint32, order = 'C')
-    ind = np.array(data, dype = np.uint32, copy = False, 
-        order = 'C') 
-    if len(ind.shape) > 1:
-        err = "Bad index type for QState12 array"
-        raise TypeError(err)
-    return  ind & mask   
    
 def as_qstate12(QState12 state):
     """Retturn an object as an instance of class QState12"""

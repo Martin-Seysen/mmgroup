@@ -104,6 +104,23 @@ class QStateMatrix(QState12):
         a = super(QStateMatrix, self).complex_unreduced()
         a = a.reshape((1 << self.rows, 1 << self.cols)) 
         return a        
+        
+    def __getitem__(self, item):
+        if not isinstance(item, tuple):
+            item = (item,)
+        while len(item) < 2:
+            item = item + (None,)
+        a0 = as_index_array(item[0], self.shape[0]) << self.shape[1]
+        a1 = as_index_array(item[1], self.shape[1])
+        shape_ =  a0.shape + a1.shape 
+        a = np.ravel(a0)[:, np.newaxis] + np.ravel(a1)[ np.newaxis, :] 
+        if a.dtype != np.uint32:
+            a = np.array(a, dtype = np.uint32)
+        a = np.ravel(a, order = "C")
+        c = self.entries(a)  
+        if len(shape_):        
+            return c.reshape(shape_)
+        return c[0]
 
     def __str__(self):
         return format_state(self)
@@ -212,3 +229,26 @@ def format_state(q, reduced = False):
        s += " *\n" + str_data 
     return s + ">\n"                  
         
+        
+
+####################################################################
+# omputing an array of indices
+####################################################################
+        
+        
+def as_index_array(data, nqb):
+    mask = (1 << nqb) - 1
+    if isinstance(data, Integral):
+        return np.array(data & mask, dtype = np.uint32)
+    if data is None:
+        return np.arange(1 << nqb, dtype = np.uint32)
+    if isinstance(data, slice):
+        return np.arange(*data.indices(1 << nqb), 
+            dtype = np.uint32)
+    ind = np.array(data, dype = np.uint32, copy = False) 
+    if len(ind.shape) > 1:
+        err = "Bad index type for QState12 array"
+        raise TypeError(err)
+    return  ind & mask  
+
+    
