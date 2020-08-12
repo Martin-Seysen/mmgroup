@@ -193,12 +193,12 @@ def compare_complex(c1, c2, text, qstate = None):
         err = text if text else "Error in comparing complex matrices"
         print("\n" + err + "\n")
         print("qstate  = ", qstate)
-        if max(c1.shape + c2.shape) < 6:
+        if max(sum(c1.shape), sum(c2.shape)) <= 64:
             print("expected\n", c1)
             print("obtained\n\n", c2)
-        else:
-            print("Shape of expected matrix:", c1.shape)
-            print("Shape of obtained matrix:", c2.shape)
+            print("expected - obtained\n\n", c1 - c2)
+        print("Shape of expected matrix:", c1.shape)
+        print("Shape of obtained matrix:", c2.shape)
         print("Max. absolute error:", diff)
         raise ValueError(err)
 

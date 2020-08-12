@@ -452,7 +452,17 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
         chk_qstate12(cl.qstate12_matmul(&self.qs, &qs2, nqb))
         return self
-
+        
+    def prep_mul(self, other, uint32_t nqb):  
+        """Yet to be documented!!!    
+        
+        Both, ``self`` and ``other``, are modified. Return the pair
+        ``(self, other)``.
+        For testing only!!
+        """
+        cdef p_qstate12_type other_pqs = pqs12(other)
+        chk_qstate12(cl.qstate12_prep_mul(&self.qs, other_pqs, nqb))
+        return self, other
      
     #########################################################################
     # Applying qubit gates
@@ -599,7 +609,6 @@ cdef p_qstate12_type pqs12(QState12 state):
     Here a ``state`` must be of type ``QState12``.
     """
     return &state.qs
- 
  
 
    

@@ -183,7 +183,7 @@ uint64_t qstate12_xor_col(uint64_t *m1, uint64_t *m2, uint32_t j, uint32_t len)
 {
     uint_fast32_t i;
     uint64_t a = 0;
-    for (i = 0; i <= len; ++i) a |= (((m1[i] ^ m2[i]) >> j) & ONE) << i;
+    for (i = 0; i < len; ++i) a |= (((m1[i] ^ m2[i]) >> j) & ONE) << i;
     return a;
 }
 
@@ -241,8 +241,8 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
             if (i2) {
                 qstate12_copy_row(m1, pqs1->ncols, pqs1->nrows,
                                                row_pos1++, row_pos);
-                qstate12_copy_row(m1, pqs2->ncols, pqs2->nrows,
-                                               row_pos1++, row_pos);
+                qstate12_copy_row(m2, pqs2->ncols, pqs2->nrows,
+                                               row_pos2++, row_pos);
                 qstate12_pivot(pqs2, row_pos++, v);
             } else {          
                 qstate12_pivot(pqs1, row_pos1++, v);
@@ -254,10 +254,10 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
                 int32_t i = row_pos-1;
                 while (i >= 0 && ((ONE << i) & v) == 0) --i;
                 if (i > 0) {
-                    if ((m1[i] >> col_pos) & 1) qstate12_pivot(pqs1, i, v);
-                    else qstate12_pivot(pqs2, i, v);
+                    qstate12_pivot(pqs1, i, v);
+                    qstate12_pivot(pqs2, i, v);
                     deleted |= ONE << i; ++n_deleted;
-                    pqs1->data[i] =  pqs2->data[i] = 0; 
+                    m1[i] = m2[i] = 0;
                 } else if (i == 0) {
                     return  pqs1->nrows = pqs2->nrows = 0;  
                 }                
@@ -308,7 +308,7 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
 
 
 // %%EXPORT p
-int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nc, uint32_t nqb)
+int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb, uint32_t nc)
 // Compute a certain product ``qs3`` of the states ``qs1`` 
 // and ``qs2`` referred by ``pqs1`` and ``pqs2``. 
 // Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
@@ -324,12 +324,12 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nc, 
 // E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
 // contraction over the first ``nc`` qubits of ``qs1`` and 
 // ``qs2``. ``In case pqs1->ncols = pqs2->ncols = n``, the 
-// function ``qstate12_product(pqs1, pqs2, 0, n)`` returns the 
+// function ``qstate12_product(pqs1, pqs2, n, 0)`` returns the 
 // product of ``qs1`` and ``qs2`` (considered as functions); 
 // and ``qstate12_product(pqs1, pqs2, n, n)`` returns the scalar
 // product of ``qs1`` and ``qs2`` (considered as vectors).
 //
-// ``qstate12_product(pqs1, pqs2, 0, n)`` corresponds to the 
+// ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds to the 
 // function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
 // ``'\odot'`` operation defined in section 
 // 'Products and tensor products of quadratic mappings'

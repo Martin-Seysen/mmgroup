@@ -81,10 +81,41 @@ class QStateMatrix(QState12):
         else:
             err = "Cannot construct QStateMatrix from given objects" 
             raise TypeError(err) 
+            
+    def copy(self):
+        """Return a copy of the matrix"""    
+        return QStateMatrix(self)   
     
     @property
     def shape(self):
-        return (self.rows, self.cols)    
+        return (self.rows, self.cols)  
+
+
+    def reshape(self, shape = (), copy = True):
+        """Reshape matrix to given ``shape``
+
+        ``shape[0] + shape[1] = self.rows + self.cols`` must hold.
+
+        If on of the values ``shape[0]``, ``shape[1]`` is negative,
+        the other value is calculated from ``self.rows + self.cols``. 
+
+        Shape default to ``(-1, 0)``.
+        """  
+        m = QStateMatrix(self) if copy else self
+        if isintance(shape, Integral): 
+            shape = (shape,)
+        while len(shape) < 2:
+            shape.append(-1 if min(shape) >= 0 else 0)
+        if shape[0] < 0:
+            shape[0] = m.ncols - shape[1]
+        if shape[1] < 0:
+            shape[0] = m.ncols - shape[1]
+        if (len(shape) > 2 or shape[0] + shape[1] != m.ncols or
+            min(shape[0], shape[1]) < 0):
+            err = "Bad shape for reshaping  QStateMatrix"
+            raise ValueError(err)
+        m.rows, m.cols = shape
+        return m
      
     def complex(self):
         """Return complex matrix of state as numpy array"""
@@ -110,8 +141,8 @@ class QStateMatrix(QState12):
             item = (item,)
         while len(item) < 2:
             item = item + (None,)
-        a0 = as_index_array(item[0], self.shape[0]) << self.shape[1]
-        a1 = as_index_array(item[1], self.shape[1])
+        a0 = _as_index_array(item[0], self.shape[0]) << self.shape[1]
+        a1 = _as_index_array(item[1], self.shape[1])
         shape_ =  a0.shape + a1.shape 
         a = np.ravel(a0)[:, np.newaxis] + np.ravel(a1)[ np.newaxis, :] 
         if a.dtype != np.uint32:
@@ -232,11 +263,11 @@ def format_state(q, reduced = False):
         
 
 ####################################################################
-# omputing an array of indices
+# Computing an array of indices
 ####################################################################
         
         
-def as_index_array(data, nqb):
+def _as_index_array(data, nqb):
     mask = (1 << nqb) - 1
     if isinstance(data, Integral):
         return np.array(data & mask, dtype = np.uint32)
@@ -250,5 +281,17 @@ def as_index_array(data, nqb):
         err = "Bad index type for QState12 array"
         raise TypeError(err)
     return  ind & mask  
+
+####################################################################
+# Some wrppers
+####################################################################
+
+def prep_mul(a, b, nqb = None):
+    if nqb is None and a.cols == b.cols:
+        nqb = a.cols
+    a, b = a.copy().prep_mul(b.copy(), nqb)
+    return QStateMatrix(a), QStateMatrix(b)
+
+
 
     
