@@ -11,10 +11,12 @@ import numpy as np
 import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import prep_mul
+from mmgroup.structures.qs_matrix import prep_mul, flat_product
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
+from mmgroup.clifford12 import QState12, qstate12_product
+from mmgroup.clifford12 import qstate12_prep_mul
 
 #####################################################################
 # 
@@ -24,7 +26,7 @@ from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
 
 qs_matrix_data = [
-    [ (0,0, (1,0), []),  (0,0, (1,0), []), 0 ],
+   # [ (0,0, (1,0), []),  (0,0, (1,0), []), 0 ],
     [ (0,4, (0,0), [0b00_0101, 0b00_0011]),
         (0,4, (0,0), [0b00_0111, 0b_00_1001]), 2],
 ]
@@ -50,9 +52,9 @@ def create_product_testvectors():
         for cols2 in range(2,6):
             for nqb in range(min(cols1, cols2)):
                for n in range(2):
-                   m1 = rand_qs_matrix(1, cols1, cols1+3)
+                   m1 = rand_qs_matrix(0, cols1, cols1+3)
                    m1.mul_scalar(randint(-8, 8), randint(0,7))  
-                   m2 = rand_qs_matrix(1, cols2, cols2+3)
+                   m2 = rand_qs_matrix(0, cols2, cols2+3)
                    m1.mul_scalar(randint(-8, 8), randint(0,7))  
                    yield m1, m2, nqb    
     # Sparse states           
@@ -61,9 +63,9 @@ def create_product_testvectors():
             for nqb in range(min(cols1, cols2)):
                for r in range(3):
                    for n in range(2):
-                       m1 = rand_qs_matrix(1, cols1,r)
+                       m1 = rand_qs_matrix(0, cols1,r)
                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
-                       m2 = rand_qs_matrix(1, cols2, r)
+                       m2 = rand_qs_matrix(0, cols2, r)
                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
                        yield m1, m2, nqb    
                 
@@ -102,7 +104,7 @@ def test_qs_prep_mul(verbose = 0):
     """
     for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
         m1a, m2a = prep_mul(m1, m2, nqb)
-        if verbose or ntest < len(qs_matrix_data):
+        if verbose:
             print("TEST %s" % (ntest+1))
             print(m1)
             print(m2)
@@ -116,12 +118,57 @@ def test_qs_prep_mul(verbose = 0):
             err = "Function prep_mul() has failed"
             compare_complex(c1, c1a, err)
         except ValueError:
-            print("n" + err +"\nInput states:")
+            print("\n" + err +"\nInput states:")
             print(m1); print(m2);  
             print("nqb =", nqb)      
             print("\nOutput states:")
             print(m1a); print(m2a);  
             raise      
         check_eq_cols(m1a, m2a, nqb)
+
+
+@pytest.mark.qstate1
+def test_qs_product(verbose = 0):
+    for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
+        nc = randint(0, nqb)
+        if verbose:
+            print("TEST %s" % (ntest+1))
+            print(m1)
+            print(m2)
+            print("nqb =", nqb, " nc =", nc)
+            print("Output states")
+        try:
+            err = "Execution of function flat_product() has failed"
+            #m3 = flat_product(m1, m2, nqb, nc)
+            qm1, qm2 = QState12(m1), QState12(m2)
+            qstate12_product(qm1, qm2, nqb, nc)
+            m3, m4 = QStateMatrix(qm1), QStateMatrix(qm2)
+        except ValueError:
+            print("\n" + err +"\nInput states:")
+            print(m1); print(m2);  
+            print("nqb =", nqb, ", nc =", nc)  
+            pm1, pm2 = QState12(m1), QState12(m2)
+            row_pos =qstate12_prep_mul(pm1, pm2, nqb)            
+            print("prep_mul, row pos = ", row_pos) 
+            print(QStateMatrix(pm1)); print(QStateMatrix(pm2))            
+            print("\nOutput states:")
+            print(QStateMatrix(qm1)); print(QStateMatrix(qm2)); 
+            print(qm1.nrows, qm1.ncols, qm2.nrows, qm2.ncols)
+            raise      
+        c1, c2, c3 = m1.complex(), m2.complex(), m3.complex()
+        c3_ref = qs_complex_prod(c1, c2, nqb, nc)
+        try:
+            err = "Function flat_product() has failed"
+            compare_complex(c3_ref, c3, err)
+        except ValueError:
+            print("\n" + err +"\nInput states:")
+            print(m1); print(m2);  
+            print("nqb =", nqb, ", nc =", nc)      
+            print("\nOutput states:")
+            print(m3);  
+            raise      
+        if verbose:
+            print("Output state")
+            print(m3)
 
         

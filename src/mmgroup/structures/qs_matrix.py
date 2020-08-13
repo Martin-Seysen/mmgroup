@@ -72,7 +72,7 @@ class QStateMatrix(QState12):
             if isinstance(source, QStateMatrix):
                 self.rows, self.cols = source.rows, source.cols
                 super(QStateMatrix, self).__init__(as_qstate12(source))
-            elif isinstance(source, QState):
+            elif isinstance(source, QState12):
                 self.rows, self.cols = 0, source.ncols
                 super(QStateMatrix, self).__init__(as_qstate12(source))
             else:
@@ -283,7 +283,7 @@ def _as_index_array(data, nqb):
     return  ind & mask  
 
 ####################################################################
-# Some wrppers
+# Some wrappers
 ####################################################################
 
 def prep_mul(a, b, nqb = None):
@@ -291,6 +291,10 @@ def prep_mul(a, b, nqb = None):
         nqb = a.cols
     a, b = a.copy().prep_mul(b.copy(), nqb)
     return QStateMatrix(a), QStateMatrix(b)
+    
+    
+def flat_product(a, b, nqb, nc):
+    return QStateMatrix(a.copy().product(b, nqb, nc))  
 
 
 

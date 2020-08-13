@@ -43,7 +43,8 @@ cdef int32_t chk_qstate12(int32_t code) except -1:
     try:
         err = QSTATE12_ERROR_STRINGS[code]
     except KeyError:
-        err = "Internal error in processing QState12 instance"
+        err = "Internal error %d in processing QState12 instance"
+        err = err % code
     raise ValueError(err)
     return -1
 
@@ -384,7 +385,7 @@ cdef class QState12(object):
     #########################################################################
     # The basic multiplication method
     
-    def product(self, other, uint32_t nc, uint32_t nqb):
+    def product(self, other, uint32_t nqb, uint32_t nc):
         """Compute a certain produce of ``self`` and ``other``
      
         Let ``qs1`` be the state referred by ``self`` and ``qs2``
@@ -421,7 +422,7 @@ cdef class QState12(object):
         cdef qstate12_type qs2
         cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
         chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-        chk_qstate12(cl.qstate12_product(&self.qs, &qs2, nc, nqb))
+        chk_qstate12(cl.qstate12_product(&self.qs, &qs2, nqb, nc))
         return self
  
      
@@ -637,3 +638,15 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t n, a):
     chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, n, &aa[0])) 
     return qs
 
+def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):
+    """Wrapper for the corresponding C function"""
+    cdef p_qstate12_type pqs1 = pqs12(qs1)
+    cdef p_qstate12_type pqs2 = pqs12(qs2)
+    chk_qstate12(cl.qstate12_product(pqs1, pqs2, nqb, nc))
+
+def qstate12_prep_mul(QState12 qs1, QState12 qs2, uint32_t nqb):
+    """Wrapper for the corresponding C function"""
+    cdef p_qstate12_type pqs1 = pqs12(qs1)
+    cdef p_qstate12_type pqs2 = pqs12(qs2)
+    return chk_qstate12(cl.qstate12_prep_mul(pqs1, pqs2, nqb))
+    

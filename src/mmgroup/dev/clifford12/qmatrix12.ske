@@ -265,7 +265,6 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
         } 
     }
 
-    // printf("<almost>");
     v = deleted + (ONE << row_pos1) - (ONE << row_pos);
     if ((res = qstate12_del_rows(pqs1, v)) < 0) return res;
     v = deleted + (ONE << row_pos2) - (ONE << row_pos);
@@ -336,7 +335,7 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
 // of the guide.
 {
     int32_t row_pos = qstate12_prep_mul(pqs1, pqs2, nqb);
-    int32_t rows1, rows2; 
+    int32_t rows1, rows2, cols1, cols2; 
     int32_t res;
 
     if (row_pos < 0) return row_pos; // Then row_pos is an error code
@@ -346,18 +345,19 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
     if ((res = qstate12_sum_cols(pqs2, 0, nc)) < 0) return res; 
     nqb -= nc;
     
-    res = qstate12_extend_zero(pqs1, pqs1->ncols, pqs2->ncols - nqb);
+    cols1 = pqs1->ncols; cols2 = pqs2->ncols;
+    res = qstate12_extend_zero(pqs1, nqb, cols2 - nqb);
     if (res < 0) return res;
-    res = qstate12_extend_zero(pqs2, nqb, pqs1->ncols - nqb); 
+    res = qstate12_extend_zero(pqs2, cols2, cols1 - nqb); 
     if (res < 0) return res;
-
+ 
     if (pqs1->nrows == 0 || pqs2->nrows == 0)
         return pqs1->nrows = pqs1->factor = 0; 
 
     rows1 = pqs1->nrows - row_pos;  rows2 = pqs2->nrows - row_pos;
-    res = qstate12_insert_rows(pqs1, pqs1->nrows, rows2);
+    res = qstate12_insert_rows(pqs1, row_pos, rows2);
     if (res < 0) return res;
-    res = qstate12_insert_rows(pqs2, row_pos, rows1); 
+    res = qstate12_insert_rows(pqs2, pqs2->nrows, rows1); 
     if (res < 0) return res;
     res = qstate12_mul_elements(pqs1, pqs2, -(ONE << nqb)); 
     if (res < 0) return res;

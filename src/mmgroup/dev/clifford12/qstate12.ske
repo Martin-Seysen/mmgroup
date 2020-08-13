@@ -830,7 +830,8 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
     uint64_t *m = pqs->data, mask;
     
     if (bad_state(pqs)) return -2;
-    if (pqs->ncols + nqb > MAXCOLS) return -4;
+    if (j > pqs->ncols) return -3;
+    if (pqs->ncols + nqb + pqs->nrows > MAXCOLS) return -4;
     mask = (ONE << j) - 1;
     pqs->ncols += nqb;
 
@@ -1259,7 +1260,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 
     set_complex_factors(pqs->factor, freal, fimag);
     freal[4] = fimag[4] = 0.0;
-     qstate12_row_table(pqs, row_table);
+    qstate12_row_table(pqs, row_table);
     while (n--) {
         factor = 0;
         m0 = m[0] ^ (vmask & *v++);
