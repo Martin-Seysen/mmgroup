@@ -10,9 +10,10 @@ from numbers import Integral
 from random import randint
 
 import numpy as np
-from mmgroup.clifford12 import QState12, as_qstate12, qstate12_unit_matrix 
-
-
+from mmgroup.clifford12 import QState12, as_qstate12 
+from mmgroup.clifford12 import qstate12_unit_matrix 
+from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
+from mmgroup.clifford12 import qstate12_product
 
 
 class QStateMatrix(QState12):
@@ -102,19 +103,19 @@ class QStateMatrix(QState12):
         Shape default to ``(-1, 0)``.
         """  
         m = QStateMatrix(self) if copy else self
-        if isintance(shape, Integral): 
+        if isinstance(shape, Integral): 
             shape = (shape,)
         while len(shape) < 2:
-            shape.append(-1 if min(shape) >= 0 else 0)
-        if shape[0] < 0:
-            shape[0] = m.ncols - shape[1]
-        if shape[1] < 0:
-            shape[0] = m.ncols - shape[1]
-        if (len(shape) > 2 or shape[0] + shape[1] != m.ncols or
-            min(shape[0], shape[1]) < 0):
+            shape += (-1 if min(shape) >= 0 else 0),
+        rows, cols = shape
+        if rows < 0:
+            rows = m.ncols - cols
+        if cols < 0:
+            cols = m.ncols - rows
+        if rows + cols != m.ncols or min(rows, cols) < 0:
             err = "Bad shape for reshaping  QStateMatrix"
             raise ValueError(err)
-        m.rows, m.cols = shape
+        m.rows, m.cols = rows, cols
         return m
      
     def complex(self):
@@ -134,7 +135,20 @@ class QStateMatrix(QState12):
         """
         a = super(QStateMatrix, self).complex_unreduced()
         a = a.reshape((1 << self.rows, 1 << self.cols)) 
-        return a        
+        return a  
+
+    def __matmul__(self, other):
+        r1, c1 = self.shape
+        r2, c2 = other.shape
+        if r2 != c1:
+            err = "Shape mismatch in QStateMatrix multiplication"
+            raise ValueError(err)
+        result = self.copy()
+        qstate12_matmul(result, other.copy(), c1)
+        result = QStateMatrix(result)
+        result.reshape((r1, c2), copy = False)
+        return result
+            
         
     def __getitem__(self, item):
         if not isinstance(item, tuple):
@@ -289,12 +303,15 @@ def _as_index_array(data, nqb):
 def prep_mul(a, b, nqb = None):
     if nqb is None and a.cols == b.cols:
         nqb = a.cols
-    a, b = a.copy().prep_mul(b.copy(), nqb)
+    a, b = QState12(a), QState12(b)
+    qstate12_prep_mul(a, b, nqb)
     return QStateMatrix(a), QStateMatrix(b)
     
     
 def flat_product(a, b, nqb, nc):
-    return QStateMatrix(a.copy().product(b, nqb, nc))  
+    a, b = QState12(a), QState12(b)
+    qstate12_product(a, b, nqb, nc)
+    return QStateMatrix(a)  
 
 
 

@@ -382,88 +382,6 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_restrict(&self.qs, j, nqb))
         return self
 
-    #########################################################################
-    # The basic multiplication method
-    
-    def product(self, other, uint32_t nqb, uint32_t nc):
-        """Compute a certain produce of ``self`` and ``other``
-     
-        Let ``qs1`` be the state referred by ``self`` and ``qs2``
-        be the state referred by parameter ``other`` of type QState.
-        We compute a certain product ``qs3`` of the states ``qs1`` 
-        and store that product in ``self``. 
-        Let ``n1 = self.ncols,  n2 = other.ncols``.
-        Put ``qs1a =  qs1.extend(n1, n2-nqb)``,
-        ``qs2a =  qs2.extend(nqb, n1-nqb)``. Then ``qs1a`` and
-        ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
-        qubits. Let ``qs3a`` be the complex function which is the 
-        product of the functions  ``qs1a`` and ``qs2a``. Then we 
-        have ``qs3 = qs3a.sum_cols(0, nc)``. So we have
-        ``qs3.ncols = nn1 + nn2 - nqb - nc``.
-        The result ``qs3`` is computed in the state referred by 
-        ``self``. It is reduced. 
- 
-        E.g. ``qs1.product(qs2, nc, nc)`` is the tensor 
-        contraction over the first ``nc`` qubits of ``qs1`` and 
-        ``qs2``. ``In case qs1.ncols = qs2.ncols = n``, the 
-        function ``qs1.product(qs2, 0, n)`` returns the 
-        product of ``qs1`` and ``qs2`` (considered as functions); 
-        and ``qs1.product(qs2, n, n)`` returns the scalar
-        product of ``qs1`` and ``qs2`` (considered as vectors).
- 
-        ``qs1.product(qs2, 0, n)`` corresponds to the 
-        function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
-        ``'\odot'`` operation defined in section 
-        'Products and tensor products of quadratic mappings'
-        of the guide.
-        """
-        cdef uint64_t data2[QSTATE12_MAXROWS] 
-        cdef p_qstate12_type other_pqs = pqs12(other)
-        cdef qstate12_type qs2
-        cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
-        chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-        chk_qstate12(cl.qstate12_product(&self.qs, &qs2, nqb, nc))
-        return self
- 
-     
-
-    def matmul(self, other, uint32_t nqb):
-        """ Perform a matrix multiplication.
-        
-        Given a state ``qs`` with ``qs->ncols = m + n`` we
-        may interpret ``qs`` as an ``2**m`` times ``2**n`` matrix, 
-        where the ``2**m`` rows of the matrix correspond to the
-        higher ``m`` qubits and the ``2**n`` columns corrspond to 
-        the lower ``n`` qubits.
-        Then we consider the state ``qs1`` referred by ``self``
-        as a ``qs1->ncols - nqb`` times ``nqb`` matrix ``m1``and 
-        the state ``qs2`` referred by ``other`` as a  ``nqb`` times 
-        ``qs2->ncols - nqb`` matrix m2. ``other`` must be an 
-        instnce of class ``QState``.
-
-        We compute the matrix product ``m3 = m1 * m2``  as a 
-        ``qs1->ncols - nqb`` times ``qs2->ncols - nqb`` matrix
-        and we store the state corresponding to matrix ``m3``
-        in ``self``.
-        """
-        cdef uint64_t data2[QSTATE12_MAXROWS] 
-        cdef p_qstate12_type other_pqs = pqs12(other)
-        cdef qstate12_type qs2
-        cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
-        chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-        chk_qstate12(cl.qstate12_matmul(&self.qs, &qs2, nqb))
-        return self
-        
-    def prep_mul(self, other, uint32_t nqb):  
-        """Yet to be documented!!!    
-        
-        Both, ``self`` and ``other``, are modified. Return the pair
-        ``(self, other)``.
-        For testing only!!
-        """
-        cdef p_qstate12_type other_pqs = pqs12(other)
-        chk_qstate12(cl.qstate12_prep_mul(&self.qs, other_pqs, nqb))
-        return self, other
      
     #########################################################################
     # Applying qubit gates
@@ -602,6 +520,10 @@ cdef class QState12(object):
         del a
         return c
 
+ 
+####################################################################
+# Auxiliary functions  
+####################################################################
 
  
 cdef p_qstate12_type pqs12(QState12 state):
@@ -610,43 +532,149 @@ cdef p_qstate12_type pqs12(QState12 state):
     Here a ``state`` must be of type ``QState12``.
     """
     return &state.qs
- 
-
-   
+  
 def as_qstate12(QState12 state):
-    """Retturn an object as an instance of class QState12"""
+    """Return an object as an instance of class QState12"""
     return state
  
+ 
+####################################################################
+# Wrappers for exported C functions  
+####################################################################
+
 def qstate12_unit_matrix(QState12 qs, uint32_t n):
     """Change state qs to a  2**n times 2**n unit matrix"""
     cdef p_qstate12_type m_pqs = pqs12(qs)
     chk_qstate12(cl.qstate12_std_matrix(m_pqs, n, n, n))
     return qs
 
-def qstate12_row_monomial_matrix(QState12 qs, uint32_t n, a):
-    """"Change state qs to a 2**n times 2**n monomial matrix
+def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
+    """Change state ``qs`` to a monomial matrix
     
-    Yet to be documented!!!
+    Set the state ``qs`` to a real monomial 
+    ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` that 
+    transforms a  state ``<v|`` of ``nqb`` input bits to a state 
+    ``<v|  * T`` of ``nqb`` output qubits. Here right multiplication
+     with ``T`` maps unit vectors to (possibly negated) unit vectors. 
+    ``<v|`` is considered as a row vector.
+ 
+    ``pa`` refers to an array a of integers ``a[i]`` of length 
+    ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
+    field  via its binary  representation. So ``a[i,j]`` means 
+    ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
+    ``a[i,j1],...,a[i,j2-1]``.
+      
+    ``T`` is a ``2**n`` times ``2**n`` matrix which is monomial in 
+    the sense that each row contains exactly one nonzero entry 
+    ``1`` or ``-1``. So right multiplication with that matrix maps 
+    unit vectors to  (possibly negated) unit vectors as described 
+    below.
+ 
+    For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
+    unit vector with index ``v``. For any bit vector ``v`` of 
+    length ``nqb + 1`` let ``<v|`` be the (possibly negated) unit 
+    vector ``(-1)**v[nqb] * <v[0:nqb]|``.  ``<v1 ^ v2|`` and 
+    ``<1 << v1|`` are defined via the corrresponding operators 
+    ``<<`` and ``^`` in C.
+ 
+    Then ``T``  maps
+ 
+      *  ``<0|``     to  ``<a[0, 0:nqb+1|``
+ 
+      *  ``<1 << i|``  to  ``<a[i+1, 0:nqb+1]|``
+ 
+    ``T`` maps unit vectors to (possibly negated) unit vectors, 
+     so ``T(v)`` is well defined by ``<T(v)| = T(<v|)`` for a bit 
+    field ``v`` of length ``nqb + 1``. We have
+ 
+      * ``<T(v1 ^ v2)| = (-1)**Q(v1,v2) * <T(v1) ^ T(v2) ^ T(0)|``,
+ 
+    for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
+    alternating bilinear form ``Q`` depending on the first ``nqb`` 
+    bits of ``v1`` and ``v2`` only. Thus ``T`` is  defined by the 
+    above equation and ``Q``. The bilinear form ``Q`` is defined by:
+     
+      * ``Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0``,  and
+ 
+      * ``Q(1 << i, 1 << j) =  m[i + 1, j + nqb + 1]``,  
+        for ``0 <= j < i < nqb``.
     """
     cdef p_qstate12_type m_pqs = pqs12(qs)
     cdef uint64_t aa[QSTATE12_MAXROWS+1]
-    if n > QSTATE12_MAXROWS:
+    if nqb > QSTATE12_MAXROWS:
         return chk_qstate12(-4) 
     cdef int i
-    for i in range(n+1):
+    for i in range(nqb + 1):
         aa[i] = a[i]
-    chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, n, &aa[0])) 
+    chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
     return qs
 
 def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):
-    """Wrapper for the corresponding C function"""
+    """Wrapper for the corresponding C function
+    
+    We compute a certain product ``qs3`` of the states ``qs1`` 
+    and store that product in ``qs1``. ``qs2`` is destroyed.
+        
+    Let ``n1 = qs1.ncols,  n2 = qs2.ncols``.
+    Put ``qs1a =  qs1.extend(n1, n2-nqb)``,
+    ``qs2a =  qs2.extend(nqb, n1-nqb)``. Then ``qs1a`` and
+    ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
+    qubits. Let ``qs3a`` be the complex function which is the 
+    product of the functions  ``qs1a`` and ``qs2a``. Then we 
+    have ``qs3 = qs3a.sum_cols(0, nc)``. So we have
+    ``qs3.ncols = nn1 + nn2 - nqb - nc``.
+    The result ``qs3`` is computed in the state referred by 
+    ``qs1``. It is reduced. 
+ 
+    E.g. ``qs1.product(qs2, nc, nc)`` is the tensor 
+    contraction over the first ``nc`` qubits of ``qs1`` and 
+    ``qs2``. ``In case qs1.ncols = qs2.ncols = n``, the 
+    function ``qs1.product(qs2, 0, n)`` returns the 
+    product of ``qs1`` and ``qs2`` (considered as functions); 
+    and ``qs1.product(qs2, n, n)`` returns the scalar
+    product of ``qs1`` and ``qs2`` (considered as vectors).
+ 
+    ``qs1.product(qs2, 0, n)`` corresponds to the 
+    function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
+    ``'\odot'`` operation defined in section 
+    *Products and tensor products of quadratic mappings*
+    of the guide.   
+    """
     cdef p_qstate12_type pqs1 = pqs12(qs1)
     cdef p_qstate12_type pqs2 = pqs12(qs2)
     chk_qstate12(cl.qstate12_product(pqs1, pqs2, nqb, nc))
 
 def qstate12_prep_mul(QState12 qs1, QState12 qs2, uint32_t nqb):
-    """Wrapper for the corresponding C function"""
+    """Wrapper for the corresponding C function
+    
+    To be used for tests only. Function ``qstate12_prep_mul``
+    is an auxliary function for function ``qstate12_product``.    
+    """
     cdef p_qstate12_type pqs1 = pqs12(qs1)
     cdef p_qstate12_type pqs2 = pqs12(qs2)
     return chk_qstate12(cl.qstate12_prep_mul(pqs1, pqs2, nqb))
     
+    
+def qstate12_matmul(QState12 qs1, QState12 qs2, uint32_t nqb):
+    """Perform a matrix multiplication.
+        
+    Given a state ``qs`` with ``qs->ncols = m + n`` we
+    may interpret ``qs`` as an ``2**m`` times ``2**n`` matrix, 
+    where the ``2**m`` rows of the matrix correspond to the
+    higher ``m`` qubits and the ``2**n`` columns corrspond to 
+    the lower ``n`` qubits.
+    Then we consider the state ``qs1`` as a ``qs1->ncols - nqb`` 
+    times ``nqb`` matrix ``m1``and the state ``qs2`` as an
+    ``nqb`` times ``qs2->ncols - nqb`` 
+    matrix ``m2``. 
+    
+    We compute the matrix product ``m3 = m1 @ m2``  as a 
+    ``qs1->ncols - nqb`` times ``qs2->ncols - nqb`` matrix
+    and we store the state corresponding to matrix ``m3``
+    in ``qs1``. `qs2`` is destroyed.
+    """
+    cdef p_qstate12_type pqs1 = pqs12(qs1)
+    cdef p_qstate12_type pqs2 = pqs12(qs2)
+    return chk_qstate12(cl.qstate12_matmul(pqs1, pqs2, nqb))
+
+

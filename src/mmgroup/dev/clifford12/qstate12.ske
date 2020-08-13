@@ -66,6 +66,8 @@ typedef struct {
 
 
 // Use this for the number 1 as an uint64_t
+// We'd better make sure that  ONE << n  works as expected 
+// for  n >= 32 on all compilers, regardless of sizeof(int).
 #define ONE ((uint64_t)0x1ULL)
 
 
@@ -600,7 +602,7 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
     uint_fast32_t k, sh; 
 
     // process rows i-1, ..., 1 
-    for  (k = i - 1; k > 0; --k) if (v & (1 << k)) {
+    for  (k = i - 1; k > 0; --k) if (v & (ONE << k)) {
          // Flip bit Q[0,k] if Q[i,k] ^ (Q[k,k] & Q[i,i]) is 1; 
          // see guide, section 'Implementation of quadratic mappings'
          m[0] ^= ((m[k] & (m[i] >> (i-k))) ^ m[i]) & (col_mask << k);
@@ -1210,7 +1212,7 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
 
     if ((res = qstate12_check(pqs)) < 0) return res;
     assoc = m[0]; 
-    for (i = 0; i < 2LL << ncols; ++i) pc[i] = 0.0;
+    for (i = 0; i < (2*ONE) << ncols; ++i) pc[i] = 0.0;
     if (pqs->nrows == 0) return 0;
     set_complex_factors(pqs->factor, freal, fimag);
    

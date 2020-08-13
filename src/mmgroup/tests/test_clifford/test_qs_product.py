@@ -26,13 +26,14 @@ from mmgroup.clifford12 import qstate12_prep_mul
 
 
 qs_matrix_data = [
-   # [ (0,0, (1,0), []),  (0,0, (1,0), []), 0 ],
+    [ (0,0, (1,0), []),  (0,0, (1,0), []), 0 ],
     [ (0,4, (0,0), [0b00_0101, 0b00_0011]),
         (0,4, (0,0), [0b00_0111, 0b_00_1001]), 2],
 ]
 
 
 def create_m(rows, cols, factor, data):
+    """Create ``QStateMatrix`` object from input data"""
     m = QStateMatrix(rows, cols, data)
     m.mul_scalar(*factor) 
     return m
@@ -72,6 +73,12 @@ def create_product_testvectors():
 
 
 def qs_complex_prod(a, b, nqb, nc):
+    """Complex equivalent to function ``qstate12_product``
+
+    ``a`` and ``b`` must be complex numpy arrays of dimension 2.
+    The function returns ``qstate12_product(a, b, nqb, nc)``
+    as a complex umpy array of dimension 2.
+    """
     nb = nqb - nc
     assert nb >= 0
     a1 = a.reshape((-1, 1 << nb, 1 << nc))
@@ -81,6 +88,11 @@ def qs_complex_prod(a, b, nqb, nc):
 
 
 def check_eq_cols(qs1, qs2, nqb):
+    """Check if the first ``nqb`` columns of states are equal
+    
+    Raise ValueError if this is not the case. 
+    ``qs1`` and ``qs2`` must be instances of class ``QStateMatrix``.
+    """
     s = 0
     n = min(qs1.nrows, qs2.nrows)
     m1, m2 = qs1.data, qs2.data
@@ -96,12 +108,7 @@ def check_eq_cols(qs1, qs2, nqb):
 
 @pytest.mark.qstate
 def test_qs_prep_mul(verbose = 0):
-    """Basic test for class ``QStateMatrix`` 
-    
-    It tests the ``__str__ `` method, the conversion to a
-    complex matrix and the echelonization and the reduction of 
-    an instance of class ``QStateMatrix``.
-    """
+    """Test function ``qstate12_prep_mul``. """
     for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
         m1a, m2a = prep_mul(m1, m2, nqb)
         if verbose:
@@ -127,8 +134,9 @@ def test_qs_prep_mul(verbose = 0):
         check_eq_cols(m1a, m2a, nqb)
 
 
-@pytest.mark.qstate1
+@pytest.mark.qstate
 def test_qs_product(verbose = 0):
+    """Test function ``qstate12_product``. """
     for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
         nc = randint(0, nqb)
         if verbose:
@@ -139,10 +147,7 @@ def test_qs_product(verbose = 0):
             print("Output states")
         try:
             err = "Execution of function flat_product() has failed"
-            #m3 = flat_product(m1, m2, nqb, nc)
-            qm1, qm2 = QState12(m1), QState12(m2)
-            qstate12_product(qm1, qm2, nqb, nc)
-            m3, m4 = QStateMatrix(qm1), QStateMatrix(qm2)
+            m3 = flat_product(m1, m2, nqb, nc)
         except ValueError:
             print("\n" + err +"\nInput states:")
             print(m1); print(m2);  
@@ -152,8 +157,9 @@ def test_qs_product(verbose = 0):
             print("prep_mul, row pos = ", row_pos) 
             print(QStateMatrix(pm1)); print(QStateMatrix(pm2))            
             print("\nOutput states:")
+            qm1, qm2 = QState12(m1), QState12(m2)
+            qstate12_product(qm1, qm2, nqb, nc)
             print(QStateMatrix(qm1)); print(QStateMatrix(qm2)); 
-            print(qm1.nrows, qm1.ncols, qm2.nrows, qm2.ncols)
             raise      
         c1, c2, c3 = m1.complex(), m2.complex(), m3.complex()
         c3_ref = qs_complex_prod(c1, c2, nqb, nc)
@@ -170,5 +176,88 @@ def test_qs_product(verbose = 0):
         if verbose:
             print("Output state")
             print(m3)
+            
+            
+            
+def create_matmul_testvectors():
+    """Yield pairs of matrices for testing matrix multiplication
 
-        
+    These matrices are instances of class ``QStateMatrix``.
+    """
+    for i in range(2,6):
+        for j in range(2,6):
+            for k in range(2, 6):
+                for r in range(3):
+                    for n in range(2):
+                        m1 = rand_qs_matrix(i, j, r)
+                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
+                        m2 = rand_qs_matrix(j, k, r)
+                        m2.mul_scalar(randint(-8, 8), randint(0,7))  
+                        yield m1, m2   
+
+@pytest.mark.qstate
+def test_matmul(verbose = 0):
+    """Test matrix multiplication. """
+    for ntest,(m1, m2) in enumerate(create_matmul_testvectors()):
+        if verbose:
+            print("TEST %s QStateMatrix multiplication" % (ntest+1))
+            print(m1)
+            print(m2)
+        m3 = m1 @ m2
+        c1, c2 = m1.complex(), m2.complex()
+        c3 = m3.complex()
+        c3_ref = c1 @ c2        
+        err = "Matrix multiplcation has failed"
+        compare_complex(c3_ref, c3, err)
+        if verbose:
+            print("Product")
+            print(m3)
+
+
+
+def large_matmul_testvectors():
+    """Yield test data for large matrix multiplication
+
+    yield pairs ``m1``, ``m2`` of 2**12 times 2**12
+    and also pairs random slices of about 40 elements
+    in range(2**12)
+    """
+    nn = 12
+    for r in range(10, 27):
+        m1 = rand_qs_matrix(nn, nn, r)
+        m1.mul_scalar(randint(-8, 0), randint(0,7))  
+        m2 = rand_qs_matrix(nn, nn, r)
+        m2.mul_scalar(randint(-8, 0), randint(0,7))
+        r1 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
+        r2 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
+        yield m1, m2, r1, r2   
+
+
+@pytest.mark.qstate
+def test_matmul(verbose = 0):
+    """Testlarge  matrix multiplication. 
+    
+    For the mmgroup project wee have to multiply marices
+    of type QStateMatrix with shape (12,12). So we'd
+    better test this operation here!
+    
+    We generate random matrices m1, m2. We test the 
+    multiplication of a random  r times 4096 submatrix
+    of m1 with a random 4096 times r submatrix of m2.
+    Here r is about 14.
+    """
+    for ntest,(m1, m2, r1, r2) in enumerate(large_matmul_testvectors()):
+        if verbose:
+            print("TEST %s QStateMatrix multiplication" % (ntest+1))
+            print(m1.echelon())
+            print(m2.echelon())
+        m3 = m1 @ m2
+        if verbose:
+            print("Product")
+            print(m3)
+        c1, c2 = m1[r1,:], m2[:,r2]
+        c3 = m3[r1, r2]
+        c3_ref = c1 @ c2        
+        err = "Matrix multiplcation has failed"
+        compare_complex(c3_ref, c3, err)
+

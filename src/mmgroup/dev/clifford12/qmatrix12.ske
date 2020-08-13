@@ -385,7 +385,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 // the state ``qs2`` referred by ``pqs2`` as a  ``nqb`` times 
 // ``qs2->ncols - nqb`` matrix m2.
 //
-// We compute the matrix product ``m3 = m1 * m2``  as a 
+// We compute the matrix product ``m3 = m1 @ m2``  as a 
 // ``qs1->ncols - nqb`` times ``qs2->ncols - nqb`` matrix
 // and we store the state corresponding to matrix ``m3``
 // in ``qs1``.  The state ``qs2`` is destroyed.
