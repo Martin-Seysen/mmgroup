@@ -14,6 +14,7 @@
 // -6: Bit matrix part Q is not symmetric
 // -7: Bad row index for bit matrix 
 // -8: Internal parameter error (Usually a bad row is requested)
+// -9: Overflow in scalar factor
 // -99: Any other fatal error
 
 
@@ -81,6 +82,12 @@ typedef struct {
 // Adding factors
 #define ADD_FACTORS(e1, e2) ((((e1) & FACTOR_MASK) + (e2)) & FACTOR_MASK)
 
+// Sign bit of factor
+#define FACTOR_SIGN 0x80000000
+
+// Check factor overflow
+#define ADD_FACTOR_OVERFLOW(e1, e2) \
+   (((e1) + (e2) < -0x8000000) || ((e1) + (e2) >= 0x8000000))
 
 
 
@@ -344,6 +351,8 @@ int32_t qstate12_mul_scalar(qstate12_type *pqs, int32_t e, uint32_t phi)
 // 2**(e/2) * exp(phi * pi * sqrt(-1) / 4);
 {
     if (bad_state(pqs)) return -2;
+    if (pqs->nrows == 0) return 0;
+    if (ADD_FACTOR_OVERFLOW(pqs->factor >> 4, e)) return -9;
     pqs->factor = ADD_FACTORS(pqs->factor, (e << 4) + (phi & 7));
     return 0;
 }
@@ -491,7 +500,7 @@ int32_t qstate12_mul_Av(qstate12_type *pqs, uint64_t v, uint64_t *pw)
     v &= (ONE << pqs->ncols) - 1;
     if (v & (v-1)) {
         // The standard case: v has bit weight > 1
-        for (i = 0; i < pqs->ncols; ++i) {
+        for (i = 0; i < pqs->nrows; ++i) {
             // Compute x = bit_parity(m[i] & v)
             x = m[i] & v;
             x ^= x >> 32; x ^= x >> 16; x ^= x >> 8; x ^= x >> 4;
@@ -502,7 +511,8 @@ int32_t qstate12_mul_Av(qstate12_type *pqs, uint64_t v, uint64_t *pw)
     } else if (v) {
         // Optimize the case where v has bit weight 1
         for (sh = 0; (v & 1) == 0; v >>= 1) ++sh;
-        for (i = 0; i < pqs->ncols; ++i) w += ((m[i] >> sh) & 1) << i;
+        for (i = 0; i < pqs->nrows; ++i) 
+            w += ((m[i] >> sh) & 1) << i;
     }   
     // There is nothing to do in case  v == 0
     *pw = w;
@@ -647,6 +657,7 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
     uint64_t *m = pqs->data, mask = (ONE << pqs->ncols) - 1; 
     uint64_t v, del_rows = 0;
     int_fast32_t i, n;
+    int32_t old_sign = ~pqs->factor & FACTOR_SIGN;
 
     // Sum up rows where A is zero. We use the algorithm in section
     // 'Reducing the representation of a quadratic mapping' of the guide.
@@ -694,6 +705,7 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
         }
         --pqs->nrows;  // delete row n
     }
+    if (old_sign & pqs->factor) return -9;
     // Delete marked rows
     if (del_rows) {
         qstate12_del_rows(pqs, del_rows);
@@ -1027,7 +1039,7 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
 // corresponds to applying a  phase ``(phi * pi/2)``  gate 
 // to qubit ``j``. 
 {
-    uint64_t *m = pqs->data, w, wsh, c;
+    uint64_t *m = pqs->data, w, wsh, c = ONE << pqs->ncols;
     uint_fast32_t i;
     int32_t res;
     if ((res = qstate12_mul_Av(pqs, v, &w)) < 0) return res;
@@ -1035,10 +1047,9 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
     wsh = w << pqs->ncols;
 
     if (phi & 1) {
-        c = ONE << pqs->ncols;
-        //TODO: yet to be dcoumented and checked!!!!
+        //TODO: yet to be documented and checked!!!!
         pqs->factor = ADD_FACTORS(pqs->factor, (w & 1) << 1);
-        m[0] ^= wsh & -(w & ONE);
+        m[0] ^= wsh & -(w & ONE) & ~c;
         for (i = 1; i < pqs->nrows; ++i) {
             m[0] ^= wsh & m[i] & (c << i);
             m[i] ^= wsh & -((w >> i) & ONE);
@@ -1046,7 +1057,7 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
     }
     if (phi & 2) {
         pqs->factor ^= (w & 1) << 2; 
-        m[0] ^= wsh;
+        m[0] ^= wsh & ~c;
     }
     return 0;
 }
@@ -1069,14 +1080,14 @@ int32_t qstate12_gate_ctrl_phi(qstate12_type *pqs, uint64_t v1, uint64_t v2)
     int32_t res;
     if ((res = qstate12_mul_Av(pqs, v1, &w1)) < 0) return res;
     if ((res = qstate12_mul_Av(pqs, v2, &w2)) < 0) return res;
-    w1sh = w1 << pqs->ncols;
-    w2sh = w2 << pqs->ncols;
+    w1sh = (w1 & ~ONE) << pqs->ncols;
+    w2sh = (w2 & ~ONE) << pqs->ncols;
     pqs->factor ^= (w1 & w2 & 1) << 2; 
-    m[0] ^= (w1sh & -(w2 & ONE)) ^ (w2sh & -(w2 & ONE))
+    m[0] ^= (w1sh & -(w2 & ONE)) ^ (w2sh & -(w1 & ONE))
           ^ (w1sh & w2sh);
     for (i = 1; i < pqs->nrows; ++i) {
         m[i] ^= (w1sh & -((w2 >> i) & ONE)) 
-              ^ (w2sh & -((w2 >> i) & ONE));
+              ^ (w2sh & -((w1 >> i) & ONE));
     }
     return 0;
 }
@@ -1096,17 +1107,19 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
     uint64_t *m = pqs->data, w, mask1, c;
     uint_fast32_t i, j, sh, max_rows;
     uint32_t res;
+    int32_t old_sign;
     if (bad_state(pqs)) return -2;
     if (pqs->nrows == 0) return 0; // nothing do do for zero state
 
-    max_rows = MIN(2 * pqs->maxrows + 1, pqs->maxrows);
-    max_rows = MIN(max_rows, MAXCOLS - pqs->ncols);
+    max_rows = MIN(2 * pqs->ncols + 2, pqs->maxrows - 1);
+    max_rows = MIN(max_rows, MAXCOLS - pqs->ncols - 1);
 
     for (j = 0; j < pqs->ncols ; ++j) if (v & (ONE << j))  {
         // Reduce if short of space
         if (pqs->nrows >= max_rows) {
             if ((res = qstate12_echelonize(pqs)) < 0) 
                 return res;
+            if (pqs->nrows >= max_rows) return -5;
         }
         // Append one zero row and apply the algorithm in the guide in
         // section 'Applying a Hadamard gate to a quadratic mapping'.
@@ -1117,14 +1130,16 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
         w = 0;
         sh = pqs->nrows + pqs->ncols;
         mask1 = (ONE << sh) - (ONE << j) - 1;
-        for (i = 0; i < pqs->nrows; ++j) {
+        for (i = 0; i < pqs->nrows; ++i) {
             c = (m[i] >> j) & 1;
             m[i] = (m[i] & mask1) | (c << sh);
-            w |= c << j;
+            w |= c << i;
         } 
         m[pqs->nrows++] = (ONE << j) + (w << pqs->ncols);
         // multiply result with 1 / sqrt(2)
-        pqs->factor -= 0x10; 
+        old_sign = pqs->factor & FACTOR_SIGN;
+        pqs->factor -= 0x10;
+        if (old_sign & ~pqs->factor) return -9;        
     }
     return 0;
 }

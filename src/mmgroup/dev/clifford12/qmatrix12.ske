@@ -297,6 +297,8 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
        m1[0] ^= m1[k] & m2m & (c << k);
        m1[k] ^= m2m;
     }
+    if (ADD_FACTOR_OVERFLOW(pqs1->factor >> 4, pqs2->factor >> 4))
+        return -9;
     pqs1->factor = ADD_FACTORS(pqs1->factor, pqs2->factor);
     return 0;
 }

@@ -27,6 +27,7 @@ QSTATE12_ERROR_STRINGS = {
  -6: "Bit matrix part Q of QState12 instance is not symmetric",
  -7: "Bad row index for bit matrix in a QState12 instance",
  -8: "Internal parameter error in a QState12 instance",
+ -9: "Overflow in scalar factor in a QState12 instance",
 }
 
 
@@ -431,7 +432,7 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_gate_phi(&self.qs, v, phi))
         return self
 
-    def gate_ctrl_phi(self, uint64_t v,  uint64_t v1, uint64_t v2):
+    def gate_ctrl_phi(self, uint64_t v1, uint64_t v2):
         """Apply controlled phase gates to a state
         
         Change the state ``qs`` referred by ``self`` to a state ``qs'``
