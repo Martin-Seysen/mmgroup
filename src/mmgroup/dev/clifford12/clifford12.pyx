@@ -198,6 +198,14 @@ cdef class QState12(object):
         """
         chk_qstate12(cl.qstate12_mul_scalar(&self.qs, e, phi & 7))
         return self
+        
+    def set_zero(self):
+        """Multiply the state by a sclar factor in place
+        
+        The factor is :math:`2^{e/2} \cdot \exp(\phi \pi i /4)` .           
+        """
+        self.qs.factor = self.qs.nrows = 0
+        return self
 
     def check(self):
         """Raise ValueError is state is bad"""               
@@ -261,7 +269,7 @@ cdef class QState12(object):
     #########################################################################
     # Permuting the qubits of the state
 
-    def rot_bits(self, int32_t rot, nrot = None, uint32_t n0 = 0):  
+    def rot_bits(self, int32_t rot, uint32_t nrot, uint32_t n0 = 0):  
         """Rotate the qubit arguments the state q
         
         For ``n0 <= i < n0 + nrot``  we map bit ``i`` to bit  
@@ -274,11 +282,7 @@ cdef class QState12(object):
         ``qs(...,x[n0-1],z[0],...,z[nrot-1],z[n0+nrot],...,),``
         where ``z[j] = y[j - rot (mod 3)]``.
         """
-        cdef int64_t nrott
-        nrott = self.qs.ncols - n0 if nrot is None else nrot
-        if not 0 <= nrot < self.qs.ncols:
-            chk_qstate12(-3)
-        chk_qstate12(cl.qstate12_rot_bits(&self.qs, rot, nrott, n0))
+        chk_qstate12(cl.qstate12_rot_bits(&self.qs, rot, nrot, n0))
         return self
         
 
@@ -549,46 +553,42 @@ def qstate12_unit_matrix(QState12 qs, uint32_t n):
     chk_qstate12(cl.qstate12_std_matrix(m_pqs, n, n, n))
     return qs
 
-def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
+def qstate12_column_monomial_matrix(QState12 qs, uint32_t nqb, a):
     """Change state ``qs`` to a monomial matrix
-    
+
     Set the state ``qs`` to a real monomial 
-    ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` that 
-    transforms a  state ``<v|`` of ``nqb`` input bits to a state 
-    ``<v|  * T`` of ``nqb`` output qubits. Here right multiplication
-     with ``T`` maps unit vectors to (possibly negated) unit vectors. 
-    ``<v|`` is considered as a row vector.
- 
+    ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` which 
+    is monomial in  the sense that each column contains exactly 
+    one nonzero entry ``1`` or ``-1``. So left multiplication  
+    with ``T`` maps maps unit vectors to (possibly negated) unit  
+    vectors. It transforms a  state ``<v|`` of ``nqb`` input bits 
+    to a state ``T * <v|`` of ``nqb`` output qubits. Here
+    ``|v>`` is considered as a column vector.
+
     ``pa`` refers to an array a of integers ``a[i]`` of length 
     ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
     field  via its binary  representation. So ``a[i,j]`` means 
     ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
     ``a[i,j1],...,a[i,j2-1]``.
-      
-    ``T`` is a ``2**n`` times ``2**n`` matrix which is monomial in 
-    the sense that each row contains exactly one nonzero entry 
-    ``1`` or ``-1``. So right multiplication with that matrix maps 
-    unit vectors to  (possibly negated) unit vectors as described 
-    below.
- 
+   
     For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
     unit vector with index ``v``. For any bit vector ``v`` of 
-    length ``nqb + 1`` let ``<v|`` be the (possibly negated) unit 
-    vector ``(-1)**v[nqb] * <v[0:nqb]|``.  ``<v1 ^ v2|`` and 
-    ``<1 << v1|`` are defined via the corrresponding operators 
+    length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit 
+    vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and 
+    ``|1 << v1>`` are defined via the corrresponding operators 
     ``<<`` and ``^`` in C.
- 
+  
     Then ``T``  maps
- 
-      *  ``<0|``     to  ``<a[0, 0:nqb+1|``
- 
-      *  ``<1 << i|``  to  ``<a[i+1, 0:nqb+1]|``
- 
+  
+      * ``|0>``     to  ``|a[0, 0:nqb+1]>``
+  
+      * ``|1 << i>`` to  ``|a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>``
+  
     ``T`` maps unit vectors to (possibly negated) unit vectors, 
-     so ``T(v)`` is well defined by ``<T(v)| = T(<v|)`` for a bit 
+    so ``T(v)`` is well defined by ``|T(v)> = T(|v>)`` for a bit 
     field ``v`` of length ``nqb + 1``. We have
  
-      * ``<T(v1 ^ v2)| = (-1)**Q(v1,v2) * <T(v1) ^ T(v2) ^ T(0)|``,
+      * ``|T(v1 ^ v2)> = (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)>``,
  
     for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
     alternating bilinear form ``Q`` depending on the first ``nqb`` 
@@ -602,12 +602,12 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
     """
     cdef p_qstate12_type m_pqs = pqs12(qs)
     cdef uint64_t aa[QSTATE12_MAXROWS+1]
-    if nqb > QSTATE12_MAXROWS:
+    if nqb >= QSTATE12_MAXROWS:
         return chk_qstate12(-4) 
     cdef int i
     for i in range(nqb + 1):
         aa[i] = a[i]
-    chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
+    chk_qstate12(cl.qstate12_monomial_column_matrix(m_pqs, nqb, &aa[0])) 
     return qs
 
 def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):

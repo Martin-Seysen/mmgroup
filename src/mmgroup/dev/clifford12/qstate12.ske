@@ -97,16 +97,6 @@ typedef struct {
     ((pqs)->nrows + (pqs)->ncols > MAXCOLS  \
       || (pqs)->nrows  > (pqs)->maxrows)
 
-// Deprecated!!!
-// Return True if i is an illegal row index for the object
-// of type qstate12_type referred by pqs.
-// #define bad_row(pqs, i) ((i) >= (pqs)->nrows) 
-
-// Deprecated!!!
-// Return True if j is an illegal column index for the object
-// of type qstate12_type referred by pqs.
-// #define bad_col(pqs, j) ((j) >= MAXCOLS) 
-
    
 
 // The 'bad' maximum and minimum functions in C, use them with care!!
@@ -277,7 +267,7 @@ int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t 
 // Otherwise the part ``Q`` of the data matrix must be symmetric.
 {
     uint_fast32_t i, j;
-    uint64_t *m = pqs->data, mask;
+    uint64_t *m = pqs->data, mask, mask_r;
     
     if (nqb + nrows > MAXCOLS || nrows > pqs->maxrows) return -4;
     pqs->nrows = nrows;
@@ -290,15 +280,20 @@ int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t 
         m[0] &= mask - 1;
         for (i = 1; i < nrows; ++i) {
             m[i] &= (mask << (i + 1)) - 1;
+        }    
+        for (i = 0; i < nrows; ++i) {
             for (j = i+1; j < nrows; ++j) 
                 m[i] ^= ((m[j] >> i) & mask) << j;
         }
         return 0;
     }
     if (mode == 2) {
-        m[0] &= mask - 1;
+        mask_r = (mask << nrows) - 1;
+        m[0] &= mask_r - mask;
         for (i = 1; i < nrows; ++i) {
-            m[i] &= -(mask << (i + 1));
+            m[i] &=  mask_r - ((mask << i) - mask);
+        }
+        for (i = 0; i < nrows; ++i) {
             for (j = 0; j < i; ++j) 
                 m[i] ^= ((m[j] >> i) & mask) << j;
         }
@@ -395,43 +390,6 @@ uint64_t qstate12_get_column(qstate12_type *pqs, uint32_t j)
     if (bad_state(pqs) || j >= pqs->nrows + pqs->ncols) return 0;
     return qstate12_get_col(pqs->data, j,  pqs->nrows); 
 }
-
-
-// Deprecated!!!
-int32_t qstate12_get_cols(qstate12_type *pqs, uint32_t c0, uint32_t len, uint32_t *pa)
-// Extract columns c0,...,c0 + len - 1 from matrix (A,Q)
-// This is a workaround for a compiler problem with Cython 
-{
-    uint_fast32_t i;
-    uint64_t *m = pqs->data, mask = (ONE << len) - 1;
-    for (i = 0; i < pqs->nrows; ++i) {
-        pa[i] = (uint32_t)((m[i] >> c0) & mask);
-    }
-    return 0;
-}
-
-
-// Deprecated!!!
-int32_t qstate12_set_cols(qstate12_type *pqs, uint32_t c0, uint32_t len, uint32_t *pa)
-// Fill columns c0,...,c0 + len - 1 of matrix (A,Q) from matrix *pa,
-// columns 0,...,len-1.
-// This is a workaround for a compiler problem with Cython 
-{
-    uint_fast32_t i;
-    uint64_t *m = pqs->data, mask = (ONE << len) - 1;
-    uint64_t mask_pqs = ~(mask << c0);
-    for (i = 0; i < pqs->nrows; ++i) {
-        m[i] &= mask_pqs;
-        m[i] ^= (uint64_t)(pa[i] & mask) << c0;
-    }
-    return 0;
-}
-
-
-
-
-
-
 
 
 

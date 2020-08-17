@@ -79,44 +79,40 @@ int32_t qstate12_unit_matrix(qbstate12_type *pqs, uint32_t nqb)
 **********************/
 
 // %%EXPORT p
-int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
+int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
 // Set the state ``qs`` referred by ``pqs`` to a real monomial 
-// ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` that 
-// transforms a  state ``<v|`` of ``nqb`` input bits to a state 
-// ``<v|  * T`` of ``nqb`` output qubits. Here right multiplication
-//  with ``T`` maps unit vectors to (possibly negated) unit vectors. 
-// ``<v|`` is considered as a row vector.
+// ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` which 
+// is monomial in  the sense that each column contains exactly 
+// one nonzero entry ``1`` or ``-1``. So left multiplication  
+// with ``T`` maps maps unit vectors to (possibly negated) unit  
+// vectors. It transforms a  state ``|v>`` of ``nqb`` input bits 
+// to a state ``T * |v>`` of ``nqb`` output qubits. Here
+// ``|v>`` is considered as a column vector.
 //
 // ``pa`` refers to an array a of integers ``a[i]`` of length 
 // ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
 // field  via its binary  representation. So ``a[i,j]`` means 
 // ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
 // ``a[i,j1],...,a[i,j2-1]``.
-//   
-// ``T`` is a ``2**n`` times ``2**n`` matrix which is monomial in 
-// the sense that each row contains exactly one nonzero entry 
-// ``1`` or ``-1``. So right multiplication with that matrix maps 
-// unit vectors to  (possibly negated) unit vectors as described 
-// below.
 //
 // For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
 // unit vector with index ``v``. For any bit vector ``v`` of 
-// length ``nqb + 1`` let ``<v|`` be the (possibly negated) unit 
-// vector ``(-1)**v[nqb] * <v[0:nqb]|``.  ``<v1 ^ v2|`` and 
-// ``<1 << v1|`` are defined via the corrresponding operators 
+// length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit 
+// vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and 
+// ``|1 << v1>`` are defined via the corrresponding operators 
 // ``<<`` and ``^`` in C.
 //
 // Then ``T``  maps
 //
-//   *  ``<0|``     to  ``<a[0, 0:nqb+1|``
+//   * ``|0>``     to  ``|a[0, 0:nqb+1]>``
 //
-//   *  ``<1 << i|``  to  ``<a[i+1, 0:nqb+1]|``
+//   * ``|1 << i>`` to  ``|a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>``
 //
 // ``T`` maps unit vectors to (possibly negated) unit vectors, 
-//  so ``T(v)`` is well defined by ``<T(v)| = T(<v|)`` for a bit 
+// so ``T(v)`` is well defined by ``|T(v)> = T(|v>)`` for a bit 
 // field ``v`` of length ``nqb + 1``. We have
 //
-//   * ``<T(v1 ^ v2)| = (-1)**Q(v1,v2) * <T(v1) ^ T(v2) ^ T(0)|``,
+//   * ``|T(v1 ^ v2)> = (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)>``,
 //
 // for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
 // alternating bilinear form ``Q`` depending on the first ``nqb`` 
@@ -129,20 +125,22 @@ int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t 
 //     for ``0 <= j < i < nqb``.
 //
 {
-    uint64_t *m = pqs->data, mask1, m0;
+    uint64_t *m = pqs->data, mask1;
     uint_fast32_t i;
+    int32_t factor = ((pa[0] >> nqb) & 1) << 2;
     pqs->nrows = nqb + 1;
     pqs->ncols = nqb << 1;
-    pqs->factor = ((pa[0] >> nqb) & 1) << 2;
     if (bad_state(pqs)) return -4;
  
     mask1 = (ONE << nqb) - 1;
-    m[0] = m0 = (pa[0] & mask1) << nqb;
+    m[0] = (pa[0] & mask1) << nqb;
     for (i = 1; i <= nqb; ++i) {
         mask1 += mask1 + 1;
-        m[i] = ((ONE << (i - 1)) | ((pa[i] & mask1) << nqb)) ^ m0;
+        m[i] = ((ONE << (i - 1)) | ((pa[i] & mask1) << nqb));
     } 
-    return qstate12_set(pqs, nqb << 1, nqb + 1, m, 1); 
+    qstate12_set(pqs, 2*nqb, nqb+1, m, 1);
+    pqs->factor = factor;
+    return 0; 
 }
 
 
@@ -158,7 +156,7 @@ int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t 
 static inline void
 qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint32_t i2)
 // Copy row ``i1`` of the bit matrix m referred to row ``i2``. 
-// ``i2 < i1`` must hold. We interpret ``m`` as a pair ``A,Q``
+// ``i2 <= i1`` must hold. We interpret ``m`` as a pair ``A,Q``
 // of adjacent matrices of a state so that ``A`` has ``ncols``
 // columns. We also adjust the quadratic form ``Q``
 { 

@@ -39,6 +39,10 @@ def create_m(rows, cols, factor, data):
     return m
 
 
+
+def rand_mul_scalar(m):
+    m.mul_scalar(randint(-16, 15), randint(-8,7))
+
 def create_product_testvectors():
     """yield instances of class ``QStateMatrix`` for tests """
     for m1_data, m2_data, nqb in qs_matrix_data:
@@ -54,9 +58,9 @@ def create_product_testvectors():
             for nqb in range(min(cols1, cols2)):
                for n in range(2):
                    m1 = rand_qs_matrix(0, cols1, cols1+3)
-                   m1.mul_scalar(randint(-8, 8), randint(0,7))  
+                   rand_mul_scalar(m1)  
                    m2 = rand_qs_matrix(0, cols2, cols2+3)
-                   m1.mul_scalar(randint(-8, 8), randint(0,7))  
+                   rand_mul_scalar(m2)  
                    yield m1, m2, nqb    
     # Sparse states           
     for cols1 in range(2,6):
@@ -187,12 +191,12 @@ def create_matmul_testvectors():
     for i in range(2,6):
         for j in range(2,6):
             for k in range(2, 6):
-                for r in range(3):
-                    for n in range(2):
+                for r in range(3, 12, 2):
+                    for n in range(1):
                         m1 = rand_qs_matrix(i, j, r)
-                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
+                        rand_mul_scalar(m1)  
                         m2 = rand_qs_matrix(j, k, r)
-                        m2.mul_scalar(randint(-8, 8), randint(0,7))  
+                        rand_mul_scalar(m2)  
                         yield m1, m2   
 
 @pytest.mark.qstate
@@ -225,16 +229,16 @@ def large_matmul_testvectors():
     nn = 12
     for r in range(10, 27):
         m1 = rand_qs_matrix(nn, nn, r)
-        m1.mul_scalar(randint(-8, 0), randint(0,7))  
+        rand_mul_scalar(m1)  
         m2 = rand_qs_matrix(nn, nn, r)
-        m2.mul_scalar(randint(-8, 0), randint(0,7))
+        rand_mul_scalar(m2)
         r1 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
         r2 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
         yield m1, m2, r1, r2   
 
 
 @pytest.mark.qstate
-def test_matmul(verbose = 0):
+def test_large_matmul(verbose = 0):
     """Testlarge  matrix multiplication. 
     
     For the mmgroup project wee have to multiply marices
@@ -261,3 +265,84 @@ def test_matmul(verbose = 0):
         err = "Matrix multiplcation has failed"
         compare_complex(c3_ref, c3, err)
 
+
+
+
+def create_mul_testvectors():
+    """Yield pairs of matrices for testing matrix multiplication
+
+    These matrices are instances of class ``QStateMatrix``.
+    """
+    for i in range(2,6):
+        for j in range(2,6):
+            for r in range(2, 12, 2):
+                for n in range(2):
+                    m1 = rand_qs_matrix(i, j, r)
+                    rand_mul_scalar(m1)  
+                    m2 = rand_qs_matrix(i, j, r)
+                    rand_mul_scalar(m2)  
+                    yield m1, m2   
+
+
+
+@pytest.mark.qstate
+def test_mul(verbose = 0):
+    """Test elementwise and scalar multiplication for `QStateMatrix``"""
+    for ntest, (m1, m2) in enumerate(create_mul_testvectors()):
+        if verbose:
+            print("TEST %s Matrix multiplication of entries" % (ntest+1))
+            print(m1.echelon())
+            print(m2.echelon())
+        m3 = (m1 * m2)
+        if verbose:
+            print("Product")
+            print(m3)
+        c3 = m3[:,:]
+        c3_ref = m1[:,:] * m2[:,:]
+        err = "Matrix multiplcation of entries has failed"
+        compare_complex(c3_ref, c3, err)
+        err = "Matrix negation has failed"
+        compare_complex(-(m1[:,:]), (-m1)[:,:], err)
+        err = "Matrix scalar multiplication failed"
+        f = (1+1j)**randint(-8,7) * 2**(0.5*randint(-10,10))
+        compare_complex(f*(m1[:,:]), (f*m1)[:,:], err)
+        compare_complex(f*(m1[:,:]), (m1*f)[:,:], err)
+        compare_complex((m1[:,:]/f), (m1/f)[:,:], err)
+        if ntest < 20:
+            compare_complex(0*(m1[:,:]), (0*m1)[:,:], err)
+   
+
+def create_conj_testvectors():
+    """Yield pairs of matrices for testing matrix multiplication
+
+    These matrices are instances of class ``QStateMatrix``.
+    """
+    for i in range(2,6):
+        for j in range(2,6):
+            for r in range(2, 12, 2):
+                for n in range(2):
+                    m1 = rand_qs_matrix(i, j, r)
+                    rand_mul_scalar(m1)  
+                    yield m1  
+
+   
+@pytest.mark.qstate
+def test_conj(verbose = 0):
+    """Test conjugation and transposition for `QStateMatrix``"""
+    for ntest, m1 in enumerate(create_conj_testvectors()):
+        if verbose:
+            print("TEST %s Matrix multiplication of entries" % (ntest+1))
+            print(m1.echelon())
+        if verbose:
+            print("Conjugate")
+            print(m1.conj())
+        err = "Matrix conjugation failed" 
+        compare_complex(m1.conj()[:,:], m1[:,:].conj(), err)
+        if verbose:
+            print("Transpose")
+            print(m1.T)
+        err = "Matrix transpostion failed" 
+        compare_complex(m1.T[:,:], m1[:,:].T, err)
+
+
+     

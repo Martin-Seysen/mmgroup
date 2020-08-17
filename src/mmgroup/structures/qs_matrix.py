@@ -6,7 +6,9 @@ from __future__ import  unicode_literals
 
 import re
 from collections.abc import Iterable
-from numbers import Integral
+from numbers import Integral, Complex
+import math
+import cmath
 from random import randint
 
 import numpy as np
@@ -14,7 +16,7 @@ from mmgroup.clifford12 import QState12, as_qstate12
 from mmgroup.clifford12 import qstate12_unit_matrix 
 from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
 from mmgroup.clifford12 import qstate12_product
-
+from mmgroup.clifford12 import qstate12_column_monomial_matrix
 
 class QStateMatrix(QState12):
     def __init__(self, rows, cols = None, data = None, mode = 0):
@@ -117,6 +119,32 @@ class QStateMatrix(QState12):
             raise ValueError(err)
         m.rows, m.cols = rows, cols
         return m
+        
+    def conjugate(self, copy = True):
+        """Conugate a matrix"""
+        m = QStateMatrix(self) if copy else self   
+        return super(QStateMatrix, m).conjugate()   
+
+    conj = conjugate        
+
+    def transpose(self, copy = True):
+        """Conugate a matrix"""
+        m = QStateMatrix(self) if copy else self
+        rows, cols = m.shape 
+        m.rot_bits(rows, m.ncols, 0)   
+        m.reshape((cols, rows), copy = False)        
+        return m   
+
+    @property 
+    def T(self):
+        """Return transpose matrix as in numpy"""   
+        return self.transpose()
+
+    @property 
+    def H(self):
+        """Return conjugate transpose matrix as in numpy"""   
+        m = self.transpose()
+        return super(QStateMatrix, m).conjugate()    
      
     def complex(self):
         """Return complex matrix of state as numpy array"""
@@ -148,15 +176,52 @@ class QStateMatrix(QState12):
         result = QStateMatrix(result)
         result.reshape((r1, c2), copy = False)
         return result
+        
+    
+    def  __mul__(self, other):
+        if isinstance(other, Complex):
+            e, phi = complex_to_qs_scalar(other)
+            if e is None:
+                return self.copy().set_zero()
+            else:
+                return self.copy().mul_scalar(e, phi)
+        elif isinstance(other, QStateMatrix):
+            if self.shape == other.shape:
+                c = flat_product(self, other, self.ncols, 0)
+                c.reshape(self.shape, copy = False)
+                return c
+            else:
+                err = "QStateMatrix instances must have same shape"
+                raise ValueError
+        else:
+            err = "Byte type for multiplication with QStateMatrix"
+            raise TypeError(err)
             
+    __rmul__ = __mul__       
+
+    def __truediv__(self, other):
+        if isinstance(other, Complex):
+            return self.__mul__(1.0/other)
+        else:
+            err = "Byte type for multiplication with QStateMatrix"
+            raise TypeError(err)
+            
+    def __neg__(self):
+        return self.copy().mul_scalar(0, 4)    
+
+    def __pos__(self):
+        return self    
         
     def __getitem__(self, item):
         if not isinstance(item, tuple):
             item = (item,)
         while len(item) < 2:
             item = item + (None,)
-        a0 = _as_index_array(item[0], self.shape[0]) << self.shape[1]
-        a1 = _as_index_array(item[1], self.shape[1])
+        a0, f0 = _as_index_array(item[0], self.shape[0]) 
+        a1, f1 = _as_index_array(item[1], self.shape[1])
+        if f0 & f1:
+            return self.complex()
+        a0 = a0 << self.shape[1]
         shape_ =  a0.shape + a1.shape 
         a = np.ravel(a0)[:, np.newaxis] + np.ravel(a1)[ np.newaxis, :] 
         if a.dtype != np.uint32:
@@ -261,7 +326,8 @@ STATE_TYPE = { (0,0) : ("QState scalar"),
 }    
         
     
-def format_state(q, reduced = False):
+def format_state(q):
+    """Return  a ``QStateMatrix`` object as a string."""
     q.check()
     rows, cols = q.rows, q.cols
     data = q.data
@@ -282,19 +348,64 @@ def format_state(q, reduced = False):
         
         
 def _as_index_array(data, nqb):
+    """Convert an index ``data`` to an array of indices.
+    
+    ``data`` in an object for indexing a one-dimesnional numpy
+    array of length ``nqb``. 
+    
+    Return a pair ``(a, full)`` where ``a`` is a numpy array 
+    containing the indices and ``full`` is True iff
+    ``a`` contains the data ``range(1 << nqb)``.
+    """
     mask = (1 << nqb) - 1
     if isinstance(data, Integral):
-        return np.array(data & mask, dtype = np.uint32)
+        return np.array(data & mask, dtype = np.uint32), False
     if data is None:
-        return np.arange(1 << nqb, dtype = np.uint32)
+        return np.arange(1 << nqb, dtype = np.uint32), True
     if isinstance(data, slice):
-        return np.arange(*data.indices(1 << nqb), 
-            dtype = np.uint32)
+        ind = data.indices(1 << nqb)
+        full = ind == (0, 1 << nqb, 1) 
+        return np.arange(*ind, dtype = np.uint32), full
     ind = np.array(data, dype = np.uint32, copy = False) 
     if len(ind.shape) > 1:
         err = "Bad index type for QState12 array"
         raise TypeError(err)
-    return  ind & mask  
+    return  ind & mask, False 
+    
+    
+    
+####################################################################
+# convert a complex number to a factor for class QStateMatrix 
+####################################################################
+    
+
+MIN_ABS = 2.0**-1024
+EPS = 1.0e-8 
+    
+def complex_to_qs_scalar(x):
+    """Convert complex number to scalar factor
+    
+    Return ``(e, phi)`` if ``x == 2**(0.5*e) * z**phi``
+    with ``z = (1+1j)/sqrt(2)``.
+    
+    Return ``None, None`` if ``x == 0``
+    
+    raise ValueError otherwise. We accept a relative error of
+    about ``1.0e-8`` for ``x``.
+    
+    So it is safe to write e.g. ``2**-0.5 * (-1+1j) * m`` 
+    if ``m`` is an  instance of class ``QStateMatrix``.    
+    """
+    r, phi = cmath.polar(x)
+    if r <= MIN_ABS:
+        return None, None
+    e = 2 * (math.log(r) / math.log(2))
+    phi8 = 4 * phi / math.pi
+    e_r, phi8_r = round(e), round(phi8)
+    if (max(abs(e - e_r), abs(phi8 - phi8_r)) < EPS):
+        return e_r, phi8_r
+    err = "Cannot convert number to factor for QStateMatrix"
+    raise ValueError(err)    
 
 ####################################################################
 # Some wrappers
@@ -312,7 +423,12 @@ def flat_product(a, b, nqb, nc):
     a, b = QState12(a), QState12(b)
     qstate12_product(a, b, nqb, nc)
     return QStateMatrix(a)  
-
-
+    
+    
+def qstate_column_monomial_matrix(data):
+    nqb = len(data) - 1
+    qs = QStateMatrix(nqb, nqb, 1) 
+    qstate12_column_monomial_matrix(qs, nqb, data)
+    return qs
 
     

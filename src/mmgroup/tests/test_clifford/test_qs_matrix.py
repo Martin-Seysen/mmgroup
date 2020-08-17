@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-
+from mmgroup.structures.qs_matrix import qstate_column_monomial_matrix
 
 
 #####################################################################
@@ -26,8 +26,8 @@ def eval_A_Q(ncols, data, v):
     Given a state matrix ``qs`` type ``QStateMatrix``, parameter
     ``ncols`` should be equal to ``qs.rows + qs.cols``, and parameter
     ``data`` should be equal to ``qs.data``.  Then parts ``A``and ``Q``
-    of ``qs`` are evaluated for a bot vector ``v`` of bit length
-    ``qs.nrows``, where . ``qs.nrows`` is equal to ``len(data)``.
+    of ``qs`` are evaluated for a bit vector ``v`` of bit length
+    ``qs.nrows``, where ``qs.nrows`` is equal to ``len(data)``.
     
     ``A`` is the ``qs.nrows`` times ``qs.ncols`` bit matrix that
     consistts of the first `qs.ncols`` columns of bit matrix ``data``.
@@ -344,4 +344,107 @@ def test_getitem(verbose = 0):
             print(c1)
         compare_complex(np.array(c1_ref), np.array(c1), s, m)  
 
+ 
+#####################################################################
+# Test the generation of a monomial matrix
+#####################################################################
+
+
+def eval_nonomial(data):
+    """Auxiliary function for function ``slow_complex``.
+    
+    Yet to be documented
+    
+    TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    This function sets map(0b000..01) to data[0] ^ data[1]
+    The C function might set  map(0b000..01) to data[1]
+    
+    Find a reasonable definition of this function!!!!!!!!!!!!!!!
+    """
+    nqb = len(data) - 1
+    res = np.zeros( (1 << nqb, 2), dtype = np.int32)
+    data = data[:]
+    mask = (2 << nqb) - 1
+    data[0] &= mask
+    for i in range(1, nqb + 1):
+        data[i] &= mask
+        mask += mask + 1
         
+    mask =  (1 << nqb) - 1       
+    for j in range(1 << nqb):
+        v = j + j + 1    
+        a = 0
+        for i, d in enumerate(data): 
+            a ^= d & -((v >> i) & 1)
+        q = (a >> nqb) & v        
+        for sh in [32, 16, 8, 4, 2, 1]:
+            q ^= q >> sh 
+        res[j,0] = a & mask
+        res[j,1] = 1 - 2*(q & 1)
+    return res
+
+
+def a_binary(data, length):
+    s = ""
+    for n in data:
+        n &= ((1 << length) - 1)
+        b = format(n, "b")
+        s +=  "0" * (length - len(b)) + b + "\n"
+    return s
+
+
+      
+
+
+qs_monomial_matrix_data = [
+     [1],
+     [0b10, 0b00],
+     [0b11, 0b11],
+    ]
+ 
+def rand_monomial_data(nqb):
+    k = 1 << (2 * nqb)
+    return [randint(0, k-1) for i in range(nqb+1)]
+ 
+def create_monomial_testvectors():
+    """yield instances of class ``QStateMatrix`` for tests """
+    for data in qs_monomial_matrix_data:
+        yield data
+    for nqb in range(8):
+        for k in range(3):
+            yield(rand_monomial_data(nqb))
+            
+ 
+@pytest.mark.qstate
+def test_monomial(verbose = 0):
+    for ntest, data in enumerate(create_monomial_testvectors()):
+        nqb = len(data) - 1
+        m = qstate_column_monomial_matrix(data)
+        if verbose:
+            print("TEST %s, nqb = %d" % (ntest+1, nqb))
+            s_data =  a_binary(data, 2*nqb)
+            print("input:\n" + s_data)
+            print(m)
+
+        c = m[:,:].T
+        s = np.sum(abs(c), axis = 1) - 1
+        error = np.amax(abs(s)) > EPS
+        if (verbose or error):
+            if error:
+                err = "Error in checking monomial matrix"
+                print("\n" + err + "\n")
+            s_data =  a_binary(data, 2*nqb)
+            print("data  = \n" +  s_data)
+            if nqb <= 3:
+                print("obtained\n\n", c)
+            print("Shape of obtained matrix:", c.shape)
+            if error:
+                print("Max. absolute error:", np.amax(abs(s)))
+                raise ValueError(err)
+        res = eval_nonomial(data)
+        for j, w in  enumerate(res):
+            k = w[0]
+            value = w[1]
+            assert c[j,k] == value, (nqb, j, k, c[j,k], value, res)
+
