@@ -131,9 +131,72 @@ class QStateMatrix(QState12):
         """Conugate a matrix"""
         m = QStateMatrix(self) if copy else self
         rows, cols = m.shape 
-        m.rot_bits(rows, m.ncols, 0)   
+        super(QStateMatrix, m).rot_bits(rows, m.ncols, 0)   
         m.reshape((cols, rows), copy = False)        
         return m   
+        
+    def rot_bits(self, rot, nrot, n0 = 0, copy = True):    
+        """Wrapper for corresponding function in class QState12"""
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).rot_bits(rot, nrot, n0)   
+        return m   
+        
+    def xch_bits(self, sh, mask, copy = True):    
+        """Wrapper for corresponding function in class QState12"""
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).xch_bits(sh, mask)   
+        return m   
+        
+    def extend(self, j,nqb, copy = True):    
+        """Wrapper for corresponding function in class QState12
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).extend(j, nqb) 
+        m.reshape((0, m.ncols), copy = False)        
+        return m   
+
+    def extend_zero(self, j, nqb, copy = True):    
+        """Wrapper for corresponding function in class QState12
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).extend_zero(j, nqb) 
+        m.reshape((0, m.ncols), copy = False)        
+        return m   
+
+    def restrict(self, j,nqb, copy = True):    
+        """Wrapper for corresponding function in class QState12
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).restrict(j, nqb) 
+        m.reshape((0, m.ncols), copy = False)        
+        return m   
+
+    def restrict_zero(self, j, nqb, copy = True):    
+        """Wrapper for corresponding function in class QState12
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).restrict_zero(j, nqb) 
+        m.reshape((0, m.ncols), copy = False)        
+        return m   
+
+    def sumup(self, j,nqb, copy = True):    
+        """Wrapper for corresponding function in class QState12
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).sumup(j, nqb) 
+        m.reshape((0, m.ncols), copy = False)        
+        return m   
+
 
     @property 
     def T(self):

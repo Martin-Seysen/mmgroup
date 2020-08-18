@@ -529,6 +529,7 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
     uint64_t *m = pqs->data, v;
     uint_fast32_t k;
     if (bad_state(pqs)) return -2;
+    if (mask == 0) return 0;
     if (sh >= pqs->ncols ||  mask & ((mask | (-ONE << pqs->ncols)) >> sh)) 
         return -3;
 
@@ -829,7 +830,7 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 //   = ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` .
 // So we increment ``pqs->ncols`` by ``nqb``.
 //
-// If the input is reduced then the result is also reduced.
+// The result is not reduced.
 {
 
     uint64_t *m = pqs->data, mask;
@@ -837,9 +838,10 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
     int32_t res;
 
     if ((res = qstate12_extend_zero(pqs, j, nqb)) < 0) return res;
+    if (pqs->nrows == 0) return 0;
     mask = (ONE << j) - 1;
-    for (i = 1; i < pqs->nrows; ++i) if (m[i] & mask) ++i; 
-    if ((res = qstate12_insert_rows(pqs, j, nqb)) < 0) return res;
+    i = pqs->nrows; 
+    if ((res = qstate12_insert_rows(pqs, i, nqb)) < 0) return res;
     mask = ONE << j;
     for (k = 0; k < nqb; ++k) m[i+k] ^= mask << k;
     return 0;

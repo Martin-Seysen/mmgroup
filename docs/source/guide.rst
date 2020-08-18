@@ -219,6 +219,6 @@ More details will be documented in a future version of this project.
 Computation in the subgroup :math:`2^{1+24}.Co_1`
 =================================================
 
-.. automodule:: mmgroup.dev.leech.qstate12
+.. automodule:: mmgroup.dev.clifford12.qstate12
 
 
