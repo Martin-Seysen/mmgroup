@@ -17,6 +17,8 @@ from mmgroup.clifford12 import qstate12_unit_matrix
 from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
 from mmgroup.clifford12 import qstate12_product
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
+from mmgroup.clifford12 import qstate12_reduce_matrix
+from mmgroup.clifford12 import error_string
 
 class QStateMatrix(QState12):
     def __init__(self, rows, cols = None, data = None, mode = 0):
@@ -226,7 +228,11 @@ class QStateMatrix(QState12):
         """
         a = super(QStateMatrix, self).complex_unreduced()
         a = a.reshape((1 << self.rows, 1 << self.cols)) 
-        return a  
+        return a 
+
+    def reduce_matrix(self):
+        """yet to be docmented"""
+        return qstate12_reduce_matrix(self, self.shape[1])        
 
     def __matmul__(self, other):
         r1, c1 = self.shape
@@ -304,10 +310,10 @@ class QStateMatrix(QState12):
 # Creating a random a QStateMatrix object
 ####################################################################
 
-def rand_qs_matrix(row, cols, data_rows):
-    limit = (1 << (row  + cols + data_rows)) - 1 
+def rand_qs_matrix(rows, cols, data_rows):
+    limit = (1 << (rows  + cols + data_rows)) - 1 
     data = [randint(0, limit) for i in range(data_rows)]
-    return QStateMatrix(row, cols, data, mode = 1)
+    return QStateMatrix(rows, cols, data, mode = 1)
 
 ####################################################################
 # Formatting a QStateMatrix object
@@ -391,9 +397,14 @@ STATE_TYPE = { (0,0) : ("QState scalar"),
     
 def format_state(q):
     """Return  a ``QStateMatrix`` object as a string."""
-    q.check()
     rows, cols = q.rows, q.cols
-    data = q.data
+    try:
+        data = q.data
+    except ValueError:
+        print("\nError: Bad instance of class QStateMatrix:\n") 
+        print(format_state_raw(q))        
+        raise    
+        
     e = q.factor
     str_e = format_scalar(*e) if len (data) else "0"
     str_data = format_data(data, rows, cols, reduced = False)   
@@ -401,8 +412,17 @@ def format_state(q):
     s = "<%s %s" % (qtype, str_e)
     if len(str_data):
        s += " *\n" + str_data 
-    return s + ">\n"                  
-        
+    s += ">\n"                  
+    return s
+
+def format_state_raw(q):
+    s = ("QStateMatrix, shape = %s, factor = %s, nrows = %s, cols = %s\n"
+        % (q.shape, q.factor, q.nrows, q.ncols))
+    s += "data:\n"
+    length = q.nrows + q.ncols
+    for d in q.raw_data[:q.nrows]:
+        s += binary(d, 0, length) + "\n"
+    return s
         
 
 ####################################################################

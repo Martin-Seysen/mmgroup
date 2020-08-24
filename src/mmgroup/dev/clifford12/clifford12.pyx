@@ -31,6 +31,15 @@ QSTATE12_ERROR_STRINGS = {
 }
 
 
+
+def error_string(code):
+    """Map an error code to a string"""
+    try:
+        return QSTATE12_ERROR_STRINGS[code]
+    except KeyError:
+        err = "Internal error %d in processing QState12 instance"
+        return err % code
+
 cdef int32_t chk_qstate12(int32_t code) except -1:
     """Check the return code of a function in module qstate12.c
     
@@ -41,12 +50,7 @@ cdef int32_t chk_qstate12(int32_t code) except -1:
     """
     if code >= 0:
         return code
-    try:
-        err = QSTATE12_ERROR_STRINGS[code]
-    except KeyError:
-        err = "Internal error %d in processing QState12 instance"
-        err = err % code
-    raise ValueError(err)
+    raise ValueError(error_string(code))
     return -1
 
 cdef class QState12(object):
@@ -115,7 +119,7 @@ cdef class QState12(object):
     # Properties and methods for obtaining implementation details
 
     property data:
-        """Get a copy of the data bit matrix of the state as a numpy array"""
+        """Get a copy of the data bit matrix of the state as a list"""
         def __get__(self):
             """Return a copy of the data bits of the state as a numpy array"""
             chk_qstate12(cl.qstate12_check(&self.qs))
@@ -128,6 +132,14 @@ cdef class QState12(object):
             # Dealing with numpy arrays of type np.uint64 is a nuisance.
             # So we convert is to a list of ints
             return list(map(int, a)) 
+            
+    property raw_data:
+        """Get a copy of the raw data bit matrix of the state as a list
+        
+        For debugging and testing only!
+        """
+        def __get__(self):
+            return [int(x) for x in self.data_]
         
     property nrows:
         """Get the number of rows of the bit matrix of the state """
@@ -208,9 +220,21 @@ cdef class QState12(object):
         return self
 
     def check(self):
-        """Raise ValueError is state is bad"""               
-        chk_qstate12(cl.qstate12_check(&self.qs))
-        return self 
+        """Raise ValueError is state is bad""" 
+        cdef int32_t res = cl.qstate12_check(&self.qs)
+        return chk_qstate12(res)
+
+    def check_code(self):
+        """Check a state
+        
+        Return ``0`` if state is ok.
+        
+        If the state is bad then return an error code as a 
+        negative integer.
+        """ 
+        cdef int32_t res = cl.qstate12_check(&self.qs)
+        return res 
+
 
     #########################################################################
     # Reducing a state to a standard form and checking euality of states
@@ -678,4 +702,13 @@ def qstate12_matmul(QState12 qs1, QState12 qs2, uint32_t nqb):
     cdef p_qstate12_type pqs2 = pqs12(qs2)
     return chk_qstate12(cl.qstate12_matmul(pqs1, pqs2, nqb))
 
+def qstate12_reduce_matrix(QState12 qs, uint32_t nqb):
+    """Yet to be documented"""
+    cdef uint8_t row_table[QSTATE12_MAXCOLS+1]
+    cdef p_qstate12_type pqs = pqs12(qs)
+    chk_qstate12(cl.qstate12_reduce_matrix(pqs, nqb, &row_table[0]))
+    cdef uint32_t i = qs.nrows + qs.ncols
+    cdef uint32_t j
+    return [ row_table[j] for j in range(i) ]
+    
 

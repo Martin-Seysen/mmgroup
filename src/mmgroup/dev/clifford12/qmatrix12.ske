@@ -427,32 +427,36 @@ int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint
 
 // %%EXPORT p
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_table)
+// TODO: Yet to be documented!!
 {
-    int_fast32_t res, i, j, fst_row = pqs->nrows;
-    uint64_t kernel = 0, *m = pqs->data, v;
+    int_fast32_t res, i, j, fst_row;
+    uint64_t kernel, *m = pqs->data, v;
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     if ((res = qstate12_row_table(pqs, row_table)) < 0) return res;
-    if (nqb >= pqs->ncols) return -3;
+    if (nqb > pqs->ncols) return -3;
+    if (pqs->nrows == 0) return 0;
     
-    for (i = pqs->ncols; i < pqs->ncols + pqs->nrows; ++i)
-        row_table[i] = QSTATE12_UNDEF_ROW;
+    fst_row = pqs->nrows;
+    v = (ONE << nqb) - 1;
+    for (i = pqs->nrows - 1; i > 0; --i) {
+        row_table[pqs->ncols + i] = QSTATE12_UNDEF_ROW;
+        if ((m[i] & v) == 0) fst_row = i;
+    }    
+    kernel = -(ONE << fst_row);
+    row_table[pqs->ncols] = fst_row;
     for (j = 0; j < nqb; ++j) if (row_table[j] != QSTATE12_UNDEF_ROW)
         row_table[pqs->ncols + row_table[j]] = j;
         
     for (j = nqb; j < pqs->ncols; ++j) {
-        if (row_table[j] != QSTATE12_UNDEF_ROW) {
-            if (fst_row == pqs->nrows) fst_row = row_table[j];
-        } else {
+        if (row_table[j] == QSTATE12_UNDEF_ROW) {
             i =  qstate12_find_masked_pivot(m, fst_row, j, kernel);
             if (i > 0) {
                kernel |= ONE << i;
                qstate12_pivot(pqs, i, qstate12_get_col(m,j, i));
-               row_table[i] = i;
+               row_table[j] = i;
             }   
         }
     }
-    row_table[pqs->ncols] = fst_row;
-    kernel |= -(ONE << fst_row);
     
     // Pivot Q part of state data
     // TODO: check it!!!!!
@@ -460,18 +464,48 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
         i = qstate12_find_masked_pivot(m, fst_row, j + pqs->ncols, kernel);
         // if i >= 0 then i is the higest row with Q[i,j] = 1
         if (i > 0) {
-            // set v to column j of matrix a
+            // set v to column (or row) j of matrix Q
             v = ((m[j] >> pqs->ncols) & (-2ULL)) +
                  ((m[0] >> (j + pqs->ncols)) & 1);
             v &= ~kernel;     
             qstate12_pivot(pqs, i, v);
-            v = -(ONE <<  fst_row);
-            qstate12_pivot(pqs, j + pqs->ncols, v);
+            // Set v to  column (or row) i of matrix Q
+            v = m[i] >> pqs->ncols;
+            v &= -(ONE <<  fst_row);
+            qstate12_pivot(pqs, j, v);
             row_table[pqs->ncols + j] = i;
         }
     }    
     return 0;
     
+}
+
+
+
+// %%EXPORT p
+int32_t qstate12_conjugate_matrix(qstate12_type *pqs, uint32_t nqb, uint32_t n, uint32_t *v)
+// TODO: Yet to be implemented!!
+{
+    int_fast32_t res, i, j;
+    uint8_t row_table[MAXCOLS];
+    uint64_t *m = pqs->data, m0, v0, w, f,  mask = (ONE << nqb) - 1;
+    
+    res = qstate12_reduce_matrix(pqs, nqb, row_table);
+    if (res < 0) return res;
+    
+    while (n--) {
+        v0 = *v;
+        m0 = m[0];
+        f = v0 >> (2 * nqb);
+        m0 ^= v0 & (mask << nqb);
+        if ((res = qstate12_mul_Av(pqs, v0, &w)) < 0) return res; 
+        f &= w;
+        m0 ^= w << (2*nqb);
+        // TODO: yet to be implemented!!!!  
+    
+        ++v;
+    }
+    return 0;
 }
 
 
