@@ -444,8 +444,6 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
     }    
     kernel = -(ONE << fst_row);
     row_table[pqs->ncols] = fst_row;
-    for (j = 0; j < nqb; ++j) if (row_table[j] != QSTATE12_UNDEF_ROW)
-        row_table[pqs->ncols + row_table[j]] = j;
         
     for (j = nqb; j < pqs->ncols; ++j) {
         if (row_table[j] == QSTATE12_UNDEF_ROW) {
@@ -454,6 +452,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
                kernel |= ONE << i;
                qstate12_pivot(pqs, i, qstate12_get_col(m,j, i));
                row_table[j] = i;
+               row_table[pqs->ncols + i] = j;
             }   
         }
     }

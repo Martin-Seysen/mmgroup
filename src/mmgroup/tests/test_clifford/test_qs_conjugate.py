@@ -37,9 +37,9 @@ def create_testmatrices():
     yield QStateMatrix(4, 4,  1)  
     for i in range(20):
         yield rand_qs_matrix(2, 2, 4)
-    for cols in range(0,6):
-        for rows in range(0, 6):
-            if rows + cols > 8:
+    for cols in range(0,7):
+        for rows in range(0, 7):
+            if rows + cols > 9:
                  break
             yield QStateMatrix(rows, cols)
             for data_rows in range(1, rows + cols + 3):
@@ -67,9 +67,12 @@ def zero_column(d, j, i):
         s |= d[k]
     return (s & (1 << j)) == 0
 
+EPS = 1.0e-8
+
 @pytest.mark.qstate
 def test_reduce_matrix(verbose = 0):
     for ntest, m in enumerate(create_testmatrices()):
+        # Check method m.reduce_matrix() for matrix m
         m1 = m.copy()
         if verbose:
             print("Test %d: reduce matrix, m =" % (ntest + 1), m)
@@ -86,6 +89,7 @@ def test_reduce_matrix(verbose = 0):
             err = "m and m1 are not equal"
             raise ValueError(err)
         if m1.nrows == 0: 
+            assert  m.lb_rank() == -1
             continue
         assert len(row_tab) == m1.nrows + m1.ncols
         d = m1.data
@@ -101,7 +105,6 @@ def test_reduce_matrix(verbose = 0):
                     print("m1", m1)
                     print("table", row_tab)
                     raise ValueError(err)
-                assert row_tab[m1.rows + m1.cols + i] == j
         row_mask = bitrange_mask(m1.cols, m1.cols + m1.rows)
         row_set = set(range(1, m1.nrows))
         for j in range(m1.cols, m1.cols + m1.rows):
@@ -110,6 +113,7 @@ def test_reduce_matrix(verbose = 0):
             if i < fst_row:
                 ok = is_leading_low(d[i] & row_mask, j)
                 ok = ok and zero_column(d, j, i)
+                assert row_tab[m1.ncols + i] == j
                 row_set.remove(i)
             elif i < 255: 
                 assert i == imin + 1
@@ -137,4 +141,12 @@ def test_reduce_matrix(verbose = 0):
                 row_set.remove(i)
         for i in row_set:
             assert d[i] & q_mask == 0
-                      
+            
+        # Finally, check the computation of the rank of matrix m              
+        if m.ncols > 8:
+            continue
+        rk = np.linalg.matrix_rank(m[:], tol=EPS)
+        lb_rk = m.lb_rank()
+        assert rk == 1 << lb_rk, (m1[:], rk, lb_rk)   
+
+        

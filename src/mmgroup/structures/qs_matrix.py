@@ -20,7 +20,11 @@ from mmgroup.clifford12 import qstate12_column_monomial_matrix
 from mmgroup.clifford12 import qstate12_reduce_matrix
 from mmgroup.clifford12 import error_string
 
+
+
 class QStateMatrix(QState12):
+    UNDEF_ROW = 255
+    
     def __init__(self, rows, cols = None, data = None, mode = 0):
         """Create a 2**rows times 2**cols quadratic state matrix
 
@@ -232,7 +236,24 @@ class QStateMatrix(QState12):
 
     def reduce_matrix(self):
         """yet to be docmented"""
-        return qstate12_reduce_matrix(self, self.shape[1])        
+        return qstate12_reduce_matrix(self, self.shape[1]) 
+
+    def lb_rank(self):
+        """Return binary logarithm of rank of matrix.
+        
+        Return -1 if matrix is zero.
+        """
+        m = self.copy()
+        t = m.reduce_matrix()
+        if m.nrows == 0:
+            return -1
+        imin, imax = m.cols, m.ncols
+        r = sum(0 <= x < t[m.ncols] for x in t[imin:imax])
+        imin, imax = m.ncols + t[m.ncols], m.ncols + m.nrows
+        r += sum(x != self.UNDEF_ROW for x in t[imin:imax])
+        return r
+
+                
 
     def __matmul__(self, other):
         r1, c1 = self.shape
