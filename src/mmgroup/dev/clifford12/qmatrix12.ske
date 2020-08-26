@@ -9,6 +9,13 @@
 // Their meaning is the same as in module qstate12.c
 
 
+// %%COMMENT
+// Negative return values of functions in this module are error codes:
+// These error codes are extenstion of those in mudule qstate12.c 
+// -11: Matrix is not invertible,
+// -12: Matrix is not in the Pauli group,
+
+
 /*************************************************************************
 ** External references 
 *************************************************************************/
@@ -397,7 +404,49 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 }
 
 
+/*************************************************************************
+*** Creating and checking matrices in the Pauli group
+*************************************************************************/
 
+// %%EXPORT p
+uint64_t qstate12_pauli_vector(qstate12_type *pqs, uint32_t nqb, uint64_t *pv)
+{
+    int32_t res, i = 1;
+    uint64_t *m = pqs->data, w, mask = ONE + (ONE << nqb);
+    
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    if (pqs->ncols != nqb << 1 || pqs->nrows != nqb + 1) return -12;
+    if (pqs->factor & -0xf) return -12; 
+    for (i = 0; i < nqb; ++ i) {
+        w |=  (m[i+1] ^ mask);
+        mask <<= 1;
+    }
+    mask = (((ONE << pqs->nrows) - 1) << pqs->ncols) - 1;
+    if (w & mask) return -12;
+    mask = (ONE << nqb) - 1;
+    w = (m[0] >> (pqs->ncols + 1)) & mask;
+    w |= m[0] & (mask << nqb);
+    w |= ((pqs->factor >> 2) & 1) << pqs->ncols;    
+    w |= ((pqs->factor >> 1) & 1) << (pqs->ncols + 1);    
+    *pv = w;
+    return 0;
+}
+
+
+
+// %%EXPORT p
+uint64_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
+{
+    int32_t res;
+    uint64_t *m = pqs->data, mask = (ONE << nqb) - 1;
+    if ((res = qstate12_std_matrix(pqs, nqb, nqb, nqb)) < 0) return res;
+    m[0] |= (v & mask) << (2 * nqb + 1); 
+    m[0] |= v & (mask << nqb);
+    v >>= 2*nqb;
+    pqs->factor |= (v & 1) << 2;    
+    pqs->factor |= v & 2;    
+    return 0;
+}
 
 
 /*************************************************************************
@@ -479,28 +528,64 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
     
 }
 
+/*************************************************************************
+*** Conjugation of Pauli vector with a  matrix
+*************************************************************************/
 
 
 // %%EXPORT p
 int32_t qstate12_conjugate_matrix(qstate12_type *pqs, uint32_t nqb, uint32_t n, uint32_t *v)
 // TODO: Yet to be implemented!!
 {
-    int_fast32_t res, i, j;
+    int_fast32_t res, i, j, rank = 0, fst_row, sh, j0, j1;
     uint8_t row_table[MAXCOLS];
     uint64_t *m = pqs->data, m0, v0, w, f,  mask = (ONE << nqb) - 1;
     
     res = qstate12_reduce_matrix(pqs, nqb, row_table);
     if (res < 0) return res;
     
+    // Cehck that rank of matrix is equak to nqb
+    fst_row = row_table[pqs->ncols];
+    for (j = nqb; j <= nqb << 1; ++j) rank += row_table[j] < fst_row;
+    for (j = pqs->ncols + fst_row; j < pqs->ncols + pqs->nrows; ++j) 
+        rank +=  row_table[j] != QSTATE12_UNDEF_ROW;
+    if (rank != nqb) return - 11;
+    if (nqb == 0) return 0;
+    
+    
     while (n--) {
         v0 = *v;
         m0 = m[0];
-        f = v0 >> (2 * nqb);
+        f = 2 * (v0 >> (2 * nqb)) + ((v0 >> (2 * nqb + 1)) & 1);
         m0 ^= v0 & (mask << nqb);
         if ((res = qstate12_mul_Av(pqs, v0, &w)) < 0) return res; 
-        f &= w;
+        f += w << 1;
         m0 ^= w << (2*nqb);
         // TODO: yet to be implemented!!!!  
+        
+        for (j = nqb; j < pqs->ncols; ++j) if ((m0 >> j) & 1) {
+            i = row_table[j];
+            sh = pqs->ncols + i;
+            // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
+            // see guide, section 'Implementation of quadratic mappings'
+            f += ((m0 >> sh) & 1) << 1;
+            f += (m[i] >> sh) & 1;
+            // Add row i to row 0
+            m0 ^= m[i];
+        }
+        j0 = pqs->ncols + fst_row; j1 = pqs->ncols + pqs->nrows;
+        for (j = j0; j < j1; ++j) if ((m0 >> j) & 1) {
+            i = row_table[j];
+            sh = pqs->ncols + i;
+            // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
+            // see guide, section 'Implementation of quadratic mappings'
+            f += ((m0 >> sh) & 1) << 1;
+            f += (m[i] >> sh) & 1;
+            // Add row i to row 0
+            m0 ^= m[i];
+        }
+    
+        // TODO: compute conjugated v!!!!
     
         ++v;
     }

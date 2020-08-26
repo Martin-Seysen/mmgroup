@@ -28,6 +28,8 @@ QSTATE12_ERROR_STRINGS = {
  -7: "Bad row index for bit matrix in a QState12 instance",
  -8: "Internal parameter error in a QState12 instance",
  -9: "Overflow in scalar factor in a QState12 instance",
+ -11: "QStateMatrix is not invertible",
+ -12: "QStateMatrix is not in the Pauli group",
 }
 
 
@@ -549,6 +551,14 @@ cdef class QState12(object):
         del a
         return c
 
+    #########################################################################
+    # Some matrix functions
+    
+    def pauli_vector(self, uint32_t n):
+        """TODO: yet to be documented!!!"""
+        cdef uint64_t v;
+        chk_qstate12(cl.qstate12_pauli_vector(&self.qs, n, &v))
+        return v
  
 ####################################################################
 # Auxiliary functions  
@@ -576,6 +586,13 @@ def qstate12_unit_matrix(QState12 qs, uint32_t n):
     cdef p_qstate12_type m_pqs = pqs12(qs)
     chk_qstate12(cl.qstate12_std_matrix(m_pqs, n, n, n))
     return qs
+
+def qstate12_pauli_matrix(QState12 qs, uint32_t n, uint64_t v):
+    """Change state qs to a  2**n times 2**n Pauli matrix"""
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    chk_qstate12(cl.qstate12_pauli_matrix(m_pqs, n, v))
+    return qs
+
 
 def qstate12_column_monomial_matrix(QState12 qs, uint32_t nqb, a):
     """Change state ``qs`` to a monomial matrix
