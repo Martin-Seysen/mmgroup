@@ -201,7 +201,7 @@ elif os.name in ["nt"]:
     shared_libs_stage2 = shared_libs_stage1 + [
                 "libmmgroup_mm_basics"]
 elif os.name in ["posix"]:
-    shared_libs_stage1 = ["mmgroup_mat24", "libmmgroup_clifford12"]
+    shared_libs_stage1 = ["mmgroup_mat24", "mmgroup_clifford12"]
     shared_libs_stage2 = shared_libs_stage1 + [
                 "mmgroup_mm_basics"]
 else:

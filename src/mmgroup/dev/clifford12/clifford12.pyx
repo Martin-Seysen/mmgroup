@@ -53,7 +53,6 @@ cdef int32_t chk_qstate12(int32_t code) except -1:
     if code >= 0:
         return code
     raise ValueError(error_string(code))
-    return -1
 
 cdef class QState12(object):
     """TODO: Yet to be documented!!!"""
@@ -559,6 +558,21 @@ cdef class QState12(object):
         cdef uint64_t v;
         chk_qstate12(cl.qstate12_pauli_vector(&self.qs, n, &v))
         return v
+        
+    def pauli_conjugate(self, uint32_t n, v):   
+        v = np.array(v, dtype = np.uint64, copy=True)
+        shape = v.shape
+        assert len(shape) <= 1
+        np.ravel(v)
+        if len(v) == 0:
+            return []
+        cdef uint64_t[:] v_view = v
+        chk_qstate12(cl.qstate12_pauli_conjugate(
+            &self.qs, n, len(v), &v_view[0]))
+        if len(shape):
+            return list(map(int,v))
+        else:
+            return int(v[0])
  
 ####################################################################
 # Auxiliary functions  
@@ -729,3 +743,12 @@ def qstate12_reduce_matrix(QState12 qs, uint32_t nqb):
     return [ row_table[j] for j in range(i) ]
     
 
+def qstate12_bit_matrix_t(m, uint32_t ncols):
+    m1 = np.array(m, dtype = np.uint64)
+    m2 = np.zeros(ncols, dtype = np.uint64)
+    cdef uint64_t[:] m1_view = m1
+    cdef uint64_t[:] m2_view = m2
+    if len(m1) and ncols:
+        chk_qstate12(cl.qstate12_bit_matrix_t(
+            &m1_view[0], len(m1), ncols, &m2_view[0]))
+    return m2        

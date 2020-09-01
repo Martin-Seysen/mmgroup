@@ -18,6 +18,7 @@ from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
 from mmgroup.clifford12 import qstate12_product
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
 from mmgroup.clifford12 import qstate12_reduce_matrix
+from mmgroup.clifford12 import qstate12_pauli_matrix
 from mmgroup.clifford12 import error_string
 
 
@@ -237,6 +238,17 @@ class QStateMatrix(QState12):
     def reduce_matrix(self):
         """yet to be docmented"""
         return qstate12_reduce_matrix(self, self.shape[1]) 
+        
+    def pauli_vector(self):
+        """TODO: yet to be documented!!!"""
+        return super(QStateMatrix, self).pauli_vector(self.shape[1])
+    
+    def pauli_conjugate(self, v):
+        """TODO: yet to be documented!!!"""
+        w = super(QStateMatrix, self).pauli_conjugate(
+           self.shape[1], v)
+        return w
+        
 
     def lb_rank(self):
         """Return binary logarithm of rank of matrix.
@@ -253,7 +265,18 @@ class QStateMatrix(QState12):
         r += sum(x != self.UNDEF_ROW for x in t[imin:imax])
         return r
 
-                
+    def inv(self):
+        """Return inverse matrix
+        
+        Raise ValueError if matrix is not invertible.
+        """
+        if not (self.shape[0] == self.shape[1] == self.lb_rank()):
+           err = "QState matrix is not invertible"
+           raise ValueError(err)
+        inv_ = self.H
+        f = self.factor[0] + (self.nrows - self.shape[0] - 1) 
+        inv_.mul_scalar(-2*f)
+        return inv_        
 
     def __matmul__(self, other):
         r1, c1 = self.shape
@@ -535,4 +558,12 @@ def qstate_column_monomial_matrix(data):
     qstate12_column_monomial_matrix(qs, nqb, data)
     return qs
 
-    
+def qstate_unit_matrix(nqb):
+    qs = QStateMatrix(nqb, nqb, 1) 
+    return qs
+
+def qstate_pauli_matrix(nqb, v):
+    qs = QStateMatrix(nqb, nqb, 1)
+    qstate12_pauli_matrix(qs, nqb, v)    
+    return qs
+
