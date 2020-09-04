@@ -17,10 +17,12 @@ from mmgroup.clifford12 import qstate12_unit_matrix
 from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
 from mmgroup.clifford12 import qstate12_product
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
+from mmgroup.clifford12 import qstate12_row_monomial_matrix
 from mmgroup.clifford12 import qstate12_reduce_matrix
 from mmgroup.clifford12 import qstate12_pauli_matrix
 from mmgroup.clifford12 import error_string
-
+from mmgroup.clifford12 import qstate12_pauli_vector_mul
+from mmgroup.clifford12 import qstate12_pauli_vector_exp
 
 
 class QStateMatrix(QState12):
@@ -241,7 +243,10 @@ class QStateMatrix(QState12):
         
     def pauli_vector(self):
         """TODO: yet to be documented!!!"""
-        return super(QStateMatrix, self).pauli_vector(self.shape[1])
+        w = super(QStateMatrix, self).pauli_vector(self.shape[1])
+        #sh = int(self.ncols)
+        #print("pauli", w, self.ncols, sh)
+        return w # & ((4 << sh) - 1)
     
     def pauli_conjugate(self, v):
         """TODO: yet to be documented!!!"""
@@ -557,6 +562,12 @@ def qstate_column_monomial_matrix(data):
     qs = QStateMatrix(nqb, nqb, 1) 
     qstate12_column_monomial_matrix(qs, nqb, data)
     return qs
+    
+def qstate_row_monomial_matrix(data):
+    nqb = len(data) - 1
+    qs = QStateMatrix(nqb, nqb, 1) 
+    qstate12_row_monomial_matrix(qs, nqb, data)
+    return qs
 
 def qstate_unit_matrix(nqb):
     qs = QStateMatrix(nqb, nqb, 1) 
@@ -567,3 +578,8 @@ def qstate_pauli_matrix(nqb, v):
     qstate12_pauli_matrix(qs, nqb, v)    
     return qs
 
+def qstate_pauli_vector_mul(nqb, v1, v2):
+    return qstate12_pauli_vector_mul(nqb, v1, v2)
+
+def qstate_pauli_vector_exp(nqb, v, e):
+    return qstate12_pauli_vector_exp(nqb, v, e)

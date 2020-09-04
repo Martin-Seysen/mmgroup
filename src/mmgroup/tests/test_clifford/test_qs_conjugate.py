@@ -15,6 +15,8 @@ from mmgroup.structures.qs_matrix import binary
 from mmgroup.structures.qs_matrix import qstate12_reduce_matrix
 from mmgroup.structures.qs_matrix import qstate_pauli_matrix
 from mmgroup.structures.qs_matrix import qstate_unit_matrix
+from mmgroup.structures.qs_matrix import qstate_pauli_vector_mul
+from mmgroup.structures.qs_matrix import qstate_pauli_vector_exp
 
 #####################################################################
 # Create test matrices
@@ -108,6 +110,58 @@ def test_pauli_conjugate(verbose = 0):
                 elif verbose:
                    s = "Pauli vector: %s, conjugated: %s"
                    print (s % (hex(v[i]), hex(w_i)))
+        
+
+#####################################################################
+# Create test matrices for Pauli group operation
+#####################################################################
+
+
+def create_pauli_vectors():
+    yield 0, 2, 3
+    yield 16, 0x100000001, 0x200010000
+    for n in range(0,21):
+        for i in range(4):
+            v = rand_pauli_vectors(n, 2)
+            yield n, v[0], v[1]
+
+@pytest.mark.qstate
+def test_pauli_multiplication(verbose = 0):
+    for ntest, (n, v1, v2) in enumerate(create_pauli_vectors()):
+        p1 = qstate_pauli_matrix(n, v1)
+        p2 = qstate_pauli_matrix(n, v2)
+        # Check product v1 * v2
+        v3 = qstate_pauli_vector_mul(n, v1, v2)
+        p3 = qstate_pauli_matrix(n, v3)
+        v3_ref = (p1 @ p2).pauli_vector()
+        ok = v3 == v3_ref
+        if verbose or not ok:
+            print("Test %d, dim = %d" % (ntest, n))
+            print("v1 = %s, v2 = %s, v1 * v2 = %s" % 
+               (hex(v1), hex(v2), hex(v3_ref)) )
+            if not ok:
+                print("m1", p1)
+                print("m2", p2)
+                print("m1 * m2", p1 @ p2)
+                print("pauli vector obtained: ", hex(v3))
+                err = "Pauli vector multiplication failed"
+                raise ValueError(err)
+        # Check powers of v1
+        p_e_list = [qstate_unit_matrix(n), p1, p1 @ p1, p1.H]
+        v_e_ref_list = [m.pauli_vector() for m in p_e_list]
+        v_e_list = [qstate_pauli_vector_exp(n, v1, e) for e in range(4)]
+        ok = v_e_list == v_e_ref_list
+        if verbose or not ok:
+            print("v1 = ", hex(v1))
+            for e, v_ref in enumerate(v_e_ref_list):
+                if ok:
+                    print("v1 ** %d = %s" % (e, hex(v_ref)))
+                else:
+                    print("v1 ** %d = %s, obtained: %s" % 
+                         (e, hex(v_ref), hex(v_e_list[e])))
+            if not ok:
+                err = "Pauli vector exponentiation failed"
+                raise ValueError(err)
         
 
 

@@ -12,6 +12,7 @@ import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
 from mmgroup.structures.qs_matrix import qstate_column_monomial_matrix
+from mmgroup.structures.qs_matrix import qstate_row_monomial_matrix
 
 
 #####################################################################
@@ -447,4 +448,6 @@ def test_monomial(verbose = 0):
             k = w[0]
             value = w[1]
             assert c[j,k] == value, (nqb, j, k, c[j,k], value, res)
+        # Test qstate_rown_monomial_matrix(data)
+        assert qstate_row_monomial_matrix(data) == m.T
 

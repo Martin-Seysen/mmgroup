@@ -557,7 +557,7 @@ cdef class QState12(object):
         """TODO: yet to be documented!!!"""
         cdef uint64_t v;
         chk_qstate12(cl.qstate12_pauli_vector(&self.qs, n, &v))
-        return v
+        return int(v)
         
     def pauli_conjugate(self, uint32_t n, v):   
         v = np.array(v, dtype = np.uint64, copy=True)
@@ -598,7 +598,7 @@ def as_qstate12(QState12 state):
 def qstate12_unit_matrix(QState12 qs, uint32_t n):
     """Change state qs to a  2**n times 2**n unit matrix"""
     cdef p_qstate12_type m_pqs = pqs12(qs)
-    chk_qstate12(cl.qstate12_std_matrix(m_pqs, n, n, n))
+    chk_qstate12(cl.qstate12_unit_matrix(m_pqs, n))
     return qs
 
 def qstate12_pauli_matrix(QState12 qs, uint32_t n, uint64_t v):
@@ -664,6 +664,26 @@ def qstate12_column_monomial_matrix(QState12 qs, uint32_t nqb, a):
         aa[i] = a[i]
     chk_qstate12(cl.qstate12_monomial_column_matrix(m_pqs, nqb, &aa[0])) 
     return qs
+
+
+def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
+    """Change state ``qs`` to a monomial matrix
+
+    Equivalent to 
+
+    ``qstate12_column_monomial_matrix(qs, nqb, a)``
+    ``qs = qs.T``
+    """
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    cdef uint64_t aa[QSTATE12_MAXROWS+1]
+    if nqb >= QSTATE12_MAXROWS:
+        return chk_qstate12(-4) 
+    cdef int i
+    for i in range(nqb + 1):
+        aa[i] = a[i]
+    chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
+    return qs
+
 
 def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):
     """Wrapper for the corresponding C function
@@ -752,3 +772,14 @@ def qstate12_bit_matrix_t(m, uint32_t ncols):
         chk_qstate12(cl.qstate12_bit_matrix_t(
             &m1_view[0], len(m1), ncols, &m2_view[0]))
     return m2        
+
+
+def qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2):
+    if nqb > 31:
+        raise ValueError("Bad Pauli group vector")
+    return int(cl.qstate12_pauli_vector_mul(nqb, v1, v2))
+
+def qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e):
+    if nqb > 31:
+        raise ValueError("Bad Pauli group vector")
+    return int(cl.qstate12_pauli_vector_exp(nqb, v, e))

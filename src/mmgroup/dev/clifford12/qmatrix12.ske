@@ -73,17 +73,15 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
 
 
 
-/*********************
-int32_t qstate12_unit_matrix(qbstate12_type *pqs, uint32_t nqb) 
-// Set the state referred by *pqs to the unit transformation with nqb
-// input and nqb output qubits. Note that the distinction beteween input  
-// and output qubits is out of the scope of this module. So we just set a
-// state for 2*nqb qubits, where (input) qubit j is connected to (output)
-// qubit  (j + nqb). 
+
+// %%EXPORT p
+int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb) 
+//  Set the state ``qs`` referred by ``pqs`` to a 
+// ``2**nqb`` times ``2**nqb`` unit matrix
 {  
-    return  qstate12__std_matrix(pqs, nqb, nqb, nqb);
+    return  qstate12_std_matrix(pqs, nqb, nqb, nqb);
 }
-**********************/
+
 
 // %%EXPORT p
 int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
@@ -150,7 +148,19 @@ int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64
     return 0; 
 }
 
-
+// %%EXPORT p
+int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
+// Similar to qstate12_monomial_column_matrix; but we create a 
+// matrix ``T`` which is monomial in  the sense that each row
+// contains exactly  one nonzero entry ``1`` or ``-1``.
+// ``qstate12_monomial_row_matrix(*pqs, nqb, *pa)`` 
+// creates the transposed matrix of  
+// ``qstate12_monomial_column_matrix(*pqs, nqb, *pa)`` 
+{
+    int32_t res = qstate12_monomial_column_matrix(pqs, nqb, pa); 
+    if (res < 0) return res;
+    return qstate12_rot_bits(pqs, nqb, 2*nqb, 0);
+}
 
 
 /*************************************************************************
@@ -426,8 +436,8 @@ uint64_t qstate12_pauli_vector(qstate12_type *pqs, uint32_t nqb, uint64_t *pv)
     mask = (ONE << nqb) - 1;
     w = (m[0] >> (pqs->ncols + 1)) & mask;
     w |= m[0] & (mask << nqb);
-    w |= ((pqs->factor >> 2) & 1) << pqs->ncols;    
-    w |= ((pqs->factor >> 1) & 1) << (pqs->ncols + 1);    
+    w |= (uint64_t)((pqs->factor >> 2) & ONE) << pqs->ncols;    
+    w |= (uint64_t)((pqs->factor >> 1) & ONE) << (pqs->ncols + 1);    
     *pv = w;
     return 0;
 }
@@ -447,6 +457,41 @@ uint64_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
     pqs->factor |= v & 2;    
     return 0;
 }
+
+
+/*************************************************************************
+*** Multiplication and exponentiation in the Pauli group
+*************************************************************************/
+
+// %%EXPORT p
+uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
+// Yet to be documented!!
+{
+    uint64_t s;
+    if (nqb >= MAXCOLS/2) return v1 ^ v2; 
+    s = (v1 & (v2 >> nqb)) & ((ONE << nqb) - 1);
+    s ^= ((v1 & v2) >> (2*nqb + 1)) & 1;
+    s ^= s >> 32; s ^= s >> 16; s ^= s >> 8; s ^= s >> 4;
+    s = (0x6996 >> (s & 0x0f)) & 1;
+    return (v1 ^ v2 ^ (s << (nqb << 1))) & (((4*ONE) << (2*nqb)) - 1);
+}
+
+// %%EXPORT p
+uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
+// Yet to be documented!!
+{
+    uint64_t s = 0;
+    if (e & 2 && nqb < MAXCOLS/2) {
+       s = (v & (v >> nqb)) & ((ONE << nqb) - 1);
+       s ^= (v >> (2*nqb + 1)) & 1;
+       s ^= s >> 32; s ^= s >> 16; s ^= s >> 8; s ^= s >> 4;
+       s = (0x6996 >> (s & 0x0f)) & 1;
+       s <<= (nqb << 1);    
+    } 
+    s ^= -(e & ONE)  & v;
+    return  s & (((4*ONE) << (2*nqb)) - 1);
+}
+
 
 
 /*************************************************************************
