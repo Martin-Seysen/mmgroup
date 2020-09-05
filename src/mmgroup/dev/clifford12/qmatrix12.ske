@@ -422,7 +422,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 uint64_t qstate12_pauli_vector(qstate12_type *pqs, uint32_t nqb, uint64_t *pv)
 {
     int32_t res, i = 1;
-    uint64_t *m = pqs->data, w, mask = ONE + (ONE << nqb);
+    uint64_t *m = pqs->data, w = 0, mask = ONE + (ONE << nqb);
     
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     if (pqs->ncols != nqb << 1 || pqs->nrows != nqb + 1) return -12;
