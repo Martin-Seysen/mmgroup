@@ -760,6 +760,9 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
     int_fast32_t row_pos = 1, col, i; 
     uint64_t *m = pqs->data, mask;
     if (bad_state(pqs)) return -2;  // abort if state is bad
+    for (col = 0; col < pqs->ncols; ++col) 
+        row_table[col] = QSTATE12_UNDEF_ROW;
+    if (pqs->nrows == 0) return 0;
  
     // Convert submatrix A of M to (non-reduced) echelon form
     for (col = 0; col < pqs->ncols; ++col) {
@@ -771,9 +774,8 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
             row_table[col] = row_pos = i;
             ++row_pos;
         }
-        else row_table[col] = QSTATE12_UNDEF_ROW;
     }
-    return 0;    
+    return 0;  
 }
 
 
