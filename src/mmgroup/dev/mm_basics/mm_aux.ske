@@ -145,7 +145,7 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
                 source = *mv++;
                 // %%FOR jj in range(0, INT_BITS, 1 << LOG_F)
                 tmp = (source >> {jj}) & p;
-                b[{int:jj >> LOG_F}] = (tmp + ((tmp + 1) >> sh)) & p;
+                b[{int:jj >> LOG_F}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
                 // %%END FOR
                 b += {int:INT_BITS >> LOG_F};
             }
@@ -168,7 +168,8 @@ void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t le
 
     while (len--) {
         source = *mv++;
-        for (j = 0; j < {INT_BITS}; j += i) *b++ = (source >> j) & p;
+        for (j = 0; j < {INT_BITS}; j += i) 
+            *b++ = (uint8_t)((source >> j) & p);
     }
 }
 
@@ -227,7 +228,7 @@ void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
                 source = *mv++;                 
                 // %%END IF
                 tmp = (source >> {int:(j << LOG_F) % INT_BITS}) & p;
-                b[{int:j}] = (tmp + ((tmp + 1) >> sh)) & p;
+                b[{int:j}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
                 // %%END FOR                           
                 b += 24;
                 // %%IF* (24 << LOG_F) % INT_BITS == 0  # then adjust mv
@@ -452,21 +453,21 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
     c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
 
     // Do the small part
-    mm_rng_gen_modp(p, seed, (uint8_t *)(mv), 24 + 3 * 276);
+    mm_rng_gen_modp((uint8_t)p, seed, (uint8_t *)(mv), 24 + 3 * 276);
     mm_aux_small24_expand((uint8_t *)(mv), b1);
     mm_aux_write_mmv24(p, b1, mv, 72);
     mv += MM_AUX_OFS_T >> c;
 
     // Do the 759 * 64 vector; note that 759 = 11 * 69
     for (i = 0; i < 22; ++i) {
-        mm_rng_gen_modp(p, seed, b1, 69 * 32);
+        mm_rng_gen_modp((uint8_t)p, seed, b1, 69 * 32);
         mm_aux_write_mmv1(p, b1, mv, 69 * 32);
         mv += (69 * 32) >> c;
     } 
 
     // Do the 6144 * 24 vector
     for (i = 0; i < 48; ++i) {  
-        mm_rng_gen_modp(p, seed, b1, 3072);
+        mm_rng_gen_modp((uint8_t)p, seed, b1, 3072);
         mm_aux_write_mmv24(p, b1, mv, 128);
         mv += 4096 >> c;
     } 
@@ -816,13 +817,13 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
 // If the entry is p the negative coordinate is read instead. In 
 // other case that entry of 'sp' contains garbage.
 {
-    uint_fast32_t i, lg_int_fields, lg_field_bits, p_bits, index_mask;
+    uint_fast32_t i0, lg_int_fields, lg_field_bits, p_bits, index_mask;
 
     if (mm_aux_bad_p(p)) return;
-    // %%MMV_LOAD_CONST  p, i
-    p_bits = {MMV_CONST:P_BITS,i}; // This is P_BITS
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
+    // %%MMV_LOAD_CONST  p, i0
+    p_bits = {MMV_CONST:P_BITS,i0}; // This is P_BITS
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {
@@ -879,13 +880,13 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
 // representation and 'sp' given in sparse format. 'sp' has length 
 // 'length'. Entries in 'sp' with the same index are added up.
 {
-    uint_fast32_t i, lg_int_fields, lg_field_bits, p_bits, index_mask;
+    uint_fast32_t i0, lg_int_fields, lg_field_bits, p_bits, index_mask;
 
     if (mm_aux_bad_p(p)) return;
-    // %%MMV_LOAD_CONST  p, i
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
-    p_bits = {MMV_CONST:P_BITS,i};               // This is P_BITS
+    // %%MMV_LOAD_CONST  p, i0
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
+    p_bits = {MMV_CONST:P_BITS,i0};               // This is P_BITS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {
@@ -943,12 +944,12 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 // If 'sp' has an entry with label 'l' then the corresponding entry 
 // of 'mv' is set to to the value coded in the entry of 'sp'.
 {
-    uint_fast32_t i, lg_int_fields, lg_field_bits, index_mask;
+    uint_fast32_t i0, lg_int_fields, lg_field_bits, index_mask;
 
     if (mm_aux_bad_p(p)) return;
-    // %%MMV_LOAD_CONST  p, i
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i}; // This is LOG_INT_FIELDS
+    // %%MMV_LOAD_CONST  p, i0
+    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {

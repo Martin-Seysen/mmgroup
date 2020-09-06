@@ -178,7 +178,7 @@ qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint
 // columns. We also adjust the quadratic form ``Q``
 { 
     uint64_t mask; 
-    int_fast32_t k, sh;
+    uint_fast32_t k, sh;
     if (i2 < i1) {
         m[i2] = m[i1]; 
         mask = ONE <<  (ncols + i2);
@@ -613,7 +613,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t nqb, uint32_t n, u
     res = qstate12_reduce_matrix(pqs, nqb, row_table);
     if (res < 0) return res;
     
-    // Check that rank of matrix is equak to nqb
+    // Check that rank of matrix is equal to nqb
     fst_row = row_table[pqs->ncols];
     for (j = nqb; j <= nqb << 1; ++j) rank += row_table[j] < fst_row;
     for (j = pqs->ncols + fst_row; j < pqs->ncols + pqs->nrows; ++j) 
@@ -625,7 +625,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t nqb, uint32_t n, u
     for (j = 0; j < nqb; ++j) a_t[j] <<= pqs->ncols;
     
     mask = (ONE << j1) - (ONE << j0) + (ONE << pqs->ncols) - (ONE << nqb);
-    if  (m0 & mask) return -90; // internal error
+    if  (m[0] & mask) return -90; // internal error
    
     while (n--) {
         v = *pv;

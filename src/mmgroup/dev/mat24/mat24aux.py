@@ -197,7 +197,7 @@ class Lsbit24Function(object):
 
         """
         if not arg_is_pwr2:
-             x = "({0}) & -({0})".format(x)
+             x = "({0}) & (0-({0}))".format(x)
         return  """{1}[({2} *  \\
         ({0}) >> 26) & 0x1f]""".format(x, 
             names["Mat24_lsbit_table"], cls.hCONST)
