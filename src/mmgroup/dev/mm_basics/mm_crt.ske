@@ -81,8 +81,8 @@ static uint32_t mm_crt_{op}_24(
         ];
         a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
         a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
-        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
-        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
         res |= a + {int:0x10000000-CRT_NPROD//2}L;
         // %%END IF
         // %%IF* op == "combine" and j < 24
@@ -140,8 +140,8 @@ static uint32_t mm_crt_{op}_T(
         ];
         a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
         a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
-        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
-        a += -((a & 0x80000000) >> 31) & {CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
         res |= a + {int:0x10000000-CRT_NPROD//2}L;
         // %%IF* op == "combine"
         *pout++ = a - {int:CRT_NPROD//2}L;

@@ -43,7 +43,7 @@ static void mm_op{P}_xi_mon(
         p_b = b;
         
         for (j = 0; j < {i_src.SHAPE[1]}; ++j) {
-           // %%OP_XI_LOAD p_src, p_b, {i_src.SHAPE[2]}
+           // %%OP_XI_LOAD p_src, p_b, {i_src.SHAPE[2]}, uint8_t
            p_src += {V24_INTS};
            p_b += 32;
         }
@@ -97,7 +97,7 @@ static void mm_op{P}_xi_yz(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 static void mm_op{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 {
     uint_fast32_t i;
-    uint_mmv_t e_mask =  -((uint_mmv_t)exp1 & {hex:1});
+    uint_mmv_t e_mask =  0 - ((uint_mmv_t)exp1 & {hex:1});
     for (i = 0; i < 6; ++i) {
         // %%MUL_MATRIX_XI16 v_in, e_mask, v_out
     }
@@ -107,14 +107,15 @@ static void mm_op{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 // %%EXPORT p
 void mm_op{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
-    uint_mmv_t i, exp1;
+    uint_mmv_t i;
+    uint32_t exp1;
  
     exp %= 3;
     if (exp == 0) {
         for (i = 0; i < {MMV_INTS}; ++i) v_out[i] = v_in[i];
         return;
     }
-    exp1 =  (uint_mmv_t)exp - {hex:1};
+    exp1 =  exp - 1;
 
     // Do monomial part, i.e. tags B, C, T, X
     // Caution: this uses v_out[MM_OP{P}_OFS_Z:] as temporary storage

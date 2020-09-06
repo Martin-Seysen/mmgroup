@@ -287,7 +287,7 @@ uint_fast8_t i;
         are negated if bit 0 of variable 'sign' is set. 'sign' must be 
         of type uint_mmv_t. 
         """
-        s = "{sign} = (-({sign} & {hex:1})) & {smask:P, range(24)};\n"
+        s = "{sign} = (0-({sign} & {hex:1})) & {smask:P, range(24)};\n"
         for i in range(self.V24_INTS_USED):
             if i == 1 and self.V24_INTS_USED == 2:
                 s += "{sign} &= {smask:P, range(8)};\n"
@@ -456,7 +456,7 @@ class SmallPerm64(MM_Op):
 
 
 
-    def generate_load_perm64(self, source, bytes, sign):
+    def generate_load_perm64(self, source, bytes, sign, type_ = ""):
         """Load 64 enries of a vector 'source' to a byte array 'bytes'
 
         The vector of type uint_mmv_t[] is negated if bit 12 of the
@@ -471,7 +471,8 @@ class SmallPerm64(MM_Op):
         s = "uint_mmv_t %s;\n" % registers
         LOAD_MASK = self.hex(self.smask(self.P, -1, 8))
         SIGN_MASK = self.hex(self.smask(self.P, -1))
-        s += "%s = (-((%s >> 12) & 1)) & %s;\n" % (sign, sign, SIGN_MASK)
+        s += "%s = (0-((%s >> 12) & 1)) & %s;\n" % (sign, sign, SIGN_MASK)
+        type_ = "(%s)" % type_ if len(type_) else ""
         for i, start in enumerate(range(0, 64, self.INT_FIELDS)):
             s += "r0 =  (%s)[%d] ^ (%s);\n" % (source, i, sign)
             for j in range(1, n_registers):
@@ -479,8 +480,8 @@ class SmallPerm64(MM_Op):
                    j, j * self.FIELD_BITS, LOAD_MASK)
             s += "r0 &= %s;\n" % LOAD_MASK
             for j in range(self.INT_FIELDS):
-                s += "(%s)[%d] = r%d >> %d;\n" % (bytes,  start + j, 
-                    j % n_registers, 8 * (j // n_registers))
+                s += "(%s)[%d] = %s(r%d >> %d);\n" % (bytes,  start + j, 
+                    type_, j % n_registers, 8 * (j // n_registers))
         return s;
 
     def setup_store(self, op):
@@ -535,7 +536,7 @@ class SmallPerm64(MM_Op):
 
     def make_directives(self):
         return {
-           "LOAD_PERM64" : UserDirective(self.generate_load_perm64, "sss"),
+           "LOAD_PERM64" : UserDirective(self.generate_load_perm64, "ssss"),
            "STORE_PERM64" : UserDirective(self.generate_store_perm64, "sss"),
            "INVERT_PERM64" : UserDirective(self.generate_invert_perm64, "s"),
         }

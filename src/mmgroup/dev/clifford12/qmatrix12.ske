@@ -231,8 +231,8 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
 // section 'Products and tensor products of quadratic mappings'
 // of the guide.
 {
-    int_fast32_t i1, i2, col_pos, n_deleted = 0;
-    int_fast32_t row_pos = 1, row_pos1 = 1, row_pos2 = 1;
+    uint_fast32_t i1, i2, col_pos, n_deleted = 0;
+    uint_fast32_t row_pos = 1, row_pos1 = 1, row_pos2 = 1;
     uint64_t v, deleted = 0;
     uint64_t *m1 = pqs1->data, *m2 = pqs2->data;
     int32_t res;
@@ -303,7 +303,7 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
 // The number of rows and columns in both states must be equal. 
 {
     uint64_t *m1 = pqs1->data, *m2 = pqs2->data, c = ONE << pqs1->ncols;
-    int32_t k;
+    uint32_t k;
     if (bad_state(pqs1) || bad_state(pqs2)) return -2;
     if (pqs2->nrows != pqs1->nrows || pqs2->ncols != pqs1->ncols) return -99; 
     m1[0] ^= m2[0] & mask;
@@ -376,7 +376,7 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
     if (res < 0) return res;
     res = qstate12_insert_rows(pqs2, pqs2->nrows, rows1); 
     if (res < 0) return res;
-    res = qstate12_mul_elements(pqs1, pqs2, -(ONE << nqb)); 
+    res = qstate12_mul_elements(pqs1, pqs2, 0 - (ONE << nqb)); 
     if (res < 0) return res;
     return qstate12_reduce(pqs1);
 }
@@ -419,9 +419,10 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 *************************************************************************/
 
 // %%EXPORT p
-uint64_t qstate12_pauli_vector(qstate12_type *pqs, uint32_t nqb, uint64_t *pv)
+int32_t qstate12_pauli_vector(qstate12_type *pqs, uint32_t nqb, uint64_t *pv)
 {
-    int32_t res, i = 1;
+    int32_t res;
+    uint_fast32_t i = 1;
     uint64_t *m = pqs->data, w = 0, mask = ONE + (ONE << nqb);
     
     if ((res = qstate12_reduce(pqs)) < 0) return res;
@@ -488,7 +489,7 @@ uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
        s = (0x6996 >> (s & 0x0f)) & 1;
        s <<= (nqb << 1);    
     } 
-    s ^= -(e & ONE)  & v;
+    s ^= (0 - (e & ONE))  & v;
     return  s & (((4*ONE) << (2*nqb)) - 1);
 }
 
@@ -502,7 +503,7 @@ uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
 
 
 static inline 
-int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint32_t mask)
+int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint64_t mask)
 // Auxiliary low-level function for ``qstate12_reduce_matrix()``.
 // Let ``m`` be a bit matrix with ``nrows`` rows.  On input ``j``, 
 // the function returns the highest row index ``i`` such that
@@ -523,7 +524,8 @@ int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_table)
 // TODO: Yet to be documented!!
 {
-    int_fast32_t res, i, j, fst_row;
+    int_fast32_t res, i;
+    uint_fast32_t  j, fst_row;
     uint64_t kernel, *m = pqs->data, v;
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     if ((res = qstate12_row_table(pqs, row_table)) < 0) return res;
@@ -536,8 +538,8 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
         row_table[pqs->ncols + i] = QSTATE12_UNDEF_ROW;
         if ((m[i] & v) == 0) fst_row = i;
     }    
-    kernel = -(ONE << fst_row);
-    row_table[pqs->ncols] = fst_row;
+    kernel = 0 - (ONE << fst_row);
+    row_table[pqs->ncols] = (uint8_t)fst_row;
         
     for (j = nqb; j < pqs->ncols; ++j) {
         if (row_table[j] == QSTATE12_UNDEF_ROW) {
@@ -545,8 +547,8 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
             if (i > 0) {
                kernel |= ONE << i;
                qstate12_pivot(pqs, i, qstate12_get_col(m,j, i));
-               row_table[j] = i;
-               row_table[pqs->ncols + i] = j;
+               row_table[j] = (uint8_t)i;
+               row_table[pqs->ncols + i] = (uint8_t)j;
             }   
         }
     }
@@ -554,19 +556,19 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
     // Pivot Q part of state data
     // TODO: check it!!!!!
     for (j = pqs->nrows -1; j >= fst_row; --j) {
-        i = qstate12_find_masked_pivot(m, fst_row, j + pqs->ncols, kernel);
+        i = qstate12_find_masked_pivot(m, fst_row, j+ pqs->ncols, kernel);
         // if i >= 0 then i is the higest row with Q[i,j] = 1
         if (i > 0) {
             // set v to column (or row) j of matrix Q
-            v = ((m[j] >> pqs->ncols) & (-2ULL)) +
+            v = ((m[j] >> pqs->ncols) & (0-2ULL)) +
                  ((m[0] >> (j + pqs->ncols)) & 1);
             v &= ~kernel;     
             qstate12_pivot(pqs, i, v);
             // Set v to  column (or row) i of matrix Q
             v = m[i] >> pqs->ncols;
-            v &= -(ONE <<  fst_row);
+            v &= 0 - (ONE <<  fst_row);
             qstate12_pivot(pqs, j, v);
-            row_table[pqs->ncols + j] = i;
+            row_table[pqs->ncols + j] = (uint8_t)i;
         }
     }    
     return 0;
@@ -605,7 +607,8 @@ int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2
 int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t nqb, uint32_t n, uint64_t *pv)
 // TODO: Yet to be implemented!!
 {
-    int_fast32_t res, i, j, rank = 0, fst_row, sh, j0, j1;
+    int_fast32_t res, js;
+    uint_fast32_t i, j, rank = 0, fst_row, sh, j0, j1;
     uint8_t row_table[MAXCOLS];
     uint64_t *m = pqs->data, m0, v, w, f,  mask;
     uint64_t v_out, a_t[MAXCOLS/3+1]; 
@@ -624,6 +627,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t nqb, uint32_t n, u
     if (res < 0) return res;
     for (j = 0; j < nqb; ++j) a_t[j] <<= pqs->ncols;
     
+    j0 = pqs->ncols + fst_row; j1 = pqs->ncols + pqs->nrows;
     mask = (ONE << j1) - (ONE << j0) + (ONE << pqs->ncols) - (ONE << nqb);
     if  (m[0] & mask) return -90; // internal error
    
@@ -669,12 +673,12 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t nqb, uint32_t n, u
         // adjust z part of output Pauli matrix v_out
         mask = (2*ONE) << pqs->ncols;
         m0 &= ~(ONE << pqs->ncols);
-        for (j = nqb - 1; j >= 0; --j) {
-            if (((m[0] ^ m0) >> j) & mask) {
-                v_out ^= ONE << j;
-                if (((a_t[j] >> j) & mask) == 0) return -94; // internal error
-                f += (m0 >> j) << 1; 
-                m0 ^= a_t[j];
+        for (js = nqb - 1; js >= 0; --js) {
+            if (((m[0] ^ m0) >> js) & mask) {
+                v_out ^= ONE << js;
+                if (((a_t[js] >> js) & mask) == 0) return -94; // internal error
+                f += (m0 >> js) << 1; 
+                m0 ^= a_t[js];
             }
         }
         

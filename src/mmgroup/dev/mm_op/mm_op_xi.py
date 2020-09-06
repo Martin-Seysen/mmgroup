@@ -63,12 +63,13 @@ class MonomialOp_xi_uint8_t(MM_Op):
         self.tables.update(self.make_tables())
         self.directives.update(self.make_directives())
 
-    def load_bytes(self, source, bytes, n_bytes):
+    def load_bytes(self, source, bytes, n_bytes, type_=""):
         s = ""
         n_registers = 8 // self.FIELD_BITS
         registers =  ", ".join(["r%d" % i for i in range(n_registers)])
         s = "uint_mmv_t %s;\n"% registers
         LOAD_MASK = self.hex(self.smask(self.P, -1, 8))
+        type_ = "(%s)" % type_ if len(type_) else ""
         for i, start in enumerate(range(0, n_bytes, self.INT_FIELDS)):
             s += "r0 =  (%s)[%d];\n" % (source, i)
             for j in range(1, n_registers):
@@ -77,8 +78,8 @@ class MonomialOp_xi_uint8_t(MM_Op):
             s += "r0 &= %s;\n" % LOAD_MASK
             for j in range(self.INT_FIELDS):
                 if start + j < n_bytes:
-                    s += "(%s)[%d] = r%d >> %d;\n" % (bytes,  start + j, 
-                        j % n_registers, 8 * (j // n_registers))
+                    s += "(%s)[%d] = %s(r%d >> %d);\n" % (bytes,  start + j, 
+                        type_, j % n_registers, 8 * (j // n_registers))
         return s;
 
 
@@ -140,7 +141,7 @@ class MonomialOp_xi_uint8_t(MM_Op):
      
     def make_directives(self):
         return {
-            "OP_XI_LOAD": UserDirective(self.load_bytes, "ssi"),
+            "OP_XI_LOAD": UserDirective(self.load_bytes, "ssis"),
             "OP_XI_STORE": UserDirective(self.store_bytes, "ssssi"),
         }
 

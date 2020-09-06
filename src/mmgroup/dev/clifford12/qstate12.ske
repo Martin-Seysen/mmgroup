@@ -145,12 +145,12 @@ void qstate12_xch_rows(qstate12_type *pqs, uint32_t i1, uint32_t i2)
 // must hold. This does not change the state.
 { 
     uint64_t *m = pqs->data, v; 
-    int_fast32_t k;
+    uint_fast32_t k;
     v = m[i1]; m[i1] = m[i2];  m[i2] = v;
     i1 +=  pqs->ncols; i2 +=  pqs->ncols; 
     v = (ONE << i1) ^ (ONE << i2);
     if (v) for (k = 0; k < pqs->nrows; ++k) 
-        m[k] ^= v & -(((m[k] >> i1) ^ (m[k] >> i2)) & ONE);
+        m[k] ^= v & (0 - (((m[k] >> i1) ^ (m[k] >> i2)) & ONE));
 } 
 
 
@@ -402,7 +402,7 @@ int32_t qstate12_del_rows(qstate12_type *pqs, uint64_t v)
 // quadratic form Q inside M. Row 0 is never deleted.
 { 
     uint64_t *m = pqs->data, mask;
-    int_fast32_t i, k, sh, row_pos, shifted = 0;
+    uint_fast32_t i, k, sh, row_pos, shifted = 0;
     if (bad_state(pqs)) return -2;
     row_pos= 1;
     while ((v & (ONE << row_pos)) == 0 && row_pos < pqs->nrows) ++row_pos;
@@ -431,7 +431,7 @@ int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows)
 // hold. This process multiplies the state vector by the scalar
 // 2**nrows.
 { 
-    int_fast32_t k; 
+    uint_fast32_t k; 
     uint64_t *m = pqs->data, mask; 
     if (bad_state(pqs)) return -2;
     if (pqs->ncols + pqs->nrows + nrows > MAXCOLS) return -4;
@@ -496,7 +496,7 @@ int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32
 // where z[j] = y[j - rot (mod 3)].
 {
     uint64_t *m = pqs->data, mask_h, mask_l, mask;
-    int32_t k, sh;
+    uint32_t k, sh;
     if (bad_state(pqs)) return -2;
     if (nrot + n0 > pqs->ncols) return -3;
     if (nrot < 2) return 0;
@@ -530,7 +530,7 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
     uint_fast32_t k;
     if (bad_state(pqs)) return -2;
     if (mask == 0) return 0;
-    if (sh >= pqs->ncols ||  mask & ((mask | (-ONE << pqs->ncols)) >> sh)) 
+    if (sh >= pqs->ncols ||  mask & ((mask | ((0-ONE) << pqs->ncols)) >> sh)) 
         return -3;
 
     // Here we simply exchange row j1 with row j2 of matrix A
@@ -585,7 +585,7 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
     sh = pqs->ncols + i;
     if (col_update) {
         for (k = 0; k < pqs->nrows; ++k) {
-            m[k] ^= -((m[k] >> sh) & 1) & col_update;
+            m[k] ^= (0 - ((m[k] >> sh) & 1)) & col_update;
         } 
     }
 
@@ -688,7 +688,7 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
 // arleady the case.
 // This does not change the state. 
 {
-    int_fast32_t row_pos = 1, col, i, i1; 
+    uint_fast32_t row_pos = 1, col, i, i1; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return -2;  // abort if state is bad
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
@@ -722,7 +722,7 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 // arleady the case.
 // This does not change the state. 
 {
-    int_fast32_t row_pos = 1, col, i; 
+    uint_fast32_t row_pos = 1, col, i; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return -2;  // abort if state is bad
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
@@ -757,7 +757,7 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 // 
 // The representation of the state is not changed.
 {
-    int_fast32_t row_pos = 1, col, i; 
+    uint_fast32_t row_pos = 1, col, i; 
     uint64_t *m = pqs->data, mask;
     if (bad_state(pqs)) return -2;  // abort if state is bad
     for (col = 0; col < pqs->ncols; ++col) 
@@ -771,7 +771,8 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
         mask = ONE << col;
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
         if (i >= row_pos) {
-            row_table[col] = row_pos = i;
+            row_pos =  i;
+            row_table[col] = (uint8_t)i;
             ++row_pos;
         }
     }
@@ -801,7 +802,7 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 //
 // If the input is reduced then the result is also reduced.
 {
-    int32_t k;
+    uint32_t k;
     uint64_t *m = pqs->data, mask;
     
     if (bad_state(pqs)) return -2;
@@ -866,7 +867,7 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 //
 // The output is not reduced.
 {
-    int32_t k;
+    uint32_t k;
     uint64_t *m = pqs->data, mask = (ONE << j) - 1;
     
     if (bad_state(pqs)) return -2;
@@ -895,7 +896,8 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // The output is reduced if the input is reduced.
 {
     uint64_t *m = pqs->data, v, deleted = 0;
-    int_fast32_t i, col_pos;
+    int_fast32_t i;
+    uint_fast32_t col_pos;
 
     if (bad_state(pqs)) return -2;
     if (nqb + j > pqs->ncols) return -3;
@@ -984,7 +986,7 @@ int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
     if ((res = qstate12_mul_Av(pqs, vc, &wc)) < 0) return res;
 
     if (wc) for (i = 0; i < pqs->nrows; ++i) 
-        m[i] ^= -((wc >> i) & ONE) & v;
+        m[i] ^= (0 - ((wc >> i) & ONE)) & v;
     return 0;
 }
 
@@ -1011,10 +1013,10 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
     if (phi & 1) {
         //TODO: yet to be documented and checked!!!!
         pqs->factor = ADD_FACTORS(pqs->factor, (w & 1) << 1);
-        m[0] ^= wsh & -(w & ONE) & ~c;
+        m[0] ^= wsh & (0 - (w & ONE)) & ~c;
         for (i = 1; i < pqs->nrows; ++i) {
             m[0] ^= wsh & m[i] & (c << i);
-            m[i] ^= wsh & -((w >> i) & ONE);
+            m[i] ^= wsh & (0 - ((w >> i) & ONE));
         }
     }
     if (phi & 2) {
@@ -1045,11 +1047,11 @@ int32_t qstate12_gate_ctrl_phi(qstate12_type *pqs, uint64_t v1, uint64_t v2)
     w1sh = (w1 & ~ONE) << pqs->ncols;
     w2sh = (w2 & ~ONE) << pqs->ncols;
     pqs->factor ^= (w1 & w2 & 1) << 2; 
-    m[0] ^= (w1sh & -(w2 & ONE)) ^ (w2sh & -(w1 & ONE))
+    m[0] ^= (w1sh & (0 - (w2 & ONE))) ^ (w2sh & (0 - (w1 & ONE)))
           ^ (w1sh & w2sh);
     for (i = 1; i < pqs->nrows; ++i) {
-        m[i] ^= (w1sh & -((w2 >> i) & ONE)) 
-              ^ (w2sh & -((w1 >> i) & ONE));
+        m[i] ^= (w1sh & (0 - ((w2 >> i) & ONE))) 
+              ^ (w2sh & (0 - ((w1 >> i) & ONE)));
     }
     return 0;
 }
@@ -1068,7 +1070,7 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 {
     uint64_t *m = pqs->data, w, mask1, c;
     uint_fast32_t i, j, sh, max_rows;
-    uint32_t res;
+    int32_t res;
     int32_t old_sign;
     if (bad_state(pqs)) return -2;
     if (pqs->nrows == 0) return 0; // nothing do do for zero state
@@ -1144,7 +1146,7 @@ static void set_complex_factors(int32_t e, double  *p_real, double *p_imag)
 {
     double f;
     int i;
-    if (e >= 0) f = ONE << (e >> 5);
+    if (e >= 0) f = (double)(ONE << (e >> 5));
     else f = 1.0 / (ONE << ((0x10 - (e & ~0xfLL)) >> 5));
     if ((e & 0x10) && !(e & 1)) f *= SQRT2;
     if (!(e & 0x10) && (e & 1)) f *= (1.0L / SQRT2);
@@ -1177,7 +1179,7 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
 // p must exist. 
 // Caution: The function sets 2**pqs->ncols entries in the array pc!!
 {    
-    uint_fast32_t qf = 0;
+    uint64_t qf = 0;
     uint64_t *m = pqs->data;
     uint64_t ncols = pqs->ncols; 
     uint64_t n_iterations = ONE << (pqs->nrows - 1); 
@@ -1201,7 +1203,8 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
         d1 = d = qstate12_lsbtab[(i1 = i) & 63];
         while (d1 == 6) {
             i1 >>= 6;
-            d += (d1 = qstate12_lsbtab[i1 & 63]);
+            d1 = qstate12_lsbtab[i1 & 63];
+            d += d1;
         } 
         diag = (m[d+1] >> (ncols + d + 1)) & 1;
         qf += ((assoc >> (ncols + d)) & 2) + diag;
@@ -1225,7 +1228,8 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 // state to echelon form.
 {
     uint8_t row_table[MAXCOLS+1];
-    int32_t factor, res, i, j, sh; 
+    int32_t factor, res;
+    uint32_t i, j, sh; 
     uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
     double freal[5], fimag[5];
     

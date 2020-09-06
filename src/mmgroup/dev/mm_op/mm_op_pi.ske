@@ -243,7 +243,7 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
             {
                uint_mmv_t v = p_perm->preimage;
                uint_mmv_t *p_in = v_in + ((v & 0x3ff) << {LOG_V64_INTS});
-               // %%LOAD_PERM64 p_in, bytes, v
+               // %%LOAD_PERM64 p_in, bytes, v, uint8_t
             }
             {
                // %%STORE_PERM64 bytes, p_out, "(p_perm->perm)"
