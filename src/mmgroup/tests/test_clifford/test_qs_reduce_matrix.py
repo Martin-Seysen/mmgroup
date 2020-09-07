@@ -3,6 +3,7 @@ from __future__ import  unicode_literals
 
 
 
+from math import log
 from random import randint #, shuffle, sample
 from functools import reduce
 from operator import __or__
@@ -149,12 +150,24 @@ def test_reduce_matrix(verbose = 0):
         for i in row_set:
             assert d[i] & q_mask == 0
             
-        # Finally, check the computation of the rank of matrix m              
+        # Check the computation of the rank of matrix m              
         if m.ncols > 8:
             continue
         rk = np.linalg.matrix_rank(m[:], tol=EPS)
         lb_rk = m.lb_rank()
         assert rk == 1 << lb_rk, (m1[:], rk, lb_rk)   
+
+        # Finally, check the computation of the norm of matrix m              
+        n2 = np.linalg.norm(m[:], ord = 2)
+        log_n2 = -1 if n2 == 0 else 2.0 * log(n2) / log(2.0)
+        ok = abs(log_n2 - m.lb_norm2()) < EPS
+        if not ok:
+            print("Matrix m =", m.reduce())
+            print("log_2(squared norm2) = %f, expected = %.13f" %
+                (m.lb_norm2(), log_n2 ))
+            err = "Error in computing norm of matrix"
+            raise ValueError(err)            
+
 
 #####################################################################
 # Test function qstate12_bit_matrix_t()

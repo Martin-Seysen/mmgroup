@@ -156,7 +156,7 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
     gcodev = mat24_gcode_to_vect(x1 >> 12);
     cocodev = mat24_cocode_syndrome(x1, mat24_lsbit24(gcodev));
     // put w = weight(code word gcodev) / 4
-    w = - ((x1 >> 23) & 1);
+    w = 0 - ((x1 >> 23) & 1);
     w = (((MAT24_THETA_TABLE[(x1>>12) & 0x7ff] >> 12) & 7) ^ w) 
                  + (w & 7);  
     if (x1 & 0x800) {  // case odd cocode
@@ -185,7 +185,7 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
                 y2 = (y2 + (y2 >> 4));
                 if ( (cocodev & gcodev) != cocodev
                     ||  (y2 ^ 2 ^ w) & 3 ) return 0;
-                c ^=  (-(c >> 7)) & 0xff; 
+                c ^=  (0 - (c >> 7)) & 0xff; 
                 code = (c >> 1) | (mat24_gcode_to_octad(x1 >> 12, 1) << 6);
                 if (code >= 24000) { 
                     //  24000 = (15 + 360) * 64
@@ -227,7 +227,7 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
                 //  1536 = 2 * 24 * 32 
                 uint_fast32_t i, j;
                 gcode = code >= 768;
-                code -= -gcode & 768;
+                code -= (0 - gcode) & 768;
                 gcode <<= 11; // gecode = code >= 768 ? 0x800 : 0
                 i = code >> 5; j = code & 31;
                 cocode = mat24_vect_to_cocode((1 << i) ^ (1 << j));

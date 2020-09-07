@@ -14,7 +14,7 @@ static void invert{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
     const uint16_t *p_theta = MAT24_THETA_TABLE;
     
     for (i = 0; i <2048; ++i) {
-        uint_mmv_t mask = -((uint_mmv_t)(((p_theta[i] >> 12) & {hex:1})));
+        uint_mmv_t mask = 0 - ((uint_mmv_t)(((p_theta[i] >> 12) & {hex:1})));
         // %%IF* V24_INTS_USED > 1
         mask &= {smask:P};
         // %%END IF

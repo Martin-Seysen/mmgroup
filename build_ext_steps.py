@@ -525,7 +525,7 @@ class  BuildExtCmd(_build_ext):
 
 def make_dll_nt_msvc(cmd, ext):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = [ "/c",  "/Wall", "/DMS_WIN64"] + ext.extra_compile_args 
+    compile_args = [ "/c",  "/W4", "/DMS_WIN64"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("/I " + os.path.realpath(ipath))
     link_args = ["/DLL"] + ext.extra_link_args 

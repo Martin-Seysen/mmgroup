@@ -26,46 +26,103 @@ from mmgroup.clifford12 import qstate12_pauli_vector_exp
 
 
 class QStateMatrix(QState12):
+    """This class models a quadratic state matrix
+       
+    Quadratic state matrices are described in the *guide* at
+
+    https://mmgroup.readthedocs.io/en/latest/guide.html#module-mmgroup.dev.clifford12.qstate12  .   
+    
+    :param rows:
+    
+        Binary logarithm of the number of rows of the matrix
+    
+    :type rows: A nonnegative ``int``
+    
+    :param cols:
+    
+        Binary logarithm of the number of columns of the matrix
+    
+    :type cols: A nonnegative ``int``
+    
+    :param data:
+    
+        The data of the matrix as described below
+        
+    :param data:
+    
+        Evaluated according to parameter ``data`` as described below
+        
+    :raise:
+        * TypeError if ``type(data)`` is not as expected.
+        * ValueError if ``data`` cannot be converted to an
+          instance of class  ``QStateMatrix``.
+    
+    
+    In terms of the theory of quantum computing, ``rows, cols = 0, n`` 
+    creates a column vector or a *-ket* ``|v>`` corresponding to a 
+    state of of ``n`` qubits, and ``rows, cols = n, 0`` creates a 
+    row vector or a *-bra* ``<v|`` corresponding to a linear function
+    on a state of ``n`` qubits.
+
+    If ``rows == cols == n`` and the created ``2**n`` times ``2**n``
+    matrix is invertible, then the matrix is (a scalar multiple of) 
+    an element of the complex Clifford :math:`\mathcal{X}_{12}` of 
+    ``n`` qubits described in :cite:`NRS01`.
+
+    If ``rows`` is an instance of this class then a copy of 
+    that instance is created.
+
+    If ``rows`` an instance class ``QState`` then that source
+    is interpreted as a *-ket* and a copy of that *-ket* is 
+    created.
+
+    If ``rows`` and ``cols`` are integers then ``data``  may be:
+
+      * ``None`` (default). Then the zero matrix is created.
+
+      * An integer ``v``, if ``rows`` or ``cols`` is ``0``. 
+        Then the state is set to ``|v>`` or ``<v|``,  respectively.
+
+      * The integer ``1`` if ``rows`` == ``cols``. Then a unit 
+        matrix is created.
+
+      * A list of integers. Then that list of integers must encode 
+        a valid pair ``(A, Q)`` of bit matrices that make up a 
+        state as in class ``QState``, as dscribed in the *guide*. 
+        In this case parameter ``mode`` is evaluated as follows:
+              
+          * 1: create matrix ``Q`` from lower triangular part
+              
+          * 2: create matrix ``Q`` from upper triangular part
+               
+          * Anything else: matrix ``Q`` must be symmetric.
+          
+    As in ``numpy``, matrix multiplication of quadratic state 
+    matrices is done with the ``@`` operator and elementwise
+    multiplication of such matrices is done with the ``*``
+    operator. A quadratic state matrix may also be multiplied 
+    by a scalar. Here the scalar must be zero or of the form
+
+    .. math::
+         2^{e/2} \cdot w \mid e \in \mathbb{Z}, \;
+         w \in \mathbb{C}, \, w^8 = 1   \; .
+   
+    A matrix of type ``QStateMatrix`` may be indexed with square
+    brackets as in ``numpy`` in order to obtain entries, rows, 
+    columns or submatrices. Then a complex ``numpy`` array (or a 
+    complex number) is returned as in ``numpy``. It is  not 
+    possible to change the matrix via item assignment. So the 
+    easiest way to obtain a complex version of an instance ``m`` 
+    of type `QStateMatrix`` is to write ``m[:,:]``.
+    
+    Officially, we support matrices with ``rows, cols <= 12``
+    only. Methods of this class might work for slightly 
+    larger matrices. Any attempt to constuct a too large
+    matrix raises ValueError.
+    """
     UNDEF_ROW = 255
     
     def __init__(self, rows, cols = None, data = None, mode = 0):
-        """Create a 2**rows times 2**cols quadratic state matrix
-
-        If ``rows`` and ``cols`` are integers then ``data``
-        may be:
-
-            * ``None`` (default). Then the zero matrix is created.
-
-            * An integer ``v``, if ``rows`` or ``cols`` is ``0``. 
-              Then the state is set to ``|v>`` or ``<v|``, 
-              respectively.
-
-            * The integer ``1`` if ``rows`` == ``cols``. Then 
-              a unit matrix is created.
-
-            * A list of integers. Then that list of integers must 
-              encode a valid pair ``(A, Q)`` of bit matrices that 
-              make up a state as in class ``QState``. In this case 
-              parameter ``mode`` is evaluated as follows:
-              
-               * 1: create matrix ``Q`` from lower triangular part
-              
-               * 2: create matrix ``Q`` from upper triangular part
-               
-               * Anything else: matrix ``Q`` must be symmetric.
-
-        So ``rows, cols = 0, n`` creates a column vector or a *-ket*
-        ``|v>`` corresponding to a state of of ``n`` qubits, and 
-        ``rows, cols = n, 0`` creates a row vector or a *-bra* ``<v|`` 
-        corresponding to a linear function on a state of ``n`` qubits.
-
-        If ``rows`` is an instance of this class then a copy of 
-        that instance is created.
-
-        If ``rows`` an instance class ``QState`` then that source
-        is interpreted as a *-ket* and a copy of that *-ket* is 
-        created.
-        """
         if isinstance(cols, Integral):
             if isinstance(rows, Integral):
                 self.rows, self.cols, n = rows, cols, rows + cols
@@ -100,18 +157,25 @@ class QStateMatrix(QState12):
     
     @property
     def shape(self):
+        """Return the shape of the matrix as a pair ``(rows, cols)``
+        
+        Then the instance reprresents a ``2**rows`` times
+        ``2**cols`` quadratic state matrix.
+        """
         return (self.rows, self.cols)  
 
 
     def reshape(self, shape = (), copy = True):
         """Reshape matrix to given ``shape``
 
-        ``shape[0] + shape[1] = self.rows + self.cols`` must hold.
+        ``shape[0] + shape[1] = self.shape[0] + self.shape[0]`` 
+        must hold.
 
-        If on of the values ``shape[0]``, ``shape[1]`` is negative,
-        the other value is calculated from ``self.rows + self.cols``. 
+        If one of the values ``shape[0]``, ``shape[1]`` is negative,
+        the other value is calculated from the sum 
+        ``self.shape[0] + self.shape[1]``. 
 
-        Shape default to ``(-1, 0)``.
+        Shape defaults to ``(-1, 0)``.
         """  
         m = QStateMatrix(self) if copy else self
         if isinstance(shape, Integral): 
@@ -130,14 +194,20 @@ class QStateMatrix(QState12):
         return m
         
     def conjugate(self, copy = True):
-        """Conugate a matrix"""
+        """Return complex conjugate of the matrix
+        
+        Returns an instance of class ``QStateMatrix``.
+        """
         m = QStateMatrix(self) if copy else self   
         return super(QStateMatrix, m).conjugate()   
 
     conj = conjugate        
 
     def transpose(self, copy = True):
-        """Conugate a matrix"""
+        """Return the transposed of the matrix
+        
+        Returns an instance of class ``QStateMatrix``.
+        """
         m = QStateMatrix(self) if copy else self
         rows, cols = m.shape 
         super(QStateMatrix, m).rot_bits(rows, m.ncols, 0)   
@@ -209,17 +279,20 @@ class QStateMatrix(QState12):
 
     @property 
     def T(self):
-        """Return transpose matrix as in numpy"""   
+        """Return transposed matrix as in numpy"""   
         return self.transpose()
 
     @property 
     def H(self):
-        """Return conjugate transpose matrix as in numpy"""   
+        """Return conjugate transposed matrix as in numpy"""   
         m = self.transpose()
         return super(QStateMatrix, m).conjugate()    
      
     def complex(self):
-        """Return complex matrix of state as numpy array"""
+        """Return complex matrix as a numpy array
+        
+        ``m.complex()`` is equivalent to ```m[:,:]``.
+        """
         a = super(QStateMatrix, self).complex()
         a = a.reshape((1 << self.rows, 1 << self.cols)) 
         return a        
@@ -238,15 +311,13 @@ class QStateMatrix(QState12):
         return a 
 
     def reduce_matrix(self):
-        """yet to be docmented"""
+        """TODO: yet to be docmented"""
         return qstate12_reduce_matrix(self, self.shape[1]) 
         
     def pauli_vector(self):
         """TODO: yet to be documented!!!"""
         w = super(QStateMatrix, self).pauli_vector(self.shape[1])
-        #sh = int(self.ncols)
-        #print("pauli", w, self.ncols, sh)
-        return w # & ((4 << sh) - 1)
+        return w 
     
     def pauli_conjugate(self, v):
         """TODO: yet to be documented!!!"""
@@ -269,10 +340,24 @@ class QStateMatrix(QState12):
         imin, imax = m.ncols + t[m.ncols], m.ncols + m.nrows
         r += sum(x != self.UNDEF_ROW for x in t[imin:imax])
         return r
+        
+    def lb_norm2(self):    
+        """Return binary logarithm of squared operator norm.
+        
+        The operator norm is the largest absolute singular value
+        of the matrix.
+        
+        Return -1 if matrix is zero.
+        """
+        m = self.copy().reduce()
+        if m.nrows == 0:
+            return -1
+        return m.factor[0] + m.nrows - 1 - m.lb_rank() 
 
     def inv(self):
         """Return inverse matrix
-        
+     
+        Returns an instance of class ``QStateMatrix``.
         Raise ValueError if matrix is not invertible.
         """
         if not (self.shape[0] == self.shape[1] == self.lb_rank()):
@@ -577,6 +662,37 @@ def qstate_pauli_matrix(nqb, v):
     qs = QStateMatrix(nqb, nqb, 1)
     qstate12_pauli_matrix(qs, nqb, v)    
     return qs
+    
+def qstate_ctrl_not_matrix(nqb, vc, v, left = 0):
+    """Return Transformation matrix for ctrl-not gate
+    
+    ``nqb`` is the rank of the matrix.
+    TODO: ``vc, v`` yet to be documented.
+
+    If ``left`` is set then the matrix is for left multiplication
+    else the atrix is for right multiplication. This distinction
+    is relevant only  if the scalar product of ``vc`` and ``v``
+    is ``1``; then the returned matrix is singular.    
+    """
+    qs = qstate_unit_matrix(nqb)
+    mask = (1 << nqb) - 1
+    qs.gate_ctrl_not(vc & mask, v & mask) 
+    return qs.T.reduce() if left else qs.reduce()    
+
+def qstate_phi_matrix(nqb, v, phi):
+    qs = qstate_unit_matrix(nqb)
+    qs.gate_phi(v << nqb, phi) 
+    return qs    
+
+def qstate_ctrl_phi_matrix(nqb, v1, v2):
+    qs = qstate_unit_matrix(nqb)
+    qs.gate_ctrl_phi(v1 << nqb, v2) 
+    return qs    
+
+def qstate_hadamard_matrix(nqb, v):
+    qs = QStateMatrix(nqb, nqb, 1)
+    qs.gate_h(v)    
+    return qs.reduce()
 
 def qstate_pauli_vector_mul(nqb, v1, v2):
     return qstate12_pauli_vector_mul(nqb, v1, v2)

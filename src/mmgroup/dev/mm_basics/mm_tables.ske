@@ -239,9 +239,10 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
         uint_fast16_t i;
         for (i = 0; i < 24; ++i) {
             uint_fast16_t t = p_op->inv_perm[i];
-            p_24big[i + 2048] = t;   
-            p_24big[i + 2048 + 24] = t + 24;   
-            p_24big[i + 2048 + 48] = (t + 48) | ((delta & 0x800) << 4);  
+            p_24big[i + 2048] = (uint16_t)t;   
+            p_24big[i + 2048 + 24] = (uint16_t)(t + 24);   
+            p_24big[i + 2048 + 48] 
+                = (uint16_t)((t + 48) | ((delta & 0x800) << 4));  
         }
     }
 
@@ -268,7 +269,7 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
                 sign = src & 0x1000;
                 src = src  & 0xfff;
                 src = mat24_def_gcode_to_octad(src);
-                p_out->preimage = src | sign;
+                p_out->preimage = (uint16_t)(src | sign);
             }
             {  // deal with permutation inside a row of 64 entries
                 uint_fast8_t qi[24], acc;
@@ -358,16 +359,18 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
         p_op->lin_i[1] = p_op->lin_i[2] = p_op->f_i
                        = mat24_gcode_to_vect(f);
         p_op->ef_i = p_op->lin_i[0] ^ p_op->f_i;
-        p_XYZ[0] = (PwrMap(f) ^ PwrMap(e ^ f) ^ (f >> 12) ) 
-           ^ ((mat24_ploop_cocycle(f, e) ^ ((e ^ f) >> 12)) << 1)
-           ^ (((PwrMap(f) ^ (e >> 12) ^ (e >> 11)) & 1) << 2) ;
+        p_XYZ[0] = (uint_fast8_t)(
+            (PwrMap(f) ^ PwrMap(e ^ f) ^ (f >> 12) ) 
+            ^ ((mat24_ploop_cocycle(f, e) ^ ((e ^ f) >> 12)) << 1)
+            ^ (((PwrMap(f) ^ (e >> 12) ^ (e >> 11)) & 1) << 2) 
+            );
 
         for (li = 0; li < 11; ++li) {
             i = 1 << li ;
             v = ((ld0 >> li) & 1) + (((ld1 >> li) & 1) << 1)
               + (((ld2 >> li) & 1) << 2);
             for (j = 0; j < i; ++j) {
-                p_XYZ[i + j] = p_XYZ[j] ^ v;
+                p_XYZ[i + j] = (uint_fast8_t)(p_XYZ[j] ^ v);
             }
         }
     }
@@ -405,7 +408,8 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
             sign ^= sign >> 6; sign ^= sign >> 3; 
             sign = (0x96 >> (sign & 7)) & 1;
             sign ^= sign_e ^ PwrMap(d ^ e);
-            *p_res++ = res + (sign << 14) + ((eps & 0x800) << (15-11));
+            *p_res++ = (uint16_t)(
+                res + (sign << 14) + ((eps & 0x800) << (15-11)));
             p_oct += 8;
         }
     }

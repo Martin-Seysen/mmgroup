@@ -12,6 +12,12 @@ import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
 from mmgroup.structures.qs_matrix import prep_mul, flat_product
+from mmgroup.structures.qs_matrix import qstate_pauli_matrix
+from mmgroup.structures.qs_matrix import qstate_ctrl_not_matrix
+from mmgroup.structures.qs_matrix import qstate_phi_matrix
+from mmgroup.structures.qs_matrix import qstate_ctrl_phi_matrix
+from mmgroup.structures.qs_matrix import qstate_hadamard_matrix
+
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
@@ -60,6 +66,8 @@ def test_gate_not(verbose = 0):
             print(m1)
         err = "Method gate_not has failed"
         compare_complex(c1_ref, c1, err)            
+        gm = qstate_pauli_matrix(m.shape[1], v << m.shape[1])  
+        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
             
             
 #####################################################################
@@ -101,7 +109,7 @@ def complex_gate_ctrl_not(c1, vc, v):
     return c2
   
 @pytest.mark.qstate
-def test_gate_ctrl_not(verbose = 0):
+def test_gate_ctrl_not(verbose = 1):
     """Test function ``qstate12_gate_ctrl_not``. """
     for ntest, (m, vc, v) in enumerate(gate_ctrl_not_testdata()):
         if verbose:
@@ -116,7 +124,9 @@ def test_gate_ctrl_not(verbose = 0):
             print("output")
             print(m1)
         err = "Method gate_ctrl_not has failed"
-        compare_complex(c1_ref, c1, err)            
+        compare_complex(c1_ref, c1, err) 
+        gm = qstate_ctrl_not_matrix(m.shape[1], vc, v)  
+        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
 
@@ -164,6 +174,11 @@ def test_gate_phi(verbose = 0):
             print(m1)
         err = "Method gate_phi has failed"
         compare_complex(c1_ref, c1, err)            
+        gm = qstate_phi_matrix(m.shape[1], v, phi)  
+        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]
+        if (phi & 3 == 2):         
+            gm = qstate_pauli_matrix(m.shape[1], v)  
+            assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
 #####################################################################
@@ -215,6 +230,8 @@ def test_gate_ctrl_phi(verbose = 0):
             print(m1)
         err = "Method gate_ctrl_phi has failed"
         compare_complex(c1_ref, c1, err)            
+        gm = qstate_ctrl_phi_matrix(m.shape[1], v1, v2)  
+        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
 
@@ -276,6 +293,8 @@ def test_gate_h(verbose = 0):
             print(m1)
         err = "Method gate_ctrl_phi has failed"
         compare_complex(c1_ref, c1, err)            
+        gm = qstate_hadamard_matrix(m.shape[1], v)  
+        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
 

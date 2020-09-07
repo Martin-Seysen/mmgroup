@@ -38,7 +38,8 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
         uint32_t table24_dest[3];
         // TODO: comment properly!!!!
         for (i = 0; i < 3; ++i) table24_dest[i] = TABLE24_START[i];
-        i = (TABLE24_START[1] ^ TABLE24_START[2]) & -((p_op->eps >> 11) & 1);
+        i = (TABLE24_START[1] ^ TABLE24_START[2]) & 
+            (0 - ((p_op->eps >> 11) & 1));
         table24_dest[1] ^= i;  table24_dest[2] ^= i; 
 
         for (i = 0; i < 3; ++i)  {
@@ -127,7 +128,7 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
 
         f <<= {int:LOG_V24_INTS +1};
         ef <<= {int:LOG_V24_INTS +1};
-        eps = -((p_op->eps >> 11) & {hex:1});
+        eps = 0 - ((p_op->eps >> 11) & {hex:1});
         for (i = 0; i < {int:24*V24_INTS}; i += {V24_INTS}) {
             uint_mmv_t t, t1, t2;
             // %%FOR j in range(V24_INTS_USED)
