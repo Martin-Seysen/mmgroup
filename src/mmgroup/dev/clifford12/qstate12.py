@@ -439,6 +439,10 @@ also a row and a column operation on matrix `Q` without
 changing `f(e, A, Q)`, (up to a few corrections in line and
 column :math:`0` of :math:`Q`). 
   
+If  :math:`f(e, A, Q)` is in *echelon form*, (as defined in the
+following section), then it remains in echelon form after 
+applying an operation  :math:`T_{i,j}, i < j`.
+
 
 
 Reducing the representation of a quadratic mapping
@@ -1115,7 +1119,7 @@ The C functions in this module do operations on quadratic state
 vectors given by triples :math:`(e, A, Q)` as defined above.
 Here component :math:`e` encodes the number  
 :math:`\exp(e \pi \sqrt{-1} / 4) \cdot 
-2^{\lfloor e'/16 \rfloor / 2}`, and
+2^{\lfloor e/16 \rfloor / 2}`, and
 :math:`A` is an  :math:`(1+m) \times n` bit matrix.
 :math:`Q` is a symmetric :math:`(1+m) \times (1+m)` bit matrix 
 representing an symmetric bilinear form. We always have
@@ -1128,7 +1132,7 @@ representing an symmetric bilinear form. We always have
 corresponds to :math:`M_{i,j}`, with bit :math:`0` the least
 significant bit.
 
-A state vector is described by a structure containing 
+A quadratic state vector is described by a structure containing 
 the following components:
 
 .. code-block:: c
@@ -1141,10 +1145,21 @@ the following components:
     uint64_t *data;   // Pointer to the data bits of matrix M
   } qbstate12_type;
 
-The zero state is encode as a matrix with :math:`m'=0` rows.
-We do not update the entries :math:`Q_{i,0}=0`, so the 
+Recall that a quadratic state vector :math:`v` of type
+``qbstate12_type`` with component ``ncols = n`` models a complex 
+vector in a vector space  :math:`V` of dimension :math:`2^n`, and 
+that the basis of ``V`` is labelled by the elements of the Boolean
+vector space :math:`\mathbb{F}_2^n`. In C and python programs
+we represent the element :math:`(x_0, \ldots, x_{n-1})` of
+:math:`\mathbb{F}_2^n` by the integer 
+:math:`\sum_{0 \leq i < n} 2^i \cdot x_i`. This leads to a natural
+representation of ``v`` as a one-dimensional complex array of
+length :math:`2^n`, starting with index ``0``.
+
+The zero state is encoded as a matrix with :math:`m'=0` rows.
+We do not update the entries :math:`Q_{i,0}`, so the 
 corresponding bits in compoment ``data`` of the structure
-are garbage. Yo may use the C function ``qstate12_check`` to
+are garbage. One may use the C function ``qstate12_check`` to
 set these bits to their proper values.
 
 
@@ -1160,7 +1175,7 @@ value is intepreted as failure. Depending on the function, a
 nonnegative return value may e.g. mean an index for a matrix
 :math:`A`, :math:`M`, or :math:`Q`.
 
-Typical names for paramters of functions in this module are:
+Typical names for parameters of functions in this module are:
 
    ================== ================================================
    ``pqs, pqs1, ...`` Pointer to structure of type ``qbstate12_type``
@@ -1180,9 +1195,166 @@ Typical names for paramters of functions in this module are:
    ================== ================================================
 
 
+Quadratic state matrices
+........................
+
+A *quadratic state matrix* :math:`S` of shape :math:`(n_1, n_2)` 
+is an element of the tensor product :math:`V_1 \otimes V_2` 
+with the basis vectors of :math:`V_k` being indexed by 
+:math:`\mathbb{F}_2^{n_k}, k = 1, 2`, such that the
+coordinate function of :math:`S` is a quadratic mapping.
+That coordinate function is a function
+:math:`\mathbb{F}_2^{n_1} \times \mathbb{F}_2^{n_2}
+\rightarrow \mathbb{C}`.
+
+Thus :math:`S` corresponds to a complex 
+:math:`2^{n_1} \times 2^{n_2}` matrix. We may implement
+:math:`S` as a quadratic state vector of :math:`n_1 + n_2` 
+qubits, augmented by an information about its shape
+:math:`(n_1, n_2)` . We let the  :math:`n_1` qubits with
+high indices  correspond to the rows of  :math:`S`; and
+we let the  :math:`n_2` qubits with low indices  correspond 
+to the columns  of  :math:`S`.
+
+We implement a *quadratic state matrix* as a instance of class
+``QStateMatrix`` in module ``mmgroup.structures.qs_matrix``.
+A matrix of shape :math:`(0,n)` corresponds to a row vector of 
+dimension :math:`2^{n}` and a matrix of shape :math:`(n,0)` 
+corresponds to a column vector of dimension :math:`2^{n}`.
+We have seen above that the unitary quadratic state 
+matrices of shape :math:`(n,n)` form the Clifford group 
+:math:`\mathcal{X}_{n}`. We have also
+discussed fast algorithms for multiplication and inversion
+of such matrices. So class ``QStateMatrix`` supports fast
+computation in Clifford group :math:`\mathcal{X}_{n}`.
+Our implementation requires :math:`n \leq 12`, which is
+sufficient for computing in the subgroup
+:math:`2^{1+24}.\mbox{Co}_1` of the monster group.
+
+
+Reducing a quadratic state matrix
+.................................
+
+We define a special *reduced matrix representation* :math:`(e, A, Q)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_1, n_2)` 
+that differs slightly from the reduced representation of a 
+quadratic state vector. That representation satisfies the 
+following conditions:
+
+ 1. We require that the representation :math:`(e, A, Q)` is in 
+    (not necessarly reduced) echelon form as described in section
+    *Reducing the representation of a quadratic mapping*.
+    
+ 2. Let :math:`A'` be the bit matrix obtained from :math:`A` by
+    removing the first  :math:`n_2` columns from  :math:`A`.
+    We require that  a permutation of the rows of matrix
+    :math:`A'`, excluding row :math:`0`, is in (not necessarily 
+    reduced) echelon form.
+    
+    Note that the first :math:`n_2` columns of the bit matrix
+    :math:`A` correspond to the :math:`2^{n_2}` columns of 
+    the complex matrix :math:`S`; and the remaining  
+    :math:`n_1` columns of :math:`A` correspond to the
+    :math:`2^{n_1}` rows of :math:`S`.
+        
+ 3. Let :math:`I_1` be the set of the rows of the bit matrix 
+    :math:`A` such that all bits in columns :math:`\geq n_2` 
+    of that row are zero. Let :math:`I_2` be the set of the 
+    rows of :math:`A` such that all bits in columns 
+    :math:`< n_2` of that row are zero. We exclude row 
+    :math:`0` from :math:`I_1` and from :math:`I_2`. 
+    
+    If the bit matrix :math:`A` has :math:`m'` rows then
+    the bit matrix :math:`Q` is a symmetric 
+    :math:`m' \times m'` bit matrix. Let :math:`Q'` be the 
+    submatrix of :math:`Q` that consists of all rows with
+    index in :math:`I_1` and of all columns with index in
+    :math:`I_2` .
+
+    We require that submatrix :math:`Q'` of :math:`Q`  has at 
+    most one nonzero entry in each row and in each column. 
+
+    Note that  :math:`I_1 \cap I_2 = \emptyset`, since
+    :math:`A` is in echelon form.
+
+We may obtain a *reduced matrix representation* :math:`(e, A, Q)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_1, n_2)` 
+as follows:
+
+  * Starting from a reduced representation :math:`(e_0, A_0, Q_0)` 
+    of a quadratic state vector :math:`S` we may obtain a 
+    representation :math:`(e_1, A_1, Q_1)` of the matrix  :math:`S` 
+    satifying condition *(2.)* by applying a seqence of  
+    transformations :math:`T_{i,j}, i < j`. Then 
+    :math:`A_1` is also in echelon form. :math:`T_{i,j}` 
+    is defined in section *Implementation of quadratic mappings*. 
+
+  * We apply a sequence of transformations :math:`T_{i,j}, i < j`,
+    with :math:`i, j \in I_1` or :math:`i, j \in I_2` to 
+    :math:`(e_1, A_1, Q_1)`. These transformations preserve the 
+    echelon form of :math:`A_1` and also property *(2.)*. Since 
+    :math:`I_1 \cap I_2 = \emptyset`, these transformations act as
+    row and column operations on the submatrix :math:`S'`
+    of  :math:`S`. So we may achieve property *(3.)* by a sequence
+    of such transformations, thus obtaining a suitable
+    representation :math:`(e, A, Q)` of  :math:`S`.
 
 
 
+Using a *reduced matrix representation* :math:`(e, A, Q)` of a
+quadratic state matrix :math:`S` has a variety of advantages.
+
+ * We can easily compute the rank of :math:`S` as follows:
+
+   For :math:`(e, A, Q)` let :math:`I_1, I_2, S'` be defined as 
+   above. Let  :math:`I_3` be the subset :math:`I_1` containing 
+   alls rows of :math:`A` such that the corrsponding row of 
+   bit matrix  :math:`Q'` is zero. Then the binary logarithm of
+   the rank of :math:`S` is equal to the number of rows of
+   matrix :math:`A` with are neither in  :math:`I_2` nor in 
+   :math:`I_3`. Here we have to exclude row :math:`0` of :math:`A`.  
+
+   We omit the proof of this fact since we do not need it
+   for our purposes.
+
+ * That representation can be used for decomposing :math:`S`
+   into a product :math:`M_1 \cdot H \cdot M_2` of quadratic 
+   state matrices, where :math:`M_1, M_2` are monomial and 
+   :math:`H` is a Hadamard-like matrix. By a Hadamard-like
+   matrix we mean a matrix obtained from the unit matrix by
+   applying Hadamard gates to the row vectors.
+
+   If :math:`S` has shape :math:`(n,n)` such a decomposition
+   reduces the complexity of multiplying :math:`S` with an
+   arbitray complex vector form :math:`O(4^n)` to
+   :math:`O(n \cdot 2^n)`.
+
+   Essentially, we have used such a decomposition for 
+   multiplying the non-monimial part of generator :math:`\xi` 
+   of the monster :math:`\mathbb{M}` with a vector of our 
+   representation of :math:`\mathbb{M}`. Since this special
+   case is discussed elsewhere, we do not go into details here.
+
+ * Using quadratic state matrices we can multiply two elements
+   of the Clifford group :math:`\mathcal{X}_{n}` in
+   :math:`O(n^3)` bit operations.
+
+   In the next section we will introduce the Pauli group 
+   :math:`\mathcal{P}_{n}`, which is an important normal 
+   subgroup of :math:`\mathcal{X}_{n}`. Using the reduced 
+   matrix representation of an element :math:`S` of 
+   :math:`\mathcal{X}_{n}` we can conugate any element
+   of :math:`\mathcal{P}_{n}` with :math:`S` in  
+   :math:`O(n^2)` bit operations.
+
+Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
+converts any representation of a quadratic state matrix to a
+reduced matrix representation.
+
+The Pauli group
+...............
+
+TODO: Yet to be documented!!!
 
 ##################################################################
 
@@ -1194,25 +1366,27 @@ TODO: This should be copied to a module dealing with matrices!!!!
 For vector spaces  :math:`V_1, V_2` over :math:`\mathbb{F}_2`
 let :math:`g = f(e, A, Q)` be a quadratic mapping from
 :math:`V_1  \oplus V_2 \rightarrow \mathbb{C}`, with
-:math:`\ker A = 0`. Here 
-:math:`A: \mathbb{F}_2^m \rightarrow V_1  \otimes V_2` is an affine
-mapping and :math:`A: \mathbb{F}_2^m \rightarrow \mathbb{C}` is an 
-quuadratic function. Then :math:`g` has a natural interpretation 
-as a  :math:`2^{n_1} \times 2^{n_2}` matrix :math:`G`, 
+:math:`\ker A = 0`. Here
+:math:`A: \mathbb{F}_2^m \rightarrow V_1  \oplus V_2` is an affine
+mapping and :math:`A: \mathbb{F}_2^m \rightarrow \mathbb{C}` is an
+quuadratic function. Then :math:`g` has a natural interpretation
+as a  :math:`2^{n_1} \times 2^{n_2}` matrix :math:`G`,
 where :math:`n_j = \dim V_j`.
-Then 
+Then
 
 .. math::
    \mbox{rk} \;  G =   \frac{ 2^{r} \cdot | \mbox{im} \; A |}
    {|\ker \pi_1  \circ A| \cdot |\ker \pi_2  \circ A|} \; ,
-   
-where  :math:`\pi_i` is the projection of   
-:math:`V_1 \oplus V_2` to :math:`V_i` and :math:`r` is 
+
+where  :math:`\pi_i` is the projection of
+:math:`V_1 \oplus V_2` to :math:`V_i` and :math:`r` is
 rank of the  restriction of :math:`\beta(Q)` to
 :math:`\ker \pi_1  \circ A  \times \ker \pi_2  \circ A`.
+-
+-(YET TO BE SHOWN!!!)
 
-(YET TO BE SHOWN!!!)
 """
+
 
 
 import sys

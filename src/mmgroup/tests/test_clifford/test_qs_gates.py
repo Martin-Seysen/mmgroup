@@ -109,7 +109,7 @@ def complex_gate_ctrl_not(c1, vc, v):
     return c2
   
 @pytest.mark.qstate
-def test_gate_ctrl_not(verbose = 1):
+def test_gate_ctrl_not(verbose = 0):
     """Test function ``qstate12_gate_ctrl_not``. """
     for ntest, (m, vc, v) in enumerate(gate_ctrl_not_testdata()):
         if verbose:

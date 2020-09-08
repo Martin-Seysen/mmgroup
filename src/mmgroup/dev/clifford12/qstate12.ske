@@ -1125,11 +1125,11 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 // Although complex numbers have been invented more than 200 years
 // ago and standardized in C99 about 20 years ago, it is still tooo
 // annoying to deal with the peculiarites of the data type 
-// 'double complex' in the variaous compilers being used.
+// 'double complex' in the various compilers being used.
 // So we output an array of type double[] of real numbers of 
 // doubled length, where an adjacent pair of entries gives the
 // real and the imaginary part of a complex number. We let Python
-// do the convesion from that real array to a complex array. See:
+// do the conversion from that real array to a complex array. See:
 // 
 // https://stackoverflow.com/questions/2598734/numpy-creating-a-complex-array-from-2-real-ones
 
