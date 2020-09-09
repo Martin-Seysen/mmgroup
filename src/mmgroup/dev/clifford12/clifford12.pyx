@@ -684,6 +684,11 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
     chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
     return qs
 
+def qstate12_mat_t(QState12 qs, uint32_t nqb):
+    """Wrapper for the corresponding C function"""
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    chk_qstate12(cl.qstate12_mat_t(m_pqs, nqb))
+
 
 def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):
     """Wrapper for the corresponding C function
@@ -761,6 +766,20 @@ def qstate12_reduce_matrix(QState12 qs, uint32_t nqb):
     cdef uint32_t i = qs.nrows + qs.ncols
     cdef uint32_t j
     return [ row_table[j] for j in range(i) ]
+    
+
+def qstate12_mat_lb_rank(QState12 qs, uint32_t nqb):
+    """Yet to be documented"""
+    cdef p_qstate12_type pqs = pqs12(qs)
+    cdef int32_t res = cl.qstate12_mat_lb_rank(pqs, nqb)
+    if (res < -1):
+       chk_qstate12(res)
+    return res
+    
+def qstate12_mat_inv(QState12 qs, uint32_t nqb):
+    """Yet to be documented"""
+    cdef p_qstate12_type pqs = pqs12(qs)
+    chk_qstate12(cl.qstate12_mat_inv(pqs, nqb))
     
 
 def qstate12_bit_matrix_t(m, uint32_t ncols):

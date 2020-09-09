@@ -164,6 +164,19 @@ int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t 
 
 
 /*************************************************************************
+*** Transposition of quadratic state matrices
+*************************************************************************/
+
+// %%EXPORT p
+int32_t qstate12_mat_t(qstate12_type *pqs, uint32_t nqb) 
+// The quadratic state matrix qs of shape (pqs->ncols - nqb, nqb)
+// referred by pqs is transposed in place.
+// The result is not reduced.
+{
+    return qstate12_rot_bits(pqs, -((int32_t)nqb), pqs->ncols, 0);
+}
+
+/*************************************************************************
 *** 'Multiplying' states and matrices of states
 *************************************************************************/
 
@@ -414,6 +427,8 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
 }
 
 
+
+
 /*************************************************************************
 *** Creating and checking matrices in the Pauli group
 *************************************************************************/
@@ -575,9 +590,58 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint32_t nqb, uint8_t *row_ta
     
 }
 
+/*************************************************************************
+*** Computing the rank of a matrix
+*************************************************************************/
+
+// %%EXPORT p
+int32_t qstate12_mat_lb_rank(qstate12_type *pqs, uint32_t nqb) 
+// Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
+// referred by pqs. The function returns the binary logarithm of
+// the rank of the matrix. It returns -1 if qs is the zero matrix.
+// Matrix qs is reduced with function qstate12_reduce_matrix().
+{
+    uint8_t row_table[MAXCOLS+4];
+    int32_t res, rk = 0;
+    uint_fast32_t i, fst_row;
+    res = qstate12_reduce_matrix(pqs, nqb, row_table);
+    if (res < 0) return res;
+    if (pqs->nrows == 0) return -1;
+    fst_row = row_table[pqs->ncols];
+    for (i = nqb; i < pqs->ncols; ++i)  
+        rk += row_table[i] < fst_row;
+    for (i = pqs->ncols + fst_row; i < pqs->ncols + pqs->nrows; ++i)
+        rk += row_table[i] != QSTATE12_UNDEF_ROW;
+    return rk;
+}
+
 
 /*************************************************************************
-*** Matrix transposition
+*** Matrix inversion
+*************************************************************************/
+
+// %%EXPORT p
+int32_t qstate12_mat_inv(qstate12_type *pqs, uint32_t nqb) 
+// Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
+// referred by pqs. The function inverts the matrix qs in place,
+// It returns -11 if qs is not invertible.
+// The result is reduced with function qstate12_reduce_matrix().
+{
+    int32_t rk = 0, f;
+    qstate12_mat_t(pqs, nqb);
+    qstate12_conjugate(pqs);
+    rk =  qstate12_mat_lb_rank(pqs, nqb); 
+    if (rk < -1) return rk;
+    if (2 * nqb != pqs->ncols || rk != (int32_t)nqb) return -11;
+    f = (pqs->factor & -((int32_t)16L)) >> 4;
+    f += pqs->nrows - 1;
+    f -= pqs->ncols - nqb;
+    return qstate12_mul_scalar(pqs, -2*f, 0);
+}
+
+
+/*************************************************************************
+*** Bit matrix transposition
 *************************************************************************/
 
 

@@ -14,6 +14,7 @@ from random import randint
 import numpy as np
 from mmgroup.clifford12 import QState12, as_qstate12 
 from mmgroup.clifford12 import qstate12_unit_matrix 
+from mmgroup.clifford12 import qstate12_mat_t 
 from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
 from mmgroup.clifford12 import qstate12_product
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
@@ -23,7 +24,8 @@ from mmgroup.clifford12 import qstate12_pauli_matrix
 from mmgroup.clifford12 import error_string
 from mmgroup.clifford12 import qstate12_pauli_vector_mul
 from mmgroup.clifford12 import qstate12_pauli_vector_exp
-
+from mmgroup.clifford12 import qstate12_mat_lb_rank
+from mmgroup.clifford12 import qstate12_mat_inv
 
 class QStateMatrix(QState12):
     """This class models a quadratic state matrix
@@ -209,9 +211,8 @@ class QStateMatrix(QState12):
         Returns an instance of class ``QStateMatrix``.
         """
         m = QStateMatrix(self) if copy else self
-        rows, cols = m.shape 
-        super(QStateMatrix, m).rot_bits(rows, m.ncols, 0)   
-        m.reshape((cols, rows), copy = False)        
+        qstate12_mat_t(m, m.cols) 
+        m.rows, m.cols = self.cols, self.rows
         return m   
         
     def rot_bits(self, rot, nrot, n0 = 0, copy = True):    
@@ -331,15 +332,7 @@ class QStateMatrix(QState12):
         
         Return -1 if matrix is zero.
         """
-        m = self.copy()
-        t = m.reduce_matrix()
-        if m.nrows == 0:
-            return -1
-        imin, imax = m.cols, m.ncols
-        r = sum(0 <= x < t[m.ncols] for x in t[imin:imax])
-        imin, imax = m.ncols + t[m.ncols], m.ncols + m.nrows
-        r += sum(x != self.UNDEF_ROW for x in t[imin:imax])
-        return r
+        return qstate12_mat_lb_rank(self, self.shape[1])
         
     def lb_norm2(self):    
         """Return binary logarithm of squared operator norm.
@@ -360,13 +353,9 @@ class QStateMatrix(QState12):
         Returns an instance of class ``QStateMatrix``.
         Raise ValueError if matrix is not invertible.
         """
-        if not (self.shape[0] == self.shape[1] == self.lb_rank()):
-           err = "QState matrix is not invertible"
-           raise ValueError(err)
-        inv_ = self.H
-        f = self.factor[0] + (self.nrows - self.shape[0] - 1) 
-        inv_.mul_scalar(-2*f)
-        return inv_        
+        m = self.copy()
+        qstate12_mat_inv(m,  m.shape[1])
+        return m
 
     def __matmul__(self, other):
         r1, c1 = self.shape
