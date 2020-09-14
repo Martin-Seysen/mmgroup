@@ -10,12 +10,12 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import qstate_pauli_matrix
-from mmgroup.structures.qs_matrix import qstate_ctrl_not_matrix
-from mmgroup.structures.qs_matrix import qstate_phi_matrix
-from mmgroup.structures.qs_matrix import qstate_ctrl_phi_matrix
-from mmgroup.structures.qs_matrix import qstate_hadamard_matrix
+from mmgroup.structures.qs_matrix import QStateMatrix, qs_rand_matrix
+from mmgroup.structures.qs_matrix import qs_pauli_matrix
+from mmgroup.structures.qs_matrix import qs_ctrl_not_matrix
+from mmgroup.structures.qs_matrix import qs_phi_matrix
+from mmgroup.structures.qs_matrix import qs_ctrl_phi_matrix
+from mmgroup.structures.qs_matrix import qs_hadamard_matrix
 
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
@@ -39,7 +39,7 @@ def gate_not_testdata():
         for r in range(cols+3):
             for i in range(3):
                 v = randint(0, (1 << cols) - 1)
-                yield  rand_qs_matrix(0, cols, r), v
+                yield  qs_rand_matrix(0, cols, r), v
 
 def complex_gate_not(c1, v):
     v &= len(c1) - 1
@@ -64,7 +64,7 @@ def test_gate_not(verbose = 0):
             print(m1)
         err = "Method gate_not has failed"
         compare_complex(c1_ref, c1, err)            
-        gm = qstate_pauli_matrix(m.shape[1], v << m.shape[1]) 
+        gm = qs_pauli_matrix(m.shape[1], v << m.shape[1]) 
         assert m @ gm == m1, [str(x) for x in (m, gm, m @ gm, m1)]         
             
             
@@ -88,7 +88,7 @@ def gate_ctrl_not_testdata():
                 v = randint(0, (1 << cols) - 1)
                 while bitparity(vc & v):
                     v = randint(0, (1 << cols) - 1)
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 yield m, vc, v
 
 
@@ -125,7 +125,7 @@ def test_gate_ctrl_not(verbose = 0):
             print(m1)
         err = "Method gate_ctrl_not has failed"
         compare_complex(c1_ref, c1, err) 
-        gm = qstate_ctrl_not_matrix(m.shape[1], vc, v)  
+        gm = qs_ctrl_not_matrix(m.shape[1], vc, v)  
         assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
@@ -142,7 +142,7 @@ def gate_phi_testdata():
             for i in range(3):
                 v = randint(0, (1 << cols) - 1)
                 phi = randint(0,4); 
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 yield m, v, phi
 
 
@@ -174,10 +174,10 @@ def test_gate_phi(verbose = 0):
             print(m1)
         err = "Method gate_phi has failed"
         compare_complex(c1_ref, c1, err)            
-        gm = qstate_phi_matrix(m.shape[1], v, phi)  
+        gm = qs_phi_matrix(m.shape[1], v, phi)  
         assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]
         if (phi & 3 == 2):         
-            gm = qstate_pauli_matrix(m.shape[1], v)  
+            gm = qs_pauli_matrix(m.shape[1], v)  
             assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
@@ -198,7 +198,7 @@ def gate_ctrl_phi_testdata():
             for i in range(3):
                 v1 = randint(0, (1 << cols) - 1)
                 v2 = randint(0, (1 << cols) - 1)
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 yield m, v1, v1
 
 
@@ -230,7 +230,7 @@ def test_gate_ctrl_phi(verbose = 0):
             print(m1)
         err = "Method gate_ctrl_phi has failed"
         compare_complex(c1_ref, c1, err)            
-        gm = qstate_ctrl_phi_matrix(m.shape[1], v1, v2)  
+        gm = qs_ctrl_phi_matrix(m.shape[1], v1, v2)  
         assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
@@ -253,7 +253,7 @@ def gate_h_testdata():
         for r in range(cols+3):
             for i in range(3):
                 v = randint(0, (1 << cols) - 1)
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 yield m, v
 
 
@@ -293,7 +293,7 @@ def test_gate_h(verbose = 0):
             print(m1)
         err = "Method gate_ctrl_phi has failed"
         compare_complex(c1_ref, c1, err)            
-        gm = qstate_hadamard_matrix(m.shape[1], v)  
+        gm = qs_hadamard_matrix(m.shape[1], v)  
         assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 

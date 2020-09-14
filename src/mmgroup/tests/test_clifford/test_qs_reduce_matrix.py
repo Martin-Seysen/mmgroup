@@ -11,8 +11,8 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import qstate_column_monomial_matrix
+from mmgroup.structures.qs_matrix import QStateMatrix
+from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
 from mmgroup.tests.test_clifford.test_qs_product import create_m 
 from mmgroup.tests.test_clifford.test_qs_product import rand_mul_scalar 
 from mmgroup.clifford12 import qstate12_bit_matrix_t
@@ -36,9 +36,9 @@ def create_testmatrices():
     for m_data in qs_matrix_data:
         m = create_m(*m_data)
         yield m
-    yield QStateMatrix(4, 4,  1)  
+    yield qs_unit_matrix(4)  
     for i in range(20):
-        yield rand_qs_matrix(2, 2, 4)
+        yield qs_rand_matrix(2, 2, 4)
     for cols in range(0,7):
         for rows in range(0, 7):
             if rows + cols > 9:
@@ -46,7 +46,7 @@ def create_testmatrices():
             yield QStateMatrix(rows, cols)
             for data_rows in range(1, rows + cols + 3):
                 for n in range(2):
-                    m = rand_qs_matrix(rows, cols, data_rows)
+                    m = qs_rand_matrix(rows, cols, data_rows)
                     rand_mul_scalar(m)  
                     yield m   
  

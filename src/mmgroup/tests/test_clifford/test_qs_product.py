@@ -10,12 +10,12 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
+from mmgroup.structures.qs_matrix import QStateMatrix, qs_rand_matrix
+from mmgroup.structures.qs_matrix import qs_unit_matrix
 from mmgroup.structures.qs_matrix import flat_product
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
-from mmgroup.clifford12 import QState12
 
 #####################################################################
 # 
@@ -24,8 +24,8 @@ from mmgroup.clifford12 import QState12
 
 def prep_mul(m1, m2, nqb):
     m1, m2 = m1.copy(), m2.copy()
-    m1._qstate12_prep_mul(m2, nqb)
-    return m1, m2            
+    row_pos, m1, m2 = m1._qstate12_prep_mul(m2, nqb)
+    return row_pos, m1, m2            
 
 
 qs_matrix_data = [
@@ -52,17 +52,17 @@ def create_product_testvectors():
         m1 = create_m(*m1_data)
         m2 = create_m(*m2_data)
         yield m1, m2, nqb
-    yield QStateMatrix(4, 4,  1) , QStateMatrix(4, 4,  1), 3 
+    yield qs_unit_matrix(4), qs_unit_matrix(4), 3 
     for i in range(20):
         nqb = randint(0,2)
-        yield rand_qs_matrix(2, 0, 3), rand_qs_matrix(2, 0, 3), nqb
+        yield qs_rand_matrix(2, 0, 3), qs_rand_matrix(2, 0, 3), nqb
     for cols1 in range(2,6):
         for cols2 in range(2,6):
             for nqb in range(min(cols1, cols2)):
                for n in range(2):
-                   m1 = rand_qs_matrix(0, cols1, cols1+3)
+                   m1 = qs_rand_matrix(0, cols1, cols1+3)
                    rand_mul_scalar(m1)  
-                   m2 = rand_qs_matrix(0, cols2, cols2+3)
+                   m2 = qs_rand_matrix(0, cols2, cols2+3)
                    rand_mul_scalar(m2)  
                    yield m1, m2, nqb    
     # Sparse states           
@@ -71,9 +71,9 @@ def create_product_testvectors():
             for nqb in range(min(cols1, cols2)):
                for r in range(3):
                    for n in range(2):
-                       m1 = rand_qs_matrix(0, cols1,r)
+                       m1 = qs_rand_matrix(0, cols1,r)
                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
-                       m2 = rand_qs_matrix(0, cols2, r)
+                       m2 = qs_rand_matrix(0, cols2, r)
                        m1.mul_scalar(randint(-8, 8), randint(0,7))  
                        yield m1, m2, nqb    
                 
@@ -114,11 +114,11 @@ def check_eq_cols(qs1, qs2, nqb):
     assert s == 0
    
 
-@pytest.mark.qstate0
+@pytest.mark.qstate
 def test_qs_prep_mul(verbose = 0):
     """Test function ``qstate12_prep_mul``. """
     for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
-        m1a, m2a = prep_mul(m1, m2, nqb)
+        _, m1a, m2a = prep_mul(m1, m2, nqb)
         if verbose:
             print("TEST %s" % (ntest+1))
             print(m1)
@@ -160,14 +160,13 @@ def test_qs_product(verbose = 0):
             print("\n" + err +"\nInput states:")
             print(m1); print(m2);  
             print("nqb =", nqb, ", nc =", nc)  
-            pm1, pm2 = QState12(m1), QState12(m2)
-            row_pos =qstate12_prep_mul(pm1, pm2, nqb)            
+            row_pos, pm1, pm2 = qstate12_prep_mul(m1, m2, nqb)            
             print("prep_mul, row pos = ", row_pos) 
             print(QStateMatrix(pm1)); print(QStateMatrix(pm2))            
             print("\nOutput states:")
-            qm1, qm2 = QState12(m1), QState12(m2)
+            qm1, qm2 = m1.copy(), m2.copy()
             qm1.qstate12_product(qm2, nqb, nc)
-            print(QStateMatrix(qm1)); print(QStateMatrix(qm2)); 
+            print(m1); print(m2); 
             raise      
         c1, c2, c3 = m1.complex(), m2.complex(), m3.complex()
         c3_ref = qs_complex_prod(c1, c2, nqb, nc)
@@ -197,9 +196,9 @@ def create_matmul_testvectors():
             for k in range(2, 6):
                 for r in range(3, 12, 2):
                     for n in range(1):
-                        m1 = rand_qs_matrix(i, j, r)
+                        m1 = qs_rand_matrix(i, j, r)
                         rand_mul_scalar(m1)  
-                        m2 = rand_qs_matrix(j, k, r)
+                        m2 = qs_rand_matrix(j, k, r)
                         rand_mul_scalar(m2)  
                         yield m1, m2   
 
@@ -232,9 +231,9 @@ def large_matmul_testvectors():
     """
     nn = 12
     for r in range(10, 27):
-        m1 = rand_qs_matrix(nn, nn, r)
+        m1 = qs_rand_matrix(nn, nn, r)
         rand_mul_scalar(m1)  
-        m2 = rand_qs_matrix(nn, nn, r)
+        m2 = qs_rand_matrix(nn, nn, r)
         rand_mul_scalar(m2)
         r1 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
         r2 = slice(randint(0,100), 1<<nn, 2*randint(150,160)+1)       
@@ -266,9 +265,14 @@ def test_large_matmul(verbose = 0):
         c1, c2 = m1[r1,:], m2[:,r2]
         c3 = m3[r1, r2]
         c3_ref = c1 @ c2        
-        err = "Matrix multiplcation has failed"
+        err = "Matrix multiplication has failed"
         compare_complex(c3_ref, c3, err)
-
+        m3 = m1 @ m1
+        c1, c2 = m1[r1,:], m1[:,r2]
+        c3 = m3[r1, r2]
+        c3_ref = c1 @ c2        
+        err = "Matrix squaring has failed"
+        compare_complex(c3_ref, c3, err)
 
 
 
@@ -281,9 +285,9 @@ def create_mul_testvectors():
         for j in range(2,6):
             for r in range(2, 12, 2):
                 for n in range(2):
-                    m1 = rand_qs_matrix(i, j, r)
+                    m1 = qs_rand_matrix(i, j, r)
                     rand_mul_scalar(m1)  
-                    m2 = rand_qs_matrix(i, j, r)
+                    m2 = qs_rand_matrix(i, j, r)
                     rand_mul_scalar(m2)  
                     yield m1, m2   
 
@@ -325,7 +329,7 @@ def create_conj_testvectors():
         for j in range(2,6):
             for r in range(2, 12, 2):
                 for n in range(2):
-                    m1 = rand_qs_matrix(i, j, r)
+                    m1 = qs_rand_matrix(i, j, r)
                     rand_mul_scalar(m1)  
                     yield m1  
 

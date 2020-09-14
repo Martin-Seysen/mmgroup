@@ -12,10 +12,10 @@ import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import binary
-from mmgroup.structures.qs_matrix import qstate_pauli_matrix
-from mmgroup.structures.qs_matrix import qstate_unit_matrix
-from mmgroup.structures.qs_matrix import qstate_pauli_vector_mul
-from mmgroup.structures.qs_matrix import qstate_pauli_vector_exp
+from mmgroup.structures.qs_matrix import qs_pauli_matrix
+from mmgroup.structures.qs_matrix import qs_unit_matrix
+from mmgroup.structures.qs_matrix import pauli_vector_mul
+from mmgroup.structures.qs_matrix import pauli_vector_exp
 
 #####################################################################
 # Create test matrices
@@ -23,7 +23,7 @@ from mmgroup.structures.qs_matrix import qstate_pauli_vector_exp
 
 
 def rand_unitary_matrix(n, scalar = True):
-    m = qstate_unit_matrix(n)
+    m = qs_unit_matrix(n)
     e = randint(-16,16) if scalar else 0
     m.mul_scalar(e, randint(0,7))
     if n == 0:
@@ -55,7 +55,7 @@ def rand_pauli_vectors(n, length):
 
 def create_conjugate_data():
     yield rand_unitary_matrix(0), [0,1,2,3]
-    yield qstate_unit_matrix(1), [0,1,2,3]
+    yield qs_unit_matrix(1), [0,1,2,3]
     
     for n in range(1, 13):
         for i in range(10):
@@ -66,7 +66,7 @@ def create_conjugate_data():
 
 
 #####################################################################
-# Test method qstate12_bit_matrix_t()
+# Test method pauli_conugate()
 #####################################################################
 
 
@@ -76,7 +76,7 @@ def test_pauli_conjugate(verbose = 0):
     """Test the conjugation of Pauli matrix with unitary matrix"""
     for ntest, (m, v) in enumerate(create_conjugate_data()):
         n = m.shape[0]
-        p = [qstate_pauli_matrix(n, x) for x in v]
+        p = [qs_pauli_matrix(n, x) for x in v]
         pv = [x.pauli_vector() for x in p]
         ok = pv == v
         if verbose or not ok:
@@ -94,7 +94,7 @@ def test_pauli_conjugate(verbose = 0):
                     err = "Error in recomputation of Pauli vector"
                     raise ValueError(err)
         mi = m.inv()
-        assert m @ mi == qstate_unit_matrix(n), (str(m), str(mi), str(m@mi))
+        assert m @ mi == qs_unit_matrix(n), (str(m), str(mi), str(m@mi))
 
         w = m.pauli_conjugate(v)
         w_ref = [ (mi @ x @ m).pauli_vector() for x in p]
@@ -127,11 +127,11 @@ def create_pauli_vectors():
 @pytest.mark.qstate
 def test_pauli_multiplication(verbose = 0):
     for ntest, (n, v1, v2) in enumerate(create_pauli_vectors()):
-        p1 = qstate_pauli_matrix(n, v1)
-        p2 = qstate_pauli_matrix(n, v2)
+        p1 = qs_pauli_matrix(n, v1)
+        p2 = qs_pauli_matrix(n, v2)
         # Check product v1 * v2
-        v3 = qstate_pauli_vector_mul(n, v1, v2)
-        p3 = qstate_pauli_matrix(n, v3)
+        v3 = pauli_vector_mul(n, v1, v2)
+        p3 = qs_pauli_matrix(n, v3)
         v3_ref = (p1 @ p2).pauli_vector()
         ok = v3 == v3_ref
         if verbose or not ok:
@@ -146,9 +146,9 @@ def test_pauli_multiplication(verbose = 0):
                 err = "Pauli vector multiplication failed"
                 raise ValueError(err)
         # Check powers of v1
-        p_e_list = [qstate_unit_matrix(n), p1, p1 @ p1, p1.H]
+        p_e_list = [qs_unit_matrix(n), p1, p1 @ p1, p1.H]
         v_e_ref_list = [m.pauli_vector() for m in p_e_list]
-        v_e_list = [qstate_pauli_vector_exp(n, v1, e) for e in range(4)]
+        v_e_list = [pauli_vector_exp(n, v1, e) for e in range(4)]
         ok = v_e_list == v_e_ref_list
         if verbose or not ok:
             print("v1 = ", hex(v1))
@@ -165,4 +165,61 @@ def test_pauli_multiplication(verbose = 0):
 
 
 
+#####################################################################
+# Test matrix exponetiation and order computation
+#####################################################################
 
+
+def create_exp_data():
+    yield qs_unit_matrix(4), -3
+    for n in range(1, 13):
+        for i in range(10):
+            m = rand_unitary_matrix(n)
+            m.mul_scalar(randint(-2, 2))
+            e = randint(-10000, 10000)
+            yield m, e
+   
+
+
+def ref_power(m, e):
+    if e > 1:
+        m1 = ref_power(m, e >> 1)
+        m1 = m1 @ m1
+        return m1 @ m  if e & 1 else m1 
+    if e == 1:
+        return m
+    if e == 0:
+        return qs_unit_matrix(m.shape[0])
+    if e < 0:
+        mi = m.inv()
+        assert m @ mi == qs_unit_matrix(m.shape[0])
+        return  ref_power(mi, -e)
+    
+
+
+@pytest.mark.qstate
+def test_matrix_power(verbose = 0):
+    MAX_ORDER = (2**8-1)*(2**6-1)*2**10
+    """Test the conjugation of Pauli matrix with unitary matrix"""
+    for ntest, (m, e) in enumerate(create_exp_data()):
+        me = m.power(e)
+        me_ref = ref_power(m, e)
+        ok = me == me_ref
+        if verbose or not ok:
+            mm = m.copy()
+            print("\nTest %d: exponent = %d, " % (ntest, e))
+            print("m =", m.reduce())
+            print("Result of exponentiation:", me_ref)
+            if not ok:
+                print("Obtained:", me)
+                raise ValueError("Matrix exponentiation failed")
+        nqb = m.shape[0]
+        m.mul_scalar(-m.lb_norm2())
+        assert m.H == m.inv() 
+        if nqb > 4:
+            continue
+        order = m.order(MAX_ORDER)
+        if verbose:
+            s = print("Scaled matrix m has order %d" % order)
+        assert m.power(order) == qs_unit_matrix(m.shape[0])
+                

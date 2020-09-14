@@ -13,6 +13,7 @@ from random import randint
 
 import numpy as np
 from mmgroup.clifford12 import QState12, as_qstate12 
+from mmgroup.clifford12 import qstate12_column_vector 
 from mmgroup.clifford12 import qstate12_unit_matrix 
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
 from mmgroup.clifford12 import qstate12_row_monomial_matrix
@@ -125,6 +126,7 @@ class QStateMatrix(QState12):
                 if data is None or isinstance(data, Iterable):
                     super(QStateMatrix, self).__init__(n, data, mode)
                 elif isinstance(data, Integral):
+                    raise ValueError("WTF")
                     if rows * cols == 0:
                         super(QStateMatrix, self).__init__(n, data)
                     elif rows == cols and data == 1:
@@ -300,8 +302,62 @@ class QStateMatrix(QState12):
         Raise ValueError if matrix is not invertible.
         """
         return self.copy()._mat_inv()
-        
 
+    def power(self, e):
+        if isinstance(e, Integral):
+            if e > 1:
+                mask = 1 << (e.bit_length() - 2)
+                acc = self.copy()
+                while mask:
+                    acc._matmul(acc)
+                    if (e & mask):
+                        acc._matmul(self)
+                    mask >>= 1
+                return acc
+            elif e >= 0:
+                nqb = self.shape[0]
+                if nqb == self.shape[1]:
+                    return self.reduce() if e else qs_unit_matrix(nqb)
+                self @ self  # raise shape error
+            else:
+                return self.inv().power(-e)
+        elif isinstance(e, QStateMatrix):
+            return e.inv() @ self @ e
+        else:
+            err = "Illegal exponent type for QStateMatrix"
+            raise TypeError(err)
+
+
+    def order(self, max_order):
+        def as_tuple(matrix):
+             return tuple(matrix.data) + matrix.factor
+        nqb = self.shape[0]
+        if not self.lb_rank() == nqb == self.shape[1]:
+            err = "QStateMatrix object is not invertible"
+            raise ValueError(err)       
+        if self.lb_norm2():
+            err = "QStateMatrix object has infinite order"
+            raise ValueError(err)
+        unit = qs_unit_matrix(nqb)
+        d = {as_tuple(unit):0}
+        n = int(math.sqrt(max_order)) + 2
+        m = self.copy()
+        for i in range(1, n):
+            if m == unit:
+                return i
+            d[as_tuple(m)] = i 
+            m._matmul(self)
+        m = m.inv()
+        acc = m.copy()
+        for i in range(1, n):
+            t = as_tuple(acc)
+            if t in d:
+                return i * n + d[t]
+            acc._matmul(m)
+        err = "Order of QStateMatrix object not found" 
+        raise ValueError(err)
+
+     
     def pauli_vector(self):
         try:
             return super(QStateMatrix,self).pauli_vector()
@@ -311,9 +367,8 @@ class QStateMatrix(QState12):
             raise            
             
     def __matmul__(self, other):
-        p1, p2 = self.copy(), other.copy()
         try:
-            return p1._matmul(p2)
+            return self.copy()._matmul(other)
         except ValueError:
             err = "Multiplying QStateMatrix objects of shape %s and %s"
             if isinstance(other, QStateMatrix):
@@ -337,7 +392,7 @@ class QStateMatrix(QState12):
                 return p1
             else:
                 err = "QStateMatrix instances must have same shape"
-                raise ValueError
+                raise ValueError(err)
         else:
             err = "Byte type for multiplication with QStateMatrix"
             raise TypeError(err)
@@ -387,18 +442,10 @@ class QStateMatrix(QState12):
         return c[0]
 
     def __str__(self):
-        return format_state(self)
+        return _format_state(self)
 
 
 
-####################################################################
-# Creating a random a QStateMatrix object
-####################################################################
-
-def rand_qs_matrix(rows, cols, data_rows):
-    limit = (1 << (rows  + cols + data_rows)) - 1 
-    data = [randint(0, limit) for i in range(data_rows)]
-    return QStateMatrix(rows, cols, data, mode = 1)
 
 ####################################################################
 # Formatting a QStateMatrix object
@@ -409,7 +456,7 @@ PHASE = [ ("",""),  (""," * (1+1j)"),  (""," * 1j"), ("-"," * (1-1j)"),
           ("-",""), ("-"," * (1+1j)"), ("-"," * 1j"), (""," * (1-1j)"), 
 ]
 
-def format_scalar(e, phase):
+def _format_scalar(e, phase):
     if (phase & 1): e -= 1
     prefix, suffix = PHASE[phase]
     if 0 <= e <= 12 and not e & 1:
@@ -453,7 +500,7 @@ def binary_q(n, start, length, pos):
     return s
 
                       
-def format_data(data, rows, cols, reduced = False):
+def _format_data(data, rows, cols, reduced = False):
     s = ""
     nrows = len(data)
     if len(data) < 2 and  rows + cols == 0:
@@ -480,19 +527,19 @@ STATE_TYPE = { (0,0) : ("QState scalar"),
 }    
         
     
-def format_state(q):
+def _format_state(q):
     """Return  a ``QStateMatrix`` object as a string."""
     rows, cols = q.shape
     try:
         data = q.data
     except ValueError:
         print("\nError: Bad instance of class QStateMatrix:\n") 
-        print(format_state_raw(q))        
+        print(_format_state_raw(q))        
         raise    
         
     e = q.factor
-    str_e = format_scalar(*e) if len (data) else "0"
-    str_data = format_data(data, rows, cols, reduced = False)   
+    str_e = _format_scalar(*e) if len (data) else "0"
+    str_data = _format_data(data, rows, cols, reduced = False)   
     qtype = STATE_TYPE[bool(rows), bool(cols)]
     s = "<%s %s" % (qtype, str_e)
     if len(str_data):
@@ -500,7 +547,7 @@ def format_state(q):
     s += ">\n"                  
     return s
 
-def format_state_raw(q):
+def _format_state_raw(q):
     s = ("QStateMatrix, shape = %s, factor = %s, nrows = %s, cols = %s\n"
         % (q.shape, q.factor, q.nrows, q.ncols))
     s += "data:\n"
@@ -575,6 +622,94 @@ def complex_to_qs_scalar(x):
     err = "Cannot convert number to factor for QStateMatrix"
     raise ValueError(err)    
 
+
+    
+####################################################################
+# Creating a random a QStateMatrix object
+####################################################################
+
+def qs_column_vector(length, data, mode = 0):
+    if isinstance(length, Integral):
+        if data is None or isinstance(data, Iterable):
+            return QStateMatrix(length, 0, [data], mode)
+        elif isinstance(data, Integral):
+            m = QStateMatrix(length, 0)
+            return qstate12_column_vector(m, length, data)
+        else:
+            err = "Bad data type for  QStateMatrix"
+            raise TypeError(err) 
+    elif isinstance(length, (QState12, QStateMatrix)):
+        m = (QStateMatrix(length, 0))
+        return m.reshape(-1,0)
+    else:
+        err = "Illegal source type for QStateMatrix"
+        raise TypeError(err) 
+
+def qs_row_vector(length, data, mode = 0):
+    v = qs_column_vector(length, data, mode)
+    v = v.reshape(0, -1)
+    return v 
+
+def qs_scalar(c = 1):
+    sc = QStateMatrix(0, 0, [1])
+    return c * sc
+
+def qs_unit_matrix(nqb):
+    qs = QStateMatrix(nqb, nqb) 
+    qstate12_unit_matrix(qs, nqb)
+    return qs
+    
+def qs_rand_matrix(rows, cols, data_rows):
+    limit = (1 << (rows  + cols + data_rows)) - 1 
+    data = [randint(0, limit) for i in range(data_rows)]
+    return QStateMatrix(rows, cols, data, mode = 1)
+          
+def qs_column_monomial_matrix(data):
+    nqb = len(data) - 1
+    qs = QStateMatrix(nqb, nqb) 
+    qstate12_column_monomial_matrix(qs, nqb, data)
+    return qs
+    
+def qs_row_monomial_matrix(data):
+    nqb = len(data) - 1
+    qs = QStateMatrix(nqb, nqb) 
+    qstate12_row_monomial_matrix(qs, nqb, data)
+    return qs
+
+
+def qs_pauli_matrix(nqb, v):
+    qs = QStateMatrix(nqb, nqb)
+    qstate12_pauli_matrix(qs, nqb, v)    
+    return qs
+    
+def qs_ctrl_not_matrix(nqb, vc, v):
+    """Return Transformation matrix for ctrl-not gate
+    
+    ``nqb`` is the rank of the matrix.
+    TODO: ``vc, v`` yet to be documented.
+
+    """
+    qs = qs_unit_matrix(nqb)
+    mask = (1 << nqb) - 1
+    qs.gate_ctrl_not(vc & mask, v & mask) 
+    return qs.reduce()    
+
+def qs_phi_matrix(nqb, v, phi):
+    qs = qs_unit_matrix(nqb)
+    qs.gate_phi(v << nqb, phi) 
+    return qs    
+
+def qs_ctrl_phi_matrix(nqb, v1, v2):
+    qs = qs_unit_matrix(nqb)
+    qs.gate_ctrl_phi(v1 << nqb, v2) 
+    return qs    
+
+def qs_hadamard_matrix(nqb, v):
+    qs = qs_unit_matrix(nqb)
+    qs.gate_h(v)    
+    return qs.reduce()
+
+
 ####################################################################
 # Some wrappers
 ####################################################################
@@ -582,59 +717,10 @@ def complex_to_qs_scalar(x):
     
 def flat_product(a, b, nqb, nc):
     return a.copy()._qstate12_product(b.copy(), nqb, nc)
-    
-        
-def qstate_column_monomial_matrix(data):
-    nqb = len(data) - 1
-    qs = QStateMatrix(nqb, nqb, 1) 
-    qstate12_column_monomial_matrix(qs, nqb, data)
-    return qs
-    
-def qstate_row_monomial_matrix(data):
-    nqb = len(data) - 1
-    qs = QStateMatrix(nqb, nqb) 
-    qstate12_row_monomial_matrix(qs, nqb, data)
-    return qs
 
-def qstate_unit_matrix(nqb):
-    qs = QStateMatrix(nqb, nqb) 
-    qstate12_unit_matrix(qs, nqb)
-    return qs
 
-def qstate_pauli_matrix(nqb, v):
-    qs = QStateMatrix(nqb, nqb)
-    qstate12_pauli_matrix(qs, nqb, v)    
-    return qs
-    
-def qstate_ctrl_not_matrix(nqb, vc, v):
-    """Return Transformation matrix for ctrl-not gate
-    
-    ``nqb`` is the rank of the matrix.
-    TODO: ``vc, v`` yet to be documented.
-
-    """
-    qs = qstate_unit_matrix(nqb)
-    mask = (1 << nqb) - 1
-    qs.gate_ctrl_not(vc & mask, v & mask) 
-    return qs.reduce()    
-
-def qstate_phi_matrix(nqb, v, phi):
-    qs = qstate_unit_matrix(nqb)
-    qs.gate_phi(v << nqb, phi) 
-    return qs    
-
-def qstate_ctrl_phi_matrix(nqb, v1, v2):
-    qs = qstate_unit_matrix(nqb)
-    qs.gate_ctrl_phi(v1 << nqb, v2) 
-    return qs    
-
-def qstate_hadamard_matrix(nqb, v):
-    qs = QStateMatrix(nqb, nqb, 1)
-    qs.gate_h(v)    
-    return qs.reduce()
-
-def qstate_pauli_vector_mul(nqb, v1, v2):
+def pauli_vector_mul(nqb, v1, v2):
     return qstate12_pauli_vector_mul(nqb, v1, v2)
 
-def qstate_pauli_vector_exp(nqb, v, e):
+def pauli_vector_exp(nqb, v, e):
     return qstate12_pauli_vector_exp(nqb, v, e)

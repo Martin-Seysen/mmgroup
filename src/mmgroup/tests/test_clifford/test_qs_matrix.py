@@ -10,17 +10,20 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import qstate_column_monomial_matrix
-from mmgroup.structures.qs_matrix import qstate_row_monomial_matrix
-
+from mmgroup.structures.qs_matrix import QStateMatrix
+from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
+from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
+from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
+from mmgroup.structures.qs_matrix import qs_scalar
+from mmgroup.structures.qs_matrix import qs_row_vector
+from mmgroup.structures.qs_matrix import qs_column_vector
 
 #####################################################################
 # Convert matrix of type QStateMatrix to a complex matrix
 #####################################################################
 
 def eval_A_Q(ncols, data, v):
-    """Auxiliary function for function ``slow_complex``.
+    r"""Auxiliary function for function ``slow_complex``.
     
     Evaluate parts ``A``and ``Q`` of a matrix for a vector ``v``.
     
@@ -222,7 +225,7 @@ def check_complex(m):
 
 
 #####################################################################
-# Create ranom indices
+# Create radnom indices
 #####################################################################
 
 def random_slice(length):
@@ -244,11 +247,19 @@ def random_slice(length):
 # Display and check some matrices
 #####################################################################
 
+
+qs_vector_data = [
+    (qs_scalar, (1,), 1),  
+    (qs_scalar, (1,), -1j * 0.5**3),
+    (qs_column_vector, (3, 5),  0.5**3 * (-1j)),
+    (qs_row_vector, (6, 25),  0.5**3 * (-1+1j)),
+]
+
 qs_matrix_data = [
-     (0,0, (1,0), []),
-     (0,0, (-3,6), 0),
-     (3,0, (-3,5), 5),
-     (0,6, (9,2), 25),
+     #(0,0, (1,0), []),
+     #(0,0, (-3,6), 0),
+     #(3,0, (-3,5), 5),
+     #(0,6, (9,2), 25),
      (3,1, (1,0), []),
      (2, 2, (0,0), [0b110_10_01, 0b101_01_11, 0b011_01_00]),
      (2, 0, (0,0), [0b000_10, 0b010_01, 0b100_01]),
@@ -257,19 +268,21 @@ qs_matrix_data = [
 
 def create_display_testvectors():
     """yield instances of class ``QStateMatrix`` for tests """
+    for f, par, factor in qs_vector_data:
+        yield f(*par) * factor
     for rows, cols, factor, data in qs_matrix_data:
         m = QStateMatrix(rows, cols, data)
         m.mul_scalar(*factor) 
         yield m
-    yield QStateMatrix(4, 4,  1) 
+    yield qs_unit_matrix(4) 
     for i in range(20):
-        yield rand_qs_matrix(2, 0, 3)
+        yield qs_rand_matrix(2, 0, 3)
     for i in range(20):
-        yield rand_qs_matrix(1, 0, 2)
+        yield qs_rand_matrix(1, 0, 2)
     for rows in range(6):
         for cols in range(5):
             for nr in [1,2] + list(range(rows+cols, rows+cols+3)):
-                m = rand_qs_matrix(rows, cols, nr)
+                m = qs_rand_matrix(rows, cols, nr)
                 m.mul_scalar(randint(-8, 8), randint(0,7))  
                 yield m                
                 
@@ -283,18 +296,19 @@ def test_qs_matrix(verbose = 0):
     complex matrix and the echelonization and the reduction of 
     an instance of class ``QStateMatrix``.
     """
+    display_len = len(qs_vector_data) + len(qs_matrix_data)
     for ntest, m in enumerate(create_display_testvectors()):
-        if verbose or ntest < len(qs_matrix_data):
+        if verbose or ntest < display_len:
             print("TEST %s" % (ntest+1))
             print(m)
         check_complex(m)
-        m2 = QStateMatrix(m).echelon()
+        m2 = m.copy().echelon()
         check_echelon(m2)
         check_eq_qstate(m,m2, "Echelonized")
         if verbose:
             print("Echelonized")
             print(m2)
-        m2 = QStateMatrix(m).reduce()
+        m2 = m.copy().reduce()
         check_echelon(m2, reduced = True)
         check_eq_qstate(m,m2, "Reduced")
         if verbose: 
@@ -422,7 +436,7 @@ def create_monomial_testvectors():
 def test_monomial(verbose = 0):
     for ntest, data in enumerate(create_monomial_testvectors()):
         nqb = len(data) - 1
-        m = qstate_column_monomial_matrix(data)
+        m = qs_column_monomial_matrix(data)
         if verbose:
             print("TEST %s, nqb = %d" % (ntest+1, nqb))
             s_data =  a_binary(data, 2*nqb)
@@ -450,8 +464,8 @@ def test_monomial(verbose = 0):
             k = w[0]
             value = w[1]
             assert c[j,k] == value, (nqb, j, k, c[j,k], value, res)
-        # Test qstate_rown_monomial_matrix(data)
-        m_r = qstate_row_monomial_matrix(data)
+        # Test qs_rown_monomial_matrix(data)
+        m_r = qs_row_monomial_matrix(data)
         #print("m_r =", m_r, "m_c=", m ," m_T =", m.T)      
         assert m_r == m.T, (str(m_r), str(m.T))
 

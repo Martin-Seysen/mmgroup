@@ -10,7 +10,7 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
+from mmgroup.structures.qs_matrix import QStateMatrix, qs_rand_matrix
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
@@ -34,7 +34,7 @@ def rot_testdata():
                 while n0 + nrot > cols:
                     n0, nrot = randint(0, cols), randint(0, cols)
                 rot = randint(-nrot, nrot)
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 m.mul_scalar(randint(-8, 8), randint(0,7))  
                 yield m, rot, nrot, n0
 
@@ -85,7 +85,7 @@ def xch_bits_testdata():
     for cols in list(range(6)):
         for r in range(cols+3):
             for i in range(3):
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 m.mul_scalar(randint(-8, 8), randint(0,7))  
                 if cols == 0:
                     yield m, 0, 0
@@ -142,7 +142,7 @@ def extend_testdata():
     for cols in list(range(6)):
         for r in range(cols+3):
             for i in range(3):
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 m.mul_scalar(randint(-8, 8), randint(0,7)) 
                 j = randint(0, cols)
                 nqb = randint(0, 5) 
@@ -208,7 +208,7 @@ def restrict_testdata():
     for cols in list(range(6)):
         for r in range(cols+3):
             for i in range(3):
-                m = rand_qs_matrix(0, cols, r)
+                m = qs_rand_matrix(0, cols, r)
                 m.mul_scalar(randint(-8, 8), randint(0,7)) 
                 j = randint(0, cols)
                 nqb = randint(0, cols - j) 

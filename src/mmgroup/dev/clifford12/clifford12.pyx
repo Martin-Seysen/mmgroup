@@ -101,8 +101,6 @@ cdef class QState12(object):
             ncols = source
             if data is None:
                 chk_qstate12(cl.qstate12_zero(&self.qs, ncols))
-            elif isinstance(data, Integral):
-                chk_qstate12(cl.qstate12_vector_state(&self.qs, ncols, data))
             elif isinstance(data, Iterable):
                 nrows = len(data)
                 for i in range(min(nrows, QSTATE12_MAXROWS)):
@@ -573,7 +571,7 @@ cdef class QState12(object):
         """Perform a matrix multiplication.
         
         We replace ``self`` by the matrix product ``self @ other``.
-        ``other`` is destroyed.        
+        ``other`` is not changed.        
         """
         cdef p_qstate12_type pqs2 = pqs12(QState12(other))
         chk_qstate12(cl.qstate12_matmul(&self.qs, pqs2))
@@ -633,8 +631,8 @@ cdef class QState12(object):
         is an auxliary function for function ``qstate12_product``.    
         """
         cdef p_qstate12_type pqs2 = pqs12(other)
-        chk_qstate12(cl.qstate12_prep_mul(&self.qs, pqs2, nqb))
-        return self, other
+        row_pos = chk_qstate12(cl.qstate12_prep_mul(&self.qs, pqs2, nqb))
+        return row_pos, self, other
         
 
     #########################################################################
@@ -717,6 +715,13 @@ def qstate12_unit_matrix(QState12 qs, uint32_t n):
     cdef p_qstate12_type m_pqs = pqs12(qs)
     chk_qstate12(cl.qstate12_unit_matrix(m_pqs, n))
     return qs
+
+def qstate12_column_vector(QState12 qs, uint32_t n, uint64_t v):
+    """Change state qs to a  2**n unit column vector"""
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    chk_qstate12(cl.qstate12_vector_state(m_pqs, n, v))
+    return qs
+
 
 def qstate12_pauli_matrix(QState12 qs, uint32_t n, uint64_t v):
     """Change state qs to a  2**n times 2**n Pauli matrix"""
