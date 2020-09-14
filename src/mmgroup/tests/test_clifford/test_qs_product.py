@@ -11,18 +11,21 @@ import numpy as np
 import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import prep_mul, flat_product
+from mmgroup.structures.qs_matrix import flat_product
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
-from mmgroup.clifford12 import QState12, qstate12_product
-from mmgroup.clifford12 import qstate12_prep_mul
+from mmgroup.clifford12 import QState12
 
 #####################################################################
 # 
 #####################################################################
 
 
+def prep_mul(m1, m2, nqb):
+    m1, m2 = m1.copy(), m2.copy()
+    m1._qstate12_prep_mul(m2, nqb)
+    return m1, m2            
 
 
 qs_matrix_data = [
@@ -88,7 +91,8 @@ def qs_complex_prod(a, b, nqb, nc):
     a1 = a.reshape((-1, 1 << nb, 1 << nc))
     b1 = b.reshape((-1, 1 << nb, 1 << nc))
     prod = np.einsum("ikl,jkl->ijk", a1, b1)
-    return np.ravel(prod)
+    prod = prod.reshape((-1,1))
+    return prod
 
 
 def check_eq_cols(qs1, qs2, nqb):
@@ -110,7 +114,7 @@ def check_eq_cols(qs1, qs2, nqb):
     assert s == 0
    
 
-@pytest.mark.qstate
+@pytest.mark.qstate0
 def test_qs_prep_mul(verbose = 0):
     """Test function ``qstate12_prep_mul``. """
     for ntest, (m1, m2, nqb) in enumerate(create_product_testvectors()):
@@ -150,7 +154,7 @@ def test_qs_product(verbose = 0):
             print("nqb =", nqb, " nc =", nc)
             print("Output states")
         try:
-            err = "Execution of function flat_product() has failed"
+            err = "Execution of function qstate12_product() has failed"
             m3 = flat_product(m1, m2, nqb, nc)
         except ValueError:
             print("\n" + err +"\nInput states:")
@@ -162,7 +166,7 @@ def test_qs_product(verbose = 0):
             print(QStateMatrix(pm1)); print(QStateMatrix(pm2))            
             print("\nOutput states:")
             qm1, qm2 = QState12(m1), QState12(m2)
-            qstate12_product(qm1, qm2, nqb, nc)
+            qm1.qstate12_product(qm2, nqb, nc)
             print(QStateMatrix(qm1)); print(QStateMatrix(qm2)); 
             raise      
         c1, c2, c3 = m1.complex(), m2.complex(), m3.complex()

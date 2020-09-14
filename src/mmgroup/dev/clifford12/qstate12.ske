@@ -15,8 +15,8 @@
 // -7: Bad row index for bit matrix 
 // -8: Internal parameter error (Usually a bad row is requested)
 // -9: Overflow in scalar factor
-// -99: Any other fatal error
-
+// -10: A qubit in a ctrl-not gate cannot control itself
+// -11: Shape mismtch in comparing matrices
 
 
 /*************************************************************************
@@ -45,6 +45,7 @@ typedef struct {
     uint32_t ncols;
     int32_t  factor;
     uint64_t *data;
+    uint32_t shape1;
 } qstate12_type;
 
 
@@ -95,7 +96,8 @@ typedef struct {
 // Return True if that object is errorneous.
 #define bad_state(pqs) \
     ((pqs)->nrows + (pqs)->ncols > MAXCOLS  \
-      || (pqs)->nrows  > (pqs)->maxrows)
+      || (pqs)->nrows  > (pqs)->maxrows \
+      || (pqs)->shape1 > (pqs)->ncols)
 
    
 
@@ -215,6 +217,7 @@ int32_t qstate12_set_mem(qstate12_type *pqs, uint64_t *data, uint32_t size)
     pqs->nrows = 0;
     pqs->ncols = 0;
     pqs->factor = 0;
+    pqs->shape1 = 0;
     return 0;
 }
 
@@ -225,11 +228,12 @@ int32_t qstate12_set_mem(qstate12_type *pqs, uint64_t *data, uint32_t size)
 
 // %%EXPORT p
 int32_t qstate12_zero(qstate12_type *pqs, uint32_t nqb) 
-// Set state *pqs to zero, for nqb qubits.
+// Set state *pqs to zero row vector, for nqb qubits.
 {  
     pqs->nrows = 0;
     pqs->factor = 0;
     pqs->ncols = nqb;
+    pqs->shape1 = 0;
     if (nqb <=  MAXCOLS) return 0;
     pqs->ncols = 0;
     return -4;
@@ -242,13 +246,14 @@ int32_t qstate12_zero(qstate12_type *pqs, uint32_t nqb)
 
 // %%EXPORT p
 int32_t qstate12_vector_state(qstate12_type *pqs, uint32_t nqb, uint64_t v)
-// Set state *pqs to the unit vector |v>,  for nqb qubits.
+// Set state *pqs to the unit row vector <v|,  for nqb qubits.
 // Thus for the state qs referred by pqs we have qs(x) = 1 if x is 
 // equal to v and qs(x) = 0 otherwise. 
 {
     pqs->nrows = 1;
     pqs->ncols = nqb;
     pqs->factor = 0;
+    pqs->shape1 = 0;
     pqs->data[0] = v & ((ONE << nqb) - 1);
     if (nqb + 1 <=  MAXCOLS) return 0;
     pqs->ncols = pqs->nrows = 0;
@@ -273,6 +278,7 @@ int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t 
     pqs->nrows = nrows;
     pqs->ncols = nqb;
     pqs->factor = 0;
+    pqs->shape1 = 0;
     mask = ((ONE << nqb) << nrows) - 1;
     for (i = 0; i < nrows; ++i) m[i] = data[i] & mask;
     mask = ONE << nqb;
@@ -312,6 +318,7 @@ int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2)
     pqs2->nrows = pqs1->nrows;
     pqs2->factor = pqs1->factor;
     pqs2->ncols = pqs1->ncols;
+    pqs2->shape1 = pqs1->shape1;
     memcpy(pqs2->data, pqs1->data, pqs1->nrows * sizeof(uint64_t));
     return 0;
 }
@@ -368,7 +375,8 @@ int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2)
     uint64_t mask, diff = 0, *m1 = pqs1->data, *m2 = pqs2->data;
     uint_fast32_t i;
     if (bad_state(pqs1) || bad_state(pqs2)) return -2;
-    if (pqs1->ncols != pqs2->ncols) return 0;
+    if (pqs1->ncols != pqs2->ncols) return -11;
+    if (pqs1->shape1 != pqs2->shape1) return -11;
     if ((pqs1->nrows | pqs2->nrows) == 0) return 1;
     if (((pqs1->factor ^ pqs2->factor) & FACTOR_MASK) |
         (pqs1->nrows ^ pqs2->nrows)) return 0;
@@ -801,6 +809,7 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // So we increment ``pqs->ncols`` by ``nqb``.
 //
 // If the input is reduced then the result is also reduced.
+// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     uint32_t k;
     uint64_t *m = pqs->data, mask;
@@ -810,6 +819,7 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
     if (pqs->ncols + nqb + pqs->nrows > MAXCOLS) return -4;
     mask = (ONE << j) - 1;
     pqs->ncols += nqb;
+    pqs->shape1 = 0;
 
     for (k = 0; k < pqs->nrows; ++k) {
          m[k] = (m[k] & mask) | ((m[k] & ~mask) << nqb);
@@ -834,6 +844,7 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // So we increment ``pqs->ncols`` by ``nqb``.
 //
 // The result is not reduced.
+// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
 
     uint64_t *m = pqs->data, mask;
@@ -866,6 +877,7 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // So we decrement ``pqs->ncols`` by ``nqb``.
 //
 // The output is not reduced.
+// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     uint32_t k;
     uint64_t *m = pqs->data, mask = (ONE << j) - 1;
@@ -873,6 +885,7 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
     if (bad_state(pqs)) return -2;
     if (nqb + j > pqs->ncols) return -3;
     pqs->ncols -= nqb;
+    pqs->shape1 = 0;
     for (k = 0; k < pqs->nrows; ++k) {
         m[k] = (m[k] & mask) | ((m[k] >> nqb) & ~mask);
     }    
@@ -933,6 +946,7 @@ int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // So we decrement ``pqs->ncols`` by ``nqb``.
 //
 // The output is not reduced.
+// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     int32_t res;
     if ((res = qstate12_restrict_zero(pqs, j, nqb)) < 0) return res;
@@ -965,24 +979,29 @@ int32_t qstate12_gate_not(qstate12_type *pqs, uint64_t v)
     return 0;
 }
 
-
 // %%EXPORT p
 int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
 // Change the state ``qs`` referred by ``pqs`` to a state ``qs'``
 // with ``qs'(x) = qs(x (+) <vc,x> * v)``  where ``'(+)'`` is 
 // the bitwise  xor operation, and ``<.,.>`` is the scalar 
-// product of bit vectors.
-// The result is not reduced.
+// product of bit vectors. The result is not reduced.
+// The scalar product of the bit vectors ``j`` and ``jc`` must
+// be zero. Otherwise the ``ctrl not`` operation is not
+// unitary.
+//
 // Computing ``qstate12_gate_ctrl_not(pqs, 1 << jc, 1 << j)``, 
 // for ``jc != j``, corresponds to applying a controlled not  
 // gate  to qubit ``j``  contolled by qubit ``jc``. . 
-// This operation is unitary if and only if the scalar
-// product of ``j`` and ``jc`` is zero.
 {
-    uint64_t *m = pqs->data, wc;
+    uint64_t *m = pqs->data, wc, x;
     uint_fast32_t i;
     int32_t res;
     v &= (ONE << pqs->ncols) - 1;
+    x = v & vc;
+    x ^= x >> 32; x ^= x >> 16; x ^= x >> 8; x ^= x >> 4;
+    x = (0x6996 >> (x & 0xf)) & 1;
+    if (x) return -10;
+
     if ((res = qstate12_mul_Av(pqs, vc, &wc)) < 0) return res;
 
     if (wc) for (i = 0; i < pqs->nrows; ++i) 
@@ -1176,7 +1195,7 @@ int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
 // Expand the f * qs where qs is the state referred by pqs to the 
 // array a, and reduce all entries of array a modulo p. Depending on 
 // the scalar factor in the state pqs, a number 1/2 or sqrt(2) modulo 
-// p must exist. 
+// p must exist. ``pqs->shape1`` isignored.
 // Caution: The function sets 2**pqs->ncols entries in the array pc!!
 {    
     uint64_t qf = 0;
@@ -1220,7 +1239,8 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 // Obtain complex entries of state vector ``qs`` referred by ``pqs``
 // Here ``v`` is an array of indices of length ``n``.
 // The values ``qs[v[i]], 0 <= i < n`` are stored in  
-// ``(pc[2*i], pc[2*i+1])`` as a complex number.
+// ``(pc[2*i], pc[2*i+1])`` as a complex number
+// ``pqs->shape1`` isignored.
 // Caution: The function sets 2*n entries in the array pc!!
 //
 // This function does not change the state. It uses function 

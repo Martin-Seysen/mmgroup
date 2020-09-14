@@ -90,6 +90,7 @@ def test_reduce_matrix(verbose = 0):
         if verbose:
             print("Reduced matrix, m1 =", m1)
             print("table", row_tab)
+            print("shape", m1.shape)
         if  m != m1:
             print("m reduced", m.copy().reduce())
             print("m1", m1.copy())
@@ -102,8 +103,8 @@ def test_reduce_matrix(verbose = 0):
         assert len(row_tab) == m1.nrows + m1.ncols
         d = m1.data
         imin = 0
-        fst_row = row_tab[m1.rows + m1.cols]
-        for j in range(m1.cols):
+        fst_row = row_tab[m1.ncols]
+        for j in range(m1.shape[1]):
             i =  row_tab[j]
             if i < 255: 
                 assert i == imin + 1
@@ -113,9 +114,9 @@ def test_reduce_matrix(verbose = 0):
                     print("m1", m1)
                     print("table", row_tab)
                     raise ValueError(err)
-        row_mask = bitrange_mask(m1.cols, m1.cols + m1.rows)
+        row_mask = bitrange_mask(m1.shape[1], m1.ncols)
         row_set = set(range(1, m1.nrows))
-        for j in range(m1.cols, m1.cols + m1.rows):
+        for j in range(m1.shape[1], m1.ncols):
             i =  row_tab[j]
             ok = True
             if i < fst_row:

@@ -14,18 +14,12 @@ from random import randint
 import numpy as np
 from mmgroup.clifford12 import QState12, as_qstate12 
 from mmgroup.clifford12 import qstate12_unit_matrix 
-from mmgroup.clifford12 import qstate12_mat_t 
-from mmgroup.clifford12 import qstate12_matmul, qstate12_prep_mul
-from mmgroup.clifford12 import qstate12_product
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
 from mmgroup.clifford12 import qstate12_row_monomial_matrix
-from mmgroup.clifford12 import qstate12_reduce_matrix
 from mmgroup.clifford12 import qstate12_pauli_matrix
 from mmgroup.clifford12 import error_string
 from mmgroup.clifford12 import qstate12_pauli_vector_mul
 from mmgroup.clifford12 import qstate12_pauli_vector_exp
-from mmgroup.clifford12 import qstate12_mat_lb_rank
-from mmgroup.clifford12 import qstate12_mat_inv
 
 class QStateMatrix(QState12):
     """This class models a quadratic state matrix
@@ -127,7 +121,7 @@ class QStateMatrix(QState12):
     def __init__(self, rows, cols = None, data = None, mode = 0):
         if isinstance(cols, Integral):
             if isinstance(rows, Integral):
-                self.rows, self.cols, n = rows, cols, rows + cols
+                n = rows + cols
                 if data is None or isinstance(data, Iterable):
                     super(QStateMatrix, self).__init__(n, data, mode)
                 elif isinstance(data, Integral):
@@ -138,13 +132,12 @@ class QStateMatrix(QState12):
                 else:
                     err = "Bad data type for  QStateMatrix"
                     raise TypeError(err) 
+                self._reshape(rows, cols)
         elif cols is None:
             source = rows
-            if isinstance(source, QStateMatrix):
-                self.rows, self.cols = source.rows, source.cols
+            if isinstance(source, QState12):
                 super(QStateMatrix, self).__init__(as_qstate12(source))
-            elif isinstance(source, QState12):
-                self.rows, self.cols = 0, source.ncols
+            elif isinstance(source, QStateMatrix):
                 super(QStateMatrix, self).__init__(as_qstate12(source))
             else:
                 err = "Illegal source type for QStateMatrix"
@@ -157,14 +150,6 @@ class QStateMatrix(QState12):
         """Return a copy of the matrix"""    
         return QStateMatrix(self)   
     
-    @property
-    def shape(self):
-        """Return the shape of the matrix as a pair ``(rows, cols)``
-        
-        Then the instance reprresents a ``2**rows`` times
-        ``2**cols`` quadratic state matrix.
-        """
-        return (self.rows, self.cols)  
 
 
     def reshape(self, shape = (), copy = True):
@@ -177,22 +162,14 @@ class QStateMatrix(QState12):
         the other value is calculated from the sum 
         ``self.shape[0] + self.shape[1]``. 
 
-        Shape defaults to ``(-1, 0)``.
+        Shape defaults to ``(0, -1)``.
         """  
         m = QStateMatrix(self) if copy else self
-        if isinstance(shape, Integral): 
-            shape = (shape,)
+        if isinstance(shape, int):
+            shape = (shape, -1)
         while len(shape) < 2:
-            shape += (-1 if min(shape) >= 0 else 0),
-        rows, cols = shape
-        if rows < 0:
-            rows = m.ncols - cols
-        if cols < 0:
-            cols = m.ncols - rows
-        if rows + cols != m.ncols or min(rows, cols) < 0:
-            err = "Bad shape for reshaping  QStateMatrix"
-            raise ValueError(err)
-        m.rows, m.cols = rows, cols
+            shape += (-1),
+        m._reshape(shape[0], shape[1])
         return m
         
     def conjugate(self, copy = True):
@@ -205,16 +182,7 @@ class QStateMatrix(QState12):
 
     conj = conjugate        
 
-    def transpose(self, copy = True):
-        """Return the transposed of the matrix
-        
-        Returns an instance of class ``QStateMatrix``.
-        """
-        m = QStateMatrix(self) if copy else self
-        qstate12_mat_t(m, m.cols) 
-        m.rows, m.cols = self.cols, self.rows
-        return m   
-        
+       
     def rot_bits(self, rot, nrot, n0 = 0, copy = True):    
         """Wrapper for corresponding function in class QState12"""
         m = QStateMatrix(self) if copy else self
@@ -234,7 +202,7 @@ class QStateMatrix(QState12):
         """
         m = QStateMatrix(self) if copy else self
         super(QStateMatrix, m).extend(j, nqb) 
-        m.reshape((0, m.ncols), copy = False)        
+        m._reshape(0, m.ncols)       
         return m   
 
     def extend_zero(self, j, nqb, copy = True):    
@@ -244,7 +212,7 @@ class QStateMatrix(QState12):
         """
         m = QStateMatrix(self) if copy else self
         super(QStateMatrix, m).extend_zero(j, nqb) 
-        m.reshape((0, m.ncols), copy = False)        
+        m._reshape(0, m.ncols)        
         return m   
 
     def restrict(self, j,nqb, copy = True):    
@@ -254,7 +222,7 @@ class QStateMatrix(QState12):
         """
         m = QStateMatrix(self) if copy else self
         super(QStateMatrix, m).restrict(j, nqb) 
-        m.reshape((0, m.ncols), copy = False)        
+        m._reshape(0, m.ncols)     
         return m   
 
     def restrict_zero(self, j, nqb, copy = True):    
@@ -264,7 +232,7 @@ class QStateMatrix(QState12):
         """
         m = QStateMatrix(self) if copy else self
         super(QStateMatrix, m).restrict_zero(j, nqb) 
-        m.reshape((0, m.ncols), copy = False)        
+        m._reshape(0, m.ncols)       
         return m   
 
     def sumup(self, j,nqb, copy = True):    
@@ -274,19 +242,19 @@ class QStateMatrix(QState12):
         """
         m = QStateMatrix(self) if copy else self
         super(QStateMatrix, m).sumup(j, nqb) 
-        m.reshape((0, m.ncols), copy = False)        
+        m._reshape(0, m.ncols)        
         return m   
 
 
     @property 
     def T(self):
         """Return transposed matrix as in numpy"""   
-        return self.transpose()
+        return self.copy().transpose()
 
     @property 
     def H(self):
         """Return conjugate transposed matrix as in numpy"""   
-        m = self.transpose()
+        m = self.copy().transpose()
         return super(QStateMatrix, m).conjugate()    
      
     def complex(self):
@@ -295,7 +263,7 @@ class QStateMatrix(QState12):
         ``m.complex()`` is equivalent to ```m[:,:]``.
         """
         a = super(QStateMatrix, self).complex()
-        a = a.reshape((1 << self.rows, 1 << self.cols)) 
+        a = a.reshape((1 << self.shape[0], 1 << self.shape[1])) 
         return a        
 
     def complex_unreduced(self):
@@ -308,32 +276,10 @@ class QStateMatrix(QState12):
         faster. This method does not reduce the matrix.
         """
         a = super(QStateMatrix, self).complex_unreduced()
-        a = a.reshape((1 << self.rows, 1 << self.cols)) 
+        a = a.reshape((1 << self.shape[0], 1 << self.shape[1])) 
         return a 
 
-    def reduce_matrix(self):
-        """TODO: yet to be docmented"""
-        return qstate12_reduce_matrix(self, self.shape[1]) 
-        
-    def pauli_vector(self):
-        """TODO: yet to be documented!!!"""
-        w = super(QStateMatrix, self).pauli_vector(self.shape[1])
-        return w 
-    
-    def pauli_conjugate(self, v):
-        """TODO: yet to be documented!!!"""
-        w = super(QStateMatrix, self).pauli_conjugate(
-           self.shape[1], v)
-        return w
-        
-
-    def lb_rank(self):
-        """Return binary logarithm of rank of matrix.
-        
-        Return -1 if matrix is zero.
-        """
-        return qstate12_mat_lb_rank(self, self.shape[1])
-        
+       
     def lb_norm2(self):    
         """Return binary logarithm of squared operator norm.
         
@@ -353,21 +299,27 @@ class QStateMatrix(QState12):
         Returns an instance of class ``QStateMatrix``.
         Raise ValueError if matrix is not invertible.
         """
-        m = self.copy()
-        qstate12_mat_inv(m,  m.shape[1])
-        return m
+        return self.copy()._mat_inv()
+        
 
+    def pauli_vector(self):
+        try:
+            return super(QStateMatrix,self).pauli_vector()
+        except ValueError:
+            err = "QStateMatrix object is not in the Pauli group"
+            print("\n%s:\n%s\n" % (err, str(self)))
+            raise            
+            
     def __matmul__(self, other):
-        r1, c1 = self.shape
-        r2, c2 = other.shape
-        if r2 != c1:
-            err = "Shape mismatch in QStateMatrix multiplication"
-            raise ValueError(err)
-        result = self.copy()
-        qstate12_matmul(result, other.copy(), c1)
-        result = QStateMatrix(result)
-        result.reshape((r1, c2), copy = False)
-        return result
+        p1, p2 = self.copy(), other.copy()
+        try:
+            return p1._matmul(p2)
+        except ValueError:
+            err = "Multiplying QStateMatrix objects of shape %s and %s"
+            if isinstance(other, QStateMatrix):
+                print("\n" + err % (self.shape, other.shape))
+            raise          
+
         
     
     def  __mul__(self, other):
@@ -379,9 +331,10 @@ class QStateMatrix(QState12):
                 return self.copy().mul_scalar(e, phi)
         elif isinstance(other, QStateMatrix):
             if self.shape == other.shape:
-                c = flat_product(self, other, self.ncols, 0)
-                c.reshape(self.shape, copy = False)
-                return c
+                p1, p2 = self.copy(), other.copy()
+                p1._qstate12_product(p2, self.ncols, 0)
+                p1._reshape(*self.shape)
+                return p1
             else:
                 err = "QStateMatrix instances must have same shape"
                 raise ValueError
@@ -403,6 +356,15 @@ class QStateMatrix(QState12):
 
     def __pos__(self):
         return self    
+        
+    def __eq__(self, other):
+        try:
+            return self._equal(other)
+        except ValueError:
+            if isinstance(other, QStateMatrix):
+                err = "Comparing QStateMatrix objects of shape %s and %s"
+                print("\n" + err % (self.shape, other.shape))
+            raise          
         
     def __getitem__(self, item):
         if not isinstance(item, tuple):
@@ -520,7 +482,7 @@ STATE_TYPE = { (0,0) : ("QState scalar"),
     
 def format_state(q):
     """Return  a ``QStateMatrix`` object as a string."""
-    rows, cols = q.rows, q.cols
+    rows, cols = q.shape
     try:
         data = q.data
     except ValueError:
@@ -617,20 +579,11 @@ def complex_to_qs_scalar(x):
 # Some wrappers
 ####################################################################
 
-def prep_mul(a, b, nqb = None):
-    if nqb is None and a.cols == b.cols:
-        nqb = a.cols
-    a, b = QState12(a), QState12(b)
-    qstate12_prep_mul(a, b, nqb)
-    return QStateMatrix(a), QStateMatrix(b)
-    
     
 def flat_product(a, b, nqb, nc):
-    a, b = QState12(a), QState12(b)
-    qstate12_product(a, b, nqb, nc)
-    return QStateMatrix(a)  
+    return a.copy()._qstate12_product(b.copy(), nqb, nc)
     
-    
+        
 def qstate_column_monomial_matrix(data):
     nqb = len(data) - 1
     qs = QStateMatrix(nqb, nqb, 1) 
@@ -639,34 +592,31 @@ def qstate_column_monomial_matrix(data):
     
 def qstate_row_monomial_matrix(data):
     nqb = len(data) - 1
-    qs = QStateMatrix(nqb, nqb, 1) 
+    qs = QStateMatrix(nqb, nqb) 
     qstate12_row_monomial_matrix(qs, nqb, data)
     return qs
 
 def qstate_unit_matrix(nqb):
-    qs = QStateMatrix(nqb, nqb, 1) 
+    qs = QStateMatrix(nqb, nqb) 
+    qstate12_unit_matrix(qs, nqb)
     return qs
 
 def qstate_pauli_matrix(nqb, v):
-    qs = QStateMatrix(nqb, nqb, 1)
+    qs = QStateMatrix(nqb, nqb)
     qstate12_pauli_matrix(qs, nqb, v)    
     return qs
     
-def qstate_ctrl_not_matrix(nqb, vc, v, left = 0):
+def qstate_ctrl_not_matrix(nqb, vc, v):
     """Return Transformation matrix for ctrl-not gate
     
     ``nqb`` is the rank of the matrix.
     TODO: ``vc, v`` yet to be documented.
 
-    If ``left`` is set then the matrix is for left multiplication
-    else the atrix is for right multiplication. This distinction
-    is relevant only  if the scalar product of ``vc`` and ``v``
-    is ``1``; then the returned matrix is singular.    
     """
     qs = qstate_unit_matrix(nqb)
     mask = (1 << nqb) - 1
     qs.gate_ctrl_not(vc & mask, v & mask) 
-    return qs.T.reduce() if left else qs.reduce()    
+    return qs.reduce()    
 
 def qstate_phi_matrix(nqb, v, phi):
     qs = qstate_unit_matrix(nqb)

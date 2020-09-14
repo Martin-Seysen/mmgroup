@@ -103,7 +103,8 @@ def slow_complex(m):
         index, q = eval_A_Q(ncols, data, v)
         a[index] += phases[q]
     # Change shape of array ``a`` as required
-    return a.reshape((1 << m.rows, 1 << m.cols))
+    rows, cols = m.shape
+    return a.reshape((1 << rows, 1 << cols))
 
 
 
@@ -437,9 +438,10 @@ def test_monomial(verbose = 0):
                 print("\n" + err + "\n")
             s_data =  a_binary(data, 2*nqb)
             print("data  = \n" +  s_data)
+            print("obtained:", m)
             if nqb <= 3:
-                print("obtained\n\n", c)
-            print("Shape of obtained matrix:", c.shape)
+                print("obtained matrix\n\n", c)
+            print("Shape of obtained matrix:", m.shape, c.shape)
             if error:
                 print("Max. absolute error:", np.amax(abs(s)))
                 raise ValueError(err)
@@ -449,5 +451,7 @@ def test_monomial(verbose = 0):
             value = w[1]
             assert c[j,k] == value, (nqb, j, k, c[j,k], value, res)
         # Test qstate_rown_monomial_matrix(data)
-        assert qstate_row_monomial_matrix(data) == m.T
+        m_r = qstate_row_monomial_matrix(data)
+        #print("m_r =", m_r, "m_c=", m ," m_T =", m.T)      
+        assert m_r == m.T, (str(m_r), str(m.T))
 

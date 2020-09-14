@@ -61,7 +61,7 @@ def test_rot(verbose = 0):
         c, c1 = m.complex().ravel(), m1.complex().ravel() 
         c1_ref = np.copy(c)
         for i, x in enumerate(c):
-            c1_ref[rot_index(i, m.cols, rot, nrot, n0)] = x
+            c1_ref[rot_index(i, m.ncols, rot, nrot, n0)] = x
         if verbose:
             print("output")
             print(m1)
@@ -116,7 +116,7 @@ def test_xch_bits(verbose = 0):
         c, c1 = m.complex().ravel(), m1.complex().ravel() 
         c1_ref = np.copy(c)
         for i, x in enumerate(c):
-            c1_ref[xch_bits_index(i, m.cols, sh, mask)] = x
+            c1_ref[xch_bits_index(i, m.ncols, sh, mask)] = x
         if verbose:
             print("output")
             print(m1)

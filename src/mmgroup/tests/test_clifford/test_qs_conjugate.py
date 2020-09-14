@@ -12,7 +12,6 @@ import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import binary
-from mmgroup.structures.qs_matrix import qstate12_reduce_matrix
 from mmgroup.structures.qs_matrix import qstate_pauli_matrix
 from mmgroup.structures.qs_matrix import qstate_unit_matrix
 from mmgroup.structures.qs_matrix import qstate_pauli_vector_mul
@@ -157,8 +156,8 @@ def test_pauli_multiplication(verbose = 0):
                 if ok:
                     print("v1 ** %d = %s" % (e, hex(v_ref)))
                 else:
-                    print("v1 ** %d = %s, obtained: %s" % 
-                         (e, hex(v_ref), hex(v_e_list[e])))
+                    print("v1 ** %d = %s, obtained: %s, v1 = %s" % 
+                         (e, hex(v_ref), hex(v_e_list[e]), v1))
             if not ok:
                 err = "Pauli vector exponentiation failed"
                 raise ValueError(err)

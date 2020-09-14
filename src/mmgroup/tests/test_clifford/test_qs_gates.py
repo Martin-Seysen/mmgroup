@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 
 from mmgroup.structures.qs_matrix import QStateMatrix, rand_qs_matrix
-from mmgroup.structures.qs_matrix import prep_mul, flat_product
 from mmgroup.structures.qs_matrix import qstate_pauli_matrix
 from mmgroup.structures.qs_matrix import qstate_ctrl_not_matrix
 from mmgroup.structures.qs_matrix import qstate_phi_matrix
@@ -21,8 +20,7 @@ from mmgroup.structures.qs_matrix import qstate_hadamard_matrix
 
 from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
-from mmgroup.clifford12 import QState12, qstate12_product
-from mmgroup.clifford12 import qstate12_prep_mul
+from mmgroup.bitfunctions import bitparity
 
 #####################################################################
 # Test gate_not
@@ -53,11 +51,11 @@ def complex_gate_not(c1, v):
 @pytest.mark.qstate
 def test_gate_not(verbose = 0):
     """Test function ``qstate12_gate_not``. """
-    for ntest, (m, v) in enumerate(gate_not_testdata()):
+    for ntest, (m, v) in enumerate(gate_not_testdata()):        
         if verbose:
             print("TEST gate not %s" % (ntest+1))
             print(m)
-            print("v=", hex(v))
+            print("m.shape=", m.shape, "v=", hex(v))
         m1 = m.copy().gate_not(v) 
         c, c1 = m.complex().ravel(), m1.complex().ravel()
         c1_ref = complex_gate_not(c, v)   
@@ -66,8 +64,8 @@ def test_gate_not(verbose = 0):
             print(m1)
         err = "Method gate_not has failed"
         compare_complex(c1_ref, c1, err)            
-        gm = qstate_pauli_matrix(m.shape[1], v << m.shape[1])  
-        assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
+        gm = qstate_pauli_matrix(m.shape[1], v << m.shape[1]) 
+        assert m @ gm == m1, [str(x) for x in (m, gm, m @ gm, m1)]         
             
             
 #####################################################################
@@ -76,7 +74,7 @@ def test_gate_not(verbose = 0):
 
 
 gate_ctrl_not_data = [
-     (1, [0b0], 1, 1),
+     (1, [0b0], 1, 0),
      (4, [0b110_1001, 0b101_0111, 0b011_0100], 0b11, 0b11),
 ]
 
@@ -88,6 +86,8 @@ def gate_ctrl_not_testdata():
             for i in range(3):
                 vc = randint(0, (1 << cols) - 1)
                 v = randint(0, (1 << cols) - 1)
+                while bitparity(vc & v):
+                    v = randint(0, (1 << cols) - 1)
                 m = rand_qs_matrix(0, cols, r)
                 yield m, vc, v
 

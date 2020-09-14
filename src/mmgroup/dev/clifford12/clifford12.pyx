@@ -19,17 +19,20 @@ ctypedef qstate12_type *p_qstate12_type
 
 # Messages for error codes returned by the functions in module qstate12.c
 QSTATE12_ERROR_STRINGS = {
- -1: "No bit with the requested property found in QState12 instance",
- -2: "QState12 instance is inconsistent",
- -3: "Qubit index error at QState12 instance",
- -4: "State is too large for a QState12 instance",
- -5: "Internal buffer overflow in a QState12 instance",
- -6: "Bit matrix part Q of QState12 instance is not symmetric",
+ -1: "No bit with the requested property found in QStateMatrix instance",
+ -2: "QStateMatrix instance is inconsistent",
+ -3: "Qubit index error at QStateMatrix instance",
+ -4: "State is too large for a QStateMatrix instance",
+ -5: "Internal buffer overflow in a QStateMatrix instance",
+ -6: "Bit matrix part Q of QStateMatrix instance is not symmetric",
  -7: "Bad row index for bit matrix in a QState12 instance",
- -8: "Internal parameter error in a QState12 instance",
- -9: "Overflow in scalar factor in a QState12 instance",
- -11: "QStateMatrix is not invertible",
- -12: "QStateMatrix is not in the Pauli group",
+ -8: "Internal parameter error in a QStateMatrix instance",
+ -9: "Overflow in scalar factor in a QStateMatrix instance",
+ -10: "A qubit in a ctrl-not gate cannot control itself",
+ -11: "Shape mismatch in QStateMatrix comparison",
+ -101: "Shape mismatch in QStateMatrix operation",
+ -102: "QStateMatrix is not invertible",
+ -103: "QStateMatrix is not in the Pauli group",
 }
 
 
@@ -169,6 +172,20 @@ cdef class QState12(object):
             cdef int64_t e = (f & -0x10) >> 4 if r else 0
             cdef int64_t phi = f & 7 if r else 0
             return (e, phi)
+
+
+    property shape:
+        """Get shape of the complex matrix represented by the state 
+        
+        The function returns a pair ``(rows, cols)`` meaning
+        that the state corresponds to a complex
+        ``2**nrows`` times ``2**ncols`` matrix.        
+        """
+        def __get__(self):
+            cdef uint32_t cols = self.qs.shape1
+            cdef uint32_t rows = self.qs.ncols - cols
+            return rows, cols  
+
                                 
     def row(self, uint32_t i):    
         """Return row i of the bit matrix of the state"""
@@ -212,6 +229,18 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_mul_scalar(&self.qs, e, phi & 7))
         return self
         
+    def transpose(self):
+        """Transpose state matrix im place"""
+        chk_qstate12(cl.qstate12_mat_t(&self.qs))
+        return self
+
+    def lb_rank(self):
+        """Yet to be documented"""
+        cdef int32_t res = cl.qstate12_mat_lb_rank(&self.qs)
+        if (res < -1):
+           chk_qstate12(res)
+        return res
+        
     def set_zero(self):
         """Multiply the state by a sclar factor in place
         
@@ -223,7 +252,7 @@ cdef class QState12(object):
     def check(self):
         """Raise ValueError is state is bad""" 
         cdef int32_t res = cl.qstate12_check(&self.qs)
-        return chk_qstate12(res)
+        return self
 
     def check_code(self):
         """Check a state
@@ -236,9 +265,15 @@ cdef class QState12(object):
         cdef int32_t res = cl.qstate12_check(&self.qs)
         return res 
 
+    #########################################################################
+    # Reshaping a matrix
+    
+    def _reshape(self, int32_t rows, int32_t cols):
+        chk_qstate12(cl.qstate12_mat_reshape(&self.qs, rows, cols))
+        return self
 
     #########################################################################
-    # Reducing a state to a standard form and checking euality of states
+    # Reducing a state to a standard form and checking equality of states
 
     def echelon(self):
         """Convert state to (not reduced) echelon form
@@ -263,8 +298,17 @@ cdef class QState12(object):
         """
         chk_qstate12(cl.qstate12_reduce(&self.qs))
         return self 
+
+    def reduce_matrix(self):
+        """Yet to be documented"""
+        cdef uint8_t row_table[QSTATE12_MAXCOLS+1]
+        chk_qstate12(cl.qstate12_reduce_matrix(&self.qs, &row_table[0]))
+        cdef uint32_t i = self.nrows + self.ncols
+        cdef uint32_t j
+        return [ row_table[j] for j in range(i) ]
+
  
-    def __eq__(self, other):
+    def _equal(self, QState12 other):
         """Return True iff two states are equal"""
         cdef uint64_t data1[QSTATE12_MAXROWS] 
         cdef uint64_t data2[QSTATE12_MAXROWS] 
@@ -286,8 +330,7 @@ cdef class QState12(object):
         """
         cdef uint8_t table[QSTATE12_MAXCOLS] 
         chk_qstate12(cl.qstate12_echelonize(&self.qs))
-        chk_qstate12(cl.qstate12_echelonize(&self.qs))
-        
+       
         
                 
 
@@ -435,8 +478,11 @@ cdef class QState12(object):
         Change the state ``qs`` referred by ``self`` to a state ``qs'``
         with ``qs'(x) = qs(x (+) <vc,x> * v)``  where ``'(+)'`` is 
         the bitwise  xor operation, and ``<.,.>`` is the scalar 
-        product of bit vectors.
-        The result is not reduced.
+        product of bit vectors.  The result is not reduced. The 
+        scalar product of the bit vectors ``j`` and ``jc`` must
+        be zero. Otherwise the ``ctrl not`` operation is not
+        unitary.
+        
         Computing ``qs.gate_ctrl_not(1 << jc, 1 << j)``, 
         for ``jc != j``, corresponds to applying a controlled not  
         gate  to qubit ``j``  contolled by qubit ``jc``. 
@@ -521,6 +567,77 @@ cdef class QState12(object):
         return c
 
     #########################################################################
+    # Matrix multiplication and inversion
+    
+    def _matmul(self, QState12 other):
+        """Perform a matrix multiplication.
+        
+        We replace ``self`` by the matrix product ``self @ other``.
+        ``other`` is destroyed.        
+        """
+        cdef p_qstate12_type pqs2 = pqs12(QState12(other))
+        chk_qstate12(cl.qstate12_matmul(&self.qs, pqs2))
+        return self
+
+    def _mat_inv(self):
+        """Perform a matrix inversion in place."""
+        chk_qstate12(cl.qstate12_mat_inv(&self.qs))
+        return self
+    
+    #########################################################################
+    # A rather general multiplication function
+
+    def _qstate12_product(self, QState12 other, uint32_t nqb, uint32_t nc):
+        """Wrapper for the corresponding C function
+    
+        We compute a certain product ``qs3`` of the states ``qs1`` 
+        ad ``qs2`` referred by ``self`` and ``other`` and store
+        that product in ``self``. ``other`` is destroyed.
+        
+        Let ``n1 = qs1.ncols,  n2 = qs2.ncols``.
+        Put ``qs1a =  qs1.extend(n1, n2-nqb)``,
+        ``qs2a =  qs2.extend(nqb, n1-nqb)``. Then ``qs1a`` and
+        ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
+        qubits. Let ``qs3a`` be the complex function which is the 
+        product of the functions  ``qs1a`` and ``qs2a``. Then we 
+        have ``qs3 = qs3a.sum_cols(0, nc)``. So we have
+        ``qs3.ncols = nn1 + nn2 - nqb - nc``.
+        The result ``qs3`` is computed in the state referred by 
+        ``qs1``. It is reduced. 
+ 
+        E.g. ``qs1.product(qs2, nc, nc)`` is the tensor 
+        contraction over the first ``nc`` qubits of ``qs1`` and 
+        ``qs2``. ``In case qs1.ncols = qs2.ncols = n``, the 
+        function ``qs1.product(qs2, 0, n)`` returns the 
+        product of ``qs1`` and ``qs2`` (considered as functions); 
+        and ``qs1.product(qs2, n, n)`` returns the scalar
+        product of ``qs1`` and ``qs2`` (considered as vectors).
+ 
+        ``qs1.product(qs2, 0, n)`` corresponds to the 
+        function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
+        ``'\odot'`` operation defined in section 
+        *Products and tensor products of quadratic mappings*
+        of the guide.   
+        """
+        cdef p_qstate12_type pqs2 = pqs12(as_qstate12(other))
+        chk_qstate12(cl.qstate12_product(&self.qs, pqs2, nqb, nc))
+        return self
+
+    #########################################################################
+    # Auxiliary function for Matrix multiplication (for testing)
+
+    def _qstate12_prep_mul(self, QState12 other, uint32_t nqb):
+        """Wrapper for the corresponding C function
+    
+        To be used for tests only. Function ``qstate12_prep_mul``
+        is an auxliary function for function ``qstate12_product``.    
+        """
+        cdef p_qstate12_type pqs2 = pqs12(other)
+        chk_qstate12(cl.qstate12_prep_mul(&self.qs, pqs2, nqb))
+        return self, other
+        
+
+    #########################################################################
     # Obtain complex entries of a state
     
         
@@ -553,13 +670,13 @@ cdef class QState12(object):
     #########################################################################
     # Some matrix functions
     
-    def pauli_vector(self, uint32_t n):
+    def pauli_vector(self):
         """TODO: yet to be documented!!!"""
         cdef uint64_t v;
-        chk_qstate12(cl.qstate12_pauli_vector(&self.qs, n, &v))
+        chk_qstate12(cl.qstate12_pauli_vector(&self.qs, &v))
         return int(v)
         
-    def pauli_conjugate(self, uint32_t n, v):   
+    def pauli_conjugate(self, v):   
         v = np.array(v, dtype = np.uint64, copy=True)
         shape = v.shape
         assert len(shape) <= 1
@@ -568,7 +685,7 @@ cdef class QState12(object):
             return []
         cdef uint64_t[:] v_view = v
         chk_qstate12(cl.qstate12_pauli_conjugate(
-            &self.qs, n, len(v), &v_view[0]))
+            &self.qs, len(v), &v_view[0]))
         if len(shape):
             return list(map(int,v))
         else:
@@ -592,7 +709,7 @@ def as_qstate12(QState12 state):
  
  
 ####################################################################
-# Wrappers for exported C functions  
+# Wrappers for C functions contructing state matrices
 ####################################################################
 
 def qstate12_unit_matrix(QState12 qs, uint32_t n):
@@ -684,103 +801,9 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
     chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
     return qs
 
-def qstate12_mat_t(QState12 qs, uint32_t nqb):
-    """Wrapper for the corresponding C function"""
-    cdef p_qstate12_type m_pqs = pqs12(qs)
-    chk_qstate12(cl.qstate12_mat_t(m_pqs, nqb))
-
-
-def qstate12_product(QState12 qs1, QState12 qs2, uint32_t nqb, uint32_t nc):
-    """Wrapper for the corresponding C function
-    
-    We compute a certain product ``qs3`` of the states ``qs1`` 
-    and store that product in ``qs1``. ``qs2`` is destroyed.
-        
-    Let ``n1 = qs1.ncols,  n2 = qs2.ncols``.
-    Put ``qs1a =  qs1.extend(n1, n2-nqb)``,
-    ``qs2a =  qs2.extend(nqb, n1-nqb)``. Then ``qs1a`` and
-    ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
-    qubits. Let ``qs3a`` be the complex function which is the 
-    product of the functions  ``qs1a`` and ``qs2a``. Then we 
-    have ``qs3 = qs3a.sum_cols(0, nc)``. So we have
-    ``qs3.ncols = nn1 + nn2 - nqb - nc``.
-    The result ``qs3`` is computed in the state referred by 
-    ``qs1``. It is reduced. 
- 
-    E.g. ``qs1.product(qs2, nc, nc)`` is the tensor 
-    contraction over the first ``nc`` qubits of ``qs1`` and 
-    ``qs2``. ``In case qs1.ncols = qs2.ncols = n``, the 
-    function ``qs1.product(qs2, 0, n)`` returns the 
-    product of ``qs1`` and ``qs2`` (considered as functions); 
-    and ``qs1.product(qs2, n, n)`` returns the scalar
-    product of ``qs1`` and ``qs2`` (considered as vectors).
- 
-    ``qs1.product(qs2, 0, n)`` corresponds to the 
-    function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
-    ``'\odot'`` operation defined in section 
-    *Products and tensor products of quadratic mappings*
-    of the guide.   
-    """
-    cdef p_qstate12_type pqs1 = pqs12(qs1)
-    cdef p_qstate12_type pqs2 = pqs12(qs2)
-    chk_qstate12(cl.qstate12_product(pqs1, pqs2, nqb, nc))
-
-def qstate12_prep_mul(QState12 qs1, QState12 qs2, uint32_t nqb):
-    """Wrapper for the corresponding C function
-    
-    To be used for tests only. Function ``qstate12_prep_mul``
-    is an auxliary function for function ``qstate12_product``.    
-    """
-    cdef p_qstate12_type pqs1 = pqs12(qs1)
-    cdef p_qstate12_type pqs2 = pqs12(qs2)
-    return chk_qstate12(cl.qstate12_prep_mul(pqs1, pqs2, nqb))
-    
-    
-def qstate12_matmul(QState12 qs1, QState12 qs2, uint32_t nqb):
-    """Perform a matrix multiplication.
-        
-    Given a state ``qs`` with ``qs->ncols = m + n`` we
-    may interpret ``qs`` as an ``2**m`` times ``2**n`` matrix, 
-    where the ``2**m`` rows of the matrix correspond to the
-    higher ``m`` qubits and the ``2**n`` columns corrspond to 
-    the lower ``n`` qubits.
-    Then we consider the state ``qs1`` as a ``qs1->ncols - nqb`` 
-    times ``nqb`` matrix ``m1``and the state ``qs2`` as an
-    ``nqb`` times ``qs2->ncols - nqb`` 
-    matrix ``m2``. 
-    
-    We compute the matrix product ``m3 = m1 @ m2``  as a 
-    ``qs1->ncols - nqb`` times ``qs2->ncols - nqb`` matrix
-    and we store the state corresponding to matrix ``m3``
-    in ``qs1``. `qs2`` is destroyed.
-    """
-    cdef p_qstate12_type pqs1 = pqs12(qs1)
-    cdef p_qstate12_type pqs2 = pqs12(qs2)
-    return chk_qstate12(cl.qstate12_matmul(pqs1, pqs2, nqb))
-
-def qstate12_reduce_matrix(QState12 qs, uint32_t nqb):
-    """Yet to be documented"""
-    cdef uint8_t row_table[QSTATE12_MAXCOLS+1]
-    cdef p_qstate12_type pqs = pqs12(qs)
-    chk_qstate12(cl.qstate12_reduce_matrix(pqs, nqb, &row_table[0]))
-    cdef uint32_t i = qs.nrows + qs.ncols
-    cdef uint32_t j
-    return [ row_table[j] for j in range(i) ]
-    
-
-def qstate12_mat_lb_rank(QState12 qs, uint32_t nqb):
-    """Yet to be documented"""
-    cdef p_qstate12_type pqs = pqs12(qs)
-    cdef int32_t res = cl.qstate12_mat_lb_rank(pqs, nqb)
-    if (res < -1):
-       chk_qstate12(res)
-    return res
-    
-def qstate12_mat_inv(QState12 qs, uint32_t nqb):
-    """Yet to be documented"""
-    cdef p_qstate12_type pqs = pqs12(qs)
-    chk_qstate12(cl.qstate12_mat_inv(pqs, nqb))
-    
+####################################################################
+# Wrappers for other exported C functions  
+####################################################################
 
 def qstate12_bit_matrix_t(m, uint32_t ncols):
     m1 = np.array(m, dtype = np.uint64)
