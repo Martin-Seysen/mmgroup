@@ -4,17 +4,7 @@
 // https://mmgroup.readthedocs.io/en/latest/
 
 
-// %%COMMENT
-// Negative return values of functions in this module are error codes.
-// Their meaning is the same as in module qstate12.c
 
-
-// %%COMMENT
-// Negative return values of functions in this module are error codes:
-// These error codes are extenstion of those in mudule qstate12.c 
-// -101: Matrix shape mismatch,
-// -102: Matrix is not invertible,
-// -103: Matrix is not in the Pauli group,
 
 
 /*************************************************************************
@@ -62,10 +52,10 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
     pqs->shape1 =  cols;
     pqs->factor = 0;
     pqs->data[0] = 0;
-    if (bad_state(pqs)) return -4;
+    if (bad_state(pqs)) return ERR_QSTATE12_TOOLARGE;
     if (rk > rows || rk > cols ) {
         pqs->nrows = pqs->ncols = 0;
-        return -3;
+        return ERR_QSTATE12_QUBIT_INDEX;
     }
     for (i = 1; i < pqs->nrows; ++i) {
         pqs->data[i] = mask; mask <<= 1;
@@ -137,7 +127,7 @@ int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64
     int32_t factor = ((pa[0] >> nqb) & 1) << 2;
     pqs->nrows = nqb + 1;
     pqs->ncols = nqb << 1;
-    if (bad_state(pqs)) return -4;
+    if (bad_state(pqs)) return ERR_QSTATE12_TOOLARGE;
  
     mask1 = (ONE << nqb) - 1;
     m[0] = (pa[0] & mask1) << nqb;
@@ -177,7 +167,7 @@ int32_t qstate12_mat_reshape(qstate12_type *pqs, int32_t rows, int32_t cols)
 // shape of the matrix. If both, ``rows`` and ``cols``, is -1 then
 // ``rows`` is set to ``0`` and ``cols`` is calculated.
 {
-    if (bad_state(pqs)) return -2;
+    if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
     if (cols == -1) {
         if (rows == -1) rows = 0;
         cols = (int32_t)pqs->ncols - rows;
@@ -185,7 +175,7 @@ int32_t qstate12_mat_reshape(qstate12_type *pqs, int32_t rows, int32_t cols)
         rows = (int32_t)pqs->ncols - cols;
     }
     if (rows < 0 || cols < 0 || (uint32_t)(rows + cols) !=  pqs->ncols)
-        return -101;
+        return ERR_QSTATE12_SHAPE_OP;
     pqs->shape1 = cols;
     return 0;
 }
@@ -285,7 +275,8 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
     // printf("<prep_mul>");
     if ((res = qstate12_echelonize(pqs1)) < 0) return res;
     if ((res = qstate12_echelonize(pqs2)) < 0) return res;
-    if (nqb > pqs1->ncols || nqb > pqs2->ncols) return -3;
+    if (nqb > pqs1->ncols || nqb > pqs2->ncols) 
+        return ERR_QSTATE12_QUBIT_INDEX;
     // 
     if (pqs1->nrows == 0 || pqs2->nrows == 0)  {
         return  pqs1->nrows = pqs2->nrows = 0;
@@ -349,8 +340,8 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
 {
     uint64_t *m1 = pqs1->data, *m2 = pqs2->data, c = ONE << pqs1->ncols;
     uint32_t k;
-    if (bad_state(pqs1) || bad_state(pqs2)) return -2;
-    if (pqs2->nrows != pqs1->nrows || pqs2->ncols != pqs1->ncols) return -99; 
+    if (bad_state(pqs1) || bad_state(pqs2)) return ERR_QSTATE12_INCONSISTENT;
+    if (pqs2->nrows != pqs1->nrows || pqs2->ncols != pqs1->ncols) return -901; 
     m1[0] ^= m2[0] & mask;
     for (k = 1; k < pqs1->nrows; ++k)  {
        int64_t m2m = m2[k] & mask;
@@ -358,7 +349,7 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
        m1[k] ^= m2m;
     }
     if (ADD_FACTOR_OVERFLOW(pqs1->factor >> 4, pqs2->factor >> 4))
-        return -9;
+        return ERR_QSTATE12_SCALAR_OVFL;
     pqs1->factor = ADD_FACTORS(pqs1->factor, pqs2->factor);
     return 0;
 }
@@ -404,7 +395,7 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
     int32_t res;
 
     if (row_pos < 0) return row_pos; // Then row_pos is an error code
-    if (nc > nqb) return -3;
+    if (nc > nqb) return ERR_QSTATE12_QUBIT_INDEX;
 
     if ((res = qstate12_sum_cols(pqs1, 0, nc)) < 0) return res; 
     if ((res = qstate12_sum_cols(pqs2, 0, nc)) < 0) return res; 
@@ -456,9 +447,9 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
 {
     int32_t res;
     uint32_t nqb = pqs1->shape1, cols = pqs2->shape1; 
-    if bad_state(pqs1) return -2;
+    if bad_state(pqs1) return ERR_QSTATE12_INCONSISTENT;
     res = qstate12_rot_bits(pqs2, nqb, pqs2->ncols, 0);
-    if (pqs2->ncols - pqs2->shape1 != nqb) return -101;
+    if (pqs2->ncols - pqs2->shape1 != nqb) return ERR_QSTATE12_SHAPE_OP;
     if (res < 0) return res;
     res = qstate12_product(pqs1, pqs2, nqb, nqb);
     if (res < 0) return res;
@@ -483,14 +474,15 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     nqb = pqs->shape1;
     mask = ONE + (ONE << nqb);
-    if (pqs->ncols != nqb << 1 || pqs->nrows != nqb + 1) return -103;
-    if (pqs->factor & -0xf) return -103; 
+    if (pqs->ncols != nqb << 1 || pqs->nrows != nqb + 1) 
+        return ERR_QSTATE12_PAULI_GROUP;
+    if (pqs->factor & -0xf) return ERR_QSTATE12_PAULI_GROUP; 
     for (i = 0; i < nqb; ++ i) {
         w |=  (m[i+1] ^ mask);
         mask <<= 1;
     }
     mask = (((ONE << pqs->nrows) - 1) << pqs->ncols) - 1;
-    if (w & mask) return -103;
+    if (w & mask) return ERR_QSTATE12_PAULI_GROUP;
     mask = (ONE << nqb) - 1;
     w = (m[0] >> (pqs->ncols + 1)) & mask;
     w |= m[0] & (mask << nqb);
@@ -587,7 +579,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     nqb = pqs->shape1; 
     if ((res = qstate12_row_table(pqs, row_table)) < 0) return res;
-    if (nqb > pqs->ncols) return -3;
+    if (nqb > pqs->ncols) return ERR_QSTATE12_QUBIT_INDEX;
     if (pqs->nrows == 0) return 0;
     
     fst_row = pqs->nrows;
@@ -677,7 +669,8 @@ int32_t qstate12_mat_inv(qstate12_type *pqs)
     qstate12_conjugate(pqs);
     rk =  qstate12_mat_lb_rank(pqs); 
     if (rk < -1) return rk;
-    if (2 * nqb != pqs->ncols || rk != (int32_t)nqb) return -102;
+    if (2 * nqb != pqs->ncols || rk != (int32_t)nqb) 
+        return ERR_QSTATE12_MATRIX_INV;
     f = (pqs->factor & -((int32_t)16L)) >> 4;
     f += pqs->nrows - 1;
     f -= pqs->ncols - nqb;

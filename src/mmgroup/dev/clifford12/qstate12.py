@@ -154,94 +154,53 @@ and :math:`q` a quadratic function on  :math:`\mathbb{F}_2^m` such
 that :math:`g = f(e, a, q)` and :math:`m` is minimal. 
 Assume :math:`\ker a \neq 0`. Then we construct a tuple 
 :math:`(e', a', q'`) with :math:`g = f(e', a', q')`, such that the
-domain of  :math:`a'` and of  :math:`q'` is  a proper linear 
+domain of  :math:`a'` and of  :math:`q'` is  a proper affine 
 subspace of the domain of :math:`a`.
 
 
-For any subspace :math:`W` of :math:`\mathbb{F}_2^m` let 
-:math:`q|_W` be the restriction of :math:`q` to
-:math:`W`, and let :math:`a|_W` be the restriction of 
-:math:`a` to :math:`W`.
-
-
-
-Case 1: :math:`\ker \beta(q) \cap   \ker a \neq \{0\}`
-
-Let :math:`v_1 \in  \ker \beta(q) \cap  \ker a, v_1 \neq 0`.
-Let :math:`W` be a subspace of  :math:`\mathbb{F}_2^m`
-with  :math:`\left<v_1\right> \oplus W = \mathbb{F}_2^m`.
-Then  :math:`q(v+w) = q(v) q(w)`  for 
-:math:`v \in  \left<v_1\right>, w \in W`. Hence
-:math:`g = (1 + q(v_1)) \cdot f(e, a|_W, q|_W)`.
-Since :math:`q(v_1)` is a fourth root of unity,
-:math:`1 + q(v_1)` is in :math:`R_8`.
-
-
-Case 2: :math:`\exists v_1 \in \ker a : \beta(q)(v_1, v_1) = 1`
-
-By linear algebra we can find a subspace :math:`W` of  
-:math:`\mathbb{F}_2^m` with  
-:math:`\left<v_1\right> \oplus W = \mathbb{F}_2^m` and 
-:math:`\beta(q)(v_1, w) = 0` for all :math:`w \in W`.
-Then we proceed as in case 1.
-
-
-Case 3:  :math:`\ker \beta(q) \cap \ker a = \{0\}` and
-:math:`\forall v_1 \in \ker a : \beta(q)(v_1, v_1) = 0`
-
-Then :math:`m > 1`. So there is a :math:`v_1 \in \ker a` 
-and a :math:`v_2 \in \mathbb{F}_2^m` with 
-:math:`\beta(q)(v_1, v_2) = 1`. 
-Let :math:`V = \left<v_1, v_2\right>`. We have 
-:math:`\det \beta(q|_V) = 1`, so that we can find a subspace  
-:math:`W''` of  :math:`\mathbb{F}_2^m` with  
-:math:`V \oplus W'' = \mathbb{F}_2^m` and 
-:math:`\beta(q)(v, w) = 0` for all :math:`v \in V, w \in W''`.
-
-Thus :math:`q(\lambda v_1 + \mu v_2 + w) = (-1)^{\lambda\mu} 
-q(v_1)^\lambda q(v_2)^\mu  q(w)` for  :math:`w \in W''`. Let 
-:math:`l` be the linear form on 
-:math:`W' = \left< v_2, W''\right>` 
-with :math:`l(w) = 0` if :math:`w \in W''` and :math:`l(w) = 1`
-otherwise. Then for any :math:`y \in W'` we have:
-
+Let :math:`v \in \ker A \setminus  \{0\}` and :math:`W` 
+be a subspace of :math:`\mathbb{F}_2^m` with   
+:math:`\left<v \right> \oplus W = \mathbb{F}_2^m`. Then for 
+:math:`w \in W` we have 
+:math:`q(w+v) = q(v) \cdot (-1)^{h(w)} \cdot r`, 
+with :math:`h` a linear form on :math:`W` given by
+:math:`h(w) = \beta(q)(v, w)` and :math:`r = q(v)/q(0)`
+a fourth root of unity. Since :math:`v \in \ker A` we have
 
 .. math::
-   g(a(y)) = S(l(y)) \cdot f(e, a|_{W'}, q|_{W'})(a(y)) \;  , 
+
+   f(e,a,q)(x) = e \cdot
+   \sum_{\{y \in W \mid a(y) = x\}} q(y) + q(y + v)  
+   = e \cdot
+   \sum_{\{y \in W \mid a(y) = x\}} q(y) t(h(y)) \; ,
    
-where
-:math:`S(0) = 1 + q(v_1),  S(1) =  q(v_2) (1 - q(v_1))`.
-We have :math:`g(x) = 0` for :math:`x \notin \, \mbox{im} \, a`.
+where :math:`t(z) = 1 + r \cdot (-1)^z` for 
+:math:`z \in \mathbb{F}_2`. Let :math:`W'` be the 
+support of :math:`t \circ h`, i.e.
+:math:`W' = \{y \in W \mid t(h(y)) \neq 0\}`. In case 
+:math:`W' = \emptyset` we have :math:`f(e,a,q) = 0`.
+Otherwise it suffices to show that :math:`W'` is an affine 
+subspace of :math:`W`, and that the restriction of
+:math:`t \circ h` to :math:`W'` is a quadratic function up to
+a scalar multiple in  :math:`R_8`.
+ 
+Since :math:`r` is a fourth root ot unity, :math:`t(0)` and
+:math:`t(1)` are in :math:`R_8`. If :math:`h` is zero then 
+:math:`t \circ h` is a constant function on :math:`W`. 
 
-Case 3.1: :math:`q(v_1)` is a real fourth root of unity
+If :math:`r` is an imaginary fourth root of unity then
+:math:`t(0) \neq 0` and :math:`t(1)/t(0) = \pm \sqrt{-1}`. 
+Thus :math:`t` is a quadratic function on :math:`\mathbb{F}_2` 
+up to the factor :math:`t(0)`. Since :math:`h` is linear, 
+:math:`t \circ h` is also a quadratic function on :math:`W`. 
 
-Then :math:`S(\lambda) = 2 r_4` and  :math:`S(1-\lambda) = 0` for 
-either :math:`\lambda = 0` or :math:`\lambda = 1`, and a fourth 
-root of unity :math:`r_4`. Define the affine mapping 
-:math:`a': W'' \rightarrow  \mathbb{F}_2^n` by
-:math:`a'(x) = a(x  + \lambda v_2)`, and define the quadratic
-function :math:`q'` on :math:`W''` by 
-:math:`q'(x) = q(x + \lambda v_2) / q(v_2)^\lambda`. Then
-:math:`g(a'(y)) = 2 r_4 q(v_2)^\lambda f(e, a', q')(a'(y))` 
-and  :math:`g(x) =  0` for :math:`x \notin \, \mbox{im} \, a'`.
-
-
-
-Case 3.2: :math:`q(v_1)` is an imaginary fourth root of unity
-
-Then :math:`S(\lambda ) = \sqrt{2} r_8 \cdot r_4^\lambda`, for a 
-primitive 8-th root of unity  :math:`r_8` and  a fourth root of 
-unity :math:`r_4`. Define the quadratic function :math:`q'` on
-:math:`W'` by :math:`q'(v) = q(v) \cdot r_4^{l(v)}`. Then
-:math:`g(a'(y)) =  \sqrt{2} r_8  f(e, a|_{W'}, q')(a'(y))`  and 
-:math:`g(x) =  0` for :math:`x \notin \, \mbox{im} \, a'`.
+If :math:`r = \pm 1, h \neq 0`, then the function
+:math:`t \circ h` is constant on :math:`W'`, and we have
+:math:`W' = \ker h` if :math:`r = 1` and 
+:math:`W' = W \setminus  \ker h`  if :math:`r = -1`.
 
 q.e.d.
 
-
-The proof of the lemma yields an effective algorithm for 
-converting a representation of quadratic mapping into a 
-reduced representation.
 
 
 The complex Clifford group :math:`\mathcal{X}_n` is a group which 
@@ -266,7 +225,7 @@ matrix. Thus :math:`\mathcal{X}_n`  is a subgroup of
 :math:`\mathcal{X}'_n` . By Lemma 1 the group :math:`\mathcal{X}'_n` 
 is  finite. By Theorem 6.5 in :cite:`NRS01`  all finite supergroups 
 of :math:`\mathcal{X}_n` in the unitary group are generated by 
-:math:`\mathcal{X}_n` and a multiple of the unit matrix 
+:math:`\mathcal{X}_n` and a scalar multiple of the unit matrix 
 by a root of unity. Comparing the scalar multiples of the unit matrix 
 in :math:`\mathcal{X}_n` and :math:`\mathcal{X}'_n` 
 yields :math:`\mathcal{X}_n` = :math:`\mathcal{X}'_n`.  
@@ -456,7 +415,7 @@ The *leading coefficient* of a row of matrix :math:`A` is the
 first nonzero entry in that row. A bit matrix  :math:`A` is 
 in *row echelon form* if 
 
-  * All rows consisting of only zeroes are at the bottom.
+  * All rows consisting of only zeros are at the bottom.
   
   * The leading coefficient of a nonzero row is always strictly 
     to the right of the leading coefficient of the row above it.
@@ -1147,6 +1106,7 @@ the following components:
     uint32_t ncols;   // No n of columns of bit matrices A and Q
     int32_t  factor;  // A number e encoding a scaling factor
     uint64_t *data;   // Pointer to the data bits of matrix M
+    uint32_t shape1;  // (Will be discussed in the next session)
   } qbstate12_type;
 
 Recall that a quadratic state vector :math:`v` of type
@@ -1202,26 +1162,30 @@ Typical names for parameters of functions in this module are:
 Quadratic state matrices
 ........................
 
-A *quadratic state matrix* :math:`S` of shape :math:`(n_1, n_2)` 
-is an element of the tensor product :math:`V_1 \otimes V_2` 
+A *quadratic state matrix* :math:`S` of shape :math:`(n_0, n_1)` 
+is an element of the tensor product :math:`V_0 \otimes V_1` 
 with the basis vectors of :math:`V_k` being indexed by 
-:math:`\mathbb{F}_2^{n_k}, k = 1, 2`, such that the
+:math:`\mathbb{F}_2^{n_k}, k = 0, 1`, such that the
 coordinate function of :math:`S` is a quadratic mapping.
 That coordinate function is a function
-:math:`\mathbb{F}_2^{n_1} \times \mathbb{F}_2^{n_2}
+:math:`\mathbb{F}_2^{n_0} \times \mathbb{F}_2^{n_1}
 \rightarrow \mathbb{C}`.
 
 Thus :math:`S` corresponds to a complex 
-:math:`2^{n_1} \times 2^{n_2}` matrix. We may implement
-:math:`S` as a quadratic state vector of :math:`n_1 + n_2` 
+:math:`2^{n_0} \times 2^{n_1}` matrix. We may implement
+:math:`S` as a quadratic state vector of :math:`n_0 + n_1` 
 qubits, augmented by an information about its shape
-:math:`(n_1, n_2)` . We let the  :math:`n_1` qubits with
+:math:`(n_0, n_1)` . We let the  :math:`n_0` qubits with
 high indices  correspond to the rows of  :math:`S`; and
-we let the  :math:`n_2` qubits with low indices  correspond 
-to the columns  of  :math:`S`.
+we let the  :math:`n_1` qubits with low indices  correspond 
+to the columns  of  :math:`S`. For implementing a quadratic
+state matrix in C, we store the part :math:`n_1` of its shape 
+in component ``qstate1`` of a structure ``qs`` of type
+``qstate12_type`` and we compute the part  :math:`n_0`  as 
+``qs.ncols - qs.qstate1``.
 
-We implement a *quadratic state matrix* as a instance of class
-``QStateMatrix`` in module ``mmgroup.structures.qs_matrix``.
+In python we implement a *quadratic state matrix* as a instance of 
+class ``QStateMatrix`` in module ``mmgroup.structures.qs_matrix``.
 A matrix of shape :math:`(0,n)` corresponds to a row vector of 
 dimension :math:`2^{n}` and a matrix of shape :math:`(n,0)` 
 corresponds to a column vector of dimension :math:`2^{n}`.
@@ -1243,7 +1207,7 @@ Reducing a quadratic state matrix
 .................................
 
 We define a special *reduced matrix representation* :math:`(e, A, Q)` 
-of a quadratic state matrix :math:`S` of shape :math:`(n_1, n_2)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
 that differs slightly from the reduced representation of a 
 quadratic state vector. That representation satisfies the 
 following conditions:
@@ -1253,39 +1217,39 @@ following conditions:
     *Reducing the representation of a quadratic mapping*.
     
  2. Let :math:`A'` be the bit matrix obtained from :math:`A` by
-    removing the first  :math:`n_2` columns from  :math:`A`.
+    removing the first  :math:`n_1` columns from  :math:`A`.
     We require that  a permutation of the rows of matrix
     :math:`A'`, excluding row :math:`0`, is in (not necessarily 
     reduced) echelon form.
     
-    Note that the first :math:`n_2` columns of the bit matrix
-    :math:`A` correspond to the :math:`2^{n_2}` columns of 
+    Note that the first :math:`n_1` columns of the bit matrix
+    :math:`A` correspond to the :math:`2^{n_1}` columns of 
     the complex matrix :math:`S`; and the remaining  
-    :math:`n_1` columns of :math:`A` correspond to the
-    :math:`2^{n_1}` rows of :math:`S`.
+    :math:`n_0` columns of :math:`A` correspond to the
+    :math:`2^{n_0}` rows of :math:`S`.
         
- 3. Let :math:`I_1` be the set of the rows of the bit matrix 
-    :math:`A` such that all bits in columns :math:`\geq n_2` 
-    of that row are zero. Let :math:`I_2` be the set of the 
+ 3. Let :math:`I_0` be the set of the rows of the bit matrix 
+    :math:`A` such that all bits in columns :math:`\geq n_1` 
+    of that row are zero. Let :math:`I_1` be the set of the 
     rows of :math:`A` such that all bits in columns 
-    :math:`< n_2` of that row are zero. We exclude row 
-    :math:`0` from :math:`I_1` and from :math:`I_2`. 
+    :math:`< n_1` of that row are zero. We exclude row 
+    :math:`0` from :math:`I_0` and from :math:`I_1`. 
     
     If the bit matrix :math:`A` has :math:`m'` rows then
     the bit matrix :math:`Q` is a symmetric 
     :math:`m' \times m'` bit matrix. Let :math:`Q'` be the 
     submatrix of :math:`Q` that consists of all rows with
-    index in :math:`I_1` and of all columns with index in
-    :math:`I_2` .
+    index in :math:`I_0` and of all columns with index in
+    :math:`I_1` .
 
     We require that submatrix :math:`Q'` of :math:`Q`  has at 
     most one nonzero entry in each row and in each column. 
 
-    Note that  :math:`I_1 \cap I_2 = \emptyset`, since
+    Note that  :math:`I_0 \cap I_1 = \emptyset`, since
     :math:`A` is in echelon form.
 
 We may obtain a *reduced matrix representation* :math:`(e, A, Q)` 
-of a quadratic state matrix :math:`S` of shape :math:`(n_1, n_2)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
 as follows:
 
   * Starting from a reduced representation :math:`(e_0, A_0, Q_0)` 
@@ -1297,10 +1261,10 @@ as follows:
     is defined in section *Implementation of quadratic mappings*. 
 
   * We apply a sequence of transformations :math:`T_{i,j}, i < j`,
-    with :math:`i, j \in I_1` or :math:`i, j \in I_2` to 
+    with :math:`i, j \in I_0` or :math:`i, j \in I_1` to 
     :math:`(e_1, A_1, Q_1)`. These transformations preserve the 
     echelon form of :math:`A_1` and also property *(2.)*. Since 
-    :math:`I_1 \cap I_2 = \emptyset`, these transformations act as
+    :math:`I_0 \cap I_1 = \emptyset`, these transformations act as
     row and column operations on the submatrix :math:`S'`
     of  :math:`S`. So we may achieve property *(3.)* by a sequence
     of such transformations, thus obtaining a suitable
@@ -1313,13 +1277,13 @@ quadratic state matrix :math:`S` has a variety of advantages.
 
  * We can easily compute the rank of :math:`S` as follows:
 
-   For :math:`(e, A, Q)` let :math:`I_1, I_2, S'` be defined as 
-   above. Let  :math:`I_3` be the subset :math:`I_1` containing 
+   For :math:`(e, A, Q)` let :math:`I_0, I_1, S'` be defined as 
+   above. Let  :math:`I_2` be the subset :math:`I_0` containing 
    alls rows of :math:`A` such that the corrsponding row of 
    bit matrix  :math:`Q'` is zero. Then the binary logarithm of
    the rank of :math:`S` is equal to the number of rows of
-   matrix :math:`A` with are neither in  :math:`I_2` nor in 
-   :math:`I_3`. Here we have to exclude row :math:`0` of :math:`A`.  
+   matrix :math:`A` with are neither in  :math:`I_1` nor in 
+   :math:`I_2`. Here we have to exclude row :math:`0` of :math:`A`.  
 
    We omit the proof of this fact since we do not need it
    for our purposes.
@@ -1331,9 +1295,9 @@ quadratic state matrix :math:`S` has a variety of advantages.
    matrix we mean a matrix obtained from the unit matrix by
    applying Hadamard gates to the row vectors.
 
-   If :math:`S` has shape :math:`(n,n)` such a decomposition
+   If :math:`S` has shape :math:`(n,n)` then such a decomposition
    reduces the complexity of multiplying :math:`S` with an
-   arbitray complex vector form :math:`O(4^n)` to
+   arbitrary complex vector form :math:`O(4^n)` to
    :math:`O(n \cdot 2^n)`.
 
    Essentially, we have used such a decomposition for 
@@ -1342,17 +1306,19 @@ quadratic state matrix :math:`S` has a variety of advantages.
    representation of :math:`\mathbb{M}`. Since this special
    case is discussed elsewhere, we do not go into details here.
 
- * Using quadratic state matrices we can multiply two elements
-   of the Clifford group :math:`\mathcal{X}_{n}` in
-   :math:`O(n^3)` bit operations.
-
-   In the next section we will introduce the Pauli group 
+ * In the next section we will introduce the Pauli group 
    :math:`\mathcal{P}_{n}`, which is an important normal 
    subgroup of :math:`\mathcal{X}_{n}`. Using the reduced 
    matrix representation of an element :math:`S` of 
    :math:`\mathcal{X}_{n}` we can conugate any element
    of :math:`\mathcal{P}_{n}` with :math:`S` in  
    :math:`O(n^2)` bit operations.
+   
+   With quadratic state matrices, a general matrix 
+   multiplication in the Clifford group :math:`\mathcal{X}_{n}` 
+   costs :math:`O(n^3)` bit operations.
+
+   
 
 Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
 converts any representation of a quadratic state matrix to a
@@ -1403,8 +1369,8 @@ following cases:
 
 
 Functions ``qstate12_pauli_vector_mul`` and 
-``qstate12_pauli_vector_exp``in module ``qs_matrix.c`` perform
-multiplication and exponentiation in the Pauli group
+``qstate12_pauli_vector_exp`` in module ``qs_matrix.c`` 
+perform multiplication and exponentiation in the Pauli group
 :math:`\mathcal{P}_{n}`.
 
 
@@ -1451,34 +1417,6 @@ follows:
 Function ``qstate12_pauli_conjugate`` in module 
 ``qs_matrix.c`` performs this conjugation.
 
-##################################################################
-
-An important fact
-.................
-
-TODO: This should be copied to a module dealing with matrices!!!!
-
-For vector spaces  :math:`V_1, V_2` over :math:`\mathbb{F}_2`
-let :math:`g = f(e, A, Q)` be a quadratic mapping from
-:math:`V_1  \oplus V_2 \rightarrow \mathbb{C}`, with
-:math:`\ker A = 0`. Here
-:math:`A: \mathbb{F}_2^m \rightarrow V_1  \oplus V_2` is an affine
-mapping and :math:`A: \mathbb{F}_2^m \rightarrow \mathbb{C}` is an
-quuadratic function. Then :math:`g` has a natural interpretation
-as a  :math:`2^{n_1} \times 2^{n_2}` matrix :math:`G`,
-where :math:`n_j = \dim V_j`.
-Then
-
-.. math::
-   \mbox{rk} \;  G =   \frac{ 2^{r} \cdot | \mbox{im} \; A |}
-   {|\ker \pi_1  \circ A| \cdot |\ker \pi_2  \circ A|} \; ,
-
-where  :math:`\pi_i` is the projection of
-:math:`V_1 \oplus V_2` to :math:`V_i` and :math:`r` is
-rank of the  restriction of :math:`\beta(Q)` to
-:math:`\ker \pi_1  \circ A  \times \ker \pi_2  \circ A`.
--
--(YET TO BE SHOWN!!!)
 
 """
 

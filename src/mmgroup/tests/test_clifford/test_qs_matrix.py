@@ -469,3 +469,22 @@ def test_monomial(verbose = 0):
         #print("m_r =", m_r, "m_c=", m ," m_T =", m.T)      
         assert m_r == m.T, (str(m_r), str(m.T))
 
+
+#####################################################################
+# Test some error cases
+#####################################################################
+  
+@pytest.mark.qstate
+def test_qs_errors(verbose = 0):
+    with pytest.raises(ValueError):
+        QStateMatrix(10000, 10000) 
+    with pytest.raises(ValueError):
+        QStateMatrix(1, 1, [0, 0, 0xf]) 
+    m1, m2 = qs_unit_matrix(1),  qs_unit_matrix(2)
+    with pytest.raises(ValueError):
+        m1 @  m2
+    with pytest.raises(ValueError):
+        m1 *  m2
+    m =  QStateMatrix(3, 3, [0, 0, 0xf], 2) 
+    with pytest.raises(ValueError):
+       m.power(-1) 
