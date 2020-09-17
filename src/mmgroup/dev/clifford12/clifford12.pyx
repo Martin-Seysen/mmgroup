@@ -7,14 +7,22 @@ from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
 from collections.abc import Iterable
-from numbers import Integral
+from numbers import Integral, Complex
+import cmath
 
 import numpy as np
 from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t, int8_t
+from libc.math cimport fabs, log, round
+
 
 include "../pxd_files/clifford12.pxi"
 cimport clifford12 as cl
 ctypedef qstate12_type *p_qstate12_type
+ 
+ 
+####################################################################
+# Handling errors from C functions in file qstate.c
+####################################################################
  
 
 # Messages for error codes returned by the functions in module qstate12.c
@@ -57,6 +65,12 @@ cdef int32_t chk_qstate12(int32_t code) except -1:
         return code
     raise ValueError(error_string(code))
 
+
+####################################################################
+# Class QStateMatrix 
+####################################################################
+
+
 cdef class QState12(object):
     """TODO: Yet to be documented!!!"""
 
@@ -71,51 +85,66 @@ cdef class QState12(object):
         cl.qstate12_set_mem(&self.qs, &(self.data_[0]), QSTATE12_MAXROWS);
         cl.qstate12_zero(&self.qs, 0)
 
-    def __init__(self, source = 0, data = None, mode = 0):
-        """Intitalize a state with ``ncols`` qubits
+    def __init__(self, rows, cols = None, data = None, mode = 0):
+        """Intitalize a quadratic state matrix
+        
+        If ``rows`` is an integer then ``cols`` must also be
+        an integer and a quadratic state matrix of shape        
+        ``(rows, cols)`` is created. The parameter ``data`` may be:
 
-        If ``source`` is given, it may be another state or an integer
-        denoting the number of qubits of the new state.
-
-        If ``source`` is an integer then ``self.factor`` is set 
-        to ``1`` and  parameter ``data`` may be:
-
-            * ``None`` (default). Then the zero state is created.
-
-            * An integer ``v``. Then the state is set to ``|v>``.
-              
+            * ``None`` (default). Then the zero matrix is created.
+            
             * A list of integers. Then that list of integers must 
               encode a valid pair ``(A, Q)`` of bit matrices that make
-              up the state. In this case parameter ``mode`` is
-              evaluated as follows:
+              up the quadratic state matrix. In this case parameter 
+              ``mode`` is  evaluated as follows:
               
                * 1: create matrix ``Q`` from lower triangular part
               
                * 2: create matrix ``Q`` from upper triangular part
                
                * Anything else: matrix ``Q`` must be symmetric.
+               
+              In this case ``self.factor`` is set to  one.
+              
+            * An integer ``v``. Then one of the values ``rows``
+              and ``cols`` must be zero and the unit (row or
+              column) vector with index ``v`` is created.
+              This corresponds to a complex matrix with one 
+              row or one column.  
+
+        If ``rows`` is an instance of class QState12 then a deep
+        copy of that instance is create.                
         """
-        cdef uint64_t ncols, nrows, i
-        cdef p_qstate12_type source_pqs
-        if isinstance(source, Integral):
-            ncols = source
+        cdef uint32_t n, n0, n1, nrows, i
+        cdef uint64_t v
+        if isinstance(rows, Integral) and isinstance(rows, Integral):
+            n0, n1 = rows, cols
+            n = n0 + n1
             if data is None:
-                chk_qstate12(cl.qstate12_zero(&self.qs, ncols))
+                chk_qstate12(cl.qstate12_zero(&self.qs, n))                
             elif isinstance(data, Iterable):
                 nrows = len(data)
                 for i in range(min(nrows, QSTATE12_MAXROWS)):
                     self.data_[i] = data[i]
                 chk_qstate12(cl.qstate12_set(
-                    &self.qs, ncols, nrows, &self.data_[0], mode))
+                    &self.qs, n, nrows, &self.data_[0], mode))
+            elif isinstance(data, Integral) and rows * cols == 0:
+                v = data
+                chk_qstate12(cl.qstate12_vector_state(
+                    &self.qs, n, v))
             else:
-                err = "Bad type of data for creating instance of class  QState12"
-                raise TypeError(err)
-        elif isinstance(source, QState12):
-            source_pqs = pqs12(source)
+                err = "Bad data type for QStateMatrix"
+                raise TypeError(err) 
+            chk_qstate12(cl.qstate12_mat_reshape(&self.qs, n0, n1))
+        elif isinstance(rows, QState12) and cols is None:
+            source_pqs = pqs12(rows)
             chk_qstate12(cl.qstate12_copy(source_pqs, &self.qs))
         else:
-            err = "Bad type for creating instance of class  QState12"
-            raise TypeError(err)
+            err = "Cannot construct QStateMatrix from given input" 
+            raise TypeError(err) 
+
+
 
     #########################################################################
     # Properties and methods for obtaining implementation details
@@ -172,18 +201,6 @@ cdef class QState12(object):
             return (e, phi)
 
 
-    property shape:
-        """Get shape of the complex matrix represented by the state 
-        
-        The function returns a pair ``(rows, cols)`` meaning
-        that the state corresponds to a complex
-        ``2**nrows`` times ``2**ncols`` matrix.        
-        """
-        def __get__(self):
-            cdef uint32_t cols = self.qs.shape1
-            cdef uint32_t rows = self.qs.ncols - cols
-            return rows, cols  
-
                                 
     def row(self, uint32_t i):    
         """Return row i of the bit matrix of the state"""
@@ -214,6 +231,21 @@ cdef class QState12(object):
     #########################################################################
     # Elementary operations and checks
 
+    property shape:
+        """Get shape of the complex matrix represented by the state 
+        
+        The function returns a pair ``(rows, cols)`` meaning
+        that the state corresponds to a complex
+        ``2**nrows`` times ``2**ncols`` matrix.        
+        """
+        def __get__(self):
+            cdef uint32_t cols = self.qs.shape1
+            cdef uint32_t rows = self.qs.ncols - cols
+            return rows, cols  
+
+    def copy(self):
+        return self.__class__(self)
+
     def conjugate(self):
         """Conjugate state in place"""
         chk_qstate12(cl.qstate12_conjugate(&self.qs))
@@ -235,9 +267,9 @@ cdef class QState12(object):
     def lb_rank(self):
         """Yet to be documented"""
         cdef int32_t res = cl.qstate12_mat_lb_rank(&self.qs)
-        if (res < -1):
-           chk_qstate12(res)
-        return res
+        if (res >= -1):
+            return res
+        chk_qstate12(res)
         
     def set_zero(self):
         """Multiply the state by a sclar factor in place
@@ -249,7 +281,7 @@ cdef class QState12(object):
 
     def check(self):
         """Raise ValueError is state is bad""" 
-        cdef int32_t res = cl.qstate12_check(&self.qs)
+        cl.qstate12_check(&self.qs)
         return self
 
     def check_code(self):
@@ -264,14 +296,14 @@ cdef class QState12(object):
         return res 
 
     #########################################################################
-    # Reshaping a matrix
+    # Reshaping a state matrix
     
-    def _reshape(self, int32_t rows, int32_t cols):
+    def reshape(self, int32_t rows, int32_t cols):
         chk_qstate12(cl.qstate12_mat_reshape(&self.qs, rows, cols))
         return self
 
     #########################################################################
-    # Reducing a state to a standard form and checking equality of states
+    # Reducing a state matrix to a standard form 
 
     def echelon(self):
         """Convert state to (not reduced) echelon form
@@ -306,21 +338,6 @@ cdef class QState12(object):
         return [ row_table[j] for j in range(i) ]
 
  
-    def _equal(self, QState12 other):
-        """Return True iff two states are equal"""
-        cdef uint64_t data1[QSTATE12_MAXROWS] 
-        cdef uint64_t data2[QSTATE12_MAXROWS] 
-        cdef p_qstate12_type other_pqs = pqs12(other)
-        cdef qstate12_type qs1
-        cdef qstate12_type qs2
-        cl.qstate12_set_mem(&qs1, &(data1[0]), QSTATE12_MAXROWS)
-        cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
-        chk_qstate12(cl.qstate12_copy(&self.qs, &qs1))
-        chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-        chk_qstate12(cl.qstate12_reduce(&qs1))
-        chk_qstate12(cl.qstate12_reduce(&qs2))
-        return chk_qstate12(cl.qstate12_equal(&qs1, &qs2))
-
     def row_table(self):
         """Return row table
         
@@ -336,261 +353,206 @@ cdef class QState12(object):
     # Permuting the qubits of the state
 
     def rot_bits(self, int32_t rot, uint32_t nrot, uint32_t n0 = 0):  
-        """Rotate the qubit arguments the state q
-        
-        For ``n0 <= i < n0 + nrot``  we map bit ``i`` to bit  
-        ``n0 + (i + rot) % nrot==. E.g. ``nrot = 3, rot = 1, n0 = 0``
-        means bits are mapped as ``0->1, 1->2, 2->0``.
-                
-        Let ``n = qs.ncols``. Then the function changes 
-        ``qs to qs'`` with
-        ``qs'(...,x[n0-1],y[0],...,y[nrot-1],x[n0+nrot],...) =``
-        ``qs(...,x[n0-1],z[0],...,z[nrot-1],z[n0+nrot],...,),``
-        where ``z[j] = y[j - rot (mod 3)]``.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_rot_bits(&self.qs, rot, nrot, n0))
         return self
         
 
     def xch_bits(self, uint32_t sh, uint64_t mask):
-        """Exchange qubit arguments the state
-        
-        We exchange argument bit ``j`` with argument bit ``j + sh``
-        of the state if bit ``j`` of ``mask`` is set. If bit ``j``
-        of ``mask`` is set then bit ``j + sh`` of ``mask`` must not 
-        be set. No ``mask`` bit at  position >= ``self.ncols - sh``
-        may be set.
-        
-        E.g.  ``qs.qstate12_xch_bits(1, 0x11)`` changes the 
-        state ``qs``  to a statre ``qs'``  with
-        ``qs'(x0,x1,x2,x3,x4,x5,x6,...)``  =
-        ``qs(x1,x0,x2,x3,x5,x4,x6,...)``.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_xch_bits(&self.qs, sh, mask))
+        return self
+
+    #########################################################################
+    # Applying qubit gates
+
+    def gate_not(self, uint64_t v):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_gate_not(&self.qs, v))
+        return self
+
+    def gate_ctrl_not(self, uint64_t vc, uint64_t v):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_gate_ctrl_not(&self.qs, vc, v))
+        return self
+
+    def gate_phi(self, uint64_t v, uint32_t phi):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_gate_phi(&self.qs, v, phi))
+        return self
+
+    def gate_ctrl_phi(self, uint64_t v1, uint64_t v2):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_gate_ctrl_phi(&self.qs, v1, v2))
+        return self
+
+    def gate_h(self,  uint64_t v):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_gate_h(&self.qs, v))
         return self
         
     #########################################################################
     # Extending and restricting a state
 
     def extend_zero(self, uint32_t j, uint32_t nqb):
-        """Insert ``nqb`` zero qubits at position ``j``. 
-        
-        Let ``n = self.ncol`` so that the state ``qs`` referred by 
-        ``self`` depends on ``n`` qubits. We change ``qs`` to the
-        following state ``qs'`` depending on ``n + ncols`` qubits:
-        
-        ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
-        is equal to ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` if
-        ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
-        So we increment ``self.ncol`` by ``nqb``.
-        
-        If the input is reduced then the result is also reduced.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_extend_zero(&self.qs, j, nqb))
         return self
 
     def extend(self, uint32_t j, uint32_t nqb):
-        """Insert ``nqb`` qubits at position ``j``. . 
-        
-        Let ``n = self.>ncol`` so that the state ``qs`` referred by 
-        ``self`` depends on ``n`` qubits. We change ``qs`` to the
-        following state ``qs'`` depending on ``n + ncols`` qubits:
-        
-        ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
-          = ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` .
-        So we increment ``self.>ncol`` by ``nqb``.
-        
-        If the input is reduced then the result is also reduced.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_extend(&self.qs, j, nqb))
         return self
         
-    def sumup(self, uint32_t j, uint32_t nqb):
-        """Sum up ``nqb`` qubits  starting at position ``j``. 
-        
-        Let ``n =self.ncols`` so that the state ``qs`` referred by 
-        ``self`` depends on ``n`` qubits. We change ``qs`` to the
-        following state ``qs'`` depending on ``n - ncols`` qubits:
-        
-        ``qs'(x[0],...,x[j-1],x[j+nqb],...,x[n-1])`` =
-           ``sum_{{x[j],...,x[j+nqb-1]}}  qs1(x[0],...,x[nn1-1])`` .
-        So we decrement ``self.ncol`` by ``nqb``.
-        
-        The output is not reduced.
-        """
-        chk_qstate12(cl.qstate12_sum_cols(&self.qs, j, nqb))
-        return self
-
     def restrict_zero(self, uint32_t j, uint32_t nqb):
-        """Restrict ``nqb`` qubits starting at postion ``j`` to ``0``.
-       
-        Let ``n = self.ncols`` so that the state ``qs`` referred by 
-        ``self`` depends on ``n`` qubits. We change ``qs`` to the
-        following state ``qs'`` depending on ``n`` qubits:
-       
-        qs'(x[0],...,x[n-1]) is equal to qs(x[0],...,x[n-1]) if 
-        x[j] = ... = x[j+nqb-1] = 0 and equal to zero otherwise.
-        We do not change ``self.ncols``.
-        
-        The output is reduced if the input is reduced.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_restrict_zero(&self.qs, j, nqb))
         return self
 
     def restrict(self, uint32_t j, uint32_t nqb):
-        """This is method ``restrict_zero`` with deletion.
-       
-        Let ``n = self.ncols`` so that the state ``qs`` referred by 
-        ``self`` depends on ``n`` qubits.  We change ``qs`` to the 
-        following state ``qs'`` depending  on ``n' = n - nqb`` qubits:
-
-        qs'(x[0],...,x[n'-1]) is equal to 
-        qs(x[0],...,x[j-1],0,...,0,x[j],...,x[n'-1]). 
-        So we decrement ``self.ncols`` by ``nqb``.
-       
-        The output is not reduced.
-        """
+        """Wrapper for the corresponding C function"""
         chk_qstate12(cl.qstate12_restrict(&self.qs, j, nqb))
         return self
 
-     
-    #########################################################################
-    # Applying qubit gates
-
-    def gate_not(self, uint64_t v):
-        """Apply not gates to a state
-
-        Change the state ``qs`` referred by ``selg`` to a state ``qs'`` 
-        with ``qs'(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
-        xor operation.
-        The result is reduced if the input is reduced.
-        Computing ``qs.gate_not(1 << j)`` corresponds to
-        negating qubit ``j``.
-        """
-        chk_qstate12(cl.qstate12_gate_not(&self.qs, v))
-        return self
-
-    def gate_ctrl_not(self, uint64_t vc, uint64_t v):
-        """Apply controlled not gates to a state
-        
-        Change the state ``qs`` referred by ``self`` to a state ``qs'``
-        with ``qs'(x) = qs(x (+) <vc,x> * v)``  where ``'(+)'`` is 
-        the bitwise  xor operation, and ``<.,.>`` is the scalar 
-        product of bit vectors.  The result is not reduced. The 
-        scalar product of the bit vectors ``j`` and ``jc`` must
-        be zero. Otherwise the ``ctrl not`` operation is not
-        unitary.
-        
-        Computing ``qs.gate_ctrl_not(1 << jc, 1 << j)``, 
-        for ``jc != j``, corresponds to applying a controlled not  
-        gate  to qubit ``j``  contolled by qubit ``jc``. 
-        This operation is unitary if and only if the scalar
-        product of ``j`` and ``jc`` is zero.
-        """
-        chk_qstate12(cl.qstate12_gate_ctrl_not(&self.qs, vc, v))
-        return self
-
-    def gate_phi(self, uint64_t v, uint32_t phi):
-        """Apply phase gate to a state
-        
-        Change the state ``qs`` referred by ``self`` to a state ``qs'``
-        with ``qs'(x) = qs(x) * sqrt(-1)**(phi * <v,x>)``, where
-        ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
-        denotes exponentiation.
-        The result is reduced if the input is reduced.
-        Computing ``qs.gate_phi(1 << j, phi)`` 
-        corresponds to applying a  phase ``(phi * pi/2)``  gate 
-        to qubit ``j``. 
-        """
-        chk_qstate12(cl.qstate12_gate_phi(&self.qs, v, phi))
-        return self
-
-    def gate_ctrl_phi(self, uint64_t v1, uint64_t v2):
-        """Apply controlled phase gates to a state
-        
-        Change the state ``qs`` referred by ``self`` to a state ``qs'``
-        with ``qs'(x) = qs(x) * (-1)**(<v1,x>*<v2,x>)``, where 
-        ``<.,.>``  is the scalar product of bit vectors and ``'**'``
-        denotes exponentiation.
-        The result is reduced if the input is reduced.
-        Computing ``qs.gate_ctrl_phi(1 << j1, 1 << j2)``
-        corresponds to applying a  phase ``pi`` gate to 
-        qubit ``j2`` controlled by qubit ``j1``. 
-        """
-        chk_qstate12(cl.qstate12_gate_ctrl_phi(&self.qs, v1, v2))
-        return self
-
-    def gate_h(self,  uint64_t v):
-        """Apply Hadamard gates to a state
-     
-        Apply a Hadamard gate to all qubits ``j`` of the state ``qs``
-        (referred by ``self``) with  ``v & (1 << j) == 1``.
-        Aplying a Hadamard gate to gate ``j`` changes a state ``qs``
-        to a state ``1/sqrt(2) * qs'``, where
-        ``qs'(..,x[j-1],x_j,x[j+1],..) = qs(..,x[j-1],0,x[j+1],..)``
-          + (-1)**(x_j) * qs(..,x[j-1],1,x[j+1],..)  .
-        The result is not reduced.
-        """
-        chk_qstate12(cl.qstate12_gate_h(&self.qs, v))
+    def sumup(self, uint32_t j, uint32_t nqb):
+        """Wrapper for the corresponding C function"""
+        chk_qstate12(cl.qstate12_sum_cols(&self.qs, j, nqb))
         return self
         
     #########################################################################
-    # Conversion of a state to a complex vector
-    
-    
-    def complex(self):
+    # Conversion of a state matrix to a complex vector
+        
+    def complex(self, uint32_t reduce = True):
         """Convert the state to a complex vector"""
         cdef uint64_t data[QSTATE12_MAXROWS] 
         cdef qstate12_type qs
+        cdef uint32_t n0, n1
+        n0, n1 = self.shape
         cl.qstate12_set_mem(&qs, &(data[0]), QSTATE12_MAXROWS)
         chk_qstate12(cl.qstate12_copy(&self.qs, &qs))
-        chk_qstate12(cl.qstate12_reduce(&qs))
+        if reduce:
+            chk_qstate12(cl.qstate12_reduce(&qs))
         a = np.empty(2 << self.ncols, dtype = np.double)
         cdef double[:] a_view = a
         chk_qstate12(cl.qstate12_complex_test(&qs, &a_view[0]))
         c = a[0::2] + 1j * a[1::2]
         del a
-        return c
-    
-    def complex_unreduced(self):
-        """Convert the state to a complex vector without reducing it
-       
-        To be used for testing only!
-        """
-        a = np.empty(2 << self.ncols, dtype = np.double)
-        cdef double[:] a_view = a
-        chk_qstate12(cl.qstate12_complex_test(&self.qs, &a_view[0]))
-        c = a[0::2] + 1j * a[1::2]
-        del a
-        return c
+        return c.reshape((1 << n0, 1 << n1))
 
     #########################################################################
-    # Matrix multiplication and inversion
+    # Comparing state matrices
+
+    def __eq__(self, QState12 other):
+        """Return True iff two states are equal"""
+        cdef uint64_t data1[QSTATE12_MAXROWS] 
+        cdef uint64_t data2[QSTATE12_MAXROWS] 
+        cdef p_qstate12_type other_pqs
+        cdef qstate12_type qs1
+        cdef qstate12_type qs2
+        if isinstance(other, QState12):
+            other_pqs = pqs12(other)
+            cl.qstate12_set_mem(&qs1, &(data1[0]), QSTATE12_MAXROWS)
+            cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
+            chk_qstate12(cl.qstate12_copy(&self.qs, &qs1))
+            chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
+            chk_qstate12(cl.qstate12_reduce(&qs1))
+            chk_qstate12(cl.qstate12_reduce(&qs2))
+            return chk_qstate12(cl.qstate12_equal(&qs1, &qs2))
+        err = "Cannot compare QStateMatrix with non QStateMatrix"
+        raise TypeError(err)
+
     
-    def _matmul(self, QState12 other):
+    #########################################################################
+    # Matrix multiplication and inversion
+       
+    def __imatmul__(self, QState12 other):
         """Perform a matrix multiplication.
         
         We replace ``self`` by the matrix product ``self @ other``.
         ``other`` is not changed.        
         """
-        cdef p_qstate12_type pqs2 = pqs12(QState12(other))
-        chk_qstate12(cl.qstate12_matmul(&self.qs, pqs2))
-        return self
+        cdef int32_t res
+        cdef p_qstate12_type pqs2
+        if isinstance(other, QState12):
+            pqs2 = pqs12(QState12(other))
+            res = cl.qstate12_matmul(&self.qs, pqs2)
+            if res >= 0:
+                return self
+            err = "Multiplying QStateMatrix objects of shape %s and %s"
+            print("\n" + err % (self.shape, other.shape))
+            chk_qstate12(res)
+        err = "Bad type for matrix multiplication with QStateMatrix"
+        raise TypeError(err)
+
+    def __matmul__(self, QState12 other):
+        """Return matrix product  ``self @ other``.
+        
+        """
+        return self.copy().__imatmul__(other)
 
     def _mat_inv(self):
-        """Perform a matrix inversion in place."""
-        chk_qstate12(cl.qstate12_mat_inv(&self.qs))
-        return self
+        """Return inverse matrix"""
+        qs1 = self.copy()
+        cdef p_qstate12_type pqs1 = pqs12(qs1)
+        chk_qstate12(cl.qstate12_mat_inv(pqs1))
+        return qs1
+
+    #########################################################################
+    # Scalar multiplication 
+
+
+    def  __imul__(self, other):
+        cdef p_qstate12_type pqs
+        cdef uint32_t nqb, shape1
+        if isinstance(other, Complex):
+            qstate12_mul_scalar(self, other)
+            return self
+        elif isinstance(other, QState12):
+            if self.shape == other.shape:
+                pqs = pqs12(QState12(other))
+                nqb = self.ncols
+                shape1 = self.qs.shape1
+                chk_qstate12(cl.qstate12_product(&self.qs, pqs, nqb, 0))
+                self.qs.shape1 = shape1
+                return self
+            else:
+                err = "QStateMatrix instances must have same shape"
+                raise ValueError(err)
+        else:
+            err = "Bad type for multiplication with QStateMatrix"
+            raise TypeError(err)
+
+
+    def  __mul__(self, other):
+        return self.copy().__imul__(other)
+        
+    __rmul__ = __mul__    
+
+    def __itruediv__(self, other):
+        if isinstance(other, Complex):
+            return self.__imul__(1.0/other)
+        else:
+            err = "Bad type for multiplication with QStateMatrix"
+            raise TypeError(err)
+
+    def __truediv__(self, other):
+        return self.copy().__itruediv__(other)
+            
+    def __neg__(self):
+        return self.copy().mul_scalar(0, 4)    
+
+    def __pos__(self):
+        return self    
+
     
     #########################################################################
     # A rather general multiplication function
 
-    def _qstate12_product(self, QState12 other, uint32_t nqb, uint32_t nc):
+    def qstate12_product(self, QState12 other, uint32_t nqb, uint32_t nc):
         """Wrapper for the corresponding C function
     
-        We compute a certain product ``qs3`` of the states ``qs1`` 
-        ad ``qs2`` referred by ``self`` and ``other`` and store
-        that product in ``self``. ``other`` is destroyed.
+        We return a certain product ``qs3`` of the states ``qs1`` 
+        ad ``qs2`` referred by ``self`` and ``other``.
         
         Let ``n1 = qs1.ncols,  n2 = qs2.ncols``.
         Put ``qs1a =  qs1.extend(n1, n2-nqb)``,
@@ -617,22 +579,27 @@ cdef class QState12(object):
         *Products and tensor products of quadratic mappings*
         of the guide.   
         """
-        cdef p_qstate12_type pqs2 = pqs12(as_qstate12(other))
-        chk_qstate12(cl.qstate12_product(&self.qs, pqs2, nqb, nc))
-        return self
+        qs1 = self.copy()
+        cdef p_qstate12_type pqs1 = pqs12(qs1)
+        cdef p_qstate12_type pqs2 = pqs12(QState12(other))
+        chk_qstate12(cl.qstate12_product(pqs1, pqs2, nqb, nc))
+        return qs1
 
     #########################################################################
     # Auxiliary function for Matrix multiplication (for testing)
 
-    def _qstate12_prep_mul(self, QState12 other, uint32_t nqb):
+    def qstate12_prep_mul(self, QState12 other, uint32_t nqb):
         """Wrapper for the corresponding C function
     
         To be used for tests only. Function ``qstate12_prep_mul``
         is an auxliary function for function ``qstate12_product``.    
         """
-        cdef p_qstate12_type pqs2 = pqs12(other)
-        row_pos = chk_qstate12(cl.qstate12_prep_mul(&self.qs, pqs2, nqb))
-        return row_pos, self, other
+        qs1 = self.copy()
+        qs2 = other.copy()
+        cdef p_qstate12_type pqs1 = pqs12(qs1)
+        cdef p_qstate12_type pqs2 = pqs12(qs2)
+        row_pos = chk_qstate12(cl.qstate12_prep_mul(pqs1, pqs2, nqb))
+        return row_pos, qs1, qs2
         
 
     #########################################################################
@@ -701,10 +668,52 @@ cdef p_qstate12_type pqs12(QState12 state):
     """
     return &state.qs
   
-def as_qstate12(QState12 state):
-    """Return an object as an instance of class QState12"""
-    return state
  
+####################################################################
+# Convert a complex number to a factor for class QStateMatrix 
+####################################################################
+    
+
+MIN_ABS = 2.0**-1024
+EPS = 1.0e-8 
+PI =  3.141592653589793238462643383279
+LOG2 = 0.693147180559945309417232121458
+
+       
+def qstate12_mul_scalar(QState12 qs, x):
+    """Multiply quadratic state matrix with scalar factor
+    
+    Here ``qs`` is an instance of class ``QState12``
+    representing a quadratic state matrix and ``x`` is
+    a complex number.
+    
+    This multiplication succeeds if ``x = 0`` or 
+    ``x == 2**(0.5*e) * z**phi``, with ``z = (1+1j)/sqrt(2)``
+    and integers ``e, phi``.
+    
+    Raise ValueError multiplication fails.. We accept a relative 
+    error of about ``1.0e-8`` for ``x``.
+    
+    So it is safe to write e.g. ``2**-0.5 * (-1+1j) * m`` 
+    if ``m`` is an  instance of class ``QState12``.    
+    """
+    cdef double r, phi, e, e_r, phi8_r
+    cdef int32_t e_i, phi8_i
+    r, phi = cmath.polar(x)
+    if r <= MIN_ABS:
+        return qs.set_zero()
+    e = 2.0 * log(r) / LOG2
+    phi8 = 4.0 * phi / PI
+    e_r, phi8_r = round(e), round(phi8)
+    e_i, phi8_i = <int32_t>e_r, <int32_t>phi8_r
+    if (max(fabs(e - e_r), fabs(phi8 - phi8_r)) < EPS):
+        return qs.mul_scalar(e_i, phi8_i)
+    err = "Cannot convert number to factor for QStateMatrix"
+    raise ValueError(err)    
+
+
+
+
  
 ####################################################################
 # Wrappers for C functions contructing state matrices
@@ -714,12 +723,6 @@ def qstate12_unit_matrix(QState12 qs, uint32_t n):
     """Change state qs to a  2**n times 2**n unit matrix"""
     cdef p_qstate12_type m_pqs = pqs12(qs)
     chk_qstate12(cl.qstate12_unit_matrix(m_pqs, n))
-    return qs
-
-def qstate12_column_vector(QState12 qs, uint32_t n, uint64_t v):
-    """Change state qs to a  2**n unit column vector"""
-    cdef p_qstate12_type m_pqs = pqs12(qs)
-    chk_qstate12(cl.qstate12_vector_state(m_pqs, n, v))
     return qs
 
 

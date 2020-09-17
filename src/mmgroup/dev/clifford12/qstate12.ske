@@ -42,7 +42,7 @@ typedef struct {
 // Unless otherwise states, negative return values of functions in 
 // this module mean error codes as follows:
 
-typedef enum qstate12_error_type
+enum qstate12_error_type
 {
     ERR_QSTATE12_NOTFOUND = -1,     // No qubit with requested property found 
        // This is usually handled internally by the calling procedure

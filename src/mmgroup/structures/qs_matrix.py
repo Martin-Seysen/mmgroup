@@ -12,8 +12,7 @@ import cmath
 from random import randint
 
 import numpy as np
-from mmgroup.clifford12 import QState12, as_qstate12 
-from mmgroup.clifford12 import qstate12_column_vector 
+from mmgroup.clifford12 import QState12 
 from mmgroup.clifford12 import qstate12_unit_matrix 
 from mmgroup.clifford12 import qstate12_column_monomial_matrix
 from mmgroup.clifford12 import qstate12_row_monomial_matrix
@@ -31,9 +30,12 @@ class QStateMatrix(QState12):
     
     :param rows:
     
-        Binary logarithm of the number of rows of the matrix
+        * Binary logarithm of the number of rows of the matrix
+ 
+        * or an instance of class ``QStateMatrix``. Then a deep copy
+          of that instance is created.
     
-    :type rows: A nonnegative ``int``
+    :type rows: A nonnegative ``int`` or and ntance of class
     
     :param cols:
     
@@ -47,7 +49,7 @@ class QStateMatrix(QState12):
         
     :param data:
     
-        Evaluated according to parameter ``data`` as described below
+        Evaluated according as described below
         
     :raise:
         * TypeError if ``type(data)`` is not as expected.
@@ -76,12 +78,6 @@ class QStateMatrix(QState12):
     If ``rows`` and ``cols`` are integers then ``data``  may be:
 
       * ``None`` (default). Then the zero matrix is created.
-
-      * An integer ``v``, if ``rows`` or ``cols`` is ``0``. 
-        Then the state is set to ``|v>`` or ``<v|``,  respectively.
-
-      * The integer ``1`` if ``rows`` == ``cols``. Then a unit 
-        matrix is created.
 
       * A list of integers. Then that list of integers must encode 
         a valid pair ``(A, Q)`` of bit matrices that make up a 
@@ -118,135 +114,25 @@ class QStateMatrix(QState12):
     matrix raises ValueError.
     """
     UNDEF_ROW = 255
+
+    #########################################################################
+    # Constructors
     
     def __init__(self, rows, cols = None, data = None, mode = 0):
-        if isinstance(cols, Integral):
-            if isinstance(rows, Integral):
-                n = rows + cols
-                if data is None or isinstance(data, Iterable):
-                    super(QStateMatrix, self).__init__(n, data, mode)
-                elif isinstance(data, Integral):
-                    raise ValueError("WTF")
-                    if rows * cols == 0:
-                        super(QStateMatrix, self).__init__(n, data)
-                    elif rows == cols and data == 1:
-                        qstate12_unit_matrix(self, rows)
-                else:
-                    err = "Bad data type for  QStateMatrix"
-                    raise TypeError(err) 
-                self._reshape(rows, cols)
-        elif cols is None:
-            source = rows
-            if isinstance(source, QState12):
-                super(QStateMatrix, self).__init__(as_qstate12(source))
-            elif isinstance(source, QStateMatrix):
-                super(QStateMatrix, self).__init__(as_qstate12(source))
-            else:
-                err = "Illegal source type for QStateMatrix"
-                raise TypeError(err) 
-        else:
-            err = "Cannot construct QStateMatrix from given objects" 
-            raise TypeError(err) 
-            
-    def copy(self):
-        """Return a copy of the matrix"""    
-        return QStateMatrix(self)   
-    
+        super(QStateMatrix, self).__init__(rows, cols, data, mode)
 
-
-    def reshape(self, shape = (), copy = True):
-        """Reshape matrix to given ``shape``
-
-        ``shape[0] + shape[1] = self.shape[0] + self.shape[0]`` 
-        must hold.
-
-        If one of the values ``shape[0]``, ``shape[1]`` is negative,
-        the other value is calculated from the sum 
-        ``self.shape[0] + self.shape[1]``. 
-
-        Shape defaults to ``(0, -1)``.
-        """  
-        m = QStateMatrix(self) if copy else self
-        if isinstance(shape, int):
-            shape = (shape, -1)
-        while len(shape) < 2:
-            shape += (-1),
-        m._reshape(shape[0], shape[1])
-        return m
+    #########################################################################
+    # Elementary operations
         
-    def conjugate(self, copy = True):
+    def conjugate(self):
         """Return complex conjugate of the matrix
         
         Returns an instance of class ``QStateMatrix``.
         """
-        m = QStateMatrix(self) if copy else self   
+        m = QStateMatrix(self) 
         return super(QStateMatrix, m).conjugate()   
 
     conj = conjugate        
-
-       
-    def rot_bits(self, rot, nrot, n0 = 0, copy = True):    
-        """Wrapper for corresponding function in class QState12"""
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).rot_bits(rot, nrot, n0)   
-        return m   
-        
-    def xch_bits(self, sh, mask, copy = True):    
-        """Wrapper for corresponding function in class QState12"""
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).xch_bits(sh, mask)   
-        return m   
-        
-    def extend(self, j,nqb, copy = True):    
-        """Wrapper for corresponding function in class QState12
-        
-        The function returns *ket*, i.e. a column vector. 
-        """
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).extend(j, nqb) 
-        m._reshape(0, m.ncols)       
-        return m   
-
-    def extend_zero(self, j, nqb, copy = True):    
-        """Wrapper for corresponding function in class QState12
-        
-        The function returns *ket*, i.e. a column vector. 
-        """
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).extend_zero(j, nqb) 
-        m._reshape(0, m.ncols)        
-        return m   
-
-    def restrict(self, j,nqb, copy = True):    
-        """Wrapper for corresponding function in class QState12
-        
-        The function returns *ket*, i.e. a column vector. 
-        """
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).restrict(j, nqb) 
-        m._reshape(0, m.ncols)     
-        return m   
-
-    def restrict_zero(self, j, nqb, copy = True):    
-        """Wrapper for corresponding function in class QState12
-        
-        The function returns *ket*, i.e. a column vector. 
-        """
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).restrict_zero(j, nqb) 
-        m._reshape(0, m.ncols)       
-        return m   
-
-    def sumup(self, j,nqb, copy = True):    
-        """Wrapper for corresponding function in class QState12
-        
-        The function returns *ket*, i.e. a column vector. 
-        """
-        m = QStateMatrix(self) if copy else self
-        super(QStateMatrix, m).sumup(j, nqb) 
-        m._reshape(0, m.ncols)        
-        return m   
-
 
     @property 
     def T(self):
@@ -259,27 +145,267 @@ class QStateMatrix(QState12):
         m = self.copy().transpose()
         return super(QStateMatrix, m).conjugate()    
      
-    def complex(self):
-        """Return complex matrix as a numpy array
-        
-        ``m.complex()`` is equivalent to ```m[:,:]``.
-        """
-        a = super(QStateMatrix, self).complex()
-        a = a.reshape((1 << self.shape[0], 1 << self.shape[1])) 
-        return a        
+            
+    #########################################################################
+    # Reshaping a state matrix
 
-    def complex_unreduced(self):
-        """For tests only: Return complex matrix of state 
-        
-        Returns same result as method reduce().
+    def reshape(self, new_shape, copy = True):
+        """Reshape matrix to given ``shape``
 
-        The standard method reduce() creates a reduced copy before 
-        calculating the complex matrix, which is usually much 
-        faster. This method does not reduce the matrix.
+        ``new_shape[0] + new_shape[1] = self.shape[0] + self.shape[0]`` 
+        must hold.
+
+        If one of the values ``new_shape[0]``, ``new_shape[1]`` is 
+        negative then the other value is calculated from the sum 
+        ``self.shape[0] + self.shape[1]``. 
+        
+        If ``copy`` is True, a copy of the orginal state matrix is
+        returned, otherwise the  state matrix is is reshaped
+        inplace.
+        """  
+        return super(QStateMatrix, self).reshape(new_shape, copy)  
+
+
+       
+    def rot_bits(self, rot, nrot, start = 0):    
+        """Rotate the qubit arguments the state ``qs`` in place
+
+        If the state matrix ``qs`` has shape ``(0,n)`` or ``(n,0)`` 
+        we rotate  the qubits of the ``qs`` in place as follows:
+        
+        For ``n0 <= i < n0 + nrot``  we map qubit ``i`` to bit  
+        ``n0 + (i + rot) % nrot==. E.g. ``nrot = 3, rot = 1, n0 = 0``
+        means qubits are mapped as ``0->1, 1->2, 2->0``.
+
+        In that case the entries of the state matrix are labelled by bit 
+        vectors of length ``n``. Let ``qs(x[0],...,x[n-1])`` be the 
+        entry of the state matrix corresponding to the bit vector
+        ``(x[0],...,x[n-1])``.
+                
+        Then the function changes ``qs to qs'`` with
+        ``qs'(...,x[start-1],y[0],...,y[nrot-1],x[start+nrot],...) =``
+        ``qs(...,x[start-1],z[0],...,z[nrot-1],z[start+nrot],...,),``
+        where ``z[j] = y[j - rot (mod 3)]``.
+
+        If the state matrix ``qs`` has shape ``(n0, n1)`` then we
+        may label the entries of state matrix by bit vectors of 
+        length ``n0 + n1``, with the ``n1`` bits corresponding to 
+        the columns of the matrix occuring before the  ``n0`` bits 
+        corresponding to the rows of the matrix.
         """
-        a = super(QStateMatrix, self).complex_unreduced()
-        a = a.reshape((1 << self.shape[0], 1 << self.shape[1])) 
-        return a 
+        return super(QStateMatrix, self).rot_bits(rot, nrot, start)   
+        
+    def xch_bits(self, sh, mask):    
+        """Exchange qubit arguments the state  ``qs`` in place
+
+        We label the entries of the state matrix ``qs`` by bit vectors
+        and define ``qs(x[0],...,x[n-1])``, with  ``n = n0 + n1``, 
+        ``(n0, n1) = qs.shape`` as in method ``rot_bits``.
+        
+        We exchange qubit ``j`` with argument qubit ``j + sh``
+        of the state, if bit ``j`` of ``mask`` is set. If bit ``j``
+        of ``mask`` is set then bit ``j + sh`` of ``mask`` must not 
+        be set. No ``mask`` bit at  position >= ``self.ncols - sh``
+        may be set.
+        
+        E.g.  ``qs.qstate12_xch_bits(1, 0x11)`` changes the 
+        state matrix ``qs``  to a state matrix ``qs'``  with
+        ``qs'(x0,x1,x2,x3,x4,x5,x6,...)``  =
+        ``qs(x1,x0,x2,x3,x5,x4,x6,...)``.
+        """
+        return super(QStateMatrix, self).xch_bits(sh, mask)   
+   
+ 
+    #########################################################################
+    # Applying qubit gates
+
+    def gate_not(self,v):
+        """Apply not gates to a state
+        
+        TODO: Update documentation!!!
+
+        Change the state ``qs`` referred by ``selg`` to a state ``qs'`` 
+        with ``qs'(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
+        xor operation.
+        The result is reduced if the input is reduced.
+        Computing ``qs.gate_not(1 << j)`` corresponds to
+        negating qubit ``j``.
+        """
+        return super(QStateMatrix, self).gate_not(v)
+
+    def gate_ctrl_not(self, vc, v):
+        """Apply controlled not gates to a state
+        
+        TODO: Update documentation!!!
+        
+        Change the state ``qs`` referred by ``self`` to a state ``qs'``
+        with ``qs'(x) = qs(x (+) <vc,x> * v)``  where ``'(+)'`` is 
+        the bitwise  xor operation, and ``<.,.>`` is the scalar 
+        product of bit vectors.  The result is not reduced. The 
+        scalar product of the bit vectors ``j`` and ``jc`` must
+        be zero. Otherwise the ``ctrl not`` operation is not
+        unitary.
+        
+        Computing ``qs.gate_ctrl_not(1 << jc, 1 << j)``, 
+        for ``jc != j``, corresponds to applying a controlled not  
+        gate  to qubit ``j``  contolled by qubit ``jc``. 
+        This operation is unitary if and only if the scalar
+        product of ``j`` and ``jc`` is zero.
+        """
+        return super(QStateMatrix, self).gate_ctrl_not(vc, v)
+
+    def gate_phi(self, v, phi):
+        """Apply phase gate to a state
+         
+        TODO: Update documentation!!!
+       
+        Change the state ``qs`` referred by ``self`` to a state ``qs'``
+        with ``qs'(x) = qs(x) * sqrt(-1)**(phi * <v,x>)``, where
+        ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
+        denotes exponentiation.
+        The result is reduced if the input is reduced.
+        Computing ``qs.gate_phi(1 << j, phi)`` 
+        corresponds to applying a  phase ``(phi * pi/2)``  gate 
+        to qubit ``j``. 
+        """
+        return super(QStateMatrix, self).gate_phi(v, phi)
+
+    def gate_ctrl_phi(self, v1, v2):
+        """Apply controlled phase gates to a state
+        
+        TODO: Update documentation!!!
+        
+        Change the state ``qs`` referred by ``self`` to a state ``qs'``
+        with ``qs'(x) = qs(x) * (-1)**(<v1,x>*<v2,x>)``, where 
+        ``<.,.>``  is the scalar product of bit vectors and ``'**'``
+        denotes exponentiation.
+        The result is reduced if the input is reduced.
+        Computing ``qs.gate_ctrl_phi(1 << j1, 1 << j2)``
+        corresponds to applying a  phase ``pi`` gate to 
+        qubit ``j2`` controlled by qubit ``j1``. 
+        """
+        return super(QStateMatrix, self).gate_ctrl_phi(v1, v2)
+
+    def gate_h(self, v):
+        """Apply Hadamard gates to a state
+        
+        TODO: Update documentation!!!
+     
+        Apply a Hadamard gate to all qubits ``j`` of the state ``qs``
+        (referred by ``self``) with  ``v & (1 << j) == 1``.
+        Aplying a Hadamard gate to gate ``j`` changes a state ``qs``
+        to a state ``1/sqrt(2) * qs'``, where
+        ``qs'(..,x[j-1],x_j,x[j+1],..) = qs(..,x[j-1],0,x[j+1],..)``
+          + (-1)**(x_j) * qs(..,x[j-1],1,x[j+1],..)  .
+        The result is not reduced.
+        """
+        return super(QStateMatrix, self).gate_h(v)
+
+
+    #########################################################################
+    # Extending and restricting a state
+       
+    def extend_zero(self, j, nqb, copy = True):    
+        """Insert ``nqb`` zero qubits at position ``j``. 
+         
+        TODO: Update documentation!!!
+       
+        Let ``n = self.ncol`` so that the state ``qs`` referred by 
+        ``self`` depends on ``n`` qubits. We change ``qs`` to the
+        following state ``qs'`` depending on ``n + ncols`` qubits:
+        
+        ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
+        is equal to ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` if
+        ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
+        So we increment ``self.ncol`` by ``nqb``.
+        
+        If the input is reduced then the result is also reduced.
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).extend_zero(j, nqb) 
+        return m   
+
+    def extend(self, j,nqb, copy = True):    
+        """Insert ``nqb`` qubits at position ``j``. . 
+        
+        TODO: Update documentation!!!
+        
+        Let ``n = self.>ncol`` so that the state ``qs`` referred by 
+        ``self`` depends on ``n`` qubits. We change ``qs`` to the
+        following state ``qs'`` depending on ``n + ncols`` qubits:
+        
+        ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
+          = ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` .
+        So we increment ``self.>ncol`` by ``nqb``.
+        
+        If the input is reduced then the result is also reduced.
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).extend(j, nqb) 
+        return m   
+
+
+    def restrict_zero(self, j, nqb, copy = True):    
+        """Restrict ``nqb`` qubits starting at postion ``j`` to ``0``.
+        
+        TODO: Update documentation!!!
+       
+        Let ``n = self.ncols`` so that the state ``qs`` referred by 
+        ``self`` depends on ``n`` qubits. We change ``qs`` to the
+        following state ``qs'`` depending on ``n`` qubits:
+       
+        qs'(x[0],...,x[n-1]) is equal to qs(x[0],...,x[n-1]) if 
+        x[j] = ... = x[j+nqb-1] = 0 and equal to zero otherwise.
+        We do not change ``self.ncols``.
+        
+        The output is reduced if the input is reduced.
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).restrict_zero(j, nqb) 
+        return m   
+
+    def restrict(self, j,nqb, copy = True):    
+        """This is method ``restrict_zero`` with deletion.
+        
+        TODO: Update documentation!!!
+       
+        Let ``n = self.ncols`` so that the state ``qs`` referred by 
+        ``self`` depends on ``n`` qubits.  We change ``qs`` to the 
+        following state ``qs'`` depending  on ``n' = n - nqb`` qubits:
+
+        qs'(x[0],...,x[n'-1]) is equal to 
+        qs(x[0],...,x[j-1],0,...,0,x[j],...,x[n'-1]). 
+        So we decrement ``self.ncols`` by ``nqb``.
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).restrict(j, nqb) 
+        return m   
+
+    def sumup(self, j,nqb, copy = True):    
+        """Sum up ``nqb`` qubits  starting at position ``j``. 
+        
+        TODO: Update documentation!!!
+        
+        Let ``n =self.ncols`` so that the state ``qs`` referred by 
+        ``self`` depends on ``n`` qubits. We change ``qs`` to the
+        following state ``qs'`` depending on ``n - ncols`` qubits:
+        
+        ``qs'(x[0],...,x[j-1],x[j+nqb],...,x[n-1])`` =
+           ``sum_{{x[j],...,x[j+nqb-1]}}  qs1(x[0],...,x[nn1-1])`` .
+        So we decrement ``self.ncol`` by ``nqb``.
+        
+        The function returns *ket*, i.e. a column vector. 
+        """
+        m = QStateMatrix(self) if copy else self
+        super(QStateMatrix, m).sumup(j, nqb) 
+        return m   
+
 
        
     def lb_norm2(self):    
@@ -309,9 +435,9 @@ class QStateMatrix(QState12):
                 mask = 1 << (e.bit_length() - 2)
                 acc = self.copy()
                 while mask:
-                    acc._matmul(acc)
+                    acc @= acc
                     if (e & mask):
-                        acc._matmul(self)
+                        acc @= self
                     mask >>= 1
                 return acc
             elif e >= 0:
@@ -346,14 +472,14 @@ class QStateMatrix(QState12):
             if m == unit:
                 return i
             d[as_tuple(m)] = i 
-            m._matmul(self)
+            m @= self
         m = m.inv()
         acc = m.copy()
         for i in range(1, n):
             t = as_tuple(acc)
             if t in d:
                 return i * n + d[t]
-            acc._matmul(m)
+            acc @= m
         err = "Order of QStateMatrix object not found" 
         raise ValueError(err)
 
@@ -366,60 +492,8 @@ class QStateMatrix(QState12):
             print("\n%s:\n%s\n" % (err, str(self)))
             raise            
             
-    def __matmul__(self, other):
-        try:
-            return self.copy()._matmul(other)
-        except ValueError:
-            err = "Multiplying QStateMatrix objects of shape %s and %s"
-            if isinstance(other, QStateMatrix):
-                print("\n" + err % (self.shape, other.shape))
-            raise          
-
         
-    
-    def  __mul__(self, other):
-        if isinstance(other, Complex):
-            e, phi = complex_to_qs_scalar(other)
-            if e is None:
-                return self.copy().set_zero()
-            else:
-                return self.copy().mul_scalar(e, phi)
-        elif isinstance(other, QStateMatrix):
-            if self.shape == other.shape:
-                p1, p2 = self.copy(), other.copy()
-                p1._qstate12_product(p2, self.ncols, 0)
-                p1._reshape(*self.shape)
-                return p1
-            else:
-                err = "QStateMatrix instances must have same shape"
-                raise ValueError(err)
-        else:
-            err = "Byte type for multiplication with QStateMatrix"
-            raise TypeError(err)
-            
-    __rmul__ = __mul__       
-
-    def __truediv__(self, other):
-        if isinstance(other, Complex):
-            return self.__mul__(1.0/other)
-        else:
-            err = "Byte type for multiplication with QStateMatrix"
-            raise TypeError(err)
-            
-    def __neg__(self):
-        return self.copy().mul_scalar(0, 4)    
-
-    def __pos__(self):
-        return self    
         
-    def __eq__(self, other):
-        try:
-            return self._equal(other)
-        except ValueError:
-            if isinstance(other, QStateMatrix):
-                err = "Comparing QStateMatrix objects of shape %s and %s"
-                print("\n" + err % (self.shape, other.shape))
-            raise          
         
     def __getitem__(self, item):
         if not isinstance(item, tuple):
@@ -589,70 +663,13 @@ def _as_index_array(data, nqb):
     
     
     
-####################################################################
-# convert a complex number to a factor for class QStateMatrix 
-####################################################################
-    
-
-MIN_ABS = 2.0**-1024
-EPS = 1.0e-8 
-    
-def complex_to_qs_scalar(x):
-    """Convert complex number to scalar factor
-    
-    Return ``(e, phi)`` if ``x == 2**(0.5*e) * z**phi``
-    with ``z = (1+1j)/sqrt(2)``.
-    
-    Return ``None, None`` if ``x == 0``
-    
-    raise ValueError otherwise. We accept a relative error of
-    about ``1.0e-8`` for ``x``.
-    
-    So it is safe to write e.g. ``2**-0.5 * (-1+1j) * m`` 
-    if ``m`` is an  instance of class ``QStateMatrix``.    
-    """
-    r, phi = cmath.polar(x)
-    if r <= MIN_ABS:
-        return None, None
-    e = 2 * (math.log(r) / math.log(2))
-    phi8 = 4 * phi / math.pi
-    e_r, phi8_r = round(e), round(phi8)
-    if (max(abs(e - e_r), abs(phi8 - phi8_r)) < EPS):
-        return e_r, phi8_r
-    err = "Cannot convert number to factor for QStateMatrix"
-    raise ValueError(err)    
-
 
     
 ####################################################################
 # Creating a random a QStateMatrix object
 ####################################################################
 
-def qs_column_vector(length, data, mode = 0):
-    if isinstance(length, Integral):
-        if data is None or isinstance(data, Iterable):
-            return QStateMatrix(length, 0, [data], mode)
-        elif isinstance(data, Integral):
-            m = QStateMatrix(length, 0)
-            return qstate12_column_vector(m, length, data)
-        else:
-            err = "Bad data type for  QStateMatrix"
-            raise TypeError(err) 
-    elif isinstance(length, (QState12, QStateMatrix)):
-        m = (QStateMatrix(length, 0))
-        return m.reshape(-1,0)
-    else:
-        err = "Illegal source type for QStateMatrix"
-        raise TypeError(err) 
 
-def qs_row_vector(length, data, mode = 0):
-    v = qs_column_vector(length, data, mode)
-    v = v.reshape(0, -1)
-    return v 
-
-def qs_scalar(c = 1):
-    sc = QStateMatrix(0, 0, [1])
-    return c * sc
 
 def qs_unit_matrix(nqb):
     qs = QStateMatrix(nqb, nqb) 
@@ -716,7 +733,7 @@ def qs_hadamard_matrix(nqb, v):
 
     
 def flat_product(a, b, nqb, nc):
-    return a.copy()._qstate12_product(b.copy(), nqb, nc)
+    return a.copy().qstate12_product(b.copy(), nqb, nc)
 
 
 def pauli_vector_mul(nqb, v1, v2):

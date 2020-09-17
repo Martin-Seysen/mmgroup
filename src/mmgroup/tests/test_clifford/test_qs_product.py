@@ -23,8 +23,7 @@ from mmgroup.tests.test_clifford.test_qs_matrix import compare_complex
 
 
 def prep_mul(m1, m2, nqb):
-    m1, m2 = m1.copy(), m2.copy()
-    row_pos, m1, m2 = m1._qstate12_prep_mul(m2, nqb)
+    row_pos, m1, m2 = m1.qstate12_prep_mul(m2, nqb)
     return row_pos, m1, m2            
 
 

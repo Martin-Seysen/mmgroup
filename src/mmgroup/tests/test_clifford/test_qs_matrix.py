@@ -14,9 +14,6 @@ from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
 from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
-from mmgroup.structures.qs_matrix import qs_scalar
-from mmgroup.structures.qs_matrix import qs_row_vector
-from mmgroup.structures.qs_matrix import qs_column_vector
 
 #####################################################################
 # Convert matrix of type QStateMatrix to a complex matrix
@@ -169,7 +166,8 @@ def check_eq_qstate(m1, m2, text = None):
     ``text`` is an optional text to be displayed in case of
     an error.    
     """
-    c1, c2 = m1.complex_unreduced(), m2.complex_unreduced()
+    c1 = m1.complex(reduce = False)
+    c2 = m2.complex(reduce = False)
     eq = np.amax(abs(c1 - c2), initial = 0.0) < EPS
     if not eq:
         err = "Error in comparing instances of QStateMatrix"
@@ -216,7 +214,7 @@ def check_complex(m):
     the python function ````QStateMatrix()``.    
     """
     c0 = slow_complex(m)
-    c1 = m.complex_unreduced()
+    c1 = m.complex(reduce = False)
     err = "Complex matrix from unreduced state"
     compare_complex(c0, c1, err, m)
     c2 = m.complex()
@@ -248,18 +246,13 @@ def random_slice(length):
 #####################################################################
 
 
-qs_vector_data = [
-    (qs_scalar, (1,), 1),  
-    (qs_scalar, (1,), -1j * 0.5**3),
-    (qs_column_vector, (3, 5),  0.5**3 * (-1j)),
-    (qs_row_vector, (6, 25),  0.5**3 * (-1+1j)),
-]
+
 
 qs_matrix_data = [
-     #(0,0, (1,0), []),
-     #(0,0, (-3,6), 0),
-     #(3,0, (-3,5), 5),
-     #(0,6, (9,2), 25),
+     (0, 0, (1,0), []),
+     (0, 0, (-3,6), 0),
+     (3, 0, (-3,5), 5),
+     (0, 6, (9,2), 25),
      (3,1, (1,0), []),
      (2, 2, (0,0), [0b110_10_01, 0b101_01_11, 0b011_01_00]),
      (2, 0, (0,0), [0b000_10, 0b010_01, 0b100_01]),
@@ -268,8 +261,6 @@ qs_matrix_data = [
 
 def create_display_testvectors():
     """yield instances of class ``QStateMatrix`` for tests """
-    for f, par, factor in qs_vector_data:
-        yield f(*par) * factor
     for rows, cols, factor, data in qs_matrix_data:
         m = QStateMatrix(rows, cols, data)
         m.mul_scalar(*factor) 
@@ -296,7 +287,7 @@ def test_qs_matrix(verbose = 0):
     complex matrix and the echelonization and the reduction of 
     an instance of class ``QStateMatrix``.
     """
-    display_len = len(qs_vector_data) + len(qs_matrix_data)
+    display_len =  len(qs_matrix_data)
     for ntest, m in enumerate(create_display_testvectors()):
         if verbose or ntest < display_len:
             print("TEST %s" % (ntest+1))
