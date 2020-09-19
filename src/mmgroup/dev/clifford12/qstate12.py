@@ -6,7 +6,7 @@ In this section we present effective algorithms for computing
 in the complex Clifford group of structure 
 :math:`\frac{1}{2} ( 2^{1+2n}_+ \times Z_8 ). \mbox{Sp}_{2n}(2)`
 defined in  :cite:`NRS01`. Here a factor :math:`\frac{1}{2}` 
-means identifiction of central subgroups of order :math:`2` 
+means identification of central subgroups of order :math:`2` 
 of the factors of a direct product as in :cite:`Atlas`.
 
 The complex Clifford group  :math:`\mathcal{X}_{n}` has a
@@ -21,11 +21,11 @@ is marginal, and using our algorithms for the complex
 Clifford group might be useful in the theory of quantum 
 computation.
 
-Usually, in quantum phyhics it suffices to calculate in a
+Usually, in quantum physics it suffices to calculate in a
 unitary group up to a scalar multiple of the unit matrix. 
 Therefore we cannot simply cut an paste existing algorithms
 for calculating in :math:`\mathcal{X}_{n}` used in quantum
-pyhsics. 
+physics. 
 We keep the following exposition independent of the theory
 of quantum computation, but we do not hide the fact that
 the main ideas are strongly influenced by that theory.
@@ -43,9 +43,9 @@ will call *quadratic mappings*. Such a function has a natural
 interpretation as a vector in :math:`\mathbb{C}^{2^n}`.
 It will turn out that quadratic mappings are closed under 
 tensor products and under tensor contraction. Since matrix
-multiplication is just a spcial case of tensor contraction,
+multiplication is just a special case of tensor contraction,
 we may consider quadratic mappings on     
-:math:`\mathbb{F}_2^n \times \mathbb{F}_2^n` as a monnoid
+:math:`\mathbb{F}_2^n \times \mathbb{F}_2^n` as a monoid
 of :math:`2^n \times 2^n` matrices closed under matrix 
 multiplication. It turns out that the unitary matrices in
 this monoid are just a representation of the Clifford group  
@@ -222,7 +222,7 @@ Sketch Proof
 It is easy to see that all generators of :math:`\mathcal{X}_n` 
 in  :cite:`NRS01` are unitary complex quadratic 
 state matrices. The group  :math:`\mathcal{X}'_n` of such 
-matrices is closed under multplication. It is obviously closed under 
+matrices is closed under multiplication. It is obviously closed under 
 computing the inverse, which is the conjugate transpose for a unitary 
 matrix. Thus :math:`\mathcal{X}_n`  is a subgroup of 
 :math:`\mathcal{X}'_n` . By Lemma 1 the group :math:`\mathcal{X}'_n` 
@@ -243,7 +243,7 @@ Background from the theory of quantum computing
 In the theory of quantum computation a state vector representing the 
 state of :math:`n` qubits can be written as a vector in 
 :math:`(\mathbb{C}^2)^{\otimes n}`, where the :math:`2^n` basis vectors 
-of that space are labeled by the elements of  :math:`\mathbb{F}_2^n`. 
+of that space are labelled by the elements of  :math:`\mathbb{F}_2^n`. 
 Here the :math:`n` qubits correspond to the :math:`n` factors
 :math:`\mathbb{F}_2` of   :math:`\mathbb{F}_2^n`. 
 In  :cite:`AG04` the unit vectors which are also  quadratic state 
@@ -258,9 +258,7 @@ In :cite:`AG04` there is a fast algorithm for calculating in the
 Clifford group   :math:`\mathcal{X}_n`. As usual in quantum theory,
 this algorithm ignores scalar factors in the matrix representation
 of :math:`\mathcal{X}_n`. This means that we have to create our
-own algorihm for computing in  :math:`\mathcal{X}_n`. For computing
-in the subpgroup :math:`2^{1+24}.\mbox{Co}_1` is suffices to compute 
-in the real part of the Clifford group  :math:`\mathcal{X}_{12}`.
+own algorithm for computing in  :math:`\mathcal{X}_n`. 
 
 We remark that in the  graphical ZX-calculus (which is used for 
 describing linear maps between qubits) is an appropriate setup
@@ -384,8 +382,8 @@ is represented by the matrix :math:`A'` given by:
    \end{array}
 
 
-This means that adding row and columnn :math:`j >0` to row and 
-and columnn :math:`i \geq 0` of a matrix  :math:`Q` representing 
+This means that adding row and column :math:`j >0` to row and 
+and column :math:`i \geq 0` of a matrix  :math:`Q` representing 
 a quadratic function changes that matrix to a matrix :math:`Q'`
 representing :math:`Q \circ T_{i,j}`, up to a scalar factor 
 (which is a fourth root of unity) and some corrections
@@ -554,7 +552,7 @@ modifications of :math:`A` math :math:`Q` as above. Let
    f(e,A^{j},Q^{j})(x_0,\ldots, x_{j-1}, x_j, \ldots, x_n) = 
    f(e,A,Q)(x_0,\ldots, x_{j-1}, x_{j+1}, \ldots, x_n) \; .
 
-Function ``qstate12_extend`` in module``qstate12.c`` 
+Function ``qstate12_extend`` in module ``qstate12.c`` 
 implements the extension of a quadratic mapping.
 
 Restricting a quadratic mapping
@@ -575,7 +573,7 @@ by
    \end{array}
    \right.
 
-Function ``qstate12_restrict_zero`` in module``qstate12.c`` 
+Function ``qstate12_restrict_zero`` in module ``qstate12.c`` 
 implements the restriction of a quadratic mapping.
 
 We can compute matrices :math:`\hat{A}^{j}` and math
@@ -614,17 +612,17 @@ Remark
 We obtain the restriction of :math:`g` from 
 :math:`\mathbb{F}_2^n` to 
 :math:`\mathbb{F}_2^{} \times \{0\} \times \mathbb{F}_2^{n-1-j}`
-as :math:`g( \hat{e}^{(j)}, A', \hat{Q}^{(j)})` where 
-:math:`A'` is obtained from  :math:`\hat{A}^{(j)}` by deleting 
-column :math:`j`. This special of a restiction is implemented  
-in function ``qstate12_restrict_zero`` in module``qstate12.c`` 
+as :math:`g( \hat{e}^{(j)}, A', \hat{Q}^{(j)})` where :math:`A'` 
+is obtained from  :math:`\hat{A}^{(j)}` by deleting column 
+:math:`j`. This special case of a restriction is implemented in 
+function ``qstate12_restrict_zero`` in module ``qstate12.c``. 
 
 
 
 Products and tensor products of quadratic mappings
 ..................................................
 
-TODO: Check documentation from this point on
+TODO: Check documentation from this point on!!!
 
 In this section we present an algorithm for multiplying
 quadratic mappings. Later we will use this algorithm for

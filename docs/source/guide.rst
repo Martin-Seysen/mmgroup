@@ -232,7 +232,7 @@ representation of the group :math:`N(4096_x)` has dimension
 :math:`4096`, so naive computation in that representation is
 rather inefficient.
 
-The group :math:`4096` is a subgroup of the real Clifford group
+The group :math:`N(4096_x)` is a subgroup of the real Clifford group
 :math:`\mathcal{C}_{12}`. The real Clifford group :math:`\mathcal{C}_{n}`
 of structure :math:`2^{1+2n}_+.\mbox{O}_{2n}(2)` is defined e.g. in
 :cite:`NRS01`. :math:`\mathcal{C}_{12}` is a subgroup
@@ -241,9 +241,9 @@ defined in :cite:`NRS01`.
 
 Effective computation in the group  :math:`\mathcal{X}_{n}` has received
 a lot of attention from the theory of quantum computation, see e.g.
-:cite:`AG04`. In the next sction we present efficient algorithms for
-computing in :math:`\mathcal{X}_{n}` using the :math:`2^{n}` dimensional
-represtation of that group.
+:cite:`AG04`. In the next section we present efficient algorithms for
+computing in :math:`\mathcal{X}_{n}` and in its :math:`2^{n}` 
+dimensional complex representation.
 
 .. automodule:: mmgroup.dev.clifford12.qstate12
 
