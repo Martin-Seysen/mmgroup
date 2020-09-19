@@ -272,15 +272,12 @@ cdef class QState12(object):
         chk_qstate12(res)
         
     def set_zero(self):
-        """Multiply the state by a sclar factor in place
-        
-        The factor is :math:`2^{e/2} \cdot \exp(\phi \pi i /4)` .           
-        """
+        """Set state matrix to zero"""
         self.qs.factor = self.qs.nrows = 0
         return self
 
     def check(self):
-        """Raise ValueError is state is bad""" 
+        """Raise ValueError is state matrix is bad""" 
         cl.qstate12_check(&self.qs)
         return self
 
@@ -444,23 +441,14 @@ cdef class QState12(object):
 
     def __eq__(self, QState12 other):
         """Return True iff two states are equal"""
-        cdef uint64_t data1[QSTATE12_MAXROWS] 
-        cdef uint64_t data2[QSTATE12_MAXROWS] 
         cdef p_qstate12_type other_pqs
-        cdef qstate12_type qs1
-        cdef qstate12_type qs2
         if isinstance(other, QState12):
             other_pqs = pqs12(other)
-            cl.qstate12_set_mem(&qs1, &(data1[0]), QSTATE12_MAXROWS)
-            cl.qstate12_set_mem(&qs2, &(data2[0]), QSTATE12_MAXROWS)
-            chk_qstate12(cl.qstate12_copy(&self.qs, &qs1))
-            chk_qstate12(cl.qstate12_copy(other_pqs, &qs2))
-            chk_qstate12(cl.qstate12_reduce(&qs1))
-            chk_qstate12(cl.qstate12_reduce(&qs2))
-            return chk_qstate12(cl.qstate12_equal(&qs1, &qs2))
+            return chk_qstate12(cl.qstate12_equal(&self.qs, other_pqs))
         err = "Cannot compare QStateMatrix with non QStateMatrix"
         raise TypeError(err)
-
+        
+        
     
     #########################################################################
     # Matrix multiplication and inversion
@@ -474,7 +462,7 @@ cdef class QState12(object):
         cdef int32_t res
         cdef p_qstate12_type pqs2
         if isinstance(other, QState12):
-            pqs2 = pqs12(QState12(other))
+            pqs2 = pqs12(other)
             res = cl.qstate12_matmul(&self.qs, pqs2)
             if res >= 0:
                 return self
@@ -509,7 +497,7 @@ cdef class QState12(object):
             return self
         elif isinstance(other, QState12):
             if self.shape == other.shape:
-                pqs = pqs12(QState12(other))
+                pqs = pqs12(other)
                 nqb = self.ncols
                 shape1 = self.qs.shape1
                 chk_qstate12(cl.qstate12_product(&self.qs, pqs, nqb, 0))
@@ -581,7 +569,7 @@ cdef class QState12(object):
         """
         qs1 = self.copy()
         cdef p_qstate12_type pqs1 = pqs12(qs1)
-        cdef p_qstate12_type pqs2 = pqs12(QState12(other))
+        cdef p_qstate12_type pqs2 = pqs12(other)
         chk_qstate12(cl.qstate12_product(pqs1, pqs2, nqb, nc))
         return qs1
 

@@ -2,30 +2,40 @@ r"""
 Computation in the Clifford group 
 ---------------------------------
 
-In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
-has a subgroup :math:`G_{x0}` of structure 
-:math:`2^{1+24}_+.\mbox{Co}_1`.
-Here :math:`G_{x0}` is constructed as a diagonal poduct of the
-two groups :math:`\mbox{Co}_0` of structure :math:`2.\mbox{Co}_1`
-and :math:`N(4096_x)`. :math:`N(4096_x)` is also of structure
-:math:`2^{1+24}_+.\mbox{Co}_1` but not isomorphic to  :math:`G_{x0}`.
-It is a subgroup of the real Clifford group :math:`\mathcal{C}_{12}`.
-The real Clifford group :math:`\mathcal{C}_{n}` has structure 
-:math:`2^{1+2n}_+.\mbox{O}_{2n}(2)`. In this section we
-introduce a fast algorithm for computing in :math:`\mathcal{C}_{n}` 
-and also in its complex analogue :math:`\mathcal{X}_{n}` 
-of structure :math:`\frac{1}{2} ( 2^{1+2n}_+ \times Z_8 ).
-\mbox{Sp}_{2n}(2)` defined in :cite:`NRS01`. Here a factor 
-:math:`\frac{1}{2}` means identifiction of central subgroups of 
-order :math:`2` of the factors of a direct product as in 
-:cite:`Atlas`.
+In this section we present effective algorithms for computing
+in the complex Clifford group of structure 
+:math:`\frac{1}{2} ( 2^{1+2n}_+ \times Z_8 ). \mbox{Sp}_{2n}(2)`
+defined in  :cite:`NRS01`. Here a factor :math:`\frac{1}{2}` 
+means identifiction of central subgroups of order :math:`2` 
+of the factors of a direct product as in :cite:`Atlas`.
 
 The complex Clifford group  :math:`\mathcal{X}_{n}` has a
 unitary complex representation of dimension :math:`2^n` 
 which has been studied in the theory of quantum computation,
-see e.g. :cite:`AG04`. The real part of that representation
-corresponds to the subgroup  :math:`\mathcal{C}_{n}` of
-:math:`\mathcal{X}_{n}`.
+see e.g. :cite:`AG04`. For calculations in the monster group
+it would be sufficient to deal with the subgroup 
+:math:`\mathcal{C}_{n}` of :math:`\mathcal{X}_{n}` consisting
+of the real matrices of that representation. However, the
+extra effort for extending the real to the complex case 
+is marginal, and using our algorithms for the complex 
+Clifford group might be useful in the theory of quantum 
+computation.
+
+Usually, in quantum phyhics it suffices to calculate in a
+unitary group up to a scalar multiple of the unit matrix. 
+Therefore we cannot simply cut an paste existing algorithms
+for calculating in :math:`\mathcal{X}_{n}` used in quantum
+pyhsics. 
+We keep the following exposition independent of the theory
+of quantum computation, but we do not hide the fact that
+the main ideas are strongly influenced by that theory.
+
+We present an algorithm that performs matrix multiplication
+in  :math:`\mathcal{X}_{n}` in :math:`O(n)^3` bit operation.
+Therefore we store an element of  :math:`\mathcal{X}_{n}` 
+in :math:`O(n)^2` bits.  In case  :math:`n=12`
+this is considerably more efficient than dealing with
+complex :math:`4096 \times 4096` matrices.
 
 We will introduce certain complex-valued functions defined
 on a Boolean vector space :math:`\mathbb{F}_2^n` which we 
@@ -39,15 +49,8 @@ we may consider quadratic mappings on
 of :math:`2^n \times 2^n` matrices closed under matrix 
 multiplication. It turns out that the unitary matrices in
 this monoid are just a representation of the Clifford group  
-:math:`\mathcal{X}_{n}`. We need :math:`O(n^2)` bit 
-operations for storing such a matrix and :math:`O(n^3)` bit 
-operations for matrix multiplication. In case  :math:`n=12`
-this is considerably more efficient than dealing with
-complex :math:`4096 \times 4096` matrices.
+:math:`\mathcal{X}_{n}`.
 
-We keep the following exposition independent of the theory
-of quantum computation, but we do not hide the fact that
-the main ideas are strongly influenced by that theory.
 
 
 Quadratic mappings
@@ -137,14 +140,14 @@ For any affine mapping
 there is a unique linear mapping :math:`l(a)` that differs from 
 :math:`a` by the constant :math:`a(0)`. We write :math:`\ker a`
 for :math:`\ker l(a)`. We call a representation :math:`(e, a, q)`
-of a quadratic mapping *reduced* if  :math:`\ker a =  0`.
+of a quadratic mapping *injective* if  :math:`\ker a =  0`.
 We have:
 
 
 
 Lemma 1:
 
-Every quadratic mapping has a reduced representation.
+Every quadratic mapping has an injective representation.
 
 Proof
 
@@ -165,7 +168,7 @@ be a subspace of :math:`\mathbb{F}_2^m` with
 :math:`q(w+v) = q(v) \cdot (-1)^{h(w)} \cdot r`, 
 with :math:`h` a linear form on :math:`W` given by
 :math:`h(w) = \beta(q)(v, w)` and :math:`r = q(v)/q(0)`
-a fourth root of unity. Since :math:`v \in \ker A` we have
+a fourth root of unity. Since :math:`v \in \ker A`, we have
 
 .. math::
 
@@ -411,9 +414,35 @@ applying an operation  :math:`T_{i,j}, i < j`.
 Reducing the representation of a quadratic mapping
 ..................................................
 
-The *leading coefficient* of a row of matrix :math:`A` is the
-first nonzero entry in that row. A bit matrix  :math:`A` is 
-in *row echelon form* if 
+We call a representation  :math:`(e, A, Q)`  of a quadratic 
+mapping *reduced* if the following conditions hold:
+
+  * :math:`A` has no nonzero rows.
+
+  * Let :math:`A_1` be the matrix obtained from :math:`A` by 
+    prepending the column vector :math:`(1,0,\ldots,0)^\top`. 
+    Then the leading coefficient of a row of :math:`A_1`
+    is always strictly  to the right of the leading coefficient 
+    of the row above it.
+    
+  * Each column containing a leading coefficient of a row
+    has  zeros in all its other entries.  
+  
+Here the *leading coefficient* of a row of matrix :math:`A` is 
+the first nonzero entry in that row. 
+
+Obviously, a reduced representation :math:`(e, A, Q)` also
+injective. It is easy to see that any quadratic mapping has a
+unique reduced representation. 
+
+
+In this section we present an algorithm for converting a 
+representation of a quadratic function to a reduced 
+representation. Function ``qstate12_reduce`` in module
+``qstate12.c`` implements this algorithm.
+
+
+A matrix is in *row echelon form* if 
 
   * All rows consisting of only zeros are at the bottom.
   
@@ -421,52 +450,29 @@ in *row echelon form* if
     to the right of the leading coefficient of the row above it.
     
 A matrix  :math:`A` is in *reduced row echelon* form if  it is 
-in echelon form and each column containing a leading one of a row
-has  zeros in all its other entries.  See
+in echelon form, and each column containing a leading coefficient 
+of a row has  zeros in all its other entries.  See
 https://en.wikipedia.org/wiki/Row_echelon_form .
 
-We apply several operations on the components :math:`e, A, Q` 
-of a representation of a quadratic mapping that do not change
-:math:`f(e, A, Q)`. The goal of these operations is to bring
-matrix :math:`A` to row reduced echelon form. Such row operations 
-one :math:`A`, and also the adjustments required for components 
-:math:`e,Q`  in order to keep :math:`f(e, A, Q)` invariant,
-have been discussed in the last section. Here we may not add
-row :math:`0` to any other row of :math:`A`.  We handle this 
-special situation as follows. For each :math:`m \times n` matrix
-:math:`A` we consider an :math:`m \times (1+n)` matrix
-:math:`A'` which is equal to the matrix :math:`A` with one
-column :math:`(1,0,\ldots,0)^\top` placed in front of the left
-side of matrix :math:`A`. We say that  matrix :math:`A` is in
-(reduced) echelon form if the corresponding matrix 
-:math:`A'` is in (reduced) row echelon form.
+In order to reduce a representation :math:`(e, A, Q)` of a
+quadratic mapping :math:`f(e, A, Q)` we apply several 
+operations on the components :math:`e, A, Q` that do not change
+:math:`f(e, A, Q)`. Let :math:`T_{i,j}` be the operation on 
+:math:`e, A, Q` defined in the last section. Let 
+:math:`X_{i,j}, i, j > 0` be the operation on :math:`e, A, Q` 
+that exchanges rows :math:`i` with row :math:`j` of :math:`A` 
+and :math:`Q`, and also column :math:`i` with column :math:`j` 
+of :math:`Q`. Neither of these two operations changes 
+:math:`f(e, A, Q)`. 
 
-
-For reducing a representation :math:`(e, A, Q)` of a quadratic
-mapping :math:`f(e, A, Q)` we first convert matrix :math:`A` to
-reduced echelon form. 
-
-Therefore we first declare row :math:`0` of :math:`A` as processed 
-and all other rows as unprocessed. Then we pivot over all columns
-:math:`j = 0, \ldots, n-1` in natural order as follows.
-
-Let :math:`i` be the highest index with :math:`A_{i,j}=1`. If 
-row :math:`i` is processed or no such :math:`i` exists then we
-proceed with the next column of :math:`A`.  
-If row :math:`i` is not yet processed, then we add row 
-:math:`i` to all rows  :math:`k < i` with  :math:`A_{k,j}=1` and 
-adjust matrix :math:`Q` as above, so that :math:`f(e, A, Q)` is 
-not changed. 
-Then we exchange row :math:`i` with the lowest row :math:`i'` that 
-has not yet been processed, and exchange row and column :math:`i` 
-of :math:`Q` with  row and column :math:`i'`. This does not change
-:math:`f(e, A, Q)`. To complete the action for column :math:`j` of
-:math:`A` we declare row :math:`i'` of :math:`A` as processed.
-
-After processing all rows, the matrix :math:`A` is in reduced 
-echelon form. If the last row of :math:`A` is not zero, the 
-representation :math:`(e, A, Q)` is already reduced. Otherwise we 
-proceed as follows.
+Given :math:`A`, let :math:`A_1 = A_1(A)` be obtained from 
+:math:`A` as above. By applying a sequence of operations 
+:math:`T_{i,j}`, :math:`X_{i,j}` we may convert :math:`A_1` 
+to reduced echelon form. If :math:`A_1` is in reduced
+echelon form and contains no zero rows at the bottom then the 
+representation :math:`(e, A, Q)` is reduced. Otherwise we use 
+the following algorithm repeatedly to remove the zero rows 
+from the bottom of :math:`A`.
 
 Let :math:`i` be the index of the last row of :math:`A` and assume
 :math:`A_{i,j}=0`  for all :math:`j`.
@@ -476,8 +482,6 @@ If such an :math:`i'` exists then we add row :math:`i'` of
 :math:`A` to all  rows :math:`k` where   :math:`Q_{k,i}=1` holds
 and we adjust :math:`Q`. Afterwards we have  :math:`Q_{i',i}=1`
 for at most one index  :math:`i'`.
-
-
 
 
 
@@ -496,7 +500,7 @@ Case 3.  :math:`Q_{i',i}=1, 0 < i' < i`
 
 Then we add row :math:`i` of  :math:`A` to all  rows 
 :math:`k \notin \{i,i'\}` where   :math:`Q_{k,i'}=1` holds
-and we adjust :math:`Q`. Then
+and we adjust :math:`Q`. Afterwards we have
 :math:`Q_{k,i'} = Q_{i',k} = Q_{k,i} = Q_{i,k} = 0` for all
 :math:`k \notin \{i,i'\}`,  :math:`Q_{i,i} = 0` , and 
 :math:`Q_{i,i'} = Q_{i',i} = 1`. So we may delete rows
@@ -519,6 +523,7 @@ proof of Lemma 1.
 
 Extending a quadratic mapping
 .............................
+
 
 Let :math:`g: \mathbb{F}_2^{n} \rightarrow \mathbb{C}` be a 
 quadratic mapping with :math:`g = f(e,A,Q)`, where  :math:`A`
@@ -549,6 +554,8 @@ modifications of :math:`A` math :math:`Q` as above. Let
    f(e,A^{j},Q^{j})(x_0,\ldots, x_{j-1}, x_j, \ldots, x_n) = 
    f(e,A,Q)(x_0,\ldots, x_{j-1}, x_{j+1}, \ldots, x_n) \; .
 
+Function ``qstate12_extend`` in module``qstate12.c`` 
+implements the extension of a quadratic mapping.
 
 Restricting a quadratic mapping
 ...............................
@@ -567,6 +574,9 @@ by
    0   & \quad \mbox{if} \quad  \mbox  x_j = 1
    \end{array}
    \right.
+
+Function ``qstate12_restrict_zero`` in module``qstate12.c`` 
+implements the restriction of a quadratic mapping.
 
 We can compute matrices :math:`\hat{A}^{j}` and math
 :math:`\hat{A}^{j}` with  
@@ -606,11 +616,15 @@ We obtain the restriction of :math:`g` from
 :math:`\mathbb{F}_2^{} \times \{0\} \times \mathbb{F}_2^{n-1-j}`
 as :math:`g( \hat{e}^{(j)}, A', \hat{Q}^{(j)})` where 
 :math:`A'` is obtained from  :math:`\hat{A}^{(j)}` by deleting 
-column :math:`j`.
+column :math:`j`. This special of a restiction is implemented  
+in function ``qstate12_restrict_zero`` in module``qstate12.c`` 
+
 
 
 Products and tensor products of quadratic mappings
-...................................................
+..................................................
+
+TODO: Check documentation from this point on
 
 In this section we present an algorithm for multiplying
 quadratic mappings. Later we will use this algorithm for

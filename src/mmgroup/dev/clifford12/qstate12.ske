@@ -340,7 +340,23 @@ int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2)
 
 
 
-
+// %%EXPORT p
+int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *data, uint32_t size)
+// Equivalent to
+//   qstate12_set_mem(pqs2, data, size);
+//   qstate12_copy(pqs1,pqs2) 
+{
+    if (bad_state(pqs1)) return ERR_QSTATE12_INCONSISTENT;
+    if (size < pqs1->nrows) return ERR_QSTATE12_BUFFER_OVFL;
+    pqs2->data = data;
+    pqs2->maxrows = size;    
+    pqs2->nrows = pqs1->nrows;
+    pqs2->factor = pqs1->factor;
+    pqs2->ncols = pqs1->ncols;
+    pqs2->shape1 = pqs1->shape1;
+    memcpy(data, pqs1->data, pqs1->nrows * sizeof(uint64_t));
+    return 0;
+}
 
 
 
@@ -375,31 +391,6 @@ int32_t qstate12_mul_scalar(qstate12_type *pqs, int32_t e, uint32_t phi)
     return 0;
 }
 
-/*************************************************************************
-*** Checking equality of two states state
-*************************************************************************/
-
-// %%EXPORT p
-int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2) 
-// Return 1 if the states referred by pqs1 and pqs2 are equal,
-// 0 if not, and -1 if any of these two states is erroneous.
-// Both states are reduced before comparing them.
-// Caution!
-// We just check equality of data. States are not reduced to a
-// unique form!
-{
-    uint64_t mask, diff = 0, *m1 = pqs1->data, *m2 = pqs2->data;
-    uint_fast32_t i;
-    if (bad_state(pqs1) || bad_state(pqs2)) return ERR_QSTATE12_INCONSISTENT ;
-    if (pqs1->ncols != pqs2->ncols) return -ERR_QSTATE12_SHAPE_COMP;
-    if (pqs1->shape1 != pqs2->shape1) return -ERR_QSTATE12_SHAPE_COMP;
-    if ((pqs1->nrows | pqs2->nrows) == 0) return 1;
-    if (((pqs1->factor ^ pqs2->factor) & FACTOR_MASK) |
-        (pqs1->nrows ^ pqs2->nrows)) return 0;
-    mask = (((ONE << pqs1->nrows) - 1) << pqs1->ncols) - 1;
-    for (i = 0; i < pqs1->nrows; ++i) diff |= (m1[i] ^ m2[i]) & mask;
-    return (int32_t)(!diff);
-}
 
 
 /*************************************************************************
@@ -808,6 +799,46 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 
 
 /*************************************************************************
+*** Checking equality of two states state
+*************************************************************************/
+
+// %%EXPORT p
+int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2) 
+// Return 1 if the states referred by pqs1 and pqs2 are equal,
+// 0 if not, and a negative number in case of error.
+// Temporary copies of both states are reduced before comparing them.
+{
+    uint64_t mask, diff = 0, qs1_data[MAXROWS], qs2_data[MAXROWS];
+    uint_fast32_t i;
+    int_fast32_t res;
+    qstate12_type qs1, qs2;
+
+    if (bad_state(pqs1) || bad_state(pqs2)) return ERR_QSTATE12_INCONSISTENT;
+    
+    // Compare shapes of *pqs1 and *pqs2
+    if (pqs1->ncols != pqs2->ncols) return -ERR_QSTATE12_SHAPE_COMP;
+    if (pqs1->shape1 != pqs2->shape1) return -ERR_QSTATE12_SHAPE_COMP;
+        
+    // Create temporary copies of *pqs1 and *pqs2
+    res = qstate12_copy_alloc(pqs1, &qs1, qs1_data, MAXROWS);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
+    if (res < 0) return res;
+    
+    // Reduce and compare  qs1 and  qs2
+    if ((res = qstate12_reduce(&qs1)) < 0) return res;
+    if ((res = qstate12_reduce(&qs2)) < 0) return res;
+    if ((qs1.nrows | qs2.nrows) == 0) return 1;
+    if (((qs1.factor ^ qs2.factor) & FACTOR_MASK) |
+        (qs1.nrows ^ qs2.nrows)) return 0;
+    mask = (((ONE << qs1.nrows) - 1) << qs1.ncols) - 1;
+    for (i = 0; i < qs1.nrows; ++i) 
+        diff |= (qs1.data[i] ^ qs2.data[i]) & mask;
+    return (int32_t)(!diff);
+}
+
+
+/*************************************************************************
 *** Extending and restricting a state
 *************************************************************************/
 
@@ -923,7 +954,7 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 //
 // qs'(x[0],...,x[n-1]) is equal to qs(x[0],...,x[n-1]) if 
 // x[j] = ... = x[j+nqb-1] = 0 and equal to zero otherwise.
-// We do not change ``pqs->ncol``.
+// We do not change the shape of ``qs``.
 // 
 // The output is reduced if the input is reduced.
 {

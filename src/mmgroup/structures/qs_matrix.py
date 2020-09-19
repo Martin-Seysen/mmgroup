@@ -8,7 +8,6 @@ import re
 from collections.abc import Iterable
 from numbers import Integral, Complex
 import math
-import cmath
 from random import randint
 
 import numpy as np
@@ -22,7 +21,7 @@ from mmgroup.clifford12 import qstate12_pauli_vector_mul
 from mmgroup.clifford12 import qstate12_pauli_vector_exp
 
 class QStateMatrix(QState12):
-    """This class models a quadratic state matrix
+    r"""This class models a quadratic state matrix
        
     Quadratic state matrices are described in the *guide* at
 
@@ -35,13 +34,17 @@ class QStateMatrix(QState12):
         * or an instance of class ``QStateMatrix``. Then a deep copy
           of that instance is created.
     
-    :type rows: A nonnegative ``int`` or and ntance of class
+    :type rows: 
+    
+        ``int`` or and instance of class ``QStateMatrix``
     
     :param cols:
     
         Binary logarithm of the number of columns of the matrix
     
-    :type cols: A nonnegative ``int``
+    :type cols: 
+    
+        A nonnegative ``int``, if parameter ``rows`` is an ``int``
     
     :param data:
     
@@ -71,10 +74,6 @@ class QStateMatrix(QState12):
     If ``rows`` is an instance of this class then a copy of 
     that instance is created.
 
-    If ``rows`` an instance class ``QState`` then that source
-    is interpreted as a *-ket* and a copy of that *-ket* is 
-    created.
-
     If ``rows`` and ``cols`` are integers then ``data``  may be:
 
       * ``None`` (default). Then the zero matrix is created.
@@ -89,24 +88,44 @@ class QStateMatrix(QState12):
           * 2: create matrix ``Q`` from upper triangular part
                
           * Anything else: matrix ``Q`` must be symmetric.
+
+      * An integer ``v``. Then one of the values ``rows`` and 
+        ``cols`` must be zero and the unit (row or column) 
+        vector with index ``v`` is created. Here a row vector
+        is an ``1`` times ``2**cols`` and a column vector is a
+        ``2**rows`` times ``1`` matrix.  
           
     As in ``numpy``, matrix multiplication of quadratic state 
     matrices is done with the ``@`` operator and elementwise
     multiplication of such matrices is done with the ``*``
     operator. A quadratic state matrix may also be multiplied 
-    by a scalar. Here the scalar must be zero or of the form
+    by a scalar. Here the scalar must be zero or of the form:
 
     .. math::
-         2^{e/2} \cdot w \mid e \in \mathbb{Z}, \;
-         w \in \mathbb{C}, \, w^8 = 1   \; .
+        2^{e/2} \cdot w \mid e \in \mathbb{Z}, \;
+        w \in \mathbb{C}, \, w^8 = 1   \; .
    
     A matrix of type ``QStateMatrix`` may be indexed with square
     brackets as in ``numpy`` in order to obtain entries, rows, 
     columns or submatrices. Then a complex ``numpy`` array (or a 
     complex number) is returned as in ``numpy``. It is  not 
     possible to change the matrix via item assignment. So the 
-    easiest way to obtain a complex version of an instance ``m`` 
-    of type `QStateMatrix`` is to write ``m[:,:]``.
+    easiest way to obtain a complex version of an instance ``qs`` 
+    of type ``QStateMatrix`` is to write ``qs[:,:]``.
+    
+    A row or coulumn index has a natural interpretation as a
+    bit vector. In the theory of quantum computation a bit of
+    such a bit vector corresponds to a *qubit*. Let ``qs`` be
+    a quadratic state matrix of shape ``(m, n)`` and 
+    
+    .. math::
+        x = \sum_{k=0}^{m-1} 2^k x_k, \; y = \sum_{k=0}^{n-1} 2^k y_k, 
+        \, x_k, y_k \in \{0, 1 \}.
+        
+    Then ``qs[x,y]`` is the entry of matrix ``qs`` with row index 
+    corresponding to the bit vector :math:`(x_0,\ldots,x_{m-1})` 
+    and column index corresponding to the bit vector 
+    :math:`(y_0,\ldots,y_{n-1})`.     
     
     Officially, we support matrices with ``rows, cols <= 12``
     only. Methods of this class might work for slightly 
@@ -125,9 +144,9 @@ class QStateMatrix(QState12):
     # Elementary operations
         
     def conjugate(self):
-        """Return complex conjugate of the matrix
+        """Compute complex conjugate of the matrix
         
-        Returns an instance of class ``QStateMatrix``.
+        :return: instance of class ``QStateMatrix``.
         """
         m = QStateMatrix(self) 
         return super(QStateMatrix, m).conjugate()   
@@ -150,34 +169,51 @@ class QStateMatrix(QState12):
     # Reshaping a state matrix
 
     def reshape(self, new_shape, copy = True):
-        """Reshape matrix to given ``shape``
+        """Reshape matrix to given shape
+                        
+        :param new_shape:
+    
+            This shape of the reshaped matrix. It must be a pair of
+            integers. A pair ``(n0, n1)`` correponds to a complex
+            ``2**n0`` times ``2**n1`` matrix.            
+    
+        :type new_shape: 
+        
+            tuple of two integers
+    
+        :param copy:
+        
+            A deep copy of the reshaped  matrix is returned if   
+            ``copy`` is True (default). Otherwise the matrix is
+            reshaped in place.
+            
+        :type copy: ``bool``
+    
 
         ``new_shape[0] + new_shape[1] = self.shape[0] + self.shape[0]`` 
         must hold.
 
-        If one of the values ``new_shape[0]``, ``new_shape[1]`` is 
-        negative then the other value is calculated from the sum 
+        If one of the values ``new_shape[0]``, ``new_shape[1]``  
+        is ``-1`` then the other value is calculated from the sum 
         ``self.shape[0] + self.shape[1]``. 
-        
-        If ``copy`` is True, a copy of the orginal state matrix is
-        returned, otherwise the  state matrix is is reshaped
-        inplace.
         """  
         return super(QStateMatrix, self).reshape(new_shape, copy)  
 
+    #########################################################################
+    # Permuting the qubits of the state matrix
 
        
     def rot_bits(self, rot, nrot, start = 0):    
-        """Rotate the qubit arguments the state ``qs`` in place
+        """Rotate the qubit indices the state matrix ``qs`` in place
 
         If the state matrix ``qs`` has shape ``(0,n)`` or ``(n,0)`` 
-        we rotate  the qubits of the ``qs`` in place as follows:
+        we rotate  the qubits of ``qs`` in place as follows:
         
-        For ``n0 <= i < n0 + nrot``  we map qubit ``i`` to bit  
-        ``n0 + (i + rot) % nrot==. E.g. ``nrot = 3, rot = 1, n0 = 0``
+        For ``n0 <= i < n0 + nrot``  we map qubit ``i`` to qubit  
+        ``n0 + (i + rot) % nrot``. E.g. ``nrot = 3, rot = 1, n0 = 0``
         means qubits are mapped as ``0->1, 1->2, 2->0``.
 
-        In that case the entries of the state matrix are labelled by bit 
+        Here the entries of the state matrix are labelled by bit 
         vectors of length ``n``. Let ``qs(x[0],...,x[n-1])`` be the 
         entry of the state matrix corresponding to the bit vector
         ``(x[0],...,x[n-1])``.
@@ -188,10 +224,10 @@ class QStateMatrix(QState12):
         where ``z[j] = y[j - rot (mod 3)]``.
 
         If the state matrix ``qs`` has shape ``(n0, n1)`` then we
-        may label the entries of state matrix by bit vectors of 
-        length ``n0 + n1``, with the ``n1`` bits corresponding to 
-        the columns of the matrix occuring before the  ``n0`` bits 
-        corresponding to the rows of the matrix.
+        label the entries of state matrix by bit vectors of 
+        length ``n0 + n1``, with the ``n1`` highest bits corresponding 
+        to  the rows of the matrix, and the ``n0`` lowest bits 
+        corresponding to the columns of the matrix.
         """
         return super(QStateMatrix, self).rot_bits(rot, nrot, start)   
         
@@ -205,7 +241,7 @@ class QStateMatrix(QState12):
         We exchange qubit ``j`` with argument qubit ``j + sh``
         of the state, if bit ``j`` of ``mask`` is set. If bit ``j``
         of ``mask`` is set then bit ``j + sh`` of ``mask`` must not 
-        be set. No ``mask`` bit at  position >= ``self.ncols - sh``
+        be set. No ``mask`` bit at  position >= ``n - sh``
         may be set.
         
         E.g.  ``qs.qstate12_xch_bits(1, 0x11)`` changes the 
@@ -406,7 +442,8 @@ class QStateMatrix(QState12):
         super(QStateMatrix, m).sumup(j, nqb) 
         return m   
 
-
+    #########################################################################
+    # Matrix operations
        
     def lb_norm2(self):    
         """Return binary logarithm of squared operator norm.
@@ -483,6 +520,8 @@ class QStateMatrix(QState12):
         err = "Order of QStateMatrix object not found" 
         raise ValueError(err)
 
+    #########################################################################
+    # Dealing with the Pauli subgroup of the Clifford group
      
     def pauli_vector(self):
         try:
@@ -493,6 +532,8 @@ class QStateMatrix(QState12):
             raise            
             
         
+    #########################################################################
+    # Obtaining (complex) entries and submatrices
         
         
     def __getitem__(self, item):
@@ -514,6 +555,9 @@ class QStateMatrix(QState12):
         if len(shape_):        
             return c.reshape(shape_)
         return c[0]
+
+    #########################################################################
+    # Formatting a quadratic state matrix
 
     def __str__(self):
         return _format_state(self)
@@ -666,7 +710,7 @@ def _as_index_array(data, nqb):
 
     
 ####################################################################
-# Creating a random a QStateMatrix object
+# Creating specific state matrices of type QStateMatrix
 ####################################################################
 
 
@@ -728,7 +772,7 @@ def qs_hadamard_matrix(nqb, v):
 
 
 ####################################################################
-# Some wrappers
+# Some wrappers for functions written in C
 ####################################################################
 
     

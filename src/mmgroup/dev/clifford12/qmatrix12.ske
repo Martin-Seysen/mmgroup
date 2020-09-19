@@ -356,44 +356,14 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
 
 
 
-
-
-
-// %%EXPORT p
-int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb, uint32_t nc)
-// Compute a certain product ``qs3`` of the states ``qs1`` 
-// and ``qs2`` referred by ``pqs1`` and ``pqs2``. 
-// Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
-// Put ``qs1a =  qstate12_extend(qs, n1, n2-nqb)``,
-// ``qs2a =  qstate12_extend(qs, nqb, n1-nqb)``. Then ``qs1a``
-// and ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
-// bits. Let ``qs3a`` be the complex function which is the 
-// product of the functions  ``qs1a`` and ``qs2a``. Then we 
-// have ``qs3 = qstate12_sum_cols(qs23, 0, nc)``.
-// The result ``qs3`` is computed in the state referred by 
-// ``qs1``. It is reduced. ``qs2`` is destoyed. 
-//
-// E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
-// contraction over the first ``nc`` qubits of ``qs1`` and 
-// ``qs2``. ``In case pqs1->ncols = pqs2->ncols = n``, the 
-// function ``qstate12_product(pqs1, pqs2, n, 0)`` returns the 
-// product of ``qs1`` and ``qs2`` (considered as functions); 
-// and ``qstate12_product(pqs1, pqs2, n, n)`` returns the scalar
-// product of ``qs1`` and ``qs2`` (considered as vectors).
-//
-// ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds to the 
-// function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
-// ``'\odot'`` operation defined in section 
-// 'Products and tensor products of quadratic mappings'
-// of the guide.
-//
-// pqs1->shape1 and pqs2->shape1 are destroyed. The user should 
-// set pqs1->shape1 to a reasonable value.
+static int32_t qs_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb, uint32_t nc)
+// Workhorse for the exported function qstate12_product().
+// Same operation as function qstate12_product(), but
+// *pqs2 is destroyed.
 {
-    int32_t row_pos = qstate12_prep_mul(pqs1, pqs2, nqb);
-    int32_t rows1, rows2, cols1, cols2; 
-    int32_t res;
-
+    int_fast32_t row_pos, rows1, rows2, cols1, cols2, res;
+    
+    row_pos = qstate12_prep_mul(pqs1, pqs2, nqb);
     if (row_pos < 0) return row_pos; // Then row_pos is an error code
     if (nc > nqb) return ERR_QSTATE12_QUBIT_INDEX;
 
@@ -417,9 +387,57 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
     if (res < 0) return res;
     res = qstate12_mul_elements(pqs1, pqs2, 0 - (ONE << nqb)); 
     if (res < 0) return res;
-    pqs1->shape1 = 0;  // deterministic destruction
+    pqs1->shape1 = 0;  
     return qstate12_reduce(pqs1);
 }
+
+
+// %%EXPORT p
+int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb, uint32_t nc)
+// Compute a certain product ``qs3`` of the states ``qs1`` 
+// and ``qs2`` referred by ``pqs1`` and ``pqs2``. 
+// Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
+// Put ``qs1a =  qstate12_extend(qs, n1, n2-nqb)``,
+// ``qs2a =  qstate12_extend(qs, nqb, n1-nqb)``. Then ``qs1a``
+// and ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
+// bits. Let ``qs3a`` be the complex function which is the 
+// product of the functions  ``qs1a`` and ``qs2a``. Then we 
+// have ``qs3 = qstate12_sum_cols(qs23, 0, nc)``.
+// The result ``qs3`` is computed in the state referred by 
+// ``qs1``. It is reduced. ``qs2`` is not changed. 
+//
+// E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
+// contraction over the first ``nc`` qubits of ``qs1`` and 
+// ``qs2``. ``In case pqs1->ncols = pqs2->ncols = n``, the 
+// function ``qstate12_product(pqs1, pqs2, n, 0)`` returns the 
+// product of ``qs1`` and ``qs2`` (considered as functions); 
+// and ``qstate12_product(pqs1, pqs2, n, n)`` returns the scalar
+// product of ``qs1`` and ``qs2`` (considered as vectors).
+//
+// ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds to the 
+// function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
+// ``'\odot'`` operation defined in section 
+// 'Products and tensor products of quadratic mappings'
+// of the guide.
+//
+// pqs1->shape1 is set to 0. The user should  set pqs1->shape1 
+// to a reasonable value. 
+{
+    int_fast32_t res;
+    qstate12_type qs1, qs2;
+    uint64_t qs1_data[MAXROWS], qs2_data[MAXROWS];
+    
+    // Create temporary copy of *pqs1 and *pqs2
+    res = qstate12_copy_alloc(pqs1, &qs1, qs1_data, MAXROWS);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
+    if (res < 0) return res;
+    
+    res =  qs_product(&qs1, &qs2, nqb, nc);
+    if (res < 0) return res;
+    return qstate12_copy(&qs1, pqs1);
+}
+
 
 
 
@@ -443,18 +461,28 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
 //
 // The function computes the matrix product ``m3 = m1 @ m2`` as 
 // an  ``2**m_1`` times ``2**n_2`` matrix and stores matrix 
-// ``m3`` in ``qs_1``.  ``qs_2`` is destroyed.
+// ``m3`` in ``qs_1``.  ``qs_2`` is not changed.
 {
     int32_t res;
     uint32_t nqb = pqs1->shape1, cols = pqs2->shape1; 
+    qstate12_type qs1, qs2;
+    uint64_t qs1_data[MAXROWS], qs2_data[MAXROWS];
+
     if bad_state(pqs1) return ERR_QSTATE12_INCONSISTENT;
-    res = qstate12_rot_bits(pqs2, nqb, pqs2->ncols, 0);
     if (pqs2->ncols - pqs2->shape1 != nqb) return ERR_QSTATE12_SHAPE_OP;
+    
+    // Create temporary copy of *pqs1 and *pqs2
+    res = qstate12_copy_alloc(pqs1, &qs1, qs1_data, MAXROWS);
     if (res < 0) return res;
-    res = qstate12_product(pqs1, pqs2, nqb, nqb);
+    res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
     if (res < 0) return res;
-    pqs1->shape1 = cols;
-    return 0;
+
+    res = qstate12_rot_bits(&qs2, nqb, qs2.ncols, 0);
+    if (res < 0) return res;
+    res = qstate12_product(&qs1, &qs2, nqb, nqb);
+    if (res < 0) return res;
+    qs1.shape1 = cols;    
+    return qstate12_copy(&qs1, pqs1);
 }
 
 

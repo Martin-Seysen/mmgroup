@@ -216,9 +216,41 @@ The basic table-providing class for ``mmgroup.mm<p>``
 More details will be documented in a future version of this project.
 
 
-Computation in the subgroup :math:`2^{1+24}.Co_1`
-=================================================
+Computation in the subgroup :math:`2^{1+24}.Co_1` of the monster
+================================================================
+
+In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
+has a subgroup :math:`G_{x0}` of structure 
+:math:`2^{1+24}_+.\mbox{Co}_1`.
+Here :math:`G_{x0}` is constructed as a diagonal product of the
+two groups :math:`\mbox{Co}_0` of structure :math:`2.\mbox{Co}_1`
+and :math:`N(4096_x)`. :math:`N(4096_x)` is also of structure
+:math:`2^{1+24}_+.\mbox{Co}_1` but not isomorphic to  :math:`G_{x0}`.
+Computation in  :math:`\mbox{Co}_0` is easy since that group has a 
+:math:`24`-dimensional rational representation. The smallest real
+representation of the group :math:`N(4096_x)` has dimension
+:math:`4096`, so naive computation in that representation is
+rather inefficient.
+
+The group :math:`4096` is a subgroup of the real Clifford group
+:math:`\mathcal{C}_{12}`. The real Clifford group :math:`\mathcal{C}_{n}`
+of structure :math:`2^{1+2n}_+.\mbox{O}_{2n}(2)` is defined e.g. in
+:cite:`NRS01`. :math:`\mathcal{C}_{12}` is a subgroup
+of the complex Clifford group :math:`\mathcal{X}_{n}`, which is also
+defined in :cite:`NRS01`.
+
+Effective computation in the group  :math:`\mathcal{X}_{n}` has received
+a lot of attention from the theory of quantum computation, see e.g.
+:cite:`AG04`. In the next sction we present efficient algorithms for
+computing in :math:`\mathcal{X}_{n}` using the :math:`2^{n}` dimensional
+represtation of that group.
 
 .. automodule:: mmgroup.dev.clifford12.qstate12
 
 
+Class ``QStateMatrix`` modelling a quadratic state matrix
+---------------------------------------------------------
+
+
+.. autoclass:: mmgroup.structures.qs_matrix.QStateMatrix
+   :members: conjugate, T, H, reshape
