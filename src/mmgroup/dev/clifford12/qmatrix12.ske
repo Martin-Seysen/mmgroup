@@ -490,7 +490,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
 *** Creating and checking matrices in the Pauli group
 *************************************************************************/
 
-static uint64_t bit_rev(uint32_t length, uint64_t n)
+static inline uint64_t bit_rev(uint32_t length, uint64_t n)
 // Reverse lower ``length`` bit of interger ``n``.
 {
     uint32_t i;
@@ -498,6 +498,14 @@ static uint64_t bit_rev(uint32_t length, uint64_t n)
     for (i = 0; i < length; ++i) 
         v |= ((n >> (length - i - 1)) & ONE) << i;
     return v;
+}
+
+
+static inline uint64_t bitparity64(uint64_t x)
+// return bit parity of x
+{
+    x ^= x >> 32; x ^= x >> 16; x ^= x >> 8; x ^= x >> 4;
+    return (0x6996 >> (x & 0x0f)) & 1;
 }
 
 
@@ -522,8 +530,9 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
     if (w & mask) return ERR_QSTATE12_PAULI_GROUP;
     mask = (ONE << nqb) - 1;
     w = bit_rev(nqb, m[0] >> (pqs->ncols + 1));
-    w |= m[0] & (mask << nqb);
-    w |= (uint64_t)((pqs->factor >> 2) & ONE) << pqs->ncols;    
+    w |= (m[0] & mask) << nqb;
+    w |= ((uint64_t)((pqs->factor >> 2) & ONE) ^   
+         bitparity64(w & m[0] & mask)) << pqs->ncols;
     w |= (uint64_t)((pqs->factor >> 1) & ONE) << (pqs->ncols + 1);    
     *pv = w;
     return 0;

@@ -118,6 +118,7 @@ def test_pauli_conjugate(verbose = 0):
 
 def create_pauli_vectors():
     yield 0, 2, 3
+    yield 4, 0x1, 0x10
     yield 16, 0x100000001, 0x200010000
     for n in range(0,21):
         for i in range(4):
@@ -137,7 +138,7 @@ def test_pauli_multiplication(verbose = 0):
         if verbose or not ok:
             print("Test %d, dim = %d" % (ntest, n))
             print("v1 = %s, v2 = %s, v1 * v2 = %s" % 
-               (hex(v1), hex(v2), hex(v3_ref)) )
+                (hex(v1), hex(v2), hex(v3_ref)) )
             if not ok:
                 print("m1", p1)
                 print("m2", p2)

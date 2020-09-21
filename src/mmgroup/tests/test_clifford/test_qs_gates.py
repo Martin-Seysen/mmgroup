@@ -157,8 +157,8 @@ def complex_gate_phi(c1, v, phi):
     return c2
 
 
-@pytest.mark.qstate1
-def test_gate_phi(verbose = 1):
+@pytest.mark.qstate
+def test_gate_phi(verbose = 0):
     """Test function ``qstate12_gate_phi``. """
     for ntest, (m, v, phi) in enumerate(gate_phi_testdata()):
         assert 0 <= v < 1 << m.shape[1]
@@ -176,11 +176,9 @@ def test_gate_phi(verbose = 1):
         err = "Method gate_phi has failed"
         compare_complex(c1_ref, c1, err)            
         gm = qs_phi_matrix(m.shape[1], v, phi)  
-        print("gm", gm)
         assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]
         if (phi & 3 == 2):         
             gm = qs_pauli_matrix(m.shape[1], v)  
-            print("gm",gm)
             assert m @ gm == m1, [str(x) for x in (m, m @ gm, m1)]         
 
 
