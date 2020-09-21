@@ -705,25 +705,28 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
 // arleady the case.
 // This does not change the state. 
 {
-    uint_fast32_t row_pos = 1, col, i, i1; 
+    uint_fast32_t row_pos = 1, i, i1; 
+    int_fast32_t col; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;  
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
     // Convert submatrix A of M to (non-reduced) echelon form
-    for (col = 0; col < pqs->ncols && row_pos < pqs->nrows; ++col) {
+    for (col = pqs->ncols - 1; col >= 0; --col) {
         // pivot with column col, advance row_pos if success
         i = pqs->nrows - 1; 
         mask = ONE << col;
         v = 0;
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
-        if (i > row_pos) {
-            for (i1 = row_pos; i1 < i; ++i1) 
-                v |= ((m[i1] >> col) & 1) << i1; 
-            if (v) qstate12_pivot(pqs, i, v);
-            qstate12_xch_rows(pqs, i, row_pos);
+        if (i >= row_pos) {
+            if (i > row_pos) {
+                for (i1 = row_pos; i1 < i; ++i1) 
+                    v |= ((m[i1] >> col) & 1) << i1; 
+                if (v) qstate12_pivot(pqs, i, v);
+                qstate12_xch_rows(pqs, i, row_pos);
+            }
+            if (++row_pos >= pqs->nrows) break;
         }
-        row_pos += i >= row_pos;
     }    
     return qstate12_sum_up_kernel(pqs);
 }
@@ -739,22 +742,25 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 // arleady the case.
 // This does not change the state. 
 {
-    uint_fast32_t row_pos = 1, col, i; 
+    uint_fast32_t row_pos = 1, i, i1; 
+    int_fast32_t col; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;  // abort if state is bad
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
-    // Convert submatrix A of M to (non-reduced) echelon form
-    for (col = 0; col < pqs->ncols && row_pos < pqs->nrows; ++col) {
+    // Convert submatrix A of M to reduced echelon form
+    for (col = pqs->ncols - 1; col >= 0; --col) {
         // pivot with column col, advance row_pos if success
         i = pqs->nrows - 1; 
         mask = ONE << col;
         while (i >= row_pos  && ((m[i] & mask) == 0)) -- i;
         if  (i >= row_pos) {
-            v = qstate12_get_col(m, col, i);
+            v = 0;
+            for (i1 = 0; i1 < i; ++i1) 
+                v |= ((m[i1] >> col) & 1) << i1; 
             if (v) qstate12_pivot(pqs, i, v);
             if (i > row_pos) qstate12_xch_rows(pqs, i, row_pos);
-            ++row_pos;
+            if (++row_pos >= pqs->nrows) break;
         }    
     }    
     return qstate12_sum_up_kernel(pqs);
@@ -774,15 +780,16 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 // 
 // The representation of the state is not changed.
 {
-    uint_fast32_t row_pos = 1, col, i; 
+    uint_fast32_t row_pos = 1, i;
+    int32_t col; 
     uint64_t *m = pqs->data, mask;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ; 
-    for (col = 0; col < pqs->ncols; ++col) 
+    for (col =  pqs->ncols - 1; col >= 0; --col) 
         row_table[col] = QSTATE12_UNDEF_ROW;
     if (pqs->nrows == 0) return 0;
  
     // Convert submatrix A of M to (non-reduced) echelon form
-    for (col = 0; col < pqs->ncols; ++col) {
+    for (col =  pqs->ncols - 1; col >= 0; --col) {
         // find pivoting row ``i`` for column ``col``
         i = pqs->nrows - 1; 
         mask = ONE << col;
@@ -1299,8 +1306,8 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 // state to echelon form.
 {
     uint8_t row_table[MAXCOLS+1];
-    int32_t factor, res;
-    uint32_t i, j, sh; 
+    int32_t factor, res, j;
+    uint32_t i,sh; 
     uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
     double freal[5], fimag[5];
     
@@ -1319,7 +1326,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
         factor = 0;
         m0 = m[0] ^ (vmask & *v++);
         // m0 is a copy of row 0 with bits of index equal to 1 flipped
-        for (j = 0; j < pqs->ncols; ++j) {
+        for (j = pqs->ncols - 1; j >= 0; --j) {
             if ((m0 >> j) & 1) {
                 i = row_table[j];
                 if (i == QSTATE12_UNDEF_ROW) {

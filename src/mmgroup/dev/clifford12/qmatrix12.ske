@@ -44,7 +44,7 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
 // of submatrix A) to output qubit j (corresponding to column j of 
 // submatrix A). 0 <= rk < min(nows, cols) must hold.
 {
-    uint64_t mask = (ONE << cols) + ONE;
+    uint64_t mask = ((ONE << cols) + ONE) << (rk - 1);
     uint32_t i;
 
     pqs->nrows = rk + 1;
@@ -58,7 +58,7 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
         return ERR_QSTATE12_QUBIT_INDEX;
     }
     for (i = 1; i < pqs->nrows; ++i) {
-        pqs->data[i] = mask; mask <<= 1;
+        pqs->data[i] = mask; mask >>= 1;
     } 
     return 0;  
 }
@@ -223,16 +223,7 @@ qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint
 
 
 
-static inline 
-uint64_t qstate12_xor_col(uint64_t *m1, uint64_t *m2, uint32_t j, uint32_t len)
-// Return XOR sum of columns ``j`` of the bit matrices ``m1``
-// and ``m2`` upto and exlcuding line ``len``.
-{
-    uint_fast32_t i;
-    uint64_t a = 0;
-    for (i = 0; i < len; ++i) a |= (((m1[i] ^ m2[i]) >> j) & ONE) << i;
-    return a;
-}
+
 
 
 // %%EXPORT p
@@ -265,8 +256,9 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
 //
 // pqs1->shape1 and pqs2->shape1 are ignored.
 {
-    uint_fast32_t i1, i2, col_pos, n_deleted = 0;
+    uint_fast32_t i1, i2, n_deleted = 0, ii;
     uint_fast32_t row_pos = 1, row_pos1 = 1, row_pos2 = 1;
+    uint_fast32_t col_pos, col1, col2;
     uint64_t v, deleted = 0;
     uint64_t *m1 = pqs1->data, *m2 = pqs2->data;
     int32_t res;
@@ -281,12 +273,15 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
     if (pqs1->nrows == 0 || pqs2->nrows == 0)  {
         return  pqs1->nrows = pqs2->nrows = 0;
     }
-    // Equalize the first 'ncols' columns of m1 and m2
-    for (col_pos = 0; col_pos < nqb; ++col_pos) {
-        // pivot with column col_pos, advance row_pos if success
-        i1 = row_pos1 < pqs1->nrows ? (m1[row_pos1] >> col_pos) & 1 : 0;
-        i2 = row_pos2 < pqs2->nrows ? (m2[row_pos2] >> col_pos) & 1 : 0;
-        v = qstate12_xor_col(m1, m2, col_pos, row_pos);
+    // Equalize the highest 'nqb' columns of m1 and m2
+    for (col_pos = 1; col_pos <= nqb; ++col_pos) {
+        col1 = pqs1->ncols - col_pos; col2 = pqs2->ncols - col_pos; 
+        // pivot with column col1, col2, advance row_pos if success
+        i1 = row_pos1 < pqs1->nrows ? (m1[row_pos1] >> col1) & 1 : 0;
+        i2 = row_pos2 < pqs2->nrows ? (m2[row_pos2] >> col2) & 1 : 0;
+        v = 0;
+        for (ii = 0; ii < row_pos; ++ii) 
+            v |= (((m1[ii] >> col1) ^ (m2[ii] >> col2)) & ONE) << ii;
         if (i1) {
             if (i2) {
                 qstate12_copy_row(m1, pqs1->ncols, pqs1->nrows,
@@ -332,7 +327,7 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
 // For the submatrices ``A1, Q1`` and ``A2, Q2`` of the matrices
 // ``M1`` and ``M2`` the states rreferred by ``qs1`` and ``qs2``
 // we put ``A1 = A1 + A2, Q1 = Q1 + Q2``.
-// The pair ``(A2, Q2)`` is masked with the ``mask`` befor
+// The pair ``(A2, Q2)`` is masked with the ``mask`` before
 // it is added. A carry in the adiition of diagonal entries
 // of ``Q1`` nd ``Q2`` is processed correctly.
 // The number of rows and columns in both states must be equal. 
@@ -367,16 +362,19 @@ static int32_t qs_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
     if (row_pos < 0) return row_pos; // Then row_pos is an error code
     if (nc > nqb) return ERR_QSTATE12_QUBIT_INDEX;
 
-    if ((res = qstate12_sum_cols(pqs1, 0, nc)) < 0) return res; 
-    if ((res = qstate12_sum_cols(pqs2, 0, nc)) < 0) return res; 
+    if ((res = qstate12_sum_cols(pqs1, pqs1->ncols - nc, nc)) < 0) 
+        return res; 
+    if ((res = qstate12_sum_cols(pqs2, pqs2->ncols - nc, nc)) < 0) 
+        return res; 
     nqb -= nc;
     
     cols1 = pqs1->ncols; cols2 = pqs2->ncols;
-    res = qstate12_extend_zero(pqs1, nqb, cols2 - nqb);
+    res = qstate12_extend_zero(pqs1, 0, cols2 - nqb);
     if (res < 0) return res;
-    res = qstate12_extend_zero(pqs2, cols2, cols1 - nqb); 
+    res = qstate12_extend_zero(pqs2, cols2 - nqb, cols1 - nqb); 
     if (res < 0) return res;
  
+    pqs1->shape1 = 0;  
     if (pqs1->nrows == 0 || pqs2->nrows == 0)
         return pqs1->nrows = pqs1->factor = 0; 
 
@@ -385,9 +383,9 @@ static int32_t qs_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
     if (res < 0) return res;
     res = qstate12_insert_rows(pqs2, pqs2->nrows, rows1); 
     if (res < 0) return res;
-    res = qstate12_mul_elements(pqs1, pqs2, 0 - (ONE << nqb)); 
+    res = qstate12_mul_elements(pqs1, pqs2, 
+        ~(((ONE << nqb) - 1) << (pqs1->ncols - nqb))); 
     if (res < 0) return res;
-    pqs1->shape1 = 0;  
     return qstate12_reduce(pqs1);
 }
 
@@ -477,7 +475,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
     res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
     if (res < 0) return res;
 
-    res = qstate12_rot_bits(&qs2, nqb, qs2.ncols, 0);
+    res = qstate12_rot_bits(&qs1, -nqb, qs1.ncols, 0);
     if (res < 0) return res;
     res = qstate12_product(&qs1, &qs2, nqb, nqb);
     if (res < 0) return res;
@@ -492,6 +490,17 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
 *** Creating and checking matrices in the Pauli group
 *************************************************************************/
 
+static uint64_t bit_rev(uint32_t length, uint64_t n)
+// Reverse lower ``length`` bit of interger ``n``.
+{
+    uint32_t i;
+    uint64_t v = 0;
+    for (i = 0; i < length; ++i) 
+        v |= ((n >> (length - i - 1)) & ONE) << i;
+    return v;
+}
+
+
 // %%EXPORT p
 int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
 {
@@ -501,18 +510,18 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
     
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     nqb = pqs->shape1;
-    mask = ONE + (ONE << nqb);
+    mask = (ONE + (ONE << nqb)) << (nqb - 1);
     if (pqs->ncols != nqb << 1 || pqs->nrows != nqb + 1) 
         return ERR_QSTATE12_PAULI_GROUP;
     if (pqs->factor & -0xf) return ERR_QSTATE12_PAULI_GROUP; 
     for (i = 0; i < nqb; ++ i) {
         w |=  (m[i+1] ^ mask);
-        mask <<= 1;
+        mask >>= 1;
     }
     mask = (((ONE << pqs->nrows) - 1) << pqs->ncols) - 1;
     if (w & mask) return ERR_QSTATE12_PAULI_GROUP;
     mask = (ONE << nqb) - 1;
-    w = (m[0] >> (pqs->ncols + 1)) & mask;
+    w = bit_rev(nqb, m[0] >> (pqs->ncols + 1));
     w |= m[0] & (mask << nqb);
     w |= (uint64_t)((pqs->factor >> 2) & ONE) << pqs->ncols;    
     w |= (uint64_t)((pqs->factor >> 1) & ONE) << (pqs->ncols + 1);    
@@ -528,7 +537,7 @@ uint64_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
     int32_t res;
     uint64_t *m = pqs->data, mask = (ONE << nqb) - 1;
     if ((res = qstate12_std_matrix(pqs, nqb, nqb, nqb)) < 0) return res;
-    m[0] |= (v & mask) << (2 * nqb + 1); 
+    m[0] |= bit_rev(nqb, v) << (2 * nqb + 1); 
     m[0] |= v & (mask << nqb);
     v >>= 2*nqb;
     pqs->factor |= (v & 1) << 2;    

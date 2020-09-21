@@ -126,11 +126,11 @@ def check_echelon(m, reduced = False):
     err = "Bad vector in row % of part A of QSMatrix"
     data = m.data
     mask = (1 << m.ncols) - 1
-    index = 0
+    index = m.ncols + 1
     for i, v in enumerate(data[1:]):
         v &= mask
-        new_index = (v & -v).bit_length()
-        if new_index <= index:
+        new_index = v.bit_length()
+        if new_index >= index:
             print("\nError: " + err % i)
             print(m)
             err1 = "QSMatrix is not in echelon form"
