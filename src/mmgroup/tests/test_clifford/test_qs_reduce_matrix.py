@@ -59,6 +59,11 @@ def is_leading_low(x, j):
     """Return True if bit ``j`` is the lowest bit set in ``x``."""
     return x & ((1 << (j+1)) - 1) == 1 << j
 
+def is_leading_high(x, j):
+    """Return True if bit ``j`` is the lowest bit set in ``x``."""
+    return x.bit_length() == j + 1
+
+
 def zero_column(d, j, i):
     """Return True if ``d[k,j] = 0`` for ``0 <= k < i``
 
@@ -77,6 +82,16 @@ def zero_column(d, j, i):
 
 EPS = 1.0e-8
 
+def show_row_table(text, m, row_tab):
+    c = m.ncols
+    t0, t1 = list(reversed(row_tab[:c])), row_tab[c:]
+    s = "table of %s:" % text
+    if len(t1):
+        print(s, t0, t1[0], ", Q:", t1[1:])
+    else:
+        print(s, t0)
+
+
 @pytest.mark.qstate
 def test_reduce_matrix(verbose = 0):
     for ntest, m in enumerate(create_testmatrices()):
@@ -87,9 +102,10 @@ def test_reduce_matrix(verbose = 0):
             print("Standard reduced m =", m.copy().reduce())
         row_tab = m1.reduce_matrix()
         m1.check()
+        assert len(row_tab) == m1.nrows + m1.ncols
         if verbose:
             print("Reduced matrix, m1 =", m1)
-            print("table", row_tab)
+            show_row_table("m1", m1, row_tab)
             print("shape", m1.shape)
         if  m != m1:
             print("m reduced", m.copy().reduce())
@@ -100,40 +116,41 @@ def test_reduce_matrix(verbose = 0):
         if m1.nrows == 0: 
             assert  m.lb_rank() == -1
             continue
-        assert len(row_tab) == m1.nrows + m1.ncols
+        fst_row = row_tab[m1.ncols]
+        n0, n1 = m1.shape
         d = m1.data
         imin = 0
-        fst_row = row_tab[m1.ncols]
-        for j in range(m1.shape[1]):
+        row_mask = bitrange_mask(0, n0 + n1)
+        for j in range(n0 + n1 - 1, n1 - 1, -1):
             i =  row_tab[j]
             if i < 255: 
                 assert i == imin + 1
                 imin = i
-                if not is_leading_low(d[i], j):
+                if not is_leading_high(d[i] & row_mask, j):
                     err = "error in row %d of m1"% i 
                     print("m1", m1)
-                    print("table", row_tab)
+                    show_row_table("m1", m1, row_tab)
                     raise ValueError(err)
-        row_mask = bitrange_mask(m1.shape[1], m1.ncols)
+        row_mask = bitrange_mask(0,n1)
         row_set = set(range(1, m1.nrows))
-        for j in range(m1.shape[1], m1.ncols):
+        for j in range(n1 - 1, -1, -1):
             i =  row_tab[j]
             ok = True
             if i < fst_row:
-                ok = is_leading_low(d[i] & row_mask, j)
+                ok = is_leading_high(d[i] & row_mask, j)
                 ok = ok and zero_column(d, j, i)
                 assert row_tab[m1.ncols + i] == j
                 row_set.remove(i)
             elif i < 255: 
                 assert i == imin + 1
                 imin = i
-                ok = is_leading_low(d[i], j)
+                ok = is_leading_high(d[i] & row_mask, j)
                 ok = ok and zero_column(d, j, fst_row)
                 row_set.remove(i)
             if not ok:
                 err = "error in column %d, row %d of m1" % (j, i) 
                 print("m1", m1)
-                print("table", row_tab)
+                show_row_table("m1", m1, row_tab)
                 raise ValueError(err)
         assert imin == m1.nrows - 1
         for i in row_set:
@@ -151,9 +168,10 @@ def test_reduce_matrix(verbose = 0):
         for i in row_set:
             assert d[i] & q_mask == 0
             
-        # Check the computation of the rank of matrix m              
         if m.ncols > 8:
             continue
+        
+        # Check the computation of the rank of matrix m              
         rk = np.linalg.matrix_rank(m[:], tol=EPS)
         lb_rk = m.lb_rank()
         assert rk == 1 << lb_rk, (m1[:], rk, lb_rk)   

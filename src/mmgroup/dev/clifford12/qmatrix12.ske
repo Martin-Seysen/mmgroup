@@ -475,7 +475,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
     res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
     if (res < 0) return res;
 
-    res = qstate12_rot_bits(&qs1, -nqb, qs1.ncols, 0);
+    res = qstate12_rot_bits(&qs1, 0-nqb, qs1.ncols, 0);
     if (res < 0) return res;
     res = qstate12_product(&qs1, &qs2, nqb, nqb);
     if (res < 0) return res;
@@ -619,17 +619,16 @@ int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 // TODO: Yet to be documented!!
 {
-    int_fast32_t res, i;
-    uint_fast32_t  j, fst_row, nqb;
+    int_fast32_t res, i, j;
+    uint_fast32_t  fst_row, n0, n1;
     uint64_t kernel, *m = pqs->data, v;
     if ((res = qstate12_reduce(pqs)) < 0) return res;
-    nqb = pqs->shape1; 
+    n1 = pqs->shape1;  n0 = pqs->ncols - n1;
     if ((res = qstate12_row_table(pqs, row_table)) < 0) return res;
-    if (nqb > pqs->ncols) return ERR_QSTATE12_QUBIT_INDEX;
     if (pqs->nrows == 0) return 0;
     
     fst_row = pqs->nrows;
-    v = (ONE << nqb) - 1;
+    v = ((ONE << n0) - ONE) << n1;
     for (i = pqs->nrows - 1; i > 0; --i) {
         row_table[pqs->ncols + i] = QSTATE12_UNDEF_ROW;
         if ((m[i] & v) == 0) fst_row = i;
@@ -637,7 +636,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     kernel = 0 - (ONE << fst_row);
     row_table[pqs->ncols] = (uint8_t)fst_row;
         
-    for (j = nqb; j < pqs->ncols; ++j) {
+    for (j = n1 - 1; j >= 0; --j) {
         if (row_table[j] == QSTATE12_UNDEF_ROW) {
             i =  qstate12_find_masked_pivot(m, fst_row, j, kernel);
             if (i > 0) {
@@ -651,8 +650,8 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     
     // Pivot Q part of state data
     // TODO: check it!!!!!
-    for (j = pqs->nrows -1; j >= fst_row; --j) {
-        i = qstate12_find_masked_pivot(m, fst_row, j+ pqs->ncols, kernel);
+    for (j = pqs->nrows-1; j >= (int_fast32_t)fst_row; --j) {
+        i = qstate12_find_masked_pivot(m, fst_row, j+pqs->ncols, kernel);
         // if i >= 0 then i is the higest row with Q[i,j] = 1
         if (i > 0) {
             // set v to column (or row) j of matrix Q
@@ -690,7 +689,7 @@ int32_t qstate12_mat_lb_rank(qstate12_type *pqs)
     if (res < 0) return res;
     if (pqs->nrows == 0) return -1;
     fst_row = row_table[pqs->ncols];
-    for (i = nqb; i < pqs->ncols; ++i)  
+    for (i = 0; i < nqb; ++i)  
         rk += row_table[i] < fst_row;
     for (i = pqs->ncols + fst_row; i < pqs->ncols + pqs->nrows; ++i)
         rk += row_table[i] != QSTATE12_UNDEF_ROW;
