@@ -712,7 +712,7 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
     // Convert submatrix A of M to (non-reduced) echelon form
-    for (col = pqs->ncols - 1; col >= 0; --col) {
+    if (pqs->ncols > 0) for (col = pqs->ncols - 1; col >= 0; --col) {
         // pivot with column col, advance row_pos if success
         i = pqs->nrows - 1; 
         mask = ONE << col;
@@ -749,7 +749,7 @@ int32_t qstate12_reduce(qstate12_type *pqs)
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
     // Convert submatrix A of M to reduced echelon form
-    for (col = pqs->ncols - 1; col >= 0; --col) {
+    if (pqs->ncols > 0) for (col = pqs->ncols - 1; col >= 0; --col) {
         // pivot with column col, advance row_pos if success
         i = pqs->nrows - 1; 
         mask = ONE << col;
