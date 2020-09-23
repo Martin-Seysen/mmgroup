@@ -665,7 +665,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
             qstate12_pivot(pqs, j, v);
             row_table[pqs->ncols + j] = (uint8_t)i;
         }
-    }    
+    }
     return 0;
     
 }
@@ -673,6 +673,25 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 /*************************************************************************
 *** Computing the rank of a matrix
 *************************************************************************/
+
+static inline int32_t lb_rank_reduced(qstate12_type *pqs, uint8_t *row_table)
+// Workhorse for function qstate12_mat_lb_rank().
+// Same operation on *pqs, but assumes that *pqs is has been reduced
+// with function qstate12_reduce_matrix(). Furthermore, the
+// ``row_table`` computed by function qstate12_reduce_matrix()
+// must be given as a parameter to this function.
+{
+    uint_fast32_t i, fst_row, nqb = pqs->shape1; 
+    int32_t rk = 0;
+    if (pqs->nrows == 0) return -1;
+    fst_row = row_table[pqs->ncols];
+    for (i = 0; i < nqb; ++i)  
+        rk += row_table[i] < fst_row;
+    for (i = pqs->ncols + fst_row; i < pqs->ncols + pqs->nrows; ++i)
+        rk += row_table[i] != QSTATE12_UNDEF_ROW;
+    return rk;
+}
+
 
 // %%EXPORT p
 int32_t qstate12_mat_lb_rank(qstate12_type *pqs) 
@@ -682,18 +701,10 @@ int32_t qstate12_mat_lb_rank(qstate12_type *pqs)
 // Matrix qs is reduced with function qstate12_reduce_matrix().
 {
     uint8_t row_table[MAXCOLS+4];
-    int32_t res, rk = 0;
-    uint_fast32_t i, fst_row, nqb; 
+    int32_t res; 
     res = qstate12_reduce_matrix(pqs, row_table);
-    nqb = pqs->shape1; 
     if (res < 0) return res;
-    if (pqs->nrows == 0) return -1;
-    fst_row = row_table[pqs->ncols];
-    for (i = 0; i < nqb; ++i)  
-        rk += row_table[i] < fst_row;
-    for (i = pqs->ncols + fst_row; i < pqs->ncols + pqs->nrows; ++i)
-        rk += row_table[i] != QSTATE12_UNDEF_ROW;
-    return rk;
+    return lb_rank_reduced(pqs, row_table);
 }
 
 
@@ -754,43 +765,71 @@ int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2
 int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
 // TODO: Yet to be documented!!
 {
-    int_fast32_t res, js;
-    uint_fast32_t i, j, rank = 0, fst_row, sh, j0, j1, nqb;
+    int_fast32_t res,  j;
+    uint_fast32_t i, fst_row, sh, j0, j1, nqb;
     uint8_t row_table[MAXCOLS];
-    uint64_t *m = pqs->data, m0, v, w, f,  mask;
-    uint64_t v_out, a_t[MAXCOLS/3+1]; 
+    uint64_t *m = pqs->data, m0, v, f,  mask;
+    uint64_t v_out, a_t[2*MAXCOLS/3+1]; 
     
     res = qstate12_reduce_matrix(pqs, row_table);
-    nqb = pqs->shape1;
     if (res < 0) return res;
+    nqb = pqs->shape1;
+    fst_row = row_table[pqs->ncols];
     
     // Check that rank of matrix is equal to nqb
-    fst_row = row_table[pqs->ncols];
-    for (j = nqb; j <= nqb << 1; ++j) rank += row_table[j] < fst_row;
-    for (j = pqs->ncols + fst_row; j < pqs->ncols + pqs->nrows; ++j) 
-        rank +=  row_table[j] != QSTATE12_UNDEF_ROW;
-    if (rank != nqb) return -102;
+    if (2*nqb != pqs->ncols || 
+        nqb != (uint32_t)lb_rank_reduced(pqs, row_table)) 
+            return ERR_QSTATE12_MATRIX_INV;
     if (nqb == 0) return 0;
-    res = qstate12_bit_matrix_t(m, nqb + 1, nqb, a_t);
-    if (res < 0) return res;
-    for (j = 0; j < nqb; ++j) a_t[j] <<= pqs->ncols;
     
+    // Reduce state matrix ``qs``
+    res = qstate12_bit_matrix_t(m, pqs->nrows, pqs->ncols, a_t);
+    if (res < 0) return res;
+    for (j = 0; j < (int32_t)pqs->ncols; ++j) a_t[j] <<= pqs->ncols; 
+    
+    // Adjust column ``pqs->ncols`` of matrix ``qs``, 
+    // i.e column ``0`` of part ``Q`` of the matrix.
+    mask = ~(ONE << pqs->ncols);
+    m[0] &=  mask;
+    for (i = 1; i < pqs->nrows; ++i) {
+        m[i] &=  mask;
+        m[i] |= (m[0] >> i) & ~mask;
+    }
+
+    // Internal check of matrix ``qs``
     j0 = pqs->ncols + fst_row; j1 = pqs->ncols + pqs->nrows;
-    mask = (ONE << j1) - (ONE << j0) + (ONE << pqs->ncols) - (ONE << nqb);
+    mask = (ONE << j1) - (ONE << j0) + (ONE << nqb) - 1;
     if  (m[0] & mask) return -90; // internal error
    
+    // Main loop: conjugate ``qs`` with Pauli group vectors
     while (n--) {
-        v = *pv;
-        mask = (ONE << nqb) - 1;
+        // Let ``v`` be the current Pauli vector to be conjugated
+        v = *pv;  
+        
+        // We modify line 0 of the data of ``qs``, and we store the
+        // modified line ``m[0]`` in ``m0``. We ignore the original
+        // scalar factor of ``qs``. Assuming that this factor is one, 
+        // the modified scalar factor is of the form ``sqrt(-1)**f``, 
+        // and its exponent will be stored in ``f``. We first store 
+        // the corresponding exponent of the the central factor of 
+        // the Pauli vector ``v`` in ``f``.
         m0 = m[0];
         f = 0x3120 >> (((v >> (pqs->ncols)) & 3) << 2);
-        if ((res = qstate12_mul_Av(pqs, (v & mask) << nqb, &w)) < 0) 
-            return res; 
-        f += w << 1;
-        m0 ^= w << pqs->ncols;
-        m0 ^= v & (mask << nqb);
         
-        for (j = nqb; j < pqs->ncols; ++j) if ((m0 >> j) & 1) {
+        // Right multiply ``qs`` with the x part of ``v``. Therefore
+        // we right multiply ``qs`` with a sequence of not gates.
+        mask = (ONE << nqb) - 1;
+        m0 ^= (v >> nqb) & mask;
+                
+        // Right multiply ``qs`` with the z part of ``v``. Therefore
+        // we right multiply ``qs`` with a sequence of phase gates.
+        for (j = 0; j < (int32_t)nqb; ++j) if ((v >> j) & ONE) {
+            m0 ^= a_t[j];
+            f += (m0 >> j) << 1;
+        }
+ 
+        // Zero ``m0[j], 0 <= j < nqb``, without changing ``qs``       
+        for (j = nqb - 1; j >= 0; --j) if ((m0 >> j) & 1) {
             i = row_table[j];
             sh = pqs->ncols + i;
             // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
@@ -801,8 +840,10 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
             if (((m[i] >> j) & 1) == 0) return -91; // internal error
             m0 ^= m[i];
         }
+
+        // Zero ``m0[j], j0 <= j < j1``, without changing ``qs``       
         j0 = pqs->ncols + fst_row; j1 = pqs->ncols + pqs->nrows;
-        for (j = j0; j < j1; ++j) if ((m0 >> j) & 1) {
+        for (j = j1 - 1; j >= (int32_t)j0; --j) if ((m0 >> j) & 1) {
             i = row_table[j];
             sh = pqs->ncols + i;
             // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
@@ -813,30 +854,45 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
             if (((m[i] >> j) & 1) == 0) return -92; // internal error
             m0 ^= m[i];
         }
-        mask = (ONE << j1) - (ONE << j0) + (ONE << pqs->ncols) - (ONE << nqb);
+        
+        // Some internal check:
+        // We check the the relevant bits of m0 have been set to zero
+        mask = (ONE << j1) - (ONE << j0) + (ONE << nqb) - ONE;
         if  (m0 & mask) return -93; // internal error
     
+        
+        // Adjust z part of output Pauli matrix v_out. Therefore
+        // we left multiply ``qs`` with a sequence of phase gates.
         v_out = 0;
-        
-        // adjust z part of output Pauli matrix v_out
-        mask = (2*ONE) << pqs->ncols;
+        mask = ONE << (pqs->ncols + nqb);
         m0 &= ~(ONE << pqs->ncols);
-        for (js = nqb - 1; js >= 0; --js) {
-            if (((m[0] ^ m0) >> js) & mask) {
-                v_out ^= ONE << js;
-                if (((a_t[js] >> js) & mask) == 0) return -94; // internal error
-                f += (m0 >> js) << 1; 
-                m0 ^= a_t[js];
+        for (j = nqb; j < (int32_t)(pqs->ncols); ++j) {
+            if ((m[0] ^ m0) & mask) {
+                v_out ^= ONE << j;
+                v = a_t[j];
+                if ((v & mask) == 0) return -94;
+                f += (m0 >> j) << 1;
+                m0 ^= v;
             }
+            mask >>= 1;
         }
+        v_out >>= nqb;
         
-        mask = ((ONE << nqb) - 1) << (pqs->ncols + 1);
+        // Some internal check:
+        // Q-part of m[0] and m0 must be equal.
+        mask = ((ONE << (pqs->nrows - 1)) - 1) << (pqs->ncols + 1);
         if ((m[0] ^ m0) & mask)  return -95; // internal error
         
-        // adjust x part of output Pauli matrix
-        v_out ^= ((m0 ^ m[0]) & ((ONE << nqb) - 1)) << nqb;
+        // Adjust x part of output Pauli matrix. Therefore
+        // we left multiply ``qs`` with a sequence of not gates.
+        v_out ^= (m0 ^ m[0]) & (((ONE << nqb) - 1) << nqb);
+        
+        // Muliply Pauli group element ``v_out = (x,z)`` with
+        // ``(-1)**<z,x>``, where ``<.,.>`` is the scalar product.
+        mask = (ONE << nqb) - 1;
+        f ^= bitparity64(v_out & (v_out >> nqb) & mask) << 1;
       
-        // adjust Factor of output Pauli matrix
+        // Set factor of output Pauli matrix
         f = (0x3120 >> ((f & 3) << 2)) & 3;
         v_out ^= f << pqs->ncols;
         *pv++ = v_out;

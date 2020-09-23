@@ -97,7 +97,7 @@ def test_pauli_conjugate(verbose = 0):
         assert m @ mi == qs_unit_matrix(n), (str(m), str(mi), str(m@mi))
 
         w = m.pauli_conjugate(v)
-        w_ref = [ (mi @ x @ m).pauli_vector() for x in p]
+        w_ref = [ (m @ x @ mi).pauli_vector() for x in p]
         if verbose or w != w_ref:
             for i, w_i in enumerate(w):
                 w_i_ref = w_ref[i]
@@ -105,7 +105,7 @@ def test_pauli_conjugate(verbose = 0):
                    s = "Pauli vector: %s, conjugated: %s, obtained: %s"
                    print (s % (hex(v[i]), hex(w_i_ref), hex(w_i)))
                    err = "Pauli vector conjgation error"
-                   #raise ValueError(err)
+                   raise ValueError(err)
                 elif verbose:
                    s = "Pauli vector: %s, conjugated: %s"
                    print (s % (hex(v[i]), hex(w_i)))
