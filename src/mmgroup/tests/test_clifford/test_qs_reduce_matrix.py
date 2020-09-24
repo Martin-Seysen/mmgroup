@@ -138,14 +138,14 @@ def test_reduce_matrix(verbose = 0):
             ok = True
             if i < fst_row:
                 ok = is_leading_high(d[i] & row_mask, j)
-                ok = ok and zero_column(d, j, i)
+                #ok = ok and zero_column(d, j, i)
                 assert row_tab[m1.ncols + i] == j
                 row_set.remove(i)
             elif i < 255: 
                 assert i == imin + 1
                 imin = i
                 ok = is_leading_high(d[i] & row_mask, j)
-                ok = ok and zero_column(d, j, fst_row)
+                #ok = ok and zero_column(d, j, fst_row)
                 row_set.remove(i)
             if not ok:
                 err = "error in column %d, row %d of m1" % (j, i) 

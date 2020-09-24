@@ -257,6 +257,7 @@ name mangling.
 import sys
 import os
 import subprocess
+from subprocess import CalledProcessError
 
 from glob import glob
 
@@ -357,9 +358,12 @@ class  BuildExtCmd(_build_ext):
                     if isinstance(args[0], str):
                         # Then execute a subprocess
                         print(" ".join(map(str, args)))
-                        if subprocess.call(list(map(str, args))) != 0:
-                            err = "Subprocess %s failed"
-                            raise ValueError(err %  args[0])              
+                        try:
+                            subprocess.check_call(list(map(str, args)))
+                        except CalledProcessError:
+                            err = "\nSubprocess '%s' has failed!"
+                            print(err % str(args[0]))
+                            raise             
                     else:
                         # Then execute a python function
                         args[0](*(args[1:])) 
@@ -550,7 +554,7 @@ def make_dll_nt_msvc(cmd, ext):
         args.append('/Fo"%s"' % obj)
         objects.append(obj)
         print("cl " + " ".join(args))
-        subprocess.call("cl " + " ".join(args)) 
+        subprocess.check_call("cl " + " ".join(args)) 
 
     # Link
     largs = link_args[:] + objects 
@@ -572,7 +576,7 @@ def make_dll_nt_msvc(cmd, ext):
     implib_path = os.path.join(ext.implib_dir, "lib%s.lib" % pure_dll_name)
     largs += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
     print("link " + " ".join(largs))
-    subprocess.call("link " + " ".join(largs)) 
+    subprocess.check_call("link " + " ".join(largs)) 
 
     #print("removing object files...")
     #for obj in objects:
@@ -614,7 +618,7 @@ def make_dll_nt_mingw32(cmd, ext):
         args.append(obj)
         objects.append(obj)
         print("gcc " + " ".join(args))
-        subprocess.call("gcc " + " ".join(args)) 
+        subprocess.check_call("gcc " + " ".join(args)) 
 
     # Link
     largs = link_args[:] + objects 
@@ -636,7 +640,7 @@ def make_dll_nt_mingw32(cmd, ext):
     implib_path = os.path.join(ext.implib_dir, "lib%s.lib" % pure_dll_name)
     largs += [ "-Wl,--out-implib," + implib_path ]
     print("gcc " + " ".join(largs))
-    subprocess.call("gcc " + " ".join(largs)) 
+    subprocess.check_call("gcc " + " ".join(largs)) 
 
     print("removing object files...")
     for obj in objects:
@@ -675,7 +679,7 @@ def make_so_posix_gcc(cmd, ext):
         args.append(obj)
         objects.append(obj)
         print("gcc " + " ".join(args))
-        subprocess.call(["cc"] + args) 
+        subprocess.check_call(["cc"] + args) 
 
     # Link
     largs = link_args[:] + objects 
@@ -688,7 +692,7 @@ def make_so_posix_gcc(cmd, ext):
     dll_name[-1] =  "lib" + dll_name[-1]  
     dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
     largs +=  ["-o",  dll_path ]
-    subprocess.call(["cc"] + largs) 
+    subprocess.check_call(["cc"] + largs) 
 
     print("removing object files...")
     for obj in objects:

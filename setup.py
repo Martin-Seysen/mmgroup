@@ -146,7 +146,7 @@ package_data = {
 # command. Each entry of list 'custom_presteps' is a list which we call 
 # a program list. A program list ia a list of strings corresponding to 
 # a program to be executed with:
-#     subprocess.call(program_list) . 
+#     subprocess.check_call(program_list) . 
 # The first entry of a program list is the name of the program to be 
 # executed; here sys.executable means the current python version. 
 # Subsequents entries correspond to command line arguments.
@@ -519,8 +519,9 @@ setup(
 
 
 
-if not on_readthedocs and os.name == "posix":    
-    if "bdist_wheel" in sys.argv:
+def build_posix_wheel():   
+    assert  os.name == "posix" 
+    if not on_readthedocs and "bdist_wheel" in sys.argv:
         PROJECT_NAME = r"mmgroup"
         SUFFIX_MATCH = r"[-0-9A-Za-z._]+linux[-0-9A-Za-z._]+\.whl"
         DIST_DIR = "dist"
@@ -530,8 +531,12 @@ if not on_readthedocs and os.name == "posix":
             wheel_path = os.path.join(DIST_DIR, wheel)
             args = ["auditwheel", "-v", "repair", wheel_path]
             print(" ".join(args))
-            subprocess.call(args)
+            subprocess.check_call(args)
 
 
+
+if os.name == "posix":
+    ## build_posix_wheel()  # This does not work
+    pass
 
 
