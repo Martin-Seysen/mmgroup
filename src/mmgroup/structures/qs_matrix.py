@@ -50,7 +50,7 @@ class QStateMatrix(QState12):
     
         The data of the matrix as described below
         
-    :param data:
+    :param mode:
     
         Evaluated according as described below
         

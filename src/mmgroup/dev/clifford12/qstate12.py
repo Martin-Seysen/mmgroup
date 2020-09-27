@@ -119,12 +119,12 @@ Lemma 1:
 Let :math:`g, g_1: V = \mathbb{F}_2^n \rightarrow \mathbb{C}` be 
 quadratic mappings. Then
 
-   * For any affine mapping :math:`a :  W = \mathbb{F}_2^{n'} 
+   * For any affine mapping :math:`a : \mathbb{F}_2^{n'} 
      \rightarrow \mathbb{F}_2^{n}` the composition 
      :math:`g \circ a` given by  :math:`x \mapsto g(a(x))` is 
-     a quadratic function on :math:`W`. 
+     a quadratic mapping on :math:`\mathbb{F}_2^{n'}`. 
 
-     Hence the definition of a quadratic function on the
+     Hence the definition of a quadratic mapping on the
      affine space :math:`V` is invariant to translations and
      to basis transformations of :math:`V`.
      
@@ -141,7 +141,7 @@ quadratic mappings. Then
    * For any linear subspace :math:`W` of :math:`V` the 
      function :math:`g^{(W)} : V/W \rightarrow \mathbb{C}`  
      given by :math:`x \mapsto \sum_{y \in W} g(x+y)` is a 
-     quadratic  mapping.     
+     quadratic  mapping. 
 
 
 
@@ -629,72 +629,6 @@ bottom and a zero column at the right. Then we have
 as required. Function ``qstate12_extend`` in module 
 ``qstate12.c`` implements the extension of a quadratic mapping.
 
-Restricting a quadratic mapping
-...............................
-
-
-
-Let :math:`g: \mathbb{F}_2^{n} \rightarrow \mathbb{C}` with
-:math:`g = f(e,A,Q)` be as in the last section. Define 
-:math:`\hat{g}^{(j)}: \mathbb{F}_2^{n}\rightarrow \mathbb{C}` 
-by
- 
-.. math::
-   \hat{g}^{(j)}(x_{n-1},\ldots, x_j, \ldots, x_0) = 
-   \left\{
-   \begin{array}{ll}
-   g(x_{n-1},\ldots, x_j, \ldots, x_0) & 
-   \quad \mbox{if} \quad x_j = 0    \\ 
-   0   & \quad \mbox{if} \quad  \mbox  x_j = 1
-   \end{array}
-   \right.
-
-Function :math:`\hat{g}^{(j)}` is a special kind of a restriction 
-the quadratic mapping :math:`g`. Function 
-``qstate12_restrict_zero`` in module ``qstate12.c`` 
-implements this kind of  restriction of a quadratic mapping.
-
-We can compute matrices :math:`\hat{A}^{j}` and math
-:math:`\hat{A}^{j}` with  
-:math:`\hat{g}^{(j)} = f(\hat{e}^{j},\hat{A}^{j},\hat{Q}^{j})` 
-as follows.
-
-Case 1:  :math:`A_{i,0}=0` for all :math:`i`
-
-The we put 
-:math:`(\hat{e}^{(j)},\hat{A}^{(j)},\hat{Q}^{(j)}) = (e, A, Q)`.
-
-
-Case 2: :math:`A_{i,0}=1`, :math:`A_{i,j}=0` for :math:`i>0`
-
-Then :math:`\hat{g}^{(j)}` is the constant function :math:`0`
-and we may put :math:`\hat{e}^{(j)} = 0`.
-
-
-Case 3: There is an :math:`i > 0` with :math:`A_{i,j} = 1`
-
-Then we add row :math:`i` of matrix :math:`A` to all rows
-:math:`k` of :math:`A` where :math:`A_{k,j} = 1`, and we 
-adjust :math:`Q` and :math:`e`  so that :math:`g` is not changed. 
-Let :math:`(e', A', Q')` be the adjusted triple :math:`(e, A, Q)`.
-Then :math:`f(e', A', Q') = g(e, A, Q)` and column :math:`j` of
-:math:`A` has precisely one nonzero entry in row :math:`i`.  
-
-We obtain :math:`\hat{A}^{(j)}` from :math:`A` by deleting 
-row :math:`i`, and  :math:`\hat{Q}^{(j)}` from :math:`Q` by 
-deleting row  and column :math:`i`. We put  
-:math:`\hat{e}^{(j)} = e`.
-
-Remark
-
-We obtain the usual restriction of :math:`g` from 
-:math:`\mathbb{F}_2^n` to 
-:math:`\mathbb{F}_2^{n-1-j} \times \{0\} \times \mathbb{F}_2^{j}`
-as :math:`g( \hat{e}^{(j)}, A', \hat{Q}^{(j)})` where :math:`A'` 
-is obtained from  :math:`\hat{A}^{(j)}` by deleting column 
-:math:`j`. The usual restriction of a quadratic mapping is 
-implemented in function ``qstate12_restrict`` in module 
-``qstate12.c``. 
 
 
 
@@ -752,8 +686,8 @@ state vectors we see that
 
 
 The functions :math:`g^{(\lambda)}, \lambda = 1, 2` defined
-above may also be considered as a tensors in the spaces
-:math:`V_0 \otimes V^\lambda` with
+above may also be considered as  tensors in the spaces
+:math:`V_0 \otimes V_\lambda` with
 :math:`V_0 = (\mathbb{C}^2)^{ \otimes j}`,
 :math:`V_\lambda = (\mathbb{C}^2)^{ \otimes n_\lambda - j}`.
 Then 
@@ -776,7 +710,7 @@ given above corresponds to the matrix product
 matrix. 
 
 
-In the next section we present an algorithm for computing
+In the next two sections we present an algorithm for computing
 :math:`(g^{(1)} \odot g^{(2)})_{j,c}` for quadratic mappings 
 :math:`g^{(1)}, g^{(2)}`. This yields an algorithm for tensor 
 contraction and also for matrix multiplication of quadratic 
@@ -788,6 +722,23 @@ The functions ``qstate12_product`` and ``qstate12_matmul``
 in module ``qmatrix12.c`` implement the operation
 :math:`(. \odot .)_{j,c}` and the matrix multiplication.
 
+The operator :math:`(. \odot .)_{j,c}` can be implemented in 
+python with the ``numpy`` package. Let ``c1`` and ``c2`` be
+one-dimensional  complex ``numpy`` arrays of length 
+:math:`2^{n_1}` and :math:`2^{n_2}`  corresponding to the 
+vectors :math:`g^{(1)}` and :math:`g^{(2)}`, respectively. 
+Then a ``numpy`` array ``c3`` corresponding to the vector  
+:math:`(g^{(1)} \otimes g^{(2)})_{j,c}` can be computed as 
+follows:
+
+.. code-block:: python
+
+  import numpy as np
+  c1a = c1.reshape((2**c, 2**(j-c), -1))
+  c2a = c2.reshape((2**c, 2**(j-c), -1)) 
+  c3 = np.einsum("cjk,cjl->jkl", c1a, c2a)
+  c3 = c3.reshape((-1,))
+
 Without going into details,
 we remark that in the  graphical ZX-calculus (which is used for 
 describing linear maps between qubits) is an appropriate setup
@@ -798,207 +749,168 @@ see  e.g. https://en.wikipedia.org/wiki/ZX-calculus .
 An algorithm for multiplying quadratic mappings
 ...............................................
 
-### This not yet satisfactory at all!!!
 
-
-TODO: Show that computing  :math:`(. \odot ,)_{j,c}` can be 
-reduced to  computing  :math:`(. \odot ,)_{j}` !!! 
-
-For actually computing :math:`(g^{(1)} \odot g^{(2)})_j` we
-may extend the mapping 
-:math:`g^{(1)}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
-\rightarrow  \mathbb{C}`
-to a mapping
-:math:`g^{(1')}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
-\times \mathbb{F}_2^{n_2-j} \rightarrow  \mathbb{C}`, with
-:math:`g^{(1')}`  not depending on the last factor
-:math:`\mathbb{F}_2^{n_2-j}`, as described in one of the
-last sections. Similarly, we may extend :math:`g^{(2)}` to
-a mapping 
-:math:`g^{(2')}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
-\times \mathbb{F}_2^{n_2-j} \rightarrow  \mathbb{C}`, with
-:math:`g^{(2')}`  not depending on the factor
-:math:`\mathbb{F}_2^{n_2-j}` in the middle.
-
-Then we simply have 
-:math:`(g^{(1)} \odot g^{(2)})_j = g^{(1')} \cdot g^{(2')}`.
-
-
-In the next section we give an effective algorithm for computing 
-the product :math:`h_1 \cdot h_2` of two quadratic mappings 
-:math:`h_1 ,  h_2:  \mathbb{F}_2^k \rightarrow \mathbb{C}`.
-
-
-The appropriate setup for 'explaining' the operation
-:math:`(. \odot .)_j` is the ZX-calculus. Since we only need
-this operation for fast matrix multiplication, we do not go
-into details here.
-
-
-
-
-
-For  :math:`\lambda = 1,2` let
-:math:`g^{(\lambda)} : \mathbb{F}_2^{n_\lambda}` be 
-quadratic mappings and :math:`j \leq \min(n_1, n_2)`
-as in the last section. Let
-:math:`g^{(\lambda)} = 
-f\big(e^{(\lambda)}, A^{(\lambda)}, Q^{(\lambda)} \big)` 
+In this section we present an effective algorithm for computing 
+the product :math:`g^{(1)} \cdot g^{(2)}` of two 
+quadratic mappings  
+:math:`g^{(1)}, g^{(2)}:  \mathbb{F}_2^n \rightarrow \mathbb{C}`.
+Such an algorithm is a key ingredient for implementing
+the operator :math:`(.\odot.)_{j,c}`.
+For  :math:`\lambda = 1,2` let 
+:math:`(e^{(\lambda)}, A^{(\lambda)}, Q^{(\lambda)})` 
 be a reduced representation of :math:`g^{(\lambda)}`.
-We assume that :math:`A^{(\lambda)}` is in reduced
-echelon form. 
 
 
-For any  :math:`j \leq \min(n_1, n_2)` there are quadratic
-mappings :math:`g^{(\lambda,j)} = 
+We will show that for any  :math:`j \leq n` there are 
+quadratic mappings :math:`g^{(\lambda,j)} = 
 f\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)} \big)` 
 with 
-:math:`(g^{(1,j)} \odot g^{(2,j)})_j` =
-:math:`(g^{(1)} \odot g^{(2)})_j`, where the first 
+:math:`g^{(1,j)} \cdot g^{(2,j)}` =
+:math:`g^{(1)} \cdot g^{(2)}`, where the first 
 :math:`j` columns of :math:`A^{(1,j)}` and :math:`A^{(2,j)}`
-are equal, and both, :math:`A^{(1,j)}` and :math:`A^{(2,j)}`
+are equal, and both, :math:`A^{(1,j)}` and :math:`A^{(2,j)}`,
 are in reduced echelon form.
 We put  :math:`A^{(\lambda,0)} = A^{(\lambda)}`.
 
-Next we give an algorithm for computing
+
+
+Assume that 
+:math:`e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
+Q^{(\lambda,j-1)}` satisfy the conditions given above.
+Then we can compute
 :math:`\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)}\big)`
 from
 :math:`\big(e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
-Q^{(\lambda,j-1)}\big)`.
-
-Asumme that 
-:math:`e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
-Q^{(\lambda,j-1)}` satisfy the conditions above.
+Q^{(\lambda,j-1)}\big)` as follows:
 
 
-Case 1:  Both, :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}`,
-have a row with leading coefficient in column  :math:`j`.
+ Case 1:  Both, :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}`,
+ have a row with leading coefficient in column  :math:`j`.
 
-Since :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}` are in reduced
-echelon form and the first :math:`j-1` columns of these two
-matrices are equal, we conclude that the first  :math:`j` 
-columns of  :math:`A^{(1,j)}` and :math:`A^{(2,j)}` are equal.
+ Since :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}` are in reduced
+ echelon form and the first :math:`j-1` columns of these two
+ matrices are equal, we conclude that the first  :math:`j` 
+ columns of  :math:`A^{(1,j)}` and :math:`A^{(2,j)}` are equal.
 
-So we may put 
-:math:`\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)}\big) =
-\big( e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, Q^{(\lambda,j-1)}\big)` 
-for :math:`\lambda  = 1,2`.
+ So we may put 
+ :math:`\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)}\big) =
+ \big( e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, Q^{(\lambda,j-1)}\big)` 
+ for :math:`\lambda  = 1,2`.
 
-Case 2: Only :math:`A^{(1,j-1)}` has a row with leading 
-coefficient in column  :math:`j`.
+ Case 2: Only :math:`A^{(1,j-1)}` has a row with leading 
+ coefficient in column  :math:`j`.
 
-Assume that this row of :math:`A^{(1,j-1)}` has index :math:`i`. 
-We add row :math:`i` to all rows :math:`k` of :math:`A^{(1,j-1)}` 
-where :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
-We also adjust  :math:`Q^{(1,j-1)}` and  :math:`e^{(1,j-1)}`
-so that :math:`g^{(1,j-1)}` is not changed. Write 
-:math:`A^{(1,j-1)'}` for the matrix obtained from
-:math:`A^{(1,j-1)}` by performing these row operations.
-Let  :math:`Q^{(1,j-1)'}` and  :math:`e^{(1,j-1)'}` be the
-adjusted quantities such that
-:math:`f\big(e^{(1,j-1)'}, A^{(1,j-1)'}, Q^{(1,j-1)'}\big)`
-= :math:`f\big(e^{(1,j-1)}, A^{(1,j-1)}, Q^{(1,j-1)}\big)`.
+ Assume that this row of :math:`A^{(1,j-1)}` has index :math:`i`. 
+ We add row :math:`i` to all rows :math:`k` of :math:`A^{(1,j-1)}` 
+ where :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
+ We also adjust  :math:`Q^{(1,j-1)}` and  :math:`e^{(1,j-1)}`
+ so that :math:`g^{(1,j-1)}` is not changed. Write 
+ :math:`A^{(1,j-1)'}` for the matrix obtained from
+ :math:`A^{(1,j-1)}` by performing these row operations.
+ Let  :math:`Q^{(1,j-1)'}` and  :math:`e^{(1,j-1)'}` be the
+ adjusted quantities such that
+ :math:`f\big(e^{(1,j-1)'}, A^{(1,j-1)'}, Q^{(1,j-1)'}\big)`
+ = :math:`f\big(e^{(1,j-1)}, A^{(1,j-1)}, Q^{(1,j-1)}\big)`.
 
-We obtain  :math:`A^{(1,j)}` from :math:`A^{(1,j-1)'}` by deleting 
-row :math:`i` of  :math:`A^{(1,j-1)'}`. We obtain :math:`Q^{(1,j)}` 
-from :math:`Q^{(1,j-1)'}` by deleting row and column :math:`i`.  
-We put :math:`e^{(1,j)} = e^{(1,j-1)'}`. We put
-:math:`\left(e^{(2,j)},A^{(2,j)},Q^{(2,j)}\right)` =  
-:math:`\left(e^{(2,j-1)},A^{(2,j-1)},Q^{(2,j-1)}\right)`.
+ We obtain  :math:`A^{(1,j)}` from :math:`A^{(1,j-1)'}` by deleting 
+ row :math:`i` of  :math:`A^{(1,j-1)'}`. We obtain :math:`Q^{(1,j)}` 
+ from :math:`Q^{(1,j-1)'}` by deleting row and column :math:`i`.  
+ We put :math:`e^{(1,j)} = e^{(1,j-1)'}`. We put
+ :math:`\left(e^{(2,j)},A^{(2,j)},Q^{(2,j)}\right)` =  
+ :math:`\left(e^{(2,j-1)},A^{(2,j-1)},Q^{(2,j-1)}\right)`.
 
-By construction, matrix :math:`A^{(1,j)}`  is in reduced echelon
-from and the first :math:`j` columns of  :math:`A^{(1,j)}` and 
-:math:`A^{(2,j)}` are equal.
+ By construction, matrix :math:`A^{(1,j)}`  is in reduced echelon
+ from and the first :math:`j` columns of  :math:`A^{(1,j)}` and 
+ :math:`A^{(2,j)}` are equal.
 
-It remains to show that deleting row :math:`i` of matrix 
-:math:`A^{(1,j-1)'}` does not change 
-:math:`(g^{(1)} \odot g^{(2)})_j`. 
+ It remains to show that deleting row :math:`i` of matrix 
+ :math:`A^{(1,j-1)'}` does not change 
+ :math:`g^{(1)} \cdot g^{(2)}`. 
 
-Let :math:`D^{(\lambda)}` be the submatrix of 
-:math:`A^{(\lambda,j-1)'}` that consists of the first :math:`j`
-columns of :math:`A^{(1,j-1)'}`. For computing 
-:math:`(g^{(1)} \odot g^{(2)})_j` we only have to consider
-rows of matrix :math:`D^{(1)}` that are linear combinations of 
-rows of matrix :math:`D^{(2)}`, excluding row :math:`0` of both 
-matrices. By construction, :math:`D^{(1)}` and :math:`D^{(2)}` 
-are in reduced echelon form, row :math:`i` of :math:`D^{(1)}` has 
-its leading coefficient in column :math:`j`, and in 
-:math:`D^{(2)}` there is no row with leading coefficient in 
-column :math:`j`. Thus row  :math:`i` of :math:`D^{(1)}`  is
-not a linear combination of the rows of  :math:`D^{(2)}`,
-ignoring row :math:`0` of :math:`D^{(2)}`.
+ Let :math:`D^{(\lambda)}` be the submatrix of 
+ :math:`A^{(\lambda,j-1)'}` that consists of the first :math:`j`
+ columns of :math:`A^{(1,j-1)'}`. For computing 
+ :math:`g^{(1)} \cdot g^{(2)}` we only have to consider
+ rows of matrix :math:`D^{(1)}` that are linear combinations of 
+ rows of matrix :math:`D^{(2)}`, excluding row :math:`0` of both 
+ matrices. By construction, :math:`D^{(1)}` and :math:`D^{(2)}` 
+ are in reduced echelon form, row :math:`i` of :math:`D^{(1)}` has 
+ its leading coefficient in column :math:`j`, and in 
+ :math:`D^{(2)}` there is no row with leading coefficient in 
+ column :math:`j`. Thus row  :math:`i` of :math:`D^{(1)}`  is
+ not a linear combination of the rows of  :math:`D^{(2)}`,
+ ignoring row :math:`0` of :math:`D^{(2)}`.
+
+ Case 3: Only :math:`A^{(2,j-1)}` has a row with leading 
+ coefficient in column  :math:`j`.
+
+ This case is symmetric to case 2, exchanging the role of
+ :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}`.
+
+ Case 4:
+ Neither :math:`A^{(1,j-1)}` nor  :math:`A^{(2,j-1)}` has a 
+ row with leading coefficient in column  :math:`j`.
+
+ Case 4.1: Columns :math:`j` of :math:`A^{(1,j-1)}` and  
+ :math:`A^{(2,j-1)}`  are equal.
+
+ Then we may proceed as in case 1.
+
+ Case 4.2: Column :math:`j` of :math:`A^{(1,j-1)}` and  
+ :math:`A^{(2,j-1)}` are equal except in row :math:`0`.
+
+ Assume that :math:`x^{(1)}` is in the support of
+ :math:`g^{(1,j-1)}`, :math:`x^{(2)}` is in the support of
+ :math:`g^{(2,j-1)}`, and that the leftmost :math:`j-1` 
+ bits of :math:`x^{(1)}` and :math:`x^{(2)}` agree.
+ Then from the properties of :math:`A^{(1,j-1)}` and 
+ :math:`A^{(2,j-1)}` we conclude that :math:`x^{(1)}`
+ and :math:`x^{(2)}` must  differ in the bit at position 
+ :math:`j`. Thus :math:`g^{(1,j-1)} \cdot g^{(2,j-1)}` 
+ is the  constant function :math:`0`,  and we may put 
+ :math:`e^{(1,j)}  = e^{(2,j)}  = 0`.
+
+ Case 4.3: There is an :math:`i>0` with 
+ :math:`A^{(1,j-1)}_{i,j}  \neq A^{(2,j-1)}_{i,j}`.  
+
+ Let :math:`i` be the highest row index such that
+ :math:`A^{(1,j-1)}_{i,j}  \neq A^{(2,j-1)}_{i,j}` holds.
+
+ For :math:`\lambda = 1,2` we add row :math:`i` to all rows 
+ :math:`k` of :math:`A^{(\lambda,j-1)}` where 
+ :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
+ We also adjust  :math:`Q^{(\lambda,j-1)}` and  
+ :math:`e^{(\lambda,j-1)}` so that :math:`g^{(\lambda,j-1)}` is 
+ not changed. Write :math:`A^{(\lambda,j-1)'}` for the matrix 
+ obtained from :math:`A^{(\lambda,j-1)}` by performing these 
+ row operations. Let  :math:`Q^{(\lambda,j-1)'}` and  
+ :math:`e^{(\lambda,j-1)'}` be the adjusted quantities such that
+ :math:`f\big(e^{(\lambda,j-1)'}, A^{(\lambda,j-1)'}, 
+ Q^{(\lambda,j-1)'}, \big)`
+ = :math:`f\big(e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
+ Q^{(\lambda,j-1)} \big)`.
+
+ As in Case 2 we obtain  
+ :math:`A^{(\lambda,j)}` from :math:`A^{(\lambda,j-1)'}` 
+ by deleting row :math:`i` of  :math:`A^{(\lambda,j-1)'}`. We obtain 
+ :math:`Q^{(\lambda,j)}` from :math:`Q^{(\lambda,j-1)'}` by deleting 
+ row and column :math:`i`.  We put 
+ :math:`e^{(\lambda,j)} = e^{(\lambda,j-1)'}`.
+
+ A similar argument as in case 2 shows that matrices 
+ :math:`A^{(1,j)}` and  :math:`A^{(2,j)}` are as required and 
+ that deleting row :math:`i` from 
+ :math:`A^{(1,j-1')}` and  :math:`A^{(2,j-1')}` does not change
+ :math:`g^{(1)} \cdot g^{(2)}`.  
 
 
 
-Case 3: Only :math:`A^{(2,j-1)}` has a row with leading 
-coefficient in column  :math:`j`.
 
-This case is symmetric to case 2, exchanging the role of
-:math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}`.
-
-Case 4:
-Neither :math:`A^{(1,j-1)}` nor  :math:`A^{(2,j-1)}` has a 
-row with leading coefficient in column  :math:`j`.
-
-Case 4.1: Columns :math:`j` of :math:`A^{(1,j-1)}` and  
-:math:`A^{(2,j-1)}`  are equal.
-
-Then we may proceed as in case 1.
-
-Case 4.2: Column :math:`j`of :math:`A^{(1,j-1)}` and  
-:math:`A^{(2,j-1)}` are equal except in row :math:`0`.
-
-Assume :math:`A^{(\lambda,j-1)}_{0,j} =  \lambda + y \pmod{2}`. 
-Then 
-:math:`g^{(\lambda,j-1)}(x_0, \ldots, x_{j-1}, x_j, \ldots) = 0` 
-if  :math:`x_j \neq \lambda + y \pmod{2}`. Hence
-:math:`(g^{(1)} \odot g^{(2)})_j` is zero for all arguments
-and we may put :math:`e^{(1,j)}  = e^{(2,j)}  = 0`.
-
-
-
-Case 4.3: There is an :math:`i>0` with 
-:math:`A^{(1,j-1)}_{i,j}  \neq A^{(2,j-1)}_{i,j}` 
-
-
-Let :math:`i` be the index of the highest row with
-:math:`A^{(1,j-1)}_{i,j}  \neq A^{(2,j-1)}_{i,j}` .
-
-For :math:`\lambda = 1,2` we add row :math:`i` to all rows 
-:math:`k` of :math:`A^{(\lambda,j-1)}` where 
-:math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
-We also adjust  :math:`Q^{(\lambda,j-1)}` and  
-:math:`e^{(\lambda,j-1)}` so that :math:`g^{(\lambda,j-1)}` is 
-not changed. Write :math:`A^{(\lambda,j-1)'}` for the matrix 
-obtained from :math:`A^{(\lambda,j-1)}` by performing these 
-row operations. Let  :math:`Q^{(\lambda,j-1)'}` and  
-:math:`e^{(\lambda,j-1)'}` be the adjusted quantities such that
-:math:`f\big(e^{(\lambda,j-1)'}, A^{(\lambda,j-1)'}, 
-Q^{(\lambda,j-1)'}, \big)`
-= :math:`f\big(e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
-Q^{(\lambda,j-1)} \big)`.
-
-As in Case 2 we obtain  
-:math:`A^{(\lambda,j)}` from :math:`A^{(\lambda,j-1)'}` 
-by deleting row :math:`i` of  :math:`A^{(\lambda,j-1)'}`. We obtain 
-:math:`Q^{(\lambda,j)}` from :math:`Q^{(\lambda,j-1)'}` by deleting 
-row and column :math:`i`.  We put 
-:math:`e^{(\lambda,j)} = e^{(\lambda,j-1)'}`.
-
-A similar argument as in case 2 shows that matrices 
-:math:`A^{(1,j)}` and  :math:`A^{(2,j)}` are as required and 
-that deleting row :math:`i` from 
-:math:`A^{(1,j-1')}` and  :math:`A^{(2,j-1')}` does not change
-:math:`(g^{(1)} \odot g^{(2)})_j`.  
-
-
-Remark
-
-In case :math:`n_1 = n_2 = n` we may compute the product of
+Now we may compute the product of
 :math:`g^{(1)}` and :math:`g^{(2)}`  as follows:
 
 .. math::
-   g^{(1)} \cdot g^{(2)}  = (g^{(1)} \odot g^{(2)})_n
+   g^{(1)} \cdot g^{(2)}  = g^{(1,n)} \cdot g^{(2,n)}
    = f\big( e^{(1,n)} \cdot e^{(2,n)}, A^{(1,n)}, 
    Q^{(1,n)} \odot    Q^{(2,n)} \big) \; . 
    
@@ -1006,11 +918,11 @@ If the symmetric :math:`(m+1) \times (m+1)` bit matrices
 :math:`Q^{(\lambda)}, \lambda = 1,2`, represent the quadratic
 functions 
 :math:`q^{(\lambda)} : \mathbb{F}_2^m \rightarrow\mathbb{T}`,
-then :math:`Q^{(1)} \odot  Q^{(2)}` is the symmtric
+then we define :math:`Q^{(1)} \odot  Q^{(2)}` as the symmtric
 :math:`(m+1) \times (m+1)` bit matrix representing the
 quadratic function :math:`q^{(1)} \cdot  q^{(2)}`.
 The entries  :math:`Q^{(1 \odot 2)}_{i,j}` of 
-:math:`Q^{(1)} \odot  Q^{(2)}` are given as follows:
+:math:`Q^{(1)} \odot  Q^{(2)}` can be computed as follows:
 
 .. math::
     \begin{array}{ll}
@@ -1033,15 +945,137 @@ interpreted modulo :math:`4`.
 So our algorithm allows us to multiply guadratic mappings 
 effectively. 
 
-When we want to compute the expression
-:math:`(g^{(1)} \odot g^{(2)})_j` defined in the last section,
-then in the algorithm above there may be colums of matrices
-:math:`A^{(\lambda)}, \lambda = 1, 2` that araise from 
-extending the functions :math:`g^{(\lambda)}`. Here the extended
-function :math:`g^{(\lambda)}` does not depend on the bit 
-corresponding to such a column of matrix :math:`A^{(\lambda)}`. 
-Expointing that independence leads to a considerable simplifiction 
-of the aglorithm given above. We omit the details here.
+Remark
+
+In certain cases we have to compute
+:math:`\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)}\big)`
+from
+:math:`\big(e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
+Q^{(\lambda,j-1)}\big)`; and we have the additional information
+that e.g. the factor :math:`g_1` of the product :math:`g_1 \cdot g_2`
+is a quadratic mapping that does not depend on qubit :math:`i`. 
+Then the part :math:`A^{(1,j-1)}` of the representation of 
+:math:`g^{(1,j-1)}` always has a row :math:`i` such that
+:math:`A^{(1,j-1)}_{i,j}` is the only nonzero entry in
+row :math:`i` and in column :math:`j` of   :math:`A^{(1,j-1)}`.
+Furthermore, row :math:`i` and column :math:`j` of   
+:math:`Q^{(1,j-1)}` are zero in that case.
+Thus only cases 1 and 2 can occur in the above computation,
+and adding  row :math:`i` of  :math:`A^{(1,j-1)}` to any
+other row in that matrix affects column :math:`j` of 
+:math:`A^{(1,j-1)}` only, and does not affect :math:`Q^{(1,j-1)}`.
+In our implmentation we make use of this simplification
+wherever appropriate.
+
+
+
+Computing tensor and matrix products
+....................................
+
+
+In this section we explain how to compute the operator 
+:math:`(. \odot ,)_{j,c}`. For  :math:`\lambda = 1,2` let
+:math:`g^{(\lambda)} : \mathbb{F}_2^{n_\lambda}` be 
+quadratic mappings and 
+:math:`0 \leq c \leq j \leq \min(n_1, n_2)`.
+We first show how to compute a representation of
+:math:`(g^{(1)} \odot g^{(2)})_{j}` from the 
+representations of :math:`g^{(1)}` and :math:`g^{(2)}`.
+
+
+
+For actually computing :math:`(g^{(1)} \odot g^{(2)})_j` we
+may extend the mapping 
+:math:`g^{(1)}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
+\rightarrow  \mathbb{C}`
+to a mapping
+:math:`g^{(1')}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
+\times \mathbb{F}_2^{n_2-j} \rightarrow  \mathbb{C}`, with
+:math:`g^{(1')}`  not depending on the last factor
+:math:`\mathbb{F}_2^{n_2-j}`, as described in one of the
+last sections. Similarly, we may extend :math:`g^{(2)}` to
+a mapping 
+:math:`g^{(2')}: \mathbb{F}_2^{j} \times \mathbb{F}_2^{n_1-j}
+\times \mathbb{F}_2^{n_2-j} \rightarrow  \mathbb{C}`, with
+:math:`g^{(2')}`  not depending on the factor
+:math:`\mathbb{F}_2^{n_2-j}` in the middle.
+Then we simply have 
+:math:`(g^{(1)} \odot g^{(2)})_j = g^{(1')} \cdot g^{(2')}`.
+
+
+Using the techniqes discussed in section 
+*Extending a quadratic mapping* and in the last section we can
+compute a representation of :math:`(g^{(1)} \odot g^{(2)})_j`
+from representations of :math:`g^{(1)}` and   :math:`g^{(2)}`.
+
+It remains to compute :math:`(g^{(1)} \odot g^{(2)})_{j,c}` 
+from :math:`(g^{(1)} \odot g^{(2)})_{j}`. We have
+
+.. math::
+    \big(g^{(1)} \odot g^{(2)}\big)_{j,c}(x) =
+    \sum_{y \in  \mathbb{F}_2^c}
+    \big(g^{(1)} \odot g^{(2)}\big)_{j}(y, x) \quad
+    \mbox{for} \quad x \in  \mathbb{F}_2^{n_1+n_2-j-c} \; .
+
+Let :math:`h : \mathbb{F}_2^n \rightarrow \mathbb{C}` be a
+quadratic mapping with representation  :math:`(e, A, Q)`, and
+define :math:`h_c : \mathbb{F}_2^{n-c} \rightarrow \mathbb{C}` 
+by :math:`x \mapsto \sum_{y \in \mathbb{F}_2^{c}} h(y,x)`.
+Then  :math:`h_c` is a quadratic mapping with representation  
+:math:`(e, A_c, Q)`, where :math:`A_c` is obtained from 
+:math:`A`  by deleting the leftmost :math:`c` columns of
+:math:`A`.
+
+So we may easily compute :math:`(g^{(1)} \odot g^{(2)})_{j,c}` 
+from :math:`(g^{(1)} \odot g^{(2)})_{j}`.
+
+Restricting a quadratic mapping
+...............................
+
+
+
+For any function :math:`g: \mathbb{F}_2^{n} \rightarrow \mathbb{C}`
+define 
+:math:`\hat{g}^{(j)}: \mathbb{F}_2^{n}\rightarrow \mathbb{C}` by
+ 
+.. math::
+   \hat{g}^{(j)}(x_{n-1},\ldots, x_j, \ldots, x_0) = 
+   \left\{
+   \begin{array}{ll}
+   g(x_{n-1},\ldots, x_j, \ldots, x_0) & 
+   \quad \mbox{if} \quad x_j = 0    \\ 
+   0   & \quad \mbox{if} \quad  \mbox  x_j = 1
+   \end{array}
+   \right.
+
+Then :math:`\hat{g}^{(j)}  = g \cdot \hat{\chi}^{(j)}`, where
+:math:`\hat{\chi}^{(j)} :  \mathbb{F}_2^{n} \rightarrow \mathbb{C}`
+is a projection function given by 
+:math:`(x_{n-1},\ldots, x_j, \ldots, x_0) \mapsto 1 - x_j`.
+It is easy to find a representation of the quadratic mapping
+:math:`\hat{\chi}^{(j)}` so that we can compute a representation
+of  :math:`\hat{g}^{(j)}` from a representation of a quadratic
+mapping :math:`g`. This computation is implemented in function
+``qstate12_restrict_zero`` in module ``qstate12.c``.
+
+
+Function :math:`\hat{g}^{(j)}` corresponds to a certain kind of 
+a restriction  of the function :math:`g`. Let   :math:`g` be
+a quadratic mapping and :math:`(e, A, Q)` be a representation of 
+:math:`\hat{g}^{(j)}`. Let 
+:math:`V = \mathbb{F}_2^{n-1-j} \times \{0\} \times \mathbb{F}_2^{j}`.
+Let :math:`g\mid_V` be the restriction of :math:`g` to :math:`V`.
+Then  :math:`(e, A_j, Q)` is a representation of the restriction
+:math:`g\mid_V`, where :math:`A_j` is the matrix obtained from
+matrix  :math:`A` by deleting column :math:`j`.  Function
+``qstate12_restrict_zero`` in module ``qstate12.c`` computes
+a representation of :math:`g\mid_V` from a representation of
+:math:`g`.
+
+The restriction of a quadratic mapping discussed in this 
+section can be used for describing a measurement of a 
+stabilizer state on a quantum computer.
+
 
 
 
