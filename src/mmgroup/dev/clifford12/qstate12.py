@@ -506,11 +506,13 @@ mapping *reduced* if the following conditions hold:
     has  zeros in all its other entries.  
   
 Here the *leading coefficient* of a row of matrix :math:`A` is 
-the first nonzero entry in that row. 
+the first nonzero entry in that row. We call the  representation
+:math:`(e, A, Q)` *echelonized* if only the first two of the
+three conditions above are satisfied.
 
-Obviously, a reduced representation :math:`(e, A, Q)` also
-injective. It is easy to see that any quadratic mapping has a
-unique reduced representation. 
+Obviously, a reduced or echelonized representation 
+:math:`(e, A, Q)` also injective. It is easy to see that any 
+quadratic mapping has a unique reduced representation. 
 
 
 In this section we present an algorithm for converting a 
@@ -636,7 +638,6 @@ Products and tensor products of quadratic mappings
 ..................................................
 
 
-TODO: Check documentation from this point on!!!
 
 Let :math:`g^{(\lambda)}, \lambda = 1, 2`, be arbitrary 
 complex-valued functions on :math:`\mathbb{F}_2^{n_\lambda}`.
@@ -750,6 +751,8 @@ An algorithm for multiplying quadratic mappings
 ...............................................
 
 
+TODO: Check documentation fromthis point on!!!
+
 In this section we present an effective algorithm for computing 
 the product :math:`g^{(1)} \cdot g^{(2)}` of two 
 quadratic mappings  
@@ -790,7 +793,7 @@ Q^{(\lambda,j-1)}\big)` as follows:
  Since :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}` are in reduced
  echelon form and the first :math:`j-1` columns of these two
  matrices are equal, we conclude that the first  :math:`j` 
- columns of  :math:`A^{(1,j)}` and :math:`A^{(2,j)}` are equal.
+ columns of  :math:`A^{(1,j-1)}` and :math:`A^{(2,j-1)}` are equal.
 
  So we may put 
  :math:`\big(e^{(\lambda,j)}, A^{(\lambda,j)}, Q^{(\lambda,j)}\big) =
@@ -802,18 +805,17 @@ Q^{(\lambda,j-1)}\big)` as follows:
 
  Assume that this row of :math:`A^{(1,j-1)}` has index :math:`i`. 
  We add row :math:`i` to all rows :math:`k` of :math:`A^{(1,j-1)}` 
- where :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
- We also adjust  :math:`Q^{(1,j-1)}` and  :math:`e^{(1,j-1)}`
- so that :math:`g^{(1,j-1)}` is not changed. Write 
- :math:`A^{(1,j-1)'}` for the matrix obtained from
- :math:`A^{(1,j-1)}` by performing these row operations.
- Let  :math:`Q^{(1,j-1)'}` and  :math:`e^{(1,j-1)'}` be the
- adjusted quantities such that
+ where :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`.
+ Therefore we apply the operation :math:`T_{i,k}` defined in 
+ section *Changing the representation of a quadratic mapping*.
+ So we obtain a representation 
  :math:`f\big(e^{(1,j-1)'}, A^{(1,j-1)'}, Q^{(1,j-1)'}\big)`
- = :math:`f\big(e^{(1,j-1)}, A^{(1,j-1)}, Q^{(1,j-1)}\big)`.
-
+ of :math:`g^{(1,j-1)}`, where the first :math:`j` columns
+ of :math:`A^{(1,j-1)'}` and :math:`A^{(2,j-1)}` are equal,
+ except for the coefficient in row :math:`i`, column :math:`j`.
+ 
  We obtain  :math:`A^{(1,j)}` from :math:`A^{(1,j-1)'}` by deleting 
- row :math:`i` of  :math:`A^{(1,j-1)'}`. We obtain :math:`Q^{(1,j)}` 
+ row :math:`i` of  :math:`A^{(1,j-1)'}`, and :math:`Q^{(1,j)}` 
  from :math:`Q^{(1,j-1)'}` by deleting row and column :math:`i`.  
  We put :math:`e^{(1,j)} = e^{(1,j-1)'}`. We put
  :math:`\left(e^{(2,j)},A^{(2,j)},Q^{(2,j)}\right)` =  
@@ -862,7 +864,7 @@ Q^{(\lambda,j-1)}\big)` as follows:
  Assume that :math:`x^{(1)}` is in the support of
  :math:`g^{(1,j-1)}`, :math:`x^{(2)}` is in the support of
  :math:`g^{(2,j-1)}`, and that the leftmost :math:`j-1` 
- bits of :math:`x^{(1)}` and :math:`x^{(2)}` agree.
+ bits of :math:`x^{(1)}` and :math:`x^{(2)}` are equal.
  Then from the properties of :math:`A^{(1,j-1)}` and 
  :math:`A^{(2,j-1)}` we conclude that :math:`x^{(1)}`
  and :math:`x^{(2)}` must  differ in the bit at position 
@@ -878,24 +880,20 @@ Q^{(\lambda,j-1)}\big)` as follows:
 
  For :math:`\lambda = 1,2` we add row :math:`i` to all rows 
  :math:`k` of :math:`A^{(\lambda,j-1)}` where 
- :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}`. 
- We also adjust  :math:`Q^{(\lambda,j-1)}` and  
- :math:`e^{(\lambda,j-1)}` so that :math:`g^{(\lambda,j-1)}` is 
- not changed. Write :math:`A^{(\lambda,j-1)'}` for the matrix 
- obtained from :math:`A^{(\lambda,j-1)}` by performing these 
- row operations. Let  :math:`Q^{(\lambda,j-1)'}` and  
- :math:`e^{(\lambda,j-1)'}` be the adjusted quantities such that
- :math:`f\big(e^{(\lambda,j-1)'}, A^{(\lambda,j-1)'}, 
- Q^{(\lambda,j-1)'}, \big)`
- = :math:`f\big(e^{(\lambda,j-1)}, A^{(\lambda,j-1)}, 
- Q^{(\lambda,j-1)} \big)`.
+ :math:`A^{(1,j-1)}_{k,j} \neq  A^{(2,j-1)}_{k,j}` by
+ applying operations :math:`T_{i,k}`.
+ 
+ So we obtain a representation 
+ :math:`f\big(e^{(1,j-1)'}, A^{(1,j-1)'}, Q^{(1,j-1)'}\big)`
+ of :math:`g^{(1,j-1)}`, where the first :math:`j` columns
+ of :math:`A^{(1,j-1)'}` and :math:`A^{(2,j-1)}` are equal,
+ except for the coefficient in row :math:`i`, column :math:`j`.
 
- As in Case 2 we obtain  
- :math:`A^{(\lambda,j)}` from :math:`A^{(\lambda,j-1)'}` 
- by deleting row :math:`i` of  :math:`A^{(\lambda,j-1)'}`. We obtain 
- :math:`Q^{(\lambda,j)}` from :math:`Q^{(\lambda,j-1)'}` by deleting 
- row and column :math:`i`.  We put 
- :math:`e^{(\lambda,j)} = e^{(\lambda,j-1)'}`.
+ For :math:`j = 1, 2` we obtain   :math:`A^{(\lambda,j)}` from 
+ :math:`A^{(\lambda,j-1)'}`  by deleting row :math:`i` of  
+ :math:`A^{(\lambda,j-1)'}`. We obtain  :math:`Q^{(\lambda,j)}` 
+ from :math:`Q^{(\lambda,j-1)'}` by deleting  row and column 
+ :math:`i`.  We put  :math:`e^{(\lambda,j)} = e^{(\lambda,j-1)'}`.
 
  A similar argument as in case 2 shows that matrices 
  :math:`A^{(1,j)}` and  :math:`A^{(2,j)}` are as required and 
@@ -966,7 +964,6 @@ other row in that matrix affects column :math:`j` of
 :math:`A^{(1,j-1)}` only, and does not affect :math:`Q^{(1,j-1)}`.
 In our implmentation we make use of this simplification
 wherever appropriate.
-
 
 
 Computing tensor and matrix products
@@ -1068,15 +1065,277 @@ Let :math:`g\mid_V` be the restriction of :math:`g` to :math:`V`.
 Then  :math:`(e, A_j, Q)` is a representation of the restriction
 :math:`g\mid_V`, where :math:`A_j` is the matrix obtained from
 matrix  :math:`A` by deleting column :math:`j`.  Function
-``qstate12_restrict_zero`` in module ``qstate12.c`` computes
+``qstate12_restrict`` in module ``qstate12.c`` computes
 a representation of :math:`g\mid_V` from a representation of
 :math:`g`.
 
 The restriction of a quadratic mapping discussed in this 
 section can be used for describing a measurement of a 
-stabilizer state on a quantum computer.
+stabilizer state on a quantum computer, see e.g. 
+:cite:`AG04`.
 
 
+
+
+
+
+
+
+
+Quadratic state matrices
+........................
+
+A *quadratic state matrix* :math:`S` of shape :math:`(n_0, n_1)` 
+is an element of the tensor product :math:`V_0 \otimes V_1` 
+with the basis vectors of :math:`V_k` being indexed by 
+:math:`\mathbb{F}_2^{n_k}, k = 0, 1`, such that the
+coordinate function of :math:`S` is a quadratic mapping.
+That coordinate function is a function
+:math:`\mathbb{F}_2^{n_0} \times \mathbb{F}_2^{n_1}
+\rightarrow \mathbb{C}`.
+
+Thus :math:`S` corresponds to a complex 
+:math:`2^{n_0} \times 2^{n_1}` matrix. We may implement
+:math:`S` as a quadratic state vector of :math:`n_0 + n_1` 
+qubits, augmented by an information about its shape
+:math:`(n_0, n_1)` . We let the  :math:`n_0` qubits with
+high indices  correspond to the rows of  :math:`S`; and
+we let the  :math:`n_1` qubits with low indices  correspond 
+to the columns  of  :math:`S`. 
+
+In python we implement a *quadratic state matrix* as a instance of 
+class ``QStateMatrix`` in module ``mmgroup.structures.qs_matrix``.
+A matrix of shape :math:`(0,n)` corresponds to a row vector of 
+dimension :math:`2^{n}` and a matrix of shape :math:`(n,0)` 
+corresponds to a column vector of dimension :math:`2^{n}`.
+We have seen above that the unitary quadratic state 
+matrices of shape :math:`(n,n)` form the Clifford group 
+:math:`\mathcal{X}_{n}`. We have also
+discussed fast algorithms for multiplication and inversion
+of such matrices. So class ``QStateMatrix`` supports fast
+computation in Clifford group :math:`\mathcal{X}_{n}`.
+Our implementation requires :math:`n \leq 12`, which is
+sufficient for computing in the subgroup
+:math:`2^{1+24}.\mbox{Co}_1` of the monster group.
+
+Function ``qstate12_matmul`` in file ``qmatrix12.c`` multiplies
+two quadratic state matrices.
+
+
+Reducing a quadratic state matrix
+.................................
+
+We define a special *reduced matrix representation* :math:`(e, A, Q)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
+that differs slightly from the reduced representation of a 
+quadratic state vector. That representation satisfies the 
+following conditions:
+
+ 1. We require that the representation :math:`(e, A, Q)` is 
+    echelonized (but not necessarly reduced), as described in 
+    section
+    *Reducing the representation of a quadratic mapping*.
+    
+ 2. Let :math:`A'` be the bit matrix obtained from :math:`A` by
+    removing the leftmost :math:`n_0` columns from  :math:`A`.
+    We require that  a permutation of the rows of matrix
+    :math:`A'`, excluding row :math:`0`, is in (not necessarily 
+    reduced) echelon form.
+    
+    Note that the first :math:`n_0` columns of the bit matrix
+    :math:`A` correspond to the :math:`2^{n_0}` columns of 
+    the complex matrix :math:`S`; and the remaining  
+    :math:`n_1` columns of :math:`A` correspond to the
+    :math:`2^{n_1}` rows of :math:`S`.
+        
+ 3. Let :math:`K_0` be the set of the rows of the bit matrix 
+    :math:`A` such that all bits in the leftmost :math:`n_0` 
+    columns of that row are zero. Let :math:`K_1` be the set of 
+    the  rows of :math:`A` such that all bits in rightmost
+    :math:`n_1` columns of that row are zero. We exclude row 
+    :math:`0` from :math:`K_0` and from :math:`K_1`. 
+    
+    If the bit matrix :math:`A` has :math:`m'` rows then
+    the bit matrix :math:`Q` is a symmetric 
+    :math:`m' \times m'` bit matrix. Let :math:`Q'` be the 
+    submatrix of :math:`Q` that consists of all rows with
+    index in :math:`K_1` and of all columns with index in
+    :math:`K_0` .
+
+    We require that submatrix :math:`Q'` of :math:`Q`  has at 
+    most one nonzero entry in each row and in each column. 
+
+    Note that  :math:`K_0 \cap K_1 = \emptyset`, since the
+    representation :math:`(e, A, Q)` is echelonized.
+
+We may obtain a *reduced matrix representation* :math:`(e, A, Q)` 
+of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
+as follows:
+
+  * Starting from a reduced representation :math:`(e_0, A_0, Q_0)` 
+    of a quadratic state vector :math:`S` we may obtain a 
+    representation :math:`(e_1, A_1, Q_1)` of the matrix  :math:`S` 
+    satifying condition *(2.)* by applying a seqence of  
+    transformations :math:`T_{i,j}, i < j`. Then 
+    :math:`A_1` is also in echelon form. :math:`T_{i,j}` 
+    is defined in section *Implementation of quadratic mappings*. 
+
+  * We apply a sequence of transformations :math:`T_{i,j}, i < j`,
+    with :math:`i, j \in K_0` or :math:`i, j \in K_1` to 
+    :math:`(e_1, A_1, Q_1)`. These transformations preserve the 
+    echelon form of :math:`A_1` and also property *(2.)*. Since 
+    :math:`K_0 \cap K_1 = \emptyset`, these transformations act as
+    row and column operations on the submatrix :math:`S'`
+    of  :math:`S`. So we may achieve property *(3.)* by a sequence
+    of such transformations, thus obtaining a suitable
+    representation :math:`(e, A, Q)` of  :math:`S`.
+
+
+
+Using a *reduced matrix representation* :math:`(e, A, Q)` of a
+quadratic state matrix :math:`S` has a variety of advantages.
+
+ * We can easily compute the rank of :math:`S` as follows:
+
+   For :math:`(e, A, Q)` let :math:`K_0, K_1, Q'` be defined as 
+   above. Let  :math:`K_2` be the subset :math:`K_1` containing 
+   alls rows of :math:`A` such that the corrsponding row of 
+   bit matrix  :math:`Q'` is zero. Then the binary logarithm of
+   the rank of :math:`S` is equal to the number of rows of
+   matrix :math:`A` with are neither in  :math:`K_0` nor in 
+   :math:`K_2`. Here we have to exclude row :math:`0` of :math:`A`.  
+
+   We omit the proof of this fact since we do not need it
+   for our purposes.
+
+ * That representation can be used for decomposing :math:`S`
+   into a product :math:`M_1 \cdot H \cdot M_2` of quadratic 
+   state matrices, where :math:`M_1, M_2` are monomial and 
+   :math:`H` is a Hadamard-like matrix. By a Hadamard-like
+   matrix we mean a matrix obtained from the unit matrix by
+   applying Hadamard gates to the row vectors.
+
+   If :math:`S` has shape :math:`(n,n)` then such a decomposition
+   reduces the complexity of multiplying :math:`S` with an
+   arbitrary complex vector form :math:`O(4^n)` to
+   :math:`O(n \cdot 2^n)`.
+
+   Essentially, we have used such a decomposition for 
+   multiplying the non-monimial part of generator :math:`\xi` 
+   of the monster :math:`\mathbb{M}` with a vector of our 
+   representation of :math:`\mathbb{M}`. Since this special
+   case is discussed elsewhere, we do not go into details here.
+
+ * In the next section we will introduce the Pauli group 
+   :math:`\mathcal{P}_{n}`, which is an important normal 
+   subgroup of :math:`\mathcal{X}_{n}`. Using the reduced 
+   matrix representation of an element :math:`S` of 
+   :math:`\mathcal{X}_{n}` we can conugate any element
+   of :math:`\mathcal{P}_{n}` with :math:`S` in  
+   :math:`O(n^2)` bit operations.
+   
+   With quadratic state matrices, a general matrix 
+   multiplication in the Clifford group :math:`\mathcal{X}_{n}` 
+   costs :math:`O(n^3)` bit operations.
+
+   
+
+Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
+converts any representation of a quadratic state matrix to a
+reduced matrix representation.
+
+The Pauli group
+...............
+
+The *Pauli group* :math:`\mathcal{P}_{n}` of :math:`n` qubits
+is the normal subgroup of the Clifford group 
+:math:`\mathcal{X}_{n}` generated by the not gates, the phase 
+:math:`\pi` gates in :math:`\mathcal{X}_{n}`, and by the scalar 
+multiples of the unit matrix by a fourth root of unity. It has 
+structure :math:`\frac{1}{2}(2_+^{1+2n} \times Z_4)`, exponent
+math:`4` and order :math:`2^{2n+2}`.
+ 
+We represent an element of :math:`\mathcal{P}_{n}` as a product
+of :math:`2n+2` generators. Each generator may have exponent 
+:math:`0` or :math:`1`. The sequence of these exponents are   
+stored as a bit vector as follows:
+
+  * Bit :math:`2n+1` corresponds to multiplication with 
+    the scalar :math:`\sqrt{-1}`.
+
+  * Bit :math:`2n` corresponds to  multiplication with
+    the scalar :math:`-1`.
+
+  * Bit :math:`n+i` with :math:`0 \leq i < n` corresponds to 
+    a not gate applied to qubit :math:`i`.
+
+  * Bit :math:`i` with :math:`0 \leq i < n` corresponds to 
+    a phase :math:`\pi` gate applied to qubit :math:`i`.
+
+
+Factors are ordered by bit positions, with the most significant 
+bit position occuring first. In the C language we represent bit 
+vectors a integers as usual.
+
+All generators commute and have order :math:`2` except for the
+following cases:
+
+  * A phase :math:`\pi` gate anticommutes with a not gate
+    applied to the same qubit, i.e their commutator is the
+    scalar  :math:`-1`.
+
+  * Of course, the scalar :math:`\sqrt{-1}`
+    squares to the scalar :math:`-1`.
+
+
+Functions ``qstate12_pauli_vector_mul`` and 
+``qstate12_pauli_vector_exp`` in module ``qs_matrix.c`` 
+perform multiplication and exponentiation in the Pauli group
+:math:`\mathcal{P}_{n}`.
+
+
+Given an element :math:`p` of the Pauli group and a
+*reduced matrix representation* :math:`(e, A, Q)` of a
+unitary quadratic state matrix :math:`S`, we can quickly 
+compute the conjugate  :math:`S^{-1} \cdot p \cdot S` as 
+follows:
+
+  * Left multiply :math:`S` with :math:`p` by applying the 
+    appropriate gates to :math:`S`. This affects row 
+    :math:`0` of the bit matrix :math:`A` and  row and 
+    column :math:`0` of the symmetic bit  matrix :math:`Q` 
+    only.
+
+  * Restore the original values  :math:`A[0,j]` or all
+    :math:`j \geq n` and the original values 
+    :math:`Q[0,k] = Q[k,0]` for all :math:`k > n` by applying 
+    appropriate transformations :math:`T_{0,j}` to the 
+    modified representation :math:`(e, A, Q)`. 
+    This does not change the value :math:`p \cdot S` of 
+    the complex matrix computed in the previous step.
+    :math:`T_{0,j}` is defined in section
+    *Implementation of quadratic mappings*.
+
+  * We may restore the the remaining original values of row 
+    and column :math:`0` of :math:`Q` by applying phase 
+    :math:`\pi` gates to :math:`S`. These gate operations 
+    correspond to a right multiplication with a element 
+    :math:`p_1` of the Pauli group.
+
+  * We may restore the the remaining original values of row 
+    :math:`0` of :math:`A` by applying not gates to
+    :math:`S`. These gate operations correspond to a right
+    multiplication with a element :math:`p_2` of the Pauli
+    group.
+
+  * Up to a known scalar factor we have obtained an equation
+    :math:`S = p  \cdot S \cdot p_2 \cdot p_1`, with 
+    :math:`p_1, p_2` in the  Pauli group. With this equation
+    the requested conjugation is an easy computation in the 
+    Pauli group.
+
+Function ``qstate12_pauli_conjugate`` in module 
+``qs_matrix.c`` performs this conjugation.
 
 
 
@@ -1239,14 +1498,15 @@ Thus
 The C function ``state12_gate_h`` implements a sequence of 
 Hadamard gates.
 
+
 C functions dealing with quadratic state vectors
 ................................................
 
 
-The C functions in this module do operations on quadratic state
-vectors given by triples :math:`(e, A, Q)` as defined above.
-Here component :math:`e` encodes the number  
-:math:`\exp(e \pi \sqrt{-1} / 4) \cdot 
+The C functions in modules ``qstate.c`` and ``qsmatrix.c``
+perform operations on quadratic state matrices given by triples 
+:math:`(e, A, Q)` as defined above. Here component :math:`e` 
+encodes the number  :math:`\exp(e \pi \sqrt{-1} / 4) \cdot 
 2^{\lfloor e/16 \rfloor / 2}`, and
 :math:`A` is an  :math:`(1+m) \times n` bit matrix.
 :math:`Q` is a symmetric :math:`(1+m) \times (1+m)` bit matrix 
@@ -1260,7 +1520,7 @@ representing an symmetric bilinear form. We always have
 corresponds to :math:`M_{i,j}`, with bit :math:`0` the least
 significant bit.
 
-A quadratic state vector is described by a structure containing 
+A quadratic state matrix is described by a structure containing 
 the following components:
 
 .. code-block:: c
@@ -1271,19 +1531,25 @@ the following components:
     uint32_t ncols;   // No n of columns of bit matrices A and Q
     int32_t  factor;  // A number e encoding a scaling factor
     uint64_t *data;   // Pointer to the data bits of matrix M
-    uint32_t shape1;  // (Will be discussed in the next session)
+    uint32_t shape1;  // Describes the shape of the quadratic state
+                      // matrix, as indicated below.
   } qbstate12_type;
 
-Recall that a quadratic state vector :math:`v` of type
+A quadratic state vector :math:`v` of type
 ``qbstate12_type`` with component ``ncols = n`` models a complex 
 vector in a vector space  :math:`V` of dimension :math:`2^n`, and 
 that the basis of ``V`` is labelled by the elements of the Boolean
 vector space :math:`\mathbb{F}_2^n`. In C and python programs
-we represent the element :math:`(x_0, \ldots, x_{n-1})` of
+we represent the element :math:`(x_{n-1}, \ldots, x_{0})` of
 :math:`\mathbb{F}_2^n` by the integer 
 :math:`\sum_{0 \leq i < n} 2^i \cdot x_i`. This leads to a natural
 representation of ``v`` as a one-dimensional complex array of
 length :math:`2^n`, starting with index ``0``.
+
+A quadratic state matrix is a quadratic shape vector augmented
+by an information about its matrix shape. For a quadratic state
+matrix ``qs`` of shape ``(n0, n1)`` we put ``qs.ncols = n0 + n1``
+and ``qs.ncols = n1``.
 
 The zero state is encoded as a matrix with :math:`m'=0` rows.
 We do not update the entries :math:`Q_{i,0}`, so the 
@@ -1323,264 +1589,6 @@ Typical names for parameters of functions in this module are:
                       :math:`A`, :math:`M`, or  :math:`Q`.
    ================== ================================================
 
-
-Quadratic state matrices
-........................
-
-A *quadratic state matrix* :math:`S` of shape :math:`(n_0, n_1)` 
-is an element of the tensor product :math:`V_0 \otimes V_1` 
-with the basis vectors of :math:`V_k` being indexed by 
-:math:`\mathbb{F}_2^{n_k}, k = 0, 1`, such that the
-coordinate function of :math:`S` is a quadratic mapping.
-That coordinate function is a function
-:math:`\mathbb{F}_2^{n_0} \times \mathbb{F}_2^{n_1}
-\rightarrow \mathbb{C}`.
-
-Thus :math:`S` corresponds to a complex 
-:math:`2^{n_0} \times 2^{n_1}` matrix. We may implement
-:math:`S` as a quadratic state vector of :math:`n_0 + n_1` 
-qubits, augmented by an information about its shape
-:math:`(n_0, n_1)` . We let the  :math:`n_0` qubits with
-high indices  correspond to the rows of  :math:`S`; and
-we let the  :math:`n_1` qubits with low indices  correspond 
-to the columns  of  :math:`S`. For implementing a quadratic
-state matrix in C, we store the part :math:`n_1` of its shape 
-in component ``qstate1`` of a structure ``qs`` of type
-``qstate12_type`` and we compute the part  :math:`n_0`  as 
-``qs.ncols - qs.qstate1``.
-
-In python we implement a *quadratic state matrix* as a instance of 
-class ``QStateMatrix`` in module ``mmgroup.structures.qs_matrix``.
-A matrix of shape :math:`(0,n)` corresponds to a row vector of 
-dimension :math:`2^{n}` and a matrix of shape :math:`(n,0)` 
-corresponds to a column vector of dimension :math:`2^{n}`.
-We have seen above that the unitary quadratic state 
-matrices of shape :math:`(n,n)` form the Clifford group 
-:math:`\mathcal{X}_{n}`. We have also
-discussed fast algorithms for multiplication and inversion
-of such matrices. So class ``QStateMatrix`` supports fast
-computation in Clifford group :math:`\mathcal{X}_{n}`.
-Our implementation requires :math:`n \leq 12`, which is
-sufficient for computing in the subgroup
-:math:`2^{1+24}.\mbox{Co}_1` of the monster group.
-
-Function ``qstate12_matmul`` in file ``qmatrix12.c`` multiplies
-two quadratic state matrices.
-
-
-Reducing a quadratic state matrix
-.................................
-
-We define a special *reduced matrix representation* :math:`(e, A, Q)` 
-of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
-that differs slightly from the reduced representation of a 
-quadratic state vector. That representation satisfies the 
-following conditions:
-
- 1. We require that the representation :math:`(e, A, Q)` is in 
-    (not necessarly reduced) echelon form as described in section
-    *Reducing the representation of a quadratic mapping*.
-    
- 2. Let :math:`A'` be the bit matrix obtained from :math:`A` by
-    removing the first  :math:`n_1` columns from  :math:`A`.
-    We require that  a permutation of the rows of matrix
-    :math:`A'`, excluding row :math:`0`, is in (not necessarily 
-    reduced) echelon form.
-    
-    Note that the first :math:`n_1` columns of the bit matrix
-    :math:`A` correspond to the :math:`2^{n_1}` columns of 
-    the complex matrix :math:`S`; and the remaining  
-    :math:`n_0` columns of :math:`A` correspond to the
-    :math:`2^{n_0}` rows of :math:`S`.
-        
- 3. Let :math:`I_0` be the set of the rows of the bit matrix 
-    :math:`A` such that all bits in columns :math:`\geq n_1` 
-    of that row are zero. Let :math:`I_1` be the set of the 
-    rows of :math:`A` such that all bits in columns 
-    :math:`< n_1` of that row are zero. We exclude row 
-    :math:`0` from :math:`I_0` and from :math:`I_1`. 
-    
-    If the bit matrix :math:`A` has :math:`m'` rows then
-    the bit matrix :math:`Q` is a symmetric 
-    :math:`m' \times m'` bit matrix. Let :math:`Q'` be the 
-    submatrix of :math:`Q` that consists of all rows with
-    index in :math:`I_0` and of all columns with index in
-    :math:`I_1` .
-
-    We require that submatrix :math:`Q'` of :math:`Q`  has at 
-    most one nonzero entry in each row and in each column. 
-
-    Note that  :math:`I_0 \cap I_1 = \emptyset`, since
-    :math:`A` is in echelon form.
-
-We may obtain a *reduced matrix representation* :math:`(e, A, Q)` 
-of a quadratic state matrix :math:`S` of shape :math:`(n_0, n_1)` 
-as follows:
-
-  * Starting from a reduced representation :math:`(e_0, A_0, Q_0)` 
-    of a quadratic state vector :math:`S` we may obtain a 
-    representation :math:`(e_1, A_1, Q_1)` of the matrix  :math:`S` 
-    satifying condition *(2.)* by applying a seqence of  
-    transformations :math:`T_{i,j}, i < j`. Then 
-    :math:`A_1` is also in echelon form. :math:`T_{i,j}` 
-    is defined in section *Implementation of quadratic mappings*. 
-
-  * We apply a sequence of transformations :math:`T_{i,j}, i < j`,
-    with :math:`i, j \in I_0` or :math:`i, j \in I_1` to 
-    :math:`(e_1, A_1, Q_1)`. These transformations preserve the 
-    echelon form of :math:`A_1` and also property *(2.)*. Since 
-    :math:`I_0 \cap I_1 = \emptyset`, these transformations act as
-    row and column operations on the submatrix :math:`S'`
-    of  :math:`S`. So we may achieve property *(3.)* by a sequence
-    of such transformations, thus obtaining a suitable
-    representation :math:`(e, A, Q)` of  :math:`S`.
-
-
-
-Using a *reduced matrix representation* :math:`(e, A, Q)` of a
-quadratic state matrix :math:`S` has a variety of advantages.
-
- * We can easily compute the rank of :math:`S` as follows:
-
-   For :math:`(e, A, Q)` let :math:`I_0, I_1, S'` be defined as 
-   above. Let  :math:`I_2` be the subset :math:`I_0` containing 
-   alls rows of :math:`A` such that the corrsponding row of 
-   bit matrix  :math:`Q'` is zero. Then the binary logarithm of
-   the rank of :math:`S` is equal to the number of rows of
-   matrix :math:`A` with are neither in  :math:`I_1` nor in 
-   :math:`I_2`. Here we have to exclude row :math:`0` of :math:`A`.  
-
-   We omit the proof of this fact since we do not need it
-   for our purposes.
-
- * That representation can be used for decomposing :math:`S`
-   into a product :math:`M_1 \cdot H \cdot M_2` of quadratic 
-   state matrices, where :math:`M_1, M_2` are monomial and 
-   :math:`H` is a Hadamard-like matrix. By a Hadamard-like
-   matrix we mean a matrix obtained from the unit matrix by
-   applying Hadamard gates to the row vectors.
-
-   If :math:`S` has shape :math:`(n,n)` then such a decomposition
-   reduces the complexity of multiplying :math:`S` with an
-   arbitrary complex vector form :math:`O(4^n)` to
-   :math:`O(n \cdot 2^n)`.
-
-   Essentially, we have used such a decomposition for 
-   multiplying the non-monimial part of generator :math:`\xi` 
-   of the monster :math:`\mathbb{M}` with a vector of our 
-   representation of :math:`\mathbb{M}`. Since this special
-   case is discussed elsewhere, we do not go into details here.
-
- * In the next section we will introduce the Pauli group 
-   :math:`\mathcal{P}_{n}`, which is an important normal 
-   subgroup of :math:`\mathcal{X}_{n}`. Using the reduced 
-   matrix representation of an element :math:`S` of 
-   :math:`\mathcal{X}_{n}` we can conugate any element
-   of :math:`\mathcal{P}_{n}` with :math:`S` in  
-   :math:`O(n^2)` bit operations.
-   
-   With quadratic state matrices, a general matrix 
-   multiplication in the Clifford group :math:`\mathcal{X}_{n}` 
-   costs :math:`O(n^3)` bit operations.
-
-   
-
-Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
-converts any representation of a quadratic state matrix to a
-reduced matrix representation.
-
-The Pauli group
-...............
-
-The *Pauli group* :math:`\mathcal{P}_{n}` of :math:`n` qubits
-is the normal subgroup of the Clifford group 
-:math:`\mathcal{X}_{n}` generated by the not gates, the phase 
-:math:`\pi` gates in :math:`\mathcal{X}_{n}`, and by the scalar 
-multiples of the unit matrix by a fourth root of unity. It has 
-structure :math:`\frac{1}{2}(2_+^{1+2n} \times Z_4)`, exponent
-math:`4` and order :math:`2^{2n+2}`.
- 
-We represent an element of :math:`\mathcal{P}_{n}` as a product
-of :math:`2n+2` generators. Each generator may have exponent 
-:math:`0` or :math:`1`. The sequence of these exponents are   
-stored as a bit vector as follows:
-
-  * Bit :math:`2n+1` corresponds to multiplication with 
-    the scalar :math:`\sqrt{-1}`.
-
-  * Bit :math:`2n` corresponds to  multiplication with
-    the scalar :math:`-1`.
-
-  * Bit :math:`n+i` with :math:`0 \leq i < n` corresponds to 
-    a not gate applied to qubit :math:`i`.
-
-  * Bit :math:`i` with :math:`0 \leq i < n` corresponds to 
-    a phase :math:`\pi` gate applied to qubit :math:`i`.
-
-
-Factors are ordered by bit positions, with the most significant 
-bit position occuring first. In the C language we represent bit 
-vectors a integers as usual.
-
-All generators commute and have order :math:`2` except for the
-following cases:
-
-  * A phase :math:`\pi` gate anticommutes with a not gate
-    applied to the same qubit, i.e their commutator is the
-    scalar  :math:`-1`.
-
-  * Of course, the scalar :math:`\sqrt{-1}`
-    squares to the scalar :math:`-1`.
-
-
-Functions ``qstate12_pauli_vector_mul`` and 
-``qstate12_pauli_vector_exp`` in module ``qs_matrix.c`` 
-perform multiplication and exponentiation in the Pauli group
-:math:`\mathcal{P}_{n}`.
-
-
-Given an element :math:`p` of the Pauli group and a
-*reduced matrix representation* :math:`(e, A, Q)` of a
-unitary quadratic state matrix :math:`S`, we can quickly 
-compute the conjugate  :math:`S^{-1} \cdot p \cdot S` as 
-follows:
-
-  * Left multiply :math:`S` with :math:`p` by applying the 
-    appropriate gates to :math:`S`. This affects row 
-    :math:`0` of the bit matrix :math:`A` and  row and 
-    column :math:`0` of the symmetic bit  matrix :math:`Q` 
-    only.
-
-  * Restore the original values  :math:`A[0,j]` or all
-    :math:`j \geq n` and the original values 
-    :math:`Q[0,k] = Q[k,0]` for all :math:`k > n` by applying 
-    appropriate transformations :math:`T_{0,j}` to the 
-    modified representation :math:`(e, A, Q)`. 
-    This does not change the value :math:`p \cdot S` of 
-    the complex matrix computed in the previous step.
-    :math:`T_{0,j}` is defined in section
-    *Implementation of quadratic mappings*.
-
-  * We may restore the the remaining original values of row 
-    and column :math:`0` of :math:`Q` by applying phase 
-    :math:`\pi` gates to :math:`S`. These gate operations 
-    correspond to a right multiplication with a element 
-    :math:`p_1` of the Pauli group.
-
-  * We may restore the the remaining original values of row 
-    :math:`0` of :math:`A` by applying not gates to
-    :math:`S`. These gate operations correspond to a right
-    multiplication with a element :math:`p_2` of the Pauli
-    group.
-
-  * Up to a known scalar factor we have obtained an equation
-    :math:`S = p  \cdot S \cdot p_2 \cdot p_1`, with 
-    :math:`p_1, p_2` in the  Pauli group. With this equation
-    the requested conjugation is an easy computation in the 
-    Pauli group.
-
-Function ``qstate12_pauli_conjugate`` in module 
-``qs_matrix.c`` performs this conjugation.
 
 
 """
