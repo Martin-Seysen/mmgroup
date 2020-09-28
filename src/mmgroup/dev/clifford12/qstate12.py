@@ -1143,10 +1143,10 @@ following conditions:
     reduced) echelon form.
     
     Note that the first :math:`n_0` columns of the bit matrix
-    :math:`A` correspond to the :math:`2^{n_0}` columns of 
-    the complex matrix :math:`S`; and the remaining  
+    :math:`A` correspond to the :math:`2^{n_0}` rows of 
+    the complex matrix :math:`S`; and that the remaining  
     :math:`n_1` columns of :math:`A` correspond to the
-    :math:`2^{n_1}` rows of :math:`S`.
+    :math:`2^{n_1}` columns of :math:`S`.
         
  3. Let :math:`K_0` be the set of the rows of the bit matrix 
     :math:`A` such that all bits in the leftmost :math:`n_0` 
@@ -1212,9 +1212,11 @@ quadratic state matrix :math:`S` has a variety of advantages.
    into a product :math:`M_1 \cdot H \cdot M_2` of quadratic 
    state matrices, where :math:`M_1, M_2` are monomial and 
    :math:`H` is a Hadamard-like matrix. By a Hadamard-like
-   matrix we mean a matrix obtained from the unit matrix by
-   applying Hadamard gates to the row vectors.
-
+   matrix we mean a tensor product of :math:`2 \times 2`
+   unit matrices and matrices  
+   :math:`\left( \begin{smallmatrix}1 & 1 \\ 1 & -1
+   \end{smallmatrix} \right)`.
+   
    If :math:`S` has shape :math:`(n,n)` then such a decomposition
    reduces the complexity of multiplying :math:`S` with an
    arbitrary complex vector form :math:`O(4^n)` to
@@ -1340,8 +1342,8 @@ Function ``qstate12_pauli_conjugate`` in module
 
 
 
-Applying a (controlled) not gate to a quadratic mapping
-.......................................................
+Applying a gate to a quadratic mapping
+......................................
 
 In the theory of quantum computing we may apply so-called
 *gates* to a quadratic state vector in 
@@ -1357,146 +1359,160 @@ number :math:`1 \leq k \leq 2`. Here we may permute the factors
 arbitrarily before the decompostion into a tensor product as 
 above.
 
-A *not* gate operating in qubit :math:`j` maps a  state 
-:math:`g` to a state :math:`g'` with
-:math:`g'(x) = g(x + e_j)`, where
-:math:`e_j = (0,\ldots,0,1,0,\ldots,0)` and  the component
-:math:`1` is at position `j`. 
-A *not* gate operating in qubit :math:`j` is implemented
-for :math:`g = f(e,A,Q)` by flipping the bit :math:`A_{0,j}`.
-The C function ``state12_gate_not`` implements a sequence of 
-not gates.
-
-A *controlled not* gate is a gate that negates a target qubit
-:math:`j \neq j` controlled by a qubit :math:`j'`. Such a 
-gate maps a state :math:`g` to a state :math:`g'` with
-:math:`g'(x) = g(x + \langle e_{j'},x \rangle \cdot e_j)`,
-where :math:`\langle .,. \rangle` is the scalar product 
-of bit vectors. Such a gate is implemented for 
-:math:`g = f(e,A,Q)` by adding column :math:`j'` of 
-:math:`A` to  column :math:`j` of :math:`A`. The C function 
-``state12_gate_ctrl_not`` implements a generalization of a
-controlled not gate.
+We state without proofs how to apply a certain gates to a 
+quadratic mapping. The gates listed below generate the 
+Clifford group.
+Here a quadratic mapping represents a quadratic state vector
+as before. A quadratic state matrix of shape :math:`(n_0, n_1)`
+is considered as a quadratic mapping
+:math:`\mathbb{F}_2^{n_0} \times \mathbb{F}_2^{n_1}
+\rightarrow \mathbb{C}`.
 
 
-In the following two sections we discuss more types of gates.
-Altogether, these gates generate the Clifford group 
-:math:`\mathcal{X}_n` on :math:`n` qubits.
 
-Applying a (controlled) phase gate to a quadratic mapping
-.........................................................
+The not gate
 
+ A *not* gate operating in qubit :math:`j` maps a  state 
+ :math:`g` to a state :math:`g'` with
+ :math:`g'(x) = g(x + e_j)`, where
+ :math:`e_j = (0,\ldots,0,1,0,\ldots,0)` and  the component
+ :math:`1` is at position `j`. 
+ A *not* gate operating in qubit :math:`j` is implemented
+ for :math:`g = f(e,A,Q)` by flipping the bit :math:`A_{0,j}`.
+ The C function ``state12_gate_not`` implements a  not gate.
 
-Applying a phase :math:`\phi` gate  to qubit :math:`j` of
-a state :math:`g= f(e,A,Q)` changes the state :math:`g` to 
-a state :math:`g'` with 
+The controlled not gate
 
-.. math::
-    g'(x_0,\ldots,x_j,\ldots,x_{n-1}) =
+ A *controlled not* gate is a gate that negates a target qubit
+ :math:`j \neq j'` controlled by a qubit :math:`j'`. Such a 
+ gate maps a state :math:`g` to a state :math:`g'` with
+ :math:`g'(x) = g(x + \langle e_{j'},x \rangle \cdot e_j)`,
+ where :math:`\langle .,. \rangle` is the scalar product 
+ of bit vectors. Such a gate is implemented for 
+ :math:`g = f(e,A,Q)` by adding column :math:`j'` of 
+ :math:`A` to  column :math:`j` of :math:`A`. The C function 
+ ``state12_gate_ctrl_not`` implements a controlled not gate.
+
+The phase :math:`\phi` gate 
+
+ Applying a phase :math:`\phi` gate  to qubit :math:`j` of
+ a state :math:`g= f(e,A,Q)` changes the state :math:`g` to 
+ a state :math:`g'` with 
+
+ .. math::
+    g'(x_{n-1},\ldots,x_j,\ldots,x_{0}) =
     \exp(\phi  x_j \sqrt{-1}) \cdot
-    g(x_0,\ldots,x_j,\ldots,x_{n-1}) \; .
+    g(x_{n-1},\ldots,x_j,\ldots,x_{0}) \; .
     
-We consider only phase :math:`\phi` which are multiples of
-:math:`\pi/2`. For an :math:`(m+1) \times n` matrix 
-:math:`A` let :math:`A_j` be the :math:`j`-th column of
-matrix :math:`A`. Let  :math:`A_{-1}` be the column vector 
-:math:`(1,0,\ldots,0)^\top` with :math:`m+1` entries.
-Then a phase :math:`\pi` gate on qubit :math:`j` maps
-:math:`f(e,A,Q)` to 
+ We consider only phases :math:`\phi` which are multiples of
+ :math:`\pi/2`. For an :math:`(m+1) \times n` matrix 
+ :math:`A` let :math:`A_j` be the :math:`j`-th column of
+ matrix :math:`A`. Let  :math:`A_{-1}` be the column vector 
+ :math:`(1,0,\ldots,0)^\top` with :math:`m+1` entries.
+ Then a phase :math:`\pi` gate on qubit :math:`j` maps
+ :math:`f(e,A,Q)` to 
 
-.. math::
+ .. math::
     f\left( (-1)^{A_{0,j}} \cdot e, A, Q \odot A_{-1} A_j ^\top
     \odot    A_j A_{-1}^\top \right) \; .
     
-Here we consider :math:`A_j, A_{-1}` as a :math:`(m+1) \times 1`
-matrices, so that the matrix product :math:`A_j A_{-1}^\top` 
-is an :math:`(m+1) \times (m+1)` matrix. Operator :math:`\odot`
-is as in section *Multiplication of quadratic mappings*.
 
-A phase :math:`\pi/2` gate on qubit :math:`j` maps
-:math:`f(e,A,Q)` to 
+ A phase :math:`\pi/2` gate on qubit :math:`j` maps
+ :math:`f(e,A,Q)` to 
  
-.. math::
+ .. math::
     f\left( \sqrt{-1}^{A_{0,j}} \cdot e, A, Q \odot A_j A_j ^\top
     \right) \; .
 
+ Here we consider :math:`A_j, A_{-1}` as a :math:`(m+1) \times 1`
+ matrices, so that the matrix product :math:`A_j A_{-1}^\top` 
+ is an :math:`(m+1) \times (m+1)` matrix. Operator :math:`\odot`
+ is as in section *Multiplication of quadratic mappings*.
+ 
+ The C function  ``qstate12_gate_phi`` implements phase gate.
 
-Applying a controlled phase :math:`\pi` gate  to qubits
-:math:`j` and :math:`j'` of a state :math:`g= f(e,A,Q)` changes 
-the state :math:`g` to  a state :math:`g'` with 
+The controlled phase :math:`\pi` gate 
 
-.. math::
+ Applying a controlled phase :math:`\pi` gate  to qubits
+ :math:`j` and :math:`j'` of a state :math:`g= f(e,A,Q)` changes 
+ the state :math:`g` to  a state :math:`g'` with 
+
+ .. math::
     g'(\ldots,x_j,\ldots,x_{j'},\ldots ) =
     (-1)^{x_j x_{j'}} \cdot
     g(\ldots,x_j,\ldots,x_{j'},\ldots) \; .
     
     
-A conrtolled phase :math:`\pi` gate on qubit :math:`j` and
-:math:`j'` maps  :math:`f(e,A,Q)` to     
+ A controlled phase :math:`\pi` gate on qubit :math:`j` and
+ :math:`j'` maps  :math:`f(e,A,Q)` to     
 
 
-.. math::
+ .. math::
     f\left( (-1)^{A_{0,j} \cdot A_{0,j'}} \cdot e, A, 
     Q \odot A_j A_{j'}^\top \odot A_{j'} A_j^\top  \right) \; .
 
+ The C function  ``qstate12_gate_ctrl_phi`` implements 
+ controlled phase gate.
 
-We leave the proofs of these statements to the reader.
 
-Applying a Hadamard gate to a quadratic mapping
-...............................................
+The Hadamard gate
 
-A Hadamard gate at qubit :math:`j` is a a mapping that changes
-a quadratic mapping :math:`g` to another quadratic mapping 
-:math:`1/\sqrt{2} \cdot g'` with
+ A Hadamard gate at qubit :math:`j` is a a mapping that changes
+ a quadratic mapping :math:`g` to another quadratic mapping 
+ :math:`1/\sqrt{2} \cdot g'` with
 
-.. math::
-    g'(x_0,\ldots,x_{j-1},x_j,x_{j+1},\ldots,x_{n-1}) =
-    g(x_0,\ldots,x_{j-1},0,x_{j+1},\ldots,x_{n-1}) + (-1)^{x_j} \cdot 
-    g(x_0,\ldots,x_{j-1},1,x_{j+1},\ldots,x_{n-1}) \; .
+ .. math::
+    g'(\ldots,x_{j+1},x_j,x_{j+1},\ldots) = \\
+    g(\ldots,x_{j+1},0,x_{j-1},\ldots) + (-1)^{x_j} \cdot 
+    g(\ldots,x_{j+1},1,x_{j-1},\ldots) \; .
     
     
-We implement the application of a Hadamard gate on qubit :math:`j`
-to a quadatic mapping :math:`g` represented as :math:`(e, A, Q)` 
-as follows.
+ We implement the application of a Hadamard gate on qubit 
+ :math:`j` to a quadatic mapping :math:`g` represented as 
+ :math:`(e, A, Q)` as follows.
 
-We append a zero row at :math:`A` and also a zero row and a
-zero column at :math:`Q`. Let :math:`i` be the index of the 
-appended row and column. Then we put 
-:math:`Q_{i,k} = Q_{k,i} = A_{k,j}`, :math:`A_{k,j} = 0`
-for all :math:`k \neq i`, and  :math:`A_{i,j} = 1`. Let 
-:math:`A', Q'` be the modified matrices :math:`A', Q'`. 
-Then :math:`g' = f(e, A', Q')`.
+ We append a zero row at :math:`A` and also a zero row and a
+ zero column at :math:`Q`. Let :math:`i` be the index of the 
+ appended row and column. Then we change 
+ :math:`Q_{i,k}` and :math:`Q_{k,i}` to :math:`A_{k,j}`, 
+ :math:`A_{k,j}` to :math:`0` for all :math:`k \neq i`, and 
+ :math:`A_{i,j}` to :math:`1`. Let :math:`A', Q'` be the 
+ modified matrices :math:`A', Q'`.  Then we have 
+ :math:`g' = f(e, A', Q')`.
 
-The correctenss of this algorithm can be seen as follows.
-W.l.o.g we assume that :math:`j` is the last index :math:`n-1`.
-Let :math:`x = (x_0,\ldots, x_j) \in \mathbb{F}_2^n`,
-:math:`y  = (y_0,\ldots, y_m) \in   \mathbb{F}_2^{m+1}`
-with :math:`y_0 = 1`,  and assume :math:`y \cdot A = x`
-for the matrix product :math:`y \cdot A`. 
-Then 
+ The C function ``state12_gate_h`` implements a  
+ Hadamard gate.
 
-.. math::
-   (y, b) \cdot A' = (x_0,\ldots,x_{n-1},b) \quad 
+Correctness of the implementation of the Hadamard gate
+
+ The correctness of that imlpementation can be seen as follows.
+ W.l.o.g we assume that :math:`j` is the last index :math:`0`.
+ Let :math:`x = (x_{n-1},\ldots, x_0) \in \mathbb{F}_2^n`,
+ :math:`y  = (y_0,\ldots, y_m) \in   \mathbb{F}_2^{m+1}`
+ with :math:`y_0 = 1`,  and assume :math:`y \cdot A = x`
+ for the matrix product :math:`y \cdot A`. 
+ Then 
+
+ .. math::
+   (y, b) \cdot A' = (x_{n-1},\ldots,x_1,b) \quad 
    \mbox{for} \quad b \in \mathbb{F}_2 \; .
 
-Let :math:`q, q'` be the quadratic mappings given by :math:`Q, Q'`.
-Then 
+ Let :math:`q, q'` be the quadratic mappings given by :math:`Q, Q'`.
+ Then 
 
-.. math::
-    q'(y, b) = (-1)^{b \cdot \langle y, A_j \rangle} \cdot q(y)
-    = (-1)^{b \cdot x_j} \cdot q(y) \; ,
+ .. math::
+    q'(y, b) = (-1)^{b \cdot \langle y, A_0 \rangle} \cdot q(y)
+    = (-1)^{b \cdot x_0} \cdot q(y) \; ,
     
-where :math:`A_j` is the :math:`j`-th column of :math:`A`. 
-Thus
+ where :math:`A_0` is the last column of :math:`A`. 
+ Thus
 
-.. math::
-   f(e, A',Q')(x_0, \ldots, x_{j-1}, x_j) =
-   g(x_0, \ldots, x_{j-1}, 0) + 
-   (-1)^{x_j} \cdot g(x_0, \ldots, x_{j-1}, 1) \; .
+ .. math::
+   f(e, A',Q')(x_{n-1},\ldots, x_0) =
+   g(x_{n-1},\ldots, x_1, 0) + 
+   (-1)^{x_0} \cdot g(x_{n-1},\ldots, x_1, 1) \; .
 
 
-The C function ``state12_gate_h`` implements a sequence of 
-Hadamard gates.
 
 
 C functions dealing with quadratic state vectors
@@ -1505,9 +1521,9 @@ C functions dealing with quadratic state vectors
 
 The C functions in modules ``qstate.c`` and ``qsmatrix.c``
 perform operations on quadratic state matrices given by triples 
-:math:`(e, A, Q)` as defined above. Here component :math:`e` 
-encodes the number  :math:`\exp(e \pi \sqrt{-1} / 4) \cdot 
-2^{\lfloor e/16 \rfloor / 2}`, and
+:math:`(e, A, Q)` as defined above. Here the integer :math:`e` 
+encodes the complex number  :math:`\exp(e \pi \sqrt{-1} / 4) 
+\cdot 2^{\lfloor e/16 \rfloor / 2}`, and
 :math:`A` is an  :math:`(1+m) \times n` bit matrix.
 :math:`Q` is a symmetric :math:`(1+m) \times (1+m)` bit matrix 
 representing an symmetric bilinear form. We always have

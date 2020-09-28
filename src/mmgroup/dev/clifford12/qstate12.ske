@@ -508,8 +508,8 @@ int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32
 // n0 <= i < n0 + nrot  we map bit i to bit  n0 + (i + rot) % nrot. E.g. 
 // nrot = 3, rot = 1, n0 = 0 means bits are mapped as 0->1, 1->2, 2->0.
 // Let nn1 = qs->ncols. Then the function changes qs to qs' with
-// qs'(x[0],...,x[n0-1],y[0],...,y[nrot-1],x[n0+nrot],...,x[nn1-1]) =
-// qs(x[0],...,x[n0-1],z[0],...,z[nrot-1],z[n0+nrot],...,x[nn1-1]),
+// qs'(x[nn1-1],...,x[n0+nrot],y[nrot-1],...,y[0],x[n0-1],...,x[0])=
+// qs(x[nn1-1],...,x[n0+nrot],z[nrot-1],...,y[0],z[n0-1],...,x[0]),
 // where z[j] = y[j - rot (mod 3)].
 {
     uint64_t *m = pqs->data, mask_h, mask_l, mask;
@@ -541,7 +541,7 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 // set then bit  j + sh of 'mask' must not be set. No 'mask' bit at 
 // position >= pqs->ncols - sh may be set.
 // E.g.  qstate12_xch_bits(pqs, 1, 0x11) changes qs to qs' with
-// qs'(x0,x1,x2,x3,x4,x5,x6,...) = qs(x1,x0,x2,x3,x5,x4,x6,...)
+// qs'(...,x6,x5,x4,x3,x2,x1,x0) = qs(...,x6,x4,x5,x3,x2,x0,x1).
 {
     uint64_t *m = pqs->data, v;
     uint_fast32_t k;
@@ -859,8 +859,8 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n + ncols`` qubits:
 //
-// ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
-// is equal to ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` if
+// ``qs'(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+// is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` if
 // ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
 // So we increment ``pqs->ncols`` by ``nqb``.
 //
@@ -896,8 +896,8 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n + ncols`` qubits:
 //
-// ``qs'(x[0],...,x[j-1],y[0],...,y[nqb-1],x[j],...,x[n0-1])`` 
-//   = ``qs(x[0],...,x[j-1],x[j],...,[n-1])`` .
+// ``qs'(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+//   = ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` .
 // So we increment ``pqs->ncols`` by ``nqb``.
 //
 // The result is not reduced.
@@ -929,8 +929,8 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n - ncols`` qubits:
 //
-// ``qs'(x[0],...,x[j-1],x[j+nqb],...,x[n-1])`` =
-//    ``sum_{{x[j],...,x[j+nqb-1]}}  qs1(x[0],...,x[nn1-1])`` .
+// ``qs'(x[n-1],...,x[j+nqb],x[j-1],x[0])`` =
+//    ``sum_{{x[j+nqb-1],...,x[j]}}  qs1(x[nn1-1],...,x[0])`` .
 // So we decrement ``pqs->ncols`` by ``nqb``.
 //
 // The output is not reduced.
@@ -959,7 +959,7 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n`` qubits:
 //
-// qs'(x[0],...,x[n-1]) is equal to qs(x[0],...,x[n-1]) if 
+// qs'(x[n-1],...,x[0]) is equal to qs(x[n-1],...,x[0]) if 
 // x[j] = ... = x[j+nqb-1] = 0 and equal to zero otherwise.
 // We do not change the shape of ``qs``.
 // 
@@ -998,8 +998,8 @@ int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits.  We change ``qs`` to the
 // following state ``qs'`` depending  on ``n' = n - nqb`` qubits:
 // 
-// qs'(x[0],...,x[n'-1]) is equal to 
-// qs(x[0],...,x[j-1],0,...,0,x[j],...,x[n'-1]). 
+// qs'(x[n'-1],...,x[0]) is equal to 
+// qs(x[n'-1],...,x[j],0,...,0,x[-1],...,x[0]). 
 // So we decrement ``pqs->ncols`` by ``nqb``.
 //
 // The output is not reduced.
@@ -1141,8 +1141,8 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 // (referred by pqs) with  ``v & (1 << j) == 1``.
 // Aplying a Hadamard gate to gate ``j`` changes a state ``qs``
 // to a state ``1/sqrt(2) * qs'``, where
-// ``qs'(..,x[j-1],x_j,x[j+1],..) = qs(..,x[j-1],0,x[j+1],..)``
-//   + (-1)**(x_j) * qs(..,x[j-1],1,x[j+1],..)  .
+// ``qs'(..,x[j+1],x_j,x[j-1],..) = qs(..,x[j+1],0,x[j-1],..)``
+//   + (-1)**(x_j) * qs(..,x[j+1],1,x[j-1],..)  .
 // The result is not reduced.
 {
     uint64_t *m = pqs->data, w, mask1, c;
