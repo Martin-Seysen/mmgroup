@@ -751,7 +751,6 @@ An algorithm for multiplying quadratic mappings
 ...............................................
 
 
-TODO: Check documentation fromthis point on!!!
 
 In this section we present an effective algorithm for computing 
 the product :math:`g^{(1)} \cdot g^{(2)}` of two 
@@ -772,8 +771,9 @@ with
 :math:`g^{(1)} \cdot g^{(2)}`, where the first 
 :math:`j` columns of :math:`A^{(1,j)}` and :math:`A^{(2,j)}`
 are equal, and both, :math:`A^{(1,j)}` and :math:`A^{(2,j)}`,
-are in reduced echelon form.
-We put  :math:`A^{(\lambda,0)} = A^{(\lambda)}`.
+are in reduced echelon form. We put  
+:math:`(e^{(\lambda,0 )}, A^{(\lambda, 0)}, Q^{(\lambda, 0)})` 
+= :math:`(e^{(\lambda)}, A^{(\lambda)}, Q^{(\lambda)})`.
 
 
 
@@ -1030,7 +1030,6 @@ Restricting a quadratic mapping
 ...............................
 
 
-
 For any function :math:`g: \mathbb{F}_2^{n} \rightarrow \mathbb{C}`
 define 
 :math:`\hat{g}^{(j)}: \mathbb{F}_2^{n}\rightarrow \mathbb{C}` by
@@ -1055,7 +1054,6 @@ of  :math:`\hat{g}^{(j)}` from a representation of a quadratic
 mapping :math:`g`. This computation is implemented in function
 ``qstate12_restrict_zero`` in module ``qstate12.c``.
 
-
 Function :math:`\hat{g}^{(j)}` corresponds to a certain kind of 
 a restriction  of the function :math:`g`. Let   :math:`g` be
 a quadratic mapping and :math:`(e, A, Q)` be a representation of 
@@ -1075,15 +1073,11 @@ stabilizer state on a quantum computer, see e.g.
 :cite:`AG04`.
 
 
-
-
-
-
-
-
-
 Quadratic state matrices
 ........................
+
+TODO: Check documentation from this point on!!!
+
 
 A *quadratic state matrix* :math:`S` of shape :math:`(n_0, n_1)` 
 is an element of the tensor product :math:`V_0 \otimes V_1` 
@@ -1121,6 +1115,106 @@ sufficient for computing in the subgroup
 Function ``qstate12_matmul`` in file ``qmatrix12.c`` multiplies
 two quadratic state matrices.
 
+
+Displaying quadratic state vectors and matrices
+...............................................
+
+We use the *bra-ket* formalism to display quadratic state
+vectors.
+We display a column unit vector as a *ket*. E.g. ``|1011>`` 
+means the column unit vector labelled by the bit vector
+:math:`(1,0,1,1)` in :math:`(\mathbb{C}^2)^{\otimes 4}`.
+This corresponds to a state where the qubits with indices
+:math:`3,2,1,0` have values  :math:`1,0,1,1` , respectively.
+Similarly, we display a row vector  as a *bra*. So e.g.
+``<110|`` means the row unit vector labelled by 
+:math:`(1,1,0)`. A matrix with an entry one in the row 
+labelled by :math:`(1,0,1,1)` and the column labelled by 
+:math:`(1,1,0)`, and zeros elsewhere, is displayed  as 
+``|1011><110|``.
+ 
+We also want to display certain linear combinations of
+such unit vectors or matrices. As we have seen earlier, the
+coordinate function of such a state vector in 
+:math:`(\mathbb{C}^2)^{\otimes n}` is a function 
+:math:`\mathbb{F}_2^n \rightarrow \mathbb{C}`. We only
+consider state vectors where the support of the coordinate
+function is an affine subspace of :math:`\mathbb{F}_2^n`,
+and where the nonzero coordinates are in the set
+:math:`\{\pm 1, \pm \sqrt{-1}\}`, up to a global scalar 
+factor. Furthermore, the nonzero coordinates must be 
+given by a certain quadratic form :math:`Q` that we will
+specify below.
+
+The support of the coordinate function is an affine 
+subspace :math:`a_0 + V`, where  
+:math:`a_0  \in \mathbb{F}_2^n` and :math:`V` is a linear
+subpace of :math:`\mathbb{F}_2^n` with a basis, say,
+:math:`(a_1,\ldots a_m)`.
+In order to specify the support of the coordinate function,
+we write  :math:`a_0` in *bra-ket* notation as above, and
+we write coordinates :math:`a_1,\ldots,a_m` underneath 
+the coordinate :math:`a_0` without any bras or kets. We may
+give the basis :math:`(a_1,\ldots a_m)` in echelon form,
+omitting leading zeros. We write :math:`A` for the
+matrix  :math:`(a_0,\ldots,a_m)^\top` of coordinates.
+
+We write a lower triangular matrix :math:`Q` with diagonal
+entries ``'.'`` or ``'j'`` and off-diagonal entries
+entries ``'+'`` or ``'-'``  to the left of the coordinate 
+matrix  :math:`A`. Here an entry ``'-'`` means :math:`-1`, 
+``'j'`` means :math:`\sqrt{-1}`, and anything else means 
+:math:`1`. We write :math:`q_{i,j}` for the entries of the 
+matrix matrix :math:`Q`. Then we put:
+
+.. math::
+    f(A, Q) =
+    \sum_{x = (x_0,\ldots,x_m) \in \{0,1\}^{m+1}, x_0 = 1}
+       \! \! \! 
+       Q(x) \cdot \left| \oplus_{k=0}^m x_k \cdot a_k \right> \, ,
+       \quad Q(x) = 
+        \prod_{i, j = 0}^m x_i x_j q_{i,j} \, .
+
+We use the same notation if the values :math:`a_i` are
+*kets* or matrices witten in the form ``|ket><bra|``.
+For example: 
+
+.. code-block:: none
+
+     .   |10><01| 
+     -.    1  10
+     -+j       1
+     
+means :math:`1 \cdot \left|10\right> \left<01\right| 
+- 1 \cdot \left|11\right> \left<11\right|
+- \sqrt{-1} \cdot \left|10\right> \left<00\right| 
++ \sqrt{-1} \cdot \left|11\right>\left<10\right|`.     
+
+E.g. the coefficient in the third term of that sum 
+is computed as:
+
+.. math::
+    Q(1,0,1) = 
+    \textstyle{
+    (1, 0, 1)
+    \left( \begin{array}{ccc}
+       .  &     & \\
+       -  &  .  & \\
+       -  &  +  &  j
+    \end{array} \right)  
+    \left( \begin{array}{c}   
+       1 \\
+       0 \\
+       1
+    \end{array} \right) = (-1) \cdot \sqrt{-1} = -\sqrt{-1}} \; .
+       
+
+It turns out that up to a scalar factor all elements of the
+complex Clifford group  :math:`\mathcal{X}_{n}` and all 
+stabilizer states can be displayed in that way. So we can
+display any element of  :math:`\mathcal{X}_{n}` and any 
+stabilizer state of :math:`2n` qubits on one page for 
+:math:`n` up to about :math:`25`.
 
 Reducing a quadratic state matrix
 .................................

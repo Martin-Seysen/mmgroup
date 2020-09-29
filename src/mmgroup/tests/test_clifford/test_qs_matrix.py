@@ -14,6 +14,7 @@ from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
 from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
+from mmgroup.structures.qs_matrix import FORMAT_REDUCED
 
 #####################################################################
 # Convert matrix of type QStateMatrix to a complex matrix
@@ -287,6 +288,7 @@ def test_qs_matrix(verbose = 0):
     complex matrix and the echelonization and the reduction of 
     an instance of class ``QStateMatrix``.
     """
+    FORMAT_REDUCED = False
     display_len =  len(qs_matrix_data)
     for ntest, m in enumerate(create_display_testvectors()):
         if verbose or ntest < display_len:
@@ -305,11 +307,13 @@ def test_qs_matrix(verbose = 0):
         if verbose: 
             print("Reduced")
             print(m2)
+    FORMAT_REDUCED = True
 
  
 
 @pytest.mark.qstate
 def test_getitem(verbose = 0):
+    FORMAT_REDUCED = False
     for ntest, m in enumerate(create_display_testvectors()):
         if verbose:
             print("TEST %s" % (ntest+1))
@@ -350,6 +354,7 @@ def test_getitem(verbose = 0):
             print(s)
             print(c1)
         compare_complex(np.array(c1_ref), np.array(c1), s, m)  
+    FORMAT_REDUCED = True
 
  
 #####################################################################
@@ -425,6 +430,7 @@ def create_monomial_testvectors():
  
 @pytest.mark.qstate
 def test_monomial(verbose = 0):
+    FORMAT_REDUCED = False
     for ntest, data in enumerate(create_monomial_testvectors()):
         nqb = len(data) - 1
         m = qs_column_monomial_matrix(data)
@@ -459,6 +465,7 @@ def test_monomial(verbose = 0):
         m_r = qs_row_monomial_matrix(data)
         #print("m_r =", m_r, "m_c=", m ," m_T =", m.T)      
         assert m_r == m.T, (str(m_r), str(m.T))
+    FORMAT_REDUCED = True
 
 
 #####################################################################
@@ -467,6 +474,7 @@ def test_monomial(verbose = 0):
   
 @pytest.mark.qstate
 def test_qs_errors(verbose = 0):
+    FORMAT_REDUCED = False
     with pytest.raises(ValueError):
         QStateMatrix(10000, 10000) 
     with pytest.raises(ValueError):
@@ -479,3 +487,7 @@ def test_qs_errors(verbose = 0):
     m =  QStateMatrix(3, 3, [0, 0, 0xf], 2) 
     with pytest.raises(ValueError):
        m.power(-1) 
+    FORMAT_REDUCED = True
+
+
+

@@ -929,7 +929,7 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n - ncols`` qubits:
 //
-// ``qs'(x[n-1],...,x[j+nqb],x[j-1],x[0])`` =
+// ``qs'(x[n-1],...,x[j+nqb],x[j-1],...,x[0])`` =
 //    ``sum_{{x[j+nqb-1],...,x[j]}}  qs1(x[nn1-1],...,x[0])`` .
 // So we decrement ``pqs->ncols`` by ``nqb``.
 //
@@ -959,8 +959,8 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 // ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
 // following state ``qs'`` depending on ``n`` qubits:
 //
-// qs'(x[n-1],...,x[0]) is equal to qs(x[n-1],...,x[0]) if 
-// x[j] = ... = x[j+nqb-1] = 0 and equal to zero otherwise.
+// ``qs'(x[n-1],...,x[0])`` is equal to ``qs(x[n-1],...,x[0])`` if 
+// ``x[j] = ... = x[j+nqb-1] = 0`` and equal to zero otherwise.
 // We do not change the shape of ``qs``.
 // 
 // The output is reduced if the input is reduced.
