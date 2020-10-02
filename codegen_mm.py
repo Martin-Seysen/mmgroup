@@ -168,6 +168,7 @@ C_BASICS_SKELETONS = [
    "mm_random",
    "mm_tables",
    "mm_group_n",
+   "mm_group_word",
    "mm_tables_xi",
    "mm_crt",
 ]

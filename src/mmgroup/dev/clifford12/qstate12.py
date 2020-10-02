@@ -1173,7 +1173,7 @@ matrix matrix :math:`Q`. Then we put:
        \! \! \! 
        Q(x) \cdot \left| \oplus_{k=0}^m x_k \cdot a_k \right> \, ,
        \quad Q(x) = 
-        \prod_{i, j = 0}^m x_i x_j q_{i,j} \, .
+        \prod_{i, j = 0}^m  q_{i,j}^{x_i \cdot x_j} \, .
 
 We use the same notation if the values :math:`a_i` are
 *kets* or matrices witten in the form ``|ket><bra|``.

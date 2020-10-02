@@ -307,7 +307,7 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
 mm_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_basics", 
     sources=[ os.path.join(C_DIR, f) for f in 
-        [ "mm_aux.c", "mm_group_n.c", "mm_random.c", # "mm_sparse.c",
+        [ "mm_aux.c", "mm_group_n.c", "mm_random.c", "mm_group_word.c",
           "mm_tables.c","mm_tables_xi.c", "mm_crt.c",
         ]
     ],    

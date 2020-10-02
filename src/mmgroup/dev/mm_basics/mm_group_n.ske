@@ -296,6 +296,9 @@ uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
     tag = (atom >> 28) & 0xf;
     op = atom & 0xfffffff;
     switch(tag) {
+        case 8:
+        case 0:
+           return 0;
         case 8 + 1:
         case 1:
            mm_group_n_mul_delta_pi(g, op & 0xfff, 0);
