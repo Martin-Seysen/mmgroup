@@ -243,7 +243,9 @@ class TableGenerator(object):
         if len(self.block_stack):
             raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "EXPORT")
         self.export_pending = True
-        self.pxd_export_pending = len(args) and 'p' in args
+        self.pxd_export_pending =  'p' in args
+        if self.pxd_export_pending and 'x' in args:
+            self.pyx("<wrap pxi>")
         return self.export_kwd, self.export_kwd
 
     def set_export(self, args, *_):

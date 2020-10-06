@@ -197,13 +197,25 @@ general_presteps = CustomBuildStep("Starting code generation",
 if on_readthedocs:
     shared_libs_stage1 = shared_libs_stage2 = []
 elif os.name in ["nt"]:
-    shared_libs_stage1 = ["libmmgroup_mat24", "libmmgroup_clifford12"]
+    shared_libs_before_stage1 = [
+        "libmmgroup_mat24", 
+    ]
+    shared_libs_stage1 = shared_libs_before_stage1 + [
+        "libmmgroup_clifford12",
+    ]
     shared_libs_stage2 = shared_libs_stage1 + [
-                "libmmgroup_mm_basics"]
+        "libmmgroup_mm_basics",
+   ]
 elif os.name in ["posix"]:
-    shared_libs_stage1 = ["mmgroup_mat24", "mmgroup_clifford12"]
+    shared_libs_before_stage1 = [
+        "mmgroup_mat24", 
+    ]
+    shared_libs_stage1 = shared_libs_before_stage1 + [
+        "mmgroup_clifford12",
+    ]
     shared_libs_stage2 = shared_libs_stage1 + [
-                "mmgroup_mm_basics"]
+        "mmgroup_mm_basics",
+    ]
 else:
     raise DistutilsPlatformError(
         "I don't know how to build to the shared libraries "
@@ -241,10 +253,11 @@ clifford12_shared = SharedExtension(
     sources = [
         os.path.join(C_DIR, "qstate12.c"),
         os.path.join(C_DIR, "qmatrix12.c"),
+        os.path.join(C_DIR, "xsp2co1.c"),
     ],
-    libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
+    libraries = shared_libs_before_stage1, 
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
     define_macros = [ ("CLIFFORD12_DLL_EXPORTS", None)],

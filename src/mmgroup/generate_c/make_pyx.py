@@ -54,8 +54,18 @@ def _parse_pxd_line(l):
          return (type, function, args) 
 
 
+m_pxd_enable = re.compile("\s*#\s+PYX(.+)")
 
-def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = False): 
+def _parse_pxd_enable(l):
+    m = m_pxd_enable.match(l) 
+    if m:
+        return True
+    else:
+        return False
+
+
+
+def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil = False): 
     """Extract Cython wrappers from prototypes in a .pxd file
 
     A .pxd file contains prototypes of external C functions and it
@@ -111,10 +121,10 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
     The ``<return_type>`` may be void, but not be a pointer. Other 
     types  are not allowed.
 
-    Parameter ``doc`` specifies the documentation to be entered
-    into each function. Default means no documentation. 
-
-    Caution: this is not yet implemented, use default!
+    If parameter ``select`` is True then we convert a function only
+    if a line containing the string "``# PYX``" (possibly with
+    leading blanks) precedes the declaration of a function.
+    By default, ``select`` is False. 
 
     If ``nogil`` is True, a C function is called with as follows::
 
@@ -135,10 +145,13 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
     s = "cimport %s\n\n" % module
     if nogil:
         s += "cimport cython\n"
+    enable = not select
     with open(pxd_file, "rt") as input_file:
         for l in input_file:
             data = _parse_pxd_line(l)
-            if not data:
+            if not data or not enable:
+                if select:
+                     enable = _parse_pxd_enable(l)
                 continue
             return_type, function, args = data
             t_function = translate(function) if translate else function
@@ -149,8 +162,7 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
             s += "def {f}({args}):\n".format( 
               f = t_function, args = ", ".join([a[2] for a in args]))
             c_args = []
-            if doc:
-                raise NotImplementedError("documentation not yet implemented")
+ 
             has_returnvalue = return_type != "void"
             for argtype, is_ptr, name in args:
                 memview = "[::1]"  if is_ptr else ""
@@ -172,6 +184,7 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, doc = None, nogil = Fa
                 ) 
             if has_returnvalue:
                 s += "    return ret_\n"
+            enable = not select
     return s
 
 

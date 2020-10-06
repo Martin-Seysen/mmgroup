@@ -1,0 +1,262 @@
+// %%COMMENT
+// For this module we refer to the section
+// 'Computation in the Clifford group' in the guide, see
+// https://mmgroup.readthedocs.io/en/latest/
+
+
+
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+#include <string.h>
+#include "mat24_functions.h"
+
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+/*************************************************************************
+*** Leech lattice mod 3
+*************************************************************************/
+
+
+// %%EXPORT px
+uint64_t xp2co1_short_2to3(uint64_t x)
+{
+    uint_fast32_t  gcodev, cocodev, theta, w;
+    // Put gcodev = codeword (in vector rep)
+    gcodev = mat24_gcode_to_vect((uint32_t)x >> 12); 
+    theta = MAT24_THETA_TABLE[((uint32_t)x >> 12) & 0x7ff]; 
+    // Put w = weight(code word gcodev) / 4
+    w = 0 - ((x >> 23) & 1);
+    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+
+    if (x & 0x800) {  // case odd cocode
+        uint_fast32_t scalar; 
+        // Put cocodev = cocode word (in vector rep)
+        cocodev = mat24_cocode_syndrome((uint32_t)x ^ theta, 0);    
+        if (cocodev & (cocodev - 1)) return 0;
+        // Put scalar = scalar product (code, cocode)
+        scalar = (x >> 12) &  x & 0xfff;
+        scalar ^= scalar >> 6;
+        scalar ^= scalar >> 3;
+        scalar = (0x96 >> (scalar & 7));
+        if ((scalar ^ w) & 1) return 0;
+        return (gcodev ^ ((gcodev ^ 0xffffff) << 24))
+               & ~(cocodev | (cocodev << 24));
+    } else { 
+        uint_fast32_t  c_w;
+        uint8_t c_list[4];
+        // Put x[11...0] = cocode word (in cocode rep)
+        x ^= theta; 
+        switch (w) {
+            case 4:
+                gcodev ^= 0xffffff;
+            case 2:
+                // Put cocodev = cocode word (in vector rep)
+                cocodev = mat24_cocode_syndrome((uint32_t)x, 
+                    mat24_lsbit24(gcodev));
+                // Put c_w = min weight of cocode word
+                c_w = mat24_bw24(cocodev);
+                if ( (cocodev & gcodev) != cocodev
+                    ||  (c_w ^ 2 ^ w) & 3 ) return 0;
+                return (gcodev & ~cocodev) | (cocodev << 24);
+            case 3:
+                return 0;
+            default:  // can be case 0 or 6 only
+                // Put c_w = min weight of cocode word
+                // and store cocode bits in c_list.
+                c_w = mat24_cocode_to_bit_list((uint32_t)x, 0, c_list);
+                if (c_w != 2) return 0;
+                return (1 <<  c_list[0]) + (1 <<  (c_list[1] + 24 - 4 * w));
+        }
+    } 
+}
+
+
+
+static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
+{
+    uint64_t zero, res;
+    
+    // Compute set all bits i in zero where x1[i] * x2[i] != 0
+    zero = ((x1 ^ (x1 >> 24)) | (x2 ^ (x2 >> 24))) & 0xffffffUL;
+    // Store products of entries of x1 and x2 in res
+    res = (x1 ^ x2) & 0xffffff000000ULL;
+    res = (res & (zero << 24)) | (zero & ~(res >> 24));
+    // Sum up entries of res, counting the high 24 bit twice
+    res = (res & 0x555555555555ULL) + ((res >> 1) & 0x555555555555ULL);
+    res = (res & 0x333333333333ULL) + ((res >> 2) & 0x333333333333ULL);
+    res = (res & 0xffffffULL) + ((res >> 23) & 0x1fffffeULL);
+    res = (res & 0x0f0f0fULL) + ((res >> 4) & 0x0f0f0fULL);
+    res += ((res >> 16) + (res >> 8) + res) & 0xff;
+    // Reduce res modulo 3; we have 0 <= res <= 48
+    res = (res & 7) + (res >> 3) + 1; // res <= 15; res is one too big
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 6
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 3
+    return (uint32_t)res - 1;
+}
+
+
+static inline uint64_t short_3_reduce(uint64_t x)
+{
+    uint64_t a = (x & (x >> 24)) & 0xffffffUL;
+    x ^=  a | (a << 24);
+    return x  & 0xffffffffffffULL;
+}
+
+
+// %%EXPORT px
+uint64_t xp2co1_short_3to2(uint64_t x)
+{
+    uint_fast32_t  gcodev, cocodev, theta, w1, w2;
+    x = short_3_reduce(x);
+    w1 = mat24_bw24((uint32_t)x); 
+    w2 = mat24_bw24((uint32_t)(x >> 24));
+    switch (w1 + w2) {
+        case 23:
+            cocodev = ~(uint32_t)(x |  (x >> 24)) & 0xfffffffUL;
+            if (cocodev == 0 || (cocodev & (cocodev - 1))) return 0; 
+            gcodev = ((uint32_t)x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
+            if ((w1 + 1) & 4)  gcodev ^= 0xffffffUL;
+            break;              
+        case 8:
+            if (w1 & 1) return 0;
+            gcodev = (x |  (x >> 24)) & 0xffffffUL;
+            cocodev = x & 0xfffffff;
+            if (w1 & 2) gcodev ^= 0xffffffUL;
+            break;
+        case 2:
+            cocodev = (x |  (x >> 24)) & 0xffffffUL;
+            gcodev = (w1 & 1) ? 0xfffffffULL : 0;
+            break;
+        default:
+            return 0;        
+    }
+    gcodev = mat24_gcode_to_vect(gcodev);
+    if (gcodev & 0xff000000UL) return 0;
+    theta = MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    return (gcodev << 12) ^ theta ^ cocodev;
+}
+
+
+
+
+
+// %%EXPORT px
+uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
+{
+    uint64_t support1, support2, mask;
+    uint_fast32_t c1, c2;
+    x1 = short_3_reduce(x1);
+    x2 = short_3_reduce(x2);
+    // Compute the support of x1 in variable support1
+    support1 = (uint32_t)(x1 & (x1 >> 24) & 0xffffffUL);
+    // Compute the support of x2 in variable support1
+    support2 = x2 & (x2 >> 24) & 0xffffffUL;
+    if (support1 & ~support2) {
+        // Find a bit c1 in (support1 & ~support2) and a bit c2 in
+        // support2 and return a vector with support at bit positions
+        // at c1 and c2, and entries taken from vector x1.
+        // Fail if x2 ==  0
+        c1 = mat24_lsbit24((uint32_t)(support1 & ~support2));
+        c2 = mat24_lsbit24((uint32_t)support2);
+        if (c2 >= 24) return 0;
+        mask = (ONE << c1) ^ (ONE << c2);
+        return x1 & (mask | (mask << 24));
+    }
+    if (support2 & ~support1) {
+        // Similar to previous case, exchanging the roles of x1 and x2.
+        c2 = mat24_lsbit24((uint32_t)(support2 & ~support1));
+        c1 = mat24_lsbit24((uint32_t)support1);
+        if (c1 >= 24) return 0;
+        mask = (ONE << c1) ^ (ONE << c2);
+        return x2 & (mask | (mask << 24));
+    }
+    if (support2 & support2) {
+        // If (~support1 & ~support2) is not empty then take an entry
+        // with one nonzero value at a position in (support2 & support2)
+        // and one nonzero value at a position in (~support2 & ~support2).
+        c1 = mat24_lsbit24((uint32_t)(support1 & support2));
+        c2 = mat24_lsbit24((uint32_t)(~support1 & ~support2));
+        if (c2 < 24) return (ONE << c1) ^ (ONE << c2);
+        // Here the support of both, x1 and x2, comprises all 24 bits.
+        // Find two bit positions c1 and c2, where both, x1 and x2, have 
+        // equal values. Return a vector with support at bit positions
+        // at c1 and c2, and entries taken from vector x1.
+        mask = (x1 ^ x2) & 0xffffffUL;
+        if ((mask & (mask-1)) == 0) mask ^= 0xfffffffUL;
+        c1 = mat24_lsbit24((uint32_t)mask);
+        mask &= ONE << c1;
+        c2 = mat24_lsbit24((uint32_t)mask); 
+        mask = (ONE << c1) ^ (ONE << c2);       
+        return x1 & (mask | (mask << 24));
+    }
+    return 0;
+}
+
+
+// %%EXPORT p
+int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc, uint64_t *pdest)
+{
+    qstate12_type qs;
+    uint64_t qs_data[26], dest0, prod, src_prod;
+    int_fast32_t res, ok;
+    uint_fast32_t i;
+
+    if bad_state(pqs) return ERR_QSTATE12_INCONSISTENT;
+    if (pqs->ncols != 24 || pqs->shape1 != 12) 
+         return ERR_QSTATE12_SHAPE_OP;
+    
+    // Create temporary copy of *pqs
+    res = qstate12_copy_alloc(pqs, &qs, qs_data, 
+         sizeof(qs_data)/sizeof(uint64_t));
+    if (res < 0) return res;
+    if (length <= 0) return 0;
+    dest0 = short_3_reduce(pdest[0]);
+    for (i = 0; i < length; ++i) pdest[i] = xp2co1_short_3to2(pdest[i]);
+    res = qstate12_pauli_conjugate(&qs, length, pdest);
+    if (res < 0) return res;
+    for (i = 0; i < length; ++i) pdest[i] = xp2co1_short_2to3(pdest[i]);
+    ok = (pdest[0] ==  dest0) || 
+        (short_3_reduce(pdest[0] ^ 0xffffffffffff) == dest0);
+    pdest[0] = ok ? dest0 : 0;
+    for (i = 1; i < length;  ++i) {
+        src_prod = short_3_scalprod(psrc[i-1], psrc[i]);
+        prod =  short_3_scalprod(pdest[i-1], pdest[i]);
+        if (prod != src_prod) pdest[i] = 
+            short_3_reduce(pdest[i] ^ 0xffffffffffff);
+        if (prod == 0 || src_prod == 0) pdest[i] = 0;
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

@@ -71,7 +71,9 @@ VERBOSE = 0
 
 SKE_DIR = os.path.join(DEV_DIR, "clifford12")
 
-SKE_FILES = ["qstate12", "qmatrix12"]
+SIMPLE_SKE_FILES = ["qstate12", "qmatrix12"]
+PXI_SKE_FILES = ["xsp2co1"]
+SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
 
 
 ##########################################################################
@@ -291,15 +293,16 @@ def generate_files():
     c_files,  pxd_files =  make_clifford12() 
     f_pxi = open(os.path.join(PXD_DIR, PXI_FILE_NAME), "wt")
     print(PXD_DECLARATIONS, file = f_pxi)
-    """
+    
     for pxd_f in pxd_files:
         pxi_comment("Wrappers for C functions from file %s" % pxd_f, f_pxi)
         pxi_content = pxd_to_pyx(
             os.path.join(PXD_DIR, pxd_f),
-            os.path.split(pxd_f)[0]
+            os.path.split(pxd_f)[0],
+            select = True
         )
         print(pxi_content, file = f_pxi)
-    """
+     
     f_pxi.close()
     return c_files
 
