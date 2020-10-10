@@ -828,9 +828,10 @@ def qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e):
 ####################################################################
 
 def xp2co1_elem_to_qs(e1):
-    cdef uint64_t e[25]
+    assert len(e1) >= 26 
+    cdef uint64_t e[26]
     cdef uint32_t i
-    for i in range(25): e[i] = e1[i]
+    for i in range(26): e[i] = e1[i]
     result = QState12(12, 12)
     cdef qstate12_type qs0
     cdef p_qstate12_type pqs = pqs12(result)
