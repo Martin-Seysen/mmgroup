@@ -120,6 +120,8 @@ static inline uint64_t short_3_reduce(uint64_t x)
 }
 
 
+
+
 // %%EXPORT px
 uint64_t xp2co1_short_3to2(uint64_t x)
 {
@@ -211,11 +213,45 @@ uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
 }
 
 
+
+static inline
+int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
+{
+    int_fast32_t res;
+    res =  qstate12_gate_not(pqs, 0x800800);
+    if (res < 0) return res;
+    res =  qstate12_gate_h(pqs, 0x800800);
+    return res;
+}
+
+
+#define SHIFT_MASKED(a, aux, mask, sh) \
+    aux = (a ^ (a >> sh)) & mask; \
+    a ^=  aux ^  (aux << sh);
+
+static inline
+uint64_t xp2co1_to_vect_mod3(uint64_t x)
+{
+    uint64_t y;
+    x = short_3_reduce(x);
+    x = (x & 0xffffffULL) + ((x & 0xffffff000000ULL) << 8);
+    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
+    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
+    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
+    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
+    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
+    x = (x & 0xffffffULL) + ((x >> 8) & 0xffffff000000ULL);
+    return x;
+}
+
+
+#define MAXROWS_ELEM 30
+
 // %%EXPORT p
 int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc, uint64_t *pdest)
 {
     qstate12_type qs;
-    uint64_t qs_data[26], dest0, prod, src_prod;
+    uint64_t qs_data[MAXROWS_ELEM], dest0, prod, src_prod;
     int_fast32_t res, ok;
     uint_fast32_t i;
 
@@ -224,9 +260,10 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
          return ERR_QSTATE12_SHAPE_OP;
     
     // Create temporary copy of *pqs
-    res = qstate12_copy_alloc(pqs, &qs, qs_data, 
-         sizeof(qs_data)/sizeof(uint64_t));
+    res = qstate12_copy_alloc(pqs, &qs, qs_data, MAXROWS_ELEM);
     if (res < 0) return res;
+    res = xp2co1_basis_to_conjugate(pqs);
+    if (res < 0) return res;    
     if (length <= 0) return 0;
     dest0 = short_3_reduce(pdest[0]);
     for (i = 0; i < length; ++i) pdest[i] = xp2co1_short_3to2(pdest[i]);
@@ -247,9 +284,239 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
 }
 
 
+// %%EXPORT p
+int32_t xp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
+{
+    int32_t res;
+    res = qstate12_set_mem(pqs, e + 1, 25); 
+    if (res < 0) return res;
+    pqs->maxrows = pqs->nrows = 25;
+    pqs->ncols = 24;
+    pqs->shape1 = 12;
+    pqs->factor = -12 * 16;
+    while (pqs->nrows > 1 && pqs->data[pqs->nrows - 1] == 0) {
+        --pqs->nrows;
+        pqs->factor += 16;
+    }
+    return qstate12_check(pqs);
+}
+
+// %%EXPORT p
+int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
+{
+    int32_t res;
+    uint_fast32_t i;
+    res = qstate12_reduce(pqs); 
+    if (res < 0) return res;
+    if (pqs->nrows > 25) return -5;
+    res = qstate12_check(pqs);
+    if (res < 0) return res;
+    for (i = 0; i < pqs->nrows; ++i) e[i+1] =  pqs->data[i];
+    for (i = pqs->nrows; i < 25; ++i) e[i+1] = 0;
+    if (pqs->factor & 4) x1 ^= 0xffffffffffffULL;
+    e[0] = short_3_reduce(x1);  
+    return 0;    
+}
 
 
 
+#define STD_V3  0x8000004ULL
+
+
+// %%EXPORT px
+void xp2co1_unit_elem(uint64_t *e)
+{
+    uint_fast32_t i;
+    uint64_t mask = 0x800000800000ULL;
+    e[0] = STD_V3;
+    e[1] = 0;
+    for (i = 2; i < 14; ++i) {
+        e[i] = mask;
+        mask >>= 1;
+    }
+    for (i = 14; i < 26; ++i) e[i] = 0;
+}
+
+
+// %%EXPORT px
+void xp2co1_neg_elem(uint64_t *e)
+{
+    e[0] = short_3_reduce(e[0] ^ 0xffffffffffffULL);
+}
+
+
+
+// %%EXPORT px
+void xp2co1_copy_elem(uint64_t *e1, uint64_t *e2)
+{
+    uint_fast32_t i;
+    for (i = 0; i < 26; ++i) e2[i] = e1[i];
+}
+
+
+// %%EXPORT px
+int32_t xp2co1_reduce_elem(uint64_t *e1)
+{
+    int32_t res;
+    qstate12_type qs;
+    res = xp2co1_elem_to_qs(e1, &qs);
+    if (res < 0) return res;
+    short_3_reduce(e1[0]);
+    res = qstate12_reduce(&qs); 
+    if (res < 0) return res;
+    if (qs.nrows > 25) return -5;
+    res = qstate12_check(&qs);
+    return res;
+}
+
+// %%EXPORT px
+int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
+{
+    int32_t res;
+    qstate12_type qs1, qs2, qs3;
+    uint64_t data3[MAXROWS_ELEM], asrc[3], adest[3];
+    res = xp2co1_elem_to_qs(e1, &qs1);
+    if (res < 0) return res;
+    res = xp2co1_elem_to_qs(e2, &qs2);
+    if (res < 0) return res;
+    res = qstate12_set_mem(&qs3, data3, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_matmul(&qs2, &qs1, &qs3);
+    if (res < 0) return res;
+
+    asrc[0] = STD_V3;
+    adest[0] = e2[0];
+    asrc[2] = e1[0];
+    asrc[1] = xp2co1_find_chain_short_3(asrc[0], asrc[2]);
+    res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
+    if (res < 0) return res;
+    if (adest[2] == 0) return -12;
+    res = xp2co1_qs_to_elem(&qs3, adest[2], e3);
+    return res;
+}
+
+
+// %%EXPORT px
+int32_t xp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
+{
+    int32_t res;
+    qstate12_type qs1, qs2;
+    uint64_t data2[MAXROWS_ELEM], asrc[3], adest[3];
+    res = xp2co1_elem_to_qs(e1, &qs1);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_mat_inv(&qs2);
+    if (res < 0) return res;
+
+    asrc[0] = e1[0];
+    adest[0] = STD_V3;
+    asrc[2] = STD_V3;
+    asrc[1] = xp2co1_find_chain_short_3(asrc[0], asrc[2]);
+    res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
+    if (res < 0) return res;
+    if (adest[2] == 0) return -12;
+    res = xp2co1_qs_to_elem(&qs2, adest[2], e2);
+    return res;
+}
+
+
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
+{
+    int32_t res, sign;
+    qstate12_type qs1, qs2;
+    uint64_t data2[MAXROWS_ELEM], x;
+ 
+    uint64_t n_iterations, i;
+    uint64_t assoc; 
+    uint64_t *m, x_data[2];
+    uint64_t qf = 0;
+    uint64_t ncols, mask; 
+
+    res = xp2co1_elem_to_qs(e1, &qs1);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_gate_not(&qs2, column & 0xfff);
+    if (res < 0) return res;
+    res = qstate12_restrict(&qs2, 0, 12);
+    if (res < 0) return res;
+    res = qstate12_reduce(&qs2);
+    if (res < 0) return res;
+    sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
+    x = e1[0];
+    if (sign) x ^= 0xffffffffffffULL;
+    x = short_3_reduce(x);
+    x_data[0] = xp2co1_to_vect_mod3(x);
+    x_data[1] = xp2co1_to_vect_mod3(x ^  0xffffffffffffULL);
+
+    n_iterations = ONE << (qs2.nrows - 1);
+    m = qs2.data;
+    assoc = m[0]; 
+    ncols = qs2.ncols; 
+    mask = (ONE << ncols) - 1;
+    for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
+
+    for (i = 1; i <= n_iterations; ++i) {
+        uint64_t i1, d, d1, index;
+        index = assoc & mask;
+        v[index] += x_data[qf & 1];
+        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
+        while (d1 == 6) {
+            i1 >>= 6;
+            d1 = qstate12_lsbtab[i1 & 63];
+            d += d1;
+        } 
+        qf += assoc >> (ncols + d + 1);
+        assoc ^= m[d+1];
+    } 
+    return 0;
+    
+
+    
+}
+
+
+static 
+int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
+{
+    int32_t res;
+    uint_fast32_t i, parity;
+    uint64_t data[MAXROWS_ELEM], x;
+    qstate12_type qs;
+    
+    data[0] = 0;
+    for (i = 0; i < 12; ++i) data[i+1] = aut[i];
+    parity =  aut[11] & 0x1000;
+    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_monomial_column_matrix(&qs, 12, data);
+    if (res < 0) return res;
+    if (parity) {
+        res =  qstate12_gate_not(&qs, 0x800800);
+        if (res < 0) return res;
+    }
+    
+    x = (ONE << perm[2]) + (ONE << (perm[3] + 24));
+    return xp2co1_qs_to_elem(&qs, x, e1);
+}
+
+
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
+{
+    uint8_t perm[24];
+    uint32_t aut[12];
+    
+    mat24_m24num_to_perm(pi, perm);
+    mat24_perm_to_autpl(delta, perm, aut);
+    return elem_delta_pi_aut(e1, perm, aut);
+}
 
 
 // %%GEN ch

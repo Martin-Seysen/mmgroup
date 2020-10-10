@@ -446,7 +446,7 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
 
 
 // %%EXPORT p
-int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
+int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, qstate12_type *pqs3)
 // Performs a matrix multiplication.
 // Given a state ``qs_i`` with ``qs_i->ncols = m_i + n_i`` we may
 // interpret ``qs_i`` as an ``2**m_i`` times ``2**n_i`` matrix, 
@@ -459,7 +459,9 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
 //
 // The function computes the matrix product ``m3 = m1 @ m2`` as 
 // an  ``2**m_1`` times ``2**n_2`` matrix and stores matrix 
-// ``m3`` in ``qs_1``.  ``qs_2`` is not changed.
+// ``m3`` in ``*pqs3``.  Inputs ``qs_1`` and ``qs_1``  are 
+// not changed. Any overlap between ``pqs1, pqs2, pqs3`` is
+// allowed.
 {
     int32_t res;
     uint32_t nqb = pqs1->shape1, cols = pqs2->shape1; 
@@ -480,7 +482,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2)
     res = qstate12_product(&qs1, &qs2, nqb, nqb);
     if (res < 0) return res;
     qs1.shape1 = cols;    
-    return qstate12_copy(&qs1, pqs1);
+    return qstate12_copy(&qs1, pqs3);
 }
 
 

@@ -53,7 +53,7 @@ def error_string(code):
         err = "Internal error %d in processing QState12 instance"
         return err % code
 
-cdef int32_t chk_qstate12(int32_t code) except -1:
+cpdef int32_t chk_qstate12(int32_t code) except -1:
     """Check the return code of a function in module qstate12.c
     
     The function raises ValueError with a suitable error message if
@@ -463,7 +463,7 @@ cdef class QState12(object):
         cdef p_qstate12_type pqs2
         if isinstance(other, QState12):
             pqs2 = pqs12(other)
-            res = cl.qstate12_matmul(&self.qs, pqs2)
+            res = cl.qstate12_matmul(&self.qs, pqs2, &self.qs)
             if res >= 0:
                 return self
             err = "Multiplying QStateMatrix objects of shape %s and %s"
@@ -821,3 +821,36 @@ def qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e):
     if nqb > 31:
         raise ValueError("Bad Pauli group vector")
     return int(cl.qstate12_pauli_vector_exp(nqb, v, e))
+
+
+####################################################################
+# Support for the subgroup 2^{1+24}.Co_1 of the monster  
+####################################################################
+
+def xp2co1_elem_to_qs(e1):
+    cdef uint64_t e[25]
+    cdef uint32_t i
+    for i in range(25): e[i] = e1[i]
+    result = QState12(12, 12)
+    cdef qstate12_type qs0
+    cdef p_qstate12_type pqs = pqs12(result)
+    chk_qstate12(cl.xp2co1_elem_to_qs(e, &qs0))
+    chk_qstate12(cl.qstate12_copy(&qs0, pqs))
+    return result
+
+def xp2co1_qs_to_elem(QState12 qstate, uint64_t x1):
+    cdef p_qstate12_type pqs = pqs12(qstate)
+    result = np.zeros(26, dtype = np.uint64)
+    cdef uint64_t[:] result_view = result
+    chk_qstate12(cl.xp2co1_qs_to_elem(pqs, x1, &result_view[0]))
+    return result
+
+def xp2co1_chain_short_3(QState12 qstate, src, dest):
+    cdef uint64_t[:] src_view = src
+    cdef uint64_t[:] dest_view = dest
+    cdef p_qstate12_type pqs = pqs12(qstate)
+    cdef uint32_t length = len(src)
+    assert len(dest) >= length
+    if length > 0:
+        chk_qstate12(cl.xp2co1_chain_short_3(pqs, length, &src_view[0], 
+            &dest_view[0]))

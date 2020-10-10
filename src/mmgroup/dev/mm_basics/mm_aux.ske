@@ -1111,7 +1111,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 
 
 // %%EXPORT p
-int32_t mm_aux_index_sparse_to_leech2(uint32_t i)
+uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
 // Convert sparse index i to a short vector v in the Leech lattice
 // modulo 2 in "Leech lattice coding"
 // Return 0 if index i is bad or does not map to a short vector

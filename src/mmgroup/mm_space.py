@@ -203,6 +203,7 @@ from mmgroup.mm import mm_aux_get_mmv1
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_sparse_to_leech
+from mmgroup.mm import mm_aux_index_sparse_to_leech2
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 standard_seed = mm_rng_make_seed()
@@ -873,8 +874,37 @@ class MMSpace(AbstractMmRepSpace):
     #######################################################################
 
 
-    @classmethod
-    def index_to_short(cls, tag, i0 = -1, i1 = -1):
+    @staticmethod
+    def index_to_sparse_short(tag, i0 = -1, i1 = -1):
+        r"""Auxiliary method for index_to_short
+
+        Convert a tagged tuple ``(tag, i0, i1)`` to a sparse 
+        index. That tuple must refer to an index describing a
+        short Leech lattice vector.
+        See method ``index_to_short`` for details. 
+        """
+        i = 0x0
+        if isinstance(tag, Integral) and 300 <= tag < 98580:
+            i = mm_aux_index_extern_to_sparse(tag)
+        elif isinstance(tag, str) and len(tag) == 1:
+            t = TAGS.find(tag)
+            if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
+                i = (t << 25) + (i0 << 14) + (i1 << 8) 
+            elif  tag == "E" and 300 <= i0 < 98580:
+                i = mm_aux_index_extern_to_sparse(i0)
+            elif tag == "D" and 0 <= i0 < 24:
+                i = (1 << 25) + (i0 << 14) + (i0 << 8) 
+        elif isinstance(tag, MMSpaceVector):
+            sp = tag.as_sparse()
+            if len(sp) == 1:
+                i = sp[0]
+        else:    
+            err = "Cannot convert object to short Leech lattice vector"
+            raise TypeError(err)
+        return i
+
+    @staticmethod
+    def index_to_short(tag, i0 = -1, i1 = -1):
         r"""Convert index to a short Leech lattice vector
 
         If ``tag`` is an integer, this is interpreted a linear index 
@@ -898,27 +928,31 @@ class MMSpace(AbstractMmRepSpace):
         referring to the same basis vector return the same short
         vector.   
         """
-        i = 0x0
+        i = MMSpace.index_to_sparse_short(tag, i0, i1)
         v = np.zeros(24, dtype = np.int32)
-        if isinstance(tag, Integral) and 300 <= tag < 98580:
-            i = mm_aux_index_extern_to_sparse(tag)
-        elif isinstance(tag, str) and len(tag) == 1:
-            t = TAGS.find(tag)
-            if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
-                i = (t << 25) + (i0 << 14) + (i1 << 8) 
-            elif  tag == "E" and 300 <= i0 < 98580:
-                i = mm_aux_index_extern_to_sparse(i0)
-            elif tag == "D" and 0 <= i0 < 24:
-                i = (1 << 25) + (i0 << 14) + (i0 << 8) 
-        elif isinstance(tag, MMSpaceVector):
-            sp = tag.as_sparse()
-            if len(sp) == 1:
-                i = sp[0]
-        else:    
-            err = "Cannot convert object to short Leech lattice vector"
-            raise TypeError(err)
         if mm_aux_index_sparse_to_leech(i, v) == 0:
             return v          
         err = "Vector does not map to short Leech lattice vector"
         raise ValueError(err)
+
+    @staticmethod
+    def index_to_short_mod2(tag, i0 = -1, i1 = -1):
+        r"""Convert index to a short Leech lattice vector modulo 2
+
+        The tuple ``(tag, i0, i1)`` is interpreted as a basis vector
+        as in method ``index_to_short``.
  
+        Some but not all of these basis vectors correspond to short
+        vector in the Leech lattice up to sign. If this is the
+        case then the function returns a short vector of the Leech
+        lattice modulo 2 as an integer. 
+
+        The function raises ValueError if the basis vector in 
+        :math:`\rho_p` does not correspond to a short vector.
+        """
+        i = MMSpace.index_to_sparse_short(tag, i0, i1)
+        i2 = mm_aux_index_sparse_to_leech2(i)
+        if i2 != 0:
+            return i2          
+        err = "Vector does not map to short Leech lattice vector"
+        raise ValueError(err)

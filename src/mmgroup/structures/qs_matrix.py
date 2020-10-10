@@ -214,7 +214,9 @@ class QStateMatrix(QState12):
         is ``-1`` then the other value is calculated from the sum 
         ``self.shape[0] + self.shape[1]``. 
         """  
-        return super(QStateMatrix, self).reshape(new_shape, copy)  
+        c = self.copy() if copy else self
+        super(QStateMatrix, c).reshape(*new_shape)  
+        return c
 
     #########################################################################
     # Permuting the qubits of the state matrix
