@@ -19,7 +19,7 @@ from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem
 from mmgroup.clifford12 import xp2co1_chain_short_3 
 from mmgroup.clifford12 import xp2co1_neg_elem
 from mmgroup.clifford12 import error_string, chk_qstate12
-from mmgroup.clifford12 import xp2co1_elem_delta_pi
+from mmgroup.clifford12 import xp2co1_unit_elem, xp2co1_elem_delta_pi
 from mmgroup.clifford12 import xp2co1_mul_elem
 from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
@@ -63,20 +63,21 @@ class Xs12_Co1_Word(AbstractGroupWord):
     MIN_LEN = 16
     __slots__ =  "_data" 
     def __init__(self, atoms = [], **kwds):
+        print("Xs12_Co1_Word()", [hex(x) for x in atoms])
         self.group = kwds['group']
-        self._data = np.zeros(16, dtype = np.uint64) 
-        atom_list = gen_atom(tag, number)
-        if len(atom_list) ==  0:
+        self._data = np.zeros(26, dtype = np.uint64) 
+        if len(atoms) ==  0:
             xp2co1_unit_elem(self._data)
+            return
         elem = self._data
         while len(atoms):
-            tag = atom_list[0] >> 28 
+            tag = atoms[0] >> 28 
             if tag == 1:
-                if len(atoms > 1) and  atom_list[1] >> 28  == 2:    
-                    xp2co1_elem_delta_pi(elem, atom_list[0] & 0xfff,
-                        atom_list[1] & 0xfffffff)  
-                    atom = atoms[2:]
-                else:                        
+                if len(atoms) > 1 and  atoms[1] >> 28  == 2:    
+                    xp2co1_elem_delta_pi(elem, atoms[0] & 0xfff,
+                        atoms[1] & 0xfffffff)  
+                    atoms = atoms[2:]
+                else:  
                     xp2co1_elem_delta_pi(elem, atoms[0] & 0xfff, 0)
                     atoms = atoms[1:]
             elif tag == 2:           
@@ -84,14 +85,23 @@ class Xs12_Co1_Word(AbstractGroupWord):
                 atoms = atoms[1:]                
             else:
                 raise ValueError("WTF") 
-            if elem != _self.data:
+            if not elem is self._data:
                 xp2co1_mul_elem(self._data, elem, self._data) 
-            else:
-                elem = np.zeors(26, dtype = np.uint64)   
+            elif len(atoms):
+                elem = np.zeros(26, dtype = np.uint64)   
                 
     @property
     def data(self):
-        return list(map(int(self._data)))
+        return list(map(int, self._data))
+
+    @property
+    def short3(self):
+        return int(self._data[0])
+
+    @property
+    def qs(self):
+        return xp2co1_elem_to_qs(self._data)
+
         
     def order(self, max_order = 119):
         """Return the order of the element of the monster group
@@ -217,6 +227,9 @@ class Xs12_Co1_Group(AbstractGroup):
         return self.word_type(gen_atom(tag, i), group = self)
 
     def _imul(self, g1, g2):
+        print("Xs12_Co1_Group imul")
+        print(g1)
+        print(g2)
         chk_qstate12(xp2co1_mul_elem(g1._data, g2._data, g1._data))
         return self
 
@@ -261,11 +274,24 @@ Xs12_Co1 = Xs12_Co1_Group()
 
 
 _dict_pm3 = {0: '0', 1:'+', 0x1000000:'-', 0x1000001:'0'}
-def str_xs12_co1(data):
-    x = int(data[0])
+def str_leech3(x):
+    x = int(x)
     lst = [_dict_pm3[(x >> i) & 0x1000001] for i in range(24)]
-    s = "(" + "".join(lst) + ")"
+    return "(" + "".join(lst) + ")"
+
+def str_xs12_co1(data):
     qs0 = xp2co1_elem_to_qs(data)
     qs = QStateMatrix(qs0) / 64
-    return s + " (x) " + str(qs)
-   
+    return str_leech3(data[0]) + " (x) " + str(qs)
+
+
+try:
+    from mmgroup.clifford12 import xp2co1_error_pool
+    def get_error_pool(length):
+        assert length > 0
+        a = np.zeros(length, dtype = np.uint64)
+        length = xp2co1_error_pool(a, length)
+        return list(map(int, a[:length])) 
+except:
+    def get_error_pool(length):        
+        return []    

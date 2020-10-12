@@ -633,7 +633,7 @@ cdef class QState12(object):
         v = np.array(v, dtype = np.uint64, copy=True)
         shape = v.shape
         assert len(shape) <= 1
-        np.ravel(v)
+        v = np.ravel(v)
         if len(v) == 0:
             return []
         cdef uint64_t[:] v_view = v

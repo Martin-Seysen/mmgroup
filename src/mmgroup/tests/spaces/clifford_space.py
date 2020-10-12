@@ -19,6 +19,8 @@ from mmgroup.clifford12 import xp2co1_short_2to3
 from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem 
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xp2co1_neg_elem, xp2co1_elem_row_mod3
+from mmgroup.clifford12 import xp2co1_mul_elem
+from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.xs1_co1 import Xs12_Co1, str_xs12_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.abstract_rep_space import AbstractRepVector
@@ -39,8 +41,14 @@ ERR_LEECH = "Tuple does not describe a short Leech lattice vector %s"
 
 def tuple_to_leech_mod3(tag, i0 = -1, i1 = -1):
     leech_mod2 = MMSpace.index_to_short_mod2(tag, i0, i1)
+    print("Leech mod 2", hex(leech_mod2))
+    print("Leech", MMSpace.index_to_short(tag, i0, i1))
     res = xp2co1_short_2to3(leech_mod2)
     if (res == 0):
+        err = get_error_pool(15)
+        if len(err):
+            print("Debug information from function xp2co1_short_2to3:")
+            print([hex(x) for x in err])
         raise ValueError(ERR_LEECH % "mod 3")
     return res
 
@@ -76,6 +84,14 @@ class Xs12_Co1_Vector(AbstractRepVector):
         self.is_zero = True
         self._data = np.zeros(26, dtype = np.uint64)
 
+    @property
+    def short3(self):
+        return int(self._data[0])
+
+    @property
+    def qs(self):
+        return xp2co1_elem_to_qs(self._data)
+
     def _set_vector(self, rep_4096, rep_leech):
         qs = obj_to_qstate( rep_4096) 
         x = tuple_to_leech_mod3(*rep_leech)
@@ -98,6 +114,8 @@ class Xs12_Co1_Vector(AbstractRepVector):
     def dump(self):
         self.space.dump_vector(self)    
 
+    def as_mmspace_vector(self):
+        return self.space.as_mmspace_vector(self) 
 
 
 ######################################################################
@@ -251,4 +269,4 @@ class Xs12_Co1_Space(AbstractRepSpace):
         pass  # Yet nothing do do here!!
         return v1
 
-Xs12_Co1 =  Xs12_Co1_Space()        
+Space_ZY =  Xs12_Co1_Space()        

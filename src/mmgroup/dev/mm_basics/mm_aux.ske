@@ -1128,27 +1128,32 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
             if (i >= 759) return 0;
             {
                 uint_fast32_t w, gcode, cocode, v;
-                w = (0x96 >> ((j ^ (j >> 3)) & 7)) & 1;  
-                j = (j << 1) + w;
+                // Put w = bitweight(j)  (mod 4)
+                w = (j & 0x15) + ((j >> 1) & 0x15);
+                w = w + (w >> 2) + (w >> 4);
+                // Double j and adjust parity of j to even
+                j = (j << 1) + (w & 1);
                 gcode = MAT24_OCT_DEC_TABLE[i] & 0xfff;
                 v = mat24_gcode_to_vect(gcode);
                 cocode = mat24_vect_to_cocode(mat24_spread_b24(j, v));
+                // Put w = bitweight(adjusted j)   (mod 4)
                 w += w & 1;
-                gcode ^=  ((w >> 1) & 1) << 11;
-                cocode ^= MAT24_THETA_TABLE[gcode] & 0xfff;
+                gcode ^= ((w >> 1) & 1) << 11;
+                cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff;
                 res = (gcode << 12) + cocode;
             }
             return res;
         case 5:  // tag X
             if (j >= 24) return 0;
             {
-                uint_fast32_t w, gcode, cocode;
+                uint_fast32_t w, gcode, cocode, theta;
                 cocode = mat24_vect_to_cocode(1 << j);
-                w = ((MAT24_THETA_TABLE[i] >> 12) & 1) ^ (i & cocode);
+                theta = MAT24_THETA_TABLE[i & 0x7ff];
+                w = ((theta >> 12) & 1) ^ (i & cocode);
                 w ^= w >> 6; 
                 w = (0x96 >> ((w ^ (w >> 3)) & 7)) & 1; 
                 gcode = i ^ (w << 11); 
-                cocode ^= MAT24_THETA_TABLE[gcode] & 0xfff;
+                cocode ^= theta & 0xfff;
                 res = (gcode << 12) + cocode;
             }
             return res;

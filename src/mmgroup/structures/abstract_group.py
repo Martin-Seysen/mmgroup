@@ -617,10 +617,12 @@ class AbstractGroup(object):
 
         If none of these condition is met, we raise TypeError.
         """
-        result = self.neutral()
-        for g in args:
-            result = self._imul(result,  self._cast(g))
-        return result
+        if (len(args)):
+            result = self._cast(args[0])
+            for g in args[1:]:
+                result = self._imul(result,  self._cast(g))
+            return result
+        return self.neutral()
 
     
     def word(self, *args):
@@ -642,10 +644,12 @@ class AbstractGroup(object):
         product  ``G(g1) * G(g2)``. In some cases this feature can
         be useful for testing.
         """
-        result = self.neutral()
-        for g in args:
-            result = self._imul_nonreduced(result, self._cast(g))
-        return result
+        if (len(args)):
+            result = self._cast(args[0])
+            for g in args[1:]:
+                result = self._imul_nonreduced(result,  self._cast(g))
+            return result
+        return self.neutral()
     
 
 
