@@ -63,7 +63,6 @@ class Xs12_Co1_Word(AbstractGroupWord):
     MIN_LEN = 16
     __slots__ =  "_data" 
     def __init__(self, atoms = [], **kwds):
-        print("Xs12_Co1_Word()", [hex(x) for x in atoms])
         self.group = kwds['group']
         self._data = np.zeros(26, dtype = np.uint64) 
         if len(atoms) ==  0:
@@ -227,9 +226,6 @@ class Xs12_Co1_Group(AbstractGroup):
         return self.word_type(gen_atom(tag, i), group = self)
 
     def _imul(self, g1, g2):
-        print("Xs12_Co1_Group imul")
-        print(g1)
-        print(g2)
         chk_qstate12(xp2co1_mul_elem(g1._data, g2._data, g1._data))
         return self
 

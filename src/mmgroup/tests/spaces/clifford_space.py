@@ -41,12 +41,12 @@ ERR_LEECH = "Tuple does not describe a short Leech lattice vector %s"
 
 def tuple_to_leech_mod3(tag, i0 = -1, i1 = -1):
     leech_mod2 = MMSpace.index_to_short_mod2(tag, i0, i1)
-    print("Leech mod 2", hex(leech_mod2))
-    print("Leech", MMSpace.index_to_short(tag, i0, i1))
     res = xp2co1_short_2to3(leech_mod2)
     if (res == 0):
         err = get_error_pool(15)
         if len(err):
+            print("tuple_to_leech_mod3 input:", hex(leech_mod2))
+            print("Leech", MMSpace.index_to_short(tag, i0, i1))
             print("Debug information from function xp2co1_short_2to3:")
             print([hex(x) for x in err])
         raise ValueError(ERR_LEECH % "mod 3")

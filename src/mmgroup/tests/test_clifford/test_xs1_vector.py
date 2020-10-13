@@ -37,6 +37,7 @@ STD_V3  = 0x8000004
 def create_test_vectors():
    vector_data = [ 
       (0x001, ("B", 2, 3)),
+      (0x001, ("C", 0, 16)),
       (0x001, ("C", 15, 19)),
       (0x001, ("T", 643, 51)),
       (0x001, ("T", 199, 7)),
@@ -46,6 +47,7 @@ def create_test_vectors():
    ]
    group_data = [
       [('d', 0x124)],
+      [('d', 0x756)],
    ]
    for x4096, x24 in vector_data:
        for g in group_data:
@@ -58,13 +60,9 @@ def tuple_to_leech3(tag, i0, i1):
         sign = -1
         tag = tag[1:]
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)
-    print("x2=", hex(x2))
     x3 = xp2co1_short_2to3(x2)
-    print(list(map(hex, get_error_pool(15))))
-    print("x3=", hex(x3))
     if sign == -1:
         x3 ^= 0xffffffffffff
-    print("x3=", hex(x3))
     return x3
     
 
@@ -73,14 +71,13 @@ def short3_abs_equal(x1, x2):
     x1, x2 = int(x1), int(x2)
     return not bool((x1 ^ (x1 >> 24)  ^ x2 ^ (x2 >> 24)) & 0xffffff)
 
-def map_v3(v, g, expected = None, verbose = 0):
+def map_v3(v, g, expected = None, verbose = 1):
     src = np.zeros(3, dtype = np.uint64)
     dest = np.zeros(3, dtype = np.uint64)
     src[0] = 0x8000004
     dest[0] = g.short3
     src[2] = v if isinstance(v, Integral) else tuple_to_leech3(*v)
     src[1] = xp2co1_find_chain_short_3(src[0], src[2])
-    print(str_leech3(dest[0]))
     xp2co1_chain_short_3(xp2co1_elem_to_qs(g._data), src, dest)
     ok = dest[-1] != 0
     if not expected is None:
@@ -110,8 +107,8 @@ def map_v3(v, g, expected = None, verbose = 0):
     return dest[-1]
 
 
-@pytest.mark.qstate1
-def test_vector(verbose = 1):
+@pytest.mark.qstate
+def test_vector(verbose = 0):
     FORMAT_REDUCED = False
     for ntest, (x4096, x24, g) in enumerate(create_test_vectors()):
         if verbose:
@@ -119,30 +116,47 @@ def test_vector(verbose = 1):
             print("vector =", x4096, x24)
         vm = Space_ZY.unit(x4096, x24)
         if verbose:
-            print(vm.as_tuples())
-            print(vm)
+            print("vm =", vm.as_tuples())
+            print("vm =", vm)
             vm.dump()
         v3 = vm.as_mmspace_vector() 
         if verbose:
-            print(g)
+            print("g =", g)
         g3 = MMGroup3(*g)
-        if verbose:
-            print(g)
         gm = Xs12_Co1(*g)
         if verbose:
-            print("g3 = ", gm)
+            print("gm = ", gm)
+            print("g3 = ", g3)
         try:
             wm = vm * gm
-            map_v3(x24, gm, wm.short3, verbose = 0)
+            if verbose:
+                print("w = vm * gm = ", wm)
         except ValueError:
             map_v3(x24, gm, wm.short3, verbose = 1)
             raise
         w3_op =  wm.as_mmspace_vector()
         w3_mult =  v3 * g3
         if verbose:
-            print(w3_op)
-            print(w3_mult)
-        #assert w3_op == w3_mult
+            print("w3_op =", w3_op)
+            print("w3_mult =", w3_mult)
+        ok =  w3_op == w3_mult
+        if not ok:
+            print("\nTEST %s" % (ntest+1))
+            print("vector =", x4096, x24)
+            print("v =", hex(x4096), "(x)", x24)
+            print("rep of v:", vm)
+            print("v =", v3)
+            print("g = ", g)
+            print("rep of g:", gm)
+            print("Output w = v * g\nexpected:", w3_mult)
+            print("obtained:", w3_op)
+            print("rep:", wm)
+            print("")
+            map_v3(x24, gm, wm.short3, verbose = 1)
+            if not ok:
+               ERR = "Vector multiplication test in group G_{x0} failed"
+               raise ValueError(ERR)
+            
             
             
             
