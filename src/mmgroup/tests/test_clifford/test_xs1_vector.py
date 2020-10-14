@@ -38,7 +38,7 @@ def create_test_vectors():
    vector_data = [ 
       (0x001, ("B", 2, 3)),
       (0x001, ("C", 0, 16)),
-      (0x001, ("C", 15, 19)),
+      (0xabf, ("C", 15, 19)),
       (0x001, ("T", 643, 51)),
       (0x001, ("T", 199, 7)),
       (0x001, ("X", 0, 23)),
@@ -47,7 +47,10 @@ def create_test_vectors():
    ]
    group_data = [
       [('d', 0x124)],
-      [('d', 0x756)],
+      [('d', 0x800)],
+      [('p', 187654344)],
+      [('d', 0xd79), ('p', 205334671)],
+      [('p', 205334671), ('d', 0xd79)],
    ]
    for x4096, x24 in vector_data:
        for g in group_data:
@@ -115,6 +118,7 @@ def test_vector(verbose = 0):
             print("\nTEST %s" % (ntest+1))
             print("vector =", x4096, x24)
         vm = Space_ZY.unit(x4096, x24)
+        vm_old = vm.copy()
         if verbose:
             print("vm =", vm.as_tuples())
             print("vm =", vm)
@@ -123,7 +127,14 @@ def test_vector(verbose = 0):
         if verbose:
             print("g =", g)
         g3 = MMGroup3(*g)
-        gm = Xs12_Co1(*g)
+        try:
+            gm = Xs12_Co1(*g)
+        except ValueError:
+            print("\nError in constructing group element g")
+            print("Debug data pool:\n", 
+                    [hex(x) for x in get_error_pool(15)])
+            raise
+        gm_old = gm
         if verbose:
             print("gm = ", gm)
             print("g3 = ", g3)
@@ -132,6 +143,8 @@ def test_vector(verbose = 0):
             if verbose:
                 print("w = vm * gm = ", wm)
         except ValueError:
+            print("Debug data pool:\n", 
+                    [hex(x) for x in get_error_pool(15)])
             map_v3(x24, gm, wm.short3, verbose = 1)
             raise
         w3_op =  wm.as_mmspace_vector()
@@ -139,9 +152,11 @@ def test_vector(verbose = 0):
         if verbose:
             print("w3_op =", w3_op)
             print("w3_mult =", w3_mult)
-        ok =  w3_op == w3_mult
+        ok =  w3_op == w3_mult or w3_op == -w3_mult
+        assert vm == vm_old
+        assert gm == gm_old
         if not ok:
-            print("\nTEST %s" % (ntest+1))
+            print("\nError in TEST %s" % (ntest+1))
             print("vector =", x4096, x24)
             print("v =", hex(x4096), "(x)", x24)
             print("rep of v:", vm)
@@ -151,8 +166,7 @@ def test_vector(verbose = 0):
             print("Output w = v * g\nexpected:", w3_mult)
             print("obtained:", w3_op)
             print("rep:", wm)
-            print("")
-            map_v3(x24, gm, wm.short3, verbose = 1)
+            map_v3(x24, gm, verbose = 1)
             if not ok:
                ERR = "Vector multiplication test in group G_{x0} failed"
                raise ValueError(ERR)

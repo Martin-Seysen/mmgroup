@@ -227,7 +227,7 @@ class Xs12_Co1_Group(AbstractGroup):
 
     def _imul(self, g1, g2):
         chk_qstate12(xp2co1_mul_elem(g1._data, g2._data, g1._data))
-        return self
+        return g1
 
     def _invert(self, g1):
         w = self.word_type([], group=self)

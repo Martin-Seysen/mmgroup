@@ -19,7 +19,7 @@ from mmgroup.clifford12 import xp2co1_short_2to3
 from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem 
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xp2co1_neg_elem, xp2co1_elem_row_mod3
-from mmgroup.clifford12 import xp2co1_mul_elem
+from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_reduce_elem
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.xs1_co1 import Xs12_Co1, str_xs12_co1
 from mmgroup.structures.qs_matrix import QStateMatrix

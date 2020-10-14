@@ -27,15 +27,45 @@ extern "C" {
 #endif
 // %%GEN c
 
+
+/*************************************************************************
+*** Basic definitions
+*************************************************************************/
+
+
+// The standard short Leech lattice vector modulo 3
+#define STD_V3  0x8000004ULL
+
+
+// If ERROR_POOL is defined then function xp2co1_error_pool() can
+// read data from an "error pool" that contains debug information
+// for certain functions after calling them.
+#define ERROR_POOL
+
+// Number of entries of type uit64_t of the ERROR_POOL
+#define LEN_ERROR_POOL 20
+
+// Exchange the bits masked by ``mask`` of the integer ``a``
+// with the corresponding bits masked by ``mask << sh``.
+// ``mask & (mask << sh)` = 0`` must hold. ``aux`` must be an 
+// integer variable of the same type as variable ``a``.
+#define SHIFT_MASKED(a, aux, mask, sh) \
+    aux = (a ^ (a >> sh)) & mask; \
+    a ^=  aux ^  (aux << sh);
+
+
+// Standard size of a buffer for a quaratic state matrix
+// representing an element of the group G_{{x0}}. 
+#define MAXROWS_ELEM 30
+
+
 /*************************************************************************
 *** Using a pool for recording errors (for debugging)
 *************************************************************************/
 
 
-#define ERROR_POOL
 
 #ifdef  ERROR_POOL
-#define LEN_ERROR_POOL 20
 
 static uint64_t error_pool[LEN_ERROR_POOL];
 #endif
@@ -49,12 +79,14 @@ uint32_t xp2co1_error_pool(uint64_t *dest, uint32_t length)
     for (i = 0; i < length; ++i) dest[i] = error_pool[i];   
     return length;
   #else
-    return 0;  
+    return 0;  // Dummy if  ERROR_POOL is not #defined.
   #endif   // #ifdef  ERROR_POOL 
 }
 
+
+
 /*************************************************************************
-*** Leech lattice mod 3
+*** Functions for supporting the Leech lattice mod 3
 *************************************************************************/
 
 
@@ -179,7 +211,6 @@ static inline uint64_t short_3_reduce(uint64_t x)
 
 
 
-
 // %%EXPORT px
 uint64_t xp2co1_short_3to2(uint64_t x)
 {
@@ -215,7 +246,9 @@ uint64_t xp2co1_short_3to2(uint64_t x)
 }
 
 
-
+/*************************************************************************
+*** Chains of short vectors in the Leech lattice mod 3
+*************************************************************************/
 
 
 // %%EXPORT px
@@ -238,8 +271,8 @@ uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
         c2 = mat24_lsbit24(support2);
         if (c2 >= 24) return 0;
         mask = (ONE << c1) ^ (ONE << c2);
-        mask = x2 & (mask | (mask << 24));
-        if ((mask & (mask-1)) == 0) mask |= (ONE << c1);
+        mask = x1 & (mask | (mask << 24));
+        if ((mask & (mask-1)) == 0) mask |= (ONE << c2);
         return mask;
     }
     if (support2 & ~support1) {
@@ -248,8 +281,8 @@ uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
         c1 = mat24_lsbit24(support1);
         if (c1 >= 24) return 0;
         mask = (ONE << c1) ^ (ONE << c2);
-        mask = x1 & (mask | (mask << 24));
-        if ((mask & (mask-1)) == 0) mask |= (ONE << c2);
+        mask = x2 & (mask | (mask << 24));
+        if ((mask & (mask-1)) == 0) mask |= (ONE << c1);
         return mask;
     }
     if (support2 & support2) {
@@ -276,37 +309,7 @@ uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
 
 
 
-static inline
-int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
-{
-    int_fast32_t res;
-    res =  qstate12_gate_not(pqs, 0x800800);
-    if (res < 0) return res;
-    res =  qstate12_gate_h(pqs, 0x800800);
-    return res;
-}
 
-
-#define SHIFT_MASKED(a, aux, mask, sh) \
-    aux = (a ^ (a >> sh)) & mask; \
-    a ^=  aux ^  (aux << sh);
-
-static inline
-uint64_t xp2co1_to_vect_mod3(uint64_t x)
-{
-    uint64_t y;
-    x = short_3_reduce(x);
-    x = (x & 0xffffffULL) + ((x & 0xffffff000000ULL) << 8);
-    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
-    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
-    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
-    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
-    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
-    return x;
-}
-
-
-#define MAXROWS_ELEM 30
 
 // %%EXPORT p
 int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc, uint64_t *pdest)
@@ -323,7 +326,7 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
     // Create temporary copy of *pqs
     res = qstate12_copy_alloc(pqs, &qs, qs_data, MAXROWS_ELEM);
     if (res < 0) return res;
-    res = xp2co1_basis_to_conjugate(pqs);
+    res = xp2co1_basis_to_conjugate(&qs);
     if (res < 0) return res;    
     if (length <= 0) return 0;
     dest0 = short_3_reduce(pdest[0]);
@@ -339,10 +342,16 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
         prod =  short_3_scalprod(pdest[i-1], pdest[i]);
         if (prod != src_prod) pdest[i] = 
             short_3_reduce(pdest[i] ^ 0xffffffffffffULL);
-        if (prod == 0 || src_prod == 0) pdest[i] = 0;
+        ok = ok && src_prod  &&  prod;
     }
-    return 0;
+    return ok ? 0 : -13;
 }
+
+
+
+/*************************************************************************
+*** Conversion between quadratic state matrices and group elements
+*************************************************************************/
 
 
 // %%EXPORT p
@@ -362,6 +371,8 @@ int32_t xp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
     return qstate12_check(pqs);
 }
 
+
+
 // %%EXPORT p
 int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
 {
@@ -380,23 +391,42 @@ int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
 }
 
 
+/*************************************************************************
+*** Conversion between the two standard bases for group elements
+*************************************************************************/
 
-#define STD_V3  0x8000004ULL
 
-
-// %%EXPORT px
-void xp2co1_unit_elem(uint64_t *e)
+static inline
+int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
 {
-    uint_fast32_t i;
-    uint64_t mask = 0x800800ULL;
-    e[0] = STD_V3;
-    e[1] = 0;
-    for (i = 2; i < 14; ++i) {
-        e[i] = mask;
-        mask >>= 1;
-    }
-    for (i = 14; i < 26; ++i) e[i] = 0;
+    int_fast32_t res;
+    res =  qstate12_gate_not(pqs, 0x800800);
+    if (res < 0) return res;
+    res =  qstate12_gate_h(pqs, 0x800800);
+    return res;
 }
+
+
+
+static inline
+int32_t xp2co1_conjugate_to_basis(qstate12_type *pqs)
+{
+    int_fast32_t res;
+    res =  qstate12_gate_h(pqs, 0x800800);
+    if (res < 0) return res;
+    res =  qstate12_gate_not(pqs, 0x800800);
+    return res;
+}
+
+
+
+
+
+/*************************************************************************
+*** Elementary function operating on group elements
+*************************************************************************/
+
+
 
 
 // %%EXPORT px
@@ -404,7 +434,6 @@ void xp2co1_neg_elem(uint64_t *e)
 {
     e[0] = short_3_reduce(e[0] ^ 0xffffffffffffULL);
 }
-
 
 
 // %%EXPORT px
@@ -430,6 +459,13 @@ int32_t xp2co1_reduce_elem(uint64_t *e1)
     return res;
 }
 
+
+
+/*************************************************************************
+*** Group multiplication and inversion
+*************************************************************************/
+
+
 // %%EXPORT px
 int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
 {
@@ -447,7 +483,6 @@ int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
     
     asrc[0] = STD_V3;
     adest[0] = e2[0];
-    // if (qs3.factor & 4) adest[0] ^= 0xffffffffffffULL;
     asrc[2] = e1[0];
     asrc[1] = xp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
@@ -487,7 +522,89 @@ int32_t xp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
 }
 
 
+/*************************************************************************
+*** Cnstruction of group elements
+*************************************************************************/
 
+
+// %%EXPORT px
+void xp2co1_unit_elem(uint64_t *e)
+{
+    uint_fast32_t i;
+    uint64_t mask = 0x800800ULL;
+    e[0] = STD_V3;
+    e[1] = 0;
+    for (i = 2; i < 14; ++i) {
+        e[i] = mask;
+        mask >>= 1;
+    }
+    for (i = 14; i < 26; ++i) e[i] = 0;
+}
+
+
+static 
+int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
+{
+    int32_t res;
+    uint_fast32_t i;
+    uint64_t data[MAXROWS_ELEM], x;
+    qstate12_type qs;
+    
+    data[0] = 0;
+    for (i = 0; i < 12; ++i) data[i+1] = aut[i];
+    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_monomial_column_matrix(&qs, 12, data);
+    if (res < 0) return res;
+    res = xp2co1_conjugate_to_basis(&qs);
+    if (res < 0) return res;
+    
+    x = (ONE << perm[2]) + (ONE << (perm[3] + 24));
+    return xp2co1_qs_to_elem(&qs, x, e1);
+}
+
+
+
+
+
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
+{
+    uint8_t perm[24];
+    uint32_t aut[12];
+    
+    mat24_m24num_to_perm(pi, perm);
+    mat24_perm_to_autpl(delta, perm, aut);
+    return elem_delta_pi_aut(e1, perm, aut);
+}
+
+
+
+
+
+
+
+/*************************************************************************
+*** Converting a an element to a vector of the menster rep modulo 3
+*************************************************************************/
+
+
+
+static inline
+uint64_t xp2co1_to_vect_mod3(uint64_t x)
+{
+    uint64_t y;
+    x = short_3_reduce(x);
+    x = (x & 0xffffffULL) + ((x & 0xffffff000000ULL) << 8);
+    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
+    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
+    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
+    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
+    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
+    return x;
+}
 
 // %%EXPORT px
 int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
@@ -528,7 +645,7 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1, d, d1, index;
         index = assoc & mask;
-        v[index] += x_data[qf & 1];
+        v[index] = x_data[qf & 1];
         d1 = d = qstate12_lsbtab[(i1 = i) & 63];
         while (d1 == 6) {
             i1 >>= 6;
@@ -538,50 +655,10 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
         qf += assoc >> (ncols + d + 1);
         assoc ^= m[d+1];
     } 
-    return 0;
-    
-
-    
+    return 0;   
 }
 
 
-static 
-int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
-{
-    int32_t res;
-    uint_fast32_t i, parity;
-    uint64_t data[MAXROWS_ELEM], x;
-    qstate12_type qs;
-    
-    data[0] = 0;
-    for (i = 0; i < 12; ++i) data[i+1] = aut[i];
-    parity =  aut[11] & 0x1000;
-    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
-    if (res < 0) return res;
-    res = qstate12_monomial_column_matrix(&qs, 12, data);
-    if (res < 0) return res;
-    if (parity) {
-        res =  qstate12_gate_not(&qs, 0x800800);
-        if (res < 0) return res;
-    }
-    
-    x = (ONE << perm[2]) + (ONE << (perm[3] + 24));
-    return xp2co1_qs_to_elem(&qs, x, e1);
-}
-
-
-
-
-// %%EXPORT px
-int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
-{
-    uint8_t perm[24];
-    uint32_t aut[12];
-    
-    mat24_m24num_to_perm(pi, perm);
-    mat24_perm_to_autpl(delta, perm, aut);
-    return elem_delta_pi_aut(e1, perm, aut);
-}
 
 
 // %%GEN ch
