@@ -213,7 +213,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
         """
         if v.is_zero:
             return "Xs12 vector 0"
-        return "Xs12 vector " + str_xs12_co1(v._data)
+        return "Xs12 vector " + str_xs12_co1(v._data, factor = 64)
 
     ### Standard methods that need not be overwritten #################
 

@@ -185,7 +185,8 @@ static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
     
     // Set all bits i in ``zero`` to 0 where x1[i] * x2[i] is 0
     zero = ((x1 ^ (x1 >> 24)) & (x2 ^ (x2 >> 24))) & 0xffffffUL;
-    // Store products of entries of x1 and x2 in res
+    // Store scalar products of entries of x1 and x2 in res
+    // Each scalar product is >= 0 and <= 2.
     res = (x1 ^ x2) & 0xffffff000000ULL;
     res = (res & (zero << 24)) | (zero & ~(res >> 24));
     // Sum up entries of res, counting the high 24 bits twice
@@ -400,8 +401,8 @@ static inline
 int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
 {
     int_fast32_t res;
-    res =  qstate12_gate_not(pqs, 0x800800);
-    if (res < 0) return res;
+    // res =  qstate12_gate_not(pqs, 0x800800);
+    // if (res < 0) return res;
     res =  qstate12_gate_h(pqs, 0x800800);
     return res;
 }
@@ -414,7 +415,7 @@ int32_t xp2co1_conjugate_to_basis(qstate12_type *pqs)
     int_fast32_t res;
     res =  qstate12_gate_h(pqs, 0x800800);
     if (res < 0) return res;
-    res =  qstate12_gate_not(pqs, 0x800800);
+    // res =  qstate12_gate_not(pqs, 0x800800);
     return res;
 }
 
@@ -629,11 +630,12 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     res = qstate12_reduce(&qs2);
     if (res < 0) return res;
+    if (qs2.factor & 0x13) return -14;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
     x = e1[0];
     if (sign) x ^= 0xffffffffffffULL;
     x_data[0] = xp2co1_to_vect_mod3(x);
-    x_data[1] = xp2co1_to_vect_mod3(x ^  0xffffffffffffULL);
+    x_data[1] = xp2co1_to_vect_mod3(x ^ 0xffffffffffffULL);
 
     n_iterations = ONE << (qs2.nrows - 1);
     m = qs2.data;

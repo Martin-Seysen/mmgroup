@@ -275,9 +275,9 @@ def str_leech3(x):
     lst = [_dict_pm3[(x >> i) & 0x1000001] for i in range(24)]
     return "(" + "".join(lst) + ")"
 
-def str_xs12_co1(data):
+def str_xs12_co1(data, factor = 1):
     qs0 = xp2co1_elem_to_qs(data)
-    qs = QStateMatrix(qs0) / 64
+    qs = QStateMatrix(qs0) / factor
     return str_leech3(data[0]) + " (x) " + str(qs)
 
 

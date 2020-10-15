@@ -14,6 +14,7 @@ import pytest
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
+from mmgroup.structures.autpl import AutPL
 from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.clifford12 import xp2co1_chain_short_3, xp2co1_elem_to_qs
 from mmgroup.clifford12 import xp2co1_short_2to3, xp2co1_short_3to2
@@ -35,7 +36,7 @@ STD_V3  = 0x8000004
 #####################################################################
 
 def create_test_vectors():
-   vector_data = [ 
+    vector_data = [ 
       (0x001, ("B", 2, 3)),
       (0x001, ("C", 0, 16)),
       (0xabf, ("C", 15, 19)),
@@ -44,17 +45,21 @@ def create_test_vectors():
       (0x001, ("X", 0, 23)),
       (0x001, ("X", 137, 23)),
       (0x001, ("X", 1897, 1)),
-   ]
-   group_data = [
+    ]
+    group_data = [
       [('d', 0x124)],
       [('d', 0x800)],
       [('p', 187654344)],
       [('d', 0xd79), ('p', 205334671)],
       [('p', 205334671), ('d', 0xd79)],
-   ]
-   for x4096, x24 in vector_data:
-       for g in group_data:
-           yield x4096, x24, g
+    ]
+    for i in range(1):
+        p = {0:2, 1:3, 2:0, 3:1, 4:4, 6:6, 8:8}
+        #print("AutPL", [hex(x) for x in AutPL(p).rep])
+        yield 256, ("B", 2, 3),  [("p", p)]
+    for x4096, x24 in vector_data:
+        for g in group_data:
+            yield x4096, x24, g
 
 
 def tuple_to_leech3(tag, i0, i1):
@@ -151,8 +156,10 @@ def test_vector(verbose = 0):
         w3_mult =  v3 * g3
         if verbose:
             print("w3_op =", w3_op)
+            print("w3_op data =")
+            wm.dump()
             print("w3_mult =", w3_mult)
-        ok =  w3_op == w3_mult or w3_op == -w3_mult
+        ok =  w3_op == w3_mult
         assert vm == vm_old
         assert gm == gm_old
         if not ok:
