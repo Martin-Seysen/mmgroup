@@ -247,6 +247,29 @@ uint64_t xp2co1_short_3to2(uint64_t x)
 }
 
 
+
+/*************************************************************************
+*** Conversion between the two standard bases for group elements
+*************************************************************************/
+
+
+static inline
+int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
+{
+    return qstate12_gate_h(pqs, 0x800800);
+}
+
+
+
+static inline
+int32_t xp2co1_conjugate_to_basis(qstate12_type *pqs)
+{
+    return qstate12_gate_h(pqs, 0x800800);
+}
+
+
+
+
 /*************************************************************************
 *** Chains of short vectors in the Leech lattice mod 3
 *************************************************************************/
@@ -390,35 +413,6 @@ int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
     e[0] = short_3_reduce(x1);  
     return 0;    
 }
-
-
-/*************************************************************************
-*** Conversion between the two standard bases for group elements
-*************************************************************************/
-
-
-static inline
-int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
-{
-    int_fast32_t res;
-    // res =  qstate12_gate_not(pqs, 0x800800);
-    // if (res < 0) return res;
-    res =  qstate12_gate_h(pqs, 0x800800);
-    return res;
-}
-
-
-
-static inline
-int32_t xp2co1_conjugate_to_basis(qstate12_type *pqs)
-{
-    int_fast32_t res;
-    res =  qstate12_gate_h(pqs, 0x800800);
-    if (res < 0) return res;
-    // res =  qstate12_gate_not(pqs, 0x800800);
-    return res;
-}
-
 
 
 
