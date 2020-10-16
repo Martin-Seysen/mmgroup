@@ -543,7 +543,7 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
 
 
 // %%EXPORT p
-uint64_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
+int32_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
 {
     int32_t res;
     uint64_t *m = pqs->data, mask = (ONE << nqb) - 1;

@@ -73,11 +73,15 @@ def create_test_vectors():
       (0x001, (1, "X", 1897, 1)),
     ]
     group_data = [
+      [('x', 0x124), ('d', 0x555)],
       [('d', 0x124)],
       [('d', 0x800)],
       [('p', 187654344)],
       [('d', 0xd79), ('p', 205334671)],
       [('p', 205334671), ('d', 0xd79)],
+      [('d', 0xd79), ('x', 0x1123)],
+      [('y', 0x1d79)],
+      [('y', 0x586)],
     ]
     for i in range(1):
         p = {0:2, 1:3, 2:0, 3:1, 4:4, 6:6, 8:8}
@@ -86,13 +90,12 @@ def create_test_vectors():
     for x4096, x24 in vector_data:
         for g in group_data:
             yield x4096, x24, g
-
     for x in "BCTX":
         for j in range(50):
             sign = -1**j
             d = randint(0, 0xfff)
             t = rand_tuple(x)
-            yield d, ((sign,) + t),  rand_element("dpdp")    
+            yield d, ((sign,) + t),  rand_element("ydpdpxdpyx")    
 
 def tuple_to_leech3(sign, tag, i0, i1):
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)

@@ -20,9 +20,11 @@ from mmgroup.clifford12 import xp2co1_chain_short_3
 from mmgroup.clifford12 import xp2co1_neg_elem
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xp2co1_unit_elem, xp2co1_elem_delta_pi
+from mmgroup.clifford12 import xp2co1_elem_x_delta
 from mmgroup.clifford12 import xp2co1_mul_elem
 from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
+from mmgroup.clifford12 import xp2co1_elem_y
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -82,8 +84,19 @@ class Xs12_Co1_Word(AbstractGroupWord):
             elif tag == 2:           
                 xp2co1_elem_delta_pi(elem, 0, atoms[0] & 0xfffffff) 
                 atoms = atoms[1:]                
+            elif tag == 3:           
+                if len(atoms) > 1 and  atoms[1] >> 28  == 1:    
+                    xp2co1_elem_x_delta(elem, atoms[0] & 0x1fff, 
+                        atoms[1] & 0xfff)  
+                    atoms = atoms[2:]
+                else:  
+                    xp2co1_elem_x_delta(elem, atoms[0] & 0x1fff, 0)
+                    atoms = atoms[1:]
+            elif tag == 4:           
+                xp2co1_elem_y(elem, atoms[0] & 0x1fff)
+                atoms = atoms[1:]
             else:
-                raise ValueError("WTF") 
+                raise ValueError("Bad element of group G_{x1}") 
             if not elem is self._data:
                 xp2co1_mul_elem(self._data, elem, self._data) 
             elif len(atoms):

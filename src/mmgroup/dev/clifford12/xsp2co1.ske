@@ -561,9 +561,6 @@ int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
 
 
 
-
-
-
 // %%EXPORT px
 int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
 {
@@ -578,6 +575,66 @@ int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
 
 
 
+// %%EXPORT px
+int32_t xp2co1_elem_x_delta(uint64_t *e1, uint32_t x, uint32_t delta)
+{
+
+    int32_t res;
+    uint64_t v, t, data[MAXROWS_ELEM];
+    qstate12_type qs;
+
+    v =  ((x & 0x1fffUL) << 12) + (delta & 0xfffUL);
+    v ^=  MAT24_THETA_TABLE[x & 0x7ff] & 0xfff;
+    t = (delta ^ x) & 0x800UL;
+    v ^= (t << 12) ^ t;    
+    
+    t = v & (v >> 12);
+    t ^= t >> 6; t ^= t >> 3; 
+    t = (0x96 >> (t & 7)) & 1;
+    v ^= t << 24;
+    
+    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_pauli_matrix(&qs, 12, v);
+    if (res < 0) return res;
+    return xp2co1_qs_to_elem(&qs, STD_V3, e1);
+}
+
+
+
+static uint32_t MAPY_STD_V3[4] = {
+   0x8000004UL, 0x4000008UL, 0xC, 0xC000000UL
+};
+
+// %%EXPORT px
+int32_t xp2co1_elem_y(uint64_t *e1, uint32_t y)
+{
+
+    int32_t res, i;
+    uint64_t d, s, data[MAXROWS_ELEM], assoc, theta_y, theta_d, v;
+    qstate12_type qs;
+
+    theta_y = MAT24_THETA_TABLE[y & 0x7ff] & 0x7ff;
+    data[0] = y & 0x17ff;
+    for (i = 0; i < 11; ++i) {
+        d = ONE << i;
+        theta_d = MAT24_THETA_TABLE[d & 0x7ff];
+        s =  theta_d & y;
+        s ^= s >> 6; s ^= s >> 3; 
+        s = (0x96 >> (s & 7)) & 1;
+        assoc = MAT24_THETA_TABLE[(d ^ y) & 0x7ff] ^ theta_d ^ theta_y;
+        data[i+1] = d + (s << 12) + ((assoc & 0x7ff) << 13);
+    } 
+    data[12] = data[0] + 0x800 + (theta_y << 13);       
+    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_monomial_column_matrix(&qs, 12, data);
+    if (res < 0) return res;
+
+    v = ((y >> 8) ^ (y >> 10) ^ (y >> 11)) & 1;
+    v ^= (y >> 8) & 2;
+    return xp2co1_qs_to_elem(&qs, (uint64_t)MAPY_STD_V3[v], e1);
+}
 
 
 
