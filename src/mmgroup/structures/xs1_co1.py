@@ -34,7 +34,7 @@ FORMAT_REDUCED = True
 
 
 
-
+py_xi = None
 
 
 ###########################################################################
@@ -95,6 +95,16 @@ class Xs12_Co1_Word(AbstractGroupWord):
             elif tag == 4:           
                 xp2co1_elem_y(elem, atoms[0] & 0x1fff)
                 atoms = atoms[1:]
+            elif tag == 6:  
+                try:
+                    1/0
+                except:
+                    if py_xi is None:
+                        create_py_xi(verbose = 0)                     
+                    new_elem = py_xi[(atoms[0] & 0xfffffff) % 3]
+                    for i in range(26):
+                        elem[i] = new_elem._data[i]
+                atoms = atoms[1:]
             else:
                 raise ValueError("Bad element of group G_{x1}") 
             if not elem is self._data:
@@ -112,7 +122,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
     @property
     def qs(self):
-        return xp2co1_elem_to_qs(self._data)
+        return QStateMatrix(xp2co1_elem_to_qs(self._data))
 
         
     def order(self, max_order = 119):
@@ -271,6 +281,13 @@ class Xs12_Co1_Group(AbstractGroup):
         if n == 1:
             return w
         raise TypeError("Cannot convert a number to a group element")
+        
+    def from_qs(self, qs, x):  
+        w = self.word_type([], group=self)
+        w0 =  xp2co1_qs_to_elem (qs, x)
+        for i in range(26):
+             w._data[i] =  w0[i]
+        return w             
 
     def str_word(self, v1):
         return "Xs12_Co1 " + str_xs12_co1(v1._data)
@@ -304,3 +321,41 @@ try:
 except:
     def get_error_pool(length):        
         return []    
+
+
+
+def create_py_xi(verbose = 0):
+    global py_xi
+    from mmgroup.structures.qs_matrix import qs_unit_matrix
+    print("create_py_xi")
+    py_xi = [ Xs12_Co1()]
+    
+    xi_sym16 = qs_unit_matrix(12)
+    xi_sym16.gate_h(0xf)
+    xi_sym16.gate_ctrl_not(0xf, 0xf)
+    
+    xi_diag16 = -qs_unit_matrix(12)
+    for c1, c2 in [(8,7), (4,3), (2,1)]:
+        xi_diag16 = xi_diag16.gate_ctrl_phi(c1, c2)
+    
+    xi_gamma = qs_unit_matrix(12)
+    xi_gamma.gate_not(1 << 11)
+    xi_gamma.gate_ctrl_not(1 << 10, 1 << 11)
+    
+    xi_g = qs_unit_matrix(12)
+    xi_g.gate_not(1 << 10)
+    xi_g.gate_ctrl_not(1 << 11, 1 << 10)
+    
+    xi_1 = xi_diag16 @ xi_sym16 @ xi_g @ xi_gamma
+    xi_2 = xi_sym16 @ xi_diag16 @ xi_gamma @ xi_g
+    
+    STD_V3  = 0x8000004
+    py_xi.append(Xs12_Co1.from_qs(xi_1, STD_V3))   
+    py_xi.append(Xs12_Co1.from_qs(xi_2, STD_V3)) 
+    if verbose:
+        print("Group element 1:\n", py_xi[0])    
+        print("Group element xi:\n", py_xi[1])    
+        print("Group element xi**2:\n", py_xi[2])    
+        
+    
+   

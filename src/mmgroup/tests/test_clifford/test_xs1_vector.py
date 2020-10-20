@@ -11,11 +11,12 @@ from numbers import Integral
 import numpy as np
 import pytest
 
-from mmgroup.structures.qs_matrix import QStateMatrix
+from mmgroup.structures.qs_matrix import qs_pauli_matrix
 from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
-from mmgroup.mat24 import MAT24_ORDER
+from mmgroup.mat24 import MAT24_ORDER, ploop_theta
+from mmgroup.mat24_xi import xi_op_leech
 from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.clifford12 import xp2co1_chain_short_3, xp2co1_elem_to_qs
 from mmgroup.clifford12 import xp2co1_short_2to3, xp2co1_short_3to2
@@ -82,6 +83,8 @@ def create_test_vectors():
       [('d', 0xd79), ('x', 0x1123)],
       [('y', 0x1d79)],
       [('y', 0x586)],
+      [('l', 1)],
+      [('l', 2)],
     ]
     for i in range(1):
         p = {0:2, 1:3, 2:0, 3:1, 4:4, 6:6, 8:8}
@@ -95,7 +98,7 @@ def create_test_vectors():
             sign = -1**j
             d = randint(0, 0xfff)
             t = rand_tuple(x)
-            yield d, ((sign,) + t),  rand_element("ydpdpxdpyx")    
+            yield d, ((sign,) + t),  rand_element("lydpdpxdpylx")    
 
 def tuple_to_leech3(sign, tag, i0, i1):
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)
@@ -117,7 +120,9 @@ def map_v3(v, g, expected = None, verbose = 1):
     dest[0] = g.short3
     src[2] = v if isinstance(v, Integral) else tuple_to_leech3(*v)
     src[1] = xp2co1_find_chain_short_3(src[0], src[2])
-    xp2co1_chain_short_3(xp2co1_elem_to_qs(g._data), src, dest)
+    qstate = g.qs
+    qstate_base = qstate.copy().gate_h(0x800800)
+    xp2co1_chain_short_3(qstate, src, dest)
     ok = dest[-1] != 0
     if not expected is None:
         ok = ok and short3_abs_equal(dest[-1], expected)
@@ -132,10 +137,12 @@ def map_v3(v, g, expected = None, verbose = 1):
             print(" ",  str_leech3(src[i]), "->", str_leech3(dest[i]))
         for i in range(3):
             v2 =  xp2co1_short_3to2(src[i])       
-            v2c = g.qs.pauli_conjugate(v2);
+            v2c = qstate_base.pauli_conjugate(v2);
             v3c = xp2co1_short_2to3(v2c)
-            print("   -> 0x%06x -> 0x%06x -> %s" %
-                (v2, v2c, str_leech3(v3c)))
+            print("   %s -> 0x%06x -> 0x%06x -> %s" %
+                (str_leech3(src[i]), v2, v2c, str_leech3(v3c)))
+            print("    Debug data pool:\n    ", 
+                    [hex(x) for x in get_error_pool(15)])
         print("")
         if not expected == None:
             print("Expected result: %s" % str_leech3(expected))
@@ -190,7 +197,7 @@ def test_vector(verbose = 0):
             print("w3_op data =")
             wm.dump()
             print("w3_mult =", w3_mult)
-        ok =  w3_op == w3_mult
+        ok =  w3_op == w3_mult 
         assert vm == vm_old
         assert gm == gm_old
         if not ok:
@@ -213,3 +220,42 @@ def test_vector(verbose = 0):
             
             
             
+#####################################################################
+# Conjugation with xi
+#####################################################################
+
+
+
+def ref_conjugate_xi(x, exp):
+    x ^= ploop_theta(x >> 12)
+    res = xi_op_leech(x, exp)
+    return res ^  ploop_theta(res >> 12) 
+
+
+def conjugate_xi(x, exp):
+    elem_l = Xs12_Co1(('l', exp))
+    mat_l = elem_l.qs.gate_h(0x800800)
+    mat_x = qs_pauli_matrix(12, x)
+    mat_res = mat_l @ mat_x @ mat_l.inv()
+    return mat_res.pauli_vector()
+   
+@pytest.mark.qstate
+def test_conjugate_xi(verbose = 0):
+    for exp in [1, 2]:
+        for lb_x in range(25):
+            x = 1 << lb_x
+            y_ref = ref_conjugate_xi(x, exp)
+            y  = conjugate_xi(x, exp)
+            ok = y == y_ref
+            if verbose or not ok:
+                print("conjugate x= 0x%06x with xi**%d" % (x, exp))
+                print("expected: 0x%06x" % y_ref) 
+                print("obtained: 0x%06x" % y) 
+                if not ok:
+                    ERR = "Error in conjugating with element l"
+                    raise ValueError(ERR)
+
+                
+
+           
+

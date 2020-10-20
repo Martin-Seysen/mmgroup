@@ -110,6 +110,9 @@ uint64_t xp2co1_short_2to3(uint64_t x)
         uint_fast32_t scalar; 
         // Put cocodev = cocode word (in vector rep)
         cocodev = mat24_cocode_syndrome((uint32_t)(x ^ theta), 0);    
+        #ifdef ERROR_POOL
+            error_pool[4] = cocodev; 
+        #endif    
         if (cocodev & (cocodev - 1)) return 0;
         // Put scalar = scalar product (code, cocode)
         scalar = (x >> 12) &  x & 0xfff;
@@ -117,7 +120,6 @@ uint64_t xp2co1_short_2to3(uint64_t x)
         scalar ^= scalar >> 3;
         scalar = (0x96 >> (scalar & 7));
         #ifdef ERROR_POOL
-            error_pool[4] = cocodev; 
             error_pool[5] = scalar & 1; 
         #endif    
         if (scalar & 1) return 0;
@@ -192,12 +194,13 @@ static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
     // Sum up entries of res, counting the high 24 bits twice
     res = (res & 0x555555555555ULL) + ((res >> 1) & 0x555555555555ULL);
     res = (res & 0x333333333333ULL) + ((res >> 2) & 0x333333333333ULL);
+    res = (res & 0x0f0f0f0f0f0fULL) + ((res >> 4) & 0x0f0f0f0f0f0fULL);
     res = (res & 0xffffffULL) + ((res >> 23) & 0x1fffffeULL);
-    res = (res & 0x0f0f0fULL) + ((res >> 4) & 0x0f0f0fULL);
     res = ((res >> 16) + (res >> 8) + res) & 0xff;
     // Reduce res modulo 3; we have 0 <= res <= 48
-    res = (res & 7) + (res >> 3) + 1; // res <= 15; res is one too big
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 6
+    res = (res & 3) + (res >> 2) + 1; // res <= 19; res is one too big
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 7
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 4
     res =  (res & 3) + (res >> 2);    // 1 <= res <= 3
     return (uint32_t)res - 1;
 }

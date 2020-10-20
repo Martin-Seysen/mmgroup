@@ -597,7 +597,8 @@ class QStateMatrix(QState12):
     def __str__(self):
         if FORMAT_REDUCED:
             qs = self.copy()
-            qs.reduce_matrix()
+            #qs.reduce_matrix()
+            qs.reduce()
             return _format_state(qs, True)
         return _format_state(qs, False)
 
