@@ -100,6 +100,13 @@ def create_test_vectors():
             t = rand_tuple(x)
             yield d, ((sign,) + t),  rand_element("lydpdpxdpylx")    
 
+
+#####################################################################
+# Simulate the mapping of Leech lattice vectors modulo 3
+#####################################################################
+
+
+
 def tuple_to_leech3(sign, tag, i0, i1):
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)
     x3 = xp2co1_short_2to3(x2)
@@ -153,9 +160,13 @@ def map_v3(v, g, expected = None, verbose = 1):
     return dest[-1]
 
 
+#####################################################################
+# Test multiplication of vectors with elements of G_{x1}
+#####################################################################
+
+
 @pytest.mark.qstate
 def test_vector(verbose = 0):
-    FORMAT_REDUCED = False
     for ntest, (x4096, x24, g) in enumerate(create_test_vectors()):
         if verbose:
             print("\nTEST %s" % (ntest+1))
@@ -221,7 +232,7 @@ def test_vector(verbose = 0):
             
             
 #####################################################################
-# Conjugation with xi
+# Test conjugation with the element xi of group G_{x1}
 #####################################################################
 
 
@@ -257,5 +268,43 @@ def test_conjugate_xi(verbose = 0):
 
                 
 
+#####################################################################
+# Test multiplication ind inversion of elements of G_{x1}
+#####################################################################
            
 
+def create_test_elements():
+    for i in range(20):
+        g1 = rand_element("xydplyplyplxydp")
+        g2 = rand_element("xydplyplyplxydp")
+        yield g1, g2
+
+@pytest.mark.qstate
+def test_group(verbose = 0):
+    unit = Xs12_Co1()
+    for ntest, (g1, g2) in enumerate(create_test_elements()):
+        gm1 = Xs12_Co1(*g1)    
+        gm2 = Xs12_Co1(*g2)    
+        gm3_ref = Xs12_Co1(*(g1 + g2))    
+        gm3 = gm1 * gm2
+        ok = gm3 == gm3_ref 
+        if verbose or not ok:
+            print("\nTEST %s" % (ntest+1))
+            print("element g1 =", g1)
+            print("element g2 =", g2)
+            print("element g1 * g2")
+            print("expected:", gm3_ref)
+            print("obtained:", gm3)
+            if not ok:
+                ERR = "Multiplication in group G_{x1} failed"
+                raise ValueError(ERR)
+        gm1i =  gm1**(-1) 
+        ok = gm1 * gm1i == unit
+        if verbose or not ok:
+            print("g1\n",  gm1) 
+            print("g1 ** -1 obtained\n",  gm1**(-1)) 
+            if not ok:            
+                ERR = "Inversion in group G_{x1} failed"
+                raise ValueError(ERR)
+            
+            
