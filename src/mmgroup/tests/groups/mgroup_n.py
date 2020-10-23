@@ -242,7 +242,12 @@ def kernel_rule_y(group, word):
     global n_rules
     n_rules += 1
     y = word[0].pl & 0x1fff
-    mask, table = dict_y[group.kernel]
+    mask, table, _  = kernel_data[group.kernel]
+    if y & mask == y:
+        return [ xy_Atom('x', table[y]) ]
+    else:
+        raise AutoGroupMulError
+
     mask = y & mask
     x = table[y & mask]
     y_new = y & ~mask & 0x1fff
@@ -396,6 +401,7 @@ class MGroupN(AutoGroup):
 
     kernel_rules = {
         r"yx": kernel_rule_yx,
+        r"y": kernel_rule_y,
     }
     kernel_rules.update(rules)
 

@@ -31,6 +31,8 @@ def make_testcases():
     testdata = [
         (ref_group(("y", 0x1000),('p', 234579)), ("y", 0x1800)),
         (ref_group(("y", 0x1000),('t',2)), ("y", 0x1800)),
+        (ref_group(("x", 0x800)), ('t',1)),
+        (ref_group(("y", 0x5a2)), ("y", 0x1da2)),  
     ]
     for d in testdata:
         yield d
