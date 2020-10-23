@@ -314,7 +314,7 @@ def suboctad_testcases(gc):
     for d in testdata:
         yield d
     for i in range(100):
-        oct = gc.gcode_to_vect(randint(0,0xfff)) 
+        oct = gc.gcode_to_vect(randint(1,0xfff)) 
         sub = gc.cocode_syndrome(randint(0, 0xffffff), gc.lsbit24(oct))
         if gc.bw24(oct) != 8: 
             status = 2

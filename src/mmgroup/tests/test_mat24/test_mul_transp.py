@@ -40,10 +40,10 @@ int main(int argc, char **argv)
 {{
     uint_fast32_t i, v;
     static uint_fast32_t a[1000];
-    sscanf(argv[1], "%d", &v);
-    for (i=0; i < argc-2; ++i) sscanf(argv[i+2], "%d", a+i);
+    sscanf(argv[1], "%ld", &v);
+    for (i=0; i < argc-2; ++i) sscanf(argv[i+2], "%ld", a+i);
     {0}
-    printf("%d\n",v);
+    printf("%ld\n",v);
     return 0;
 }}
 """.format(generate("v", "a", lv, lm, n)), file = f)
