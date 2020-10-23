@@ -679,7 +679,7 @@ void xp2co1_elem_xi(uint64_t *e, uint32_t exp)
 
 
 /*************************************************************************
-*** Converting a an element to a vector of the menster rep modulo 3
+*** Converting a an element to a vector of the monster rep modulo 3
 *************************************************************************/
 
 
@@ -751,6 +751,123 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     return 0;   
 }
 
+
+
+
+/*************************************************************************
+*** Converting a short vector modulo 3 to a Leech lattice vector
+*************************************************************************/
+
+
+
+
+// %%EXPORT px
+int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
+// Given a short Leech lattice vector ``x`` (modulo 3), and short 
+// Leech latice vectors ``src`` and ``dest``, referred by ``psrc`` and 
+// ``pdest``, the function computes  ``dest = src + factor * x``.
+// Here ``src`` and ``dest`` are given in the standard basis, so that
+// a unit vector of length ``sqrt(8)`` has one entry with absolute
+// value ``8``.
+{
+    uint_fast32_t  gcodev, cocodev, w1, w2;
+    int_fast8_t f[4], i;
+    f[0] = f[3] = 0;
+    x = short_3_reduce(x);
+    w1 = mat24_bw24((uint32_t)x); 
+    w2 = mat24_bw24((uint32_t)(x >> 24));
+    switch (w1 + w2) {
+        case 23:
+            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) return -13;
+            f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
+            f[1] = (int8_t)factor;
+            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
+            break;              
+        case 8:
+            if (w1 & 1) return -13;
+            gcodev = (x | (x >> 24)) & 0xffffffUL;
+            f[1] = -2 * (int8_t)factor;
+            break;
+        case 2:
+            gcodev = 0;
+            f[1] = 4 * (int8_t)factor;
+            break;
+        default:
+            return -13;        
+    }
+    f[2] = -f[1];
+    gcodev = mat24_vect_to_gcode(gcodev);
+    if (gcodev & 0xfffff000UL) return -13;
+    x = xp2co1_to_vect_mod3(x);
+
+    for (i = 0; i < 24; ++i) {
+        pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
+    }
+    return 0;
+}
+
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
+// Given an element ``elem`` of the group ``G_{{x_1}}``, the 
+// function computes a ``24 times 24`` matrix ``L`` in the
+// array ``dest`` referred by ``pdest``. The entry ``8 * L[i,j]``
+// is stored in ``dest[24*i+j]``. Matrix ``L`` is unique up to 
+// sign. The sign is undocumented, but computed deteministically. 
+// Function ``xp2co1_elem_to_qs(elem,...)``  computes a``
+// ``4096 times 4096`` matrix ``M`` for the element ``elem``
+// as an object of type ``qstate12_type``.  The Kronecker
+// product of ``L`` and ``M`` represents the element ``elem``
+// of the group ``G_{{x_1}}`` uniquely. Let ``M.T`` be the
+// transposed matrix of ``M``. Matrices ``L`` and `M.T`` act 
+// on the tensor product ``24_x (x) 4096_x``, which is a  
+// representation of ``G_{{x_1}}``, by right multiplication.
+{
+    uint64_t src3[25], dest3[25];
+    int_fast32_t res, i;
+    qstate12_type qs;
+    
+    // We let ``elem`` act on a sequence of short vectors
+    // ``4*e_{{i}} -  4*e_{{i+1}}``, with ``e_i`` the ``i-``th
+    // unit vector of the Leech lattice, and indices 
+    // ``i = 2,...,25 `` taken modulo ``24``. We append the
+    // unit vector ``4*e_{{2}} +  4*e_{{3}}`` to that sequence.
+    // Adjacent vectors have nonzero scalar product modulo ``3``,
+    // so we may use function ``xp2co1_chain_short_3`` to compute
+    // the images of the vectors in that sequence under the group
+    // element ``elem``. Form these images we may compute the
+    // images of the unit vectors ``8 * e_i``, which form the
+    // matrix ``8 * L``.
+
+    for (i = 0; i <= 20; ++i) src3[i] = STD_V3 << i;
+    src3[21] =  0x1800000ULL;
+    src3[22] =  STD_V3 >> 2;
+    src3[23] =  STD_V3 >> 1;
+    src3[24] =  0xc;
+    dest3[0] =  elem[0];
+
+    res =  xp2co1_elem_to_qs(elem, &qs);
+    if (res < 0) return res;
+    res = xp2co1_chain_short_3(&qs, 25, src3, dest3);
+    if (res < 0) return res;
+
+    memset(pdest + 2*24, 0, 24);
+    res = xp2co1_add_short_3_leech(dest3[24], 1, pdest + 2*24, pdest + 2*24);
+    memcpy(pdest + 3*24, pdest + 2*24, 24);
+    res |= xp2co1_add_short_3_leech(dest3[0], 1, pdest + 2*24, pdest + 2*24);
+    res |= xp2co1_add_short_3_leech(dest3[0], -1, pdest + 3*24, pdest + 3*24);
+    res |= xp2co1_add_short_3_leech(dest3[23], 2, pdest + 2*24, pdest + 1*24);
+    res |= xp2co1_add_short_3_leech(dest3[22], 2, pdest + 1*24, pdest + 0*24);
+    res |= xp2co1_add_short_3_leech(dest3[21], 2, pdest + 0*24, 
+              pdest + 23*24);
+    for (i = 20; i >= 2; --i) {
+       res |= xp2co1_add_short_3_leech(dest3[i], 2, pdest + (i+3)*24, 
+           pdest + (i+2)*24);
+    }
+    return res;
+}
 
 
 

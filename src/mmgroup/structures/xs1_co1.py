@@ -26,6 +26,7 @@ from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_inv_elem
 from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
 from mmgroup.clifford12 import xp2co1_elem_y
+from mmgroup.clifford12 import xp2co1_elem_to_leech_op
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -188,7 +189,13 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
     @property
     def qs(self):
-        return QStateMatrix(xp2co1_elem_to_qs(self._data))
+        return QStateMatrix(xp2co1_elem_to_qs(self._data)).T.reduce()
+        
+    @property
+    def leech_op(self):
+        a = np.zeros(576, dtype = np.int8)
+        xp2co1_elem_to_leech_op(self._data, a) 
+        return a.reshape((24,24))        
 
         
     def order(self, max_order = 119):

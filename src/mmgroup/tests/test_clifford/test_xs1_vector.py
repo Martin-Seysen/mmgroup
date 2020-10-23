@@ -247,7 +247,7 @@ def conjugate_xi(x, exp):
     elem_l = Xs12_Co1(('l', exp))
     mat_l = elem_l.qs.gate_h(0x800800)
     mat_x = qs_pauli_matrix(12, x)
-    mat_res = mat_l @ mat_x @ mat_l.inv()
+    mat_res = mat_l.inv() @ mat_x @ mat_l
     return mat_res.pauli_vector()
    
 @pytest.mark.qstate
@@ -274,7 +274,7 @@ def test_conjugate_xi(verbose = 0):
            
 
 def create_test_elements():
-    for i in range(20):
+    for i in range(50):
         g1 = rand_element("xydplyplyplxydp")
         g2 = rand_element("xydplyplyplxydp")
         yield g1, g2
@@ -298,6 +298,22 @@ def test_group(verbose = 0):
             if not ok:
                 ERR = "Multiplication in group G_{x1} failed"
                 raise ValueError(ERR)
+        gq1 = gm1.qs
+        gq2 = gm2.qs
+        gq3 = gm3.qs  
+        gq3_ref = gq1 @ gq2
+        sign_q  = int(gq3 == -gq3_ref)
+        assert sign_q  or  gq3_ref == gq3       
+
+        gleech1 = gm1.leech_op
+        gleech2 = gm2.leech_op
+        gleech3 = gm3.leech_op  
+        gleech3_ref = gleech1 @ gleech2 / 8
+        sign_leech  = int((gleech3 == -gleech3_ref).all())
+        assert  (gleech3 @ gleech3.T == 64 * np.eye(24)).all()       
+        assert sign_leech  or  (gleech3_ref == gleech3).all()
+
+                
         gm1i =  gm1**(-1) 
         ok = gm1 * gm1i == unit
         if verbose or not ok:

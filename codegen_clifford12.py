@@ -159,7 +159,7 @@ H_FILE_END = """
 PXD_DECLARATIONS = """
 
 from libc.stdint cimport uint64_t, uint32_t, uint16_t, uint8_t
-from libc.stdint cimport int64_t, int32_t
+from libc.stdint cimport int64_t, int32_t, int8_t
 
 
 cdef extern from "clifford12.h":
