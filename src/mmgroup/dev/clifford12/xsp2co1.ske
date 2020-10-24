@@ -40,7 +40,7 @@ extern "C" {
 // If ERROR_POOL is defined then function xp2co1_error_pool() can
 // read data from an "error pool" that contains debug information
 // for certain functions after calling them.
-#define ERROR_POOL
+// #define ERROR_POOL
 
 // Number of entries of type uit64_t of the ERROR_POOL
 #define LEN_ERROR_POOL 20
@@ -400,16 +400,11 @@ int32_t xp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
 
 
 
-// %%EXPORT p
-int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
+static inline 
+int32_t xp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t x1, uint64_t *e)
 {
-    int32_t res;
     uint_fast32_t i;
-    res = qstate12_reduce(pqs); 
-    if (res < 0) return res;
     if (pqs->nrows > 25) return -5;
-    res = qstate12_check(pqs);
-    if (res < 0) return res;
     for (i = 0; i < pqs->nrows; ++i) e[i+1] =  pqs->data[i];
     for (i = pqs->nrows; i < 25; ++i) e[i+1] = 0;
     if (pqs->factor & 4) x1 ^= 0xffffffffffffULL;
@@ -417,7 +412,28 @@ int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
     return 0;    
 }
 
+// %%EXPORT p
+int32_t xp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
+{
+    int32_t res;
+    res = qstate12_reduce(pqs); 
+    if (res < 0) return res;
+    res = qstate12_check(pqs);
+    if (res < 0) return res;
+    return  xp2co1_qs_to_elem_noreduce(pqs, x1, e);    
+}
 
+
+
+// %%EXPORT px
+int32_t xp2co1_reduce_elem(uint64_t *e)
+{
+    int32_t res;
+    qstate12_type qs;
+    res = xp2co1_elem_to_qs(e, &qs);
+    if (res < 0) return res;
+    return xp2co1_qs_to_elem_noreduce(&qs, e[0], e); 
+}
 
 
 /*************************************************************************
@@ -442,20 +458,7 @@ void xp2co1_copy_elem(uint64_t *e1, uint64_t *e2)
 }
 
 
-// %%EXPORT px
-int32_t xp2co1_reduce_elem(uint64_t *e1)
-{
-    int32_t res;
-    qstate12_type qs;
-    res = xp2co1_elem_to_qs(e1, &qs);
-    if (res < 0) return res;
-    res = qstate12_reduce(&qs); 
-    if (res < 0) return res;
-    res = qstate12_check(&qs);
-    if (qs.factor & 4) e1[0] ^= 0xffffffffffffULL;
-    e1[0] = short_3_reduce(e1[0]);
-    return res;
-}
+
 
 
 
@@ -490,7 +493,7 @@ int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
     #endif    
     if (res < 0) return res;
     if (adest[2] == 0) return -12;
-    res = xp2co1_qs_to_elem(&qs3, adest[2], e3);
+    res = xp2co1_qs_to_elem_noreduce(&qs3, adest[2], e3);
     return res;
 }
 
@@ -515,7 +518,7 @@ int32_t xp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
     res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
     if (res < 0) return res;
     if (adest[2] == 0) return -12;
-    res = xp2co1_qs_to_elem(&qs2, adest[2], e2);
+    res = xp2co1_qs_to_elem_noreduce(&qs2, adest[2], e2);
     return res;
 }
 
@@ -600,7 +603,7 @@ int32_t xp2co1_elem_x_delta(uint64_t *e1, uint32_t x, uint32_t delta)
     if (res < 0) return res;
     res = qstate12_pauli_matrix(&qs, 12, v);
     if (res < 0) return res;
-    return xp2co1_qs_to_elem(&qs, STD_V3, e1);
+    return xp2co1_qs_to_elem_noreduce(&qs, STD_V3, e1);
 }
 
 
@@ -761,7 +764,7 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
 
 
 
-// %%EXPORT px
+static
 int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
 // Given a short Leech lattice vector ``x`` (modulo 3), and short 
 // Leech latice vectors ``src`` and ``dest``, referred by ``psrc`` and 

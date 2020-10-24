@@ -68,3 +68,10 @@ except:
     warnings.warn(w, UserWarning)
 
 
+try:
+    from mmgroup.structures.xs1_co1 import Xs12_Co1
+except:
+    w = "Module 'mmgroup.structures.xs1_co1' not found!"
+    warnings.warn(w, UserWarning)
+    
+    
