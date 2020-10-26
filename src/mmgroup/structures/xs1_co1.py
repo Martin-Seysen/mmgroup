@@ -20,13 +20,12 @@ from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem
 from mmgroup.clifford12 import xp2co1_chain_short_3 
 from mmgroup.clifford12 import xp2co1_neg_elem
 from mmgroup.clifford12 import error_string, chk_qstate12
-from mmgroup.clifford12 import xp2co1_unit_elem, xp2co1_elem_delta_pi
-from mmgroup.clifford12 import xp2co1_elem_x_delta
+from mmgroup.clifford12 import xp2co1_unit_elem
 from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_inv_elem
 from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
-from mmgroup.clifford12 import xp2co1_elem_y
 from mmgroup.clifford12 import xp2co1_elem_to_leech_op
+from mmgroup.clifford12 import xp2co1_mul_elem_atom
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -140,44 +139,13 @@ class Xs12_Co1_Word(AbstractGroupWord):
     __slots__ =  "_data" 
     def __init__(self, atoms = [], **kwds):
         self.group = kwds['group']
-        self._data = np.zeros(26, dtype = np.uint64) 
-        if len(atoms) ==  0:
+        self._data = np.zeros(26, dtype = np.uint64)
+        if len(atoms):
+            chk_qstate12(xp2co1_mul_elem_atom(self._data, atoms[0], 1))
+            for v in atoms[1:]:
+                chk_qstate12(xp2co1_mul_elem_atom(self._data, v, 0))
+        else:
             xp2co1_unit_elem(self._data)
-            return
-        elem = self._data
-        while len(atoms):
-            tag = atoms[0] >> 28 
-            if tag == 1:
-                if len(atoms) > 1 and  atoms[1] >> 28  == 2:    
-                    xp2co1_elem_delta_pi(elem, atoms[0] & 0xfff,
-                        atoms[1] & 0xfffffff)  
-                    atoms = atoms[2:]
-                else:  
-                    xp2co1_elem_delta_pi(elem, atoms[0] & 0xfff, 0)
-                    atoms = atoms[1:]
-            elif tag == 2:           
-                xp2co1_elem_delta_pi(elem, 0, atoms[0] & 0xfffffff) 
-                atoms = atoms[1:]                
-            elif tag == 3:           
-                if len(atoms) > 1 and  atoms[1] >> 28  == 1: 
-                    xp2co1_elem_x_delta(elem, atoms[0] & 0x1fff, 
-                        atoms[1] & 0xfff)  
-                    atoms = atoms[2:]
-                else:  
-                    xp2co1_elem_x_delta(elem, atoms[0] & 0x1fff, 0)
-                    atoms = atoms[1:]
-            elif tag == 4:           
-                xp2co1_elem_y(elem, atoms[0] & 0x1fff)
-                atoms = atoms[1:]
-            elif tag == 6:  
-                xp2co1_elem_xi(elem, atoms[0] & 0xfffffff)
-                atoms = atoms[1:]
-            else:
-                raise ValueError("Bad element of group G_{x1}") 
-            if not elem is self._data:
-                xp2co1_mul_elem(self._data, elem, self._data) 
-            elif len(atoms):
-                elem = np.zeros(26, dtype = np.uint64)   
                 
     @property
     def data(self):

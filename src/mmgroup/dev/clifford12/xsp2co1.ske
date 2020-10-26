@@ -37,6 +37,7 @@ extern "C" {
 #define ERR_LEECH_OP -201  // Internal error in operation of group Co_0
 #define ERR_REP_GX1 -202   // Error in operation of group 2^{{1+24}}.Co_1
 #define ERR_NOTIN_XSP -203 // Element of 2^{{1+24}}.Co_1 not in 2^{{1+24}}
+#define ERR_GX1_TAG -204   // Bad tag for atom in group 2^{{1+24}}.Co_1 
 
 // The standard short Leech lattice vector modulo 3
 #define STD_V3  0x8000004ULL
@@ -791,6 +792,9 @@ void xp2co1_elem_xi(uint64_t *e, uint32_t exp)
 {
     uint_fast32_t i;
     uint64_t *p_xi;
+    // Before we have generated the array ``elem_xi`` manually
+    // we cannot return anythin greasonable here.
+    // return ERR_GX1_TAG;
     xp2co1_unit_elem(e);
     exp %= 3;
     if (exp == 0) return;
@@ -798,6 +802,92 @@ void xp2co1_elem_xi(uint64_t *e, uint32_t exp)
     for (i = 0; i < 4; ++i) e[i] = p_xi[i];
     for (i = 4; i < 12; ++i) e[i + 6] = p_xi[i];
 }
+
+
+
+// %%EXPORT px
+int32_t xp2co1_mul_elem_atom(uint64_t *e, uint32_t v, uint32_t set_one)
+// Multiply the element ``e`` of the group ``g_{{x1}}`` with the atom
+// given by ``v``. Atom ``v`` is interpreted as follows:
+// Bit 31:      sign of exponent
+// Bit 30..28   tag
+// Bit 27..0    operarand
+// Tag are as follows:
+//
+//                bit
+// Tag  word     length   operand
+//  0:  1         -       unit of the group, no operand
+//  1:  x_delta   12      delta in C* in 'cocode' rep
+//  2:  x_pi      28      pi a permutation number  
+//  3:  x_d       13      d an element of the parker loop
+//  4:  y_d       13      d an element of the parker loop
+//  5:  t**e      28      exponent e
+//  6:  xi**e     28      exponent e
+//  7   illegal                  
+// 
+// 
+// If ``set_one`` is not zero then ``g`` is set to ``1`` before
+// multiplication with atom ``v``.
+{
+    uint_fast32_t tag, x = 0;
+    uint64_t atom[26], *p_atom = atom;
+    uint8_t perm[24], perm_i[24];
+    uint32_t aut[12], aut_i[12];
+    int32_t res;
+
+    if (set_one)  xp2co1_unit_elem(p_atom = e);
+    tag = v >> 28;
+    v &= 0xfffffff;
+    switch(tag) {
+        case 8:
+        case 0:
+           return 0;
+        case 8 + 1:
+        case 1:
+           return elem_op_xspecial(e, v & 0xfff);
+        case 8 + 2:
+           mat24_m24num_to_perm(v, perm);
+           mat24_perm_to_autpl(0, perm, aut);
+           mat24_inv_perm(perm, perm_i);
+           mat24_inv_autpl(aut, aut_i);
+           res = elem_delta_pi_aut(p_atom, perm_i, aut_i);
+           if (res < 0) return res;
+           break;
+        case 2:
+           mat24_m24num_to_perm(v, perm);
+           mat24_perm_to_autpl(0, perm, aut);
+           res = elem_delta_pi_aut(p_atom, perm, aut);
+           if (res < 0) return res;
+           break;
+        case 8 + 3:
+           x ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000) << 12;
+        case 3:
+           x ^=  ((v & 0x1fffUL) << 12);
+           x ^=  MAT24_THETA_TABLE[v & 0x7ff] & 0xfff;
+           return elem_op_xspecial(e, x);
+        case 8 + 4:
+           x ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
+        case 4:
+           x ^= v & 0x1fffUL;
+           res = xp2co1_elem_y(p_atom, x);
+           if (res < 0) return res;
+           break;
+        case 8 + 5:
+        case 5:
+           if (v % 3 == 0) return 0;
+        default:
+           return ERR_GX1_TAG;
+        case 8 + 6:
+           v ^= 0xfffffff;
+        case 6:
+           v %= 3;
+           if (v == 0) return 0;
+           xp2co1_elem_xi(p_atom, v);
+           break;
+    }
+    return set_one ? 0 :  xp2co1_mul_elem(e, atom, e);
+}
+
 
 
 
