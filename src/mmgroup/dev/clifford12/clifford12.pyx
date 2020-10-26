@@ -41,6 +41,11 @@ QSTATE12_ERROR_STRINGS = {
  -101: "Shape mismatch in QStateMatrix operation",
  -102: "QStateMatrix is not invertible",
  -103: "QStateMatrix is not in the Pauli group",
+ 
+ # Additional error codes taken from file xsp2co1.c
+ -201: "Internal error in operation of group Co_0",
+ -202: "Internal Error in operation of group 2^{1+24}.Co_1",
+ -203: "Element of 2^{1+24}.Co_1 is not in subroup 2^{1+24}",
 }
 
 

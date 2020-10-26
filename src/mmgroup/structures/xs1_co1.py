@@ -159,7 +159,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
                 xp2co1_elem_delta_pi(elem, 0, atoms[0] & 0xfffffff) 
                 atoms = atoms[1:]                
             elif tag == 3:           
-                if len(atoms) > 1 and  atoms[1] >> 28  == 1:    
+                if len(atoms) > 1 and  atoms[1] >> 28  == 1: 
                     xp2co1_elem_x_delta(elem, atoms[0] & 0x1fff, 
                         atoms[1] & 0xfff)  
                     atoms = atoms[2:]

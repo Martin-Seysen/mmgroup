@@ -5,8 +5,6 @@
 
 
 
-
-
 /*************************************************************************
 ** External references 
 *************************************************************************/
@@ -33,8 +31,17 @@ extern "C" {
 *************************************************************************/
 
 
+// Error codes returned by functions n this module
+// These error codes extend those defined in  
+// ``enum qstate12_error_type`` in file qstate12.h.
+#define ERR_LEECH_OP -201  // Internal error in operation of group Co_0
+#define ERR_REP_GX1 -202   // Error in operation of group 2^{{1+24}}.Co_1
+#define ERR_NOTIN_XSP -203 // Element of 2^{{1+24}}.Co_1 not in 2^{{1+24}}
+
 // The standard short Leech lattice vector modulo 3
 #define STD_V3  0x8000004ULL
+// The negative of STD_V3
+#define STD_V3_NEG  0x4000008ULL
 
 
 // If ERROR_POOL is defined then function xp2co1_error_pool() can
@@ -256,22 +263,39 @@ uint64_t xp2co1_short_3to2(uint64_t x)
 *************************************************************************/
 
 
+
+
+
 static inline
-int32_t xp2co1_basis_to_conjugate(qstate12_type *pqs)
+int32_t xp2co1_conv_conjugate_basis(qstate12_type *pqs)
 {
     return qstate12_gate_h(pqs, 0x800800);
 }
 
 
 
-static inline
-int32_t xp2co1_conjugate_to_basis(qstate12_type *pqs)
-{
-    return qstate12_gate_h(pqs, 0x800800);
+static inline uint32_t conv_pauli_vector_xspecial(uint32_t x)
+{  
+    uint32_t t;
+    x &= 0x1ffffff;
+    t = (x ^ (x >> 12)) & 0x800UL;
+    x ^= (t << 12) ^ t;       
+    t = x & (x >> 12) & 0x7ff;
+    t ^= t >> 6; t ^= t >> 3; 
+    t = (0x96 >> (t & 7)) & 1;
+    x ^= t << 24;
+    return x;
 }
 
 
 
+static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
+{  
+    uint32_t t;
+    t = (x ^ (x >> 12)) & 0x800UL;
+    x ^= (t << 12) ^ t;       
+    return x;
+}
 
 /*************************************************************************
 *** Chains of short vectors in the Leech lattice mod 3
@@ -353,14 +377,18 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
     // Create temporary copy of *pqs
     res = qstate12_copy_alloc(pqs, &qs, qs_data, MAXROWS_ELEM);
     if (res < 0) return res;
-    res = xp2co1_basis_to_conjugate(&qs);
-    if (res < 0) return res;    
     if (length <= 0) return 0;
     dest0 = short_3_reduce(pdest[0]);
-    for (i = 0; i < length; ++i) pdest[i] = xp2co1_short_3to2(psrc[i]);
+    for (i = 0; i < length; ++i) {
+        pdest[i] = xp2co1_short_3to2(psrc[i]);
+        pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
+    }
     res = qstate12_pauli_conjugate(&qs, length, pdest);
     if (res < 0) return res;
-    for (i = 0; i < length; ++i) pdest[i] = xp2co1_short_2to3(pdest[i]);
+    for (i = 0; i < length; ++i) {
+        pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
+        pdest[i] = xp2co1_short_2to3(pdest[i]);
+    }    
     ok = (pdest[0] ==  dest0) || 
         (short_3_reduce(pdest[0] ^ 0xffffffffffffULL) == dest0);
     pdest[0] = ok ? dest0 : 0;
@@ -371,7 +399,7 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
             short_3_reduce(pdest[i] ^ 0xffffffffffffULL);
         ok = ok && src_prod  &&  prod;
     }
-    return ok ? 0 : -13;
+    return ok ? 0 : ERR_LEECH_OP;
 }
 
 
@@ -395,7 +423,7 @@ int32_t xp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
         --pqs->nrows;
         pqs->factor += 16;
     }
-    return qstate12_check(pqs);
+    return 0;
 }
 
 
@@ -404,8 +432,10 @@ static inline
 int32_t xp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t x1, uint64_t *e)
 {
     uint_fast32_t i;
-    if (pqs->nrows > 25) return -5;
-    for (i = 0; i < pqs->nrows; ++i) e[i+1] =  pqs->data[i];
+    if (pqs->nrows > 25) return ERR_QSTATE12_BUFFER_OVFL;
+    for (i = 0; i < pqs->nrows; ++i) {
+        e[i+1] =  pqs->data[i] & 0x1fffffeffffffULL;
+    }
     for (i = pqs->nrows; i < 25; ++i) e[i+1] = 0;
     if (pqs->factor & 4) x1 ^= 0xffffffffffffULL;
     e[0] = short_3_reduce(x1);  
@@ -432,7 +462,7 @@ int32_t xp2co1_reduce_elem(uint64_t *e)
     qstate12_type qs;
     res = xp2co1_elem_to_qs(e, &qs);
     if (res < 0) return res;
-    return xp2co1_qs_to_elem_noreduce(&qs, e[0], e); 
+    return xp2co1_qs_to_elem(&qs, e[0], e); 
 }
 
 
@@ -492,7 +522,6 @@ int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
         memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
     #endif    
     if (res < 0) return res;
-    if (adest[2] == 0) return -12;
     res = xp2co1_qs_to_elem_noreduce(&qs3, adest[2], e3);
     return res;
 }
@@ -517,14 +546,72 @@ int32_t xp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
     asrc[1] = xp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
     if (res < 0) return res;
-    if (adest[2] == 0) return -12;
     res = xp2co1_qs_to_elem_noreduce(&qs2, adest[2], e2);
     return res;
 }
 
 
+
 /*************************************************************************
-*** Cnstruction of group elements
+*** Conjugation of extraspecial element with group element
+*************************************************************************/
+
+
+// %%EXPORT px
+int32_t xp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *pv)
+{
+    qstate12_type qs, qs1;
+    uint64_t data[MAXROWS_ELEM];
+    int_fast32_t res;
+    uint_fast32_t i;
+
+    res = xp2co1_elem_to_qs(elem, &qs);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+
+    for (i = 0; i < n; ++i) {
+        pv[i] = conv_pauli_vector_xspecial((uint32_t)pv[i]);
+    }
+    res = qstate12_pauli_conjugate(&qs, n, pv);
+    if (res < 0) return res;
+    for (i = 0; i < n; ++i) {
+        pv[i] = conv_pauli_vector_xspecial((uint32_t)pv[i]);
+    }    
+    return 0;
+}
+
+/*************************************************************************
+*** Check if an element is in the extraspecial group
+*************************************************************************/
+
+
+
+
+// %%EXPORT px
+int32_t xp2co1_xspecial_vector(uint64_t *elem, uint32_t *pv)
+{
+    int32_t res;
+    qstate12_type qs, qs1;
+    uint64_t data[MAXROWS_ELEM], v, e0;
+    res = xp2co1_elem_to_qs(elem, &qs);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_pauli_vector(&qs1, &v);
+    if (res < 0) {
+       return res == ERR_QSTATE12_PAULI_GROUP ? ERR_NOTIN_XSP : res;
+    }
+    e0 = short_3_reduce(elem[0]);
+    if (e0 == STD_V3_NEG) v ^= 0x1000000;
+    else if (e0 != STD_V3) return ERR_NOTIN_XSP;
+    *pv = conv_pauli_vector_xspecial((uint32_t) v);
+    return 0;
+}
+
+
+/*************************************************************************
+*** Construction of  elements in the extraspecial subgroup
 *************************************************************************/
 
 
@@ -543,6 +630,63 @@ void xp2co1_unit_elem(uint64_t *e)
 }
 
 
+
+
+static inline 
+int32_t elem_op_xspecial(uint64_t *e1, uint32_t x)
+// Multiplies the element ``e1`` of the group ``G_{{x1}}`` with
+// the element ``x`` of the extraspecial group. Here 
+// ``x_d`` * ``x_delta`` in the notation of :cite:``Seys19``
+// is encoded as ``x = 0x1000 * d + delta``, ``0 <= x < 0x2000``,
+// ``0 <= delta < 0x1000``.
+{
+    int32_t res;
+    qstate12_type qs; 
+    uint64_t w;
+    
+    res = xp2co1_elem_to_qs(e1, &qs);
+    if (res < 0) return res;
+    x = conv_pauli_vector_xspecial(x);
+    // Apply phase pi gate to rows i = 0,...,11 if bit i of x is 1.
+    if ((res = qstate12_mul_Av(&qs, (x & 0xfff) << 12, &w)) < 0) 
+        return res;
+    e1[1] ^= (w & (0-2ULL)) << 24;
+    // Apply not gate to rows i = 0,...,11 if bit i+12 of x is 1.
+    e1[1] ^= x & 0xfff000;
+    // Negate element if necessary
+    if ((w ^ (x >> 24)) & 1) {
+        e1[0] = short_3_reduce(e1[0] ^ 0xffffffffffff);
+    }
+    return 0;
+}
+
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_xspecial(uint64_t *e1, uint32_t x)
+{
+    xp2co1_unit_elem(e1);
+    return elem_op_xspecial(e1, x);
+}
+
+
+// %%EXPORT px
+int32_t xp2co1_elem_x_delta(uint64_t *e1, uint32_t x, uint32_t delta)
+{
+    uint_fast32_t v;
+    v =  ((x & 0x1fffUL) << 12) + (delta & 0xfffUL);
+    v ^=  MAT24_THETA_TABLE[x & 0x7ff] & 0xfff;
+    xp2co1_unit_elem(e1);
+    return elem_op_xspecial(e1, v);
+}
+
+
+
+/*************************************************************************
+*** Construction of other group elements
+*************************************************************************/
+
+
 static 
 int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
 {
@@ -557,7 +701,7 @@ int32_t elem_delta_pi_aut(uint64_t *e1, uint8_t perm[24], uint32_t aut[12])
     if (res < 0) return res;
     res = qstate12_monomial_column_matrix(&qs, 12, data);
     if (res < 0) return res;
-    res = xp2co1_conjugate_to_basis(&qs);
+    res = xp2co1_conv_conjugate_basis(&qs);
     if (res < 0) return res;
     
     x = (ONE << perm[2]) + (ONE << (perm[3] + 24));
@@ -581,30 +725,7 @@ int32_t xp2co1_elem_delta_pi(uint64_t *e1, uint32_t delta, uint32_t pi)
 
 
 
-// %%EXPORT px
-int32_t xp2co1_elem_x_delta(uint64_t *e1, uint32_t x, uint32_t delta)
-{
 
-    int32_t res;
-    uint64_t v, t, data[MAXROWS_ELEM];
-    qstate12_type qs;
-
-    v =  ((x & 0x1fffUL) << 12) + (delta & 0xfffUL);
-    v ^=  MAT24_THETA_TABLE[x & 0x7ff] & 0xfff;
-    t = (delta ^ x) & 0x800UL;
-    v ^= (t << 12) ^ t;    
-    
-    t = v & (v >> 12);
-    t ^= t >> 6; t ^= t >> 3; 
-    t = (0x96 >> (t & 7)) & 1;
-    v ^= t << 24;
-    
-    res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
-    if (res < 0) return res;
-    res = qstate12_pauli_matrix(&qs, 12, v);
-    if (res < 0) return res;
-    return xp2co1_qs_to_elem_noreduce(&qs, STD_V3, e1);
-}
 
 
 
@@ -724,7 +845,7 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     res = qstate12_reduce(&qs2);
     if (res < 0) return res;
-    if (qs2.factor & 0x13) return -14;
+    if (qs2.factor & 0x13) return ERR_REP_GX1;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
     x = e1[0];
     if (sign) x ^= 0xffffffffffffULL;
@@ -782,13 +903,14 @@ int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_
     switch (w1 + w2) {
         case 23:
             cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
-            if ((cocodev == 0) || (cocodev & (cocodev - 1))) return -13;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) 
+                return ERR_LEECH_OP;
             f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
             f[1] = (int8_t)factor;
             gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
             break;              
         case 8:
-            if (w1 & 1) return -13;
+            if (w1 & 1) return ERR_LEECH_OP;
             gcodev = (x | (x >> 24)) & 0xffffffUL;
             f[1] = -2 * (int8_t)factor;
             break;
@@ -797,11 +919,11 @@ int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_
             f[1] = 4 * (int8_t)factor;
             break;
         default:
-            return -13;        
+            return ERR_LEECH_OP;        
     }
     f[2] = -f[1];
     gcodev = mat24_vect_to_gcode(gcodev);
-    if (gcodev & 0xfffff000UL) return -13;
+    if (gcodev & 0xfffff000UL) return ERR_LEECH_OP;
     x = xp2co1_to_vect_mod3(x);
 
     for (i = 0; i < 24; ++i) {
@@ -873,6 +995,97 @@ int32_t xp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
 }
 
 
+
+/*************************************************************************
+*** Type of a Leech vector
+*************************************************************************/
+
+// %%EXPORT px
+uint32_t xp2co1_leech_type(uint64_t x)
+// Return ``0x10 * type(x) + subtype(x)`` for a vector ``x``
+// in the Leech lattice modulo ``2``.
+// The type of a vector is half the length of the shortest 
+// representative of a vector in the Leech lattice.
+// The subtype decsribes the double coset of the vector in
+// in ``N_x \ Co_1 / N_x``, where ``Co``_1 is the automorphism 
+// group of the Leech lattice modulo ``2``, and ``N_x`` is the 
+// automorphism group of a vector ``(2,...,2)`` in the standard 
+// basis of the Leech lattice modulo ``N_x`` has structure 
+// ``2^11. Mat_24``, with ``Mat_24`` the Mathieu group operating
+// on 24 elements.
+//
+// In :cite`:`Con85` a vector in th Leech lattice is
+// denotes by ``x_d * x_delta``, where ``d`` is an element of
+// the Golay code and ``delta`` is an eöment of it cocode. 
+// Subtypes can be described as follows:
+//
+// 0: The set contains an element with ``delta = 0``
+// 1: ``delta`` has weight ``1`` for all elements in the set.
+// 2: ``d`` or its complement is an octad and ``delta`` is
+//     even and contained in that octad.
+// 3: ``delta`` has weight ``1`` for all elements in the set.  
+// 4: ``d`` or its complement is an octad and ``delta`` is
+//     even and not contained in that octad.
+// 6: ``d`` has weight 12
+// 8: The singleton containing ``(2,...,2)`` 
+//
+// Valid combinations of type and subtype (hex) are
+//
+// 00,   20, 21, 22,   31, 33, 34, 36,  
+// 40, 42, 43, 44, 46, 48.
+{
+    static uint8_t tab_odd[4] = {
+        0x21, 0x31, 0x43, 0x33
+    };
+    static uint8_t tab_even_scalar1[7] = {
+        0xff, 0xff, 0x34, 0x36, 0x34, 0xff, 0xff
+    };
+    uint_fast32_t  x1, gcodev, cocodev, theta, w, cw,scalar, lsb;
+    x1 = (uint_fast32_t)x;
+    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]; 
+    // put cw = min weight of cocode word
+    cw = mat24_cocode_weight(x1 ^ theta);
+    // Put scalar = scalar product (code, cocode)
+    scalar = (x1 >> 12) &  x1 & 0xfff;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    scalar = (0x96 >> (scalar & 7)) & 1;
+    
+    // Deal with odd cocode first
+    if (x1 & 0x800) return tab_odd[cw-1+scalar]; 
+    
+    // Put w = weight(code word gcodev) / 4
+    w = 0 - ((x1 >> 23) & 1);
+    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+
+    // Deal with even cocode and scalar == 1
+    if (scalar) return tab_even_scalar1[w];
+   
+    switch (w) {
+        case 6:
+            if (cw == 0) return 0x48;
+        case 0: 
+            return cw << 4;
+        case 3:
+            return 0x46;
+        case 4:
+            // Add 1....1 to bit vector x (in vector rep)
+            x1 ^= 0x800000; 
+        default:   // This must be case 2:
+            // Put gcodev = codeword (in vector rep)
+            gcodev = mat24_gcode_to_vect(x1 >> 12); 
+            // Put coccodev = cocode word (in vector rep), such that
+            // the cocode word is a suboctad of gcodev if possible
+            lsb = mat24_lsbit24(gcodev);
+            cocodev = mat24_cocode_syndrome(x1 ^ theta, lsb); 
+            // Put cw = 0x22 if (w ^ cw) & 2 is 2, else put cw = 0x42
+            cw = 0x42 - (((w ^ cw) & 2) << 4);
+            // Return cw if cocodev is a suboctad of gcodev
+            if ((gcodev & cocodev) == cocodev) return cw;
+            // Otherwise vector is of type 4
+            return 0x44;          
+    }
+}
 
 // %%GEN ch
 #ifdef __cplusplus
