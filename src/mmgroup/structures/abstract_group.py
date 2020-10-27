@@ -141,7 +141,7 @@ class AbstractGroupWord(object):
         elif isinstance(exp, AbstractGroupWord):
             e = self.group._to_group(exp) 
             return g._imul(g._imul(g._invert(e), self), e)
-        elif isinstance(other, Parity):
+        elif isinstance(exp, Parity):
             one = self.group.neutral()
             if self * self == one:
                 return self if other.value & 1 else one

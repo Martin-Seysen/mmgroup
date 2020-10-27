@@ -545,6 +545,7 @@ class GCode():
         """
         th = mat24.ploop_theta(self.value) 
         if g2 == None:
+            complete_import()
             return Cocode(th)
         if isinstance(g2, GCode):
             return Parity(mat24.scalar_prod(g2.value, th))

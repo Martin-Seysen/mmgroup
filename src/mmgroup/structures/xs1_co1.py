@@ -26,6 +26,9 @@ from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
 from mmgroup.clifford12 import xp2co1_elem_to_leech_op
 from mmgroup.clifford12 import xp2co1_mul_elem_atom
+from mmgroup.clifford12 import xp2co1_xspecial_vector
+from mmgroup.clifford12 import xp2co1_xspecial_conjugate
+from mmgroup.clifford12 import xp2co1_elem_xspecial
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -176,12 +179,35 @@ class Xs12_Co1_Word(AbstractGroupWord):
         ``max_order``. By default, the function returns the exact 
         order of the element.
         """
-        raise NotImplementedError
-        if check_mm_order is None:
-            import_mm_order_functions()
-        return check_mm_order(self, max_order)
+        o = self.qs.order(max_order)
+        if o & 1 == 0:
+            o = o >> 1
+        unit, pw = self.group(), self**o
+        if pw == unit:
+            return o
+        for i in range(2):
+            o, pw = 2*o, pw * pw
+            if pw == unit:
+                return o
+        err = "Order of QStateMatrix object not found" 
+        raise ValueError(err)
 
 
+    def as_xsp(self):
+        v = np.zeros(1, dtype = np.uint32)
+        chk_qstate12(xp2co1_xspecial_vector(self._data, v))
+        return v[0]
+
+    def xsp_conjugate(self, v):
+        v = np.array(v, dtype = np.uint64, copy=True)
+        shape = v.shape
+        assert len(shape) <= 1
+        v = np.ravel(v)
+        chk_qstate12(xp2co1_xspecial_conjugate(self._data, len(v), v))
+        if len(shape):
+            return list(map(int,v))
+        else:
+            return int(v[0])
 
 
 ###########################################################################
@@ -333,6 +359,12 @@ class Xs12_Co1_Group(AbstractGroup):
     def str_word(self, v1):
         return "Xs12_Co1 " + str_xs12_co1(v1._data)
  
+    def from_xsp(self, x):
+        w = self.word_type([], group=self)
+        chk_qstate12(xp2co1_elem_xspecial(w._data, x))
+        return w
+
+
 
 
 Xs12_Co1 = Xs12_Co1_Group()
