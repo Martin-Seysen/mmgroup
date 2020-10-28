@@ -100,12 +100,13 @@ in  [Seysen20] and in  module mat24_functions.c  to code a Parker
 loop element as a 13-bit integer v and a Golay cocode element as 
 a 12-bit integer c. Then we put  
 
-        x = 2**12 * v + c. 
+        x = 2**12 * v + (c ^ theta(v)). 
 
 The signs and the basis of the Parker loop have been chosen deliberately 
 in mat24_functions.c in a way compatible to [Seysen20]. For each short 
 vector listed in Table 1 the Parker loop part v (with positive sign) and
 the cocode part c can be computed from the information given in [Seysen20].
+Here function theta is as in function Mat24.ploop_theta.
 
 
 Short vector encoding of the short vector in Q_x
@@ -310,7 +311,6 @@ class Mat24Xi(object):
         exp %= 3
         if (exp == 0): 
             return x
-        x ^= Mat24.ploop_theta(x >> 12)
         scal = bw24((x >> 12) &  x & 0xc0f) & 1  
         x ^= scal << 24 # xor scalar product to sign
 
@@ -326,7 +326,6 @@ class Mat24Xi(object):
             x ^= w2v << 24  # xor w2(code) to sign
         x ^= gv         # xor g(code) to cocode 
         x ^= gc << 12   # xor g(cocode) to code
-        x ^= Mat24.ploop_theta(x >> 12)
         return x
 
     @staticmethod
@@ -336,11 +335,8 @@ class Mat24Xi(object):
         The two factors X1, X1 are coded as integers x1, x2 as in 
         method xi_op_leech. The product is returned in the same form. 
         """
-        x1 ^= Mat24.ploop_theta(x1 >> 12) 
-        x2 ^= Mat24.ploop_theta(x2 >> 12)
         x1 ^= Mat24.scalar_prod(x2 >> 12, x1) << 24;
         x1 ^= x2 
-        x1 ^= Mat24.ploop_theta(x1 >> 12) 
         return x1
 
 
@@ -400,7 +396,8 @@ class Mat24Xi(object):
             gcodev = Mat24.gcode_to_vect(gcode)
             cocode = Mat24.vect_to_cocode(Mat24.spread_b24(cc, gcodev))
             gcode ^=  ((w >> 1) & 1) << 11
-        return (sign << 24) | (gcode << 12) | cocode 
+        cocode ^= Mat24.ploop_theta(gcode)
+        return (sign << 24) | (gcode << 12) | cocode
 
     @staticmethod
     def xi_leech_to_short(x1):   
@@ -414,8 +411,11 @@ class Mat24Xi(object):
         The function returns 0 if the vector x1 is not short. 
         """   
         sign = (x1 >> 24) & 1
+        x1 ^= Mat24.ploop_theta(x1 >> 12)
         gcodev = Mat24.gcode_to_vect(x1 >> 12) 
-        cocodev = Mat24.cocode_syndrome(x1, Mat24.lsbit24(gcodev))
+        cocodev = Mat24.cocode_syndrome(x1, 
+            min(23, Mat24.lsbit24(gcodev))
+        )
         w = Mat24.gcode_weight(x1 >> 12)
         if x1 & 0x800:
             if (Mat24.bw24(cocodev) > 1 or

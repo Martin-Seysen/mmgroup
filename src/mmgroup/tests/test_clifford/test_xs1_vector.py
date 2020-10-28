@@ -237,11 +237,7 @@ def test_vector(verbose = 0):
 #####################################################################
 
 
-
-def ref_conjugate_xi(x, exp):
-    x ^= ploop_theta(x >> 12)
-    res = xi_op_leech(x, exp)
-    return res ^  ploop_theta(res >> 12) 
+ref_conjugate_xi = xi_op_leech
 
 
 def conjugate_xi(x, exp):

@@ -102,8 +102,6 @@ uint32_t mat24_xi_op_leech(uint32_t x1, uint32_t u_exp)
     if ((u_exp = u_exp % 3) == 0) return x1;
     // map u_exp = 1, 2   to  u_exp = -1,  0
     u_exp -= 2;   
-    // transform standard to internal Leech lattice rep
-    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
     // put tv = scalar product of gray parts of code and cocode
     tv = (x1 >> 12) & x1 & 0xc0f;
     tv = 0x6996UL >> ((tv ^ (tv >> 10)) & 0xf);
@@ -122,8 +120,6 @@ uint32_t mat24_xi_op_leech(uint32_t x1, uint32_t u_exp)
     // if old u_exp = 2: x1 ^= (tv>>7)<<24 // xor w2(code) to sign
     tv ^= (tc ^ tv) & u_exp; 
     x1 ^= (tv >> 7) << 24;
-    // transform back to standard  Leech lattice rep
-    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
     return x1;
 }
 
@@ -135,14 +131,11 @@ uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 // %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
 {
     uint_fast32_t scalar;      
-    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff;
-    x2 ^= MAT24_THETA_TABLE[(x2 >> 12) & 0x7ff] & 0xfff;
     scalar = (x2 >> 12) &  x1 & 0xfff;
     scalar ^= scalar >> 6;
     scalar ^= scalar >> 3;
     scalar = (0x96 >> (scalar & 7)) & 1;
     x1 ^= x2 ^ (scalar << 24);
-    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff;
     return x1;
 }
 
@@ -154,6 +147,8 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
     uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
     sign = (x1 >> 24) & 1;
     gcodev = mat24_gcode_to_vect(x1 >> 12);
+    // transform linear to internal Leech lattice rep
+    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
     cocodev = mat24_cocode_syndrome(x1, mat24_lsbit24(gcodev));
     // put w = weight(code word gcodev) / 4
     w = 0 - ((x1 >> 23) & 1);
@@ -281,6 +276,8 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
         cocode = mat24_vect_to_cocode(mat24_spread_b24(cc, gcodev));
         gcode ^=  ((w >> 1) & 1) << 11;
     }
+    // transform internal Leech lattice rep to linear rep
+    cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff; 
     return (sign << 24) | (gcode << 12) | cocode; 
 }
 
