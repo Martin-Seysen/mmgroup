@@ -594,13 +594,24 @@ class QStateMatrix(QState12):
     #########################################################################
     # Formatting a quadratic state matrix
 
+    def show(self, reduced = True):
+        """Return a state as a string.
+        
+        If ``reduced`` is True (default) then the reduced representation
+        of the state is displayed. Otherwise the satte is displayed 
+        'as is'.         
+         
+        The standard conversion of a state to a string, i.e. method
+        ``__str__()``, is equivalent to method ``show()``.         
+        """
+        if reduced:
+            self.reduce()
+        return _format_state(self, reduced)
+
+
     def __str__(self):
-        if FORMAT_REDUCED:
-            qs = self.copy()
-            #qs.reduce_matrix()
-            qs.reduce()
-            return _format_state(qs, True)
-        return _format_state(qs, False)
+        self.reduce()
+        return _format_state(self, True)
 
 
 

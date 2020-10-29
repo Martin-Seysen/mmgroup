@@ -171,8 +171,9 @@ cdef extern from "clifford12.h":
         uint32_t nrows
         uint32_t ncols
         int32_t  factor
-        uint64_t *data 
         uint32_t shape1
+        uint32_t reduced
+        uint64_t *data 
 
 
 """.format()

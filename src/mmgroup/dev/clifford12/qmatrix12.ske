@@ -60,6 +60,7 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
     for (i = 1; i < pqs->nrows; ++i) {
         pqs->data[i] = mask; mask >>= 1;
     } 
+    pqs->reduced = 1;
     return 0;  
 }
 
@@ -273,6 +274,8 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
     if (pqs1->nrows == 0 || pqs2->nrows == 0)  {
         return  pqs1->nrows = pqs2->nrows = 0;
     }
+    pqs1->reduced =  pqs2->reduced = 0;
+
     // Equalize the highest 'nqb' columns of m1 and m2
     for (col_pos = 1; col_pos <= nqb; ++col_pos) {
         col1 = pqs1->ncols - col_pos; col2 = pqs2->ncols - col_pos; 
@@ -337,6 +340,7 @@ int32_t qstate12_mul_elements(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t
     uint32_t k;
     if (bad_state(pqs1) || bad_state(pqs2)) return ERR_QSTATE12_INCONSISTENT;
     if (pqs2->nrows != pqs1->nrows || pqs2->ncols != pqs1->ncols) return -901; 
+    pqs1->reduced = 0;
     m1[0] ^= m2[0] & mask;
     for (k = 1; k < pqs1->nrows; ++k)  {
        int64_t m2m = m2[k] & mask;
@@ -479,7 +483,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, qstate12_type 
 
     res = qstate12_rot_bits(&qs1, 0-nqb, qs1.ncols, 0);
     if (res < 0) return res;
-    res = qstate12_product(&qs1, &qs2, nqb, nqb);
+    res = qs_product(&qs1, &qs2, nqb, nqb);
     if (res < 0) return res;
     qs1.shape1 = cols;    
     return qstate12_copy(&qs1, pqs3);
@@ -551,6 +555,7 @@ int32_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
     m[0] |= bit_rev(nqb, v) << (2 * nqb + 1); 
     m[0] |= v & (mask << nqb);
     v >>= 2*nqb;
+    pqs->reduced = 0;
     pqs->factor |= (v & 1) << 2;    
     pqs->factor |= v & 2;    
     return 0;
@@ -629,6 +634,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     if ((res = qstate12_row_table(pqs, row_table)) < 0) return res;
     if (pqs->nrows == 0) return 0;
     
+    pqs->reduced = 0;
     fst_row = pqs->nrows;
     v = ((ONE << n0) - ONE) << n1;
     for (i = pqs->nrows - 1; i > 0; --i) {
@@ -701,13 +707,18 @@ int32_t qstate12_mat_lb_rank(qstate12_type *pqs)
 // Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
 // referred by pqs. The function returns the binary logarithm of
 // the rank of the matrix. It returns -1 if qs is the zero matrix.
-// Matrix qs is reduced with function qstate12_reduce_matrix().
+// Matrix qs is not changed.
 {
+    qstate12_type qs;
+    uint64_t qs_data[MAXROWS];
     uint8_t row_table[MAXCOLS+4];
     int32_t res; 
-    res = qstate12_reduce_matrix(pqs, row_table);
+    // Create temporary copy of *pqs
+    res = qstate12_copy_alloc(pqs, &qs, qs_data, MAXROWS);
     if (res < 0) return res;
-    return lb_rank_reduced(pqs, row_table);
+    res = qstate12_reduce_matrix(&qs, row_table);
+    if (res < 0) return res;
+    return lb_rank_reduced(&qs, row_table);
 }
 
 

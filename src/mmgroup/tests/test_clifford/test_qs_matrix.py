@@ -99,7 +99,7 @@ def slow_complex(m):
     # be the sum of the matrix ``R`` derivend from ``v`` and
     # ``Q`` as in function ``eval_A_Q()``.
     # Then add ``phases[q mod 4]`` to entry ``a[index]``
-    ncols, data = m.ncols, m.data
+    ncols, data = m.ncols, m.copy().check().raw_data[:m.nrows]
     for v in range(1, 1 << len(data), 2):
         index, q = eval_A_Q(ncols, data, v)
         a[index] += phases[q]
@@ -125,7 +125,7 @@ def check_echelon(m, reduced = False):
     echelon form.
     """
     err = "Bad vector in row % of part A of QSMatrix"
-    data = m.data
+    data = m.copy().check().raw_data[:m.nrows]
     mask = (1 << m.ncols) - 1
     index = m.ncols + 1
     for i, v in enumerate(data[1:]):
@@ -214,6 +214,7 @@ def check_complex(m):
     complex matrix 8with and without previous reduction) against
     the python function ````QStateMatrix()``.    
     """
+    print("m", m.copy().show(reduced = False))
     c0 = slow_complex(m)
     c1 = m.complex(reduce = False)
     err = "Complex matrix from unreduced state"
@@ -293,7 +294,7 @@ def test_qs_matrix(verbose = 0):
     for ntest, m in enumerate(create_display_testvectors()):
         if verbose or ntest < display_len:
             print("TEST %s" % (ntest+1))
-            print(m)
+            print(m.copy())
         check_complex(m)
         m2 = m.copy().echelon()
         check_echelon(m2)

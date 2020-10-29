@@ -132,6 +132,7 @@ cdef class QState12(object):
                 chk_qstate12(cl.qstate12_zero(&self.qs, n))                
             elif isinstance(data, Iterable):
                 nrows = len(data)
+                self.qs.reduced = 0
                 for i in range(min(nrows, QSTATE12_MAXROWS)):
                     self.data_[i] = data[i]
                 chk_qstate12(cl.qstate12_set(
@@ -159,9 +160,15 @@ cdef class QState12(object):
     property data:
         """Get a copy of the data bit matrix of the state as a list"""
         def __get__(self):
-            """Return a copy of the data bits of the state as a numpy array"""
+            """Return a copy of the data bits of the  state as a numpy array"""
+            chk_qstate12(cl.qstate12_reduce(&self.qs))
             chk_qstate12(cl.qstate12_check(&self.qs))
-            cdef int imax = self.qs.nrows
+            cdef uint32_t i
+            cdef uint32_t imax = self.qs.nrows
+            cdef uint64_t *a = &self.data_[0]
+            return  [int(a[i]) for i in range(imax)]
+            
+            """
             a = np.empty(imax, dtype=np.uint64)
             cdef uint64_t[:] a_view = a
             cdef int32_t i
@@ -170,6 +177,7 @@ cdef class QState12(object):
             # Dealing with numpy arrays of type np.uint64 is a nuisance.
             # So we convert is to a list of ints
             return list(map(int, a)) 
+            """
             
     property raw_data:
         """Get a copy of the raw data bit matrix of the state as a list
@@ -177,7 +185,10 @@ cdef class QState12(object):
         For debugging and testing only!
         """
         def __get__(self):
-            return [int(x) for x in self.data_]
+            cdef uint32_t i
+            cdef uint32_t imax = QSTATE12_MAXROWS
+            cdef uint64_t *a = &self.data_[0]
+            return  [int(a[i]) for i in range(imax)]
         
     property nrows:
         """Get the number of rows of the bit matrix of the state """
@@ -280,7 +291,7 @@ cdef class QState12(object):
         
     def set_zero(self):
         """Set state matrix to zero"""
-        self.qs.factor = self.qs.nrows = 0
+        self.qs.factor = self.qs.nrows = self.reduced = 0
         return self
 
     def check(self):
@@ -322,14 +333,19 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_echelonize(&self.qs))
         return self
 
-    def reduce(self):
+    def reduce(self, forced = False):
         """Reduce a state to a standard form
         
         The representation of a state is not unique.  This function
         changes a sate to a unique standard form where the bit matrix A
         of the internal representation of the state is in reduced
         echelon form, as described in the guide.
+        
+        If ``forced`` is ``True``, also a previously reduced state
+        is recuced one again.
         """
+        if forced:
+            self.qs.reduced = 0
         chk_qstate12(cl.qstate12_reduce(&self.qs))
         return self 
 
@@ -342,15 +358,6 @@ cdef class QState12(object):
         return [ row_table[j] for j in range(i) ]
 
  
-    def row_table(self):
-        """Return row table
-        
-        Yet to be documented!!!
-        """
-        cdef uint8_t table[QSTATE12_MAXCOLS] 
-        chk_qstate12(cl.qstate12_echelonize(&self.qs))
-       
-        
                 
 
     #########################################################################

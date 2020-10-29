@@ -33,8 +33,9 @@ typedef struct {
     uint32_t nrows;
     uint32_t ncols;
     int32_t  factor;
-    uint64_t *data;
     uint32_t shape1;
+    uint32_t reduced;
+    uint64_t *data;
 } qstate12_type;
 
 
@@ -59,7 +60,7 @@ enum qstate12_error_type
     ERR_QSTATE12_CTRL_NOT = -10,    // Bad control_not gate
        // A qubit in a ctrl-not gate cannot control itself
     ERR_QSTATE12_SHAPE_COMP = -11,  // Shape mismatch in comparing matrices
-    ERR_QSTATE12_SHAPE_OP = -101,   // Shape mismatch in matric operation
+    ERR_QSTATE12_SHAPE_OP = -101,   // Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, // Matrix is not invertible
     ERR_QSTATE12_PAULI_GROUP = -103, // Matrix is not in the Pauli group
 };
@@ -234,6 +235,7 @@ int32_t qstate12_set_mem(qstate12_type *pqs, uint64_t *data, uint32_t size)
     pqs->ncols = 0;
     pqs->factor = 0;
     pqs->shape1 = 0;
+    pqs->reduced = 0;
     return 0;
 }
 
@@ -252,6 +254,10 @@ int32_t qstate12_zero(qstate12_type *pqs, uint32_t nqb)
     pqs->shape1 = 0;
     if (nqb <=  MAXCOLS) return 0;
     pqs->ncols = 0;
+    // By definition, zero state if, of course, reduced. But it is
+    // likely that somebody will copy data into this state aferwards, 
+    // and re-reducung the zero state is not a big affair.
+    pqs->reduced = 0;
     return ERR_QSTATE12_TOOLARGE;
 }
 
@@ -271,6 +277,7 @@ int32_t qstate12_vector_state(qstate12_type *pqs, uint32_t nqb, uint64_t v)
     pqs->factor = 0;
     pqs->shape1 = 0;
     pqs->data[0] = v & ((ONE << nqb) - 1);
+    pqs->reduced = 1;
     if (nqb + 1 <=  MAXCOLS) return 0;
     pqs->ncols = pqs->nrows = 0;
     return ERR_QSTATE12_TOOLARGE;
@@ -296,6 +303,7 @@ int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t 
     pqs->ncols = nqb;
     pqs->factor = 0;
     pqs->shape1 = 0;
+    pqs->reduced = 0;
     mask = ((ONE << nqb) << nrows) - 1;
     for (i = 0; i < nrows; ++i) m[i] = data[i] & mask;
     mask = ONE << nqb;
@@ -336,6 +344,7 @@ int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2)
     pqs2->factor = pqs1->factor;
     pqs2->ncols = pqs1->ncols;
     pqs2->shape1 = pqs1->shape1;
+    pqs2->reduced = pqs1->reduced;
     memcpy(pqs2->data, pqs1->data, pqs1->nrows * sizeof(uint64_t));
     return 0;
 }
@@ -356,6 +365,7 @@ int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *
     pqs2->factor = pqs1->factor;
     pqs2->ncols = pqs1->ncols;
     pqs2->shape1 = pqs1->shape1;
+    pqs2->reduced = pqs1->reduced;
     memcpy(data, pqs1->data, pqs1->nrows * sizeof(uint64_t));
     return 0;
 }
@@ -462,6 +472,7 @@ int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows)
     for (k = 0; k < pqs->nrows + nrows; ++ k) 
         m[k] = (m[k] & mask) |  ((m[k] & ~mask) << nrows); 
     pqs->nrows += nrows;
+    pqs->reduced = 0;
     return 0;
 }
 
@@ -519,6 +530,7 @@ int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (nrot + n0 > pqs->ncols) return ERR_QSTATE12_QUBIT_INDEX;
     if (nrot < 2) return 0;
+    pqs->reduced = 0;
     if (rot < 0) rot += nrot * (-rot / nrot) + nrot;
     rot %= nrot;
     if (rot == 0) return 0;
@@ -549,10 +561,11 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
     uint_fast32_t k;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (mask == 0) return 0;
+    pqs->reduced = 0;
     if (sh >= pqs->ncols ||  mask & ((mask | ((0-ONE) << pqs->ncols)) >> sh)) 
         return ERR_QSTATE12_QUBIT_INDEX;
 
-    // Here we simply exchange row j1 with row j2 of matrix A
+    // Here we simply exchange column j1 with row j2 of matrix A
     for (k = 0; k < pqs->nrows; ++k) {
         v = (m[k] ^ (m[k] >> sh)) & mask;
         m[k] ^= v ^ (v << sh);   
@@ -589,6 +602,7 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
     uint64_t col_update = 0;
     uint_fast32_t k, sh; 
 
+    pqs->reduced = 0;
     // process rows i-1, ..., 1 
     for  (k = i - 1; k > 0; --k) if (v & (ONE << k)) {
          // Flip bit Q[0,k] if Q[i,k] ^ (Q[k,k] & Q[i,i]) is 1; 
@@ -711,6 +725,7 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
     int_fast32_t col; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;  
+    if (pqs->reduced) return 0;
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
     // Convert submatrix A of M to (non-reduced) echelon form
@@ -745,9 +760,10 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 // This does not change the state. 
 {
     uint_fast32_t row_pos = 1, i, i1; 
-    int_fast32_t col; 
+    int_fast32_t col, res; 
     uint64_t *m = pqs->data, v, mask;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;  // abort if state is bad
+    if (pqs->reduced) return 0;
     if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
 
     // Convert submatrix A of M to reduced echelon form
@@ -765,7 +781,9 @@ int32_t qstate12_reduce(qstate12_type *pqs)
             if (++row_pos >= pqs->nrows) break;
         }    
     }    
-    return qstate12_sum_up_kernel(pqs);
+    res = qstate12_sum_up_kernel(pqs);
+    pqs->reduced = 1;
+    return res;
 }
 
 
@@ -790,7 +808,6 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
         row_table[col] = QSTATE12_UNDEF_ROW;
     if (pqs->nrows == 0) return 0;
  
-    // Convert submatrix A of M to (non-reduced) echelon form
     for (col =  pqs->ncols - 1; col >= 0; --col) {
         // find pivoting row ``i`` for column ``col``
         i = pqs->nrows - 1; 
@@ -815,34 +832,21 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2) 
 // Return 1 if the states referred by pqs1 and pqs2 are equal,
 // 0 if not, and a negative number in case of error.
-// Temporary copies of both states are reduced before comparing them.
+// Both states are reduced before comparing them.
 {
-    uint64_t mask, diff = 0, qs1_data[MAXROWS], qs2_data[MAXROWS];
+    uint64_t mask, diff = 0;
     uint_fast32_t i;
     int_fast32_t res;
-    qstate12_type qs1, qs2;
 
-    if (bad_state(pqs1) || bad_state(pqs2)) return ERR_QSTATE12_INCONSISTENT;
-    
-    // Compare shapes of *pqs1 and *pqs2
-    if (pqs1->ncols != pqs2->ncols) return -ERR_QSTATE12_SHAPE_COMP;
-    if (pqs1->shape1 != pqs2->shape1) return -ERR_QSTATE12_SHAPE_COMP;
-        
-    // Create temporary copies of *pqs1 and *pqs2
-    res = qstate12_copy_alloc(pqs1, &qs1, qs1_data, MAXROWS);
-    if (res < 0) return res;
-    res = qstate12_copy_alloc(pqs2, &qs2, qs2_data, MAXROWS);
-    if (res < 0) return res;
-    
     // Reduce and compare  qs1 and  qs2
-    if ((res = qstate12_reduce(&qs1)) < 0) return res;
-    if ((res = qstate12_reduce(&qs2)) < 0) return res;
-    if ((qs1.nrows | qs2.nrows) == 0) return 1;
-    if (((qs1.factor ^ qs2.factor) & FACTOR_MASK) |
-        (qs1.nrows ^ qs2.nrows)) return 0;
-    mask = (((ONE << qs1.nrows) - 1) << qs1.ncols) - 1;
-    for (i = 0; i < qs1.nrows; ++i) 
-        diff |= (qs1.data[i] ^ qs2.data[i]) & mask;
+    if ((res = qstate12_reduce(pqs1)) < 0) return res;
+    if ((res = qstate12_reduce(pqs2)) < 0) return res;
+    if ((pqs1->nrows | pqs2->nrows) == 0) return 1;
+    if (((pqs1->factor ^ pqs2->factor) & FACTOR_MASK) |
+        (pqs1->nrows ^ pqs2->nrows)) return 0;
+    mask = (((ONE << pqs1->nrows) - 1) << pqs1->ncols) - 1;
+    for (i = 0; i < pqs1->nrows; ++i) 
+        diff |= (pqs1->data[i] ^ pqs2->data[i]) & mask;
     return (int32_t)(!diff);
 }
 
@@ -912,6 +916,7 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 
     if ((res = qstate12_extend_zero(pqs, j, nqb)) < 0) return res;
     if (pqs->nrows == 0) return 0;
+    pqs->reduced = 0;
     mask = (ONE << j) - 1;
     i = pqs->nrows; 
     if ((res = qstate12_insert_rows(pqs, i, nqb)) < 0) return res;
@@ -945,6 +950,7 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
     if (nqb + j > pqs->ncols) return ERR_QSTATE12_QUBIT_INDEX;
     pqs->ncols -= nqb;
     pqs->shape1 = 0;
+    pqs->reduced = 0;
     for (k = 0; k < pqs->nrows; ++k) {
         m[k] = (m[k] & mask) | ((m[k] >> nqb) & ~mask);
     }    
@@ -1009,6 +1015,7 @@ int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 {
     int32_t res;
     if ((res = qstate12_restrict_zero(pqs, j, nqb)) < 0) return res;
+    pqs->reduced = 0;
     return qstate12_sum_cols(pqs, j, nqb);
 }
 
@@ -1028,13 +1035,14 @@ int32_t qstate12_gate_not(qstate12_type *pqs, uint64_t v)
 // Change the state ``qs`` referred by ``pqs`` to a state ``qs'`` 
 // with ``qs'(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
 // xor operation.
-// The result is reduced if the input is reduced.
+// The result is not reduced.
 // Computing ``qstate12_gate_not(pqs, 1 << j)`` corrsponds to
 // negating qubit ``j``.
 {
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (pqs->nrows == 0) return 0;
     pqs->data[0] ^= v & ((ONE << pqs->ncols) - 1);
+    pqs->reduced = 0;
     return 0;
 }
 
@@ -1064,6 +1072,7 @@ int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
     if ((res = qstate12_mul_Av(pqs, vc, &wc)) < 0) 
         return ERR_QSTATE12_CTRL_NOT;
 
+    pqs->reduced = 0;
     if (wc) for (i = 0; i < pqs->nrows; ++i) 
         m[i] ^= (0 - ((wc >> i) & ONE)) & v;
     return 0;
@@ -1159,6 +1168,7 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 
     for (j = 0; j < pqs->ncols ; ++j) if (v & (ONE << j))  {
         // Reduce if short of space
+        pqs->reduced = 0;
         if (pqs->nrows >= max_rows) {
             if ((res = qstate12_echelonize(pqs)) < 0) 
                 return res;

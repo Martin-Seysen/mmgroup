@@ -523,7 +523,7 @@ int32_t xp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
         memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
     #endif    
     if (res < 0) return res;
-    res = xp2co1_qs_to_elem_noreduce(&qs3, adest[2], e3);
+    res = xp2co1_qs_to_elem(&qs3, adest[2], e3);
     return res;
 }
 
@@ -547,7 +547,7 @@ int32_t xp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
     asrc[1] = xp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xp2co1_chain_short_3(&qs2, 3, asrc, adest);
     if (res < 0) return res;
-    res = xp2co1_qs_to_elem_noreduce(&qs2, adest[2], e2);
+    res = xp2co1_qs_to_elem(&qs2, adest[2], e2);
     return res;
 }
 

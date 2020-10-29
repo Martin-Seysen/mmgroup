@@ -101,16 +101,21 @@ def test_reduce_matrix(verbose = 0):
             print("Test %d: reduce matrix, m =" % (ntest + 1), m)
             print("Standard reduced m =", m.copy().reduce())
         row_tab = m1.reduce_matrix()
+        # Caution: 
+        # The matrix-reduced representation of ``m1`` is very voltile,
+        # since the user never actually needs it. Even ``__str__(m1)``
+        # or ``m1 == _`` changes the representation of ``m1``
+        # from 'reduced-matrix' to 'reduced'!!!
         m1.check()
         assert len(row_tab) == m1.nrows + m1.ncols
         if verbose:
             print("Reduced matrix, m1 =", m1)
             show_row_table("m1", m1, row_tab)
             print("shape", m1.shape)
-        if  m != m1:
+        if  m != m1.copy():
             print("m reduced", m.copy().reduce())
             print("m1", m1.copy())
-            print("m1 reduced", m1.copy().reduce())
+            print("m1 reduced", m1.display(reduced = False))
             err = "m and m1 are not equal"
             raise ValueError(err)
         if m1.nrows == 0: 
@@ -118,7 +123,9 @@ def test_reduce_matrix(verbose = 0):
             continue
         fst_row = row_tab[m1.ncols]
         n0, n1 = m1.shape
-        d = m1.data
+        mask = (1 << m1.ncols) - 1
+        mask += ((1 << m1.nrows) - 2) << m1.ncols
+        d = [x & mask for x in m1.copy().check().raw_data[:m1.nrows]]
         imin = 0
         row_mask = bitrange_mask(0, n0 + n1)
         for j in range(n0 + n1 - 1, n1 - 1, -1):
@@ -128,8 +135,8 @@ def test_reduce_matrix(verbose = 0):
                 imin = i
                 if not is_leading_high(d[i] & row_mask, j):
                     err = "error in row %d of m1"% i 
-                    print("m1", m1)
-                    show_row_table("m1", m1, row_tab)
+                    print("m1", m1.display(reduced = False))
+                    show_row_table("m1", m1.copy(), row_tab)
                     raise ValueError(err)
         row_mask = bitrange_mask(0,n1)
         row_set = set(range(1, m1.nrows))
@@ -149,7 +156,7 @@ def test_reduce_matrix(verbose = 0):
                 row_set.remove(i)
             if not ok:
                 err = "error in column %d, row %d of m1" % (j, i) 
-                print("m1", m1)
+                print("m1", m1.display(reduced = False))
                 show_row_table("m1", m1, row_tab)
                 raise ValueError(err)
         assert imin == m1.nrows - 1
