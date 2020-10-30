@@ -463,9 +463,9 @@ int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows)
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (pqs->ncols + pqs->nrows + nrows > MAXCOLS) 
         return ERR_QSTATE12_TOOLARGE;
-    if (pqs->nrows + nrows > MAXROWS) 
+    if (pqs->nrows + nrows > pqs->maxrows) 
         return ERR_QSTATE12_BUFFER_OVFL;
-    if (i == 0) return ERR_QSTATE12_BAD_ROW;
+    if (i == 0 || i > pqs->nrows) return ERR_QSTATE12_BAD_ROW;
     for (k = pqs->nrows - 1; k >= i; --k)  m[k + nrows] = m[k]; 
     for (k = i + nrows - 1; k >= i; --k) m[k] = 0; 
     mask = ((ONE <<  pqs->ncols) << i) - 1; 
