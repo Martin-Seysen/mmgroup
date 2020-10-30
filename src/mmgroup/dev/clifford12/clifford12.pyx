@@ -168,17 +168,6 @@ cdef class QState12(object):
             cdef uint64_t *a = &self.data_[0]
             return  [int(a[i]) for i in range(imax)]
             
-            """
-            a = np.empty(imax, dtype=np.uint64)
-            cdef uint64_t[:] a_view = a
-            cdef int32_t i
-            for i in range(imax):
-                a_view[i] = self.data_[i]
-            # Dealing with numpy arrays of type np.uint64 is a nuisance.
-            # So we convert is to a list of ints
-            return list(map(int, a)) 
-            """
-            
     property raw_data:
         """Get a copy of the raw data bit matrix of the state as a list
         
@@ -246,8 +235,12 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_mul_Av(&self.qs, v, &w))
         return int(w)
 
+
     #########################################################################
     # Elementary operations and checks
+    
+    def is_reduced(self):
+        return bool(self.qs.reduced)
 
     property shape:
         """Get shape of the complex matrix represented by the state 

@@ -214,7 +214,6 @@ def check_complex(m):
     complex matrix 8with and without previous reduction) against
     the python function ````QStateMatrix()``.    
     """
-    print("m", m.copy().show(reduced = False))
     c0 = slow_complex(m)
     c1 = m.complex(reduce = False)
     err = "Complex matrix from unreduced state"
