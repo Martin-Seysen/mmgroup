@@ -16,7 +16,7 @@ from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.mat24_xi import xi_op_leech
+from mmgroup.mat24_xi import xi_op_xi
 from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.clifford12 import xp2co1_chain_short_3, xp2co1_elem_to_qs
 from mmgroup.clifford12 import xp2co1_short_2to3, xp2co1_short_3to2
@@ -237,7 +237,6 @@ def test_vector(verbose = 0):
 #####################################################################
 
 
-ref_conjugate_xi = xi_op_leech
 
 
 def conjugate_xi(x, exp):
@@ -252,7 +251,7 @@ def test_conjugate_xi(verbose = 0):
     for exp in [1, 2]:
         for lb_x in range(25):
             x = 1 << lb_x
-            y_ref = ref_conjugate_xi(x, exp)
+            y_ref = xi_op_xi(x, exp)
             y  = conjugate_xi(x, exp)
             ok = y == y_ref
             if verbose or not ok:

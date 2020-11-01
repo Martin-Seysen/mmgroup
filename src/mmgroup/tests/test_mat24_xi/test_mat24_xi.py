@@ -43,7 +43,7 @@ TEST_PAR = [(Mat24Xi, 200), (mat24_xi, 2000)]
 @pytest.mark.mat24_xi
 @pytest.mark.parametrize("mat24_xi_class, ntests", TEST_PAR )
 def test_mat24_xi_leech(mat24_xi_class, ntests):
-    xi = mat24_xi_class.xi_op_leech 
+    xi = mat24_xi_class.xi_op_xi 
     mul =  mat24_xi_class.xi_mul_leech 
 
     xl_old =  [0,0,0]
@@ -120,8 +120,8 @@ TEST_PAR = [(Mat24Xi, 200), (mat24_xi, 2000)]
 @pytest.mark.mat24_xi
 @pytest.mark.parametrize("mat24_xi_class, ntests", TEST_PAR )
 def test_mat24_xi_short(mat24_xi_class, ntests):
-    xi = mat24_xi_class.xi_op_leech 
-    xi_short = mat24_xi_class.xi_op_short 
+    xi = mat24_xi_class.xi_op_xi 
+    xi_short = mat24_xi_class.xi_op_xi_short 
     to_leech = mat24_xi_class.xi_short_to_leech
     to_short = mat24_xi_class.xi_leech_to_short
     for x in short_samples(ntests):
@@ -145,7 +145,7 @@ def test_mat24_xi_short(mat24_xi_class, ntests):
 @pytest.mark.mat24_xi
 @pytest.mark.parametrize("mat24_xi_class, ref", [(mat24_xi, Mat24Xi)])
 def test_mat24_xi_ref(mat24_xi_class, ref, ntests=200):       
-    xi, xi_ref = mat24_xi_class.xi_op_leech, ref.xi_op_leech 
+    xi, xi_ref = mat24_xi_class.xi_op_xi, ref.xi_op_xi 
     mul, mul_ref =  mat24_xi_class.xi_mul_leech, ref.xi_mul_leech 
 
     x_old = 0
@@ -159,10 +159,10 @@ def test_mat24_xi_ref(mat24_xi_class, ref, ntests=200):
         assert mat24_xi_class.xi_g_cocode(x) == ref.xi_g_cocode(x)
         assert mat24_xi_class.xi_w2_cocode(x) == ref.xi_w2_cocode(x)
         x_old = x
-    xi_short = mat24_xi_class.xi_op_short 
+    xi_short = mat24_xi_class.xi_op_xi_short 
     to_leech = mat24_xi_class.xi_short_to_leech
     to_short = mat24_xi_class.xi_leech_to_short
-    xi_short_ref = ref.xi_op_short 
+    xi_short_ref = ref.xi_op_xi_short 
     to_leech_ref = ref.xi_short_to_leech
     for x in short_samples(ntests):
         xl = to_leech_ref(x)

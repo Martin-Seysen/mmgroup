@@ -294,7 +294,7 @@ class Mat24Xi(object):
         return cls.tab_g_cocode[compress_gray(c)] >> 7
 
     @classmethod
-    def xi_op_leech(cls, x, exp):
+    def xi_op_xi(cls, x, exp):
         """Operation of  xi**exp  on the element x of the group Q_x0.
 
         The function returns the element
@@ -333,7 +333,7 @@ class Mat24Xi(object):
         """Return product of two elements the group  Q_x0.
 
         The two factors X1, X1 are coded as integers x1, x2 as in 
-        method xi_op_leech. The product is returned in the same form. 
+        method xi_op_xi. The product is returned in the same form. 
         """
         x1 ^= Mat24.scalar_prod(x2 >> 12, x1) << 24;
         x1 ^= x2 
@@ -461,7 +461,7 @@ class Mat24Xi(object):
   
 
     @classmethod
-    def xi_op_short(cls, x, exp):
+    def xi_op_xi_short(cls, x, exp):
         """Operation of  xi**exp  on the element x of the group Q_x0.
 
         The function returns the element
@@ -476,7 +476,7 @@ class Mat24Xi(object):
         """
         y = cls.xi_short_to_leech(x)
         if (y == 0): return x
-        y = cls.xi_op_leech(y, exp)
+        y = cls.xi_op_xi(y, exp)
         if (y == 0): return x
         y =  cls.xi_leech_to_short(y)
         if (y == 0): return x
@@ -491,7 +491,7 @@ class Mat24Xi(object):
         length = t_size[u_box] 
         u_box <<= 16;
         for i  in range(length):
-            a[i] = cls.xi_op_short(u_box + i, u_exp) & 0xffff;
+            a[i] = cls.xi_op_xi_short(u_box + i, u_exp) & 0xffff;
         return a[:length]
 
     @staticmethod

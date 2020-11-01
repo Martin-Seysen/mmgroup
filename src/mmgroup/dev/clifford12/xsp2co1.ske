@@ -366,7 +366,7 @@ uint64_t xp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
 // %%EXPORT p
 int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc, uint64_t *pdest)
 {
-    uint64_t dest0, prod, src_prod;
+    uint64_t prod, src_prod;
     int_fast32_t res, ok;
     uint_fast32_t i;
 
@@ -374,21 +374,18 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
     if (pqs->ncols != 24 || pqs->shape1 != 12) 
          return ERR_QSTATE12_SHAPE_OP;
     
-    if (length <= 0) return 0;
-    dest0 = short_3_reduce(pdest[0]);
-    for (i = 0; i < length; ++i) {
+    if (length <= 1) return 0;
+    for (i = 1; i < length; ++i) {
         pdest[i] = xp2co1_short_3to2(psrc[i]);
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
     }
-    res = qstate12_pauli_conjugate(pqs, length, pdest);
+    res = qstate12_pauli_conjugate(pqs, length - 1, pdest + 1);
     if (res < 0) return res;
-    for (i = 0; i < length; ++i) {
+    for (i = 1; i < length; ++i) {
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
         pdest[i] = xp2co1_short_2to3(pdest[i]);
     }    
-    ok = (pdest[0] ==  dest0) || 
-        (short_3_reduce(pdest[0] ^ 0xffffffffffffULL) == dest0);
-    pdest[0] = ok ? dest0 : 0;
+    ok = 1;
     for (i = 1; i < length;  ++i) {
         src_prod = short_3_scalprod(psrc[i-1], psrc[i]);
         prod =  short_3_scalprod(pdest[i-1], pdest[i]);

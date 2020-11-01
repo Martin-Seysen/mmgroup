@@ -37,7 +37,56 @@ extern "C" {
 
 // %%COMMENT
 /*************************************************************************
-*** tables
+*** Multiplication in the extraspecial group 2^{{1+24}}
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
+{
+    uint_fast32_t scalar;      
+    scalar = (x2 >> 12) &  x1 & 0xfff;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    scalar = (0x96 >> (scalar & 7)) & 1;
+    x1 ^= x2 ^ (scalar << 24);
+    return x1;
+}
+
+
+// %%COMMENT
+/*************************************************************************
+*** Operation of y on the extraspecial group 2^{{1+24}}
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_xi_op_y(uint32_t x1, uint32_t y)
+{
+    uint32_t s, o, theta_x1, theta_y, odd, eps;
+    odd = 0 - ((x1 >> 11) & 1);
+    theta_x1 = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+    theta_y = MAT24_THETA_TABLE[(y >> 12) & 0x7ff];
+    s =  (theta_x1 & y) ^ (~odd &  x1 & y); 
+    s ^= s >> 6; s ^= s >> 3;
+    s = (0x96 >> (s & 7)) & 1;
+    o = (theta_y & (y >> 12)) ^ (x1 & y) ^ ((theta_y >> 1) & odd);
+    o ^= o >> 6; o ^= o >> 3;
+    o = (0x96 >> (o & 7)) & 1;
+    eps = theta_x1 ^ (theta_y & ~odd) 
+           ^  MAT24_THETA_TABLE[((x1 ^ y) >> 12) & 0x7ff]; 
+    x1 ^= (eps & 0xfff) ^ (y & 0xfff000 & odd);
+    x1 ^= (s << 24) ^ (o << 23);
+    return x1;
+}
+
+
+
+// %%COMMENT
+/*************************************************************************
+*** Tables for operation of xi on gray code and cocode vectors
 *************************************************************************/
 
 // // %%USE_TABLE
@@ -92,10 +141,16 @@ uint32_t mat24_xi_w2_cocode(uint32_t v1)
 }
 
 
-// %%EXPORT p
-uint32_t mat24_xi_op_leech(uint32_t x1, uint32_t u_exp)
 // %%COMMENT
-// %%PY_DOCSTR Mat24Xi_doc.xi_op_leech
+/*************************************************************************
+*** Operation of xi on the extraspecial group 2^{{1+24}}
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_op_xi
 {
     uint_fast32_t tv, tc; 
     // reduce u_exp mod 3, no action if u_exp is 0 (mod 3)
@@ -124,20 +179,11 @@ uint32_t mat24_xi_op_leech(uint32_t x1, uint32_t u_exp)
 }
 
 
-
-// %%EXPORT p
-uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 // %%COMMENT
-// %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
-{
-    uint_fast32_t scalar;      
-    scalar = (x2 >> 12) &  x1 & 0xfff;
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    scalar = (0x96 >> (scalar & 7)) & 1;
-    x1 ^= x2 ^ (scalar << 24);
-    return x1;
-}
+/*************************************************************************
+*** Conversion between 'short' and 'Leech' representation of vectors
+*************************************************************************/
+
 
 // %%EXPORT p
 uint32_t mat24_xi_leech_to_short(uint32_t x1)
@@ -282,19 +328,30 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
 }
 
 
-// %%EXPORT p
-uint32_t mat24_xi_op_short(uint32_t x1, uint32_t u_exp)
 // %%COMMENT
-// %%PY_DOCSTR Mat24Xi_doc.xi_op_short
+/*************************************************************************
+*** Operation of xi on sort vectors in 'short' representation
+*************************************************************************/
+
+
+// %%EXPORT p
+uint32_t mat24_xi_op_xi_short(uint32_t x1, uint32_t u_exp)
+// %%COMMENT
+// %%PY_DOCSTR Mat24Xi_doc.xi_op_xi_short
 {
     uint_fast32_t y = mat24_xi_short_to_leech(x1);
     if (y == 0) return x1;
-    y = mat24_xi_op_leech(y, u_exp);
+    y = mat24_xi_op_xi(y, u_exp);
     if (y == 0) return x1;
     y = mat24_xi_leech_to_short(y);
     return y ? y : x1;
 }
 
+
+// %%COMMENT
+/*************************************************************************
+*** Creating tables for the operation of xi in 'short' representation
+*************************************************************************/
 
 
 // %%EXPORT p
@@ -307,7 +364,7 @@ uint32_t mat24_xi_make_table(uint32_t u_box, uint32_t u_exp, uint16_t *ptab)
     uint_fast32_t i, len = u_box < 6 ? t_size[u_box] : 0;
     u_box <<= 16;
     for (i = 0; i < len; ++i) ptab[i] = 
-         (uint16_t)(mat24_xi_op_short(u_box + i, u_exp) & 0xffff);
+         (uint16_t)(mat24_xi_op_xi_short(u_box + i, u_exp) & 0xffff);
     return len;
 }
 

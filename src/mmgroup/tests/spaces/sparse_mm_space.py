@@ -343,7 +343,7 @@ tag_ofs_shift = [None, None, None, (T,375,6), (X,0,5), (X,1024,5)]
 def make_table_x_entry(exp, d):
      box = d + 4
      table = m24xi.make_table(box, exp)
-     box = m24xi.xi_op_short(box << 16, exp) >> 16
+     box = m24xi.xi_op_xi_short(box << 16, exp) >> 16
      tag, ofs, shift  = tag_ofs_shift[box]
      mask = (1 << shift) - 1
      return tag, ofs, shift, mask, table

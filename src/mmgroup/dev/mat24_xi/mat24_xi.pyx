@@ -39,8 +39,8 @@ def xi_w2_cocode(uint32_t v1):
     return mat24_xi_w2_cocode(v1)
 
 
-def xi_op_leech(uint32_t x1, uint32_t u_exp):
-    return mat24_xi_op_leech(x1, u_exp)
+def xi_op_xi(uint32_t x1, uint32_t u_exp):
+    return mat24_xi_op_xi(x1, u_exp)
 
 
 def xi_mul_leech(uint32_t x1, uint32_t x2):
@@ -55,8 +55,8 @@ def xi_short_to_leech(uint32_t x1):
     return mat24_xi_short_to_leech(x1)
 
 
-def xi_op_short(uint32_t x1, uint32_t u_exp):
-    return mat24_xi_op_short(x1, u_exp)
+def xi_op_xi_short(uint32_t x1, uint32_t u_exp):
+    return mat24_xi_op_xi_short(x1, u_exp)
 
 
 def make_table(uint32_t u_box, uint32_t u_exp):

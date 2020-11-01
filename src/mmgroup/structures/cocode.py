@@ -319,7 +319,8 @@ class Cocode():
         corresponding to the bits which are set in the syndrome.
         """
         if i is None: i = 24
-        return GcVector(mat24.cocode_syndrome(self.value, i))
+        syn = mat24.cocode_syndrome(self.value, i)
+        return [i for i in range(24) if (syn >> i) & 1]
 
 
 
