@@ -152,11 +152,24 @@ otherwise. Then
   \quad \mbox{with} \; \;  n = m + \left<f, ij \right> \, ;  \\  
   (ij)_1    &  \stackrel{g^{-1}}{\longrightarrow} 
     (-1)^{\left< f, ij \right>} (ij)_1  \; .
+
+
+Conjugation of  :math:`\tilde{x}_d x_\delta` with :math:`y_e`
+.............................................................
   
 
+Sometimes we have to conjugate an element :math:`\tilde{x}_d x_\delta`, 
+where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have 
 
-
-
+.. math::
+     y_e^{-1} \tilde{x}_d x_\delta y_e & = 
+     x_{-1}^\alpha, x_\Omega^\beta,  \tilde{x}_d \tilde{x}_e^{|\delta|} 
+     x_\delta  x_\epsilon \, , \\
+     \alpha & = \theta(d,e) + \langle e,\delta\rangle^{1 + |\delta|}
+     + \mbox{sign}(e) \, ,\\
+     \beta &= \theta(e,d) + \langle e,\delta\rangle
+     + {P(e)}^{|\delta|} \, , \\
+     \epsilon &= A(d,e) +  {\theta(e)}^{|\delta|} \, .
 
 
 

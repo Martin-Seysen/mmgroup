@@ -104,7 +104,7 @@ def test_pauli_conjugate(verbose = 0):
                 if w_i_ref != w_i:
                    s = "Pauli vector: %s, conjugated: %s, obtained: %s"
                    print (s % (hex(v[i]), hex(w_i_ref), hex(w_i)))
-                   err = "Pauli vector conjgation error"
+                   err = "Pauli vector conjugation error"
                    raise ValueError(err)
                 elif verbose:
                    s = "Pauli vector: %s, conjugated: %s"
@@ -167,7 +167,7 @@ def test_pauli_multiplication(verbose = 0):
 
 
 #####################################################################
-# Test matrix exponetiation and order computation
+# Test matrix exponentiation and order computation
 #####################################################################
 
 

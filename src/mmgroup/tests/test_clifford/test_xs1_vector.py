@@ -16,7 +16,8 @@ from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.mat24_xi import xi_op_xi
+from mmgroup.mat24_xi import xi_op_xi, xi_op_y, xi_op_delta_pi
+from mmgroup.mat24_xi import xi_op_delta_pi_inv, xi_op_x_delta
 from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.clifford12 import xp2co1_chain_short_3, xp2co1_elem_to_qs
 from mmgroup.clifford12 import xp2co1_short_2to3, xp2co1_short_3to2
@@ -233,36 +234,90 @@ def test_vector(verbose = 0):
             
             
 #####################################################################
-# Test conjugation with the element xi of group G_{x1}
+# Test conjugation with some elements of group G_{x1}
 #####################################################################
 
 
 
 
-def conjugate_xi(x, exp):
-    elem_l = Xs12_Co1(('l', exp))
+   
+def ref_conjugate(x, elem):
+    elem_l = Xs12_Co1(*elem)
     mat_l = elem_l.qs.gate_h(0x800800)
     mat_x = qs_pauli_matrix(12, x)
     mat_res = mat_l.inv() @ mat_x @ mat_l
     return mat_res.pauli_vector()
    
+
+def is_tag_dp(elem):
+    if len(elem) == 2 and elem[0][0] == 'd' and elem[1][0] == 'p':
+        return  elem[0][1],  elem[1][1] 
+    return None
+   
+def conjugate_mat24_xi(x, elem):
+    for tag, data in elem:
+        if tag == 'l':
+            x = xi_op_xi(x, data)
+        elif tag == 'y':
+            x = xi_op_y(x, data)
+        elif tag == 'd':
+            x = xi_op_x_delta(x, 0, data)
+        elif tag == 'x':
+            x = xi_op_x_delta(x, data, 0)
+        elif tag == 'p':
+            x = xi_op_delta_pi(x, 0, data)
+        else:
+            raise ValueError("Bad tag %s" % tag)
+    return x
+
+def conjugate_group_testdata():
+    max_tag = {'x': 0x1fff, 'y': 0x1fff, 'd': 0xfff, 'p': MAT24_ORDER-1}
+    data = [
+        [("l",1)],
+        [("l",2)],
+    ]
+    for d in data: 
+        yield d
+    for tag in "pydx":
+        for i in range(30):
+            yield [(tag, randint(0, max_tag[tag]))]
+    for i in range(30):
+        yield [('d', randint(0, 0xfff)), 
+              ('p', randint(0, MAT24_ORDER-1))]
+
+
+def conjugate_vector_testdata():
+    for i in range(25):
+        yield (1 << i) 
+    for n in range(20):
+        yield randint(0, 0x1ffffff)
+
+
 @pytest.mark.qstate
-def test_conjugate_xi(verbose = 0):
-    for exp in [1, 2]:
-        for lb_x in range(25):
-            x = 1 << lb_x
-            y_ref = xi_op_xi(x, exp)
-            y  = conjugate_xi(x, exp)
-            ok = y == y_ref
+def test_conjugate_mat24xi(verbose = 0):
+    for g in conjugate_group_testdata():
+        for x in conjugate_vector_testdata():
+            xc_ref = ref_conjugate(x, g)
+            xc  = conjugate_mat24_xi(x, g)
+            ok = xc == xc_ref
+            #ok_upto_sign = ok or ((xc ^ xc_ref) & ~0x1800000 )== 0
             if verbose or not ok:
-                print("conjugate x= 0x%06x with xi**%d" % (x, exp))
-                print("expected: 0x%06x" % y_ref) 
-                print("obtained: 0x%06x" % y) 
+                g_hex = [(t, hex(x)) for t,x in g]
+                print("conjugate x= 0x%06x with  %s" % (x, g_hex))
+                if not ok:
+                    print("expected: 0x%06x" % xc_ref) 
+                print("obtained: 0x%06x" % xc) 
                 if not ok:
                     ERR = "Error in conjugating with element l"
                     raise ValueError(ERR)
+            t = is_tag_dp(g)
+            if t:
+                assert xi_op_delta_pi(x, *t) == xc
+                assert xi_op_delta_pi_inv(xc, *t) == x
 
-                
+
+
+     
 
 #####################################################################
 # Test multiplication ind inversion of elements of G_{x1}
