@@ -1,12 +1,14 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
+import random
 from random import randint
 import types
 import sys
 import re
 import os
 from operator import __or__, __xor__
+import subprocess
 
 import pytest
  
@@ -20,12 +22,28 @@ from mmgroup.dev.mat24.make_mul_transp import BitMatrixMulTransp
 #########################################################################
 
 
+def compile_gcc(c_name, exe_name):
+    subprocess.check_output(["gcc", c_name, "-o", exe_name])
+
+def compile_msvc(c_name, exe_name):
+    subprocess.check_output(["cl", c_name, "/Fe" + exe_name])
+
+
+def compile_testprogramm(c_name, exe_name):
+    if os.name in ["nt"]:
+        try:
+            compile_msvc(c_name, exe_name)
+            return
+        except FileNotFoundError:
+            pass
+    compile_gcc(c_name, exe_name)
+
+
 
 @pytest.mark.slow
 @pytest.mark.mat24
 def test_make_mul_transp():
     """Generate, compile and test a C program"""
-    import subprocess, random
     tmp_dir =  make_temp_dir()
     FILE_NAME = "tmp_test_mul_transp"
     NAME = os.path.join(tmp_dir, FILE_NAME)
@@ -48,7 +66,8 @@ int main(int argc, char **argv)
 }}
 """.format(generate("v", "a", lv, lm, n)), file = f)
         f.close()
-        subprocess.check_output(["gcc", C_NAME, "-o", EXE_NAME])
+        #subprocess.check_output(["gcc", C_NAME, "-o", EXE_NAME])
+        compile_testprogramm(C_NAME, EXE_NAME)
         checker = BitMatrixMulTransp()
         checker.set_matrix(lv, lm, n)
         return checker

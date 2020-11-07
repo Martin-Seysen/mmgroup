@@ -2,6 +2,7 @@ _doc/
 backup/
 dist/
 build/
+_reports/
 docs/build
 src/mmgroup/*.dll
 src/mmgroup/dev/c_doc/
@@ -24,6 +25,7 @@ __pycache__
 *.pyd
 *.o
 *.old
+*.obj
 *~
 
 
