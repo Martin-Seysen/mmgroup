@@ -296,13 +296,23 @@ def cythonize():
 
         This is one of the few places where OS-specific code is required
         """
-        command = [sys.executable, 
+        if os.name in ["nt"]:
+            compilers = ["msvc", ""]
+        else:
+            compilers = [""]
+        for compiler in compilers:
+            try:
+                command = [sys.executable, 
                    os.path.join("..", "setup_test_hadamard.py"),
                      "build_ext", "--inplace",
-                   #  "-c mingw32",
-                  ]
-        if subprocess.call(command) != 0:
-             raise ValueError("setup has failed")
+                ]
+                if compiler: 
+                    command.append("-c " + compiler)
+                if subprocess.call(command) == 0:
+                    return
+            except FileNotFoundError:
+                pass
+        raise ValueError("setup has failed")
 
 def cleanup():
     for fname in [

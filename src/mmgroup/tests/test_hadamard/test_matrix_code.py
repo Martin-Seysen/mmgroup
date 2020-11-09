@@ -162,6 +162,7 @@ def hadamard_function_testcases(n_cases = 5):
                 v = [randint(0, p - 1) for l in range(1 << l)]
                 yield p, v 
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_hadamard_function(n_cases = 5, verbose = 0):
@@ -224,6 +225,7 @@ def xch_parity_function_testcases(n_cases = 5):
             v = [randint(0, p - 1) for l in range(64)]
             yield p, v 
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_xch_parity_function(n_cases = 5, verbose = 0):
@@ -298,6 +300,7 @@ def op_p64_function_testcases(n_cases = 5):
             yield p, v, 2 
 
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_op_p64_function(n_cases = 5, verbose = 0):
@@ -396,6 +399,7 @@ def op_p3_function_testcases(n_cases = 5):
             yield p, v, 2 
 
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_op_p3_function(n_cases = 5, verbose = 0):
@@ -478,6 +482,7 @@ def op_xi_sym64_function_testcases(n_cases = 5):
                     v[i,j] = randint(0, p-1)
             yield p, v
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_op_xi_sym64_function(n_cases = 5, verbose = 0):
@@ -562,6 +567,7 @@ def op_xi64_function_testcases(n_cases = 5):
             yield p, v, 1
             yield p, v, 2
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_op_xi64_function(n_cases = 5, verbose = 0):
@@ -670,6 +676,7 @@ def op_xi16_function_testcases(n_cases = 5):
             yield p, v, 2
 
 
+@pytest.mark.compiler
 @pytest.mark.slow
 @pytest.mark.hadamard
 def test_op_xi16_function(n_cases = 5, verbose = 0):

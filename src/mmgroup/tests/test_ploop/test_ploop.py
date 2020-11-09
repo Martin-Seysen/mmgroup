@@ -234,6 +234,7 @@ def test_cocode():
 @pytest.mark.ploop
 def test_octads():
     print("")
+    OMEGA = ~PLoop(0)
     for i in range(200):
         no = randint(0, 758)
         o = Octad(no)
@@ -250,14 +251,15 @@ def test_octads():
         nsub =  randint(0, 63)
         sub = SubOctad(no, nsub)
         sub1 = SubOctad(o, nsub)
+        sub_weight = mat24.suboctad_weight(nsub)
         assert sub == sub1
-        assert o == Octad(sub)
+        assert o == Octad(sub) * OMEGA ** sub_weight 
         assert sub.octad == no
-        assert sub.gcode == o.gcode  
+        assert sub.gcode == o.gcode ^ 0x800 * sub_weight  
         assert sub.suboctad == nsub 
         assert sub.sign == o.sign 
         coc = mat24.suboctad_to_cocode(nsub, o.gcode)
-        assert sub.cocode == coc
+        assert sub.cocode == coc 
         assert Cocode(sub) == Cocode(coc)
         assert sub == SubOctad(o, Cocode(coc))
         assert sub == SubOctad(no, Cocode(coc))

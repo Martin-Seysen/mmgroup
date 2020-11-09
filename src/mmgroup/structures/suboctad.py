@@ -325,6 +325,8 @@ class SubOctad():
         else:
             value = Cocode(suboctad).cocode 
             self.suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+        if mat24.suboctad_weight(self.suboctad_) & 1:
+            self.octad_ = ~self.octad_
 
     def __mul__(self, other):
         if isinstance(other, Integral):
@@ -454,6 +456,6 @@ class SubOctad():
         return not self.__equ__(other)
 
     def str(self):
-        return "<SubOctad_%d_%s>" % (o_value, ihex(self.suboctad_, 2))
+        return "<SubOctad_%d_%s>" % (self.o_value, ihex(self.suboctad_, 2))
     __repr__ = str    
 

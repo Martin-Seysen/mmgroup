@@ -13,6 +13,7 @@ import subprocess
 import pytest
  
 from mmgroup.tests.tempdir import make_temp_dir, kill_temp_dir
+from mmgroup.tests.compile import compile_testprogramm
 from mmgroup.dev.mat24.make_mul_transp import BitMatrixMulTransp
 #from mmgroup.dev.mat24.make_mul_transp import generate_c_mul_transp
   
@@ -22,26 +23,10 @@ from mmgroup.dev.mat24.make_mul_transp import BitMatrixMulTransp
 #########################################################################
 
 
-def compile_gcc(c_name, exe_name):
-    subprocess.check_output(["gcc", c_name, "-o", exe_name])
-
-def compile_msvc(c_name, exe_name):
-    subprocess.check_output(["cl", c_name, "/Fe" + exe_name])
-
-
-def compile_testprogramm(c_name, exe_name):
-    if os.name in ["nt"]:
-        try:
-            compile_msvc(c_name, exe_name)
-            return
-        except FileNotFoundError:
-            pass
-    compile_gcc(c_name, exe_name)
-
-
 
 @pytest.mark.slow
 @pytest.mark.mat24
+@pytest.mark.compiler
 def test_make_mul_transp():
     """Generate, compile and test a C program"""
     tmp_dir =  make_temp_dir()
@@ -67,7 +52,7 @@ int main(int argc, char **argv)
 """.format(generate("v", "a", lv, lm, n)), file = f)
         f.close()
         #subprocess.check_output(["gcc", C_NAME, "-o", EXE_NAME])
-        compile_testprogramm(C_NAME, EXE_NAME)
+        compile_testprogramm([C_NAME], EXE_NAME)
         checker = BitMatrixMulTransp()
         checker.set_matrix(lv, lm, n)
         return checker

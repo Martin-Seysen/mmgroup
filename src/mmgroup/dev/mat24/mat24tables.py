@@ -696,7 +696,10 @@ class Mat24Tables(object):
         An exception is raised if v1 does not represent an octad.
         """
         oct = cls.gcode_to_vect(v1)
-        assert cls.bw24(oct) == 8
+        w = cls.bw24(oct)
+        if w == 16:
+             w, oct =  8, oct ^ 0xffffff
+        assert w == 8
         parity =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1
         sub = parity + ((u_sub & 0x3f) << 1)
         vector =  cls.spread_b24(sub, oct)
@@ -716,7 +719,10 @@ class Mat24Tables(object):
         """ 
         assert c1 & 0x800 == 0
         oct = cls.gcode_to_vect(v1)
-        assert cls.bw24(oct) == 8
+        w = cls.bw24(oct)
+        if w == 16:
+             w, oct =  8, oct ^ 0xffffff
+        assert w == 8
         syn = cls.cocode_syndrome(c1, cls.lsbit24(oct))
         assert syn & oct == syn
         u_sub = cls.extract_b24(syn, oct)

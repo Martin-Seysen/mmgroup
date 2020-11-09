@@ -316,12 +316,13 @@ def suboctad_testcases(gc):
     for i in range(100):
         oct = gc.gcode_to_vect(randint(1,0xfff)) 
         sub = gc.cocode_syndrome(randint(0, 0xffffff), gc.lsbit24(oct))
-        if gc.bw24(oct) != 8: 
-            status = 2
-        elif sub & oct != sub or gc.bw24(sub) & 1:
-            status = 1
+        w = gc.bw24(oct)
+        if w == 8: 
+            status = sub & oct != sub or gc.bw24(sub) & 1
+        elif w == 16: 
+            status = sub & ~oct != sub or gc.bw24(sub) & 1
         else:
-            status = 0
+            status = 2
         yield  oct, sub, status
     for i in range(200):
         oct = gc.octad_to_vect(randint(0,758)) 
@@ -330,7 +331,8 @@ def suboctad_testcases(gc):
         while (i > 50 and status):
             sub = randint(0, 0xffffff) & oct
             status = gc.bw24(sub) & 1
-        yield oct, sub, status
+        sign = randint(-1, 0)
+        yield (oct ^ sign) & 0xffffff, sub, status
                 
 
 

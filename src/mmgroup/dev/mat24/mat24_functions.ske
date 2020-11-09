@@ -675,13 +675,16 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
 // The function fails if v1 does not represent an octad.
 // It returns (uint32_t)(-1) in case of failure.
 {
+    uint_fast32_t oct, l;
     // Let oct = vector of v1 in 'vect' representation
-    uint_fast32_t oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+    oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
                        ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
-    // Abort if w = gcode_to_vect(v1) is not an octad. 
-    uint_fast32_t l = (MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7;
-        // Now l =  weight(w0)/4,  w = w0 + w1,  w1 = Omega * (v1 & 1)
-    if (l != 2UL << ((v1 >> 11) & 1)) return (uint32_t)(-1);
+    // Let  l =  weight(v1)/4
+    l = mat24_gcode_weight(v1);
+    // Complement ``oct`` if weight(v1) == 16, 
+    // abort if that weight is not 8 or 16
+    if (l == 4) oct ^= 0xffffff;
+    else if (l != 2) return (uint32_t)(-1);
     // Put l = parity of u_sub
     l =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1;  
     // Let u_sub be a vector representing the suboctad of w with No u_sub
@@ -705,16 +708,20 @@ uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
 // representation, respectively. 
 //
 // The function fails if v1 is not an octad or c1 cannot be 
-// represented as an even subset of v1.
-// It returns (uint32_t)(-1) in case of failure.
+// represented as an even subset of v1. If v1 is a complement 
+// of an octad o the o is taken instead of v1.
+// The function returns (uint32_t)(-1) in case of failure.
 {
+    uint_fast32_t syn, oct, l;
     // Let oct = vector of v1 in 'vect' representation
-    uint_fast32_t syn, oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
+    oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
                        ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
-    // Abort if w = gcode_to_vect(v1) is not an octad. 
-    uint_fast32_t l = (MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7;
-        // Now l =  weight(w0)/4,  w = w0 + w1,  w1 = Omega * (v1 & 1)
-    if (l != 2UL << ((v1 >> 11) & 1)) return (uint32_t)(-1);
+    // Let  l =  weight(v1)/4
+    l = mat24_gcode_weight(v1);
+    // Complement ``oct`` if weight(v1) == 16, 
+    // abort if that weight is not 8 or 16
+    if (l == 4) oct ^= 0xffffff;
+    else if (l != 2) return (uint32_t)(-1);
     // Abort if c1 is not even
     if (c1 & 0x800) return (uint32_t)(-1);
     // l = lsbit of oct
@@ -724,11 +731,11 @@ uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
     syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
     syn = (1 << (syn & 31)) ^ (1 << ((syn>>5) & 31))   
                                ^ (1 << ((syn>>10) & 31));
-    // Abort if syndrome is not a sbset of the octad oct
+    // Abort if syndrome is not a subset of the octad oct
     if ((syn & oct) != syn) return (uint32_t)(-1);
-    // compress syndrome to suboctad number
+    // Compress syndrome to suboctad number
     syn = mat24_extract_b24(syn, oct) >> 1;
-    // complement suboctad number if highest bit is set
+    // Complement suboctad number if highest bit is set
     l = (syn >> 6) & 1;
     return (syn ^ (0-l)) & 0x3f;
 }    
