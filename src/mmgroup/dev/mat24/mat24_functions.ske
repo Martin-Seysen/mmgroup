@@ -645,7 +645,7 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
     if (c1 & 0x800) return (uint32_t)(-1L);
     c2 =  c1 ^ MAT24_RECIP_BASIS[0];
     syn = MAT24_SYNDROME_TABLE[c2 & 0x7ff];
-    if (syn & 31 == 0) return (uint32_t)(-1L);
+    if ((syn & 31) == 0) return (uint32_t)(-1L);
     a_out[0] = 0;
     a_out[1] = syn & 31; 
     a_out[2] = (syn >> 5) & 31; 
@@ -661,6 +661,7 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
         a_out[i+2] = (syn >> 5) & 31; 
         a_out[i+3] = (syn >> 10) & 31; 
     }
+    return 0;
 }
 
 
