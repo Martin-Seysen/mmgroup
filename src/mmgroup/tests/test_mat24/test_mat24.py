@@ -61,7 +61,7 @@ def test_Mat24(gc, ref, small):
             k1_ref = ref.perm_to_m24num(p)
             assert k1 == k1_ref, (i, k1, k1_ref)
         assert k == k1,  (map(hex, [v, k, k1]),i)
-        assert gc.perm_check(p) == 0
+        gc.perm_check(p)
         #if (i & 0x3ff) == 0x3ff: print( '.', end ="" )
 
         vc = randint(0,0xfff)
@@ -87,6 +87,9 @@ def test_Mat24(gc, ref, small):
             assert p ==  ref.m24num_to_perm(k), (hex(k),p,ref.m24num_to_perm(k))
             assert k1 == ref.perm_to_m24num(p)
             assert vc2 == ref.op_gcode_matrix(vc, m)
+            p1 = [p[1], p[0]] + p[2:]
+            with  pytest.raises(ValueError):
+                gc.perm_check(p1)
     print( "test of the Mathieu group operation passed" )
     
 

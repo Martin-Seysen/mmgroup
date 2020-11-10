@@ -1039,7 +1039,7 @@ uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
    heptad_encode(r0);
    heptad_syndrome(r0);
 
-   // Compute a syndrome containong ecactly  p_io[6] and p_io[7]
+   // Compute a syndrome containing exactly  p_io[6] and p_io[7]
    r1 = st;
    heptad_encode(r1);
    err = ((r1 >> 11) & 1) ^ 1;    // error if st is not odd
@@ -1071,6 +1071,61 @@ uint32_t mat24_perm_check(uint8_t *p1)
     memcpy(p2, p1, 9*sizeof(uint8_t));
     return mat24_perm_complete_heptad(p2) || memcmp(p1, p2, 24);
 }        
+
+
+// %%EXPORT p
+uint32_t mat24_perm_complete_octad(uint8_t *p_io)
+// Complete an octad given by 6 elements of it. 
+// This is a simplified version of function 
+// mat24_perm_complete_heptad().
+// We complete an octad from entries p_io[i], i = 0,1,2,3,4,5.
+// We store the remaining entries of the octad in p_io[6],
+// p_io[7]. The order of these two entries is such that there
+// exists a permutation in Mat24 that maps from the (ordered) 
+// standard octad  0,...,7  to p_io[0],...,p_io[7].
+// If p_io[5] is 24, that it is set to the lowest possible
+// value such that there is an octad  p_io[0],...,p_io[7].
+{
+   uint_fast32_t st5, syn, v_io8, t, r0, r1, r4, v_io11;
+   // Let st5 be the bit vector obteined from the first five entries
+   // and let syn be the syndrome for that vector
+   syn = st5 = (1 << p_io[0]) | (1 << p_io[1]) | (1 << p_io[2]) 
+             | (1 << p_io[3]) | (1 << p_io[4]);
+   heptad_encode(syn);
+   heptad_syndrome(syn);
+   // Error if (st5 | syn) is not an octad
+   if (mat24_bw24(st5 | syn) != 8) return (uint32_t)(-1);
+   // If p_io[5] is 24 then select p_io[5] from bit vector syn,
+   // otherwise check that p_io[5] is in the bit vector syn.
+   if (p_io[5] == 24) p_io[5] = mat24_def_lsbit24(syn);
+   else if (((1 << p_io[5]) | syn) != syn) return (uint32_t)(-1);
+   // Select an arbitrary bit position io8 not in the octad
+   v_io8 = (st5 | syn) ^ 0xffffff; v_io8 &= (0 - v_io8);
+   // Compute r0, r1, r2 as in function mat24_perm_complete_heptad()
+   t = v_io8 ^ (1 << p_io[4]) ^ (1 << p_io[5]);
+   r0 = t ^ (1 << p_io[2]) ^ (1 << p_io[3]);
+   heptad_encode(r0);
+   heptad_syndrome(r0);
+   r1 = t ^ (1 << p_io[1]) ^ (1 << p_io[3]);
+   heptad_encode(r1);
+   heptad_syndrome(r1);
+   r4 = t ^ (1 << p_io[0]) ^ (1 << p_io[2]);
+   heptad_encode(r4);
+   heptad_syndrome(r4);
+   // Compute 1 << io[11] as in mat24_perm_complete_heptad()
+   v_io11 = r4 & r1;
+   // Compute a syndrome containing io[6] but not io[7]
+   r0 ^= (1 << p_io[5]) ^ v_io11;
+   heptad_encode(r0);
+   heptad_syndrome(r0);
+   // Compute bit vector containing exactly  io[6] and io[7] 
+   syn &= ~(1 << p_io[5]);
+   // Compute  p_io[6] and p_io[7] from the last two bit vectors
+   p_io[6] = mat24_def_lsbit24_pwr2(syn & r0); 
+   p_io[7] = mat24_def_lsbit24_pwr2(syn & ~r0); 
+   return 0;
+}
+
 
 
 // %%EXPORT p

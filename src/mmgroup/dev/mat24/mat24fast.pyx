@@ -314,6 +314,8 @@ def perm_complete_heptad(p_io):
     cdef int i
     for i in range(24): p1[i] = 24 if p_io[i] is None else int(p_io[i]) 
     cdef uint32_t res = mat24_perm_complete_heptad(p_p1)
+    if res != 0:
+        raise ValueError("Vector is not an umbral heptad")
     for i in range(24): p_io[i]  = p1[i]
     return res
 
@@ -325,14 +327,30 @@ def perm_check(p1):
     cdef int i
     cdef uint32_t acc = 0
     cdef uint32_t entry
-    if len(p1) != 24: return 1
+    if len(p1) != 24: 
+        err = "Permutation in group Mat24 must have length 24"
+        raise ValueError(err)
     for i in range(24): 
         entry = int(p1[i])
         p1a[i] = entry
         acc |= entry 
-    return acc  & -32 or mat24_perm_check(p_p1a)
+    if acc  & -32 or mat24_perm_check(p_p1a):
+        err =   "Permutation is not in group Mat24" 
+        raise ValueError(err)
 
 
+def perm_complete_octad(p_io):
+    cdef uint8_t p1[8]
+    cdef uint8_t *p_p1 = p1
+    cdef int i
+    p1[5] = 24
+    for i in range(5): p1[i] = p_io[i] 
+    if p_io[5] is not None: p1[5] = p_io[5]
+    cdef uint32_t res = mat24_perm_complete_octad(p_p1)
+    if res:
+         err = "Cannot complete a vector to an octad"
+         raise ValueError(err)      
+    for i in range(8): p_io[i]  = p1[i]
 
 
 def perm_from_heptads(h1, h2):
@@ -371,7 +389,7 @@ def perm_to_m24num(p1):
     cdef uint8_t *p_p1a = p1a
     cdef int i
     for i in range(24): p1a[i] = int(p1[i]) 
-    return mat24_perm_to_m24num(p_p1a)
+    return  mat24_perm_to_m24num(p_p1a)
 
 
 def perm_to_matrix(p1):

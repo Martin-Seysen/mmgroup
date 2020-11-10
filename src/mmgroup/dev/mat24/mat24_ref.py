@@ -284,11 +284,12 @@ Golay cocode vectors are to be understood modulo the Golay code.
         It can be shown that such a permutation p can be completed to 
         a unique element of Mat24.
 
-        The function returns 0 in case of success and a nonzero value
+        The function returns 0 in case of success and raises ValueError
         otherwise. In case of success, p_io is completed to an element of
         the Mathieu group Mat24. 
         """
-        return cls.heptad_completer.compute(p_io)
+        if cls.heptad_completer.compute(p_io) != 0:
+            raise ValueError("Could not complete permutation in Mat24")
 
 
     @classmethod
@@ -301,6 +302,31 @@ Golay cocode vectors are to be understood modulo the Golay code.
         if  cls.perm_complete_heptad(p2):
              return -1
         return  p2 != list(p1[:])
+
+    @classmethod
+    def perm_complete_octad(cls, p_io):
+        """Complete an octad given by 6 elements of it. 
+        
+        This is a simplified version of function 
+        perm_complete_heptad().
+
+        We complete an octad from entries p_io[i], i = 0,1,2,3,4,5.
+        We store the remaining entries of the octad in p_io[6],
+        p_io[7]. The order of these two entries is such that there
+        exists a permutation in Mat24 that maps from the (ordered) 
+        standard octad  0,...,7  to p_io[0],...,p_io[7].
+        If p_io[5] is None, that it is set to the lowest possible
+        value such that there is an octad  p_io[0],...,p_io[7].
+        """
+        assert len(p_io) >= 8
+        p = list(p_io[:8]) + [None] * 16
+        v = sum([1 << i for i in p[:5]])
+        syn = cls.syndrome(v)
+        if p_io[5] in (24, None):
+            p[5] = cls.lsbit24(syn)
+        p[8] = cls.lsbit24((v | syn) ^ 0xffffff)
+        cls.perm_complete_heptad(p)
+        p_io[6:8] = p[6:8]
 
     @classmethod
     def perm_from_heptads(cls, h1, h2):

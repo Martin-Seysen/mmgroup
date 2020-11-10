@@ -99,11 +99,11 @@ def get_testdata(gc):
         p[8] = random.randint(24,32)
         yield p,  False
     for i in range(6):
-         for j in range(i):
-             p = random_umbral_heptad(gc)
-             hc.compute(p)
-             p[i] = p[j]
-             yield p, False     
+        for j in range(i):
+            p = random_umbral_heptad(gc)
+            hc.compute(p)
+            p[i] = p[j]
+            yield p, False     
               
         
   
@@ -123,9 +123,9 @@ def test_heptad_completer(gc, gc_ref):
     hc = gc_ref.heptad_completer
     for p, ok in get_testdata(gc_ref):
         p_in = p[:6] + [None]*2 + p[8:9] + [None]*15
-        err =  gc.perm_complete_heptad(p_in)
         if ok:
-            assert  err == 0, (p_in, hex(err))
+            err =  gc.perm_complete_heptad(p_in)
+            #assert  err == 0, (p_in, hex(err))
             if not None in p:
                 assert list(p) == list(p_in), (p, p_in, hex(err))
                 i = hc.perm_to_int(p)
@@ -133,13 +133,20 @@ def test_heptad_completer(gc, gc_ref):
                 p1 = hc.int_to_perm(i)
                 assert list(p) == list(p1), (i, p, p1)
         else:
-            assert err != 0
+            with pytest.raises(ValueError):
+                gc.perm_complete_heptad(p_in)
+        if ok:
+            hexad = p[:6] + [None]*2
+            hexad_ref = hexad[:]
+            gc.perm_complete_octad(hexad)
+            assert hexad == p_in[:8]
+            gc_ref.perm_complete_octad(hexad_ref)
+            assert hexad_ref == p_in[:8]
 
     for h1, h2 in heptad_testdata(gc_ref):
         p = gc.perm_from_heptads(h1, h2)
         for i in range(7):
             assert p[h1[i]] == h2[i]
-
     perm0 = gc.perm_to_m24num(lrange(24))
     assert perm0 == 0, perm0
 
