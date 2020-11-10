@@ -198,6 +198,14 @@ def cocode_to_bit_list(uint32_t  c1,  uint32_t u_tetrad = 24):
     return list(data[:length])
     
     
+def cocode_to_sextet(uint32_t  c1):
+    cdef uint8_t data[24]
+    cdef uint32_t result
+    result = mat24_cocode_to_sextet(c1, &data[0])
+    if result == 0xffffffff:
+        raise ValueError("Golay cocode word is not a sextet")
+    return list(data[:24])
+
 
 ############################################################################
 # Scalar product of Golay code and cocode

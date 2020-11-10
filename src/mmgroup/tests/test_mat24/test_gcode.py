@@ -215,6 +215,12 @@ def test_syndrome(gc, ref):
         if len(cocode) == 4:
             with pytest.raises(ValueError):
                 gc.syndrome(vector,24)
+            t = gc.cocode_to_sextet(coc)
+            assert t == ref.cocode_to_sextet(coc)
+            assert sum([1 << i for i in t]) == 0xffffff
+            for i in range(0, 24, 4):
+                v1 = sum([1 << j for j in t[i:i+4]])
+                assert gc.vect_to_cocode(v1) == coc
     print( "Golay code syndome decoding test passed" )
 
 

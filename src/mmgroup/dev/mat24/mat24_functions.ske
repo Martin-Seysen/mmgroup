@@ -630,6 +630,41 @@ uint32_t mat24_cocode_to_bit_list(uint32_t c1, uint32_t u_tetrad, uint8_t *a_out
 }
 
 
+
+// %%EXPORT p
+uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
+// Store a cocode word 'c1' in array a_out as a sextet.
+//
+// Here 'c1' is an cocode word in cocode representation. The 
+// function stores the 6 tetrads that make up the sextet 'c1' 
+// in a_out[4*i],...,a_out[4*i+3] for i = 0,...,5. The 
+// (ordered) tetrads are stored in lexical order. 
+// The function returns (uint32_t)(-1) if 'c1' is not a tetrad.
+{
+    uint_fast32_t c2, syn, v, i;
+    if (c1 & 0x800) return (uint32_t)(-1L);
+    c2 =  c1 ^ MAT24_RECIP_BASIS[0];
+    syn = MAT24_SYNDROME_TABLE[c2 & 0x7ff];
+    if (syn & 31 == 0) return (uint32_t)(-1L);
+    a_out[0] = 0;
+    a_out[1] = syn & 31; 
+    a_out[2] = (syn >> 5) & 31; 
+    a_out[3] = (syn >> 10) & 31; 
+    v = 0xffffff;
+    for (i = 4; i < 24; i += 4) {
+        v ^= (1 << a_out[i-4]) ^ (1 << a_out[i-3]) 
+           ^ (1 << a_out[i-2]) ^ (1 << a_out[i-1]);
+        a_out[i] = mat24_def_lsbit24(v); 
+        c2 =  c1 ^ MAT24_RECIP_BASIS[a_out[i]];
+        syn = MAT24_SYNDROME_TABLE[c2 & 0x7ff];
+        a_out[i+1] = syn & 31; 
+        a_out[i+2] = (syn >> 5) & 31; 
+        a_out[i+3] = (syn >> 10) & 31; 
+    }
+}
+
+
+
 // %%COMMENT
 /*************************************************************************
 *** Scalar product of Golay code and cocode

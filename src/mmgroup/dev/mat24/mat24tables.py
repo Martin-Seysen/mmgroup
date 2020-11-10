@@ -655,6 +655,28 @@ class Mat24Tables(object):
         return bit_list[:length]
 
 
+    @classmethod
+    def cocode_to_sextet(cls, c1):
+        """Return a cocode word 'c1' in as a sextet.
+ 
+        Here 'c1' is an cocode word in cocode representation. The 
+        function stores concatenation of the 6 tetrads that make up 
+        the sextet 'c1' is a list of length 24. The (ordered) 
+        tetrads are stored in lexical order. 
+        It raises ValueError if 'c1' is not a tetrad.
+        """
+        sextet = cls.cocode_to_bit_list(c1, 0)
+        if len(sextet) != 4:
+            raise ValueError("Golay cocode word is not a sextet") 
+        v = set(range(24)) - set(sextet)
+        while len(v):
+            tetrad = cls.cocode_to_bit_list(c1, min(v)) 
+            v = v - set(tetrad)
+            sextet += tetrad
+        return sextet
+        
+
+
     ############################################################################
     # Scalar product of Golay code and cocode
     ############################################################################
