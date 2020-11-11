@@ -415,6 +415,32 @@ def matrix_to_perm(m1):
 
 
 ###########################################################################
+# Mathieu group M24: Mapping a dodecad
+###########################################################################
+
+
+
+def perm_from_dodecads(d1, d2):
+    cdef uint8_t d1a[9]
+    cdef uint8_t *p_d1a = d1a
+    cdef uint8_t d2a[9]
+    cdef uint8_t *p_d2a = d2a 
+    cdef uint8_t p1[24]
+    cdef uint8_t *p_p1 = p1
+    cdef int i
+    for i in range(9):
+        d1a[i] = int(d1[i]) 
+        d2a[i] = int(d2[i]) 
+    cdef uint32_t res = mat24_perm_from_dodecads(p_d1a, p_d2a, p_p1)
+    if res:
+        err = "Cannot construct permutation in Mat24 from dodecads"
+        raise ValueError(err)
+    return [p1[i] for i in range(24)] 
+
+
+
+
+###########################################################################
 # Mathieu group M24: operation of group elements
 ###########################################################################
 

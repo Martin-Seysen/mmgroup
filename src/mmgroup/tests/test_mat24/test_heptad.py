@@ -9,6 +9,7 @@ import re
 import os
 from operator import __or__, __xor__, __and__
 from functools import reduce
+import random
 
 
  
@@ -26,6 +27,12 @@ from mmgroup.dev.mat24.mat24heptad import HeptadCompleter
 from mmgroup import mat24
 from mmgroup.dev.mat24.mat24_ref import Mat24
 
+
+#########################################################################
+# Test completion of heptads and octads
+#########################################################################
+
+
 def random_umbral_heptad(gc, as_heptad_at_pos = None):
     """Return random list p with p[0],...,p[5], p[8] an umbral heptad.
 
@@ -40,7 +47,6 @@ def random_umbral_heptad(gc, as_heptad_at_pos = None):
 
     Parameter gc must be an instance of class Mat24.     
     """
-    import random
     p = []
     while len(p) < 5:
         x = random.randint(0,23)
@@ -154,11 +160,37 @@ def test_heptad_completer(gc, gc_ref):
 
 
 
+#########################################################################
+# Test completion of heptads and dodecads
+#########################################################################
+
+def random_dodecad():
+    while True:
+        gc = random.randint(0,0xfff)
+        if mat24.gcode_weight(gc) == 3:
+            v = mat24.gcode_to_vect(gc)
+            w, l = mat24.vect_to_bit_list(v)
+            assert w == 12
+            l = l[:12]
+            random.shuffle(l)
+            return l
 
 
+def get_test_dodecads():
+    for i in range(200):
+        yield random_dodecad(), random_dodecad()
 
 
+@pytest.mark.mat24
+def test_heptad_completer():
+    for ntest, (d1, d2) in enumerate(get_test_dodecads()):
+        #print(d1, d2)
+        perm = mat24.perm_from_dodecads(d1[:9], d2[:9])
+        for i in range(5):
+             assert perm[d1[i]] == d2[i]
+        img = set([perm[x] for x in d1])
+        assert img == set(d2)
 
-
+    
 
 

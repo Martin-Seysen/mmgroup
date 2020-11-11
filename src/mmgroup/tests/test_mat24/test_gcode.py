@@ -313,20 +313,19 @@ def suboctad_testcases(gc):
     status = 1  is suboctad is not a suboctad of the octad
     """
     testdata = [
-      #  (0x82b114, 0xa50, 1),
-      #  (0xa9c50, 0x29850, 0), 
-      #  (0xffff, 0, 2), (0,1,2), (0x00ff00, 0x001000,1)
+      #   (0x00ffff, 0x110000, 0),
+      #   (0x00ffff, 0x001111, 1),
+      #   (0xeed2dd, 0x481001, 1),
     ]
     for d in testdata:
         yield d
-    for i in range(100):
+    for i in range(10000):
         oct = gc.gcode_to_vect(randint(1,0xfff)) 
-        sub = gc.cocode_syndrome(randint(0, 0xffffff), gc.lsbit24(oct))
-        w = gc.bw24(oct)
-        if w == 8: 
-            status = sub & oct != sub or gc.bw24(sub) & 1
-        elif w == 16: 
-            status = sub & ~oct != sub or gc.bw24(sub) & 1
+        short_oct = oct if gc.bw24(oct) in [8, 24] else oct ^ 0xffffff
+        cocodev = randint(0, 0xffffff)
+        sub = gc.cocode_syndrome(cocodev,  gc.lsbit24(short_oct))
+        if gc.bw24(short_oct) == 8: 
+            status = sub & short_oct != sub or gc.bw24(sub) & 1
         else:
             status = 2
         yield  oct, sub, status
@@ -346,6 +345,7 @@ def suboctad_testcases(gc):
 @pytest.mark.parametrize("gc, ref", [(mat24fast, Mat24)])
 def test_suboctads(gc, ref):
     for octad, suboctad, status in suboctad_testcases(gc):
+        #print("Testing suboctad", hex(octad), hex(suboctad), status)
         v = gc.vect_to_gcode(octad)
         c = gc.vect_to_cocode(suboctad)
         last_u_sub = 0
@@ -372,8 +372,8 @@ def test_suboctads(gc, ref):
                 #print("gc.cocode_to_suboctad failed as expected")
                 pass
             else:
-                syn1 = gc.cocode_syndrome(suboctad, gc.lsbit24(octad))
-                print ("Bad suboctad", map(hex,[octad, suboctad, syn1, status]))
+                syn1 = gc.syndrome(suboctad, gc.lsbit24(octad))
+                print ("Bad suboctad", list(map(hex,[octad, suboctad, syn1, status])))
                 raise ValueError("cocode_to_suboctad() should fail bud didn't.")
             if status == 2:
                 try:
@@ -381,7 +381,7 @@ def test_suboctads(gc, ref):
                 except:
                     pass
                 else:
-                    print ("Bad octad", map(hex,[octad, suboctad, v, c, status]))
+                    print ("Bad octad", list(map(hex,[octad, suboctad, v, c, status])))
                     raise ValueError("suboctad_to_cocode() should fail bud didn't.")
     print("Golay code suboctad test passed")
 

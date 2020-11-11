@@ -1341,6 +1341,71 @@ void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
 
 // %%COMMENT
 /*************************************************************************
+*** Mathieu group M24: Mapping a dodecad
+*************************************************************************/
+
+static uint32_t dodecad_to_heptad(uint8_t *dod, uint8_t *hept)
+{
+    uint_fast32_t s5, rem, all_12, syn, t, i;
+    uint8_t a[8];
+    uint8_t sextet[24];
+    syn = s5 = (1 << dod[0]) ^ (1 << dod[1]) ^ (1 << dod[2]) 
+         ^ (1 << dod[3]) ^ (1 << dod[4]);
+    heptad_encode(syn);
+    heptad_syndrome(syn);
+    t = rem = s5 ^ (1 << dod[5]) ^ (1 << dod[6]) 
+         ^ (1 << dod[7]) ^ (1 << dod[8]);
+    heptad_encode(t);
+    heptad_syndrome(t);
+    all_12 = t ^ rem;
+    if (mat24_bw24(all_12) != 12) return (uint32_t)(-1);
+    hept[0] = a[0] = dod[0]; hept[1] = a[1] = dod[1]; 
+    hept[2] = a[2] = dod[2]; hept[3] = a[3] = dod[3];  
+    hept[4] = a[4] = dod[4]; 
+    t = syn & all_12;
+    hept[5] = a[5] = mat24_def_lsbit24(t);
+    if (mat24_perm_complete_octad(a)) return (uint32_t)(-1);
+    t = (1 << a[0]) ^ (1 << a[1]) ^ (1 << a[2]) ^ (1 << a[6]); 
+    heptad_encode(t);
+    if (mat24_cocode_to_sextet(t, sextet)) return (uint32_t)(-1);
+    rem = ~(all_12 | syn);
+    for (i = 0; i < 24; i += 4) {
+        t = ((1 << sextet[i]) ^ (1 << sextet[i+1]) 
+          ^ (1 << sextet[i+2]) ^ (1 << sextet[i+3])) & rem;
+        if (t != 0 && (t & (t-1)) == 0) {
+            hept[6] = mat24_def_lsbit24_pwr2(t);
+            return 0;
+        }        
+    }
+    return (uint32_t)(-1);
+}      
+
+
+
+// %%EXPORT p
+uint32_t mat24_perm_from_dodecads(uint8_t *d1, uint8_t *d2, uint8_t *p_out)
+// Try to find a permutation p that maps dodecad d1 to d2
+//
+// d1 and d2 are arrays of length 9, which must be subsets of 
+// dodecads D1 and D2. Then the function returns the unique
+// permutation p that maps D1 to D2 and also d1[i] to d2[i] for
+// 0 <= i < 5.
+//
+// The function stores p in the array referred by p_out if such a p  
+// has been found. Otherwise it fails. 
+//
+// The function returns 0 in case of success and  (uint32_t)(-1) 
+// in case of failure.
+{
+    uint8_t h1[8], h2[8];
+    return (dodecad_to_heptad(d1, h1) || dodecad_to_heptad(d2, h2)
+            || mat24_perm_from_heptads(h1, h2, p_out)) 
+            ? (uint32_t)(-1) : 0;
+}
+
+
+// %%COMMENT
+/*************************************************************************
 *** Mathieu group M24: operation of group elements
 *************************************************************************/
 
