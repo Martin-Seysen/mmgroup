@@ -2,25 +2,24 @@ r"""We deal with the Golay code and its cocode.
 
 Let :math:`\tilde{\Omega}` be the set of integers
 :math:`\{ i \in \mathbb{Z} \mid 0 \leq i < 24\}` of size 
-:math:`24` and 
-construct the vector space :math:`\mathbb{F}_2^{24}` as 
-:math:`\prod_{i\in \tilde{\Omega}} \mathbb{F}_2`. In this document
-elements of :math:`\tilde{\Omega}` are called *bit vectors*.
+:math:`24` and construct the vector space
+:math:`\mathcal{V} = \mathbb{F}_2^{24}` as 
+:math:`\prod_{i\in \tilde{\Omega}} \mathbb{F}_2`. In this 
+document elements of :math:`\mathcal{V}` are called *bit vectors*.
 We represent bit vectors as instances of class |GcVector|.
 
-We identify  the power set of :math:`\tilde{\Omega}` with
-:math:`\mathbb{F}_2^{24}` by mapping each subset of 
-:math:`\tilde{\Omega}` 
-to its characteristic function, which is a bit vector in 
-:math:`\mathbb{F}_2^{24}`.  So we may talk about union and 
-intersection of bit vectors in a natural way and use the
-python operators ``|`` and ``&`` for these operations as usual.
-We use the  ``+`` operator for vector addition of bit vectors.
-Bit vectors are numbered from ``0`` to ``0xffffff``, with bit
-``i`` of that number corresponding to the ``i``-th unit vector.
+We identify  the power set of :math:`\tilde{\Omega}` with the
+vector space :math:`\mathcal{V} = \mathbb{F}_2^{24}` by mapping 
+each subset of :math:`\tilde{\Omega}` to its characteristic 
+function, which is a bit vector in :math:`\mathcal{V}`.  So we may 
+talk about union and intersection of bit vectors in a natural way 
+and use the python operators ``|`` and ``&`` for these operations 
+as usual. We use the  ``+`` operator for vector addition of bit 
+vectors. Bit vectors are numbered from ``0`` to ``0xffffff``, with 
+bit ``i`` of that number corresponding to the ``i``-th unit vector.
 
 The Golay code :math:`\mathcal{C}` is a :math:`12`-dimensional 
-linear subspace of :math:`\tilde{\Omega}` such that a nonzero 
+linear subspace of :math:`\mathcal{V}` such that a nonzero 
 vector in :math:`\mathcal{C}` has weight at least  :math:`8`.
 This characterizes the Golay code up to permutation. In this
 package we chose a specific basis of the Golay code that
@@ -266,7 +265,7 @@ class GCode():
     **Standard functions**
 
     ``len(g)`` returns the bit weight of the Golay code word ``g``, i.e.
-    the number of bits set int the word ``g``. 
+    the number of bits set in the word ``g``. 
 
 
     **Special functions**
