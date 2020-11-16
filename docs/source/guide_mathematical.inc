@@ -163,7 +163,7 @@ where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have
 
 .. math::
      y_e^{-1} \tilde{x}_d x_\delta y_e & = 
-     x_{-1}^\alpha, x_\Omega^\beta,  \tilde{x}_d \tilde{x}_e^{|\delta|} 
+     x_{-1}^\alpha x_\Omega^\beta \tilde{x}_d \tilde{x}_e^{|\delta|} 
      x_\delta  x_\epsilon \, , \\
      \alpha & = \theta(d,e) + \langle e,\delta\rangle^{1 + |\delta|}
      + \mbox{sign}(e) \, ,\\

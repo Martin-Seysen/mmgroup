@@ -56,6 +56,7 @@ from mmgroup.dev.mat24.mat24_doc import __doc__ as Mat24__doc__
 
 from mmgroup.generate_c import UserDirective, UserFormat
 
+from mmgroup.dev import config
 
 
 TABLE_NAMES = None
@@ -93,6 +94,7 @@ class Mat24(Mat24Tables):
     heptad_completer = HeptadCompleter(Mat24Tables)
     theta_table = make_augmented_theta_table()
     autpl_qf_table = make_autpl_qf_table(theta_table)
+    autpl_qf_table64 = make_autpl_qf_table(theta_table, 64)
     verbose = False
 
     # recip_basis(i & 31) shall not fail in C 
@@ -114,7 +116,9 @@ class Mat24(Mat24Tables):
            "Mat24_oct_dec_table"     : Mat24Tables.oct_dec_table, 
            "Mat24_theta_table"       : theta_table,
            "Mat24_autpl_qf_table"    : autpl_qf_table,
-           "Mat24_doc"               : Mat24__doc__ 
+           "Mat24_autpl_qf_table64"  : autpl_qf_table64,
+           "Mat24_doc"               : Mat24__doc__, 
+           "INT_BITS"                : config.INT_BITS,
     }
 
     directives = {}

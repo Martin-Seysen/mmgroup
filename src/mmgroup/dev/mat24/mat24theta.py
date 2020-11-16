@@ -15,7 +15,7 @@ import os
 from operator import __or__, __xor__
 
 import numpy
-from numpy import array, zeros, uint8, uint16, uint32
+from numpy import array, zeros, uint8, uint16, uint32, uint64
 
 
 from mmgroup.bitfunctions import bw24, v2
@@ -155,12 +155,18 @@ def make_augmented_theta_table():
 def make_autpl_qf_table(theta_table, bitwidth=32):
     qf_table = [theta_table[(1 << i)] & 0x7ff for i in range(11)]
     mask_table =  [(1 << i) - 1 for i in range(11)]
-    assert  bitwidth==32
-    tab = numpy.zeros(10, dtype = uint32)
-    for i in range(0, 10, 2):
-        tab[i] = qf_table[i+1] + (qf_table[i+2] << 16) 
-        tab[i+1] = mask_table[i+1] + (mask_table[i+2] << 16) 
-    return tab
+    if  bitwidth==32:
+        tab = numpy.zeros(10, dtype = uint32)
+        for i in range(0, 10, 2):
+            tab[i] = qf_table[i+1] + (qf_table[i+2] << 16) 
+            tab[i+1] = mask_table[i+1] + (mask_table[i+2] << 16) 
+        return tab
+    if bitwidth == 64:
+        t = [sum((int(qf_table[5*i+j+1]) << (12*j) for j in range(5)))
+            for i in range(2)]
+        return ["0x%xULL" % x for x in t]
+    raise ValueError("Illegal  bitwidth for table 'qf_table'")
+        
 
 
 

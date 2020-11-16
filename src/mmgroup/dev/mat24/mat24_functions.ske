@@ -1515,11 +1515,11 @@ void mat24_inv_perm(uint8_t *p1, uint8_t *p_out)
 *** Automorphisms of the Parker Loop
 *************************************************************************/
 
-
+// %%IF* INT_BITS == 32
 static const uint32_t MAT24_AUTPL_QF_TABLE[] = {
   // %%TABLE Mat24_autpl_qf_table, uint32   
 };
-
+// %%END IF
 
 // %%EXPORT p
 void mat24_autpl_set_qform(uint32_t *m_io)
@@ -1531,7 +1531,8 @@ void mat24_autpl_set_qform(uint32_t *m_io)
 // of  Parker loop automorphisms. The quadratic form qf is stored 
 // in bits 13,...,24 of the entries of m_io. 
 {
-    uint_fast32_t i, v,  m2[10];
+    uint_fast32_t i;
+    uint_fast{INT_BITS}_t v,  m2[10];
 
     // The quadratic form qf on the Golay code is defined as follows:
     // qf(b[i]) = 0 for all basis vectors b[i] of the standard
@@ -1553,8 +1554,10 @@ void mat24_autpl_set_qform(uint32_t *m_io)
 
     // Internal operation:
     // Most of the work is the computation of  theta(m[i], m[j]).
+	
+  // %%IF* INT_BITS == 32
+  
     // We read theta(b[i],b[j]) from table MAT24_AUTPL_QF_TABLE.
-
     // Store m[i], bit 0..10, in m2[i], bit 0..10,
     // and a copy of that value in m2[i], bit 16..26  
     for (i = 0; i < 10; ++i)  {
@@ -1578,6 +1581,44 @@ void mat24_autpl_set_qform(uint32_t *m_io)
         m_io[i+1] = (m_io[i+1] & 0x1fff) ^ ((v & 0x7ff0000) >> 3);
     }
     // Clear rows 0 and 11 of the quadratic form
+
+  // %%ELSE	
+	
+    for (i = 0; i < 10; ++i)  {
+        v =  (m_io[i] & 0x7ff);
+        v ^= v << 12; v ^= v << 24;
+        m2[i] = v ^ (v << 48);
+    }
+	
+	v = (uint64_t)MAT24_THETA_TABLE[m_io[1] & 0x7ff] & 0x7ff;
+	// %%FOR i in range(1, 5)
+	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[{int:i+1}] & 0x7ff] & 0x7ff) << {int:12*i};
+	// %%END FOR
+	
+	// %%BITVMULTRANSP v, m2, 12, 5, 5
+	v ^= {Mat24_autpl_qf_table64[0]};
+
+	// %%FOR i in range(5)
+	m_io[{int:i+1}] &= 0x1fff;
+	m_io[{int:i+1}] ^= {BITV_EXTRACT: v, 12*i, i+1, 13};
+	// %%END FOR
+	
+	v = (uint64_t)MAT24_THETA_TABLE[m_io[6] & 0x7ff] & 0x7ff;
+	// %%FOR i in range(1, 5)
+	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[{int:i+6}] & 0x7ff] & 0x7ff) << {int:12*i};
+	// %%END FOR
+	
+	// %%BITVMULTRANSP v, m2, 12, 10, 5
+	v ^= {Mat24_autpl_qf_table64[1]};
+
+	// %%FOR i in range(5)
+	m_io[{int:i+6}] &= 0x1fff;
+	m_io[{int:i+6}] ^= {BITV_EXTRACT: v, 12*i, i+6, 13};
+	// %%END FOR
+
+  // %%END IF	
+
+
     m_io[0] &= 0x1fff; m_io[11] &= 0x1fff;
 }
 
