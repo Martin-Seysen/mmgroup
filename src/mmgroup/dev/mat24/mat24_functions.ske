@@ -973,91 +973,108 @@ uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
 
 
 
-#define heptad_encode(x) \
-         x = MAT24_ENC_TABLE0[(x) & 0xff] \
-           ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  \
-           ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
 
-#define heptad_syndrome(x)    \
-     x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; \
-      x = (1 << ((x) & 31)) ^ (1 << (((x) >> 5) & 31))  \
+// Return the same result as function mat24_syndrome(x, 24).
+// But this is faster and works for vectors x with odd
+// parity only.
+static inline uint_fast32_t odd_syn(uint_fast32_t x) {
+    x = MAT24_ENC_TABLE0[(x) & 0xff] 
+      ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  
+      ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
+    x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; 
+    return  (1 << ((x) & 31)) ^ (1 << (((x) >> 5) & 31))  
               ^ (1 << (((x) >> 10) & 31));
+}
 
-
-
+#define lsb24(x) ((uint8_t)(mat24_def_lsbit24_pwr2(x)))
 
 // %%EXPORT p
 uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
 // Complete a permutation p given by p_io to an element of  Mat24.
 //
-// p must have length 24. Entries p[i], i = 0,1,2,3,4,5,8 must make 
+// p must have length 24. Entries p[i], i = 0,1,2,3,4,5,8 must make
 // up a valid umbral heptad, i.e. a heptad not contained in an octad.
-// p[0],...,p[5] must be contained in an octad, p[8] must not be 
+// p[0],...,p[5] must be contained in an octad, p[8] must not be
 // contained in that octad. The other entries of input p are ignored.
 //
-// It can be shown that such a permutation p can be completed to 
+// It can be shown that such a permutation p can be completed to
 // a unique element of Mat24.
 //
-// If a suitable permutation p an be found, the array p_io is 
+// If a suitable permutation p an be found, the array p_io is
 // completed so that it contains permutation p, and the function
 // returns 0.
-//  
-// Otherwise array p_io is not changed and the function returns 
-// and (uint32_t)(-1). This case is not considered as a failure.
+//
+// Otherwise array p_io is not changed and the function returns
+// a nonzero value.
 {
-   uint_fast32_t st, err, t;
-   uint_fast32_t r0, r1, r2, r3, r4, r5, r6, r7, r8, r9;
+    // This implementation is (almost) a copy of the 
+    // implementation of the corresponding python function
+    // mmgroup.dev.mat24.mat24heptad.mat24_complete_heptad().
+    uint_fast32_t  err, s1, s5, s015, s3, s4, s8, s01234; 
+    uint_fast32_t  s567, s67, s9AB, s9CD, s9, s6GH, s6;
+    uint_fast32_t  sACE, sD, sFGI, sG, sFJK, sJLM, sALN;
 
-   // We complete a permutation p in Mat24 from p[i], i = 0,1,2,3,4,5,8.
-   // These p[i] must make up a valid umbral heptad, i.e. a heptad not
-   // contained in an octad. p[0],...,p[5] must be contained in an octad.
-   // At the end we'll have err = 0 iff the completion has succeded. 
-
-   // Compute the heptad  obtained from the inputs in st
-   st = (1 << p_io[8]) | (1 << p_io[0]) | (1 << p_io[1]) | (1 << p_io[2]) 
-      | (1 << p_io[3]) | (1 << p_io[4]) | (1 << p_io[5]);
-
-   // %%FOR i, j1, j2 in Mat24_heptad_index_table
-   // Compute a pentad in r{i} from st and the inputs
-   r{i} = st ^ (1 <<  p_io[{j1}]) ^ (1 <<  p_io[{j2}]);
-   // Compute the syndrome of that pentad in r{i}
-   heptad_encode(r{i});
-   heptad_syndrome(r{i});
-   // %%END FOR
-
-   // Compute p_io[9,...,23] by intersecting pairs of r<i>, r<j> of syndromes.
-   // %%FOR i, j1, j2 in Mat24_heptad_find_table
-   t = r{j1} & r{j2};
-   p_io[{i}] = mat24_def_lsbit24_pwr2(t); 
-   // %%END FOR
-
-   // Now it remains to compute  p_io[6] and  p_io[7].
-   // Compute a syndrome containing p_io[6] but not p_io[7]
-   r0 = (1 << p_io[{Mat24_heptad_const[0]}]) 
-          ^ (1 << p_io[{Mat24_heptad_const[1]}])
-          ^ r{Mat24_heptad_const[2]};
-   heptad_encode(r0);
-   heptad_syndrome(r0);
-
-   // Compute a syndrome containing exactly  p_io[6] and p_io[7]
-   r1 = st;
-   heptad_encode(r1);
-   err = ((r1 >> 11) & 1) ^ 1;    // error if st is not odd
-   heptad_syndrome(r1);
-   r1 ^=  (1 << p_io[8]); // should be (1 << p_io[6]) | (1 << p_io[7])
-   
-   // Compute  p_io[6] and p_io[7] from the last two syndromes
-   r2 = r1 & r0;          //  should be  1 << p_io[6] 
-   p_io[6] = mat24_def_lsbit24_pwr2(r2); 
-   r2 = r1 & ~r0;         //  should be  1 << p_io[7]   
-   p_io[7] = mat24_def_lsbit24_pwr2(r2); 
-  
-   // Put err = 0 if ok, err != 0 in case of any error
-   err |= (uint_fast32_t)(-32) &
-     (p_io[8] | p_io[0] | p_io[1] | p_io[2] | p_io[3] | p_io[4] | p_io[5]);
-   err |= st & (0xff000000 | (1 << p_io[6]) | (1 << p_io[7]) | r1);
-   err |= (r1 - 1) & 0xff000000;
-   return err;
+    err = ((p_io[0] + 8) | (p_io[1] + 8) | (p_io[2] + 8) | 
+      (p_io[3] + 8) | (p_io[4] + 8) | (p_io[5] + 8) | (p_io[8] + 8));
+    err &= (0 - 0x20);
+    s1 = 1 << p_io[1]; 
+    s5 = 1 << p_io[5];
+    s015 = (1 << p_io[0]) ^ s1 ^ s5;
+    s3 = 1 << p_io[3]; 
+    s4 = 1 << p_io[4]; 
+    s8 = 1 << p_io[8];
+    s01234 = s015 ^ s5 ^ (1 << p_io[2]) ^ s3 ^ s4;
+    // if err == 0 then 0 <= s01234 < 0x1000000 has odd parity
+    // octad = [0, 1, 2, 3, 4, 5, 6, 7]
+    s567 = odd_syn(s01234);
+    err |= (s01234) & s567;
+    // if err == 0 then entries [0,1,2,3,4,6] are in an octad
+    err |= (s01234 | s567) & s8;
+    // if err == 0 then entry 8 is not in that octad
+    err |= s5 ^ (s5 & s567);
+    s67 = s567 & ~s5;
+    // octad = [0, 1, 2, 3, 8, 9, 10, 11]
+    s9AB = odd_syn(s01234 ^ s4 ^ s8);
+    // octad = [0, 1, 4, 5, 8, 9, 12, 13]
+    s9CD = odd_syn(s015 ^ s4 ^ s8);
+    s9 = s9AB & s9CD;
+    p_io[9] = lsb24(s9);
+    // octad [1, 3, 5, 6, 8, 9, 16, 17]
+    s6GH = odd_syn(s1 ^ s3 ^  s5 ^ s8 ^ s9);
+    s6 = s67 &  s6GH;
+    p_io[6] = lsb24(s6);
+    p_io[7] = lsb24(s67 & ~s6GH);
+    // still needed: 
+    //   err, s1, s015, s3, s8, s01234, s9AB, s9CD, s9, s6GH, s6
+    // octad [0, 2, 4, 6, 8, 10, 12, 14]
+    sACE = odd_syn(s01234 ^ s1 ^ s3 ^ s6 ^ s8);
+    p_io[10] = lsb24(s9AB & sACE);
+    p_io[11] = lsb24(s9AB & ~sACE & ~s9);
+    p_io[12] = lsb24(s9CD & sACE);
+    sD = s9CD & ~sACE & ~s9;
+    p_io[13] = lsb24(sD);
+    p_io[14] = lsb24(sACE & ~s9AB & ~s9CD);
+    // still needed: 
+    //   err, s1, s015, s3, s8, s6GH, s6, sACE, sD
+    // octad [0, 1, 5, 6, 13, 15, 16, 18]
+    sFGI = odd_syn(s015 ^ s6 ^ sD);
+    sG = s6GH & sFGI;
+    p_io[16] = lsb24(sG);
+    p_io[17] = lsb24(s6GH & ~s6 & ~sFGI);
+    // octad [0, 1, 3, 5, 8, 15, 19, 20]
+    sFJK = odd_syn(s015 ^ s3 ^ s8);
+    p_io[15] = lsb24(sFGI & sFJK);
+    p_io[18] = lsb24(sFGI & ~sG & ~sFJK);
+    // octad [0, 3, 5, 6, 16, 19, 21, 22]
+    sJLM = odd_syn(s015 ^ s1 ^ s3 ^ s6 ^ sG);
+    p_io[19] = lsb24(sFJK & sJLM);
+    p_io[20] = lsb24(sFJK & ~sFGI & ~sJLM);
+    // octad [0, 1, 5, 6, 8, 10, 21, 23]
+    sALN = odd_syn(s015 ^ s6 ^ s8); 
+    p_io[21] = lsb24(sALN & sJLM);
+    p_io[22] = lsb24(sJLM & ~sALN & ~sFJK);
+    p_io[23] = lsb24(sALN & ~sACE & ~sJLM);
+    return err;
 }
 
 // %%EXPORT p
@@ -1085,46 +1102,44 @@ uint32_t mat24_perm_complete_octad(uint8_t *p_io)
 // standard octad  0,...,7  to p_io[0],...,p_io[7].
 // If p_io[5] is 24, that it is set to the lowest possible
 // value such that there is an octad  p_io[0],...,p_io[7].
+// This is a simplifiction of function
+// mat24_perm_complete_heptad()
 {
-   uint_fast32_t st5, syn, v_io8, t, r0, r1, r4, v_io11;
-   // Let st5 be the bit vector obteined from the first five entries
-   // and let syn be the syndrome for that vector
-   syn = st5 = (1 << p_io[0]) | (1 << p_io[1]) | (1 << p_io[2]) 
-             | (1 << p_io[3]) | (1 << p_io[4]);
-   heptad_encode(syn);
-   heptad_syndrome(syn);
-   // Error if (st5 | syn) is not an octad
-   if (mat24_bw24(st5 | syn) != 8) return (uint32_t)(-1);
-   // If p_io[5] is 24 then select p_io[5] from bit vector syn,
-   // otherwise check that p_io[5] is in the bit vector syn.
-   if (p_io[5] == 24) p_io[5] = mat24_def_lsbit24(syn);
-   else if (((1 << p_io[5]) | syn) != syn) return (uint32_t)(-1);
-   // Select an arbitrary bit position io8 not in the octad
-   v_io8 = (st5 | syn) ^ 0xffffff; v_io8 &= (0 - v_io8);
-   // Compute r0, r1, r2 as in function mat24_perm_complete_heptad()
-   t = v_io8 ^ (1 << p_io[4]) ^ (1 << p_io[5]);
-   r0 = t ^ (1 << p_io[2]) ^ (1 << p_io[3]);
-   heptad_encode(r0);
-   heptad_syndrome(r0);
-   r1 = t ^ (1 << p_io[1]) ^ (1 << p_io[3]);
-   heptad_encode(r1);
-   heptad_syndrome(r1);
-   r4 = t ^ (1 << p_io[0]) ^ (1 << p_io[2]);
-   heptad_encode(r4);
-   heptad_syndrome(r4);
-   // Compute 1 << io[11] as in mat24_perm_complete_heptad()
-   v_io11 = r4 & r1;
-   // Compute a syndrome containing io[6] but not io[7]
-   r0 ^= (1 << p_io[5]) ^ v_io11;
-   heptad_encode(r0);
-   heptad_syndrome(r0);
-   // Compute bit vector containing exactly  io[6] and io[7] 
-   syn &= ~(1 << p_io[5]);
-   // Compute  p_io[6] and p_io[7] from the last two bit vectors
-   p_io[6] = mat24_def_lsbit24_pwr2(syn & r0); 
-   p_io[7] = mat24_def_lsbit24_pwr2(syn & ~r0); 
-   return 0;
+    uint_fast32_t  err, s1, s5, s015, s3, s4, s8, s01234; 
+    uint_fast32_t  s567, s67, s9AB, s9CD, s9, s6GH, s6;
+
+    err = ((p_io[0] + 8) | (p_io[1] + 8) | (p_io[2] + 8) | 
+      (p_io[3] + 8) | (p_io[4] + 8) | (p_io[5] + 8));
+    err &= (0 - 0x20);
+    s1 = 1 << p_io[1]; 
+    s5 = 1 << p_io[5];
+    s015 = (1 << p_io[0]) ^ s1 ^ s5;
+    s3 = 1 << p_io[3]; 
+    s4 = 1 << p_io[4]; 
+    s01234 = s015 ^ s5 ^ (1 << p_io[2]) ^ s3 ^ s4;
+    // if err == 0 then 0 <= s01234 < 0x1000000 has odd parity
+    // octad = [0, 1, 2, 3, 4, 5, 6, 7]
+    s567 = odd_syn(s01234);
+    // Put s8 = 1 << u, with u the smallest entry not in the octad
+    s8 = 0xffffff ^ (s01234 | s567);
+    s8 = s8 & (0 - s8);   
+    err |= (s01234) & s567;
+    // if err == 0 then entries [0,1,2,3,4,6] are in an octad
+    err |= s5 ^ (s5 & s567);
+    s67 = s567 & ~s5;
+    // octad = [0, 1, 2, 3, 8, 9, 10, 11]
+    s9AB = odd_syn(s01234 ^ s4 ^ s8);
+    // octad = [0, 1, 4, 5, 8, 9, 12, 13]
+    s9CD = odd_syn(s015 ^ s4 ^ s8);
+    s9 = s9AB & s9CD;
+    // octad [1, 3, 5, 6, 8, 9, 16, 17]
+    s6GH = odd_syn(s1 ^ s3 ^  s5 ^ s8 ^ s9);
+    s6 = s67 &  s6GH;
+    p_io[6] = lsb24(s6);
+    p_io[7] = lsb24(s67 & ~s6GH);
+    return err ? (0 - 1) : 0;
 }
+
 
 
 
@@ -1173,8 +1188,8 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
     p2[8] = p2[y];   p2[y] = p2[6];
 
     // Complete p1 and p2 from heptad. Return error if any completion fails
-    if (mat24_perm_complete_heptad(p1)) return (uint32_t)(-1);
-    if (mat24_perm_complete_heptad(p2)) return (uint32_t)(-1);
+    if (mat24_perm_complete_heptad(p1) |
+          mat24_perm_complete_heptad(p2)) return (uint32_t)(-1);
 
     //  If success, put p = p1**(-1) * p2
     for (i = 0; i < 24; ++i)  p_out[p1[i]] = p2[i];
@@ -1183,7 +1198,7 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
 
 
 
-#define  STD_OCTAD {MAT24_STD_OCTAD[0]}
+#define  STD_OCTAD {MAT24_STD_OCTAD}
 
 
 // %%EXPORT p
@@ -1252,6 +1267,7 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
     memcpy(p_out, p1, 24 * sizeof(uint8_t));
     return 0;
 }
+
 
 
 
@@ -1351,12 +1367,10 @@ static uint32_t dodecad_to_heptad(uint8_t *dod, uint8_t *hept)
     uint8_t sextet[24];
     syn = s5 = (1 << dod[0]) ^ (1 << dod[1]) ^ (1 << dod[2]) 
          ^ (1 << dod[3]) ^ (1 << dod[4]);
-    heptad_encode(syn);
-    heptad_syndrome(syn);
+    syn = odd_syn(syn);
     t = rem = s5 ^ (1 << dod[5]) ^ (1 << dod[6]) 
          ^ (1 << dod[7]) ^ (1 << dod[8]);
-    heptad_encode(t);
-    heptad_syndrome(t);
+    t = odd_syn(t);
     all_12 = t ^ rem;
     if (mat24_bw24(all_12) != 12) return (uint32_t)(-1);
     hept[0] = a[0] = dod[0]; hept[1] = a[1] = dod[1]; 
@@ -1366,7 +1380,9 @@ static uint32_t dodecad_to_heptad(uint8_t *dod, uint8_t *hept)
     hept[5] = a[5] = mat24_def_lsbit24(t);
     if (mat24_perm_complete_octad(a)) return (uint32_t)(-1);
     t = (1 << a[0]) ^ (1 << a[1]) ^ (1 << a[2]) ^ (1 << a[6]); 
-    heptad_encode(t);
+    t = MAT24_ENC_TABLE0[(t) & 0xff] 
+           ^ MAT24_ENC_TABLE1[((t) >> 8) & 0xff]  
+           ^ MAT24_ENC_TABLE2[((t) >> 16) & 0xff];
     if (mat24_cocode_to_sextet(t, sextet)) return (uint32_t)(-1);
     rem = ~(all_12 | syn);
     for (i = 0; i < 24; i += 4) {
@@ -1377,7 +1393,7 @@ static uint32_t dodecad_to_heptad(uint8_t *dod, uint8_t *hept)
             return 0;
         }        
     }
-    return (uint32_t)(-1);
+    return (uint32_t)(0-1);
 }      
 
 
