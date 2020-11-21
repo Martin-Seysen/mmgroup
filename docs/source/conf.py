@@ -16,6 +16,17 @@ import subprocess
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 
+
+# -- Check if we are in readthedocs -------------------------------------------
+
+on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
+
+# -- Call Setup.py if we are in readthedocs -----------------------------------
+
+SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
+if on_readthedocs:
+    subprocess.call([sys.executable, "setup.py", "build_ext"], cwd=SETUP_DIR)
+
 # -- Call doxygen ------------------------------------------------------------
 
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
