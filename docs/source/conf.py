@@ -12,9 +12,14 @@
 #
 import os
 import sys
+import subprocess
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 
+# -- Call doxygen ------------------------------------------------------------
+
+DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
+subprocess.call("doxygen", shell = True, cwd = DOXYGEN_DIR)
 
 # -- Project information -----------------------------------------------------
 
