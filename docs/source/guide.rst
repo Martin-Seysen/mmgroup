@@ -106,6 +106,13 @@ In this section we give a brief overview over the modules in
 ``mmgroup.dev.mat24`` used for generating C code for the 
 ``mmgroup.mat24`` extension.
 
+
+C interface
+...........
+
+.. doxygenfile:: mat24_functions.c
+
+
 Module ``mat24_ref``
 ....................
 

@@ -107,6 +107,8 @@ def extend_path():
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
+codegen_args = ["mockup"] if on_readthedocs else []
+
 ####################################################################
 # Set path for shared libraries in linux
 ####################################################################
@@ -195,6 +197,7 @@ general_presteps = CustomBuildStep("Starting code generation",
 
 
 if on_readthedocs:
+    shared_libs_before_stage1 = []
     shared_libs_stage1 = shared_libs_stage2 = []
 elif os.name in ["nt"]:
     shared_libs_before_stage1 = [
@@ -312,8 +315,8 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 
 
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
-  [sys.executable, "codegen_mm.py"],
-  [sys.executable, "codegen_mm_op.py"],
+  [sys.executable, "codegen_mm.py"] + codegen_args,
+  [sys.executable, "codegen_mm_op.py"] + codegen_args,
 )
 
 
@@ -409,6 +412,20 @@ for p in PRIMES:
     )
 
 
+
+####################################################################
+# After building the externals we call doxygen
+####################################################################
+
+
+doxygen_step = CustomBuildStep("doxygen",
+    ["doxygen"],
+    cwd = os.path.join("docs", "doxygen")
+)
+
+ext_modules.append(doxygen_step)
+
+
 ####################################################################
 # After building the externals we add a tiny little test step.
 ####################################################################
@@ -431,7 +448,12 @@ ext_modules.append(test_step)
 
 
 if on_readthedocs:
-    ext_modules = [ ]
+    ext_modules = [ 
+        general_presteps,
+        mat24_presteps,
+        mm_presteps,
+        doxygen_step,
+    ]
 
    
 

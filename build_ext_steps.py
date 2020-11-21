@@ -151,6 +151,10 @@ with that name is called. Otherwise the corresponding python function
 is executed. Subsequent entries in the list are arguments given to
 the subprocess or to the function.
 
+Keyword arguments in the constructor are passed to function
+``subprocess.check_call`` when executing a subprocess and 
+ignored when executing a python function.
+
 Such a subprocess may be e.g. a step that generates C code to be
 used for building a subsequent python extension.    
 
@@ -280,13 +284,15 @@ Extension = _Extension
 class CustomBuildStep(_Extension):
     """Model a custom build step as described in the header of this module 
     """
-    def __init__(self, name = "Customer_step", *args):
+    def __init__(self, name = "Customer_step", *args, **kwds):
         # Set attribute name (for displaying the corresponding build step)
         self.name = name
         if not isinstance(name, str):
             raise AssertionError("'name' must be a string")
         # Set the list of functions
         self.function_list = list(args) or []
+        # Set the dict of keywords
+        self.keyword_dict = kwds
         # Mark this as a nonstandard instance of class Extension
         self.is_non_standard = True
         # Set all other attributes of class Extension to default values
@@ -352,14 +358,15 @@ class  BuildExtCmd(_build_ext):
         # Now process all extensions in the given order
         for ext in self.extensions[:]:
             if isinstance(ext, CustomBuildStep):
-                # Then we execute a sequence of subprocesses or a functions 
+                # Then we execute a sequence of subprocesses or functions 
                 print("\nExecuting custom build step '%s'" %  ext.name)
                 for args in ext.function_list:
                     if isinstance(args[0], str):
                         # Then execute a subprocess
                         print(" ".join(map(str, args)))
                         try:
-                            subprocess.check_call(list(map(str, args)))
+                            subprocess.check_call(list(map(str, args)), 
+                                **ext.keyword_dict)
                         except CalledProcessError:
                             err = "\nSubprocess '%s' has failed!"
                             print(err % str(args[0]))

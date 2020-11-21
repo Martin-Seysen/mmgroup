@@ -34,6 +34,7 @@ release = '0.0.1'
 extensions = [
    'sphinx.ext.autodoc',
    'sphinxcontrib.bibtex',
+    'breathe',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -112,4 +113,16 @@ latex_elements = {
 # Additional stuff for the LaTeX preamble.
 'preamble': r'\usepackage{enumitem}\setlistdepth{99}',
 }
+
+
+
+
+# -- Breathe Configuration --------
+
+breathe_projects = {
+   'mmgroup' : '../doxygen/xml'
+}
+
+breathe_default_project = "mmgroup"
+
 

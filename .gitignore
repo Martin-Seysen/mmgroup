@@ -4,6 +4,9 @@ dist/
 build/
 _reports/
 docs/build
+docs/doxgen/html
+docs/doxgen/latex
+docs/doxgen/xml
 src/mmgroup/*.dll
 src/mmgroup/dev/c_doc/
 src/mmgroup/dev/c_files/

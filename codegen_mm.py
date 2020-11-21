@@ -145,9 +145,6 @@ SKE_DIR = os.path.join(DEV_DIR, "mm_basics")
 from mmgroup.generate_c import TableGenerator, make_doc, format_item
 from mmgroup.generate_c import pxd_to_pyx
 
-from mmgroup.dev.mat24.mat24_ref import Mat24
-from mmgroup.dev.mat24_xi.mat24_xi_ref import Mat24Xi
-
 import mmgroup.dev.mm_basics
 from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
 from mmgroup.dev.mm_basics import mm_tables_xi, mm_random, mm_crt
@@ -290,11 +287,14 @@ BASIC_TABLE_CLASSES = [
     mm_aux.MM_IO24,
     mm_tables.MM_OctadTable,
     mm_random.MM_Random_Doc,
-    mm_tables_xi.MM_TablesXi,  
     mm_crt.MM_CrtCombine,  
 ]
 
 
+if "mockup" in sys.argv:
+    BASIC_TABLE_CLASSES.append(mm_tables_xi.Mockup_MM_TablesXi)  
+else:
+    BASIC_TABLE_CLASSES.append(mm_tables_xi.MM_TablesXi)  
 
     
 ##########################################################################

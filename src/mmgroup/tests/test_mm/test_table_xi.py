@@ -16,20 +16,7 @@ from mmgroup.tests.spaces.spaces import MMTestSpace
 space = MMTestSpace(3)
 group = space.group
 
-
-
-#from mmgroup import mat24 as m24
-#from sparse_mm_rep_space import SparseMmRepSpace
-#from mgroup_n import MGroupN
-#from mm_tables_xi import MM_TablesXi
-#from mm_op import mm_sub_get_table_xi
-
-#group = MGroupN(0)
-#space = SparseMmRepSpace(3, group)
-
-
-
-   
+ 
 
 def unit_vector_to_tuple(v):
     tuples = v.as_tuples()
@@ -79,14 +66,15 @@ def xi_tuple_to_tuple(t):
 
 def op_xi_tuple(v, e, verbose =  0):
     from mmgroup.dev.mm_basics.mm_tables_xi import MM_TablesXi
+    tables_xi = MM_TablesXi()
     e1 = e - 1
     table_index = None
-    for i, source_tag in MM_TablesXi.SOURCE_TAGS.items():
+    for i, source_tag in tables_xi.SOURCE_TAGS.items():
         if source_tag[e1] == v[0]:
             table_index = i
-    dest_tag = MM_TablesXi.DEST_TAGS[table_index][e1]
-    dest_shape = MM_TablesXi.DEST_SHAPES[table_index]
-    source_shape = MM_TablesXi.SOURCE_SHAPES[table_index]
+    dest_tag = tables_xi.DEST_TAGS[table_index][e1]
+    dest_shape = tables_xi.DEST_SHAPES[table_index]
+    source_shape = tables_xi.SOURCE_SHAPES[table_index]
     block, entry = divmod(v[1], source_shape[1] * 32)
     section_len = dest_shape[1] * dest_shape[2]
     section = block * section_len
@@ -94,7 +82,7 @@ def op_xi_tuple(v, e, verbose =  0):
     if verbose > 1:
         print("xi_tuple table", e1, ti1,  "; ", block, entry, source_shape)
         print("destination",  dest_tag , dest_shape) 
-    ref_table = MM_TablesXi.PERM_TABLES[e, table_index]
+    ref_table = tables_xi.PERM_TABLES[e, table_index]
     ref_part = ref_table[section : section + section_len] 
     index = section + int(np.nonzero((ref_part & 0x7fff) == entry)[0][0])
     assert mm_sub_get_table_xi(e1, ti1, index, 0) & 0x7fff == entry
@@ -103,7 +91,7 @@ def op_xi_tuple(v, e, verbose =  0):
     q, r = divmod(index, dest_shape[2])
     dest_index = 32 * q + r
     dest_sign = (mm_sub_get_table_xi(e1, ti1, q, 1) >> r) & 1
-    ref_sign_table = MM_TablesXi.SIGN_TABLES[e, table_index]
+    ref_sign_table = tables_xi.SIGN_TABLES[e, table_index]
     assert dest_sign == (ref_sign_table[q] >> r) & 1
     return dest_sign, (dest_tag, dest_index)
 

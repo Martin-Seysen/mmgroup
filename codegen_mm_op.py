@@ -198,6 +198,10 @@ C_FILE_SKELETONS = [
     "mm{P}_op_word",
 ]
 
+
+
+
+
 ##########################################################################
 # Generating .h and .pxd files files
 ##########################################################################
@@ -287,9 +291,12 @@ TABLE_CLASSES = [
     hadamard_t.HadamardOpT3,
     hadamard_xi.HadamardOpXi64,
     hadamard_xi.HadamardOpXi16,
-    mm_op_xi.MonomialOp_xi,
 ]
 
+if "mockup" in sys.argv:
+    TABLE_CLASSES.append(mm_op_xi.Mockup_MonomialOp_xi)  
+else:
+    TABLE_CLASSES.append(mm_op_xi.MonomialOp_xi)  
 
 
     

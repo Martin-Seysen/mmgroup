@@ -58,6 +58,7 @@ class MonomialOp_xi_uint8_t(MM_Op):
 
     def __init__(self, p):
         super(MonomialOp_xi_uint8_t, self).__init__(p)
+        MM_TablesXi()
         self.make_table_info()
         # make tables and directives for code generation
         self.tables.update(self.make_tables())
@@ -302,5 +303,17 @@ class MonomialOp_xi_alternative(MM_Op):
 
 MonomialOp_xi =  MonomialOp_xi_uint8_t
 
-
+class Mockup_MonomialOp_xi:
+    def __init__(srlf, *args):
+        pass
+    tables =  {
+        "OP_XI_TABLE_INFO": [], 
+        "OP_XI_TABLE_DIFF": 0
+    }
+    def op(self, *args):
+        return "\n"
+    directives = {
+        "OP_XI": UserDirective(op, "ssssi")
+    }
+        
         

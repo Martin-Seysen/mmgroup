@@ -1,3 +1,14 @@
+
+
+/** \file mat24_functions.c
+ C implementation of the functionality of Python class  Mat24
+
+ This covers the Golay code, its cocode, the Parker loop,
+ the Mathieu group Mat24, and the group of standard automorphisms
+ of the Parker loop.
+*/
+
+
 // %%COMMENT
 // This is a C implementation of the functionality of Python class
 // Mat24 as described in the sequel. Note that all exported funtions
@@ -33,8 +44,10 @@
 
 #include <stdint.h>
 
-#define MAT24_DLL  // We want a DLL!!
 
+/// @cond DO_NOT_DOCUMENT 
+
+#define MAT24_DLL  // We want a DLL!!
 
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
@@ -52,7 +65,6 @@
     #define MAT24_HELPER_DLL_LOCAL
   #endif
 #endif
-
 
 // Now we use the generic helper definitions above to define MAT24_API 
 // and MAT24_LOCAL.
@@ -73,7 +85,7 @@
   #define MAT24_LOCAL
 #endif // MAT24_DLL
 
-
+/// @endcond
 
 #define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
 
@@ -89,11 +101,15 @@ extern "C" {
 *** Some general bit operations
 *************************************************************************/
 
+
+/// @cond DO_NOT_DOCUMENT 
+
 // %%USE_TABLE
 static const uint8_t MAT24_LSBIT_TABLE[32] = { 
 // %%TABLE Mat24_lsbit_table, uint8
 };
 
+/// @endcond  
 
 // Commpute index of least significant bit of an integer v1
 // If v1 & 0xffffff is zero then 24 is computed  
@@ -104,6 +120,12 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
 #define mat24_def_lsbit24_pwr2(x)  {MAT24_LSBIT:x,1}
 
 
+/**
+ @brief Return position of least significant bit of an integer.
+
+ The function returns the minimum of the number 24 and the position of the
+ least significant bit of `v1`. It uses a De Bruijn sequence.
+*/
 // %%EXPORT p
 uint32_t mat24_lsbit24(uint32_t v1)
 // Return index of least significant bit of an integer v1.
@@ -217,6 +239,8 @@ uint32_t mat24_spread_b24(uint32_t v1, uint32_t u_mask)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
+
 // %%USE_TABLE
 static const uint32_t MAT24_ENC_TABLE0[256] = {
 // %%TABLE Mat24_enc_table0, uint32
@@ -248,7 +272,7 @@ static const uint32_t MAT24_DEC_TABLE2[256] = {
 };
 
 
-// %%COMMENT
+
 // The following table MAT24_BASIS contains the used basis of the 
 // Golay cocode (12 bit vectors of type uint32_t) followed by the 
 // used basis of the Golay code (12 bit vectors).
@@ -268,6 +292,7 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 // %%TABLE Mat24_syndrome_table, uint16
 };
 
+/// @endcond 
 
 
 // %%COMMENT
@@ -972,7 +997,7 @@ uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
 *************************************************************************/
 
 
-
+/// @cond DO_NOT_DOCUMENT
 
 // Return the same result as function mat24_syndrome(x, 24).
 // But this is faster and works for vectors x with odd
@@ -987,6 +1012,8 @@ static inline uint_fast32_t odd_syn(uint_fast32_t x) {
 }
 
 #define lsb24(x) ((uint8_t)(mat24_def_lsbit24_pwr2(x)))
+
+/// @endcond
 
 // %%EXPORT p
 uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
@@ -1197,9 +1224,9 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
 }        
 
 
-
+/// @cond DO_NOT_DOCUMENT
 #define  STD_OCTAD {MAT24_STD_OCTAD}
-
+/// @endcond
 
 // %%EXPORT p
 uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
@@ -1321,7 +1348,6 @@ uint32_t mat24_perm_to_m24num(uint8_t  *p1)
     return  16 * res + p2[p1[8] & 0x1f];
 }
 
-#undef  STD_OCTADNO   
             
 
 
@@ -1694,6 +1720,8 @@ uint32_t mat24_autpl_to_cocode(uint32_t *m1)
 }
 
 
+/// @cond DO_NOT_DOCUMENT
+
 // The following macro computes t = mat24_op_ploop_autpl(v1, m1).
 // It destroys v1. Description see function mat24_op_ploop_autpl().
 #define inline_op_ploop_autpl(v1, m1, t) \
@@ -1707,6 +1735,8 @@ uint32_t mat24_autpl_to_cocode(uint32_t *m1)
     v1 = (t >> 13) & v1;  v1 ^= v1 >> 6;  v1 ^= v1 >> 3; \
     v1 = (0x96 >> (v1 & 7)) & 1; \
     t = (t & 0x1fff) ^ (v1 << 12);     
+
+/// @endcond
 
 
 // %%EXPORT p
