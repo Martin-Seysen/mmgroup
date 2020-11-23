@@ -49,8 +49,8 @@ def generate_doxygen_xml(app):
 def setup(app):
     # For readthedocs:
     # Add hook for building doxygen xml when needed
-    app.connect("builder-inited", generate_doxygen_xml)
-
+    # app.connect("builder-inited", generate_doxygen_xml)
+    pass
 
 # -- Project information -----------------------------------------------------
 

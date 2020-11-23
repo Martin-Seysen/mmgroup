@@ -106,6 +106,8 @@ def extend_path():
 
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
+on_readthedocs = True
+
 codegen_args = ["mockup"] if on_readthedocs else []
 
 ####################################################################
@@ -411,7 +413,28 @@ for p in PRIMES:
     )
 
 
+####################################################################
+# After building the externals generate the xml files with doxygen.
+####################################################################
 
+
+DOXYGEN_DIR = os.path.abspath(os.path.join(ROOT_DIR, 'docs', 'doxygen'))
+
+def generate_doxygen_xml():
+    """Run the doxygen make commands if we're on the ReadTheDocs server"""
+
+    print("Starting generate_doxygen_xml ...")
+    print("Doxygen Directory ", DOXYGEN_DIR)
+    print("C Directory ", C_DIR)
+    print(os.listdir(C_DIR))
+    subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
+    print("End of generate_doxygen_xml\n")
+
+doxygen_step = CustomBuildStep("doxygen",
+  [generate_doxygen_xml],
+)
+
+ext_modules.append(doxygen_step)
 
 
 ####################################################################
@@ -440,6 +463,7 @@ if on_readthedocs:
         general_presteps,
         mat24_presteps,
         mm_presteps,
+        doxygen_step,
     ]
 
    
