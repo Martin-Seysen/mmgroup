@@ -28,18 +28,20 @@ SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 C_DIR = os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
 
+if on_readthedocs:
+    subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
+            cwd=SETUP_DIR)
+    print("Setup Directory ", SETUP_DIR)
+    print("Doxygen Directory ", DOXYGEN_DIR)
+    print("C Directory ", C_DIR)
+    print(os.listdir(C_DIR))
+
+
 
 def generate_doxygen_xml(app):
     """Run the doxygen make commands if we're on the ReadTheDocs server"""
 
     print("Starting generate_doxygen_xml ...")
-    if on_readthedocs:
-        subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
-            cwd=SETUP_DIR)
-        print("Setup Directory ", SETUP_DIR)
-        print("Doxygen Directory ", DOXYGEN_DIR)
-        print("C Directory ", C_DIR)
-        print(os.listdir(C_DIR))
     subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
     print("End of generate_doxygen_xml\n")
 
@@ -161,4 +163,13 @@ breathe_projects = {
 
 breathe_default_project = "mmgroup"
 
+
+
+MMGROUP_FILES = [f for f in os.listdir(C_DIR) 
+    if os.path.splitext(f)[1] in [".c", ".h"]]
+
+
+breathe_projects_source = {
+   "mmgroup" :  (C_DIR, MMGROUP_FILES)
+}
 

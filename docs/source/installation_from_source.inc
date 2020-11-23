@@ -34,6 +34,7 @@ should install the following python packages:
                            extensions
   ``sphinx``               Documentation: basic package used for documentation
   ``sphinxcontrib-bibtex`` Documentation: bibliography in BibTeX style
+  ``breathe``              Documentation: link between ``doxygen`` and ``sphinx``
   ======================== =========================================================
 
 Packages used for the purpose of documentation are required only if you want to 
@@ -50,6 +51,8 @@ also install the following programs:
   ========= ============== ===========================================================
   miktex    Documentation  https://miktex.org/
   Perl      Documentation  https://www.perl.org/get.html
+  doxygen   Documentation  https://www.doxygen.nl/download.html
+            of C files
   ========= ============== ===========================================================
 
 
