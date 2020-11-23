@@ -27,6 +27,9 @@ SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 if on_readthedocs:
     subprocess.check_call([sys.executable, "setup.py", "build_ext"], cwd=SETUP_DIR)
 
+print(os.listdir(os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")))
+
+
 # -- Call doxygen ------------------------------------------------------------
 
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
