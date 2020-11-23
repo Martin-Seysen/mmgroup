@@ -1,7 +1,7 @@
 
 
 /** \file mat24_functions.c
- C implementation of the functionality of Python class  Mat24
+ C implementation of the functionality of Python module ``mmgroup.mat24``
 
  This covers the Golay code, its cocode, the Parker loop,
  the Mathieu group Mat24, and the group of standard automorphisms
@@ -111,13 +111,19 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
 
 /// @endcond  
 
-// Commpute index of least significant bit of an integer v1
-// If v1 & 0xffffff is zero then 24 is computed  
-#define mat24_def_lsbit24(x) {MAT24_LSBIT:x}
+/**
+ @brief Macro version of function ``mat24_lsbit24``.
+*/
+#define mat24_def_lsbit24(v1) {MAT24_LSBIT:v1}
 
 
-// Same as mat24_def_lsbit24(x), assuming that x is a power of two
-#define mat24_def_lsbit24_pwr2(x)  {MAT24_LSBIT:x,1}
+/**
+ @brief Special macro version of function ``mat24_lsbit24``.
+
+ This is faster than ``mat24_def_lsbit24``, but here
+ ``v1`` must be  power of two. 
+*/
+#define mat24_def_lsbit24_pwr2(v1)  {MAT24_LSBIT:v1,1}
 
 
 /**
@@ -137,10 +143,14 @@ uint32_t mat24_lsbit24(uint32_t v1)
     // return MAT24_LSBIT_TABLE[(((v1 & -v1) * 0x077CB531L) >> 26) & 0x1f];
     return {MAT24_LSBIT:v1};
 }
-        
+
+
+
+/**
+ @brief Returns the bit weight of the lowest 24 bits of ``v1``.      
+*/ 
 // %%EXPORT p
 uint32_t mat24_bw24(uint32_t v1)
-// returns the bit weight of the lowest 24 bits of v1
 {
    v1 = (v1 & 0x555555) + ((v1 & 0xaaaaaa) >> 1); 
    v1 = (v1 & 0x333333) + ((v1 & 0xcccccc) >> 2);
@@ -154,20 +164,21 @@ uint32_t mat24_bw24(uint32_t v1)
 *** Conversion between bit vectors of GF(2)**24
 *************************************************************************/
 
+/**
+ @brief Stores the positions of 1-bits of v to the array referred by a_out.
+ 
+ Let ``w`` be the bit weight of ``v & 0xffffff``, i.e. number of bits 
+ of ``v``  at positions ``< 24 equal``  to one. Then the ordered bit
+ positions where the corrsponding bit of ``v `` is 1 are stored in
+ ``a_out[0],...,a_out[w-1]``. 
 
-
+ Then ``v & 0xffffff`` has ``24 - w`` zero bits. The ordered list of the
+ positions of these zero bits is stored in ``a_out[w],...,a_out[23]``. 
+ 
+ The function returns ``w``.
+*/
 // %%EXPORT p
 uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
-// Stores the positions of 1-bits of v to the array referred by a_out).
-// 
-// Let w be the bit weight of v & 0xffffff, i.e. number n of bits 
-// of v at positions < 24 equal  to one. Then the ordered bit
-// positions where the corrsponding bit of v is 1 are stored in
-// a_out[0],...,a_out[w-1]. 
-// Then v & 0xffffff has 24 - w zero bits. The ordered list of the
-// positions of these zero bits is stored in a_out[w],...,a_out[23]. 
-// 
-// The function returns w.
 {
     uint_fast32_t w, i, j;
 
@@ -198,13 +209,15 @@ uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
 
 
 
+/**
+ @brief Extract the bits of 24-bit vector ``v1`` given by the mask ``u_mask``
+ 
+ If ``u_mask`` has bits equal to one at positions ``i_0, i_1, ..., i_k``
+ (in ascending order) then the bit of ``v1`` at position ``i_j`` is copied 
+ to the bit at position ``j`` of the return value for ``j = 0,...,k``.
+*/
 // %%EXPORT p
 uint32_t mat24_extract_b24(uint32_t v1, uint32_t u_mask)
-// Extract the bits of 24-bit vector v1 given by the mask u_mask
-// 
-// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k
-// (in ascending order) then the bit of v1 at position i_j is copied 
-// to the bit at position j of the return value for j = 0,...,k.
 {
     uint_fast32_t res = 0, sh = 0, i;
     v1 &= u_mask;
@@ -215,14 +228,15 @@ uint32_t mat24_extract_b24(uint32_t v1, uint32_t u_mask)
     return res;
 }
 
-
+/**
+ @brief Spread bits of 24-bit vector ``v1`` according to the mask ``u_mask``
+ 
+ If ``u_mask`` has bits equal to one at positions ``i_0, i_1, ..., i_k``
+ (in ascending order) then the bit of ``v1`` at position ``i`` is copied 
+ to the bit at position ``i_j`` of the return value for ``j = 0,...,k``.
+*/
 // %%EXPORT p
 uint32_t mat24_spread_b24(uint32_t v1, uint32_t u_mask)
-// Spread the bits of 24-bit vector v1 according to the mask u_mask
-// 
-// If u_mask has bits equal to one at positions i_0, i_1, ..., i_k,
-// (in ascending order) then the bit of v1 at position i is copied 
-// to the bit at position i_j of the return value for j = 0,...,k.
 {
     uint_fast32_t res = 0, sh = 0, i;
     for (i = 0; i < 24; ++i) {

@@ -106,7 +106,6 @@ def extend_path():
 
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
-
 codegen_args = ["mockup"] if on_readthedocs else []
 
 ####################################################################
