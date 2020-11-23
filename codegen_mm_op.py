@@ -169,7 +169,7 @@ from mmgroup.dev.mm_basics import mm_tables_xi, mm_random
 from mmgroup.dev.hadamard import hadamard_t 
 from mmgroup.dev.hadamard import hadamard_xi 
 
-from mmgroup.dev.mm_op import mm_op, mm_op_pi, mm_op_xy, mm_op_xi
+from mmgroup.dev.mm_op import mm_op
 
 
 
@@ -279,25 +279,30 @@ MM_BASICS_CONSTANTS = [
 ##########################################################################
 
 
+if "mockup" in sys.argv[1:]:
+    TABLE_CLASSES = [
+        mm_op.Mockup_MM_Op,
+    ]
+else:
+    from mmgroup.dev.mm_op import mm_op_pi, mm_op_xy, mm_op_xi
+    TABLE_CLASSES = [
+        mm_op.MM_Op,
+        mm_op_xi.MonomialOp_xi,
+        mm_op_pi.Perm24_Benes,
+        mm_op_pi.SmallPerm64,
+        mm_op_pi.ScalarProd2048,    
+        mm_op_xy.Perm64_xy, 
+        hadamard_t.HadamardOpT64,
+        hadamard_t.HadamardOpT3,
+        hadamard_xi.HadamardOpXi64,
+        hadamard_xi.HadamardOpXi16,
+    ]  
 
 
-TABLE_CLASSES = [
-    mm_op.MM_Op,
-    mm_op_pi.Perm24_Benes,
-    mm_op_pi.SmallPerm64,
-    mm_op_pi.ScalarProd2048,    
-    mm_op_xy.Perm64_xy, 
-    hadamard_t.HadamardOpT64,
-    hadamard_t.HadamardOpT3,
-    hadamard_xi.HadamardOpXi64,
-    hadamard_xi.HadamardOpXi16,
+MORE_TABLE_CLASSES = [
 ]
 
-if "mockup" in sys.argv:
-    TABLE_CLASSES.append(mm_op_xi.Mockup_MonomialOp_xi)  
-else:
-    TABLE_CLASSES.append(mm_op_xi.MonomialOp_xi)  
-
+TABLE_CLASSES += MORE_TABLE_CLASSES
 
     
 ##########################################################################

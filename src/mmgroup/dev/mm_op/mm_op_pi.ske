@@ -7,7 +7,7 @@
 
 
 
-
+// %%IF* GENERATE_CODE
    
 static const uint_mmv_t MM{P}_TBL_SCALPROD_HIGH[] = { 
 // %%TABLE MMV_TBL_SCALPROD_HIGH, uint{INT_BITS}
@@ -17,6 +17,7 @@ static const uint_mmv_t MM{P}_TBL_SCALPROD_LOW[] = {
 // %%TABLE MMV_TBL_SCALPROD_LOW, uint{INT_BITS}
 };
 
+// %%END IF  # GENERATE_CODE
 
 
 
@@ -24,6 +25,7 @@ static const uint_mmv_t MM{P}_TBL_SCALPROD_LOW[] = {
 void mm{P}_neg_scalprod_d_i(uint_mmv_t* v)
 // negate entries d (x) i with sclar product equal to 1
 {
+  // %%IF* GENERATE_CODE
     const uint_mmv_t* p0 = MM{P}_TBL_SCALPROD_HIGH;
     const uint_mmv_t* p0_end = p0 + 32 * {V24_INTS};
 
@@ -36,9 +38,11 @@ void mm{P}_neg_scalprod_d_i(uint_mmv_t* v)
             v +=   4 * {V24_INTS};
         }
     }
+  // %%END IF # GENERATE_CODE
 }
 
 
+// %%IF* GENERATE_CODE
 
 // %%IF PERM24_USE_BENES_NET
 
@@ -181,6 +185,7 @@ static void pi24_72(
 
 
 
+// %%END IF  # GENERATE_CODE
 
 
 
@@ -192,6 +197,7 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
     uint_mmv_t *a_src[3], *a_dest[3];
     uint16_t *p_perm = p_op->tbl_perm24_big;
 
+  // %%IF* GENERATE_CODE
     // %%IF PERM24_USE_BENES_NET
     uint_mmv_t small_perm[{PERM24_BENES_MASK_LEN}]; 
 
@@ -265,6 +271,7 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
 
         mm{P}_neg_scalprod_d_i(v); 
     }
+  // %%END IF  # GENERATE_CODE
 } 
 
 
@@ -274,9 +281,11 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
 // %%EXPORT p
 void mm_op{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
 {
+  // %%IF* GENERATE_CODE
     mm_sub_op_pi_type s_op;
     mm_sub_prep_pi(delta, pi, &s_op);
     mm_op{P}_do_pi(v_in, &s_op, v_out);
+  // %%END IF  # GENERATE_CODE
 }
 
 
@@ -287,6 +296,7 @@ void mm_op{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
     uint8_t signs[2048];
     uint_mmv_t *a_src[3], *a_dest[3];
 
+  // %%IF* GENERATE_CODE
     mat24_op_all_cocode(delta, signs);
     for (i = 0; i < 72; ++i) signs[i] &= 7;
     for (i = 48; i < 72; ++i) signs[i] |= (delta & 0x800) >> (11 - 3);
@@ -378,6 +388,7 @@ void mm_op{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 
         mm{P}_neg_scalprod_d_i(v); 
     }
+  // %%END IF  # GENERATE_CODE
 }
 
 

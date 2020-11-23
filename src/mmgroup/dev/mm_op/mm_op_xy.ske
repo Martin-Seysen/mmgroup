@@ -7,6 +7,7 @@
    
 
 
+// %%IF* GENERATE_CODE
 
 
 static const uint_mmv_t TABLE_PERM64_LOW[] = {
@@ -24,6 +25,7 @@ static const uint32_t TABLE24_START[4] = {
 };
 
 
+// %%END IF #  GENERATE_CODE
 
 
 // %%EXPORT
@@ -31,6 +33,7 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
 {
     uint_fast32_t i;
 
+  // %%IF* GENERATE_CODE
     for (i = 0; i < MM_OP{P}_OFS_E; ++i) v_out[i] = 0;
     
     // Step 1: do rows with 24 entries 
@@ -159,6 +162,7 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
     // If eps is odd: 
     //    negate entries X_d,i with scalar product <d,i> = 1
     if (p_op->eps & 0x800) mm{P}_neg_scalprod_d_i(v_out + MM_OP{P}_OFS_X); 
+  // %%END IF # GENERATE_CODE
 } 
 
 
@@ -168,9 +172,11 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
 // %%EXPORT p
 void mm_op{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
+  // %%IF* GENERATE_CODE
     mm_sub_op_xy_type s_op;
     mm_sub_prep_xy(f, e, eps, &s_op);
     mm_op{P}_do_xy(v_in, &s_op, v_out);
+  // %%END IF   # GENERATE_CODE
 }
 
 

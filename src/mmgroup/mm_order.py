@@ -164,12 +164,13 @@ def compute_order_vector(s_v71, s_g71, s_v94, s_g94, verbose = 0):
     The function raises an exception if any of the checks given
     above fails.
 
-    According to  :cite:`Wilson13` the vector ``w`` is fixed by the
-    neutral element of the monster group only. Note that vector 
-    ``w`` is obtained by Chinese remaindering two vectors in
-    characteristic ``3`` and ``5``, so that the operation of an 
-    element ``g`` of the monster on ``w`` actually corresponds to
-    the operation on the two vectors ``w mod 3`` and ``w mod 5``.
+    According to  :cite:`LPWW98`, section 7, the vector ``w`` is 
+    fixed by the  neutral element of the monster group only. Note 
+    that vector ``w`` is obtained by Chinese remaindering two 
+    vectors in characteristic ``3`` and ``5``, so that the 
+    operation of an element ``g`` of the monster on ``w`` actually 
+    corresponds to the operation on the two vectors ``w mod 3`` 
+    and ``w mod 5``.
 
     Inputs ``s_v71, s_g71, s_v94, s_g94`` can be found by function
     ``find_order_vector``. Searching for such inputs may take a 

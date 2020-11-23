@@ -288,7 +288,7 @@ class MMGroupWord(AbstractGroupWord):
     def order(self, max_order = 119):
         """Return the order of the element of the monster group
 
-        We use the method in :cite:`Wil03` for computing
+        We use the method in :cite:`LPWW98`, section 7, for computing
         the order of an element of the monster.
 
         If the argument ``max_order`` is present then the order of the 

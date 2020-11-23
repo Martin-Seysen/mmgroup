@@ -6,6 +6,7 @@
 #include "mat24_functions.h"
 #include "mm_op{P}.h"   
 
+// %%IF* GENERATE_CODE
 
 static void mm_op{P}_xi_mon(
     uint_mmv_t * v_in,  
@@ -104,12 +105,16 @@ static void mm_op{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 }  
 
 
+// %%END IF   # GENERATE_CODE
+
+
 // %%EXPORT p
 void mm_op{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i;
     uint32_t exp1;
- 
+
+  // %%IF* GENERATE_CODE 
     exp %= 3;
     if (exp == 0) {
         for (i = 0; i < {MMV_INTS}; ++i) v_out[i] = v_in[i];
@@ -129,7 +134,7 @@ void mm_op{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
         uint_mmv_t *p_src = v_in + MM_OP{P}_OFS_Z + (i << HALF_YZ_SHIFT);
         mm_op{P}_xi_yz(p_src, exp1, v_out + TAB{P}_XI64_OFFSET[exp1][i]);
     }
-    
+  // %%END IF # GENERATE_CODE    
 }
 
 

@@ -25,12 +25,12 @@ on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 if on_readthedocs:
-    subprocess.call([sys.executable, "setup.py", "build_ext"], cwd=SETUP_DIR)
+    subprocess.check_call([sys.executable, "setup.py", "build_ext"], cwd=SETUP_DIR)
 
 # -- Call doxygen ------------------------------------------------------------
 
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
-subprocess.call("doxygen", shell = True, cwd = DOXYGEN_DIR)
+subprocess.check_call("doxygen", shell = True, cwd = DOXYGEN_DIR)
 
 # -- Project information -----------------------------------------------------
 

@@ -172,6 +172,13 @@ class MM_Op(MM_Basics):
 
 
 
+class Mockup_MM_Op(MM_Op):
+    def __init__(self, p):
+        super(Mockup_MM_Op, self).__init__(p)
+        old_tables = self.tables
+        self.tables = {}
+        self.tables.update(old_tables)
+        self.tables["GENERATE_CODE"] = False
 
 
 

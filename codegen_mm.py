@@ -282,7 +282,19 @@ INT_BITS = {INT_BITS}
 ##########################################################################
 
 
-BASIC_TABLE_CLASSES = [
+if "mockup" in sys.argv[1:]:
+    BASIC_TABLE_CLASSES = [
+        mm_basics.Mockup_MM_Const,
+        mm_tables_xi.Mockup_MM_TablesXi,
+    ]  
+else:
+    BASIC_TABLE_CLASSES = [
+        mm_basics.MM_Const,
+        mm_tables_xi.MM_TablesXi,
+    ]  
+
+
+MORE_BASIC_TABLE_CLASSES = [
     mm_basics.MM_Const,
     mm_aux.MM_IO24,
     mm_tables.MM_OctadTable,
@@ -290,11 +302,7 @@ BASIC_TABLE_CLASSES = [
     mm_crt.MM_CrtCombine,  
 ]
 
-
-if "mockup" in sys.argv:
-    BASIC_TABLE_CLASSES.append(mm_tables_xi.Mockup_MM_TablesXi)  
-else:
-    BASIC_TABLE_CLASSES.append(mm_tables_xi.MM_TablesXi)  
+BASIC_TABLE_CLASSES += MORE_BASIC_TABLE_CLASSES
 
     
 ##########################################################################

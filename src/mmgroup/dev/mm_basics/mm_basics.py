@@ -197,6 +197,7 @@ class MM_Basics(object):
     assert INT_BITS in (32, 64)
     LOG_INT_BITS = hibit(INT_BITS)
     tables = { 
+        "GENERATE_CODE" : True,
         "INT_BITS": INT_BITS,
         "LOG_INT_BITS": LOG_INT_BITS,
         "MMV_ENTRIES" : MMV_ENTRIES,
@@ -263,6 +264,9 @@ class MM_Basics(object):
         """
         tables = {"directives" : self.directives, **self.tables, **kwds}
         return c_snippet(source, *args, **tables)
+
+
+
 
 
 ########################################################################
@@ -471,5 +475,16 @@ class MM_Const(MM_Basics):
         except:
             return cls.gen_get_const_expr(name, *args)
       
+
+
+class Mockup_MM_Const(MM_Const):
+    def __init__(self):
+        super(Mockup_MM_Const, self).__init__()
+        old_tables = self.tables
+        self.tables = {}
+        self.tables.update(old_tables)
+        self.tables["GENERATE_CODE"] = False
+
+
 
 
