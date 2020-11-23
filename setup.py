@@ -413,17 +413,6 @@ for p in PRIMES:
 
 
 
-####################################################################
-# After building the externals we call doxygen
-####################################################################
-
-
-doxygen_step = CustomBuildStep("doxygen",
-    ["doxygen"],
-    cwd = os.path.join("docs", "doxygen")
-)
-
-ext_modules.append(doxygen_step)
 
 
 ####################################################################

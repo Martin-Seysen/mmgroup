@@ -21,19 +21,35 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
-# -- Call Setup.py if we are in readthedocs -----------------------------------
+# -- Hook for building doxygen xml --------------------------------------------
 
 SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
-if on_readthedocs:
-    subprocess.check_call([sys.executable, "setup.py", "build_ext"], cwd=SETUP_DIR)
-
-print(os.listdir(os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")))
-
-
-# -- Call doxygen ------------------------------------------------------------
-
+C_DIR = os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
-subprocess.check_call("doxygen", shell = True, cwd = DOXYGEN_DIR)
+
+
+def generate_doxygen_xml(app):
+    """Run the doxygen make commands if we're on the ReadTheDocs server"""
+
+    if on_readthedocs:
+        #subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
+        #    cwd=SETUP_DIR)
+        print("Setup Directory ", SETUP_DIR)
+        print("Doxygen Directory ", DOXYGEN_DIR)
+        print("C Directory ", C_DIR)
+        print(os.listdir(C_DIR))
+    subprocess.check_call("doxygen", shell = True, cwd = DOXYGEN_DIR)
+
+
+# -- Call generate_doxygen_xml -----------------------------------------------
+
+def setup(app):
+    # For readthedocs:
+    # Add hook for building doxygen xml when needed
+    print("Starting generate_doxygen_xml ...")
+    app.connect("builder-inited", generate_doxygen_xml)
+    print("End of generate_doxygen_xml\n")
+
 
 # -- Project information -----------------------------------------------------
 
