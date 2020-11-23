@@ -34,7 +34,7 @@ def generate_doxygen_xml(app):
 
     print("Starting generate_doxygen_xml ...")
     if on_readthedocs:
-        subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
+        subprocess.check_call([sys.executable, "setup.py", "build_ext", "install"], 
             cwd=SETUP_DIR)
         print("Setup Directory ", SETUP_DIR)
         print("Doxygen Directory ", DOXYGEN_DIR)
@@ -49,7 +49,7 @@ def generate_doxygen_xml(app):
 def setup(app):
     # For readthedocs:
     # Add hook for building doxygen xml when needed
-    # app.connect("builder-inited", generate_doxygen_xml)
+    app.connect("builder-inited", generate_doxygen_xml)
     pass
 
 # -- Project information -----------------------------------------------------
