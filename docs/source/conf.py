@@ -22,37 +22,25 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
-# -- Hook for building doxygen xml --------------------------------------------
+# -- Creating C filesin in readthedocs ----------------------------------------
 
 SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 C_DIR = os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
 
 if on_readthedocs:
+    print("\nGenerating C files ...")
     subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
             cwd=SETUP_DIR)
-    print("Setup Directory ", SETUP_DIR)
-    print("Doxygen Directory ", DOXYGEN_DIR)
-    print("C Directory ", C_DIR)
-    print(os.listdir(C_DIR))
+    print("C files have been generated\n")
+
+print("Doxygen Directory = ", DOXYGEN_DIR)
+print("C Directory =", C_DIR, ":")
+C_FILES = [f for f in os.listdir(C_DIR) 
+    if os.path.splitext(f)[1] in [".c", ".h"]]
+print(C_FILES, "\n")
 
 
-
-def generate_doxygen_xml(app):
-    """Run the doxygen make commands if we're on the ReadTheDocs server"""
-
-    print("Starting generate_doxygen_xml ...")
-    subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
-    print("End of generate_doxygen_xml\n")
-
-
-# -- Call generate_doxygen_xml -----------------------------------------------
-
-def setup(app):
-    # For readthedocs:
-    # Add hook for building doxygen xml when needed
-    app.connect("builder-inited", generate_doxygen_xml)
-    pass
 
 # -- Project information -----------------------------------------------------
 
@@ -165,11 +153,26 @@ breathe_default_project = "mmgroup"
 
 
 
-MMGROUP_FILES = [f for f in os.listdir(C_DIR) 
-    if os.path.splitext(f)[1] in [".c", ".h"]]
-
 
 breathe_projects_source = {
-   "mmgroup" :  (C_DIR, MMGROUP_FILES)
+   "mmgroup" :  (C_DIR, C_FILES)
 }
+
+
+# -- Call generate_doxygen_xml -----------------------------------------------
+
+def generate_doxygen_xml(app):
+    """Run the doxygen make commands if we're on the ReadTheDocs server"""
+
+    print(" \nStarting generate_doxygen_xml ...")
+    subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
+    print("End of generate_doxygen_xml\n")
+
+
+
+def setup(app):
+    # For readthedocs:
+    # Add hook for building doxygen xml when needed
+    app.connect("builder-inited", generate_doxygen_xml)
+    pass
 
