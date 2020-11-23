@@ -34,7 +34,7 @@ def generate_doxygen_xml(app):
 
     print("Starting generate_doxygen_xml ...")
     if on_readthedocs:
-        subprocess.check_call([sys.executable, "setup.py", "build_ext", "install"], 
+        subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
             cwd=SETUP_DIR)
         print("Setup Directory ", SETUP_DIR)
         print("Doxygen Directory ", DOXYGEN_DIR)
@@ -156,7 +156,7 @@ latex_elements = {
 # -- Breathe Configuration --------
 
 breathe_projects = {
-   'mmgroup' : '../doxygen/xml'
+   'mmgroup' : os.path.join(DOXYGEN_DIR, 'xml')
 }
 
 breathe_default_project = "mmgroup"
