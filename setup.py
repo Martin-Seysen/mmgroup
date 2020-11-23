@@ -441,7 +441,6 @@ if on_readthedocs:
         general_presteps,
         mat24_presteps,
         mm_presteps,
-        doxygen_step,
     ]
 
    
