@@ -32,8 +32,8 @@ def generate_doxygen_xml(app):
     """Run the doxygen make commands if we're on the ReadTheDocs server"""
 
     if on_readthedocs:
-        #subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
-        #    cwd=SETUP_DIR)
+        subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
+            cwd=SETUP_DIR)
         print("Setup Directory ", SETUP_DIR)
         print("Doxygen Directory ", DOXYGEN_DIR)
         print("C Directory ", C_DIR)
