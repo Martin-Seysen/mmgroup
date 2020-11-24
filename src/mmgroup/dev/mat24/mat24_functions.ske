@@ -572,12 +572,18 @@ uint32_t mat24_octad_to_vect(uint32_t u_octad)
 *** Golay code syndoms and weights
 *************************************************************************/
 
+/** 
+  @brief Return Golay code syndrome of cocode element  ``c1``.
 
+  Here ``c1`` is a cocode element in ``cocode``  representation. 
+  ``mat24_cocode_syndrome(c1, u_tetrad)`` is equivalent to 
+  ``mat24_syndrome(mat24_cocode_to_vect(c1), u_tetrad)``.
+
+  The function returns a Golay code syndrome as described in the 
+  documentation of function  mat24_syndrome().   
+*/
 // %%EXPORT p
 uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
-// Same as mat24_syndrome(mat24_cocode_to_vect(c1), u_tetrad). 
-// The function may fail as indicated in the description of
-// function  mat24_syndrome(). 
 {
         uint_fast32_t  y, syn, bad; 
         if (u_tetrad > 24) return (uint32_t)(-1L);
@@ -601,25 +607,32 @@ uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
 }
 
 
+/** 
+  @brief Return Golay code syndrome of word ``v1``.
 
+  Here ``v1`` is an arbitrary word in ``GF(2)**24`` in ``vector``
+  representation. The function returns a Golay code syndrome of 
+  ``v1`` (of minimum possible bit weight) as a bit vector in 
+  ``vector`` representation. 
+
+  Such a syndrome is unique if it has weight less than 4. In that
+  case the unique syndrome is returned.
+
+  If the minimum weight of the syndrome is four then the six
+  possible syndroms form a partition of the the underlying set
+  of 24 elements. In this case we return the syndrome of bit 
+  weight four where the bit at position 'u_tetrad' is  set.
+  Therefore parameter ``u_tetrad`` must satisfy
+  `` 0 <= u_tetrad < 24``; otherwise the function fails.
+
+  If the minimum weight of the sydrome is at most three,
+  parameter ``u_tetrad`` must satisfy `` 0 <= u_tetrad < 24``; 
+  otherwise the function fails.
+
+  The function returns ``(uint32_t)(-1)`` in case of failure.
+*/
 // %%EXPORT p
 uint32_t mat24_syndrome(uint32_t v1, uint32_t u_tetrad)
-// Return Golay code syndrome of word 'v1'.
-//
-// Here 'v1' is an arbitrary word in GF(2)**24. The function 
-// returns a Golay code syndrome of v1 of bit weight at most four.
-// The returned syndrome is an integer representing a bit vector.
-// That syndrome is unique if it has weight < 4. 
-//
-// The function returns (uint32_t)(-1) in case of failure.
-// 
-// Input 'u_tetrad' must satisfy 0 <= u_tetrad <= 24; otherwise the
-// function fails. The function succeeds if the weight of the
-// syndrome is less than 4. If that weight is equal to 4, we have:
-//
-// If 'u_tetrad' < 24 the function succeeds and returns the unique 
-// syndrome of bit weight 4 where the bit at position 'u_tetrad' is 
-// set. If 'u_tetrad' >= 24 the function fails.
 {
         uint_fast32_t as_cocode;
 
@@ -632,12 +645,14 @@ uint32_t mat24_syndrome(uint32_t v1, uint32_t u_tetrad)
 
 
 
+/** 
+  @brief Returns bit weight of Golay code word ``v1`` divided by 4
 
+  Here ``0 <= v1 < 4096`` is the number of a Golay code word,
+  i.e. ``v1`` is given in ``gcode`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_gcode_weight(uint32_t v1)
-// returns bit weight of Golay code word v1 divided by 4
-//
-// Here 0 <= v1 < 4096 is the number of a Golay code word.
 {
    register uint_fast32_t  t = 0 - ((v1 >> 11) & 1);
    return (((MAT24_THETA_TABLE[v1 & 0x7ff] >> 12) & 7) ^ t) 
@@ -645,30 +660,33 @@ uint32_t mat24_gcode_weight(uint32_t v1)
 }
 
 
+/** 
+  @brief Store bit positions of Golay code ``v1`` in array ``a_out`` 
 
+  Here ``0 <= v1 < 4096`` is the number of a Golay code word,  i.e. 
+  ``v1`` is given in ``gcode`` representation. The Golay code word 
+  ``v1`` is stored in the array referred by ``a_out`` as an ordered 
+  list of the positions of the bits being set in the word ``v1``.
+
+  That array must have physical length at least 24. The function 
+  returns the actual length of the returned array, which is equal 
+  to the bit weight of the word 'v1'.
+*/
 // %%EXPORT p
 uint32_t mat24_gcode_to_bit_list(uint32_t v1, uint8_t *a_out)
-// Store Golay code 'v1' in array a_out as a list of bit positions.
-//
-// Here 0 <= v1 < 4096 is the number of a Golay code word in 
-// 'gcode' representation. The array referred by 'a_out' must have
-// physical length at least 24. The function stores the bit
-// positions of the word 'v1' in 'a_out'.
-//
-// The function returns the length of the list 'a_out'.
-// That length is equal to the weight of the word 'v1'.
 {
    v1 = MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
           ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff];
    return mat24_vect_to_bit_list(v1, a_out);
 }
 
+/** 
+  @brief Return the minimum possible weight of the cocode vector ``c1``
 
+  Here ``c1`` is a cocode element in ``cocode`` representation.
+*/ 
 // %%EXPORT p
 uint32_t mat24_cocode_weight(uint32_t c1)
-// Return minimum possible weight of cocode vector c1.  
-//
-// Here c1 is a cocode vector in cocode representation.
 
 {
         uint_fast32_t  y, syn, w; 
@@ -687,27 +705,33 @@ uint32_t mat24_cocode_weight(uint32_t c1)
 }
 
 
+/** 
+  @brief Store Golay code syndrome of cocode word ``c1`` in an array
 
+  Here ``c1`` is an cocode word in cocode representation. The function 
+  stores the sorted  bit positions of the syndrome of ``c1`` in the 
+  array referred by ``a_out`` and returns the actual length of that
+  array, which is the weight of the syndrome. The array referred by 
+  ``a_out`` must have physical length at least 4. 
+
+  Such a syndrome is unique if it has weight less than 4. In that
+  case the unique syndrome is returned.
+
+  If the minimum weight of the syndrome is four then the six
+  possible syndroms form a partition of the the underlying set
+  of 24 elements. In this case we return the syndrome of bit 
+  weight four where the bit at position 'u_tetrad' is  set.
+  Therefore parameter ``u_tetrad`` must satisfy
+  `` 0 <= u_tetrad < 24``; otherwise the function fails.
+
+  If the minimum weight of the sydrome is at most three,
+  parameter ``u_tetrad`` must satisfy `` 0 <= u_tetrad < 24``; 
+  otherwise the function fails.
+
+  The function returns ``(uint32_t)(-1)`` in case of failure.
+*/
 // %%EXPORT p
 uint32_t mat24_cocode_to_bit_list(uint32_t c1, uint32_t u_tetrad, uint8_t *a_out)
-// Store Golay code syndrome of cocode word 'c1' in array a_out.
-//
-// Here 'c1' is an cocode word in cocode representation. The function 
-// stores the sorted  bit positions of the syndrome of c1 in the array
-// referred by a_out and returns the length of that array. The array
-// referred by a_out must have physical length at least 4. 
-// That syndrome is unique if it has length < 4. 
-//
-// The function returns the length of the list a_out, which is <= 4.
-// It returns (uint32_t)(-1) in case of failure.
-// 
-// Input 'u_tetrad' must satisfy 0 <= u_tetrad <= 24; otherwise the
-// function fails. The function succeeds if the length of the
-// syndrome is less than 4. If that length is equal to 4, we have:
-//
-// If 'u_tetrad' < 24 the function succeeds and computes the unique 
-// syndrome of length 4 where the bit at position 'u_tetrad' is set.
-// If 'u_tetrad' >= 24 the function fails.
 {
         uint_fast32_t  syn, bad, len, i, tmp, a[6]; 
         if (u_tetrad > 24) return (uint32_t)(-1L);
@@ -746,16 +770,21 @@ uint32_t mat24_cocode_to_bit_list(uint32_t c1, uint32_t u_tetrad, uint8_t *a_out
 }
 
 
+/** 
+  @brief Store a cocode word ``c1`` in array ``a_out`` as a sextet
 
+  Here ``c1`` is an cocode word in cocode representation. That 
+  cocode word must correspond to a syndome of length four, i.e.
+  the syndrome must be a tetrad. Otherwise the function fails.
+
+  The function stores the six tetrads that make up the sextet ``c1`` 
+  in ``a_out[4*i],...,a_out[4*i+3]`` for ``i = 0,...,5``. The 
+  (ordered) tetrads are stored in lexical order. 
+
+  The function returns ``(uint32_t)(-1)`` if ``c1`` is not a tetrad.
+*/
 // %%EXPORT p
 uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
-// Store a cocode word 'c1' in array a_out as a sextet.
-//
-// Here 'c1' is an cocode word in cocode representation. The 
-// function stores the 6 tetrads that make up the sextet 'c1' 
-// in a_out[4*i],...,a_out[4*i+3] for i = 0,...,5. The 
-// (ordered) tetrads are stored in lexical order. 
-// The function returns (uint32_t)(-1) if 'c1' is not a tetrad.
 {
     uint_fast32_t c2, syn, v, i;
     if (c1 & 0x800) return (uint32_t)(-1L);
@@ -787,13 +816,17 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
 *** Scalar product of Golay code and cocode
 *************************************************************************/
 
+/** 
+  @brief Return scalar product of Golay code and cocode vector
 
+  ``v1`` is a Golay code vector in 'gcode' representation, ``c1``
+  is a cocode vector in cocode representation.
+
+  Actually the function returns the bit parity of ``v1 & c1 & 0xfff``.
+  
+*/
 // %%EXPORT p
 uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
-// Return scalar product (v1,c1) of Golay code and cocode vector
-//
-// v1 is a Golay code vector in 'gcode' representation, c1 is a
-// cocode vector in cocode representation.
 {
     v1 &= c1;
     v1 ^= v1 >> 6;  v1 ^= v1 >> 3;
@@ -806,26 +839,35 @@ uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
 /*************************************************************************
 *** Conversion from and to suboctads
 *************************************************************************/
+/** 
+  @brief Convert even suboctad of octad  to cocode representation
+  
+  The function converts a suboctad ``u_sub`` (in ``suboctad`` 
+  representation) of an octad ``v1`` (in ``gcode`` representation) 
+  to a cocode element. It returns that cocode element in ``cocode``
+  representation.
 
+  Each octad ``v1`` has 64 even subsets, when each subset of ``v1``
+  is identified with its complement in ``v1``. These subsets are 
+  called suboctads. Let ``b_0, ..., b_7 `` be the elements of the 
+  octad ``v1`` in natural order. Then the even subset ``(b_0 , b_i)``
+  has suboctad number ``2**(i-1)`` for ``i = 1,...,6``. Combining 
+  suboctads by disjoint union corresponds to combining their numbers
+  by ``xor``. The empty subocatad has number zero. This yields a 
+  one-to-one correspondence between the integers ``0,...,63`` and
+  the suboctads of a fixed octad ``v1``, when identifying a suboctad 
+  with its complement. 
+ 
+  The function returns the suboctad of ``v1`` with number ``u_sub``
+  in ``cocode`` representation. Octad ``v1`` must be given in 
+  ``gcode`` representation. If ``v1`` is a complement 
+  of an octad ``o`` the ``o`` is taken instead of ``v1``.
+ 
+  The function fails if ``v1`` does not represent an octad.
+  It returns ``(uint32_t)(-1)`` in case of failure.
+*/
 // %%EXPORT p
 uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
-// Convert even suboctad u_sub of octad v1 to cocode representation
-//
-// Each octad v1 has 64 even subsets, when a subset x of v1 is identified
-// with its complement v1 \ x. These subsets are called suboctads.
-// Let b_0,...,b_7 be the elements of the octad v1 in natural order. 
-// Then the even subset (b_0 , b_i)  has suboctad number 2**(i-1) for 
-// i = 1,...,6. Combining suboctads by disjoint union corresponds to 
-// combining their numbers by xor. The empty subocatad has number 0.
-// This yields a 1:1 correspondence between the integers 0,...,63 and
-// the suboctads of a fixed octad v1, when identifying a suboctad with
-// its complement. 
-//
-// The function returns the suboctad of v1 with number u_sub in 'cocode'
-// representation. Octad v1 must be given in 'gcode' representation. 
-//
-// The function fails if v1 does not represent an octad.
-// It returns (uint32_t)(-1) in case of failure.
 {
     uint_fast32_t oct, l;
     // Let oct = vector of v1 in 'vect' representation
@@ -848,21 +890,28 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
           ^ MAT24_ENC_TABLE2[(u_sub >> 16) & 0xff]) & 0xfff;
 }
 
+/** 
+  @brief Convert cocode element ``c1 to suboctad of octad ``v1``
+
+  The function converts a cocode element ``c1`` (in ``cocode`` 
+  representation) of an octad ``v1`` (in ``gcode`` representation) 
+  to a suboctad. 
+
+  This is an inverse of function ``mat24_suboctad_to_cocode``.
+  The function returns the suboctad number corresponding to the
+  cocode element ``c1``, if ``v1`` is an octad and ``c1`` is an 
+  even subset of ``v1``. See documentation of function 
+  ``mat24_suboctad_to_cocode`` for the numbering of the suboctads.
+ 
+  The function fails if ``v1`` is not anoctad or ``c1`` cannot be  
+  represented as an even subset of ``v1``. If ``v1`` is a complement 
+  of an octad ``o`` the ``o`` is taken instead of ``v1``.
+  The function returns ``(uint32_t)(-1)`` in case of failure.
+*/
 
 // %%EXPORT p
 uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
-// Convert cocode element c1 to suboctad of octad v1.
-//
-// This is an inverse of function mat24_suboctad_to_cocode().
-// The function returns the suboctad number corresponding to the
-// cocode element c1, if v1 is an octad and c1 is an even subset 
-// of v1. c1 and v1 must be given in 'cocode' and 'gcode'
-// representation, respectively. 
-//
-// The function fails if v1 is not an octad or c1 cannot be 
-// represented as an even subset of v1. If v1 is a complement 
-// of an octad o the o is taken instead of v1.
-// The function returns (uint32_t)(-1) in case of failure.
+
 {
     uint_fast32_t syn, oct, l;
     // Let oct = vector of v1 in 'vect' representation
@@ -892,30 +941,41 @@ uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
     return (syn ^ (0-l)) & 0x3f;
 }    
 
+/** 
+  @brief Return parity of halved bit weight of the even suboctad
 
+  Here parameter ``u_sub`` is the number of a suboctad. A suboctad
+  cooresponds to a subset of an octad of even parity. The function 
+  returns 0 is the bit weight of that subset is divisible by four 
+  and 1 otherwise.
+
+  The numbering of suboctads is described in the documentation
+  of function ``mat24_suboctad_to_cocode``.
+*/
 // %%EXPORT p
 uint32_t mat24_suboctad_weight(uint32_t u_sub)
-// Return parity of halved bit weight ofthe even suboctad u_sub
-//    
-// See member function mat24_suboctad_to_cocode for documentation of 
-// suboctads. The function returns 0 is the bit weight of a suboctad 
-// with number u_sub is divisible by four and 1 othewise.
 {
    uint_fast32_t w = (u_sub & 0x15) + ((u_sub & 0x2a) >> 1);
    w = w + (w >> 2) + (w >> 4) + 1;
    return (w >> 1) & 1; 
 }
 
+
+/** 
+  @brief Return scalar product of two suboctads
+
+  The function returns the scalar product of the wo suboctads 
+  with the numbers ``u_sub1, u_sub2``.  
+     
+  Here the scalar product is the parity of the vector 
+  ``u_sub1 & u_sub2`` when ``u_sub1`` and ``u_sub2`` are given as 
+  subsets of an octad in vector notation.
+ 
+  But in this functions parameters ``u_sub1, u_sub2`` are suboctad 
+  numbers as documented in function ``suboctad_to_cocode``.
+*/
 // %%EXPORT p
 uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
-// Return scalar product of suboctads u_sub1, u_sub2
-//    
-// Here the scalar product is the parity of the vector  u_sub1 & u_sub2 
-// when u_sub1 and u_sub2 are given as subsets of an octad in vector 
-// notation.
-//
-// But in this functions parameters u_sub1, u_sub2 are suboctad 
-// numbers as described in function suboctad_to_cocode.
 {
    uint_fast32_t wp = (0x96 >> ((u_sub1 ^ (u_sub1 >> 3)) & 7)) 
                     & (0x96 >> ((u_sub2 ^ (u_sub2 >> 3)) & 7));
@@ -930,29 +990,43 @@ uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
 *** Parker Loop
 *************************************************************************/
 
+/** 
+  @brief Returns the theta function for the Parker loop
+
+  Here function ``theta()`` is a quadratic from from the Golay code 
+  ``C`` to the cocode ``C*``. Parameter ``v1`` of function ``theta`` 
+  is a Golay code word in ``gcode`` representation. The result of 
+  the ``theta`` function is returned as a Golay cocode word in 
+  ``cocode`` representation.
+
+  The cocycle of the Parker loop is given by:
+ 
+           cocycle(v1,v2) =   mat24_scalar_prod(theta(v1), v2),
+         
+  where ``mat24_scalar_prod`` computes the scalar product.
+
+  The function evluates the lower 12 bits of ``v1``  only. Thus
+  ``v1`` may also be an element of the Parker loop.
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_theta(uint32_t v1)
-// returns the theta function for the Parker loop as given in [SPLG]:
-//
-// theta is a quadratic from from the Golay code C to the cocode C*.
-// Here parameter v1 of function theta is represented as a Golay code 
-// word. The result of the function is represented as a Golay cocode 
-// word. The cocycle of the Parker loop is given by:
-//
-//          cocycle(v1,v2) =   scalar_prod(theta(v1), v2)
-//        
-// with  scalar_prod(.,.) the scalar product.
 {
    return MAT24_THETA_TABLE[v1 & 0x7ff] & 0xfff;
 }
 
+
+/** 
+  @brief Returns the cocycle of the Parker loop.
+ 
+  Here parameters `v1` and `v2`are Golay code vectors in  ``gcode`` 
+  representations or elements of the Parker loop, codws as in 
+  function ``mat24_mul_ploop``. Then the Parker  loop product  of 
+  ``v1`` and ``v2`` is given by
+ 
+      v1 (*) v2  =  v1 ^ v2 * (-1)**cocycle(v1, v2). 
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
-// Returns the cocycle of the Parker loop.
-//
-// Then the Parker Loop product is given by
-//
-//      v1 (*) v2  =  v1 ^ v2 * (-1)**cocycle(v1, v2) . 
 {
     uint_fast32_t s;
     s = MAT24_THETA_TABLE[v1 & 0x7ff] & v2 & 0xfff;
@@ -962,38 +1036,60 @@ uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
     return s & 1; 
 }
 
+/** 
+  @brief Returns the product of two elements of the Parker loop
+ 
+  Here the Parker loop elements ``v1`` and ``v2`` are integers
+  coded as follows:
 
+      bit 0,...,11:   a Golay code word in ``gcode`` representation
+
+      bit 12:         Parker loop sign
+
+  The other bis of``v1`` and ``v2`` are ignored.
+*/
 // %%EXPORT p
 uint32_t mat24_mul_ploop(uint32_t v1, uint32_t v2)
-// Returns the Parker loop product v1 (*) v2
-//
-// Here v1 and v2 are integers coded as follows:
-// bit 0,...,11:   representation as Golay code word
-// bit 12:         Parker loop sign
-// otther bits:    ignored
 {
    return v1 ^ v2 ^ (mat24_ploop_cocycle(v1, v2) << 12);
 }
 
 
+/** 
+  @brief Returns a power of an element of the Parker loop
+ 
+  Here ``v1`` is a the Parker loop element coded as in function
+  ``mat24_mul_ploop``. ``u_exp`` is the exponent. The function
+  returns the power ``v1 ** exp`` as an element of the Parker loop.
+
+  E.g. ``mat24_pow_ploop(v1, 3)`` is the inverse of ``v1``.
+*/
 // %%EXPORT p
 uint32_t mat24_pow_ploop(uint32_t v1, uint32_t u_exp)
-// Return power v1 ** u_exp of the Parker loop element v1
-//
-// Here mat24_pow_ploop(v1, 3) is the inverse of v1.
 {
     return (v1 & (0 - (u_exp & 1))) 
       ^ (MAT24_THETA_TABLE[v1 & 0x7ff] & ((u_exp & 2) << 11));
 }
 
 
+/** 
+  @brief Return commutator of Golay code words ``v1`` and ``v2``
+ 
+  This is equal to 0 if the intersection of the bit vectors ``v1`` 
+  and  ``v2`` has  bit weight 0 mod 4, and equal to 1 is that 
+  intersection has bit weight 2 mod 4. Words ``v1`` and ``v2`` 
+  must be given in ``gcode``  representation.
+
+  For  Parker loop elements ``v1`` and ``v2`` (coded as in function
+  ``mat24_mul_ploop``) the commutator of  ``v1`` and ``v2`` is
+  equal to
+
+     (-1) ** mat24_ploop_comm(v1, v2),
+
+  where ``**`` denotes exponentiation.
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
-// Return commutator of Golay code word v1 and v2
-//
-// This is 0 if the intersection of the vectors v1 and v2 has
-// bit weight 0 mod 4 and 1 is that intersection has bit weight 
-// 2 mod 4. v1 and v2 are in 'gvect' or 'ploop' representation.
 {   
     uint_fast32_t r;
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v2)
@@ -1003,25 +1099,36 @@ uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
 } 
 
 
+/** 
+  @brief Return intersection of two Golay code words as cocode word.
+ 
+  Here ``v1`` and ``v2`` are Golay code words in ``gcode`` 
+  representation. The result is a cocode word returned in 
+  ``cocode`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_cap(uint32_t v1, uint32_t v2)
-// Return intersection of two Golay code words as cocode word.
-//
-// v1 and v2 are in 'gvect' or 'ploop' representation, the result
-// is returned in 'cocode' representation.
+
 {
     v1 &= 0x7ff; v2 &= 0x7ff;
     return (MAT24_THETA_TABLE[v1]  ^  MAT24_THETA_TABLE[v2] 
               ^ MAT24_THETA_TABLE[v1 ^ v2]) & 0xfff ;
 }
 
+/** 
+  @brief Return associator of Golay code words ``v1, v2,`` and ``v3``
+ 
+  This is the parity of the intersection of the bit vectors ``v1, v2,`` 
+  and ``v3``. So the function returns 0 or 1. Vectors ``v1, v2, v3`` 
+  are in ``gcode``  representation.
 
+  The associator of three Parker loop elements `v1, v2, v3``  
+  (coded as in function ``mat24_mul_ploop``) is equal to
+
+     (-1) ** mat24_ploop_assoc(v1, v2, v3),
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
-// Return associator of Golay code words v1, v2 and v3
-//
-// This the parity of the intersection of the vectors v1, v2 and 
-// v3.  v1, v2 and v3 are in 'gvect' or 'ploop' representation.
 {
     uint_fast32_t r;
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v3)
@@ -1032,29 +1139,32 @@ uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
 }
 
 
+/** 
+  @brief Return cocode element that kills signs of Parker loop elements
+  
+  Here ``p_io`` refers to an array of ``u_len`` Parker loop elements
+  coded as in function ``mat24_mul_ploop``. The function tries to 
+  find a cocode element that makes all these Parker loop elements 
+  positive, when operating on them as a diagonal automorphism. The 
+  function returns the least cocode  element in lexical order 
+  satisfying that condition in the bits ``0,...,11`` of the return 
+  value. For that order we assume that lower bits have higher valence. 
+  If no such cocode element  exists, the function fails.
+ 
+  We set bit 12 of the return value to indicate a failure.
+ 
+  The array ``p_io`` is destroyed. More specifically, the first 
+  ``k`` entries of that array are changed to an array of linear
+  independent Parker loop elements. When these ``k`` elements are
+  mapped to positive Parker loop elements, this also yields a
+  solution of the original problem. If the problem cannot be 
+  solved then we put ``p_io[k-1]`` = 0x1000. 
+ 
+  The function returns the value ``k`` in bits ``31,...,16``
+  of the result.
+*/
 // %%EXPORT p
 uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
-// Return cocode element that kills signs of Parker loop elements
-// 
-// Here 'p_io' is an array of 'u_len' Parker loop elements. The
-// function tries to find a cocode element that makes all these
-// Parker loop elements positive, when operating on them as a
-// diagonal automorphism. The function returns the least cocode 
-// element in lexical order satisfying that condition in bits
-// 0,...,11 of the return value. For that order we assume that 
-// lower bits have higher valence. If no such cocode element  
-// exists, the function fails.
-//
-// We set bit 12 of the return value to indicate a failure.
-//
-// The array p_io is destroyed. More specifically, the first 
-// k entries of that array are changed to an array of linear
-// independent Parker loop elements. When these k elements are
-// mapped to positive Parker loop elements, this also yields a
-// solution of the original problem. If the problem cannot be 
-// solved then we put p_io[k-1] = 0x1000. 
-//
-// The function returns the value k in bits 31..16 of the result.
 {
     uint_fast32_t col, row, nrows, mask, piv, piv_col[13], res;
     nrows = 0;
