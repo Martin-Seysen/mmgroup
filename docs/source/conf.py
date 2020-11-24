@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
-# -- Creating C filesin in readthedocs ----------------------------------------
+# -- Creating C files in readthedocs ----------------------------------------
 
 SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 C_DIR = os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")
@@ -40,6 +40,13 @@ C_FILES = [f for f in os.listdir(C_DIR)
     if os.path.splitext(f)[1] in [".c", ".h"]]
 print(C_FILES, "\n")
 
+
+# -- Call doxygen ------------------------------------------------------------
+
+
+print("\nStarting doxygen ...")
+subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
+print("doxygen completed\n")
 
 
 # -- Project information -----------------------------------------------------
@@ -82,7 +89,7 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # -- Options for latex output ------------------------------------------------
 # The following option should remove excessive blank pages.
@@ -159,20 +166,5 @@ breathe_projects_source = {
 }
 
 
-# -- Call generate_doxygen_xml -----------------------------------------------
 
-def generate_doxygen_xml(app):
-    """Run the doxygen make commands if we're on the ReadTheDocs server"""
-
-    print(" \nStarting generate_doxygen_xml ...")
-    subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
-    print("End of generate_doxygen_xml\n")
-
-
-
-def setup(app):
-    # For readthedocs:
-    # Add hook for building doxygen xml when needed
-    app.connect("builder-inited", generate_doxygen_xml)
-    pass
 

@@ -1,5 +1,4 @@
 numpy
-Cython
 breathe
 pytest
 sphinx>=2.0
