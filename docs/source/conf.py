@@ -41,6 +41,12 @@ C_FILES = [f for f in os.listdir(C_DIR)
 print(C_FILES, "\n")
 
 
+# -- Call doxygen ------------------------------------------------------
+
+print(" \nStarting doxygen ...")
+subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
+print("End of doxygen\n")
+
 
 # -- Project information -----------------------------------------------------
 
@@ -157,19 +163,4 @@ breathe_projects_source = {
 }
 
 
-# -- Call generate_doxygen_xml -----------------------------------------------
-
-def generate_doxygen_xml(app):
-    """Run the doxygen make commands if we're on the ReadTheDocs server"""
-    print(" \nStarting generate_doxygen_xml ...")
-    subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
-    print("End of generate_doxygen_xml\n")
-
-
-
-def setup(app):
-    # For readthedocs:
-    # Add hook for building doxygen xml when needed
-    app.connect("builder-inited", generate_doxygen_xml)
-    pass
 
