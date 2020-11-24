@@ -22,12 +22,23 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
-# -- Creating C filesin in readthedocs ----------------------------------------
+# -- Creating C files in readthedocs ----------------------------------------
 
 SETUP_DIR = os.path.abspath(os.path.join('..', '..'))
 C_DIR = os.path.join(SETUP_DIR, "src", "mmgroup", "dev", "c_files")
 DOXYGEN_DIR = os.path.abspath(os.path.join('..', 'doxygen'))
 
+if on_readthedocs:
+    print("\nGenerating C files ...")
+    subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
+        cwd=SETUP_DIR)
+    print("C files have been generated\n")
+
+print("\nDoxygen Directory = ", DOXYGEN_DIR)
+print("C Directory =", C_DIR, ":")
+C_FILES = [f for f in os.listdir(C_DIR) 
+    if os.path.splitext(f)[1] in [".c", ".h"]]
+print(C_FILES, "\n")
 
 
 
@@ -140,67 +151,6 @@ breathe_projects = {
 
 breathe_default_project = "mmgroup"
 
-# This is not nice, but C file nmaes must be known in advance
-C_FILES = [
-"clifford12.h",
-"mat24_functions.c",
-"mat24_functions.h",
-"mat24_xi_functions.c",
-"mat24_xi_functions.h",
-"mm127_op_misc.c",
-"mm127_op_pi.c",
-"mm127_op_t.c",
-"mm127_op_word.c",
-"mm127_op_xi.c",
-"mm127_op_xy.c",
-"mm15_op_misc.c",
-"mm15_op_pi.c",
-"mm15_op_t.c",
-"mm15_op_word.c",
-"mm15_op_xi.c",
-"mm15_op_xy.c",
-"mm255_op_misc.c",
-"mm255_op_pi.c",
-"mm255_op_t.c",
-"mm255_op_word.c",
-"mm255_op_xi.c",
-"mm255_op_xy.c",
-"mm31_op_misc.c",
-"mm31_op_pi.c",
-"mm31_op_t.c",
-"mm31_op_word.c",
-"mm31_op_xi.c",
-"mm31_op_xy.c",
-"mm3_op_misc.c",
-"mm3_op_pi.c",
-"mm3_op_t.c",
-"mm3_op_word.c",
-"mm3_op_xi.c",
-"mm3_op_xy.c",
-"mm7_op_misc.c",
-"mm7_op_pi.c",
-"mm7_op_t.c",
-"mm7_op_word.c",
-"mm7_op_xi.c",
-"mm7_op_xy.c",
-"mm_aux.c",
-"mm_basics.h",
-"mm_crt.c",
-"mm_group_n.c",
-"mm_group_word.c",
-"mm_op127.h",
-"mm_op15.h",
-"mm_op255.h",
-"mm_op3.h",
-"mm_op31.h",
-"mm_op7.h",
-"mm_random.c",
-"mm_tables.c",
-"mm_tables_xi.c",
-"qmatrix12.c",
-"qstate12.c",
-"xsp2co1.c",
-]
 
 breathe_projects_source = {
     "mmgroup" :  (C_DIR, C_FILES) # C_FILES not yet known
@@ -211,19 +161,7 @@ breathe_projects_source = {
 
 def generate_doxygen_xml(app):
     """Run the doxygen make commands if we're on the ReadTheDocs server"""
-
     print(" \nStarting generate_doxygen_xml ...")
-    if on_readthedocs:
-        print("\nGenerating C files ...")
-        subprocess.check_call([sys.executable, "setup.py", "build_ext"], 
-            cwd=SETUP_DIR)
-        print("C files have been generated\n")
-
-    print("Doxygen Directory = ", DOXYGEN_DIR)
-    print("C Directory =", C_DIR, ":")
-    C_FILES_FOUND = [f for f in os.listdir(C_DIR) 
-        if os.path.splitext(f)[1] in [".c", ".h"]]
-    print(C_FILES_FOUND, "\n")
     subprocess.check_call("doxygen", cwd = DOXYGEN_DIR)
     print("End of generate_doxygen_xml\n")
 
