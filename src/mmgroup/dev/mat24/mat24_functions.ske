@@ -1,7 +1,8 @@
 
 
 /** \file mat24_functions.c
- C implementation of the functionality of Python module ``mmgroup.mat24``
+ File ``mat24_functions.c`` contains the C implementation of the 
+ functionality of Python module ``mmgroup.mat24``
 
  This covers the Golay code, its cocode, the Parker loop,
  the Mathieu group Mat24, and the group of standard automorphisms
@@ -167,15 +168,16 @@ uint32_t mat24_bw24(uint32_t v1)
 /**
  @brief Stores the positions of 1-bits of v to the array referred by a_out.
  
- Let ``w`` be the bit weight of ``v & 0xffffff``, i.e. number of bits 
- of ``v``  at positions ``< 24 equal``  to one. Then the ordered bit
- positions where the corrsponding bit of ``v `` is 1 are stored in
+ Let ``w`` be the bit weight of ``v1 & 0xffffff``, i.e. number of bits 
+ of ``v1``  at positions ``< 24`` equal  to one. Then the ordered bit
+ positions where the corrsponding bit of ``v1`` is 1 are stored in
  ``a_out[0],...,a_out[w-1]``. 
 
- Then ``v & 0xffffff`` has ``24 - w`` zero bits. The ordered list of the
- positions of these zero bits is stored in ``a_out[w],...,a_out[23]``. 
+ Then ``(v1 ^ 0xffffff) & 0xffffff`` has ``24 - w`` zero bits. The ordered 
+ list of the positions of these zero bits is stored in 
+ ``a_out[w],...,a_out[23]``. 
  
- The function returns ``w``.
+ The function returns the bit weight ``w``.
 */
 // %%EXPORT p
 uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
@@ -309,109 +311,155 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 /// @endcond 
 
 
-// %%COMMENT
-// The #define macro mat24_def_octad_to_gcode(o) returns the  number 
-// of the Golay code word corresponding to octad o. This is equivalent
-// to mat24_octad_to_gcode(o) without parameter check.
-//
-// The #define macro mat24_def_gcode_to_octad(v) return the number
-// of the octad corresponding to Golay code vector v, with v in 'gcode'
-// representation. It returns garbage if v is not an octad.
-//
-// These macros use the public tables MAT24_OCT_DEC_TABLE and
-// MAT24_OCT_ENC_TABLE.
-
 // %%GEN h
+
+/**
+  @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
+
+ ``mat24_def_octad_to_gcode(o)`` returns the  number 
+ of the Golay code word corresponding to octad ``o``. 
+ Parameter ``o`` is not checked.
+*/
 #define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
+
+
+/**
+  @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
+
+  ``mat24_def_gcode_to_octad(v)`` returns the  number of the
+  octad corresponding to Golay code vector ``v``, with ``v``
+  in ``gcode``. It returns garbage if ``v`` is not an octad. 
+*/
 #define mat24_def_gcode_to_octad(v) \
   ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
     + 3 * ((v & 0x7ff) >> 3) - {Mat24_oct_enc_offset})
 // %%GEN c
 
 
+/**
+  @brief Table for converting ``octad`` to ``gcode`` representation
+
+  The public macro ``mat24_def_octad_to_gcode`` uses this table
+*/
 // %%EXPORT_TABLE p
 const uint16_t MAT24_OCT_DEC_TABLE[759] = { 
 // %%TABLE Mat24_oct_dec_table, uint16
 };
 
+/**
+ @brief Table for converting ``gcode`` to ``octad`` representation
+
+ The public macro ``mat24_def_gcode_to_octad`` uses this table
+*/
 // %%EXPORT_TABLE p
 const uint8_t MAT24_OCT_ENC_TABLE[2048] = { 
 // %%TABLE Mat24_oct_enc_table, uint8
 };
 
 
+/** 
+ @brief Table containing data about the Golay code.
 
+ For ``0 <= d < 0x800`` entry ``d``  contains the following
+ information the code word ``d``, with ``d`` in ``gcode``
+ representation.
 
+   Bit 11,...,0:   ``mat24_ploop_theta(d)``
 
+   Bit 14,...,12:  Bit weight of code word ``d`` in ``GF(2)**24`` divided by 4
 
+   Bit 15:         reserved
 
-
-// %%COMMENT:
-// The public table MAT24_THETA_TABLE contains data about the Golay 
-// code. Entry i contains the following information the code word d,
-// (with d = i in 'gcode' representation):
-// Bit 11,...,0:   mat24_ploop_theta(d)
-// Bit 14,...,12:  Bit weight of code word d in GF(2)**24 divided by 4
-// Bit 15:         reserved
-// 
-// We have d**2 = (-1)**<Bit 12 of i> for d = 2*i in the Parker loop.
-
+ We have ``d**2 = (-1)**<Bit 12 of entry d>`` for ``d`` in the Parker loop.
+*/
 // %%EXPORT_TABLE
 const uint16_t MAT24_THETA_TABLE[] = { 
 // %%TABLE Mat24_theta_table, uint16
 };
 
 
+/** 
+  @brief Convert bit vector ``v1`` in ``GF(2)^24`` from ``vector``
+  to ``vintern`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_vect_to_vintern(uint32_t v1)
-// Convert bit vector v1 in GF(2)^24 from vector to vintern rep.
 {
     return  MAT24_ENC_TABLE0[v1 & 0xff]
           ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
           ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
 }
 
+
+/** 
+  @brief Convert bit vector ``v1`` in ``GF(2)^24`` from ``vintern``
+  to ``vector`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_vintern_to_vect(uint32_t v1)
-// Convert bit vector v1 in GF(2)^24 from vintern to vector rep.
 {
     return  MAT24_DEC_TABLE0[v1 & 0xff]
            ^ MAT24_DEC_TABLE1[(v1 >> 8) & 0xff]
            ^ MAT24_DEC_TABLE2[(v1 >> 16) & 0xff];
 }
 
+/** 
+  @brief Return Golay cocode element corresponding to a bit vector
+  in ``GF(2)^24``.
+
+  This amounts to reducing the vector ``v1`` (given in ``vector``
+  representation) modulo the Golay code. 
+  The function returns the cocode element corresponding to ``v1``
+  in ``cocode`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_vect_to_cocode(uint32_t v1)
-// Return number of Golay cocode element for a vector v1 in GF(2)^24
 {
     return  (MAT24_ENC_TABLE0[v1 & 0xff]
           ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
           ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]) & 0xfff;
 }
 
+/** 
+  @brief Convert Golay code element number ``v1`` to a vector in ``GF(2)^24``
+
+  Input ``v1`` is a Golay code element in ``gcode`` representation. 
+  The function returns the bit vector corresponding to ``v1``
+  in ``vector`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_gcode_to_vect(uint32_t v1)
-// Convert Golay code element number v1 to a vector in GF(2)^24
 {
     return  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
           ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff];
 }
 
+/** 
+  @brief Return a vector in ``GF(2)^24`` corresponding to cocode element
+
+  Here ``c1`` is the number of a cocode element in ``cocode`` 
+  representation. One of ``2**12`` possible preimages of ``c1`` in
+  ``GF(2)^24``  is returned in ``vector`` representation.
+*/
 // %%EXPORT p
 uint32_t mat24_cocode_to_vect(uint32_t c1)
-// Return vector in GF(2)^24 corresponding to cocode element number 
-// c1. One of 2**12 possible vectors with this property is returned.
 {
     return mat24_vintern_to_vect(c1);
 }
 
+/** 
+  @brief Return a vector in ``GF(2)^24`` as a Golay code element.
+
+  If the vector ``v1`` (given in ``vector`` representation) is in
+  the Golay code then the function returns the number of that
+  Golay code word. Thus the return value is in ``gcode``
+  representation.
+
+  If ``v1`` is not in the Golay code then the function
+  returns (uint32_t)(-1).
+*/
 // %%EXPORT p
 uint32_t mat24_vect_to_gcode(uint32_t v1)
-// Return gcode(v1) if v1 is a Golay code word. 
-// Here 0 <= gcode(v1) < 4096 is the number of a Golay code word.
-//
-// The function fails if v1 is not a Golay code word.
-// It returns (uint32_t)(-1) in case of failure.
 {
     uint_fast32_t  cn =  mat24_vect_to_vintern(v1);
     return cn & 0xfff ? (uint32_t)(-1)   : cn >> 12;
@@ -419,17 +467,24 @@ uint32_t mat24_vect_to_gcode(uint32_t v1)
 
 
 
+/** 
+  @brief Return a Golay code vector as an octad.
 
+  If ``u_strict`` is even then the function acts as follows:
+
+  If the Golay code vector ``v1`` (given in ``gcode`` representation) 
+  is  an octad or a complement of an octad then the function returns 
+  the number of that octad. Thus the return value is in ``octad``
+  representation. Then we have ``0 <= octad(v1, strict) < 759``.
+
+  If ``v1`` is not a (possibly complemented) octad then the 
+  function returns ``(uint32_t)(-1)``.
+
+  If ``u_strict`` is odd then the function returns ``(uint32_t)(-1)`` 
+  also in case of a complemented octad ``v1``.
+*/
 // %%EXPORT p
 uint32_t mat24_gcode_to_octad(uint32_t v1, uint32_t u_strict)
-// Return octad(v1) if v1 is an octad.
-// Here 0 <= v1 < 4096 is the number of a Golay code element
-// and 0 <= octad(v1) < 759 is the number of an octad. 
-// If u_strict is 0 (mod 2) then complements of octads are taken
-// as octads; otherwise the function fails for a complemented octad.
-// 
-// The function fails if v1 is not an octad.
-// It returns (uint32_t)(-1) in case of failure.
 {
     uint_fast32_t y;
     u_strict = (u_strict & 1) + 0x100;
@@ -440,16 +495,24 @@ uint32_t mat24_gcode_to_octad(uint32_t v1, uint32_t u_strict)
 }
 
 
+/** 
+  @brief Return a vector in ``GF(2)^24`` as an octad.
+
+  If ``u_strict`` is even then the function acts as follows:
+
+  If the vector ``v1`` (given in ``vector`` representation) is 
+  an octad or a complement of an octad then the function returns 
+  the number of that octad. Thus the return value is in ``octad``
+  representation. Then we have `` 0 <= octad(v1, strict) < 759``.
+
+  If ``v1`` is not a (possibly complemented) octad then the 
+  function returns ``(uint32_t)(-1)``.
+
+  If ``u_strict`` is odd then the function returns ``(uint32_t)(-1)`` 
+  also in case of a complemented octad ``v1``.
+*/
 // %%EXPORT p
 uint32_t mat24_vect_to_octad(uint32_t v1, uint32_t u_strict)
-// Return octad(v1) if v1 is an octad.
-// Here v1 is a vector in GF(2)**24 and
-// 0 <= octad(v1) < 759 is the number of an octad. 
-// If u_strict is 0 (mod 2) then complements of octads are taken
-// as octads; otherwise the function fails for a complemented octad.
-// 
-// The function fails if v1 is not an octad.
-// It returns (uint32_t)(-1) in case of failure.
 {
     uint_fast32_t y, err;
     u_strict = (u_strict & 1) + 0x100;
@@ -464,23 +527,37 @@ uint32_t mat24_vect_to_octad(uint32_t v1, uint32_t u_strict)
     return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - {Mat24_oct_enc_offset};
 }
 
+
+/** 
+  @brief Convert an octad to a Golay code vector.
+
+  Given an octad ``u_octad`` (in ``octad`` representation), the
+  function returns the number of the corresponding Golay code
+  number in ``gcode`` representation. 
+
+  There are  759 octads. The  function returns ``(uint32_t)(-1)``
+  in case  ``u_octad >= 759``.
+*/
 // %%EXPORT p
 uint32_t mat24_octad_to_gcode(uint32_t u_octad)
-// Return number of Golay code word corresponding to octad u_octad.
-// 
-// The function succeds if 0 <= u_octad < 759 and fails otherwise.
-// It returns (uint32_t)(-1) in case of failure.
 {   
     return u_octad < 759 ? MAT24_OCT_DEC_TABLE[u_octad] & 0xfff 
                          : (uint32_t)(-1);
 }
 
+
+/** 
+  @brief Convert an octad to a bit vector in ``GF(2)^24``.
+
+  Given an octad ``u_octad`` (in ``octad`` representation), the
+  function returns bit vector corresponding to that octad
+  in ``vector`` representation. 
+
+  There are  759 octads. The  function returns ``(uint32_t)(-1)``
+  in case  ``u_octad >= 759``.
+*/
 // %%EXPORT p
 uint32_t mat24_octad_to_vect(uint32_t u_octad)
-// Return vector in GF(2)**24 corresponding to octad u_octad.
-// 
-// The function succeds if 0 <= u_octad < 759 and fails otherwise.
-// It returns (uint32_t)(-1) in case of failure.
 {
     uint_fast32_t u;
     if (u_octad >= 759) return (uint32_t)(-1);

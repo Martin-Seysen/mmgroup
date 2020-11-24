@@ -110,7 +110,7 @@ The corresponding python functions raise ``ValueError`` in case
 of failure. 
   
    
-Function ``syndrome()`` takes a vector ``v and`` calculates its 
+Function ``syndrome()`` takes a vector ``v`` and calculates its 
 syndrome, which is a vector of minimum weight equivalent to ``v`` 
 modulo the Golay code. Function ``cocode_syndrome()`` takes a 
 ``cocode`` representation of a cocode word instead.
