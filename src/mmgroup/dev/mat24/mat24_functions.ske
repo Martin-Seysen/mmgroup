@@ -311,6 +311,8 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 /// @endcond 
 
 
+/// @cond DO_NOT_DOCUMENT 
+
 // %%GEN h
 
 /**
@@ -334,6 +336,8 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
   ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
     + 3 * ((v & 0x7ff) >> 3) - {Mat24_oct_enc_offset})
 // %%GEN c
+
+/// @endcond 
 
 
 /**
@@ -2193,7 +2197,7 @@ void mat24_autpl_to_perm(uint32_t *m1, uint8_t  *p_out)
   has the following property:
   
   Let ``p`` be the permutation in ``Mat24`` obtained from ``m1``
-  by calling``mat24_autpl_to_perm(m1, p)``. Then calling
+  by calling ``mat24_autpl_to_perm(m1, p)``. Then calling
   ``mat24_perm_to_autpl(c, p, m2)`` (where ``m2`` is a suitable 
   array) constructs a copy ``m2`` of ``m1`` from ``c`` and ``p``.  
 */  
