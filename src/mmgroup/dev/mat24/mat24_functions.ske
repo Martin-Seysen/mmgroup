@@ -166,16 +166,16 @@ uint32_t mat24_bw24(uint32_t v1)
 *************************************************************************/
 
 /**
- @brief Stores the positions of 1-bits of v to the array referred by a_out.
+ @brief Stores the positions of 1-bits of a bit vector to an array.
  
- Let ``w`` be the bit weight of ``v1 & 0xffffff``, i.e. number of bits 
- of ``v1``  at positions ``< 24`` equal  to one. Then the ordered bit
- positions where the corrsponding bit of ``v1`` is 1 are stored in
- ``a_out[0],...,a_out[w-1]``. 
+ Let ``w`` be the bit weight of the bit vector ``v1 & 0xffffff``, 
+ i.e. number of bits of ``v1``  at positions ``< 24`` equal  to one. 
+ Then the ordered bit positions where the corrsponding bit of ``v1`` 
+ is 1 are stored in ``a_out[0],...,a_out[w-1]``. 
 
- Then ``(v1 ^ 0xffffff) & 0xffffff`` has ``24 - w`` zero bits. The ordered 
- list of the positions of these zero bits is stored in 
- ``a_out[w],...,a_out[23]``. 
+ Then ``(v1 & 0xffffff)`` has ``24 - w`` zero bits. The 
+ ordered  list of the positions of these zero bits is stored in 
+``a_out[w],...,a_out[23]``. 
  
  The function returns the bit weight ``w``.
 */
@@ -316,9 +316,9 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 /**
   @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
 
- ``mat24_def_octad_to_gcode(o)`` returns the  number 
- of the Golay code word corresponding to octad ``o``. 
- Parameter ``o`` is not checked.
+  ``mat24_def_octad_to_gcode(o)`` returns the  number 
+  of the Golay code word corresponding to octad ``o``. 
+  Parameter ``o`` is not checked.
 */
 #define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
 
@@ -456,7 +456,7 @@ uint32_t mat24_cocode_to_vect(uint32_t c1)
   representation.
 
   If ``v1`` is not in the Golay code then the function
-  returns (uint32_t)(-1).
+  returns ``(uint32_t)(-1)``.
 */
 // %%EXPORT p
 uint32_t mat24_vect_to_gcode(uint32_t v1)
@@ -569,7 +569,7 @@ uint32_t mat24_octad_to_vect(uint32_t u_octad)
 
 // %%COMMENT
 /*************************************************************************
-*** Golay code syndoms and weights
+*** Golay code syndomes and weights
 *************************************************************************/
 
 /** 
@@ -621,9 +621,9 @@ uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
   If the minimum weight of the syndrome is four then the six
   possible syndroms form a partition of the the underlying set
   of 24 elements. In this case we return the syndrome of bit 
-  weight four where the bit at position 'u_tetrad' is  set.
+  weight four where the bit at position ``u_tetrad`` is  set.
   Therefore parameter ``u_tetrad`` must satisfy
-  `` 0 <= u_tetrad < 24``; otherwise the function fails.
+  `` 0 <= u_tetrad <= 24``; otherwise the function fails.
 
   If the minimum weight of the sydrome is at most three,
   parameter ``u_tetrad`` must satisfy `` 0 <= u_tetrad < 24``; 
@@ -670,7 +670,7 @@ uint32_t mat24_gcode_weight(uint32_t v1)
 
   That array must have physical length at least 24. The function 
   returns the actual length of the returned array, which is equal 
-  to the bit weight of the word 'v1'.
+  to the bit weight of the word ``v1``.
 */
 // %%EXPORT p
 uint32_t mat24_gcode_to_bit_list(uint32_t v1, uint8_t *a_out)
@@ -720,7 +720,7 @@ uint32_t mat24_cocode_weight(uint32_t c1)
   If the minimum weight of the syndrome is four then the six
   possible syndroms form a partition of the the underlying set
   of 24 elements. In this case we return the syndrome of bit 
-  weight four where the bit at position 'u_tetrad' is  set.
+  weight four where the bit at position ``u_tetrad`` is  set.
   Therefore parameter ``u_tetrad`` must satisfy
   `` 0 <= u_tetrad < 24``; otherwise the function fails.
 
@@ -774,7 +774,7 @@ uint32_t mat24_cocode_to_bit_list(uint32_t c1, uint32_t u_tetrad, uint8_t *a_out
   @brief Store a cocode word ``c1`` in array ``a_out`` as a sextet
 
   Here ``c1`` is an cocode word in cocode representation. That 
-  cocode word must correspond to a syndome of length four, i.e.
+  cocode word must correspond to a syndrome of length four, i.e.
   the syndrome must be a tetrad. Otherwise the function fails.
 
   The function stores the six tetrads that make up the sextet ``c1`` 
@@ -852,9 +852,9 @@ uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
   called suboctads. Let ``b_0, ..., b_7 `` be the elements of the 
   octad ``v1`` in natural order. Then the even subset ``(b_0 , b_i)``
   has suboctad number ``2**(i-1)`` for ``i = 1,...,6``. Combining 
-  suboctads by disjoint union corresponds to combining their numbers
-  by ``xor``. The empty subocatad has number zero. This yields a 
-  one-to-one correspondence between the integers ``0,...,63`` and
+  suboctads by symmetric difference corresponds to combining their 
+  numbers by ``xor``. The empty subocatad has number zero. This yields 
+  a one-to-one correspondence between the integers ``0,...,63`` and
   the suboctads of a fixed octad ``v1``, when identifying a suboctad 
   with its complement. 
  
@@ -891,7 +891,7 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
 }
 
 /** 
-  @brief Convert cocode element ``c1 to suboctad of octad ``v1``
+  @brief Convert cocode element ``c1`` to suboctad of octad ``v1``
 
   The function converts a cocode element ``c1`` (in ``cocode`` 
   representation) of an octad ``v1`` (in ``gcode`` representation) 
@@ -903,7 +903,7 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
   even subset of ``v1``. See documentation of function 
   ``mat24_suboctad_to_cocode`` for the numbering of the suboctads.
  
-  The function fails if ``v1`` is not anoctad or ``c1`` cannot be  
+  The function fails if ``v1`` is not a octad or ``c1`` cannot be
   represented as an even subset of ``v1``. If ``v1`` is a complement 
   of an octad ``o`` the ``o`` is taken instead of ``v1``.
   The function returns ``(uint32_t)(-1)`` in case of failure.
@@ -964,7 +964,7 @@ uint32_t mat24_suboctad_weight(uint32_t u_sub)
 /** 
   @brief Return scalar product of two suboctads
 
-  The function returns the scalar product of the wo suboctads 
+  The function returns the scalar product of the two suboctads 
   with the numbers ``u_sub1, u_sub2``.  
      
   Here the scalar product is the parity of the vector 
@@ -1001,7 +1001,7 @@ uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
 
   The cocycle of the Parker loop is given by:
  
-           cocycle(v1,v2) =   mat24_scalar_prod(theta(v1), v2),
+           cocycle(v1, v2) =   mat24_scalar_prod(theta(v1), v2),
          
   where ``mat24_scalar_prod`` computes the scalar product.
 
@@ -1019,7 +1019,7 @@ uint32_t mat24_ploop_theta(uint32_t v1)
   @brief Returns the cocycle of the Parker loop.
  
   Here parameters `v1` and `v2`are Golay code vectors in  ``gcode`` 
-  representations or elements of the Parker loop, codws as in 
+  representations or elements of the Parker loop, coded as in 
   function ``mat24_mul_ploop``. Then the Parker  loop product  of 
   ``v1`` and ``v2`` is given by
  
@@ -1084,7 +1084,7 @@ uint32_t mat24_pow_ploop(uint32_t v1, uint32_t u_exp)
   ``mat24_mul_ploop``) the commutator of  ``v1`` and ``v2`` is
   equal to
 
-     (-1) ** mat24_ploop_comm(v1, v2),
+         (-1) ** mat24_ploop_comm(v1, v2),
 
   where ``**`` denotes exponentiation.
 */
@@ -1122,10 +1122,10 @@ uint32_t mat24_ploop_cap(uint32_t v1, uint32_t v2)
   and ``v3``. So the function returns 0 or 1. Vectors ``v1, v2, v3`` 
   are in ``gcode``  representation.
 
-  The associator of three Parker loop elements `v1, v2, v3``  
-  (coded as in function ``mat24_mul_ploop``) is equal to
+  The associator of three Parker loop elements ``v1, v2, v3`` (coded
+  as in function ``mat24_mul_ploop``) is equal to
 
-     (-1) ** mat24_ploop_assoc(v1, v2, v3),
+       (-1) ** mat24_ploop_assoc(v1, v2, v3),
 */
 // %%EXPORT p
 uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
@@ -1158,7 +1158,7 @@ uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
   independent Parker loop elements. When these ``k`` elements are
   mapped to positive Parker loop elements, this also yields a
   solution of the original problem. If the problem cannot be 
-  solved then we put ``p_io[k-1]`` = 0x1000. 
+  solved then we put ``p_io[k-1] = 0x1000``. 
  
   The function returns the value ``k`` in bits ``31,...,16``
   of the result.
@@ -1216,24 +1216,44 @@ static inline uint_fast32_t odd_syn(uint_fast32_t x) {
 
 /// @endcond
 
+
+/** 
+  @brief Complete permutation in the Mathieu group ``Mat24`` from 7 images
+
+  This is an auxilary function for function ``mat24_perm_from_heptads``.
+  We use the terminology introduced in that function.
+
+  The function completes the array ``p_io`` to a permutation ``p``
+  in the Mathieu group ``Mat24``. On output, permutation ``p`` is 
+  given as a mapping ``i -> p_io[i]`` for ``i = 0,...,23``.
+
+  On input, the images ``p_io[i]`` must be given for 
+  ``i = 0,1,2,3,4,5,8``; the other entries of ``p_io`` are ignored.
+
+  The set ``(p_io[i], i = 0,1,2,3,4,5,8)`` must be an umbral heptad 
+  with distiguished element ``p_io[8]``. Then the mapping
+  ``i -> p_io[i], i = 0,1,2,3,4,5,8`` is a feasible mapping between 
+  umbral heptads; it extends to a unique permutation in ``Mat24``.
+  Note that ``8`` is the distingished element of the umbral heptad
+  ``(0,1,2,3,4,5,8)``. 
+
+  The function returns 0 if the mapping given on input can be
+  extended to an element of ``Mat24``, and a nonzero value
+  otherwise.
+
+  Implementation idea:
+
+  We choose pentads, i.e. subsets of size 5 of the set ``(0,....,23)``
+  that consist of known values ``p_io[i]``. We calculate the syndromes
+  of such pentads, which are triads, i.e. sets of size three. 
+  Calculating the syndromes of the preimages of these pentads we obtain 
+  mappings between triads. Intersecting triads in a suitable way we 
+  obtain mappings between singletons, and hence peviously unknown 
+  images of elements of the set ``(0,....,23)``.
+*/
+
 // %%EXPORT p
 uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
-// Complete a permutation p given by p_io to an element of  Mat24.
-//
-// p must have length 24. Entries p[i], i = 0,1,2,3,4,5,8 must make
-// up a valid umbral heptad, i.e. a heptad not contained in an octad.
-// p[0],...,p[5] must be contained in an octad, p[8] must not be
-// contained in that octad. The other entries of input p are ignored.
-//
-// It can be shown that such a permutation p can be completed to
-// a unique element of Mat24.
-//
-// If a suitable permutation p an be found, the array p_io is
-// completed so that it contains permutation p, and the function
-// returns 0.
-//
-// Otherwise array p_io is not changed and the function returns
-// a nonzero value.
 {
     // This implementation is (almost) a copy of the 
     // implementation of the corresponding python function
@@ -1305,33 +1325,45 @@ uint32_t mat24_perm_complete_heptad(uint8_t *p_io)
     return err;
 }
 
+
+/**
+  @brief Check if permutation is in in the Mathieu group ``Mat24``.
+
+  The function checks the mapping ``i -> p1[i]``, ``i = 0,...,23``. 
+
+  It returns zero if that mapping is a permutation in ``Mat24`` 
+  and a nonzero value otherwise.
+
+  The implementation uses function ``mat24_perm_complete_heptad``.
+*/
 // %%EXPORT p
 uint32_t mat24_perm_check(uint8_t *p1)
-// Check if permutation p1 is in in the Mathieu group Mat24.
-//
-// The function returns zero if this is the case and a nonzero
-// value otherwise.
 {
     uint8_t p2[24];
     memcpy(p2, p1, 9*sizeof(uint8_t));
     return mat24_perm_complete_heptad(p2) || memcmp(p1, p2, 24);
 }        
 
+/**
+  @brief Complete an octad given by 6 elements of it. 
 
+  Given entries ``p_io[i], i = 0,1,2,3,4,5``, we calculate values
+  ``p_io[6], p_io[7]`` such that the set ``(p_io[i], 0 <= i < 8)`` 
+  is an octad. Furthermore, we order the values ``p_io[6], p_io[7]`` 
+  in such way that the mapping ``i -> p_io[i]`` may be extended to a 
+  permutation in the grpup ``Mat24``. This restrtiction determines
+  the order uniquely. Note that the set ``0,...,7`` is an octad,
+  which is called the standard octad.
+
+  The set ``p_io[i], i = 0,1,2,3,4,5`` must be a subset of an
+  octad; otherwise the function fails. The function returns 0
+  in case of success and ``(uint32_t)(-1)`` in case of failure.
+
+  The implementation is a simplified version of function
+  ``mat24_perm_complete_heptad()``.
+*/
 // %%EXPORT p
 uint32_t mat24_perm_complete_octad(uint8_t *p_io)
-// Complete an octad given by 6 elements of it. 
-// This is a simplified version of function 
-// mat24_perm_complete_heptad().
-// We complete an octad from entries p_io[i], i = 0,1,2,3,4,5.
-// We store the remaining entries of the octad in p_io[6],
-// p_io[7]. The order of these two entries is such that there
-// exists a permutation in Mat24 that maps from the (ordered) 
-// standard octad  0,...,7  to p_io[0],...,p_io[7].
-// If p_io[5] is 24, that it is set to the lowest possible
-// value such that there is an octad  p_io[0],...,p_io[7].
-// This is a simplifiction of function
-// mat24_perm_complete_heptad()
 {
     uint_fast32_t  err, s1, s5, s015, s3, s4, s8, s01234; 
     uint_fast32_t  s567, s67, s9AB, s9CD, s9, s6GH, s6;
@@ -1370,20 +1402,40 @@ uint32_t mat24_perm_complete_octad(uint8_t *p_io)
 
 
 
+/** 
+  @brief Complete a mapping to a permutation in the Mathieu group ``Mat24``
 
+  A permutation in the  Mathieu group ``Mat24`` is a mapping  from the
+  set ``(0,...,23)`` to itself.  The function completes the  mapping 
+  ``h1[i] -> h2[i]``, ``0 <= i < 7``, ``0 <= h1[i], h2[i] < 24`` to
+  a permutation ``i -> p_out[i]``, ``0 <= i < 24``. The result is 
+  returned in the array ``p_out[i]``.
+
+  The sets ``h1[i], 0 <= i < 7`` and ``h2[i], 0 <= i < 7`` must be
+  umbral heptads, and the mapping from ``h1`` to ``h2`` must be
+  feasible.
+
+  An umbral heptad is a set of seven elements of the set ``(0,...,23)``
+  which is not a subset of an octad. The syndrome of an umbral heptad, 
+  i.e. the smallest set equivalent to the heptad  modulo the Golay code, 
+  is a singleton containing exactly one element of the umbral heptad. 
+  That element is called the distiguished element of the heptad. 
+  A feasible mapping from an umbral heptad to another umbral heptad is
+  a mapping that maps the distiguished element of the first heptad to
+  the distiguished element of the second heptad.
+
+  It can be shown that a feasible mapping from an umbral heptad to 
+  another umbral heptad extends to a unique element of the Mathieu 
+  group. 
+
+  The function returns 0 if the mapping ``h1[i] -> h2[i]`` can be
+  extended to an element of ``Mat24`` and ``(uint32_t)(-1)``
+  otherwise.
+
+  The implementation uses function ``mat24_perm_complete_heptad``.
+*/
 // %%EXPORT p
 uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
-// Try to find a permutation p that maps heptad h1 to h2
-//
-// h1 and h2 are arrays of length 7 defining two umbral heptads,
-// i.e. heptads not contained in an octad. If a permutation p in
-// the Mathieu group Mat24 that maps h1 to h2 exists, it is unique. 
-//
-// The function stores p in the array referred by p_out if such a p  
-// has been found. Otherwise it fails. 
-//
-// The function returns 0 in case of success and  (uint32_t)(-1) 
-// in case of failure.
 {
     uint8_t p1[24], p2[24];
     uint_fast32_t v, y, i;
@@ -1429,19 +1481,38 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
 #define  STD_OCTAD {MAT24_STD_OCTAD}
 /// @endcond
 
+/**
+  @brief Compute permutation in the Mathieu group ``Mat24`` from its number
+
+  The Mathieu group has order ``244823040``. We assign numbers
+  ``0 <= n < 244823040`` to the elements of ``Mat24``, with
+  ``0`` the number of the neutral element. This is just a 
+  convenient way to refer to an element of ``Mat24``.  The actual 
+  numbering is not part of the public interface.
+
+  The function calculates the permutation with the number ``u_m24``
+  and stores it in the array ``p_out`` as a mapping
+  ``i -> `p_out[i]``. ``0 <= u_m24 < 244823040`` must hold;
+  otherwise the function fails.
+
+  The function returns 0 in case of success and ``(uint32_t)(-1)``
+  in case of failure. 
+
+  Implementation idea:
+
+  Internally we represent the permutation number in mixed radix
+  base, where one digit refers to the octad  which is the image of
+  the standard octad. All octads are stored in an internal table.
+  Once having estblished a mapping from the standard octad to another
+  octad, is suffices to work in the stabilizer of that octad. That
+  stabilizer is a semidirect product of the alternating group of 8
+  elements, and an elementary Abelian group of order 16 that acts 
+  regularly on the 16 elements not in the octad. So working in that 
+  stabilizer is easy; here we use function 
+  ``mat24_perm_complete_heptad``.  
+*/
 // %%EXPORT p
 uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
-// Return permutation with number u_m24 in the Mathieu group Mat24.
-//
-// The inverse of this function is member function mat24_perm_to_int()
-// This is just a short and convenient way to number elements of Mat24.
-// Input u_m24 = 0 gives the identity permutation.
-//
-// 0 <= u_m24 < 244823040 = order(Mat24) must hold, otherwise the
-// function fails.
-//
-// The function returns 0 in case of success and (uint32_t)(-1)
-// in case of failure. 
 {
     uint_fast32_t oct, i, j, k = u_m24, k1;
     uint8_t p1[32], j8;
@@ -1502,11 +1573,25 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
 
 
 
+/**
+  @brief Compute number of a permutation in the Mathieu group ``Mat24``
+
+  This is the inverse of function ``mat24_int_to_perm``. 
+
+  Given a permutation ``i -> p1[i], 0 <= i < 24``, the function
+  returns the number ``n`` of that permutation. We have 
+  ``0 <= n < 244823040``, as described in function 
+  ``mat24_int_to_perm``.
+
+  The function returns garbage if ``p1`` is not a valid permutation
+  in ``Mat24``. One may use function ``mat24_perm_check`` to check
+  if permutation ``p1`` is in ``Mat24``.
+
+  Essentially, the implementation just reverses the operations
+  in function ``mat24_perm_check``. 
+*/
 // %%EXPORT p
 uint32_t mat24_perm_to_m24num(uint8_t  *p1)
-// Convert the permutation p1 in the Mathieu group mat24 to an integer.
-//
-// This reverses function mat24_int_to_perm. The result is undefined
 // (without any indication of failure) if p1 is not in Mat24.
 {
     uint_fast32_t oct, i, j, res;
@@ -1552,14 +1637,30 @@ uint32_t mat24_perm_to_m24num(uint8_t  *p1)
             
 
 
+/**
+  @brief Convert permutation in the Mathieu group ``Mat24`` to bit matrix
+
+  The input of the function is the permutation ``p: i -> p1[i]``,
+  ``0 <= i < 24`` which must be in the Mathieu group ``Mat24``.
+
+  The function computes a ``12 times 12`` bit matrix ``m``, acting 
+  on  a Golay code vector ``v`` (in ``gcode`` representation) by right 
+  multiplication. Then we have ``v * m = p(v)``. Bit ``m[i,j]`` is
+  stored in bit ``j`` of the the integer ``m_out[i]``.
+
+  Output ``m_out[i], 0 <= i < 12`` contains garbage if ``p`` is not
+  in ``Mat24``.
+
+  Implementation idea:
+
+  In the standard basis of ``GF(2)**24``, that operation corresponds
+  to a permutation. We have precomputed a matrix converting that
+  standard basis to an internal basis, where Golay code words are
+  visible, and also the inverse of that matrix. Thus the operation
+  is just an (optimized) sequence of matrix multiplications.
+*/
 // %%EXPORT p
 void mat24_perm_to_matrix(uint8_t  *p1, uint32_t *m_out)
-// Convert the permutation p1 in the Mathieu group Mat24 to a matrix.
-//
-// The matrix is a 12 x 12 bit matrix acting on the Golay code
-// vectors by right multiplication. It is stored at m_out.
-//
-// Permutation p1 is not checked to be a member of the Mathieu group.
 {
    int i;
    uint32_t a[24]; 
@@ -1569,14 +1670,36 @@ void mat24_perm_to_matrix(uint8_t  *p1, uint32_t *m_out)
 }
 
 
+
+/**
+  @brief Convert bit matrix to permutation in the Mathieu group ``Mat24``
+
+  This is the inverse of function ``mat24_perm_to_matrix``
+
+  The input ``m1`` of the function is a bit matrix that maps
+  a Golay code word ``v`` to ``p(v) = v * m1``, as described in
+  function ``mat24_perm_to_matrix``.
+
+  The function computes the permutation ``p: i -> p_out[i]``, 
+  ``0 <= i < 24``, from that matrix and stores the result in
+  the output vector ``p_out`` of length 24.
+
+  Output ``p_out[i], 0 <= i < 24`` contains garbage if ``m1`` is not
+  bit matrix corresponding to an element of ``mat24``.
+
+  Implementation idea:
+
+  We could have reversed the operation of function 
+  ``mat24_perm_to_matrix``, but the following implememtation is
+  faster:
+
+  Converting rows of matrix ``m1`` from ``gcode`` to ``standard``
+  representation yields the images of some Golay code words as bit
+  vectors. Intersecting these bit vectors in a suitable way yields
+  the images of singletons and hence the requestend permutation.
+*/
 // %%EXPORT p
 void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
-// Convert Mathieu group element m1 from matrix to permutation.
-//
-// The matrix m1 is a 12 x 12 bit matrix acting on the Golay code
-// vectors by right multiplication. The matrix is not checked.
-//    
-// The output permutation is stored to p_out.
 {
    // %%MAT24_MATRIX_TO_PERM   m1, p_out
 }
