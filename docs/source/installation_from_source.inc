@@ -33,6 +33,7 @@ should install the following python packages:
   ``setuptools``           Development: basic package used for setup and building
                            extensions
   ``sphinx``               Documentation: basic package used for documentation
+  ``sphinx-rtd-theme``     Documentation: 'theme' to be used by sphinx 
   ``sphinxcontrib-bibtex`` Documentation: bibliography in BibTeX style
   ``breathe``              Documentation: link between ``doxygen`` and ``sphinx``
   ======================== =========================================================

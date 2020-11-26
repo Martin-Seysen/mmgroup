@@ -113,12 +113,14 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
 /// @endcond  
 
 /**
+ @def mat24_def_lsbit24(v1) 
  @brief Macro version of function ``mat24_lsbit24``.
 */
 #define mat24_def_lsbit24(v1) {MAT24_LSBIT:v1}
 
 
 /**
+ @def mat24_def_lsbit24_pwr2(v1) 
  @brief Special macro version of function ``mat24_lsbit24``.
 
  This is faster than ``mat24_def_lsbit24``, but here
@@ -313,7 +315,8 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 
 // %%GEN h
 
-/*
+/**
+  @def mat24_def_octad_to_gcode(o)
   @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
 
   ``mat24_def_octad_to_gcode(o)`` returns the  number 
@@ -323,7 +326,8 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 #define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
 
 
-/*
+/**
+  @def  mat24_def_gcode_to_octad(v)
   @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
 
   ``mat24_def_gcode_to_octad(v)`` returns the  number of the
