@@ -157,6 +157,70 @@ The Representation of the Monster Group
 
 .. autofunction:: mmgroup.characteristics
 
+.. _clifford-group-label:
+
+
+The subgroup :math:`2^{1+24}.Co_1` of the monster and the Clifford group
+========================================================================
+
+In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
+has a subgroup :math:`G_{x0}` of structure 
+:math:`2^{1+24}_+.\mbox{Co}_1`.
+There :math:`G_{x0}` is constructed as a diagonal product of the
+two groups :math:`\mbox{Co}_0` of structure :math:`2.\mbox{Co}_1`
+and :math:`N(4096_x)`. :math:`N(4096_x)` is also of structure
+:math:`2^{1+24}_+.\mbox{Co}_1` but not isomorphic to  :math:`G_{x0}`.
+Here :math:`2^{1+24}_+` means an extraspecial group of plus
+type. :math:`\mbox{Co}_0`, and :math:`\mbox{Co}_1` are the automorphism
+groups of the :math:`24`-dimensional Leech lattice and of the Leech 
+lattice modulo :math:`2`, see e.g. :cite:`Atlas` or :cite:`CS99` for 
+background. 
+
+Computation in  :math:`\mbox{Co}_0` is easy since that group has a 
+:math:`24`-dimensional rational representation. The smallest real
+representation of the group :math:`N(4096_x)` has dimension
+:math:`4096`, so naive computation in that representation is
+rather inefficient.
+
+The group :math:`N(4096_x)` is a subgroup of the real Clifford group
+:math:`\mathcal{C}_{12}`. The real Clifford group :math:`\mathcal{C}_{n}`
+of structure :math:`2^{1+2n}_+.\mbox{GO}^+_{2n}(2)` is defined e.g. in
+:cite:`NRS01`. :math:`\mathcal{C}_{12}` is a subgroup
+of the complex Clifford group :math:`\mathcal{X}_{n}`  of structure 
+:math:`\frac{1}{2} ( 2^{1+2n}_+ \times Z_8 ). \mbox{Sp}_{2n}(2)`, 
+which is also defined in :cite:`NRS01`.  Here a factor 
+:math:`\frac{1}{2}` means identification of central subgroups of 
+order :math:`2` of the factors of a direct product. 
+:math:`\mbox{GO}^+_{2n}(2)` and :math:`\mbox{Sp}_{2n}(2)` are the
+orthogonal subgroup (of :math:`+`-type) and the symplectic
+subgroup of the group :math:`GL_{2n}(2)` of invertible 
+:math:`2n \times 2n`-matrices with entries in :math:`\mathbb{F}_2`,
+as defined in :cite:`Atlas`.
+
+Effective computation in the group  :math:`\mathcal{X}_{n}` has received
+a lot of attention from the theory of quantum computation, see e.g.
+:cite:`AG04`. In the next section we present efficient algorithms for
+computing in :math:`\mathcal{X}_{n}` and in its :math:`2^{n}` 
+dimensional complex representation.
+
+.. automodule:: mmgroup.dev.clifford12.qstate12
+
+
+Class ``QStateMatrix`` modelling a quadratic state matrix
+---------------------------------------------------------
+
+
+.. autoclass:: mmgroup.structures.qs_matrix.QStateMatrix
+   :members: conjugate, T, H, shape, reshape, copy,
+             rot_bits, xch_bits,
+             gate_not, gate_ctrl_not, gate_phi, gate_ctrl_phi, gate_h,
+             extend_zero, extend, restrict_zero, restrict, sumup,
+             lb_norm2, inv,
+             power, order
+
+.. autofunction:: mmgroup.structures.qs_matrix.qs_unit_matrix
+
+
 
 
 

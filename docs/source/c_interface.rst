@@ -147,50 +147,103 @@ The basic table-providing class for ``mmgroup.mm<p>``
 More details will be documented in a future version of this project.
 
 
-Computation in the subgroup :math:`2^{1+24}.Co_1` of the monster
-================================================================
+Description of the ``qstate12`` and ``clifford12`` extensions
+=============================================================
 
-In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
-has a subgroup :math:`G_{x0}` of structure 
-:math:`2^{1+24}_+.\mbox{Co}_1`.
-Here :math:`G_{x0}` is constructed as a diagonal product of the
-two groups :math:`\mbox{Co}_0` of structure :math:`2.\mbox{Co}_1`
-and :math:`N(4096_x)`. :math:`N(4096_x)` is also of structure
-:math:`2^{1+24}_+.\mbox{Co}_1` but not isomorphic to  :math:`G_{x0}`.
-Computation in  :math:`\mbox{Co}_0` is easy since that group has a 
-:math:`24`-dimensional rational representation. The smallest real
-representation of the group :math:`N(4096_x)` has dimension
-:math:`4096`, so naive computation in that representation is
-rather inefficient.
-
-The group :math:`N(4096_x)` is a subgroup of the real Clifford group
-:math:`\mathcal{C}_{12}`. The real Clifford group :math:`\mathcal{C}_{n}`
-of structure :math:`2^{1+2n}_+.\mbox{O}_{2n}(2)` is defined e.g. in
-:cite:`NRS01`. :math:`\mathcal{C}_{12}` is a subgroup
-of the complex Clifford group :math:`\mathcal{X}_{n}`, which is also
-defined in :cite:`NRS01`.
-
-Effective computation in the group  :math:`\mathcal{X}_{n}` has received
-a lot of attention from the theory of quantum computation, see e.g.
-:cite:`AG04`. In the next section we present efficient algorithms for
-computing in :math:`\mathcal{X}_{n}` and in its :math:`2^{n}` 
-dimensional complex representation.
-
-.. automodule:: mmgroup.dev.clifford12.qstate12
+C functions dealing with quadratic state vectors
+................................................
 
 
-Class ``QStateMatrix`` modelling a quadratic state matrix
----------------------------------------------------------
+The C functions in modules ``qstate.c`` and ``qsmatrix.c``
+perform operations on quadratic state matrices given by triples 
+:math:`(e, A, Q)` as defined above. Here the integer :math:`e` 
+encodes the complex number  :math:`\exp(e \pi \sqrt{-1} / 4) 
+\cdot 2^{\lfloor e/16 \rfloor / 2}`, and
+:math:`A` is an  :math:`(1+m) \times n` bit matrix.
+:math:`Q` is a symmetric :math:`(1+m) \times (1+m)` bit matrix 
+representing an symmetric bilinear form. We always have
+:math:`Q_{0,0}=0`. Put :math:`m'=1+m`. Matrices :math:`A` and 
+:math:`Q` are concatenated to an :math:`m' \times (n+m')` matrix
+:math:`M` with :math:`M_{i,j} = A_{i,j}` for :math:`j < n` and
+:math:`M_{i,j} = Q_{i-n,j}` for :math:`j \geq n`. Matrix
+:math:`M` is encoded in a one-dimensional array of unsigned
+64-bit integers. Here bit :math:`j` of entry :math:`i` 
+corresponds to :math:`M_{i,j}`, with bit :math:`0` the least
+significant bit.
+
+A quadratic state matrix is described by a structure containing 
+the following components:
+
+.. code-block:: c
+
+  typedef struct {
+    uint32_t maxrows; // No of entries allocated to component data
+    uint32_t nrows;   // No m' = m + 1 of rows of bit matrix A
+    uint32_t ncols;   // No n of columns of bit matrices A and Q
+    int32_t  factor;  // A number e encoding a scaling factor
+    uint64_t *data;   // Pointer to the data bits of matrix M
+    uint32_t shape1;  // Describes the shape of the quadratic state
+                      // matrix, as indicated below.
+  } qbstate12_type;
+
+A quadratic state vector :math:`v` of type
+``qbstate12_type`` with component ``ncols = n`` models a complex 
+vector in a vector space  :math:`V` of dimension :math:`2^n`, and 
+that the basis of ``V`` is labelled by the elements of the Boolean
+vector space :math:`\mathbb{F}_2^n`. In C and python programs
+we represent the element :math:`(x_{n-1}, \ldots, x_{0})` of
+:math:`\mathbb{F}_2^n` by the integer 
+:math:`\sum_{0 \leq i < n} 2^i \cdot x_i`. This leads to a natural
+representation of ``v`` as a one-dimensional complex array of
+length :math:`2^n`, starting with index ``0``.
+
+A quadratic state matrix is a quadratic shape vector augmented
+by an information about its matrix shape. For a quadratic state
+matrix ``qs`` of shape ``(n0, n1)`` we put ``qs.ncols = n0 + n1``
+and ``qs.ncols = n1``.
+
+The zero state is encoded as a matrix with :math:`m'=0` rows.
+We do not update the entries :math:`Q_{i,0}`, so the 
+corresponding bits in compoment ``data`` of the structure
+are garbage. One may use the C function ``qstate12_check`` to
+set these bits to their proper values.
 
 
-.. autoclass:: mmgroup.structures.qs_matrix.QStateMatrix
-   :members: conjugate, T, H, shape, reshape, copy,
-             rot_bits, xch_bits,
-             gate_not, gate_ctrl_not, gate_phi, gate_ctrl_phi, gate_h,
-             extend_zero, extend, restrict_zero, restrict, sumup,
-             lb_norm2, inv,
-             power, order
+The current implementation requires ``n + m <= 63``.  
+This can easily be generalized to larger Clifford 
+groups by reserving an array of several integers for each row 
+of matrix :math:`M`. Here we also leave the details to the reader.
 
-.. autofunction:: mmgroup.structures.qs_matrix.qs_unit_matrix
+C functions supporting this module are prefixed with ``qbstate12_``.
+Unless otherwise stated, these functions return an ``int32_t``, 
+where a nonegative value is interpreted as success, and a negative 
+value is intepreted as failure. Depending on the function, a 
+nonnegative return value may e.g. mean an index for a matrix
+:math:`A`, :math:`M`, or :math:`Q`.
+
+Typical names for parameters of functions in this module are:
+
+   ================== ================================================
+   ``pqs, pqs1, ...`` Pointer to structure of type ``qbstate12_type``
+   ``nqb``            Number of qubits, i.e. of columns of matrix 
+                      :math:`A`.
+   ``nrows``          Number of rows of matrix :math:`A`, :math:`M`, 
+                      and :math:`Q`.
+   ``i, i1, ...``     Index of a row of matrix :math:`A`, :math:`M`,  
+                      or and :math:`Q`, starting with 0.
+   ``j, j1, ...``     Index of a column of matrix :math:`A`, with a 
+                      column of :math:`A`, corrsesponding to a qubit, 
+                      starting with ``j = 0``.
+                      If appropriate, an index  ``j >= ncols`` refers 
+                      to column ``(j - ncols)`` of matrix  :math:`Q`.
+   ``pv, pv1,...``    Pointer to a row or column vector of matrix 
+                      :math:`A`, :math:`M`, or  :math:`Q`.
+   ================== ================================================
+   
+   .. doxygenfile:: clifford12.h
+
+   .. doxygenfile:: qstate12.c
+
+
 
 

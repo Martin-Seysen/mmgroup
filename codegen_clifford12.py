@@ -93,9 +93,18 @@ H_FILE_BEGIN = """
 // %%EXPORT_KWD CLIFFORD12_API
 
 // %%GEN h
+
+/** @file clifford12.h
+ File ``clifford.h`` is the header file for shared library 
+ ``mmgroup_clifford12``. This comprises the C modules
+
+          qstate12.c, qmatrix12.c, xsp2co1.c .
+*/
+
 #ifndef CLIFFORD12_H
 #define CLIFFORD12_H
 
+/// @cond DO_NOT_DOCUMENT 
 
 #include <stdint.h>
 
@@ -138,6 +147,9 @@ H_FILE_BEGIN = """
   #define CLIFFORD12_API
   #define CLIFFORD12_LOCAL
 #endif // CLIFFORD12_DLL
+
+
+/// @endcond 
 
 """
 

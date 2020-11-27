@@ -30,14 +30,10 @@ extern "C" {
 *** Basic definitions
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
-// Error codes returned by functions n this module
-// These error codes extend those defined in  
-// ``enum qstate12_error_type`` in file qstate12.h.
-#define ERR_LEECH_OP -201  // Internal error in operation of group Co_0
-#define ERR_REP_GX1 -202   // Error in operation of group 2^{{1+24}}.Co_1
-#define ERR_NOTIN_XSP -203 // Element of 2^{{1+24}}.Co_1 not in 2^{{1+24}}
-#define ERR_GX1_TAG -204   // Bad tag for atom in group 2^{{1+24}}.Co_1 
+
+
 
 // The standard short Leech lattice vector modulo 3
 #define STD_V3  0x8000004ULL
@@ -66,15 +62,19 @@ extern "C" {
 // representing an element of the group G_{{x0}}. 
 #define MAXROWS_ELEM 30
 
+/// @endcond 
+
 
 /*************************************************************************
 *** Using a pool for recording errors (for debugging)
 *************************************************************************/
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 #ifdef  ERROR_POOL
-
 static uint64_t error_pool[LEN_ERROR_POOL];
 #endif
 
@@ -93,9 +93,13 @@ uint32_t xp2co1_error_pool(uint64_t *dest, uint32_t length)
 
 
 
+
 /*************************************************************************
 *** Functions for supporting the Leech lattice mod 3
 *************************************************************************/
+
+
+
 
 
 // %%EXPORT px
@@ -393,7 +397,7 @@ int32_t xp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc
             short_3_reduce(pdest[i] ^ 0xffffffffffffULL);
         ok = ok && src_prod  &&  prod;
     }
-    return ok ? 0 : ERR_LEECH_OP;
+    return ok ? 0 : ERR_QSTATE12_LEECH_OP;
 }
 
 
@@ -594,11 +598,12 @@ int32_t xp2co1_xspecial_vector(uint64_t *elem, uint32_t *pv)
     if (res < 0) return res;
     res = qstate12_pauli_vector(&qs1, &v);
     if (res < 0) {
-       return res == ERR_QSTATE12_PAULI_GROUP ? ERR_NOTIN_XSP : res;
+       return res == ERR_QSTATE12_PAULI_GROUP ? 
+                     ERR_QSTATE12_NOTIN_XSP : res;
     }
     e0 = short_3_reduce(elem[0]);
     if (e0 == STD_V3_NEG) v ^= 0x1000000;
-    else if (e0 != STD_V3) return ERR_NOTIN_XSP;
+    else if (e0 != STD_V3) return ERR_QSTATE12_NOTIN_XSP;
     *pv = conv_pauli_vector_xspecial((uint32_t) v);
     return 0;
 }
@@ -787,7 +792,7 @@ void xp2co1_elem_xi(uint64_t *e, uint32_t exp)
     uint64_t *p_xi;
     // Before we have generated the array ``elem_xi`` manually
     // we cannot return anythin greasonable here.
-    // return ERR_GX1_TAG;
+    // return ERR_QSTATE12_GX1_TAG;
     xp2co1_unit_elem(e);
     exp %= 3;
     if (exp == 0) return;
@@ -869,7 +874,7 @@ int32_t xp2co1_mul_elem_atom(uint64_t *e, uint32_t v, uint32_t set_one)
         case 5:
            if (v % 3 == 0) return 0;
         default:
-           return ERR_GX1_TAG;
+           return ERR_QSTATE12_GX1_TAG;
         case 8 + 6:
            v ^= 0xfffffff;
         case 6:
@@ -928,7 +933,7 @@ int32_t xp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     res = qstate12_reduce(&qs2);
     if (res < 0) return res;
-    if (qs2.factor & 0x13) return ERR_REP_GX1;
+    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX1;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
     x = e1[0];
     if (sign) x ^= 0xffffffffffffULL;
@@ -987,13 +992,13 @@ int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_
         case 23:
             cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
             if ((cocodev == 0) || (cocodev & (cocodev - 1))) 
-                return ERR_LEECH_OP;
+                return ERR_QSTATE12_LEECH_OP;
             f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
             f[1] = (int8_t)factor;
             gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
             break;              
         case 8:
-            if (w1 & 1) return ERR_LEECH_OP;
+            if (w1 & 1) return ERR_QSTATE12_LEECH_OP;
             gcodev = (x | (x >> 24)) & 0xffffffUL;
             f[1] = -2 * (int8_t)factor;
             break;
@@ -1002,11 +1007,11 @@ int32_t xp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_
             f[1] = 4 * (int8_t)factor;
             break;
         default:
-            return ERR_LEECH_OP;        
+            return ERR_QSTATE12_LEECH_OP;        
     }
     f[2] = -f[1];
     gcodev = mat24_vect_to_gcode(gcodev);
-    if (gcodev & 0xfffff000UL) return ERR_LEECH_OP;
+    if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
     x = xp2co1_to_vect_mod3(x);
 
     for (i = 0; i < 24; ++i) {
@@ -1169,6 +1174,13 @@ uint32_t xp2co1_leech_type(uint64_t x)
             return 0x44;          
     }
 }
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
 
 // %%GEN ch
 #ifdef __cplusplus

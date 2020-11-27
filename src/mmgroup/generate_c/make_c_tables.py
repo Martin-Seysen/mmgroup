@@ -573,7 +573,8 @@ class TableGenerator(object):
                 #self._check_names()
                 l = format_line(l, self.names, self.args)
                 l = indent_subsequent_lines(l) 
-                c_out = l if self.gen_c else line_as_comment(l)
+                c_out = l if self.gen_c else "" 
+                  # old version outputs line_as_comment(l) if not self.gen_c
                 h_out = l if self.gen_h else ""
                 yield c_out, h_out
                 if self.export_pending:

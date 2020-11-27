@@ -26,10 +26,10 @@ FORMAT_REDUCED = True
 class QStateMatrix(QState12):
     r"""This class models a quadratic state matrix
        
-    Quadratic state matrices are described in the *guide* at
-
-    https://mmgroup.readthedocs.io/en/latest/guide.html#module-mmgroup.dev.clifford12.qstate12  .   
+    Quadratic state matrices are described in the *API reference* in 
+    section **Computation in the Clifford group**.
     
+   
     :param rows:
     
         * Binary logarithm of the number of rows of the matrix

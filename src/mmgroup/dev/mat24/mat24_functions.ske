@@ -1,6 +1,6 @@
 
 
-/** \file mat24_functions.c
+/** @file mat24_functions.c
  File ``mat24_functions.c`` contains the C implementation of the 
  functionality of Python module ``mmgroup.mat24``
 

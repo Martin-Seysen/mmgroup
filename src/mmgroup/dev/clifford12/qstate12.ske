@@ -4,6 +4,11 @@
 // https://mmgroup.readthedocs.io/en/latest/
 
 
+/** @file qstate12.c
+ File ``qstate12.c`` contains  basic function for quadratic
+ state vectors as described in the *API reference* in 
+ section **Computation in the Clifford group**.
+*/
 
 
 /*************************************************************************
@@ -18,7 +23,7 @@
 
 // %%GEN h
 
-
+/// @cond DO_NOT_DOCUMENT 
 
 
 #define QSTATE12_MAXCOLS     (64)
@@ -27,42 +32,65 @@
 // Marker for an undefined row index
 #define QSTATE12_UNDEF_ROW 0xff
 
+/// @endcond  
+
+
+/**
+  @brief Description of a quadratic state matrix
+
+  A quadratic state matrix is described by a structure containing the 
+  following components
+
+
+*/
 
 typedef struct {
-    uint32_t maxrows;
-    uint32_t nrows;
-    uint32_t ncols;
-    int32_t  factor;
-    uint32_t shape1;
-    uint32_t reduced;
-    uint64_t *data;
+  uint32_t maxrows; ///< No of entries of type ``uint64_t`` allocated to component ``data``
+  uint32_t nrows;   ///< No ``m' = m + 1`` of rows of bit matrix ``A``
+  uint32_t ncols;   ///< No n of columns of bit matrices ``A`` and ``Q``
+  int32_t  factor;  ///< A integer ``e`` encoding the scaling factor
+                    ///< \f$\exp(e \pi \sqrt{{-1}}/4) \cdot 2^{{\lfloor e/16 \rfloor / 2}}\f$
+  uint32_t shape1;  ///< Describes the shape of the quadratic state matrix
+  uint32_t reduced; ///< Set to 1 if state is reduced and to 0 otherwise
+  uint64_t *data;   ///< Pointer to the data bits of the matrix ``M = (A,Q)``
 } qstate12_type;
 
 
-// %%COMMENT
-// Unless otherwise states, negative return values of functions in 
-// this module mean error codes as follows:
+/**
+  @enum qstate12_error_type
+  @brief Error codes for functions in this module
 
+  Unless otherwise stated, the functions in modules ``qstate.c``, 
+  ``qmatrix.c``, and ``xsp2co1.c``  return nonnegative 
+  in case of success and negative values in case of failure. 
+  Negative return values mean error codes as follows:
+*/
 enum qstate12_error_type
 {
-    ERR_QSTATE12_NOTFOUND = -1,     // No qubit with requested property found 
-       // This is usually handled internally by the calling procedure
-    ERR_QSTATE12_INCONSISTENT = -2, // State is inconsistent
-    ERR_QSTATE12_QUBIT_INDEX = -3,  // Qubit index error
-    ERR_QSTATE12_TOOLARGE = -4,     //State is too large for this module
-    ERR_QSTATE12_BUFFER_OVFL = -5,  //
-       // Usually there are now enough rows available
-    ERR_QSTATE12_Q_NOT_SYMM = -6,   // Bit matrix part Q is not symmetric
-    ERR_QSTATE12_BAD_ROW = -7,      // Bad row index for bit matrix 
-    ERR_QSTATE12_INTERN_PAR = -8,   // Internal parameter error 
-       // Usually a bad row is requested
-    ERR_QSTATE12_SCALAR_OVFL = -9,  // Overflow in scalar factor
-    ERR_QSTATE12_CTRL_NOT = -10,    // Bad control_not gate
-       // A qubit in a ctrl-not gate cannot control itself
-    ERR_QSTATE12_SHAPE_COMP = -11,  // Shape mismatch in comparing matrices
-    ERR_QSTATE12_SHAPE_OP = -101,   // Shape mismatch in matrix operation
-    ERR_QSTATE12_MATRIX_INV = -102, // Matrix is not invertible
-    ERR_QSTATE12_PAULI_GROUP = -103, // Matrix is not in the Pauli group
+    ERR_QSTATE12_NOTFOUND = -1,     ///< No qubit with requested property found 
+       ///< This is usually handled internally by the calling procedure
+    ERR_QSTATE12_INCONSISTENT = -2, ///< State is inconsistent
+    ERR_QSTATE12_QUBIT_INDEX = -3,  ///< Qubit index error
+    ERR_QSTATE12_TOOLARGE = -4,     ///<State is too large for this module
+    ERR_QSTATE12_BUFFER_OVFL = -5,  
+       ///< Usually there are now enough rows available
+    ERR_QSTATE12_Q_NOT_SYMM = -6,   ///< Bit matrix part Q is not symmetric
+    ERR_QSTATE12_BAD_ROW = -7,      ///< Bad row index for bit matrix 
+    ERR_QSTATE12_INTERN_PAR = -8,   ///< Internal parameter error. 
+       ///< Usually a bad row is requested
+    ERR_QSTATE12_SCALAR_OVFL = -9,  ///< Overflow in scalar factor
+    ERR_QSTATE12_CTRL_NOT = -10,    ///< Bad control_not gate.
+       ///< A qubit in a ctrl-not gate cannot control itself
+    ERR_QSTATE12_SHAPE_COMP = -11,  ///< Shape mismatch in comparing matrices
+    ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
+    ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
+    ERR_QSTATE12_PAULI_GROUP = -103, ///< Matrix is not in the Pauli group
+
+    ERR_QSTATE12_LEECH_OP = -201,  ///< Internal error in operation of group Co_0
+    ERR_QSTATE12_REP_GX1 = -202,   ///< Error in operation of group 2^{{1+24}}.Co_1
+    ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of 2^{{1+24}}.Co_1 not in 2^{{1+24}}
+    ERR_QSTATE12_GX1_TAG = -204    ///< Bad tag for atom in group 2^{{1+24}}.Co_1 
+
 };
 
 /*************************************************************************
@@ -71,6 +99,8 @@ enum qstate12_error_type
  
  
 #ifdef CLIFFORD12_INTERN
+
+/// @cond DO_NOT_DOCUMENT 
       
 // Max No of columns supporte in an object of type 
 // qstate12_type. Here each column stores a bit.
@@ -122,6 +152,7 @@ enum qstate12_error_type
 
 extern const uint8_t qstate12_lsbtab[64];
 
+/// @endcond
 
 
 /*************************************************************************
@@ -184,6 +215,11 @@ extern "C" {
 #endif
 // %%GEN c
 
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 /*************************************************************************
@@ -1359,6 +1395,11 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
     }
     return 0;
 }
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
 
 
 // %%GEN ch

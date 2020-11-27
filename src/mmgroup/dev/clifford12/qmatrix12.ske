@@ -32,6 +32,10 @@ extern "C" {
 *************************************************************************/
 
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
 
 
 // %%EXPORT p
@@ -990,6 +994,10 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
 }
 
 
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
 
 
 
