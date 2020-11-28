@@ -154,37 +154,13 @@ C functions dealing with quadratic state vectors
 ................................................
 
 
-The C functions in modules ``qstate.c`` and ``qsmatrix.c``
-perform operations on quadratic state matrices given by triples 
-:math:`(e, A, Q)` as defined above. Here the integer :math:`e` 
-encodes the complex number  :math:`\exp(e \pi \sqrt{-1} / 4) 
-\cdot 2^{\lfloor e/16 \rfloor / 2}`, and
-:math:`A` is an  :math:`(1+m) \times n` bit matrix.
-:math:`Q` is a symmetric :math:`(1+m) \times (1+m)` bit matrix 
-representing an symmetric bilinear form. We always have
-:math:`Q_{0,0}=0`. Put :math:`m'=1+m`. Matrices :math:`A` and 
-:math:`Q` are concatenated to an :math:`m' \times (n+m')` matrix
-:math:`M` with :math:`M_{i,j} = A_{i,j}` for :math:`j < n` and
-:math:`M_{i,j} = Q_{i-n,j}` for :math:`j \geq n`. Matrix
-:math:`M` is encoded in a one-dimensional array of unsigned
-64-bit integers. Here bit :math:`j` of entry :math:`i` 
-corresponds to :math:`M_{i,j}`, with bit :math:`0` the least
-significant bit.
+The C functions in modules ``qstate.c`` and ``qsmatrix.c`` perform 
+operations on quadratic state matrices given by triples 
+:math:`(e, A, Q)` as described in **API reference** the section 
+:ref:`clifford-group-label`. 
 
-A quadratic state matrix is described by a structure containing 
-the following components:
 
-.. code-block:: c
-
-  typedef struct {
-    uint32_t maxrows; // No of entries allocated to component data
-    uint32_t nrows;   // No m' = m + 1 of rows of bit matrix A
-    uint32_t ncols;   // No n of columns of bit matrices A and Q
-    int32_t  factor;  // A number e encoding a scaling factor
-    uint64_t *data;   // Pointer to the data bits of matrix M
-    uint32_t shape1;  // Describes the shape of the quadratic state
-                      // matrix, as indicated below.
-  } qbstate12_type;
+Check everything from here on!!!!
 
 A quadratic state vector :math:`v` of type
 ``qbstate12_type`` with component ``ncols = n`` models a complex 

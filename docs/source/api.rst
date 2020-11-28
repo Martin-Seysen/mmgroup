@@ -159,7 +159,6 @@ The Representation of the Monster Group
 
 .. _clifford-group-label:
 
-
 The subgroup :math:`2^{1+24}.Co_1` of the monster and the Clifford group
 ========================================================================
 
