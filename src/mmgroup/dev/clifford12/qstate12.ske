@@ -8,6 +8,34 @@
  File ``qstate12.c`` contains  basic function for quadratic
  state vectors as described in the *API reference* in 
  section **Computation in the Clifford group**.
+
+
+  C functions in this module are prefixed with ``qbstate12_``.
+  Unless otherwise stated, these functions return an ``int32_t``, 
+  where a nonegative value is interpreted as success, and a negative 
+  value is intepreted as failure. Error coded are documented
+  in file ``clifford12.h``.
+
+  Typical names for parameters of functions in this module are:
+
+      Name           | Parameter type
+      -------------- | ----------------------------------------------
+      pqs, pqs1, ... |  Pointer to structure of type qbstate12_type
+      nqb            |  Number of qubits, i.e. of columns of matrix 
+                     |  A in a structure of type qbstate12_type.
+      nrows          |  Number of rows of matrix   A  or   Q  
+                     |  in a structure of type qbstate12_type.
+      i, i1, ...     |  Index of a row of matrix   A  or   Q  ,  
+                     |  starting with 0.
+      j, j1, ...     |  Index of a column of matrix   A  , with a 
+                     |  column of   A  , corrsesponding to a qubit, 
+                     |  starting with j = 0.
+                     |  If appropriate, an index  j >= ncols refers 
+                     |  to column (j - ncols) of matrix    Q  .
+      pv, pv1,...    |  Pointer to a row or column vector of matrix 
+                     |  A, Q  or   M  .
+     
+   
 */
 
 
@@ -16,7 +44,10 @@
 *************************************************************************/
 
 #include <string.h>
+/// @cond DO_NOT_DOCUMENT 
 #define CLIFFORD12_INTERN
+/// @endcond 
+
 #include "clifford12.h"
 
 // %%EXPORT_KWD CLIFFORD12_API
@@ -39,22 +70,21 @@
   @brief Description of a quadratic state matrix
   
   More precisely, a variable of this type decribes the
-  representation  \f$(e, A, Q)\f$ of a quadratic mapping 
-  \f$f(e, A, Q)\f$. Here \f$A\f$  is an \f$(1+m) \times n\f$
+  representation  \f$(e', A, Q)\f$ of a quadratic mapping 
+  \f$f(e', A, Q)\f$. Here \f$A\f$  is an \f$(1+m) \times n\f$
   bit matrix. \f$Q\f$ is a symmetric \f$(1+m) \times (1+m)\f$ bit 
   matrix representing an symmetric bilinear form.  We always have
-  \f$Q_{{0,0}}=0\f$. Put \f$m'=1+m\f$. Then the quadratic mapping
-  \f$f(e, A, Q): \mathbb{{F}}_2^n \rightarrow \mathbb{{C}} \f$ 
+  \f$Q_{{0,0}}=0\f$. Then the quadratic mapping
+  \f$f(e', A, Q): \mathbb{{F}}_2^n \rightarrow \mathbb{{C}} \f$ 
   is given by
 
 
   \f[
-     f(e,a,q)(x) = e \cdot
+     f(e',A,Q)(x) = e' \cdot
      \sum_{{\{{y = (y_0,\ldots,y_m) \in \mathbb{{F}}_2^{{m+1}}
-     \mid y_0 = 1,  y \cdot A  = x\}}}} q(y) \, ,
-     \mbox{{with}} \\
-     q(y) = \exp \left( \pi \sqrt{{-1}}/2 \sum_{{j,k=0}}^m
-     Q_{{j,k}} y_j y_k \right) \, .
+     \mid y_0 = 1,  y \cdot A  = x\}}}} 
+	 \exp \left( \frac {{\pi \sqrt{{-1}}}}{{2}} 
+	 \sum_{{j,k=0}}^m     Q_{{j,k}} y_j y_k \right) \, .
   \f]  
 
   
@@ -67,34 +97,36 @@
   array corresponds to \f$M_{{i,j}}\f$, with bit \f$0\f$ the 
   least significant bit.
   
-  We do not update column  \f$0\f$ from matrix  \f$Q\f$. 
-  Here \f$Q_{{j,0}}\f$ is inferred from \f$Q_{{0,j}}\f$ for
+  We do not update column  \f$0\f$ of matrix  \f$Q\f$. 
+  \f$Q_{{j,0}}\f$ is inferred from \f$Q_{{0,j}}\f$ for
   \f$j>0\f$ and we always have \f$Q_{{0,0}} = 0.\f$ 
   
   We also interpret a quadratic mapping \f$ f \f$ from 
   \f$\mathbb{{F}}_2^n\f$ to \f$\mathbb{{C}}\f$ as a complex
   \f$2^{{n-k}} \times 2^k\f$ matrix \f$U\f$ with entries
-  \f$U[i,j] = f(b_0,\ldots,b_{{n-1}})\f$. Here
-  \f$f(b_{{n-1}},...,b_0)_2\f$, is the binary representation
-  of the integer \f$i \cdot 2^k + j\f$, and \f$k\f$ given by
+  \f$U[i,j] = f(b_0,\ldots,b_{{n-1}})\f$, where
+  \f$(b_{{n-1}},...,b_0)_2\f$, is the binary representation
+  of the integer \f$i \cdot 2^k + j\f$, and \f$k\f$ is given by
   component ``shape1`` of the structure.
 
-  The current implementation requires ``n + m <= 63``, so that
+  The current implementation requires \f$n + m <= 63\f$, so that
   all columns of the bit matrix \f$M\f$ fit into a 64-bit
-  integer.  
-
+  integer. With this restriction we may still multiply 
+  \f$2^{{12}} \times 2^{{12}}\f$ matrices \f$U\f$ given as
+  quadratic mappings.
 */
 
 typedef struct {
   uint32_t maxrows; ///< No of entries of type ``uint64_t`` allocated to component ``data``
-  uint32_t nrows;   ///< No ``m' = m + 1`` of rows of bit matrix ``A``
+  uint32_t nrows;   ///< No \f$m + 1\f$ of rows of bit matrix \f$A\f$
                     ///< The value ``nrows = 0`` encodes the zero mapping.
-  uint32_t ncols;   ///< No n of columns of bit matrices ``A`` and ``Q``
-  int32_t  factor;  ///< A integer ``e`` encoding the complex scalar factor
+  uint32_t ncols;   ///< No \f$n\f$ of columns of bit matrices \f$A\f$ and \f$Q\f$
+  int32_t  factor;  ///< A integer \f$e\f$ encoding the complex scalar factor \f$e'=\f$
                     ///< \f$\exp(e \pi \sqrt{{-1}}/4) \cdot 2^{{\lfloor e/16 \rfloor / 2}}\f$
   uint32_t shape1;  ///< Describes the shape of the quadratic state matrix
+                    ///< as explained above.
   uint32_t reduced; ///< Set to 1 if state is reduced and to 0 otherwise
-  uint64_t *data;   ///< Pointer to the data bits of the matrix ``M = (A,Q)``
+  uint64_t *data;   ///< Pointer to the data bits of the matrix \f$M = (A,Q)\f$
 } qstate12_type;
 
 
@@ -109,21 +141,21 @@ typedef struct {
 */
 enum qstate12_error_type
 {
-    ERR_QSTATE12_NOTFOUND = -1,     ///< No qubit with requested property found. 
-       ///< This is usually handled internally by the calling procedure
+    ERR_QSTATE12_NOTFOUND = -1,     ///< No qubit with the requested property found. 
     ERR_QSTATE12_INCONSISTENT = -2, ///< State is inconsistent
     ERR_QSTATE12_QUBIT_INDEX = -3,  ///< Qubit index error
-    ERR_QSTATE12_TOOLARGE = -4,     ///<State is too large for this module
+    ERR_QSTATE12_TOOLARGE = -4,     ///< State is too large for this module
     ERR_QSTATE12_BUFFER_OVFL = -5,  
        ///< Buffer overflow; usually there are now enough rows available
     ERR_QSTATE12_Q_NOT_SYMM = -6,   ///< Bit matrix part Q is not symmetric
     ERR_QSTATE12_BAD_ROW = -7,      ///< Bad row index for bit matrix 
-    ERR_QSTATE12_INTERN_PAR = -8,   ///< Internal parameter error. 
-       ///< Usually a bad row is requested
+    ERR_QSTATE12_INTERN_PAR = -8,    
+       ///< Internal parameter error. Usually a bad row has been requested
     ERR_QSTATE12_SCALAR_OVFL = -9,  ///< Overflow in scalar factor
-    ERR_QSTATE12_CTRL_NOT = -10,    ///< Bad control_not gate.
-       ///< A qubit in a ctrl-not gate cannot control itself
+    ERR_QSTATE12_CTRL_NOT = -10,    
+       ///< Bad control_not gate. A qubit in a ctrl-not gate cannot control itself.
     ERR_QSTATE12_SHAPE_COMP = -11,  ///< Shape mismatch in comparing matrices
+	
     ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
     ERR_QSTATE12_PAULI_GROUP = -103, ///< Matrix is not in the Pauli group
@@ -1302,10 +1334,13 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
+
 static const int8_t  PHASES[8][2] = {
    {{1,0}}, {{1,1}}, {{0,1}}, {{-1,1}}, 
    {{-1,0}}, {{-1,-1}}, {{0,-1}}, {{1,-1}},
 };  
+
 
 #define SQRT2 1.414213562373095048801688724209L 
 
@@ -1324,12 +1359,6 @@ static void set_complex_factors(int32_t e, double  *p_real, double *p_imag)
 }
 
 
-
-
-
-
-
-
 // qstate12_lsbtab[i] is the position of least significant bit of i | 0x40
 const uint8_t qstate12_lsbtab[64] = {
     6,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
@@ -1338,44 +1367,63 @@ const uint8_t qstate12_lsbtab[64] = {
     4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0 
 };
 
+
+/// @endcond
+
+
 // %%EXPORT p
-int32_t qstate12_complex_test(qstate12_type *pqs,  double *pc)
+int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
 // Expand the f * qs where qs is the state referred by pqs to the 
-// array a, and reduce all entries of array a modulo p. Depending on 
-// the scalar factor in the state pqs, a number 1/2 or sqrt(2) modulo 
-// p must exist. ``pqs->shape1`` isignored.
+// array a, and reduce all entries of array a modulo p. 
+// ``pqs`` is reduced. ``pqs->shape1`` is ignored.
 // Caution: The function sets 2**pqs->ncols entries in the array pc!!
 {    
-    uint64_t qf = 0;
-    uint64_t *m = pqs->data;
-    uint64_t ncols = pqs->ncols; 
-    uint64_t n_iterations = ONE << (pqs->nrows - 1); 
-    uint64_t mask = (ONE << ncols) - 1; 
-    uint64_t assoc; 
-    uint64_t i;
-    double freal[4], fimag[4];
-    int32_t res;
+    uint64_t qf = 0;    // current value of quadratic form Q[i]
+    uint64_t *m;        // pointer to pqs->data
+    uint64_t *m_end;    // pointer to pqs->data + pqs->nrows - 1
+    uint64_t ncols;     // equal to pqs->ncols
+    uint64_t nrc;       // equal to pqs->ncols + pqs->nrows - 1; 
+    uint64_t n_iterations; // Number 1 << (pqs->nrows-1) of nonzero entries
+    uint64_t mask;      // mask (1 << ncols) - 1; 
+    uint64_t assoc;     // Current value of row  A[i] and Q[i]
+    uint64_t i;         // Index running thru n_iterations nonzero entries
+    double freal[4], fimag[4]; // The complex number (freal[k], fimag[k]) is
+                               // the value of an entry where qf = k (mod 4) 
+    int32_t res;        // Return value of subroutines
 
-    if ((res = qstate12_check(pqs)) < 0) return res;
-    assoc = m[0]; 
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    ncols = pqs->ncols; 
     for (i = 0; i < (2*ONE) << ncols; ++i) pc[i] = 0.0;
     if (pqs->nrows == 0) return 0;
+    m = pqs->data;
+    assoc = m[0]; 
+    m_end = pqs->data + pqs->nrows - 1;
+    nrc = ncols + pqs->nrows - 1; 
+    n_iterations = ONE << (pqs->nrows - 1); 
+    mask = (ONE << ncols) - 1; 
     set_complex_factors(pqs->factor, freal, fimag);
    
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1, d, diag, d1, index;
         index = (assoc & mask) << 1;
-        pc[index] += freal[qf & 3];
-        pc[index + 1] += fimag[qf & 3];
+        pc[index] = freal[qf & 3];
+        pc[index + 1] = fimag[qf & 3];
         d1 = d = qstate12_lsbtab[(i1 = i) & 63];
         while (d1 == 6) {
             i1 >>= 6;
             d1 = qstate12_lsbtab[i1 & 63];
             d += d1;
         } 
+        diag = (m_end[-d] >> (nrc - d)) & 1;
+        qf += ((assoc >> (nrc - 1 - d)) & 2) + diag;
+        assoc ^= m_end[-d];
+        /* A simpler implementation of the last 3 rows would be:
         diag = (m[d+1] >> (ncols + d + 1)) & 1;
         qf += ((assoc >> (ncols + d)) & 2) + diag;
         assoc ^= m[d+1];
+        // But our implementation has a better locality of
+        // write accesses to the array ``pc``.
+        */
     } 
     return 0;       
 }
@@ -1388,12 +1436,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 // Here ``v`` is an array of indices of length ``n``.
 // The values ``qs[v[i]], 0 <= i < n`` are stored in  
 // ``(pc[2*i], pc[2*i+1])`` as a complex number
-// ``pqs->shape1`` isignored.
-// Caution: The function sets 2*n entries in the array pc!!
-//
-// This function does not change the state. It uses function 
-// ``qstate12_echelonize`` to bring the representation of the
-// state to echelon form.
+// ``pqs`` is reduced. ``pqs->shape1`` is ignored.
 {
     uint8_t row_table[MAXCOLS+1];
     int32_t factor, res, j;
@@ -1401,7 +1444,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
     uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
     double freal[5], fimag[5];
     
-    if ((res = qstate12_echelonize(pqs)) < 0) return res;
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
     if (pqs->nrows == 0) {
         while (n--) {
             *pc++ = 0.0; *pc++ = 0.0;

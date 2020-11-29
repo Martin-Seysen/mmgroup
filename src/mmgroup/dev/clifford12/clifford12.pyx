@@ -426,19 +426,13 @@ cdef class QState12(object):
     #########################################################################
     # Conversion of a state matrix to a complex vector
         
-    def complex(self, uint32_t reduce = True):
+    def complex(self):
         """Convert the state to a complex vector"""
-        cdef uint64_t data[QSTATE12_MAXROWS] 
-        cdef qstate12_type qs
         cdef uint32_t n0, n1
         n0, n1 = self.shape
-        cl.qstate12_set_mem(&qs, &(data[0]), QSTATE12_MAXROWS)
-        chk_qstate12(cl.qstate12_copy(&self.qs, &qs))
-        if reduce:
-            chk_qstate12(cl.qstate12_reduce(&qs))
         a = np.empty(2 << self.ncols, dtype = np.double)
         cdef double[:] a_view = a
-        chk_qstate12(cl.qstate12_complex_test(&qs, &a_view[0]))
+        chk_qstate12(cl.qstate12_complex(&self.qs, &a_view[0]))
         c = a[0::2] + 1j * a[1::2]
         del a
         return c.reshape((1 << n0, 1 << n1))

@@ -151,7 +151,7 @@ Description of the ``qstate12`` and ``clifford12`` extensions
 =============================================================
 
 C functions dealing with quadratic state vectors
-................................................
+------------------------------------------------
 
 
 The C functions in modules ``qstate.c`` and ``qsmatrix.c`` perform 
@@ -160,64 +160,39 @@ operations on quadratic state matrices given by triples
 :ref:`clifford-group-label`. 
 
 
-Check everything from here on!!!!
 
 A quadratic state vector :math:`v` of type
 ``qbstate12_type`` with component ``ncols = n`` models a complex 
-vector in a vector space  :math:`V` of dimension :math:`2^n`, and 
-that the basis of ``V`` is labelled by the elements of the Boolean
-vector space :math:`\mathbb{F}_2^n`. In C and python programs
-we represent the element :math:`(x_{n-1}, \ldots, x_{0})` of
-:math:`\mathbb{F}_2^n` by the integer 
+vector in a vector space  :math:`V` of dimension :math:`2^n`, 
+or an  :math:`2^{n-k} \times 2^k` matrix.
+
+The basis of vector space ``V`` is labelled by the elements of the 
+Boolean vector space :math:`\mathbb{F}_2^n`. In C and python 
+programs we represent the element :math:`(x_{n-1}, \ldots, x_{0})` 
+of :math:`\mathbb{F}_2^n` by the integer 
 :math:`\sum_{0 \leq i < n} 2^i \cdot x_i`. This leads to a natural
 representation of ``v`` as a one-dimensional complex array of
 length :math:`2^n`, starting with index ``0``.
 
 A quadratic state matrix is a quadratic shape vector augmented
-by an information about its matrix shape. For a quadratic state
-matrix ``qs`` of shape ``(n0, n1)`` we put ``qs.ncols = n0 + n1``
-and ``qs.ncols = n1``.
+by an information about its matrix shape. For mor details werefer 
+to the description of struct ``qbstate12_type`` in file
+``clifford12.h``.
 
-The zero state is encoded as a matrix with :math:`m'=0` rows.
-We do not update the entries :math:`Q_{i,0}`, so the 
-corresponding bits in compoment ``data`` of the structure
-are garbage. One may use the C function ``qstate12_check`` to
-set these bits to their proper values.
+The current implementation requires ``n + m <= 63``. This can easily
+be generalized to larger dimension, but we do not need this for our 
+purposes.
 
 
-The current implementation requires ``n + m <= 63``.  
-This can easily be generalized to larger Clifford 
-groups by reserving an array of several integers for each row 
-of matrix :math:`M`. Here we also leave the details to the reader.
-
-C functions supporting this module are prefixed with ``qbstate12_``.
-Unless otherwise stated, these functions return an ``int32_t``, 
-where a nonegative value is interpreted as success, and a negative 
-value is intepreted as failure. Depending on the function, a 
-nonnegative return value may e.g. mean an index for a matrix
-:math:`A`, :math:`M`, or :math:`Q`.
-
-Typical names for parameters of functions in this module are:
-
-   ================== ================================================
-   ``pqs, pqs1, ...`` Pointer to structure of type ``qbstate12_type``
-   ``nqb``            Number of qubits, i.e. of columns of matrix 
-                      :math:`A`.
-   ``nrows``          Number of rows of matrix :math:`A`, :math:`M`, 
-                      and :math:`Q`.
-   ``i, i1, ...``     Index of a row of matrix :math:`A`, :math:`M`,  
-                      or and :math:`Q`, starting with 0.
-   ``j, j1, ...``     Index of a column of matrix :math:`A`, with a 
-                      column of :math:`A`, corrsesponding to a qubit, 
-                      starting with ``j = 0``.
-                      If appropriate, an index  ``j >= ncols`` refers 
-                      to column ``(j - ncols)`` of matrix  :math:`Q`.
-   ``pv, pv1,...``    Pointer to a row or column vector of matrix 
-                      :math:`A`, :math:`M`, or  :math:`Q`.
-   ================== ================================================
    
+Header file ``clifford12.h``
+----------------------------
    .. doxygenfile:: clifford12.h
 
+Module ``qstate12.c``
+---------------------
+   
+   
    .. doxygenfile:: qstate12.c
 
 
