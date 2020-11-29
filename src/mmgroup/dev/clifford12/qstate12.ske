@@ -301,12 +301,16 @@ extern "C" {
 *************************************************************************/
 
 
+/**
+  @brief Check a structure of type ``qstate12_type``.
 
+  Return 0 if ok, or an error code if there is any error in the structure 
+  referred by ``pqs``.  Part ``Q[i,0]`` is set to ``Q[0, i]``.  Part
+  ``Q[0,0]`` is set ot 0.  Irrelevant data bits in valid data 
+  rows are zeroed. 
+*/
 // %%EXPORT p
 int32_t qstate12_check(qstate12_type *pqs) 
-// Return 0 if ok, or an error code if there is any error in the matrix 
-// data.  Q[i,0] is set to Q[0, i].  Q[0,0] is set ot 0.
-// Irrelevant data bits in valid rows are zeroed. 
 {
     uint_fast32_t i, j, c, err=0;
     uint64_t *m = pqs->data;
@@ -333,11 +337,14 @@ int32_t qstate12_check(qstate12_type *pqs)
 *** Construction of a state
 *************************************************************************/
 
+/**
+  @brief Assign memeory to a structure of type ``qstate12_type``.
 
+  Assign the array ``data`` of ``size`` integers of type ``uint64_t`` as
+  memory to  structure of type ``qstate12_type`` referred by ``pqs``.
+*/
 // %%EXPORT p
 int32_t qstate12_set_mem(qstate12_type *pqs, uint64_t *data, uint32_t size)
-// Assign array 'data' of 'size' integers of type uint64_t[] as memory
-// to the state vector *pqs. We recommend size = CLIFFORD12_MAXROWS.
 {
     pqs->data = data;
     pqs->maxrows = size;
@@ -354,6 +361,13 @@ int32_t qstate12_set_mem(qstate12_type *pqs, uint64_t *data, uint32_t size)
 
 
 
+/**
+  @brief Set a structure of type ``qstate12_type`` to a zero vector.
+
+  Set the structure referrred by ``pqs`` to a zero column vector
+  of length ``2**nqb``, corresponding to the zero state of ``nqb``
+  qubits.
+*/
 // %%EXPORT p
 int32_t qstate12_zero(qstate12_type *pqs, uint32_t nqb) 
 // Set state *pqs to zero row vector, for nqb qubits.
@@ -375,12 +389,16 @@ int32_t qstate12_zero(qstate12_type *pqs, uint32_t nqb)
 
 
 
+/**
+  @brief Set a structure of type ``qstate12_type`` to a state vector.
 
+  Set the structure referrred by ``pqs`` to a unit column vector
+  ``|v>`` of length ``2**nqb``. Thus for the quadratic mapping
+  ``qs`` referred by ``pqs`` we have ``qs(x) = 1`` if ``x`` is 
+  equal to the bit vector ``v`` and ``qs(x) = 0`` otherwise. 
+*/
 // %%EXPORT p
 int32_t qstate12_vector_state(qstate12_type *pqs, uint32_t nqb, uint64_t v)
-// Set state *pqs to the unit row vector <v|,  for nqb qubits.
-// Thus for the state qs referred by pqs we have qs(x) = 1 if x is 
-// equal to v and qs(x) = 0 otherwise. 
 {
     pqs->nrows = 1;
     pqs->ncols = nqb;
@@ -393,16 +411,26 @@ int32_t qstate12_vector_state(qstate12_type *pqs, uint32_t nqb, uint64_t v)
     return ERR_QSTATE12_TOOLARGE;
 }
 
+/**
+  @brief Set a data in a structure of type ``qstate12_type``
 
+  Set ``pqs->nqb = nqb`` so that the state ``qs`` referred by ``pqs``
+  corresponds to a column vector of length ``2**nqb``. Set 
+  ``pqs->nrows = nrows``, and copy ``nrows`` rows of the array
+  ``data`` to ``pqs->data``.
+  
+  If ``mode == 1`` then copy the upper triangular part of the
+  data bit matrix part ``Q`` to the lower triangular part.
+  
+  If ``mode == 2`` then copy the lower triangular part of the
+  data bit matrix part ``Q`` to the upper triangular part.
+
+  Otherwise the part ``Q`` of the data bit matrix must be symmetric.
+  
+  The resulting state is checked with function qstate12_check().
+*/
 // %%EXPORT p
 int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t *data, uint32_t mode)
-// Set state *pqs as given by ``data`` for ``nqb`` qubits. Here
-// the array ``data`` is a bit matrix with ``nrows`` rows.
-// If ``mode == 1`` the lower triangular part ``Q`` of the
-// data matrix is taken.
-// If ``mode == 2`` the upper triangular part ``Q`` of the
-// data matrix is taken.
-// Otherwise the part ``Q`` of the data matrix must be symmetric.
 {
     uint_fast32_t i, j;
     uint64_t *m = pqs->data, mask, mask_r;
@@ -443,10 +471,15 @@ int32_t qstate12_set(qstate12_type *pqs, uint32_t nqb, uint32_t nrows, uint64_t 
     return qstate12_check(pqs);
 }
 
+/**
+  @brief Copy a state of type ``qstate12_type`` to another state.
 
+  Copy the data in the state referred by ``pqs1`` to the data in
+  the state referred by ``pqs2``. Memory must have been allocated 
+  to the state ``pqs2`` with function qstate12_set_mem()
+*/
 // %%EXPORT p
 int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2) 
-// Copy the state referred by pqs1 to the state referred by pqs2. 
 {
     if (bad_state(pqs1)) return ERR_QSTATE12_INCONSISTENT;
     if (pqs2->maxrows < pqs1->nrows) return ERR_QSTATE12_BUFFER_OVFL;
@@ -460,12 +493,16 @@ int32_t qstate12_copy(qstate12_type *pqs1, qstate12_type *pqs2)
 }
 
 
+/**
+  @brief Copy a state of type ``qstate12_type`` and allocate mamory.
 
+  Equivalent to
+  
+       qstate12_set_mem(pqs2, data, size);
+       qstate12_copy(pqs1,pqs2); 
+*/
 // %%EXPORT p
 int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *data, uint32_t size)
-// Equivalent to
-//   qstate12_set_mem(pqs2, data, size);
-//   qstate12_copy(pqs1,pqs2) 
 {
     if (bad_state(pqs1)) return ERR_QSTATE12_INCONSISTENT;
     if (size < pqs1->nrows) return ERR_QSTATE12_BUFFER_OVFL;
@@ -487,9 +524,14 @@ int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *
 *** Elementary operations on a state
 *************************************************************************/
 
+/**
+  @brief Conjugate the state referred by ``pqs``
+
+  The function changes the state referred by ``pqs`` to its complex
+  complex state.
+*/
 // %%EXPORT p
 int32_t qstate12_conjugate(qstate12_type *pqs)
-// Conjugate the state referred by pqs;
 {
     uint_fast32_t k;
     uint64_t *m = pqs->data, c = ONE << pqs->ncols;
@@ -500,10 +542,17 @@ int32_t qstate12_conjugate(qstate12_type *pqs)
 }
 
 
+/**
+  @brief Multiply the state referred by ``pqs`` by a scalar
+
+  The function multiplies the state ``qs`` referred by ``pqs`` 
+  with the scalar
+  
+        2**(e/2) * exp(phi * pi * sqrt(-1) / 4)  .
+  
+*/
 // %%EXPORT p
 int32_t qstate12_mul_scalar(qstate12_type *pqs, int32_t e, uint32_t phi)
-// Muliply the state referred by pqs by 
-// 2**(e/2) * exp(phi * pi * sqrt(-1) / 4);
 {
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (pqs->nrows == 0) return 0;
@@ -518,11 +567,12 @@ int32_t qstate12_mul_scalar(qstate12_type *pqs, int32_t e, uint32_t phi)
 /*************************************************************************
 *** Low-level functions
 *************************************************************************/
-
-
+/**
+   Return column ``j`` of the bit matrix ``M`` stored in ``pqs->data``
+   as a bit vector in an integer of type ``uin64_t``.
+*/ 
 // %%EXPORT p
 uint64_t qstate12_get_column(qstate12_type *pqs, uint32_t j)
-// Return column j from the bit matrix referred by m
 {
     if (bad_state(pqs) || j >= pqs->nrows + pqs->ncols) return 0;
     return qstate12_get_col(pqs->data, j,  pqs->nrows); 
@@ -531,12 +581,14 @@ uint64_t qstate12_get_column(qstate12_type *pqs, uint32_t j)
 
 
 
-
+/**
+  Delete all rows ``i, 1 <= i < pqs->nrows,`` from the bit matrix 
+  ``M`` stored in ``pqs->data``, if bit ``i`` in the bit vector
+  ``*pv`` is set.  Here we also adjust the quadratic form ``Q``
+  which is part of the bit matrix ``M``. Row 0 is never deleted.
+*/
 // %%EXPORT
 int32_t qstate12_del_rows(qstate12_type *pqs, uint64_t v)
-// Delete all rows i, 1 <= i < pqs->nrows, from the state matrix M 
-// referred by *pqs, if bit i of vector *pv is set.  Also adjust the 
-// quadratic form Q inside M. Row 0 is never deleted.
 { 
     uint64_t *m = pqs->data, mask;
     uint_fast32_t i, k, sh, row_pos, shifted = 0;
@@ -559,14 +611,16 @@ int32_t qstate12_del_rows(qstate12_type *pqs, uint64_t v)
     return 0; 
 } 
 
-
+/**
+  Insert ``nrows`` zero rows into the bit matrix ``M`` stored in 
+  ``pqs->data``, starting before row ``i``.  The corresponding 
+  zero columns of  the quadratic form ``Q``, which is part of the
+  bit matrix ``M``, are also inserted.  ``1 <= i <= nrows`` must 
+  hold. This process multiplies the state vector by the scalar
+  ``2**nrows``.
+*/
 // %%EXPORT
 int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows) 
-// Insert 'nrows' zero rows into state matrix M referred by *pqs, 
-// starting before row i. The corresponding zero columns for the 
-// quadratic form Q inside M are also inserted.  1 <= i <= nrows must 
-// hold. This process multiplies the state vector by the scalar
-// 2**nrows.
 { 
     uint_fast32_t k; 
     uint64_t *m = pqs->data, mask; 
@@ -586,11 +640,13 @@ int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows)
     return 0;
 }
 
-
+/**
+  Let ``M`` be the bit matrix stored in  ``pqs->data``.  We return 
+  matrix product ``w = A * Transposed(v)``, where ``A`` is the 
+  ``A`` part of the bit matrix ``M``, as a bit vector.
+*/
 // %%EXPORT p
 int32_t qstate12_mul_Av(qstate12_type *pqs, uint64_t v, uint64_t *pw) 
-// Return matrix product w = A * v^T, where A is the A part of the
-// matrix  referred by pqs.
 {
     uint64_t  w = 0, x, *m = pqs->data;
     uint_fast32_t i, sh; 
