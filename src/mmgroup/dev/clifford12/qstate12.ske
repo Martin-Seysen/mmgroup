@@ -5,15 +5,14 @@
 
 
 /** @file qstate12.c
- File ``qstate12.c`` contains  basic function for quadratic
- state vectors as described in the *API reference* in 
- section **Computation in the Clifford group**.
-
+  File ``qstate12.c`` contains  basic function for quadratic
+  state vectors as described in the *API reference* in 
+  section **Computation in the Clifford group**.
 
   C functions in this module are prefixed with ``qbstate12_``.
   Unless otherwise stated, these functions return an ``int32_t``, 
   where a nonegative value is interpreted as success, and a negative 
-  value is intepreted as failure. Error coded are documented
+  value is intepreted as failure. Error codes are documented
   in file ``clifford12.h``.
 
   Typical names for parameters of functions in this module are:
@@ -33,9 +32,7 @@
                      |  If appropriate, an index  j >= ncols refers 
                      |  to column (j - ncols) of matrix    Q  .
       pv, pv1,...    |  Pointer to a row or column vector of matrix 
-                     |  A, Q  or   M  .
-     
-   
+                     |  A, Q  or   M  .   
 */
 
 
@@ -60,10 +57,14 @@
 #define QSTATE12_MAXCOLS     (64)
 #define QSTATE12_MAXROWS     (QSTATE12_MAXCOLS+1)
 
-// Marker for an undefined row index
+/// @endcond  
+
+/**
+  @def QSTATE12_UNDEF_ROW
+  @brief Marker for an undefined row index in function qstate12_row_table()
+*/
 #define QSTATE12_UNDEF_ROW 0xff
 
-/// @endcond  
 
 
 /**
@@ -114,6 +115,10 @@
   integer. With this restriction we may still multiply 
   \f$2^{{12}} \times 2^{{12}}\f$ matrices \f$U\f$ given as
   quadratic mappings.
+
+  A quadratic mapping may be reduced with function qstate12_reduce()
+  without notice, whenever appropriate. 
+  
 */
 
 typedef struct {
@@ -125,7 +130,7 @@ typedef struct {
                     ///< \f$\exp(e \pi \sqrt{{-1}}/4) \cdot 2^{{\lfloor e/16 \rfloor / 2}}\f$
   uint32_t shape1;  ///< Describes the shape of the quadratic state matrix
                     ///< as explained above.
-  uint32_t reduced; ///< Set to 1 if state is reduced and to 0 otherwise
+  uint32_t reduced; ///< This is set to 1 if the state is reduced and to 0 otherwise.
   uint64_t *data;   ///< Pointer to the data bits of the matrix \f$M = (A,Q)\f$
 } qstate12_type;
 
@@ -642,7 +647,7 @@ int32_t qstate12_insert_rows(qstate12_type *pqs, uint32_t i, uint32_t nrows)
 
 /**
   Let ``M`` be the bit matrix stored in  ``pqs->data``.  We return 
-  matrix product ``w = A * Transposed(v)``, where ``A`` is the 
+  the matrix product ``w = A * Transposed(v)``, where ``A`` is the 
   ``A`` part of the bit matrix ``M``, as a bit vector.
 */
 // %%EXPORT p
@@ -681,15 +686,23 @@ int32_t qstate12_mul_Av(qstate12_type *pqs, uint64_t v, uint64_t *pw)
 *************************************************************************/
 
 
+/**
+  @brief Rotate qubit arguments of the state ``qs`` referred by ``pqs``.
+
+  For ``n0 <= i < n0 + nrot``  we map qubit ``i`` to qubit  
+  ``n0 + (i + rot) % nrot``. E.g. ``nrot = 3, rot = 1, n0 = 0`` 
+  means that bits are mapped as ``0->1, 1->2, 2->0``. Let 
+  ``nn1 = pqs->ncols``. Then the function changes the  quadratic 
+  mapping ``qs`` to referred by ``pqs`` to ``qs1`` with
+  
+  
+       qs1(x[nn1-1],...,x[n0+nrot],y[nrot-1],...,y[0],x[n0-1],...,x[0])
+       = qs(x[nn1-1],...,x[n0+nrot],z[nrot-1],...,z[0],x[n0-1],...,x[0]),
+	   
+  where ``z[j] = y[j - rot (mod 3)]``.
+*/
 // %%EXPORT p
 int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32_t n0)
-// Rotate bit arguments the state qs referred by pqs. For
-// n0 <= i < n0 + nrot  we map bit i to bit  n0 + (i + rot) % nrot. E.g. 
-// nrot = 3, rot = 1, n0 = 0 means bits are mapped as 0->1, 1->2, 2->0.
-// Let nn1 = qs->ncols. Then the function changes qs to qs' with
-// qs'(x[nn1-1],...,x[n0+nrot],y[nrot-1],...,y[0],x[n0-1],...,x[0])=
-// qs(x[nn1-1],...,x[n0+nrot],z[nrot-1],...,y[0],z[n0-1],...,x[0]),
-// where z[j] = y[j - rot (mod 3)].
 {
     uint64_t *m = pqs->data, mask_h, mask_l, mask;
     uint32_t k, sh;
@@ -713,7 +726,20 @@ int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32
 }
 
 
+/**
+  @brief Exchange qubit arguments of the state ``qs`` referred by ``pqs``.
 
+  Exchange qubit ``j`` with argument bit ``j + sh`` of the state ``qs`` 
+  referred by ``pqs``, if bit ``j`` of ``mask`` is set. If bit ``j``
+  of ``mask`` is  set then bit  ``j + sh`` of ``mask`` must not be set. 
+  No bit of ``mask`` at  position greater or equal to ``pqs->ncols - sh``
+  may be set.
+  
+  E.g. ``qstate12_xch_bits(pqs, 1, 0x11)`` changes the  quadratic 
+  mapping ``qs`` to ``qs1`` with
+  
+       qs1(...,x6,x5,x4,x3,x2,x1,x0) = qs(...,x6,x4,x5,x3,x2,x0,x1) .
+*/
 // %%EXPORT p
 int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 // Exchange argument bit j with argument bit j + sh of the state qs 
@@ -751,17 +777,20 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 
 
 
-
-
+/**
+  @brief Auxiliary function for function qstate12_reduce().
+  
+  Let ``M`` be the bit matrix stored in  ``pqs->data``. The pivoting 
+  process is controlled by the bit vector ``v``. If ``k < i`` and bit 
+  ``k`` of ``v ``is set  then row ``i`` of bit matrix ``M ``is xored 
+  to row ``k`` of ``M``. The columns of the  part ``Q`` of ``M`` are 
+  also adjusted. ``1 <= i < pqs->nrows`` must hold. Pivoting does not 
+  change the state. 
+  
+  For internal use only. Input conditions are not checked.
+*/
 // %%EXPORT 
 void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
-// Auxiliary low-level function for qstate12_reduce().
-// Pivot the state matrix M referred by *pqs. The pivoting process is
-// controlled by the vector v. If k < i and bit k of v is set  then 
-// row i of matrix M is xored to row k of M. The columns of the 
-// form Q inside M are also adjusted. 
-// 1 <= i < pqs->nrows must hold. Pivoting does not change the state. 
-// The function returns 0 in case of success or an error code.
 {
     uint64_t *m = pqs->data; 
     uint64_t col_mask = ONE << pqs->ncols;
@@ -803,14 +832,16 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
 
 
 
+/**
+  @brief Auxiliary function for function qstate12_reduce().
 
-
+  Sum up the kernel of the transformation matrix ``A``, which
+  is part of the bit matrix ``M = pqs->data``. We assume that ``A``
+  is echelonized in the sense that all nonzero rows of ``A`` are 
+  linear independent and that they occur before the zero rows.
+*/
 // %%EXPORT 
 int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
-// Auxiliary low-level function for qstate12_reduce().
-// Sum up the kernel of the transformation matrix A
-// We assume that A is reduced in the sense that all nonzero rows of 
-// A are linear independent and that they occur before the zero rows.
 {
     uint64_t *m = pqs->data, mask = (ONE << pqs->ncols) - 1; 
     uint64_t v, del_rows = 0;
@@ -863,7 +894,7 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
         }
         --pqs->nrows;  // delete row n
     }
-    if (old_sign & pqs->factor) return -9;
+    if (old_sign & pqs->factor) return ERR_QSTATE12_SCALAR_OVFL;
     // Delete marked rows
     if (del_rows) {
         qstate12_del_rows(pqs, del_rows);
@@ -876,16 +907,20 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
 
 
 
+/** @brief Convert the state represented by ``pqs`` to echelon form
 
+  The representation state referred by ``pqs`` is converted to (not 
+  necessarily reduced) echelon form, and the kernel of bit matrix 
+  ``A``, which is part of the bit matrix ``M = pqs->data`` is  
+  summed up as described in the guide, section 
+  'Reducing the representation of a quadratic mapping'. 
+  The representation of the state is not changed if this is
+  already the case.
+  
+  This function does not change the state. 
+*/
 // %%EXPORT p
 int32_t qstate12_echelonize(qstate12_type *pqs)
-// The representation state referred by pqs is converted to (not 
-// necessarily reduced) echelon form, and the kernel of bit matrix 
-// ``A`` is  summed up as described in the guide, section 
-// 'Reducing the representation of a quadratic mapping'. 
-// The representation of the state is not changed if this is
-// arleady the case.
-// This does not change the state. 
 {
     uint_fast32_t row_pos = 1, i, i1; 
     int_fast32_t col; 
@@ -914,16 +949,20 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
     return qstate12_sum_up_kernel(pqs);
 }
 
+/** @brief Reduce the state represented by ``pqs`` 
 
+  The representation state referred by ``pqs`` is converted to  
+  reduced echelon form, and the kernel of bit matrix ``A``, which 
+  is part of the bit matrix ``M = pqs->data`` is summed up as
+  described in the guide, section 
+  'Reducing the representation of a quadratic mapping'. 
+  The representation of the state is not changed if this is
+  already the case.
+  
+  This function does not change the state. 
+*/
 // %%EXPORT p
 int32_t qstate12_reduce(qstate12_type *pqs)
-// The representation state referred by pqs is converted to (not 
-// necessarily reduced) echelon form, and the kernel of bit matrix 
-// ``A`` is  summed up as described in the guide, section 
-// 'Reducing the representation of a quadratic mapping'. 
-// The representation of the state is not changed if this is
-// arleady the case.
-// This does not change the state. 
 {
     uint_fast32_t row_pos = 1, i, i1; 
     int_fast32_t col, res; 
@@ -953,18 +992,23 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 }
 
 
+/**
+  @brief Compute a certain table for the state referred by ``pqs``
 
+  Compute a row table for the state ``qs`` referred by ``pqs``. 
+  ``qs`` must be in (not necessarily reduced) echelon form. 
+  
+  
+  The function computes ``row_table[j] = i`` if the leading bit
+  of row ``i`` of part ``A`` of the bit matrix ``M = pqs->data``
+  is in column ``j``, for ``0 <= j < pqs->ncols`` and
+  ``1 <= i < pqs->nrows``. If now such row exists for column
+  ``j`` then we put  ``row_table[j] = QSTATE12_UNDEF_ROW``
+  
+  The representation of the state is not changed.
+*/
 // %%EXPORT p
 int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
-// Compute a row table for the state ``qs`` referred by ``pqs``. 
-// `qs`` must be in (not necessarily reduced) echelon form. 
-// The function computes ``row_table[j] = i`` if the leading
-// bit of row ``i`` of part ``A`` of the data matrix of ``qs``
-// is in column ``j``, for ``0 <= j < pqs->ncols`` and
-// ``1 <= i < pqs->nrows``. If now such row exists for column
-// ``j`` we put  ``row_table[j] = QSTATE12_UNDEF_ROW``
-// 
-// The representation of the state is not changed.
 {
     uint_fast32_t row_pos = 1, i;
     int32_t col; 
@@ -994,11 +1038,15 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 *** Checking equality of two states state
 *************************************************************************/
 
+/** 
+  @brief Check equality of two states
+  
+  Return 1 if the states referred by ``pqs1`` and ``pqs2`` are equal,
+  0 if not, and a negative number in case of error.
+  Both states are reduced before comparing them.
+*/
 // %%EXPORT p
 int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2) 
-// Return 1 if the states referred by pqs1 and pqs2 are equal,
-// 0 if not, and a negative number in case of error.
-// Both states are reduced before comparing them.
 {
     uint64_t mask, diff = 0;
     uint_fast32_t i;
@@ -1021,23 +1069,27 @@ int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2)
 *** Extending and restricting a state
 *************************************************************************/
 
+/**
+  @brief Insert qubits into a state and set them to 0
 
+  We insert ``nqb`` zero qubits into the state ``qs`` referred 
+  by  ``pqs`` starting at position ``j``. 
+ 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
+  following state ``qs1`` depending on ``n + ncols`` qubits:
+ 
+  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+  is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` if
+  ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
+  So we increment ``pqs->ncols`` by ``nqb``.
+ 
+  If the input is reduced then the result is also reduced.
+  ``pqs->shape1`` is set to 0, i.e. a column vector is 
+  returned.
+*/
 // %%EXPORT p
 int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
-// We insert ``nqb`` zero qubits into the state ``qs`` referred 
-// by  ``pqs`` starting at position j. 
-//
-// Let ``n = pqs->ncol`` so that the state ``qs`` referred by 
-// ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-// following state ``qs'`` depending on ``n + ncols`` qubits:
-//
-// ``qs'(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
-// is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` if
-// ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
-// So we increment ``pqs->ncols`` by ``nqb``.
-//
-// If the input is reduced then the result is also reduced.
-// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     uint32_t k;
     uint64_t *m = pqs->data, mask;
@@ -1058,22 +1110,25 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 
 
 
+/**
+  @brief Insert qubits into a state
 
+  We insert ``nqb`` qubits into the state ``qs`` referred 
+  by  ``pqs`` starting at position ``j``. 
+ 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
+  following state ``qs1`` depending on ``n + ncols`` qubits:
+ 
+  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+  is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])``.
+  So we increment ``pqs->ncols`` by ``nqb``.
+ 
+  The result is not reduced. ``pqs->shape1`` is set to 0, i.e. 
+  a column vector is  returned.
+*/
 // %%EXPORT p
 int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
-// We insert ``nqb`` qubits into the state ``qs`` referred by 
-// ``pqs`` starting at position j. 
-//
-// Let ``n = pqs->ncol`` so that the state ``qs`` referred by 
-// ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-// following state ``qs'`` depending on ``n + ncols`` qubits:
-//
-// ``qs'(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
-//   = ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` .
-// So we increment ``pqs->ncols`` by ``nqb``.
-//
-// The result is not reduced.
-// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
 
     uint64_t *m = pqs->data, mask;
@@ -1092,22 +1147,25 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 }
 
 
-
+/**
+  @brief Sum up the functional values for some qubits
+  
+  We sum up ``nqb`` qubits of the state ``qs`` referred by ``pqs`` 
+  at position ``j``. 
+ 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
+  following state ``qs1`` depending on ``n - ncols`` qubits:
+ 
+  ``qs1(x[n-1],...,x[j+nqb],x[j-1],...,x[0])`` =
+  ``sum_{{x[j+nqb-1],...,x[j]}}  qs1(x[nn1-1],...,x[0])`` .
+  So we decrement ``pqs->ncols`` by ``nqb``.
+ 
+  The output is not reduced.
+  ``pqs->shape1`` is set to 0, i.e. a column vector is returned.
+*/
 // %%EXPORT p
 int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
-// We sum up nqb qubits of the state qs referred by pqs 
-// at position j. 
-//
-// Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
-// ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-// following state ``qs'`` depending on ``n - ncols`` qubits:
-//
-// ``qs'(x[n-1],...,x[j+nqb],x[j-1],...,x[0])`` =
-//    ``sum_{{x[j+nqb-1],...,x[j]}}  qs1(x[nn1-1],...,x[0])`` .
-// So we decrement ``pqs->ncols`` by ``nqb``.
-//
-// The output is not reduced.
-// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     uint32_t k;
     uint64_t *m = pqs->data, mask = (ONE << j) - 1;
@@ -1124,20 +1182,21 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 }
 
 
-
+/**
+  @brief Restrict ``nqb`` qubits starting at postion ``j`` to 0.
+ 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
+  following state ``qs1`` depending on ``n`` qubits:
+ 
+  ``qs1(x[n-1],...,x[0])`` is equal to ``qs(x[n-1],...,x[0])`` if 
+  ``x[j] = ... = x[j+nqb-1] = 0`` and equal to zero otherwise.
+  We do not change the shape of ``qs``.
+  
+  The output is reduced if the input is reduced.
+*/
 // %%EXPORT p
 int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
-// Restrict ``nqb`` qubits starting at postion ``j`` to ``0``.
-//
-// Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
-// ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-// following state ``qs'`` depending on ``n`` qubits:
-//
-// ``qs'(x[n-1],...,x[0])`` is equal to ``qs(x[n-1],...,x[0])`` if 
-// ``x[j] = ... = x[j+nqb-1] = 0`` and equal to zero otherwise.
-// We do not change the shape of ``qs``.
-// 
-// The output is reduced if the input is reduced.
 {
     uint64_t *m = pqs->data, v, deleted = 0;
     int_fast32_t i;
@@ -1162,22 +1221,29 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 }
 
 
-
+/**
+  @brief Restrict some qubits to 0 and delete them.
+  
+  Similar to function ``qstate12_restrict_zero`` with deleting
+  the restricted qubits.
+ 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  ``pqs`` depends on ``n`` qubits.  We change ``qs`` to the
+  following state ``qs1`` depending  on ``n1 = n - nqb`` qubits:
+  
+  ``qs1(x[n1-1],...,x[0]``) is equal to 
+  ``qs(x[n1-1],...,x[j],0,...,0,x[-1],...,x[0])``. 
+  So we decrement ``pqs->ncols`` by ``nqb``.
+ 
+  The output is not reduced.
+  ``pqs->shape1`` is set to ``0``, i.e. a column vector is returned.
+  
+  In quantum computing theory this operation can be interpreted
+  as measurement of the corresponding qubits with postselection, 
+  setting all measured qubits to 0.
+*/
 // %%EXPORT p
 int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
-// Similar to function ``qstate12_restrict_zero`` with deleting
-// the restricted qubits.
-//
-// Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
-// ``pqs`` depends on ``n`` qubits.  We change ``qs`` to the
-// following state ``qs'`` depending  on ``n' = n - nqb`` qubits:
-// 
-// qs'(x[n'-1],...,x[0]) is equal to 
-// qs(x[n'-1],...,x[j],0,...,0,x[-1],...,x[0]). 
-// So we decrement ``pqs->ncols`` by ``nqb``.
-//
-// The output is not reduced.
-// ``pqs->shape1`` is set to ``0``, i.e. a row vector is returned.
 {
     int32_t res;
     if ((res = qstate12_restrict_zero(pqs, j, nqb)) < 0) return res;
