@@ -1349,7 +1349,7 @@ is the normal subgroup of the Clifford group
 :math:`\pi` gates in :math:`\mathcal{X}_{n}`, and by the scalar 
 multiples of the unit matrix by a fourth root of unity. It has 
 structure :math:`\frac{1}{2}(2_+^{1+2n} \times Z_4)`, exponent
-math:`4` and order :math:`2^{2n+2}`.
+:math:`4` and order :math:`2^{2n+2}`.
  
 We represent an element of :math:`\mathcal{P}_{n}` as a product
 of :math:`2n+2` generators. Each generator may have exponent 

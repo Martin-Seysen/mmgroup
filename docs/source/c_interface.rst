@@ -195,6 +195,12 @@ Module ``qstate12.c``
    
    .. doxygenfile:: qstate12.c
 
+Module ``qmatrix12.c``
+----------------------
+   
+   
+   .. doxygenfile:: qmatrix12.c
+
 
 
 

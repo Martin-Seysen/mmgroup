@@ -1,9 +1,32 @@
-// %%COMMENT
-// For this module we refer to the section
-// 'Computation in the Clifford group' in the guide, see
-// https://mmgroup.readthedocs.io/en/latest/
+/** @file qmatrix12.c
+  File ``qmatrix12.c`` contains  basic functions for quadratic
+  state matrices as described in the **API reference** in 
+  section **Computation in the Clifford group**. The functions
+  is this module are based on the functions in module
+  ``qstate.c`` and on the data structures defined in module
+  ``clifford12.h``.
 
-
+  C functions in this module are prefixed with ``qbstate12_``.
+  Unless otherwise stated, these functions return an ``int32_t``, 
+  where a nonegative value is interpreted as success, and a negative 
+  value is intepreted as failure. Error codes are documented
+  in file ``clifford12.h``.
+  
+  A structure ``qs`` of type ``qstate12_type`` defines a function
+  \f$f: \mathbb{{F}}_2^n \rightarrow \mathbb{{C}}\f$
+  and also a \f$2^{{n-k}} \times 2^k\f$ matrix \f$M\f$ with entries  
+  \f$M[i,j] = f(2^k \cdot i+j)\f$. Here we idenitfy the nonegative 
+  integers \f$ < 2^n\f$ with the bit vectors given by their 
+  binary representation. For the shape parameters \f$n, k\f$ of a
+  state ``qs`` we have  \f$n\f$ = ``qs.ncols``,  
+  \f$k\f$ = ``qs.qstate1``. Thus indices of vectors and matrices
+  start with 0, as usual in C and python.
+  
+  While the functions in module ``qstate.c`` mostly ingnore the
+  shape parameter  \f$k\f$, the functions in this module use 
+  that shape parameter for determining the shape of a matrix.
+  
+*/
 
 
 
@@ -13,7 +36,9 @@
 *************************************************************************/
 
 #include <string.h>
+/// @cond DO_NOT_DOCUMENT 
 #define CLIFFORD12_INTERN
+/// @endcond  
 #include "clifford12.h"
 
 // %%EXPORT_KWD CLIFFORD12_API
@@ -37,17 +62,17 @@ extern "C" {
 //  %%GEN c
 
 
+/**
+  @brief Create a standard matrix with entries 1 in the diagonal
 
+  Create a standard matrix ``qs`` with ``2**rows`` rows and ``2**cols`` 
+  columns as an object of type ``qstate12_type``, and store the result 
+  in ``*pqs``.  Diagonal entries ``qs[i,i]`` are equal to one for 
+  ``ì < 2**rk``.  All other entries of the matrix are zero.
+  ``0 <= rk < min(nows, cols)`` must hold.
+*/
 // %%EXPORT p
 int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, uint32_t rk) 
-// Create a standard matrix (as a C-strided array) with 'rows' rows,
-// 'cols' columns, of rank 2**rk. Considering row operations as inputs 
-// and column peration as outputs, we connect the first 'rk' input 
-// qubits to the first 'rk' output qubits.  Note that the distinction 
-// between input and output qubits is out of the scope of this module. 
-// So we just connect input qubit j (corresponding to column j + cols
-// of submatrix A) to output qubit j (corresponding to column j of 
-// submatrix A). 0 <= rk < min(nows, cols) must hold.
 {
     uint64_t mask = ((ONE << cols) + ONE) << (rk - 1);
     uint32_t i;
@@ -71,7 +96,13 @@ int32_t qstate12_std_matrix(qstate12_type *pqs, uint32_t rows, uint32_t cols, ui
 
 
 
+/**
+  @brief Create a unit matrix 
 
+  Create a unit matrix  with ``2**nqb`` rows and ``2**nqb`` 
+  columns as an object of type ``qstate12_type``, and store the 
+  result in ``*pqs``.  
+*/
 // %%EXPORT p
 int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb) 
 //  Set the state ``qs`` referred by ``pqs`` to a 
@@ -80,53 +111,59 @@ int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb)
     return  qstate12_std_matrix(pqs, nqb, nqb, nqb);
 }
 
+/**
+  @brief Create matrix with one nonzero entry in each column
 
+  Create a matrix  ``T`` with ``2**nqb`` rows and ``2**nqb`` 
+  columns as an object of type ``qstate12_type``, and store the 
+  result in ``*pqs``.  
+
+  Matrix ``T`` is a real ``2**nqb`` times ``2**nqb`` transformation
+  matrix which is monomial in  the sense that each column contains 
+  exactly  one nonzero entry 1 or -1. So left multiplication with 
+  ``T`` maps unit vectors to (possibly negated) unit  vectors. It 
+  transforms a complex column vector ``w``  of length ``2**nqb`` 
+  to a vector ``T * w``.
+
+  ``pa`` refers to an array a of integers ``a[i]`` of length 
+  ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
+  field  via its binary  representation. So ``a[i,j]`` means 
+  ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
+  ``a[i,j1],...,a[i,j2-1]``.
+ 
+  For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
+  unit vector with index ``v``. For any bit vector ``v`` of 
+  length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit 
+  vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and 
+  ``|1 << v1>`` are defined via the corrresponding operators 
+  ``<<`` and ``^`` in C. 
+ 
+  Then ``T``  maps
+ 
+       |0>      to  |a[0, 0:nqb+1]>
+ 
+       |1 << i> to  |a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>
+ 
+  ``T`` maps unit vectors to (possibly negated) unit vectors, 
+  so ``T(v)`` is well defined by ``|T(v)> = T(|v>)`` for a bit 
+  field ``v`` of length ``nqb + 1``. We have
+ 
+       |T(v1 ^ v2)> = (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)>,
+ 
+  for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
+  alternating bilinear form ``Q`` depending on the lowest ``nqb`` 
+  bits of ``v1`` and ``v2`` only. Thus ``T`` is  defined by the 
+  above equation and ``Q``. The bilinear form ``Q`` is defined by:
+   
+      Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0,  and
+ 
+      Q(1 << i, 1 << j) =  a[i + 1, j + nqb + 1]``,  
+      for ``0 <= j < i < nqb``.
+ 
+*/
 // %%EXPORT p
 int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
-// Set the state ``qs`` referred by ``pqs`` to a real monomial 
-// ``2**nqb`` times ``2**nqb`` transformation matrix ``T`` which 
-// is monomial in  the sense that each column contains exactly 
-// one nonzero entry ``1`` or ``-1``. So left multiplication  
-// with ``T`` maps maps unit vectors to (possibly negated) unit  
-// vectors. It transforms a  state ``|v>`` of ``nqb`` input bits 
-// to a state ``T * |v>`` of ``nqb`` output qubits. Here
-// ``|v>`` is considered as a column vector.
-//
-// ``pa`` refers to an array a of integers ``a[i]`` of length 
-// ``nqb + 1``. Each integer ``a[i]`` is interpreted as a bit 
-// field  via its binary  representation. So ``a[i,j]`` means 
-// ``(a[i] >> j) & 1``. ``a[i, j1:j2]`` means the bit field  
-// ``a[i,j1],...,a[i,j2-1]``.
-//
-// For any bit vector ``v`` of length ``nqb`` let ``|v>`` be the 
-// unit vector with index ``v``. For any bit vector ``v`` of 
-// length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit 
-// vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and 
-// ``|1 << v1>`` are defined via the corrresponding operators 
-// ``<<`` and ``^`` in C.
-//
-// Then ``T``  maps
-//
-//   * ``|0>``     to  ``|a[0, 0:nqb+1]>``
-//
-//   * ``|1 << i>`` to  ``|a[0, 0:nqb+1] ^ a[i+1, 0:nqb+1]>``
-//
-// ``T`` maps unit vectors to (possibly negated) unit vectors, 
-// so ``T(v)`` is well defined by ``|T(v)> = T(|v>)`` for a bit 
-// field ``v`` of length ``nqb + 1``. We have
-//
-//   * ``|T(v1 ^ v2)> = (-1)**Q(v1,v2) * |T(v1) ^ T(v2) ^ T(0)>``,
-//
-// for bit fields ``v1, v2`` of length ``nqb + 1`` and an 
-// alternating bilinear form ``Q`` depending on the first ``nqb`` 
-// bits of ``v1`` and ``v2`` only. Thus ``T`` is  defined by the 
-// above equation and ``Q``. The bilinear form ``Q`` is defined by:
-//  
-//   * ``Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0``,  and
-//
-//   * ``Q(1 << i, 1 << j) =  m[i + 1, j + nqb + 1]``,  
-//     for ``0 <= j < i < nqb``.
-//
+
 {
     uint64_t *m = pqs->data, mask1;
     uint_fast32_t i;
@@ -147,14 +184,18 @@ int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64
     return 0; 
 }
 
+/**
+  @brief Create matrix with one nonzero entry in each row
+
+  Similar to qstate12_monomial_column_matrix(); but we create a 
+  matrix ``T`` which is monomial in  the sense that each row
+  contains exactly  one nonzero entry ``1`` or ``-1``.
+  ``qstate12_monomial_row_matrix(*pqs, nqb, *pa)`` 
+  creates the transposed matrix of  
+  ``qstate12_monomial_column_matrix(*pqs, nqb, *pa)`` 
+*/
 // %%EXPORT p
 int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
-// Similar to qstate12_monomial_column_matrix; but we create a 
-// matrix ``T`` which is monomial in  the sense that each row
-// contains exactly  one nonzero entry ``1`` or ``-1``.
-// ``qstate12_monomial_row_matrix(*pqs, nqb, *pa)`` 
-// creates the transposed matrix of  
-// ``qstate12_monomial_column_matrix(*pqs, nqb, *pa)`` 
 {
     int32_t res = qstate12_monomial_column_matrix(pqs, nqb, pa); 
     if (res < 0) return res;
@@ -166,12 +207,26 @@ int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t 
 *** Reshaping a quadratic state matrices
 *************************************************************************/
 
+/**
+  @brief Change the shape of a matrix
+  
+  Reshape the matrix ``T`` referred by ``pqs`` will be a ``2**rows`` 
+  times ``2**rows`` matrix. 
+  
+  The old shape of the matrix is ``(n-k, k)`` with ``n, k`` given by
+  ``n = pqs->ncols``, ``k = pqs->shape1``. Reshaping must not change
+  the number of entries, so ``rows + cols == n`` must hold. We follow
+  the convention in the python numpy package for reshaping matrices.  
+  Thus index ``[i,j]`` of a matrix with shape ``(I,J)`` corresponds to 
+  the  index ``i * 2**J + j`` in the one-dimensional array storing
+  that matrix.
+  
+  If ``rows`` or ``cols`` is -1 then it is calculated from the old
+  shape of the matrix. If both, ``rows`` and ``cols``, are -1 then
+  ``rows`` is set to ``0`` and ``cols`` is calculated.
+*/  
 // %%EXPORT p
 int32_t qstate12_mat_reshape(qstate12_type *pqs, int32_t rows, int32_t cols)
-// Reshape the matrix referred by ``pqs`` to the shape ``(rows, cols)``.
-// If ``rows`` or ``cols`` is -1, the it is calculated from the old
-// shape of the matrix. If both, ``rows`` and ``cols``, is -1 then
-// ``rows`` is set to ``0`` and ``cols`` is calculated.
 {
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
     if (cols == -1) {
@@ -190,11 +245,15 @@ int32_t qstate12_mat_reshape(qstate12_type *pqs, int32_t rows, int32_t cols)
 *** Transposition of quadratic state matrices
 *************************************************************************/
 
+
+/**
+  @brief Transpose a matrix in place
+
+  The quadratic state matrix ``qs`` referred by ``pqs`` is transposed 
+  in place. The result is not reduced.
+*/  
 // %%EXPORT p
 int32_t qstate12_mat_t(qstate12_type *pqs) 
-// The quadratic state matrix qs of shape (pqs->ncols - nqb, nqb)
-// referred by pqs is transposed in place.
-// The result is not reduced.
 {   
     uint32_t nqb = pqs->ncols - pqs->shape1;
     pqs->shape1 = nqb;
@@ -207,6 +266,7 @@ int32_t qstate12_mat_t(qstate12_type *pqs)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline void
 qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint32_t i2)
@@ -227,40 +287,50 @@ qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint
     }
 } 
 
+/// @endcond 
 
 
 
-
-
+/**
+  @brief Auxiliary low-level function for function qstate12_product()
+  
+  Prepare the states ``qs1`` and ``qs2`` referred by ``pqs1`` and 
+  ``pqs2`` for matrix  multiplication. Here the summation in that 
+  operation runs over first ``nqb`` qubits of ``qs1`` and ``qs2``,
+  regardless of the shape of the input matrices.
+  The function returns a number ``row_pos``, so that, after 
+  preparation, the first ``nqb`` columns of submatrices ``A1`` and 
+  ``A2`` of the bit matrices ``M1`` and ``M2`` corresponding to 
+  ``qs1`` and ``qs2`` will be equal in the following sense: 
+  
+        A1[i,j] = A2[i,j]       for i <  'row_pos', j < 'nqb' ,   
+		
+        A1[i,j] = A2[i,j] = 0   for i >= 'row_pos', j < 'nqb' .
+  
+  
+  Also,  matrices ``A1`` and ``A2`` will both have rank 
+  ``row_pos - 1``, when excluding row 0 of the two matrices.
+  Some rows of ``A1`` or ``A2`` may be deleted to achieve this 
+  situation. The result of the summation of the matrix products
+  of ``qs1`` and ``qs2`` over  the first ``nqb`` columns (which
+  is used by the matrix multiplication procedure)  is not changed 
+  by this operation.
+  Apart from this assertion, both states are changed, and they may
+  have less rows than before. They may even be changed to zero, if the 
+  result of the multiplication is zero.
+ 
+  The algorithm used here is explained in the **API reference** in 
+  section **Multiplication of quadratic mappings**. 
+  In the notation in that section the algorithm computes
+  states \f$\mbox{{qs1}}', \mbox{{qs2}}'\f$ with  
+  \f$ (\mbox{{qs1}}' \odot  \mbox{{qs2}}')_n 
+  = (\mbox{{qs1}} \odot \mbox{{qs2}})_n, \f$,  
+  where \f$ n\f$ = ``nqb``.
+ 
+  ``pqs1->shape1`` and ``pqs2->shape1`` are ignored.  
+*/
 // %%EXPORT p
 int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb)
-// Auxiliary low-level function for qstate12_product().
-// Prepare the states qs1 and qs2 referred by pqs1 and pqs2 for 
-// multiplication. Here the first nqb columns of qs1 and qs2 are to 
-// be multiplieded. The function returns a number 'row_pos', so that, 
-// after preparation, the first nqb columns of submatrices A1 and A2 
-// of the matrices M1 and M2corresponding to qs1 and qs2 will be equal 
-// in the following sense: 
-// A1[i,j] = A2[i,j]       for i <  'row_pos', j < 'nqb' ,   (QS1)
-// A1[i,j] = A2[i,j] = 0   for i >= 'row_pos', j < 'nqb' ,   (QS2)
-// and matrices A1 and A2 both have rank 'row_pos' - 1, when excluding
-// row 0 of the two matrices.
-// Some rows of A1 or A2 may be deleted to achieve this situation.
-// The result of the multiplication of the states qs1 and qs2 over 
-// the first nqb columns of is not changed by this operation.
-// Apart from this assertion, both states are changed, and they may
-// have less rows than before. They may even be changed to zero, if the 
-// result of the multiplication is zero.
-//
-// The algorithm used here is explained in the guide in section
-// 'Multiplication of quadratic mappings'. 
-// In the notation in that section the algorithm computes
-// states qs1', qs2' with  (qs1' (*) qs2')_n = (qs1 (*) qs2)_n 
-// where n = nqb, and (*) denotes the '\odot' operation defined in
-// section 'Products and tensor products of quadratic mappings'
-// of the guide.
-//
-// pqs1->shape1 and pqs2->shape1 are ignored.
 {
     uint_fast32_t i1, i2, n_deleted = 0, ii;
     uint_fast32_t row_pos = 1, row_pos1 = 1, row_pos2 = 1;
@@ -359,6 +429,7 @@ int32_t qstate12_prep_mul(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline int32_t 
 shift_a(qstate12_type *pqs, uint32_t n, uint32_t i_lo, uint32_t i_hi)
@@ -450,36 +521,45 @@ static int32_t qs_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
 }
 
 
+/// @endcond  
+
+
+/**
+  @brief  Compute a certain product of two states 
+  
+  Compute a certain product ``qs3`` of the states ``qs1`` and ``qs2``
+  referred by ``pqs1`` and ``pqs2`` and store the (reduced) result 
+  in ``*pqs1``.  Overlap between ``pqs1`` and ``pqs2`` is possible. 
+  ``qs2`` is not changed.
+  
+  Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
+  Put ``qs1a =  qstate12_extend(qs, n1, n2-nqb)``,
+  ``qs2a =  qstate12_extend(qs, nqb, n1-nqb)``. Then ``qs1a``
+  and ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
+  bits. Let ``qs3a`` be the complex function which is the 
+  product of the functions  ``qs1a`` and ``qs2a``. Then we 
+  have ``qs3 = qstate12_sum_cols(qs3a, 0, nc)``.
+ 
+  E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
+  contraction over the first ``nc`` qubits of ``qs1`` and 
+  ``qs2``. In case ``pqs1->ncols = pqs2->ncols = n`` the 
+  function ``qstate12_product(pqs1, pqs2, n, 0)`` returns the 
+  product of ``qs1`` and ``qs2`` (considered as functions).
+  Furthermore, and ``qstate12_product(pqs1, pqs2, n, n)`` returns 
+  the scalar product of ``qs1`` and ``qs2`` (considered as vectors).
+ 
+  In general, ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds 
+  to the function  \f$ (\mbox{{qs1}}' \odot  \mbox{{qs2}}')_n \f$
+  defined in 
+  section **Products and tensor products of quadratic mappings**
+  of the **API reference**.
+ 
+  ``pqs1->shape1`` is set to 0. The user should  set 
+  ``pqs1->shape1``  to a reasonable value. 
+  
+*/
 // %%EXPORT p
 int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb, uint32_t nc)
-// Compute a certain product ``qs3`` of the states ``qs1`` 
-// and ``qs2`` referred by ``pqs1`` and ``pqs2``. 
-// Let ``n1 = pqs1->ncols,  n2 = pqs2->ncols``.
-// Put ``qs1a =  qstate12_extend(qs, n1, n2-nqb)``,
-// ``qs2a =  qstate12_extend(qs, nqb, n1-nqb)``. Then ``qs1a``
-// and ``qs2a`` are complex functions on ``(nn1 + nn2 - nqb)``
-// bits. Let ``qs3a`` be the complex function which is the 
-// product of the functions  ``qs1a`` and ``qs2a``. Then we 
-// have ``qs3 = qstate12_sum_cols(qs23, 0, nc)``.
-// The result ``qs3`` is computed in the state referred by 
-// ``qs1``. It is reduced. ``qs2`` is not changed. 
-//
-// E.g. ``qstate12_product(pqs1, pqs2, nc, nc)`` is the tensor 
-// contraction over the first ``nc`` qubits of ``qs1`` and 
-// ``qs2``. ``In case pqs1->ncols = pqs2->ncols = n``, the 
-// function ``qstate12_product(pqs1, pqs2, n, 0)`` returns the 
-// product of ``qs1`` and ``qs2`` (considered as functions); 
-// and ``qstate12_product(pqs1, pqs2, n, n)`` returns the scalar
-// product of ``qs1`` and ``qs2`` (considered as vectors).
-//
-// ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds to the 
-// function ``(qs1 (*) qs2)_n``  where ``(*)`` denotes the 
-// ``'\odot'`` operation defined in section 
-// 'Products and tensor products of quadratic mappings'
-// of the guide.
-//
-// pqs1->shape1 is set to 0. The user should  set pqs1->shape1 
-// to a reasonable value. 
 {
     int_fast32_t res;
     qstate12_type qs1, qs2;
@@ -504,24 +584,22 @@ int32_t qstate12_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb,
 *** Matrix multiplication
 *************************************************************************/
 
+/**
+  @brief  Compute the matrix product of two matrices 
 
+  Compute the matrix product ``qs3`` of the matices ``qs1`` and ``qs2``
+  referred by ``pqs1`` and ``pqs2`` and store the (reduced) result in 
+  ``*pqs3``.  Overlap between ``pqs1, pqs2, pqs3`` is possible. 
+
+  If ``qs1`` has shape ``(r1,c1)`` and ``qs2`` has shape ``(r2,c2)``
+  then ``c1 == r2`` must hold, and ``qs3`` has shape ``(r1,c2)``
+  
+  Note that a shape ``(r,c)`` of a matrix ``qs``  means a 
+  ``2**r`` times ``2**c`` matrix, where ``r+c == qs.ncols``,
+  ``c = qs.shape1``.
+*/
 // %%EXPORT p
 int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, qstate12_type *pqs3)
-// Performs a matrix multiplication.
-// Given a state ``qs_i`` with ``qs_i->ncols = m_i + n_i`` we may
-// interpret ``qs_i`` as an ``2**m_i`` times ``2**n_i`` matrix, 
-// where the ``2**m_i`` rows of the matrix correspond to the
-// higher ``m_i`` qubits and the ``2**n_i`` columns corrspond  
-// to the lower ``n_i`` qubits. The value ``n_i`` is given by
-// ``qs_i->shape1``.
-// Let ``qs_1, qs_2`` be the quadratic state matrices referred by 
-// ``pqs1, pqs_2``.
-//
-// The function computes the matrix product ``m3 = m1 @ m2`` as 
-// an  ``2**m_1`` times ``2**n_2`` matrix and stores matrix 
-// ``m3`` in ``*pqs3``.  Inputs ``qs_1`` and ``qs_1``  are 
-// not changed. Any overlap between ``pqs1, pqs2, pqs3`` is
-// allowed.
 {
     int32_t res;
     uint32_t nqb = pqs1->shape1, cols = pqs2->shape1; 
@@ -552,6 +630,8 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, qstate12_type 
 *** Creating and checking matrices in the Pauli group
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
 static inline uint64_t bit_rev(uint32_t length, uint64_t n)
 // Reverse lower ``length`` bit of interger ``n``.
 {
@@ -570,6 +650,38 @@ static inline uint64_t bitparity64(uint64_t x)
     return (0x6996 >> (x & 0x0f)) & 1;
 }
 
+/// @endcond  
+
+
+/**
+  @brief Check if a matrix is in the Pauli group and convert it to a vector
+
+  The **Pauli group**  of \f$n\f$ qubits is the normal subgroup
+  of the Clifford group of \f$n\f$ qubits generated by the not 
+  gates, the phase  \f$\pi\f$ gates, and by the scalar 
+  multiples of the unit matrix by a fourth root of unity. 
+  
+  We represent an element of the Pauli group as a product of
+  \f$2n+2\f$ generators of order 2 or 4. The sequence of these 
+  exponents is stored in a bit vector (coded as an integer)   
+  as follows:
+
+       Bit 2n+1:  a scalar factor sqrt(-1)
+
+       Bit 2n:    a scalar factor -1
+
+       Bit n+i:   a not gate applied to qubit i, 0 <= i < n
+
+       Bit i:     a phase pi gate applied to qubit i, 0 <= i < n
+
+  See section **The Pauli group** in the **API reference** for 
+  details. 
+
+  If the matrix ``qs`` referred by ``pqs`` is in the Pauli group of 
+  \f$n\f$ qubits then the function returns \f$n\f$ and stores ``qs``
+  as an element of the Pauli group in the vector ``v`` referred  
+  by ``pv``. Otherwise the function returns a negative error code.
+*/
 
 // %%EXPORT p
 int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
@@ -597,11 +709,19 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
          bitparity64(w & m[0] & mask)) << pqs->ncols;
     w |= (uint64_t)((pqs->factor >> 1) & ONE) << (pqs->ncols + 1);    
     *pv = w;
-    return 0;
+    return nqb;
 }
 
 
+/**
+  @brief Convert element of the Pauli group to a matrix
 
+  Here parameter ``v`` encodes an element of the Pauli group  of
+  ``nqb`` qubits as described in function qstate12_pauli_vector()
+  The function converts ``v``  to a matrix of shape ``(nqb, nqb)``
+  in the Cliffrod group and stores the result in the state
+  referred by ``pqs``.
+*/
 // %%EXPORT p
 int32_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
 {
@@ -622,6 +742,16 @@ int32_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
 *** Multiplication and exponentiation in the Pauli group
 *************************************************************************/
 
+/**
+  @brief Multiplication of two elements of the Pauli group
+
+  Here parameters ``v1`` and ``v2``encode two elements of the Pauli 
+  group  of ``nqb`` qubits as described in function 
+  qstate12_pauli_vector().
+  
+  The function returns the product ``v1 * v2`` encoded in the same
+  way.
+*/
 // %%EXPORT p
 uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
 // Yet to be documented!!
@@ -635,9 +765,22 @@ uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
     return (v1 ^ v2 ^ (s << (nqb << 1))) & (((4*ONE) << (2*nqb)) - 1);
 }
 
+/**
+  @brief Exponentiation of an element of the Pauli group
+
+  Here parameters ``v1`` encodes an two element of the Pauli 
+  group  of ``nqb`` qubits as described in function 
+  qstate12_pauli_vector().
+  
+  The function returns the power ``v1 ** e`` encoded in the same
+  way. 
+  
+  The Pauli group has exponent 4, so 
+  ``qstate12_pauli_vector_exp(nqb, v1, 3)`` returns the inverse 
+  of ``v1``.
+*/
 // %%EXPORT p
 uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
-// Yet to be documented!!
 {
     uint64_t s = 0;
     if (e & 2 && nqb < MAXCOLS/2) {
@@ -659,6 +802,7 @@ uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline 
 int32_t qstate12_find_masked_pivot(uint64_t *m, uint32_t nrows, uint32_t j, uint64_t mask)
@@ -736,14 +880,15 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     
 }
 
+/// @endcond  
 
 
 // %%EXPORT p
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 // This function converts the matrix ``qs`` referred by ``pqs``to 
 // **reduced matrix representation** It also computes a row table 
-// for that representation*. For backround fe refer to the **guide**, 
-// section **Reducing a quadratic state matrix**.
+// for that representation*. For backround fe refer to the 
+// **API reference**, section **Reducing a quadratic state matrix**.
 {
     int_fast32_t res;
     if ((res = qstate12_reduce(pqs)) < 0) return res;
@@ -754,6 +899,9 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 /*************************************************************************
 *** Computing the rank of a matrix
 *************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
 
 static inline int32_t lb_rank_reduced(qstate12_type *pqs, uint8_t *row_table)
 // Workhorse for function qstate12_mat_lb_rank().
@@ -772,6 +920,8 @@ static inline int32_t lb_rank_reduced(qstate12_type *pqs, uint8_t *row_table)
         rk += row_table[i] != QSTATE12_UNDEF_ROW;
     return rk;
 }
+
+/// @endcond 
 
 
 // %%EXPORT p
@@ -830,7 +980,7 @@ int32_t qstate12_mat_inv(qstate12_type *pqs)
 // %%EXPORT p
 int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
 // Here ``m1`` is an ``i`` times ``j`` bit matrix. The function
-// write the transposed matrix of ``m1`` to ``m2``.
+// writes the transposed matrix of ``m1`` to ``m2``.
 {
     uint64_t v;
     uint32_t i1, j1;
@@ -926,7 +1076,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
             i = row_table[j];
             sh = qs.ncols + i;
             // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
-            // see guide, section 'Implementation of quadratic mappings'
+            // see API ref, section 'Implementation of quadratic mappings'
             f += ((m0 >> sh) & 1) << 1;
             f += (m[i] >> sh) & 1;
             // Add row i to row 0
@@ -940,7 +1090,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
             i = row_table[j];
             sh = qs.ncols + i;
             // factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
-            // see guide, section 'Implementation of quadratic mappings'
+            // see API ref, section 'Implementation of quadratic mappings'
             f += ((m0 >> sh) & 1) << 1;
             f += (m[i] >> sh) & 1;
             // Add row i to row 0

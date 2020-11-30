@@ -1,13 +1,13 @@
-// %%COMMENT
 // For this module we refer to the section
 // 'Computation in the Clifford group' in the guide, see
 // https://mmgroup.readthedocs.io/en/latest/
 
 
 /** @file qstate12.c
-  File ``qstate12.c`` contains  basic function for quadratic
-  state vectors as described in the *API reference* in 
+  File ``qstate12.c`` contains  functions for quadratic
+  state matrices as described in the *API reference* in 
   section **Computation in the Clifford group**.
+
 
   C functions in this module are prefixed with ``qbstate12_``.
   Unless otherwise stated, these functions return an ``int32_t``, 
@@ -1077,7 +1077,7 @@ int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2)
  
   Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-  following state ``qs1`` depending on ``n + ncols`` qubits:
+  following state ``qs1`` depending on ``n + nqb`` qubits:
  
   ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
   is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` if
@@ -1118,7 +1118,7 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
  
   Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
-  following state ``qs1`` depending on ``n + ncols`` qubits:
+  following state ``qs1`` depending on ``n + nqb`` qubits:
  
   ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
   is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])``.
@@ -1151,7 +1151,7 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
   @brief Sum up the functional values for some qubits
   
   We sum up ``nqb`` qubits of the state ``qs`` referred by ``pqs`` 
-  at position ``j``. 
+  starting at position ``j``. 
  
   Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
@@ -1224,14 +1224,14 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 /**
   @brief Restrict some qubits to 0 and delete them.
   
-  Similar to function ``qstate12_restrict_zero`` with deleting
+  Similar to function ``qstate12_restrict_zero``, but with deleting
   the restricted qubits.
  
   Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
   ``pqs`` depends on ``n`` qubits.  We change ``qs`` to the
   following state ``qs1`` depending  on ``n1 = n - nqb`` qubits:
   
-  ``qs1(x[n1-1],...,x[0]``) is equal to 
+  ``qs1(x[n1-1],...,x[0])`` is equal to 
   ``qs(x[n1-1],...,x[j],0,...,0,x[-1],...,x[0])``. 
   So we decrement ``pqs->ncols`` by ``nqb``.
  
@@ -1260,16 +1260,19 @@ int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 *** Applying 'gates' to a state
 *************************************************************************/
 
+/**
+  @brief Apply a not gate to a state
 
-
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1`` 
+  with ``qs1(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
+  xor operation.
+  The result is not reduced.
+  
+  Computing ``qstate12_gate_not(pqs, 1 << j)`` corresponds to
+  negating qubit ``j``.
+*/
 // %%EXPORT p
 int32_t qstate12_gate_not(qstate12_type *pqs, uint64_t v)
-// Change the state ``qs`` referred by ``pqs`` to a state ``qs'`` 
-// with ``qs'(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
-// xor operation.
-// The result is not reduced.
-// Computing ``qstate12_gate_not(pqs, 1 << j)`` corrsponds to
-// negating qubit ``j``.
 {
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (pqs->nrows == 0) return 0;
@@ -1278,19 +1281,25 @@ int32_t qstate12_gate_not(qstate12_type *pqs, uint64_t v)
     return 0;
 }
 
+
+/**
+  @brief Apply a contol-not gate to a state
+
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1`` 
+  with ``qs1(x) = qs(x (+) <vc,x> * v)``, where ``'(+)'`` is 
+  the bitwise  xor operation, and ``<.,.>`` is the scalar 
+  product of bit vectors. The result is not reduced.
+  The scalar product of the bit vectors ``j`` and ``jc`` must
+  be zero. Otherwise the ``ctrl not`` operation is not
+  unitary.
+ 
+  Computing ``qstate12_gate_ctrl_not(pqs, 1 << jc, 1 << j)``, 
+  for ``jc != j``, corresponds to applying a controlled not
+  gate  to qubit ``j``,  contolled by qubit ``jc``. 
+*/
 // %%EXPORT p
 int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
-// Change the state ``qs`` referred by ``pqs`` to a state ``qs'``
-// with ``qs'(x) = qs(x (+) <vc,x> * v)``  where ``'(+)'`` is 
-// the bitwise  xor operation, and ``<.,.>`` is the scalar 
-// product of bit vectors. The result is not reduced.
-// The scalar product of the bit vectors ``j`` and ``jc`` must
-// be zero. Otherwise the ``ctrl not`` operation is not
-// unitary.
-//
-// Computing ``qstate12_gate_ctrl_not(pqs, 1 << jc, 1 << j)``, 
-// for ``jc != j``, corresponds to applying a controlled not  
-// gate  to qubit ``j``  contolled by qubit ``jc``. . 
+
 {
     uint64_t *m = pqs->data, wc, x;
     uint_fast32_t i;
@@ -1312,16 +1321,20 @@ int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
 
 
 
+/**
+  @brief Apply a phase gate to a state
+  
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
+  with ``qs1(x) = qs(x) * sqrt(-1)**(phi * <v,x>)``, where
+  ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
+  denotes exponentiation.
+  The result is reduced if the input is reduced.
+  Computing ``qstate12_gate_ph(pqs, 1 << j, phi)`` 
+  corresponds to applying a  phase ``(phi * pi/2)``  gate 
+  to qubit ``j``. 
+*/
 // %%EXPORT p
 int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
-// Change the state ``qs`` referred by ``pqs`` to a state ``qs'``
-// with ``qs'(x) = qs(x) * sqrt(-1)**(phi * <v,x>)``, where
-// ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
-// denotes exponentiation.
-// The result is reduced if the input is reduced.
-// Computing ``qstate12_gate_ph(pqs, 1 << j, phi)`` 
-// corresponds to applying a  phase ``(phi * pi/2)``  gate 
-// to qubit ``j``. 
 {
     uint64_t *m = pqs->data, w, wsh, c = ONE << pqs->ncols;
     uint_fast32_t i;
@@ -1347,17 +1360,21 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
 }
 
 
-
+/**
+  @brief Apply a controlled phase gate to a state
+  
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
+  with ``qs1(x) = qs(x) * (-1)**(<v1,x>*<v2,x>)``, where
+  ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
+  denotes exponentiation.
+  
+  The result is reduced if the input is reduced.
+  Computing ``qstate12_gate_ctrl_phi(pqs, 1 << j1, 1 << j2)``
+  corresponds to applying a  phase ``pi`` gate to 
+  qubit ``j2`` controlled by qubit ``j1``. 
+*/
 // %%EXPORT p
 int32_t qstate12_gate_ctrl_phi(qstate12_type *pqs, uint64_t v1, uint64_t v2)
-// Change the state ``qs`` referred by ``pqs`` to a state ``qs'``
-// with ``qs'(x) = qs(x) * (-1)**(<v1,x>*<v2,x>)``, where 
-// ``<.,.>``  is the scalar product of bit vectors and ``'**'``
-// denotes exponentiation.
-// The result is reduced if the input is reduced.
-// Computing ``qstate12_gate_ctrl_phi(pqs, 1 << j1, 1 << j2)``
-// corresponds to applying a  phase ``pi`` gate to 
-// qubit ``j2`` controlled by qubit ``j1``. 
 {
     uint64_t *m = pqs->data, w1, w2, w1sh, w2sh;
     uint_fast32_t i;
@@ -1377,16 +1394,19 @@ int32_t qstate12_gate_ctrl_phi(qstate12_type *pqs, uint64_t v1, uint64_t v2)
 }
 
 
-
+/**
+  @brief Apply Hadamard gates to a state
+  
+  Apply a Hadamard gate to all qubits ``j`` of the state ``qs``
+  (referred by pqs) with  ``v & (1 << j) == 1``.
+  Applying a Hadamard gate to gate ``j`` changes a state ``qs``
+  to a state ``1/sqrt(2) * qs1``, where
+  ``qs1(..,x[j+1],x_j,x[j-1],..)`` = ``qs(..,x[j+1],0,x[j-1],..)``
+  + ``(-1)**(x_j) * qs(..,x[j+1],1,x[j-1],..)`` .
+  The result is not reduced.
+*/
 // %%EXPORT p
 int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
-// Apply a Hadamard gate to all qubits ``j`` of the state ``qs``
-// (referred by pqs) with  ``v & (1 << j) == 1``.
-// Aplying a Hadamard gate to gate ``j`` changes a state ``qs``
-// to a state ``1/sqrt(2) * qs'``, where
-// ``qs'(..,x[j+1],x_j,x[j-1],..) = qs(..,x[j+1],0,x[j-1],..)``
-//   + (-1)**(x_j) * qs(..,x[j+1],1,x[j-1],..)  .
-// The result is not reduced.
 {
     uint64_t *m = pqs->data, w, mask1, c;
     uint_fast32_t i, j, sh, max_rows;
@@ -1444,7 +1464,7 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 
 
 // Although complex numbers have been invented more than 200 years
-// ago and standardized in C99 about 20 years ago, it is still tooo
+// ago and standardized in C99 about 20 years ago, it is still too
 // annoying to deal with the peculiarites of the data type 
 // 'double complex' in the various compilers being used.
 // So we output an array of type double[] of real numbers of 
@@ -1493,12 +1513,23 @@ const uint8_t qstate12_lsbtab[64] = {
 /// @endcond
 
 
+/**
+  @brief Expand a state to an array of complex numbers
+  
+  Expand the state ``qs`` referred by ``pqs`` to the array
+  referred by the pointer ``pc``. The real part of ``qs[i]`` is 
+  stored in ``pc[2*i]`` and the imaginary part of ``qs[i]`` is 
+  stored in ``pc[2*i+1]``. The function reduces ``qs``. Here the 
+  integer ``i`` is interpreted as a bit vector as usual.
+  
+  ``pqs->shape1`` is ignored. The user has to care for the
+  shape of the returned array. The state ``qs`` is reduced.
+
+  Caution: The function sets ``2 * 2**pqs->ncols`` entries 
+  in the array ``pc``.
+*/
 // %%EXPORT p
 int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
-// Expand the f * qs where qs is the state referred by pqs to the 
-// array a, and reduce all entries of array a modulo p. 
-// ``pqs`` is reduced. ``pqs->shape1`` is ignored.
-// Caution: The function sets 2**pqs->ncols entries in the array pc!!
 {    
     uint64_t qf = 0;    // current value of quadratic form Q[i]
     uint64_t *m;        // pointer to pqs->data
@@ -1551,7 +1582,19 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
 }
 
 
+/**
+  @brief Convert entries of a state to complex numbers
+  
+  The function computes the entries ``qs[v[i]]`` of the state
+  ``qs`` referred by ``pqs``  for ``0 <= i < n`` and stores these
+  entries in the array  ``pc``. The real part of ``qs[v[i]]`` is
+  stored in ``pc[2*i]`` and the imaginary part is stored in
+  ``pc[2*i+1]``. The state ``qs`` is reduced.
 
+  Caution: The function sets ``2 * n`` entries   in the 
+  array ``pc``.
+
+*/
 // %%EXPORT p
 int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc)
 // Obtain complex entries of state vector ``qs`` referred by ``pqs``
