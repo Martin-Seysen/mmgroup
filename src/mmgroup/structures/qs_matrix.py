@@ -29,7 +29,7 @@ class QStateMatrix(QState12):
     Quadratic state matrices are described in the *API reference* in 
     section **Computation in the Clifford group**.
     
-   
+      
     :param rows:
     
         * Binary logarithm of the number of rows of the matrix
@@ -107,6 +107,8 @@ class QStateMatrix(QState12):
     .. math::
         2^{e/2} \cdot w \, , \quad  e \in \mathbb{Z}, \;
         w \in \mathbb{C}, \, w^8 = 1   \; .
+
+    Divison by such a scalar is legal.
    
     A matrix of type ``QStateMatrix`` may be indexed with square
     brackets as in ``numpy`` in order to obtain entries, rows, 
@@ -116,7 +118,7 @@ class QStateMatrix(QState12):
     easiest way to obtain a complex version of an instance ``qs`` 
     of type ``QStateMatrix`` is to write ``qs[:,:]``.
     
-    A row or coulumn index has a natural interpretation as a
+    A row or column index has a natural interpretation as a
     bit vector. In the theory of quantum computation a bit of
     such a bit vector corresponds to a *qubit*. Let ``qs`` be
     a quadratic state matrix of shape ``(m, n)`` and 
@@ -464,14 +466,23 @@ class QStateMatrix(QState12):
 
     #########################################################################
     # Matrix operations
-       
+    
+    def lb_rank(self):
+        r"""Return binary logarithm of the rank of the matrix
+
+        The rank of a nonzero quadratic state matrix is a power of two.
+        The function returns -1 if the matrix is zero.
+        """
+        return super(QStateMatrix, self).lb_rank()
+   
     def lb_norm2(self):    
         r"""Return binary logarithm of squared operator norm.
         
         The operator norm is the largest absolute singular value
-        of the matrix.
+        of the matrix. For a quadratic state matrix this is a 
+        power of :math:`\sqrt{2}` or zero.
         
-        Return -1 if the matrix is zero.
+        The function returns -1 if the matrix is zero.
         """
         m = self.copy().reduce()
         if m.nrows == 0:
@@ -559,13 +570,57 @@ class QStateMatrix(QState12):
     # Dealing with the Pauli subgroup of the Clifford group
      
     def pauli_vector(self):
+        r""" Return matrix as a Pauli vector if it is in the Pauli group
+
+        We represent an element of the Pauli group :math:`\mathcal{P}_{n}` 
+        as a product of :math:`2n+2` generators. Each generator may have 
+        exponent :math:`0` or :math:`1`. The sequence of these exponents are   
+        stored as a bit vector as follows:
+
+           * Bit :math:`2n+1` corresponds to multiplication with 
+             the scalar :math:`\sqrt{-1}`.
+
+           * Bit :math:`2n` corresponds to  multiplication with
+             the scalar :math:`-1`.
+
+           * Bit :math:`n+i` with :math:`0 \leq i < n` corresponds to 
+             a not gate applied to qubit :math:`i`.
+
+           * Bit :math:`i` with :math:`0 \leq i < n` corresponds to 
+             a phase :math:`\pi` gate applied to qubit :math:`i`.
+
+
+        Factors are ordered by bit positions, with the most significant 
+        bit position occuring first. 
+        
+        The function returns the bit vector corresponding to this 
+        object as an integer.
+        It raises ValueError if the matrix iy not in the Pauli group.
+        """
         try:
             return super(QStateMatrix,self).pauli_vector()
         except ValueError:
             err = "QStateMatrix object is not in the Pauli group"
             print("\n%s:\n%s\n" % (err, str(self)))
             raise            
-            
+
+    def pauli_conjugate(self, v):
+        r"""Conjugate Pauli group elements by the matrix
+
+        The method conjugates an element of the Pauli group or a
+        list of such elements with the quadratic matrix and returns
+        the congugated Pauli group element (or the list of 
+        conjugates element). All Pauli group elements are encoded
+        as in method ``pauli_vector``.
+
+        If :math:`M`is the quadratic state matrix given by
+        this object then the Pauli group element :math:`v` is 
+        mapped to :math:`M v M^{-1}`.
+
+        Matrix :math:`M` must be in a Clifford group. The function
+        raises ValueError if this is not the case.
+        """
+        return super(QStateMatrix,self).pauli_conjugate(v)    
         
     #########################################################################
     # Obtaining (complex) entries and submatrices
@@ -598,7 +653,7 @@ class QStateMatrix(QState12):
         """Return a state as a string.
         
         If ``reduced`` is True (default) then the reduced representation
-        of the state is displayed. Otherwise the satte is displayed 
+        of the state is displayed. Otherwise the state is displayed 
         'as is'.         
          
         The standard conversion of a state to a string, i.e. method

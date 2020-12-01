@@ -214,8 +214,8 @@ Class ``QStateMatrix`` modelling a quadratic state matrix
              rot_bits, xch_bits,
              gate_not, gate_ctrl_not, gate_phi, gate_ctrl_phi, gate_h,
              extend_zero, extend, restrict_zero, restrict, sumup,
-             lb_norm2, inv,
-             power, order
+             lb_rank, lb_norm2, inv, power, order,
+             pauli_vector, pauli_conjugate, show
 
 .. autofunction:: mmgroup.structures.qs_matrix.qs_unit_matrix
 

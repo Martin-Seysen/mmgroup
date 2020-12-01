@@ -1392,21 +1392,21 @@ perform multiplication and exponentiation in the Pauli group
 Given an element :math:`p` of the Pauli group and a
 *reduced matrix representation* :math:`(e, A, Q)` of a
 unitary quadratic state matrix :math:`S`, we can quickly 
-compute the conjugate  :math:`S^{-1} \cdot p \cdot S` as 
+compute the conjugate  :math:`S \cdot p \cdot S^{-1}` as 
 follows:
 
-  * Left multiply :math:`S` with :math:`p` by applying the 
+  * Right multiply :math:`S` with :math:`p` by applying the 
     appropriate gates to :math:`S`. This affects row 
     :math:`0` of the bit matrix :math:`A` and  row and 
     column :math:`0` of the symmetic bit  matrix :math:`Q` 
     only.
 
-  * Restore the original values  :math:`A[0,j]` or all
-    :math:`j \geq n` and the original values 
+  * Restore the original values  :math:`A[0,j]` for all
+    :math:`j < n` and the original values 
     :math:`Q[0,k] = Q[k,0]` for all :math:`k > n` by applying 
     appropriate transformations :math:`T_{0,j}` to the 
     modified representation :math:`(e, A, Q)`. 
-    This does not change the value :math:`p \cdot S` of 
+    This does not change the value :math:`S \cdot p` of 
     the complex matrix computed in the previous step.
     :math:`T_{0,j}` is defined in section
     *Implementation of quadratic mappings*.
@@ -1414,17 +1414,17 @@ follows:
   * We may restore the the remaining original values of row 
     and column :math:`0` of :math:`Q` by applying phase 
     :math:`\pi` gates to :math:`S`. These gate operations 
-    correspond to a right multiplication with a element 
+    correspond to a left multiplication with a element 
     :math:`p_1` of the Pauli group.
 
   * We may restore the the remaining original values of row 
     :math:`0` of :math:`A` by applying not gates to
-    :math:`S`. These gate operations correspond to a right
+    :math:`S`. These gate operations correspond to a left
     multiplication with a element :math:`p_2` of the Pauli
     group.
 
   * Up to a known scalar factor we have obtained an equation
-    :math:`S = p  \cdot S \cdot p_2 \cdot p_1`, with 
+    :math:`S = p_2 \cdot p_1 \cdot S \cdot p`, with 
     :math:`p_1, p_2` in the  Pauli group. With this equation
     the requested conjugation is an easy computation in the 
     Pauli group.
