@@ -9,8 +9,8 @@
   C functions in this module are prefixed with ``qbstate12_``.
   Unless otherwise stated, these functions return an ``int32_t``, 
   where a nonegative value is interpreted as success, and a negative 
-  value is intepreted as failure. Error codes are documented
-  in file ``clifford12.h``.
+  value is intepreted as failure. Error codes returned by functions
+  in this module are documented in file ``clifford12.h``.
   
   A structure ``qs`` of type ``qstate12_type`` defines a function
   \f$f: \mathbb{{F}}_2^n \rightarrow \mathbb{{C}}\f$
@@ -679,7 +679,7 @@ static inline uint64_t bitparity64(uint64_t x)
 
   If the matrix ``qs`` referred by ``pqs`` is in the Pauli group of 
   \f$n\f$ qubits then the function returns \f$n\f$ and stores ``qs``
-  as an element of the Pauli group in the vector ``v`` referred  
+  as an element of the Pauli group in the vector ``v`` referred
   by ``pv``. Otherwise the function returns a negative error code.
 */
 
@@ -717,9 +717,9 @@ int32_t qstate12_pauli_vector(qstate12_type *pqs, uint64_t *pv)
   @brief Convert element of the Pauli group to a matrix
 
   Here parameter ``v`` encodes an element of the Pauli group  of
-  ``nqb`` qubits as described in function qstate12_pauli_vector()
+  ``nqb`` qubits as described in function qstate12_pauli_vector().
   The function converts ``v``  to a matrix of shape ``(nqb, nqb)``
-  in the Cliffrod group and stores the result in the state
+  in the Clifford group and stores the result in the state
   referred by ``pqs``.
 */
 // %%EXPORT p
@@ -768,7 +768,7 @@ uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
 /**
   @brief Exponentiation of an element of the Pauli group
 
-  Here parameters ``v1`` encodes an two element of the Pauli 
+  Here parameter ``v1`` encodes an element of the Pauli 
   group  of ``nqb`` qubits as described in function 
   qstate12_pauli_vector().
   
@@ -882,7 +882,22 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 
 /// @endcond  
 
-
+/**
+  @brief Perform a special reduction on a quadratic state matrix
+  
+  This function performs a special reduction on the quadratic state
+  matrix ``qs`` referred by ``pqs``, as described in the
+  **API reference**, section **Reducing a quadratic state matrix**.
+  
+  This kind of reduction is differnt from the reduction in function
+  qstate12_reduce(). It is used internally for computing traces and
+  norms of matrices. It is also used in function
+  qstate12_pauli_conjugate().
+  
+  The function also computes a table with ``pqs->nrows + pqs->ncols``
+  entries in the array referred by parameter ``row_table`` which is
+  used internally for the operations mentioned above.  
+*/
 // %%EXPORT p
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 // This function converts the matrix ``qs`` referred by ``pqs``to 
@@ -901,6 +916,7 @@ int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
+
 
 
 static inline int32_t lb_rank_reduced(qstate12_type *pqs, uint8_t *row_table)
@@ -923,13 +939,18 @@ static inline int32_t lb_rank_reduced(qstate12_type *pqs, uint8_t *row_table)
 
 /// @endcond 
 
+/**
+  @brief compute the rank of a quadratic state matrix
 
+  Let ``qs`` be the quadratic state matrix referred by ``pqs``. The 
+  function returns the binary logarithm of the rank of matrix ``qs``,
+  which is an integer in case of the nonzero matrix.
+  It returns -1 if ``qs`` is the zero matrix. A return value less 
+  than -1 is an error code.
+  Matrix ``qs`` is reduced.
+*/
 // %%EXPORT p
 int32_t qstate12_mat_lb_rank(qstate12_type *pqs) 
-// Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
-// referred by pqs. The function returns the binary logarithm of
-// the rank of the matrix. It returns -1 if qs is the zero matrix.
-// Matrix qs is reduced.
 {
     qstate12_type qs;
     uint64_t qs_data[MAXROWS];
@@ -949,6 +970,13 @@ int32_t qstate12_mat_lb_rank(qstate12_type *pqs)
 *** Matrix inversion
 *************************************************************************/
 
+/**
+  @brief Compute the inverse of a quadratic state matrix
+
+  Let ``qs`` be the quadratic state matrix referred by ``pqs``. The 
+  function computes the (reduced) inverse of matrix ``qs`` in place.
+  It returns ERR_QSTATE12_MATRIX_INV if the matrix is not invertible.
+*/
 // %%EXPORT p
 int32_t qstate12_mat_inv(qstate12_type *pqs) 
 // Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
@@ -977,10 +1005,15 @@ int32_t qstate12_mat_inv(qstate12_type *pqs)
 *************************************************************************/
 
 
+/**
+   @brief Transpose a bit matrix
+   
+   Here ``m1`` is an ``i`` times ``j`` bit matrix. Here bit ``m1[m,n]``
+   is given by ``(m1[m] >> n) & 1``. The function writes the transposed 
+   bit matrix of ``m1`` to ``m2``.
+*/
 // %%EXPORT p
 int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
-// Here ``m1`` is an ``i`` times ``j`` bit matrix. The function
-// writes the transposed matrix of ``m1`` to ``m2``.
 {
     uint64_t v;
     uint32_t i1, j1;
@@ -999,9 +1032,26 @@ int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2
 *************************************************************************/
 
 
+/** 
+  @brief Conjugate Pauli group elements with a Clifford group element
+  
+  Here the quadratic state matrix ``qs`` referred by ``pqs`` must 
+  be of shape ``(k,k)`` and correspond to an element of the Clifford 
+  group of ``k`` qubits.  The array ``v`` referred by ``pv`` has ``n``  
+  entries ``v[0],...,v[n-1]``. Each of these entries is interpreted
+  as an  element of the Pauli group of ``k`` qubits, encoded as in
+  function qstate12_pauli_vector().
+  
+  The function replaces ``v[i]`` by the Pauli group element 
+  ``w[i] = qs**(-1) * v[i] * qs`` for all ``i < n``. ``w[i]`` is
+  encoded in the same way as ``v[i]``.
+  
+  This function uses function qstate12_reduce_matrix(). The operation
+  of this function is explained in the **API reference**, 
+  section **Reducing a quadratic state matrix** .
+*/
 // %%EXPORT p
 int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
-// TODO: Yet to be documented!!
 {
     int_fast32_t res,  j;
     uint_fast32_t i, fst_row, sh, j0, j1, nqb;

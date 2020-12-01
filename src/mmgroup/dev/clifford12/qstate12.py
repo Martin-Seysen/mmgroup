@@ -97,10 +97,9 @@ be an affine mapping. Then we define a function
 by 
 
 .. math::
-   :label: quadratic_mapping
-
    f(e,a,q)(x) = e \cdot
    \sum_{\{y \in \mathbb{F}_2^m \mid a(y) = x\}} q(y) .  
+   :label: quadratic_mapping
 
 We call a function :math:`f(e,a,q)` satisfying  
 :eq:`quadratic_mapping` a *quadratic mapping*. We call the triple  
