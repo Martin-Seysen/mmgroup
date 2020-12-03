@@ -60,7 +60,6 @@ name of a directory.
 
 Files with extension .c, .h go to the directory ``C_DIR``. Files with
 extension .pxd, .pxi, .pyx go to the directory ``PXD_DIR``. 
-Documentaion files with extension .txt go to the directory ``DOC_DIR``.
 """
 
 
@@ -77,7 +76,7 @@ import shutil
 
 
 
-from config import SRC_DIR, DEV_DIR,  C_DIR, DOC_DIR, PXD_DIR
+from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR 
 sys.path.append(REAL_SRC_DIR)
 
@@ -128,8 +127,6 @@ def mat24_make_c_code():
         MAT24_C_FILE + ".h",  
         pxd_declarations   
     )
-    doc_path_ = os.path.join(DOC_DIR, MAT24_C_FILE)  
-    make_doc(path_ + ".c", doc_path_ + "_c_doc.txt")
     print("C files for extension mat24 have been created" )
     
 
@@ -153,8 +150,6 @@ def mat24_xi_make_c_code():
         MAT24_XI_C_FILE + ".h",  
         pxd_declarations   
     )
-    doc_path_ = os.path.join(DOC_DIR, MAT24_XI_C_FILE)  
-    make_doc(path_ + ".c", doc_path_ + "_c_doc.txt")
     print("C files for extension mat24_xi have been created" )
 
 

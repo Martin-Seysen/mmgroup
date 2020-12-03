@@ -101,7 +101,7 @@ r"""The C code generator generates code from a source file automatically.
     Built-in directives
     -------------------
 
-     * ``COMMENT``
+     * ``COMMENT``,  deprecated!
         Indicates that a comment follows. This should be used only
         for comments relevant for the user, not for internal details.
         No action in this class, but other functions may use this

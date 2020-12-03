@@ -1,9 +1,7 @@
-// %%COMMENT
 // This is a C implementation of the functionality of Python class
 // Mat24Xi as described in the sequel. Note that all exported funtions
 // in this module are prefixed with 'mat24_xi'
 
-// %%COMMENT
 // %%PY_DOCSTR Mat24_xi_module_doc
 
 
@@ -35,7 +33,6 @@ extern "C" {
 // %%GEN c
 
 
-// %%COMMENT
 /*************************************************************************
 *** Multiplication in the extraspecial group 2^{{1+24}}
 *************************************************************************/
@@ -43,7 +40,6 @@ extern "C" {
 
 // %%EXPORT p
 uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
 {
     uint_fast32_t scalar;      
@@ -56,7 +52,6 @@ uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 }
 
 
-// %%COMMENT
 /*************************************************************************
 *** Operation of monomial generators on the extraspecial group 2^{{1+24}}
 *************************************************************************/
@@ -142,7 +137,6 @@ uint32_t mat24_xi_op_y(uint32_t x1, uint32_t y)
 
 
 
-// %%COMMENT
 /*************************************************************************
 *** Tables for operation of xi on gray code and cocode vectors
 *************************************************************************/
@@ -165,7 +159,6 @@ static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = {
 
 // %%EXPORT p
 uint32_t mat24_xi_g_gray(uint32_t v1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_g_gray
 {
     return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v1)]);
@@ -174,7 +167,6 @@ uint32_t mat24_xi_g_gray(uint32_t v1)
 
 // %%EXPORT p
 uint32_t mat24_xi_w2_gray(uint32_t v1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_w2_gray
 {
     return MAT24_XI_G_GRAY_TABLE[compress_gray(v1)] >> 7;
@@ -183,7 +175,6 @@ uint32_t mat24_xi_w2_gray(uint32_t v1)
 
 // %%EXPORT p
 uint32_t mat24_xi_g_cocode(uint32_t v1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_g_cocode
 {
     return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(v1)]);
@@ -192,14 +183,12 @@ uint32_t mat24_xi_g_cocode(uint32_t v1)
 
 // %%EXPORT p
 uint32_t mat24_xi_w2_cocode(uint32_t v1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_w2_cocode
 {
     return MAT24_XI_G_COCODE_TABLE[compress_gray(v1)] >> 7;
 }
 
 
-// %%COMMENT
 /*************************************************************************
 *** Operation of xi on the extraspecial group 2^{{1+24}}
 *************************************************************************/
@@ -207,7 +196,6 @@ uint32_t mat24_xi_w2_cocode(uint32_t v1)
 
 // %%EXPORT p
 uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_op_xi
 {
     uint_fast32_t tv, tc; 
@@ -237,7 +225,6 @@ uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
 }
 
 
-// %%COMMENT
 /*************************************************************************
 *** Conversion between 'short' and 'Leech' representation of vectors
 *************************************************************************/
@@ -245,7 +232,6 @@ uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
 
 // %%EXPORT p
 uint32_t mat24_xi_leech_to_short(uint32_t x1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_leech_to_short
 {
     uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
@@ -314,7 +300,6 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
 
 // %%EXPORT p
 uint32_t mat24_xi_short_to_leech(uint32_t x1)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_short_to_leech
 {
     uint_fast32_t sign = (x1 >> 15) & 1;
@@ -386,7 +371,6 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
 }
 
 
-// %%COMMENT
 /*************************************************************************
 *** Operation of xi on sort vectors in 'short' representation
 *************************************************************************/
@@ -394,7 +378,6 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
 
 // %%EXPORT p
 uint32_t mat24_xi_op_xi_short(uint32_t x1, uint32_t u_exp)
-// %%COMMENT
 // %%PY_DOCSTR Mat24Xi_doc.xi_op_xi_short
 {
     uint_fast32_t y = mat24_xi_short_to_leech(x1);
@@ -406,7 +389,6 @@ uint32_t mat24_xi_op_xi_short(uint32_t x1, uint32_t u_exp)
 }
 
 
-// %%COMMENT
 /*************************************************************************
 *** Creating tables for the operation of xi in 'short' representation
 *************************************************************************/

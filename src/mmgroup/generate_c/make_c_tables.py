@@ -234,7 +234,11 @@ class TableGenerator(object):
 
 
     def comment(self, args, *_):
-        """built-in function COMMENT"""
+        """built-in function COMMENT, deprecated!!"""
+        warnings.warn(
+            r"The %%COMMENT directive in the code generator is deprecated!",
+            DeprecationWarning
+        )
         return "", ""
 
 
@@ -838,6 +842,10 @@ def make_doc(source_file, output_file, tables = None):
                     source_file = source_file[:-1]
                 for l in source_file.split("\n"):
                     yield l + "\n"     
+    warnings.warn(
+        "Function make_doc() is deprecated. One may use doxygen instead",
+         DeprecationWarning
+    )
 
 
     g = open(output_file, "wt")
