@@ -869,10 +869,13 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
                  ((m[0] >> (j + pqs->ncols)) & 1);
             v &= ~kernel;     
             qstate12_pivot(pqs, i, v);
+            kernel |= ONE << i;
+            /* This part of the reduction is not needed
             // Set v to  column (or row) i of matrix Q
             v = m[i] >> pqs->ncols;
             v &= 0 - (ONE <<  fst_row);
             qstate12_pivot(pqs, j, v);
+            */
             row_table[pqs->ncols + j] = (uint8_t)i;
         }
     }

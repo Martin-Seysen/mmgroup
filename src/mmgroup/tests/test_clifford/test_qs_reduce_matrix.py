@@ -170,7 +170,7 @@ def test_reduce_matrix(verbose = 0):
             if i < 255:
                 q_row = d[i] & q_mask
                 assert i in row_set
-                assert q_row == 1 << j
+                assert q_row & ~(1 << j) < 1 << j
                 row_set.remove(i)
         for i in row_set:
             assert d[i] & q_mask == 0

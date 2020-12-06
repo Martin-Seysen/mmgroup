@@ -1075,8 +1075,6 @@ stabilizer state on a quantum computer, see e.g.
 Quadratic state matrices
 ........................
 
-TODO: Check documentation from this point on!!!
-
 
 A *quadratic state matrix* :math:`S` of shape :math:`(n_0, n_1)` 
 is an element of the tensor product :math:`V_0 \otimes V_1` 
@@ -1127,10 +1125,10 @@ This corresponds to a state where the qubits with indices
 :math:`3,2,1,0` have values  :math:`1,0,1,1` , respectively.
 Similarly, we display a row vector  as a *bra*. So e.g.
 ``<110|`` means the row unit vector labelled by 
-:math:`(1,1,0)`. A matrix with an entry one in the row 
-labelled by :math:`(1,0,1,1)` and the column labelled by 
-:math:`(1,1,0)`, and zeros elsewhere, is displayed  as 
-``|1011><110|``.
+:math:`(1,1,0)`. A :math:`2^4 \times 2^3` matrix with an 
+entry one in the row labelled by :math:`(1,0,1,1)` and 
+the column labelled by :math:`(1,1,0)`, and zeros 
+elsewhere, is displayed  as  ``|1011><110|``.
  
 We also want to display certain linear combinations of
 such unit vectors or matrices. As we have seen earlier, the
@@ -1154,9 +1152,9 @@ In order to specify the support of the coordinate function,
 we write  :math:`a_0` in *bra-ket* notation as above, and
 we write coordinates :math:`a_1,\ldots,a_m` underneath 
 the coordinate :math:`a_0` without any bras or kets. We may
-give the basis :math:`(a_1,\ldots a_m)` in echelon form,
-omitting leading zeros. We write :math:`A` for the
-matrix  :math:`(a_0,\ldots,a_m)^\top` of coordinates.
+give the basis :math:`(a_1,\ldots, a_m)` in echelon form,
+omitting leading zeros. We write :math:`A` for the with
+row vectors  :math:`(a_0,\ldots,a_m)^\top`.
 
 We write a lower triangular matrix :math:`Q` with diagonal
 entries ``'.'`` or ``'j'`` and off-diagonal entries
@@ -1278,8 +1276,8 @@ as follows:
     :math:`(e_1, A_1, Q_1)`. These transformations preserve the 
     echelon form of :math:`A_1` and also property *(2.)*. Since 
     :math:`K_0 \cap K_1 = \emptyset`, these transformations act as
-    row and column operations on the submatrix :math:`S'`
-    of  :math:`S`. So we may achieve property *(3.)* by a sequence
+    row and column operations on the submatrix :math:`Q'`
+    of  :math:`Q`. So we may achieve property *(3.)* by a sequence
     of such transformations, thus obtaining a suitable
     representation :math:`(e, A, Q)` of  :math:`S`.
 
@@ -1292,7 +1290,7 @@ quadratic state matrix :math:`S` has a variety of advantages.
 
    For :math:`(e, A, Q)` let :math:`K_0, K_1, Q'` be defined as 
    above. Let  :math:`K_2` be the subset :math:`K_1` containing 
-   alls rows of :math:`A` such that the corrsponding row of 
+   all rows of :math:`A` such that the corrsponding row of 
    bit matrix  :math:`Q'` is zero. Then the binary logarithm of
    the rank of :math:`S` is equal to the number of rows of
    matrix :math:`A` with are neither in  :math:`K_0` nor in 
@@ -1337,7 +1335,11 @@ quadratic state matrix :math:`S` has a variety of advantages.
 
 Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
 converts any representation of a quadratic state matrix to a
-reduced matrix representation.
+reduced matrix representation. For the sake of effiency, 
+we relax condition 3 on matrix :math:`Q'` as follows.
+A permutation of the rows of  :math:`Q'` is in echelon form 
+when the columns of :math:`Q'` are reversed.
+
 
 The Pauli group
 ...............
