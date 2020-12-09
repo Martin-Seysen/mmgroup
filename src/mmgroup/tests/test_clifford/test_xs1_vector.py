@@ -95,12 +95,14 @@ def create_test_vectors():
     for x4096, x24 in vector_data:
         for g in group_data:
             yield x4096, x24, g
+    group_elements = "lydpdpxdpylx"
+    #group_elements = "ydpdpxdpyx"
     for x in "BCTX":
         for j in range(50):
             sign = -1**j
             d = randint(0, 0xfff)
             t = rand_tuple(x)
-            yield d, ((sign,) + t),  rand_element("lydpdpxdpylx")    
+            yield d, ((sign,) + t),  rand_element(group_elements)    
 
 
 #####################################################################

@@ -53,6 +53,11 @@ def tuple_to_leech_mod3(tag, i0 = -1, i1 = -1):
     return res
 
 
+CODE_MOD3 = {0:0, 1:1, 2:0x1000001}
+def array_to_leech_mod3(a):
+    return sum(CODE_MOD3[x % 3] << i for i, x in enumerate(a[:24]))
+
+
 ######################################################################
 # Creating a vector in rep 4096x as an instance of class QStateMatrix
 ######################################################################
@@ -61,9 +66,11 @@ ERR_QSTATE_SHAPE = "QStateMatrix object must have shape (0,12) here"
 
 def obj_to_qstate(obj):
     if isinstance(obj, QStateMatrix):
-        if obj.shape != (0,12):
-            raise ValueError(ERR_QSTATE_SHAPE)
-        return obj.copy().extend_zero(12,0).reshape((12,12))
+        if obj.shape == (0,12):
+            return obj.copy().extend_zero(12,0).reshape((12,12))
+        if obj.shape == (12,12):
+            return obj
+        raise ValueError(ERR_QSTATE_SHAPE)
     if isinstance(obj, Integral):
         res = QStateMatrix(0, 12,  obj & 0xfff)
         if (obj & 0x1000):
@@ -89,12 +96,25 @@ class Xs12_Co1_Vector(AbstractRepVector):
         return int(self._data[0])
 
     @property
+    def short3_list(self):
+        x = self._data[0]
+        return  [(((x >> i) & 1) + ((x >> (23 + i)) & 2)) % 3 
+            for i in range(24)]
+
+    @property
     def qs(self):
-        return xp2co1_elem_to_qs(self._data)
+        return QStateMatrix(xp2co1_elem_to_qs(self._data))
 
     def _set_vector(self, rep_4096, rep_leech):
-        qs = obj_to_qstate( rep_4096) 
-        x = tuple_to_leech_mod3(*rep_leech)
+        qs = obj_to_qstate(rep_4096)
+        if isinstance(rep_leech, Integral): 
+            x = rep_leech
+        else:
+            tag = rep_leech[0]
+            if isinstance(tag, str):
+                x = tuple_to_leech_mod3(*rep_leech)
+            else:
+                x = array_to_leech_mod3(rep_leech)
         self._data[:] = xp2co1_qs_to_elem(qs, x)
         self.is_zero = False
        
@@ -116,6 +136,7 @@ class Xs12_Co1_Vector(AbstractRepVector):
 
     def as_mmspace_vector(self):
         return self.space.as_mmspace_vector(self) 
+
 
 
 ######################################################################

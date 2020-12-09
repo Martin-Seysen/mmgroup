@@ -856,3 +856,21 @@ def xp2co1_chain_short_3(QState12 qstate, src, dest):
     if length > 0:
         chk_qstate12(cl.xp2co1_chain_short_3(pqs, length, &src_view[0], 
             &dest_view[0]))
+
+
+def xp2co1_mul_elem_word(e, pa, n):
+    cdef uint32_t n_v_ = n
+    if n_v_ == 0:
+        return 0
+    cdef uint64_t[::1] e_v_ = e
+    cdef uint32_t[::1] pa_v_ = pa
+    cdef int32_t ret_
+    return cl.xp2co1_mul_elem_word(&e_v_[0], &pa_v_[0], n_v_)
+
+def xp2co1_set_elem_word(e, pa, n):
+    cdef uint32_t n_v_ = n
+    cdef uint64_t[::1] e_v_ = e
+    cdef uint32_t[::1] pa_v_ = pa
+    cdef uint32_t * pa_v_1_ = &pa_v_[0] if n_v_ else NULL    
+    return cl.xp2co1_set_elem_word(&e_v_[0], pa_v_1_, n_v_)
+

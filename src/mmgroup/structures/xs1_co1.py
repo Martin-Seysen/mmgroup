@@ -25,7 +25,7 @@ from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_inv_elem
 from mmgroup.clifford12 import xp2co1_copy_elem
 from mmgroup.clifford12 import xp2co1_reduce_elem
 from mmgroup.clifford12 import xp2co1_elem_to_leech_op
-from mmgroup.clifford12 import xp2co1_mul_elem_atom
+from mmgroup.clifford12 import xp2co1_set_elem_word # xp2co1_mul_elem_atom
 from mmgroup.clifford12 import xp2co1_xspecial_vector
 from mmgroup.clifford12 import xp2co1_xspecial_conjugate
 from mmgroup.clifford12 import xp2co1_elem_xspecial
@@ -143,13 +143,18 @@ class Xs12_Co1_Word(AbstractGroupWord):
     def __init__(self, atoms = [], **kwds):
         self.group = kwds['group']
         self._data = np.zeros(26, dtype = np.uint64)
+        a_atoms = np.array(atoms, dtype = np.uint32)
+        xp2co1_set_elem_word(self._data, a_atoms, len(a_atoms))
+        """
         if len(atoms):
             chk_qstate12(xp2co1_mul_elem_atom(self._data, atoms[0], 1))
             for v in atoms[1:]:
                 chk_qstate12(xp2co1_mul_elem_atom(self._data, v, 0))
         else:
             xp2co1_unit_elem(self._data)
-                
+        """
+
+         
     @property
     def data(self):
         return list(map(int, self._data))
