@@ -3,9 +3,10 @@ r"""We deal with the 196884-dimensional representation of the monster.
 The purpose of the ``mmgroup`` package is to give the user the 
 capability to compute in the ``196884``-dimensional representation 
 :math:`\rho_p` of the monster group :math:`\mathbb{M}`. Here
-:math:`\rho_p` is the rational representation  ``196884_x`` of the 
-monster constructed in in :cite:`Con85`, where the coefficients are 
-taken modulo a small odd number ``p``.  This package supports the 
+:math:`\rho` is the rational representation  ``196884_x`` of the 
+monster constructed in in :cite:`Con85`, and :math:`\rho_p`
+is obtained from  :math:`\rho` by taking all matrix coefficients
+modulo a small odd number ``p``.  This package supports the 
 cases ``p = 3, 7, 15, 31, 127, 255``.
 
 We are a bit sloppy, calling :math:`\rho_p` a vector space also

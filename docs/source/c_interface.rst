@@ -74,15 +74,14 @@ Description of the ``mmgroup.mat24_xi`` extension
 
 This extension is used for computing tables containing the monomial
 part of the operation of the generators :math:`\xi^i, i=1,2`.
-These elements operate monomially on the ``98280`` entries of the 
-representation :math:`\rho_p` with tags ``B``, ``C``, ``T``, and ``X``. 
-One table is generated for each exponent :math:`i`.
+One set of tables is generated for each exponent :math:`i`.
 
 Module ``mmgroup.dev.mat24_xi.mat24_xi_ref`` is a pure python 
 substitute for this extension; but calculating the tables for the
 generators :math:`\xi^i` with that extension takes a rather long time.
 
-More details will be documented in a future version of this project.
+
+.. automodule:: mmgroup.dev.mat24_xi.mat24_xi_ref
 
 
 Description of the ``mmgroup.mm`` extension

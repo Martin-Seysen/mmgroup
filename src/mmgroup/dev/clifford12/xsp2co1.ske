@@ -948,10 +948,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
             case 8 + 5:
             case 5:
                v = v % 3;
-               if (v) {
-                   n = i;
-                   goto mainloop_done;
-               }
+               if (v) return ERR_QSTATE12_GX1_TAG;
                break;
             case 8 + 6:
                v ^= 0xfffffff;
@@ -963,8 +960,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
                }
                break;
             default:
-               n = i;
-               goto mainloop_done;
+               return ERR_QSTATE12_GX1_TAG;
         }
         if (multiply) {
             res = qstate12_matmul(&qs_atom, &qs, &qs);
@@ -972,11 +968,8 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
         }
         p_atom = &qs_atom;
     }
-    
-  mainloop_done:    
-    
-    res = xsp2co1_qs_to_elem(&qs, v3, e);
-    return res < 0 ? res : n;
+       
+    return xsp2co1_qs_to_elem(&qs, v3, e);
 }
 
 
@@ -998,19 +991,13 @@ int32_t xsp2co1_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n)
 // %%EXPORT px
 int32_t xsp2co1_mul_elem_atom(uint64_t *e, uint32_t v)
 {
-    uint32_t res = xsp2co1_mul_set_elem_word(e, &v, 1, 0);
-    if (res < 0) return res;
-    if (res == 1) return 0;
-    return ERR_QSTATE12_GX1_TAG;
+    return xsp2co1_mul_set_elem_word(e, &v, 1, 0);
 }
 
 // %%EXPORT px
 int32_t xsp2co1_set_elem_atom(uint64_t *e, uint32_t v)
 {
-    uint32_t res = xsp2co1_mul_set_elem_word(e, &v, 1, 1);
-    if (res < 0) return res;
-    if (res == 1) return 0;
-    return ERR_QSTATE12_GX1_TAG;
+    return xsp2co1_mul_set_elem_word(e, &v, 1, 1);
 }
 
 /*************************************************************************
