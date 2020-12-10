@@ -16,19 +16,19 @@ from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
 
 
 
-from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem 
-from mmgroup.clifford12 import xp2co1_chain_short_3 
-from mmgroup.clifford12 import xp2co1_neg_elem
+from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem 
+from mmgroup.clifford12 import xsp2co1_chain_short_3 
+from mmgroup.clifford12 import xsp2co1_neg_elem
 from mmgroup.clifford12 import error_string, chk_qstate12
-from mmgroup.clifford12 import xp2co1_unit_elem
-from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_inv_elem
-from mmgroup.clifford12 import xp2co1_copy_elem
-from mmgroup.clifford12 import xp2co1_reduce_elem
-from mmgroup.clifford12 import xp2co1_elem_to_leech_op
-from mmgroup.clifford12 import xp2co1_set_elem_word # xp2co1_mul_elem_atom
-from mmgroup.clifford12 import xp2co1_xspecial_vector
-from mmgroup.clifford12 import xp2co1_xspecial_conjugate
-from mmgroup.clifford12 import xp2co1_elem_xspecial
+from mmgroup.clifford12 import xsp2co1_unit_elem
+from mmgroup.clifford12 import xsp2co1_mul_elem, xsp2co1_inv_elem
+from mmgroup.clifford12 import xsp2co1_copy_elem
+from mmgroup.clifford12 import xsp2co1_reduce_elem
+from mmgroup.clifford12 import xsp2co1_elem_to_leech_op
+from mmgroup.clifford12 import xsp2co1_set_elem_word 
+from mmgroup.clifford12 import xsp2co1_xspecial_vector
+from mmgroup.clifford12 import xsp2co1_xspecial_conjugate
+from mmgroup.clifford12 import xsp2co1_elem_xspecial
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -104,11 +104,11 @@ def display_py_xi(name = "elem_xi"):
               
 try:
     #raise ImportError
-    from mmgroup.clifford12 import xp2co1_elem_xi
+    from mmgroup.clifford12 import xsp2co1_elem_xi
 except (ImportError, ModuleNotFoundError):
-    w = "C function xp2co1_elem_xi() not implemented in xsp2co1.c"
+    w = "C function xsp2co1_elem_xi() not implemented in xsp2co1.c"
     warnings.warn(w, UserWarning)
-    def xp2co1_elem_xi(elem, exp):
+    def xsp2co1_elem_xi(elem, exp):
         new_elem = py_xi()[exp % 3]
         for i in range(26):
             elem[i] = new_elem._data[i]
@@ -144,14 +144,14 @@ class Xs12_Co1_Word(AbstractGroupWord):
         self.group = kwds['group']
         self._data = np.zeros(26, dtype = np.uint64)
         a_atoms = np.array(atoms, dtype = np.uint32)
-        xp2co1_set_elem_word(self._data, a_atoms, len(a_atoms))
+        xsp2co1_set_elem_word(self._data, a_atoms, len(a_atoms))
         """
         if len(atoms):
-            chk_qstate12(xp2co1_mul_elem_atom(self._data, atoms[0], 1))
+            chk_qstate12(xsp2co1_mul_elem_atom(self._data, atoms[0], 1))
             for v in atoms[1:]:
-                chk_qstate12(xp2co1_mul_elem_atom(self._data, v, 0))
+                chk_qstate12(xsp2co1_mul_elem_atom(self._data, v, 0))
         else:
-            xp2co1_unit_elem(self._data)
+            xsp2co1_unit_elem(self._data)
         """
 
          
@@ -165,12 +165,12 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
     @property
     def qs(self):
-        return QStateMatrix(xp2co1_elem_to_qs(self._data)).T.reduce()
+        return QStateMatrix(xsp2co1_elem_to_qs(self._data)).T.reduce()
         
     @property
     def leech_op(self):
         a = np.zeros(576, dtype = np.int8)
-        xp2co1_elem_to_leech_op(self._data, a) 
+        xsp2co1_elem_to_leech_op(self._data, a) 
         return a.reshape((24,24))        
 
         
@@ -200,7 +200,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
     def as_xsp(self):
         v = np.zeros(1, dtype = np.uint32)
-        chk_qstate12(xp2co1_xspecial_vector(self._data, v))
+        chk_qstate12(xsp2co1_xspecial_vector(self._data, v))
         return v[0]
 
     def xsp_conjugate(self, v):
@@ -208,7 +208,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
         shape = v.shape
         assert len(shape) <= 1
         v = np.ravel(v)
-        chk_qstate12(xp2co1_xspecial_conjugate(self._data, len(v), v))
+        chk_qstate12(xsp2co1_xspecial_conjugate(self._data, len(v), v))
         if len(shape):
             return list(map(int,v))
         else:
@@ -223,12 +223,12 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
 def cocode_to_xs12co1(g, c):
     res =  g.word_type(group = g)
-    chk_qstate12(xp2co1_op_delta_pi(res._data, c.cocode, 0))
+    chk_qstate12(xsp2co1_op_delta_pi(res._data, c.cocode, 0))
     return res
 
 def autpl_to_xs12co1(g, aut):
     res =  g.word_type(group = g)
-    chk_qstate12(xp2co1_op_delta_pi(res._data, aut.cocode, aut.perm_num))
+    chk_qstate12(xsp2co1_op_delta_pi(res._data, aut.cocode, aut.perm_num))
     return res
 
 def mmgroup_to_xs12co1(g, mm):
@@ -321,34 +321,34 @@ class Xs12_Co1_Group(AbstractGroup):
         return self.word_type(gen_atom(tag, i), group = self)
 
     def _imul(self, g1, g2):
-        chk_qstate12(xp2co1_mul_elem(g1._data, g2._data, g1._data))
+        chk_qstate12(xsp2co1_mul_elem(g1._data, g2._data, g1._data))
         return g1
 
     def _invert(self, g1):
         w = self.word_type([], group=self)
-        chk_qstate12(xp2co1_inv_elem(g1._data, w._data))
+        chk_qstate12(xsp2co1_inv_elem(g1._data, w._data))
         return w
 
     def copy_word(self, g1):
         w = self.word_type([], group=self)
-        xp2co1_copy_elem(g1._data, w._data)
+        xsp2co1_copy_elem(g1._data, w._data)
         return w
 
     def reduce(self, g1, copy = False):
         if copy:
             g1 = self.copy_word(g1)
-        chk_qstate12(xp2co1_reduce_elem(g1._data))
+        chk_qstate12(xsp2co1_reduce_elem(g1._data))
         return self
        
     def _equal_words(self, g1, g2):
-        chk_qstate12(xp2co1_reduce_elem(g1._data))
-        chk_qstate12(xp2co1_reduce_elem(g2._data))
+        chk_qstate12(xsp2co1_reduce_elem(g1._data))
+        chk_qstate12(xsp2co1_reduce_elem(g2._data))
         return (g1._data == g2._data).all()
 
     def _embed_number(self, n):
         w = self.word_type([], group=self)
         if (n == -1):
-            xp2co1_neg_elem(w._data)
+            xsp2co1_neg_elem(w._data)
             n = 1
         if n == 1:
             return w
@@ -356,7 +356,7 @@ class Xs12_Co1_Group(AbstractGroup):
         
     def from_qs(self, qs, x):  
         w = self.word_type([], group=self)
-        w0 =  xp2co1_qs_to_elem (qs, x)
+        w0 =  xsp2co1_qs_to_elem (qs, x)
         for i in range(26):
              w._data[i] =  w0[i]
         return w             
@@ -366,7 +366,7 @@ class Xs12_Co1_Group(AbstractGroup):
  
     def from_xsp(self, x):
         w = self.word_type([], group=self)
-        chk_qstate12(xp2co1_elem_xspecial(w._data, x))
+        chk_qstate12(xsp2co1_elem_xspecial(w._data, x))
         return w
 
 
@@ -384,17 +384,17 @@ def str_leech3(x):
     return "(" + "".join(lst) + ")"
 
 def str_xs12_co1(data, factor = 1):
-    qs0 = xp2co1_elem_to_qs(data)
+    qs0 = xsp2co1_elem_to_qs(data)
     qs = QStateMatrix(qs0) / factor
     return str_leech3(data[0]) + " (x) " + str(qs)
 
 
 try:
-    from mmgroup.clifford12 import xp2co1_error_pool
+    from mmgroup.clifford12 import xsp2co1_error_pool
     def get_error_pool(length):
         assert length > 0
         a = np.zeros(length, dtype = np.uint64)
-        length = xp2co1_error_pool(a, length)
+        length = xsp2co1_error_pool(a, length)
         return list(map(int, a[:length])) 
 except:
     def get_error_pool(length):        

@@ -19,11 +19,54 @@
 #include "mat24_xi_functions.h"
 
 
+// %%EXPORT_KWD MAT24_API
+
+
 // %%GEN h
 #ifndef MAT24_XI_FUNCTIONS_H
 #define MAT24_XI_FUNCTIONS_H
 
+/// @cond DO_NOT_DOCUMENT 
 
+#define MAT24_DLL  // We want a DLL!!
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+  #define MAT24_HELPER_DLL_IMPORT __declspec(dllimport)
+  #define MAT24_HELPER_DLL_EXPORT __declspec(dllexport)
+  #define MAT24_HELPER_DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define MAT24_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define MAT24_HELPER_DLL_IMPORT
+    #define MAT24_HELPER_DLL_EXPORT
+    #define MAT24_HELPER_DLL_LOCAL
+  #endif
+#endif
+
+// Now we use the generic helper definitions above to define MAT24_API 
+// and MAT24_LOCAL.
+// MAT24_API is used for the public API symbols. It either DLL imports 
+// or DLL exports (or does nothing for static build). 
+// MAT24_LOCAL is used for non-api symbols.
+
+#ifdef MAT24_DLL // defined if MAT24 is compiled as a DLL
+  #ifdef MAT24_DLL_EXPORTS // defined if we are building the MAT24 DLL 
+                           // (instead of using it)
+    #define MAT24_API MAT24_HELPER_DLL_EXPORT
+  #else
+    #define MAT24_API MAT24_HELPER_DLL_IMPORT
+  #endif // MAT24_DLL_EXPORTS
+  #define MAT24_LOCAL MAT24_HELPER_DLL_LOCAL
+#else // MAT24_DLL is not defined: this means MAT24 is a static lib.
+  #define MAT24_API
+  #define MAT24_LOCAL
+#endif // MAT24_DLL
+
+/// @endcond
 
 
 // %%GEN ch
@@ -33,12 +76,7 @@ extern "C" {
 // %%GEN c
 
 
-/*************************************************************************
-*** Multiplication in the extraspecial group 2^{{1+24}}
-*************************************************************************/
-
-
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 // %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
 {
@@ -50,91 +88,6 @@ uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
     x1 ^= x2 ^ (scalar << 24);
     return x1;
 }
-
-
-/*************************************************************************
-*** Operation of monomial generators on the extraspecial group 2^{{1+24}}
-*************************************************************************/
-
-
-
-// %%EXPORT p
-uint32_t mat24_xi_op_x_delta(uint32_t x1, uint32_t x, uint32_t delta)
-{
-    uint32_t s;
-    delta ^= MAT24_THETA_TABLE[x & 0x7ff];
-    s = ((x1 >> 12) & delta) ^ (x1 & x);
-    s ^= s >> 6; s ^= s >> 3;
-    s = (0x96 >> (s & 7)) & 1;
-    return x1 ^ (s << 24);
-}
-
-
-// %%EXPORT p
-uint32_t mat24_xi_op_delta_pi(uint32_t x1, uint32_t delta, uint32_t pi)
-{
-    uint32_t xd, xdelta;
-    uint8_t perm[24];
-    uint32_t autpl[12];
-    
-    xd = (x1 >> 12) & 0x1fff;
-    xdelta =  (x1 ^ MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]) & 0xfff;
-    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
-        xd ^=  mat24_scalar_prod(xd, delta) << 12;
-    } else {
-        mat24_perm_to_autpl(delta, perm, autpl);
-        xd = mat24_op_ploop_autpl(xd, autpl);
-        xdelta =  mat24_op_cocode_perm(xdelta, perm);
-    }
-    return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
-}
-
-
-// %%EXPORT p
-uint32_t mat24_xi_op_delta_pi_inv(uint32_t x1, uint32_t delta, uint32_t pi)
-{
-    uint32_t xd, xdelta;
-    uint8_t perm[24], inv_perm[24];
-    uint32_t inv_autpl[12];
-    
-    xd = (x1 >> 12) & 0x1fff;
-    xdelta =  (x1 ^ MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]) & 0xfff;
-    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
-        xd ^=  mat24_scalar_prod(xd, delta) << 12;
-    } else {
-        mat24_perm_to_iautpl(delta, perm, inv_perm, inv_autpl);
-        xd = mat24_op_ploop_autpl(xd, inv_autpl);
-        xdelta =  mat24_op_cocode_perm(xdelta, inv_perm);
-    }
-    return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
-}
-
-
-// %%EXPORT p
-uint32_t mat24_xi_op_y(uint32_t x1, uint32_t y)
-{
-    // We use the formula for conjugation of 
-    // :math:`\tilde{{x}}_d x_\delta` with :math:`y_e` 
-    // in the **guide**, section 
-    // **Implementing generators of the Monster group**.
-    uint32_t s, o, theta_x1, theta_y, odd, eps;
-    odd = 0 - ((x1 >> 11) & 1);
-    theta_x1 = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
-    theta_y = MAT24_THETA_TABLE[y & 0x7ff];
-    s =  (theta_x1 & y) ^ (~odd &  x1 & y); 
-    s ^= s >> 6; s ^= s >> 3;
-    s = (0x96 >> (s & 7)) & 1;
-    o = (theta_y & (x1 >> 12)) ^ (x1 & y);
-    o ^= (theta_y >> 12) & 1 & odd;
-    o ^= o >> 6; o ^= o >> 3;
-    o = (0x96 >> (o & 7)) & 1;
-    eps = theta_x1 ^ (theta_y & ~odd) 
-           ^  MAT24_THETA_TABLE[((x1 >> 12) ^ y) & 0x7ff]; 
-    x1 ^= (eps & 0xfff) ^ ((y << 12) & 0x1fff000 & odd);
-    x1 ^= (s << 24) ^ (o << 23);
-    return x1;
-}
-
 
 
 /*************************************************************************
@@ -450,7 +403,7 @@ void mat24_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *
 }
 #endif
 // %%GEN h
-#endif  // #ifndef MAT24_FUNCTIONS_H
+#endif  // #ifndef MAT24_XI_FUNCTIONS_H
 
 
 

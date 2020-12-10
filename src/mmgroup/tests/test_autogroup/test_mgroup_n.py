@@ -81,7 +81,7 @@ def test_mgroupn(n_tests, rand_tags, verbose = 0):
                 print("lengths of a and b",  len(a), len(b))
                 print("atom comparison", [ x == y for x, y in zip(a, b)] )
                 raise ValueError("Inversion Failed")
-    print("%d rules, %d inversions" % (n_rules, n_inv))
+    #print("%d rules, %d inversions" % (n_rules, n_inv))
 
 
 

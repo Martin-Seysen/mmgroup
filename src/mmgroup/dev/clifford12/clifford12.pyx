@@ -828,7 +828,7 @@ def qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e):
 # Support for the subgroup 2^{1+24}.Co_1 of the monster  
 ####################################################################
 
-def xp2co1_elem_to_qs(e1):
+def xsp2co1_elem_to_qs(e1):
     assert len(e1) >= 26 
     cdef uint64_t e[26]
     cdef uint32_t i
@@ -836,41 +836,42 @@ def xp2co1_elem_to_qs(e1):
     result = QState12(12, 12)
     cdef qstate12_type qs0
     cdef p_qstate12_type pqs = pqs12(result)
-    chk_qstate12(cl.xp2co1_elem_to_qs(e, &qs0))
+    chk_qstate12(cl.xsp2co1_elem_to_qs(e, &qs0))
     chk_qstate12(cl.qstate12_copy(&qs0, pqs))
     return result
 
-def xp2co1_qs_to_elem(QState12 qstate, uint64_t x1):
+def xsp2co1_qs_to_elem(QState12 qstate, uint64_t x1):
     cdef p_qstate12_type pqs = pqs12(qstate)
     result = np.zeros(26, dtype = np.uint64)
     cdef uint64_t[:] result_view = result
-    chk_qstate12(cl.xp2co1_qs_to_elem(pqs, x1, &result_view[0]))
+    chk_qstate12(cl.xsp2co1_qs_to_elem(pqs, x1, &result_view[0]))
     return result
 
-def xp2co1_chain_short_3(QState12 qstate, src, dest):
+def xsp2co1_chain_short_3(QState12 qstate, src, dest):
     cdef uint64_t[:] src_view = src
     cdef uint64_t[:] dest_view = dest
     cdef p_qstate12_type pqs = pqs12(qstate)
     cdef uint32_t length = len(src)
     assert len(dest) >= length
     if length > 0:
-        chk_qstate12(cl.xp2co1_chain_short_3(pqs, length, &src_view[0], 
+        chk_qstate12(cl.xsp2co1_chain_short_3(pqs, length, &src_view[0], 
             &dest_view[0]))
 
 
-def xp2co1_mul_elem_word(e, pa, n):
+def xsp2co1_mul_elem_word(e, pa, n):
     cdef uint32_t n_v_ = n
     if n_v_ == 0:
         return 0
     cdef uint64_t[::1] e_v_ = e
     cdef uint32_t[::1] pa_v_ = pa
     cdef int32_t ret_
-    return cl.xp2co1_mul_elem_word(&e_v_[0], &pa_v_[0], n_v_)
+    return cl.xsp2co1_mul_elem_word(&e_v_[0], &pa_v_[0], n_v_)
 
-def xp2co1_set_elem_word(e, pa, n):
+def xsp2co1_set_elem_word(e, pa, n):
     cdef uint32_t n_v_ = n
     cdef uint64_t[::1] e_v_ = e
     cdef uint32_t[::1] pa_v_ = pa
     cdef uint32_t * pa_v_1_ = &pa_v_[0] if n_v_ else NULL    
-    return cl.xp2co1_set_elem_word(&e_v_[0], pa_v_1_, n_v_)
+    return cl.xsp2co1_set_elem_word(&e_v_[0], pa_v_1_, n_v_)
+
 

@@ -15,11 +15,11 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_space import MMSpace
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 
-from mmgroup.clifford12 import xp2co1_short_2to3
-from mmgroup.clifford12 import xp2co1_elem_to_qs, xp2co1_qs_to_elem 
+from mmgroup.clifford12 import xsp2co1_short_2to3
+from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem 
 from mmgroup.clifford12 import error_string, chk_qstate12
-from mmgroup.clifford12 import xp2co1_neg_elem, xp2co1_elem_row_mod3
-from mmgroup.clifford12 import xp2co1_mul_elem, xp2co1_reduce_elem
+from mmgroup.clifford12 import xsp2co1_neg_elem, xsp2co1_elem_row_mod3
+from mmgroup.clifford12 import xsp2co1_mul_elem, xsp2co1_reduce_elem
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.xs1_co1 import Xs12_Co1, str_xs12_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
@@ -41,13 +41,13 @@ ERR_LEECH = "Tuple does not describe a short Leech lattice vector %s"
 
 def tuple_to_leech_mod3(tag, i0 = -1, i1 = -1):
     leech_mod2 = MMSpace.index_to_short_mod2(tag, i0, i1)
-    res = xp2co1_short_2to3(leech_mod2)
+    res = xsp2co1_short_2to3(leech_mod2)
     if (res == 0):
         err = get_error_pool(15)
         if len(err):
             print("tuple_to_leech_mod3 input:", hex(leech_mod2))
             print("Leech", MMSpace.index_to_short(tag, i0, i1))
-            print("Debug information from function xp2co1_short_2to3:")
+            print("Debug information from function xsp2co1_short_2to3:")
             print([hex(x) for x in err])
         raise ValueError(ERR_LEECH % "mod 3")
     return res
@@ -103,7 +103,7 @@ class Xs12_Co1_Vector(AbstractRepVector):
 
     @property
     def qs(self):
-        return QStateMatrix(xp2co1_elem_to_qs(self._data))
+        return QStateMatrix(xsp2co1_elem_to_qs(self._data))
 
     def _set_vector(self, rep_4096, rep_leech):
         qs = obj_to_qstate(rep_4096)
@@ -115,7 +115,7 @@ class Xs12_Co1_Vector(AbstractRepVector):
                 x = tuple_to_leech_mod3(*rep_leech)
             else:
                 x = array_to_leech_mod3(rep_leech)
-        self._data[:] = xp2co1_qs_to_elem(qs, x)
+        self._data[:] = xsp2co1_qs_to_elem(qs, x)
         self.is_zero = False
        
     def _set_zero(self):
@@ -186,13 +186,13 @@ class Xs12_Co1_Space(AbstractRepSpace):
         a = int(a % 3)
         v1.is_zero =  v1.is_zero or a == 0
         if a == 2 and not v1.is_zero:
-            xp2co1_neg_elem(v1._data)
+            xsp2co1_neg_elem(v1._data)
         return v1
 
     def imul_group_word(self, v1, g):
         if v1.is_zero:
             return v1
-        chk_qstate12(xp2co1_mul_elem(v1._data, g._data, v1._data))
+        chk_qstate12(xsp2co1_mul_elem(v1._data, g._data, v1._data))
         return v1
 
     def vector_get_item(self, v1, index):
@@ -224,7 +224,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
 
     def reduce(self, v):
         if not v.is_zero:
-            chk_qstate12(xp2co1_reduce_elem(v._data))
+            chk_qstate12(xsp2co1_reduce_elem(v._data))
         return v
 
 
@@ -248,7 +248,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
         vm = self.mmspace(0)  
         if INT_BITS == 64:
             START = 116416//32   
-            chk_qstate12(xp2co1_elem_row_mod3(v1._data, 0, 
+            chk_qstate12(xsp2co1_elem_row_mod3(v1._data, 0, 
                  vm.data[START:]))
             return vm
         ERR = "Function not supported on %d-bit systems"
@@ -275,7 +275,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
         
     def dump_vector(self, v1):
         a = np.zeros(4096, dtype = np.uint64)    
-        chk_qstate12(xp2co1_elem_row_mod3(v1._data, 0, a))
+        chk_qstate12(xsp2co1_elem_row_mod3(v1._data, 0, a))
         or_sum = 0
         print("Xs12_Co1 vector:")
         for i, x in enumerate(a):

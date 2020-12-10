@@ -21,20 +21,9 @@ import numpy
 
 """yet to be documented!!!! """
 
+
 def xi_mul_leech(uint32_t x1, uint32_t x2):
     return mat24_xi_mul_leech(x1, x2)
-
-def xi_op_x_delta(x1, x, delta):
-    return mat24_xi_op_x_delta(x1, x, delta)
-
-def xi_op_delta_pi(x1, delta, pi):
-    return mat24_xi_op_delta_pi(x1, delta, pi)
-
-def xi_op_delta_pi_inv(x1, delta, pi):
-    return mat24_xi_op_delta_pi_inv(x1, delta, pi)
-
-def xi_op_y(uint32_t x1, uint32_t y):
-    return mat24_xi_op_y(x1, y)
 
 def xi_g_gray(uint32_t v1):
     return mat24_xi_g_gray(v1)

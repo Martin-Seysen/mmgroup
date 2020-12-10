@@ -278,7 +278,7 @@ def create_display_testvectors():
 
 
 @pytest.mark.qstate
-def test_qs_matrix(verbose = 1):
+def test_qs_matrix(verbose = 0):
     """Basic test for class ``QStateMatrix`` 
     
     It tests the ``__str__ `` method, the conversion to a

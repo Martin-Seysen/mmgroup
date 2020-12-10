@@ -16,12 +16,13 @@ from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.mat24_xi import xi_op_xi, xi_op_y, xi_op_delta_pi
-from mmgroup.mat24_xi import xi_op_delta_pi_inv, xi_op_x_delta
+from mmgroup.mat24_xi import xi_op_xi
 from mmgroup.tests.spaces.clifford_space import Space_ZY
-from mmgroup.clifford12 import xp2co1_chain_short_3, xp2co1_elem_to_qs
-from mmgroup.clifford12 import xp2co1_short_2to3, xp2co1_short_3to2
-from mmgroup.clifford12 import xp2co1_find_chain_short_3
+from mmgroup.clifford12 import xsp2co1_chain_short_3, xsp2co1_elem_to_qs
+from mmgroup.clifford12 import xsp2co1_short_2to3, xsp2co1_short_3to2
+from mmgroup.clifford12 import xsp2co1_find_chain_short_3
+from mmgroup.clifford12 import xsp2co1_conj_leech_word
+
 
 MMSpace3 = Space_ZY.mmspace
 MMGroup3 = MMSpace3.group
@@ -113,7 +114,7 @@ def create_test_vectors():
 
 def tuple_to_leech3(sign, tag, i0, i1):
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)
-    x3 = xp2co1_short_2to3(x2)
+    x3 = xsp2co1_short_2to3(x2)
     if sign == -1:
         x3 ^= 0xffffffffffff
     return x3
@@ -130,10 +131,10 @@ def map_v3(v, g, expected = None, verbose = 1):
     src[0] = 0x8000004
     dest[0] = g.short3
     src[2] = v if isinstance(v, Integral) else tuple_to_leech3(*v)
-    src[1] = xp2co1_find_chain_short_3(src[0], src[2])
+    src[1] = xsp2co1_find_chain_short_3(src[0], src[2])
     qstate = g.qs
     qstate_base = qstate.copy().gate_h(0x800800)
-    xp2co1_chain_short_3(qstate, src, dest)
+    xsp2co1_chain_short_3(qstate, src, dest)
     ok = dest[-1] != 0
     if not expected is None:
         ok = ok and short3_abs_equal(dest[-1], expected)
@@ -147,9 +148,9 @@ def map_v3(v, g, expected = None, verbose = 1):
         for i in range(3):
             print(" ",  str_leech3(src[i]), "->", str_leech3(dest[i]))
         for i in range(3):
-            v2 =  xp2co1_short_3to2(src[i])       
+            v2 =  xsp2co1_short_3to2(src[i])       
             v2c = qstate_base.pauli_conjugate(v2);
-            v3c = xp2co1_short_2to3(v2c)
+            v3c = xsp2co1_short_2to3(v2c)
             print("   %s -> 0x%06x -> 0x%06x -> %s" %
                 (str_leech3(src[i]), v2, v2c, str_leech3(v3c)))
             print("    Debug data pool:\n    ", 
@@ -251,26 +252,15 @@ def ref_conjugate(x, elem):
     return mat_res.pauli_vector()
    
 
-def is_tag_dp(elem):
-    if len(elem) == 2 and elem[0][0] == 'd' and elem[1][0] == 'p':
-        return  elem[0][1],  elem[1][1] 
-    return None
    
+
+TAGS = {'l':6, 'd':1, 'p':2, 'x':3, 'y':4 }
+
 def conjugate_mat24_xi(x, elem):
-    for tag, data in elem:
-        if tag == 'l':
-            x = xi_op_xi(x, data)
-        elif tag == 'y':
-            x = xi_op_y(x, data)
-        elif tag == 'd':
-            x = xi_op_x_delta(x, 0, data)
-        elif tag == 'x':
-            x = xi_op_x_delta(x, data, 0)
-        elif tag == 'p':
-            x = xi_op_delta_pi(x, 0, data)
-        else:
-            raise ValueError("Bad tag %s" % tag)
-    return x
+    data = [(TAGS[tag] << 28) + (d & 0xfffffff) for tag, d in elem]
+    a = np.array(data, dtype = np.uint32)
+    return xsp2co1_conj_leech_word(x, a, len(a))
+
 
 def conjugate_group_testdata():
     max_tag = {'x': 0x1fff, 'y': 0x1fff, 'd': 0xfff, 'p': MAT24_ORDER-1}
@@ -295,6 +285,8 @@ def conjugate_vector_testdata():
         yield randint(0, 0x1ffffff)
 
 
+
+
 @pytest.mark.qstate
 def test_conjugate_mat24xi(verbose = 0):
     for g in conjugate_group_testdata():
@@ -312,10 +304,6 @@ def test_conjugate_mat24xi(verbose = 0):
                 if not ok:
                     ERR = "Error in conjugating with element l"
                     raise ValueError(ERR)
-            t = is_tag_dp(g)
-            if t:
-                assert xi_op_delta_pi(x, *t) == xc
-                assert xi_op_delta_pi_inv(xc, *t) == x
 
 
 

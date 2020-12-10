@@ -1,0 +1,311 @@
+// %%COMMENT
+// For this module we refer to the section
+// 'Computation in the Clifford group' in the guide, see
+// https://mmgroup.readthedocs.io/en/latest/
+
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+#include <string.h>
+#include "mat24_functions.h"
+#include "mat24_xi_functions.h"
+
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+
+/*************************************************************************
+*** Type of a Leech vector
+*************************************************************************/
+
+// %%EXPORT px
+uint32_t xsp2co1_leech_type(uint64_t x)
+// Return ``0x10 * type(x) + subtype(x)`` for a vector ``x``
+// in the Leech lattice modulo ``2``.
+// The type of a vector is half the length of the shortest 
+// representative of a vector in the Leech lattice.
+// The subtype decsribes the double coset of the vector in
+// in ``N_x \ Co_1 / N_x``, where ``Co``_1 is the automorphism 
+// group of the Leech lattice modulo ``2``, and ``N_x`` is the 
+// automorphism group of a vector ``(2,...,2)`` in the standard 
+// basis of the Leech lattice modulo ``N_x`` has structure 
+// ``2^11. Mat_24``, with ``Mat_24`` the Mathieu group operating
+// on 24 elements.
+//
+// In :cite`:`Con85` a vector in th Leech lattice is
+// denotes by ``x_d * x_delta``, where ``d`` is an element of
+// the Golay code and ``delta`` is an eöment of it cocode. 
+// Subtypes can be described as follows:
+//
+// 0: The set contains an element with ``delta = 0``
+// 1: ``delta`` has weight ``1`` for all elements in the set.
+// 2: ``d`` or its complement is an octad and ``delta`` is
+//     even and contained in that octad.
+// 3: ``delta`` has weight ``1`` for all elements in the set.  
+// 4: ``d`` or its complement is an octad and ``delta`` is
+//     even and not contained in that octad.
+// 6: ``d`` has weight 12
+// 8: The singleton containing ``(2,...,2)`` 
+//
+// Valid combinations of type and subtype (hex) are
+//
+// 00,   20, 21, 22,   31, 33, 34, 36,  
+// 40, 42, 43, 44, 46, 48.
+{
+    static uint8_t tab_odd[4] = {
+        0x21, 0x31, 0x43, 0x33
+    };
+    static uint8_t tab_even_scalar1[7] = {
+        0xff, 0xff, 0x34, 0x36, 0x34, 0xff, 0xff
+    };
+    uint_fast32_t  x1, gcodev, cocodev, theta, w, cw,scalar, lsb;
+    x1 = (uint_fast32_t)x;
+    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]; 
+    // put cw = min weight of cocode word
+    cw = mat24_cocode_weight(x1 ^ theta);
+    // Put scalar = scalar product (code, cocode)
+    scalar = (x1 >> 12) &  x1 & 0xfff;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    scalar = (0x96 >> (scalar & 7)) & 1;
+    
+    // Deal with odd cocode first
+    if (x1 & 0x800) return tab_odd[cw-1+scalar]; 
+    
+    // Put w = weight(code word gcodev) / 4
+    w = 0 - ((x1 >> 23) & 1);
+    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+
+    // Deal with even cocode and scalar == 1
+    if (scalar) return tab_even_scalar1[w];
+   
+    switch (w) {
+        case 6:
+            if (cw == 0) return 0x48;
+        case 0: 
+            return cw << 4;
+        case 3:
+            return 0x46;
+        case 4:
+            // Add 1....1 to bit vector x (in vector rep)
+            x1 ^= 0x800000; 
+        default:   // This must be case 2:
+            // Put gcodev = codeword (in vector rep)
+            gcodev = mat24_gcode_to_vect(x1 >> 12); 
+            // Put coccodev = cocode word (in vector rep), such that
+            // the cocode word is a suboctad of gcodev if possible
+            lsb = mat24_lsbit24(gcodev);
+            cocodev = mat24_cocode_syndrome(x1 ^ theta, lsb); 
+            // Put cw = 0x22 if (w ^ cw) & 2 is 2, else put cw = 0x42
+            cw = 0x42 - (((w ^ cw) & 2) << 4);
+            // Return cw if cocodev is a suboctad of gcodev
+            if ((gcodev & cocodev) == cocodev) return cw;
+            // Otherwise vector is of type 4
+            return 0x44;          
+    }
+}
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+
+
+
+
+
+/*************************************************************************
+*** Operation of monomial generators on the extraspecial group 2^{{1+24}}
+*************************************************************************/
+
+
+
+static inline
+uint32_t op_x_delta(uint32_t x1, uint32_t x, uint32_t delta)
+{
+    uint32_t s;
+    delta ^= MAT24_THETA_TABLE[x & 0x7ff];
+    s = ((x1 >> 12) & delta) ^ (x1 & x);
+    s ^= s >> 6; s ^= s >> 3;
+    s = (0x96 >> (s & 7)) & 1;
+    return x1 ^ (s << 24);
+}
+
+
+static inline
+uint32_t op_delta_pi(uint32_t x1, uint32_t delta, uint32_t pi)
+{
+    uint32_t xd, xdelta;
+    uint8_t perm[24];
+    uint32_t autpl[12];
+    
+    xd = (x1 >> 12) & 0x1fff;
+    xdelta =  (x1 ^ MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]) & 0xfff;
+    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
+        xd ^=  mat24_scalar_prod(xd, delta) << 12;
+    } else {
+        mat24_perm_to_autpl(delta, perm, autpl);
+        xd = mat24_op_ploop_autpl(xd, autpl);
+        xdelta =  mat24_op_cocode_perm(xdelta, perm);
+    }
+    return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
+}
+
+
+static inline
+uint32_t op_delta_pi_inv(uint32_t x1, uint32_t delta, uint32_t pi)
+{
+    uint32_t xd, xdelta;
+    uint8_t perm[24], inv_perm[24];
+    uint32_t inv_autpl[12];
+    
+    xd = (x1 >> 12) & 0x1fff;
+    xdelta =  (x1 ^ MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]) & 0xfff;
+    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
+        xd ^=  mat24_scalar_prod(xd, delta) << 12;
+    } else {
+        mat24_perm_to_iautpl(delta, perm, inv_perm, inv_autpl);
+        xd = mat24_op_ploop_autpl(xd, inv_autpl);
+        xdelta =  mat24_op_cocode_perm(xdelta, inv_perm);
+    }
+    return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
+}
+
+
+static inline
+uint32_t op_y(uint32_t x1, uint32_t y)
+{
+    // We use the formula for conjugation of 
+    // :math:`\tilde{{x}}_d x_\delta` with :math:`y_e` 
+    // in the **guide**, section 
+    // **Implementing generators of the Monster group**.
+    uint32_t s, o, theta_x1, theta_y, odd, eps;
+    odd = 0 - ((x1 >> 11) & 1);
+    theta_x1 = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+    theta_y = MAT24_THETA_TABLE[y & 0x7ff];
+    s =  (theta_x1 & y) ^ (~odd &  x1 & y); 
+    s ^= s >> 6; s ^= s >> 3;
+    s = (0x96 >> (s & 7)) & 1;
+    o = (theta_y & (x1 >> 12)) ^ (x1 & y);
+    o ^= (theta_y >> 12) & 1 & odd;
+    o ^= o >> 6; o ^= o >> 3;
+    o = (0x96 >> (o & 7)) & 1;
+    eps = theta_x1 ^ (theta_y & ~odd) 
+           ^  MAT24_THETA_TABLE[((x1 >> 12) ^ y) & 0x7ff]; 
+    x1 ^= (eps & 0xfff) ^ ((y << 12) & 0x1fff000 & odd);
+    x1 ^= (s << 24) ^ (o << 23);
+    return x1;
+}
+
+
+
+/*************************************************************************
+*** Conjugating a vector in the extraspecial group 2^{{1+24}}
+*************************************************************************/
+
+
+// %%EXPORT px
+uint32_t xsp2co1_conj_leech_word(uint32_t x1, uint32_t *pa, uint32_t n)
+// Conjugate the element ``x1`` of the Pauli group with element 
+// ``e`` of the group ``g_{{x1}}`` with the atom
+// given by ``v``. Atom ``v`` is interpreted as follows:
+// Bit 31:      sign of exponent
+// Bit 30..28   tag
+// Bit 27..0    operarand
+// Tag are as follows:
+//
+//                bit
+// Tag  word     length   operand
+//  0:  1         -       unit of the group, no operand
+//  1:  x_delta   12      delta in C* in 'cocode' rep
+//  2:  x_pi      28      pi a permutation number  
+//  3:  x_d       13      d an element of the parker loop
+//  4:  y_d       13      d an element of the parker loop
+//  5:  t**e      28      exponent e, illegal here
+//  6:  xi**e     28      exponent e
+//  7   illegal                  
+// 
+// 
+{
+    uint_fast32_t tag, i, v, y;
+ 
+    x1 &= 0x1ffffff;
+    for (i = 0; i < n; ++i) {
+        v = pa[i];
+        tag = v >> 28;
+        v  &= 0xfffffff;
+        y = 0;
+        switch(tag) {
+            case 8:
+            case 0:
+               break;
+            case 8 + 1:
+            case 1:
+               x1 = op_x_delta(x1, 0, v & 0xfff);
+               break;
+            case 8 + 2:
+               x1 = op_delta_pi_inv(x1, 0, v);
+               break;
+            case 2:
+               x1 = op_delta_pi(x1, 0, v);
+               break;
+            case 8 + 3:
+            case 3:
+               x1 = op_x_delta(x1, v & 0xfff, 0);
+               break;
+            case 8 + 4:
+               y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
+            case 4:
+               y ^= v & 0x1fffUL;
+               x1 = op_y(x1, y & 0x1fff);
+               break;
+            case 8 + 5:
+            case 5:
+               if (v % 3) return (uint32_t)(0-1UL);
+               break;
+            case 8 + 6:
+               v ^= 0xfffffff;
+            case 6:
+               x1 = mat24_xi_op_xi(x1, v % 3);
+               break;
+            default:
+               return (uint32_t)(0-1UL);
+        }
+    }
+    return x1;
+}
+
+
+
+// %%EXPORT px
+uint32_t xsp2co1_conj_leech_atom(uint32_t x1, uint32_t v)
+{
+    return  xsp2co1_conj_leech_word(x1, &v, 1);
+}
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

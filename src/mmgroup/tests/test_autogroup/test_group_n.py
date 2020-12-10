@@ -42,7 +42,7 @@ def make_testcases():
 # Test group multiplication
 ####################################################################
 
-def ll_mul_test_case(g1, g2, verbose = 1):
+def ll_mul_test_case(g1, g2, verbose = 0):
     g1 = group(g1)
     g2 = group(g2)
     g1ref = ref_group(g1) 
@@ -73,7 +73,7 @@ def test_ll_mul(verbose = 0):
 # Test group division 
 ####################################################################
 
-def ll_div_test_case(g1, g2, verbose = 1):
+def ll_div_test_case(g1, g2, verbose = 0):
     g1 = group(g1)
     g2 = group(g2)
     g1ref = ref_group(g1) 

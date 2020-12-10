@@ -241,6 +241,7 @@ mat24_shared = SharedExtension(
     name = "mmgroup.mmgroup_mat24", 
     sources=[
         os.path.join(C_DIR, "mat24_functions.c"),
+        os.path.join(C_DIR, "mat24_xi_functions.c"),
     ],
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -257,6 +258,7 @@ clifford12_shared = SharedExtension(
         os.path.join(C_DIR, "qstate12.c"),
         os.path.join(C_DIR, "qmatrix12.c"),
         os.path.join(C_DIR, "xsp2co1.c"),
+        os.path.join(C_DIR, "xsp2co1_op.c"),
     ],
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
@@ -282,7 +284,6 @@ mat24_extension = Extension("mmgroup.mat24",
 mat24_xi_extension = Extension("mmgroup.mat24_xi",
         sources=[
             os.path.join(PXD_DIR, "mat24_xi.pyx"),
-            os.path.join(C_DIR, "mat24_xi_functions.c"),
         ],
         #libraries=["m"] # Unix-like specific
         include_dirs = [ C_DIR ],
