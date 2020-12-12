@@ -1,8 +1,10 @@
-// This is a C implementation of the functionality of Python class
-// Mat24Xi as described in the sequel. Note that all exported funtions
-// in this module are prefixed with 'mat24_xi'
+/** @file mat24_xi_functions.c
+ File ``mat24_xi_function.c`` implements the functionality described
+ in the document *The C interface of the mmgroup project*, 
+ section *Description of the mmgroup.mat24_xi extension*. We use the
+ terminology introduced at the beginning of that section.
+*/
 
-// %%PY_DOCSTR Mat24_xi_module_doc
 
 
 
@@ -75,10 +77,15 @@ extern "C" {
 #endif
 // %%GEN c
 
+/**
+  @brief Return product of two elements the group \f$Q_{{x0}}\f$.
 
+  Here all elements of the group \f$Q_{{x0}}\f$ are encoded in
+  ``Leech lattice encoding``. The function returns the
+  product of the elements ``x1`` and ``x2`` of \f$Q_{{x0}}\f$.
+*/
 // %%EXPORT px
 uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
-// %%PY_DOCSTR Mat24Xi_doc.xi_mul_leech
 {
     uint_fast32_t scalar;      
     scalar = (x2 >> 12) &  x1 & 0xfff;
@@ -94,13 +101,13 @@ uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 *** Tables for operation of xi on gray code and cocode vectors
 *************************************************************************/
 
-// // %%USE_TABLE
+/// @cond DO_NOT_DOCUMENT 
+
 static const uint8_t MAT24_XI_G_GRAY_TABLE[64] = { 
 // %%TABLE Mat24_xi_g_gray_table , uint8
 };
 
 
-// // %%USE_TABLE
 static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = { 
 // %%TABLE Mat24_xi_g_cocode_table , uint8
 };
@@ -110,35 +117,63 @@ static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = {
 
 #define expand_gray(x)  (((x) & 0x0f) + (((x) & 0x30) << 6))
 
+
+/// @endcond  
+
+/**
+  @brief Compute function \f$\gamma\f$ on a Golay code element.
+
+  Here parameter \f$v\f$ is encoded in ``gcode`` representation,
+  and the return value \f$\gamma(v)\f$ is encoded in ``cocode``
+  representation. These representations are defined in 
+  the *Description of the mmgroup.mat24 extension*.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_g_gray(uint32_t v1)
+uint32_t mat24_xi_g_gray(uint32_t v)
 // %%PY_DOCSTR Mat24Xi_doc.xi_g_gray
 {
-    return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v1)]);
+    return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v)]);
 }
 
 
+/**
+  @brief Compute function \f$w_2\f$ on a Golay code element.
+
+  Here parameter \f$v\f$ is encoded in ``gcode`` representation 
+  as defined in the *Description of the mmgroup.mat24 extension*.
+  The function returns \f$w_2(v)\f$, which may be 0 or 1.  
+*/
 // %%EXPORT p
-uint32_t mat24_xi_w2_gray(uint32_t v1)
-// %%PY_DOCSTR Mat24Xi_doc.xi_w2_gray
+uint32_t mat24_xi_w2_gray(uint32_t v)
 {
-    return MAT24_XI_G_GRAY_TABLE[compress_gray(v1)] >> 7;
+    return MAT24_XI_G_GRAY_TABLE[compress_gray(v)] >> 7;
 }
 
+/**
+  @brief Compute function \f$\gamma\f$ on a Golay cocode element.
 
+  Here parameter \f$v\f$ and the return value \f$\gamma(v)\f$
+  are vencoded in ``cocode`` representation, as defined in 
+  the *Description of the mmgroup.mat24 extension*.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_g_cocode(uint32_t v1)
+uint32_t mat24_xi_g_cocode(uint32_t v)
 // %%PY_DOCSTR Mat24Xi_doc.xi_g_cocode
 {
-    return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(v1)]);
+    return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(v)]);
 }
 
+/**
+  @brief Compute function \f$w_2\f$ on a Golay cocode element.
 
+  Here parameter \f$v\f$ is encoded in ``cocode`` representation 
+  as defined in the *Description of the mmgroup.mat24 extension*. 
+  The function returns \f$w_2(v)\f$, which may be 0 or 1.  
+*/
 // %%EXPORT p
-uint32_t mat24_xi_w2_cocode(uint32_t v1)
-// %%PY_DOCSTR Mat24Xi_doc.xi_w2_cocode
+uint32_t mat24_xi_w2_cocode(uint32_t v)
 {
-    return MAT24_XI_G_COCODE_TABLE[compress_gray(v1)] >> 7;
+    return MAT24_XI_G_COCODE_TABLE[compress_gray(v)] >> 7;
 }
 
 
@@ -146,35 +181,41 @@ uint32_t mat24_xi_w2_cocode(uint32_t v1)
 *** Operation of xi on the extraspecial group 2^{{1+24}}
 *************************************************************************/
 
-
+/**
+  @brief Conjugate an element of the group \f$Q_{{x0}}\f$ with \f$\xi^e\f$ 
+  
+  The function returns \f$\xi^{{-e}} x \xi^e\f$ for an element 
+  \f$x\f$  of the group \f$Q_{{x0}}\f$. Input \f$x\f$ and the
+  return value are encoded in *Leech lattice encoding* as described
+  above.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
-// %%PY_DOCSTR Mat24Xi_doc.xi_op_xi
+uint32_t mat24_xi_op_xi(uint32_t x, uint32_t e)
 {
     uint_fast32_t tv, tc; 
-    // reduce u_exp mod 3, no action if u_exp is 0 (mod 3)
-    if ((u_exp = u_exp % 3) == 0) return x1;
-    // map u_exp = 1, 2   to  u_exp = -1,  0
-    u_exp -= 2;   
+    // reduce e mod 3, no action if e is 0 (mod 3)
+    if ((e = e % 3) == 0) return x;
+    // map e = 1, 2   to  e = -1,  0
+    e -= 2;   
     // put tv = scalar product of gray parts of code and cocode
-    tv = (x1 >> 12) & x1 & 0xc0f;
+    tv = (x >> 12) & x & 0xc0f;
     tv = 0x6996UL >> ((tv ^ (tv >> 10)) & 0xf);
     // xor scalar product to sign
-    x1 ^= (tv & 1)  << 24; 
+    x ^= (tv & 1)  << 24; 
     // tv = w2(code), g(code);   tc = w2(cocode), g(cocode);      
-    tv = MAT24_XI_G_GRAY_TABLE[compress_gray(x1 >> 12)]; 
-    tc = MAT24_XI_G_COCODE_TABLE[compress_gray(x1)];
-    // if old u_exp = 1: x1 &= ~0xc0f000, i.e. kill gray code part
-    // if old u_exp = 2: x1 &= ~0xc0f, i.e. kill gray cocode part
-    x1 &= ~(0xc0fUL << (u_exp & 12)); 
+    tv = MAT24_XI_G_GRAY_TABLE[compress_gray(x >> 12)]; 
+    tc = MAT24_XI_G_COCODE_TABLE[compress_gray(x)];
+    // if old e = 1: x &= ~0xc0f000, i.e. kill gray code part
+    // if old e = 2: x &= ~0xc0f, i.e. kill gray cocode part
+    x &= ~(0xc0fUL << (e & 12)); 
     // xor g(code) to cocode and g(cocode) to code
-    x1 ^= expand_gray(tv);       // xor g(code) to cocode
-    x1 ^= expand_gray(tc) << 12; // xor g(cocode) to code
-    // if old u_exp = 1: x1 ^= (tc>>7)<<24 // xor w2(cocode) to sign
-    // if old u_exp = 2: x1 ^= (tv>>7)<<24 // xor w2(code) to sign
-    tv ^= (tc ^ tv) & u_exp; 
-    x1 ^= (tv >> 7) << 24;
-    return x1;
+    x ^= expand_gray(tv);       // xor g(code) to cocode
+    x ^= expand_gray(tc) << 12; // xor g(cocode) to code
+    // if old e = 1: x ^= (tc>>7)<<24 // xor w2(cocode) to sign
+    // if old e = 2: x ^= (tv>>7)<<24 // xor w2(code) to sign
+    tv ^= (tc ^ tv) & e; 
+    x ^= (tv >> 7) << 24;
+    return x;
 }
 
 
@@ -182,30 +223,36 @@ uint32_t mat24_xi_op_xi(uint32_t x1, uint32_t u_exp)
 *** Conversion between 'short' and 'Leech' representation of vectors
 *************************************************************************/
 
-
+/**
+  @brief Convert the encoding of an element of the group \f$Q_{{x0}}\f$
+  
+  The function converts an element \f$x\f$ of the group \f$Q_{{x0}}\f$
+  from *Leech lattice encoding* to *Short vector encoding* and returns
+  the converted element.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_leech_to_short(uint32_t x1)
+uint32_t mat24_xi_leech_to_short(uint32_t x)
 // %%PY_DOCSTR Mat24Xi_doc.xi_leech_to_short
 {
     uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
-    sign = (x1 >> 24) & 1;
-    gcodev = mat24_gcode_to_vect(x1 >> 12);
+    sign = (x >> 24) & 1;
+    gcodev = mat24_gcode_to_vect(x >> 12);
     // transform linear to internal Leech lattice rep
-    x1 ^= MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff] & 0xfff; 
-    cocodev = mat24_cocode_syndrome(x1, mat24_lsbit24(gcodev));
+    x ^= MAT24_THETA_TABLE[(x >> 12) & 0x7ff] & 0xfff; 
+    cocodev = mat24_cocode_syndrome(x, mat24_lsbit24(gcodev));
     // put w = weight(code word gcodev) / 4
-    w = 0 - ((x1 >> 23) & 1);
-    w = (((MAT24_THETA_TABLE[(x1>>12) & 0x7ff] >> 12) & 7) ^ w) 
+    w = 0 - ((x >> 23) & 1);
+    w = (((MAT24_THETA_TABLE[(x>>12) & 0x7ff] >> 12) & 7) ^ w) 
                  + (w & 7);  
-    if (x1 & 0x800) {  // case odd cocode
+    if (x & 0x800) {  // case odd cocode
         uint_fast32_t scalar;      
         if (cocodev & (cocodev - 1)) return 0;
-        scalar = (x1 >> 12) &  x1 & 0xfff;
+        scalar = (x >> 12) &  x & 0xfff;
         scalar ^= scalar >> 6;
         scalar ^= scalar >> 3;
         scalar = (0x96 >> (scalar & 7));
         if ((scalar ^ w) & 1) return 0;
-        code = ((x1 & 0x7ff000) >> 7) | mat24_lsbit24(cocodev);
+        code = ((x & 0x7ff000) >> 7) | mat24_lsbit24(cocodev);
         box = 4 + (code >> 15);
         code &= 0x7fff;
     } else {       // case even cocode
@@ -213,7 +260,7 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
         switch (w) {
             case 4:
                 gcodev ^= 0xffffff;
-                x1 ^= 0x800000;
+                x ^= 0x800000;
                 // fall through to case 2
             case 2:
                 c =  mat24_extract_b24(cocodev, gcodev);
@@ -224,7 +271,7 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
                 if ( (cocodev & gcodev) != cocodev
                     ||  (y2 ^ 2 ^ w) & 3 ) return 0;
                 c ^=  (0 - (c >> 7)) & 0xff; 
-                code = (c >> 1) | (mat24_gcode_to_octad(x1 >> 12, 1) << 6);
+                code = (c >> 1) | (mat24_gcode_to_octad(x >> 12, 1) << 6);
                 if (code >= 24000) { 
                     //  24000 = (15 + 360) * 64
                     code -= 24000; box = 3;
@@ -251,14 +298,20 @@ uint32_t mat24_xi_leech_to_short(uint32_t x1)
 }
 
 
+/**
+  @brief Convert the encoding of an element of the group \f$Q_{{x0}}\f$
+  
+  The function converts an element \f$x\f$ of the group \f$Q_{{x0}}\f$
+  from *Short vector encoding* to *Leech lattice encoding* and returns
+  the converted element.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_short_to_leech(uint32_t x1)
-// %%PY_DOCSTR Mat24Xi_doc.xi_short_to_leech
+uint32_t mat24_xi_short_to_leech(uint32_t x)
 {
-    uint_fast32_t sign = (x1 >> 15) & 1;
-    uint_fast32_t code = x1 & 0x7fff;
+    uint_fast32_t sign = (x >> 15) & 1;
+    uint_fast32_t code = x & 0x7fff;
     uint_fast32_t gcode = 0, cocode = 0, octad = 0xffff;
-    switch(x1 >> 16) {
+    switch(x >> 16) {
         case 1:
             if (code < 1536) {  
                 //  1536 = 2 * 24 * 32 
@@ -330,15 +383,15 @@ uint32_t mat24_xi_short_to_leech(uint32_t x1)
 
 
 // %%EXPORT p
-uint32_t mat24_xi_op_xi_short(uint32_t x1, uint32_t u_exp)
+uint32_t mat24_xi_op_xi_short(uint32_t x, uint32_t u)
 // %%PY_DOCSTR Mat24Xi_doc.xi_op_xi_short
 {
-    uint_fast32_t y = mat24_xi_short_to_leech(x1);
-    if (y == 0) return x1;
-    y = mat24_xi_op_xi(y, u_exp);
-    if (y == 0) return x1;
+    uint_fast32_t y = mat24_xi_short_to_leech(x);
+    if (y == 0) return x;
+    y = mat24_xi_op_xi(y, u);
+    if (y == 0) return x;
     y = mat24_xi_leech_to_short(y);
-    return y ? y : x1;
+    return y ? y : x;
 }
 
 

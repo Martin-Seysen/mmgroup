@@ -1,8 +1,8 @@
 
 
-================================
-The C interface
-================================
+======================================
+The C interface of the mmgroup project
+======================================
 
 
 Introduction
@@ -82,6 +82,11 @@ generators :math:`\xi^i` with that extension takes a rather long time.
 
 
 .. automodule:: mmgroup.dev.mat24_xi.mat24_xi_ref
+
+C interface
+-----------
+
+.. doxygenfile:: mat24_xi_functions.c
 
 
 Description of the ``mmgroup.mm`` extension

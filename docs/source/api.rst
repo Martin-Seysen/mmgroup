@@ -87,6 +87,8 @@ The Parker loop
 .. autofunction:: mmgroup.PLoopZ
 
 
+.. _octads_label:
+
 Octads and suboctads
 --------------------
 
