@@ -304,6 +304,8 @@ uint32_t mat24_xi_leech_to_short(uint32_t x)
   The function converts an element \f$x\f$ of the group \f$Q_{{x0}}\f$
   from *Short vector encoding* to *Leech lattice encoding* and returns
   the converted element.
+  
+  An invalid value \f$x\f$ is converted to 0.
 */
 // %%EXPORT p
 uint32_t mat24_xi_short_to_leech(uint32_t x)
@@ -381,10 +383,18 @@ uint32_t mat24_xi_short_to_leech(uint32_t x)
 *** Operation of xi on sort vectors in 'short' representation
 *************************************************************************/
 
-
+/**
+  @brief Conjugate an element of the group \f$Q_{{x0}}\f$ with \f$\xi^e\f$ 
+  
+  The function returns \f$\xi^{{-e}} x \xi^e\f$ for an element 
+  \f$x\f$  of the group \f$Q_{{x0}}\f$. In contrast to function
+  mat24_xi_op_xi, the input \f$x\f$ and the return value are encoded 
+  in *short vector encoding* as described above.
+  
+  Any invalid element \f$x\f$ is converted to \f$x\f$.
+*/
 // %%EXPORT p
 uint32_t mat24_xi_op_xi_short(uint32_t x, uint32_t u)
-// %%PY_DOCSTR Mat24Xi_doc.xi_op_xi_short
 {
     uint_fast32_t y = mat24_xi_short_to_leech(x);
     if (y == 0) return x;
@@ -400,24 +410,58 @@ uint32_t mat24_xi_op_xi_short(uint32_t x, uint32_t u)
 *************************************************************************/
 
 
+/**
+  @brief Create table for operation of \f$\xi^e\f$,
+  
+  The function creates a table ``ptab`` such that ``ptab[i]`` encodes
+  \f$\xi^{{-e}} x \xi^e\f$, where \f$x = 2^{{16}} \cdot b + i\f$ 
+  encodes a short vector in \f$Q_{{x0}}\f$ in *Short vector encoding*.
+  The length of the gererated table is 
+  \f$l(b) =  2496, 23040, 24576, 32768, 32768\f$ for 
+  \f$b = 1,2,3,4,5\f$. 
+  
+  Here ``ptab[i]`` contains the lower 16 bits of the table entry only, 
+  with bit 15 equal to the sign bit. The upper 3 bits of ``ptab[i]``
+  depend on ``b`` only; they can be deduced from the permutation
+  of the boxes ``b = 1,...,5`` by \f$\xi\f$ described above.
+  
+  Not all table indices ``i`` correspond to short vectors. We put
+  ``p[i] = i`` for all invalid indices ``i``.
+*/
 // %%EXPORT p
-uint32_t mat24_xi_make_table(uint32_t u_box, uint32_t u_exp, uint16_t *ptab)
+uint32_t mat24_xi_make_table(uint32_t b, uint32_t e, uint16_t *ptab)
 // generate table, yet to be documented!!
 {
     static uint16_t t_size[6] = {
         0, 2496, 23040, 24576, 32768, 32768
     };
-    uint_fast32_t i, len = u_box < 6 ? t_size[u_box] : 0;
-    u_box <<= 16;
+    uint_fast32_t i, len = b < 6 ? t_size[b] : 0;
+    b <<= 16;
     for (i = 0; i < len; ++i) ptab[i] = 
-         (uint16_t)(mat24_xi_op_xi_short(u_box + i, u_exp) & 0xffff);
+         (uint16_t)(mat24_xi_op_xi_short(b + i, e) & 0xffff);
     return len;
 }
 
-
+/**
+  @brief Invert a table created by function ``mat24_xi_make_table``
+  
+  The function computes the inverse table of a table ``ptab``
+  of length ``len`` created by function ``mat24_xi_make_table`` 
+  and stores the inverse table in the buffer referred by ``pres``.
+  
+  Parameter ``len_res`` is the length of the returned table.
+  Parameter ``ncols`` must be 24 or 32. This means that
+  only entries ``ptab[32*i + j]`` with ``0 <= j < ncols`` are
+  valid. 
+  
+  The details of the inversion of such a table are rather tricky;
+  they are coded in class 
+  ``mmgroup.dev.mm_basics.mm_tables_xi.Pre_MM_TablesXi``. The 
+  purpose of this function is to speed up the calculations in
+  that class.
+*/  
 // %%EXPORT p
 void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_t *pres, uint32_t len_res)
-// invert table, yet to be documented!!
 {
     uint_fast32_t i, r;
     for (i = 0; i < len_res; ++i) pres[i] = 0;
@@ -431,10 +475,20 @@ void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_
 }
 
 
-
+/**
+  @brief Split a table created by function ``mat24_xi_invert_table``
+  
+  The function splits the sign bit  from a table ``ptab`` of length
+  ``len`` created by function ``mat24_xi_invert_table`` and replaces
+  ``ptab[i]`` by ``(ptab[i] & 0x7fff) % mod``. The sign bit
+  ``ptab[32*i+j] >> 15`` is stored in bit ``j`` of entry 
+  ``psign[j]``. 
+  
+  The purpose of this function is to speed up the computations in 
+  class ``mmgroup.dev.mm_basics.mm_tables_xi.Pre_MM_TablesXi``.
+*/  
 // %%EXPORT p
 void mat24_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *psign)
-// split table, yet to be documented!!
 {
     uint_fast32_t i, j, r, sign;
     len >>= 5;
