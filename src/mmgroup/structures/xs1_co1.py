@@ -199,9 +199,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
 
     def as_xsp(self):
-        v = np.zeros(1, dtype = np.uint32)
-        chk_qstate12(xsp2co1_xspecial_vector(self._data, v))
-        return v[0]
+        return chk_qstate12(xsp2co1_xspecial_vector(self._data))
 
     def xsp_conjugate(self, v):
         v = np.array(v, dtype = np.uint64, copy=True)

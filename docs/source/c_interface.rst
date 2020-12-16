@@ -170,25 +170,21 @@ A quadratic state vector :math:`v` of type
 vector in a vector space  :math:`V` of dimension :math:`2^n`, 
 or an  :math:`2^{n-k} \times 2^k` matrix.
 
-The basis of vector space ``V`` is labelled by the elements of the 
-Boolean vector space :math:`\mathbb{F}_2^n`. In C and python 
+The basis of vector space :math:`V` is labelled by the elements of 
+the  Boolean vector space :math:`\mathbb{F}_2^n`. In C and python 
 programs we represent the element :math:`(x_{n-1}, \ldots, x_{0})` 
 of :math:`\mathbb{F}_2^n` by the integer 
 :math:`\sum_{0 \leq i < n} 2^i \cdot x_i`. This leads to a natural
-representation of ``v`` as a one-dimensional complex array of
-length :math:`2^n`, starting with index ``0``.
+representation of a vector :math:`v \in V` as a one-dimensional 
+complex array of length :math:`2^n`, starting with index 
+:math:`0`.
 
 A quadratic state matrix is a quadratic shape vector augmented
-by an information about its matrix shape. For mor details werefer 
-to the description of struct ``qbstate12_type`` in file
+by an information about its matrix shape. For more details we 
+refer to the description of struct ``qbstate12_type`` in file
 ``clifford12.h``.
 
-The current implementation requires ``n + m <= 63``. This can easily
-be generalized to larger dimension, but we do not need this for our 
-purposes.
-
-
-   
+  
 Header file ``clifford12.h``
 ----------------------------
    .. doxygenfile:: clifford12.h

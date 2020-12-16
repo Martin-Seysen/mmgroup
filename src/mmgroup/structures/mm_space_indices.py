@@ -425,10 +425,10 @@ def rand_str_to_scalar(p, value):
 
     The return value x satisfies 0 <= x < p.
     """
-    if s == 'u': return 1
-    if s == 's': return mod_rand_unit(p)
-    if s == 'n': return mod_rand_invertible(p)
-    if s == 'r': return randint(0, p-1)
+    if value == 'u': return 1
+    if value == 's': return mod_rand_unit(p)
+    if value == 'n': return mod_rand_invertible(p)
+    if value == 'r': return randint(0, p-1)
     err = "Illegal scalar in tuple for MM vector"
     raise TypeError(err)
 

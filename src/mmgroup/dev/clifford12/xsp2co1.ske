@@ -587,7 +587,7 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *pv)
 
 
 // %%EXPORT px
-int32_t xsp2co1_xspecial_vector(uint64_t *elem, uint32_t *pv)
+int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 {
     int32_t res;
     qstate12_type qs, qs1;
@@ -604,8 +604,7 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem, uint32_t *pv)
     e0 = short_3_reduce(elem[0]);
     if (e0 == STD_V3_NEG) v ^= 0x1000000;
     else if (e0 != STD_V3) return ERR_QSTATE12_NOTIN_XSP;
-    *pv = conv_pauli_vector_xspecial((uint32_t) v);
-    return 0;
+    return (int32_t)(conv_pauli_vector_xspecial((uint32_t) v));
 }
 
 

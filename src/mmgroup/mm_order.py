@@ -331,12 +331,13 @@ def get_order_vector(recompute = False, verbose = 0):
     If ``recompute`` is True then the data for computing the order
     vector is always recomputed.
     """
+    global order_vector
     if recompute:
+        order_vector = None
         try:
             os.remove(FILENAME)
         except:
             pass
-    global order_vector
     if not order_vector is None:
         return order_vector
     try:

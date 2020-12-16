@@ -482,7 +482,7 @@ void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_
   ``len`` created by function ``mat24_xi_invert_table`` and replaces
   ``ptab[i]`` by ``(ptab[i] & 0x7fff) % mod``. The sign bit
   ``ptab[32*i+j] >> 15`` is stored in bit ``j`` of entry 
-  ``psign[j]``. 
+  ``psign[i]``. 
   
   The purpose of this function is to speed up the computations in 
   class ``mmgroup.dev.mm_basics.mm_tables_xi.Pre_MM_TablesXi``.
