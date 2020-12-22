@@ -301,6 +301,127 @@ uint32_t xsp2co1_conj_leech_atom(uint32_t x1, uint32_t v)
 }
 
 
+
+
+/*************************************************************************
+*** Convert type-4 vector mod 3 to type-4 vector mod 2
+*************************************************************************/
+
+
+static inline uint64_t short_3_reduce(uint64_t x)
+{
+    uint64_t a = (x & (x >> 24)) & 0xffffffUL;
+    x ^=  a | (a << 24);
+    return x  & 0xffffffffffffULL;
+}
+
+
+static inline uint32_t parity12(uint64_t x)
+{
+    x ^= x >> 6; x ^= x >> 3;
+    return (0x96 >> (x & 7)) & 1;
+}
+
+
+
+static inline uint32_t parity24(uint64_t x)
+{
+    x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
+    return (0x96 >> (x & 7)) & 1;
+}
+
+
+// %%EXPORT px
+uint64_t xsp2co1_type4_3to2(uint64_t x)
+{
+    uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
+    x = short_3_reduce(x);
+    // Let h be the support of x, i.e. the bit vector of nonzero
+    // coordinates of the vector x (modulo 3)
+    h = ((x >> 24) | x) & 0xffffff;
+    // Let w1 and w2 be the number of indices with coordinate 1 and 2
+    w = mat24_bw24((uint32_t)h);
+    // Compute ``gcode`` and ``cocode`` for vector x. Return 0 if we 
+    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
+    // has to be corrected by a term 0xffffff. At the end of the
+    // switch statemnt, ``gcode`` might not correspond to a Golay
+    // code vector; this means that x is not of type 4.
+    switch (w) {
+        case 22:
+            // type (5**1, 3**2, 1**21)
+            syn = mat24_syndrome((uint32_t)x, 0);
+            gcodev = (x ^ syn) & 0xffffff;
+            t = h & syn;
+            cocodev = t | (0xffffff & ~h);
+            if ((t == 0) || (t & (t-1))) return 0;
+            omega = 0;
+            break;              
+        case 19:
+            // type (3**5, 1**19)
+            w1 = mat24_bw24((uint32_t)x);
+            x1 = ((w1 & 1) ? x : (x >> 24)) & 0xffffff;
+            syn = mat24_syndrome(x1, 0);
+            cocodev = ~h & 0xffffff;
+            if (syn & h) syn = cocodev;            
+            gcodev = (x1 ^ syn) & 0xffffff;
+            omega = 0;
+            break;
+        case 16:
+            // type (2**16, 0**8)
+            w1 = mat24_bw24((uint32_t)x);
+            if (w1 & 1) return 0;
+            gcodev = h;
+            omega = w1 >> 1;
+            cocodev = x & 0xfffffff;
+            break;
+        case 13:
+            // type (4**1, 2**12, 0**11)
+        case 10:
+            // type (4**2, 2**10, 0**14)
+            syn = mat24_syndrome(h & 0xffffff, 0);
+            if ((h & syn) != syn) return 0;                  
+            gcodev = h ^ syn;
+            cocodev = syn | (x & ~syn & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + parity24(syn & x) + w;
+            break; 
+        case 7:
+            // type (6**1, 2**7, 0**16)
+            syn = mat24_syndrome(h, 0);
+            if (syn & (syn - 1)) return 0;
+            gcodev = h ^ syn;
+            cocodev = (x & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            cocodev |=  (0 - (w1 & 1)) & syn;
+            omega = ((w1 + 1) >> 1) + 1;
+            break; 
+        case 4:
+            gcodev = 0;
+            cocodev = h;
+            omega = parity24(x);
+            break;
+        case 1:
+            gcodev = cocodev = 0;
+            omega = 1;
+            break;    
+        default:
+            return 0;        
+    }
+    gcodev = mat24_vect_to_gcode(gcodev); 
+    if (gcodev & 0xfffff000UL) return 0;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    // correct ``gcodev`` by term ``Omega`` if omega is odd
+    gcodev ^= (omega & 1) << 11;         
+    res = (gcodev << 12) ^ cocodev;
+    // Correct an odd result
+    if (w >= 19 and parity12(res & (res >> 12))): res ^= 0x800000;
+    return res;
+}
+
+
+
 // %%GEN ch
 #ifdef __cplusplus
 }

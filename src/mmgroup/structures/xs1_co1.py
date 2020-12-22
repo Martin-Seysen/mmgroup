@@ -101,17 +101,7 @@ def display_py_xi(name = "elem_xi"):
     s += "};\n"
     return s
 
-              
-try:
-    #raise ImportError
-    from mmgroup.clifford12 import xsp2co1_elem_xi
-except (ImportError, ModuleNotFoundError):
-    w = "C function xsp2co1_elem_xi() not implemented in xsp2co1.c"
-    warnings.warn(w, UserWarning)
-    def xsp2co1_elem_xi(elem, exp):
-        new_elem = py_xi()[exp % 3]
-        for i in range(26):
-            elem[i] = new_elem._data[i]
+
 
 ###########################################################################
 # Word class for the group G_{x0}

@@ -999,6 +999,74 @@ int32_t xsp2co1_set_elem_atom(uint64_t *e, uint32_t v)
     return xsp2co1_mul_set_elem_word(e, &v, 1, 1);
 }
 
+
+/*************************************************************************
+*** Multiply vector mod 3 by an atom group element
+*************************************************************************/
+
+static inline
+uint64_t mul_vector3(uint64_t v3, uint32_t *pa, uint32_t n)
+{
+    uint_fast32_t tag, i, v;
+    uint8_t perm[24], perm_i[24];
+
+    for (i = 0; i < n; ++i) {
+        v = pa[i];
+        tag = v >> 28;
+        v  &= 0xfffffff;
+        switch(tag) {
+            case 8:
+            case 0:
+            case 8 + 1:
+            case 1:
+            case 8 + 3:
+            case 3:
+               break;
+            case 8 + 2:
+               mat24_m24num_to_perm(v, perm);
+               mat24_inv_perm(perm, perm_i);
+               v3 = mul_mod3_pi(v3, perm_i);
+               break;
+            case 2:
+               mat24_m24num_to_perm(v, perm);
+               v3 = mul_mod3_pi(v3, perm);
+               break;
+            case 8 + 4:
+            case 4:
+               v3 = mul_mod3_y(v3, v & 0x1fffUL);
+               break;
+            case 8 + 5:
+            case 5:
+               v = v % 3;
+               if (v) return 0xffff000000000000ULL;
+               break;
+            case 8 + 6:
+               v ^= 0xfffffff;
+            case 6:
+               v = v % 3;
+               if (v)  v3 = mul_mod3_xi(v3, v - 1);
+               break;
+            default:
+               return 0xffff000000000000ULL;
+        }
+    }       
+    return short_3_reduce(v3);
+}
+
+
+
+// %%EXPORT p
+uint64_t xsp2co1_mul_vector3_word(uint64_t v3, uint32_t *pa, uint32_t n)
+{
+    return mul_vector3(v3, pa, n);
+}
+
+// %%EXPORT px
+uint64_t xsp2co1_mul_vector3_atom(uint64_t v3, uint32_t v)
+{
+    return mul_vector3(v3, &v, 1);
+}
+
 /*************************************************************************
 *** Converting a an element to a vector of the monster rep modulo 3
 *************************************************************************/

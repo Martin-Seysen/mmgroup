@@ -858,6 +858,16 @@ def xsp2co1_chain_short_3(QState12 qstate, src, dest):
             &dest_view[0]))
 
 
+def xsp2co1_mul_vector3_word(v3, pa, n):
+    cdef uint32_t n_v_ = n
+    cdef uint64_t v3_ = v3
+    if n_v_ == 0:
+        return v3_
+    cdef uint32_t[::1] pa_v_ = pa
+    return cl.xsp2co1_mul_vector3_word(v3_, &pa_v_[0], n_v_)
+
+
+
 def xsp2co1_mul_elem_word(e, pa, n):
     cdef uint32_t n_v_ = n
     if n_v_ == 0:
