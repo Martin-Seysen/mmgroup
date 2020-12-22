@@ -416,7 +416,7 @@ uint64_t xsp2co1_type4_3to2(uint64_t x)
     gcodev ^= (omega & 1) << 11;         
     res = (gcodev << 12) ^ cocodev;
     // Correct an odd result
-    if (w >= 19 and parity12(res & (res >> 12))): res ^= 0x800000;
+    if (w >= 19 && parity12(res & (res >> 12))) res ^= 0x800000;
     return res;
 }
 
