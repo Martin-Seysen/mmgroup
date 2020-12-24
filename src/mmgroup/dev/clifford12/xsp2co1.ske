@@ -975,13 +975,13 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t xsp2co1_mul_elem_word(uint64_t *e, uint32_t *pa, uint32_t n)
 {
     return xsp2co1_mul_set_elem_word(e, pa, n, 0);
 }
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t xsp2co1_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n)
 {
     return xsp2co1_mul_set_elem_word(e, pa, n, 1);
@@ -1055,7 +1055,7 @@ uint64_t mul_vector3(uint64_t v3, uint32_t *pa, uint32_t n)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint64_t xsp2co1_mul_vector3_word(uint64_t v3, uint32_t *pa, uint32_t n)
 {
     return mul_vector3(v3, pa, n);

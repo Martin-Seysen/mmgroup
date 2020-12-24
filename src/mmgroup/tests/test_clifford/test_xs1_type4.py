@@ -320,7 +320,7 @@ def chisquare_v3(obtained_dict, expected_dict):
     return chisq, p
 
 
-@pytest.mark.qstate1
+@pytest.mark.qstate
 def test_chisq_type4(n = 50000):
     d = rand_v3_dict(n)  
     print("Check distribution of type-4 vectors mod 3") 

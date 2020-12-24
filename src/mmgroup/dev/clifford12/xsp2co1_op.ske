@@ -422,6 +422,131 @@ uint64_t xsp2co1_type4_3to2(uint64_t x)
 
 
 
+/*************************************************************************
+*** Reduce type-4 vector  mod 2
+*************************************************************************/
+
+#define RED_STD_OCTAD 0x80fUL
+
+static uint8_t RED_STD_HEPTAD[7] =  {{0,1,2,3,4,5,8}};
+static uint8_t RED_IMG_CASE_44[7] =  {{0,1,2,3,8,9,4}};
+static uint8_t RED_STD_DODECAD[12] = {{0,1,2,3,8,9,14,15,18,19}};
+
+static inline 
+uint32_t apply_perm(uint32_t v, uint8_t *p, uint32_t *p_res)
+{
+    uint32_t m[12], xd, xdelta;
+    uint8_t pi[24];
+    xd = (v >> 12) & 0xfff;
+    xdelta = (v ^ mat24_ploop_theta(xd)) & 0xfff;
+    mat24_perm_to_matrix(p, m);
+    xd = mat24_op_gcode_matrix(xd, m);
+    xdelta = mat24_op_cocode_perm(xdelta, p);
+    mat24_inv_perm(p, pi);
+    *p_res = 0xA0000000 + mat24_perm_to_m24num(pi);
+    return (xd << 12) ^ xdelta ^ mat24_ploop_theta(xd);
+}
+
+static inline 
+uint32_t apply_perm_heptad(uint32_t v, uint8_t *p_src, uint8_t *p_dest, uint32_t *p_res)
+{
+    uint8_t p[24];
+    mat24_perm_from_heptads(p_src, p_dest, p);
+    return apply_perm(v, p, p_res);
+}
+
+
+static inline 
+// Find exponent of ``xi`` mapping Leech vector ``v`` a subspace
+int32_t map_to_standard12_xi_exp(uint32_t v)
+{
+    uint_fast32_t parity;
+    if ((v & 0x7ff800) == 0) return 0;
+    if ((v & 0x7f080f) == 0) return 1;
+    parity = 0 - ((0x6990 >> (v & 0xf)) & 1);
+    v ^= ((v >> 12) ^ parity) & 0xf;
+    if ((v & 0x7f080f) == 0) return 2;
+    return -1; // no exponent found
+}
+     
+
+
+
+
+// %%EXPORT px
+int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
+{
+    uint32_t *p_res = result, i, gc, coc, vtype;
+    int32_t exp;
+    for (i = 5; i; --i ) {
+        gc = mat24_gcode_to_vect(v >> 12);
+        coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
+        vtype = xsp2co1_leech_type(v);
+        switch (vtype) {
+            case 0x48:
+                return (int32_t)(p_res - result);
+            case 0x40:
+                {
+                    uint8_t sextet[24];
+                    if (v & 0x7ffbff) {
+                        if (mat24_cocode_to_sextet(coc, sextet) < 0) return -1;
+                        sextet[6] = sextet[8];
+                        v = apply_perm_heptad(v,
+                            sextet, RED_STD_HEPTAD, p_res++);
+                    }
+                    exp = 2 - ((v >> 23) & 1);
+                    break;
+                }
+            case 0x42:
+                if ((exp = map_to_standard12_xi_exp(v)) < 0) {
+                    uint8_t src[24], *psrc = src;
+                    uint32_t w;
+                    w = mat24_vect_to_bit_list(gc, src); // w is 8 or 16
+                    psrc = src + (w & 16);
+                    psrc[6] = src[(w & 16) ? 0 : 8];
+                    v = apply_perm_heptad(v, src, RED_STD_HEPTAD, p_res++);
+                    exp = map_to_standard12_xi_exp(v);
+                    if (exp < 0) return -1L;
+                }
+                break;
+            case 0x44:
+                if ((exp = map_to_standard12_xi_exp(v)) < 0) {
+                    uint8_t oct[24], syn_list[24], a2_list[24], *poct = oct;
+                    uint32_t w, syn, a = 0, a1, a2, j, special;
+                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
+                    poct = oct + (w & 16);
+                    gc ^= (w & 16) ? 0xfffffff : 0;
+                    syn =  mat24_cocode_syndrome(coc, poct[0]) & ~gc;
+                    w = mat24_vect_to_bit_list(syn, syn_list);
+                    if (w != 2) return -1L;
+                    for (j = 0; j < 5; ++j) a += 1L << poct[j];
+                    a1 = a ^ (1 << syn_list[0]) ^ (1 << syn_list[1]);
+                    special = mat24_syndrome(a1, 24);
+                    a2 = a & ~special;
+                    w = mat24_vect_to_bit_list(a2, a2_list);
+                    a2_list[4] = syn_list[0]; a2_list[5] = syn_list[1];
+                    a2_list[6] = (uint8_t)(mat24_lsbit24(a & special));
+                    v = apply_perm_heptad(v, a2_list, RED_STD_HEPTAD, p_res++);
+                    exp = map_to_standard12_xi_exp(v);
+                    if (exp < 0) return -1L;
+                }
+                break;
+            default:
+                return -1L;
+        }
+        if (exp) {
+            exp += 0x60000000;
+            v = xsp2co1_conj_leech_atom(v, exp);
+            if (v & 0xfe000000) return -1L;
+            *p_res++ = exp;
+        }
+    } 
+    return -1L;
+}
+
+ 
+
+
 // %%GEN ch
 #ifdef __cplusplus
 }

@@ -77,8 +77,9 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
     an automatically generated .pyx file. Here the C functions in the
     .pxd file must be sufficiently simple as indicated below.
 
-    The returned string starts with a line::
-
+    The returned string starts with two lines::
+ 
+        cimport cython 
         cimport <module>
     
     Here <module> is given by the parameter ``module``, By default,
@@ -92,12 +93,14 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
     Every such line is converted to a string that codes function,
     which is a Cython wrapper of that function of shape::
 
-      def <translated_function>(<arg1>, <arg2> , ...):
-          cdef <type1> <arg1> = <arg1>_v_
-          cdef <type2> <arg2> = <arg2>_v
-          cdef <return_type>  _ret
-          ret_ = <module>.<function>(<arg1>_v_,  <arg2>_v_ , ...)
-          return ret_
+       @cython.boundscheck(False)  # Deactivate bounds checking
+       @cython.wraparound(False)   # Deactivate negative indexing.
+       def <translated_function>(<arg1>, <arg2> , ...):
+           cdef <type1> <arg1> = <arg1>_v_
+           cdef <type2> <arg2> = <arg2>_v
+           cdef <return_type>  _ret
+           ret_ = <module>.<function>(<arg1>_v_,  <arg2>_v_ , ...)
+           return ret_
 
     ``<translated_function>`` is the string computed as 
     ``translate(<function>)``, if the argument ``translate`` is given.
@@ -112,6 +115,8 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
 
     is converted to::
 
+       @cython.boundscheck(False)  # Deactivate bounds checking
+       @cython.wraparound(False)   # Deactivate negative indexing.
        def <translated_function1>(a):
            cdef uint8_t[::1] a_v_ = a
            cdef uint32_t ret_
@@ -142,7 +147,8 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
     """
     if not module:
         module = os.path.splitext(os.path.basename(pxd_file))[0]
-    s = "cimport %s\n\n" % module
+    s = "cimport cython\n"
+    s += "cimport %s\n\n" % module
     if nogil:
         s += "cimport cython\n"
     enable = not select
@@ -156,9 +162,8 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
             return_type, function, args = data
             t_function = translate(function) if translate else function
             s += "\n"
-            if nogil:
-                s += "@cython.wraparound(False)\n"
-                s += "@cython.boundscheck(False)\n"
+            s += "@cython.wraparound(False)\n"
+            s += "@cython.boundscheck(False)\n"
             s += "def {f}({args}):\n".format( 
               f = t_function, args = ", ".join([a[2] for a in args]))
             c_args = []
