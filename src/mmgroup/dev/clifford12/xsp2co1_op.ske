@@ -463,7 +463,7 @@ int32_t map_to_standard12_xi_exp(uint32_t v)
     uint_fast32_t parity;
     if ((v & 0x7ff800) == 0) return 0;
     if ((v & 0x7f080f) == 0) return 1;
-    parity = 0 - ((0x6990 >> (v & 0xf)) & 1);
+    parity = 0 - ((0x6996 >> (v & 0xf)) & 1);
     v ^= ((v >> 12) ^ parity) & 0xf;
     if ((v & 0x7f080f) == 0) return 2;
     return -1; // no exponent found
@@ -489,14 +489,15 @@ int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
                 {
                     uint8_t sextet[24];
                     if (v & 0x7ffbff) {
-                        if (mat24_cocode_to_sextet(coc, sextet) < 0) return -1;
+                        if (mat24_cocode_to_sextet(coc, sextet) < 0) 
+                             return -0x10000 + 0x100 * vtype + 1;
                         sextet[6] = sextet[8];
                         v = apply_perm_heptad(v,
                             sextet, RED_STD_HEPTAD, p_res++);
                     }
                     exp = 2 - ((v >> 23) & 1);
-                    break;
                 }
+                break;
             case 0x42:
                 if ((exp = map_to_standard12_xi_exp(v)) < 0) {
                     uint8_t src[24], *psrc = src;
@@ -504,9 +505,9 @@ int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
                     w = mat24_vect_to_bit_list(gc, src); // w is 8 or 16
                     psrc = src + (w & 16);
                     psrc[6] = src[(w & 16) ? 0 : 8];
-                    v = apply_perm_heptad(v, src, RED_STD_HEPTAD, p_res++);
+                    v = apply_perm_heptad(v, psrc, RED_STD_HEPTAD, p_res++);
                     exp = map_to_standard12_xi_exp(v);
-                    if (exp < 0) return -1L;
+                    if (exp < 0) return -0x10000 + 0x100 * vtype + 1;
                 }
                 break;
             case 0x44:
@@ -515,20 +516,56 @@ int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
                     uint32_t w, syn, a = 0, a1, a2, j, special;
                     w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
                     poct = oct + (w & 16);
-                    gc ^= (w & 16) ? 0xfffffff : 0;
+                    gc ^= (w & 16) ? 0xffffff : 0;
                     syn =  mat24_cocode_syndrome(coc, poct[0]) & ~gc;
                     w = mat24_vect_to_bit_list(syn, syn_list);
-                    if (w != 2) return -1L;
+                    if (w != 2) return -0x10000 + 0x100 * vtype + 1;
                     for (j = 0; j < 5; ++j) a += 1L << poct[j];
                     a1 = a ^ (1 << syn_list[0]) ^ (1 << syn_list[1]);
                     special = mat24_syndrome(a1, 24);
                     a2 = a & ~special;
                     w = mat24_vect_to_bit_list(a2, a2_list);
+                    if (w != 4) return -0x10000 + 0x100 * vtype + 2;
                     a2_list[4] = syn_list[0]; a2_list[5] = syn_list[1];
                     a2_list[6] = (uint8_t)(mat24_lsbit24(a & special));
-                    v = apply_perm_heptad(v, a2_list, RED_STD_HEPTAD, p_res++);
+                    v = apply_perm_heptad(v, 
+                        a2_list, RED_IMG_CASE_44, p_res++);
                     exp = map_to_standard12_xi_exp(v);
-                    if (exp < 0) return -1L;
+                    if (exp < 0) return -0x10000 + 0x100 * vtype + 3;
+                }
+                break;
+            case 0x46:
+                {
+                    uint8_t dodecad[24], perm[24];
+                    uint32_t w, scalar;
+                    w = mat24_vect_to_bit_list(gc, dodecad); // w is 12
+                    mat24_perm_from_dodecads(dodecad, RED_STD_DODECAD, perm); 
+                    v = apply_perm(v, perm, p_res++); 
+                    coc = mat24_ploop_theta(v >> 12) ^ v;
+                    scalar = mat24_scalar_prod(RED_STD_OCTAD, coc);
+                    exp = 2 - scalar;
+                }
+                break;
+            case 0x43:
+                {
+                    uint8_t cv_list[24], octad_list[24], rem_list[24];
+                    uint32_t cv, w, j, oct, syn;
+                    cv = mat24_cocode_syndrome(coc, 24);
+                    w = mat24_vect_to_bit_list(cv, cv_list);
+                    if (w != 3) return -0x10000 + 0x100 * vtype + 1;
+                    oct = 0;
+                    for (j = 0; j < 5; ++j) oct += 1 << cv_list[j];
+                    syn =  mat24_syndrome(oct, 24);
+                    oct ^= syn;
+                    w =  mat24_vect_to_bit_list(oct, octad_list);
+                    if (w != 8) return -0x10000 + 0x100 * vtype + 2;
+                    w = mat24_vect_to_bit_list(oct & ~cv, rem_list);
+                    if (w != 5) return -0x10000 + 0x100 * vtype + 3;
+                    cv_list[3] = rem_list[0]; cv_list[4] = rem_list[1];
+                    cv_list[5] = rem_list[2]; cv_list[6] = octad_list[8];
+                    v = apply_perm_heptad(v, 
+                        cv_list, RED_STD_HEPTAD, p_res++);
+                    exp = 2 - ((v >> 22) & 1);
                 }
                 break;
             default:
