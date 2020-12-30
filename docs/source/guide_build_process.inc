@@ -18,26 +18,28 @@ lists some important modules in the root directory.
   .. table:: Files in the root directory used by the build process
     :widths: 30 70
 
-    ======================= =============================================
-    File name               Purpose
-    ======================= =============================================
-    ``build_ext_steps.py``  Extension for the ``setuptools`` package
-    ``codegen_mat24.py``    Generates C code for extensions ``mat24``
-                            and ``mat24_xi``
-    ``codegen_mm.py``       Generates C code for extension ``mm``
-    ``codegen_mm_op.py``    Generates C code for extensions ``mm<p>``,
-                            where ``p`` is a modulus of a representation
-                            of the monster
-    ``config.py``           Main configuration file of the project
-    ``import_all.py``       Imports all extensions (after building them)
-    ``MANIFEST.in``         List of files to be added to the source
-                            distribution
-    ``pytest.ini``          Main configuration file for testing 
-                            with ``pytest``
-    ``README.rst``          Main documentation file for GitHub
-    ``setup.py``            Main file for the build process with
-                            ``setuptools``
-    ======================= =============================================
+    ========================= ============================================
+    File name                 Purpose
+    ========================= ============================================
+    ``build_ext_steps.py``    Extension for the ``setuptools`` package
+    ``codegen_clifford12.py`` Generates C code for extension
+                              ``clifford12``
+    ``codegen_mat24.py``      Generates C code for extensions ``mat24``
+                              and ``generators``
+    ``codegen_mm.py``         Generates C code for extension ``mm``
+    ``codegen_mm_op.py``      Generates C code for extensions ``mm<p>``,
+                              where ``p`` is a modulus of a representation
+                              of the monster
+    ``config.py``             Main configuration file of the project
+    ``import_all.py``         Imports all extensions (after building them)
+    ``MANIFEST.in``           List of files to be added to the source
+                              distribution
+    ``pytest.ini``            Main configuration file for testing 
+                              with ``pytest``
+    ``README.rst``            Main documentation file for GitHub
+    ``setup.py``              Main file for the build process with
+                              ``setuptools``
+    ========================= ============================================
 
 
 

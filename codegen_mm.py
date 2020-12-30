@@ -197,6 +197,7 @@ H_BASICS_BEGIN = """
 
 #include <stdint.h>
 #include "mat24_functions.h"
+#include "mmgroup_generators.h"
 
 #define MM_BASICS_DLL  // We want a DLL!!
 

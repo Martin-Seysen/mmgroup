@@ -69,24 +69,24 @@ Module ``make_mul_transp``
 .. automodule:: mmgroup.dev.mat24.make_mul_transp
 
 
-Description of the ``mmgroup.mat24_xi`` extension
-=================================================
+Description of the ``mmgroup.generators`` extension
+===================================================
 
 This extension is used for computing tables containing the monomial
 part of the operation of the generators :math:`\xi^i, i=1,2`.
 One set of tables is generated for each exponent :math:`i`.
 
-Module ``mmgroup.dev.mat24_xi.mat24_xi_ref`` is a pure python 
+Module ``mmgroup.dev.generators.gen_xi_ref`` is a pure python 
 substitute for this extension; but calculating the tables for the
 generators :math:`\xi^i` with that extension takes a rather long time.
 
 
-.. automodule:: mmgroup.dev.mat24_xi.mat24_xi_ref
+.. automodule:: mmgroup.dev.generators.gen_xi_ref
 
 C interface
 -----------
 
-.. doxygenfile:: mat24_xi_functions.c
+.. doxygenfile:: gen_xi_functions.c
 
 
 Description of the ``mmgroup.mm`` extension

@@ -65,7 +65,7 @@ def _parse_pxd_enable(l):
 
 
 
-def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil = False): 
+def pxd_to_pyx(pxd_file, module = None, translate = None, select = True, nogil = False): 
     """Extract Cython wrappers from prototypes in a .pxd file
 
     A .pxd file contains prototypes of external C functions and it
@@ -129,7 +129,9 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = False, nogil 
     If parameter ``select`` is True then we convert a function only
     if a line containing the string "``# PYX``" (possibly with
     leading blanks) precedes the declaration of a function.
-    By default, ``select`` is False. 
+    By default, ``select`` is True. In the code generator you may 
+    use the ``EXPORT`` directive with options ``px`` to enter such
+    a line into the source file.
 
     If ``nogil`` is True, a C function is called with as follows::
 

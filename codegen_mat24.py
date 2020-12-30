@@ -32,24 +32,31 @@ code generator. Class  ``Mat24`` in module
 and ``directives()`` creating the required tables and directives.
 
 
-Generating the ``mmgroup.mat24_xi`` extension
+Generating the ``mmgroup.generators`` extension
 .............................................
 
-Function ``mat24_xi_make_c_code`` generates C code for computing the
-monomial part of the operation of the elements :math`\xi` and
+Function ``generators_make_c_code`` generates C code for computing 
+the monomial part of the operation of the elements :math`\xi` and
 :math`\xi^2`of the monster group. These C functions are used for
 computing (rather large) tables required for the implmentation of
 the functions that compute the operation :math`\xi` and :math`\xi^2` 
 on a representation of the monster.
 
-The generation of the ``mmgroup.mat24_xi`` extension is similar
+The generation of the ``mmgroup.generators`` extension is similar
 to the generation of the ``mmgroup.mat24`` extension. Here the
-.ske file is file ``mat24_xi_functions.ske`` in subdirectory
-``src/mmgroup/dev/mat24_xi``. Class  ``Mat24Xi`` in module
-``mmgroup.dev.mat24_xi.mat24_xi_ref`` has methods ``tables()`` and
-``directives()`` for creating the required tables and directives.
-The functions used by the ``mmgroup.mat24_xi` extension are 
-statically linked; so they are part of that entension. 
+list of .ske file is given in the list GENERATORS_C_FILES.
+For each file in that list a C file is created. 
+
+A common header with name given by H_GENERATORS_NAME is created 
+from all these .ske files, prependend by the header files in
+the list GENERATORS_H_FILES. A .pxd file with name
+PXD_GENERATORS_NAME is created from that header file. That .pxd
+file will also contain the declarations in the string
+PXD_DECLARATIONS.
+
+All input files are read fom the directory SKE_DIR.
+
+
  
 Location of the output files
 ............................
@@ -81,10 +88,14 @@ from config import REAL_SRC_DIR
 sys.path.append(REAL_SRC_DIR)
 
 from mmgroup.dev.mat24.mat24_ref import Mat24
-from mmgroup.dev.mat24_xi.mat24_xi_ref import Mat24Xi
+from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup.generate_c import TableGenerator, make_doc
+from mmgroup.generate_c import pxd_to_pyx
 
 
+########################################################################
+# Generate mat24_functions.c
+########################################################################
 
 pxd_declarations = """
 from libc.stdint cimport uint32_t, uint16_t, uint8_t
@@ -131,29 +142,122 @@ def mat24_make_c_code():
     
 
 
-def mat24_xi_make_c_code():
+########################################################################
+# Generate c files for module 'generators'
+########################################################################
+
+SKE_DIR =  os.path.join(DEV_DIR, "generators")
+
+GENERATORS_C_FILES = [
+    "gen_xi_functions",
+]
+
+
+GENERATORS_H_START = """
+// %%GEN h
+#ifndef MMGROUP_GENERATORS_H
+#define MMGROUP_GENERATORS_H
+// %%GEN c
+
+"""
+
+GENERATORS_H_END = """
+// %%GEN h
+#endif // ifndef MMGROUP_GENERATORS_H
+// %%GEN c
+"""
+
+GENERATORS_H_FILES = [
+    GENERATORS_H_START,
+    "mmgroup_generators.h",
+]
+
+GENERATORS_TABLE_CLASSES = [
+     GenXi
+]
+
+H_GENERATORS_NAME = "mmgroup_generators.h"
+PXD_GENERATORS_NAME = "generators.pxd"
+PXI_GENERATORS_NAME = "generators.pxi"
+
+PXD_DECLARATIONS = """
+
+from libc.stdint cimport uint64_t, uint32_t, uint16_t, uint8_t
+from libc.stdint cimport int64_t, int32_t
+
+"""
+
+
+def generators_make_c_code():
     """Create .c and .h file with the functionality of class Mat24Xi
 
     """
-    print("Creating C source from file mat24_xi_functions.ske\n")
-    MAT24_XI_C_FILE = "mat24_xi_functions"
-    SKE_DIR = os.path.join(DEV_DIR, "mat24_xi")
-    Mat24Xi.tables["Mat24Xi_doc"] = Mat24Xi # can't do this earlier
-    generator = TableGenerator(Mat24Xi.tables, Mat24Xi.functions)
-    f = os.path.join(SKE_DIR, MAT24_XI_C_FILE)
-    path_ = os.path.join(C_DIR, MAT24_XI_C_FILE)  
-    generator.generate(f + ".ske", path_ + ".c", path_ + ".h")
-    #generator.export_tables(file_name = "mat24_xi_export.py")
+    print("Creating C sources for the 'generators' extension\n")
 
-    generator.generate_pxd(
-        os.path.join(PXD_DIR, MAT24_XI_C_FILE + ".pxd"), 
-        MAT24_XI_C_FILE + ".h",  
-        pxd_declarations   
+    # Setp table and directives for code generation
+    GenXi.tables["GenXi_doc"] = GenXi # can't do this earlier
+    tables = {}
+    directives = {}
+    for table_class in GENERATORS_TABLE_CLASSES:
+        table_instance = table_class()
+        tables.update(table_instance.tables)
+        directives.update(table_instance.directives)
+    print(tables.keys())
+    tg = TableGenerator(tables, directives)
+
+    # Generate c files
+    all_ske_files = [os.path.join(SKE_DIR, name) 
+        for name in GENERATORS_H_FILES]
+    for name in GENERATORS_C_FILES:
+        ske_file = name + ".ske"
+        ske_path = os.path.join(SKE_DIR, ske_file)
+        c_file = name + ".c"
+        c_path = os.path.join(C_DIR, c_file)
+        print("Creating %s from %s" % (c_file, ske_file))
+        tg.generate(ske_path, c_path)
+        all_ske_files.append(ske_path)
+
+    # generate .h file
+    all_ske_files.append(GENERATORS_H_END)
+    h_file =  H_GENERATORS_NAME
+    h_path =  os.path.join(C_DIR, h_file)
+    pxd_file =  PXD_GENERATORS_NAME
+    print("Creating %s from previous .ske files" % h_file)
+    tg.generate(all_ske_files, None, h_path)
+
+    # generate .pxd file
+    tg.generate_pxd(
+        os.path.join(PXD_DIR, PXD_GENERATORS_NAME), 
+        h_file, 
+        PXD_DECLARATIONS
     )
-    print("C files for extension mat24_xi have been created" )
+    print("C files for extension 'generators' have been created" )
+        
+    # generate .pxi file
+    def pxi_comment(text, f):
+        print("\n" + "#"*70 + "\n### %s\n" % text + "#"*70 + "\n\n",
+        file=f
+    )
+    f_pxi = open(os.path.join(PXD_DIR, PXI_GENERATORS_NAME), "wt")
+    pxi_comment(
+        "Wrappers for C functions from file %s" % PXD_GENERATORS_NAME, 
+        f_pxi
+    )
+    print(PXD_DECLARATIONS, file = f_pxi)
+    pxi_content = pxd_to_pyx(
+        os.path.join(PXD_DIR, PXD_GENERATORS_NAME),
+        os.path.split(PXD_GENERATORS_NAME)[0],
+        select = True
+    )
+    print(pxi_content, file = f_pxi)
+    f_pxi.close()
 
+ 
+########################################################################
+# Main program
+########################################################################
 
 if __name__ == "__main__":
     mat24_make_c_code()    
-    mat24_xi_make_c_code()    
+    generators_make_c_code()    
     

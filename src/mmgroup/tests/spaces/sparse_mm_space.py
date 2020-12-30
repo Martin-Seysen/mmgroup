@@ -27,8 +27,8 @@ from mmgroup.tests.spaces.rep_aux import pm_diag_from_function
 
 
 from mmgroup import mat24 as m24
-from mmgroup import mat24_xi as m24xi
-from mmgroup.mat24_xi import xi_w2_gray as w2_gray
+from mmgroup import generators as gen
+from mmgroup.generators import gen_xi_w2_gray as w2_gray
 
 
 ######################################################################
@@ -270,8 +270,8 @@ mul_Zt = partial(mul_XYZt, 2)
 dict_BCT = [None, {}, {}]
 
 
-table_BCT = [None, (0, m24xi.make_table(3, 1)),
-                 (1024, m24xi.make_table(3, 2)) ]
+table_BCT = [None, (0, gen.make_table(3, 1)),
+                 (1024, gen.make_table(3, 2)) ]
 
 
 
@@ -297,7 +297,7 @@ def unpack(a):
 def make_dict_BCT():
     global dict_BCT
     #print("Computing dict...",  end = "")
-    ar_T = [None, m24xi.make_table(1, 1), m24xi.make_table(1, 2)]
+    ar_T = [None, gen.make_table(1, 1), gen.make_table(1, 2)]
     for i in range(2496):
         t1 =  ar_T[1][i]
         if t1:
@@ -305,7 +305,7 @@ def make_dict_BCT():
             dict_BCT[1][key_] = unpack(entry_to_atom_box1(t1))
             dict_BCT[2][key_] = unpack(entry_to_atom_box1(ar_T[2][i]))
     #print("length =", len(dict_BCT[1]), 375*64+2*24*24)
-    ar_T = [None, m24xi.make_table(2, 1), m24xi.make_table(2, 2)]
+    ar_T = [None, gen.make_table(2, 1), gen.make_table(2, 2)]
     for i in range(360 * 64):
         key_ = entry_to_atom_box2(i)[1]
         dict_BCT[1][key_] = unpack(entry_to_atom_box2(ar_T[1][i]))
@@ -342,8 +342,8 @@ tag_ofs_shift = [None, None, None, (T,375,6), (X,0,5), (X,1024,5)]
 
 def make_table_x_entry(exp, d):
      box = d + 4
-     table = m24xi.make_table(box, exp)
-     box = m24xi.xi_op_xi_short(box << 16, exp) >> 16
+     table = gen.make_table(box, exp)
+     box = gen.gen_xi_op_xi_short(box << 16, exp) >> 16
      tag, ofs, shift  = tag_ofs_shift[box]
      mask = (1 << shift) - 1
      return tag, ofs, shift, mask, table

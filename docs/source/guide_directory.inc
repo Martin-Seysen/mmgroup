@@ -35,16 +35,23 @@ Directory  ``src/mmgroup/dev`` has the following subdirectories:
    * ``c_files``
      Contains automatically generated C code
 
+   * ``clifford12``
+     Scripts for generating C code related to the subgroup
+     :math:`2^{1+24}.\mbox{Co}_1` of the monster and also to
+     a Clifford group resembling that subgroup. 
+ 
+   * ``generators``
+     Scripts for generating tables related to the monomial operation
+     of the element :math:`\xi` of :math:`\mathbb{M}`, and also 
+     for generating C code related to certain subgroups of
+     :math:`\mathbb{M}`.
+
    * ``hadamard``
      Scripts for generating C code related to Hadamard matrices
 
    * ``mat24``
      Scripts for generating C code related to the Mathieu group
      :math:`\mbox{Mat}_{24}`
- 
-   * ``mat24_xi``
-     Scripts for generating tables related to the monomial operation
-     of the element :math:`\xi` of :math:`\mathbb{M}`
 
    * ``mm_basics``
      Scripts for generating C code related to the representation
@@ -72,5 +79,6 @@ Directory  ``src/mmgroup/tests`` has the following subdirectories:
      including the space  :math:`\rho_p`, for testing.
 
    * ``test_xxx``
-     Test scripts to be executed with ``pytest``
+     Test scripts (to be executed with ``pytest``) for testing
+     module ``xxx``.
          

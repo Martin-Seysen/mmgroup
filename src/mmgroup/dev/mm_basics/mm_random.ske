@@ -131,7 +131,7 @@ static void mm_rng_expand_key(uint32_t no, uint8_t *key, uint32_t len, uint8_t *
 #define POS_LFSR 258   // position of 63-bit LFSR (8 bytes long)
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
 // Seed the random generator in the variable 'seed' ot type
 // uint8_t[MM_RNG_SIZE]. Inputs are:
@@ -209,7 +209,7 @@ void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
 *****************************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
 // Generate an array of random 'len' integers modulo p, 1 < p < 256.
 // These random integers are written to the array referred by 'out'. 
@@ -302,7 +302,7 @@ void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
 *****************************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
 // Generate an array of random 'len' bytes.
 // These random bytes are written to the array referred by 'out'. 

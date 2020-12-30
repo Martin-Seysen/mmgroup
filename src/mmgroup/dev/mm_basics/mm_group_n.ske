@@ -78,7 +78,7 @@ static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 // Put g = g * x_delta * (pi), delta in C*, (pi) in AutPl as 
 // above. Here g is given as an array of five 32-bit integers.
@@ -109,7 +109,7 @@ void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 // Put g = g * (x_delta * (pi))**(-1), delta in C*, (pi) in AutPl as 
 // above. Here g is given as an array of five 32-bit integers.
@@ -145,7 +145,7 @@ void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_x(uint32_t * g, uint32_t e)
 // Put g = g * x_e. 
 // Here g is given as an array of five 32-bit integers.
@@ -158,7 +158,7 @@ void mm_group_n_mul_x(uint32_t * g, uint32_t e)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_y(uint32_t * g, uint32_t f)
 // Put g = g * y_f.
 // Here g is given as an array of five 32-bit integers.
@@ -185,7 +185,7 @@ void mm_group_n_mul_y(uint32_t * g, uint32_t f)
     g[I_y] ^= f ^ (sign_y << 12);
 }
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
 // Put g = g * t**exp, for the triality element t.
 // Here g is given as an array of five 32-bit integers.
@@ -226,7 +226,7 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_element(uint32_t *g, uint32_t *g1)
 // Put g = g * g1.
 // Here g and g1 are given as arrays of five 32-bit integers.
@@ -241,7 +241,7 @@ void mm_group_n_mul_element(uint32_t *g, uint32_t *g1)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g1)
 // Put g = g * g1**(-1).
 // Here g and g1 are given as arrays of five 32-bit integers.
@@ -258,7 +258,7 @@ void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g1)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_group_n_clear(uint32_t *g)
 // Set g to neutral element of the group N.
 {
@@ -266,7 +266,7 @@ void mm_group_n_clear(uint32_t *g)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
 // Multiply the element g of the group MM with an atom.
 // An atom is interpreted as follows:
@@ -345,7 +345,7 @@ static uint16_t ker_table_yx[4] = {
     0, 0x1000, 0x1800, 0x800
 };
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_n_reduce_word(uint32_t *g)
 // Reduce the element g of the group N.
 // We reduce g modulo the kernel K_0 using the relations
@@ -366,7 +366,7 @@ uint32_t mm_group_n_reduce_word(uint32_t *g)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 // Convert the element g of the group N to an array 'word' of atoms
 // as specififed in function mm_group_n_mul_atom() and return the
@@ -385,7 +385,7 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
 // Given a array 'word' of atoms of a given 'length', that word is split 
 // into a possibly shorter word 'word1' and an element g of the group N such 
@@ -433,7 +433,7 @@ uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, int32_t e)
 // Compute w1 = w1 * w2**e. Here w1 and w2 are words of the group 
 // MM of length l1 and l2, respectively. A word of the group MM is 
@@ -489,7 +489,7 @@ uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
 // Check if the word w1 of the group MM of length l1 is in the 
 // subgroup N_0. If this is the case then we store the word as an 
@@ -528,7 +528,7 @@ uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_group_words_equ(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, uint32_t *work)
 // Check if the words w1 and w2 of the group MM of length l1 and
 // l2 are equal. The function returns the following status 

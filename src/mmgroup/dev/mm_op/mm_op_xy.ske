@@ -169,7 +169,7 @@ void mm_op{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
   // %%IF* GENERATE_CODE

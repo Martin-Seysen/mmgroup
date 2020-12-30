@@ -34,7 +34,7 @@
 **********************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_sparse_purge(uint32_t *sp, uint32_t length)
 // Eliminate illegal entries of array sp of entries in sparse format
 // in place. sp has length 'length'. Indices for tags A, B, C are  
@@ -82,7 +82,7 @@ uint32_t mm_sparse_purge(uint32_t *sp, uint32_t length)
 #define ALL1 0xffffffff
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_sparse_bitsort(uint32_t *a, uint32_t len, uint32_t mask)
 // Sort the entries of the array 'a ' of length 'len'. The key is
 // given by 'mask': Sort the entries of 'a', masked by 'mask', in 
@@ -190,7 +190,7 @@ uint32_t mm_sparse_bitsort(uint32_t *a, uint32_t len, uint32_t mask)
 *** sorting by alllocating memory for a vector
 **********************************************************************/
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_sparse_alloc_reduce(uint32_t p, uint32_t *sp, uint32_t length)
 {
     #define MIN_IDX ((uint_fast32_t)(0x1000))
@@ -282,7 +282,7 @@ failure:
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_sparse_reduce(uint32_t p, uint32_t *sp, uint32_t length)
 {
     uint_fast32_t len_in = 0, len_out = 0, sum, last_label, v;
@@ -376,7 +376,7 @@ void mm_sparse_zero_item(uint32_t *sp, uint32_t length, uint32_t label)
 **************************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_sparse_mul(uint32_t p, uint32_t *sp, uint32_t length, int32_t factor)
 {
     if (p >= 0x100) return;

@@ -1,8 +1,6 @@
 
 #include <stdint.h>
 
-#include "mat24_functions.h"
-#include "mat24_xi_functions.h"
 
 
 #include "mm_basics.h"
@@ -134,7 +132,7 @@ mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
     // %%CODE_XI_POINTERS   TAB_PERM_XI_, TAB_SIGN_XI_
 };
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_sub_get_table_xi(uint32_t e, uint32_t i, uint32_t j, uint32_t k)
 {
     if (k) return mm_sub_table_xi[e][i].p_sign[j];

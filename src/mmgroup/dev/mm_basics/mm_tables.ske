@@ -299,7 +299,7 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
 
 }
 
-// %%EXPORT p
+// %%EXPORT px
 void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
 // Auxiliary function for debugging. Given delta and pi as in 
 // function mm_sub_prep_pi(), components of tbl_perm64 (of length 
@@ -419,7 +419,7 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint32_t *p_tbl)
 // Auxiliary function for debugging. Given delta and pi as in 
 // function mm_sub_prep_pi(), various components (dependding

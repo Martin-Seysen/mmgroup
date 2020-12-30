@@ -8,8 +8,7 @@ downloaded from
 https://github.com/Martin-Seysen/mmgroup . 
 
 The distribution contains a number of extensions written
-in ``C`` which have to be built before use. At present there is no binary 
-distribution for Windows.
+in ``C`` which have to be built before use. 
 
 Dependencies
 ------------
@@ -81,7 +80,7 @@ package, see e.g.
 
 https://packaging.python.org/guides/distributing-packages-using-setuptools/#wheels
 
-The current version support building wheels for 64-bit Windows only.
+The current version supports building wheels for 64-bit Windows only.
 
 There is experimental support for building a Linux version from a
 source distribution.

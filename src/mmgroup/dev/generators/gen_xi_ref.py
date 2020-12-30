@@ -32,7 +32,8 @@ backgound.
 The generator :math:`\xi` acts monomially on the 98280 basis vectors 
 of  :math:`\rho` corresponding to short elements :math:`Q_{x0}`.
 Here  :math:`\xi` acts on  :math:`Q_{x0} \in 2^{1+24}` by conjugation.
-The purpose of module ``mmgroup.mat24_xi`` is the computation of tables
+The purpose of the C functions with prefix ``gen_xi_`` in module 
+``mmgroup.generators`` is the computation of tables
 for the operation  of :math:`\xi`  and of :math:`\xi^2` on the short
 basis vectors. In  section :ref:`mmrep-label` we use the following 
 names and tags for the basis vectors of :math:`\rho` corresponding
@@ -120,8 +121,9 @@ corresponding to short Leech lattice vectors) is given in
 Leech lattice encoding of the vectors in :math:`Q_{x0}`
 -------------------------------------------------------
 
-The main purpose of module ``mat24_xi_function.c`` is the 
-computation of tables containg :math:`\xi^{-e} x \xi^e` for all 
+The main purpose of the C functions with prefix ``gen_xi_`` in 
+module  ``mmgroup.generators`` is the computation of tables 
+containing :math:`\xi^{-e} x \xi^e` for all 
 short math:`x \in Q_{x0}` and :math:`e = 1,2`. For performing these
 computations we encode the elements of :math:`Q_{x0}` as follows.
 
@@ -256,7 +258,7 @@ def expand_gray(x):
 
 
 
-class Mat24Xi(object):
+class GenXi(object):
     """Operation of xi of a group G_x0 on the normal subgroup Q_x0.
 
     A subgroup G_x0 of shape 2**{1+24}.Co_1 of the Monster group is 
@@ -294,12 +296,12 @@ class Mat24Xi(object):
     #tab_g_col = numpy.zeros(64, dtype = numpy.uint8)
 
     tables = {
-            "Mat24_xi_module_doc" : globals()["__doc__"],
-            "Mat24_xi_g_gray_table" : tab_g_gray,
-            "Mat24_xi_g_cocode_table" : tab_g_cocode,
+            "GenXi_module_doc" : globals()["__doc__"],
+            "GenXi_g_gray_table" : tab_g_gray,
+            "GenXi_g_cocode_table" : tab_g_cocode,
     }
 
-    functions = {}
+    directives = {}
 
     for x in range(64):
         w2, c = w2_gamma(expand_gray(x))
@@ -312,7 +314,7 @@ class Mat24Xi(object):
     
 
     @classmethod
-    def xi_g_gray(cls, v):
+    def gen_xi_g_gray(cls, v):
         """Implement function gamma() in [Seysen20], section 3.3.
 
         Given a Golay code vector v  in 'gcode' representation, see
@@ -323,7 +325,7 @@ class Mat24Xi(object):
         return expand_gray(cls.tab_g_gray[compress_gray(v)])
   
     @classmethod
-    def xi_w2_gray(cls, v):
+    def gen_xi_w2_gray(cls, v):
         """Implement function w2() in [Seysen20], section 3.3.
 
         Given a Golay code vector v  in 'gcode' representation, see
@@ -333,18 +335,18 @@ class Mat24Xi(object):
         return cls.tab_g_gray[compress_gray(v)] >> 7
 
     @classmethod
-    def xi_g_cocode(cls, c):
+    def gen_xi_g_cocode(cls, c):
         """Inverse of method xi_g_gray(v)
 
         Given a cocode vector c in in 'cocode' representation, see 
         module mat24.py, the function returns the unique gray Golay
-        code vector v such tha cls.xi_w2_gray(v) is the gray part
-        of c. 
+        code vector v such that cls.gen_xi_w2_gray(v) is the gray 
+        part of c. 
         """
         return expand_gray(cls.tab_g_cocode[compress_gray(c)])
   
     @classmethod
-    def xi_w2_cocode(cls, c):
+    def gen_xi_w2_cocode(cls, c):
         """Implement function w2() in [Seysen20], section 3.3.
 
         Given a cocode vector c in in 'cocode' representation, see 
@@ -354,7 +356,7 @@ class Mat24Xi(object):
         return cls.tab_g_cocode[compress_gray(c)] >> 7
 
     @classmethod
-    def xi_op_xi(cls, x, exp):
+    def gen_xi_op_xi(cls, x, exp):
         """Operation of  xi**exp  on the element x of the group Q_x0.
 
         The function returns the element
@@ -389,7 +391,7 @@ class Mat24Xi(object):
         return x
 
     @staticmethod
-    def xi_mul_leech(x1, x2):
+    def gen_xi_mul_leech(x1, x2):
         """Return product of two elements the group  Q_x0.
 
         The two factors X1, X1 are coded as integers x1, x2 as in 
@@ -403,7 +405,7 @@ class Mat24Xi(object):
 
         
     @staticmethod
-    def xi_short_to_leech(x1):
+    def gen_xi_short_to_leech(x1):
         """Convert short vector to Leech lattice encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
@@ -460,7 +462,7 @@ class Mat24Xi(object):
         return (sign << 24) | (gcode << 12) | cocode
 
     @staticmethod
-    def xi_leech_to_short(x1):   
+    def gen_xi_leech_to_short(x1):   
         """Convert Leech lattice to short vector encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
@@ -521,7 +523,7 @@ class Mat24Xi(object):
   
 
     @classmethod
-    def xi_op_xi_short(cls, x, exp):
+    def gen_xi_op_xi_short(cls, x, exp):
         """Operation of  xi**exp  on the element x of the group Q_x0.
 
         The function returns the element
@@ -534,11 +536,11 @@ class Mat24Xi(object):
 
         The returned result is is coded in the same way. 
         """
-        y = cls.xi_short_to_leech(x)
+        y = cls.gen_xi_short_to_leech(x)
         if (y == 0): return x
-        y = cls.xi_op_xi(y, exp)
+        y = cls.gen_xi_op_xi(y, exp)
         if (y == 0): return x
-        y =  cls.xi_leech_to_short(y)
+        y =  cls.gen_xi_leech_to_short(y)
         if (y == 0): return x
         return y
 
@@ -551,7 +553,7 @@ class Mat24Xi(object):
         length = t_size[u_box] 
         u_box <<= 16;
         for i  in range(length):
-            a[i] = cls.xi_op_xi_short(u_box + i, u_exp) & 0xffff;
+            a[i] = cls.gen_xi_op_xi_short(u_box + i, u_exp) & 0xffff;
         return a[:length]
 
     @staticmethod

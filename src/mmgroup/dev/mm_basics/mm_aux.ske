@@ -123,7 +123,7 @@ static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 // Read entries of vector mv with modulus p and store these entries
 // in the array b. len is the number of entries to be read.
@@ -154,7 +154,7 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
     }
 }
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 // Same operation as mm_aux_read_mmv1(), but vector b is not reduced.
 // This is for debugging and less optimized than mm_aux_read_mmv1(). 
@@ -175,7 +175,7 @@ void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t le
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 // Write data from the array b to the vector mv with modulus p. 
 // len is the number of entries to be written.
@@ -205,7 +205,7 @@ void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 // Read entries of vector mv with modulus p and store these entries in
 // the array b. mv is a vector of contigous small arrays with 24 
@@ -242,7 +242,7 @@ void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 // Write data from the array b to the vector mv with modulus p. 
 // mv is a vector of contiguous small arrays with 24 entries. 
@@ -282,7 +282,7 @@ void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
 // Return the entry with given index of vector mv with modulus p.
 // The result is reduced modulo p.
@@ -301,7 +301,7 @@ uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 // Set the entry of the vector mv with modulus p at the  index i  
 // to the given value. 0 <= value <= p must hold.
@@ -327,7 +327,7 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 **********************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_aux_mmv_size(uint32_t p)
 // Return number of integers of type uint_mmv_t required to store
 // a vector of the representation R_p for a given p.
@@ -339,7 +339,7 @@ uint32_t mm_aux_mmv_size(uint32_t p)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 // Zero the vector of the representation R_p referred by mv,
 {
@@ -354,7 +354,7 @@ void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 // Return the entry of the vector mv in R_p at  index  i.
 {
@@ -397,7 +397,7 @@ uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 // Set the entry of the vector mv in R_p at index i to the 
 // given value. 0 <= value <= p must hold.
@@ -440,7 +440,7 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
 // Randomize the vector mv in R_p with the internal random generator.
 // The random generator must be seeded by function mm_rng_seed().
@@ -480,7 +480,7 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
 **********************************************************************/
 
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
 // Reduce the vector mv in R_p modulo p. Note that a zero entry
 // is represented either by 0...0 or by 1...1. This functions sets 
@@ -609,7 +609,7 @@ static int32_t check_mmv_buffer(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
 // Check the vector mv in R_p modulo p. 
 // The function returns 0 if it detects no error.
@@ -630,7 +630,7 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
 *** Low-level functions supperting external rep of vectors in R_p
 **********************************************************************/
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
 //
 {
@@ -656,7 +656,7 @@ void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 //
 {
@@ -691,7 +691,7 @@ void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 // Convert the vector mv in R_p to an array b of bytes. p is the
 // modulus for mv. b must have length 196884.  
@@ -714,7 +714,7 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 // Convert the array b of 196884 bytes to the vector mv in R_p to.
 // p is the modulus for mv.  
@@ -743,7 +743,7 @@ void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 *** Conversion between internal and sparse rep of vectors in R_p
 **********************************************************************/
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
 // Convert the vector 'mv' in the representation R_p of the monster, 
 // with 'mv' given in internal representation, to sparse format. The
@@ -800,7 +800,7 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
     return (int32_t)isp; 
 }
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
 // Extract certain entries of the vector  'mv' depending on the 
 // vector 'sp'. The entries of vector 'sp' are updated with the
@@ -873,7 +873,7 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
     }
         
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t *mv)
 // Add vector 'sp' to vector 'mv'. Here 'mv' in and 'sp' are vectors 
 // in the representation R_p of the monster, with 'mv' given in internal
@@ -935,7 +935,7 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
 // Set certain entries of the vector  'mv' depending on the vector
 // 'sp'. Here 'mv' in and 'sp' are vectors in the representation R_p 
@@ -993,7 +993,7 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
 // Convert external index i to sparse index.
 // Return 0 if index i is bad
@@ -1027,7 +1027,7 @@ uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
 // Convert array a of external indices to sparse indices in place.
 // Each index is converted using mm_aux_index_extern_to_sparse() 
@@ -1037,7 +1037,7 @@ void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t mm_aux_index_sparse_to_extern(uint32_t i)
 // Convert sparse index i to external index.
 // Return -1 if index i is bad
@@ -1069,7 +1069,7 @@ int32_t mm_aux_index_sparse_to_extern(uint32_t i)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 // Convert sparse index i to a short vector v in the Leech lattice.
 // Vector v has norm 32. The sign of v is implementation dependent.
@@ -1110,7 +1110,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
 // Convert sparse index i to a short vector v in the Leech lattice
 // modulo 2 in "Leech lattice coding"

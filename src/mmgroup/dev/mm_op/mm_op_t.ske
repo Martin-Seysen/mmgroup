@@ -35,7 +35,7 @@ static void invert{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
 // %%END IF  # GENERATE_CODE
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i, j, exp1;

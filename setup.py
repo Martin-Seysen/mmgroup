@@ -164,7 +164,7 @@ package_data = {
 
 pyx_sources = [
     os.path.join(DEV_DIR, "mat24", "mat24fast.pyx"),
-    os.path.join(DEV_DIR, "mat24_xi", "mat24_xi.pyx"),
+    os.path.join(DEV_DIR, "generators", "generators.pyx"),
     os.path.join(DEV_DIR, "mm_basics", "mm_basics.pyx"),
     os.path.join(DEV_DIR, "clifford12", "clifford12.pyx"),
 ]
@@ -241,7 +241,7 @@ mat24_shared = SharedExtension(
     name = "mmgroup.mmgroup_mat24", 
     sources=[
         os.path.join(C_DIR, "mat24_functions.c"),
-        os.path.join(C_DIR, "mat24_xi_functions.c"),
+        os.path.join(C_DIR, "gen_xi_functions.c"),
     ],
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -281,9 +281,9 @@ mat24_extension = Extension("mmgroup.mat24",
         extra_link_args = EXTRA_LINK_ARGS, 
 )
 
-mat24_xi_extension = Extension("mmgroup.mat24_xi",
+generators_extension = Extension("mmgroup.generators",
         sources=[
-            os.path.join(PXD_DIR, "mat24_xi.pyx"),
+            os.path.join(PXD_DIR, "generators.pyx"),
         ],
         #libraries=["m"] # Unix-like specific
         include_dirs = [ C_DIR ],
@@ -360,7 +360,7 @@ ext_modules = [
     mat24_shared,
     clifford12_shared, 
     mat24_extension,
-    mat24_xi_extension,
+    generators_extension,
     clifford12_extension,
     mm_presteps,
     mm_shared, 

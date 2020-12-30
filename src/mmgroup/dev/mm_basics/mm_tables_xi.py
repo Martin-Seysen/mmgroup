@@ -71,11 +71,11 @@ from mmgroup.generate_c import UserDirective
 
 try:
     # Try importing the fast C function
-    from mmgroup import mat24_xi 
+    from mmgroup import generators as gen 
 except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24_xi.mat24_xi_ref import  Mat24Xi
-    mat24_xi = Mat24Xi
+    from mmgroup.dev.generators.gen_xi_ref import GenXi 
+    gen = GenXi
 
 
 
@@ -158,15 +158,15 @@ class Pre_MM_TablesXi:
             image_start = self.MAP_XI[i, start]
             shape =  self.SHAPES[start]
             image_shape = self.SHAPES[image_start]
-            table = mat24_xi.make_table(j, i)
+            table = gen.make_table(j, i)
             assert shape[0] == image_shape[0], (shape[0], image_shape[0]) 
             assert len(table) == shape[0] * shape[1] * 32
             image_len = image_shape[0] * image_shape[1] * 32
             check_table(table, shape[0], shape[2])
-            inv_table = mat24_xi.invert_table(table, shape[2], image_len)
+            inv_table = gen.invert_table(table, shape[2], image_len)
             if start == BCT:
                 make_table_bc_symmetric(inv_table)
-            t_perm, t_sign = mat24_xi.split_table(inv_table, shape[1]*32)
+            t_perm, t_sign = gen.split_table(inv_table, shape[1]*32)
             del inv_table
             if image_shape[2] == 24:
                 t_perm = cut24(t_perm)

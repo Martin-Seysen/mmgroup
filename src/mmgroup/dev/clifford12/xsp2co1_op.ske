@@ -11,7 +11,7 @@
 
 #include <string.h>
 #include "mat24_functions.h"
-#include "mat24_xi_functions.h"
+#include "mmgroup_generators.h"
 
 #define CLIFFORD12_INTERN
 #include "clifford12.h"
@@ -283,7 +283,7 @@ uint32_t xsp2co1_conj_leech_word(uint32_t x1, uint32_t *pa, uint32_t n)
             case 8 + 6:
                v ^= 0xfffffff;
             case 6:
-               x1 = mat24_xi_op_xi(x1, v % 3);
+               x1 = gen_xi_op_xi(x1, v % 3);
                break;
             default:
                return (uint32_t)(0-1UL);

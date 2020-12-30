@@ -155,7 +155,7 @@ static uint32_t mm_crt_{op}_T(
 // %%END FOR
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255, int32_t *p_out)
 // Combine a vector from the vectors  p7, p31, p127, p255  of the
 // 198884 dimensional representation modulo 7, 31, 127, and 255
@@ -193,7 +193,7 @@ uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_crt_check_v2(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
 // For a given tuple of input vectors  p7, p31, p127, p255,  the 
 // function mm_crt_check_v2() returns the same value as function
@@ -246,7 +246,7 @@ static uint32_t crt_check_l(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, u
     return res != 0;    
 }
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_crt_check_g(uint32_t g, uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
 {
      switch ((g >> 25) & 7) {
@@ -268,7 +268,7 @@ uint32_t mm_crt_check_g(uint32_t g, uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t 
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 int64_t mm_crt_norm_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
 {
     uint_fast32_t j0, j1, dp;
@@ -293,7 +293,7 @@ int64_t mm_crt_norm_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 int64_t mm_crt_norm_int32(int32_t *pv)
 {
     return mm_crt_norm_int32_32(pv, 24, 24)
@@ -303,7 +303,7 @@ int64_t mm_crt_norm_int32(int32_t *pv)
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_crt_v2_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
 {
     uint_fast32_t j0, j1, dp, res = 0x1000000;
@@ -322,7 +322,7 @@ uint32_t mm_crt_v2_int32_32(int32_t *pv, uint32_t i0, uint32_t i1)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_crt_v2_int32(int32_t *pv)
 {
     uint_fast32_t  res =  mm_crt_v2_int32_32(pv, 72, 24)

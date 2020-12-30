@@ -2,7 +2,7 @@
 #include "mm_op{P}.h"
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_op{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 // Copy mv1 to mv2. Here mv1 and mv2 are vectors of the
 // monster group representation modulo {P}.
@@ -16,7 +16,7 @@ uint32_t mm_op{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_op{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Compare two vectors of the monster group representation modulo {P}..
 //  Comparison is done modulo {P}.
@@ -47,7 +47,7 @@ uint32_t mm_op{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
    
     
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Vector addition in the monster group representation modulo {P}.
 //  Put mv1 = mv1 + mv2.
@@ -82,7 +82,7 @@ void mm_op{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 //  Scalar multiplication in the monster group representation modulo {P}.
 //  Put mv1 = factor * mv1.
@@ -113,7 +113,7 @@ void mm_op{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mm_op{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
 //  Compare two vectors of the monster group representation modulo {P}.
 //  Comparison is done modulo q. q must divide {P}. The function returns:

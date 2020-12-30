@@ -278,7 +278,7 @@ void mm_op{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_ou
 
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
 {
   // %%IF* GENERATE_CODE
@@ -289,7 +289,7 @@ void mm_op{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_o
 }
 
 
-// %%EXPORT p
+// %%EXPORT px
 void mm_op{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 {
     uint_fast32_t i, i1;

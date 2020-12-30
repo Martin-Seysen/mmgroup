@@ -12,8 +12,8 @@ import pytest
 
 
 from mmgroup.dev.mat24.mat24_ref import Mat24
-from mmgroup.dev.mat24_xi.mat24_xi_ref import Mat24Xi
-from mmgroup import mat24_xi  
+from mmgroup.dev.generators.gen_xi_ref import GenXi
+from mmgroup import generators as gen  
 
         
 
@@ -25,7 +25,7 @@ from mmgroup import mat24_xi
 
 
 #######################################################################
-# test_mat24_xi_leech
+# test_gen_xi_leech
 #######################################################################
 
 
@@ -38,13 +38,13 @@ def xi_samples(ntests):
 
 
 
-TEST_PAR = [(Mat24Xi, 200), (mat24_xi, 2000)]
+TEST_PAR = [(GenXi, 200), (gen, 2000)]
 
-@pytest.mark.mat24_xi
-@pytest.mark.parametrize("mat24_xi_class, ntests", TEST_PAR )
-def test_mat24_xi_leech(mat24_xi_class, ntests):
-    xi = mat24_xi_class.xi_op_xi 
-    mul =  mat24_xi_class.xi_mul_leech 
+@pytest.mark.gen_xi
+@pytest.mark.parametrize("gen_xi_class, ntests", TEST_PAR )
+def test_gen_xi_leech(gen_xi_class, ntests):
+    xi = gen_xi_class.gen_xi_op_xi 
+    mul =  gen_xi_class.gen_xi_mul_leech 
 
     xl_old =  [0,0,0]
     for x in xi_samples(ntests):
@@ -58,7 +58,7 @@ def test_mat24_xi_leech(mat24_xi_class, ntests):
 
 
 #######################################################################
-# test_mat24_xi_short
+# test_gen_xi_short
 #######################################################################
 
 
@@ -113,17 +113,17 @@ def short_samples(ntests):
         yield rand_short_vector()
  
 
-TEST_PAR = [(Mat24Xi, 200), (mat24_xi, 2000)]
+TEST_PAR = [(GenXi, 200), (gen, 2000)]
 
 
           
-@pytest.mark.mat24_xi
-@pytest.mark.parametrize("mat24_xi_class, ntests", TEST_PAR )
-def test_mat24_xi_short(mat24_xi_class, ntests):
-    xi = mat24_xi_class.xi_op_xi 
-    xi_short = mat24_xi_class.xi_op_xi_short 
-    to_leech = mat24_xi_class.xi_short_to_leech
-    to_short = mat24_xi_class.xi_leech_to_short
+@pytest.mark.gen_xi
+@pytest.mark.parametrize("gen_xi_class, ntests", TEST_PAR )
+def test_gen_xi_short(gen_xi_class, ntests):
+    xi = gen_xi_class.gen_xi_op_xi 
+    xi_short = gen_xi_class.gen_xi_op_xi_short 
+    to_leech = gen_xi_class.gen_xi_short_to_leech
+    to_short = gen_xi_class.gen_xi_leech_to_short
     for x in short_samples(ntests):
         xl = to_leech(x)
         x_norm = normalize_short_vector_code(x)
@@ -138,15 +138,15 @@ def test_mat24_xi_short(mat24_xi_class, ntests):
 
 
 #######################################################################
-# test_mat24_xi_ref
+# test_gen_xi_ref
 #######################################################################
 
 
-@pytest.mark.mat24_xi
-@pytest.mark.parametrize("mat24_xi_class, ref", [(mat24_xi, Mat24Xi)])
-def test_mat24_xi_ref(mat24_xi_class, ref, ntests=200):       
-    xi, xi_ref = mat24_xi_class.xi_op_xi, ref.xi_op_xi 
-    mul, mul_ref =  mat24_xi_class.xi_mul_leech, ref.xi_mul_leech 
+@pytest.mark.gen_xi
+@pytest.mark.parametrize("gen_xi_class, ref", [(gen, GenXi)])
+def test_gen_xi_ref(gen_xi_class, ref, ntests=200):       
+    xi, xi_ref = gen_xi_class.gen_xi_op_xi, ref.gen_xi_op_xi 
+    mul, mul_ref = gen_xi_class.gen_xi_mul_leech, ref.gen_xi_mul_leech 
 
     x_old = 0
     for x in xi_samples(ntests):
@@ -154,16 +154,16 @@ def test_mat24_xi_ref(mat24_xi_class, ref, ntests=200):
            res, ref_ = xi(x, i), xi_ref(x, i)
            assert res == ref_ , lmap(hex,[i, x,res, ref_ ])
         assert mul(x, x_old) == mul_ref(x, x_old)
-        assert mat24_xi_class.xi_g_gray(x) == ref.xi_g_gray(x)
-        assert mat24_xi_class.xi_w2_gray(x) == ref.xi_w2_gray(x)
-        assert mat24_xi_class.xi_g_cocode(x) == ref.xi_g_cocode(x)
-        assert mat24_xi_class.xi_w2_cocode(x) == ref.xi_w2_cocode(x)
+        assert gen_xi_class.gen_xi_g_gray(x) == ref.gen_xi_g_gray(x)
+        assert gen_xi_class.gen_xi_w2_gray(x) == ref.gen_xi_w2_gray(x)
+        assert gen_xi_class.gen_xi_g_cocode(x) == ref.gen_xi_g_cocode(x)
+        assert gen_xi_class.gen_xi_w2_cocode(x) == ref.gen_xi_w2_cocode(x)
         x_old = x
-    xi_short = mat24_xi_class.xi_op_xi_short 
-    to_leech = mat24_xi_class.xi_short_to_leech
-    to_short = mat24_xi_class.xi_leech_to_short
-    xi_short_ref = ref.xi_op_xi_short 
-    to_leech_ref = ref.xi_short_to_leech
+    xi_short = gen_xi_class.gen_xi_op_xi_short 
+    to_leech = gen_xi_class.gen_xi_short_to_leech
+    to_short = gen_xi_class.gen_xi_leech_to_short
+    xi_short_ref = ref.gen_xi_op_xi_short 
+    to_leech_ref = ref.gen_xi_short_to_leech
     for x in short_samples(ntests):
         xl = to_leech_ref(x)
         assert to_leech(x) == xl, lmap(hex,[x, xl,to_leech(x)])

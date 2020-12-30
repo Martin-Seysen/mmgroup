@@ -16,7 +16,6 @@ from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
 from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.mat24_xi import xi_op_xi
 from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.clifford12 import xsp2co1_chain_short_3, xsp2co1_elem_to_qs
 from mmgroup.clifford12 import xsp2co1_short_2to3, xsp2co1_short_3to2
@@ -256,7 +255,7 @@ def ref_conjugate(x, elem):
 
 TAGS = {'l':6, 'd':1, 'p':2, 'x':3, 'y':4 }
 
-def conjugate_mat24_xi(x, elem):
+def conjugate_gen_xi(x, elem):
     data = [(TAGS[tag] << 28) + (d & 0xfffffff) for tag, d in elem]
     a = np.array(data, dtype = np.uint32)
     return xsp2co1_conj_leech_word(x, a, len(a))
@@ -292,7 +291,7 @@ def test_conjugate_mat24xi(verbose = 0):
     for g in conjugate_group_testdata():
         for x in conjugate_vector_testdata():
             xc_ref = ref_conjugate(x, g)
-            xc  = conjugate_mat24_xi(x, g)
+            xc  = conjugate_gen_xi(x, g)
             ok = xc == xc_ref
             #ok_upto_sign = ok or ((xc ^ xc_ref) & ~0x1800000 )== 0
             if verbose or not ok:

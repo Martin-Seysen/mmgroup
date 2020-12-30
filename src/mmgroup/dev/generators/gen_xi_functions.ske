@@ -1,7 +1,7 @@
-/** @file mat24_xi_functions.c
- File ``mat24_xi_function.c`` implements the functionality described
+/** @file gen_xi_functions.c
+ File ``gen_xi_function.c`` implements the functionality described
  in the document *The C interface of the mmgroup project*, 
- section *Description of the mmgroup.mat24_xi extension*. We use the
+ section *Description of the mmgroup.gen_xi extension*. We use the
  terminology introduced at the beginning of that section.
 */
 
@@ -18,57 +18,12 @@
 // #include <stdio.h>
 #include <string.h>
 #include "mat24_functions.h"
-#include "mat24_xi_functions.h"
+#include "mmgroup_generators.h"
 
 
 // %%EXPORT_KWD MAT24_API
 
 
-// %%GEN h
-#ifndef MAT24_XI_FUNCTIONS_H
-#define MAT24_XI_FUNCTIONS_H
-
-/// @cond DO_NOT_DOCUMENT 
-
-#define MAT24_DLL  // We want a DLL!!
-
-// Generic helper definitions for shared library support
-#if defined _WIN32 || defined __CYGWIN__
-  #define MAT24_HELPER_DLL_IMPORT __declspec(dllimport)
-  #define MAT24_HELPER_DLL_EXPORT __declspec(dllexport)
-  #define MAT24_HELPER_DLL_LOCAL
-#else
-  #if __GNUC__ >= 4
-    #define MAT24_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
-    #define MAT24_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-    #define MAT24_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
-  #else
-    #define MAT24_HELPER_DLL_IMPORT
-    #define MAT24_HELPER_DLL_EXPORT
-    #define MAT24_HELPER_DLL_LOCAL
-  #endif
-#endif
-
-// Now we use the generic helper definitions above to define MAT24_API 
-// and MAT24_LOCAL.
-// MAT24_API is used for the public API symbols. It either DLL imports 
-// or DLL exports (or does nothing for static build). 
-// MAT24_LOCAL is used for non-api symbols.
-
-#ifdef MAT24_DLL // defined if MAT24 is compiled as a DLL
-  #ifdef MAT24_DLL_EXPORTS // defined if we are building the MAT24 DLL 
-                           // (instead of using it)
-    #define MAT24_API MAT24_HELPER_DLL_EXPORT
-  #else
-    #define MAT24_API MAT24_HELPER_DLL_IMPORT
-  #endif // MAT24_DLL_EXPORTS
-  #define MAT24_LOCAL MAT24_HELPER_DLL_LOCAL
-#else // MAT24_DLL is not defined: this means MAT24 is a static lib.
-  #define MAT24_API
-  #define MAT24_LOCAL
-#endif // MAT24_DLL
-
-/// @endcond
 
 
 // %%GEN ch
@@ -85,7 +40,7 @@ extern "C" {
   product of the elements ``x1`` and ``x2`` of \f$Q_{{x0}}\f$.
 */
 // %%EXPORT px
-uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
+uint32_t gen_xi_mul_leech(uint32_t x1, uint32_t x2)
 {
     uint_fast32_t scalar;      
     scalar = (x2 >> 12) &  x1 & 0xfff;
@@ -104,12 +59,12 @@ uint32_t mat24_xi_mul_leech(uint32_t x1, uint32_t x2)
 /// @cond DO_NOT_DOCUMENT 
 
 static const uint8_t MAT24_XI_G_GRAY_TABLE[64] = { 
-// %%TABLE Mat24_xi_g_gray_table , uint8
+// %%TABLE GenXi_g_gray_table , uint8
 };
 
 
 static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = { 
-// %%TABLE Mat24_xi_g_cocode_table , uint8
+// %%TABLE GenXi_g_cocode_table , uint8
 };
 
 
@@ -128,9 +83,9 @@ static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = {
   representation. These representations are defined in 
   the *Description of the mmgroup.mat24 extension*.
 */
-// %%EXPORT p
-uint32_t mat24_xi_g_gray(uint32_t v)
-// %%PY_DOCSTR Mat24Xi_doc.xi_g_gray
+// %%EXPORT px
+uint32_t gen_xi_g_gray(uint32_t v)
+// %%PY_DOCSTR GenXi_doc.gen_xi_g_gray
 {
     return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v)]);
 }
@@ -143,8 +98,8 @@ uint32_t mat24_xi_g_gray(uint32_t v)
   as defined in the *Description of the mmgroup.mat24 extension*.
   The function returns \f$w_2(v)\f$, which may be 0 or 1.  
 */
-// %%EXPORT p
-uint32_t mat24_xi_w2_gray(uint32_t v)
+// %%EXPORT px
+uint32_t gen_xi_w2_gray(uint32_t v)
 {
     return MAT24_XI_G_GRAY_TABLE[compress_gray(v)] >> 7;
 }
@@ -156,9 +111,9 @@ uint32_t mat24_xi_w2_gray(uint32_t v)
   are vencoded in ``cocode`` representation, as defined in 
   the *Description of the mmgroup.mat24 extension*.
 */
-// %%EXPORT p
-uint32_t mat24_xi_g_cocode(uint32_t v)
-// %%PY_DOCSTR Mat24Xi_doc.xi_g_cocode
+// %%EXPORT px
+uint32_t gen_xi_g_cocode(uint32_t v)
+// %%PY_DOCSTR GenXi_doc.gen_xi_g_cocode
 {
     return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(v)]);
 }
@@ -170,8 +125,8 @@ uint32_t mat24_xi_g_cocode(uint32_t v)
   as defined in the *Description of the mmgroup.mat24 extension*. 
   The function returns \f$w_2(v)\f$, which may be 0 or 1.  
 */
-// %%EXPORT p
-uint32_t mat24_xi_w2_cocode(uint32_t v)
+// %%EXPORT px
+uint32_t gen_xi_w2_cocode(uint32_t v)
 {
     return MAT24_XI_G_COCODE_TABLE[compress_gray(v)] >> 7;
 }
@@ -189,8 +144,8 @@ uint32_t mat24_xi_w2_cocode(uint32_t v)
   return value are encoded in *Leech lattice encoding* as described
   above.
 */
-// %%EXPORT p
-uint32_t mat24_xi_op_xi(uint32_t x, uint32_t e)
+// %%EXPORT px
+uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 {
     uint_fast32_t tv, tc; 
     // reduce e mod 3, no action if e is 0 (mod 3)
@@ -230,9 +185,9 @@ uint32_t mat24_xi_op_xi(uint32_t x, uint32_t e)
   from *Leech lattice encoding* to *Short vector encoding* and returns
   the converted element.
 */
-// %%EXPORT p
-uint32_t mat24_xi_leech_to_short(uint32_t x)
-// %%PY_DOCSTR Mat24Xi_doc.xi_leech_to_short
+// %%EXPORT px
+uint32_t gen_xi_leech_to_short(uint32_t x)
+// %%PY_DOCSTR GenXi_doc.gen_xi_leech_to_short
 {
     uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
     sign = (x >> 24) & 1;
@@ -307,8 +262,8 @@ uint32_t mat24_xi_leech_to_short(uint32_t x)
   
   An invalid value \f$x\f$ is converted to 0.
 */
-// %%EXPORT p
-uint32_t mat24_xi_short_to_leech(uint32_t x)
+// %%EXPORT px
+uint32_t gen_xi_short_to_leech(uint32_t x)
 {
     uint_fast32_t sign = (x >> 15) & 1;
     uint_fast32_t code = x & 0x7fff;
@@ -388,19 +343,19 @@ uint32_t mat24_xi_short_to_leech(uint32_t x)
   
   The function returns \f$\xi^{{-e}} x \xi^e\f$ for an element 
   \f$x\f$  of the group \f$Q_{{x0}}\f$. In contrast to function
-  mat24_xi_op_xi, the input \f$x\f$ and the return value are encoded 
+  gen_xi_op_xi, the input \f$x\f$ and the return value are encoded 
   in *short vector encoding* as described above.
   
   Any invalid element \f$x\f$ is converted to \f$x\f$.
 */
-// %%EXPORT p
-uint32_t mat24_xi_op_xi_short(uint32_t x, uint32_t u)
+// %%EXPORT px
+uint32_t gen_xi_op_xi_short(uint32_t x, uint32_t u)
 {
-    uint_fast32_t y = mat24_xi_short_to_leech(x);
+    uint_fast32_t y = gen_xi_short_to_leech(x);
     if (y == 0) return x;
-    y = mat24_xi_op_xi(y, u);
+    y = gen_xi_op_xi(y, u);
     if (y == 0) return x;
-    y = mat24_xi_leech_to_short(y);
+    y = gen_xi_leech_to_short(y);
     return y ? y : x;
 }
 
@@ -429,7 +384,7 @@ uint32_t mat24_xi_op_xi_short(uint32_t x, uint32_t u)
   ``p[i] = i`` for all invalid indices ``i``.
 */
 // %%EXPORT p
-uint32_t mat24_xi_make_table(uint32_t b, uint32_t e, uint16_t *ptab)
+uint32_t gen_xi_make_table(uint32_t b, uint32_t e, uint16_t *ptab)
 // generate table, yet to be documented!!
 {
     static uint16_t t_size[6] = {
@@ -438,15 +393,15 @@ uint32_t mat24_xi_make_table(uint32_t b, uint32_t e, uint16_t *ptab)
     uint_fast32_t i, len = b < 6 ? t_size[b] : 0;
     b <<= 16;
     for (i = 0; i < len; ++i) ptab[i] = 
-         (uint16_t)(mat24_xi_op_xi_short(b + i, e) & 0xffff);
+         (uint16_t)(gen_xi_op_xi_short(b + i, e) & 0xffff);
     return len;
 }
 
 /**
-  @brief Invert a table created by function ``mat24_xi_make_table``
+  @brief Invert a table created by function ``gen_xi_make_table``
   
   The function computes the inverse table of a table ``ptab``
-  of length ``len`` created by function ``mat24_xi_make_table`` 
+  of length ``len`` created by function ``gen_xi_make_table`` 
   and stores the inverse table in the buffer referred by ``pres``.
   
   Parameter ``len_res`` is the length of the returned table.
@@ -461,7 +416,7 @@ uint32_t mat24_xi_make_table(uint32_t b, uint32_t e, uint16_t *ptab)
   that class.
 */  
 // %%EXPORT p
-void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_t *pres, uint32_t len_res)
+void gen_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_t *pres, uint32_t len_res)
 {
     uint_fast32_t i, r;
     for (i = 0; i < len_res; ++i) pres[i] = 0;
@@ -476,10 +431,10 @@ void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_
 
 
 /**
-  @brief Split a table created by function ``mat24_xi_invert_table``
+  @brief Split a table created by function ``gen_xi_invert_table``
   
   The function splits the sign bit  from a table ``ptab`` of length
-  ``len`` created by function ``mat24_xi_invert_table`` and replaces
+  ``len`` created by function ``gen_xi_invert_table`` and replaces
   ``ptab[i]`` by ``(ptab[i] & 0x7fff) % mod``. The sign bit
   ``ptab[32*i+j] >> 15`` is stored in bit ``j`` of entry 
   ``psign[i]``. 
@@ -488,7 +443,7 @@ void mat24_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_
   class ``mmgroup.dev.mm_basics.mm_tables_xi.Pre_MM_TablesXi``.
 */  
 // %%EXPORT p
-void mat24_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *psign)
+void gen_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *psign)
 {
     uint_fast32_t i, j, r, sign;
     len >>= 5;
@@ -509,8 +464,6 @@ void mat24_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *
 #ifdef __cplusplus
 }
 #endif
-// %%GEN h
-#endif  // #ifndef MAT24_XI_FUNCTIONS_H
 
 
 
