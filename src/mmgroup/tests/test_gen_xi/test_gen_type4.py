@@ -17,11 +17,11 @@ import pytest
 
 from mmgroup import MMGroup
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.clifford12 import xsp2co1_type4_3to2
-from mmgroup.clifford12 import xsp2co1_mul_vector3_word
-from mmgroup.clifford12 import xsp2co1_mul_vector3_atom
-from mmgroup.clifford12 import xsp2co1_conj_leech_word
-from mmgroup.clifford12 import xsp2co1_conj_leech_atom
+from mmgroup.generators import gen_leech3_type4_to2
+from mmgroup.generators import gen_leech3_op_vector_word
+from mmgroup.generators import gen_leech3_op_vector_atom
+from mmgroup.generators import gen_leech2_conj_word
+from mmgroup.generators import gen_leech2_conj_atom
 
 
 OMEGA0_V3  = 0x1
@@ -57,7 +57,7 @@ def cond(c, a, b):
     """Substitute for the C conditional   'c ? a : b' """
     return a if c else b
 
-def py_xsp2co1_type4_3to2(x):
+def py_gen_leech3_type4_to2(x):
     # uint_fast32_t gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
     x = short_3_reduce(x);
     # Let h be the support of x, i.e. the bit vector of nonzero
@@ -187,18 +187,18 @@ def create_test_elements():
 
 def mul_v3(v3, g):
     assert g in MM
-    result = xsp2co1_mul_vector3_word(v3, g._data, g.length)
+    result = gen_leech3_op_vector_word(v3, g._data, g.length)
     assert result & 0xffff000000000000 == 0, hex(result)
     return result
         
 def mul_v2(v2, g):
     assert g in MM
-    result = xsp2co1_conj_leech_word(v2, g._data, g.length)
+    result = gen_leech2_conj_word(v2, g._data, g.length)
     assert result & 0xfe000000 == 0, hex(result)
     return result
 
 def v3_to_v2(v3):
-    result = xsp2co1_type4_3to2(v3)
+    result = gen_leech3_type4_to2(v3)
     assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
     return result
 
@@ -232,7 +232,7 @@ def test_type4(verbose = 0):
         v2 = v3_to_v2(v3) 
         ok = v2 == v2_ref 
         if  weights[w] <= 20:
-             assert  v2 == py_xsp2co1_type4_3to2(v3)        
+             assert  v2 == py_gen_leech3_type4_to2(v3)        
         if verbose or not ok:
             if not verbose:
                 print("\nTEST %s" % (ntest+1))
@@ -296,7 +296,7 @@ def rand_v3_dict(n):
     d = defaultdict(int)
     for i in range(n):
         v3 = rand_v3()
-        v2 = xsp2co1_type4_3to2(v3) 
+        v2 = gen_leech3_type4_to2(v3) 
         if (v2 == 0):
             d[0] += 1
         else: 

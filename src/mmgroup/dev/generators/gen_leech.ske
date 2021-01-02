@@ -11,13 +11,13 @@
 
 #include <string.h>
 #include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
 #include "mmgroup_generators.h"
 
-#define CLIFFORD12_INTERN
-#include "clifford12.h"
 
 
-// %%EXPORT_KWD CLIFFORD12_API
+
+// %%EXPORT_KWD MAT24_API
 
 
 // %%GEN ch
@@ -27,6 +27,62 @@ extern "C" {
 // %%GEN c
 
 
+// %%GEN h
+#ifdef MMGROUP_GENERATORS_INTERN
+
+static inline uint64_t short_3_reduce(uint64_t x)
+{
+    uint64_t a = (x & (x >> 24)) & 0xffffffUL;
+    x ^=  a | (a << 24);
+    return x  & 0xffffffffffffULL;
+}
+
+
+static inline
+uint64_t gen_leech3_op_pi(uint64_t v3, uint8_t perm[24])
+{
+    uint64_t w3 = 0;
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) {
+        w3 |= ((v3 >> i) & 0x1000001ULL) << perm[i];
+    }
+    return w3; 
+}
+
+static inline
+uint64_t gen_leech3_op_y(uint64_t v3, uint32_t y)
+{
+    uint64_t v = mat24_gcode_to_vect(y);
+    return v3 ^  (v | (v << 24)); 
+}
+
+static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
+{
+    uint64_t zero, res;
+    
+    // Set all bits i in ``zero`` to 0 where x1[i] * x2[i] is 0
+    zero = ((x1 ^ (x1 >> 24)) & (x2 ^ (x2 >> 24))) & 0xffffffUL;
+    // Store scalar products of entries of x1 and x2 in res
+    // Each scalar product is >= 0 and <= 2.
+    res = (x1 ^ x2) & 0xffffff000000ULL;
+    res = (res & (zero << 24)) | (zero & ~(res >> 24));
+    // Sum up entries of res, counting the high 24 bits twice
+    res = (res & 0x555555555555ULL) + ((res >> 1) & 0x555555555555ULL);
+    res = (res & 0x333333333333ULL) + ((res >> 2) & 0x333333333333ULL);
+    res = (res & 0x0f0f0f0f0f0fULL) + ((res >> 4) & 0x0f0f0f0f0f0fULL);
+    res = (res & 0xffffffULL) + ((res >> 23) & 0x1fffffeULL);
+    res = ((res >> 16) + (res >> 8) + res) & 0xff;
+    // Reduce res modulo 3; we have 0 <= res <= 48
+    res = (res & 3) + (res >> 2) + 1; // res <= 19; res is one too big
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 7
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 4
+    res =  (res & 3) + (res >> 2);    // 1 <= res <= 3
+    return (uint32_t)res - 1;
+}
+
+#endif // 
+// %%GEN c
+
 
 
 /*************************************************************************
@@ -34,7 +90,7 @@ extern "C" {
 *************************************************************************/
 
 // %%EXPORT px
-uint32_t xsp2co1_leech_type(uint64_t x)
+uint32_t gen_leech2_type(uint64_t x)
 // Return ``0x10 * type(x) + subtype(x)`` for a vector ``x``
 // in the Leech lattice modulo ``2``.
 // The type of a vector is half the length of the shortest 
@@ -127,8 +183,11 @@ uint32_t xsp2co1_leech_type(uint64_t x)
 
 
 
-
-
+/************************************************************************
+*************************************************************************
+*** Leech lattice mod 2
+*************************************************************************
+*************************************************************************/
 
 
 /*************************************************************************
@@ -222,7 +281,7 @@ uint32_t op_y(uint32_t x1, uint32_t y)
 
 
 // %%EXPORT px
-uint32_t xsp2co1_conj_leech_word(uint32_t x1, uint32_t *pa, uint32_t n)
+uint32_t gen_leech2_conj_word(uint32_t x1, uint32_t *pa, uint32_t n)
 // Conjugate the element ``x1`` of the Pauli group with element 
 // ``e`` of the group ``g_{{x1}}`` with the atom
 // given by ``v``. Atom ``v`` is interpreted as follows:
@@ -295,130 +354,12 @@ uint32_t xsp2co1_conj_leech_word(uint32_t x1, uint32_t *pa, uint32_t n)
 
 
 // %%EXPORT px
-uint32_t xsp2co1_conj_leech_atom(uint32_t x1, uint32_t v)
+uint32_t gen_leech2_conj_atom(uint32_t x1, uint32_t v)
 {
-    return  xsp2co1_conj_leech_word(x1, &v, 1);
+    return  gen_leech2_conj_word(x1, &v, 1);
 }
 
 
-
-
-/*************************************************************************
-*** Convert type-4 vector mod 3 to type-4 vector mod 2
-*************************************************************************/
-
-
-static inline uint64_t short_3_reduce(uint64_t x)
-{
-    uint64_t a = (x & (x >> 24)) & 0xffffffUL;
-    x ^=  a | (a << 24);
-    return x  & 0xffffffffffffULL;
-}
-
-
-static inline uint32_t parity12(uint64_t x)
-{
-    x ^= x >> 6; x ^= x >> 3;
-    return (0x96 >> (x & 7)) & 1;
-}
-
-
-
-static inline uint32_t parity24(uint64_t x)
-{
-    x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
-    return (0x96 >> (x & 7)) & 1;
-}
-
-
-// %%EXPORT px
-uint64_t xsp2co1_type4_3to2(uint64_t x)
-{
-    uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
-    x = short_3_reduce(x);
-    // Let h be the support of x, i.e. the bit vector of nonzero
-    // coordinates of the vector x (modulo 3)
-    h = ((x >> 24) | x) & 0xffffff;
-    // Let w1 and w2 be the number of indices with coordinate 1 and 2
-    w = mat24_bw24((uint32_t)h);
-    // Compute ``gcode`` and ``cocode`` for vector x. Return 0 if we 
-    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
-    // has to be corrected by a term 0xffffff. At the end of the
-    // switch statemnt, ``gcode`` might not correspond to a Golay
-    // code vector; this means that x is not of type 4.
-    switch (w) {
-        case 22:
-            // type (5**1, 3**2, 1**21)
-            syn = mat24_syndrome((uint32_t)x, 0);
-            gcodev = (x ^ syn) & 0xffffff;
-            t = h & syn;
-            cocodev = t | (0xffffff & ~h);
-            if ((t == 0) || (t & (t-1))) return 0;
-            omega = 0;
-            break;              
-        case 19:
-            // type (3**5, 1**19)
-            w1 = mat24_bw24((uint32_t)x);
-            x1 = ((w1 & 1) ? x : (x >> 24)) & 0xffffff;
-            syn = mat24_syndrome(x1, 0);
-            cocodev = ~h & 0xffffff;
-            if (syn & h) syn = cocodev;            
-            gcodev = (x1 ^ syn) & 0xffffff;
-            omega = 0;
-            break;
-        case 16:
-            // type (2**16, 0**8)
-            w1 = mat24_bw24((uint32_t)x);
-            if (w1 & 1) return 0;
-            gcodev = h;
-            omega = w1 >> 1;
-            cocodev = x & 0xfffffff;
-            break;
-        case 13:
-            // type (4**1, 2**12, 0**11)
-        case 10:
-            // type (4**2, 2**10, 0**14)
-            syn = mat24_syndrome(h & 0xffffff, 0);
-            if ((h & syn) != syn) return 0;                  
-            gcodev = h ^ syn;
-            cocodev = syn | (x & ~syn & 0xffffff);
-            w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
-            omega = (w1 >> 1) + parity24(syn & x) + w;
-            break; 
-        case 7:
-            // type (6**1, 2**7, 0**16)
-            syn = mat24_syndrome(h, 0);
-            if (syn & (syn - 1)) return 0;
-            gcodev = h ^ syn;
-            cocodev = (x & 0xffffff);
-            w1 = mat24_bw24(cocodev);
-            cocodev |=  (0 - (w1 & 1)) & syn;
-            omega = ((w1 + 1) >> 1) + 1;
-            break; 
-        case 4:
-            gcodev = 0;
-            cocodev = h;
-            omega = parity24(x);
-            break;
-        case 1:
-            gcodev = cocodev = 0;
-            omega = 1;
-            break;    
-        default:
-            return 0;        
-    }
-    gcodev = mat24_vect_to_gcode(gcodev); 
-    if (gcodev & 0xfffff000UL) return 0;
-    cocodev = mat24_vect_to_cocode(cocodev);
-    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
-    // correct ``gcodev`` by term ``Omega`` if omega is odd
-    gcodev ^= (omega & 1) << 11;         
-    res = (gcodev << 12) ^ cocodev;
-    // Correct an odd result
-    if (w >= 19 && parity12(res & (res >> 12))) res ^= 0x800000;
-    return res;
-}
 
 
 
@@ -474,14 +415,14 @@ int32_t map_to_standard12_xi_exp(uint32_t v)
 
 
 // %%EXPORT px
-int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
+int32_t gen_leech2_reduce_type4_vector(uint32_t v, uint32_t *result)
 {
     uint32_t *p_res = result, i, gc, coc, vtype;
     int32_t exp;
     for (i = 5; i; --i ) {
         gc = mat24_gcode_to_vect(v >> 12);
         coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
-        vtype = xsp2co1_leech_type(v);
+        vtype = gen_leech2_type(v);
         switch (vtype) {
             case 0x48:
                 return (int32_t)(p_res - result);
@@ -573,7 +514,7 @@ int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
         }
         if (exp) {
             exp += 0x60000000;
-            v = xsp2co1_conj_leech_atom(v, exp);
+            v = gen_leech2_conj_atom(v, exp);
             if (v & 0xfe000000) return -1L;
             *p_res++ = exp;
         }
@@ -582,6 +523,354 @@ int32_t xsp2co1_reduce_type4_vector(uint32_t v, uint32_t *result)
 }
 
  
+
+
+/************************************************************************
+*************************************************************************
+*** Leech lattice mod 3
+*************************************************************************
+*************************************************************************/
+
+/*************************************************************************
+*** Functions for supporting the Leech lattice mod 3
+*************************************************************************/
+
+#define ONE ((uint64_t)(1ULL))
+
+// %%EXPORT px
+uint64_t gen_leech2_short_to3(uint64_t x)
+{
+    uint64_t  gcodev, cocodev, theta, w, result;
+    // Put gcodev = codeword (in vector rep)
+    gcodev = mat24_gcode_to_vect((uint32_t)x >> 12); 
+    theta = MAT24_THETA_TABLE[((uint32_t)x >> 12) & 0x7ff]; 
+    // Put w = weight(code word gcodev) / 4
+    w = 0 - ((x >> 23) & 1);
+    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+
+    if (x & 0x800) {  // case odd cocode
+        uint_fast32_t scalar; 
+        // Put cocodev = cocode word (in vector rep)
+        cocodev = mat24_cocode_syndrome((uint32_t)(x ^ theta), 0);    
+        if (cocodev & (cocodev - 1)) return 0;
+        // Put scalar = scalar product (code, cocode)
+        scalar = (x >> 12) &  x & 0xfff;
+        scalar ^= scalar >> 6;
+        scalar ^= scalar >> 3;
+        scalar = (0x96 >> (scalar & 7));
+        if (scalar & 1) return 0;
+        result = (gcodev ^ ((gcodev ^ 0xffffff) << 24))
+               & ~(cocodev | (cocodev << 24));
+        return result;        
+    } else { 
+        uint_fast32_t  c_w;
+        uint8_t c_list[4];
+        // Put x[11...0] = cocode word (in cocode rep)
+        x ^= theta; 
+        switch (w) {
+            case 4:
+                gcodev ^= 0xffffff;
+            case 2:
+                // Put cocodev = cocode word (in vector rep)
+                cocodev = mat24_cocode_syndrome((uint32_t)x, 
+                    mat24_lsbit24((uint32_t)gcodev));
+                // Put c_w = min weight of cocode word
+                c_w = mat24_bw24((uint32_t)cocodev);
+                if ( ((cocodev & gcodev) != cocodev)
+                    ||  (c_w ^ 2 ^ w) & 3 ) return 0;
+                result = (gcodev & ~cocodev) | (cocodev << 24);
+                return result;
+            case 3:
+                return 0;
+            default:  // can be case 0 or 6 only
+                // Put c_w = min weight of cocode word
+                // and store cocode bits in c_list.
+                c_w = mat24_cocode_to_bit_list((uint32_t)x, 0, c_list);
+                if (c_w != 2) return 0;
+                result = (ONE <<  c_list[0]) + (ONE <<  (c_list[1] + 24 - 4 * w));
+                return result;
+        }
+    } 
+}
+
+
+
+
+
+
+
+
+
+// %%EXPORT px
+uint64_t gen_leech3_short_to2(uint64_t x)
+{
+    uint_fast32_t  gcodev, cocodev, theta, w1, w2;
+    x = short_3_reduce(x);
+    w1 = mat24_bw24((uint32_t)x); 
+    w2 = mat24_bw24((uint32_t)(x >> 24));
+    switch (w1 + w2) {
+        case 23:
+            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) return 0; 
+            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
+            if ((w1 + 1) & 4)  gcodev ^= 0xffffffUL;
+            break;              
+        case 8:
+            if (w1 & 1) return 0;
+            gcodev = (x | (x >> 24)) & 0xffffffUL;
+            cocodev = x & 0xffffffUL;
+            if (w1 & 2) gcodev ^= 0xffffffUL;
+            break;
+        case 2:
+            cocodev = (x |  (x >> 24)) & 0xffffffUL;
+            gcodev = (w1 & 1) ? 0 : 0xffffffUL;
+            break;
+        default:
+            return 0;        
+    }
+    gcodev = mat24_vect_to_gcode(gcodev);
+    if (gcodev & 0xfffff000UL) return 0;
+    theta = MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    return (gcodev << 12) ^ theta ^ cocodev;
+}
+
+
+
+/*************************************************************************
+*** Convert type-4 vector mod 3 to type-4 vector mod 2
+*************************************************************************/
+
+
+
+
+
+static inline uint32_t parity12(uint64_t x)
+{
+    x ^= x >> 6; x ^= x >> 3;
+    return (0x96 >> (x & 7)) & 1;
+}
+
+
+
+static inline uint32_t parity24(uint64_t x)
+{
+    x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
+    return (0x96 >> (x & 7)) & 1;
+}
+
+
+// %%EXPORT px
+uint64_t gen_leech3_type4_to2(uint64_t x)
+{
+    uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
+    x = short_3_reduce(x);
+    // Let h be the support of x, i.e. the bit vector of nonzero
+    // coordinates of the vector x (modulo 3)
+    h = ((x >> 24) | x) & 0xffffff;
+    // Let w1 and w2 be the number of indices with coordinate 1 and 2
+    w = mat24_bw24((uint32_t)h);
+    // Compute ``gcode`` and ``cocode`` for vector x. Return 0 if we 
+    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
+    // has to be corrected by a term 0xffffff. At the end of the
+    // switch statemnt, ``gcode`` might not correspond to a Golay
+    // code vector; this means that x is not of type 4.
+    switch (w) {
+        case 22:
+            // type (5**1, 3**2, 1**21)
+            syn = mat24_syndrome((uint32_t)x, 0);
+            gcodev = (x ^ syn) & 0xffffff;
+            t = h & syn;
+            cocodev = t | (0xffffff & ~h);
+            if ((t == 0) || (t & (t-1))) return 0;
+            omega = 0;
+            break;              
+        case 19:
+            // type (3**5, 1**19)
+            w1 = mat24_bw24((uint32_t)x);
+            x1 = ((w1 & 1) ? x : (x >> 24)) & 0xffffff;
+            syn = mat24_syndrome(x1, 0);
+            cocodev = ~h & 0xffffff;
+            if (syn & h) syn = cocodev;            
+            gcodev = (x1 ^ syn) & 0xffffff;
+            omega = 0;
+            break;
+        case 16:
+            // type (2**16, 0**8)
+            w1 = mat24_bw24((uint32_t)x);
+            if (w1 & 1) return 0;
+            gcodev = h;
+            omega = w1 >> 1;
+            cocodev = x & 0xfffffff;
+            break;
+        case 13:
+            // type (4**1, 2**12, 0**11)
+        case 10:
+            // type (4**2, 2**10, 0**14)
+            syn = mat24_syndrome(h & 0xffffff, 0);
+            if ((h & syn) != syn) return 0;                  
+            gcodev = h ^ syn;
+            cocodev = syn | (x & ~syn & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + parity24(syn & x) + w;
+            break; 
+        case 7:
+            // type (6**1, 2**7, 0**16)
+            syn = mat24_syndrome(h, 0);
+            if (syn & (syn - 1)) return 0;
+            gcodev = h ^ syn;
+            cocodev = (x & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            cocodev |=  (0 - (w1 & 1)) & syn;
+            omega = ((w1 + 1) >> 1) + 1;
+            break; 
+        case 4:
+            gcodev = 0;
+            cocodev = h;
+            omega = parity24(x);
+            break;
+        case 1:
+            gcodev = cocodev = 0;
+            omega = 1;
+            break;    
+        default:
+            return 0;        
+    }
+    gcodev = mat24_vect_to_gcode(gcodev); 
+    if (gcodev & 0xfffff000UL) return 0;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    // correct ``gcodev`` by term ``Omega`` if omega is odd
+    gcodev ^= (omega & 1) << 11;         
+    res = (gcodev << 12) ^ cocodev;
+    // Correct an odd result
+    if (w >= 19 && parity12(res & (res >> 12))) res ^= 0x800000;
+    return res;
+}
+
+
+
+/*************************************************************************
+*** Multiply vector mod 3 by an atom group element
+*************************************************************************/
+
+
+
+
+// %%EXPORT px
+uint64_t gen_leech3_op_xi(uint64_t v, uint32_t e)
+{
+    uint64_t a, b, t, ee1;
+    e %= 3;
+    if (e == 0) return v;
+
+    ee1 = 0ULL - (uint64_t)((e - 1) & 1ULL);
+    v ^= 0x111111111111ULL & ~ee1;
+    // multiply x with matrix  (++++),    where '+' means 1
+    //                         (++--)     and   '-' means -1
+    //                         (+-+-)
+    //                         (+--+)
+    // reorder bits of a, 7 ops
+    a = ((v & 0xaaaaaa555555ULL) ^ ((v >> 23) & 0xaaaaaaULL)
+         ^ ((v & 0xaaaaaaULL) << 23));
+    // special step
+    a ^= 0xcccccc000000ULL;
+    // split a
+    b = (a >> 2) & 0x333333333333ULL;
+    a &= 0x333333333333ULL;
+    // 1st Hadamard step.11 ops
+    t = a + b;
+    b = a + (b ^ 0x333333333333ULL);
+    a = t & 0x444444444444ULL;
+    a = t - a + (a >> 2);
+    t = b & 0x444444444444ULL;
+    b = b - t + (t >> 2);
+    // exchange high and low part of b
+    b = ((b >> 24) & 0xffffffULL) + ((b & 0xffffffULL) << 24);
+    // 2nd Hadamard step, 11 ops
+    t = a + b;
+    b = a + (b ^ 0x333333333333ULL);
+    a = t & 0x444444444444ULL;
+    a = t - a + (a >> 2);
+    t = b & 0x444444444444ULL;
+    b = b - t + (t >> 2);
+    // unite a and b
+    a = a ^ (b << 2);
+    // special step
+    a ^= 0xcccccc000000ULL;
+    // reorder bits of a, 7 ops
+    a = ((a & 0xaaaaaa555555ULL) ^ ((a >> 23) & 0xaaaaaaULL)
+         ^ ((a & 0xaaaaaaULL) << 23));
+    // matrix multipliction done
+    a ^= 0x111111111111ULL & ee1; 
+    return a;
+}
+
+
+
+
+static inline
+uint64_t mul_vector3(uint64_t v3, uint32_t *pa, uint32_t n)
+{
+    uint_fast32_t tag, i, v;
+    uint8_t perm[24], perm_i[24];
+
+    for (i = 0; i < n; ++i) {
+        v = pa[i];
+        tag = v >> 28;
+        v  &= 0xfffffff;
+        switch(tag) {
+            case 8:
+            case 0:
+            case 8 + 1:
+            case 1:
+            case 8 + 3:
+            case 3:
+               break;
+            case 8 + 2:
+               mat24_m24num_to_perm(v, perm);
+               mat24_inv_perm(perm, perm_i);
+               v3 = gen_leech3_op_pi(v3, perm_i);
+               break;
+            case 2:
+               mat24_m24num_to_perm(v, perm);
+               v3 = gen_leech3_op_pi(v3, perm);
+               break;
+            case 8 + 4:
+            case 4:
+               v3 = gen_leech3_op_y(v3, v & 0x1fffUL);
+               break;
+            case 8 + 5:
+            case 5:
+               v = v % 3;
+               if (v) return 0xffff000000000000ULL;
+               break;
+            case 8 + 6:
+               v ^= 0xfffffff;
+            case 6:
+               if (v)  v3 = gen_leech3_op_xi(v3, v);
+               break;
+            default:
+               return 0xffff000000000000ULL;
+        }
+    }       
+    return short_3_reduce(v3);
+}
+
+
+
+// %%EXPORT px
+uint64_t gen_leech3_op_vector_word(uint64_t v3, uint32_t *pa, uint32_t n)
+{
+    return mul_vector3(v3, pa, n);
+}
+
+// %%EXPORT px
+uint64_t gen_leech3_op_vector_atom(uint64_t v3, uint32_t v)
+{
+    return mul_vector3(v3, &v, 1);
+}
 
 
 // %%GEN ch

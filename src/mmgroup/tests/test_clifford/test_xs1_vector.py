@@ -17,10 +17,10 @@ from mmgroup.structures.xs1_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.tests.spaces.clifford_space import Space_ZY
-from mmgroup.clifford12 import xsp2co1_chain_short_3, xsp2co1_elem_to_qs
-from mmgroup.clifford12 import xsp2co1_short_2to3, xsp2co1_short_3to2
+from mmgroup.generators import gen_leech2_short_to3, gen_leech3_short_to2
+from mmgroup.generators import gen_leech2_conj_word
 from mmgroup.clifford12 import xsp2co1_find_chain_short_3
-from mmgroup.clifford12 import xsp2co1_conj_leech_word
+from mmgroup.clifford12 import xsp2co1_chain_short_3, xsp2co1_elem_to_qs
 
 
 MMSpace3 = Space_ZY.mmspace
@@ -113,7 +113,7 @@ def create_test_vectors():
 
 def tuple_to_leech3(sign, tag, i0, i1):
     x2 = MMSpace3.index_to_short_mod2(tag, i0, i1)
-    x3 = xsp2co1_short_2to3(x2)
+    x3 = gen_leech2_short_to3(x2)
     if sign == -1:
         x3 ^= 0xffffffffffff
     return x3
@@ -147,9 +147,9 @@ def map_v3(v, g, expected = None, verbose = 1):
         for i in range(3):
             print(" ",  str_leech3(src[i]), "->", str_leech3(dest[i]))
         for i in range(3):
-            v2 =  xsp2co1_short_3to2(src[i])       
+            v2 =  gen_leech3_short_to2(src[i])       
             v2c = qstate_base.pauli_conjugate(v2);
-            v3c = xsp2co1_short_2to3(v2c)
+            v3c = gen_leech2_short_to3(v2c)
             print("   %s -> 0x%06x -> 0x%06x -> %s" %
                 (str_leech3(src[i]), v2, v2c, str_leech3(v3c)))
             print("    Debug data pool:\n    ", 
@@ -258,7 +258,7 @@ TAGS = {'l':6, 'd':1, 'p':2, 'x':3, 'y':4 }
 def conjugate_gen_xi(x, elem):
     data = [(TAGS[tag] << 28) + (d & 0xfffffff) for tag, d in elem]
     a = np.array(data, dtype = np.uint32)
-    return xsp2co1_conj_leech_word(x, a, len(a))
+    return gen_leech2_conj_word(x, a, len(a))
 
 
 def conjugate_group_testdata():

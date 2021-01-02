@@ -58,6 +58,11 @@
 #define I_d 3
 #define I_pi 4
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
 
 
 static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi)
@@ -573,3 +578,9 @@ uint32_t mm_group_words_equ(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
     // Here we don't know if w1 == w2
     return l1 + 2;    
 }
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif

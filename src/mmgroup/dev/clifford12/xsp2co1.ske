@@ -11,6 +11,8 @@
 
 #include <string.h>
 #include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
 
 #define CLIFFORD12_INTERN
 #include "clifford12.h"
@@ -93,173 +95,6 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 
 
 
-
-/*************************************************************************
-*** Functions for supporting the Leech lattice mod 3
-*************************************************************************/
-
-
-
-
-
-// %%EXPORT px
-uint64_t xsp2co1_short_2to3(uint64_t x)
-{
-    uint64_t  gcodev, cocodev, theta, w, result;
-    // Put gcodev = codeword (in vector rep)
-    gcodev = mat24_gcode_to_vect((uint32_t)x >> 12); 
-    theta = MAT24_THETA_TABLE[((uint32_t)x >> 12) & 0x7ff]; 
-    // Put w = weight(code word gcodev) / 4
-    w = 0 - ((x >> 23) & 1);
-    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
-    #ifdef ERROR_POOL
-        memset(error_pool, 0, sizeof(error_pool));
-        error_pool[0] = x; error_pool[1] = gcodev; 
-        error_pool[2] = theta; error_pool[3] = w; 
-    #endif    
-
-    if (x & 0x800) {  // case odd cocode
-        uint_fast32_t scalar; 
-        // Put cocodev = cocode word (in vector rep)
-        cocodev = mat24_cocode_syndrome((uint32_t)(x ^ theta), 0);    
-        #ifdef ERROR_POOL
-            error_pool[4] = cocodev; 
-        #endif    
-        if (cocodev & (cocodev - 1)) return 0;
-        // Put scalar = scalar product (code, cocode)
-        scalar = (x >> 12) &  x & 0xfff;
-        scalar ^= scalar >> 6;
-        scalar ^= scalar >> 3;
-        scalar = (0x96 >> (scalar & 7));
-        #ifdef ERROR_POOL
-            error_pool[5] = scalar & 1; 
-        #endif    
-        if (scalar & 1) return 0;
-        result = (gcodev ^ ((gcodev ^ 0xffffff) << 24))
-               & ~(cocodev | (cocodev << 24));
-        #ifdef ERROR_POOL
-            error_pool[6] = result; 
-        #endif 
-        return result;        
-    } else { 
-        uint_fast32_t  c_w;
-        uint8_t c_list[4];
-        // Put x[11...0] = cocode word (in cocode rep)
-        x ^= theta; 
-        #ifdef ERROR_POOL
-            error_pool[4] = x; 
-        #endif    
-        switch (w) {
-            case 4:
-                gcodev ^= 0xffffff;
-            case 2:
-                // Put cocodev = cocode word (in vector rep)
-                cocodev = mat24_cocode_syndrome((uint32_t)x, 
-                    mat24_lsbit24((uint32_t)gcodev));
-                // Put c_w = min weight of cocode word
-                c_w = mat24_bw24((uint32_t)cocodev);
-                #ifdef ERROR_POOL
-                    error_pool[4] = gcodev; 
-                    error_pool[5] = cocodev; 
-                    error_pool[6] = c_w; 
-                #endif    
-                if ( ((cocodev & gcodev) != cocodev)
-                    ||  (c_w ^ 2 ^ w) & 3 ) return 0;
-                result = (gcodev & ~cocodev) | (cocodev << 24);
-                #ifdef ERROR_POOL
-                    error_pool[7] = result; 
-                #endif    
-                return result;
-            case 3:
-                return 0;
-            default:  // can be case 0 or 6 only
-                // Put c_w = min weight of cocode word
-                // and store cocode bits in c_list.
-                c_w = mat24_cocode_to_bit_list((uint32_t)x, 0, c_list);
-                #ifdef ERROR_POOL
-                    error_pool[4] = c_w; 
-                    error_pool[5] = c_list[0]; 
-                    error_pool[6] = c_list[1]; 
-                #endif    
-                if (c_w != 2) return 0;
-                result = (ONE <<  c_list[0]) + (ONE <<  (c_list[1] + 24 - 4 * w));
-                #ifdef ERROR_POOL
-                    error_pool[7] = result; 
-                #endif    
-                return result;
-        }
-    } 
-}
-
-
-
-static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
-{
-    uint64_t zero, res;
-    
-    // Set all bits i in ``zero`` to 0 where x1[i] * x2[i] is 0
-    zero = ((x1 ^ (x1 >> 24)) & (x2 ^ (x2 >> 24))) & 0xffffffUL;
-    // Store scalar products of entries of x1 and x2 in res
-    // Each scalar product is >= 0 and <= 2.
-    res = (x1 ^ x2) & 0xffffff000000ULL;
-    res = (res & (zero << 24)) | (zero & ~(res >> 24));
-    // Sum up entries of res, counting the high 24 bits twice
-    res = (res & 0x555555555555ULL) + ((res >> 1) & 0x555555555555ULL);
-    res = (res & 0x333333333333ULL) + ((res >> 2) & 0x333333333333ULL);
-    res = (res & 0x0f0f0f0f0f0fULL) + ((res >> 4) & 0x0f0f0f0f0f0fULL);
-    res = (res & 0xffffffULL) + ((res >> 23) & 0x1fffffeULL);
-    res = ((res >> 16) + (res >> 8) + res) & 0xff;
-    // Reduce res modulo 3; we have 0 <= res <= 48
-    res = (res & 3) + (res >> 2) + 1; // res <= 19; res is one too big
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 7
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 4
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 3
-    return (uint32_t)res - 1;
-}
-
-
-static inline uint64_t short_3_reduce(uint64_t x)
-{
-    uint64_t a = (x & (x >> 24)) & 0xffffffUL;
-    x ^=  a | (a << 24);
-    return x  & 0xffffffffffffULL;
-}
-
-
-
-// %%EXPORT px
-uint64_t xsp2co1_short_3to2(uint64_t x)
-{
-    uint_fast32_t  gcodev, cocodev, theta, w1, w2;
-    x = short_3_reduce(x);
-    w1 = mat24_bw24((uint32_t)x); 
-    w2 = mat24_bw24((uint32_t)(x >> 24));
-    switch (w1 + w2) {
-        case 23:
-            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
-            if ((cocodev == 0) || (cocodev & (cocodev - 1))) return 0; 
-            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
-            if ((w1 + 1) & 4)  gcodev ^= 0xffffffUL;
-            break;              
-        case 8:
-            if (w1 & 1) return 0;
-            gcodev = (x | (x >> 24)) & 0xffffffUL;
-            cocodev = x & 0xffffffUL;
-            if (w1 & 2) gcodev ^= 0xffffffUL;
-            break;
-        case 2:
-            cocodev = (x |  (x >> 24)) & 0xffffffUL;
-            gcodev = (w1 & 1) ? 0 : 0xffffffUL;
-            break;
-        default:
-            return 0;        
-    }
-    gcodev = mat24_vect_to_gcode(gcodev);
-    if (gcodev & 0xfffff000UL) return 0;
-    theta = MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
-    cocodev = mat24_vect_to_cocode(cocodev);
-    return (gcodev << 12) ^ theta ^ cocodev;
-}
 
 
 
@@ -380,14 +215,14 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psr
     
     if (length <= 1) return 0;
     for (i = 1; i < length; ++i) {
-        pdest[i] = xsp2co1_short_3to2(psrc[i]);
+        pdest[i] = gen_leech3_short_to2(psrc[i]);
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
     }
     res = qstate12_pauli_conjugate(pqs, length - 1, pdest + 1);
     if (res < 0) return res;
     for (i = 1; i < length; ++i) {
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
-        pdest[i] = xsp2co1_short_2to3(pdest[i]);
+        pdest[i] = gen_leech2_short_to3(pdest[i]);
     }    
     ok = 1;
     for (i = 1; i < length;  ++i) {
@@ -695,16 +530,6 @@ int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 }
 
 
-static 
-uint64_t mul_mod3_pi(uint64_t v3, uint8_t perm[24])
-{
-    uint64_t w3 = 0;
-    uint_fast32_t i;
-    for (i = 0; i < 24; ++i) {
-        w3 |= ((v3 >> i) & 0x1000001ULL) << perm[i];
-    }
-    return w3; 
-}
 
 
 /*************************************************************************
@@ -732,14 +557,6 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
     } 
     data[12] = data[0] + 0x800 + (theta_y << 13);       
     return qstate12_monomial_column_matrix(pqs, 12, data);
-}
-
-
-static inline
-uint64_t mul_mod3_y(uint64_t v3, uint32_t y)
-{
-    uint64_t v = mat24_gcode_to_vect(y);
-    return v3 ^  (v | (v << 24)); 
 }
 
 
@@ -788,56 +605,6 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
         return mul_qs_xi2(pqs);
     }
 }
-
-static inline
-uint64_t mul_mod3_xi(uint64_t v, uint32_t e1)
-{
-    uint64_t a, b, t, ee1;
-
-    ee1 = 0ULL - (uint64_t)(e1 & 1ULL);
-    v ^= 0x111111111111ULL & ~ee1;
-    // multiply x with matrix  (++++),    where '+' means 1
-    //                         (++--)     and   '-' means -1
-    //                         (+-+-)
-    //                         (+--+)
-    // reorder bits of a, 7 ops
-    a = ((v & 0xaaaaaa555555ULL) ^ ((v >> 23) & 0xaaaaaaULL)
-         ^ ((v & 0xaaaaaaULL) << 23));
-    // special step
-    a ^= 0xcccccc000000ULL;
-    // split a
-    b = (a >> 2) & 0x333333333333ULL;
-    a &= 0x333333333333ULL;
-    // 1st Hadamard step.11 ops
-    t = a + b;
-    b = a + (b ^ 0x333333333333ULL);
-    a = t & 0x444444444444ULL;
-    a = t - a + (a >> 2);
-    t = b & 0x444444444444ULL;
-    b = b - t + (t >> 2);
-    // exchange high and low part of b
-    b = ((b >> 24) & 0xffffffULL) + ((b & 0xffffffULL) << 24);
-    // 2nd Hadamard step, 11 ops
-    t = a + b;
-    b = a + (b ^ 0x333333333333ULL);
-    a = t & 0x444444444444ULL;
-    a = t - a + (a >> 2);
-    t = b & 0x444444444444ULL;
-    b = b - t + (t >> 2);
-    // unite a and b
-    a = a ^ (b << 2);
-    // special step
-    a ^= 0xcccccc000000ULL;
-    // reorder bits of a, 7 ops
-    a = ((a & 0xaaaaaa555555ULL) ^ ((a >> 23) & 0xaaaaaaULL)
-         ^ ((a & 0xaaaaaaULL) << 23));
-    // matrix multipliction done
-    a ^= 0x111111111111ULL & ee1; 
-    return a;
-}
-
-
-
 
 
 
@@ -916,7 +683,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
                mat24_inv_autpl(aut, aut_i);
                res = set_qs_delta_pi_aut(p_atom, aut_i);
                if (res < 0) return res;
-               v3 = mul_mod3_pi(v3, perm_i);
+               v3 = gen_leech3_op_pi(v3, perm_i);
                multiply = p_atom == &qs_atom;
                break;
             case 2:
@@ -924,7 +691,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
                mat24_perm_to_autpl(0, perm, aut);
                res = set_qs_delta_pi_aut(p_atom, aut);
                if (res < 0) return res;
-               v3 = mul_mod3_pi(v3, perm);
+               v3 = gen_leech3_op_pi(v3, perm);
                multiply = p_atom == &qs_atom;
                break;
             case 8 + 3:
@@ -941,7 +708,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
                x ^= v & 0x1fffUL;
                res = set_qs_y(p_atom, x);
                if (res < 0) return res;
-               v3 = mul_mod3_y(v3, x);
+               v3 = gen_leech3_op_y(v3, x);
                multiply = p_atom == &qs_atom;
                break;
             case 8 + 5:
@@ -955,7 +722,7 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
                v = v % 3;
                if (v) {
                    if ((res = mul_qs_xi(&qs, v - 1)) < 0) return res;
-                   v3 = mul_mod3_xi(v3, v - 1);
+                   v3 = gen_leech3_op_xi(v3, v);
                }
                break;
             default:
@@ -1000,72 +767,6 @@ int32_t xsp2co1_set_elem_atom(uint64_t *e, uint32_t v)
 }
 
 
-/*************************************************************************
-*** Multiply vector mod 3 by an atom group element
-*************************************************************************/
-
-static inline
-uint64_t mul_vector3(uint64_t v3, uint32_t *pa, uint32_t n)
-{
-    uint_fast32_t tag, i, v;
-    uint8_t perm[24], perm_i[24];
-
-    for (i = 0; i < n; ++i) {
-        v = pa[i];
-        tag = v >> 28;
-        v  &= 0xfffffff;
-        switch(tag) {
-            case 8:
-            case 0:
-            case 8 + 1:
-            case 1:
-            case 8 + 3:
-            case 3:
-               break;
-            case 8 + 2:
-               mat24_m24num_to_perm(v, perm);
-               mat24_inv_perm(perm, perm_i);
-               v3 = mul_mod3_pi(v3, perm_i);
-               break;
-            case 2:
-               mat24_m24num_to_perm(v, perm);
-               v3 = mul_mod3_pi(v3, perm);
-               break;
-            case 8 + 4:
-            case 4:
-               v3 = mul_mod3_y(v3, v & 0x1fffUL);
-               break;
-            case 8 + 5:
-            case 5:
-               v = v % 3;
-               if (v) return 0xffff000000000000ULL;
-               break;
-            case 8 + 6:
-               v ^= 0xfffffff;
-            case 6:
-               v = v % 3;
-               if (v)  v3 = mul_mod3_xi(v3, v - 1);
-               break;
-            default:
-               return 0xffff000000000000ULL;
-        }
-    }       
-    return short_3_reduce(v3);
-}
-
-
-
-// %%EXPORT px
-uint64_t xsp2co1_mul_vector3_word(uint64_t v3, uint32_t *pa, uint32_t n)
-{
-    return mul_vector3(v3, pa, n);
-}
-
-// %%EXPORT px
-uint64_t xsp2co1_mul_vector3_atom(uint64_t v3, uint32_t v)
-{
-    return mul_vector3(v3, &v, 1);
-}
 
 /*************************************************************************
 *** Converting a an element to a vector of the monster rep modulo 3

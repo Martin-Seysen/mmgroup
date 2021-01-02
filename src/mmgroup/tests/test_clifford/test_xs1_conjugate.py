@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from mmgroup import Xs12_Co1, PLoop, AutPL, Cocode
-from mmgroup.clifford12 import xsp2co1_leech_type
+from mmgroup.generators import gen_leech2_type
 
 #####################################################################
 # Create test matrices
@@ -125,7 +125,7 @@ def display_leech_vector(x):
     print ("Cocode:", cocode.syndrome_list(pos).bit_list)
 
 def check_leech_type(x, t_expected):
-    t = xsp2co1_leech_type(x)
+    t = gen_leech2_type(x)
     ok = t == t_expected
     if not ok:
         print("Error: expected Leech type: %s, obtained: %s" % (
