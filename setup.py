@@ -242,6 +242,7 @@ mat24_shared = SharedExtension(
     sources=[
         os.path.join(C_DIR, "mat24_functions.c"),
         os.path.join(C_DIR, "gen_xi_functions.c"),
+        os.path.join(C_DIR, "mm_group_n.c"),
     ],
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -324,7 +325,7 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
 mm_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_basics", 
     sources=[ os.path.join(C_DIR, f) for f in 
-        [ "mm_aux.c", "mm_group_n.c", "mm_random.c", "mm_group_word.c",
+        [ "mm_aux.c", "mm_random.c", "mm_group_word.c",
           "mm_tables.c","mm_tables_xi.c", "mm_crt.c",
         ]
     ],    

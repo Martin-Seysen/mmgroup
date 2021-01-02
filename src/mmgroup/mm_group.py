@@ -174,8 +174,6 @@ from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import  AtomDict      
-#from mmgroup.structures.parse_atoms import eval_atom_expression        
-#from mmgroup.structures.parse_atoms import TaggedAtom
 
 try:
     from mmgroup.mat24 import MAT24_ORDER, pow_ploop
@@ -189,7 +187,7 @@ except (ImportError, ModuleNotFoundError):
 from mmgroup.structures.ploop import Cocode, PLoop
 from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj
 
-from mmgroup.mm import mm_group_mul_words
+from mmgroup.generators import mm_group_mul_words
 
 # Functions to be imported from module mmgroup.mm_order
 check_mm_order = None

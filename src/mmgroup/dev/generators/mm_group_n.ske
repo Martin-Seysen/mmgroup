@@ -46,10 +46,10 @@
 // Pl, C*, and Mat24 in module mat24_functions.c
 
 #include "mat24_functions.h"
-#include "mm_basics.h"
+#include "mmgroup_generators.h"
 
 
-// %%EXPORT_KWD MM_BASICS_API
+// %%EXPORT_KWD MAT24_API
 
 
 #define I_t 0

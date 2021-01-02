@@ -106,11 +106,12 @@ from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.structures.parse_atoms import ihex       
 
 
-from mmgroup.mm import mm_group_n_mul_atom, mm_group_n_mul_element
-from mmgroup.mm import mm_group_n_mul_inv_element
-from mmgroup.mm import mm_group_n_mul_delta_pi, mm_group_n_mul_x
-from mmgroup.mm import mm_group_n_mul_inv_delta_pi
-from mmgroup.mm import mm_group_n_mul_y, mm_group_n_mul_t
+from mmgroup.generators import mm_group_n_mul_atom
+from mmgroup.generators import mm_group_n_mul_element
+from mmgroup.generators import mm_group_n_mul_inv_element
+from mmgroup.generators import mm_group_n_mul_delta_pi, mm_group_n_mul_x
+from mmgroup.generators import mm_group_n_mul_inv_delta_pi
+from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
 
 
 from mmgroup.mm_group import gen_atom, tags

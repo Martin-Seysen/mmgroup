@@ -150,6 +150,7 @@ SKE_DIR =  os.path.join(DEV_DIR, "generators")
 
 GENERATORS_C_FILES = [
     "gen_xi_functions",
+    "mm_group_n",
 ]
 
 

@@ -11,10 +11,11 @@ import mmgroup
 from mmgroup.mm_group import MMGroup, MMGroupWord
 from mmgroup.mm_space import MMSpace
 from mmgroup import structures
-from mmgroup.mm import mm_vector, mm_group_check_word_n
-from mmgroup.mm import mm_group_words_equ
-from mmgroup.mm import mm_group_n_mul_element
-from mmgroup.mm import mm_group_n_reduce_word 
+from mmgroup.generators import mm_group_check_word_n
+from mmgroup.generators import mm_group_words_equ
+from mmgroup.generators import mm_group_n_mul_element
+from mmgroup.generators import mm_group_n_reduce_word 
+from mmgroup.mm import mm_vector
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
