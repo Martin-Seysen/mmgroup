@@ -79,7 +79,7 @@ Description of the ``mmgroup.generators`` extension
 Header file mmgroup_generators.h
 --------------------------------
 
-.. doxygengroup::  mmgroup_generators_h
+.. doxygenfile::  mmgroup_generators.h
  
 
 

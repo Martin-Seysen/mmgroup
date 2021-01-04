@@ -100,6 +100,11 @@ static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
 *** Type of a Leech vector
 *************************************************************************/
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
 /**
   @brief Return type and subtype of Leech lattice vector mod 2
 
@@ -900,6 +905,13 @@ uint64_t gen_leech3_op_vector_atom(uint64_t v3, uint32_t v)
 {
     return mul_vector3(v3, &v, 1);
 }
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
 
 
 // %%GEN ch

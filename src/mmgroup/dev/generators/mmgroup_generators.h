@@ -1,5 +1,22 @@
 // %%GEN h
 /** @file mmgroup_generators.h
+
+ The header file ``mmgroup_generators.h`` contains definitions for 
+ the C files in the ``generator`` extension. This extension comprises 
+ files ``mm_group_n.c``, ``gen_xi_functions.c``, and ``gen_leech.c``.
+ 
+ In this header file we also define the tags for the atoms generating 
+ the Monster group. An element of the monster group is represented
+ as an array of integers of type uint32_t, where each integer 
+ represents an atom, i.e. an atomic element of the monster.
+ Bits 31,...,28 of a atom are the tag of that atom, as defined below;
+ bits 27,...,0 make up the data part of that atom.
+ 
+ Each tag is represented as a single lower-case letter as described
+ in section *The Monster group* in the *API reference*. Valid letters
+ for tags used in this header are ``'pdxytl'``. If bit 31 of an atom
+ is set, this means that the atom has to be inversed.
+
 */
 
 
@@ -48,26 +65,7 @@
 
 /// @endcond
 
-/**
- * \defgroup  mmgroup_generators_h Definitions in file mmgroup_generators.h
- * @{
- *
- * The header file ``mmgroup_generators.h`` contains definitions for 
- * the C files in the ``generator`` extension. This extension comprises 
- * files ``mm_group_n.c``, ``gen_xi_functions.c``, and ``gen_leech.c``.
- * 
- * In this header file we also define the tags for the atoms generating 
- * the Monster group. An element of the monster group is represented
- * as an array of integers of type uint32_t, where each integer 
- * represents an atom, i.e. an atomic element of the monster.
- * Bits 31,...,28 of a atom are the tag of that atom, as defined below;
- * bits 27,...,0 make up the data part of that atom.
- * 
- * Each tag is represented as a single lower-case letter as described
- * in section *The Monster group* in the *API reference*. Valid letters
- * for tags used in this header are ``'pdxytl'``. If bit 31 of an atom
- * is set, this means that the atom has to be inversed.
- */
+
 
 
 /** Tag field of a monster group atom  */
@@ -105,5 +103,4 @@
 #define MMGROUP_ATOM_DATA 0xFFFFFFFUL
 
 
-/**@}*/
 

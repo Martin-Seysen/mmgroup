@@ -30,6 +30,17 @@ extern "C" {
 #endif
 // %%GEN c
 
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/*************************************************************************
+*** Multiplication in the group Q_{{x0}}
+*************************************************************************/
+
+
 /**
   @brief Return product of two elements the group \f$Q_{{x0}}\f$.
 
@@ -53,6 +64,9 @@ uint32_t gen_xi_mul_leech(uint32_t x1, uint32_t x2)
 /*************************************************************************
 *** Tables for operation of xi on gray code and cocode vectors
 *************************************************************************/
+
+
+
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -456,6 +470,10 @@ void gen_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *ps
     }
 }
 
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
 
 
 // %%GEN ch

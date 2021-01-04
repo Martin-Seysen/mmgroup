@@ -76,6 +76,13 @@ extern "C" {
 #endif
 // %%GEN c
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
 /// @cond DO_NOT_DOCUMENT 
 
 static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi)
@@ -601,6 +608,12 @@ uint32_t mm_group_words_equ(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
     // Here we don't know if w1 == w2
     return l1 + 2;    
 }
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
 
 
 // %%GEN ch
