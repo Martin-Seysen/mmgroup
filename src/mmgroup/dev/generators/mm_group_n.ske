@@ -1,3 +1,11 @@
+/** @file mm_group_n.c
+The functions in file ``mm_group_n.c`` implement the subgroup
+\f$N_0\f$ of structure 
+\f$2^{{2+11+2\cdot11}}.(\mbox{{Sym}}_3 \times \mbox{{Mat}}_{{24}})\f$
+on the monster group.
+*/
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // This is a fast little calculator for the subgroup N_0 of the monster.
@@ -51,6 +59,7 @@
 
 // %%EXPORT_KWD MAT24_API
 
+/// @cond DO_NOT_DOCUMENT 
 
 #define I_t 0
 #define I_y 1
@@ -58,12 +67,16 @@
 #define I_d 3
 #define I_pi 4
 
+/// @endcond  
+
+
 // %%GEN ch
 #ifdef __cplusplus
 extern "C" {
 #endif
 // %%GEN c
 
+/// @cond DO_NOT_DOCUMENT 
 
 static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi)
 // Return the value f representing an element of PL with 
@@ -81,6 +94,9 @@ static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi
     mat24_perm_to_iautpl(delta, perm, inv_perm, inv_autpl);
     return mat24_op_ploop_autpl(e, inv_autpl);
 }
+
+/// @endcond  
+
 
 
 // %%EXPORT px
@@ -340,6 +356,9 @@ uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
 }
 
 
+
+/// @cond DO_NOT_DOCUMENT 
+
 // map x_(d >> 11) to y_e, where e = ker_table_xy[d]
 static uint16_t ker_table_xy[4] = {
     0, 0x1800, 0x800, 0x1000
@@ -349,6 +368,10 @@ static uint16_t ker_table_xy[4] = {
 static uint16_t ker_table_yx[4] = {
     0, 0x1000, 0x1800, 0x800
 };
+
+
+/// @endcond 
+
 
 // %%EXPORT px
 uint32_t mm_group_n_reduce_word(uint32_t *g)

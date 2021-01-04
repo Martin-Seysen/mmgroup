@@ -1,18 +1,22 @@
-// %%COMMENT
-// For this module we refer to the section
-// 'Computation in the Clifford group' in the guide, see
-// https://mmgroup.readthedocs.io/en/latest/
-
+/** @file gen_leech.c
+The functions in file ``gen_leech.c`` implement operations on the
+vectors of the Leech lattice modulo 2 and modulo 3 as described
+the document *The C interface of the mmgroup project*, 
+section *Description of the mmgroup.generators extension*. We use 
+the terminology introduced at the beginning of that section.
+*/
 
 
 /*************************************************************************
 ** External references 
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 #include <string.h>
 #include "mat24_functions.h"
 #define MMGROUP_GENERATORS_INTERN
 #include "mmgroup_generators.h"
+/// @endcond 
 
 
 
@@ -29,6 +33,9 @@ extern "C" {
 
 // %%GEN h
 #ifdef MMGROUP_GENERATORS_INTERN
+
+/// @cond DO_NOT_DOCUMENT 
+
 
 static inline uint64_t short_3_reduce(uint64_t x)
 {
@@ -80,6 +87,10 @@ static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
     return (uint32_t)res - 1;
 }
 
+
+/// @endcond  
+
+
 #endif // 
 // %%GEN c
 
@@ -89,6 +100,10 @@ static inline uint32_t short_3_scalprod(uint64_t x1, uint64_t x2)
 *** Type of a Leech vector
 *************************************************************************/
 
+/**
+  @brief Return type and subtype of Leech lattice vector mod 2
+
+*/
 // %%EXPORT px
 uint32_t gen_leech2_type(uint64_t x)
 // Return ``0x10 * type(x) + subtype(x)`` for a vector ``x``
@@ -177,9 +192,6 @@ uint32_t gen_leech2_type(uint64_t x)
 }
 
 
-//  %%GEN h
-/// @endcond  
-//  %%GEN c
 
 
 
@@ -195,6 +207,7 @@ uint32_t gen_leech2_type(uint64_t x)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline
 uint32_t op_x_delta(uint32_t x1, uint32_t x, uint32_t delta)
@@ -273,6 +286,7 @@ uint32_t op_y(uint32_t x1, uint32_t y)
     return x1;
 }
 
+/// @endcond 
 
 
 /*************************************************************************
@@ -308,40 +322,40 @@ uint32_t gen_leech2_conj_word(uint32_t x1, uint32_t *pa, uint32_t n)
     x1 &= 0x1ffffff;
     for (i = 0; i < n; ++i) {
         v = pa[i];
-        tag = v >> 28;
-        v  &= 0xfffffff;
+        tag = v & MMGROUP_ATOM_TAG_ALL;
+        v  &= MMGROUP_ATOM_DATA;
         y = 0;
         switch(tag) {
-            case 8:
-            case 0:
+            case MMGROUP_ATOM_TAG_1:
+            case MMGROUP_ATOM_TAG_I1:
                break;
-            case 8 + 1:
-            case 1:
+            case MMGROUP_ATOM_TAG_ID:
+            case MMGROUP_ATOM_TAG_D:
                x1 = op_x_delta(x1, 0, v & 0xfff);
                break;
-            case 8 + 2:
+            case MMGROUP_ATOM_TAG_IP:
                x1 = op_delta_pi_inv(x1, 0, v);
                break;
-            case 2:
+            case MMGROUP_ATOM_TAG_P:
                x1 = op_delta_pi(x1, 0, v);
                break;
-            case 8 + 3:
-            case 3:
+            case MMGROUP_ATOM_TAG_IX:
+            case MMGROUP_ATOM_TAG_X:
                x1 = op_x_delta(x1, v & 0xfff, 0);
                break;
-            case 8 + 4:
+            case MMGROUP_ATOM_TAG_IY:
                y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
-            case 4:
+            case MMGROUP_ATOM_TAG_Y:
                y ^= v & 0x1fffUL;
                x1 = op_y(x1, y & 0x1fff);
                break;
-            case 8 + 5:
-            case 5:
+            case MMGROUP_ATOM_TAG_IT:
+            case MMGROUP_ATOM_TAG_T:
                if (v % 3) return (uint32_t)(0-1UL);
                break;
-            case 8 + 6:
+            case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;
-            case 6:
+            case MMGROUP_ATOM_TAG_L:
                x1 = gen_xi_op_xi(x1, v % 3);
                break;
             default:
@@ -366,6 +380,8 @@ uint32_t gen_leech2_conj_atom(uint32_t x1, uint32_t v)
 /*************************************************************************
 *** Reduce type-4 vector  mod 2
 *************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
 
 #define RED_STD_OCTAD 0x80fUL
 
@@ -411,6 +427,7 @@ int32_t map_to_standard12_xi_exp(uint32_t v)
 }
      
 
+/// @endcond  
 
 
 
@@ -535,7 +552,13 @@ int32_t gen_leech2_reduce_type4_vector(uint32_t v, uint32_t *result)
 *** Functions for supporting the Leech lattice mod 3
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
 #define ONE ((uint64_t)(1ULL))
+
+/// @endcond  
+
+
 
 // %%EXPORT px
 uint64_t gen_leech2_short_to3(uint64_t x)
@@ -642,6 +665,7 @@ uint64_t gen_leech3_short_to2(uint64_t x)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 
@@ -658,6 +682,9 @@ static inline uint32_t parity24(uint64_t x)
     x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
     return (0x96 >> (x & 7)) & 1;
 }
+
+
+/// @endcond 
 
 
 // %%EXPORT px
@@ -808,6 +835,7 @@ uint64_t gen_leech3_op_xi(uint64_t v, uint32_t e)
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 static inline
@@ -858,6 +886,7 @@ uint64_t mul_vector3(uint64_t v3, uint32_t *pa, uint32_t n)
     return short_3_reduce(v3);
 }
 
+/// @endcond  
 
 
 // %%EXPORT px

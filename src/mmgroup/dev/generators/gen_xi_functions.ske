@@ -1,8 +1,6 @@
 /** @file gen_xi_functions.c
- File ``gen_xi_function.c`` implements the functionality described
- in the document *The C interface of the mmgroup project*, 
- section *Description of the mmgroup.gen_xi extension*. We use the
- terminology introduced at the beginning of that section.
+The functions in file ``gen_xi_function.c`` implement the operation 
+of the generator \f$\xi\f$ on the group \f$Q_{{x0}}\f$.
 */
 
 
@@ -108,7 +106,7 @@ uint32_t gen_xi_w2_gray(uint32_t v)
   @brief Compute function \f$\gamma\f$ on a Golay cocode element.
 
   Here parameter \f$v\f$ and the return value \f$\gamma(v)\f$
-  are vencoded in ``cocode`` representation, as defined in 
+  are encoded in ``cocode`` representation, as defined in 
   the *Description of the mmgroup.mat24 extension*.
 */
 // %%EXPORT px
