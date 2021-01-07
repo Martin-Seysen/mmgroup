@@ -141,7 +141,8 @@ strategies for words of generators of :math:`\mathbb{M}` :
    :math:`G_{x0} = 2_+^{1+24}.\mbox{Co}_1` may be reduced to a
    standard form. Yet this
    is considerably more difficult than reducing elements of
-   the subgroup :math:`N_0`.
+   the subgroup :math:`N_0`. Here the geometric information 
+   about the Leech lattice in :cite:`Iva99` will be helpful
 
    Here we will use a fast algorithm for computing in the real
    Clifford group :math:`\mathcal{C}_{12}`,

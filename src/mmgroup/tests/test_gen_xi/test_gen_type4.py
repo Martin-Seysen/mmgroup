@@ -8,6 +8,7 @@ from functools import reduce
 from operator import __or__
 from numbers import Integral
 from collections import defaultdict
+from multiprocessing import Pool, TimeoutError
 
 import numpy as np
 import scipy
@@ -22,6 +23,7 @@ from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_op_vector_atom
 from mmgroup.generators import gen_leech2_conj_word
 from mmgroup.generators import gen_leech2_conj_atom
+from mmgroup.generators import gen_leech2_type_selftest
 
 
 OMEGA0_V3  = 0x1
@@ -214,7 +216,7 @@ def weight_v3(v3):
     
     
 
-@pytest.mark.qstate
+@pytest.mark.gen_xi
 def test_type4(verbose = 0):
     weights = defaultdict(int)
     for ntest, data in enumerate(create_test_elements()):
@@ -320,9 +322,82 @@ def chisquare_v3(obtained_dict, expected_dict):
     return chisq, p
 
 
-@pytest.mark.qstate
+
+
+@pytest.mark.gen_xi
 def test_chisq_type4(n = 50000):
     d = rand_v3_dict(n)  
     print("Check distribution of type-4 vectors mod 3") 
     chisq, p =  chisquare_v3(d, P)
     print("Chisq = %.3f, p = %.4f" % (chisq, p))
+
+#*************************************************************************
+#** Self test from C file
+#************************************************************************/
+
+
+def one_selftest_leech2(data):
+    start, n = data
+    a = np.zeros(0x50, dtype = np.uint32)
+    result =  gen_leech2_type_selftest(start, n, a)
+    return result, a
+
+
+def gen_selftest_inputs(n):
+    assert 0x1000000 % n == 0
+    q = 0x1000000 // n
+    for  i in range(n):
+        yield i*q, q
+
+
+
+# From :cite:`Iva99`, Lemmas 4.4.1 and 4.6.1
+TYPE_LENGTHS = {               # Name in :cite:`Iva99`
+ 0x00: 1,
+ 0x20: binom(24,2) * 2,        # \Lambda_2^4
+ 0x21: 24 * 2**11,             # \Lambda_2^3
+ 0x22: 759 * 2**6,             # \Lambda_2^2
+ 0x31: 24 * 2**11,             # \Lambda_3^5
+ 0x33: binom(24,3) * 2**11,    # \Lambda_3^3
+ 0x34: 759 * 16 * 2**7,        # \Lambda_3^4
+ 0x36: 2576 * 2**10,           # \Lambda_3^2
+ 0x40: 2 * 1771,               # \bar{\Lambda}_4^{4a}
+ 0x42: 759 * 2**6,             # \bar{\Lambda}_4^{6} 
+ 0x43: binom(24,3) * 2**11,    # \bar{\Lambda}_4^{5}
+ 0x44: 15 * 759 * 2**7,        # \bar{\Lambda}_4^{4b}
+ 0x46: 1288 * 2**11,           # \bar{\Lambda}_4^{4c}
+ 0x48: 1                       # \bar{\Lambda}_4^{8}
+}  
+
+@pytest.mark.gen_xi
+@pytest.mark.slow
+def test_leech2_self(verbose = 0):
+    NPROCESSES = 4
+    with Pool(processes = NPROCESSES) as pool:
+        results = pool.map(one_selftest_leech2, 
+                   gen_selftest_inputs(NPROCESSES))
+    pool.join()
+    result = sum(x[0] for x in results)
+    a = np.zeros(0x50, dtype = np.uint32)
+    for x in results:
+         a += x[1]
+    d = {}
+    for i, n in enumerate(a):
+        if n:
+            d[i] = n
+    if verbose:
+        print("Type-4 vectors: %d\nVector types:" % result)
+        for t, n in d.items():
+            print(" %2x: %7d" % (t, n))
+    assert sum( TYPE_LENGTHS.values() ) == 2**24
+    for t, n in d.items():
+        assert n == TYPE_LENGTHS[t]
+    N4 = sum(n for i, n in d.items() if i & 0xf0 == 0x40)
+    assert result == N4
+
+
+
+
+
+
+

@@ -173,7 +173,217 @@ where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have
 
 
 
+Computations in the Leech lattice modulo 2
+------------------------------------------
+
+In this section we describe the operation of the Conway group
+:math:`Co_1` on the type-4 vectors in :math:`\Lambda / 2 \Lambda`,
+where :math:`\Lambda` is the Leech lattice.
+It is well known that such a type-4 vector corresponds to a 
+coordinate frame in the Leech lattice in standard coordinates,
+see e.g. :cite:`CS99`, :cite:`Iva99`. 
+
+This operation is important for computing in the subgroup
+:math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1` of the 
+monster, as described in :cite:`Con85` and :cite:`Seysen20`.
+Let :math:`Q_{x0}` be the normal subgroup of :math:`G_{x0}`
+of structure :math:`2^{1+24}`.
+The group :math:`\mbox{Co}_1 = G_{x0}/Q_{x0}` is the automorphism
+group of :math:`\Lambda / 2 \Lambda`.  We assume that 
+:math:`\mbox{Co}_1` and also :math:`G_{x0}` operate on  
+:math:`\Lambda / 2 \Lambda` by right multiplcation. Let 
+:math:`\Omega` \in :math:`\Lambda / 2 \Lambda` be the 
+type-4 vector corresponding to the the standard coordinate frame 
+in :math:`\Lambda`.
+The stabilizer of :math:`\Omega` is a subgroup :math:`N_{x0}` of  
+:math:`G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`. Thus 
+the set of type-4 vectors in  :math:`\Lambda / 2 \Lambda`
+corresponds the set of right cosets
+:math:`\mbox{Co}_1 \setminus 2^{11}.M_{24}`. We have 
+:math:`G_{x0} \setminus N_{x0} \cong \mbox{Co}_1 \setminus 2^{11}.M_{24}`.
+So identifying the right coset :math:`N_{x0} h` for a
+:math:`h \in G_{x0}` reduces to the computation of the frame
+:math:`\Omega h`.
+
+In our construction of the monster, the element :math:`h` may 
+given as an arbitrary word in the generators of :math:`G_{x0}`
+(modulo :math:`Q_{x0}`). So it is important to find a short word 
+:math:`g` in the the generators of :math:`G_{x0}` with 
+:math:`g \in N_{x0} h`. This can be achieved by applying a sequences
+:math:`g' = g'_1,\ldots,g'_k` of automorphisms of
+:math:`\Lambda / 2 \Lambda` to :math:`\Omega h` such that  
+:math:`\Omega h g' = \Omega`, and each :math:`g'_i` corresponds to 
+a generator of  :math:`G_{x0}` (modulo :math:`Q_{x0}`).
+
+
+We assume that the reader is familiar with the
+Conway group and the geometry of the Leech lattice as described in
+:cite:`Iva99`, section 4.1 - 4.7.
 
 
 
+Orbits of the group :math:`N_{x0}` in the Leech lattice mod 2
+.............................................................
+
+In this subsection w  describe the orbits of :math:`N_{x0}` on
+:math:`\Lambda / 2 \Lambda`. The type of a vector in 
+:math:`v \in  \Lambda` is the halved scalar product 
+:math:`\frac{1}{2} \langle v, v \rangle`. The type of a vector 
+in :math:`\Lambda / 2 \Lambda` is the type of its shortest
+representative in :math:`\Lambda`. Each vector in  
+:math:`\Lambda / 2 \Lambda` has type 0, 2, 3 or 4; and the 
+group :math:`G_{x0}` is transtive on the vectors of any of these
+types.
+
+The orbits of the groups :math:`N_{x0}` on the vectors of
+type 2,3, and 4 on :math:`\Lambda` have been described in 
+:cite:`Iva99`,  Lemma 4.4.1. Since :math:`N_{x0}` acts monomially
+on the  the lattice :math:`\sqrt{8} \Lambda` given in the
+standard Euclidean basis, an orbit of :math:`N_{x0}` on
+:math:`\Lambda` can be described by the *shape* of its vectors in 
+:math:`\sqrt{8} \Lambda`. Here the shape of a vector is the 
+multiset of the absolute values of the coordinates of the vector. 
+E.g. a vector of shape :math:`(3^5 1^{19})` has 5 coordinates 
+with absolute value 3 and 19 coordinates with absolute value 1.
+
+A vector of type 2 or 3 in :math:`\Lambda / 2 \Lambda` has a unique
+representative of the same type in :math:`\Lambda` (up to sign); so 
+its shape is uniquely defined.  A vector of type 4 in 
+:math:`\Lambda / 2 \Lambda` has :math:`2 \cdot 24` representatives 
+of type 4 in :math:`\Lambda` which are orthogonal except when equal 
+or opposite.   
+
+The table at Lemma 4.4.1. in :cite:`Iva99` assigns a name and a 
+shape to each orbit of  :math:`N_{x0}` on the vectors of type
+2, 3, and 4 in  :math:`\Lambda`. The table at  Lemma 4.6.1. 
+in :cite:`Iva99` assigns a name and a shape to each orbit of  
+:math:`N_{x0}` on the vectors of type 4 in  
+:math:`\Lambda / 2 \Lambda`. We repreduce this information
+for the orbits of :math:`N_{x0}` on :math:`\Lambda / 2 \Lambda`
+in the following table. Here we also assign a subtype
+(which is an 2-digit number) to each orbit.  Here the first 
+digit specifies the type of the orbit and the second digit is
+used to distinguish between orbits of the same type. 
+
+In :cite:`Con85`, section 7 and `Sey19`, section section 6.1,
+an element of :math:`\Lambda / 2 \Lambda` is also described
+as a product :math:`x_d \cdot x_\delta \in Q_{x0} / \{\pm 1\}`,  
+with :math:`x_d \in \mathcal{C}`, 
+:math:`x_\delta \in \mathcal{C}^*`. Here with :math:`\mathcal{C}`
+is the Golay code and :math:`\mathcal{C}^*` is the Golay cocode.
+The :math:`\Lambda / 2 \Lambda`-orbit of :math:`x_d \cdot x_\delta`
+can also be computed from :math:`d` and :math:`\delta`
+as indicated in the table:
+
+
+.. math::
+    \begin{array}{|c|c|c|c|c|c|c|}
+    \hline 
+    \mbox{Subype} & \mbox{Name} & \mbox{Shape}  & |d| & |\delta| &
+    \langle d , \delta\rangle & \mbox{Remark} \\
+    \hline
+    00 & 
+        & (0^{24})  & 
+    0 & 0  & 0 \\     
+    \hline
+    20 & 
+    \Lambda_2^4 & (4^2 0^{22}) & 
+    0, 24  &  2  & 0 &    \\     
+    \hline
+    21 & 
+    \Lambda_2^3 & (3 \,  1^{23}) & 
+    \mbox{any} & 1 & |d| / 4 &  \\     
+    \hline
+    22 & 
+    \Lambda_2^2 & (2^8 0^{16}) & 
+    8, 16  &  \mbox{even} & 0 &  1. \\     
+    \hline
+    31 & 
+    \Lambda_3^5 & (5 \, 1^{23}) & 
+    \mbox{any} & 1 & |d| / 4 + 1 &  \\     
+    \hline
+    33 & 
+    \Lambda_3^3 & (3^3 1^{21}) & 
+    \mbox{any} & 3 & |d| / 4 &  \\     
+    \hline
+    34 & 
+    \Lambda_3^4 & (4 \, 2^{8} 0^{15}) & 
+    8, 16 & \mbox{even}  &  1 &  \\    
+    \hline
+    36 & 
+    \Lambda_3^2 & (2^{12} 0^{12}) & 
+    12 & \mbox{even}  &  0 &  \\    
+    \hline
+    40 & 
+    \bar{\Lambda}_4^{4a} & (4^4 0^{20}) & 
+    0, 24 & 4 &  0 &  \\    
+    \hline 
+    42 & 
+    \bar{\Lambda}_4^{6} & (6 \, 2^7 0^{16}), (2^{16} 0^8) & 
+    8, 16 & \mbox{even} &   0 & 2.\\    
+    \hline
+    43 & 
+    \bar{\Lambda}_4^{5} & (5 \, 3^2 1^{21}), (3^{5} 1^{16}) & 
+    \mbox{any} & 3 & |d| / 4 + 1 &  \\    
+    \hline
+    44 & 
+    \bar{\Lambda}_4^{4b} & (4^2 2^8 0^{14}), (2^{16} 0^8) & 
+    8, 16 & \mbox{even} &   0 & 3.\\    
+    \hline 
+    46 & 
+    \bar{\Lambda}_4^{4c} & (4 \, 2^{12} 0^{11}) & 
+    12 & \mbox{even} &   1 &  \\    
+    \hline 
+    48 & 
+    \bar{\Lambda}_4^{8} & (8 \,  0^{23}) & 
+    24 & 0 &  0 &  \\    
+    \hline 
+    \end{array}
+
+
+Remarks
+
+   1. :math:`|\delta|/2 = 1 + |d|/8 \pmod{2}`, 
+      :math:`\delta \subset d \Omega^{1 + |d|/8}`
+      for a suitable representative :math:`\delta` of the cocode.
+
+   2. :math:`|\delta|/2 = |d|/8 \pmod{2}`, 
+      :math:`\delta \subset d \Omega^{1 + |d|/8}`
+      for a suitable representative :math:`\delta` of the cocode.
+
+   3. None of the conditions stated in Remarks 1 and 2 hold.
+  
+
+Here column *Subtype* lists the numbers that we use for describing 
+the orbit. Columns  *Name* and *Shape* list the names and the shapes
+of the orbits as given in :cite:`Iva99`, Lemma 4.1.1  and 4.6.1.
+Columns :math:`|d|` and  :math:`|\delta|` list conditions on the
+weigth of a Golay code word :math:`d` and of (a shortest 
+representative of) the Golay cocode word :math:`\delta`, 
+respectively. Column :math:`\langle d, \delta \rangle` lists 
+conditions on the scalar product of  :math:`|d|` and  
+:math:`|\delta|`. All this information can easily be derived from  
+:cite:`Iva99` and  :cite:`Con85` (or :cite:`Seysen20`).
+
+The table provides enough information for effectively computing
+the subtype of an element :math:`x_d \cdot x_\delta`. Function
+``gen_leech2_type`` in file ``gen_leech.c`` compute that subtype.
+
+
+Operation of the group :math:`G_{x0}` on the Leech lattice
+..........................................................
+
+
+Yet to be documented!
+
+From type 46 to type 44
+.......................
+
+Yet to be documented!
+
+
+Here the part :math:`x_d` of the vector in the Leech lattice mod 2 
+corresponds to a dodecad. We map that dodecad to the dodecad 
+:math:`(0,1,2,3,8,9,14,15,18,19,22,23)` by applying a permutation
+:math:`\pi \in 2^{11}.M_{24}`. 
 

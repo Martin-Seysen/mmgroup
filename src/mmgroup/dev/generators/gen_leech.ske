@@ -545,6 +545,33 @@ int32_t gen_leech2_reduce_type4_vector(uint32_t v, uint32_t *result)
 }
 
  
+/*************************************************************************
+*** Self test
+*************************************************************************/
+
+// %%EXPORT px
+uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
+{
+    uint32_t type_count[0x100], word[16];
+    uint32_t v, v_type, v_reduced, i, n_success = 0;
+    int32_t len_word;
+
+    for (i = 0; i < 0x100; ++i) type_count[i] = 0;
+    for (v = start; v < start + n; ++v) {
+        v_type = gen_leech2_type(v);
+        ++type_count[v_type & 0xff];
+        if ((v_type & 0xf0) == 0x40) {
+            len_word = gen_leech2_reduce_type4_vector(v, word);
+            if ((len_word >= 0) && (len_word <= 6)) {
+                v_reduced = gen_leech2_conj_word(v, word, len_word);
+                n_success += (v_reduced & 0xffffff) == 0x800000;
+            }            
+        }
+    }    
+    for (i = 0; i < 0x50; ++i) result[i] = type_count[i];
+    for (i = 0x50; i < 0x100; ++i) result[0x10] += type_count[i];
+    return n_success;
+}
 
 
 /************************************************************************
