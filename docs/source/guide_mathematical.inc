@@ -177,11 +177,8 @@ Computations in the Leech lattice modulo 2
 ------------------------------------------
 
 In this section we describe the operation of the Conway group
-:math:`Co_1` on the type-4 vectors in :math:`\Lambda / 2 \Lambda`,
+:math:`\mbox{Co}_1` on :math:`\Lambda / 2 \Lambda`,
 where :math:`\Lambda` is the Leech lattice.
-It is well known that such a type-4 vector corresponds to a 
-coordinate frame in the Leech lattice in standard coordinates,
-see e.g. :cite:`CS99`, :cite:`Iva99`. 
 
 This operation is important for computing in the subgroup
 :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1` of the 
@@ -199,13 +196,13 @@ The stabilizer of :math:`\Omega` is a subgroup :math:`N_{x0}` of
 :math:`G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`. Thus 
 the set of type-4 vectors in  :math:`\Lambda / 2 \Lambda`
 corresponds the set of right cosets
-:math:`\mbox{Co}_1 \setminus 2^{11}.M_{24}`. We have 
-:math:`G_{x0} \setminus N_{x0} \cong \mbox{Co}_1 \setminus 2^{11}.M_{24}`.
+:math:`2^{11}.M_{24} \setminus \mbox{Co}_1`. We have 
+:math:`N_{x0} \setminus G_{x0} \cong 2^{11}.M_{24} \setminus \mbox{Co}_1`.
 So identifying the right coset :math:`N_{x0} h` for a
 :math:`h \in G_{x0}` reduces to the computation of the frame
 :math:`\Omega h`.
 
-In our construction of the monster, the element :math:`h` may 
+In our construction of the monster, the element :math:`h` may be
 given as an arbitrary word in the generators of :math:`G_{x0}`
 (modulo :math:`Q_{x0}`). So it is important to find a short word 
 :math:`g` in the the generators of :math:`G_{x0}` with 
@@ -216,24 +213,24 @@ given as an arbitrary word in the generators of :math:`G_{x0}`
 a generator of  :math:`G_{x0}` (modulo :math:`Q_{x0}`).
 
 
-We assume that the reader is familiar with the
-Conway group and the geometry of the Leech lattice as described in
-:cite:`Iva99`, section 4.1 - 4.7.
+We assume that the reader is familiar with the Conway group 
+:math:`\mbox{Co}_1` and the geometry of the Leech lattice as 
+described in :cite:`Iva99`, section 4.1 - 4.7.
 
 
 
 Orbits of the group :math:`N_{x0}` in the Leech lattice mod 2
 .............................................................
 
-In this subsection w  describe the orbits of :math:`N_{x0}` on
+In this subsection we describe the orbits of :math:`N_{x0}` on
 :math:`\Lambda / 2 \Lambda`. The type of a vector in 
 :math:`v \in  \Lambda` is the halved scalar product 
 :math:`\frac{1}{2} \langle v, v \rangle`. The type of a vector 
 in :math:`\Lambda / 2 \Lambda` is the type of its shortest
 representative in :math:`\Lambda`. Each vector in  
 :math:`\Lambda / 2 \Lambda` has type 0, 2, 3 or 4; and the 
-group :math:`G_{x0}` is transtive on the vectors of any of these
-types.
+group :math:`\mbox{Co}_1` is transtive on the vectors of any of 
+these types.
 
 The orbits of the groups :math:`N_{x0}` on the vectors of
 type 2,3, and 4 on :math:`\Lambda` have been described in 
@@ -251,8 +248,12 @@ representative of the same type in :math:`\Lambda` (up to sign); so
 its shape is uniquely defined.  A vector of type 4 in 
 :math:`\Lambda / 2 \Lambda` has :math:`2 \cdot 24` representatives 
 of type 4 in :math:`\Lambda` which are orthogonal except when equal 
-or opposite.   
+or opposite. It is well known that a type-4 vector in 
+:math:`\Lambda / 2 \Lambda` corresponds to a 
+coordinate frame in the Leech lattice in standard coordinates,
+see e.g. :cite:`CS99`, :cite:`Iva99`. 
 
+  
 The table at Lemma 4.4.1. in :cite:`Iva99` assigns a name and a 
 shape to each orbit of  :math:`N_{x0}` on the vectors of type
 2, 3, and 4 in  :math:`\Lambda`. The table at  Lemma 4.6.1. 
@@ -265,15 +266,15 @@ in the following table. Here we also assign a subtype
 digit specifies the type of the orbit and the second digit is
 used to distinguish between orbits of the same type. 
 
-In :cite:`Con85`, section 7 and `Sey19`, section section 6.1,
+In :cite:`Con85`, section 7, and `Seysen20`, section 6.1,
 an element of :math:`\Lambda / 2 \Lambda` is also described
-as a product :math:`x_d \cdot x_\delta \in Q_{x0} / \{\pm 1\}`,  
-with :math:`x_d \in \mathcal{C}`, 
-:math:`x_\delta \in \mathcal{C}^*`. Here with :math:`\mathcal{C}`
-is the Golay code and :math:`\mathcal{C}^*` is the Golay cocode.
+as a product :math:`x_d \cdot x_\delta \in Q_{x0}` (modulo the
+center of :math:`Q_{x0}`), with :math:`x_d \in \mathcal{C}`, 
+:math:`x_\delta \in \mathcal{C}^*`. Here :math:`\mathcal{C}`
+is the Golay code, and :math:`\mathcal{C}^*` is the Golay cocode.
 The :math:`\Lambda / 2 \Lambda`-orbit of :math:`x_d \cdot x_\delta`
 can also be computed from :math:`d` and :math:`\delta`
-as indicated in the table:
+as indicated in the following table:
 
 
 .. math::
@@ -323,7 +324,7 @@ as indicated in the table:
     8, 16 & \mbox{even} &   0 & 2.\\    
     \hline
     43 & 
-    \bar{\Lambda}_4^{5} & (5 \, 3^2 1^{21}), (3^{5} 1^{16}) & 
+    \bar{\Lambda}_4^{5} & (5 \, 3^2 1^{21}), (3^{5} 1^{19}) & 
     \mbox{any} & 3 & |d| / 4 + 1 &  \\    
     \hline
     44 & 
@@ -366,15 +367,109 @@ conditions on the scalar product of  :math:`|d|` and
 :cite:`Iva99` and  :cite:`Con85` (or :cite:`Seysen20`).
 
 The table provides enough information for effectively computing
-the subtype of an element :math:`x_d \cdot x_\delta`. Function
-``gen_leech2_type`` in file ``gen_leech.c`` compute that subtype.
+the subtype of an element :math:`x_d \cdot x_\delta` from
+math:`d` and math:`\delta`. Function ``gen_leech2_type`` in file 
+``gen_leech.c`` computes that subtype.
+
+The following table may be helpful for memorizing the second digit
+of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
+
+.. math::
+    \begin{array}{|c|l|}
+    \hline 
+    \mbox{Subtype} & \mbox{Description}  \\
+    \hline 
+    x0 & \mbox{Contains a vector $x_d x_\delta$ with $d=0$;
+    $\delta$ even} \\ 
+    \hline 
+    x1 & \mbox{Vectors $x_d x_\delta$ with $|\delta|=1$} \\ 
+    \hline 
+    x2 & \mbox{Vectors $x_d x_\delta$ with $|d| = 8, 16$; and 
+    $\delta \subset d \Omega^{1 + |d|/8}$, $|\delta|$ even}\\ 
+    \hline 
+    x3 & \mbox{Vector $x_d x_\delta$ with $|\delta|=3$} \\ 
+    \hline 
+    x4 & \mbox{Vectors $x_d x_\delta$ with $|d| = 8, 16$; not
+    of subtype $x2$, $|\delta|$ even} \\ 
+    \hline 
+    x6 & \mbox{Vectors $x_d x_\delta$ with $|d| = 12$; 
+    $|\delta|$ even} \\ 
+    \hline 
+    x8 & \mbox{Vectors $x_d x_\delta$ with $|d| = 24$; 
+    $\delta = 0$} \\ 
+    \hline 
+    \end{array}
+
 
 
 Operation of the group :math:`G_{x0}` on the Leech lattice
 ..........................................................
 
+The generators :math:`x_d, x_\delta, y_d, x_\pi, \xi`, with
+:math:`d \in \mathcal{C}, \delta \in \mathcal{C}^*, \pi \in
+\mbox{Aut}_{St} mathcal{P}` operate on the subgroup 
+:math:`G_{x0}` of the monster and also on 
+:math:`\Lambda / 2 \Lambda`. Here :math:`x_d, x_\delta`
+operate trivially on :math:`\Lambda / 2 \Lambda`.
+:math:`y_d` and :math:`x_\pi` act as permutations and sign 
+changes on the coordinates of :math:`\Lambda`, resepctively; 
+they do not change the subtype. 
 
-Yet to be documented!
+From the *Leech graph* in :cite:`Iva99`, section 4.7, we see
+that generators :math:`\xi` and :math:`\xi^2` may change
+the subtype of a vector in  :math:`\Lambda / 2 \Lambda` as
+follows:
+
+.. only:: html
+
+    
+        * subtype 48 to 40
+        
+        * subtype 40 to 40, 48, 42, 44
+        
+        * subtype 42 to 40, 42, 44, 43
+        
+        * subtype 44 to 40, 42, 44, 43, 46
+        
+        * subtype 43 to 42, 44, 43, 46
+        
+        * subtype 46 to 44, 43, 46
+
+
+ 
+
+.. raw:: latex
+
+    \begin{figure}[h]
+    \setlength{\unitlength}{1cm}
+    \centering
+    \begin{picture}(10,6)
+	\put(0.5,3){\oval(1.0, 0.75)}
+	\put(0.3,2.9){$48$}
+	\put(3.5,3){\oval(1.0, 0.75)}
+    \put(3.3,2.9){$40$}
+    \put(1.0,3){\line(1,0){2}}
+    \put(4,3.1){\line(1,1){1.5}}
+	\put(6.0,4.7){\oval(1.0, 0.75)}
+    \put(5.8,4.6){$42$}
+    \put(4,2.9){\line(1,-1){1.5}}
+    \put(6.0,1.3){\oval(1.0, 0.75)}
+    \put(6.0,1.75){\line(0,1){2.5}}
+    \put(5.8,1.2){$44$}
+    \put(6.5,1.5){\line(1,1){2.8}}
+	\put(9.5,4.7){\oval(1.0, 0.75)}
+    \put(9.3,4.6){$43$}
+	\put(9.5,1.3){\oval(1.0, 0.75)}
+    \put(9.3,1.2){$46$}
+    \put(6.5,4.7){\line(1,0){2.5}}
+    \put(6.5,1.2){\line(1,0){2.5}}
+    \put(9.5,1.75){\line(0,1){2.5}}   
+    \end{picture}
+    \caption{A line between two subtypes means that $\xi$ and $\xi^2$ 
+    may map one subtype to the other subtype. Every subtype apart from
+    48 may also be mapped to itself.}    
+    \end{figure}
+
 
 From type 46 to type 44
 .......................
