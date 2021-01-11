@@ -1,10 +1,7 @@
 r"""
 
 
-Implementing the group :math:`N_{0}`
-------------------------------------
-
-Yet to be documented
+The implementing the group :math:`N_{0}` is yet to be documented.
 
 
 

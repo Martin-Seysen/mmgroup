@@ -173,6 +173,9 @@ where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have
 
 
 
+.. _computation-leech2:
+
+
 Computations in the Leech lattice modulo 2
 ------------------------------------------
 
@@ -204,7 +207,7 @@ So identifying the right coset :math:`N_{x0} h` for a
 :math:`h \in G_{x0}` reduces to the computation of the frame
 :math:`\Omega h`.
 
-In our construction of the monster, the element :math:`h` may be
+In our construction of the monster the element :math:`h` may be
 given as an arbitrary word in the generators of :math:`G_{x0}`
 (modulo :math:`Q_{x0}`). So it is important to find a short word 
 :math:`g` in the the generators of :math:`G_{x0}` with 
@@ -260,8 +263,8 @@ see e.g. :cite:`CS99`, :cite:`Iva99`.
 The table at Lemma 4.4.1. in :cite:`Iva99` assigns a name and a 
 shape to each orbit of  :math:`N_{x0}` on the vectors of type
 2, 3, and 4 in  :math:`\Lambda`. The table at  Lemma 4.6.1. 
-in :cite:`Iva99` assigns a name and a shape to each orbit of  
-:math:`N_{x0}` on the vectors of type 4 in  
+in :cite:`Iva99` assigns a name and one or more shapes to each 
+orbit of :math:`N_{x0}` on the vectors of type 4 in  
 :math:`\Lambda / 2 \Lambda`. We repreduce this information
 for the orbits of :math:`N_{x0}` on :math:`\Lambda / 2 \Lambda`
 in the following table. Here we also assign a subtype (which is 
@@ -362,11 +365,11 @@ Remarks
    3. None of the conditions stated in Remarks 1 and 2 hold.
   
 
-Here column *Subtype* lists the numbers that we use for describing 
-the orbit. Columns  *Name* and *Shape* list the names and the shapes
-of the orbits as given in :cite:`Iva99`, Lemma 4.1.1  and 4.6.1.
-Columns :math:`|d|` and  :math:`|\delta|` list conditions on the
-weight of a Golay code word :math:`d` and of (a shortest 
+Here column *Subtype* lists the two-digit number that we use for 
+describing the orbit. Columns  *Name* and *Shape* list the names and 
+the shapes of the orbits as given in :cite:`Iva99`, Lemma 4.1.1 and 
+4.6.1. Columns :math:`|d|` and  :math:`|\delta|` list conditions 
+on the weight of a Golay code word :math:`d` and of (a shortest 
 representative of) the Golay cocode element :math:`\delta`, 
 respectively. Column :math:`\langle d, \delta \rangle` lists 
 conditions on the scalar product of  :math:`|d|` and  
@@ -376,7 +379,8 @@ conditions on the scalar product of  :math:`|d|` and
 The table provides enough information for effectively computing
 the subtype of an element :math:`\lambda_d + \lambda_\delta` from
 :math:`d` and :math:`\delta`. Function ``gen_leech2_type`` in file 
-``gen_leech.c`` computes that subtype.
+``gen_leech.c`` computes that subtype. It returns e.g. the subtype
+46 as the hexadecimal number 0x46.
 
 The following table may be helpful for memorizing the second digit
 of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
@@ -402,7 +406,7 @@ of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
     x6 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 12$; 
     $|\delta|$ even} \\ 
     \hline 
-    x8 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 24$; 
+    x8 & \mbox{The vector $\lambda_d+\lambda_\delta$ with $|d| = 24$; 
     $\delta = 0$} \\ 
     \hline 
     \end{array}
@@ -490,7 +494,7 @@ We will provide some more information about the operation of
 We say that a vector :math:`w \in \mathbb{Z}^n` is of shape
 :math:`(m^\alpha 0^{n-\alpha} \bmod 2m)` if :math:`w` has
 :math:`\alpha` coordinates equal to :math:`m` :math:`\pmod{2m}`
-and :math:`m-\alpha` coordinates equal to 
+and :math:`n-\alpha` coordinates equal to 
 :math:`0` :math:`\pmod{2m}`.
 For a vector :math:`v = (v_0,\ldots, v_{23}) \in \mathbb{R}^{24}`
 define 
@@ -503,7 +507,7 @@ description of the Golay code and the Leech lattice, see
 Lemma 
 
 Let :math:`v \in \sqrt{8} \Lambda`, and let 
-:math:`v^{(k)} = v^{\xi^k}`.
+:math:`v^{(k)} = v \cdot {\xi^k}`.
 Let :math:`w` be a column of :math:`v`, and let :math:`w^{(k)}`
 be the corresponding column of :math:`v^{(k)}`. Then
 :math:`|w^{(k)}| = |w|`. If :math:`w` has shape
@@ -640,9 +644,9 @@ Select 5 points from octad :math:`d'`, and let :math:`h` be the
 heptad formed by these 5 points and :math:`c_0, c_1`. Then 
 :math:`h` is an umbral heptad (i.e. an heptad not contained in an 
 octad); and :math:`h` has a unique point :math:`o_0` such that 
-the difference set :math:`h \setminus o_0`  is a standard hexad,
-i.e. a hexad contained in an octad. Furthermore, :math:`o_0`  
-is in the octad  :math:`d'`.
+the difference set :math:`h \setminus \{o_0\}`  is a standard 
+hexad, i.e. a hexad contained in an octad. Furthermore, 
+:math:`o_0` is in the octad  :math:`d'`.
 
 Select 4 points :math:`o_1, o_2, o_3, o_4` (differerent from 
 :math:`o_0`) from the octad  :math:`d'` and map the umbral 
@@ -702,4 +706,4 @@ to the standard tetrad  :math:`\omega` represented by
 :math:`\{0,1,2,3\}`. 
 Then :math:`\lambda_r \cdot x_\pi = \alpha \lambda_\Omega + 
 \lambda_\omega`. A suitable power of  :math:`\xi` maps that
-vector to the unque vector :math:`\lambda_\Omega` of type 48.
+vector to the unique vector :math:`\lambda_\Omega` of type 48.
