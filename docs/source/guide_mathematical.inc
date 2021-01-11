@@ -176,6 +176,7 @@ where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have
 Computations in the Leech lattice modulo 2
 ------------------------------------------
 
+
 In this section we describe the operation of the Conway group
 :math:`\mbox{Co}_1` on :math:`\Lambda / 2 \Lambda`,
 where :math:`\Lambda` is the Leech lattice.
@@ -197,7 +198,8 @@ The stabilizer of :math:`\Omega` is a subgroup :math:`N_{x0}` of
 the set of type-4 vectors in  :math:`\Lambda / 2 \Lambda`
 corresponds the set of right cosets
 :math:`2^{11}.M_{24} \setminus \mbox{Co}_1`. We have 
-:math:`N_{x0} \setminus G_{x0} \cong 2^{11}.M_{24} \setminus \mbox{Co}_1`.
+:math:`N_{x0} \setminus G_{x0} \cong 2^{11}.M_{24} 
+\setminus \mbox{Co}_1`.
 So identifying the right coset :math:`N_{x0} h` for a
 :math:`h \in G_{x0}` reduces to the computation of the frame
 :math:`\Omega h`.
@@ -229,22 +231,23 @@ In this subsection we describe the orbits of :math:`N_{x0}` on
 in :math:`\Lambda / 2 \Lambda` is the type of its shortest
 representative in :math:`\Lambda`. Each vector in  
 :math:`\Lambda / 2 \Lambda` has type 0, 2, 3 or 4; and the 
-group :math:`\mbox{Co}_1` is transtive on the vectors of any of 
+group :math:`\mbox{Co}_1` is transitive on the vectors of any of 
 these types.
 
 The orbits of the groups :math:`N_{x0}` on the vectors of
 type 2,3, and 4 on :math:`\Lambda` have been described in 
-:cite:`Iva99`,  Lemma 4.4.1. Since :math:`N_{x0}` acts monomially
-on the  the lattice :math:`\sqrt{8} \Lambda` given in the
-standard Euclidean basis, an orbit of :math:`N_{x0}` on
-:math:`\Lambda` can be described by the *shape* of its vectors in 
+:cite:`Iva99`,  Lemma 4.4.1. :math:`N_{x0}` acts monomially
+on the  the lattice :math:`\sqrt{8} \Lambda`, which has integers
+coordinates in the standard Euclidean basis. Thus an orbit of 
+:math:`N_{x0}` on :math:`\Lambda / 2 \Lambda` can be described by 
+the *shapes* of the shortest vectors in the corrsponding orbit of
 :math:`\sqrt{8} \Lambda`. Here the shape of a vector is the 
 multiset of the absolute values of the coordinates of the vector. 
 E.g. a vector of shape :math:`(3^5 1^{19})` has 5 coordinates 
 with absolute value 3 and 19 coordinates with absolute value 1.
 
-A vector of type 2 or 3 in :math:`\Lambda / 2 \Lambda` has a unique
-representative of the same type in :math:`\Lambda` (up to sign); so 
+A vector of type 2 or 3 in :math:`\Lambda / 2 \Lambda` has two
+opposite representatives of the same type in :math:`\Lambda`; so 
 its shape is uniquely defined.  A vector of type 4 in 
 :math:`\Lambda / 2 \Lambda` has :math:`2 \cdot 24` representatives 
 of type 4 in :math:`\Lambda` which are orthogonal except when equal 
@@ -261,19 +264,23 @@ in :cite:`Iva99` assigns a name and a shape to each orbit of
 :math:`N_{x0}` on the vectors of type 4 in  
 :math:`\Lambda / 2 \Lambda`. We repreduce this information
 for the orbits of :math:`N_{x0}` on :math:`\Lambda / 2 \Lambda`
-in the following table. Here we also assign a subtype
-(which is an 2-digit number) to each orbit.  Here the first 
-digit specifies the type of the orbit and the second digit is
-used to distinguish between orbits of the same type. 
+in the following table. Here we also assign a subtype (which is 
+a 2-digit number) to each orbit. The first digit of the subtype
+specifies the type of the orbit and the second digit is used to 
+distinguish between orbits of the same type.
 
-In :cite:`Con85`, section 7, and `Seysen20`, section 6.1,
-an element of :math:`\Lambda / 2 \Lambda` is also described
-as a product :math:`x_d \cdot x_\delta \in Q_{x0}` (modulo the
-center of :math:`Q_{x0}`), with :math:`x_d \in \mathcal{C}`, 
-:math:`x_\delta \in \mathcal{C}^*`. Here :math:`\mathcal{C}`
-is the Golay code, and :math:`\mathcal{C}^*` is the Golay cocode.
-The :math:`\Lambda / 2 \Lambda`-orbit of :math:`x_d \cdot x_\delta`
-can also be computed from :math:`d` and :math:`\delta`
+Let :math:`\mathcal{C}` be the Golay code and :math:`\mathcal{C}^*` 
+is the Golay cocode. For 
+:math:`d \in \mathcal{C}, \delta \in \mathcal{C}^*` let 
+:math:`\lambda_d, \lambda_\delta \in \Lambda / 2 \Lambda` be
+defined as in :cite:`Seysen20`, Theorem 6.1. Conway's definition
+of :math:`\lambda_d, \lambda_\delta` in :cite:`Con85` differs
+slightly from that definition. Each 
+:math:`v \in  \Lambda / 2 \Lambda` has a unique decomposion 
+:math:`v = \lambda_d + \lambda_\delta, d \in \mathcal{C}, 
+\delta \in \mathcal{C}^*`. The subtype of a vector 
+:math:`\lambda_d + \lambda_\delta \in \Lambda / 2\Lambda` can
+be computed from :math:`d` and :math:`\delta`,
 as indicated in the following table:
 
 
@@ -359,16 +366,16 @@ Here column *Subtype* lists the numbers that we use for describing
 the orbit. Columns  *Name* and *Shape* list the names and the shapes
 of the orbits as given in :cite:`Iva99`, Lemma 4.1.1  and 4.6.1.
 Columns :math:`|d|` and  :math:`|\delta|` list conditions on the
-weigth of a Golay code word :math:`d` and of (a shortest 
-representative of) the Golay cocode word :math:`\delta`, 
+weight of a Golay code word :math:`d` and of (a shortest 
+representative of) the Golay cocode element :math:`\delta`, 
 respectively. Column :math:`\langle d, \delta \rangle` lists 
 conditions on the scalar product of  :math:`|d|` and  
 :math:`|\delta|`. All this information can easily be derived from  
 :cite:`Iva99` and  :cite:`Con85` (or :cite:`Seysen20`).
 
 The table provides enough information for effectively computing
-the subtype of an element :math:`x_d \cdot x_\delta` from
-math:`d` and math:`\delta`. Function ``gen_leech2_type`` in file 
+the subtype of an element :math:`\lambda_d + \lambda_\delta` from
+:math:`d` and :math:`\delta`. Function ``gen_leech2_type`` in file 
 ``gen_leech.c`` computes that subtype.
 
 The following table may be helpful for memorizing the second digit
@@ -379,23 +386,23 @@ of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
     \hline 
     \mbox{Subtype} & \mbox{Description}  \\
     \hline 
-    x0 & \mbox{Contains a vector $x_d x_\delta$ with $d=0$;
+    x0 & \mbox{Contains a vector $\lambda_d+\lambda_\delta$ with $d=0$;
     $\delta$ even} \\ 
     \hline 
-    x1 & \mbox{Vectors $x_d x_\delta$ with $|\delta|=1$} \\ 
+    x1 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|\delta|=1$} \\ 
     \hline 
-    x2 & \mbox{Vectors $x_d x_\delta$ with $|d| = 8, 16$; and 
-    $\delta \subset d \Omega^{1 + |d|/8}$, $|\delta|$ even}\\ 
+    x2 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$; 
+    and  $\delta \subset d \Omega^{1 + |d|/8}$, $|\delta|$ even}\\ 
     \hline 
-    x3 & \mbox{Vector $x_d x_\delta$ with $|\delta|=3$} \\ 
+    x3 & \mbox{Vector $\lambda_d+\lambda_\delta$ with $|\delta|=3$} \\ 
     \hline 
-    x4 & \mbox{Vectors $x_d x_\delta$ with $|d| = 8, 16$; not
-    of subtype $x2$, $|\delta|$ even} \\ 
+    x4 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$;
+    not of subtype $x2$, $|\delta|$ even} \\ 
     \hline 
-    x6 & \mbox{Vectors $x_d x_\delta$ with $|d| = 12$; 
+    x6 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 12$; 
     $|\delta|$ even} \\ 
     \hline 
-    x8 & \mbox{Vectors $x_d x_\delta$ with $|d| = 24$; 
+    x8 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 24$; 
     $\delta = 0$} \\ 
     \hline 
     \end{array}
@@ -407,18 +414,18 @@ Operation of the group :math:`G_{x0}` on the Leech lattice
 
 The generators :math:`x_d, x_\delta, y_d, x_\pi, \xi`, with
 :math:`d \in \mathcal{C}, \delta \in \mathcal{C}^*, \pi \in
-\mbox{Aut}_{St} mathcal{P}` operate on the subgroup 
+\mbox{Aut}_{St} \mathcal{P}` operate on the subgroup 
 :math:`G_{x0}` of the monster and also on 
 :math:`\Lambda / 2 \Lambda`. Here :math:`x_d, x_\delta`
 operate trivially on :math:`\Lambda / 2 \Lambda`.
 :math:`y_d` and :math:`x_\pi` act as permutations and sign 
-changes on the coordinates of :math:`\Lambda`, resepctively; 
+changes on the coordinates of :math:`\Lambda`, respectively; 
 they do not change the subtype. 
 
 From the *Leech graph* in :cite:`Iva99`, section 4.7, we see
 that generators :math:`\xi` and :math:`\xi^2` may change
-the subtype of a vector in  :math:`\Lambda / 2 \Lambda` as
-follows:
+the subtype of a type-4 vector in  :math:`\Lambda / 2 \Lambda` 
+as follows:
 
 .. only:: html
 
@@ -456,7 +463,7 @@ follows:
     \put(6.0,1.3){\oval(1.0, 0.75)}
     \put(6.0,1.75){\line(0,1){2.5}}
     \put(5.8,1.2){$44$}
-    \put(6.5,1.5){\line(1,1){2.8}}
+    \put(6.5,1.5){\line(1,1){2.8}}s
 	\put(9.5,4.7){\oval(1.0, 0.75)}
     \put(9.3,4.6){$43$}
 	\put(9.5,1.3){\oval(1.0, 0.75)}
@@ -471,14 +478,228 @@ follows:
     \end{figure}
 
 
-From type 46 to type 44
-.......................
+In the next few subsections we show how to map a vector of subtype
+4x to a vector of subtype 48 by a sequence of generators
+:math:`x_\pi, \xi^k` of length at most 6. The proofs are a bit 
+involved, but the C function ``gen_leech2_reduce_type4_vector``
+in file ``gen_leech.c`` constructs that sequence very fast.
 
-Yet to be documented!
+We will provide some more information about the operation of 
+:math:`\xi^k` on :math:`\Lambda`. 
+
+We say that a vector :math:`w \in \mathbb{Z}^n` is of shape
+:math:`(m^\alpha 0^{n-\alpha} \bmod 2m)` if :math:`w` has
+:math:`\alpha` coordinates equal to :math:`m` :math:`\pmod{2m}`
+and :math:`m-\alpha` coordinates equal to 
+:math:`0` :math:`\pmod{2m}`.
+For a vector :math:`v = (v_0,\ldots, v_{23}) \in \mathbb{R}^{24}`
+define 
+:math:`(v_{4i}, v_{4i+1}, v_{4i+2}, v_{4i+3}) \in \mathbb{R}^4` 
+to be the :math:`i`-th column of :math:`v`. This definition is
+related to the Miracle Octad Generator (MOG) used for the
+description of the Golay code and the Leech lattice, see
+:cite:`CS99`, chapter 11.
+
+Lemma 
+
+Let :math:`v \in \sqrt{8} \Lambda`, and let 
+:math:`v^{(k)} = v^{\xi^k}`.
+Let :math:`w` be a column of :math:`v`, and let :math:`w^{(k)}`
+be the corresponding column of :math:`v^{(k)}`. Then
+:math:`|w^{(k)}| = |w|`. If :math:`w` has shape
+:math:`(m^4 \bmod{2m})` then there is a :math:`k \in \{1,2\}`
+such that :math:`w^{(k)}` has shape :math:`(0^4 \bmod{2m})`.
+If :math:`w` has shape :math:`(0^4 \bmod{2m})` or 
+:math:`(m^2 0^2 \bmod{2m})` then :math:`w^{(k)}` has 
+the same shape (modulo :math:`2m`) for all
+:math:`k \in \mathbb{Z}`.
+
+Sketch proof
+
+In :cite:`Seysen20`, section 9.5 the operation of :math:`\xi` 
+on a column is given as a product of two orthogonal symmetric
+:math:`4 \times 4` matrices :math:`\xi_{4a}` and
+:math:`\xi_{4b}`. Matrix :math:`\xi_{4b}` negates the first
+coordinate of a column, and the operation of matrix 
+:math:`\xi_{4a}` corresponds to the subtraction of the halved
+sum of all coordinates from each coordinate. With this
+description of :math:`\xi_{4a}` and :math:`\xi_{4b}` it is
+easy to show the Lemma.
+
+q.e.d.
 
 
-Here the part :math:`x_d` of the vector in the Leech lattice mod 2 
-corresponds to a dodecad. We map that dodecad to the dodecad 
-:math:`(0,1,2,3,8,9,14,15,18,19,22,23)` by applying a permutation
-:math:`\pi \in 2^{11}.M_{24}`. 
 
+
+From subtype 46 to subtype 44
+.............................
+
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
+subtype 46. Then :math:`d` is a dodecad. There is a permutation
+:math:`x_\pi` that maps :math:`d` to the dodecad
+:math:`e = \{0,1,2,3,8,9,14,15,18,19,22,23\}`.
+Function ``mat24_perm_from_dodecads`` in file ``mat24_functions.c`` 
+can be used for constructing a suitable permutation. 
+:math:`x_\pi` maps :math:`\delta` to an even cocode element
+:math:`\epsilon` with :math:`\langle e, \epsilon \rangle = 1``.
+
+There is a vector :math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+that has MOG coordinates
+  
+.. math::
+    \begin{array}{|c|c|c|c|c|c|}
+    \hline 
+    2 & 0 & 2 & 0 & 0 & 0 \\
+    \hline 
+    2 & 0 & 2 & 0 & 0 & 0  \\ 
+    \hline 
+    2 & 0 & 4 & 2 & 2 & 2 \\ 
+    \hline 
+    2 & 0 & 0 & 2 & 2 & 2  \\ 
+    \hline 
+    \end{array}
+    
+up to sign. By the Lemma given above  there is a 
+:math:`k \in \{1,2\}` such that column 0 of the the vector 
+:math:`w = v \cdot {\xi^k}` has shape :math:`(4 \, 0^3)`. The other
+columns of :math:`w` have the same shape as the corresponding 
+columns of :math:`v`. Thus  :math:`w` has shape 
+:math:`(4 \, 2^8 0^{15})`. So using the table given above we see
+that  :math:`w` has type 44. 
+
+With a little extra effort we can show 
+:math:`k = 2 - \langle f, \epsilon \rangle` for
+:math:`f = \{0,1,2,3,4,5,6,7\}`, and 
+:math:`\langle ., . \rangle: \mathcal{C} \times \mathcal{C}^*
+\rightarrow \{0,1\}` the scalar product.
+
+
+
+From subtype 43 to subtype 42
+.............................
+
+
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
+subtype 43. Then :math:`|\delta| = 3`.There is a permutation
+:math:`x_\pi` that maps :math:`\delta` to 
+:math:`\epsilon = \{0,1,2\}`, and  :math:`d` to a Golay code 
+word :math:`e`.
+
+There is a vector :math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+that has MOG coordinates
+  
+.. math::
+    \begin{array}{|c|c|c|c|c|c|}
+    \hline 
+    5 & 1 & 1 & 1 & 1 & 1 \\
+    \hline 
+    3 & 1 & 1 & 1 & 1 & 1  \\ 
+    \hline 
+    3 & 1 & 1 & 1 & 1 & 1 \\ 
+    \hline 
+    1 & 1 & 1 & 1 & 1 & 1  \\ 
+    \hline 
+    \end{array}
+
+up to sign. By the Lemma given above  there is a 
+:math:`k \in \{1,2\}` such that one column of
+:math:`w = v \cdot {\xi^k}` (and hence all columns) have even 
+entries. Column 0 of :math:`w` has squared norm 
+:math:`44 = 6^2 + 2^2 + 2^2 + 0^2`. That decompostion of
+:math:`44` into a sum of four even squares is unique, so 
+column 0 has shape :math:`(6 \, 2^2 0)`. The other columns
+have shape  :math:`(2 \, 0^3)`. So :math:`w` is of
+shape  :math:`(6 \, 2^7 0^{15})` and hence of subtype 42.
+ 
+With a little extra effort we can show 
+:math:`k = 2 - \langle e, \varphi \rangle` for
+:math:`\varphi = \{0,1,2,3\} \in \mathcal{C}^*`, and 
+:math:`\langle ., . \rangle` as above. 
+
+
+From subtype 44 to subtype 40
+.............................
+
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
+subtype 44. Then :math:`d` is an octad or a complement of
+an octad. We call that octad :math:`d'`. There is a permutation 
+:math:`x_\pi` that maps :math:`d'` to the standard octad
+:math:`e = \{0,1,2,3,4,5,6,7\}`. But a suitable :math:`x_\pi`
+also has to deal with :math:`\delta`.
+
+If the cocode word :math:`\delta` is a duad, let :math:`c_0, c_1` 
+be the two points in that duad. Otherwise, let :math:`c` by any 
+tetrad intersecting the octad :math:`d'` in two points, so that
+:math:`c` is equal to the sextet :math:`\delta` modulo the cocode
+:math:`\mathcal{C}^*`. Let :math:`c_0, c_1` be the two points in  
+:math:`c` which are not in the octad  :math:`d'`. 
+
+Select 5 points from octad :math:`d'`, and let :math:`h` be the 
+heptad formed by these 5 points and :math:`c_0, c_1`. Then 
+:math:`h` is an umbral heptad (i.e. an heptad not contained in an 
+octad); and :math:`h` has a unique point :math:`o_0` such that 
+the difference set :math:`h \setminus o_0`  is a standard hexad,
+i.e. a hexad contained in an octad. Furthermore, :math:`o_0`  
+is in the octad  :math:`d'`.
+
+Select 4 points :math:`o_1, o_2, o_3, o_4` (differerent from 
+:math:`o_0`) from the octad  :math:`d'` and map the umbral 
+heptad :math:`(o_1, o_2, o_3, o_4, c_0, c_1, o_0)` to the umbral 
+heptad :math:`(0,1,2,3,8,9,4)` via a permutation :math:`x_\pi`. 
+Then :math:`x_\pi` maps :math:`d'` to :math:`e` and 
+:math:`\delta` to :math:`\epsilon \in \mathcal{C}^*` such that 
+a representative of :math:`\epsilon` is a subset of
+:math:`\{i \in \mathbb{Z} \mid 0 \leq i < 10\}`.
+Function ``mat24_perm_from_heptads``
+in file ``math24_functions.c`` constructs mappings from
+umbral heptads to umbral heptads.
+
+There is a vector :math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+that has MOG coordinates
+  
+.. math::
+    \begin{array}{|c|c|c|c|c|c|}
+    \hline 
+    2 & 2 & 4 & 0 & 0 & 0 \\
+    \hline 
+    2 & 2 & 4 & 0 & 0 & 0  \\ 
+    \hline 
+    2 & 2 & 0 & 2 & 2 & 2 \\ 
+    \hline 
+    2 & 2 & 0 & 2 & 2 & 2  \\ 
+    \hline 
+    \end{array}
+
+up to sign. Similar to the previous cases, we can show
+there is a :math:`k \in \{1,2\}` such that 
+:math:`w = v \cdot {\xi^k}` has shape 
+:math:`(4^4 0^{20})`. So :math:`w` is of subtype 40.
+
+One can show :math:`k = 2 - \sigma`, where
+:math:`\sigma = |c \cap \{0,1,2,3\}| \pmod{2}`, 
+:math:`\sigma \in \{0,1\}`. 
+
+
+From subtype 42 to subtype 40
+.............................
+
+Here a simplified version of the construction for the 
+reduction of subtype 44 can be used. More specifically, we 
+may ignore the contibution of the cocode part 
+:math:`\lambda_\delta` to the permutation :math:`x_\pi` .
+
+From subtype 40 to subtype 48
+.............................
+
+Let :math:`\lambda_r` be of subtype 40. Then
+:math:`\lambda_r = \lambda_\delta` for some 
+:math:`\delta \in \mathcal{C}^*`, :math:`|\delta|=4`.
+A suitable permutation :math:`x_\pi` maps :math:`\delta` 
+to the standard tetrad  :math:`\omega` represented by
+:math:`\{0,1,2,3\}`. 
+Then :math:`\lambda_r \cdot x_\pi = \alpha \lambda_\Omega + 
+\lambda_\omega`. A suitable power of  :math:`\xi` maps that
+vector to the unque vector :math:`\lambda_\Omega` of type 48.
