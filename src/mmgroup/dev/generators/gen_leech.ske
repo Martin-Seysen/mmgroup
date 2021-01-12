@@ -300,7 +300,7 @@ uint32_t op_y(uint32_t x1, uint32_t y)
 
 
 // %%EXPORT px
-uint32_t gen_leech2_conj_word(uint32_t x1, uint32_t *pa, uint32_t n)
+uint32_t gen_leech2_op_word(uint32_t x1, uint32_t *pa, uint32_t n)
 // Conjugate the element ``x1`` of the Pauli group with element 
 // ``e`` of the group ``g_{{x1}}`` with the atom
 // given by ``v``. Atom ``v`` is interpreted as follows:
@@ -373,9 +373,9 @@ uint32_t gen_leech2_conj_word(uint32_t x1, uint32_t *pa, uint32_t n)
 
 
 // %%EXPORT px
-uint32_t gen_leech2_conj_atom(uint32_t x1, uint32_t v)
+uint32_t gen_leech2_op_atom(uint32_t x1, uint32_t v)
 {
-    return  gen_leech2_conj_word(x1, &v, 1);
+    return  gen_leech2_op_word(x1, &v, 1);
 }
 
 
@@ -536,7 +536,7 @@ int32_t gen_leech2_reduce_type4_vector(uint32_t v, uint32_t *result)
         }
         if (exp) {
             exp += 0x60000000;
-            v = gen_leech2_conj_atom(v, exp);
+            v = gen_leech2_op_atom(v, exp);
             if (v & 0xfe000000) return -1L;
             *p_res++ = exp;
         }
@@ -563,7 +563,7 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
         if ((v_type & 0xf0) == 0x40) {
             len_word = gen_leech2_reduce_type4_vector(v, word);
             if ((len_word >= 0) && (len_word <= 6)) {
-                v_reduced = gen_leech2_conj_word(v, word, len_word);
+                v_reduced = gen_leech2_op_word(v, word, len_word);
                 n_success += (v_reduced & 0xffffff) == 0x800000;
             }            
         }
@@ -593,7 +593,7 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
 
 // %%EXPORT px
-uint64_t gen_leech2_short_to3(uint64_t x)
+uint64_t gen_leech2to3_short(uint64_t x)
 {
     uint64_t  gcodev, cocodev, theta, w, result;
     // Put gcodev = codeword (in vector rep)
@@ -657,7 +657,7 @@ uint64_t gen_leech2_short_to3(uint64_t x)
 
 
 // %%EXPORT px
-uint64_t gen_leech3_short_to2(uint64_t x)
+uint64_t gen_leech3to2_short(uint64_t x)
 {
     uint_fast32_t  gcodev, cocodev, theta, w1, w2;
     x = short_3_reduce(x);
@@ -720,7 +720,7 @@ static inline uint32_t parity24(uint64_t x)
 
 
 // %%EXPORT px
-uint64_t gen_leech3_type4_to2(uint64_t x)
+uint64_t gen_leech3to2_type4(uint64_t x)
 {
     uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
     x = short_3_reduce(x);

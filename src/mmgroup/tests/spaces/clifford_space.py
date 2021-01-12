@@ -15,7 +15,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_space import MMSpace
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 
-from mmgroup.generators import gen_leech2_short_to3
+from mmgroup.generators import gen_leech2to3_short
 from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem 
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xsp2co1_neg_elem, xsp2co1_elem_row_mod3
@@ -41,7 +41,7 @@ ERR_LEECH = "Tuple does not describe a short Leech lattice vector %s"
 
 def tuple_to_leech_mod3(tag, i0 = -1, i1 = -1):
     leech_mod2 = MMSpace.index_to_short_mod2(tag, i0, i1)
-    res = gen_leech2_short_to3(leech_mod2)
+    res = gen_leech2to3_short(leech_mod2)
     if (res == 0):
         err = get_error_pool(15)
         if len(err):

@@ -18,11 +18,11 @@ import pytest
 
 from mmgroup import MMGroup
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.generators import gen_leech3_type4_to2
+from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_op_vector_atom
-from mmgroup.generators import gen_leech2_conj_word
-from mmgroup.generators import gen_leech2_conj_atom
+from mmgroup.generators import gen_leech2_op_word
+from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_type_selftest
 
 
@@ -59,7 +59,7 @@ def cond(c, a, b):
     """Substitute for the C conditional   'c ? a : b' """
     return a if c else b
 
-def py_gen_leech3_type4_to2(x):
+def py_gen_leech3to2_type4(x):
     # uint_fast32_t gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
     x = short_3_reduce(x);
     # Let h be the support of x, i.e. the bit vector of nonzero
@@ -195,12 +195,12 @@ def mul_v3(v3, g):
         
 def mul_v2(v2, g):
     assert g in MM
-    result = gen_leech2_conj_word(v2, g._data, g.length)
+    result = gen_leech2_op_word(v2, g._data, g.length)
     assert result & 0xfe000000 == 0, hex(result)
     return result
 
 def v3_to_v2(v3):
-    result = gen_leech3_type4_to2(v3)
+    result = gen_leech3to2_type4(v3)
     assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
     return result
 
@@ -234,7 +234,7 @@ def test_type4(verbose = 0):
         v2 = v3_to_v2(v3) 
         ok = v2 == v2_ref 
         if  weights[w] <= 20:
-             assert  v2 == py_gen_leech3_type4_to2(v3)        
+             assert  v2 == py_gen_leech3to2_type4(v3)        
         if verbose or not ok:
             if not verbose:
                 print("\nTEST %s" % (ntest+1))
@@ -298,7 +298,7 @@ def rand_v3_dict(n):
     d = defaultdict(int)
     for i in range(n):
         v3 = rand_v3()
-        v2 = gen_leech3_type4_to2(v3) 
+        v2 = gen_leech3to2_type4(v3) 
         if (v2 == 0):
             d[0] += 1
         else: 

@@ -215,14 +215,14 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psr
     
     if (length <= 1) return 0;
     for (i = 1; i < length; ++i) {
-        pdest[i] = gen_leech3_short_to2(psrc[i]);
+        pdest[i] = gen_leech3to2_short(psrc[i]);
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
     }
     res = qstate12_pauli_conjugate(pqs, length - 1, pdest + 1);
     if (res < 0) return res;
     for (i = 1; i < length; ++i) {
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
-        pdest[i] = gen_leech2_short_to3(pdest[i]);
+        pdest[i] = gen_leech2to3_short(pdest[i]);
     }    
     ok = 1;
     for (i = 1; i < length;  ++i) {
