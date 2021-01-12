@@ -11,8 +11,8 @@ Generator :math:`\xi` is an element of the subgroup
 normal subgroup :math:`Q_{x0}` of  of structure :math:`2^{1+24}`
 by conjugation as described in the **Guide**, section 
 :ref:`computation-leech2`. :math:`Q_{x0}` is extraspecial 
-and has center :math:`\pm1`. We have 
-:math:`Q_{x0} / \pm 1 \cong \Lambda / 2 \Lambda`. An element 
+and has center :math:`\{\pm1\}`. We have 
+:math:`Q_{x0} / \{\pm 1\} \cong \Lambda / 2 \Lambda`. An element 
 :math:`x` of :math:`Q_{x0}` is short if it corresponds to
 a vector in the Leech lattice :math:`\Lambda` of norm 4. 
 :math:`G_{x0}` also operates on the :math:`2 \cdot 98280` short 
@@ -21,7 +21,7 @@ elements of :math:`Q_{x0}`.
 Representation :math:`\rho` has a subspace :math:`98280_x` of 
 dimension 98280 on which :math:`G_{x0}` operates monomially in the 
 same way as it operates on the short elements of :math:`Q_{x0}`. 
-So the basis vectors of  :math:`98280_x` (Together with their opposite 
+So the basis vectors of  :math:`98280_x` (together with their opposite 
 vectors) can be identified with the short elements of :math:`Q_{x0}`.
 
 The functions in module ``gen_xi_functions.c`` are also used for 
@@ -122,11 +122,12 @@ and :math:`e = 1,2`. Here we represent an  :math:`x \in Q_{x0}`
 as a 25-bit integer in Leech lattice encoding as described above.
 
 Let :math:`\mathcal{C}` and :math:`\mathcal{C}^*` be the Golay 
-code and its cocode. In ibid., section 2.2 we give decompositions
+code and its cocode. In :cite:`Seysen20`, section 2.2 we give 
+decompositions
 :math:`\mathcal{C} = \mathcal{G} \oplus \mathcal{H}` and
 :math:`\mathcal{C}^* = \mathcal{G}^* \oplus \mathcal{H}^*`.
 
-The formulas in Lemma 9.5 use auxiliary functions 
+The formulas in ibid., Lemma 9.5 use auxiliary functions 
 :math:`\gamma : \mathcal{G} \rightarrow \mathcal{G^*}` and
 :math:`w_2 : \mathcal{G} \cup \mathcal{G^*} \rightarrow
 \mathbb{F}_2` defined in ibid., section 3.3. Using the

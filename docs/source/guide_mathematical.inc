@@ -420,11 +420,11 @@ The generators :math:`x_d, x_\delta, y_d, x_\pi, \xi`, with
 :math:`d \in \mathcal{C}, \delta \in \mathcal{C}^*, \pi \in
 \mbox{Aut}_{St} \mathcal{P}` operate on the subgroup 
 :math:`G_{x0}` of the monster and also on 
-:math:`\Lambda / 2 \Lambda`. Here :math:`x_d, x_\delta`
-operate trivially on :math:`\Lambda / 2 \Lambda`.
-:math:`y_d` and :math:`x_\pi` act as permutations and sign 
-changes on the coordinates of :math:`\Lambda`, respectively; 
-they do not change the subtype. 
+:math:`\Lambda / 2 \Lambda`, as described in :cite:`Seysen20`. 
+Here :math:`x_d, x_\delta` operate trivially on 
+:math:`\Lambda / 2 \Lambda`. :math:`y_d` and :math:`x_\pi` 
+act as permutations and sign changes on the coordinates of 
+:math:`\Lambda`, respectively; they do not change the subtype. 
 
 From the *Leech graph* in :cite:`Iva99`, section 4.7, we see
 that generators :math:`\xi` and :math:`\xi^2` may change

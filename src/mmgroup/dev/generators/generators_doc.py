@@ -51,21 +51,26 @@ Leech lattice. For the commmutator :math:`[e_1, e_2]` we have
 Leech lattice encoding of the vectors in :math:`Q_{x0}`
 -------------------------------------------------------
 
-For an element :math:`d` of the Parker loop and an element
-:math:`\delta` of the  Golay cocode we encode the element 
-:math:`X = X_d \cdot X_\delta` of :math:`Q_{x0}` as an integer 
-:math:`x`  as follows. 
+An element of  of :math:`Q_{x0}` can be written uniquely as 
+a product :math:`x_d \cdot x_\delta`, 
+:math:`d \in \mathcal{P} , \delta \in \mathcal{C}^*`, see
+:cite:`Seysen20`, section 5. Here :math:`\mathcal{P}` is the 
+Parker loop and :math:`\mathcal{C}^*` is the Golay cocode.
+We encode the element 
+:math:`x_d \cdot x_\delta` of :math:`Q_{x0}` as an integer 
+:math:`x`  as follows:
 
 .. math::
 
-       x = 2^{12} \cdot d \oplus (\delta \oplus \theta(d)).
+       x = 2^{12} \cdot d \oplus (\delta \oplus \theta(d)) \, .
 
 Here elements of the Parker loop and elements of the cocode 
-are encoded as integers as in section :ref:`mmrep-label`,
+are encoded as integers as in section :ref:`parker-loop-label`
+and :ref:`golay-label`.
 :math:`\theta` is the cocycle given in section 
 :ref:`basis-golay-label`, and ':math:`\oplus`' means bitwise
-addition modulo 2. This representation of :math:`Q_{x0}` is linear 
-(up to sign) when interpreting integers as bit vectors. 
+addition modulo 2. This representation of :math:`Q_{x0}` is 
+linear (up to sign) when interpreting integers as bit vectors. 
 Note that a  Parker loop element is 13 bits long (with the
 most significant bit denoting the sign) and that a cocode 
 element is 12 bits long.
