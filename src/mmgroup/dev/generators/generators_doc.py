@@ -48,7 +48,7 @@ Leech lattice. For the commmutator :math:`[e_1, e_2]` we have
 :math:`t = \langle \tilde{e}_1, \tilde{e}_2 \rangle`.
 
 
-Leech lattice encoding of the vectors in :math:`Q_{x0}`
+Leech lattice encoding of the elements :math:`Q_{x0}`
 -------------------------------------------------------
 
 An element of  of :math:`Q_{x0}` can be written uniquely as 
@@ -69,12 +69,17 @@ are encoded as integers as in section :ref:`parker-loop-label`
 and :ref:`golay-label`.
 :math:`\theta` is the cocycle given in section 
 :ref:`basis-golay-label`, and ':math:`\oplus`' means bitwise
-addition modulo 2. This representation of :math:`Q_{x0}` is 
-linear (up to sign) when interpreting integers as bit vectors. 
-Note that a  Parker loop element is 13 bits long (with the
-most significant bit denoting the sign) and that a cocode 
-element is 12 bits long.
+addition modulo 2. Note that a  Parker loop element is 13 bits 
+long (with the most significant bit denoting the sign) and that 
+a cocode element is 12 bits long.
 
+From this representation of :math:`Q_{x0}` we obtain a 
+representation of a vector in the Leech lattice modulo 2 by 
+dropping sign bit, i.e. the most significant bit at position 24. 
+A vector addition in the Leech lattice modulo 2 can be done by 
+applying the XOR operator ``^`` to the integers representing 
+the vectors, ignoring the sign bit.
+ 
 """
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals

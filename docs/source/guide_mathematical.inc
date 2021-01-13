@@ -355,12 +355,12 @@ as indicated in the following table:
 Remarks
 
    1. :math:`|\delta|/2 = 1 + |d|/8 \pmod{2}`, 
-      :math:`\delta \subset d \Omega^{1 + |d|/8}`
-      for a suitable representative :math:`\delta` of the cocode.
+      :math:`\delta \subset d \Omega^{1 + |d|/8}` for a suitable 
+      representative :math:`\delta` of the cocode element.
 
    2. :math:`|\delta|/2 = |d|/8 \pmod{2}`, 
-      :math:`\delta \subset d \Omega^{1 + |d|/8}`
-      for a suitable representative :math:`\delta` of the cocode.
+      :math:`\delta \subset d \Omega^{1 + |d|/8}` for a suitable 
+      representative :math:`\delta` of the cocode element.
 
    3. None of the conditions stated in Remarks 1 and 2 hold.
   
