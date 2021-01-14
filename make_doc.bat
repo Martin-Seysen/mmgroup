@@ -18,5 +18,4 @@ cd ..
 :abort:
 @echo off
 pause Press any key to abort
-exit 1
 :done

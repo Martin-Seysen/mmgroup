@@ -618,8 +618,8 @@ have shape  :math:`(2 \, 0^3)`. So :math:`w` is of
 shape  :math:`(6 \, 2^7 0^{15})` and hence of subtype 42.
  
 With a little extra effort we can show 
-:math:`k = 2 - \langle e, \varphi \rangle` for
-:math:`\varphi = \{0,1,2,3\} \in \mathcal{C}^*`, and 
+:math:`k = 2 - \langle e, \omega \rangle`, where :math:`\omega`
+is the standard tetrad represented by :math:`\{0,1,2,3\}`, and 
 :math:`\langle ., . \rangle` as above. 
 
 
