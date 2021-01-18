@@ -9,13 +9,14 @@
 ** External references 
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 #include <string.h>
 #include "mat24_functions.h"
 #define MMGROUP_GENERATORS_INTERN
 #include "mmgroup_generators.h"
-
 #define CLIFFORD12_INTERN
 #include "clifford12.h"
+/// @endcond  
 
 
 // %%EXPORT_KWD CLIFFORD12_API
@@ -76,6 +77,9 @@ extern "C" {
 //  %%GEN c
 
 
+
+/// @cond DO_NOT_DOCUMENT 
+
 #ifdef  ERROR_POOL
 static uint64_t error_pool[LEN_ERROR_POOL];
 #endif
@@ -93,6 +97,8 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
   #endif   // #ifdef  ERROR_POOL 
 }
 
+/// @endcond 
+
 
 
 
@@ -104,6 +110,7 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 static inline
@@ -137,42 +144,46 @@ static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
     return x;
 }
 
+
+/// @endcond 
+
+
 /*************************************************************************
 *** Chains of short vectors in the Leech lattice mod 3
 *************************************************************************/
 
 
 // %%EXPORT px
-uint64_t xsp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
+uint64_t xsp2co1_find_chain_short_3(uint64_t v3_1, uint64_t v3_2)
 {
     uint64_t mask;
     uint_fast32_t support1, support2, c1, c2;
-    x1 = short_3_reduce(x1);
-    x2 = short_3_reduce(x2);
-    // Compute the support of x1 in variable support1
-    support1 = (uint32_t)((x1 | (x1 >> 24)) & 0xffffffUL);
-    // Compute the support of x2 in variable support2
-    support2 = (uint32_t)((x2 | (x2 >> 24)) & 0xffffffUL);
+    v3_1 = short_3_reduce(v3_1);
+    v3_2 = short_3_reduce(v3_2);
+    // Compute the support of v3_1 in variable support1
+    support1 = (uint32_t)((v3_1 | (v3_1 >> 24)) & 0xffffffUL);
+    // Compute the support of v3_2 in variable support2
+    support2 = (uint32_t)((v3_2 | (v3_2 >> 24)) & 0xffffffUL);
     if (support1 & ~support2) {
         // Find a bit c1 in (support1 & ~support2) and a bit c2 in
         // support2 and return a vector with support at bit positions
-        // at c1 and c2, and entries taken from vector x1.
-        // Fail if x2 ==  0
+        // at c1 and c2, and entries taken from vector v3_1.
+        // Fail if v3_2 ==  0
         c1 = mat24_lsbit24(support1 & ~support2);
         c2 = mat24_lsbit24(support2);
         if (c2 >= 24) return 0;
         mask = (ONE << c1) ^ (ONE << c2);
-        mask = x1 & (mask | (mask << 24));
+        mask = v3_1 & (mask | (mask << 24));
         if ((mask & (mask-1)) == 0) mask |= (ONE << c2);
         return mask;
     }
     if (support2 & ~support1) {
-        // Similar to previous case, exchanging the roles of x1 and x2.
+        // Similar to previous case, exchanging the roles of v3_1 and v3_2.
         c2 = mat24_lsbit24(support2 & ~support1);
         c1 = mat24_lsbit24(support1);
         if (c1 >= 24) return 0;
         mask = (ONE << c1) ^ (ONE << c2);
-        mask = x2 & (mask | (mask << 24));
+        mask = v3_2 & (mask | (mask << 24));
         if ((mask & (mask-1)) == 0) mask |= (ONE << c1);
         return mask;
     }
@@ -183,17 +194,17 @@ uint64_t xsp2co1_find_chain_short_3(uint64_t x1, uint64_t x2)
         c1 = mat24_lsbit24(support1 & support2);
         c2 = mat24_lsbit24(~support1 & ~support2);
         if (c2 < 24) return (ONE << c1) ^ (ONE << c2);
-        // Here the support of both, x1 and x2, comprises all 24 bits.
-        // Find two bit positions c1 and c2, where both, x1 and x2, have 
-        // equal values. Return a vector with support at bit positions
-        // at c1 and c2, and entries taken from vector x1.
-        mask = (x1 ^ x2) & 0xffffffUL;
+        // Here the support of both, v3_1 and v3_2, comprises all 24 bits.
+        // Find two bit positions c1 and c2, where both, v3_1 and v3_2, 
+        // have equal values. Return a vector with support at bit positions
+        // at c1 and c2, and entries taken from vector v3_1.
+        mask = (v3_1 ^ v3_2) & 0xffffffUL;
         if ((mask & (mask-1)) == 0) mask ^= 0xfffffffUL;
         c1 = mat24_lsbit24((uint32_t)mask);
         mask ^= ONE << c1;
         c2 = mat24_lsbit24((uint32_t)mask); 
         mask = (ONE << c1) ^ (ONE << c2);       
-        return x1 & (mask | (mask << 24));
+        return v3_1 & (mask | (mask << 24));
     }
     return 0;
 }
@@ -243,10 +254,10 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psr
 
 
 // %%EXPORT p
-int32_t xsp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
+int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 {
     int32_t res;
-    res = qstate12_set_mem(pqs, e + 1, 25); 
+    res = qstate12_set_mem(pqs, elem + 1, 25); 
     if (res < 0) return res;
     pqs->maxrows = pqs->nrows = 25;
     pqs->ncols = 24;
@@ -260,42 +271,47 @@ int32_t xsp2co1_elem_to_qs(uint64_t *e, qstate12_type *pqs)
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline 
-int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t x1, uint64_t *e)
+int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t x1, uint64_t *elem)
 {
     uint_fast32_t i;
     if (pqs->nrows > 25) return ERR_QSTATE12_BUFFER_OVFL;
     for (i = 0; i < pqs->nrows; ++i) {
-        e[i+1] =  pqs->data[i] & 0x1fffffeffffffULL;
+        elem[i+1] =  pqs->data[i] & 0x1fffffeffffffULL;
     }
-    for (i = pqs->nrows; i < 25; ++i) e[i+1] = 0;
+    for (i = pqs->nrows; i < 25; ++i) elem[i+1] = 0;
     if (pqs->factor & 4) x1 ^= 0xffffffffffffULL;
-    e[0] = short_3_reduce(x1);  
+    elem[0] = short_3_reduce(x1);  
     return 0;    
 }
 
+/// @endcond  
+
+
+
 // %%EXPORT p
-int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *e)
+int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *elem)
 {
     int32_t res;
     res = qstate12_reduce(pqs); 
     if (res < 0) return res;
     res = qstate12_check(pqs);
     if (res < 0) return res;
-    return  xsp2co1_qs_to_elem_noreduce(pqs, x1, e);    
+    return  xsp2co1_qs_to_elem_noreduce(pqs, x1, elem);    
 }
 
 
 
 // %%EXPORT px
-int32_t xsp2co1_reduce_elem(uint64_t *e)
+int32_t xsp2co1_reduce_elem(uint64_t *elem)
 {
     int32_t res;
     qstate12_type qs;
-    res = xsp2co1_elem_to_qs(e, &qs);
+    res = xsp2co1_elem_to_qs(elem, &qs);
     if (res < 0) return res;
-    return xsp2co1_qs_to_elem(&qs, e[0], e); 
+    return xsp2co1_qs_to_elem(&qs, elem[0], elem); 
 }
 
 
@@ -307,17 +323,17 @@ int32_t xsp2co1_reduce_elem(uint64_t *e)
 
 
 // %%EXPORT px
-void xsp2co1_neg_elem(uint64_t *e)
+void xsp2co1_neg_elem(uint64_t *elem)
 {
-    e[0] = short_3_reduce(e[0] ^ 0xffffffffffffULL);
+    elem[0] = short_3_reduce(elem[0] ^ 0xffffffffffffULL);
 }
 
 
 // %%EXPORT px
-void xsp2co1_copy_elem(uint64_t *e1, uint64_t *e2)
+void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 {
     uint_fast32_t i;
-    for (i = 0; i < 26; ++i) e2[i] = e1[i];
+    for (i = 0; i < 26; ++i) elem2[i] = elem1[i];
 }
 
 
@@ -331,14 +347,14 @@ void xsp2co1_copy_elem(uint64_t *e1, uint64_t *e2)
 
 
 // %%EXPORT px
-int32_t xsp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
+int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 {
     int32_t res;
     qstate12_type qs1, qs2, qs3;
     uint64_t data3[MAXROWS_ELEM], asrc[3], adest[3];
-    res = xsp2co1_elem_to_qs(e1, &qs1);
+    res = xsp2co1_elem_to_qs(elem1, &qs1);
     if (res < 0) return res;
-    res = xsp2co1_elem_to_qs(e2, &qs2);
+    res = xsp2co1_elem_to_qs(elem2, &qs2);
     if (res < 0) return res;
     res = qstate12_set_mem(&qs3, data3, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -346,8 +362,8 @@ int32_t xsp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
     if (res < 0) return res;
     
     asrc[0] = STD_V3;
-    adest[0] = e2[0];
-    asrc[2] = e1[0];
+    adest[0] = elem2[0];
+    asrc[2] = elem1[0];
     asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xsp2co1_chain_short_3(&qs2, 3, asrc, adest);
     #ifdef ERROR_POOL
@@ -355,31 +371,31 @@ int32_t xsp2co1_mul_elem(uint64_t *e1, uint64_t *e2, uint64_t *e3)
         memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
     #endif    
     if (res < 0) return res;
-    res = xsp2co1_qs_to_elem(&qs3, adest[2], e3);
+    res = xsp2co1_qs_to_elem(&qs3, adest[2], elem3);
     return res;
 }
 
 
 // %%EXPORT px
-int32_t xsp2co1_inv_elem(uint64_t *e1, uint64_t *e2)
+int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 {
     int32_t res;
     qstate12_type qs1, qs2;
     uint64_t data2[MAXROWS_ELEM], asrc[3], adest[3];
-    res = xsp2co1_elem_to_qs(e1, &qs1);
+    res = xsp2co1_elem_to_qs(elem1, &qs1);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
     if (res < 0) return res;
     res = qstate12_mat_inv(&qs2);
     if (res < 0) return res;
 
-    asrc[0] = e1[0];
+    asrc[0] = elem1[0];
     adest[0] = STD_V3;
     asrc[2] = STD_V3;
     asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xsp2co1_chain_short_3(&qs2, 3, asrc, adest);
     if (res < 0) return res;
-    res = xsp2co1_qs_to_elem(&qs2, adest[2], e2);
+    res = xsp2co1_qs_to_elem(&qs2, adest[2], elem2);
     return res;
 }
 
@@ -449,17 +465,17 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 
 
 // %%EXPORT px
-void xsp2co1_unit_elem(uint64_t *e)
+void xsp2co1_unit_elem(uint64_t *elem)
 {
     uint_fast32_t i;
     uint64_t mask = 0x800800ULL;
-    e[0] = STD_V3;
-    e[1] = 0;
+    elem[0] = STD_V3;
+    elem[1] = 0;
     for (i = 2; i < 14; ++i) {
-        e[i] = mask;
+        elem[i] = mask;
         mask >>= 1;
     }
-    for (i = 14; i < 26; ++i) e[i] = 0;
+    for (i = 14; i < 26; ++i) elem[i] = 0;
 }
 
 
@@ -497,7 +513,7 @@ int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
 }
 
 // %%EXPORT px
-int32_t xsp2co1_elem_xspecial(uint64_t *e1, uint32_t x)
+int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 {
     int32_t res;
     qstate12_type qs;
@@ -506,7 +522,7 @@ int32_t xsp2co1_elem_xspecial(uint64_t *e1, uint32_t x)
     if ((res = qstate12_set_mem(&qs, data, MAXROWS_ELEM)) < 0) return res;
     if ((res = qstate12_unit_matrix(&qs, 12)) < 0) return res;
     if ((res = mul_qs_xspecial(&qs, x)) < 0) return res;
-    return xsp2co1_qs_to_elem(&qs, STD_V3, e1);
+    return xsp2co1_qs_to_elem(&qs, STD_V3, elem);
 }
 
 /*************************************************************************
@@ -514,6 +530,7 @@ int32_t xsp2co1_elem_xspecial(uint64_t *e1, uint32_t x)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static 
 int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
@@ -530,12 +547,14 @@ int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 }
 
 
+/// @endcond 
 
 
 /*************************************************************************
 *** Construction of a group element with tag 'y'
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline
 int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
@@ -559,12 +578,14 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
     return qstate12_monomial_column_matrix(pqs, 12, data);
 }
 
+/// @endcond  
 
 
 /*************************************************************************
 *** Multiplication of a group element by an atom with tag 'l' 
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline
 int32_t mul_qs_xi1(qstate12_type *pqs)
@@ -606,6 +627,7 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
     }
 }
 
+/// @endcond  
 
 
 
@@ -614,11 +636,12 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static int32_t 
-xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_one)
-// Multiply the element ``e`` of the group ``g_{{x1}}`` with the atom
-// given by ``v``. Atom ``v`` is interpreted as follows:
+xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set_one)
+// Multiply element ``elem`` of the group ``g_{{x1}}`` with the 
+// atom given by ``v``. Atom ``v`` is interpreted as follows:
 // Bit 31:      sign of exponent
 // Bit 30..28   tag
 // Bit 27..0    operarand
@@ -653,9 +676,9 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
         v3 = STD_V3;
         p_atom = &qs;
     } else {
-        if ((res = xsp2co1_elem_to_qs(e, &qs_atom)) < 0) return res;
+        if ((res = xsp2co1_elem_to_qs(elem, &qs_atom)) < 0) return res;
         if ((res = qstate12_copy(&qs_atom, &qs)) < 0) return res;
-        v3 = e[0];
+        v3 = elem[0];
         p_atom = &qs_atom;
     }
     res = qstate12_set_mem(&qs_atom, data_atom, MAXROWS_ELEM);
@@ -735,35 +758,36 @@ xsp2co1_mul_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n, uint32_t set_on
         p_atom = &qs_atom;
     }
        
-    return xsp2co1_qs_to_elem(&qs, v3, e);
+    return xsp2co1_qs_to_elem(&qs, v3, elem);
 }
 
 
 
+/// @endcond  
 
 
 // %%EXPORT px
-int32_t xsp2co1_mul_elem_word(uint64_t *e, uint32_t *pa, uint32_t n)
+int32_t xsp2co1_mul_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n)
 {
-    return xsp2co1_mul_set_elem_word(e, pa, n, 0);
+    return xsp2co1_mul_set_elem_word(elem, pa, n, 0);
 }
 
 // %%EXPORT px
-int32_t xsp2co1_set_elem_word(uint64_t *e, uint32_t *pa, uint32_t n)
+int32_t xsp2co1_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n)
 {
-    return xsp2co1_mul_set_elem_word(e, pa, n, 1);
+    return xsp2co1_mul_set_elem_word(elem, pa, n, 1);
 }
 
 // %%EXPORT px
-int32_t xsp2co1_mul_elem_atom(uint64_t *e, uint32_t v)
+int32_t xsp2co1_mul_elem_atom(uint64_t *elem, uint32_t v)
 {
-    return xsp2co1_mul_set_elem_word(e, &v, 1, 0);
+    return xsp2co1_mul_set_elem_word(elem, &v, 1, 0);
 }
 
 // %%EXPORT px
-int32_t xsp2co1_set_elem_atom(uint64_t *e, uint32_t v)
+int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 {
-    return xsp2co1_mul_set_elem_word(e, &v, 1, 1);
+    return xsp2co1_mul_set_elem_word(elem, &v, 1, 1);
 }
 
 
@@ -773,6 +797,7 @@ int32_t xsp2co1_set_elem_atom(uint64_t *e, uint32_t v)
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline
 uint64_t xsp2co1_to_vect_mod3(uint64_t x)
@@ -788,8 +813,12 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
     return x;
 }
 
+/// @endcond 
+
+
+
 // %%EXPORT px
-int32_t xsp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
+int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 {
     int32_t res, sign;
     qstate12_type qs1, qs2;
@@ -801,7 +830,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     uint64_t qf = 0;
     uint64_t ncols, mask; 
 
-    res = xsp2co1_elem_to_qs(e1, &qs1);
+    res = xsp2co1_elem_to_qs(elem, &qs1);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -813,7 +842,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX1;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
-    x = e1[0];
+    x = elem[0];
     if (sign) x ^= 0xffffffffffffULL;
     x_data[0] = xsp2co1_to_vect_mod3(x);
     x_data[1] = xsp2co1_to_vect_mod3(x ^ 0xffffffffffffULL);
@@ -850,6 +879,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *e1, uint32_t column, uint64_t *v)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static
 int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
@@ -898,6 +928,7 @@ int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8
     return 0;
 }
 
+/// @endcond 
 
 
 // %%EXPORT px

@@ -94,6 +94,8 @@ C interface for file mm_group_n.c
 .. doxygenfile:: mm_group_n.c
 
 
+.. _op-leech-label:
+
 Operation of the group :math:`G_{x0}` on the Leech lattice
 ----------------------------------------------------------
 
@@ -231,4 +233,15 @@ Module ``qmatrix12.c``
 
 
 
+C functions dealing with the subgroup :math:`G_{x0}` of the monster
+-------------------------------------------------------------------
 
+.. automodule:: mmgroup.dev.clifford12.xsp2co1_doc
+
+
+
+Module ``xsp2co1.c``
+----------------------
+
+
+   .. doxygenfile:: xsp2co1.c

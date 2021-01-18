@@ -853,12 +853,12 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
 /************************************************************************
 *************************************************************************
-*** Leech lattice mod 3
+*** Functions for supporting the Leech lattice mod 3
 *************************************************************************
 *************************************************************************/
 
 /*************************************************************************
-*** Functions for supporting the Leech lattice mod 3
+** Convert a short vector (mod 2) to a short vector (mod 3)
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -940,6 +940,9 @@ uint64_t gen_leech2to3_short(uint64_t v2)
 
 
 
+/*************************************************************************
+** Convert a short vector (mod 3) to a short vector (mod 2)
+*************************************************************************/
 
 
 
@@ -992,7 +995,7 @@ uint64_t gen_leech3to2_short(uint64_t v3)
 
 
 /*************************************************************************
-*** Convert type-4 vector mod 3 to type-4 vector mod 2
+*** Convert a type-4 vector (mod 3) to a type-4 vector (mod 2)
 *************************************************************************/
 
 
@@ -1125,7 +1128,7 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
 
 
 /*************************************************************************
-*** Multiply vector mod 3 by an atom group element
+*** Operation of G_{{x1}} on the Leech lattice mod 3
 *************************************************************************/
 
 
@@ -1135,7 +1138,7 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
 
   For internal purposes only. This is equivalent to
   ``gen_leech3_op_vector_word(v3, g)``, where ``g`` encodes
-  the element \f$\xi^e\f$ of \f$G_{{x0}}\f$.
+  the element \f$\xi^e\f$ of \f$G_{{x1}}\f$.
   
   Parameter \f${{v_3}}\f$ and the result are given Leech lattice 
   mod 3 encoding.
@@ -1191,7 +1194,7 @@ uint64_t gen_leech3_op_xi(uint64_t v3, uint32_t e)
 
 
 /**
-  @brief Operation of \f$G_{{x0}}\f$ on the Leech lattice mod 3
+  @brief Operation of \f$G_{{x1}}\f$ on the Leech lattice mod 3
 
   The function returns the element \f$v_3 g\f$ for
   \f$v_3 \in \Lambda/3\Lambda\f$ and \f$g \in G_{{x0}}\f$. Here 
@@ -1254,7 +1257,7 @@ uint64_t gen_leech3_op_vector_word(uint64_t v3, uint32_t *pg, uint32_t n)
 
 
 /**
-  @brief Atomic operation of \f$G_{{x0}}\f$ on the Leech lattice mod 3
+  @brief Atomic operation of \f$G_{{x1}}\f$ on the Leech lattice mod 3
 
   Equivalent to ``gen_leech3_op_vector_word(v3, &g, 1)``.
   
