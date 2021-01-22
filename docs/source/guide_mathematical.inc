@@ -68,6 +68,9 @@ We store the lower triangular submatrix of the bit matrix
 the automorphism :math:`\pi` of the Parker loop.
 
 
+.. _implement-gen-mm:
+
+
 Implementing generators of the Monster group
 --------------------------------------------
 

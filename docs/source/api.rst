@@ -169,7 +169,7 @@ has a subgroup :math:`G_{x0}` of structure
 :math:`2^{1+24}_+.\mbox{Co}_1`.
 There :math:`G_{x0}` is constructed as a diagonal product of the
 two groups :math:`\mbox{Co}_0` of structure :math:`2.\mbox{Co}_1`
-and :math:`N(4096_x)`. :math:`N(4096_x)` is also of structure
+and :math:`G(4096_x)`. :math:`G(4096_x)` is also of structure
 :math:`2^{1+24}_+.\mbox{Co}_1` but not isomorphic to  :math:`G_{x0}`.
 Here :math:`2^{1+24}_+` means an extraspecial group of plus
 type. :math:`\mbox{Co}_0`, and :math:`\mbox{Co}_1` are the automorphism
@@ -179,11 +179,11 @@ background.
 
 Computation in  :math:`\mbox{Co}_0` is easy since that group has a 
 :math:`24`-dimensional rational representation. The smallest real
-representation of the group :math:`N(4096_x)` has dimension
+representation of the group :math:`G(4096_x)` has dimension
 :math:`4096`, so naive computation in that representation is
 rather inefficient.
 
-The group :math:`N(4096_x)` is a subgroup of the real Clifford group
+The group :math:`G(4096_x)` is a subgroup of the real Clifford group
 :math:`\mathcal{C}_{12}`. The real Clifford group :math:`\mathcal{C}_{n}`
 of structure :math:`2^{1+2n}_+.\mbox{GO}^+_{2n}(2)` is defined e.g. in
 :cite:`NRS01`. :math:`\mathcal{C}_{12}` is a subgroup

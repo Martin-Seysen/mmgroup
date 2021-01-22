@@ -1104,13 +1104,14 @@ matrices of shape :math:`(n,n)` form the Clifford group
 :math:`\mathcal{X}_{n}`. We have also
 discussed fast algorithms for multiplication and inversion
 of such matrices. So class ``QStateMatrix`` supports fast
-computation in Clifford group :math:`\mathcal{X}_{n}`.
-Our implementation requires :math:`n \leq 12`, which is
-sufficient for computing in the subgroup
-:math:`2^{1+24}.\mbox{Co}_1` of the monster group.
+computation in Clifford group :math:`\mathcal{X}_{n}` for 
+:math:`n \leq 12`, which is sufficient for computing in the 
+subgroup :math:`2^{1+24}.\mbox{Co}_1` of the monster group.
 
-Function ``qstate12_matmul`` in file ``qmatrix12.c`` multiplies
-two quadratic state matrices.
+On the C level, a quadratic state matrix is implemented as a
+structure of type ``qstate12_type`` as defined in file 
+``clifford12.h``.  E.g. function ``qstate12_matmul`` in file 
+``qmatrix12.c`` multiplies two such quadratic state matrices.
 
 
 Displaying quadratic state vectors and matrices

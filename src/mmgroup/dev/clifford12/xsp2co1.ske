@@ -153,6 +153,21 @@ static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
 *************************************************************************/
 
 
+/**
+@brief Find vector not orthogonal to vectors in Leech lattice mod 3
+
+Given two vectors \f$v_{{3,1}}\f$ and \f$v_{{3,2}}\f$ in the Leech
+lattice mod 3, the function returns a vector \f$v_{{3,3}}\f$ such
+that the scalar product \f$\langle v_{{3,3}}, v_{{3,i}} \rangle\f$
+is not zero for both, \f$i = 1, 2\f$. \f$v_{{3,3}}\f$ has precisely 
+two nonzero coordinates and is hence short. Such a vector 
+\f$v_{{3,3}}\f$ exists if none of the vectors 
+\f$v_{{3,1}}, v_{{3,2}}\f$ is zero. If no such vector 
+\f$v_{{3,3}}\f$ exists then the function returns 0.
+
+All vectors \f$v_{{3,i}}\f$ are in given in **Leech lattice mod 3 
+encoding**.
+*/
 // %%EXPORT px
 uint64_t xsp2co1_find_chain_short_3(uint64_t v3_1, uint64_t v3_2)
 {
@@ -213,8 +228,34 @@ uint64_t xsp2co1_find_chain_short_3(uint64_t v3_1, uint64_t v3_2)
 
 
 
+/**
+@brief Apply transformation in \f$G_{{x1}}\f$ to vectors in Leech lattice mod 3
+
+Let \f$x_g \in G(4096_x)\f$ be given by the quadratic state matrix
+referred by ``pqs``. Let ``psrc`` be an array 
+\f$(v_0,\ldots v_{{n-1}})\f$
+of \f$n\f$ short vectors in the Leech lattice mod 3, given 
+in **Leech lattice mod 3 encoding**. We try to compute 
+\f$w_i = v_i x_g\f$ for \f$0 \leq i < n\f$ and to store  \f$w_i\f$ in
+``pdest[i]``, also in **Leech lattice mod 3 encoding**. Unfortunately, 
+the short vector  \f$w_i\f$ is defined to sign only. In other words, 
+\f$x_g\f$  may correspond to two  different elements \f$\pm g\f$ in 
+the automorphisem group \f$\mbox{{Co}}_0\f$ of the Leech lattice.
+
+To specify the correct \f$g \in \mbox{{Co}}_0\f$, we must store the
+correct value \f$w_0 = v_0 x_0\f$ in ``pdest[0]`` and provide short 
+vectors \f$v_i\f$ such that the scalar product  
+\f$\langle v_{{i-1}}, v_i\rangle \f$ of adjacent vectors is not 
+zero for \f$i>0\f$. The the correct values \f$v_i x_i\f$ are
+determined by ortohonality of \f$g\f$.
+
+The function returns garbage if the input conditions for the 
+\f$x_g, v_0, w_0\f$ are not satisfied. It returns a negative
+value if two adjacent vectors \f$v_0\f$ are orthognal or
+not short.
+*/
 // %%EXPORT p
-int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psrc, uint64_t *pdest)
+int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, uint64_t *pdest)
 {
     uint64_t prod, src_prod;
     int_fast32_t res, ok;
@@ -224,19 +265,19 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t length, uint64_t *psr
     if (pqs->ncols != 24 || pqs->shape1 != 12) 
          return ERR_QSTATE12_SHAPE_OP;
     
-    if (length <= 1) return 0;
-    for (i = 1; i < length; ++i) {
+    if (n <= 1) return 0;
+    for (i = 1; i < n; ++i) {
         pdest[i] = gen_leech3to2_short(psrc[i]);
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
     }
-    res = qstate12_pauli_conjugate(pqs, length - 1, pdest + 1);
+    res = qstate12_pauli_conjugate(pqs, n - 1, pdest + 1);
     if (res < 0) return res;
-    for (i = 1; i < length; ++i) {
+    for (i = 1; i < n; ++i) {
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
         pdest[i] = gen_leech2to3_short(pdest[i]);
     }    
     ok = 1;
-    for (i = 1; i < length;  ++i) {
+    for (i = 1; i < n;  ++i) {
         src_prod = short_3_scalprod(psrc[i-1], psrc[i]);
         prod =  short_3_scalprod(pdest[i-1], pdest[i]);
         if (prod != src_prod) pdest[i] = 
@@ -348,6 +389,17 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 // %%EXPORT px
 int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
+/**
+   @brief Multipy two elements of the group \f$G_{{x0}}\f$.
+   
+   Let \f$g_1, g_2 \in G_{{x0}}\f$ be stored in the arrays ``elem1``,
+   ``elem2`` in **G_x0 representation**. The function computes
+   \f$g_1 \cdot g_2 \f$ and stores the result in the array 
+   ``elem3`` in **G_x0 representation**.
+   
+   Any kind of overlapping beween the arrays ``elem1``, ``ele2``,
+   ``elem2``  is allowed.  
+*/
 {
     int32_t res;
     qstate12_type qs1, qs2, qs3;
