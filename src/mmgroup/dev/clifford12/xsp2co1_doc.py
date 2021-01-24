@@ -117,7 +117,12 @@ that the scalar factor :math:`e` in the triple
 :math:`(e,A,Q)` is positive, and that trailing zero 
 entries in the array ``elem`` are unused.
 
- 
+The group :math:`G_{x0}` has an extraspecial normal subgroup 
+:math:`Q_{x0}` of structure :math:`2^{1+24}`.
+We also represent an element of :math:`Q_{x0}` as a 25-bit
+integer in **Leech lattice encoding** as described in 
+section :ref:`mmgroup-generators-label`. 
+
 
 We also use the vectors :math:`(d'), d \in \mathcal{P}` as basis 
 vectors of :math:`4096_x` , where:

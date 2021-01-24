@@ -71,10 +71,16 @@ Module ``make_mul_transp``
 .. automodule:: mmgroup.dev.mat24.make_mul_transp
 
 
+.. _mmgroup-generators-label:
+
 Description of the ``mmgroup.generators`` extension
 ===================================================
 
 .. automodule:: mmgroup.dev.generators.generators_doc
+
+
+.. _header-mmgroup-generators-label:
+
 
 Header file mmgroup_generators.h
 --------------------------------

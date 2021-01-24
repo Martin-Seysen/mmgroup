@@ -294,6 +294,24 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
 *************************************************************************/
 
 
+/**
+@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
+
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. This means that \f$g\f$ is
+stored as a pair
+\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
+The function stores \f$x_g\f$ in the structure ``qs`` of type
+``qstate12_type`` referred by ``pqs``. 
+
+Component \f$v_g\f$ is equal to ``elem[0]`` 
+(in **Leech lattice mod 3 encoding**).
+
+Caution:
+
+After returning, the structure ``qs`` and the array ``elem``
+share the same data block.
+*/
 // %%EXPORT p
 int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 {
@@ -315,36 +333,58 @@ int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 /// @cond DO_NOT_DOCUMENT 
 
 static inline 
-int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t x1, uint64_t *elem)
+int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
 {
     uint_fast32_t i;
     if (pqs->nrows > 25) return ERR_QSTATE12_BUFFER_OVFL;
     for (i = 0; i < pqs->nrows; ++i) {
-        elem[i+1] =  pqs->data[i] & 0x1fffffeffffffULL;
+        elem[i+1] =  pqs->data[i] & 0x3fffffeffffffULL;
     }
     for (i = pqs->nrows; i < 25; ++i) elem[i+1] = 0;
-    if (pqs->factor & 4) x1 ^= 0xffffffffffffULL;
-    elem[0] = short_3_reduce(x1);  
+    if (pqs->factor & 4) v3 ^= 0xffffffffffffULL;
+    elem[0] = short_3_reduce(v3);  
     return 0;    
 }
 
 /// @endcond  
 
 
+/**
+@brief Construct \f$g \in G_{{x0}}\f$ from pair \f$(x_g, x_v)\f$ 
 
+The function constructs a \f$g \in G_{{x0}}\f$ from a pair 
+\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ and 
+stores the result in the array ``elem`` in **G_x0 representation**. 
+The value \f$x_g \in G(4096_x)\f$ must be given as a structure
+of type ``qstate12_type`` referred by ``pqs``. The value
+\f$v_g \in \Lambda / 3 \Lambda\f$ must be given by parameter
+``v3`` in **Leech lattice mod 3 encoding**.
+*/
 // %%EXPORT p
-int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t x1, uint64_t *elem)
+int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
 {
     int32_t res;
     res = qstate12_reduce(pqs); 
     if (res < 0) return res;
     res = qstate12_check(pqs);
     if (res < 0) return res;
-    return  xsp2co1_qs_to_elem_noreduce(pqs, x1, elem);    
+    return  xsp2co1_qs_to_elem_noreduce(pqs, v3, elem);    
 }
 
 
+/**
+@brief Reduce an \f$g \in G_{{x0}}\f$ to a standard form. 
 
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. This means that \f$g\f$ is
+stored as a pair
+\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
+The function reduces the components \f$x_g\f$, \f$v_g\f$
+to their standard form in place. 
+
+In functions that construct elements of \f$G_{{x0}}\f$
+these elements are reduced automatically.
+*/
 // %%EXPORT px
 int32_t xsp2co1_reduce_elem(uint64_t *elem)
 {
@@ -362,7 +402,17 @@ int32_t xsp2co1_reduce_elem(uint64_t *elem)
 
 
 
+/**
+@brief Negate an \f$g \in G_{{x0}}\f$. 
 
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. The function negates \f$g\f$
+in place.
+
+Negation is equivalent to multiplication with the generator
+\f$x_{{-1}}\f$, and also to  multiplication with the generator
+\f$y_{{\Omega}}\f$.
+*/
 // %%EXPORT px
 void xsp2co1_neg_elem(uint64_t *elem)
 {
@@ -370,6 +420,14 @@ void xsp2co1_neg_elem(uint64_t *elem)
 }
 
 
+/**
+@brief Copy a \f$g \in G_{{x0}}\f$. 
+
+The function copies the element of \f$G_{{x0}}\f$  stored in 
+the array ``elem1`` (in **G_x0 representation**) to the
+array ``elem2``.
+
+*/
 // %%EXPORT px
 void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 {
@@ -387,8 +445,6 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 *************************************************************************/
 
 
-// %%EXPORT px
-int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 /**
    @brief Multipy two elements of the group \f$G_{{x0}}\f$.
    
@@ -397,9 +453,11 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
    \f$g_1 \cdot g_2 \f$ and stores the result in the array 
    ``elem3`` in **G_x0 representation**.
    
-   Any kind of overlapping beween the arrays ``elem1``, ``ele2``,
-   ``elem2``  is allowed.  
+   Any kind of overlapping beween the arrays ``elem1``, ``elem2``,
+   and ``elem3``  is allowed.  
 */
+// %%EXPORT px
+int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 {
     int32_t res;
     qstate12_type qs1, qs2, qs3;
@@ -428,6 +486,17 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 }
 
 
+/**
+   @brief Invert an element of the group \f$G_{{x0}}\f$.
+   
+   Let \f$g_1 \in G_{{x0}}\f$ be stored in the array ``elem1``,
+   in **G_x0 representation**. The function computes
+   \f$g_1^{{-1}}\f$ and stores the result in the array 
+   ``elem2`` in **G_x0 representation**.
+   
+   Any kind of overlapping beween the arrays ``elem1`` and
+   ``elem2``  is allowed.  
+*/
 // %%EXPORT px
 int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 {
@@ -457,9 +526,19 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 *** Conjugation of extraspecial element with group element
 *************************************************************************/
 
+/**
+@brief Conjugation of elements of \f$Q_{{x0}}\f$ with an element of \f$G_{{x0}}\f$
 
+Let \f$x_0,\ldots,x_{{n-1}}\f$ a list of \f$n\f$ elements of
+\f$Q_{{x0}}\f$ stored in the the array ``ax``
+in **Leech lattice encoding**. Let  \f$g \in G_{{x0}}\f$ be
+stored in the array ``elem`` in **G_x0 representation**.
+
+Then the function replaces the element \f$x_i\f$ by
+\f$g^{{-1}} x_i g\f$ for \f$0 \leq i < n\f$.
+*/
 // %%EXPORT px
-int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *pv)
+int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
 {
     qstate12_type qs, qs1;
     uint64_t data[MAXROWS_ELEM];
@@ -472,12 +551,12 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *pv)
     if (res < 0) return res;
 
     for (i = 0; i < n; ++i) {
-        pv[i] = conv_pauli_vector_xspecial((uint32_t)pv[i]);
+        ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
     }
-    res = qstate12_pauli_conjugate(&qs, n, pv);
+    res = qstate12_pauli_conjugate(&qs, n, ax);
     if (res < 0) return res;
     for (i = 0; i < n; ++i) {
-        pv[i] = conv_pauli_vector_xspecial((uint32_t)pv[i]);
+        ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
     }    
     return 0;
 }
@@ -488,7 +567,16 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *pv)
 
 
 
+/**
+@brief Convert \f$x \in Q_{{x0}}\f$ from \f$G_{{x0}}\f$ rep to Leech
 
+Let \f$x \in Q_{{x0}} \subset G_{{x0}}\f$ be stored in the
+array ``elem`` in **G_x0 representation**. The function
+returns \f$x\f$ as an integer in **Leech lattice encoding**.
+
+The function returns a negative number in case of error. E.g. in
+case \f$x \notin Q_{{x0}}\f$ it returns ``ERR_QSTATE12_NOTIN_XSP``.
+*/
 // %%EXPORT px
 int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 {
@@ -516,6 +604,12 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 *************************************************************************/
 
 
+/**
+@brief Store neutral element of \f$G_{{x0}}\f$ 
+
+The function stores the neutral element of \f$G_{{x0}}\f$ in the 
+array ``elem`` in **G_x0 representation**. 
+*/
 // %%EXPORT px
 void xsp2co1_unit_elem(uint64_t *elem)
 {
@@ -541,6 +635,7 @@ void xsp2co1_unit_elem(uint64_t *elem)
 *** Multiplication of a group element by an atom with tag 'x' or 'd'
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline 
 int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
@@ -564,6 +659,17 @@ int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
     return 0;
 }
 
+/// @endcond  
+
+
+/**
+@brief Convert \f$x \in Q_{{x0}}\f$ from Leech to \f$G_{{x0}}\f$ rep  
+
+Let \f$x \in Q_{{x0}} \subset G_{{x0}}\f$ be stored in parameter
+``x`` in **Leech lattice encoding**. The function converts
+\f$x\f$ to **G_x0 representation** and stores the result in
+the array ``elem`` .
+*/
 // %%EXPORT px
 int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 {
@@ -584,6 +690,25 @@ int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/** Auxiliary function for function ``xsp2co1_mul_set_elem_word``
+
+The function sets the quadratic state matrix ``qs`` referred by
+``pqs`` to an element \f$x_\pi\f$ of \f$G(4906_x)\f$, where \f$\pi\f$ 
+automorphism of the Parker loop. \f$\pi\f$ is given in the array
+``aut`` of length 12 in as described inf function 
+``mat24_perm_to_autpl`` in file ``mat24_functions.c``.
+
+Essentially, the array ``aut`` obtained by function 
+``mat24_perm_to_autpl`` already encodes  \f$x_\pi\f$ as
+a monomial matrix acting on the basis vectors \f$(d')f$ of
+the representation \f$4906_x\f$ of \f$G(4906_x)\f$.
+So we may use fucntion ``qstate12_monomial_column_matrix``
+to convert that monomial matrix to a quadratic state matrix
+in that basis. Then we use function 
+``xsp2co1_conv_conjugate_basi`` from that basis to the
+stadard basis given by the vectors \f$d_1^+, d_1^+\f$.
+
+*/
 static 
 int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 {
@@ -690,29 +815,21 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**
+@brief Auxiliary function for function ``xsp2co1_mul_elem_word``
+
+``xsp2co1_mul_set_elem_word(elem, a, n, 0)`` is equivalent to
+``xsp2co1_mul_elem_word(elem, a, n)``.
+
+``xsp2co1_mul_set_elem_word(elem, a, n, 1)`` is equivalent to
+``xsp2co1_set_elem_word(elem, a, n)``.
+
+So the function muultiplies element ``elem`` of the group ``G_{{x0}}`` 
+with the the word given by ``a``. If parameter ``set_one`` is zero  then 
+``elem`` is set to the neutral element before the multiplication starts.
+*/
 static int32_t 
-xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set_one)
-// Multiply element ``elem`` of the group ``g_{{x1}}`` with the 
-// atom given by ``v``. Atom ``v`` is interpreted as follows:
-// Bit 31:      sign of exponent
-// Bit 30..28   tag
-// Bit 27..0    operarand
-// Tag are as follows:
-//
-//                bit
-// Tag  word     length   operand
-//  0:  1         -       unit of the group, no operand
-//  1:  x_delta   12      delta in C* in 'cocode' rep
-//  2:  x_pi      28      pi a permutation number  
-//  3:  x_d       13      d an element of the parker loop
-//  4:  y_d       13      d an element of the parker loop
-//  5:  t**e      28      exponent e, illegal here
-//  6:  xi**e     28      exponent e
-//  7   illegal                  
-// 
-// 
-// If ``set_one`` is not zero then ``g`` is set to ``1`` before
-// multiplication with atom ``v``.
+xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
 {
     uint_fast32_t tag, i, x = 0, v, multiply;
     uint8_t perm[24], perm_i[24];
@@ -737,21 +854,21 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set
     if (res < 0) return res;
 
     for (i = 0; i < n; ++i) {
-        v = pa[i];
-        tag = v >> 28;
-        v  &= 0xfffffff;
+        v = a[i];
+        tag = v & MMGROUP_ATOM_TAG_ALL;
+        v  &= MMGROUP_ATOM_DATA;
         multiply = 0;
         x = 0;
         switch(tag) {
-            case 8:
-            case 0:
+            case MMGROUP_ATOM_TAG_1:
+            case MMGROUP_ATOM_TAG_I1:
                break;
-            case 8 + 1:
-            case 1:
+            case MMGROUP_ATOM_TAG_ID:
+            case MMGROUP_ATOM_TAG_D:
                res = mul_qs_xspecial(&qs, v & 0xfff);
                if (res < 0) return res;
                break;
-            case 8 + 2:
+            case MMGROUP_ATOM_TAG_IP:
                mat24_m24num_to_perm(v, perm);
                mat24_perm_to_autpl(0, perm, aut);
                mat24_inv_perm(perm, perm_i);
@@ -761,7 +878,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set
                v3 = gen_leech3_op_pi(v3, perm_i);
                multiply = p_atom == &qs_atom;
                break;
-            case 2:
+            case MMGROUP_ATOM_TAG_P:
                mat24_m24num_to_perm(v, perm);
                mat24_perm_to_autpl(0, perm, aut);
                res = set_qs_delta_pi_aut(p_atom, aut);
@@ -769,31 +886,31 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set
                v3 = gen_leech3_op_pi(v3, perm);
                multiply = p_atom == &qs_atom;
                break;
-            case 8 + 3:
+            case MMGROUP_ATOM_TAG_IX:
                x ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000) << 12;
-            case 3:
+            case MMGROUP_ATOM_TAG_X:
                x ^=  ((v & 0x1fffUL) << 12);
                x ^=  MAT24_THETA_TABLE[v & 0x7ff] & 0xfff;
                res = mul_qs_xspecial(&qs, x);
                if (res < 0) return res;
                break;
-            case 8 + 4:
+            case MMGROUP_ATOM_TAG_IY:
                x ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
-            case 4:
+            case MMGROUP_ATOM_TAG_Y:
                x ^= v & 0x1fffUL;
                res = set_qs_y(p_atom, x);
                if (res < 0) return res;
                v3 = gen_leech3_op_y(v3, x);
                multiply = p_atom == &qs_atom;
                break;
-            case 8 + 5:
-            case 5:
+            case MMGROUP_ATOM_TAG_IT:
+            case MMGROUP_ATOM_TAG_T:
                v = v % 3;
                if (v) return ERR_QSTATE12_GX1_TAG;
                break;
-            case 8 + 6:
+            case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;
-            case 6:
+            case MMGROUP_ATOM_TAG_L:
                v = v % 3;
                if (v) {
                    if ((res = mul_qs_xi(&qs, v - 1)) < 0) return res;
@@ -817,25 +934,56 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n, uint32_t set
 
 /// @endcond  
 
+/**
+@brief Right multiply an element of \f$G_{{x0}}\f$ with a word of generators
 
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem`` 
+in **G_x0 representation**. We replace \f$g\f$ by \f$g \cdot w\f$,
+where \f$w\f$ is a word in the generators of  \f$G_{{x0}}\f$ 
+of length \f$n\f$. \f$w\f$ is stored in the array ``a``, and each
+entry of ``a`` encodes a generator of   \f$G_{{x0}}\f$ as 
+described in file ``mmgroup_generators.h``.
+*/
 // %%EXPORT px
-int32_t xsp2co1_mul_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n)
+int32_t xsp2co1_mul_elem_word(uint64_t *elem, uint32_t *a, uint32_t n)
 {
-    return xsp2co1_mul_set_elem_word(elem, pa, n, 0);
+    return xsp2co1_mul_set_elem_word(elem, a, n, 0);
 }
 
+
+/**
+@brief Convert word of generators of \f$G_{{x0}}\f$ to G_x0 representation
+
+Let \f$w\f$ be a word in the generators of  \f$G_{{x0}}\f$ 
+of length \f$n\f$. \f$w\f$ is stored in the array ``a``, and each
+entry of ``a`` encodes a generator of   \f$G_{{x0}}\f$ as 
+described in file ``mmgroup_generators.h``.  We convert the word
+\f$w\f$ to an element of  \f$G_{{x0}}\f$ in **G_x0 representation**
+and store the result in the array ``elem``.
+*/
 // %%EXPORT px
-int32_t xsp2co1_set_elem_word(uint64_t *elem, uint32_t *pa, uint32_t n)
+int32_t xsp2co1_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n)
 {
-    return xsp2co1_mul_set_elem_word(elem, pa, n, 1);
+    return xsp2co1_mul_set_elem_word(elem, a, n, 1);
 }
 
+
+/**
+@brief Right multiply an element of \f$G_{{x0}}\f$ with a generator
+
+Equivalent to ``xsp2co1_mul_elem_word(elem, &v, 1)``
+*/
 // %%EXPORT px
 int32_t xsp2co1_mul_elem_atom(uint64_t *elem, uint32_t v)
 {
     return xsp2co1_mul_set_elem_word(elem, &v, 1, 0);
 }
 
+/**
+@brief Convert a genertor of \f$G_{{x0}}\f$ to G_x0 representation
+
+Equivalent to ``xsp2co1_set_elem_word(elem, &v, 1)``
+*/
 // %%EXPORT px
 int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 {
