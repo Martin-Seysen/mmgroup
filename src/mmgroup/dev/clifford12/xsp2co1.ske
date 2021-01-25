@@ -84,6 +84,9 @@ extern "C" {
 static uint64_t error_pool[LEN_ERROR_POOL];
 #endif
 
+/**
+@brief Used for debugging only
+*/
 // %%EXPORT px
 uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 {
@@ -113,29 +116,63 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 /// @cond DO_NOT_DOCUMENT 
 
 
-static inline
+/**
+@brief Conversion to basis \f$(d)'\f$ of  \f$4096_x\f$
+
+The rational vector space \f$4096_x\f$ of the 4096-dimensional
+representation of the group \f$G(4096_x)\f$ has a standard basis 
+given by vectors \f$d_1^+, d_1^-, d \in \mathcal{{P}}\f$, and 
+also a basis given by vectors  \f$(d)'\f$. Let the coordinates
+of \f$x_g \in 4096_x\f$ (in the standard basis) be given by the
+quadratic state matrix referred by ``pqs``. The function
+converts the  coordinates in the standard basis to the
+coordinates in the basis \f$(d)'\f$ in place.
+
+This conversion is done by applying a Hadamard gate to the 
+qubit corresponding the sign \f$'\pm'\f$ in the basis vector 
+\f$d_1^\pm\f$. So this conversion is an involution and works
+in both directions.
+
+*/
 int32_t xsp2co1_conv_conjugate_basis(qstate12_type *pqs)
 {
     return qstate12_gate_h(pqs, 0x800800);
 }
 
 
+/**
+@brief Conversion to basis \f$(d)'\f$ of  \f$4096_x\f$
 
+The function performs the basis conversion deescribed in
+function ``xsp2co1_conv_conjugate_basis``  on an element
+``x`` of \f$Q_{{x0}}\f$ (in Leech lattice encoding). It
+returns the converted element in in Leech lattice encoding.
+
+Note the remark about this function in the decription above.
+*/
 static inline uint32_t conv_pauli_vector_xspecial(uint32_t x)
 {  
     uint32_t t;
     x &= 0x1ffffff;
+    // Exchange bit 11 of x with bit 23 of x
     t = (x ^ (x >> 12)) & 0x800UL;
-    x ^= (t << 12) ^ t;       
+    x ^= (t << 12) ^ t;  
+    // Compute parity of (x & (x >> 12) & 0x7ff) in t    
     t = x & (x >> 12) & 0x7ff;
     t ^= t >> 6; t ^= t >> 3; 
     t = (0x96 >> (t & 7)) & 1;
+    // Change sign of x if the parity t is odd
     x ^= t << 24;
     return x;
 }
 
 
+/**
+@brief simplified version of function ``conv_pauli_vector_xspecial``
 
+Same as function ``conv_pauli_vector_xspecial``, ignoring the sign
+of the parameter. The returned sign is garbage.
+*/
 static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
 {  
     uint32_t t;
@@ -331,7 +368,13 @@ int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 
 
 /// @cond DO_NOT_DOCUMENT 
+/**
+@brief Simplified version of function ``xsp2co1_qs_to_elem``.
 
+In contrast to function ``xsp2co1_qs_to_elem``, the component
+\f$x_g\f$ in the result \f$g\f$ constrcuted by that function
+is not reduced.
+*/
 static inline 
 int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
 {
@@ -637,13 +680,16 @@ void xsp2co1_unit_elem(uint64_t *elem)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**
+@brief Multiply \f$x_g \in G(4096_)\f$ by \f$x \in Q_{{x1}}\f$ 
+
+The function multiplies the element \f$x_g\f$ of \f$G(4096_x)\f$ 
+(stored in the structure ``qs`` referred by ``pqs``) by the element 
+\f$x\f$ of \f$Q_{{x1}}\f$ and stores the result in ``qs``.
+Element f$x\f$ is encoded in **Leech lattice encoding**.
+*/ 
 static inline 
 int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
-// Multiplies the state ``qs`` referred by ``pqs`` with
-// the element ``x`` of the extraspecial group. Here 
-// ``x_d`` * ``x_delta`` in the notation of :cite:``Seys19``
-// is encoded as ``x = 0x1000 * d + delta``, ``0 <= x < 0x2000``,
-// ``0 <= delta < 0x1000``.
 {
     int32_t res;
     
@@ -693,10 +739,10 @@ int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 /** Auxiliary function for function ``xsp2co1_mul_set_elem_word``
 
 The function sets the quadratic state matrix ``qs`` referred by
-``pqs`` to an element \f$x_\pi\f$ of \f$G(4906_x)\f$, where \f$\pi\f$ 
-automorphism of the Parker loop. \f$\pi\f$ is given in the array
-``aut`` of length 12 in as described inf function 
-``mat24_perm_to_autpl`` in file ``mat24_functions.c``.
+``pqs`` to an element \f$x_\pi\f$ of \f$G(4906_x)\f$, where 
+\f$\pi\f$ is an automorphism of the Parker loop. \f$\pi\f$ is 
+given in the array ``aut`` of length 12 in as described in 
+function ``mat24_perm_to_autpl`` in file ``mat24_functions.c``.
 
 Essentially, the array ``aut`` obtained by function 
 ``mat24_perm_to_autpl`` already encodes  \f$x_\pi\f$ as
@@ -733,6 +779,16 @@ int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 
 /// @cond DO_NOT_DOCUMENT 
 
+/** Auxiliary function for function ``xsp2co1_mul_set_elem_word``
+
+The function sets the quadratic state matrix ``qs`` referred by
+``pqs`` to an element \f$y_d\f$ of \f$G(4906_x)\f$, where \f$d\f$ 
+is an element of the Parker loop. The number \f$d\f$ of that 
+element is given by parameter ``y``.
+
+The monomial operation of \f$y_d\f$ on the standard basis of
+\f$4096_x\f$ is implemented as in [Sey20], section 7.
+*/
 static inline
 int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
 {
@@ -764,6 +820,23 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/** Auxiliary function for function ``mul_qs_xi``
+
+Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+referred by ``pqs``.
+
+The function right multiplies \f$x_g\f$ with the element 
+\f$\xi_g\f$ defined in [Sey20], section 9.6., and stores 
+the result in ``qs``. Note that \f$\xi_g\f$ can be decomposed
+into a product of a permutation matrix acting on qubits 10 and 11,
+and a non-monomial matrix acting on qubits 0,1,2,3. 
+
+The non-monomial matrix can be decomposed into a Hadamard matrix
+and a permutation matrix operating on the basis vectors, which are
+labelled by bit vectors. The operation on the bit vectors is as
+follows: Bit vectors with even parity are fixed, and bit vectors 
+with odd parity are complmented. 
+*/
 static inline
 int32_t mul_qs_xi1(qstate12_type *pqs)
 {
@@ -777,6 +850,18 @@ int32_t mul_qs_xi1(qstate12_type *pqs)
     return qstate12_gate_h(pqs, 0xf << 12);
 }
 
+/** Auxiliary function for function ``mul_qs_xi``
+
+Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+referred by ``pqs``.
+
+The function right multiplies \f$x_g\f$ with the element 
+\f$\xi_\gamma\f$ defined in [Sey20], section 9.6., and stores 
+the result in ``qs``. Note that \f$\xi_\gamma\f$ is monomial
+and can be decomposed into product of a permutation matrix 
+acting on qubits 10 and 11 and a diagonal matrix acting on 
+qubits 0,1,2,3.
+*/
 static inline
 int32_t mul_qs_xi2(qstate12_type *pqs)
 {
@@ -790,7 +875,20 @@ int32_t mul_qs_xi2(qstate12_type *pqs)
     return qstate12_gate_ctrl_phi (pqs, 2 << 12, 1 << 12);
 }
 
+/** Auxiliary function for function ``xsp2co1_mul_set_elem_word``
 
+Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+referred by ``pqs``.
+
+The function right multiplies \f$x_g\f$ with a power \f$\xi^e\f$
+of the generator \f$\xi\f$ and stores the result in ``qs``.
+Here \f$e = e_0 + 1\f$ must be 1 or 2 and \f$e_0\f$ is given by
+parameter ``e_minus_1``.
+
+Generator \f$\xi\f$ is constructed as a product 
+\f$xi_\gamma \xi_g\f$ of two involutions  \f$\gamma\f$, \f$\xu_g\f$ 
+as in [Sey20], section 9.4.
+*/
 static inline
 int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 {
@@ -824,7 +922,7 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 ``xsp2co1_mul_set_elem_word(elem, a, n, 1)`` is equivalent to
 ``xsp2co1_set_elem_word(elem, a, n)``.
 
-So the function muultiplies element ``elem`` of the group ``G_{{x0}}`` 
+So the function multiplies element ``elem`` of the group ``G_{{x0}}`` 
 with the the word given by ``a``. If parameter ``set_one`` is zero  then 
 ``elem`` is set to the neutral element before the multiplication starts.
 */

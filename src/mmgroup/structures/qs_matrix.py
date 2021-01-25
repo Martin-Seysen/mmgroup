@@ -610,7 +610,7 @@ class QStateMatrix(QState12):
         The method conjugates an element of the Pauli group or a
         list of such elements with the quadratic matrix and returns
         the congugated Pauli group element (or the list of 
-        conjugates element). All Pauli group elements are encoded
+        conjugated elements). All Pauli group elements are encoded
         as in method ``pauli_vector``.
 
         If :math:`M`is the quadratic state matrix given by
