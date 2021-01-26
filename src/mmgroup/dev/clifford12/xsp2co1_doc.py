@@ -58,12 +58,12 @@ Embedding a group related to :math:`G_{x0}` into a Clifford group
 .................................................................
 
 The representation :math:`4096_x` of the subgroup  
-:math:`G_{x1}` of :math:`\mathcal{C}_{12}` extends to the
-standard representation of the Clifford group 
+:math:`G(4096_x)` of :math:`\mathcal{C}_{12}` extends to 
+the standard representation of the Clifford group 
 :math:`\mathcal{C}_{12}`. So we may use the theory in 
 section :ref:`clifford-group-label` for computing in 
-:math:`G_{x1}`. In that section the basis vectors of the
-standard rpresentation  of :math:`\mathcal{C}_{12}` are 
+:math:`G(4096_x)`. In that section the basis vectors of the
+standard representation  of :math:`\mathcal{C}_{12}` are 
 numbered from :math:`0` to :math:`2^{12}-1`. We will 
 assign compatible numbers to the basis vectors of the
 representation :math:`4096_x` . 
@@ -209,7 +209,7 @@ In this basis the operation of the extraspecial group
       :math:`(d \oplus e)'` for :math:`e \in \mathcal{P}`.
       Here :math:`\theta` is the cocycle, see section 
       :ref:`parker-loop-label`. In the language of 
-      quantum computing this corresponds to a seqence
+      quantum computing this corresponds to a sequence
       of commuting **not** gates.
       
     * :math:`x_\epsilon` maps    :math:`(d)'` to   
@@ -217,7 +217,7 @@ In this basis the operation of the extraspecial group
       for :math:`\epsilon \in \mathcal{C}^*`. Here 
       :math:`\mathcal{C}^*` is the Golay cocode. In 
       the language of quantum computing this corresponds 
-      to a seqence of commuting **phase**-:math:`\pi`
+      to a sequence of commuting **phase**-:math:`\pi`
       gates.
 
 

@@ -336,10 +336,10 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
-stored as a pair
+given as a pair
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
-The function stores \f$x_g\f$ in the structure ``qs`` of type
-``qstate12_type`` referred by ``pqs``. 
+The function stores \f$x_g^{{-1}}\f$ in the structure ``qs`` of 
+type ``qstate12_type`` referred by ``pqs``. 
 
 Component \f$v_g\f$ is equal to ``elem[0]`` 
 (in **Leech lattice mod 3 encoding**).
@@ -348,6 +348,12 @@ Caution:
 
 After returning, the structure ``qs`` and the array ``elem``
 share the same data block.
+
+Caution:
+
+Internally, the we store the inverse of component \f$x_g\f$
+in the element \f$g\f$, and this function also stores that
+inverse in the structure ``qs``.
 */
 // %%EXPORT p
 int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
@@ -395,13 +401,19 @@ int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *e
 /**
 @brief Construct \f$g \in G_{{x0}}\f$ from pair \f$(x_g, x_v)\f$ 
 
-The function constructs a \f$g \in G_{{x0}}\f$ from a pair 
+The function constructs a \f$g \in G_{{x0}}\f$ as a pair 
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ and 
 stores the result in the array ``elem`` in **G_x0 representation**. 
-The value \f$x_g \in G(4096_x)\f$ must be given as a structure
-of type ``qstate12_type`` referred by ``pqs``. The value
+The value \f$x_g^{{-1}} \in G(4096_x)\f$ must be given as a 
+structure of type ``qstate12_type`` referred by ``pqs``. The value
 \f$v_g \in \Lambda / 3 \Lambda\f$ must be given by parameter
 ``v3`` in **Leech lattice mod 3 encoding**.
+
+Caution:
+
+Internally, the we store the inverse of component \f$x_g\f$
+in the element \f$g\f$, and this function also requires that
+inverse in the structure referred by ``pqs``.
 */
 // %%EXPORT p
 int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
@@ -1228,22 +1240,30 @@ int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8
 
 /// @endcond 
 
+/**
+@brief Get Leech lattice matrix from \f$g \in G_{{x0}}\f$ 
 
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. This means that \f$g\f$ is
+given as a pair
+\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$.
+\f$G_{{x0}}\f$ operates faithfully on the space
+\f$4096_x \otimes_\mathbb{{R}} \Lambda\f$. This function 
+constructs a \f$24 \times 24\f$ integer matrix
+\f$L_g\f$ such that  \f$\frac{{1}}{{8}} L_g\f$ corresponds 
+to the operation of \f$g\f$ on \f$\Lambda\f$. It stores
+entry  \f$L_g[i,j]\f$ in ``dest[24*i+j]``.  Matrix \f$L_g\f$ 
+is unique up to sign.
+
+Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
+(representation of) an orthogonal \f$4096 \times 4096\f$
+matrix \f$X_g\f$ such that right multiplication with the 
+Kronecker product  
+\f$\frac{{1}}{{8}} X_g^\top  \otimes L_g\f$ is equal to the 
+action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
+*/
 // %%EXPORT px
 int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
-// Given an element ``elem`` of the group ``G_{{x_1}}``, the 
-// function computes a ``24 times 24`` matrix ``L`` in the
-// array ``dest`` referred by ``pdest``. The entry ``8 * L[i,j]``
-// is stored in ``dest[24*i+j]``. Matrix ``L`` is unique up to 
-// sign. The sign is undocumented, but computed deteministically. 
-// Function ``xsp2co1_elem_to_qs(elem,...)``  computes a``
-// ``4096 times 4096`` matrix ``M`` for the element ``elem``
-// as an object of type ``qstate12_type``.  The Kronecker
-// product of ``L`` and ``M`` represents the element ``elem``
-// of the group ``G_{{x_1}}`` uniquely. Let ``M.T`` be the
-// transposed matrix of ``M``. Matrices ``L`` and `M.T`` act 
-// on the tensor product ``24_x (x) 4096_x``, which is a  
-// representation of ``G_{{x_1}}``, by right multiplication.
 {
     uint64_t src3[25], dest3[25];
     int_fast32_t res, i;
