@@ -20,7 +20,7 @@ from mmgroup.tests.spaces.clifford_space import Space_ZY
 from mmgroup.generators import gen_leech2to3_short, gen_leech3to2_short
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_find_chain_short_3
-from mmgroup.clifford12 import xsp2co1_chain_short_3, xsp2co1_elem_to_qs
+from mmgroup.clifford12 import xsp2co1_chain_short_3
 
 
 MMSpace3 = Space_ZY.mmspace

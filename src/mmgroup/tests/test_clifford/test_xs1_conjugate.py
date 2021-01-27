@@ -10,8 +10,11 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup import Xs12_Co1, PLoop, AutPL, Cocode
+from mmgroup import Xs12_Co1, PLoop, AutPL, Cocode, MM
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_op_word
+
+
 
 #####################################################################
 # Create test matrices
@@ -19,12 +22,22 @@ from mmgroup.generators import gen_leech2_type
 
 
 def rand_xs1co1_elem():
-    return Xs12_Co1(*[(x,) for x in "dxpylpylpylpy"])
+    return MM(*[(x,) for x in "dxpylpylpylpy"])
 
 def rand_xs1_vectors(length):
     return [randint(0, 0x1ffffff) for i in range(length)]
 
-def create_conjugate_data():   
+def create_conjugate_data():  
+    # Testing with following test data verfies that generators
+    # :math:`\xi^e, e = 1,2` operate on the group :math:`Q_{x0}`
+    # correctly. This verifies the correct implementation of 
+    # these generator up to sign. The sign can be verified by
+    # checking that the generator has order 3
+    for exp in (1, 2): 
+        g_mm = MM(('l', exp))
+        xs = [1 << i for i in range(24)]
+        yield g_mm, xs         
+    # test with some more random data
     for i in range(20):
         g = rand_xs1co1_elem()
         xs = rand_xs1_vectors(8)
@@ -40,11 +53,34 @@ Co_1_ORDERS = set(list(range(1,17)) +
       [18,20,21,22,23,24,26,28,30,33,35,36,39,40,42,60])
 Gx0_ORDERS = set([x*y for x in Co_1_ORDERS for y in [1, 2, 4]])
 
+
+def conj_x_by_word(x, g_mm):
+    """Conugate x ith a word of elments in the Clifford group
+
+    Here :math:`x` is an element of the normal subgroup :math:`Q_x0`
+    of :math:`G_x0`, and :math:`g_{mm}` is an element of the 
+    subgroup :math:`G_x0` of the monster.
+
+    :math:`x` is given as an integer in **Leech lattice
+    represention** and :math:`g_{mm}` is given as an element
+    of the group  object ``mmgroup.MM``, which is the standard 
+    instance of the monster group.
+
+    The function returns :math:`g_{mm}^{-1} x g_{mm}` as an
+    integer in **Leech lattice represention**.
+    """
+    w_g = g_mm.data
+    return gen_leech2_op_word(x, w_g, len(w_g))
+
     
 @pytest.mark.qstate
 def test_xs1_conjugate(verbose = 0):
     """Test the conjugation of Pauli matrix with unitary matrix"""
-    for ntest, (g, xs) in enumerate(create_conjugate_data()):
+    l0, l1, l2 = Xs12_Co1(), Xs12_Co1(('l', 1)),  Xs12_Co1(('l', 2))
+    assert l1**2 == l2
+    assert l1**3 == l0    
+    for ntest, (g_mm, xs) in enumerate(create_conjugate_data()):
+        g = Xs12_Co1(g_mm)
         xs_g_all = [Xs12_Co1.from_xsp(x) for x in xs]
         xs_all = [x.as_xsp() for x in xs_g_all]
         ok = xs == xs_all
@@ -62,7 +98,20 @@ def test_xs1_conjugate(verbose = 0):
 
         conj = g.xsp_conjugate(xs)
         ref_conj = [(g**-1 * x * g).as_xsp()  for x in xs_g_all]
-        ok = conj == ref_conj
+        ref_conj1 = [conj_x_by_word(x, g_mm) for x in xs]
+        ref_ok = ref_conj == ref_conj1
+        if not ref_ok:
+            print("Conjugation of v with g =\n", g)
+            print("v =", [hex(x) for x in xs])
+            print("Reference for v * g via direct calculation")
+            print([hex(x) for x in ref_conj]) 
+            print("Reference using C function gen_leech2_op_word")
+            print([hex(x) for x in ref_conj1]) 
+            err = "Error in reference for conjugation in group G_{x1}"
+            raise ValueError(err)
+
+        ok = ref_ok and conj == ref_conj1
+
         if verbose or not ok:
             if not verbose:
                 print("Conjugation of v with g =\n", g)

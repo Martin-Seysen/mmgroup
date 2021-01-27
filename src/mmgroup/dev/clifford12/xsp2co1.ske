@@ -332,7 +332,7 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
 
 
 /**
-@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
+@brief Get component \f$x_g^{{-1}} \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
@@ -356,7 +356,7 @@ in the element \f$g\f$, and this function also stores that
 inverse in the structure ``qs``.
 */
 // %%EXPORT p
-int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
+int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
 {
     int32_t res;
     res = qstate12_set_mem(pqs, elem + 1, 25); 
@@ -375,14 +375,14 @@ int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 
 /// @cond DO_NOT_DOCUMENT 
 /**
-@brief Simplified version of function ``xsp2co1_qs_to_elem``.
+@brief Simplified version of function ``xsp2co1_qs_to_elem_i``.
 
-In contrast to function ``xsp2co1_qs_to_elem``, the component
-\f$x_g\f$ in the result \f$g\f$ constrcuted by that function
-is not reduced.
+In contrast to function ``xsp2co1_qs_to_elem_i``, the component
+\f$x_g\f$ in the result \f$x_g^{{-1}}\f$ constrcuted by that 
+function is not reduced.
 */
 static inline 
-int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
+int32_t xsp2co1_qs_to_elem_i_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
 {
     uint_fast32_t i;
     if (pqs->nrows > 25) return ERR_QSTATE12_BUFFER_OVFL;
@@ -396,6 +396,41 @@ int32_t xsp2co1_qs_to_elem_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *e
 }
 
 /// @endcond  
+
+
+/**
+@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
+
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. This means that \f$g\f$ is
+given as a pair
+\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
+The function stores \f$x_g\f$ in the structure ``qs`` of 
+type ``qstate12_type`` referred by ``pqs``. \f$x_g\f$ 
+represents a \f$4096 \times 4096\f$ matrix.
+
+Caution:
+
+The structure referred by ``pqs`` must provide sufficient 
+memory for data, see function ``qstate12_set_mem`` in file
+``qstate12.c``; here ``pqs->data`` should be at least 25.
+*/
+// %%EXPORT p
+int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
+{
+    int32_t res;
+    qstate12_type qs_i;
+    // Copy component to pqs
+    res = xsp2co1_elem_to_qs_i(elem, &qs_i);
+    if (res < 0) return res;
+    res = qstate12_copy(&qs_i, pqs);
+    // Internally we store the transposed of the orthogonal matrix
+    // x_g in ``elem``. So we have to transpose that matrix.
+    if (res < 0) return res;
+    res = qstate12_mat_t(pqs);
+    if (res < 0) return res;
+    return qstate12_reduce;
+}
 
 
 /**
@@ -416,14 +451,14 @@ in the element \f$g\f$, and this function also requires that
 inverse in the structure referred by ``pqs``.
 */
 // %%EXPORT p
-int32_t xsp2co1_qs_to_elem(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
+int32_t xsp2co1_qs_to_elem_i(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
 {
     int32_t res;
     res = qstate12_reduce(pqs); 
     if (res < 0) return res;
     res = qstate12_check(pqs);
     if (res < 0) return res;
-    return  xsp2co1_qs_to_elem_noreduce(pqs, v3, elem);    
+    return  xsp2co1_qs_to_elem_i_noreduce(pqs, v3, elem);    
 }
 
 
@@ -445,9 +480,9 @@ int32_t xsp2co1_reduce_elem(uint64_t *elem)
 {
     int32_t res;
     qstate12_type qs;
-    res = xsp2co1_elem_to_qs(elem, &qs);
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;
-    return xsp2co1_qs_to_elem(&qs, elem[0], elem); 
+    return xsp2co1_qs_to_elem_i(&qs, elem[0], elem); 
 }
 
 
@@ -517,9 +552,9 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     int32_t res;
     qstate12_type qs1, qs2, qs3;
     uint64_t data3[MAXROWS_ELEM], asrc[3], adest[3];
-    res = xsp2co1_elem_to_qs(elem1, &qs1);
+    res = xsp2co1_elem_to_qs_i(elem1, &qs1);
     if (res < 0) return res;
-    res = xsp2co1_elem_to_qs(elem2, &qs2);
+    res = xsp2co1_elem_to_qs_i(elem2, &qs2);
     if (res < 0) return res;
     res = qstate12_set_mem(&qs3, data3, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -536,7 +571,7 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
         memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
     #endif    
     if (res < 0) return res;
-    res = xsp2co1_qs_to_elem(&qs3, adest[2], elem3);
+    res = xsp2co1_qs_to_elem_i(&qs3, adest[2], elem3);
     return res;
 }
 
@@ -558,7 +593,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
     int32_t res;
     qstate12_type qs1, qs2;
     uint64_t data2[MAXROWS_ELEM], asrc[3], adest[3];
-    res = xsp2co1_elem_to_qs(elem1, &qs1);
+    res = xsp2co1_elem_to_qs_i(elem1, &qs1);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -571,7 +606,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
     asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
     res = xsp2co1_chain_short_3(&qs2, 3, asrc, adest);
     if (res < 0) return res;
-    res = xsp2co1_qs_to_elem(&qs2, adest[2], elem2);
+    res = xsp2co1_qs_to_elem_i(&qs2, adest[2], elem2);
     return res;
 }
 
@@ -600,7 +635,7 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
     int_fast32_t res;
     uint_fast32_t i;
 
-    res = xsp2co1_elem_to_qs(elem, &qs);
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -638,7 +673,7 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem)
     int32_t res;
     qstate12_type qs, qs1;
     uint64_t data[MAXROWS_ELEM], v, e0;
-    res = xsp2co1_elem_to_qs(elem, &qs);
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -738,7 +773,7 @@ int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
     if ((res = qstate12_set_mem(&qs, data, MAXROWS_ELEM)) < 0) return res;
     if ((res = qstate12_unit_matrix(&qs, 12)) < 0) return res;
     if ((res = mul_qs_xspecial(&qs, x)) < 0) return res;
-    return xsp2co1_qs_to_elem(&qs, STD_V3, elem);
+    return xsp2co1_qs_to_elem_i(&qs, STD_V3, elem);
 }
 
 /*************************************************************************
@@ -900,6 +935,10 @@ parameter ``e_minus_1``.
 Generator \f$\xi\f$ is constructed as a product 
 \f$xi_\gamma \xi_g\f$ of two involutions  \f$\gamma\f$, \f$\xu_g\f$ 
 as in [Sey20], section 9.4.
+
+The python function ``mmgroup.tests.test_clifford.test_xs1_conjugate``
+checks the correctness of these implmentations of the generators 
+\f$\xi\f$ and \f$\xi^2\f$.
 */
 static inline
 int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
@@ -955,7 +994,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
         v3 = STD_V3;
         p_atom = &qs;
     } else {
-        if ((res = xsp2co1_elem_to_qs(elem, &qs_atom)) < 0) return res;
+        if ((res = xsp2co1_elem_to_qs_i(elem, &qs_atom)) < 0) return res;
         if ((res = qstate12_copy(&qs_atom, &qs)) < 0) return res;
         v3 = elem[0];
         p_atom = &qs_atom;
@@ -1037,7 +1076,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
         p_atom = &qs_atom;
     }
        
-    return xsp2co1_qs_to_elem(&qs, v3, elem);
+    return xsp2co1_qs_to_elem_i(&qs, v3, elem);
 }
 
 
@@ -1126,7 +1165,11 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 /// @endcond 
 
 
+/**
+@brief A function to be used for testing
 
+Yet to be documented!!
+*/
 // %%EXPORT px
 int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 {
@@ -1140,7 +1183,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     uint64_t qf = 0;
     uint64_t ncols, mask; 
 
-    res = xsp2co1_elem_to_qs(elem, &qs1);
+    res = xsp2co1_elem_to_qs_i(elem, &qs1);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
     if (res < 0) return res;
@@ -1257,9 +1300,9 @@ is unique up to sign.
 
 Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
 (representation of) an orthogonal \f$4096 \times 4096\f$
-matrix \f$X_g\f$ such that right multiplication with the 
+matrix \f$x_g\f$ such that right multiplication with the 
 Kronecker product  
-\f$\frac{{1}}{{8}} X_g^\top  \otimes L_g\f$ is equal to the 
+\f$\frac{{1}}{{8}} x_g \otimes L_g\f$ is equal to the 
 action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
 */
 // %%EXPORT px
@@ -1288,7 +1331,7 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
     src3[24] =  0xc;
     dest3[0] =  elem[0];
 
-    res =  xsp2co1_elem_to_qs(elem, &qs);
+    res =  xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;
     res = xsp2co1_chain_short_3(&qs, 25, src3, dest3);
     if (res < 0) return res;

@@ -1,5 +1,8 @@
 r"""We deal with the representation of elements of the monster group. 
 
+Generators of the monster group :math:`\mathbb{M}`
+..................................................
+
 Conway :cite:`Con85` has constructed a ``196884``-dimensional rational 
 representation :math:`\rho` of the monster :math:`\mathbb{M}` based on 
 representations of two subgroups 
@@ -52,6 +55,11 @@ The generators :math:`x_e`, :math:`y_e`, and :math:`z_e` in
 :math:`x_e \cdot z_{-1}^{|e/4|}`, :math:`y_e \cdot x_{-1}^{|e/4|}`,
 and  :math:`z_e \cdot y_{-1}^{|e/4|}`` in :cite:`Con85`.
  
+
+Creating an instance of the monster group
+.........................................
+
+
 For dealing with the monster :math:`\mathbb{M}` the user must 
 first create an instance ``M`` of class |MMGroup|, which 
 represents an instance of the monster group :math:`\mathbb{M}`::
@@ -72,7 +80,18 @@ An argument passed to an instance ``M`` of class  |MMGroup| may be a pair
 type of the generator of :math:`\mathbb{M}`, and ``value`` is an 
 integer describing the value of that generator. Alternatively, ``value``
 may be an instance of the appropriate algebraic structure used for
-indexing a generator of a given type as indicted in the table below.
+indexing a generator of a given type as indicated in the table below.
+
+There is a predefined instance ``mmgroup.MM`` of class  |MMGroup| of 
+the monster group. This is used as a default in some situations. E.g. 
+an instance of a representation space of the monster group, which is
+of type |MMSpace|, refers to the object ``mmgroup.MM`` as the group
+acting on that space it by default.
+
+
+Implementation of the generators of the monster group
+.....................................................
+
 
 Math papers may use (at least) Latin or Greek letters for labelling
 objects, but most programming languages are restricted to ASCII characters.
@@ -133,6 +152,31 @@ which is easy. We apply no relations to the remaining generator
 Reducing an arbitrary word in :math:`\mathbb{M}` to a standard form
 is beyond or current capabilities of computing in the monster group,
 see  :cite:`Wilson13` for background.
+
+
+Large versus small groups involved in the monster group
+.......................................................
+
+The user is encouraged to create his own instances of 
+class |MMGroup|  for calculating in the monster group  
+:math:`\mathbb{M}`. This also applies to some large groups 
+innvolved in :math:`\mathbb{M}` to be defined later.
+Calling an instance of class  |MMGroup| returns an element
+of that group.
+
+On the other hand, small objects involved in the monster,
+such as the Golay code and its cocode, or the Parker loop and
+its standard automorphism group, are considered as index sets
+for labelling the generators of  :math:`\mathbb{M}`,  or the
+basis vectors of a representation of :math:`\mathbb{M}`.
+Here for any such small group or loop the is just a single 
+object representing the abstract group or loop. Examples of 
+such small objects are |GCode|, |PLoop|, |Cocode|, or |AutPL|.
+Calling such an object also  returns an element of the
+corresponding group or loop.
+
+Future development
+..................
 
 Future versions of this package may implement the following reduction
 strategies for words of generators of :math:`\mathbb{M}` :
@@ -622,4 +666,6 @@ class MMGroup(AbstractGroup):
         return g1.group == g2.group and check_mm_equal(g1, g2)
 
 
+# Predefine a standard instance of class MMGroup
+MM =  MMGroup()
 

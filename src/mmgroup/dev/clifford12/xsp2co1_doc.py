@@ -113,6 +113,8 @@ the upper 25 entries of the array ``elem``. The rationale
 for storing the inverse is that this simplifies the operation
 of :math:`G(4096)_x` on :math:`Q_{x1}` by conjugation, using
 function ``qstate12_pauli_conjugate`` in file ``qmatrix12.c``.
+Note that :math:`x_g^{-1} = x_g^\top`, since  :math:`x_g`
+is orthogonal.
 
 
 In section :ref:`clifford-group-label` an element :math:`c`

@@ -16,7 +16,8 @@ from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
 
 
 
-from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem 
+from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
+from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
 from mmgroup.clifford12 import xsp2co1_chain_short_3 
 from mmgroup.clifford12 import xsp2co1_neg_elem
 from mmgroup.clifford12 import error_string, chk_qstate12
@@ -32,74 +33,9 @@ from mmgroup.clifford12 import xsp2co1_elem_xspecial
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
-from mmgroup.mm_group import gen_atom, MMGroupWord
+from mmgroup.mm_group import gen_atom, MM
 
 FORMAT_REDUCED = True
-
-###########################################################################
-# Create data for power of xi
-###########################################################################
-
-
-_py_xi = None
-
-def create_py_xi(verbose = 0):
-    global _py_xi
-    from mmgroup.structures.qs_matrix import qs_unit_matrix
-    print("create_py_xi")
-    _py_xi = [ Xs12_Co1()]
-    
-    xi_sym16 = qs_unit_matrix(12)
-    xi_sym16.gate_h(0xf)
-    xi_sym16.gate_ctrl_not(0xf, 0xf)
-    
-    xi_diag16 = -qs_unit_matrix(12)
-    for c1, c2 in [(8,7), (4,3), (2,1)]:
-        xi_diag16 = xi_diag16.gate_ctrl_phi(c1, c2)
-    
-    xi_gamma = qs_unit_matrix(12)
-    xi_gamma.gate_not(1 << 11)
-    xi_gamma.gate_ctrl_not(1 << 10, 1 << 11)
-    
-    xi_g = qs_unit_matrix(12)
-    xi_g.gate_not(1 << 10)
-    xi_g.gate_ctrl_not(1 << 11, 1 << 10)
-    
-    xi_1 = xi_diag16 @ xi_sym16 @ xi_g @ xi_gamma
-    xi_2 = xi_sym16 @ xi_diag16 @ xi_gamma @ xi_g
-    
-    STD_V3  = 0x8000004
-    _py_xi.append(Xs12_Co1.from_qs(xi_1, STD_V3))   
-    _py_xi.append(Xs12_Co1.from_qs(xi_2, STD_V3)) 
-    if verbose:
-        print("Group element 1:\n", _py_xi[0])    
-        print("Group element xi:\n", _py_xi[1])    
-        print("Group element xi**2:\n", _py_xi[2])    
-        
-
-def py_xi():
-    if _py_xi is None:
-        create_py_xi(verbose = 0) 
-    return _py_xi        
-
-
-def display_py_xi(name = "elem_xi"):
-    xi = py_xi()
-    xi0, xi1, xi2 = xi_data = [x._data for x in xi]
-    d = [i for i in range(26) if xi0[i] != xi1[i] or xi0[i] != xi2[i]]
-    print(d)
-    print(xi)
-    s = "static uint64_t %s[2][%d] = {\n" % (name, len(d))
-    for i in [1,2]:
-        s += "{\n// Entries %s of element xi**%d\n" % (d,i)
-        for sep, j in enumerate(d):
-            s += "0x%012xULL" % xi_data[i][j]
-            s += ", " if j < d[-1] else ""
-            if  sep % 4 == 3 or j == d[-1]:
-                s += "\n"
-        s += "}%s\n" % ("," if i < 2 else "")
-    s += "};\n"
-    return s
 
 
 
@@ -154,8 +90,12 @@ class Xs12_Co1_Word(AbstractGroupWord):
         return int(self._data[0])
 
     @property
+    def qs_t(self):
+        return QStateMatrix(xsp2co1_elem_to_qs_i(self._data))
+        
+    @property
     def qs(self):
-        return QStateMatrix(xsp2co1_elem_to_qs(self._data)).T.reduce()
+        return QStateMatrix(xsp2co1_elem_to_qs(self._data))
         
     @property
     def leech_op(self):
@@ -290,7 +230,6 @@ class Xs12_Co1_Group(AbstractGroup):
     conversions = {
         Cocode: cocode_to_xs12co1,
         AutPL: autpl_to_xs12co1,
-        MMGroupWord: mmgroup_to_xs12co1,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
@@ -344,7 +283,7 @@ class Xs12_Co1_Group(AbstractGroup):
         
     def from_qs(self, qs, x):  
         w = self.word_type([], group=self)
-        w0 =  xsp2co1_qs_to_elem (qs, x)
+        w0 =  xsp2co1_qs_to_elem_i (qs, x)
         for i in range(26):
              w._data[i] =  w0[i]
         return w             
@@ -361,7 +300,8 @@ class Xs12_Co1_Group(AbstractGroup):
 
 
 Xs12_Co1 = Xs12_Co1_Group()
-
+Xs12_Co1.set_preimage(MM, tuple)
+MM.set_preimage(Xs12_Co1, tuple)
 
 
 
@@ -371,8 +311,8 @@ def str_leech3(x):
     lst = [_dict_pm3[(x >> i) & 0x1000001] for i in range(24)]
     return "(" + "".join(lst) + ")"
 
-def str_xs12_co1(data, factor = 1):
-    qs0 = xsp2co1_elem_to_qs(data)
+def str_xs12_co1(data, factor = 1, t = False):
+    qs0 = xsp2co1_elem_to_qs_i(data) if t else xsp2co1_elem_to_qs(data)
     qs = QStateMatrix(qs0) / factor
     return str_leech3(data[0]) + " (x) " + str(qs)
 
@@ -389,13 +329,5 @@ except:
         return []    
 
 
-
-########################################################################
-# Display data for element xi and xi**2
-########################################################################
-
-
-if __name__ == "__main__":
-    print(display_py_xi())  
 
    

@@ -840,23 +840,31 @@ def xsp2co1_chain_short_3(QState12 qstate, src, dest):
         chk_qstate12(cl.xsp2co1_chain_short_3(pqs, length, &src_view[0],
             &dest_view[0]))
 
-def xsp2co1_elem_to_qs(e1):
-    assert len(e1) >= 26 
+def xsp2co1_elem_to_qs_i(elem):
+    assert len(elem) >= 26 
     cdef uint64_t e[26]
     cdef uint32_t i
-    for i in range(26): e[i] = e1[i]
+    for i in range(26): e[i] = elem[i]
     result = QState12(12, 12)
     cdef qstate12_type qs0
     cdef p_qstate12_type pqs = pqs12(result)
-    chk_qstate12(cl.xsp2co1_elem_to_qs(e, &qs0))
+    chk_qstate12(cl.xsp2co1_elem_to_qs_i(e, &qs0))
     chk_qstate12(cl.qstate12_copy(&qs0, pqs))
     return result
 
-def xsp2co1_qs_to_elem(QState12 qstate, uint64_t x1):
+def xsp2co1_elem_to_qs(elem):
+    cdef uint64_t[:] elem_view = elem
+    result = QState12(12, 12)
+    cdef p_qstate12_type pqs = pqs12(result)
+    chk_qstate12(cl.xsp2co1_elem_to_qs(&elem_view[0], pqs))
+    return result
+
+
+def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
     cdef p_qstate12_type pqs = pqs12(qstate)
     result = np.zeros(26, dtype = np.uint64)
     cdef uint64_t[:] result_view = result
-    chk_qstate12(cl.xsp2co1_qs_to_elem(pqs, x1, &result_view[0]))
+    chk_qstate12(cl.xsp2co1_qs_to_elem_i(pqs, x1, &result_view[0]))
     return result
 
 

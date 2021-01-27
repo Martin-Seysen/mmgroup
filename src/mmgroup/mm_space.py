@@ -187,7 +187,7 @@ from importlib import import_module
 
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
-from mmgroup.mm_group  import MMGroup, MMGroupWord
+from mmgroup.mm_group  import MMGroup, MMGroupWord, MM
 
 
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
@@ -208,7 +208,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 standard_seed = mm_rng_make_seed()
-standard_mm_group = MMGroup()
+standard_mm_group = MM
 
 
 TAGS = " ABCTXZY"
@@ -345,12 +345,16 @@ class MMSpace(AbstractMmRepSpace):
 
     :var p:
         Contains the characteristic of the vector 
-        space, which is a small odd integer.
+        space, which is a small odd integer. Function 
+        ``mmgroup.characteristics()`` returns the list
+        of legal values ``p``.
 
     :var group:
         Contains the group operating on the vector
         space by right multiplication. 
-        That group is an instance of class |MMGroup|.
+        That group is an instance of class |MMGroup|. This 
+        defaults to the predefined instance ``mmgroup.MM``
+        of class |MMGroup|. 
 
 
     Thus the instruction ``V = MMSpace(3, M)``, with ``M`` an instance of

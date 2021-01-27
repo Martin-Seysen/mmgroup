@@ -49,7 +49,7 @@ try:
     import mmgroup.mm
     import mmgroup.mm_group
     import mmgroup.mm_space
-    from mmgroup.mm_group import MMGroup,  MMGroupWord
+    from mmgroup.mm_group import MMGroup,  MMGroupWord, MM
     from mmgroup.mm import INT_BITS
 except:
     w = "Extension mmgroup.mm not found, package not functional!"

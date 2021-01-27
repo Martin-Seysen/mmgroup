@@ -16,7 +16,7 @@ from mmgroup.mm_space import MMSpace
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 
 from mmgroup.generators import gen_leech2to3_short
-from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem 
+from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem_i 
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xsp2co1_neg_elem, xsp2co1_elem_row_mod3
 from mmgroup.clifford12 import xsp2co1_mul_elem, xsp2co1_reduce_elem
@@ -113,7 +113,7 @@ class Xs12_Co1_Vector(AbstractRepVector):
                 x = tuple_to_leech_mod3(*rep_leech)
             else:
                 x = array_to_leech_mod3(rep_leech)
-        self._data[:] = xsp2co1_qs_to_elem(qs, x)
+        self._data[:] = xsp2co1_qs_to_elem_i(qs, x)
         self.is_zero = False
        
     def _set_zero(self):
@@ -232,7 +232,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
         """
         if v.is_zero:
             return "Xs12 vector 0"
-        return "Xs12 vector " + str_xs12_co1(v._data, factor = 64)
+        return "Xs12 vector " + str_xs12_co1(v._data, factor=64, t=True)
 
     ### Standard methods that need not be overwritten #################
 
