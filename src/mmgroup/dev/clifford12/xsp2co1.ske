@@ -346,12 +346,13 @@ Component \f$v_g\f$ is equal to ``elem[0]``
 
 Caution:
 
-After returning, the structure ``qs`` and the array ``elem``
-share the same data block.
+This is a low-level function. After returning, the 
+structure ``qs`` and the array ``elem`` share the same 
+data block.
 
 Caution:
 
-Internally, the we store the inverse of component \f$x_g\f$
+Internally, we store the inverse of component \f$x_g\f$
 in the element \f$g\f$, and this function also stores that
 inverse in the structure ``qs``.
 */
@@ -380,6 +381,11 @@ int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
 In contrast to function ``xsp2co1_qs_to_elem_i``, the component
 \f$x_g\f$ in the result \f$x_g^{{-1}}\f$ constrcuted by that 
 function is not reduced.
+
+Caution:
+
+This is a low-level function. The warnings stated for function
+``xsp2co1_qs_to_elem_i`` apply to this function too!
 */
 static inline 
 int32_t xsp2co1_qs_to_elem_i_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
@@ -446,7 +452,14 @@ structure of type ``qstate12_type`` referred by ``pqs``. The value
 
 Caution:
 
-Internally, the we store the inverse of component \f$x_g\f$
+As a low-level function, this function may construct a value
+\f$g\f$ which is not in \f$G_{{x0}}\f$. Function
+``xsp2co1_set_elem_word`` should be used for constructing an 
+element of \f$G_{{x0}}\f$ instead.
+
+Caution:
+
+Internally, we store the inverse of component \f$x_g\f$
 in the element \f$g\f$, and this function also requires that
 inverse in the structure referred by ``pqs``.
 */
@@ -1148,6 +1161,16 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**
+@brief Auxiliary function for function ``xsp2co1_elem_row_mod3``
+
+The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
+**Leech lattice mod 3** encoding to the encoding to the endoding
+of a vector in \f$(\mathbb{{Z}} / 3\mathbb{{Z}})^{{24}}\f$ 
+used in the ``mmgroup.mm3`` extension.
+
+This conversion is an involution.
+*/
 static inline
 uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 {
@@ -1166,9 +1189,45 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 
 
 /**
-@brief A function to be used for testing
+@brief A low-level function to be used for testing
 
-Yet to be documented!!
+A projection matrix \f$\Pi\f$ is a symmetric matrix with
+one eigenvalue 1 and the other eigenvalues equal to zero
+operating on an Euclidean vector space.
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem`` 
+in **G_x0 representation**.  This function left multiplies 
+\f$g\f$ by a certain projection matrix \f$\Pi\f$. The 
+result \f$y = \Pi \cdot g\f$ is an element of the vector 
+space \f$4096_x \otimes 24_x\f$.
+The function reduces the coordinates of \f$y\f$ modulo
+3 and stores the result in the array ``v`` in a format
+compatible the format used in the ``mmgroup.mm3`` extension.
+
+Right multiplcation of \f$g\f$ by \f$G_{{x0}}\f$ commutes
+with left multiplication of \f$g\f$ by \f$\Pi\f$, so that we
+can test the right multiplication by \f$G_{{x0}}\f$
+implemented in this module against the corresponding
+multiplication implemented in the ``mmgroup.mm3`` extension.
+This leads to the important interoperability test in the
+python function
+``mmgroup.tests.test_clifford.test_xs1_vector.test_vector``.
+
+
+We specify the projection matrix  \f$\Pi\f$ as a tensor
+product \f$\Pi_{{4096}} \otimes \Pi_{{24}}\f$. Here
+\f$\Pi_{{24}}\f$ projects onto the fixed short Leech 
+lattice vector
+\f$(0,0,1,-1,0, \ldots,0)\f$. \f$\Pi_{{4096}}\f$ is the
+projection onto the coordinate with number ``column``
+of the space  \f$4096_x\f$.
+
+Remark:
+
+The result is an array with 4096 entries corresponding
+to the entries with tags ``Z`` and ``Y`` of a vector
+in the represention \f$\rho_3\f$,  as described in
+section **The Representation of the Monster Group**
+of the **API reference**.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
@@ -1234,14 +1293,19 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**
+@brief add short Leech lattice vector (given mod 3) to Leech lattice vector
+
+Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
+lattice mod 3** encoding, and short Leech latice vectors 
+``src`` and ``dest``, referred by ``psrc`` and ``pdest``, the 
+function computes  ``dest = src + factor * x``. Here ``src`` and 
+``dest`` are given in the standard basis, so that a unit vector of 
+length ``sqrt(8)`` has one entry with absolute value ``8``.
+ 
+*/
 static
 int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
-// Given a short Leech lattice vector ``x`` (modulo 3), and short 
-// Leech latice vectors ``src`` and ``dest``, referred by ``psrc`` and 
-// ``pdest``, the function computes  ``dest = src + factor * x``.
-// Here ``src`` and ``dest`` are given in the standard basis, so that
-// a unit vector of length ``sqrt(8)`` has one entry with absolute
-// value ``8``.
 {
     uint_fast32_t  gcodev, cocodev, w1, w2;
     int_fast8_t f[4], i;
@@ -1291,7 +1355,7 @@ in **G_x0 representation**. This means that \f$g\f$ is
 given as a pair
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$.
 \f$G_{{x0}}\f$ operates faithfully on the space
-\f$4096_x \otimes_\mathbb{{R}} \Lambda\f$. This function 
+\f$4096_x \otimes_\mathbb{{Z}} \Lambda\f$. This function 
 constructs a \f$24 \times 24\f$ integer matrix
 \f$L_g\f$ such that  \f$\frac{{1}}{{8}} L_g\f$ corresponds 
 to the operation of \f$g\f$ on \f$\Lambda\f$. It stores

@@ -21,7 +21,7 @@ the automorphism group  :math:`\mbox{Co}_0` of the Leech
 lattice :math:`\Lambda`. :math:`G_{x1}` is a preimage of 
 :math:`G_{x0}` with :math:`|G_{x1}:G_{x0}| = 2`, and 
 :math:`G_{x0}` operates faithfully on the tensor product 
-:math:`4096_x \otimes \Lambda`. Let 
+:math:`4096_x \otimes_\mathbb{Z} \Lambda`. Let 
 :math:`(x_g, L_g) \in G_{x1} \subset G(4096_x) \times  G(24x)`.
 Component :math:`x_g` determines component :math:`L_g` of
 the pair up to sign. So it suffices to store the image 
