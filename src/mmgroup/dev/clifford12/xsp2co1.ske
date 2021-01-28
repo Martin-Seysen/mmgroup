@@ -108,7 +108,7 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 
 
 /*************************************************************************
-*** Conversion between the two standard bases for group elements
+*** Conversion between the two standard bases of the rep 4096_x
 *************************************************************************/
 
 
@@ -266,7 +266,7 @@ uint64_t xsp2co1_find_chain_short_3(uint64_t v3_1, uint64_t v3_2)
 
 
 /**
-@brief Apply transformation in \f$G_{{x1}}\f$ to vectors in Leech lattice mod 3
+@brief Apply transformation in \f$G_{{x0}}\f$ to vectors in Leech lattice mod 3
 
 Let \f$x_g \in G(4096_x)\f$ be given by the quadratic state matrix
 referred by ``pqs``. Let ``psrc`` be an array 
@@ -327,12 +327,12 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
 
 
 /*************************************************************************
-*** Conversion between quadratic state matrices and group elements
+*** Conversion between quadratic state matrices and elements of G_{{x0}}
 *************************************************************************/
 
 
 /**
-@brief Get component \f$x_g^{{-1}} \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
+@brief Get component \f$x_g^{{-1}} \in G(4096_x)\f$ from \f$g \in G_{{x0}}\f$ 
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
@@ -405,7 +405,7 @@ int32_t xsp2co1_qs_to_elem_i_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t 
 
 
 /**
-@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x1}}\f$ 
+@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x0}}\f$ 
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
@@ -486,7 +486,7 @@ The function reduces the components \f$x_g\f$, \f$v_g\f$
 to their standard form in place. 
 
 In functions that construct elements of \f$G_{{x0}}\f$
-these elements are reduced automatically.
+these components are reduced automatically.
 */
 // %%EXPORT px
 int32_t xsp2co1_reduce_elem(uint64_t *elem)
@@ -500,7 +500,7 @@ int32_t xsp2co1_reduce_elem(uint64_t *elem)
 
 
 /*************************************************************************
-*** Elementary function operating on group elements
+*** Elementary function operating on elements of G_{{x0}}
 *************************************************************************/
 
 
@@ -544,7 +544,7 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /*************************************************************************
-*** Group multiplication and inversion
+*** Multiplication and inversion in the group G_{{x0}}
 *************************************************************************/
 
 
@@ -626,7 +626,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /*************************************************************************
-*** Conjugation of extraspecial element with group element
+*** Conjugate elements of Q_{{x0}} with an element of G_{{x0}}
 *************************************************************************/
 
 /**
@@ -665,7 +665,7 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
 }
 
 /*************************************************************************
-*** Check if an element is in the extraspecial group
+*** Check if an element of G_{{x0}} is in the subgroup  Q_{{x0}}
 *************************************************************************/
 
 
@@ -703,7 +703,7 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 
 
 /*************************************************************************
-*** Construction of  elements in the extraspecial subgroup
+*** Construction of elements of the subgroup of Q_{{x0}} of G_{{x0}}
 *************************************************************************/
 
 
@@ -735,17 +735,17 @@ void xsp2co1_unit_elem(uint64_t *elem)
 
 
 /*************************************************************************
-*** Multiplication of a group element by an atom with tag 'x' or 'd'
+*** Multiplication of an element of G_{{x0}} by an element of Q_{{x0}}
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-@brief Multiply \f$x_g \in G(4096_)\f$ by \f$x \in Q_{{x1}}\f$ 
+@brief Multiply \f$x_g \in G(4096_x)\f$ by \f$x \in Q_{{x0}}\f$ 
 
 The function multiplies the element \f$x_g\f$ of \f$G(4096_x)\f$ 
 (stored in the structure ``qs`` referred by ``pqs``) by the element 
-\f$x\f$ of \f$Q_{{x1}}\f$ and stores the result in ``qs``.
+\f$x\f$ of \f$Q_{{x0}}\f$ and stores the result in ``qs``.
 Element f$x\f$ is encoded in **Leech lattice encoding**.
 */ 
 static inline 
@@ -790,7 +790,7 @@ int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 }
 
 /*************************************************************************
-*** Construction of a group element with tag 'p'
+*** Construction of an element of G_{{x0}}  with tag 'p'
 *************************************************************************/
 
 
@@ -834,7 +834,7 @@ int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 
 
 /*************************************************************************
-*** Construction of a group element with tag 'y'
+***  Construction of an element of G_{{x0}}  with tag 'y'
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -875,14 +875,14 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
 
 
 /*************************************************************************
-*** Multiplication of a group element by an atom with tag 'l' 
+*** Multiply an element of G_{{x0}} by an atom with tag 'l' 
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 /** Auxiliary function for function ``mul_qs_xi``
 
-Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+Let \f$x_g \in G(4096_x)\f$ be stored in the structure ``qs`` 
 referred by ``pqs``.
 
 The function right multiplies \f$x_g\f$ with the element 
@@ -912,7 +912,7 @@ int32_t mul_qs_xi1(qstate12_type *pqs)
 
 /** Auxiliary function for function ``mul_qs_xi``
 
-Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+Let \f$x_g \in G(4096_x)\f$ be stored in the structure ``qs`` 
 referred by ``pqs``.
 
 The function right multiplies \f$x_g\f$ with the element 
@@ -937,7 +937,7 @@ int32_t mul_qs_xi2(qstate12_type *pqs)
 
 /** Auxiliary function for function ``xsp2co1_mul_set_elem_word``
 
-Let \f$x_g \in G_{{x1}}\f$ be stored in the structure ``qs`` 
+Let \f$x_g \in G(4096_x)\f$ be stored in the structure ``qs`` 
 referred by ``pqs``.
 
 The function right multiplies \f$x_g\f$ with a power \f$\xi^e\f$
@@ -971,7 +971,7 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 
 
 /*************************************************************************
-*** Multiply a group element by an atom group elements
+*** Multiply an element of G_{{x0}} by a word of generators of G_{{x0}}
 *************************************************************************/
 
 
@@ -1154,15 +1154,16 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 
 
 
-/*************************************************************************
-*** Converting a an element to a vector of the monster rep modulo 3
-*************************************************************************/
 
+
+/*************************************************************************
+*** Obtain Leech lattice transformation from an element of G_{{x0}}
+*************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-@brief Auxiliary function for function ``xsp2co1_elem_row_mod3``
+@brief Auxiliary function for function ``xsp2co1_add_short_3_leech``
 
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
 **Leech lattice mod 3** encoding to the encoding to the endoding
@@ -1186,6 +1187,137 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 }
 
 /// @endcond 
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+@brief add short Leech lattice vector (given mod 3) to Leech lattice vector
+
+Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
+lattice mod 3** encoding, and short Leech latice vectors 
+``src`` and ``dest``, referred by ``psrc`` and ``pdest``, the 
+function computes  ``dest = src + factor * x``. Here ``src`` and 
+``dest`` are given in the standard basis, so that a unit vector of 
+length ``sqrt(8)`` has one entry with absolute value ``8``.
+ 
+*/
+static
+int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
+{
+    uint_fast32_t  gcodev, cocodev, w1, w2;
+    int_fast8_t f[4], i;
+    f[0] = f[3] = 0;
+    x = short_3_reduce(x);
+    w1 = mat24_bw24((uint32_t)x); 
+    w2 = mat24_bw24((uint32_t)(x >> 24));
+    switch (w1 + w2) {
+        case 23:
+            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) 
+                return ERR_QSTATE12_LEECH_OP;
+            f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
+            f[1] = (int8_t)factor;
+            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
+            break;              
+        case 8:
+            if (w1 & 1) return ERR_QSTATE12_LEECH_OP;
+            gcodev = (x | (x >> 24)) & 0xffffffUL;
+            f[1] = -2 * (int8_t)factor;
+            break;
+        case 2:
+            gcodev = 0;
+            f[1] = 4 * (int8_t)factor;
+            break;
+        default:
+            return ERR_QSTATE12_LEECH_OP;        
+    }
+    f[2] = -f[1];
+    gcodev = mat24_vect_to_gcode(gcodev);
+    if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
+    x = xsp2co1_to_vect_mod3(x);
+
+    for (i = 0; i < 24; ++i) {
+        pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
+    }
+    return 0;
+}
+
+/// @endcond 
+
+/**
+@brief Get Leech lattice matrix from \f$g \in G_{{x0}}\f$ 
+
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. 
+\f$G_{{x0}}\f$ operates faithfully on the space
+\f$4096_x \otimes_\mathbb{{Z}} \Lambda\f$. This function 
+constructs a \f$24 \times 24\f$ integer matrix
+\f$L_g\f$ such that  \f$\frac{{1}}{{8}} L_g\f$ corresponds 
+to the operation of \f$g\f$ on \f$\Lambda\f$. It stores
+entry  \f$L_g[i,j]\f$ in ``dest[24*i+j]``.  Matrix \f$L_g\f$ 
+is unique up to sign.
+
+Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
+(representation of) an orthogonal \f$4096 \times 4096\f$
+matrix \f$x_g\f$ such that right multiplication with the 
+Kronecker product  
+\f$\frac{{1}}{{8}} x_g \otimes L_g\f$ is equal to the 
+action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
+{
+    uint64_t src3[25], dest3[25];
+    int_fast32_t res, i;
+    qstate12_type qs;
+    
+    // We let ``elem`` act on a sequence of short vectors
+    // ``4*e_{{i}} -  4*e_{{i+1}}``, with ``e_i`` the ``i-``th
+    // unit vector of the Leech lattice, and indices 
+    // ``i = 2,...,25 `` taken modulo ``24``. We append the
+    // unit vector ``4*e_{{2}} +  4*e_{{3}}`` to that sequence.
+    // Adjacent vectors have nonzero scalar product modulo ``3``,
+    // so we may use function ``xsp2co1_chain_short_3`` to compute
+    // the images of the vectors in that sequence under the group
+    // element ``elem``. Form these images we may compute the
+    // images of the unit vectors ``8 * e_i``, which form the
+    // matrix ``8 * L``.
+
+    for (i = 0; i <= 20; ++i) src3[i] = STD_V3 << i;
+    src3[21] =  0x1800000ULL;
+    src3[22] =  STD_V3 >> 2;
+    src3[23] =  STD_V3 >> 1;
+    src3[24] =  0xc;
+    dest3[0] =  elem[0];
+
+    res =  xsp2co1_elem_to_qs_i(elem, &qs);
+    if (res < 0) return res;
+    res = xsp2co1_chain_short_3(&qs, 25, src3, dest3);
+    if (res < 0) return res;
+
+    memset(pdest + 2*24, 0, 24);
+    res = xsp2co1_add_short_3_leech(dest3[24], 1, pdest + 2*24, pdest + 2*24);
+    memcpy(pdest + 3*24, pdest + 2*24, 24);
+    res |= xsp2co1_add_short_3_leech(dest3[0], 1, pdest + 2*24, pdest + 2*24);
+    res |= xsp2co1_add_short_3_leech(dest3[0], -1, pdest + 3*24, pdest + 3*24);
+    res |= xsp2co1_add_short_3_leech(dest3[23], 2, pdest + 2*24, pdest + 1*24);
+    res |= xsp2co1_add_short_3_leech(dest3[22], 2, pdest + 1*24, pdest + 0*24);
+    res |= xsp2co1_add_short_3_leech(dest3[21], 2, pdest + 0*24, 
+              pdest + 23*24);
+    for (i = 20; i >= 2; --i) {
+       res |= xsp2co1_add_short_3_leech(dest3[i], 2, pdest + (i+3)*24, 
+           pdest + (i+2)*24);
+    }
+    return res;
+}
+
+
+/*************************************************************************
+*** Convert element of G_{{x0}} to a vector of the monster rep modulo 3
+*************************************************************************/
+
+
 
 
 /**
@@ -1280,140 +1412,6 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
         assoc ^= m[d+1];
     } 
     return 0;   
-}
-
-
-
-
-/*************************************************************************
-*** Converting a short vector modulo 3 to a Leech lattice vector
-*************************************************************************/
-
-
-
-/// @cond DO_NOT_DOCUMENT 
-
-/**
-@brief add short Leech lattice vector (given mod 3) to Leech lattice vector
-
-Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
-lattice mod 3** encoding, and short Leech latice vectors 
-``src`` and ``dest``, referred by ``psrc`` and ``pdest``, the 
-function computes  ``dest = src + factor * x``. Here ``src`` and 
-``dest`` are given in the standard basis, so that a unit vector of 
-length ``sqrt(8)`` has one entry with absolute value ``8``.
- 
-*/
-static
-int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
-{
-    uint_fast32_t  gcodev, cocodev, w1, w2;
-    int_fast8_t f[4], i;
-    f[0] = f[3] = 0;
-    x = short_3_reduce(x);
-    w1 = mat24_bw24((uint32_t)x); 
-    w2 = mat24_bw24((uint32_t)(x >> 24));
-    switch (w1 + w2) {
-        case 23:
-            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
-            if ((cocodev == 0) || (cocodev & (cocodev - 1))) 
-                return ERR_QSTATE12_LEECH_OP;
-            f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
-            f[1] = (int8_t)factor;
-            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
-            break;              
-        case 8:
-            if (w1 & 1) return ERR_QSTATE12_LEECH_OP;
-            gcodev = (x | (x >> 24)) & 0xffffffUL;
-            f[1] = -2 * (int8_t)factor;
-            break;
-        case 2:
-            gcodev = 0;
-            f[1] = 4 * (int8_t)factor;
-            break;
-        default:
-            return ERR_QSTATE12_LEECH_OP;        
-    }
-    f[2] = -f[1];
-    gcodev = mat24_vect_to_gcode(gcodev);
-    if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
-    x = xsp2co1_to_vect_mod3(x);
-
-    for (i = 0; i < 24; ++i) {
-        pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
-    }
-    return 0;
-}
-
-/// @endcond 
-
-/**
-@brief Get Leech lattice matrix from \f$g \in G_{{x0}}\f$ 
-
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
-in **G_x0 representation**. This means that \f$g\f$ is
-given as a pair
-\f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$.
-\f$G_{{x0}}\f$ operates faithfully on the space
-\f$4096_x \otimes_\mathbb{{Z}} \Lambda\f$. This function 
-constructs a \f$24 \times 24\f$ integer matrix
-\f$L_g\f$ such that  \f$\frac{{1}}{{8}} L_g\f$ corresponds 
-to the operation of \f$g\f$ on \f$\Lambda\f$. It stores
-entry  \f$L_g[i,j]\f$ in ``dest[24*i+j]``.  Matrix \f$L_g\f$ 
-is unique up to sign.
-
-Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
-(representation of) an orthogonal \f$4096 \times 4096\f$
-matrix \f$x_g\f$ such that right multiplication with the 
-Kronecker product  
-\f$\frac{{1}}{{8}} x_g \otimes L_g\f$ is equal to the 
-action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
-*/
-// %%EXPORT px
-int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
-{
-    uint64_t src3[25], dest3[25];
-    int_fast32_t res, i;
-    qstate12_type qs;
-    
-    // We let ``elem`` act on a sequence of short vectors
-    // ``4*e_{{i}} -  4*e_{{i+1}}``, with ``e_i`` the ``i-``th
-    // unit vector of the Leech lattice, and indices 
-    // ``i = 2,...,25 `` taken modulo ``24``. We append the
-    // unit vector ``4*e_{{2}} +  4*e_{{3}}`` to that sequence.
-    // Adjacent vectors have nonzero scalar product modulo ``3``,
-    // so we may use function ``xsp2co1_chain_short_3`` to compute
-    // the images of the vectors in that sequence under the group
-    // element ``elem``. Form these images we may compute the
-    // images of the unit vectors ``8 * e_i``, which form the
-    // matrix ``8 * L``.
-
-    for (i = 0; i <= 20; ++i) src3[i] = STD_V3 << i;
-    src3[21] =  0x1800000ULL;
-    src3[22] =  STD_V3 >> 2;
-    src3[23] =  STD_V3 >> 1;
-    src3[24] =  0xc;
-    dest3[0] =  elem[0];
-
-    res =  xsp2co1_elem_to_qs_i(elem, &qs);
-    if (res < 0) return res;
-    res = xsp2co1_chain_short_3(&qs, 25, src3, dest3);
-    if (res < 0) return res;
-
-    memset(pdest + 2*24, 0, 24);
-    res = xsp2co1_add_short_3_leech(dest3[24], 1, pdest + 2*24, pdest + 2*24);
-    memcpy(pdest + 3*24, pdest + 2*24, 24);
-    res |= xsp2co1_add_short_3_leech(dest3[0], 1, pdest + 2*24, pdest + 2*24);
-    res |= xsp2co1_add_short_3_leech(dest3[0], -1, pdest + 3*24, pdest + 3*24);
-    res |= xsp2co1_add_short_3_leech(dest3[23], 2, pdest + 2*24, pdest + 1*24);
-    res |= xsp2co1_add_short_3_leech(dest3[22], 2, pdest + 1*24, pdest + 0*24);
-    res |= xsp2co1_add_short_3_leech(dest3[21], 2, pdest + 0*24, 
-              pdest + 23*24);
-    for (i = 20; i >= 2; --i) {
-       res |= xsp2co1_add_short_3_leech(dest3[i], 2, pdest + (i+3)*24, 
-           pdest + (i+2)*24);
-    }
-    return res;
 }
 
 
