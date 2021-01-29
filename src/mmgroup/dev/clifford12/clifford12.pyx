@@ -42,6 +42,7 @@ QSTATE12_ERROR_STRINGS = {
  -101: "Shape mismatch in QStateMatrix operation",
  -102: "QStateMatrix is not invertible",
  -103: "QStateMatrix is not in the Pauli group",
+ -104: "QStateMatrix is not monomial",
  
  # Additional error codes taken from file xsp2co1.c
  -201: "Internal error in operation of group Co_0",
@@ -303,6 +304,15 @@ cdef class QState12(object):
         """ 
         cdef int32_t res = cl.qstate12_check(&self.qs)
         return res 
+
+    def monomial_row_op(self):
+        a = np.zeros(self.qs.nrows, dtype = np.uint32)
+        cdef uint32_t[:] a_view = a 
+        cdef int32_t res
+        res = cl.qstate12_monomial_matrix_row_op(&self.qs, &a_view[0])
+        if (res >= 0):
+            return a
+        chk_qstate12(res)
 
     #########################################################################
     # Reshaping a state matrix

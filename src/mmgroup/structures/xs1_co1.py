@@ -27,6 +27,7 @@ from mmgroup.clifford12 import xsp2co1_copy_elem
 from mmgroup.clifford12 import xsp2co1_reduce_elem
 from mmgroup.clifford12 import xsp2co1_elem_to_leech_op
 from mmgroup.clifford12 import xsp2co1_set_elem_word 
+from mmgroup.clifford12 import xsp2co1_mul_elem_word 
 from mmgroup.clifford12 import xsp2co1_xspecial_vector
 from mmgroup.clifford12 import xsp2co1_xspecial_conjugate
 from mmgroup.clifford12 import xsp2co1_elem_xspecial
@@ -141,6 +142,11 @@ class Xs12_Co1_Word(AbstractGroupWord):
             return list(map(int,v))
         else:
             return int(v[0])
+
+    def mul_data(self, data):
+        a_atoms = np.array(data, dtype = np.uint32)
+        xsp2co1_mul_elem_word(self._data, a_atoms, len(a_atoms))
+
 
 
 ###########################################################################
@@ -296,6 +302,25 @@ class Xs12_Co1_Group(AbstractGroup):
         chk_qstate12(xsp2co1_elem_xspecial(w._data, x))
         return w
 
+    def from_data(self, data):
+        """Create a group element from an array of generators
+
+        Internally, an element of group is represented
+        as an array of unsigned 32-bit integers, where each entry
+        of the array describes a generator. See section
+        :ref:`header-mmgroup-generators-label` for details.
+ 
+        This function creates an element of the group from
+        such an array of integers.
+
+        :param data: An array-like object representing a 
+                     word of generators of the monster group
+
+        :return: An element of this instance of the group 
+        :rtype:  an instance of class mmgroup.xs1_co1.Xs12_Co1_Word
+
+        """
+        return self.word_type(data, group = self)
 
 
 

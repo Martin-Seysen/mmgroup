@@ -307,7 +307,14 @@ class MMGroupWord(AbstractGroupWord):
              
     @property
     def data(self):
-        return self._data[:self.length]
+        """Return the internal representation of the group element
+
+        Internally, an element of the monster group is represented
+        as an array of unsigned 32-bit integers, where each entry
+        of the array describes a generator. See section
+        :ref:`header-mmgroup-generators-label` for details.
+        """
+        return np.copy(self._data[:self.length])
         
     def __len__(self):
         return self.length
@@ -475,22 +482,23 @@ class MMGroup(AbstractGroup):
       :widths: 25 75
 
       +---------------------+-------------------------------------------+
-      | type                | Evaluates to                              |
+      | Object of type      | Evaluates to                              |
       +=====================+===========================================+
       | tuple (``tag, i``)  | ``M((tag, i))`` is equivalent to          |
       |                     | ``M.atom(tag, i)``                        |
       +---------------------+-------------------------------------------+
-      | class |AutPL|       | The automorphism :math:`\pi` of the       | 
-      |                     | Parker loop represented as an instance    |
-      |                     | of class |AutPL| is mapped to             |
+      | class |AutPL|       | The Parker loop automorphism :math:`\pi`  | 
+      |                     | given by that object is mapped to         |
       |                     | :math:`x_\pi \in \mathbb{M}`              |
       +---------------------+-------------------------------------------+
       | class |MMGroupWord| | A deep copy of the given element of       | 
-      |                     | :math:`\mathbb{M}` is returned.           |
+      |                     | :math:`\mathbb{M}` is made                |
       +---------------------+-------------------------------------------+
       | ``str``             | For an element ``g`` of ``M`` we have     |
-      |                     | ``M(str(g)) == g``. This is helpful for   |
-      |                     | rereading printed elements of ``M``.      |
+      |                     | ``M(str(g)) == g``.                       |
+      |                     |                                           |
+      |                     | So we can reread                          |
+      |                     | printed elements of ``M``.                |
       +---------------------+-------------------------------------------+
 
     See class |MMGroupWord| for the group operation on an instance
@@ -543,19 +551,14 @@ class MMGroup(AbstractGroup):
           +-------+-----------------+----------------------------------------+
           | Tag   | Number  ``i``   | Type of element                        |
           +=======+=================+========================================+
-          |``'p'``| ``0-244823039`` | The standard representative            |
-          |       |                 | ``AutPL(('p',i))`` of the  ``i``-th    |
-          |       |                 | element of the Mathieu group           |
-          |       |                 | ``M_24`` in |AutPL|. ``i`` may also    |
-          |       |                 | be an instance of class |AutPL|.       |
+          |``'p'``| ``0-244823039`` | The automorphism ``AutPL(('p',i))`` of |
+          |       |                 | the Parker loop, see below.            |
           +-------+-----------------+----------------------------------------+
           |``'d'``| ``0-0xfff``     | The diagonal automorphism ``Cocode(i)``| 
-          |       |                 | in |AutPL|. ``i`` may also             |
-          |       |                 | be an instance of class |Cocode|.      |
+          |       |                 | in |AutPL|.                            |
           +-------+-----------------+----------------------------------------+
           |``'x'``| ``0-0x1fff``    | The element :math:`x_e`,  with         |
-          |       |                 | ``e = PLoop(i)``.  ``i`` may also      |
-          |       |                 | be an instance of class |PLoop|.       |
+          |       |                 | ``e = PLoop(i)``.                      |
           +-------+-----------------+----------------------------------------+
           |``'y'``| ``0-0x1fff``    | The element :math:`y_e`,               |
           |       |                 | ``e = PLoop(i)``;                      |
@@ -572,18 +575,29 @@ class MMGroup(AbstractGroup):
         
         Remarks
         
-        In ``i`` is the string ``'r'`` then a random element with the   
+        If ``i`` is the string ``'r'`` then a random element with the   
         given tag is generated.  If ``i`` is the string ``'n'`` then
         a random element with the given tag is generated, which is 
-        different from  ``1`` with a very high probability.
+        different from the neutral element with a very high 
+        probability.
 
         If ``tag == 'd'`` then  ``i = 'o'`` generates a random odd 
-        and ``i = 'e'`` generates a  random even diagonal automorphism.  
+        and ``i = 'e'`` generates a  random even diagonal automorphism.
+        In this case `i`` may also be an instance of class |Cocode|, 
+        representing the diagonal automorphism correspnding to the
+        given element of the Golay cocode.   
         
-        If the ``tag`` is ``'p'`` and ``i`` is an instance of class 
-        |AutPL| then the returned atom is determined by the instance of 
-        class |AutPL|; so it is not necessarily the standard 
-        representative of an element of the Mathieu group ``M_24``. 
+        If ``tag == 'p'`` then ``i`` may also be an instance of class 
+        |AutPL|. Then the returned atom is the Parker loop automorphism
+        given by that instance. If ``i`` is an integer then the Parker 
+        loop  automorphism ``AutPL(('p',i))`` is returned. This 
+        automorphism is the standard rpresentative of the i-th element 
+        of the  Mathieu group ``M_24`` in the automorphism group of the 
+        Parker loop.
+
+        If ``tag`` is ``'x'``,   ``'y'`` or ``'z'`` then ``i`` 
+        may also be an instance of class |PLoop|, representing an 
+        element of the Parker loop. 
 
         The exponent ``i`` for a tag ``'t'`` or ``'l'`` is reduced
         modulo ``3``. 
@@ -665,6 +679,25 @@ class MMGroup(AbstractGroup):
             import_mm_order_functions()
         return g1.group == g2.group and check_mm_equal(g1, g2)
 
+    def from_data(self, data):
+        """Create a group element from an array of generators
+
+        Internally, an element of the monster group is represented
+        as an array of unsigned 32-bit integers, where each entry
+        of the array describes a generator. See section
+        :ref:`header-mmgroup-generators-label` for details.
+ 
+        This function creates an element of the monster group from
+        such an array of integers.
+
+        :param data: An array-like object representing a 
+                     word of generators of the monster group
+
+        :return: An element of this instance of the monster group 
+        :rtype:  an instance of class mmgroup.MMGroupWord
+
+        """
+        return self.word_type(data, group = self)
 
 # Predefine a standard instance of class MMGroup
 MM =  MMGroup()

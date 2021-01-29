@@ -164,6 +164,7 @@ enum qstate12_error_type
     ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
     ERR_QSTATE12_PAULI_GROUP = -103, ///< Matrix is not in the Pauli group
+    ERR_QSTATE12_NOT_MONOMIAL = -104, ///< Matrix is not monomial
 
     ERR_QSTATE12_LEECH_OP = -201,  ///< Internal error in operation of group Co_0
     ERR_QSTATE12_REP_GX1 = -202,   ///< Error in operation of group 2^{{1+24}}.Co_1

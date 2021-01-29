@@ -130,13 +130,16 @@ The Monster Group
 .. automodule:: mmgroup.mm_group
 
 
+Python classes implementing the monster group
+--------------------------------------------- 
+
 .. autoclass:: mmgroup.MMGroup
-   :members: atom, neutral, rand_word, rand_atom, 
-             sample, word,   
+   :members: atom, neutral, rand_word, rand_atom,
+             sample, word, from_data
 
 
 .. autoclass:: mmgroup.MMGroupWord
-   :members:  as_tuples, copy,  is_reduced, reduce, order 
+   :members:  as_tuples, copy,  is_reduced, reduce, order, data
 
 
 .. _mmrep-label:

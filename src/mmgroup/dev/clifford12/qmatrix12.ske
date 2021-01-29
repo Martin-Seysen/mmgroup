@@ -163,7 +163,6 @@ int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb)
 */
 // %%EXPORT p
 int32_t qstate12_monomial_column_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t *pa) 
-
 {
     uint64_t *m = pqs->data, mask1;
     uint_fast32_t i;
@@ -202,6 +201,63 @@ int32_t qstate12_monomial_row_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t 
     return qstate12_rot_bits(pqs, nqb, 2*nqb, 0);
 }
 
+
+/*************************************************************************
+*** Obtaining the monomial operation of a quadratic state matrix
+*************************************************************************/
+
+/**
+  @brief Obtain operation of a monomial quadratic state matrix
+
+  A monomial matrix maps unit vectors to unit vectors, if we
+  ignore scalar factors. Let ``qs`` be the matrix referred by
+  ``pqs``. We assume that ``qs`` has exactly one nonzero entry in
+  each row. Then right multiplication with ``qs`` maps unit 
+  vectors to unit vectors, up to a scalar factor. Otherwrise the
+  function returns ERR_QSTATE12_NOT_MONOMIAL.
+
+  If we label each unit vector by a bit vector then the operation
+  of ``qs`` on these bit vectors labels is affine. If ``qs`` has 
+  shape ``(r,c)`` then we compute an ``r+1`` times ``c`` bit matrix 
+  ``a`` in the array referred by ``pa`` with the following property:
+
+  Label ``(b[0],...,b[r-1])`` is mapped to label 
+  ``(1, b[0],...,b[r-1]) * a``.
+
+  The function returns the number ``r+1`` of rows of ``a``.
+
+  From bit matrix  ``a`` we can construct a unique matrix ``qs1``, of 
+  the same shape as ``qs``, that maps unit vectors to unit vectors  as
+  given by the mapping of the labels. In case ``r == c`` this can be
+  done by calling ``qstate12_monomial_row_matrix(pqs1, r, pa)``,
+  where ``pqs1`` points to a buffer for ``qs1``.
+
+  Then ``qs`` can be obtained by multiplying ``qs1`` with a
+  diagonal matrix.    
+*/
+// %%EXPORT p
+int32_t qstate12_monomial_matrix_row_op(qstate12_type *pqs, uint32_t *pa) 
+{
+    uint64_t row_mask, col_mask, data_mask, err = 0;
+    uint32_t i, rows, cols;
+    int32_t res;
+    uint64_t *m = pqs->data;
+
+    if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    cols = pqs->shape1; rows = pqs->ncols - cols;
+    if (pqs->nrows != rows + 1) return ERR_QSTATE12_NOT_MONOMIAL;
+    row_mask = ((ONE << rows) - 1) << cols;
+    col_mask = (ONE << cols) - 1;
+    data_mask = (ONE << (rows + cols));
+    pa[0] = (uint32_t)(m[0] & col_mask);
+    for (i = 1; i <= rows; ++i) {
+        data_mask >>= 1;
+        err |= (m[i] ^ data_mask) & row_mask;
+        pa[rows + 1 - i] =  (uint32_t)(m[i] & col_mask);
+    }
+    return err ? ERR_QSTATE12_NOT_MONOMIAL : rows + 1;    
+}
 
 /*************************************************************************
 *** Reshaping a quadratic state matrices

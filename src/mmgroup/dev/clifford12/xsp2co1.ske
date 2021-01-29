@@ -435,12 +435,12 @@ int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
     if (res < 0) return res;
     res = qstate12_mat_t(pqs);
     if (res < 0) return res;
-    return qstate12_reduce;
+    return qstate12_reduce(pqs);
 }
 
 
 /**
-@brief Construct \f$g \in G_{{x0}}\f$ from pair \f$(x_g, x_v)\f$ 
+@brief Construct \f$g \in G_{{x0}}\f$ from pair \f$(x_g, v_g)\f$ 
 
 The function constructs a \f$g \in G_{{x0}}\f$ as a pair 
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ and 
@@ -464,14 +464,14 @@ in the element \f$g\f$, and this function also requires that
 inverse in the structure referred by ``pqs``.
 */
 // %%EXPORT p
-int32_t xsp2co1_qs_to_elem_i(qstate12_type *pqs, uint64_t v3, uint64_t *elem)
+int32_t xsp2co1_qs_to_elem_i(qstate12_type *pqs, uint64_t v_g, uint64_t *elem)
 {
     int32_t res;
     res = qstate12_reduce(pqs); 
     if (res < 0) return res;
     res = qstate12_check(pqs);
     if (res < 0) return res;
-    return  xsp2co1_qs_to_elem_i_noreduce(pqs, v3, elem);    
+    return  xsp2co1_qs_to_elem_i_noreduce(pqs, v_g, elem);    
 }
 
 
@@ -1311,6 +1311,118 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
     }
     return res;
 }
+
+
+
+/*************************************************************************
+*** Convert element of G_{{x0}} to a word in its generators
+*************************************************************************/
+/**
+@brief Convert element of \f$G_{{x0}}\f$ to a word in its generators
+
+Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``. The function
+converts \f$g\f$ to a word in the generators of \f$g\f$ and store
+that word in the array ``a``. Then  each entry of ``a`` encodes a 
+generator of \f$G_{{x0}}\f$ as described in file 
+``mmgroup_generators.h``. The function returns the length of that 
+word.
+
+Such a word may have up to 10 entries.
+
+Caution: Function is yet buggy!!
+*/
+int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
+{
+    int32_t res, len_a = 0;
+    uint64_t img_Omega = 0x800000;
+    uint64_t elem_reduced[26], qs_atom_data[25];
+    qstate12_type qs, qs_atom;
+    uint64_t v_g;
+    uint32_t atom;
+    uint32_t monomial[13];
+    uint8_t perm[24];
+    uint64_t x;
+    
+    // Compute image of \Omega under conugation and store
+    // the result in img_Omega.
+    res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
+    if (res < 0) return res;
+    // Compute a word w of generators of $G_{{x0}} that maps
+    // img_Omega to Omega and store the result in a
+    // We store the lenght of thw word w in len_a.
+    len_a = gen_leech2_reduce_type4((uint32_t)img_Omega, a);
+    if (len_a < 0) return len_a;
+    // Compute g * w in ``elem_reduced``. Then ``elem_reduced`` 
+    // stabilizes \Omega
+    xsp2co1_copy_elem(elem, elem_reduced);
+    res =  xsp2co1_mul_elem_word(elem_reduced, a, len_a);
+    if (res < 0) return res;
+    // Compute inverse part x_g of ``elem_reduced`` in ``qs``
+    res = xsp2co1_elem_to_qs_i(elem_reduced, &qs);
+    if (res < 0) return res;
+    qstate12_mat_t(&qs);
+    res = qstate12_reduce(&qs);
+    if (res < 0) return res;
+    // Store part v_g of ``elem_reduced`` in v_g
+    v_g = elem_reduced[0];
+    
+    // Multiply (x_g, v_g) with y_d^(-1), with d = qs.data[1] & 0x7ff
+    atom = qs.data[1] & 0x7ff;
+    res = qstate12_set_mem(&qs_atom, qs_atom_data, 25);
+    if (res < 0) return res;
+    res = set_qs_y(&qs_atom, atom);
+    if (res < 0) return res;
+    res =  qstate12_matmul(&qs, &qs_atom, &qs);
+    if (res < 0) return res;
+    // append y_d^(-1) to word w
+    a[len_a++] = MMGROUP_ATOM_TAG_IY + atom;
+    // apply y_d^(-1) to v_g
+    atom ^= (MAT24_THETA_TABLE[atom & 0x7ff] & 0x1000);
+    v_g = gen_leech3_op_y(v_g, atom);
+   
+    // Next multiply  (x_q, v_g) with a suitable permutation pi
+    // Copute permutation as Parker loop automorphism in autpl
+    for (i = 0; i < 12; ++i) autpl[i] = (uint32_t)(qs.data[12-i] & 0xfff);
+    mat24_autpl_set_qform(autpl);
+    // Make element of G_{{x0}} from autpl  in  qs_atom 
+    res = set_qs_delta_pi_aut(&qs_atom, autpl);
+    if (res < 0) return res;
+    // Multiply qs by qs_atom
+    res =  qstate12_matmul(&qs, &qs_atom, &qs);
+    if (res < 0) return res;
+    // Store inverse of autpl as permutation in perm
+    mat24_autpl_to_perm(autpl, perm);
+    mat24_inv_perm(perm, perm);
+    // Apply perm to v3
+    v_g = gen_leech3_op_pi(v_g, perm);
+    // Compute permutation number of perm in atom
+    atom =  mat24_perm_to_m24num(perm);
+    // Append atom correspont to inverted permutation
+    a[len_a++] = MMGROUP_ATOM_TAG_IP + atom;
+    
+    // Now we work along the lines of function 
+    // ``xsp2co1_xspecial_vector`` to convert (x_g, v_g) 
+    // to an element of Q_{{x0}}. We store the result in x
+    // in **Leech latice encoding**
+    res = qstate12_pauli_vector(&qs, &x);
+    if (res < 0) {
+       return res == ERR_QSTATE12_PAULI_GROUP ? 
+                     ERR_QSTATE12_NOTIN_XSP : res;
+    }
+    v_g = short_3_reduce(v_g);
+    if (v_g == STD_V3_NEG) x ^= 0x1000000;
+    else if (v_g != STD_V3) return ERR_QSTATE12_NOTIN_XSP;
+    x = conv_pauli_vector_xspecial((uint32_t) x);
+    
+    // Convert x from Leech lattice encoding to (x_d,x_delta)
+    x ^= MAT24_THETA_TABLE[(x >> 12) & 0x7ff] & 0x7ff;
+    // append (x_d,x_delta) to word w
+    a[len_a++] = MMGROUP_ATOM_TAG_X + ((atom >> 12) & 0x1fff);
+    a[len_a++] = MMGROUP_ATOM_TAG_D + (atom  & 0xfff);
+       
+    return len_a;
+}
+
 
 
 /*************************************************************************

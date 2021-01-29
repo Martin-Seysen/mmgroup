@@ -94,18 +94,20 @@ basis vector as a tuple ``(tag, i0, i1)``.
   :math:`X^+_{d \cdot \delta}` ``('T',o,s)`` ``o = x.octad``, 
                                              ``s = x.suboctad``,
                                              ``x = SubOctad(d, delta)``,
+
                                              :math:`d \in \mathcal{P}`,
                                              :math:`\delta \in \mathcal{C^*}`,
                                              :math:`d` an octad, 
                                              :math:`\delta \subset d`,
                                              :math:`\delta` even. See class
-                                             |SubOctad| for background.
+                                             |SubOctad|.
 
                                              We have ``0 <= o < 759``,
                                              ``0 <= s < 64``. 
 
   :math:`X^+_{d \cdot i}`      ``('X',d,i)`` ``0 <= d < 2048``, 
                                              ``0 <= i < 24``,
+
                                              ``d`` represents the element
                                              ``PLoop(d)`` of the Parker
                                              loop :math:`\mathcal{P}`
@@ -373,31 +375,39 @@ class MMSpace(AbstractMmRepSpace):
       ====================== ============================================= 
       type                   Evaluates to                               
       ====================== ============================================= 
-      ``(f,tag, i0, i1)``    Here ``tag`` must be one of the letters           
-                             ``ABCTXYZ``, and ``i0, i1`` must be integers. 
+      ``(f,tag, i0, i1)``    ``tag`` must be one of the letters           
+                             ``ABCTXYZ``; ``i0, i1`` must be integers. 
+
                              The tuple ``(tag, i0, i1)`` denotes a basis 
-                             vector of the space as described in the table 
-                             above. ``f`` is an optional integer factor 
+                             vector as in the table above. 
+
+                             ``f`` is an optional integer factor 
                              for the basis vector, default is ``1``.                       
       ---------------------- --------------------------------------------- 
       ``(f,'D', i0)``        Shorthand for ``(f,'A', i0, i0)``   
       ---------------------- --------------------------------------------- 
       ``(f,'I', i0, i1)``    Shorthand for ``f`` times the sum of the
                              basis vectors 
+
                              ``('A', i0, i0)`` + ``('A', i1, i1)`` - 
-                             ``('A', i0, i1)`` - ``2 * ('B', i0, i1)``,
+                             ``('A', i0, i1)`` - ``2 ('B', i0, i1)``,
+
                              see remark below. 
       ---------------------- --------------------------------------------- 
       ``(f,'E', i)``         This is ``f`` times the basis vector with
-                             *linear* index ``i``. See method
+                             *linear* index ``i``. 
+
+                             See method
                              ``tuple_to_index`` for converting a tuple to         
-                             a linear index of a basis vector.              
+                             a linear index.              
       ---------------------- --------------------------------------------- 
        class |MMSpaceVector| A deep copy of the given vector is returned.            
       ---------------------- --------------------------------------------- 
        ``str``               For an vector ``v`` in ``V`` we have      
-                             ``V(str(v)) == v``. This is helpful    
-                             for rereading printed vectors.       
+                             ``V(str(v)) == v``. 
+
+                             This is helpful for rereading printed 
+                             vectors.       
       ====================== ============================================= 
 
     Remarks
