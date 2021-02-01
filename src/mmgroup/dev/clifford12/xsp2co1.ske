@@ -1364,7 +1364,7 @@ int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
 @brief Convert element of \f$G_{{x0}}\f$ to a word in its generators
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``. The function
-converts \f$g\f$ to a word in the generators of \f$g\f$ and store
+converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
 that word in the array ``a``. Then  each entry of ``a`` encodes a 
 generator of \f$G_{{x0}}\f$ as described in file 
 ``mmgroup_generators.h``. The function returns the length of that 
@@ -1377,95 +1377,55 @@ Caution: Function is yet buggy!!
 // %%EXPORT px
 int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 {
-    int32_t res, len_a = 0;
+    int32_t res, len_a0, len_a, x, i;
     uint64_t img_Omega = 0x800000;
-    uint64_t elem_reduced[26], qs_atom_data[25];
-    qstate12_type qs, qs_atom;
-    uint64_t v_g;
-    uint32_t atom;
-    uint32_t monomial[13];
-    uint8_t perm[24];
-    uint64_t x;
+    uint64_t elem_reduced[26];
+    uint32_t a0[10];
     
-    // Compute image of \Omega under conugation and store
+    // Compute image of \Omega under conjugation and store
     // the result in img_Omega.
     res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
     if (res < 0) return res;
-    // Compute a word w of generators of $G_{{x0}} that maps
-    // img_Omega to Omega and store the result in a
-    // We store the lenght of thw word w in len_a.
-    len_a = gen_leech2_reduce_type4((uint32_t)img_Omega, a);
-    if (len_a < 0) return len_a;
-    // Compute g * w in ``elem_reduced``. Then ``elem_reduced`` 
-    // stabilizes \Omega
+    // Compute a word w0 of generators of G_{{x0}} that maps
+    // img_Omega to Omega (by conjugation) and store the result 
+    // in a0. We store the length of the word w0 in len_a0.
+    len_a0 = gen_leech2_reduce_type4((uint32_t)img_Omega, a0);
+    if (len_a0 < 0) return len_a0;
+    // Compute g * w0 in ``elem_reduced``. Then ``elem_reduced`` 
+    // stabilizes \Omega. Hence ``elem_reduced`` is monomial 
+    // in the rep ``4096_x``.
     xsp2co1_copy_elem(elem, elem_reduced);
-    res =  xsp2co1_mul_elem_word(elem_reduced, a, len_a);
+    res = xsp2co1_mul_elem_word(elem_reduced, a0, len_a0);
     if (res < 0) return res;
-    // Compute inverse part x_g of ``elem_reduced`` in ``qs``
-    res = xsp2co1_elem_to_qs_i(elem_reduced, &qs);
+    // Compute a word ``w1`` of generators of G_{{x0}} such that
+    // ``elem_reduced * w1`` is in Q_{{x0}}; append ``w1`` to ``w0``.
+    len_a = xsp2co1_elem_monomial_to_xsp(elem_reduced, a0 + len_a0);
+    if (len_a < 0) return len_a;
+    // Multiply ``elem_reduced`` with the word ``w1``
+    res =  xsp2co1_mul_elem_word(elem_reduced, a0 + len_a0, len_a);
     if (res < 0) return res;
-    qstate12_mat_t(&qs);
-    res = qstate12_reduce(&qs);
-    if (res < 0) return res;
-    // Store part v_g of ``elem_reduced`` in v_g
-    v_g = elem_reduced[0];
+    // Keep the word ``w = w0 w1`` in ``a0`` and store its length
+    // in ``len_a0``.
+    len_a0 = len_a0 + len_a;
+    // Now ``elem_reduced`` is in Q_{{x0}}, Store the value of
+    // ``elem_reduced`` in ``x`` in ``Leech lattice encoding``.
+    x = xsp2co1_xspecial_vector(elem_reduced);
+    if (x < 0) return x;
     
-    /*
-    // Multiply (x_g, v_g) with y_d^(-1), with d = qs.data[1] & 0x7ff
-    atom = qs.data[1] & 0x7ff;
-    res = qstate12_set_mem(&qs_atom, qs_atom_data, 25);
-    if (res < 0) return res;
-    res = set_qs_y(&qs_atom, atom);
-    if (res < 0) return res;
-    res =  qstate12_matmul(&qs, &qs_atom, &qs);
-    if (res < 0) return res;
-    // append y_d^(-1) to word w
-    a[len_a++] = MMGROUP_ATOM_TAG_IY + atom;
-    // apply y_d^(-1) to v_g
-    atom ^= (MAT24_THETA_TABLE[atom & 0x7ff] & 0x1000);
-    v_g = gen_leech3_op_y(v_g, atom);
-   
-    // Next multiply  (x_q, v_g) with a suitable permutation pi
-    // Copute permutation as Parker loop automorphism in autpl
-    for (i = 0; i < 12; ++i) autpl[i] = (uint32_t)(qs.data[12-i] & 0xfff);
-    mat24_autpl_set_qform(autpl);
-    // Make element of G_{{x0}} from autpl  in  qs_atom 
-    res = set_qs_delta_pi_aut(&qs_atom, autpl);
-    if (res < 0) return res;
-    // Multiply qs by qs_atom
-    res =  qstate12_matmul(&qs, &qs_atom, &qs);
-    if (res < 0) return res;
-    // Store inverse of autpl as permutation in perm
-    mat24_autpl_to_perm(autpl, perm);
-    mat24_inv_perm(perm, perm);
-    // Apply perm to v3
-    v_g = gen_leech3_op_pi(v_g, perm);
-    // Compute permutation number of perm in atom
-    atom =  mat24_perm_to_m24num(perm);
-    // Append atom correspont to inverted permutation
-    a[len_a++] = MMGROUP_ATOM_TAG_IP + atom;
-    
-    // Now we work along the lines of function 
-    // ``xsp2co1_xspecial_vector`` to convert (x_g, v_g) 
-    // to an element of Q_{{x0}}. We store the result in x
-    // in **Leech latice encoding**
-    res = qstate12_pauli_vector(&qs, &x);
-    if (res < 0) {
-       return res == ERR_QSTATE12_PAULI_GROUP ? 
-                     ERR_QSTATE12_NOTIN_XSP : res;
+    // Now the result is ``x * a0**(-1)``. We will store a word
+    // representing the result in the array ``a``. We will use   
+    // ``len_a`` for recording the length of the stored word.
+    len_a = 0;
+    x ^= mat24_ploop_theta(x >> 12);  // apply cocycle to get x_delta
+    // First store a word representing ``x`` in ``a``.
+    if (x & 0x1fff000) a[len_a++] = 0x30000000 + (x >> 12); // x_d
+    if (x & 0xfff) a[len_a++] = 0x10000000 + (x & 0xfff); // x_delta
+    // Then append the word ``w**(-1)`` to the word in ``a``.
+    for (i = 0; i < len_a0; ++i) {
+        a[len_a + i] = a0[len_a0 - 1 - i] ^ 0x80000000;
     }
-    v_g = short_3_reduce(v_g);
-    if (v_g == STD_V3_NEG) x ^= 0x1000000;
-    else if (v_g != STD_V3) return ERR_QSTATE12_NOTIN_XSP;
-    x = conv_pauli_vector_xspecial((uint32_t) x);
-    
-    // Convert x from Leech lattice encoding to (x_d,x_delta)
-    x ^= MAT24_THETA_TABLE[(x >> 12) & 0x7ff] & 0x7ff;
-    // append (x_d,x_delta) to word w
-    a[len_a++] = MMGROUP_ATOM_TAG_X + ((atom >> 12) & 0x1fff);
-    a[len_a++] = MMGROUP_ATOM_TAG_D + (atom  & 0xfff);
-    */
-       
+    len_a = len_a + len_a0;
+    // Return length of the final word a
     return len_a;
 }
 
