@@ -449,7 +449,7 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
             case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;
             case MMGROUP_ATOM_TAG_L:
-               q0 = gen_xi_op_xi(q0, v % 3);
+               q0 = gen_xi_op_xi(q0, v);
                break;
             default:
                return (uint32_t)(0-1UL);
@@ -784,10 +784,9 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
         }
         // Apply xi**exp to the permuted vector v2
         if (exp) {
-            exp += 0x60000000;                // Add tag to exponent
-            v2 = gen_leech2_op_atom(v2, exp); // Apply xi**exp to v2
+            v2 = gen_xi_op_xi(v2, exp);       // Apply xi**exp to v2
             if (v2 & 0xfe000000) return -1L;  // Abort if this fails
-            *pg_end++ = exp;                  // Store xi**exp 
+            *pg_end++ = 0xe0000003 - exp;     // Store atom for xi**exp 
         }
     } 
     // Abort if not done after three rounds

@@ -1703,6 +1703,38 @@ void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
    // %%MAT24_MATRIX_TO_PERM   m1, p_out
 }
 
+/**
+  @brief Complete bit matrix for Mathieu group ``Mat24`` from submatrix
+
+  Let the input ``m1`` of the function be a 12 times 12 bit matrix
+  that maps  a Golay code word ``v`` to ``p(v) = v * m1``, as 
+  described in function ``mat24_perm_to_matrix()``.
+
+  There are cases where the first 11 rows and columns of ``m1``
+  can be deduced from an external source, but the last row and 
+  column is unknown. This means the operation of an element of
+  ``Mat24`` on the Golay code is know modulo the code word 
+  ``Omega = (1,...,1)`` only. This function completes such an 
+  11 times 11 bit matrix to a 12 times 12 matrix in place.
+*/
+// %%EXPORT p
+void mat24_matrix_from_mod_omega(uint32_t *m1)
+{
+    uint32_t i, weights = {hex:Mat24_basis_weights_8} << 11;
+    // Let b[i] be the i-th basis vector of the Golay code and w[i] 
+    // the weight of b[i]. Bit i + 11 of ``weights`` is equal to bit  
+    // 3 of ``w[i]``. Bit 3 of the bit weight of the image ``m1[i]``  
+    // of b[i] is obtained from table MAT24_THETA_TABLE. Adding
+    // ``Omega`` to the Golay code word ``m[i]`` flips both, bit 3 
+    // of ``w[i]``, and bit 11 of ``m[i]``. So we can adjust ``m[i]``.
+
+    m1[11] &= ~0xfff;   // m1[11] is always equal to Omega
+    for (i = 0; i < 12; ++i) {
+        m1[i] ^= ((MAT24_THETA_TABLE[m1[i] & 0x7ff] >> 2) 
+                  ^ (weights >> i)) & 0x800;
+    }
+}
+
 
 /*************************************************************************
 *** Mathieu group M24: Mapping a dodecad

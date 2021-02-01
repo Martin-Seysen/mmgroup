@@ -28,6 +28,7 @@ import re
 import os
 from random import randint
 from operator import __or__, __xor__, __and__
+from functools import reduce
 
 import numpy
 from numpy import array, zeros, uint8, uint16, uint32
@@ -414,6 +415,23 @@ class Mat24Tables(object):
         The basis is returned as a list of 12 + 12 integers
         """
         return [cls.basis[i] for i in range(24)]
+
+
+    @classmethod
+    def basis_weights_8(cls):
+        """Return weights of basis of Golay code
+
+        Let ``w[i]`` be the bit weight of the ``i``-th basis
+        vector of the Golay code.
+ 
+        The function returns a integer ``v`` such that bit ``i``  
+        of ``v`` is equal to ``(w[i] >> 3) & 1``.
+        """
+        w = [cls.bw24(cls.basis[i + 12]) for i in range(12)]
+        assert reduce(__or__, w) & 7 == 0
+        bits = [(b >> 3) & 1 for b in w]
+        return sum((b << i for i, b in enumerate(bits)))
+
 
 
     ###########################################################################

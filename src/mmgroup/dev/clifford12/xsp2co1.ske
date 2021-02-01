@@ -366,6 +366,7 @@ int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
     pqs->ncols = 24;
     pqs->shape1 = 12;
     pqs->factor = -12 * 16;
+    pqs->reduced = 0;
     while (pqs->nrows > 1 && pqs->data[pqs->nrows - 1] == 0) {
         --pqs->nrows;
         pqs->factor += 16;
@@ -759,7 +760,8 @@ int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
     if ((res =  qstate12_gate_phi(pqs, (x & 0xfff) << 12, 2)) < 0) 
         return res;
     // Apply not gate to rows i = 0,...,11 if bit i+12 of x is 1.
-    pqs->data[0] ^= x & 0xfff000;
+    if ((res =  qstate12_gate_not(pqs,  x & 0xfff000)) < 0)
+        return res;
     // Negate element if bit 24 of x is set
     pqs->factor ^= (x >> 22) & 4;
     return 0;
@@ -811,7 +813,7 @@ the representation \f$4906_x\f$ of \f$G(4906_x)\f$.
 So we may use fucntion ``qstate12_monomial_column_matrix``
 to convert that monomial matrix to a quadratic state matrix
 in that basis. Then we use function 
-``xsp2co1_conv_conjugate_basi`` from that basis to the
+``xsp2co1_conv_conjugate_basis`` from that basis to the
 stadard basis given by the vectors \f$d_1^+, d_1^+\f$.
 
 */
@@ -1014,6 +1016,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
     }
     res = qstate12_set_mem(&qs_atom, data_atom, MAXROWS_ELEM);
     if (res < 0) return res;
+    
 
     for (i = 0; i < n; ++i) {
         v = a[i];
@@ -1038,7 +1041,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
                res = set_qs_delta_pi_aut(p_atom, aut_i);
                if (res < 0) return res;
                v3 = gen_leech3_op_pi(v3, perm_i);
-               multiply = p_atom == &qs_atom;
+               multiply = p_atom != &qs;
                break;
             case MMGROUP_ATOM_TAG_P:
                mat24_m24num_to_perm(v, perm);
@@ -1046,7 +1049,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
                res = set_qs_delta_pi_aut(p_atom, aut);
                if (res < 0) return res;
                v3 = gen_leech3_op_pi(v3, perm);
-               multiply = p_atom == &qs_atom;
+               multiply = p_atom != &qs;
                break;
             case MMGROUP_ATOM_TAG_IX:
                x ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000) << 12;
@@ -1063,7 +1066,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
                res = set_qs_y(p_atom, x);
                if (res < 0) return res;
                v3 = gen_leech3_op_y(v3, x);
-               multiply = p_atom == &qs_atom;
+               multiply = p_atom != &qs;
                break;
             case MMGROUP_ATOM_TAG_IT:
             case MMGROUP_ATOM_TAG_T:
@@ -1082,10 +1085,10 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
             default:
                return ERR_QSTATE12_GX1_TAG;
         }
-        if (multiply) {
-            res = qstate12_matmul(&qs_atom, &qs, &qs);
-            if (res < 0) return res;
-        }
+        res = 0;
+        if (multiply) res = qstate12_matmul(&qs_atom, &qs, &qs);
+        else if (qs.nrows > 25) res = qstate12_reduce(&qs);
+        if (res < 0) return res;
         p_atom = &qs_atom;
     }
        
@@ -1317,6 +1320,46 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
 /*************************************************************************
 *** Convert element of G_{{x0}} to a word in its generators
 *************************************************************************/
+
+/**
+@brief Map monomial element of \f$G_{{x0}}\f$ to element of \f$Q_{{x0}}\f$
+
+Let \f$g \in G_{{x0}}\f$ stored in the array ``elem``. The matrix
+corresponding to \f$g\f$ in the representation \f$4096_x\f$ must be 
+monomial. The function computes a word \f$w\f$ of in the generators 
+of \f$G_{{x0}}\f$ such that  \f$g w \in Q_{{x0}}\f$. The word  
+\f$w\f$ has length at most 2 and is stored in the array ``a``. Each 
+entry of ``a`` encodes a generator of \f$G_{{x0}}\f$ as described 
+in file ``mmgroup_generators.h``. The function returns the length 
+of that word.
+
+The atoms in the word have tags ``p, y`` in that order. Each word 
+is stored as the inverse of a generator.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
+{
+    int32_t res, len_a = 0;
+    qstate12_type qs_i;
+    uint32_t monomial[13];
+    uint8_t perm[24];
+    uint32_t pi, y;
+    
+    res = xsp2co1_elem_to_qs_i(elem, &qs_i);
+    if (res < 0) return res;
+    res = qstate12_monomial_matrix_row_op(&qs_i, monomial); 
+    if (res < 0) return res;
+    y = (monomial[12] & 0x7ff); 
+    mat24_matrix_from_mod_omega(monomial + 1);
+    mat24_autpl_to_perm(monomial + 1, perm);
+    mat24_inv_perm(perm, perm);
+    pi = mat24_perm_to_m24num(perm);
+    if (pi) a[len_a++] = 0xA0000000 + pi; 
+    if (y) a[len_a++] = 0xC0000000 + y;  
+    return len_a;    
+}
+
+
 /**
 @brief Convert element of \f$G_{{x0}}\f$ to a word in its generators
 
@@ -1331,6 +1374,7 @@ Such a word may have up to 10 entries.
 
 Caution: Function is yet buggy!!
 */
+// %%EXPORT px
 int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 {
     int32_t res, len_a = 0;
@@ -1366,6 +1410,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
     // Store part v_g of ``elem_reduced`` in v_g
     v_g = elem_reduced[0];
     
+    /*
     // Multiply (x_g, v_g) with y_d^(-1), with d = qs.data[1] & 0x7ff
     atom = qs.data[1] & 0x7ff;
     res = qstate12_set_mem(&qs_atom, qs_atom_data, 25);
@@ -1419,6 +1464,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
     // append (x_d,x_delta) to word w
     a[len_a++] = MMGROUP_ATOM_TAG_X + ((atom >> 12) & 0x1fff);
     a[len_a++] = MMGROUP_ATOM_TAG_D + (atom  & 0xfff);
+    */
        
     return len_a;
 }

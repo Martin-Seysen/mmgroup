@@ -146,6 +146,7 @@ class Xs12_Co1_Word(AbstractGroupWord):
     def mul_data(self, data):
         a_atoms = np.array(data, dtype = np.uint32)
         xsp2co1_mul_elem_word(self._data, a_atoms, len(a_atoms))
+        return self
 
 
 

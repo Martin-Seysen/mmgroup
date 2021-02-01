@@ -96,6 +96,7 @@ class Mat24(Mat24Tables):
     autpl_qf_table = make_autpl_qf_table(theta_table)
     autpl_qf_table64 = make_autpl_qf_table(theta_table, 64)
     verbose = False
+    basis_weights_8 = Mat24Tables.basis_weights_8()
 
     # recip_basis(i & 31) shall not fail in C 
     recip_basis_c = numpy.append(Mat24Tables.recip_basis.copy(), [0]*8)
@@ -119,6 +120,7 @@ class Mat24(Mat24Tables):
            "Mat24_autpl_qf_table64"  : autpl_qf_table64,
            "Mat24_doc"               : Mat24__doc__, 
            "INT_BITS"                : config.INT_BITS,
+           "Mat24_basis_weights_8"   : basis_weights_8,
     }
 
     directives = {}

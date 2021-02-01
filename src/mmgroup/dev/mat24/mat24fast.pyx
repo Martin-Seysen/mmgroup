@@ -413,6 +413,14 @@ def matrix_to_perm(m1):
     mat24_matrix_to_perm(p_m1a, p_p1)
     return [p1[i] for i in range(24)]
 
+def matrix_from_mod_omega(m1):
+    cdef uint32_t m1a[12]
+    cdef uint32_t *p_m1a = m1a
+    cdef int i
+    for i in range(12): m1a[i] = int(m1[i])
+    mat24_matrix_from_mod_omega(m1a)
+    for i in range(12): m1[i] = int(m1a[i])
+
 
 ###########################################################################
 # Mathieu group M24: Mapping a dodecad
