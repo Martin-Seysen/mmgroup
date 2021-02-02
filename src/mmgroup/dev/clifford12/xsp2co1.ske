@@ -1489,6 +1489,12 @@ to the entries with tags ``Z`` and ``Y`` of a vector
 in the represention \f$\rho_3\f$,  as described in
 section **The Representation of the Monster Group**
 of the **API reference**.
+
+Warning:
+
+This function works only if the data type ``uint_mmv_t`` used
+in the ``mmgroup.mm3`` extension is equal to the data type
+``uint64_t``.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
@@ -1520,12 +1526,14 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     x_data[0] = xsp2co1_to_vect_mod3(x);
     x_data[1] = xsp2co1_to_vect_mod3(x ^ 0xffffffffffffULL);
 
+    ncols = qs2.ncols; 
+    if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX1;
+    for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
+    if (qs2.nrows == 0) return 0; // Vector is zero
     n_iterations = ONE << (qs2.nrows - 1);
     m = qs2.data;
     assoc = m[0]; 
-    ncols = qs2.ncols; 
     mask = (ONE << ncols) - 1;
-    for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
 
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1, d, d1, index;

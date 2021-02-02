@@ -243,9 +243,11 @@ class Xsp2_Co1_Space(AbstractRepSpace):
     ### Extra methods ##################################################
 
     def as_mmspace_vector(self, v1):
-        vm = self.mmspace(0)  
+        vm = self.mmspace(0)
+        assert v1.qs.shape == (12,12) 
         if INT_BITS == 64:
-            START = 116416//32   
+            START = 116416//32
+            assert len(vm.data) >=  START + 4096
             chk_qstate12(xsp2co1_elem_row_mod3(v1._data, 0, 
                  vm.data[START:]))
             return vm
