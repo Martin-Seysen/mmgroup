@@ -119,12 +119,12 @@
   A quadratic mapping may be reduced with function qstate12_reduce()
   without notice, whenever appropriate. 
 
-  **Warning**
+  Warning:
 
   If an external function changes any component of a structure ``qs`` 
-  of type ``qstate12_type`` (or the content of ``qs.data``) then it
-  **must** set ``qs.reduced`` to zero. The **only** legal way to set 
-  ``qs.reduced`` to a nonzero value is to call function 
+  of type ``qstate12_type`` (or the content of ``qs.data``) then 
+  it **must** set ``qs.reduced`` to zero. The **only** legal way to  
+  set ``qs.reduced`` to a nonzero value is to call function 
   ``qstate12_reduce``.  The functions in this module assume that
   ``qs`` is actually reduced if ``qs.reduced`` is not zero.
   

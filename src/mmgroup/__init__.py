@@ -69,9 +69,9 @@ except:
 
 
 try:
-    from mmgroup.structures.xs1_co1 import Xs12_Co1
+    from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 except:
-    w = "Module 'mmgroup.structures.xs1_co1' not found!"
+    w = "Module 'mmgroup.structures.xsp2_co1' not found!"
     warnings.warn(w, UserWarning)
     
     

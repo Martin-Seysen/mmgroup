@@ -20,8 +20,8 @@ from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem_i
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xsp2co1_neg_elem, xsp2co1_elem_row_mod3
 from mmgroup.clifford12 import xsp2co1_mul_elem, xsp2co1_reduce_elem
-from mmgroup.structures.xs1_co1 import get_error_pool
-from mmgroup.structures.xs1_co1 import Xs12_Co1, str_xs12_co1
+from mmgroup.structures.xsp2_co1 import get_error_pool
+from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_xsp2_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.abstract_rep_space import AbstractRepVector
 from mmgroup.structures.abstract_rep_space import AbstractRepSpace
@@ -74,7 +74,7 @@ def obj_to_qstate(obj):
         if (obj & 0x1000):
             res = - res 
         return res.extend_zero(0,12).reshape((12,12))
-    ERR = "Illegal type for creating an Xs12_Co1_Vector"
+    ERR = "Illegal type for creating an Xsp2_Co1_Vector"
     raise TypeError(ERR)  
 
 
@@ -82,7 +82,7 @@ def obj_to_qstate(obj):
 # Modelling a vector
 ######################################################################
 
-class Xs12_Co1_Vector(AbstractRepVector):
+class Xsp2_Co1_Vector(AbstractRepVector):
     def __init__(self, space):
         __slots__ = 'space', '_data', 'is_zero'
         self.space = space
@@ -144,14 +144,14 @@ class Xs12_Co1_Vector(AbstractRepVector):
 
 
 
-class Xs12_Co1_Space(AbstractRepSpace):
+class Xsp2_Co1_Space(AbstractRepSpace):
     """Models the sparse representation 198884x of the monster group. 
 
     YET TO BE DOCUMENTED !!!
 
     """
 
-    vector_type = Xs12_Co1_Vector
+    vector_type = Xsp2_Co1_Vector
     mmspace = MMSpace3
 
     def __init__(self):
@@ -159,7 +159,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
 
         All calculations are done modulo the odd number p
         """
-        super(Xs12_Co1_Space, self).__init__(3, Xs12_Co1)
+        super(Xsp2_Co1_Space, self).__init__(3, Xsp2_Co1)
 
 
     ### Standard methods that must be overwritten ####################
@@ -231,13 +231,13 @@ class Xs12_Co1_Space(AbstractRepSpace):
 
         """
         if v.is_zero:
-            return "Xs12 vector 0"
-        return "Xs12 vector " + str_xs12_co1(v._data, factor=64, t=True)
+            return "Xsp2 vector 0"
+        return "Xsp2 vector " + str_xsp2_co1(v._data, factor=64, t=True)
 
     ### Standard methods that need not be overwritten #################
 
     def parse(self, s):
-        ERR = "Cannot convert a strig to a  Xs12_Co1_Vector"
+        ERR = "Cannot convert a strig to a  Xsp2_Co1_Vector"
         raise TypeError(ERR)
 
     ### Extra methods ##################################################
@@ -275,7 +275,7 @@ class Xs12_Co1_Space(AbstractRepSpace):
         a = np.zeros(4096, dtype = np.uint64)    
         chk_qstate12(xsp2co1_elem_row_mod3(v1._data, 0, a))
         or_sum = 0
-        print("Xs12_Co1 vector:")
+        print("Xsp2_Co1 vector:")
         for i, x in enumerate(a):
             x = int(x) & 0xffffffffffff
             if (x): 
@@ -288,4 +288,4 @@ class Xs12_Co1_Space(AbstractRepSpace):
         pass  # Yet nothing do do here!!
         return v1
 
-Space_ZY =  Xs12_Co1_Space()        
+Space_ZY =  Xsp2_Co1_Space()        

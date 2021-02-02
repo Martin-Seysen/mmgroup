@@ -550,7 +550,7 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /**
-   @brief Multipy two elements of the group \f$G_{{x0}}\f$.
+   @brief Multiply two elements of the group \f$G_{{x0}}\f$.
    
    Let \f$g_1, g_2 \in G_{{x0}}\f$ be stored in the arrays ``elem1``,
    ``elem2`` in **G_x0 representation**. The function computes
@@ -1365,17 +1365,25 @@ int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
 
 Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``. The function
 converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
-that word in the array ``a``. Then  each entry of ``a`` encodes a 
-generator of \f$G_{{x0}}\f$ as described in file 
-``mmgroup_generators.h``. The function returns the length of that 
-word.
+that word in the array ``a``. Then  each entry of ``a`` encodes a
+generator of \f$G_{{x0}}\f$ as described in file
+``mmgroup_generators.h``. The function returns the length of that
+word. Parameter ``img_omega`` should usually be zero.
 
-Such a word may have up to 10 entries.
+The word stored in the array ``a`` may have up to 10 entries. The
+tags of the entries in that word are ``xdyplplplp`` in that order.
+See documentation of class ``mmgroup.MMGroup`` for the meaning of
+these tags. Each entry of a word may encode the neutral element
+as a generator; then that entry is dropped. We assert that the
+number of entries with tag ``l`` is minimal.
 
-Caution: Function is yet buggy!!
+There are cases where the image \f$g^{{-1}} x_\Omega g\f$ of the
+generator \f$x_\Omega\f$  is known in advance. Then run time can
+be saved encoding that image in parameter ``img_omega``
+in **Leech lattice encoding**.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
+int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 {
     int32_t res, len_a0, len_a, x, i;
     uint64_t img_Omega = 0x800000;
@@ -1383,9 +1391,12 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
     uint32_t a0[10];
     
     // Compute image of \Omega under conjugation and store
-    // the result in img_Omega.
-    res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
-    if (res < 0) return res;
+    // the result in img_Omega, if ``img_omega`` is zero.
+    // If ``img_omega`` != 0 just take the image from there.
+    if ((img_omega & 0xffffff) == 0) {
+        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
+        if (res < 0) return res;
+    } else img_Omega = img_omega & 0xffffff;
     // Compute a word w0 of generators of G_{{x0}} that maps
     // img_Omega to Omega (by conjugation) and store the result 
     // in a0. We store the length of the word w0 in len_a0.

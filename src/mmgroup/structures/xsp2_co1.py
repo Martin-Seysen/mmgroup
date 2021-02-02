@@ -46,21 +46,21 @@ FORMAT_REDUCED = True
 
 
 
-class Xs12_Co1_Word(AbstractGroupWord):
+class Xsp2_Co1_Word(AbstractGroupWord):
     """Model an element the subgroup :math:`G_{x0}` of the Monster
 
-    See class ``Xs12_Co1`` for the definition of that group.   
+    See class ``Xsp2_Co1`` for the definition of that group.   
 
     The constructor of this class returns the neutral element of
     the group :math:`G_{x0}`. 
 
     :var group:
         This attribute contains the group to which the element belongs.
-        That group is an instance of class Xs12_Co1.
+        That group is an instance of class Xsp2_Co1.
 
     .. warning::
        The constructor of this class is not for public use! You
-       may call an instance ``M`` of class Xs12_Co1 for
+       may call an instance ``M`` of class Xsp2_Co1 for
        constructing elements of the instance ``M`` of the monster 
        group.
   
@@ -156,21 +156,21 @@ class Xs12_Co1_Word(AbstractGroupWord):
 
 
 
-def cocode_to_xs12co1(g, c):
+def cocode_to_xsp2co1(g, c):
     res =  g.word_type(group = g)
     chk_qstate12(xsp2co1_op_delta_pi(res._data, c.cocode, 0))
     return res
 
-def autpl_to_xs12co1(g, aut):
+def autpl_to_xsp2co1(g, aut):
     res =  g.word_type(group = g)
     chk_qstate12(xsp2co1_op_delta_pi(res._data, aut.cocode, aut.perm_num))
     return res
 
-def mmgroup_to_xs12co1(g, mm):
+def mmgroup_to_xsp2co1(g, mm):
     raise NotImplementedError
 
 
-class Xs12_Co1_Group(AbstractGroup):
+class Xsp2_Co1_Group(AbstractGroup):
     r"""Model the subgroup :math:`G_{x0}` of the Monster
     
     The group :math:`G_{x0}` is the subgroup of the Monster group
@@ -210,7 +210,7 @@ class Xs12_Co1_Group(AbstractGroup):
       class |AutPL|         Create an element of the subgroup of
                             :math:`G_{x0}` given by class |AutPL|.
                            
-      class ``Xs12_Co1``    Create a copy of an element of this class.
+      class ``Xsp2_Co1``    Create a copy of an element of this class.
                            
       pair (``qstate, x``)  Deprecated and not implemented!!!!!
                             This kind of construction is for testing and
@@ -225,18 +225,18 @@ class Xs12_Co1_Group(AbstractGroup):
     :raise:
         * TypeError if ``type(data)`` is not as expected.
         * ValueError if ``data`` cannot be converted to an
-          instance of class  `` Xs12_Co1``.
+          instance of class  `` Xsp2_Co1``.
     
     
     """
     __slots__ = "data"
     STD_V3  = 0x8000004
-    word_type = Xs12_Co1_Word
+    word_type = Xsp2_Co1_Word
     tags, formats = " dpxyl", [None, ihex, str, ihex, ihex, str]
     atom_parser = {}               # see method parse()
     conversions = {
-        Cocode: cocode_to_xs12co1,
-        AutPL: autpl_to_xs12co1,
+        Cocode: cocode_to_xsp2co1,
+        AutPL: autpl_to_xsp2co1,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
@@ -246,7 +246,7 @@ class Xs12_Co1_Group(AbstractGroup):
 
 
         """
-        super(Xs12_Co1_Group, self).__init__()
+        super(Xsp2_Co1_Group, self).__init__()
         self.atom_parser = AtomDict(self.atom)
         self.set_preimage(StdAutPlGroup,  tuple)
 
@@ -296,7 +296,7 @@ class Xs12_Co1_Group(AbstractGroup):
         return w             
 
     def str_word(self, v1):
-        return "Xs12_Co1 " + str_xs12_co1(v1._data)
+        return "Xsp2_Co1 " + str_xsp2_co1(v1._data)
  
     def from_xsp(self, x):
         w = self.word_type([], group=self)
@@ -318,16 +318,17 @@ class Xs12_Co1_Group(AbstractGroup):
                      word of generators of the monster group
 
         :return: An element of this instance of the group 
-        :rtype:  an instance of class mmgroup.xs1_co1.Xs12_Co1_Word
+        :rtype:  an instance of class 
+                 mmgroup.structures.xsp2_co1.Xsp2_Co1_Word
 
         """
         return self.word_type(data, group = self)
 
 
 
-Xs12_Co1 = Xs12_Co1_Group()
-Xs12_Co1.set_preimage(MM, tuple)
-MM.set_preimage(Xs12_Co1, tuple)
+Xsp2_Co1 = Xsp2_Co1_Group()
+Xsp2_Co1.set_preimage(MM, tuple)
+MM.set_preimage(Xsp2_Co1, tuple)
 
 
 
@@ -337,7 +338,7 @@ def str_leech3(x):
     lst = [_dict_pm3[(x >> i) & 0x1000001] for i in range(24)]
     return "(" + "".join(lst) + ")"
 
-def str_xs12_co1(data, factor = 1, t = False):
+def str_xsp2_co1(data, factor = 1, t = False):
     qs0 = xsp2co1_elem_to_qs_i(data) if t else xsp2co1_elem_to_qs(data)
     qs = QStateMatrix(qs0) / factor
     return str_leech3(data[0]) + " (x) " + str(qs)

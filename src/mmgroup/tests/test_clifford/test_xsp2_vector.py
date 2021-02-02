@@ -12,8 +12,8 @@ import numpy as np
 import pytest
 
 from mmgroup.structures.qs_matrix import qs_pauli_matrix
-from mmgroup.structures.xs1_co1 import Xs12_Co1, str_leech3
-from mmgroup.structures.xs1_co1 import get_error_pool
+from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_leech3
+from mmgroup.structures.xsp2_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.tests.spaces.clifford_space import Space_ZY
@@ -138,7 +138,7 @@ def map_v3(v, g, expected = None, verbose = 1):
     if not expected is None:
         ok = ok and short3_abs_equal(dest[-1], expected)
     if verbose or not ok:
-        print("Map a short Leech vector v by an element g of Xs2Co1:")
+        print("Map a short Leech vector v by an element g of Xsp2_Co1:")
         if not isinstance(v, Integral):
             print("v = %s = %s" % (v, str_leech3(src[2])))
         else:
@@ -186,7 +186,7 @@ def test_vector(verbose = 0):
             print("g =", g)
         g3 = MMGroup3(*g)
         try:
-            gm = Xs12_Co1(*g)
+            gm = Xsp2_Co1(*g)
         except ValueError:
             print("\nError in constructing group element g")
             print("Debug data pool:\n", 
@@ -244,7 +244,7 @@ def test_vector(verbose = 0):
 
    
 def ref_conjugate(x, elem):
-    elem_l = Xs12_Co1(*elem)
+    elem_l = Xsp2_Co1(*elem)
     mat_l = elem_l.qs.gate_h(0x800800)
     mat_x = qs_pauli_matrix(12, x)
     mat_res = mat_l.inv() @ mat_x @ mat_l
@@ -321,11 +321,11 @@ def create_test_elements():
 
 @pytest.mark.qstate
 def test_group(verbose = 0):
-    unit = Xs12_Co1()
+    unit = Xsp2_Co1()
     for ntest, (g1, g2) in enumerate(create_test_elements()):
-        gm1 = Xs12_Co1(*g1)    
-        gm2 = Xs12_Co1(*g2)    
-        gm3_ref = Xs12_Co1(*(g1 + g2))    
+        gm1 = Xsp2_Co1(*g1)    
+        gm2 = Xsp2_Co1(*g2)    
+        gm3_ref = Xsp2_Co1(*(g1 + g2))    
         gm3 = gm1 * gm2
         ok = gm3 == gm3_ref 
         if verbose or not ok:

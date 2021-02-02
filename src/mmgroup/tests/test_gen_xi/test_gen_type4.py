@@ -151,7 +151,7 @@ def py_gen_leech3to2_type4(x):
 #####################################################################
 
 
-def rand_xs1co1_elem(n):
+def rand_xsp2co1_elem(n):
     s1, l = [('p',),('y',)],  [('l','n')]
     return s1 + (l + s1) * n
 
@@ -179,7 +179,7 @@ def create_test_elements():
         yield  g
     for n, imax  in [(1,50),(2,1000), (3,1000)]:
         for i in range(1 * imax):
-            yield rand_xs1co1_elem(n)
+            yield rand_xsp2co1_elem(n)
 
 
 #####################################################################

@@ -10,7 +10,7 @@ from operator import __or__
 import numpy as np
 import pytest
 
-from mmgroup import Xs12_Co1, PLoop, AutPL, Cocode, MM
+from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_op_word
 
@@ -21,10 +21,10 @@ from mmgroup.generators import gen_leech2_op_word
 #####################################################################
 
 
-def rand_xs1co1_elem():
+def rand_xsp2co1_elem():
     return MM(*[(x,) for x in "dxpylpylpylpy"])
 
-def rand_xs1_vectors(length):
+def rand_xsp2_vectors(length):
     return [randint(0, 0x1ffffff) for i in range(length)]
 
 def create_conjugate_data():  
@@ -39,8 +39,8 @@ def create_conjugate_data():
         yield g_mm, xs         
     # test with some more random data
     for i in range(20):
-        g = rand_xs1co1_elem()
-        xs = rand_xs1_vectors(8)
+        g = rand_xsp2co1_elem()
+        xs = rand_xsp2_vectors(8)
         yield g, xs
 
 
@@ -74,14 +74,14 @@ def conj_x_by_word(x, g_mm):
 
     
 @pytest.mark.qstate
-def test_xs1_conjugate(verbose = 0):
+def test_xsp2_conjugate(verbose = 0):
     """Test the conjugation of Pauli matrix with unitary matrix"""
-    l0, l1, l2 = Xs12_Co1(), Xs12_Co1(('l', 1)),  Xs12_Co1(('l', 2))
+    l0, l1, l2 = Xsp2_Co1(), Xsp2_Co1(('l', 1)),  Xsp2_Co1(('l', 2))
     assert l1**2 == l2
     assert l1**3 == l0    
     for ntest, (g_mm, xs) in enumerate(create_conjugate_data()):
-        g = Xs12_Co1(g_mm)
-        xs_g_all = [Xs12_Co1.from_xsp(x) for x in xs]
+        g = Xsp2_Co1(g_mm)
+        xs_g_all = [Xsp2_Co1.from_xsp(x) for x in xs]
         xs_all = [x.as_xsp() for x in xs_g_all]
         ok = xs == xs_all
         o = g.order()
@@ -91,7 +91,7 @@ def test_xs1_conjugate(verbose = 0):
             print("g has order %d" % o)
             print("v =", [hex(x) for x in xs])
             if not ok:
-                print("Input and recomputed xs1 vectors v:")
+                print("Input and recomputed xsp2 vectors v:")
                 print("v =", [hex(x) for x in xs_all])
                 err = "Error in recomputation of extraspecial vector"
                 raise ValueError(err)
@@ -134,11 +134,11 @@ OCTAD = PLoop([0,1,2,3,4,5,6,7])
 HEXADECAD = ~OCTAD
 
 def rand_n_elem():
-    return Xs12_Co1(*[(x,) for x in "dxpy"])
+    return Xsp2_Co1(*[(x,) for x in "dxpy"])
 
 
 def xs_vector(pl, cocode):
-    return Xs12_Co1(("x", pl), ("d", Cocode(cocode))).as_xsp() 
+    return Xsp2_Co1(("x", pl), ("d", Cocode(cocode))).as_xsp() 
 
 type_data = [
     (ZERO, [], 0),
@@ -185,7 +185,7 @@ def check_leech_type(x, t_expected):
         
 
 @pytest.mark.qstate
-def test_xs1_type(verbose = 0):
+def test_xsp2_type(verbose = 0):
     for ntest, (pl, cocode, vtype) in enumerate(type_data):
         x = xs_vector(pl, cocode)
         if verbose:
