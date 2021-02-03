@@ -182,7 +182,7 @@ r"""The C code generator generates code from a source file automatically.
         Examples::   
 
          // %%FOR x in range(1,3)
-         i{x} += 2*{x};
+         i%{x} += 2*%{x};
          // %%END FOR
 
         evaluates to::
@@ -221,7 +221,7 @@ r"""The C code generator generates code from a source file automatically.
           a += 
           // %%JOIN*  " +", ";"
           // %%FOR* i in range(1,4)
-            {int:2*i} * table[{i}]
+            %{int:2*i} * table[%{i}]
           // %%END FOR
 
         evaluates to::
@@ -301,7 +301,7 @@ r"""The C code generator generates code from a source file automatically.
         Example::   
 
           // %WITH square, cube = int((x+1)**2), int((x+1)**3)
-          i += {cube} + {square} + {x};
+          i += %{cube} + %{square} + %{x};
           // %%END WITH
 
         Assuming ``x`` has value ``9``, this evaluates to::
@@ -315,36 +315,32 @@ r"""The C code generator generates code from a source file automatically.
     String formatting
     -----------------
 
-    A line ``l`` in the source file may contain an expression in curly
-    braces '{...}'. Then the standard ``.format()`` method is applied 
-    to  the string ``l`` with dictionary ``names`` given as the list of 
-    keyword arguments. 
+    A line ``l`` in the source file may contain a string ``s``  with 
+    balanced curly  braces and preceded by a '%' character.
+    Then the standard ``.format()`` method is applied  to  the string 
+    ``s[1:]`` obtained from  ``s`` by dropping the initial '%' 
+    character. The  dictionary ``names`` is given to the formatting
+    method as given as the list of keyword arguments. 
 
-    E.g. in case ``names['x'] = y``, the expressions ``{x.z}`` and 
-    ``{x[z]}``  refer  to ``y.z`` and ``y[z]``. Of course, the objects 
+    E.g. in case ``names['x'] = y``, the expressions ``%{x.z}`` and 
+    ``%{x[z]}``  refer  to ``y.z`` and ``y[z]``. Of course, the objects 
     ``y.z`` or ``y[z]`` must exist and evaluate to strings which are 
     meaningful in the generated C file.
 
     For formatting, the dictionary ``names`` is an updated version of 
     the dictionary ``tables`` passed in the constructor, as described 
     in section *Arguments of directives*.
-              
-    An opening curly bracket not followed by a closing one or a closing
-    curly bracket not preceded by an opening one is not passed to
-    the string formatter.
-    
+                 
     We consider this to be a reasonable compromise between the standard 
     C syntax and the very powerful pythonic ``.format`` method for 
-    strings. If you really need an opening and a closing curly bracket 
-    in the same line of C code, replace ``{`` by ``{{`` and 
-    ``}`` by ``}}``.
+    strings. 
 
 
     Using functions via string formatting
     -------------------------------------
 
-    User-defined functions can be invoked inside C code via the
-    the string formatting operator ``{function_name:arg1,arg2,...}``.
+    User-defined functions can be invoked inside C code via the the
+    string formatting operator ``%{function_name:arg1,arg2,...}``.
     Then the function with name ``function_name`` is called with the
     given arguments, and the result of the function is substituted 
     in the C code. 
@@ -356,7 +352,7 @@ r"""The C code generator generates code from a source file automatically.
         "function_name" : UserFormat(f)
 
     in the dictionary ``tables`` passed to the constructor. Then
-    ``{function_name:arg1,arg2,...}`` evaluates to 
+    ``%{function_name:arg1,arg2,...}`` evaluates to 
     ``str(f(arg1,arg2,...))``.
     Here arguments ``arg1, arg2`` must be given in python syntax and 
     they are processed in the same way as the arguments of a directive 
@@ -374,11 +370,11 @@ r"""The C code generator generates code from a source file automatically.
 
     There are a few predefined functions for string formatting:
 
-       * ``{int:x}``    returns ``x`` as a decimal integer 
-       * ``{hex:x}``    returns ``x`` as a hexadecimal integer
-       * ``{len:l}``    returns length of list ``l`` as a decimal integer     
-       * ``{str:x}``    returns ``str(x)``
-       * ``{join:s,l}`` returns ``s.join(l)`` for a string ``s`` and a list ``l``
+      * ``%{int:x}``    returns ``x`` as a decimal integer 
+      * ``%{hex:x}``    returns ``x`` as a hexadecimal integer
+      * ``%{len:l}``    returns length of list ``l`` as a decimal int     
+      * ``%{str:x}``    returns ``str(x)``
+      * ``%{join:s,l}`` returns ``s.join(l)`` for string ``s`` and list ``l``
 
     See dictionary ``built_in_formats`` in module 
     ``mmgroup.generate_c.generate_functions`` for details.
@@ -387,7 +383,7 @@ r"""The C code generator generates code from a source file automatically.
     in the dictionary ``tables`` passed to the code generator, we may 
     write e.g.::
 
-       y{a} += {int:3*b+1};
+       y%{a} += %{int:3*b+1};
 
     in the source file. This evaluates to::
 
@@ -411,5 +407,17 @@ r"""The C code generator generates code from a source file automatically.
 
     you probably do not want any messy comments about the IF directive
     in your generated code.
+
+    Historical remark
+    -----------------
+
+    In versions up to 0.4 string formatting operator was ``{xxx}``
+    instead of ``%{xxx}``. This had the unpleasent effect that
+    valid C expressions have a different meaning in the input and
+    and the output of the code generation process. This situation
+    became unbearable after intoducing doxygen for documentation
+    of C code. Then expressions like ``\f$ x_{1,1} \f$`` could not
+    be coded in a reasonable way the old version.
+
 """
 

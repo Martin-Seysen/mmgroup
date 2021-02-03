@@ -79,9 +79,9 @@ obtain these values for any legal ``p`` as in the following example:
        // Load the constants for modulus p to variable modulus_data
        // %%MMV_LOAD_CONST  p, modulus_data;
        // Load value P_BITS for modulus P to p_bits (using modulus_data)
-       p_bits = {MMV_CONST:P_BITS,modulus_data};
+       p_bits = %{MMV_CONST:P_BITS,modulus_data};
        // Load value FIELD_BITS for modulus P to field_bits 
-       field_bits = {MMV_CONST:FIELD_BITS,modulus_data};
+       field_bits = %{MMV_CONST:FIELD_BITS,modulus_data};
        // Now do the actual work of the function using these values
        ...
    }
@@ -301,12 +301,12 @@ class MM_Const(MM_Basics):
     of class ``MM_Const``. They can also be coded with the code 
     generator directly via string formatting, e.g.::
 
-        uint_8_t  a[{MMV_ENTRIES}];
+        uint_8_t  a[%{MMV_ENTRIES}];
 
     For a fixed modulus ``p`` the constants depending on ``p`` can also
     be coded with the code generator via string formatting, e.g.::
 
-        a >>= {P_BITS:3};
+        a >>= %{P_BITS:3};
 
     That constant also availble in the form ``MM_Const().P_BITS(3)``.
 
@@ -314,18 +314,18 @@ class MM_Const(MM_Basics):
     Class ``MM_Const`` provides a string-formatting function ``shl`` 
     which generates a shift expression  Here::
 
-         {shl:expression, i}
+         %{shl:expression, i}
 
     generates an expression equivalent to ``((expression) << i)``. 
     Here ``i`` must be an integer. In case ``i < 0`` we generate 
-    ``((expression) >> -i)`` instead. E.g. ``{shl:'x',-3}``
+    ``((expression) >> -i)`` instead. E.g. ``%{shl:'x',-3}``
     evaluates to ``x >> 3``.
 
     Class ``MM_Const`` provides another string-formatting function
     ``smask`` which generates an integer constant to be used as a 
     bit mask for integers of type ``uint_mmv_t``. Here::
 
-         {smask:value, fields, width}
+         %{smask:value, fields, width}
 
     with integers ``value``, ``fields``, and ``width`` creates such a 
     bit mask. ``For 0 <= i`` and ``0 <= j < width``, the bit of that 
@@ -340,7 +340,7 @@ class MM_Const(MM_Basics):
     of that argument is set if its position occurs in that list and 
     cleared otherwise.
   
-    E.g. ``{smask:3, [1,2], 4}`` evaluates to ``0x330``.
+    E.g. ``%{smask:3, [1,2], 4}`` evaluates to ``0x330``.
     """
     # Names of the constants to be stored in an integer for each p
     entries = [  

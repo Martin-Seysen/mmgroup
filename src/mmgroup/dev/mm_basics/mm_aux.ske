@@ -31,7 +31,7 @@ static const uint16_t MM_AUX_TBL_ABC[] = {
 // %%COMMENT
 // %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
 static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
-// %%TABLE MM_AUX_TBL_REDUCE, uint{INT_BITS}
+// %%TABLE MM_AUX_TBL_REDUCE, uint%{INT_BITS}
 };
 
 
@@ -134,20 +134,20 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
     uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
     // %%MMV_LOAD_CONST  p, i
-    sh = {MMV_CONST:P_BITS,i};        // This is P_BITS
-    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    len >>= {LOG_INT_BITS} - i;
+    sh = %{MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= %{LOG_INT_BITS} - i;
 
     switch (i) {
         // %%FOR LOG_F in [1, 2, 3]
-        case {LOG_F}:
+        case %{LOG_F}:
             while (len--) {
                 source = *mv++;
                 // %%FOR jj in range(0, INT_BITS, 1 << LOG_F)
-                tmp = (source >> {jj}) & p;
-                b[{int:jj >> LOG_F}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
+                tmp = (source >> %{jj}) & p;
+                b[%{int:jj >> LOG_F}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
                 // %%END FOR
-                b += {int:INT_BITS >> LOG_F};
+                b += %{int:INT_BITS >> LOG_F};
             }
             break;
         // %%END FOR
@@ -162,13 +162,13 @@ void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t le
     uint_fast32_t i, j;  
     uint_mmv_t source;
     // %%MMV_LOAD_CONST  p, i
-    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    len >>= {LOG_INT_BITS} - i;
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= %{LOG_INT_BITS} - i;
     i = 1 << i;                       // This is FIELD_BITS
 
     while (len--) {
         source = *mv++;
-        for (j = 0; j < {INT_BITS}; j += i) 
+        for (j = 0; j < %{INT_BITS}; j += i) 
             *b++ = (uint8_t)((source >> j) & p);
     }
 }
@@ -185,19 +185,19 @@ void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
     uint_fast32_t i;  
     uint_mmv_t dest;
     // %%MMV_LOAD_CONST  p, i
-    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    len >>= {LOG_INT_BITS} - i;
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= %{LOG_INT_BITS} - i;
     
     switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
-        case {LOG_F}:
+        case %{LOG_F}:
             while (len--) {
                 dest =  0;
                 // %%FOR jj in range(0, INT_BITS, 1 << LOG_F)
-                dest +=  (uint_mmv_t)(b[{int:jj >> LOG_F}]) << {jj};
+                dest +=  (uint_mmv_t)(b[%{int:jj >> LOG_F}]) << %{jj};
                 // %%END FOR
                 *mv++ = dest;
-                b += {int:INT_BITS >> LOG_F};
+                b += %{int:INT_BITS >> LOG_F};
             }
             break;
         // %%END FOR
@@ -216,23 +216,23 @@ void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
     uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
     // %%MMV_LOAD_CONST  p, i
-    sh = {MMV_CONST:P_BITS,i};        // This is P_BITS
-    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    sh = %{MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
 
     switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
-        case {LOG_F}:
+        case %{LOG_F}:
             while (len--) {
                 // %%FOR j in range(0, 24)         
                 // %%IF* (j << LOG_F) % INT_BITS == 0  # then reload source
                 source = *mv++;                 
                 // %%END IF
-                tmp = (source >> {int:(j << LOG_F) % INT_BITS}) & p;
-                b[{int:j}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
+                tmp = (source >> %{int:(j << LOG_F) % INT_BITS}) & p;
+                b[%{int:j}] = (uint8_t)((tmp + ((tmp + 1) >> sh)) & p);
                 // %%END FOR                           
                 b += 24;
                 // %%IF* (24 << LOG_F) % INT_BITS == 0  # then adjust mv
-                mv += {int: (8 << LOG_F) / INT_BITS};
+                mv += %{int: (8 << LOG_F) / INT_BITS};
                 // %%END IF
             }
             break;
@@ -252,12 +252,12 @@ void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
     uint_fast32_t i;  
     uint_mmv_t dest;
     // %%MMV_LOAD_CONST  p, i
-    i = {MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
 
 
     switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
-        case {LOG_F}:
+        case %{LOG_F}:
             while (len--) {
                 // %%FOR j in range(0, 24)             
                 // %%IF* (j << LOG_F) % INT_BITS == 0  # then clear buffer
@@ -266,7 +266,7 @@ void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
                 // %%END IF
                 dest = 0;
                 // %%END IF
-                dest += (uint_mmv_t)(b[{j}] & p) << {int:(j<<LOG_F) % INT_BITS};
+                dest += (uint_mmv_t)(b[%{j}] & p) << %{int:(j<<LOG_F) % INT_BITS};
                 // %%END FOR                           
                 *mv++ = dest;                
                 // %%FOR* k in range((8 << LOG_F) // INT_BITS)
@@ -290,12 +290,12 @@ uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
     uint_fast32_t  c, j, res;
 
     // %%MMV_LOAD_CONST p, c
-    j = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    j = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
     mv += i >> j;
     i &= (1 << j) - 1;
-    j = {LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
+    j = %{LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
     res = (mv[0] >> (i << j)) & p;    // This is the result
-    j = {MMV_CONST:P_BITS,c};         // This is P_BITS
+    j = %{MMV_CONST:P_BITS,c};         // This is P_BITS
     // return result reduced modulo p
     return (uint8_t) ( (res + ((res + 1) >> j)) & p );
 }
@@ -309,10 +309,10 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
     uint_fast32_t  j;
 
     // %%MMV_LOAD_CONST  p, j
-    j = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+    j = %{MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
     mv += i >> j;
     i &= (1 << j) - 1;
-    j = {LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
+    j = %{LOG_INT_BITS} - j;           // This is LOG_FIELD_BITS
     i <<= j;
     mv[0] &= ~(((uint_mmv_t)p) << i);
     mv[0] |= ((uint_mmv_t)(value & p)) << i;
@@ -335,7 +335,7 @@ uint32_t mm_aux_mmv_size(uint32_t p)
     uint_fast32_t tbl;
     // %%MMV_LOAD_CONST  p, tbl
     // return the value MMV_INTS for the specified p
-    return{MMV_CONST:MMV_INTS,tbl};
+    return%{MMV_CONST:MMV_INTS,tbl};
 }
 
 
@@ -346,7 +346,7 @@ void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
     uint_fast32_t j;
     if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, j
-    j = {MMV_CONST:MMV_INTS,j};
+    j = %{MMV_CONST:MMV_INTS,j};
     do {
         *mv++ = 0;
     } while(--j);
@@ -378,12 +378,12 @@ uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
     }
 
     // %%MMV_LOAD_CONST  p, c
-    j = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    j = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
     mv += i >> j;
-    i = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+    i = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
     res = (mv[0] >> i) & p;             // This is the result
     //Reduce reult modulo p
-    c = {MMV_CONST:P_BITS,c}; // This is P_BITS
+    c = %{MMV_CONST:P_BITS,c}; // This is P_BITS
     return (uint8_t)((res + ((res + 1) >> c)) & p);
 }
 
@@ -408,14 +408,14 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
     value &= p;
 
     // %%MMV_LOAD_CONST  p, j
-    j = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+    j = %{MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
 
     if (i <  MM_AUX_XOFS_X) {
         if (i <  MM_AUX_XOFS_T) {
             // Tags A, B, C
             diff = 31 * (MM_AUX_TBL_ABC[i] >> 11);
             i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
-            sh = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+            sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
             mv[i >> j] = (mv[i >> j] &  ~(((uint_mmv_t)p) << sh))
                   |   ((uint_mmv_t)(value)) << sh;
             i -= diff;
@@ -433,7 +433,7 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
     }
 
     mv += i >> j;
-    sh = (i & ((1 << j) - 1)) << ({LOG_INT_BITS} - j);
+    sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
     mv[0] = (mv[0] &  ~(((uint_mmv_t)p) << sh))
               |   ((uint_mmv_t)(value)) << sh;
 }
@@ -450,7 +450,7 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
 
     if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST p, c
-    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
 
     // Do the small part
     mm_rng_gen_modp((uint8_t)p, seed, (uint8_t *)(mv), 24 + 3 * 276);
@@ -495,8 +495,8 @@ int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
 
     if (mm_aux_bad_p(p)) return -1;
     // %%MMV_LOAD_CONST  p, i
-    sh = {MMV_CONST:P_BITS, i};          // This is P_BITS
-    i = {MMV_CONST:LOG_INT_FIELDS, i};   // This is LOG_INT_FIELDS
+    sh = %{MMV_CONST:P_BITS, i};          // This is P_BITS
+    i = %{MMV_CONST:LOG_INT_FIELDS, i};   // This is LOG_INT_FIELDS
     i = MM_AUX_OFS_E >> i;               // No of unit_mmv_t to process
     mask_1 =  MM_AUX_TBL_REDUCE[2*sh-4];
     mask_p =  MM_AUX_TBL_REDUCE[2*sh-3];
@@ -537,16 +537,16 @@ static int32_t check24(uint32_t p, uint_mmv_t *mv, uint32_t length)
 
     // %%MMV_LOAD_CONST  p, d
     // Put d =  5 - LOG_INT_FIELDS
-    d = 5 - {MMV_CONST:LOG_INT_FIELDS, d}; 
+    d = 5 - %{MMV_CONST:LOG_INT_FIELDS, d}; 
     switch (d) {
-        // %%IF {INT_BITS} == 64
+        // %%IF %{INT_BITS} == 64
         case 0:
-            mask = {hex: -1 << (3*INT_BITS//4)};
+            mask = %{hex: -1 << (3*INT_BITS//4)};
             while (length--) acc |= *mv++ & mask;
             break;
         // %%END IF
         case 1:
-            mask = {hex: -1 << (INT_BITS//2)};
+            mask = %{hex: -1 << (INT_BITS//2)};
             while (length--) {
                 acc |= mv[1] & mask; mv += 2;
             }
@@ -556,7 +556,7 @@ static int32_t check24(uint32_t p, uint_mmv_t *mv, uint32_t length)
                 acc |= mv[3]; mv += 4;
             }
             break;
-        // %%IF {INT_BITS} == 32
+        // %%IF %{INT_BITS} == 32
         case 3:
             while (--length) {
                 acc |= mv[6] | mv[7]; mv += 8;
@@ -602,7 +602,7 @@ static int32_t check_mmv_buffer(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
     i = check24(p, mv, 72);          // check tags A,B,C
     if (i) return i;                 // Error -3 may occur here
     // %%MMV_LOAD_CONST  p, i
-    i = {MMV_CONST:LOG_INT_FIELDS, i}; //  LOG_INT_FIELDS
+    i = %{MMV_CONST:LOG_INT_FIELDS, i}; //  LOG_INT_FIELDS
     i = check24(p, mv + (MM_AUX_OFS_X >> i), 6144); // check tags X,Y,Z
     if (i) return i - 100;                 // Error -3 may occur here
     return check_sym(p, mv, buffer); // Errors -4, -5 may occur here
@@ -700,7 +700,7 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
     uint_fast32_t c;
 
     // %%MMV_LOAD_CONST  p, c
-    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
     
     mm_aux_read_mmv24(p, mv, b1, 72);
     mm_aux_small24_compress(b1, b);
@@ -723,7 +723,7 @@ void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
     uint_fast32_t  c;
 
     // %%MMV_LOAD_CONST  p, c
-    c = {MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
 
     mm_aux_small24_expand(b, b1);   
     mm_aux_write_mmv24(p, b1, mv, 72);
@@ -760,9 +760,9 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
     if ((status = check_mmv_buffer(p, mv, b)) != 0) return status;
     
     // %%MMV_LOAD_CONST  p, j
-    field_bits = {MMV_CONST:FIELD_BITS,j}; // This is FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
-    sh = 8 - {LOG_INT_BITS} + lg_int_fields; // This is 8 - LOG_FIELD_BITS; 
+    field_bits = %{MMV_CONST:FIELD_BITS,j}; // This is FIELD_BITS
+    lg_int_fields = %{MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+    sh = 8 - %{LOG_INT_BITS} + lg_int_fields; // This is 8 - LOG_FIELD_BITS; 
  
     // Do tags A, B, C
     p_row = b;
@@ -779,7 +779,7 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
     row_end = (MM_AUX_OFS_X - MM_AUX_OFS_T) >> lg_int_fields;
     for (row = 0; row < row_end; ++row) if ((source = *mv++) != 0) {
         ofs = 0x8000000 + (row << (8 + lg_int_fields));
-        for (j = 0; j < {INT_BITS}; j += field_bits) {
+        for (j = 0; j < %{INT_BITS}; j += field_bits) {
             if ((value = (source >> j) & p) != 0)  {
                 sp[isp++] = ofs + (j << sh) + value;
             } 
@@ -790,7 +790,7 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
     for (row = 0; row < row_end; ++row) if ((source = *mv++) != 0) {
         ofs = 0x5000000 + (row << (8 + lg_int_fields));
         ofs += ofs & 0xfffe000;
-        for (j = 0; j < {INT_BITS}; j += field_bits) {
+        for (j = 0; j < %{INT_BITS}; j += field_bits) {
             if ((value = (source >> j) & p) != 0)  {
                  sp[isp++] = ofs + (j << sh) + value;
             } 
@@ -821,9 +821,9 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
 
     if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, i0
-    p_bits = {MMV_CONST:P_BITS,i0}; // This is P_BITS
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
+    p_bits = %{MMV_CONST:P_BITS,i0}; // This is P_BITS
+    lg_field_bits = %{MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = %{MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {
@@ -884,9 +884,9 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
 
     if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, i0
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
-    p_bits = {MMV_CONST:P_BITS,i0};               // This is P_BITS
+    lg_field_bits = %{MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = %{MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
+    p_bits = %{MMV_CONST:P_BITS,i0};               // This is P_BITS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {
@@ -948,8 +948,8 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 
     if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, i0
-    lg_field_bits = {MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
-    lg_int_fields = {MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
+    lg_field_bits = %{MMV_CONST:LOG_FIELD_BITS,i0}; // This is LOG_FIELD_BITS
+    lg_int_fields = %{MMV_CONST:LOG_INT_FIELDS,i0}; // This is LOG_INT_FIELDS
     index_mask = (1 << lg_int_fields) - 1;
 
     for ( ;length--; ++sp) {

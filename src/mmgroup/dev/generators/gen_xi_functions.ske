@@ -1,6 +1,6 @@
 /** @file gen_xi_functions.c
 The functions in file ``gen_xi_function.c`` implement the operation 
-of the generator \f$\xi\f$ on the group \f$Q_{{x0}}\f$.
+of the generator \f$\xi\f$ on the group \f$Q_{x0}\f$.
 */
 
 
@@ -37,16 +37,16 @@ extern "C" {
 
 
 /*************************************************************************
-*** Multiplication in the group Q_{{x0}}
+*** Multiplication in the group Q_{x0}
 *************************************************************************/
 
 
 /**
-  @brief Return product of two elements the group \f$Q_{{x0}}\f$.
+  @brief Return product of two elements the group \f$Q_{x0}\f$.
 
-  Here all elements of the group \f$Q_{{x0}}\f$ are encoded in
+  Here all elements of the group \f$Q_{x0}\f$ are encoded in
   ``Leech lattice encoding``. The function returns the
-  product of the elements ``x1`` and ``x2`` of \f$Q_{{x0}}\f$.
+  product of the elements ``x1`` and ``x2`` of \f$Q_{x0}\f$.
 */
 // %%EXPORT px
 uint32_t gen_xi_mul_leech(uint32_t x1, uint32_t x2)
@@ -147,14 +147,14 @@ uint32_t gen_xi_w2_cocode(uint32_t v)
 
 
 /*************************************************************************
-*** Operation of xi on the extraspecial group 2^{{1+24}}
+*** Operation of xi on the extraspecial group 2^{1+24}
 *************************************************************************/
 
 /**
-  @brief Conjugate an element of the group \f$Q_{{x0}}\f$ with \f$\xi^e\f$ 
+  @brief Conjugate an element of the group \f$Q_{x0}\f$ with \f$\xi^e\f$ 
   
-  The function returns \f$\xi^{{-e}} x \xi^e\f$ for an element 
-  \f$x\f$  of the group \f$Q_{{x0}}\f$. Input \f$x\f$ and the
+  The function returns \f$\xi^{-e} x \xi^e\f$ for an element 
+  \f$x\f$  of the group \f$Q_{x0}\f$. Input \f$x\f$ and the
   return value are encoded in *Leech lattice encoding* as described
   above.
 */
@@ -193,9 +193,9 @@ uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 *************************************************************************/
 
 /**
-  @brief Convert the encoding of an element of the group \f$Q_{{x0}}\f$
+  @brief Convert the encoding of an element of the group \f$Q_{x0}\f$
   
-  The function converts an element \f$x\f$ of the group \f$Q_{{x0}}\f$
+  The function converts an element \f$x\f$ of the group \f$Q_{x0}\f$
   from *Leech lattice encoding* to *Short vector encoding* and returns
   the converted element.
 */
@@ -268,9 +268,9 @@ uint32_t gen_xi_leech_to_short(uint32_t x)
 
 
 /**
-  @brief Convert the encoding of an element of the group \f$Q_{{x0}}\f$
+  @brief Convert the encoding of an element of the group \f$Q_{x0}\f$
   
-  The function converts an element \f$x\f$ of the group \f$Q_{{x0}}\f$
+  The function converts an element \f$x\f$ of the group \f$Q_{x0}\f$
   from *Short vector encoding* to *Leech lattice encoding* and returns
   the converted element.
   
@@ -353,10 +353,10 @@ uint32_t gen_xi_short_to_leech(uint32_t x)
 *************************************************************************/
 
 /**
-  @brief Conjugate an element of the group \f$Q_{{x0}}\f$ with \f$\xi^e\f$ 
+  @brief Conjugate an element of the group \f$Q_{x0}\f$ with \f$\xi^e\f$ 
   
-  The function returns \f$\xi^{{-e}} x \xi^e\f$ for an element 
-  \f$x\f$  of the group \f$Q_{{x0}}\f$. In contrast to function
+  The function returns \f$\xi^{-e} x \xi^e\f$ for an element 
+  \f$x\f$  of the group \f$Q_{x0}\f$. In contrast to function
   gen_xi_op_xi, the input \f$x\f$ and the return value are encoded 
   in *short vector encoding* as described above.
   
@@ -383,8 +383,8 @@ uint32_t gen_xi_op_xi_short(uint32_t x, uint32_t u)
   @brief Create table for operation of \f$\xi^e\f$,
   
   The function creates a table ``ptab`` such that ``ptab[i]`` encodes
-  \f$\xi^{{-e}} x \xi^e\f$, where \f$x = 2^{{16}} \cdot b + i\f$ 
-  encodes a short vector in \f$Q_{{x0}}\f$ in *Short vector encoding*.
+  \f$\xi^{-e} x \xi^e\f$, where \f$x = 2^{16} \cdot b + i\f$ 
+  encodes a short vector in \f$Q_{x0}\f$ in *Short vector encoding*.
   The length of the gererated table is 
   \f$l(b) =  2496, 23040, 24576, 32768, 32768\f$ for 
   \f$b = 1,2,3,4,5\f$. 

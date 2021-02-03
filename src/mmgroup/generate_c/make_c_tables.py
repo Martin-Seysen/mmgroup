@@ -107,7 +107,8 @@ class TableGenerator(object):
     m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)(\*|\b)(.*)?")
     block_kwds = set(["FOR", "IF", "WITH"])
     ILLEGAL_INSIDE_BLOCK = "%s directive is illegal inside a codegen block"
-
+    is_terminal = True, # True: Error if cannot valuate %{..}  expression
+                        # False: Let expression unchanged in that case
 
     def __init__(self, tables, directives={}, verbose = False):
         """Creates a Code generator with tables and directives
@@ -554,12 +555,12 @@ class TableGenerator(object):
         of the FOR loop.
         """
         self.adjust_names()
-        self.export_pending = False         # set when EXPORT action pending
-        self.pxd_export_pending = False     # set when EXPORT include .pxd file
-        self.use_table_pending = False      # set when USE_TABLE action pending
-                                            # 1 = just remember C name of table
-                                            # 2 = also create prototype
-        self.join_pending = False           # set when JOIN action is pending
+        self.export_pending = False      # set when EXPORT action pending
+        self.pxd_export_pending = False  # set when EXPORT include .pxd file
+        self.use_table_pending = False   # set when USE_TABLE action pending
+                                         # 1 = just remember C name of table
+                                         # 2 = also create prototype
+        self.join_pending = False        # set when JOIN action is pending
         for l in source:
             if self.verbose:
                 print("%d: %s" % (len(self.block_stack), l), end = "")
@@ -569,16 +570,15 @@ class TableGenerator(object):
                 fname, quiet, args = m.groups()
                 if not quiet:
                     yield l, ""
-                args = args.format(*self.args, **self.names)
+                args = format_line(args, self.names, self.args) 
                 c_out, h_out = self.directives[fname](args, quiet, source)
-                self.adjust_names()        # a directive might mess up names
+                self.adjust_names()      # a directive might mess up names
                 yield c_out, h_out
             else:
-                #self._check_names()
-                l = format_line(l, self.names, self.args)
+                l = format_line(l, self.names, self.args,
+                                           self.is_terminal)
                 l = indent_subsequent_lines(l) 
                 c_out = l if self.gen_c else "" 
-                  # old version outputs line_as_comment(l) if not self.gen_c
                 h_out = l if self.gen_h else ""
                 yield c_out, h_out
                 if self.export_pending:
@@ -586,7 +586,6 @@ class TableGenerator(object):
                 if self.use_table_pending:
                     yield self.process_use_table(l)
                 self.join_pending = False
-        #self.reset_names()
 
 
     def iter_generate(self, source):
@@ -899,29 +898,22 @@ def c_snippet(source, *args, **kwds):
 
     Here *source* is a string that is interpreted in the same way as
     a source file in method ``generate()`` of class TableGenerator.
+    The function applies the code generator to the string *source*
+    nd returns the generated code as a string.
 
     All subsequent keyword arguments are treated as a dictionary and
     they are passed to the code generator in class TableGenerator in 
     the same way as parameter 'tables' in the constructor of that
-    class.
+    class. 
 
-    Thus ``c_snippet(source, x, a = 'b')`` has pretty much the same 
-    effect ``as source.format(x, a = 'b')``. This means that 
-    positional and keyword arguments of this function are eventually 
-    passed to to the standard string formatting method ``.format()``,
-    with the following exceptions: 
- 
-       - An opening curly bracket not followed by a closing one or a 
-         closing curly bracket not preceded by an opening one is not 
-         passed to the formatting method. So we may write the string  
-         *source*  almost in usual C syntax, but expressions in curly 
-         braces inside a line are passed to the formatting method.
+    One can also pass positional arguments to this function. In the
+    **source* string they an be accessed as ``%{0}``, ``%{1}``, etc.
 
-       - A line starting with ``'// %%'`` is interpreted as in class
-         ``TableGenerator``.
+    A line starting with ``// %%`` is interpreted as in class
+    ``TableGenerator``.
 
-       - keyword ``directives`` is reserved for passing a list of
-         directives as in class ``TableGenerator``.
+    The keyword ``directives`` is reserved for passing a list of
+    directives as in class ``TableGenerator``.
 
     In order to achieve a similar effect as generating C code with::
 
@@ -931,6 +923,11 @@ def c_snippet(source, *args, **kwds):
     you may code e.g.::
         
         c_string = c_snippet(source, directives=directives, **tables) 
+
+    If this function cannot evaluate an expression of shape  ``%{xxx}`` 
+    the the expression it is not changed; so a subsequent code 
+    generation step  may evaluate that expression. Unevaluated arguments 
+    of directives lead to an error.
     """ 
     src = source.splitlines(True)
     try:
@@ -938,6 +935,7 @@ def c_snippet(source, *args, **kwds):
     except KeyError:
         directives = {}
     tg = TableGenerator(kwds, directives)
+    tg.is_terminal = False
     tg.args = args
     return "".join(c for c,h in tg.iter_generate(src)) 
 

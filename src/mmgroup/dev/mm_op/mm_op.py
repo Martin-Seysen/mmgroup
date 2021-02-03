@@ -14,13 +14,13 @@ have fixed values. So they are available as attributes of an
 instance of class ``MM_Op`` and they may also be used by the code 
 generator directly via string formatting.
  
-The string formatting functions ``{shl:expression,i}`` and 
-``{smask:value, fields, width}`` work as in class ``MM_Op``. In 
+The string formatting functions ``%{shl:expression,i}`` and 
+``%{smask:value, fields, width}`` work as in class ``MM_Op``. In 
 addition, parameter ``fields`` defaults to ``-1`` (i.e. the mask 
 is set in all bit fields) and ``width`` defaults to the constant 
 ``FIELD_BITS``. i.e. the number of bits used to store an integer 
 modulo ``p``. E.g. for ``p = 7`` we have ``FIELD_BITS = 4``, and 
-``{smask:1}`` evaluates to the ``64``-bit integer constant 
+``%{smask:1}`` evaluates to the ``64``-bit integer constant 
 ``0x1111111111111111``.
 
 Class ``MM_Op`` also provides the following directives:
@@ -125,9 +125,9 @@ class MM_Op(MM_Basics):
         count = int(count) % self.P_BITS
         if count == 0:
             return
-        s = """// Put {dest} = {src} rotated left by {c} for all fields
-{dest} = ((({src}) << {c}) & {smask: (-1 << {c}) & P})
-       | ((({src}) >> {int:P_BITS-c}) & {smask:range(c)});
+        s = """// Put %{dest} = %{src} rotated left by %{c} for all fields
+%{dest} = (((%{src}) << %{c}) & %{smask: (-1 << {c}) & P})
+       | (((%{src}) >> %{int:P_BITS-c}) & %{smask:range(c)});
 """
         return self.snippet(s, src = src, dest = dest, c=count)
 

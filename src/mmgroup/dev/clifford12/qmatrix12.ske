@@ -13,8 +13,8 @@
   in this module are documented in file ``clifford12.h``.
   
   A structure ``qs`` of type ``qstate12_type`` defines a function
-  \f$f: \mathbb{{F}}_2^n \rightarrow \mathbb{{C}}\f$
-  and also a \f$2^{{n-k}} \times 2^k\f$ matrix \f$M\f$ with entries
+  \f$f: \mathbb{F}_2^n \rightarrow \mathbb{C}\f$
+  and also a \f$2^{n-k} \times 2^k\f$ matrix \f$M\f$ with entries
   \f$M[i,j] = f(2^k \cdot i+j)\f$. Here we idenitfy the nonegative 
   integers \f$ < 2^n\f$ with the bit vectors given by their
   binary representation. For the shape parameters \f$n, k\f$ of a
@@ -378,9 +378,9 @@ qstate12_copy_row(uint64_t *m, uint32_t ncols, uint32_t nrows, uint32_t i1, uint
   The algorithm used here is explained in the **API reference** in
   section **Multiplication of quadratic mappings**.
   In the notation in that section the algorithm computes
-  states \f$\mbox{{qs1}}', \mbox{{qs2}}'\f$ with
-  \f$ (\mbox{{qs1}}' \odot  \mbox{{qs2}}')_n
-  = (\mbox{{qs1}} \odot \mbox{{qs2}})_n, \f$, 
+  states \f$\mbox{qs1}', \mbox{qs2}'\f$ with
+  \f$ (\mbox{qs1}' \odot  \mbox{qs2}')_n
+  = (\mbox{qs1} \odot \mbox{qs2})_n, \f$, 
   where \f$ n\f$ = ``nqb``.
  
   ``pqs1->shape1`` and ``pqs2->shape1`` are ignored.
@@ -605,7 +605,7 @@ static int32_t qs_product(qstate12_type *pqs1, qstate12_type *pqs2, uint32_t nqb
   the scalar product of ``qs1`` and ``qs2`` (considered as vectors).
  
   In general, ``qstate12_product(pqs1, pqs2, n, 0)`` corresponds
-  to the function  \f$ (\mbox{{qs1}}' \odot  \mbox{{qs2}}')_n \f$
+  to the function  \f$ (\mbox{qs1}' \odot  \mbox{qs2}')_n \f$
   defined in
   section **Products and tensor products of quadratic mappings**
   of the **API reference**.

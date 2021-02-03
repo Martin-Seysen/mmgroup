@@ -62,7 +62,7 @@ extern "C" {
 
 
 // Standard size of a buffer for a quaratic state matrix
-// representing an element of the group G_{{x0}}. 
+// representing an element of the group G_{x0}. 
 #define MAXROWS_ELEM 30
 
 /// @endcond 
@@ -121,7 +121,7 @@ uint32_t xsp2co1_error_pool(uint64_t *dest, uint32_t length)
 
 The rational vector space \f$4096_x\f$ of the 4096-dimensional
 representation of the group \f$G(4096_x)\f$ has a standard basis 
-given by vectors \f$d_1^+, d_1^-, d \in \mathcal{{P}}\f$, and 
+given by vectors \f$d_1^+, d_1^-, d \in \mathcal{P}\f$, and 
 also a basis given by vectors  \f$(d)'\f$. Let the coordinates
 of \f$x_g \in 4096_x\f$ (in the standard basis) be given by the
 quadratic state matrix referred by ``pqs``. The function
@@ -145,7 +145,7 @@ int32_t xsp2co1_conv_conjugate_basis(qstate12_type *pqs)
 
 The function performs the basis conversion deescribed in
 function ``xsp2co1_conv_conjugate_basis``  on an element
-``x`` of \f$Q_{{x0}}\f$ (in Leech lattice encoding). It
+``x`` of \f$Q_{x0}\f$ (in Leech lattice encoding). It
 returns the converted element in in Leech lattice encoding.
 
 Note the remark about this function in the decription above.
@@ -193,16 +193,16 @@ static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
 /**
 @brief Find vector not orthogonal to vectors in Leech lattice mod 3
 
-Given two vectors \f$v_{{3,1}}\f$ and \f$v_{{3,2}}\f$ in the Leech
-lattice mod 3, the function returns a vector \f$v_{{3,3}}\f$ such
-that the scalar product \f$\langle v_{{3,3}}, v_{{3,i}} \rangle\f$
-is not zero for both, \f$i = 1, 2\f$. \f$v_{{3,3}}\f$ has precisely 
+Given two vectors \f$v_{3,1}\f$ and \f$v_{3,2}\f$ in the Leech
+lattice mod 3, the function returns a vector \f$v_{3,3}\f$ such
+that the scalar product \f$\langle v_{3,3}, v_{3,i} \rangle\f$
+is not zero for both, \f$i = 1, 2\f$. \f$v_{3,3}\f$ has precisely 
 two nonzero coordinates and is hence short. Such a vector 
-\f$v_{{3,3}}\f$ exists if none of the vectors 
-\f$v_{{3,1}}, v_{{3,2}}\f$ is zero. If no such vector 
-\f$v_{{3,3}}\f$ exists then the function returns 0.
+\f$v_{3,3}\f$ exists if none of the vectors 
+\f$v_{3,1}, v_{3,2}\f$ is zero. If no such vector 
+\f$v_{3,3}\f$ exists then the function returns 0.
 
-All vectors \f$v_{{3,i}}\f$ are in given in **Leech lattice mod 3 
+All vectors \f$v_{3,i}\f$ are in given in **Leech lattice mod 3 
 encoding**.
 */
 // %%EXPORT px
@@ -266,23 +266,23 @@ uint64_t xsp2co1_find_chain_short_3(uint64_t v3_1, uint64_t v3_2)
 
 
 /**
-@brief Apply transformation in \f$G_{{x0}}\f$ to vectors in Leech lattice mod 3
+@brief Apply transformation in \f$G_{x0}\f$ to vectors in Leech lattice mod 3
 
 Let \f$x_g \in G(4096_x)\f$ be given by the quadratic state matrix
 referred by ``pqs``. Let ``psrc`` be an array 
-\f$(v_0,\ldots v_{{n-1}})\f$
+\f$(v_0,\ldots v_{n-1})\f$
 of \f$n\f$ short vectors in the Leech lattice mod 3, given 
 in **Leech lattice mod 3 encoding**. We try to compute 
 \f$w_i = v_i x_g\f$ for \f$0 \leq i < n\f$ and to store  \f$w_i\f$ in
 ``pdest[i]``, also in **Leech lattice mod 3 encoding**. Unfortunately, 
 the short vector  \f$w_i\f$ is defined to sign only. In other words, 
 \f$x_g\f$  may correspond to two  different elements \f$\pm g\f$ in 
-the automorphisem group \f$\mbox{{Co}}_0\f$ of the Leech lattice.
+the automorphisem group \f$\mbox{Co}_0\f$ of the Leech lattice.
 
-To specify the correct \f$g \in \mbox{{Co}}_0\f$, we must store the
+To specify the correct \f$g \in \mbox{Co}_0\f$, we must store the
 correct value \f$w_0 = v_0 x_0\f$ in ``pdest[0]`` and provide short 
 vectors \f$v_i\f$ such that the scalar product  
-\f$\langle v_{{i-1}}, v_i\rangle \f$ of adjacent vectors is not 
+\f$\langle v_{i-1}, v_i\rangle \f$ of adjacent vectors is not 
 zero for \f$i>0\f$. The the correct values \f$v_i x_i\f$ are
 determined by ortohonality of \f$g\f$.
 
@@ -327,18 +327,18 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
 
 
 /*************************************************************************
-*** Conversion between quadratic state matrices and elements of G_{{x0}}
+*** Conversion between quadratic state matrices and elements of G_{x0}
 *************************************************************************/
 
 
 /**
-@brief Get component \f$x_g^{{-1}} \in G(4096_x)\f$ from \f$g \in G_{{x0}}\f$ 
+@brief Get component \f$x_g^{-1} \in G(4096_x)\f$ from \f$g \in G_{x0}\f$ 
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
 given as a pair
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
-The function stores \f$x_g^{{-1}}\f$ in the structure ``qs`` of 
+The function stores \f$x_g^{-1}\f$ in the structure ``qs`` of 
 type ``qstate12_type`` referred by ``pqs``. 
 
 Component \f$v_g\f$ is equal to ``elem[0]`` 
@@ -380,7 +380,7 @@ int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
 @brief Simplified version of function ``xsp2co1_qs_to_elem_i``.
 
 In contrast to function ``xsp2co1_qs_to_elem_i``, the component
-\f$x_g\f$ in the result \f$x_g^{{-1}}\f$ constrcuted by that 
+\f$x_g\f$ in the result \f$x_g^{-1}\f$ constrcuted by that 
 function is not reduced.
 
 Caution:
@@ -406,9 +406,9 @@ int32_t xsp2co1_qs_to_elem_i_noreduce(qstate12_type *pqs, uint64_t v3, uint64_t 
 
 
 /**
-@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{{x0}}\f$ 
+@brief Get component \f$x_g \in G(4096_x)\f$ from \f$g \in G_{x0}\f$ 
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
 given as a pair
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
@@ -441,12 +441,12 @@ int32_t xsp2co1_elem_to_qs(uint64_t *elem, qstate12_type *pqs)
 
 
 /**
-@brief Construct \f$g \in G_{{x0}}\f$ from pair \f$(x_g, v_g)\f$ 
+@brief Construct \f$g \in G_{x0}\f$ from pair \f$(x_g, v_g)\f$ 
 
-The function constructs a \f$g \in G_{{x0}}\f$ as a pair 
+The function constructs a \f$g \in G_{x0}\f$ as a pair 
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ and 
 stores the result in the array ``elem`` in **G_x0 representation**. 
-The value \f$x_g^{{-1}} \in G(4096_x)\f$ must be given as a 
+The value \f$x_g^{-1} \in G(4096_x)\f$ must be given as a 
 structure of type ``qstate12_type`` referred by ``pqs``. The value
 \f$v_g \in \Lambda / 3 \Lambda\f$ must be given by parameter
 ``v3`` in **Leech lattice mod 3 encoding**.
@@ -454,9 +454,9 @@ structure of type ``qstate12_type`` referred by ``pqs``. The value
 Caution:
 
 As a low-level function, this function may construct a value
-\f$g\f$ which is not in \f$G_{{x0}}\f$. Function
+\f$g\f$ which is not in \f$G_{x0}\f$. Function
 ``xsp2co1_set_elem_word`` should be used for constructing an 
-element of \f$G_{{x0}}\f$ instead.
+element of \f$G_{x0}\f$ instead.
 
 Caution:
 
@@ -477,16 +477,16 @@ int32_t xsp2co1_qs_to_elem_i(qstate12_type *pqs, uint64_t v_g, uint64_t *elem)
 
 
 /**
-@brief Reduce an \f$g \in G_{{x0}}\f$ to a standard form. 
+@brief Reduce an \f$g \in G_{x0}\f$ to a standard form. 
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. This means that \f$g\f$ is
 stored as a pair
 \f$(x_g, v_g) \in G(4096_x) \times \Lambda / 3 \Lambda\f$ .
 The function reduces the components \f$x_g\f$, \f$v_g\f$
 to their standard form in place. 
 
-In functions that construct elements of \f$G_{{x0}}\f$
+In functions that construct elements of \f$G_{x0}\f$
 these components are reduced automatically.
 */
 // %%EXPORT px
@@ -501,21 +501,21 @@ int32_t xsp2co1_reduce_elem(uint64_t *elem)
 
 
 /*************************************************************************
-*** Elementary function operating on elements of G_{{x0}}
+*** Elementary function operating on elements of G_{x0}
 *************************************************************************/
 
 
 
 /**
-@brief Negate an \f$g \in G_{{x0}}\f$. 
+@brief Negate an \f$g \in G_{x0}\f$. 
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. The function negates \f$g\f$
 in place.
 
 Negation is equivalent to multiplication with the generator
-\f$x_{{-1}}\f$, and also to  multiplication with the generator
-\f$y_{{\Omega}}\f$.
+\f$x_{-1}\f$, and also to  multiplication with the generator
+\f$y_{\Omega}\f$.
 */
 // %%EXPORT px
 void xsp2co1_neg_elem(uint64_t *elem)
@@ -525,9 +525,9 @@ void xsp2co1_neg_elem(uint64_t *elem)
 
 
 /**
-@brief Copy a \f$g \in G_{{x0}}\f$. 
+@brief Copy a \f$g \in G_{x0}\f$. 
 
-The function copies the element of \f$G_{{x0}}\f$  stored in 
+The function copies the element of \f$G_{x0}\f$  stored in 
 the array ``elem1`` (in **G_x0 representation**) to the
 array ``elem2``.
 
@@ -545,14 +545,14 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /*************************************************************************
-*** Multiplication and inversion in the group G_{{x0}}
+*** Multiplication and inversion in the group G_{x0}
 *************************************************************************/
 
 
 /**
-   @brief Multiply two elements of the group \f$G_{{x0}}\f$.
+   @brief Multiply two elements of the group \f$G_{x0}\f$.
    
-   Let \f$g_1, g_2 \in G_{{x0}}\f$ be stored in the arrays ``elem1``,
+   Let \f$g_1, g_2 \in G_{x0}\f$ be stored in the arrays ``elem1``,
    ``elem2`` in **G_x0 representation**. The function computes
    \f$g_1 \cdot g_2 \f$ and stores the result in the array 
    ``elem3`` in **G_x0 representation**.
@@ -591,11 +591,11 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 
 
 /**
-   @brief Invert an element of the group \f$G_{{x0}}\f$.
+   @brief Invert an element of the group \f$G_{x0}\f$.
    
-   Let \f$g_1 \in G_{{x0}}\f$ be stored in the array ``elem1``,
+   Let \f$g_1 \in G_{x0}\f$ be stored in the array ``elem1``,
    in **G_x0 representation**. The function computes
-   \f$g_1^{{-1}}\f$ and stores the result in the array 
+   \f$g_1^{-1}\f$ and stores the result in the array 
    ``elem2`` in **G_x0 representation**.
    
    Any kind of overlapping beween the arrays ``elem1`` and
@@ -627,19 +627,19 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /*************************************************************************
-*** Conjugate elements of Q_{{x0}} with an element of G_{{x0}}
+*** Conjugate elements of Q_{x0} with an element of G_{x0}
 *************************************************************************/
 
 /**
-@brief Conjugation of elements of \f$Q_{{x0}}\f$ with an element of \f$G_{{x0}}\f$
+@brief Conjugation of elements of \f$Q_{x0}\f$ with an element of \f$G_{x0}\f$
 
-Let \f$x_0,\ldots,x_{{n-1}}\f$ a list of \f$n\f$ elements of
-\f$Q_{{x0}}\f$ stored in the the array ``ax``
-in **Leech lattice encoding**. Let  \f$g \in G_{{x0}}\f$ be
+Let \f$x_0,\ldots,x_{n-1}\f$ a list of \f$n\f$ elements of
+\f$Q_{x0}\f$ stored in the the array ``ax``
+in **Leech lattice encoding**. Let  \f$g \in G_{x0}\f$ be
 stored in the array ``elem`` in **G_x0 representation**.
 
 Then the function replaces the element \f$x_i\f$ by
-\f$g^{{-1}} x_i g\f$ for \f$0 \leq i < n\f$.
+\f$g^{-1} x_i g\f$ for \f$0 \leq i < n\f$.
 */
 // %%EXPORT px
 int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
@@ -666,20 +666,20 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
 }
 
 /*************************************************************************
-*** Check if an element of G_{{x0}} is in the subgroup  Q_{{x0}}
+*** Check if an element of G_{x0} is in the subgroup  Q_{x0}
 *************************************************************************/
 
 
 
 /**
-@brief Convert \f$x \in Q_{{x0}}\f$ from \f$G_{{x0}}\f$ rep to Leech
+@brief Convert \f$x \in Q_{x0}\f$ from \f$G_{x0}\f$ rep to Leech
 
-Let \f$x \in Q_{{x0}} \subset G_{{x0}}\f$ be stored in the
+Let \f$x \in Q_{x0} \subset G_{x0}\f$ be stored in the
 array ``elem`` in **G_x0 representation**. The function
 returns \f$x\f$ as an integer in **Leech lattice encoding**.
 
 The function returns a negative number in case of error. E.g. in
-case \f$x \notin Q_{{x0}}\f$ it returns ``ERR_QSTATE12_NOTIN_XSP``.
+case \f$x \notin Q_{x0}\f$ it returns ``ERR_QSTATE12_NOTIN_XSP``.
 */
 // %%EXPORT px
 int32_t xsp2co1_xspecial_vector(uint64_t *elem)
@@ -704,14 +704,14 @@ int32_t xsp2co1_xspecial_vector(uint64_t *elem)
 
 
 /*************************************************************************
-*** Construction of elements of the subgroup of Q_{{x0}} of G_{{x0}}
+*** Construction of elements of the subgroup of Q_{x0} of G_{x0}
 *************************************************************************/
 
 
 /**
-@brief Store neutral element of \f$G_{{x0}}\f$ 
+@brief Store neutral element of \f$G_{x0}\f$ 
 
-The function stores the neutral element of \f$G_{{x0}}\f$ in the 
+The function stores the neutral element of \f$G_{x0}\f$ in the 
 array ``elem`` in **G_x0 representation**. 
 */
 // %%EXPORT px
@@ -736,17 +736,17 @@ void xsp2co1_unit_elem(uint64_t *elem)
 
 
 /*************************************************************************
-*** Multiplication of an element of G_{{x0}} by an element of Q_{{x0}}
+*** Multiplication of an element of G_{x0} by an element of Q_{x0}
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-@brief Multiply \f$x_g \in G(4096_x)\f$ by \f$x \in Q_{{x0}}\f$ 
+@brief Multiply \f$x_g \in G(4096_x)\f$ by \f$x \in Q_{x0}\f$ 
 
 The function multiplies the element \f$x_g\f$ of \f$G(4096_x)\f$ 
 (stored in the structure ``qs`` referred by ``pqs``) by the element 
-\f$x\f$ of \f$Q_{{x0}}\f$ and stores the result in ``qs``.
+\f$x\f$ of \f$Q_{x0}\f$ and stores the result in ``qs``.
 Element f$x\f$ is encoded in **Leech lattice encoding**.
 */ 
 static inline 
@@ -771,9 +771,9 @@ int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
 
 
 /**
-@brief Convert \f$x \in Q_{{x0}}\f$ from Leech to \f$G_{{x0}}\f$ rep  
+@brief Convert \f$x \in Q_{x0}\f$ from Leech to \f$G_{x0}\f$ rep  
 
-Let \f$x \in Q_{{x0}} \subset G_{{x0}}\f$ be stored in parameter
+Let \f$x \in Q_{x0} \subset G_{x0}\f$ be stored in parameter
 ``x`` in **Leech lattice encoding**. The function converts
 \f$x\f$ to **G_x0 representation** and stores the result in
 the array ``elem`` .
@@ -792,7 +792,7 @@ int32_t xsp2co1_elem_xspecial(uint64_t *elem, uint32_t x)
 }
 
 /*************************************************************************
-*** Construction of an element of G_{{x0}}  with tag 'p'
+*** Construction of an element of G_{x0}  with tag 'p'
 *************************************************************************/
 
 
@@ -836,7 +836,7 @@ int32_t set_qs_delta_pi_aut(qstate12_type *pqs, uint32_t aut[12])
 
 
 /*************************************************************************
-***  Construction of an element of G_{{x0}}  with tag 'y'
+***  Construction of an element of G_{x0}  with tag 'y'
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -877,7 +877,7 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
 
 
 /*************************************************************************
-*** Multiply an element of G_{{x0}} by an atom with tag 'l' 
+*** Multiply an element of G_{x0} by an atom with tag 'l' 
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -973,7 +973,7 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 
 
 /*************************************************************************
-*** Multiply an element of G_{{x0}} by a word of generators of G_{{x0}}
+*** Multiply an element of G_{x0} by a word of generators of G_{x0}
 *************************************************************************/
 
 
@@ -988,7 +988,7 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 ``xsp2co1_mul_set_elem_word(elem, a, n, 1)`` is equivalent to
 ``xsp2co1_set_elem_word(elem, a, n)``.
 
-So the function multiplies element ``elem`` of the group ``G_{{x0}}`` 
+So the function multiplies element ``elem`` of the group ``G_{x0}`` 
 with the the word given by ``a``. If parameter ``set_one`` is zero  then 
 ``elem`` is set to the neutral element before the multiplication starts.
 */
@@ -1100,13 +1100,13 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
 /// @endcond  
 
 /**
-@brief Right multiply an element of \f$G_{{x0}}\f$ with a word of generators
+@brief Right multiply an element of \f$G_{x0}\f$ with a word of generators
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem`` 
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem`` 
 in **G_x0 representation**. We replace \f$g\f$ by \f$g \cdot w\f$,
-where \f$w\f$ is a word in the generators of  \f$G_{{x0}}\f$ 
+where \f$w\f$ is a word in the generators of  \f$G_{x0}\f$ 
 of length \f$n\f$. \f$w\f$ is stored in the array ``a``, and each
-entry of ``a`` encodes a generator of   \f$G_{{x0}}\f$ as 
+entry of ``a`` encodes a generator of   \f$G_{x0}\f$ as 
 described in file ``mmgroup_generators.h``.
 */
 // %%EXPORT px
@@ -1117,13 +1117,13 @@ int32_t xsp2co1_mul_elem_word(uint64_t *elem, uint32_t *a, uint32_t n)
 
 
 /**
-@brief Convert word of generators of \f$G_{{x0}}\f$ to G_x0 representation
+@brief Convert word of generators of \f$G_{x0}\f$ to G_x0 representation
 
-Let \f$w\f$ be a word in the generators of  \f$G_{{x0}}\f$ 
+Let \f$w\f$ be a word in the generators of  \f$G_{x0}\f$ 
 of length \f$n\f$. \f$w\f$ is stored in the array ``a``, and each
-entry of ``a`` encodes a generator of   \f$G_{{x0}}\f$ as 
+entry of ``a`` encodes a generator of   \f$G_{x0}\f$ as 
 described in file ``mmgroup_generators.h``.  We convert the word
-\f$w\f$ to an element of  \f$G_{{x0}}\f$ in **G_x0 representation**
+\f$w\f$ to an element of  \f$G_{x0}\f$ in **G_x0 representation**
 and store the result in the array ``elem``.
 */
 // %%EXPORT px
@@ -1134,7 +1134,7 @@ int32_t xsp2co1_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n)
 
 
 /**
-@brief Right multiply an element of \f$G_{{x0}}\f$ with a generator
+@brief Right multiply an element of \f$G_{x0}\f$ with a generator
 
 Equivalent to ``xsp2co1_mul_elem_word(elem, &v, 1)``
 */
@@ -1145,7 +1145,7 @@ int32_t xsp2co1_mul_elem_atom(uint64_t *elem, uint32_t v)
 }
 
 /**
-@brief Convert a genertor of \f$G_{{x0}}\f$ to G_x0 representation
+@brief Convert a genertor of \f$G_{x0}\f$ to G_x0 representation
 
 Equivalent to ``xsp2co1_set_elem_word(elem, &v, 1)``
 */
@@ -1160,7 +1160,7 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 
 
 /*************************************************************************
-*** Obtain Leech lattice transformation from an element of G_{{x0}}
+*** Obtain Leech lattice transformation from an element of G_{x0}
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -1170,7 +1170,7 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
 **Leech lattice mod 3** encoding to the encoding to the endoding
-of a vector in \f$(\mathbb{{Z}} / 3\mathbb{{Z}})^{{24}}\f$ 
+of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ 
 used in the ``mmgroup.mm3`` extension.
 
 This conversion is an involution.
@@ -1249,14 +1249,14 @@ int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8
 /// @endcond 
 
 /**
-@brief Get Leech lattice matrix from \f$g \in G_{{x0}}\f$ 
+@brief Get Leech lattice matrix from \f$g \in G_{x0}\f$ 
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``,
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
 in **G_x0 representation**. 
-\f$G_{{x0}}\f$ operates faithfully on the space
-\f$4096_x \otimes_\mathbb{{Z}} \Lambda\f$. This function 
+\f$G_{x0}\f$ operates faithfully on the space
+\f$4096_x \otimes_\mathbb{Z} \Lambda\f$. This function 
 constructs a \f$24 \times 24\f$ integer matrix
-\f$L_g\f$ such that  \f$\frac{{1}}{{8}} L_g\f$ corresponds 
+\f$L_g\f$ such that  \f$\frac{1}{8} L_g\f$ corresponds 
 to the operation of \f$g\f$ on \f$\Lambda\f$. It stores
 entry  \f$L_g[i,j]\f$ in ``dest[24*i+j]``.  Matrix \f$L_g\f$ 
 is unique up to sign.
@@ -1265,7 +1265,7 @@ Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
 (representation of) an orthogonal \f$4096 \times 4096\f$
 matrix \f$x_g\f$ such that right multiplication with the 
 Kronecker product  
-\f$\frac{{1}}{{8}} x_g \otimes L_g\f$ is equal to the 
+\f$\frac{1}{8} x_g \otimes L_g\f$ is equal to the 
 action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
 */
 // %%EXPORT px
@@ -1276,10 +1276,10 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
     qstate12_type qs;
     
     // We let ``elem`` act on a sequence of short vectors
-    // ``4*e_{{i}} -  4*e_{{i+1}}``, with ``e_i`` the ``i-``th
+    // ``4*e_{i} -  4*e_{i+1}``, with ``e_i`` the ``i-``th
     // unit vector of the Leech lattice, and indices 
     // ``i = 2,...,25 `` taken modulo ``24``. We append the
-    // unit vector ``4*e_{{2}} +  4*e_{{3}}`` to that sequence.
+    // unit vector ``4*e_{2} +  4*e_{3}`` to that sequence.
     // Adjacent vectors have nonzero scalar product modulo ``3``,
     // so we may use function ``xsp2co1_chain_short_3`` to compute
     // the images of the vectors in that sequence under the group
@@ -1318,18 +1318,18 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
 
 
 /*************************************************************************
-*** Convert element of G_{{x0}} to a word in its generators
+*** Convert element of G_{x0} to a word in its generators
 *************************************************************************/
 
 /**
-@brief Map monomial element of \f$G_{{x0}}\f$ to element of \f$Q_{{x0}}\f$
+@brief Map monomial element of \f$G_{x0}\f$ to element of \f$Q_{x0}\f$
 
-Let \f$g \in G_{{x0}}\f$ stored in the array ``elem``. The matrix
+Let \f$g \in G_{x0}\f$ stored in the array ``elem``. The matrix
 corresponding to \f$g\f$ in the representation \f$4096_x\f$ must be 
 monomial. The function computes a word \f$w\f$ of in the generators 
-of \f$G_{{x0}}\f$ such that  \f$g w \in Q_{{x0}}\f$. The word  
+of \f$G_{x0}\f$ such that  \f$g w \in Q_{x0}\f$. The word  
 \f$w\f$ has length at most 2 and is stored in the array ``a``. Each 
-entry of ``a`` encodes a generator of \f$G_{{x0}}\f$ as described 
+entry of ``a`` encodes a generator of \f$G_{x0}\f$ as described 
 in file ``mmgroup_generators.h``. The function returns the length 
 of that word.
 
@@ -1361,12 +1361,12 @@ int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
 
 
 /**
-@brief Convert element of \f$G_{{x0}}\f$ to a word in its generators
+@brief Convert element of \f$G_{x0}\f$ to a word in its generators
 
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem``. The function
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
 converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
 that word in the array ``a``. Then  each entry of ``a`` encodes a
-generator of \f$G_{{x0}}\f$ as described in file
+generator of \f$G_{x0}\f$ as described in file
 ``mmgroup_generators.h``. The function returns the length of that
 word. Parameter ``img_omega`` should usually be zero.
 
@@ -1377,7 +1377,7 @@ these tags. Each entry of a word may encode the neutral element
 as a generator; then that entry is dropped. We assert that the
 number of entries with tag ``l`` is minimal.
 
-There are cases where the image \f$g^{{-1}} x_\Omega g\f$ of the
+There are cases where the image \f$g^{-1} x_\Omega g\f$ of the
 generator \f$x_\Omega\f$  is known in advance. Then run time can
 be saved encoding that image in parameter ``img_omega``
 in **Leech lattice encoding**.
@@ -1397,7 +1397,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
         res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
         if (res < 0) return res;
     } else img_Omega = img_omega & 0xffffff;
-    // Compute a word w0 of generators of G_{{x0}} that maps
+    // Compute a word w0 of generators of G_{x0} that maps
     // img_Omega to Omega (by conjugation) and store the result 
     // in a0. We store the length of the word w0 in len_a0.
     len_a0 = gen_leech2_reduce_type4((uint32_t)img_Omega, a0);
@@ -1408,8 +1408,8 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     xsp2co1_copy_elem(elem, elem_reduced);
     res = xsp2co1_mul_elem_word(elem_reduced, a0, len_a0);
     if (res < 0) return res;
-    // Compute a word ``w1`` of generators of G_{{x0}} such that
-    // ``elem_reduced * w1`` is in Q_{{x0}}; append ``w1`` to ``w0``.
+    // Compute a word ``w1`` of generators of G_{x0} such that
+    // ``elem_reduced * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
     len_a = xsp2co1_elem_monomial_to_xsp(elem_reduced, a0 + len_a0);
     if (len_a < 0) return len_a;
     // Multiply ``elem_reduced`` with the word ``w1``
@@ -1418,7 +1418,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // Keep the word ``w = w0 w1`` in ``a0`` and store its length
     // in ``len_a0``.
     len_a0 = len_a0 + len_a;
-    // Now ``elem_reduced`` is in Q_{{x0}}, Store the value of
+    // Now ``elem_reduced`` is in Q_{x0}, Store the value of
     // ``elem_reduced`` in ``x`` in ``Leech lattice encoding``.
     x = xsp2co1_xspecial_vector(elem_reduced);
     if (x < 0) return x;
@@ -1443,7 +1443,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 
 
 /*************************************************************************
-*** Convert element of G_{{x0}} to a vector of the monster rep modulo 3
+*** Convert element of G_{x0} to a vector of the monster rep modulo 3
 *************************************************************************/
 
 
@@ -1455,7 +1455,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 A projection matrix \f$\Pi\f$ is a symmetric matrix with
 one eigenvalue 1 and the other eigenvalues equal to zero
 operating on an Euclidean vector space.
-Let \f$g \in G_{{x0}}\f$ be stored in the array ``elem`` 
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem`` 
 in **G_x0 representation**.  This function left multiplies 
 \f$g\f$ by a certain projection matrix \f$\Pi\f$. The 
 result \f$y = \Pi \cdot g\f$ is an element of the vector 
@@ -1464,9 +1464,9 @@ The function reduces the coordinates of \f$y\f$ modulo
 3 and stores the result in the array ``v`` in a format
 compatible the format used in the ``mmgroup.mm3`` extension.
 
-Right multiplcation of \f$g\f$ by \f$G_{{x0}}\f$ commutes
+Right multiplcation of \f$g\f$ by \f$G_{x0}\f$ commutes
 with left multiplication of \f$g\f$ by \f$\Pi\f$, so that we
-can test the right multiplication by \f$G_{{x0}}\f$
+can test the right multiplication by \f$G_{x0}\f$
 implemented in this module against the corresponding
 multiplication implemented in the ``mmgroup.mm3`` extension.
 This leads to the important interoperability test in the
@@ -1475,10 +1475,10 @@ python function
 
 
 We specify the projection matrix  \f$\Pi\f$ as a tensor
-product \f$\Pi_{{4096}} \otimes \Pi_{{24}}\f$. Here
-\f$\Pi_{{24}}\f$ projects onto the fixed short Leech 
+product \f$\Pi_{4096} \otimes \Pi_{24}\f$. Here
+\f$\Pi_{24}\f$ projects onto the fixed short Leech 
 lattice vector
-\f$(0,0,1,-1,0, \ldots,0)\f$. \f$\Pi_{{4096}}\f$ is the
+\f$(0,0,1,-1,0, \ldots,0)\f$. \f$\Pi_{4096}\f$ is the
 projection onto the coordinate with number ``column``
 of the space  \f$4096_x\f$.
 

@@ -240,7 +240,7 @@ H_BASICS_BEGIN = """
 
 
 
-typedef uint{INT_BITS}_t uint_mmv_t;
+typedef uint%{INT_BITS}_t uint_mmv_t;
 
 
 #ifdef __cplusplus

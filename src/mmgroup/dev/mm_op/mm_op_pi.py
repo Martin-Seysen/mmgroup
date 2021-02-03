@@ -70,7 +70,7 @@ class Perm24_Benes(MM_Op):
     // The following code prepares the permutation operation
     uint32_t benes_net[9];     // Benes network
     // The following mask is used by the actual permutation code
-    uint_mmv_t benes_mask[{PERM24_BENES_MASK_LEN}]; 
+    uint_mmv_t benes_mask[%{PERM24_BENES_MASK_LEN}]; 
     // Compute Benes network
     mat24_perm_to_net(permutation, benes_net);
     // Prepare mask array from Benes network
@@ -240,11 +240,11 @@ uint_fast8_t i;
         identifiers 'i', 'tmp' and 'tbl' inside the block.
         """
         s = """{
-    {declare}
-    for(i = 0; i < {nsteps}; ++i) {
-        {step}
+    %{declare}
+    for(i = 0; i < %{nsteps}; ++i) {
+        %{step}
         // %%MMV_UINT_SPREAD tmp, tmp
-        {result}[i] = tmp;
+        %{result}[i] = tmp;
     }
 }
 """
@@ -287,11 +287,11 @@ uint_fast8_t i;
         are negated if bit 0 of variable 'sign' is set. 'sign' must be 
         of type uint_mmv_t. 
         """
-        s = "{sign} = (0-({sign} & {hex:1})) & {smask:P, range(24)};\n"
+        s = "%{sign} = (0-(%{sign} & %{hex:1})) & %{smask:P, range(24)};\n"
         for i in range(self.V24_INTS_USED):
             if i == 1 and self.V24_INTS_USED == 2:
-                s += "{sign} &= {smask:P, range(8)};\n"
-            s += "{var}%d ^= {sign};\n" %  i
+                s += "%{sign} &= %{smask:P, range(8)};\n"
+            s += "%%{var}%d ^= %%{sign};\n" %  i
         return self.snippet(s, var = var, sign = sign) 
 
 
@@ -521,7 +521,7 @@ class SmallPerm64(MM_Op):
         s = ""
         wt = MM_OctadTable.perm64_weights
         for i in range(self.V64_INTS):
-            s += self.snippet("{src}[{i}] ^= {smask:P,{mask}};\n",
+            s += self.snippet("%{src}[%{i}] ^= %{smask:P,{mask}};\n",
                 src = src, i = i,  mask = wt >> (i * self.INT_FIELDS))
         return s
 

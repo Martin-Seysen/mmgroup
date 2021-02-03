@@ -1,7 +1,7 @@
 /** @file gen_leech.c
 The functions in file ``gen_leech.c`` implement operations on the
 vectors of the Leech lattice modulo 2 and modulo 3  and on the
-subgroup \f$Q_{{x0}}\f$. We use the terminology defined in
+subgroup \f$Q_{x0}\f$. We use the terminology defined in
 the document *The C interface of the mmgroup project*, 
 section *Description of the mmgroup.generators extension*.
 */
@@ -55,7 +55,7 @@ static inline uint64_t short_3_reduce(uint64_t v3)
 
   The function returns the vector \f$v_3 \x_\pi\f$. Here the
   permutation \f$\pi\f$ given in the array ``perm`` as a permutation
-  on the set  \f$\{{0,\ldotss,23\}}\f$. Vector \f$v_3\f$ and the
+  on the set  \f$\{0,\ldotss,23\}\f$. Vector \f$v_3\f$ and the
   result are given Leech lattice mod 3 encoding.
 */
 static inline
@@ -88,7 +88,7 @@ uint64_t gen_leech3_op_y(uint64_t v3, uint32_t d)
 /**
   @brief Scalar product of two vectors in the Leech lattice mod 3
 
-  The function returns of vectors \f$v_{{3,1}}, $v_{{3,1}}\f$. The
+  The function returns of vectors \f$v_{3,1}, $v_{3,1}\f$. The
   parameters and the result are given Leech lattice mod 3 encoding.
 */
 static inline uint32_t short_3_scalprod(uint64_t v3_1, uint64_t v3_2)
@@ -243,22 +243,22 @@ uint32_t gen_leech2_type(uint64_t v2)
 
 
 /*************************************************************************
-*** Operation of monomial generators on the extraspecial group Q{{x0}}
+*** Operation of monomial generators on the extraspecial group Q{x0}
 *************************************************************************/
 
 
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-  @brief Perform operation \f$x_d x_\delta\f$ on \f$Q_{{x0}}\f$
+  @brief Perform operation \f$x_d x_\delta\f$ on \f$Q_{x0}\f$
 
   The function returns the element \f$q_0 x_d x_\delta\f$ for
-  \f${{q_0}} \in Q_{{x0}}\f$. Here  parameters ``d`` and 
+  \f${q_0} \in Q_{x0}\f$. Here  parameters ``d`` and 
   ``delta`` are the numbers of the Golay code element \f$d\f$
   and the cocode element \f$\delta\f$ defined in the API reference  
   in section **The Golay code and its cocode**.
   
-  Parameter \f${{q_0}}\f$ and the result are given Leech lattice 
+  Parameter \f${q_0}\f$ and the result are given Leech lattice 
   encoding.
 */
 static inline
@@ -274,16 +274,16 @@ uint32_t op_x_d_delta(uint32_t q0, uint32_t d, uint32_t delta)
 
 
 /**
-  @brief Perform operation \f$x_\delta x_\pi\f$ on \f$Q_{{x0}}\f$
+  @brief Perform operation \f$x_\delta x_\pi\f$ on \f$Q_{x0}\f$
 
   The function returns the element \f$q_0 x_\delta x_\pi\f$ for
-  \f${{q_0}} \in Q_{{x0}}\f$. Here  parameter ``pi`` is the number 
-  of the permutation \f$\pi\f$  in \f$_{{24}}\f$, and ``d`` is the
+  \f${q_0} \in Q_{x0}\f$. Here  parameter ``pi`` is the number 
+  of the permutation \f$\pi\f$  in \f$_{24}\f$, and ``d`` is the
   number of the cocode element \f$\delta x\f$. These numbers are 
   defined in the API reference  in sections **Automorphisms of the 
   Parker loop** and  **The Golay code and its cocode**, respectively.
   
-  Parameter \f${{q_0}}\f$ and the result are given Leech lattice 
+  Parameter \f${q_0}\f$ and the result are given Leech lattice 
   encoding.
 */
 static inline
@@ -332,21 +332,21 @@ uint32_t op_delta_pi_inv(uint32_t q0, uint32_t delta, uint32_t pi)
 }
 
 /**
-  @brief Perform operation \f$x_d\f$ on \f$Q_{{x0}}\f$
+  @brief Perform operation \f$x_d\f$ on \f$Q_{x0}\f$
 
   The function returns the element \f$q_0 y_d\f$ for
-  \f${{q_0}} \in Q_{{x0}}\f$. Here  parameter ``d`` is the number
+  \f${q_0} \in Q_{x0}\f$. Here  parameter ``d`` is the number
   of the Golay code element \f$d\f$ defined in the API reference  
   in section **The Golay code and its cocode**.
   
-  Parameter \f${{q_0}}\f$ and the result are given Leech lattice 
+  Parameter \f${q_0}\f$ and the result are given Leech lattice 
   encoding.
 */
 static inline
 uint32_t op_y(uint32_t q0, uint32_t d)
 {
     // We use the formula for conjugation of 
-    // \f$`\tilde{{x}}_d x_\delta\f$ with \f$y_e\f$ 
+    // \f$`\tilde{x}_d x_\delta\f$ with \f$y_e\f$ 
     // in the **guide**, section 
     // **Implementing generators of the Monster group**.
     uint32_t s, o, theta_q0, theta_y, odd, eps;
@@ -371,26 +371,26 @@ uint32_t op_y(uint32_t q0, uint32_t d)
 
 
 /*************************************************************************
-*** Conjugating a vector in the extraspecial group 2^{{1+24}}
+*** Conjugating a vector in the extraspecial group 2^{1+24}
 *************************************************************************/
 
 
 /**
-  @brief Perform operation of \f$G_{{x0}}\f$ on \f$Q_{{x0}}\f$
+  @brief Perform operation of \f$G_{x0}\f$ on \f$Q_{x0}\f$
 
-  The function returns the element \f$g^{{-1}} q_0 g\f$ for
-  \f$q_0 \in Q_{{x0}}\f$ and \f$g \in G_{{x0}}\f$. Here \f$g\f$
+  The function returns the element \f$g^{-1} q_0 g\f$ for
+  \f$q_0 \in Q_{x0}\f$ and \f$g \in G_{x0}\f$. Here \f$g\f$
   is given as a word of genenators of length \f$n\f$ in the 
   array ``pg``. Each atom of the word \f$g\f$ is encoded as 
   defined in the header file ``mmgroup_generators.h``.
   
-  Parameter \f${{q_0}}\f$ and the result are given Leech lattice 
+  Parameter \f${q_0}\f$ and the result are given Leech lattice 
   encoding.
 */
 // %%EXPORT px
 uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
 // Conjugate the element ``q0`` of the Pauli group with element 
-// ``e`` of the group ``G_{{x1}}`` with the atom
+// ``e`` of the group ``G_{x1}`` with the atom
 // given by ``v``. Atom ``v`` is interpreted as follows:
 // Bit 31:      sign of exponent
 // Bit 30..28   tag
@@ -460,7 +460,7 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
 
 
 /**
-  @brief Atomic operation of \f$G_{{x0}}\f$ on \f$Q_{{x0}}\f$
+  @brief Atomic operation of \f$G_{x0}\f$ on \f$Q_{x0}\f$
 
   Equivalent to ``gen_leech2_op_word(q0, &g, 1)``.
 */
@@ -482,15 +482,15 @@ uint32_t gen_leech2_op_atom(uint32_t q0, uint32_t g)
 
 #define RED_STD_OCTAD 0x80fUL
 
-static uint8_t RED_STD_HEPTAD[7] =  {{0,1,2,3,4,5,8}};
-static uint8_t RED_IMG_CASE_44[7] =  {{0,1,2,3,8,9,4}};
-static uint8_t RED_STD_DODECAD[] = {{0,1,2,3,8,9,14,15,18,19}};
+static uint8_t RED_STD_HEPTAD[7] =  {0,1,2,3,4,5,8};
+static uint8_t RED_IMG_CASE_44[7] =  {0,1,2,3,8,9,4};
+static uint8_t RED_STD_DODECAD[] = {0,1,2,3,8,9,14,15,18,19};
 
 /**
   @brief Apply permutation to vector in Leech lattice mod 2.
   
   Let \f$\pi\f$ be the permutation given by the array ``p`` 
-  as a permutation on the set  \f$\{{0,\ldotss,23\}}\f$. Let 
+  as a permutation on the set  \f$\{0,\ldotss,23\}\f$. Let 
   \f$v_2\f$ be the vector in the Leech lattice mod  2 given 
   by parameter ``v2``. The function returns \f$v_2 x_\pi\f$
   Parameter ``v2`` and the return value are given in Leech
@@ -546,22 +546,22 @@ uint32_t apply_perm_heptad(uint32_t v2, uint8_t *p_src, uint8_t *p_dest, uint32_
   
   The function  tries to find an exponent \f$e\f$ such that 
   \f$v_2 \xi^e\f$ is  equal to an element 
-  \f$\lambda_\delta \pmod{{\lambda_\Omega}}\f$ of
+  \f$\lambda_\delta \pmod{\lambda_\Omega}\f$ of
   \f$\Lambda / 2 \Lambda\f$, 
-  \f$\delta \in \mathcal{{C}}^*\f$, \f$\delta\f$ even. The 
+  \f$\delta \in \mathcal{C}^*\f$, \f$\delta\f$ even. The 
   function returns \f$e\f$ if such an  \f$e\f$ exists and -1
   otherwise.
   
   Assume \f$v_2 = \lambda_d + \lambda_\delta + \lambda_\epsilon, 
-  d \in \mathcal{{C}}, \delta, \epsilon \in \mathcal{{C}}^*\f$, 
+  d \in \mathcal{C}, \delta, \epsilon \in \mathcal{C}^*\f$, 
   \f$d, \delta\f$ grey, even,  \f$\epsilon\f$ coloured. 
   The function returns
   
-  \f$e=0\f$ if \f$d=0 \pmod{{\Omega}}\f$,
+  \f$e=0\f$ if \f$d=0 \pmod{\Omega}\f$,
      
-  \f$e=1\f$ if \f$\delta=\gamma(d) \pmod{{\omega}} \f$,
+  \f$e=1\f$ if \f$\delta=\gamma(d) \pmod{\omega} \f$,
 
-  \f$e=2\f$ if \f$\delta=0  \pmod{{\omega}} \f$. 
+  \f$e=2\f$ if \f$\delta=0  \pmod{\omega} \f$. 
   
   In all other cases there is no suitable exponent \f$e\f$.
 */
@@ -589,16 +589,16 @@ int32_t map_to_standard12_xi_exp(uint32_t v2)
   
   Let \f$v_2 \in \Lambda / 2 \Lambda\f$ of type 4 be given by 
   parameter ``v2`` in Leech lattice encoding. Then the function 
-  constructs a \f$g \in G_{{x0}}\f$ that maps \f$v_2\f$ to the 
+  constructs a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to the 
   standard frame \f$\Omega\f$. The standard frame \f$\Omega\f$ 
   consists of the type-4 vectors parallel to the coordinate axes.
   
   The element \f$g\f$ is returned as a word in the generators
-  of \f$G_{{x0}}\f$ of length \f$n \leq 6\f$. Each atom of the 
+  of \f$G_{x0}\f$ of length \f$n \leq 6\f$. Each atom of the 
   word \f$g\f$ is encoded as  defined in the header file 
   ``mmgroup_generators.h``. Let \f$H\f$ be the stabilizer of
   \f$\Omega\f$.  We choose a representative  \f$g\f$ in
-  the coset \f$gH\f$ such that the inverse  \f$g^{{-1}}\f$ 
+  the coset \f$gH\f$ such that the inverse  \f$g^{-1}\f$ 
   is a short as possible.
 
   The function stores \f$g\f$ as a word of generators in the
@@ -804,7 +804,7 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
 
   Funvtion ``gen_leech2_type`` may tested as follows: 
 
-  We compute the subtypes of all \f$2^{{24}}\f$ vectors 
+  We compute the subtypes of all \f$2^{24}\f$ vectors 
   \f$v \in \Lambda / 2 \Lambda\f$ and we count the obtained 
   subtypes in an array ``result`` of length 0x50. The sizes of 
   the orbits of each subtype are known form [Iva99], so a 
@@ -812,7 +812,7 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
 
   During that process we may also test function
   ``gen_leech2_reduce_type4``. Whenever vector of type-4
-  vector \f$v\f$ occurs, we compute a ``g \in G_{{x0}}`` that
+  vector \f$v\f$ occurs, we compute a ``g \in G_{x0}`` that
   maps  \f$v\f$ to the standard frame using function
   ``gen_leech2_reduce_type4``; and we check the correctness of 
   that mapping using function ``gen_leech2_op_word``. We return the
@@ -822,7 +822,7 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
   Since this test takes a long time, a high-level function might
   want to distribute it over several processes. So this function
   acccumulates the test results for the vectors \f$v\f$ with
-  \f$\mbox{{start}} \leq v < \mbox{{start}} + \mbox{{n}}\f$ only.
+  \f$\mbox{start} \leq v < \mbox{start} + \mbox{n}\f$ only.
    
 */
 // %%EXPORT px
@@ -1127,7 +1127,7 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
 
 
 /*************************************************************************
-*** Operation of G_{{x1}} on the Leech lattice mod 3
+*** Operation of G_{x1} on the Leech lattice mod 3
 *************************************************************************/
 
 
@@ -1137,9 +1137,9 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
 
   For internal purposes only. This is equivalent to
   ``gen_leech3_op_vector_word(v3, g)``, where ``g`` encodes
-  the element \f$\xi^e\f$ of \f$G_{{x1}}\f$.
+  the element \f$\xi^e\f$ of \f$G_{x1}\f$.
   
-  Parameter \f${{v_3}}\f$ and the result are given Leech lattice 
+  Parameter \f${v_3}\f$ and the result are given Leech lattice 
   mod 3 encoding.
 */
 // %%EXPORT px
@@ -1193,15 +1193,15 @@ uint64_t gen_leech3_op_xi(uint64_t v3, uint32_t e)
 
 
 /**
-  @brief Operation of \f$G_{{x1}}\f$ on the Leech lattice mod 3
+  @brief Operation of \f$G_{x1}\f$ on the Leech lattice mod 3
 
   The function returns the element \f$v_3 g\f$ for
-  \f$v_3 \in \Lambda/3\Lambda\f$ and \f$g \in G_{{x0}}\f$. Here 
+  \f$v_3 \in \Lambda/3\Lambda\f$ and \f$g \in G_{x0}\f$. Here 
   \f$g\f$ is given as a word of genenators of length \f$n\f$ in 
   the array ``pg``. Each atom of the word \f$g\f$ is encoded as 
   defined in the header file ``mmgroup_generators.h``.
   
-  Parameter \f${{v_3}}\f$ and the result are given Leech lattice 
+  Parameter \f${v_3}\f$ and the result are given Leech lattice 
   mod 3 encoding.
 */
 // %%EXPORT px
@@ -1256,11 +1256,11 @@ uint64_t gen_leech3_op_vector_word(uint64_t v3, uint32_t *pg, uint32_t n)
 
 
 /**
-  @brief Atomic operation of \f$G_{{x1}}\f$ on the Leech lattice mod 3
+  @brief Atomic operation of \f$G_{x1}\f$ on the Leech lattice mod 3
 
   Equivalent to ``gen_leech3_op_vector_word(v3, &g, 1)``.
   
-  Parameter \f${{v_3}}\f$ and the result are given Leech lattice 
+  Parameter \f${v_3}\f$ and the result are given Leech lattice 
   mod 3 encoding.
 */
 // %%EXPORT px

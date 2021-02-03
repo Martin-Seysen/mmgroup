@@ -221,8 +221,8 @@ H_FILE_BEGIN = """
 // %%GEN h
 // This header has been created automatically, do not edit!
 
-#ifndef MM_OP{P}_H
-#define MM_OP{P}_H
+#ifndef MM_OP%{P}_H
+#define MM_OP%{P}_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -238,7 +238,7 @@ H_FILE_END  = """
 #ifdef __cplusplus
 }
 #endif
-#endif  // #ifndef MM_OP{P}_H
+#endif  // #ifndef MM_OP%{P}_H
 
 """
 

@@ -112,7 +112,7 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
  @def mat24_def_lsbit24(v1) 
  @brief Macro version of function ``mat24_lsbit24``.
 */
-#define mat24_def_lsbit24(v1) {MAT24_LSBIT:v1}
+#define mat24_def_lsbit24(v1) %{MAT24_LSBIT:v1}
 
 
 /**
@@ -122,7 +122,7 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
  This is faster than ``mat24_def_lsbit24``, but here
  ``v1`` must be  power of two. 
 */
-#define mat24_def_lsbit24_pwr2(v1)  {MAT24_LSBIT:v1,1}
+#define mat24_def_lsbit24_pwr2(v1)  %{MAT24_LSBIT:v1,1}
 
 
 /**
@@ -138,7 +138,7 @@ uint32_t mat24_lsbit24(uint32_t v1)
     // http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
     // which returns 24 if v1 & 0xffffff is zero.
     // return MAT24_LSBIT_TABLE[(((v1 & -v1) * 0x077CB531L) >> 26) & 0x1f];
-    return {MAT24_LSBIT:v1};
+    return %{MAT24_LSBIT:v1};
 }
 
 
@@ -331,7 +331,7 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 */
 #define mat24_def_gcode_to_octad(v) \
   ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
-    + 3 * ((v & 0x7ff) >> 3) - {Mat24_oct_enc_offset})
+    + 3 * ((v & 0x7ff) >> 3) - %{Mat24_oct_enc_offset})
 // %%GEN c
 
 /// @endcond 
@@ -492,7 +492,7 @@ uint32_t mat24_gcode_to_octad(uint32_t v1, uint32_t u_strict)
     v1 &= 0xfff;
     y = MAT24_OCT_ENC_TABLE[v1 & 0x7ff];
     if (((y ^ ((v1 >> 11) & 1)) + 2) & u_strict) return  (uint32_t)(-1);
-    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - {Mat24_oct_enc_offset};
+    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - %{Mat24_oct_enc_offset};
 }
 
 
@@ -525,7 +525,7 @@ uint32_t mat24_vect_to_octad(uint32_t v1, uint32_t u_strict)
     y = MAT24_OCT_ENC_TABLE[v1 & 0x7ff];
     err |=  (((y ^ ((v1 >> 11) & 1)) + 2) & u_strict);
     if (err) return  (uint32_t)(-1);
-    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - {Mat24_oct_enc_offset};
+    return (y >> 1) + 3 * ((v1 & 0x7ff) >> 3) - %{Mat24_oct_enc_offset};
 }
 
 
@@ -1049,7 +1049,8 @@ uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
 // %%EXPORT p
 uint32_t mat24_mul_ploop(uint32_t v1, uint32_t v2)
 {
-   return v1 ^ v2 ^ (mat24_ploop_cocycle(v1, v2) << 12);
+
+   return v1 ^ v2 ^ (mat24_ploop_cocycle(v1, v2) << 12);
 }
 
 
@@ -1477,7 +1478,7 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
 
 
 /// @cond DO_NOT_DOCUMENT
-#define  STD_OCTAD {MAT24_STD_OCTAD}
+#define  STD_OCTAD %{MAT24_STD_OCTAD}
 /// @endcond
 
 /**
@@ -1554,9 +1555,9 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
     //                 at pos i + k_i, where 0 <= k_i < 8 - i. 
 
     // %%FOR i in range(6)
-    k1 = {i} + (k >> 28);  // this is k[{i}]
-        j8 = p1[{i}];  p1[{i}] = p1[k1]; p1[k1] = j8; 
-        k = (k & 0xfffffff) * {int:7-i};  // remove digit k_{i} from k
+    k1 = %{i} + (k >> 28);  // this is k[%{i}]
+        j8 = p1[%{i}];  p1[%{i}] = p1[k1]; p1[k1] = j8; 
+        k = (k & 0xfffffff) * %{int:7-i};  // remove digit k_%{i} from k
     // %%END FOR
 
     // Now entries at pos. 0,1,2,3,4,5,8 are valid. use
@@ -1618,16 +1619,16 @@ uint32_t mat24_perm_to_m24num(uint8_t  *p1)
     }
 
     // %%FOR i in range(8)
-    j8 = p2[p1[{i}] & 0x1f] & 7;
-    q[j8] = {i};
-    q_inv[{i}] = j8;
+    j8 = p2[p1[%{i}] & 0x1f] & 7;
+    q[j8] = %{i};
+    q_inv[%{i}] = j8;
     // %%END FOR
 
     // %%FOR i in range(6)
-    j8 = q_inv[{i}];
-    q_inv[q[{i}]] = q_inv[q[j8]];
-    q[j8] = q[{i}];
-    res = res * {int:8-i} + j8 - {i};
+    j8 = q_inv[%{i}];
+    q_inv[q[%{i}]] = q_inv[q[j8]];
+    q[j8] = q[%{i}];
+    res = res * %{int:8-i} + j8 - %{i};
     // %%END FOR
 
     return  16 * res + p2[p1[8] & 0x1f];
@@ -1720,7 +1721,7 @@ void mat24_matrix_to_perm(uint32_t *m1, uint8_t *p_out)
 // %%EXPORT p
 void mat24_matrix_from_mod_omega(uint32_t *m1)
 {
-    uint32_t i, weights = {hex:Mat24_basis_weights_8} << 11;
+    uint32_t i, weights = %{hex:Mat24_basis_weights_8} << 11;
     // Let b[i] be the i-th basis vector of the Golay code and w[i] 
     // the weight of b[i]. Bit i + 11 of ``weights`` is equal to bit  
     // 3 of ``w[i]``. Bit 3 of the bit weight of the image ``m1[i]``  
@@ -2036,7 +2037,7 @@ static const uint32_t MAT24_AUTPL_QF_TABLE[] = {
 void mat24_autpl_set_qform(uint32_t *m_io)
 {
     uint_fast32_t i;
-    uint_fast{INT_BITS}_t v,  m2[10];
+    uint_fast%{INT_BITS}_t v,  m2[10];
 
     // The quadratic form qf on the Golay code is defined as follows:
     // qf(b[i]) = 0 for all basis vectors b[i] of the standard
@@ -2096,28 +2097,28 @@ void mat24_autpl_set_qform(uint32_t *m_io)
 	
 	v = (uint64_t)MAT24_THETA_TABLE[m_io[1] & 0x7ff] & 0x7ff;
 	// %%FOR i in range(1, 5)
-	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[{int:i+1}] & 0x7ff] & 0x7ff) << {int:12*i};
+	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[%{int:i+1}] & 0x7ff] & 0x7ff) << %{int:12*i};
 	// %%END FOR
 	
 	// %%BITVMULTRANSP v, m2, 12, 5, 5
-	v ^= {Mat24_autpl_qf_table64[0]};
+	v ^= %{Mat24_autpl_qf_table64[0]};
 
 	// %%FOR i in range(5)
-	m_io[{int:i+1}] &= 0x1fff;
-	m_io[{int:i+1}] ^= {BITV_EXTRACT: v, 12*i, i+1, 13};
+	m_io[%{int:i+1}] &= 0x1fff;
+	m_io[%{int:i+1}] ^= %{BITV_EXTRACT: v, 12*i, i+1, 13};
 	// %%END FOR
 	
 	v = (uint64_t)MAT24_THETA_TABLE[m_io[6] & 0x7ff] & 0x7ff;
 	// %%FOR i in range(1, 5)
-	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[{int:i+6}] & 0x7ff] & 0x7ff) << {int:12*i};
+	v ^= (uint64_t)(MAT24_THETA_TABLE[m_io[%{int:i+6}] & 0x7ff] & 0x7ff) << %{int:12*i};
 	// %%END FOR
 	
 	// %%BITVMULTRANSP v, m2, 12, 10, 5
-	v ^= {Mat24_autpl_qf_table64[1]};
+	v ^= %{Mat24_autpl_qf_table64[1]};
 
 	// %%FOR i in range(5)
-	m_io[{int:i+6}] &= 0x1fff;
-	m_io[{int:i+6}] ^= {BITV_EXTRACT: v, 12*i, i+6, 13};
+	m_io[%{int:i+6}] &= 0x1fff;
+	m_io[%{int:i+6}] ^= %{BITV_EXTRACT: v, 12*i, i+6, 13};
 	// %%END FOR
 
   // %%END IF	

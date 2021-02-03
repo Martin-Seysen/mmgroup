@@ -63,11 +63,11 @@ const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = {
 };
 
 
-// Let o be an octad. Let {{i},{j}}, i != j be the even cocode word 
+// Let o be an octad. Let {i},{j}, i != j be the even cocode word 
 // which is a subset of octad  o,  such that precisely the i1-th and 
 // the i2-th bit  of octad  o  is set, as in module mm_aux.c. Then 
 // entry  8 * i + j  in the folllowing table is the number of the
-// subocatad  {{i},{j}} in the standard numbering given in module
+// subocatad  {i},{j} in the standard numbering given in module
 // mm_aux.c.
 const uint8_t MM_SUB_PERM64_TABLE[64] = { 
     // %%TABLE MM_PERM64_TABLE, uint8

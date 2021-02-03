@@ -75,45 +75,45 @@
   \f$f(e', A, Q)\f$. Here \f$A\f$  is an \f$(1+m) \times n\f$
   bit matrix. \f$Q\f$ is a symmetric \f$(1+m) \times (1+m)\f$ bit 
   matrix representing an symmetric bilinear form.  We always have
-  \f$Q_{{0,0}}=0\f$. Then the quadratic mapping
-  \f$f(e', A, Q): \mathbb{{F}}_2^n \rightarrow \mathbb{{C}} \f$ 
+  \f$Q_{0,0}=0\f$. Then the quadratic mapping
+  \f$f(e', A, Q): \mathbb{F}_2^n \rightarrow \mathbb{C} \f$ 
   is given by
 
 
   \f[
      f(e',A,Q)(x) = e' \cdot
-     \sum_{{\{{y = (y_0,\ldots,y_m) \in \mathbb{{F}}_2^{{m+1}}
+     \sum_{{\{{y = (y_0,\ldots,y_m) \in \mathbb{F}_2^{m+1}
      \mid y_0 = 1,  y \cdot A  = x\}}}} 
-	 \exp \left( \frac {{\pi \sqrt{{-1}}}}{{2}} 
-	 \sum_{{j,k=0}}^m     Q_{{j,k}} y_j y_k \right) \, .
+	 \exp \left( \frac {\pi \sqrt{{-1}}}{2} 
+	 \sum_{j,k=0}^m     Q_{j,k} y_j y_k \right) \, .
   \f]  
 
   
   Matrices \f$A\f$ and  \f$Q\f$ are concatenated to an 
   \f$ (m+1) \times (n+m+1)\f$ matrix  \f$M\f$ such that
-  \f$M_{{i,j}} = A_{{i,j}}\f$ for \f$j < n\f$ and
-  \f$M_{{i,j}} = Q_{{i-n,j}}\f$ for \f$j \geq n\f$. Matrix
+  \f$M_{i,j} = A_{i,j}\f$ for \f$j < n\f$ and
+  \f$M_{i,j} = Q_{i-n,j}\f$ for \f$j \geq n\f$. Matrix
   \f$M\f$ is encoded in a one-dimensional array of unsigned
   64-bit integers. Here bit \f$j\f$ of entry \f$i\f$ of the
-  array corresponds to \f$M_{{i,j}}\f$, with bit \f$0\f$ the 
+  array corresponds to \f$M_{i,j}\f$, with bit \f$0\f$ the 
   least significant bit.
   
   We do not update column  \f$0\f$ of matrix  \f$Q\f$. 
-  \f$Q_{{j,0}}\f$ is inferred from \f$Q_{{0,j}}\f$ for
-  \f$j>0\f$ and we always have \f$Q_{{0,0}} = 0.\f$ 
+  \f$Q_{j,0}\f$ is inferred from \f$Q_{0,j}\f$ for
+  \f$j>0\f$ and we always have \f$Q_{0,0} = 0.\f$ 
   
   We also interpret a quadratic mapping \f$ f \f$ from 
-  \f$\mathbb{{F}}_2^n\f$ to \f$\mathbb{{C}}\f$ as a complex
-  \f$2^{{n-k}} \times 2^k\f$ matrix \f$U\f$ with entries
-  \f$U[i,j] = f(b_0,\ldots,b_{{n-1}})\f$, where
-  \f$(b_{{n-1}},...,b_0)_2\f$, is the binary representation
+  \f$\mathbb{F}_2^n\f$ to \f$\mathbb{C}\f$ as a complex
+  \f$2^{n-k} \times 2^k\f$ matrix \f$U\f$ with entries
+  \f$U[i,j] = f(b_0,\ldots,b_{n-1})\f$, where
+  \f$(b_{n-1},...,b_0)_2\f$, is the binary representation
   of the integer \f$i \cdot 2^k + j\f$, and \f$k\f$ is given by
   component ``shape1`` of the structure.
 
   The current implementation requires \f$n + m <= 63\f$, so that
   all columns of the bit matrix \f$M\f$ fit into a 64-bit
   integer. With this restriction we may still multiply 
-  \f$2^{{12}} \times 2^{{12}}\f$ matrices \f$U\f$ given as
+  \f$2^{12} \times 2^{12}\f$ matrices \f$U\f$ given as
   quadratic mappings.
 
   A quadratic mapping may be reduced with function qstate12_reduce()
@@ -136,7 +136,7 @@ typedef struct {
                     ///< The value ``nrows = 0`` encodes the zero mapping.
   uint32_t ncols;   ///< No \f$n\f$ of columns of bit matrices \f$A\f$ and \f$Q\f$
   int32_t  factor;  ///< A integer \f$e\f$ encoding the complex scalar factor \f$e'=\f$
-                    ///< \f$\exp(e \pi \sqrt{{-1}}/4) \cdot 2^{{\lfloor e/16 \rfloor / 2}}\f$
+                    ///< \f$\exp(e \pi \sqrt{-1}/4) \cdot 2^{\lfloor e/16 \rfloor / 2}\f$
   uint32_t shape1;  ///< Describes the shape of the quadratic state matrix
                     ///< as explained above.
   uint32_t reduced; ///< This is set to 1 if the state is reduced and to 0 otherwise.
@@ -176,9 +176,9 @@ enum qstate12_error_type
     ERR_QSTATE12_NOT_MONOMIAL = -104, ///< Matrix is not monomial
 
     ERR_QSTATE12_LEECH_OP = -201,  ///< Internal error in operation of group Co_0
-    ERR_QSTATE12_REP_GX1 = -202,   ///< Error in operation of group 2^{{1+24}}.Co_1
-    ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of 2^{{1+24}}.Co_1 not in 2^{{1+24}}
-    ERR_QSTATE12_GX1_TAG = -204    ///< Bad tag for atom in group 2^{{1+24}}.Co_1 
+    ERR_QSTATE12_REP_GX1 = -202,   ///< Error in operation of group 2^{1+24}.Co_1
+    ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of 2^{1+24}.Co_1 not in 2^{1+24}
+    ERR_QSTATE12_GX1_TAG = -204    ///< Bad tag for atom in group 2^{1+24}.Co_1 
 
 };
 
@@ -1168,7 +1168,7 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
   following state ``qs1`` depending on ``n - ncols`` qubits:
  
   ``qs1(x[n-1],...,x[j+nqb],x[j-1],...,x[0])`` =
-  ``sum_{{x[j+nqb-1],...,x[j]}}  qs1(x[nn1-1],...,x[0])`` .
+  ``sum_{x[j+nqb-1],...,x[j]}  qs1(x[nn1-1],...,x[0])`` .
   So we decrement ``pqs->ncols`` by ``nqb``.
  
   The output is not reduced.
@@ -1489,8 +1489,8 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 /// @cond DO_NOT_DOCUMENT 
 
 static const int8_t  PHASES[8][2] = {
-   {{1,0}}, {{1,1}}, {{0,1}}, {{-1,1}}, 
-   {{-1,0}}, {{-1,-1}}, {{0,-1}}, {{1,-1}},
+   {1,0}, {1,1}, {0,1}, {-1,1}, 
+   {-1,0}, {-1,-1}, {0,-1}, {1,-1},
 };  
 
 

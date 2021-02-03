@@ -18,7 +18,7 @@
 *** are used for seeding the volatile random genertor number 0
 ******************************************************************/
 
-#define INT_BITS  {INT_BITS} // must be 32 of 64
+#define INT_BITS  %{INT_BITS} // must be 32 of 64
 
 // The following funtions are standard C functions.
 // They should usually be available on any operating system

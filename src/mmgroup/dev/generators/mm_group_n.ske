@@ -1,7 +1,7 @@
 /** @file mm_group_n.c
 The functions in file ``mm_group_n.c`` implement the subgroup
 \f$N_0\f$ of structure 
-\f$2^{{2+11+2\cdot11}}.(\mbox{{Sym}}_3 \times \mbox{{Mat}}_{{24}})\f$
+\f$2^{2+11+2\cdot11}.(\mbox{Sym}_3 \times \mbox{Mat}_{24})\f$
 on the monster group.
 */
 

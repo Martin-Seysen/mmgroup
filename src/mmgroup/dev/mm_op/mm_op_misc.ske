@@ -1,13 +1,13 @@
 
-#include "mm_op{P}.h"
+#include "mm_op%{P}.h"
 
 
 // %%EXPORT px
-uint32_t mm_op{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
+uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 // Copy mv1 to mv2. Here mv1 and mv2 are vectors of the
-// monster group representation modulo {P}.
+// monster group representation modulo %{P}.
 {
-    uint_fast32_t len = {MMV_INTS}; 
+    uint_fast32_t len = %{MMV_INTS}; 
     do {
        *mv2++ = *mv1++;
     } while(--len);
@@ -17,29 +17,29 @@ uint32_t mm_op{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 // %%EXPORT px
-uint32_t mm_op{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
-//  Compare two vectors of the monster group representation modulo {P}..
-//  Comparison is done modulo {P}.
+uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
+//  Compare two vectors of the monster group representation modulo %{P}..
+//  Comparison is done modulo %{P}.
 //  The function returns 0 in case of equality and 1 otherwise.
 //  Warning: This function has not yet been tested!
 {
-    uint_fast32_t len = {MMV_INTS};
+    uint_fast32_t len = %{MMV_INTS};
     uint_mmv_t a, b, t, c;
     do {
         a = *mv1++;
         b = *mv2++;
         // Next we compare integers a and b modulo p. 
-        // Idea for p = {hex:P} and unsigned {P_BITS}-bit integers a, b:
-        // t is in [0, p] iff (t ^ (t >> 1)) & {hex:P>>1} == 0 
+        // Idea for p = %{hex:P} and unsigned %{P_BITS}-bit integers a, b:
+        // t is in [0, p] iff (t ^ (t >> 1)) & %{hex:P>>1} == 0 
         // We have a = +- b (mod p)  iff  a ^ b in [0, p].
         t = a ^ b;
-        c = (t ^ (t >> 1)) & {smask:P>>1}; // c = 0 iff a = +- b (mod p)
+        c = (t ^ (t >> 1)) & %{smask:P>>1}; // c = 0 iff a = +- b (mod p)
         // In case c != 0 we already know that a != b holds.
         // So assume c == 0 and hence a = +-b, i.e.  t in [0, p].
         // Then a == b (mod p) iff t == 0 or (t & a) in [0, p].
         // Thus is suffices to check if (t & a) is in [0, p]. 
         t &= a;
-        t = (t ^ (t >> 1)) & {smask:P>>1}; // t = 0 iff old t in [0,p]
+        t = (t ^ (t >> 1)) & %{smask:P>>1}; // t = 0 iff old t in [0,p]
         if (c | t) return 1;
     } while (--len);
     return 0; 
@@ -48,11 +48,11 @@ uint32_t mm_op{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
     
 
 // %%EXPORT px
-void mm_op{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
-//  Vector addition in the monster group representation modulo {P}.
+void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
+//  Vector addition in the monster group representation modulo %{P}.
 //  Put mv1 = mv1 + mv2.
 {
-    uint_fast32_t len = {MMV_INTS};
+    uint_fast32_t len = %{MMV_INTS};
     uint_mmv_t a1, b1;
     // %%IF* FIELD_BITS == P_BITS
     uint_mmv_t a2;
@@ -61,20 +61,20 @@ void mm_op{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
         a1 = *mv1;
         b1 = *mv2++;
         // %%IF* FIELD_BITS == P_BITS
-        a2 = ((a1 >> {FIELD_BITS}) & {smask:P, -1, 2*FIELD_BITS})
-           + ((b1 >> {FIELD_BITS}) & {smask:P, -1, 2*FIELD_BITS});
-        a1 = (a1 & {smask:P, -1, 2*FIELD_BITS})
-           + (b1 & {smask:P, -1, 2*FIELD_BITS});
-        a1 = (a1 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a1 >> {P_BITS}) & {smask:1, -1, 2*FIELD_BITS});
-        a2 = (a2 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a2 >> {P_BITS}) & {smask:1, -1, 2*FIELD_BITS});
-        a1 = a1 + (a2 << {FIELD_BITS});
+        a2 = ((a1 >> %{FIELD_BITS}) & %{smask:P, -1, 2*FIELD_BITS})
+           + ((b1 >> %{FIELD_BITS}) & %{smask:P, -1, 2*FIELD_BITS});
+        a1 = (a1 & %{smask:P, -1, 2*FIELD_BITS})
+           + (b1 & %{smask:P, -1, 2*FIELD_BITS});
+        a1 = (a1 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a1 >> %{P_BITS}) & %{smask:1, -1, 2*FIELD_BITS});
+        a2 = (a2 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a2 >> %{P_BITS}) & %{smask:1, -1, 2*FIELD_BITS});
+        a1 = a1 + (a2 << %{FIELD_BITS});
         // %%ELSE 
-        a1 = (a1 & {smask:P}) 
-              + (b1 & {smask:P});                     
-        a1 = (a1 & {smask:P}) 
-              + ((a1 >> {P_BITS}) & {smask:1});
+        a1 = (a1 & %{smask:P}) 
+              + (b1 & %{smask:P});                     
+        a1 = (a1 & %{smask:P}) 
+              + ((a1 >> %{P_BITS}) & %{smask:1});
         // %%END IF
         *mv1++ = a1;
     } while (--len);
@@ -83,29 +83,29 @@ void mm_op{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 // %%EXPORT px
-void mm_op{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
-//  Scalar multiplication in the monster group representation modulo {P}.
+void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
+//  Scalar multiplication in the monster group representation modulo %{P}.
 //  Put mv1 = factor * mv1.
 {
-    uint_fast32_t len = {MMV_INTS};
+    uint_fast32_t len = %{MMV_INTS};
     uint_mmv_t a1, a2;
-    factor %= {P};
-    if (factor < 0) factor += {P};
+    factor %= %{P};
+    if (factor < 0) factor += %{P};
     do {
         a1 = *mv1;
-        a2 = ((a1 >> {FIELD_BITS}) & {smask:P, -1, 2*FIELD_BITS});
-        a1 = (a1 & {smask:P, -1, 2*FIELD_BITS});
+        a2 = ((a1 >> %{FIELD_BITS}) & %{smask:P, -1, 2*FIELD_BITS});
+        a1 = (a1 & %{smask:P, -1, 2*FIELD_BITS});
         a1 *= factor;
-        a1 = (a1 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a1 >> {P_BITS}) & {smask:P, -1, 2*FIELD_BITS});
-        a1 = (a1 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a1 >> {P_BITS}) & {smask:1, -1, 2*FIELD_BITS});
+        a1 = (a1 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a1 >> %{P_BITS}) & %{smask:P, -1, 2*FIELD_BITS});
+        a1 = (a1 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a1 >> %{P_BITS}) & %{smask:1, -1, 2*FIELD_BITS});
         a2 *= factor;
-        a2 = (a2 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a2 >> {P_BITS}) & {smask:P, -1, 2*FIELD_BITS});
-        a2 = (a2 & {smask:P, -1, 2*FIELD_BITS}) 
-              + ((a2 >> {P_BITS}) & {smask:1, -1, 2*FIELD_BITS});
-        a1 = a1 + (a2 << {FIELD_BITS});
+        a2 = (a2 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a2 >> %{P_BITS}) & %{smask:P, -1, 2*FIELD_BITS});
+        a2 = (a2 & %{smask:P, -1, 2*FIELD_BITS}) 
+              + ((a2 >> %{P_BITS}) & %{smask:1, -1, 2*FIELD_BITS});
+        a1 = a1 + (a2 << %{FIELD_BITS});
         *mv1++ = a1;
     } while (--len);
 }
@@ -114,39 +114,39 @@ void mm_op{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 
 
 // %%EXPORT px
-uint32_t mm_op{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
-//  Compare two vectors of the monster group representation modulo {P}.
-//  Comparison is done modulo q. q must divide {P}. The function returns:
+uint32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
+//  Compare two vectors of the monster group representation modulo %{P}.
+//  Comparison is done modulo q. q must divide %{P}. The function returns:
 //  0  if mmv1 == mmv2 (mod q) 
 //  1  if mmv1 != mmv2 (mod q) 
-//  2  if q does not divide {P}
+//  2  if q does not divide %{P}
 {
     // %%IF* P in [1,3,7,31,127]
-    if (q == {P}) return mm_op{P}_compare(mv1, mv2);
+    if (q == %{P}) return mm_op%{P}_compare(mv1, mv2);
     return q == 1 ? 0 : 2;
     // %%ELSE 
-    uint_fast32_t d1, d2, len = {MMV_INTS};
-    if (q == {P}) return mm_op{P}_compare(mv1, mv2);
+    uint_fast32_t d1, d2, len = %{MMV_INTS};
+    if (q == %{P}) return mm_op%{P}_compare(mv1, mv2);
     if (q <= 1) return 2 - 2 * q;
-    d1 = {P} / q;
-    if (d1 * q != {P}) return 2;
-    d2 = {P} - d1;
-    // %%WITH* MASK = '{smask:P, -1, 2*FIELD_BITS}'
+    d1 = %{P} / q;
+    if (d1 * q != %{P}) return 2;
+    d2 = %{P} - d1;
+    // %%WITH* MASK = '%{smask:P, -1, 2*FIELD_BITS}'
     do {
         uint_mmv_t a, b;
-        a = (*mv1 & {MASK}) * d1 
-          + (*mv2 & {MASK}) * d2;
-        a = (a & {MASK}) + ((a >> {P_BITS}) & {MASK});
-        a = (a & {MASK}) + ((a >> {P_BITS}) & {MASK});
+        a = (*mv1 & %{MASK}) * d1 
+          + (*mv2 & %{MASK}) * d2;
+        a = (a & %{MASK}) + ((a >> %{P_BITS}) & %{MASK});
+        a = (a & %{MASK}) + ((a >> %{P_BITS}) & %{MASK});
 
-        b = ((*mv1++ >> {FIELD_BITS}) & {MASK}) * d1
-          + ((*mv2++ >> {FIELD_BITS}) & {MASK}) * d2;
-        b = (b & {MASK}) + ((b >> {P_BITS}) & {MASK});
-        b = (b & {MASK}) + ((b >> {P_BITS}) & {MASK});
+        b = ((*mv1++ >> %{FIELD_BITS}) & %{MASK}) * d1
+          + ((*mv2++ >> %{FIELD_BITS}) & %{MASK}) * d2;
+        b = (b & %{MASK}) + ((b >> %{P_BITS}) & %{MASK});
+        b = (b & %{MASK}) + ((b >> %{P_BITS}) & %{MASK});
 
-        a += b << {FIELD_BITS};
+        a += b << %{FIELD_BITS};
         a ^= a >> 1;
-        if (a & {smask:P//2}) return 1;
+        if (a & %{smask:P//2}) return 1;
     } while (--len);
     // %%END WITH
     return 0;

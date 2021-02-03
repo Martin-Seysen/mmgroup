@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from functools import partial
 import numpy
 
-
+import regex
 
 if sys.version_info[0] >= 3:
     file = IOBase 
@@ -212,11 +212,11 @@ class UserDirective(object):
 class UserFormat(UserDirective):
     r"""Convert a function for string formatting in the code generator
 
-    The code generator evaluates expressions in curly braces ``{...}``
+    The code generator evaluates expressions in curly braces ``%{...}``
     in the source code with the python ``.format()`` function for
     stings.
 
-    It is desirable that ``{int:2*3}`` evaluates to a string 
+    It is desirable that ``%{int:2*3}`` evaluates to a string 
     representing the integer constant ``int(2*3)`` for some built-in 
     and user-defined functions such as function ``int``.
 
@@ -244,7 +244,7 @@ class UserFormat(UserDirective):
       # Create a code generator 'codegen'
       codegen = TableGenerator(tables)
       # Make a sample source line of C code
-      sample_source = "  x = {int: a * b + int('1')};\n"
+      sample_source = "  x = %{int: a * b + int('1')};\n"
       # generate file "test.c" containing the evaluated sample line
       codegen.generate(sample_source, "test.c")
 
@@ -253,7 +253,7 @@ class UserFormat(UserDirective):
     The ``.format`` method obtains the entries of the dictionary 
     ``tables`` as keyword arguments.
 
-    So ``{int: a * b + int('1')}`` evaluates to ``str(3*5+1)``,
+    So ``%{int: a * b + int('1')}`` evaluates to ``str(3*5+1)``,
     and the C file ``"test.c"`` will contain the line::
 
       x = 16;
@@ -270,7 +270,8 @@ class UserFormat(UserDirective):
     :param f:
    
         A callable function which is executed when the code generator
-        parses a user-defined formatting string in curly braces ``{...}``. 
+        parses a user-defined formatting string in curly braces 
+        preceded by a '%' character, such as ``%{...}``. 
         The arguments given in the formatting string
         are passed to function ``f`` as arguments.
 
@@ -1091,63 +1092,53 @@ def py_doc_to_comment(s):
 #######################################################################
 
 
-m_final_open = re.compile(r"(.*)({[^}]*$)", re.DOTALL)
-m_initial_close = re.compile(r"^([^{]*})(.*)", re.DOTALL)
-m_close_open = re.compile(r"^([^{]*})(.*)({[^}]*$)", re.DOTALL)
 
-def format_line(l, dictionary=None, args = ()):
-    """Format a C code line l with the python .format method for strings
 
-    dictionary 'dictionary' is the dictionary passed to the .format
-    method.
+# The following expression matches  a string  with balanced curly 
+# braces and preceded by a '%' character.
+mm_line = regex.compile(r"\%(\{(?>[^{}]|(?1))*\})")
 
-    That .format method evaluates expressions in curly braces 
-    according to the standard python rules.
-    
-    An opening curly bracket not followed by a closing one or a closing
-    curly bracket not preceeded by an opening one is not passed to
-    the formatter.
-    
-    We consider this to be a reasonable compromise between the standard 
-    C syntax an the very powerful pythonic .format method for strings.
-    """
-    def doc_error():
-        print("\nCode generator string formatting error in '{...}' expression in line:\n")
-        print(l)
-        key_list = sorted(dictionary.keys())
-        print("format keywords:", key_list,"\n")
+
+def _do_format(line, format_args, format_kwds, terminal, matchobj):
+    try:
+        return matchobj.group()[1:].format(*format_args, **format_kwds)
+    except:
+        if not terminal:
+            return matchobj.group()
+        print("\nError in formatting line:")
+        print(line)
+        print("Cannot expand expression", matchobj.group() + "\n")
         raise
-           
-    if dictionary:
-        #print("DDDDD", sorted(dictionary.keys()))     
-        #print("LLLL", l)     
-        try:
-            return l.format(*args, **dictionary)
-        except ValueError:
-            m = m_close_open.match(l)
-            if m:
-                 try:
-                     l1, l2, l3 = m.groups()
-                     return l1 + l2.format(*args, **dictionary) + l3
-                 except:
-                     doc_error()
-            m = m_final_open.match(l)
-            if m:
-                 try:
-                     l1, l2 = m.groups()
-                     return l1.format(*args, **dictionary) + l2
-                 except:
-                     doc_error()
-            m = m_initial_close.match(l)
-            if m:
-                 try:
-                     l1, l2 = m.groups()
-                     return l1 + l2.format(*args, **dictionary) 
-                 except:
-                     doc_error()
-        except:
-            doc_error()
-    return l
+
+
+def format_line(line, dictionary=None, args = (), terminal = True):
+    """Format a C code ``line``
+
+    The function scans  a ``line`` for occurences of a string 
+    with balanced curly braces and preceded by a '%' character.
+    When such a string ``s``  is found, then ``s`` is substituted
+    by ``s[1:].format(*args, **dictionary)``.
+    
+    We consider this to be a reasonable compromise between the 
+    standard C syntax an the very powerful pythonic ``.format``
+    method for strings.
+    """
+    if line.find(r"%{") < 0:
+        return line
+    f_subst = partial(_do_format, line, args, dictionary, terminal)
+    try:
+        return regex.sub(mm_line, f_subst, line)
+    except:
+        print("\nError in formatting line:")
+        print(s + "\n")
+        raise
+
+
+
+#######################################################################
+# Indentation of a block
+#######################################################################
+
 
 
 def indent_subsequent_lines(s):

@@ -48,7 +48,7 @@ static const uint32_t TAB_255[256] = {
 // mm_crt_combine_24(), but does not compute any output vector.
 
 // %%FOR* op in ["combine", "v2"]
-static uint32_t mm_crt_{op}_24(
+static uint32_t mm_crt_%{op}_24(
     uint32_t nrounds,
     uint_mmv_t * p7,
     uint_mmv_t * p31,
@@ -76,17 +76,17 @@ static uint32_t mm_crt_{op}_24(
         // %%END IF  
         // %%IF* j < 24
         a = TAB_7_31[
-             ({shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
-           + ((a31 >> {int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
+             (%{shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
+           + ((a31 >> %{int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
         ];
-        a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
-        a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
-        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
-        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
-        res |= a + {int:0x10000000-CRT_NPROD//2}L;
+        a += TAB_127[(a127 >> %{int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
+        a += TAB_255[(a255 >> %{int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        res |= a + %{int:0x10000000-CRT_NPROD//2}L;
         // %%END IF
         // %%IF* op == "combine" and j < 24
-        *pout++ = a - {int:CRT_NPROD//2}L;        
+        *pout++ = a - %{int:CRT_NPROD//2}L;        
         // %%ELSE IF op == "combine"  
         *pout++ = 0;  
         // %%END IF  
@@ -111,7 +111,7 @@ static uint32_t mm_crt_{op}_24(
 // mm_crt_combine_T(), but does not compute any output vector.
 
 // %%FOR* op in ["combine", "v2"]
-static uint32_t mm_crt_{op}_T(
+static uint32_t mm_crt_%{op}_T(
     uint_mmv_t * p7,
     uint_mmv_t * p31,
     uint_mmv_t * p127,
@@ -124,7 +124,7 @@ static uint32_t mm_crt_{op}_T(
 )
 {
     uint_fast32_t i, res = 0x1000000;
-    for (i = 0; i < 64 * 759 / {INT_FIELDS:7}; ++i) {
+    for (i = 0; i < 64 * 759 / %{INT_FIELDS:7}; ++i) {
         uint_mmv_t  a7, a31, a127, a255;
         uint_fast32_t a;
         a7 = *p7++;
@@ -135,16 +135,16 @@ static uint32_t mm_crt_{op}_T(
         a255 = *p255++;
         // %%END IF  
         a = TAB_7_31[
-             ({shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
-           + ((a31 >> {int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
+             (%{shl:a7,5 - j*FIELD_BITS(7)%INT_BITS} & 0xe0)
+           + ((a31 >> %{int: j*FIELD_BITS(31)%INT_BITS}) & 0x1f)
         ];
-        a += TAB_127[(a127 >> {int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
-        a += TAB_255[(a255 >> {int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
-        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
-        a += (0 - ((a & 0x80000000) >> 31)) & {CRT_NPROD}L;
-        res |= a + {int:0x10000000-CRT_NPROD//2}L;
+        a += TAB_127[(a127 >> %{int:j*FIELD_BITS(127)%INT_BITS}) & 0x7f];
+        a += TAB_255[(a255 >> %{int:j*FIELD_BITS(255)%INT_BITS}) & 0xff];
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        res |= a + %{int:0x10000000-CRT_NPROD//2}L;
         // %%IF* op == "combine"
-        *pout++ = a - {int:CRT_NPROD//2}L;
+        *pout++ = a - %{int:CRT_NPROD//2}L;
         // %%END IF 
         // %%END FOR
     }
@@ -175,17 +175,17 @@ uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_
     uint_fast32_t res = 0;
     res |= mm_crt_combine_24(72, p7, p31, p127, p255, p_out);
     res |= mm_crt_combine_T( 
-        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_T / {INT_FIELDS:255}, 
+        p7 + MM_AUX_OFS_T / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / %{INT_FIELDS:255}, 
         p_out + MM_AUX_OFS_T 
     );
     res |= mm_crt_combine_24(3*2048, 
-        p7 + MM_AUX_OFS_X / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_X / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_X / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_X / {INT_FIELDS:255}, 
+        p7 + MM_AUX_OFS_X / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_X / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_X / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_X / %{INT_FIELDS:255}, 
         p_out + MM_AUX_OFS_X 
     );
     return mat24_lsbit24(res);       
@@ -203,16 +203,16 @@ uint32_t mm_crt_check_v2(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint
     uint_fast32_t res = 0;
     res |= mm_crt_v2_24(72, p7, p31, p127, p255);
     res |= mm_crt_v2_T( 
-        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_T / {INT_FIELDS:255} 
+        p7 + MM_AUX_OFS_T / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / %{INT_FIELDS:255} 
     );
     res |= mm_crt_v2_24(3*2048, 
-        p7 + MM_AUX_OFS_X / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_X / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_X / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_X / {INT_FIELDS:255} 
+        p7 + MM_AUX_OFS_X / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_X / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_X / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_X / %{INT_FIELDS:255} 
     );
     return mat24_lsbit24(res);       
 }
@@ -224,10 +224,10 @@ static uint32_t crt_check_t(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, u
     uint_fast32_t res;
     res = mm_crt_v2_24(72, p7, p31, p127, p255) & 1;
     res |= mm_crt_v2_T(
-        p7 + MM_AUX_OFS_T / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_T / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_T / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_T / {INT_FIELDS:255}
+        p7 + MM_AUX_OFS_T / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_T / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_T / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_T / %{INT_FIELDS:255}
     ) & 7;
     return res != 0;    
 }
@@ -238,10 +238,10 @@ static uint32_t crt_check_l(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, u
     uint_fast32_t res;
     res = mm_crt_v2_24(24, p7, p31, p127, p255) & 3;
     res |= mm_crt_v2_24(4096, 
-        p7 + MM_AUX_OFS_Z / {INT_FIELDS:7}, 
-        p31 + MM_AUX_OFS_Z / {INT_FIELDS:31}, 
-        p127 + MM_AUX_OFS_Z / {INT_FIELDS:127}, 
-        p255 + MM_AUX_OFS_Z / {INT_FIELDS:255}
+        p7 + MM_AUX_OFS_Z / %{INT_FIELDS:7}, 
+        p31 + MM_AUX_OFS_Z / %{INT_FIELDS:31}, 
+        p127 + MM_AUX_OFS_Z / %{INT_FIELDS:127}, 
+        p255 + MM_AUX_OFS_Z / %{INT_FIELDS:255}
     ) & 7;
     return res != 0;    
 }
