@@ -28,6 +28,7 @@ should install the following python packages:
   ``numpy``                Runtime: Most arrays used by the ``mmgroup`` package 
                            are ``numpy`` arrays
   ``pytest``               Testing: basic package used for testing
+  ``regex``                Development: parsing balanced curly braces
   ``scipy``                Testing: statistical tests
   ``setuptools``           Development: basic package used for setup and building
                            extensions
