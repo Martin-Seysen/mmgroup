@@ -1,7 +1,8 @@
-// %%COMMENT
-// For this module we refer to the section
-// 'Computation in the Clifford group' in the guide, see
-// https://mmgroup.readthedocs.io/en/latest/
+/** @file xsp2co1.c
+  File ``xsp2co1.c`` contains  functions for computing in the
+  subgroup \f$G_{x0}\f$ (of structure \f$2^{1+24}.\mbox{Co}_1\f$)
+  of the monster. 
+*/
 
 
 
@@ -318,7 +319,7 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
         src_prod = short_3_scalprod(psrc[i-1], psrc[i]);
         prod =  short_3_scalprod(pdest[i-1], pdest[i]);
         if (prod != src_prod) pdest[i] = 
-            short_3_reduce(pdest[i] ^ 0xffffffffffffULL);
+            short_3_reduce(~pdest[i]);
         ok = ok && src_prod  &&  prod;
     }
     return ok ? 0 : ERR_QSTATE12_LEECH_OP;
@@ -520,7 +521,7 @@ Negation is equivalent to multiplication with the generator
 // %%EXPORT px
 void xsp2co1_neg_elem(uint64_t *elem)
 {
-    elem[0] = short_3_reduce(elem[0] ^ 0xffffffffffffULL);
+    elem[0] = short_3_reduce(~elem[0]);
 }
 
 
@@ -1163,19 +1164,18 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 *** Obtain Leech lattice transformation from an element of G_{x0}
 *************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
 
 /**
 @brief Auxiliary function for function ``xsp2co1_add_short_3_leech``
 
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
-**Leech lattice mod 3** encoding to the encoding to the endoding
-of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ 
-used in the ``mmgroup.mm3`` extension.
+**Leech lattice mod 3** encoding to the encoding to the encoding
+of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in 
+the ``mmgroup.mm3`` extension. No reduction mod 3 takes place
 
 This conversion is an involution.
 */
-static inline
+// %%EXPORT px
 uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 {
     uint64_t y;
@@ -1189,7 +1189,6 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
     return x;
 }
 
-/// @endcond 
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -1238,7 +1237,7 @@ int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8
     f[2] = -f[1];
     gcodev = mat24_vect_to_gcode(gcodev);
     if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
-    x = xsp2co1_to_vect_mod3(x);
+    x = xsp2co1_to_vect_mod3(short_3_reduce(x));
 
     for (i = 0; i < 24; ++i) {
         pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
@@ -1499,12 +1498,12 @@ in the ``mmgroup.mm3`` extension is equal to the data type
 // %%EXPORT px
 int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 {
-    int32_t res, sign;
+    int32_t res;
     qstate12_type qs1, qs2;
     uint64_t data2[MAXROWS_ELEM], x;
  
     uint64_t n_iterations, i;
-    uint64_t assoc; 
+    uint64_t assoc, sign; 
     uint64_t *m, x_data[2];
     uint64_t qf = 0;
     uint64_t ncols, mask; 
@@ -1521,10 +1520,9 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX1;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
-    x = elem[0];
-    if (sign) x ^= 0xffffffffffffULL;
-    x_data[0] = xsp2co1_to_vect_mod3(x);
-    x_data[1] = xsp2co1_to_vect_mod3(x ^ 0xffffffffffffULL);
+    x = elem[0] ^ (0 - sign);
+    x_data[0] = xsp2co1_to_vect_mod3(short_3_reduce(x));
+    x_data[1] = xsp2co1_to_vect_mod3(short_3_reduce(~x));
 
     ncols = qs2.ncols; 
     if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX1;

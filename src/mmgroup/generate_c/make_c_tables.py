@@ -217,8 +217,6 @@ class TableGenerator(object):
 
     def use_table(self, args, *_):
         """built-in function USE_TABLE"""
-        if len(self.block_stack):
-            raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "USE_TABLE")
         self.use_table_pending = 1 + self.export_pending
         self.export_pending = 0
         self.pxd_export_pending = 0
@@ -226,8 +224,6 @@ class TableGenerator(object):
 
     def export_table(self, args, *_): 
         """built-in function EXPORT_TABLE"""
-        if len(self.block_stack):
-            raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "EXPORT_TABLE")
         self.use_table_pending = 2
         self.export_pending = 0
         self.pxd_export_pending = 0
@@ -245,8 +241,6 @@ class TableGenerator(object):
 
     def export_(self, args, *_):
         """built-in function EXPORT"""
-        if len(self.block_stack):
-            raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "EXPORT")
         self.export_pending = True
         self.pxd_export_pending =  'p' in args
         if self.pxd_export_pending and 'x' in args:
@@ -254,16 +248,9 @@ class TableGenerator(object):
         return self.export_kwd, self.export_kwd
 
     def set_export(self, args, *_):
-        """built-in function SET_EXPORT, deprecated!!!!"""
-        raise ValueError("Function no longer supported")
-        if len(self.block_stack):
-            raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "SET_EXPORT")
-        #args = format_line(args, self.names, self.args)
-        args = tuple(s.strip() for s in args.split("=")) 
-        name, value = args[0], args[1]
-        self.exported_table_names[name] = value
-        self.names[name] = value
-        return "", ""
+        """built-in directive SET_EXPORT, deprecated!!!!"""
+        err = "The SET_EXPORT directive is no longer supported"
+        raise ValueError(err)
 
 
     def set_export_kwd(self, args, *_):
@@ -285,8 +272,6 @@ class TableGenerator(object):
 
     def pyx(self, args, *_):
         """built-in function PYX"""
-        if len(self.block_stack):
-            raise TypeError(self.ILLEGAL_INSIDE_BLOCK % "PYX")
         #args = format_line(args, self.names, self.args)
         self.pxd_entries.append("# PYX " + args.strip())
         return "", ""
@@ -391,6 +376,7 @@ class TableGenerator(object):
         c_out, source, end_comment = self.parse_block("FOR", source)
         if quiet:
             c_out, end_comment = [], []
+        h_out = []
         save_names = SaveDictFor(self.names, local_vars)
         self.block_stack.append("FOR")
         if self.join_pending:
@@ -399,8 +385,9 @@ class TableGenerator(object):
         else:
             for entry in arg_list:
                 save_names.set_local(entry) # enter entry into self.names
-                for c_out1, _ in self.iter_generate_lines(iter(source)):
-                    c_out.append(c_out1)
+                for c_1, h_1 in self.iter_generate_lines(iter(source)):
+                    c_out.append(c_1)
+                    h_out.append(h_1)
         self.block_stack.pop()
         save_names.restore()   # restore self.names
         return "".join(c_out + end_comment) , ""
@@ -411,14 +398,16 @@ class TableGenerator(object):
         c_out, source, end_comment = self.parse_block("WITH", source)
         if quiet:
             c_out, end_comment = [], []
+        h_out = []
         save_names = SaveDictFor(self.names, local_vars)
         self.block_stack.append("WITH")
         save_names.set_local(values) # enter entry into self.names
-        for c_out1, _ in self.iter_generate_lines(iter(source)):
-            c_out.append(c_out1)
+        for c_1, h_1 in self.iter_generate_lines(iter(source)):
+            c_out.append(c_1)
+            h_out.append(h_1)
         self.block_stack.pop()
         save_names.restore()   # restore self.names
-        return "".join(c_out + end_comment) , ""
+        return "".join(c_out + end_comment) , "".join(h_out)
 
 
     def do_join(self, args, quiet, source):
@@ -491,9 +480,11 @@ class TableGenerator(object):
         c_out, source, end_comment = self.parse_block_if(args, source)
         if quiet:
             c_out, end_comment = [], []
+        h_out = []
         self.block_stack.append("IF")
-        for c_out1, _ in self.iter_generate_lines(iter(source)):
-             c_out.append(c_out1)
+        for c_1, h_1 in self.iter_generate_lines(iter(source)):
+            c_out.append(c_1)
+            h_out.append(h_1)
         self.block_stack.pop()
         return "".join(c_out + end_comment) , ""
 
@@ -896,24 +887,25 @@ def make_doc(source_file, output_file, tables = None):
 def c_snippet(source, *args, **kwds):
     r"""Return a C code snippet as a string from a *source* string
 
-    Here *source* is a string that is interpreted in the same way as
-    a source file in method ``generate()`` of class TableGenerator.
-    The function applies the code generator to the string *source*
-    nd returns the generated code as a string.
+    Here ``source`` is a string that is interpreted in the same way 
+    as the text in a source file in method ``generate()`` of class 
+    ``TableGenerator``.
+    The function applies the code generator to the string ``source``
+    and returns the generated C code as a string.
 
     All subsequent keyword arguments are treated as a dictionary and
-    they are passed to the code generator in class TableGenerator in 
-    the same way as parameter 'tables' in the constructor of that
-    class. 
+    they are passed to the code generator in class ``TableGenerator``
+    in the same way as parameter ``tables`` in the constructor of 
+    that class. 
 
     One can also pass positional arguments to this function. In the
-    **source* string they an be accessed as ``%{0}``, ``%{1}``, etc.
+    ``source`` string they an be accessed as ``%{0}``, ``%{1}``, etc.
 
-    A line starting with ``// %%`` is interpreted as in class
-    ``TableGenerator``.
+    A line starting with ``// %%`` is interpreted as a directive as
+    in class ``TableGenerator``.
 
-    The keyword ``directives`` is reserved for passing a list of
-    directives as in class ``TableGenerator``.
+    The keyword ``directives`` is reserved for passing a dictionary
+    of directives as in class ``TableGenerator``.
 
     In order to achieve a similar effect as generating C code with::
 
@@ -924,10 +916,10 @@ def c_snippet(source, *args, **kwds):
         
         c_string = c_snippet(source, directives=directives, **tables) 
 
-    If this function cannot evaluate an expression of shape  ``%{xxx}`` 
-    the the expression it is not changed; so a subsequent code 
-    generation step  may evaluate that expression. Unevaluated arguments 
-    of directives lead to an error.
+    If this function cannot evaluate an expression of shape ``%{xxx}`` 
+    then the expression it is not changed; so a subsequent code 
+    generation step may evaluate that expression. An unevaluated 
+    argument in a directive leads to an error.
     """ 
     src = source.splitlines(True)
     try:
