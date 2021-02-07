@@ -32,7 +32,6 @@ name of a directory.
 
 Files with extension .c, .h go to the directory ``C_DIR``. Files with
 extension .pxd, .pxi, .pyx go to the directory ``PXD_DIR``. 
-Documentaion files with extension .txt go to the directory ``DOC_DIR``.
 """
 
 
@@ -49,7 +48,7 @@ import shutil
 
 
 
-from config import SRC_DIR, DEV_DIR,  C_DIR, DOC_DIR, PXD_DIR
+from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR 
 sys.path.append(REAL_SRC_DIR)
 
@@ -322,27 +321,12 @@ def generate_files():
 
 
 ##########################################################################
-# Functions of this module for generating documentation
+# Main program
 ##########################################################################
-
-
-C_FILES_DOCUMENTED = ["qstate12" ]
-
-
-def generate_doc():
-    """Function for generating documentation from the genrated C files
-
-    """
-    for c_file in C_FILES_DOCUMENTED:
-        c_path = os.path.join(C_DIR, c_file + ".c")
-        doc_path = os.path.join(DOC_DIR, c_file + "_c_doc.txt")
-        make_doc(c_path, doc_path)
-
 
 
 if __name__ == "__main__":
     generate_files()
-    generate_doc()
 
 
 

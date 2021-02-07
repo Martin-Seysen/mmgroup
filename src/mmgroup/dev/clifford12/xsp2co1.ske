@@ -1359,34 +1359,30 @@ int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
+
 /**
-@brief Convert element of \f$G_{x0}\f$ to a word in its generators
+@brief Auxiliary function for function ``xsp2co1_elem_to_word``
 
-Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
-converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
-that word in the array ``a``. Then  each entry of ``a`` encodes a
-generator of \f$G_{x0}\f$ as described in file
-``mmgroup_generators.h``. The function returns the length of that
-word. Parameter ``img_omega`` should usually be zero.
 
-The word stored in the array ``a`` may have up to 10 entries. The
-tags of the entries in that word are ``xdyplplplp`` in that order.
-See documentation of class ``mmgroup.MMGroup`` for the meaning of
-these tags. Each entry of a word may encode the neutral element
-as a generator; then that entry is dropped. We assert that the
-number of entries with tag ``l`` is minimal.
+This function is the workhorse for function ``xsp2co1_elem_to_word``.
+Parameters ``elem`` and ``w``, and the return value  are as in 
+function ``xsp2co1_elem_to_word``.  Parameter ``img_omega`` should 
+usually be zero.
+
+In contrast to function ``xsp2co1_elem_to_word``, this function
+destroys the element ``elem``.
 
 There are cases where the image \f$g^{-1} x_\Omega g\f$ of the
 generator \f$x_\Omega\f$  is known in advance. Then run time can
 be saved encoding that image in parameter ``img_omega``
 in **Leech lattice encoding**.
 */
-// %%EXPORT px
-int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
+static
+int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 {
     int32_t res, len_a0, len_a, x, i;
     uint64_t img_Omega = 0x800000;
-    uint64_t elem_reduced[26];
     uint32_t a0[10];
     
     // Compute image of \Omega under conjugation and store
@@ -1401,28 +1397,28 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // in a0. We store the length of the word w0 in len_a0.
     len_a0 = gen_leech2_reduce_type4((uint32_t)img_Omega, a0);
     if (len_a0 < 0) return len_a0;
-    // Compute g * w0 in ``elem_reduced``. Then ``elem_reduced`` 
-    // stabilizes \Omega. Hence ``elem_reduced`` is monomial 
+    // Compute g * w0 in ``elem``. Then ``elem``
+    // stabilizes \Omega. Hence ``elem`` is monomial
     // in the rep ``4096_x``.
-    xsp2co1_copy_elem(elem, elem_reduced);
-    res = xsp2co1_mul_elem_word(elem_reduced, a0, len_a0);
+    xsp2co1_copy_elem(elem, elem);
+    res = xsp2co1_mul_elem_word(elem, a0, len_a0);
     if (res < 0) return res;
     // Compute a word ``w1`` of generators of G_{x0} such that
-    // ``elem_reduced * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
-    len_a = xsp2co1_elem_monomial_to_xsp(elem_reduced, a0 + len_a0);
+    // ``elem * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
+    len_a = xsp2co1_elem_monomial_to_xsp(elem, a0 + len_a0);
     if (len_a < 0) return len_a;
-    // Multiply ``elem_reduced`` with the word ``w1``
-    res =  xsp2co1_mul_elem_word(elem_reduced, a0 + len_a0, len_a);
+    // Multiply ``elem`` with the word ``w1``
+    res =  xsp2co1_mul_elem_word(elem, a0 + len_a0, len_a);
     if (res < 0) return res;
     // Keep the word ``w = w0 w1`` in ``a0`` and store its length
     // in ``len_a0``.
     len_a0 = len_a0 + len_a;
-    // Now ``elem_reduced`` is in Q_{x0}, Store the value of
-    // ``elem_reduced`` in ``x`` in ``Leech lattice encoding``.
-    x = xsp2co1_xspecial_vector(elem_reduced);
+    // Now ``elem`` is in Q_{x0}, Store the value of
+    // ``elem`` in ``x`` in ``Leech lattice encoding``.
+    x = xsp2co1_xspecial_vector(elem);
     if (x < 0) return x;
     
-    // Now the result is ``x * a0**(-1)``. We will store a word
+    // Now the result is ``x * w0**(-1)``. We will store a word
     // representing the result in the array ``a``. We will use   
     // ``len_a`` for recording the length of the stored word.
     len_a = 0;
@@ -1438,6 +1434,62 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // Return length of the final word a
     return len_a;
 }
+
+
+/// @endcond
+
+
+/**
+@brief Convert element of \f$G_{x0}\f$ to a word in its generators
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
+converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
+that word in the array ``a``. Then  each entry of ``a`` encodes a
+generator of \f$G_{x0}\f$ as described in file
+``mmgroup_generators.h``. The function returns the length of that
+word. 
+
+The word stored in the array ``a`` may have up to 10 entries. The
+tags of the entries in that word are ``xdyplplplp`` in that order.
+See documentation of class ``mmgroup.MMGroup`` for the meaning of
+these tags. Each entry of a word may encode the neutral element
+as a generator; then that entry is dropped. We assert that the
+number of entries with tag ``l`` is minimal.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
+{
+    uint64_t elem_reduced[26];
+    xsp2co1_copy_elem(elem, elem_reduced);
+    return elem_to_word(elem_reduced, a, 0);
+}
+
+
+/**
+@brief Reduce a word of generators  of \f$G_{x0}\f$ 
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``a`` as a word 
+\f$w\f$ of length \f$n\f$. The function computes a reduced 
+word \f$w_1\f$ equal to \f$w\f$ in the array ``a1`` and returns
+the length of the reduced word. Legal tags for the word \f$w\f$
+are ``d``, ``x``, ``y``, ``p``, and  ``l``. See documentation of 
+class ``mmgroup.MMGroup`` for the meaning of these tags.  
+
+It uses function ``xsp2co1_elem_to_word`` for computing \f$w_1\f$.
+The word \f$w_1\f$ stored in the array ``a1`` may have up 
+to 10 entries. 
+*/
+// %%EXPORT px
+int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
+{
+    uint64_t elem[26];
+    int32_t res;
+    res = xsp2co1_mul_set_elem_word(elem, a, n, 1);
+    if (res < 0) return res;
+    return elem_to_word(elem, a1, 0);
+}
+
+
 
 
 

@@ -42,7 +42,7 @@ extern "C" {
 
 
 #define REDUCE_MOD3(a) \
- (a) = ((a) + (((a) >> 2) & 0x1111111111111111ULL) & NEG_MASK_MOD3)
+ (a) = (((a) + (((a) >> 2) & 0x1111111111111111ULL)) & NEG_MASK_MOD3)
 
 
 #define REDUCE_FINAL_MOD3(a) \

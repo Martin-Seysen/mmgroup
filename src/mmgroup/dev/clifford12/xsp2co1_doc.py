@@ -157,6 +157,13 @@ that the scalar factor :math:`e` in the triple
 :math:`(e,A,Q)` is positive, and that trailing zero 
 entries in the array ``elem`` are unused.
 
+A word :math:`w` in the generators of the subgroup :math:`G_{x0}` 
+of the monster group can be converted to **G_x0 representation**
+by calling function ``xsp2co1_set_elem_word`` in file 
+``xsp2co1.c``. Here the word :math:`w` must be given as an array `
+of unsigned 32-bit integers as described in section 
+:ref:`header-mmgroup-generators-label`.
+
 The normal subgroup :math:`Q_{x0}` of :math:`G_{x0}`
 .....................................................
 
@@ -241,7 +248,38 @@ elements of :math:`Q_{x0}` of with numbers ``0x800`` and
 the element with number ``0x800800``.
  
 
+Converting an element in **G_x0 representation** to a word of generators
+------------------------------------------------------------------------
 
+Perhaps the most inportant function in this module is function
+``xsp2co1_elem_to_word``. This function converts an element of 
+the subgroup :math:`G_{x0}` from **G_x0 representation** to a 
+word :math:`w` of generators of the monster group. That word 
+:math:`w` is unique and **reduced** in the sense explained in the
+description of that function.
 
-     
+There is also a companion function ``xsp2co1_reduce_word`` that
+first converts an arbitrary word in the generators of the 
+subgroup :math:`G_{x0}` of the monster to  **G_x0 representation**.
+Then it calls function ``xsp2co1_elem_to_word`` to compute
+the **reduced** word equal to the input word.
+
+We briefly explain the implementation of function 
+``xsp2co1_elem_to_word``. Let :math:`g \in G_{x0}` be given in
+**G_x0 representation**. The function first computes the image
+:math:`g^{-1} \Omega g` of :math:`\Omega` using function
+``xsp2co1_xspecial_conjugate``, with :math:`\Omega` as in
+:cite:`Seysen20`. Using that image and function 
+``gen_leech2_reduce_type4`` in file ``gen_leech.c`` we can
+compute a word :math:`w_1` in the generators of  :math:`G_{x0}` 
+such that :math:`g_1 = g \cdot w_1` stabilizes  :math:`\Omega`.
+
+Then :math:`g_1` is in the monomial subgroup :math:`N_{x0}` of  
+:math:`g \in G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`.
+Function ``xsp2co1_elem_monomial_to_xsp`` computes a word
+in the generators equal to :math:`g_1`  for any 
+:math:`g_1  \in G_{x0}`. 
+
+TODO: explain implementation of function ``xsp2co1_elem_monomial_to_xsp``!!!
+
 """

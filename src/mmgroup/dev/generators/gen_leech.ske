@@ -728,10 +728,10 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
                 // Map v2 to a vector of subtype 42
                 {
                     uint8_t dodecad[24], perm[24];
-                    uint32_t w, scalar;
+                    uint32_t scalar;
                     // Perform a permutation on v2 that maps gc to the
                     // dodecad (0,1,2,3,8,9,14,15,18,19,22,23)
-                    w = mat24_vect_to_bit_list(gc, dodecad); // w is 12
+                    mat24_vect_to_bit_list(gc, dodecad); 
                     mat24_perm_from_dodecads(dodecad, RED_STD_DODECAD, 
                         perm); 
                     v2 = apply_perm(v2, perm, pg_end++); 

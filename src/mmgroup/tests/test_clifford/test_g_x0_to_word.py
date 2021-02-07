@@ -13,10 +13,12 @@ from mmgroup import mat24
 from mmgroup.mat24 import MAT24_ORDER 
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1_Word
+from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_mul_elem_word
 from mmgroup.clifford12 import xsp2co1_elem_monomial_to_xsp
 from mmgroup.clifford12 import xsp2co1_xspecial_vector
 from mmgroup.clifford12 import xsp2co1_elem_to_word
+from mmgroup.clifford12 import xsp2co1_reduce_word
 
 
 #######################################################################
@@ -115,8 +117,15 @@ def elem_to_word(elem, verbose = 1):
 def elem_to_word_C(elem):
     a = np.zeros(10, dtype = np.uint32)
     elem_data = np.array(elem.data, dtype = np.uint64)
-    len_a = xsp2co1_elem_to_word(elem_data, a, 0)
+    len_a = chk_qstate12(xsp2co1_elem_to_word(elem_data, a))
     return a[:len_a]
+
+def reduce_word_C(w):
+    a = np.array(w, dtype = np.uint32)
+    a1 = np.zeros(10, dtype = np.uint32)
+    len_a1 = chk_qstate12(xsp2co1_reduce_word(a, len(a), a1))
+    return a1[:len_a1]
+    
 
 
    
@@ -214,9 +223,9 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
 def test_elem_to_word(ntests = 50, verbose = 0):
     print("Test function test_elem_to_word()")
     for i, w in enumerate(make_testwords(monomial=False)):
+        m = MM.word(*w)
         if verbose:
             print("\nTest %d:" % (i+1))
-            m = MM.word(*w)
             print("Testing word\n%s" % m)
         elem = Xsp2_Co1(*w)
         if verbose:
@@ -225,10 +234,6 @@ def test_elem_to_word(ntests = 50, verbose = 0):
         if verbose:
             print("Reduced word\n%s" % MM.from_data(word))
         elem_1 = Xsp2_Co1.from_data(word)
-        #elem_1 = Xsp2_Co1()
-        #for w in word: elem_1 *= Xsp2_Co1.from_data([w])
-        #for w in word: elem_1.mul_data([w])
-        #elem_1.mul_data(word)
         if verbose:
             print("Recomputed element\n%s" % elem_1)
         ok = (elem == elem_1).all()
@@ -240,6 +245,8 @@ def test_elem_to_word(ntests = 50, verbose = 0):
                 raise ValueError(err)
         word_C = elem_to_word_C(elem)
         assert (word_C == word).all(), (word_C, word)
+        word1_C = reduce_word_C(m.data)
+        assert (word1_C == word).all(), (word1_C, word)
             
             
 #######################################################################
@@ -249,13 +256,12 @@ def test_elem_to_word(ntests = 50, verbose = 0):
 def one_benchmark(ntests):
     tags = "dxyplplplplplp"
     samples = [Xsp2_Co1(*rand_G_x0_testword(tags)) for i in range(400)]
-    img_omega = [s.xsp_conjugate(0x800000) for s in samples]
     a = np.zeros(10, dtype = np.uint32)
     t_start = time.process_time()
-    for elem, img in zip(samples, img_omega):
+    for elem in samples:
         elem_data = elem._data
         for i in range(ntests):
-            assert xsp2co1_elem_to_word(elem_data, a, img) >= 0
+            assert xsp2co1_elem_to_word(elem_data, a) >= 0
     t = time.process_time() - t_start
     return t / (ntests * len(samples))
 
