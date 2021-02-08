@@ -1400,7 +1400,6 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // Compute g * w0 in ``elem``. Then ``elem``
     // stabilizes \Omega. Hence ``elem`` is monomial
     // in the rep ``4096_x``.
-    xsp2co1_copy_elem(elem, elem);
     res = xsp2co1_mul_elem_word(elem, a0, len_a0);
     if (res < 0) return res;
     // Compute a word ``w1`` of generators of G_{x0} such that
@@ -1443,18 +1442,18 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 @brief Convert element of \f$G_{x0}\f$ to a word in its generators
 
 Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
-converts \f$g\f$ to a word in the generators of \f$g\f$ and stores
-that word in the array ``a``. Then  each entry of ``a`` encodes a
-generator of \f$G_{x0}\f$ as described in file
+converts \f$g\f$ to a **reduced** word in the generators of \f$g\f$
+and stores that word in the array ``a``. Then  each entry of ``a``
+encodes a generator of \f$G_{x0}\f$ as described in file
 ``mmgroup_generators.h``. The function returns the length of that
-word. 
+word.
 
-The word stored in the array ``a`` may have up to 10 entries. The
-tags of the entries in that word are ``xdyplplplp`` in that order.
-See documentation of class ``mmgroup.MMGroup`` for the meaning of
-these tags. Each entry of a word may encode the neutral element
-as a generator; then that entry is dropped. We assert that the
-number of entries with tag ``l`` is minimal.
+The **redcued** word stored in the array ``a`` may have up to 10
+entries. The tags of the entries in that word are ``xdyplplplp``
+in that order. See documentation of class ``mmgroup.MMGroup`` for
+the meaning of these tags. Each entry of a word may encode the
+neutral element as a generator; then that entry is dropped. We
+assert that the number of entries with tag ``l`` is minimal.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
@@ -1468,16 +1467,16 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 /**
 @brief Reduce a word of generators  of \f$G_{x0}\f$ 
 
-Let \f$g \in G_{x0}\f$ be stored in the array ``a`` as a word 
-\f$w\f$ of length \f$n\f$. The function computes a reduced 
+Let \f$g \in G_{x0}\f$ be stored in the array ``a`` as a word
+\f$w\f$ of length \f$n\f$. The function computes the **reduced**
 word \f$w_1\f$ equal to \f$w\f$ in the array ``a1`` and returns
 the length of the reduced word. Legal tags for the word \f$w\f$
 are ``d``, ``x``, ``y``, ``p``, and  ``l``. See documentation of 
-class ``mmgroup.MMGroup`` for the meaning of these tags.  
+class ``mmgroup.MMGroup`` for the meaning of these tags.
 
 It uses function ``xsp2co1_elem_to_word`` for computing \f$w_1\f$.
-The word \f$w_1\f$ stored in the array ``a1`` may have up 
-to 10 entries. 
+The word \f$w_1\f$ stored in the array ``a1`` may have up
+to 10 entries.
 */
 // %%EXPORT px
 int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)

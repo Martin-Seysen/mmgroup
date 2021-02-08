@@ -249,7 +249,7 @@ the element with number ``0x800800``.
  
 
 Converting an element in **G_x0 representation** to a word of generators
-------------------------------------------------------------------------
+........................................................................
 
 Perhaps the most inportant function in this module is function
 ``xsp2co1_elem_to_word``. This function converts an element of 
@@ -267,19 +267,42 @@ the **reduced** word equal to the input word.
 We briefly explain the implementation of function 
 ``xsp2co1_elem_to_word``. Let :math:`g \in G_{x0}` be given in
 **G_x0 representation**. The function first computes the image
-:math:`g^{-1} \Omega g` of :math:`\Omega` using function
+:math:`g^{-1} x_\Omega g` of :math:`x_\Omega` using function
 ``xsp2co1_xspecial_conjugate``, with :math:`\Omega` as in
 :cite:`Seysen20`. Using that image and function 
 ``gen_leech2_reduce_type4`` in file ``gen_leech.c`` we can
 compute a word :math:`w_1` in the generators of  :math:`G_{x0}` 
-such that :math:`g_1 = g \cdot w_1` stabilizes  :math:`\Omega`.
+such that :math:`g_1 = g \cdot w_1` stabilizes  
+:math:`x_\Omega` up to sign.
 
 Then :math:`g_1` is in the monomial subgroup :math:`N_{x0}` of  
-:math:`g \in G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`.
-Function ``xsp2co1_elem_monomial_to_xsp`` computes a word
-in the generators equal to :math:`g_1`  for any 
-:math:`g_1  \in G_{x0}`. 
+:math:`G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`. For any 
+:math:`g_1 \in N_{x0}` function ``xsp2co1_elem_monomial_to_xsp`` 
+computes a word in the generators of the monster that is equal 
+to :math:`g_1`. 
 
-TODO: explain implementation of function ``xsp2co1_elem_monomial_to_xsp``!!!
+Given a monomial element :math:`g_1` in **G_x0 representation**,
+function ``xsp2co1_elem_monomial_to_xsp`` computes a word of
+generators equal to  :math:`g_1`  as follows.
+Ignoring signs and identifying the basis vector :math:`d_1^+` of
+:math:`4096_x` with the basis vector :math:`d_1^-`, Table 3 in
+:cite:`Seysen20` states that :math:`x_\pi y_e x_f` maps  
+:math:`d_1^\pm` to  :math:`(d^\pi e f)_1^\pm`. This corresponds
+to an affine mapping :math:`d \mapsto d^\pi e f` from
+:math:`\mathcal{C} / \langle \Omega \rangle` to itself, from which
+we can easily compute :math:`e, f` (modulo sign and :math:`\Omega`),
+and also :math:`\pi`. Thus we can find a word :math:`w_2` in the 
+generators :math:`x_\pi y_e x_f`, such that :math:`g_2 = g_1 w_2`
+stabilizes all basis vectors of :math:`4096_x` up to sign,
+and possibly exchanging :math:`d_1^+` with :math:`d_1^-`.
+Then :math:`g_2` can easily be converted into a word in 
+the generators 
+:math:`x_{-1}, x_\Omega, x_\delta, \delta \in \mathcal{C}^*`.
+ 
+We use function ``qstate12_monomial_matrix_row_op`` in file 
+``qmatrix12.c`` for obtaining the affine mapping 
+:math:`d \mapsto d^\pi e f` from the **G_x0 representation**
+of :math:`g_1`. We use the functions in file ``mat24_functions.c``
+for obtaining :math:`\pi` from that affine mapping.
 
 """
