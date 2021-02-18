@@ -1567,7 +1567,8 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
     set_complex_factors(pqs->factor, freal, fimag);
    
     for (i = 1; i <= n_iterations; ++i) {
-        uint64_t i1, d, diag, d1, index;
+        uint64_t i1, diag, index;
+        int64_t d, d1;
         index = (assoc & mask) << 1;
         pc[index] = freal[qf & 3];
         pc[index + 1] = fimag[qf & 3];

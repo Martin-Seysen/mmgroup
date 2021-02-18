@@ -394,6 +394,41 @@ def test_rand_op(n_tests = 5, f_mul = None, verbose = 0):
     print("Test passed")
 
 
+########################################################################
+# tests operation on tag 'A' of the vector
+########################################################################
+
+
+def tag_A_testwords():
+    for atom in "dpxyl":
+        yield [(atom, "n")]
+    yield [(c, "n") for c in "dpxyl" * 3]
+
+
+@pytest.mark.mm
+def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 0):
+    print("Testing group operation on random vectors")
+    for i in range(n_tests):
+        for p in PRIMES:
+            space = MMTestSpace(p)
+            group = space.group
+            for w in tag_A_testwords():
+                g = group.word(*w)
+                #print(g)
+                v = space.rand_vector()
+                a_g = v.copy()
+                v_g = v * g
+                len_g = len(g.data)
+                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, 1)
+                assert res == 0
+                #print(v_g['A'] - a_g['A'] + 3)
+                assert (v_g['A'] ==  a_g['A']).all()
+                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, 2)
+                assert res == 0
+                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, -3)
+                assert res == 0
+                assert (v['A'] ==  a_g['A']).all()
+    print("Test passed")
 
 
 

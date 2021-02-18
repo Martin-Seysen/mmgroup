@@ -42,6 +42,50 @@ void mm%{P}_neg_scalprod_d_i(uint_mmv_t* v)
 }
 
 
+
+/**
+   @brief perform permutation on rows of length 24
+
+*/
+static void pi24_n(
+   uint_mmv_t * p_src,
+   uint16_t * p_perm,
+   uint8_t * pf,
+   uint_mmv_t * p_dest,
+   uint32_t n
+)
+{
+  // %%IF* GENERATE_CODE
+    uint_fast32_t i1;
+    for (i1 = 0; i1 < n; ++i1) {
+        uint_mmv_t sgn_perm = p_perm[i1];
+        uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << %{LOG_V24_INTS});
+
+        sgn_perm >>= 15;  // sign for permutation
+        sgn_perm = -(sgn_perm & 1);
+        // %%FOR i in range(V24_INTS_USED)  
+        // %%IF* i == 0
+        sgn_perm &= %{smask:P};
+        // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+        sgn_perm &= %{smask:P, range(24 % INT_FIELDS)};
+        // %%END IF
+        p_dest[%{i}] = sgn_perm  ^ (
+        // %%JOIN*  " |", ");"
+        // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
+        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+            (((ps[pf[%{j2}]] >> pf[%{int:j2+1}]) & %{P}) << %{j_mod})
+        // %%END FOR   #  FOR j2, j_mod
+        // %%END FOR   #  FOR j
+        // %%END FOR   #  FOR i
+        // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+        p_dest[%{i}] = 0;
+        // %%END FOR
+        p_dest +=  %{V24_INTS};      
+        }
+  // %%END IF # GENERATE_CODE
+}
+
+
 // %%IF* GENERATE_CODE
 
 // %%IF PERM24_USE_BENES_NET
@@ -145,40 +189,7 @@ static void pi24_2048(
 }
 
 
-static void pi24_72(
-   uint_mmv_t * p_src,
-   uint16_t * p_perm,
-   uint8_t * pf,
-   uint_mmv_t * p_dest
-)
-{
-    uint_fast32_t i1;
-    for (i1 = 0; i1 < 72; ++i1) {
-        uint_mmv_t sgn_perm = p_perm[i1];
-        uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << %{LOG_V24_INTS});
 
-        sgn_perm >>= 15;  // sign for permutation
-        sgn_perm = -(sgn_perm & 1);
-        // %%FOR i in range(V24_INTS_USED)  
-        // %%IF* i == 0
-        sgn_perm &= %{smask:P};
-        // %%ELSE IF i == V24_INTS_USED - 1 and 24 % INT_FIELDS
-        sgn_perm &= %{smask:P, range(24 % INT_FIELDS)};
-        // %%END IF
-        p_dest[%{i}] = sgn_perm  ^ (
-        // %%JOIN*  " |", ");"
-        // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
-        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
-            (((ps[pf[%{j2}]] >> pf[%{int:j2+1}]) & %{P}) << %{j_mod})
-        // %%END FOR   #  FOR j2, j_mod
-        // %%END FOR   #  FOR j
-        // %%END FOR   #  FOR i
-        // %%FOR* i in range(V24_INTS_USED, V24_INTS)
-        p_dest[%{i}] = 0;
-        // %%END FOR
-        p_dest +=  %{V24_INTS};      
-        }
-}
 
 
 // %%END IF
@@ -203,6 +214,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
 
     // Prepare mask array from Benes network
     // %%PERM24_BENES_PREPARE "p_op->benes_net", small_perm
+    pi24_72(v_in, p_perm + 2048, small_perm, v_out);
     // %%ELSE
     // The following array will store a version of the permutation 
     // optimized for fast operation on a vector of 24 small integers: 
@@ -216,6 +228,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
                    = (i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
         }
     }    
+    pi24_n(v_in, p_perm + 2048, small_perm, v_out, 72);
     // %%END IF
     
     // Step 1: do rows with 24 entries 
@@ -234,7 +247,6 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
 
     for (i = 0; i < 3; ++i) 
         pi24_2048(a_src[i], p_perm, small_perm, i + 12, a_dest[i]);
-    pi24_72(v_in, p_perm + 2048, small_perm, v_out);
 
 
     // Step 2: do rows with 64 entries // TODO: comment properly!!!!
@@ -392,3 +404,26 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 }
 
 
+// %%EXPORT px
+void mm_op%{P}_pi_tag_A(uint_mmv_t *v, uint32_t pi)
+{
+    uint_mmv_t v_tmp[24 *  %{V24_INTS}];
+    uint16_t row_perm[24];
+    uint8_t perm[24], col_perm[48];
+    uint_fast32_t i, j;
+
+  // %%IF* GENERATE_CODE
+    pi %= MAT24_ORDER;
+    mat24_m24num_to_perm(pi, perm);
+    
+    for(i = 0; i < 24; ++i) {
+        j = perm[i];
+        row_perm[j] = i;
+        col_perm[j+j] = (i >> %{LOG_INT_FIELDS});
+        col_perm[j+j+1] 
+                   = (i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
+    }
+    pi24_n(v, row_perm, col_perm, v_tmp, 24);
+    for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];    
+  // %%END IF  # GENERATE_CODE
+}

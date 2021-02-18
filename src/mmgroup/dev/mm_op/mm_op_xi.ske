@@ -138,3 +138,14 @@ void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 }
 
 
+// %%EXPORT px
+void mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
+{
+    uint_mmv_t v_tmp[24 * %{V24_INTS}];
+    uint_fast32_t i;
+    
+    exp %= 3;
+    if (exp == 0) return;
+    mm_op%{P}_xi_a(v, exp - 1, v_tmp);
+    for (i = 0; i < 24 * %{V24_INTS}; ++i) v[i] = v_tmp[i];
+}

@@ -57,8 +57,8 @@ void mm_group_iter_start(mm_group_iter_t *pit, uint32_t *g, int32_t len_g, int32
         pit->sign = 0;
     } else {
         pit->i_start = len_g - 1; pit->i_stop = pit->i_step = -1;
-        pit->sign = 0x8000000;
-        e = -e;
+        pit->sign = 0x80000000;
+        pit->e = -e;
     }
     pit->index = pit->i_start;
     pit->lookahead = 0;

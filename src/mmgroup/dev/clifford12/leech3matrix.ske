@@ -45,10 +45,9 @@ extern "C" {
  (a) = (((a) + (((a) >> 2) & 0x1111111111111111ULL)) & NEG_MASK_MOD3)
 
 
-#define REDUCE_FINAL_MOD3(a) \
- (a) +=  0x1111111111111111ULL; \
- (a) -= (~(a) >> 2) &  0x1111111111111111ULL; \
- (a) &= NEG_MASK_MOD3
+#define REDUCE_FINAL_MOD3(a, tmp) \
+ tmp = (a) & ((a) >> 1) & 0x5555555555555555ULL; \
+ (a) ^=  tmp ^ (tmp << 1)
 
 
 #define EXPAND_3_15(a) \
@@ -76,15 +75,15 @@ extern "C" {
 /// @endcond 
 
 /*************************************************************************
-*** Start of C code
+*** Deal with 24 times 24 times matrices mod 3
 *************************************************************************/
 
 // %%WITH N_COL = 3
 
 
 
-// %%EXPORT px
-void leech3matrix_load_3(uint64_t *v, uint64_t *a)
+static
+int32_t leech3matrix_load_3(uint64_t *v, uint64_t *a)
 {
     uint_fast32_t i, j = 0;
     for (i = 0; i < 24; ++i) {
@@ -97,11 +96,12 @@ void leech3matrix_load_3(uint64_t *v, uint64_t *a)
         // %%END FOR
         j +=  %{N_COL};
     } 
+    return 0;
 }
 
 
-// %%EXPORT px
-void leech3matrix_load_15(uint64_t *v, uint64_t *a)
+static
+int32_t leech3matrix_load_15(uint64_t *v, uint64_t *a)
 {
     uint_fast32_t i, j = 0;
     for (i = 0; i < 48; i += 2) {
@@ -118,7 +118,17 @@ void leech3matrix_load_15(uint64_t *v, uint64_t *a)
         // %%END FOR
         j +=  %{N_COL};
     } 
+    return 0;
 }
+
+// %%EXPORT px
+int32_t leech3matrix_load(uint32_t p, uint64_t *v, uint64_t *a)
+{
+    if (p == 3) return leech3matrix_load_3(v, a);
+    if (p == 15) return leech3matrix_load_15(v, a);
+    return -1;
+}
+
 
 
 static inline uint32_t pivot3(uint64_t *p_a, uint64_t *p_end, uint32_t column)
@@ -159,29 +169,29 @@ void leech3matrix_echelon(uint64_t *a)
 {
     uint64_t *p_a = a, *p_end = a +  %{int:24*N_COL};
     uint_fast32_t col;
-    for (col = 0; col < 23; ++col) {
+    for (col = 0; col < 24; ++col) {
         p_a += pivot3(p_a, p_end, col);
     }
 }
 
 // %%EXPORT px
-uint64_t leech3matrix_echelon_kernel_vector(uint64_t *a)
+void leech3matrix_compress(uint64_t *a, uint64_t *v)
 {
-    uint64_t v[2][2], tmp;
-    uint_fast32_t i, j =  %{int:22*N_COL};
+    uint64_t v0, v1, tmp;
+    uint_fast32_t i, j = 0;
 
-    for (i = 0; i < 2; ++i) {
-        v[i][0] =  COMPRESS_15_3(a[j]);
-        tmp = COMPRESS_15_3(a[i+1]);
-        v[i][1] = COMPRESS_15_3(a[j+1]);
-        v[i][0] += (tmp & 0xffff) << 16;
-        v[i][1] = (v[i][1] << 16) + (tmp >> 16);
+    for (i = 0; i < 48; i += 2) {
+        v0 = a[j]; tmp = a[j+1]; v1 = a[j+2];
+        COMPRESS_15_3(v0);
+        COMPRESS_15_3(tmp);
+        COMPRESS_15_3(v1);
+        v0 += (tmp & 0xffff) << 32;
+        v1 = (v1 << 16) + (tmp >> 16);
+        REDUCE_FINAL_MOD3(v0, tmp);
+        REDUCE_FINAL_MOD3(v1, tmp);
+        v[i] = v0; v[i+1] = v1;
         j += %{N_COL};
     }
-
-    if (~v[0][0] || v[1][0]) return 0;
-    REDUCE_FINAL_MOD3(v[1][1]);
-    return short_3_reduce(xsp2co1_to_vect_mod3(v[1][1]));
 }
 
 
@@ -202,21 +212,226 @@ void leech3matrix_sub_diag(uint64_t *a, uint64_t diag, uint32_t offset)
 }
 
 // %%EXPORT px
-uint64_t leech3matrix_kernel_vector(uint64_t *v, uint32_t p_in, uint32_t diag)
+uint64_t leech3matrix_kernel_vector(uint32_t p, uint64_t *v, uint32_t diag)
 {
     uint64_t a[24 *  %{N_COL}];
-    if (p_in == 15) leech3matrix_load_15(v, a);
-    else if (p_in == 3) leech3matrix_load_3(v, a);
-    else return 0;
+    if (leech3matrix_load(p, v, a) < 0) return 0;
     leech3matrix_sub_diag(a, diag, 0);
     leech3matrix_sub_diag(a, 2, 24);
     leech3matrix_echelon(a);
-    return leech3matrix_echelon_kernel_vector(a);
+    leech3matrix_compress(a, a);
+    if ((a[2*22] == 0) || (a[2*23] != 0)) return 0;
+    return xsp2co1_from_vect_mod3(a[2*23 + 1]);
 }
 
 
-// %%END WITH 
 
+static inline void insertsort(uint32_t *a, int32_t n)
+// Sort the array ``a`` of length ``n``.
+{
+    int_fast32_t i, j;
+    for (i = 1; i < n; i += 1) {
+        uint32_t temp = a[i];
+        for (j = i; j >= 1 && a[j - 1] > temp; --j) a[j] = a[j - 1];
+        a[j] = temp;
+    }
+}
+
+// %%EXPORT px
+int32_t leech3matrix_watermark(uint32_t p, uint64_t *v, uint32_t *w)
+{
+    uint_fast32_t i, j, k, m, d[8];
+    uint64_t x, y;
+
+    if (p == 15) {
+        d[0] = 0; d[1] = 0x20;
+        for (i = 2; i < 8; ++i) d[i] = 13 * d[i-1];
+        for (i = 0; i < 24; ++i) {
+            m = 0;
+            for (j = 0; j < 2; ++j) {
+                x = v[2*i + j];
+                y = x & 0x8888888888888888ULL;
+                y = (y << 1) - (y >> 3);
+                x ^= y;
+                for (k = 0; k < 64 - (j << 5); k += 4) {
+                    m += d[(x >> k) & 7];
+                }                
+            }
+            w[i] = (m & 0xffffffe0ULL) + i;
+        }
+        insertsort(w, 24);
+        for (i = 0; i < 23; ++i) {
+            if (((w[i] ^ w[i+1]) & 0xffffffe0) == 0) return -1;
+        }
+        return 0;
+    }
+    else {
+        for (i = 0; i < 24; ++i) w[i] = 24;
+        return -1;
+    }
+}
+
+
+
+// %%EXPORT px
+int32_t leech3matrix_watermark_perm_num(uint32_t p, uint32_t *w, uint64_t *v)
+{
+    uint32_t w1[24];
+    uint8_t perm[32];
+    uint_fast32_t i;
+    
+    if (leech3matrix_watermark(p, v, w1) < 0) return -1;
+    for (i = 0; i < 24; ++i) perm[i] = 24;
+    for (i = 0; i < 24; ++i) {
+        if ((w[i] ^ w1[i]) & 0xffffffe0) return -1;
+        perm[w[i] & 0x1f] = w1[i] & 0x1f;
+    }
+    if (mat24_perm_check(perm)) return -1;
+    return mat24_perm_to_m24num(perm);
+}
+
+
+// %%END WITH   # N_COL = 3
+
+
+
+/*************************************************************************
+*** Functions for bit matrices
+*************************************************************************/
+
+
+// %%EXPORT px
+void leech2matrix_echelon(uint64_t *m, uint32_t nrows, uint32_t ncols)
+{
+
+    int_fast32_t row_pos = 0, col, j, k;
+    uint64_t v, col_mask = ONE << (ncols - 1);
+    if (ncols > 64) ncols = 64;
+    if (nrows == 0 || ncols == 0) return;
+    for (col = (int_fast32_t)ncols - 1; col >= 0; --col) {
+        col_mask = ONE << col;
+        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
+            if (m[j] &  col_mask) {
+                 v = m[j];
+                 for (k = j - 1; k >= 0; --k) {
+                     m[k] ^= (m[k] & col_mask) ? v : 0;
+                 }
+                 m[j] = m[row_pos]; m[row_pos++] = v;
+            }
+        }
+    }     
+}
+
+
+
+
+/**
+ @brief Add an equation to a system of linear bit equations
+ 
+ The idea behind this function is that an external process generates
+ rows of a bit matrix with ``ncols`` columns, with ``0 < ncols <= 32``.
+ This function checks such a row ``a`` and accepts it, if it linearly
+ independent of all previously accepted rows. Thus at most ``ncols``
+ rows can be accepted. The ``nrows`` already accepted rows are  stored
+ in the array ``m``. The function returns  ``1`` if row ``a`` is
+ accepted and ``0``  otherwise. A negative return value indicates
+ an error. The size of the array ``m`` should be at least ``ncols``.
+ 
+ Let ``A`` be the ``ncols`` times ``ncols`` matrix of all accepted
+ rows ``a[i]``, ``0 <= i < ncols``; and let  ``I`` be the ``ncols``
+ time ``ncols`` unit matrix. We left multiply ``A`` with a matrix 
+ ``T`` such that ``T * A = I``. Thus ``T = A**(-1)``. Technically, we
+ perform row operations on the matrix ``A[:nrows]`` containing the
+ first ``nrows`` lines already accepted, such that ``T * A[:rnows]``
+ is in **reduced echelon form**. We also perform the same row
+ operations on the unit matrix to obtain ``T``.  We store
+ ``T[:rnows]`` in columns ``0,...,ncols-1`` of matrix ``M`` and
+ ``T*A[:rnows]`` in columns ``ncols,...,2*ncols-1`` of matrix ``M``
+ 
+ One may use function ``leech2matrix_solve_eqn`` for solving a
+ system of linear equations obtained in that way.
+*/
+// %%EXPORT px
+int32_t leech2matrix_add_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64_t a)
+{
+    // Our general strategy is to keep the matrix ``TA``in the upper
+    // columns of ``m`` in reduced echelon form after the insertion  
+    // of a vector ``a``. Therefore we apply row operations to ``TA``. 
+    // When entring the i-th row, we also enter the i-th row of the
+    // unit matrix ``I`` into the matrix stored in the lower ``ncols``
+    // columns of ``m``. Then subsequent row operations apply to both,
+    // the upper and the lower columns of matrix ``m``.
+
+    uint_fast32_t row, col;       // Counters for rows and columns of ``TA``
+    uint_fast32_t a_row = nrows;  // Row where to insert the (pivoted) ``a``
+    uint64_t mask = ONE << ncols; // Mask for column ```col`` of ``TA``
+    uint64_t a_mask = 0 - ONE;    // Mask for lowest bit of (pivoted) ``a``,
+                                  // (-1) means 'no such bit found'
+    // Check buffer overflow
+    if (ncols > 32 || nrows > ncols) return ERR_QSTATE12_BUFFER_OVFL;
+ 
+    // Shift vector ``a`` into the position for entering it into ``TA``.
+    // Store row ``nrows`` of the unit matrix in the lower columns of ``a``.
+    a = ((a & ((ONE << ncols) - 1)) << ncols) | (ONE << nrows);
+ 
+    // Run through the columns of ``TA``. If a row of ``TA`` has a 
+    // lowest bit in that column then pivot ``a`` with that row.
+    // If ``a`` has a lowest bit set in that column (after pivoting)
+    // then set ``a_mask`` appropriately to indicate that column.
+    for (col = row = 0; col < ncols && row < nrows; ++col) {
+        if (m[row] & mask) {
+            a ^= (a & mask) ? m[row] : 0; 
+            ++row;
+        } 
+        else if (a & mask & a_mask) {
+            a_row = row; a_mask = mask;
+        }            
+        mask <<= 1;        
+    }
+    // All rows of ``TA`` done. Proceed with remaining columns as above.
+    for ( ; col < ncols && a_mask == (0 - ONE); ++col) {
+        if (a & mask) a_mask = mask; 
+        mask <<= 1;        
+    }
+    
+    // Return 0 if no bit is set in the (pivoted) ``a``.
+    if (a_mask == (0 - ONE)) return 0;
+    
+    // Insert the pivoted ``a`` into the correct row of ``TA``
+    for (row = nrows; row > a_row; --row)  m[row] = m[row-1];
+    m[a_row] = a;
+    
+    // Pivot the lower rows of ``TA`` with ``a``.
+    for (row = 0; row < a_row; ++row) {
+        m[row] ^=  (m[row] & a_mask) ? a : 0;
+    }    
+    return 1;     
+}
+
+
+
+/**
+ @brief Solve a system of linear bit equations
+ 
+ Let ``A`` be a nonsingular  ``ncols`` times ``ncols`` bit matrix
+ stored in the array ``m`` in the special form as described in 
+ function ``leech2matrix_add_eqn``.
+ 
+ The function returns the solution ``w`` of the equation
+ ``w * A = v``.
+*/
+// %%EXPORT px
+uint64_t leech2matrix_solve_eqn(uint64_t *m, uint32_t ncols, uint64_t v)
+{
+    uint_fast32_t row = 0;
+    uint64_t mask = ONE, w = 0;
+    
+    for (row = 0; row < ncols; ++row) {
+        w ^=  (v & mask) ? m[row] : 0; 
+        mask <<= 1;
+    }
+    return  w & (mask - 1);     
+}
 
 /*************************************************************************
 *** End of of C code

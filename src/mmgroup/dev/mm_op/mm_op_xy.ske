@@ -180,3 +180,33 @@ void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_m
 }
 
 
+// %%EXPORT px
+void mm_op%{P}_y_tag_A(uint_mmv_t *v, uint32_t f)
+{
+  // %%IF* GENERATE_CODE
+        uint_mmv_t mask[2][%{V24_INTS}], x;
+        uint_fast32_t i, sign;
+
+        f = mat24_gcode_to_vect(f); 
+        // %%FOR* i in range(V24_INTS_USED)
+        // %%IF i < V24_INTS_USED - 1 or 24 % INT_FIELDS == 0
+        mask[1][%{i}] = %{smask: P};
+        // %%ELSE
+        mask[1][%{i}] = %{smask: P, range(24 % INT_FIELDS)};
+        // %%END IF
+        // %%END FOR
+        for (i = 0; i < %{V24_INTS_USED}; ++i) {
+            x = f >> (i << %{LOG_INT_FIELDS});
+            // %%MMV_UINT_SPREAD x, x
+            mask[0][i] = x & mask[1][i];
+            mask[1][i] ^= mask[0][i];
+        }
+        for (i = 0; i < 24 * %{V24_INTS}; i +=  %{V24_INTS}) {
+            sign = f & 1;
+            // %%FOR* j in range(V24_INTS_USED)
+            v[i + %{j}] ^= mask[sign][%{j}];
+            // %%END FOR
+            f >>= 1;
+        }
+  // %%END IF   # GENERATE_CODE
+}

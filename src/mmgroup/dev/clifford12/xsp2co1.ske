@@ -1168,12 +1168,10 @@ int32_t xsp2co1_set_elem_atom(uint64_t *elem, uint32_t v)
 /**
 @brief Auxiliary function for function ``xsp2co1_add_short_3_leech``
 
-The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
-**Leech lattice mod 3** encoding to the encoding to the encoding
-of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in 
-the ``mmgroup.mm3`` extension. No reduction mod 3 takes place
-
-This conversion is an involution.
+The function converts a vector in \f$\Lambda / 3\Lambda\f$ 
+from **Leech lattice mod 3** encoding to the encoding to the 
+encoding of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ 
+used in the ``mmgroup.mm3`` extension. 
 */
 // %%EXPORT px
 uint64_t xsp2co1_to_vect_mod3(uint64_t x)
@@ -1189,6 +1187,27 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
     return x;
 }
 
+
+/**
+@brief Inverse of function ``xsp2co1_to_vect_mod3``
+
+The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
+the encoding of a vector in 
+\f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in the ``mmgroup.mm3`` 
+extension to the **Leech lattice mod 3** encoding.
+*/
+// %%EXPORT px
+uint64_t xsp2co1_from_vect_mod3(uint64_t x)
+{
+    uint64_t y;
+    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
+    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
+    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
+    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
+    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
+    x = (x & 0xffffffULL) + ((x & 0xffffff00000000ULL) >> 8);
+    return short_3_reduce(x);
+}
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -1237,7 +1256,7 @@ int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8
     f[2] = -f[1];
     gcodev = mat24_vect_to_gcode(gcodev);
     if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
-    x = xsp2co1_to_vect_mod3(short_3_reduce(x));
+    x = xsp2co1_to_vect_mod3(x);
 
     for (i = 0; i < 24; ++i) {
         pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
@@ -1572,8 +1591,8 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX1;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
     x = elem[0] ^ (0 - sign);
-    x_data[0] = xsp2co1_to_vect_mod3(short_3_reduce(x));
-    x_data[1] = xsp2co1_to_vect_mod3(short_3_reduce(~x));
+    x_data[0] = xsp2co1_to_vect_mod3(x);
+    x_data[1] = xsp2co1_to_vect_mod3(~x);
 
     ncols = qs2.ncols; 
     if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX1;

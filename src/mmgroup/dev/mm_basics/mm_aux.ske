@@ -490,6 +490,13 @@ int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
 //  -1: Bad input value p
 //  -2: A one bit outside a field has been found
 {
+    return mm_aux_reduce_mmv_fields(p, mv, MM_AUX_OFS_E);
+}
+
+
+// %%EXPORT px
+int32_t mm_aux_reduce_mmv_fields(uint32_t p, uint_mmv_t *mv, uint32_t nfields)
+{
     uint_fast32_t i, sh;
     uint_mmv_t data, cy, mask_1, mask_p, acc;
 
@@ -497,7 +504,7 @@ int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
     // %%MMV_LOAD_CONST  p, i
     sh = %{MMV_CONST:P_BITS, i};          // This is P_BITS
     i = %{MMV_CONST:LOG_INT_FIELDS, i};   // This is LOG_INT_FIELDS
-    i = MM_AUX_OFS_E >> i;               // No of unit_mmv_t to process
+    i = nfields >> i;                     // No of unit_mmv_t to process
     mask_1 =  MM_AUX_TBL_REDUCE[2*sh-4];
     mask_p =  MM_AUX_TBL_REDUCE[2*sh-3];
     if (sh & (sh - 1)) {
@@ -812,8 +819,8 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
 // coordinate of vector 'mv'. If several entries of 'sp' have the 
 // same label then the same coordinate is taken from 'mv' 
 // several times.
-// Bit 7,...,0 of any entry of 'sp' must be either 0 or p. If the
-// entry is 0, the coordinate is read to bits 7,...,0 of that entry. 
+// Bit 7,...,0 of any entry of 'sp' must be either 0 or p. If that
+// value is 0, the coordinate is read to bits 7,...,0 of that entry. 
 // If the entry is p the negative coordinate is read instead. In 
 // other case that entry of 'sp' contains garbage.
 {
@@ -859,6 +866,17 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
     }
 }
 
+
+
+// %%EXPORT px
+void mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
+// Equivalent to 
+//
+//      mm_aux_mmv_extract_sparse(p, mv, &sp, 1); return sp;
+{
+     mm_aux_mmv_extract_sparse(p, mv, &sp, 1);
+     return sp;
+}
 
 
 

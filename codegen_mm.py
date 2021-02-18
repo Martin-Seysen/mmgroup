@@ -374,6 +374,7 @@ def make_basics():
     pxd_file =  PXD_BASICS_NAME
     print("Creating %s from previous .ske files" % h_file)
     tg.generate(all_ske_files, None, h_path)
+    print("Creating %s" % pxd_file)
     tg.generate_pxd(
         os.path.join(PXD_DIR, pxd_file), 
         h_file, 
@@ -405,6 +406,7 @@ def generate_files():
     def pxi_comment(text, f):
         print("\n" + "#"*70 + "\n### %s\n" % text + "#"*70 + "\n\n",file=f)
     c_files,  pxd_files =  make_basics() 
+    print("Creating %s" % PXI_FILE_NAME)
     f_pxi = open(os.path.join(PXD_DIR, PXI_FILE_NAME), "wt")
     print(PXD_DECLARATIONS, file = f_pxi)
     for pxd_f in pxd_files:
@@ -415,6 +417,7 @@ def generate_files():
         )
         print(pxi_content, file = f_pxi)
     f_pxi.close()
+    print("Code generation for module mm terminated successfully")
     return c_files
 
 
@@ -430,10 +433,12 @@ def generate_doc():
     """Function for generating documentation from the genrated C files
 
     """
+    print("Generating documentation for module mm, deprecated!")
     for c_file in C_FILES_DOCUMENTED:
         c_path = os.path.join(C_DIR, c_file + ".c")
         doc_path = os.path.join(DOC_DIR, c_file + "_c_doc.txt")
         make_doc(c_path, doc_path)
+    print("Documentation for module mm generated successfully")
 
 
 

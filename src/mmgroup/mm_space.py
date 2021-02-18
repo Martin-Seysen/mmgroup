@@ -890,7 +890,7 @@ class MMSpace(AbstractMmRepSpace):
 
 
     @staticmethod
-    def index_to_sparse_short(tag, i0 = -1, i1 = -1):
+    def index_to_sparse(tag, i0 = -1, i1 = -1):
         r"""Auxiliary method for index_to_short
 
         Convert a tagged tuple ``(tag, i0, i1)`` to a sparse 
@@ -943,7 +943,7 @@ class MMSpace(AbstractMmRepSpace):
         referring to the same basis vector return the same short
         vector.   
         """
-        i = MMSpace.index_to_sparse_short(tag, i0, i1)
+        i = MMSpace.index_to_sparse(tag, i0, i1)
         v = np.zeros(24, dtype = np.int32)
         if mm_aux_index_sparse_to_leech(i, v) == 0:
             return v          
@@ -965,7 +965,7 @@ class MMSpace(AbstractMmRepSpace):
         The function raises ValueError if the basis vector in 
         :math:`\rho_p` does not correspond to a short vector.
         """
-        i = MMSpace.index_to_sparse_short(tag, i0, i1)
+        i = MMSpace.index_to_sparse(tag, i0, i1)
         i2 = mm_aux_index_sparse_to_leech2(i)
         if i2 != 0:
             return i2          

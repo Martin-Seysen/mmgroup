@@ -248,7 +248,8 @@ def test_elem_to_word(ntests = 50, verbose = 0):
         word1_C = reduce_word_C(m.data)
         assert (word1_C == word).all(), (word1_C, word)
             
-            
+
+
 #######################################################################
 # benchmark
 #######################################################################

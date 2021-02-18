@@ -284,7 +284,7 @@ class TableGenerator(object):
         if not isinstance(entry, str):
             entry = entry.__doc__
         if len(args) > 1 and args[1]:
-            entry = format_line(entry, self.names, self.args)
+            entry = format_line(entry, self.names, self.args, terminal=0)
         return py_doc_to_comment(entry), ""
 
 
@@ -874,7 +874,7 @@ def make_doc(source_file, output_file, tables = None):
 
         if  copy and not is_keyword:
             try:
-                l = format_line(l, tables)
+                l = format_line(l, tables, terminal=0)
             except:
                 pass 
             if not m_any_directive.match(l): 
