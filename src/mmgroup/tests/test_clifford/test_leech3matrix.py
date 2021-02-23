@@ -256,7 +256,9 @@ def one_test_watermark(verbose = 0):
     v0 = MMV15.rand_uniform()
     v = v0.data[:48]
     w0 = np.zeros(24, dtype = np.uint32)
-    leech3matrix_watermark(15, v, w0)
+    result = leech3matrix_watermark(15, v, w0)
+    if result < 0:
+        return 0
     pi_num = randint(0, MAT24_ORDER-1)
     TAG_y, TAG_p = 0x40000000, 0x20000000
     y1, y2 = randint(0, 0xfff), randint(0, 0xfff)
@@ -265,9 +267,17 @@ def one_test_watermark(verbose = 0):
     op_word_tag_A(v, op, len(op), 1)
     pi_num_obt = leech3matrix_watermark_perm_num(15, w0, v)   
     assert pi_num_obt == pi_num 
+    return 1
 
+
+WATERMARK_TESTS = 10
+WATERMARK_MIN_SUCCESS = 4
 
 @pytest.mark.qstate
 def test_watermark():
-    for n in range(10):
-        one_test_watermark()
+    success = 0
+    for n in range(WATERMARK_TESTS):
+        success += bool(one_test_watermark())
+    if success < WATERMARK_MIN_SUCCESS:
+        err = "%d of %s permutation watermark tests failed"
+        raise ValueError(err, WATERMARK_TESTS-success, WATERMARK_TESTS)

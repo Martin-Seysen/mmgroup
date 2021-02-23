@@ -869,7 +869,7 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
 
 
 // %%EXPORT px
-void mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
+uint32_t mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
 // Equivalent to 
 //
 //      mm_aux_mmv_extract_sparse(p, mv, &sp, 1); return sp;
@@ -1002,6 +1002,25 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 }
 
 
+
+
+// %%EXPORT px
+int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
+{
+    uint_fast32_t i, err = 0, v1 = 0;
+    uint32_t sp1[32];
+
+    if (mm_aux_bad_p(p)) return 1ULL;
+    if (length > 32) return 0 - 1ULL;
+    for (i = 0; i < length; ++i) sp1[i] = sp[i];
+    mm_aux_mmv_extract_sparse(p, mv, sp1, length);
+    for (i = 0; i < length; ++i) {
+        err |= sp1[i] + (sp1[i] & 1);
+        v1 |= (sp1[i] & 1) << i;
+    }
+    if (err & p) return 1ULL;
+    return (int32_t)v1;
+}
 
 
 // %%COMMENT

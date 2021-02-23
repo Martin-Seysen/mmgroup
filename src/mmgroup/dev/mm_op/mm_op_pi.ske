@@ -62,7 +62,7 @@ static void pi24_n(
         uint_mmv_t *ps = p_src + ((sgn_perm & 0x7ff) << %{LOG_V24_INTS});
 
         sgn_perm >>= 15;  // sign for permutation
-        sgn_perm = -(sgn_perm & 1);
+        sgn_perm = 0 - (sgn_perm & 1);
         // %%FOR i in range(V24_INTS_USED)  
         // %%IF* i == 0
         sgn_perm &= %{smask:P};

@@ -166,9 +166,6 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
 } 
 
 
-
-
-
 // %%EXPORT px
 void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
@@ -178,6 +175,40 @@ void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_m
     mm_op%{P}_do_xy(v_in, &s_op, v_out);
   // %%END IF   # GENERATE_CODE
 }
+
+
+
+// %%EXPORT px
+void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
+// Multiply vector ``v`` with ``x_d`` inplace. Here ``d`` must be
+// 0, -1, \Omega or -\Omega.
+{
+    uint_fast32_t i0, i1, sh;
+    uint_mmv_t *pv;
+     
+    v += MM_OP%{P}_OFS_X;
+    d &= 0x1800;
+    if (d == 0) return;
+    sh = 0x01120200UL >> ((d >> 11) << 3);
+
+    for (i0 = 0; i0 < 8; i0 += 4) {
+        pv = v + (((sh >> i0) & 0xf) << (5 + 11 - %{LOG_INT_FIELDS}));
+        for (i1 = 0; i1 < 2048; ++i1) {
+            // %%FOR j in range(V24_INTS_USED)
+            // %%IF* j < V24_INTS_USED - 1 or 24 % INT_FIELDS == 0
+            pv[%{j}] ^=  %{smask: P};
+            // %%ELSE
+            pv[%{j}] ^=  %{smask: P, range(24 % INT_FIELDS)};
+            // %%END IF
+            // %%END FOR
+            // %%FOR* j in range(V24_INTS_USED, V24_INTS)
+            pv[%{j}] = 0;
+            // %%END FOR
+            pv +=  %{V24_INTS};      
+        }
+    }
+}
+
 
 
 // %%EXPORT px

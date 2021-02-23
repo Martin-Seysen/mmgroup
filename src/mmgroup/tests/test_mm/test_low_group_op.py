@@ -128,4 +128,22 @@ def test_op_yx(verbose = 0):
 
 
 
+def f_mul_omega(v, g):
+    t = g.as_tuples()
+    assert t[0][0] == "x" and t[0][1] & ~0x1800 == 0
+    v1 = v.copy()
+    v.space.mm.op_omega(v1.data, t[0][1])
+    return v1
 
+@pytest.mark.mm
+def test_op_omega(verbose = 0):
+    print("Testing group operation x_Omega")
+    for p in PRIMES:
+        space = MMTestSpace(p)
+        group = space.group
+        for i in range(5):
+            for d in (0, 0x800, 0x1000, 0x1800):
+                g = group.word( ("x", d) )
+                basis = "D" * 3 + "ABC" * 10 + "TXYZ" * 20 
+                one_test_rand_op(space, g, basis, f_mul_omega, verbose)
+    print("passed")
