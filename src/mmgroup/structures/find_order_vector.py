@@ -1,12 +1,7 @@
-import sys
 import os
-import warnings
-
 from random import randint
 from collections import OrderedDict
 from multiprocessing import Pool, TimeoutError, Lock
-
-sys.path.append(r"C:\Data\projects\MonsterGit\src")
 
 import numpy as np
 
@@ -21,7 +16,9 @@ from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_mmv_extract_sparse
-
+from mmgroup.mm_order import stabilizer_vector
+from mmgroup.mm_order import make_order_vector
+from mmgroup.mm_order import map_y, map_x
 
 _DIR = os.path.split(structures.__file__)[0]
 PY_FILENAME = os.path.join(_DIR, "order_vector_data.py")
@@ -224,30 +221,6 @@ if USE_PRECOMPUTED:
     S_gA = "M<(1/p_205578880)*(1/l_1)*(1/p_139991040)*(1/l_2)*(1/p_1392)*(1/l_2)>"
     S_diag = 2
 
-#######################################################################
-# Find a vector stabilizing by an element of order n
-#######################################################################
-
-
-def stabilizer_vector(v, g, n):
-    """Compute a vector stabilized by an element of the monster
-
-    Le ``g`` be an element of the monster group of order ``n`` and 
-    ``v`` a vector in a represention of the monster. We return the
-    vector ``sum(v * g**i for i  in range(n))`` which is stabilized
-    by ``g``. We always return ``None`` if that sum is 0 or a 
-    multiple of the 1 element in the representation space. The 
-    last condition is checked with a fast crude check only.  
-    """
-    vg = v.copy()
-    w = v.copy()
-    for i in range(1, n):
-        vg *= g 
-        w += vg
-    assert v == vg * g
-    if (w['B'] == 0).all():
-        return None
-    return w
 
 
 #######################################################################
@@ -413,31 +386,6 @@ def find_vector_v94_mod5(s_g94, verbose = 0):
 
 
 #######################################################################
-# Assemble a test vector mod 15 from the input data
-#######################################################################
-
-
-def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
-    v71 = 10 * MMV15(s_v71)
-    g71 = MM(s_g71)
-    w71 = stabilizer_vector(v71, g71, 71)
-    assert w71 is not None
-    w71 *= MM(s_gA)
-    v94 = 6 * MMV15(s_v94)
-    g94 = MM(s_g94)
-    w94 = stabilizer_vector(v94 - v94 * g94, g94**2, 47)
-    assert w94 is not None
-    w = w71 + w94
-    v3 = leech3matrix_kernel_vector(15, w.data, diag)
-    assert v3 != 0
-    v_type4 = gen_leech3to2_type4(v3)
-    assert v_type4 == 0x800000
-    w.reduce()
-    return w
-
-
-
-#######################################################################
 # Check that the test vector supports reduction
 #######################################################################
 
@@ -445,18 +393,9 @@ Y_INDICES = [("A", i, j) for i in range(2) for j in range(i+1, 24)]
 X_INDICES = [("B", i, j) for i in range(2) for j in range(i+1, 24)]
 X_INDICES += [("C", 0, j)  for j in range(1, 24)]
 BASIS = [0] + [1 << i for i in range(11)]
-X_INDICES += [("X", i, j) for j in range(1, 24)  for i in  BASIS]
+X_INDICES += [("X", i, j) for j in range(0, 24)  for i in  BASIS]
 del BASIS
 
-def map_y(y_index):
-    i, j = (y_index >> 14) & 0x1f, (y_index >> 8) & 0x1f
-    vect = (1 << i) + (1 << j)
-    gc = vect_to_cocode(vect)
-    return gc & 0x7ff
-    
-    
-def map_x(x_index):
-    return mm_aux_index_sparse_to_leech2(x_index)   
     
 def eqn_system(vector, tag_indices, map_f, n):
     entries = [vector[index] for index in tag_indices]
@@ -577,7 +516,7 @@ def find_order_vector(verbose = 1):
 
 
 def write_order_vector(result):
-    print("Writing file" + PY_FILENAME)
+    print("Writing file " + PY_FILENAME)
     f = open(PY_FILENAME, "wt")
     for text, data in result.items():
         print(str_data(text, data), file = f)
