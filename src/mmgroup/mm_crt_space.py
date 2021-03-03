@@ -111,6 +111,23 @@ def _iter_group(g):
             start = end_ 
 
 
+def compress_data(data):
+    out = np.zeros(196884, dtype = np.int32)
+    out[0:24] = data[0:768:33]
+    k = 24
+    for i in range(1,24):
+        out[k:k+i] = data[32*i:32*i+i]
+        out[276+k:276+k+i] = data[768+32*i:768+32*i+i]
+        out[552+k:552+k+i] = data[1536+32*i:1536+32*i+i]
+        k += i
+    assert k == 300
+    out[852:49428] = data[2304:50880]
+    t = data[50880:247488].reshape((3*2048,32))[:,:24]
+    out[49428:196884] = t.ravel()
+    assert len(out) == 196884
+    return out
+    
+
 
 ######################################################################
 # Modelling a vector of the 196884-dimensional rep of the monster
@@ -150,6 +167,7 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         for p in (7, 31, 127, 255):
             self.data[p] = mm_vector(p)
         self.data_int = np.zeros(247488, dtype = np.int32)
+        self.data_compressed = None
         self.shift = space.shift
         self.expanded = False
 
@@ -169,8 +187,11 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         and 255. 
         """
         if not self.expanded:
+            self.data_int.flags.writeable = True
             mm_crt_combine(self.data[7], self.data[31], 
                 self.data[127], self.data[255], self.data_int)           
+            self.data_int.flags.writeable = False
+            self.data_compressed = None
             self.expanded = True
 
     def __mod__(self, p):
@@ -215,7 +236,10 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         Where ``v.fnorm()`` is the real norm of ``v``.
         """
         self.expand()
-        return mm_crt_norm_int32(self.data_int)
+        self.data_int.flags.writeable = True
+        n = mm_crt_norm_int32(self.data_int)
+        self.data_int.flags.writeable = False
+        return n
 
     def fnorm(self):
         """Return norm of vector as a floating point number.
@@ -366,7 +390,9 @@ class MMSpaceCRT(MMSpace):
         for p in (7, 31, 127, 255):
             np.copyto(v.data[p], v1.data[p])
         if v1.expanded:
+            v.data_int.flags.writeable = True
             np.copyto(v.data_int, v1.data_int)
+            v.data_int.flags.writeable = False
         v.expanded = v1.expanded
         return v
 
@@ -518,13 +544,13 @@ class MMSpaceCRT(MMSpace):
             return a.__getitem__(index[1:])
         except KeyError:
             if index[0] == "D":
-                a =  v.data_int[0:300:25]
+                a =  v.data_int[0:768:33]
                 return a.__getitem__(index[1:])
             if index[0] == "E":
-                shape, indices = numeric_index_to_sparse(
-                    0, "E", *index[1:])
-                a = a.__getitem__(indices)
-                return a if len(shape) else int(a[0])
+                if v.data_compressed is None:
+                    v.data_compressed = compress_data(v.data_int)
+                    v.data_compressed.flags.writeable = False
+                return v.data_compressed.__getitem__(index[1:])
             err = "Bad index for vector in space of type MMSpacCRT"
             raise TypeError(err)
 

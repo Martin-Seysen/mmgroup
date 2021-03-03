@@ -238,7 +238,7 @@ def bin(x, l=24, d=8, reverse=False):
    vectors), otherwise it starts with bit l-1 (as usual for integers). 
    """
    s = ""
-   if not type(d) ==types.ListType:  d=range(d,l,d)
+   if not isinstance(d, list):  d=range(d,l,d)
    if reverse:
       for i in range(l):
          if x & (1<<i): s += '1'

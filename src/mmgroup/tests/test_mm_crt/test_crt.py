@@ -80,7 +80,7 @@ def g_shift(g):
 @pytest.mark.mm
 def test_random_io(verbose = 0):
     n = 1
-    for k in (17, 20):
+    for k in [17, 20]:
         space =  MMSpaceCRT(k)
         for v, g in crt_testdata(k):
              if verbose:
@@ -97,8 +97,16 @@ def test_random_io(verbose = 0):
                  vp =  (v % p) 
                  for tag in "A": # "ABCTXZY":
                      assert np.all(v[tag] % p == vp[tag])
+                 for j in range(5):
+                     i = randint(0, 851)
+                     assert vp["E", i] == v["E", i] % p, (p,i) 
+                 for j in range(10):
+                     i = randint(852, 196883)
+                     assert vp["E", i] == v["E", i] % p, (p,i) 
              v2_2 = v.v2()
              assert v2_2 >= v2_1 - g_shift(g)
+             i = randint(0, 23)
+             assert v["E",i] == v["A", i, i]
              n += 1
 
 
