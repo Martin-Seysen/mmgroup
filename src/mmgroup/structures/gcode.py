@@ -653,6 +653,8 @@ class GcVector:
     sign = 1
 
     def __init__(self, value):
+        if import_pending:
+            complete_import()
         if isinstance(value, Integral):
             self.value = value & 0xffffff
         elif isinstance(value, GCode):
@@ -661,7 +663,7 @@ class GcVector:
             self.value =  value.value
         elif isinstance(value, PLoopIntersection):
             self.value = (mat24.gcode_to_vect(value.v1) & 
-                 mat24.gcode_to_vect(value.v2) & 0xffffff)
+                mat24.gcode_to_vect(value.v2) & 0xffffff)
         elif isinstance(value, str):
             self.value = randint(0, 0xffffff)
             if 'e' in value and not 'o' in value:
@@ -878,7 +880,8 @@ class GcVector:
         ``Cocode(v).syndrome_list(i)``.
         """
         if i is None: i = 24
-        return GcVector(mat24.cocode_syndrome(self.value, i))
+        syn = mat24.syndrome(self.value, i)
+        return [j for j in range(24) if (1 << j) & syn]
 
 
 

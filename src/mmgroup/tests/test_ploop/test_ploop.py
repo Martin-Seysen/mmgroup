@@ -223,7 +223,11 @@ def test_cocode():
         assert cc1 % 2 == Parity(cc1)
         assert len(cc1) == mat24.cocode_weight(cc1.value)
         if len(cc1) < 4:
-            assert cc1.syndrome().value ==  mat24.cocode_syndrome(cc1.value)
+            syndrome = mat24.cocode_syndrome(cc1.value)
+            assert cc1.syndrome().value ==  syndrome
+            syn_from_list = sum(
+                1 << i for i in GcVector(ccvector).syndrome_list())
+            assert syn_from_list == syndrome
         i = randint(0,23)
         assert cc1.syndrome(i).value ==  mat24.cocode_syndrome(cc1.value, i)
         syndrome_list = cc1.syndrome(i).bit_list
