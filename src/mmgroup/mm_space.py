@@ -361,12 +361,14 @@ class MMSpace(AbstractMmRepSpace):
 
     Thus the instruction ``V = MMSpace(3, M)``, with ``M`` an instance of
     class |MMGroup| creates a representation space ``V`` of characteristic
-    ``3`` on which the monster group ``M`` operates. 
+    ``3`` on which the monster group ``M`` operates.
+
+    See function ``MMS`` for creating a standard representation space.
 
     The preferred way to construct a vector in the vector space ``V``
     is to call ``V`` with a  variable number of arguments. The each 
     argument is evaluated to a vector in ``V`` according to the 
-    following table, and the sum of all these vectors is retuned.
+    following table, and the sum of all these vectors is returned.
 
     
     .. table:: Legal types for constructing a vector
@@ -971,3 +973,28 @@ class MMSpace(AbstractMmRepSpace):
             return i2          
         err = "Vector does not map to short Leech lattice vector"
         raise ValueError(err)
+
+
+_dict_MMS = {}
+
+
+def MMS(p):
+   """Return a standard space ``MMSpace(p)`` 
+
+   The function returns an instance of class |MMSpace| of
+   characteristic ``p``. The group operating on this space is
+   the group ``mmgroup.MM``, which is an instance of class
+   |MMGroup|.
+
+   Different calls to this function with the same parameter
+   ``p`` return exactly the same object.
+   """
+   global _dict_MMS
+   try:
+       return _dict_MMS[p]
+   except KeyError:
+       _dict_MMS[p] = MMSpace(p)
+       return _dict_MMS[p]
+
+
+

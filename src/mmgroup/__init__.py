@@ -62,7 +62,7 @@ import mmgroup.generate_c
 try:
     from mmgroup.mm_space import characteristics
     assert 3 in characteristics()
-    from mmgroup.mm_space import MMSpace, MMSpaceVector
+    from mmgroup.mm_space import MMSpace, MMSpaceVector, MMS
 except:
     w = "Extension mmgroup.mm3 not found, package not functional!"
     warnings.warn(w, UserWarning)
