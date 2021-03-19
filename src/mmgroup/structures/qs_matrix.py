@@ -604,7 +604,7 @@ class QStateMatrix(QState12):
             print("\n%s:\n%s\n" % (err, str(self)))
             raise            
 
-    def pauli_conjugate(self, v):
+    def pauli_conjugate(self, v, arg = True):
         r"""Conjugate Pauli group elements by the matrix
 
         The method conjugates an element of the Pauli group or a
@@ -619,8 +619,11 @@ class QStateMatrix(QState12):
 
         Matrix :math:`M` must be in a Clifford group. The function
         raises ValueError if this is not the case.
+
+        In case ``arg = False`` the (complex) arguments of the
+        returned Pauli group elements are not computed.
         """
-        return super(QStateMatrix,self).pauli_conjugate(v)    
+        return super(QStateMatrix,self).pauli_conjugate(v, arg)    
         
     #########################################################################
     # Obtaining (complex) entries and submatrices

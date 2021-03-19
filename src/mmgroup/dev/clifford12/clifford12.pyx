@@ -641,7 +641,7 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_pauli_vector(&self.qs, &v))
         return int(v)
         
-    def pauli_conjugate(self, v):   
+    def pauli_conjugate(self, v, arg = True):   
         v = np.array(v, dtype = np.uint64, copy=True)
         shape = v.shape
         assert len(shape) <= 1
@@ -650,9 +650,9 @@ cdef class QState12(object):
             return []
         cdef uint64_t[:] v_view = v
         chk_qstate12(cl.qstate12_pauli_conjugate(
-            &self.qs, len(v), &v_view[0]))
+            &self.qs, len(v), &v_view[0], arg))
         if len(shape):
-            return list(map(int,v))
+            return [int(x) for x in v]
         else:
             return int(v[0])
  

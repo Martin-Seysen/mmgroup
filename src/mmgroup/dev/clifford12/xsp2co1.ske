@@ -308,7 +308,7 @@ int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, ui
         pdest[i] = gen_leech3to2_short(psrc[i]);
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
     }
-    res = qstate12_pauli_conjugate(pqs, n - 1, pdest + 1);
+    res = qstate12_pauli_conjugate(pqs, n - 1, pdest + 1, 0);
     if (res < 0) return res;
     for (i = 1; i < n; ++i) {
         pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
@@ -641,9 +641,12 @@ stored in the array ``elem`` in **G_x0 representation**.
 
 Then the function replaces the element \f$x_i\f$ by
 \f$g^{-1} x_i g\f$ for \f$0 \leq i < n\f$.
+
+Parameter ``sign`` should usually be a nonzero value. In case
+``sign = 0`` the signs of the returned vectors are not computed.
 */
 // %%EXPORT px
-int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
+int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uint32_t sign)
 {
     qstate12_type qs, qs1;
     uint64_t data[MAXROWS_ELEM];
@@ -655,14 +658,20 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax)
     res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
     if (res < 0) return res;
 
-    for (i = 0; i < n; ++i) {
+    if (sign) for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
     }
-    res = qstate12_pauli_conjugate(&qs, n, ax);
+    else for (i = 0; i < n; ++i) {
+        ax[i] = conv_pauli_vector_xspecial_nosign((uint32_t)ax[i]);
+    }
+    res = qstate12_pauli_conjugate(&qs, n, ax, sign);
     if (res < 0) return res;
-    for (i = 0; i < n; ++i) {
+    if (sign) for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
     }    
+    else for (i = 0; i < n; ++i) {
+        ax[i] = conv_pauli_vector_xspecial_nosign((uint32_t)ax[i]);
+    }
     return 0;
 }
 
@@ -1408,7 +1417,7 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // the result in img_Omega, if ``img_omega`` is zero.
     // If ``img_omega`` != 0 just take the image from there.
     if ((img_omega & 0xffffff) == 0) {
-        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega);
+        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega, 0);
         if (res < 0) return res;
     } else img_Omega = img_omega & 0xffffff;
     // Compute a word w0 of generators of G_{x0} that maps

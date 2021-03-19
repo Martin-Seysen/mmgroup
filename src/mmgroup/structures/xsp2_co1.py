@@ -132,12 +132,13 @@ class Xsp2_Co1_Word(AbstractGroupWord):
     def as_xsp(self):
         return chk_qstate12(xsp2co1_xspecial_vector(self._data))
 
-    def xsp_conjugate(self, v):
+    def xsp_conjugate(self, v, sign = True):
         v = np.array(v, dtype = np.uint64, copy=True)
         shape = v.shape
         assert len(shape) <= 1
         v = np.ravel(v)
-        chk_qstate12(xsp2co1_xspecial_conjugate(self._data, len(v), v))
+        chk_qstate12(
+            xsp2co1_xspecial_conjugate(self._data, len(v), v, sign))
         if len(shape):
             return list(map(int,v))
         else:

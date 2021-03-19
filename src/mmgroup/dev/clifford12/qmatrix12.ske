@@ -1103,13 +1103,17 @@ int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2
   The function replaces ``v[i]`` by the Pauli group element
   ``w[i] = qs * v[i] * qs**(-1)`` for all ``i < n``. ``w[i]`` is
   encoded in the same way as ``v[i]``.
+
+  Parameter ``arg`` should usually be a nonzero value. In case
+  ``arg == 0`` the (complex) argument of the outputs ``v[i]``
+  is not computed.
   
   This function uses function qstate12_reduce_matrix(). The operation
   of this function is explained in the **API reference**,
   section **Reducing a quadratic state matrix** .
 */
 // %%EXPORT p
-int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
+int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, uint32_t arg)
 {
     int_fast32_t res,  j;
     uint_fast32_t i, fst_row, sh, j0, j1, nqb;
@@ -1131,8 +1135,13 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
     if (2*nqb != qs.ncols || 
         nqb != (uint32_t)lb_rank_reduced(&qs, row_table)) 
             return ERR_QSTATE12_MATRIX_INV;
-    if (nqb == 0) return 0;
-    
+    if (nqb == 0) {
+        if (arg == 0) {
+            mask = (ONE << qs.ncols) - 1;
+            while (n--) *pv++ &= mask;
+        }
+        return 0;
+    }
     // Reduce state matrix ``qs``
     res = qstate12_bit_matrix_t(m, qs.nrows, qs.ncols, a_t);
     if (res < 0) return res;
@@ -1153,7 +1162,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
     if  (m[0] & mask) return -90; // internal error
    
     // Main loop: conjugate ``qs`` with Pauli group vectors
-    while (n--) {
+    if (arg) while (n--) {
         // Let ``v`` be the current Pauli vector to be conjugated
         v = *pv;  
         
@@ -1247,6 +1256,47 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv)
         f = (0x3120 >> ((f & 3) << 2)) & 3;
         v_out ^= f << qs.ncols;
         *pv++ = v_out;
+    }
+    else  while (n--) {
+        // Simplified version of the standard case arg != 0
+        // Right multiply ``qs`` with the x part of ``v``. .
+        v = *pv;  
+        mask = (ONE << nqb) - 1;
+        m0 = (v >> nqb) & mask;
+                
+        // Right multiply ``qs`` with the z part of ``v``. 
+        for (j = 0; j < (int32_t)nqb; ++j) {
+            m0 ^= a_t[j] & (0 - ((v >> j) & ONE));
+        }
+ 
+        // Zero ``m0[j], 0 <= j < nqb``, without changing ``qs``       
+        for (j = nqb - 1; j >= 0; --j)  {
+            m0 ^= m[row_table[j]] & (0 - ((m0 >> j) & ONE));
+        }
+
+        // Zero ``m0[j], j0 <= j < j1``, without changing ``qs``       
+        j0 = qs.ncols + fst_row; j1 = qs.ncols + qs.nrows;
+        for (j = j1 - 1; j >= (int32_t)j0; --j) if ((m0 >> j) & 1) {
+            m0 ^= m[row_table[j]] & (0 - ((m0 >> j) & ONE));
+        }
+                
+        // Adjust z part of output Pauli matrix v_out.
+        v_out = 0;
+        sh = qs.ncols + nqb;
+        for (j = nqb; j < (int32_t)(qs.ncols); ++j) {
+            v = 0 - ((m0 >> sh) & ONE);
+            v_out ^= (ONE << j) & v;
+            m0 ^=  a_t[j] & v ;
+            --sh;
+        }
+        v_out >>= nqb;
+               
+        // Adjust x part of output Pauli matrix. 
+        v_out ^= m0  & (((ONE << nqb) - 1) << nqb);
+             
+        // Output Pauli matrix. 
+        mask = (ONE << qs.ncols) - 1;
+        *pv++ = v_out & mask;
     }
     return 0;
 }

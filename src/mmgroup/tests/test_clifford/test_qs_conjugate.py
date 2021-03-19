@@ -109,6 +109,13 @@ def test_pauli_conjugate(verbose = 0):
                 elif verbose:
                    s = "Pauli vector: %s, conjugated: %s"
                    print (s % (hex(v[i]), hex(w_i)))
+
+        w_noarg = m.pauli_conjugate(v, arg = False)
+        if verbose:
+            print("Without arg", [hex(x) for x in w_noarg])
+        mask = (1 << (2 * n)) - 1
+        assert w_noarg == [x & mask for x in w]
+
         
 
 #####################################################################

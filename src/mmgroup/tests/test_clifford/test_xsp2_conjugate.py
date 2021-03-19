@@ -122,6 +122,10 @@ def test_xsp2_conjugate(verbose = 0):
                 err = "Error in conjugation in group G_{x1}"
                 raise ValueError(err)
 
+        conj_nosign = g.xsp_conjugate(xs, sign = False)
+        mask = (1 << 24) - 1
+        assert conj_nosign == [x & mask for x in conj]
+
 
 #####################################################################
 # Test computation of type Leech lattice vector
