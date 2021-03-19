@@ -1,0 +1,147 @@
+/** @file bitmatrix64.c
+  File ``bitmatrix64.c`` contains  functions for computing with
+  bit matrices. A bit matrix of up to 64 columns is stored in
+  an array of integers of type ``uint64_t``.  If matrix ``m`` is
+  stored in the array ``a`` then entry ``m[i,j]`` is given
+  by bit ``j`` of the entry ``a[i]`` of the array ``a``. 
+  Here bit ``j`` has valence \f$2^j\f$.
+*/
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+// %%GEN h
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+
+
+/*************************************************************************
+*** Echelonize a bit matrix 
+*************************************************************************/
+
+/**
+   @brief Convert bit matrix ``m`` to reduced row echelon form.
+
+   Matrix ``m`` has ``nrows`` rows and ``ncols`` columns. Here
+   we assume that the leading bit of a row of matrix ``m`` is 
+   the most significant bit in that row.
+*/
+// %%EXPORT px
+void bitmatrix64_echelon_h(uint64_t *m, uint32_t nrows, uint32_t ncols)
+{
+
+    int_fast32_t row_pos = 0, col, j, k;
+    uint64_t v, col_mask = ONE << (ncols - 1);
+    if (ncols > 64) ncols = 64;
+    if (nrows == 0 || ncols == 0) return;
+    for (col = (int_fast32_t)ncols - 1; col >= 0; --col) {
+        col_mask = ONE << col;
+        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
+            if (m[j] &  col_mask) {
+                 v = m[j];
+                 for (k = j - 1; k >= 0; --k) {
+                     m[k] ^= (m[k] & col_mask) ? v : 0;
+                 }
+                 m[j] = m[row_pos]; m[row_pos++] = v;
+            }
+        }
+    }     
+}
+
+
+/**
+   @brief Convert bit matrix ``m`` to reduced row echelon form.
+
+   Matrix ``m`` has ``nrows`` rows and ``ncols`` columns. Here
+   we assume that the leading bit of a row of matrix ``m`` is 
+   the least significant bit in that row.
+*/
+// %%EXPORT px
+void bitmatrix64_echelon_l(uint64_t *m, uint32_t nrows, uint32_t ncols)
+{
+
+    int_fast32_t row_pos = 0, col, j, k;
+    uint64_t v, col_mask = ONE << (ncols - 1);
+    if (ncols > 64) ncols = 64;
+    if (nrows == 0 || ncols == 0) return;
+    for (col = 0; col < ncols; ++col) {
+        col_mask = ONE << col;
+        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
+            if (m[j] &  col_mask) {
+                 v = m[j];
+                 for (k = j - 1; k >= 0; --k) {
+                     m[k] ^= (m[k] & col_mask) ? v : 0;
+                 }
+                 m[j] = m[row_pos]; m[row_pos++] = v;
+            }
+        }
+    }     
+}
+
+
+
+/*************************************************************************
+*** Bit matrix transposition
+*************************************************************************/
+
+
+/**
+   @brief Transpose a bit matrix
+   
+   Here ``m1`` is an ``i`` times ``j`` bit matrix. Here bit ``m1[m,n]``
+   is given by ``(m1[m] >> n) & 1``. The function writes the transposed
+   bit matrix of ``m1`` to ``m2``.
+*/
+// %%EXPORT px
+int32_t bitmatrix64_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
+{
+    uint64_t v;
+    uint32_t i1, j1;
+    if (i > 64 || j > 64) return -5;
+    for (j1 = 0; j1 < j; ++j1) {
+        v = 0;
+        for (i1 = 0; i1 < i; ++i1) v |= ((m1[i1] >> j1) & 1) << i1;
+        m2[j1] = v;
+    }
+    return 0;
+}
+
+/*************************************************************************
+*** End of of C code
+*************************************************************************/
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

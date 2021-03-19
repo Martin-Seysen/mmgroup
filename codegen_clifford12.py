@@ -71,7 +71,7 @@ VERBOSE = 0
 SKE_DIR = os.path.join(DEV_DIR, "clifford12")
 
 SIMPLE_SKE_FILES = ["qstate12", "qmatrix12"]
-PXI_SKE_FILES = ["xsp2co1", "leech3matrix"]
+PXI_SKE_FILES = ["bitmatrix64", "xsp2co1", "leech3matrix"]
 SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
 
 

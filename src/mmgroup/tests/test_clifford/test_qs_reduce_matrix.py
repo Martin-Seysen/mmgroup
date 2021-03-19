@@ -15,7 +15,7 @@ from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
 from mmgroup.tests.test_clifford.test_qs_product import create_m 
 from mmgroup.tests.test_clifford.test_qs_product import rand_mul_scalar 
-from mmgroup.clifford12 import qstate12_bit_matrix_t
+from mmgroup.clifford12 import bitmatrix64_t
 
 #####################################################################
 # Create test matrices
@@ -196,7 +196,7 @@ def test_reduce_matrix(verbose = 0):
 
 
 #####################################################################
-# Test function qstate12_bit_matrix_t()
+# Test function bitmatrix64_t()
 #####################################################################
 
 
@@ -224,7 +224,7 @@ def create_bitmatrices():
 def test_bitmatrix_t(verbose = 0):
     """Test the transposition of a bit matrix"""
     for ntest, (m, cols) in enumerate(create_bitmatrices()):
-        t = qstate12_bit_matrix_t(m, cols)
+        t = bitmatrix64_t(m, cols)
         m1 = as_bit_array(m, cols)
         #print(m1, "shp", m1.shape)
         t1 = as_bit_array(t, len(m))

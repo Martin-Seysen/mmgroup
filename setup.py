@@ -257,6 +257,7 @@ mat24_shared = SharedExtension(
 clifford12_shared = SharedExtension(
     name = "mmgroup.mmgroup_clifford12", 
     sources = [
+        os.path.join(C_DIR, "bitmatrix64.c"),
         os.path.join(C_DIR, "qstate12.c"),
         os.path.join(C_DIR, "qmatrix12.c"),
         os.path.join(C_DIR, "xsp2co1.c"),

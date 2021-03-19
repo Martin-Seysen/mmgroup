@@ -300,27 +300,7 @@ int32_t leech3matrix_watermark_perm_num(uint32_t p, uint32_t *w, uint64_t *v)
 *************************************************************************/
 
 
-// %%EXPORT px
-void leech2matrix_echelon(uint64_t *m, uint32_t nrows, uint32_t ncols)
-{
 
-    int_fast32_t row_pos = 0, col, j, k;
-    uint64_t v, col_mask = ONE << (ncols - 1);
-    if (ncols > 64) ncols = 64;
-    if (nrows == 0 || ncols == 0) return;
-    for (col = (int_fast32_t)ncols - 1; col >= 0; --col) {
-        col_mask = ONE << col;
-        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
-            if (m[j] &  col_mask) {
-                 v = m[j];
-                 for (k = j - 1; k >= 0; --k) {
-                     m[k] ^= (m[k] & col_mask) ? v : 0;
-                 }
-                 m[j] = m[row_pos]; m[row_pos++] = v;
-            }
-        }
-    }     
-}
 
 
 

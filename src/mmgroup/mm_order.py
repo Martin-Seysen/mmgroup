@@ -19,7 +19,7 @@ from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
-from mmgroup.clifford12 import qstate12_bit_matrix_t
+from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
@@ -142,7 +142,7 @@ def compute_order_vector(recompute = False, verbose = 0):
         nrows += leech2matrix_add_eqn(SOLVE_YT, nrows, 11, eqn)
         #print(i, hex(y), hex(eqn), nrows)
     assert nrows == 11, nrows
-    SOLVE_Y = qstate12_bit_matrix_t(SOLVE_YT, 24)
+    SOLVE_Y = bitmatrix64_t(SOLVE_YT, 24)
     assert mm_aux_mmv_extract_sparse_signs(15, OV, TAGS_Y, 11) == 0
     
     SOLVE_XT = np.zeros(24, dtype = np.uint64)
@@ -153,7 +153,7 @@ def compute_order_vector(recompute = False, verbose = 0):
         nrows += leech2matrix_add_eqn(SOLVE_XT, nrows, 24, eqn)
         #print("SOLVE_XT", i, hex(x), hex(eqn), nrows)
     assert nrows == 24, nrows
-    SOLVE_X = qstate12_bit_matrix_t(SOLVE_XT, 24)
+    SOLVE_X = bitmatrix64_t(SOLVE_XT, 24)
     #for i in range(24): print("MAT_X", i, "%08x" %(int(SOLVE_X[i]) % 2**32))
     assert mm_aux_mmv_extract_sparse_signs(15, OV, TAGS_X, 24) == 0
 

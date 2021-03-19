@@ -813,15 +813,6 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
 # Wrappers for other exported C functions  
 ####################################################################
 
-def qstate12_bit_matrix_t(m, uint32_t ncols):
-    m1 = np.array(m, dtype = np.uint64)
-    m2 = np.zeros(ncols, dtype = np.uint64)
-    cdef uint64_t[:] m1_view = m1
-    cdef uint64_t[:] m2_view = m2
-    if len(m1) and ncols:
-        chk_qstate12(cl.qstate12_bit_matrix_t(
-            &m1_view[0], len(m1), ncols, &m2_view[0]))
-    return m2        
 
 
 def qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2):
@@ -878,6 +869,18 @@ def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
     return result
 
 
+####################################################################
+# Wrappers for other exported bit matrix functions  
+####################################################################
 
 
+def bitmatrix64_t(m, uint32_t ncols):
+    m1 = np.array(m, dtype = np.uint64)
+    m2 = np.zeros(ncols, dtype = np.uint64)
+    cdef uint64_t[:] m1_view = m1
+    cdef uint64_t[:] m2_view = m2
+    if len(m1) and ncols:
+        chk_qstate12(cl.bitmatrix64_t(
+            &m1_view[0], len(m1), ncols, &m2_view[0]))
+    return m2        
 

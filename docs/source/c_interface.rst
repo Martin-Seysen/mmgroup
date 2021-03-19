@@ -225,10 +225,16 @@ Header file ``clifford12.h``
 ----------------------------
    .. doxygenfile:: clifford12.h
 
+
+Module ``bitmatrix64.c``
+------------------------
+
+   .. doxygenfile:: bitmatrix64.c
+
+
 Module ``qstate12.c``
 ---------------------
-   
-   
+     
    .. doxygenfile:: qstate12.c
 
 Module ``qmatrix12.c``

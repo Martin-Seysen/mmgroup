@@ -1059,31 +1059,7 @@ int32_t qstate12_mat_inv(qstate12_type *pqs)
 }
 
 
-/*************************************************************************
-*** Bit matrix transposition
-*************************************************************************/
 
-
-/**
-   @brief Transpose a bit matrix
-   
-   Here ``m1`` is an ``i`` times ``j`` bit matrix. Here bit ``m1[m,n]``
-   is given by ``(m1[m] >> n) & 1``. The function writes the transposed
-   bit matrix of ``m1`` to ``m2``.
-*/
-// %%EXPORT p
-int32_t qstate12_bit_matrix_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
-{
-    uint64_t v;
-    uint32_t i1, j1;
-    if (i > 64 || j > 64) return -5;
-    for (j1 = 0; j1 < j; ++j1) {
-        v = 0;
-        for (i1 = 0; i1 < i; ++i1) v |= ((m1[i1] >> j1) & 1) << i1;
-        m2[j1] = v;
-    }
-    return 0;
-}
 
 
 /*************************************************************************
@@ -1143,7 +1119,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
         return 0;
     }
     // Reduce state matrix ``qs``
-    res = qstate12_bit_matrix_t(m, qs.nrows, qs.ncols, a_t);
+    res = bitmatrix64_t(m, qs.nrows, qs.ncols, a_t);
     if (res < 0) return res;
     for (j = 0; j < (int32_t)qs.ncols; ++j) a_t[j] <<= qs.ncols; 
     
