@@ -15,7 +15,6 @@ from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.qs_matrix import qs_unit_matrix, qs_rand_matrix
 from mmgroup.tests.test_clifford.test_qs_product import create_m 
 from mmgroup.tests.test_clifford.test_qs_product import rand_mul_scalar 
-from mmgroup.clifford12 import bitmatrix64_t
 
 #####################################################################
 # Create test matrices
@@ -195,46 +194,3 @@ def test_reduce_matrix(verbose = 0):
             raise ValueError(err)            
 
 
-#####################################################################
-# Test function bitmatrix64_t()
-#####################################################################
-
-
-def rand_bit_matrix(rows, cols):
-    m = (1 << cols) - 1
-    return [randint(0, m) for i in range(rows)]
-    
-def as_bit_array(m, cols):
-    a = np.zeros( (len(m), cols), dtype = np.uint8)
-    for i in range(len(m)):
-        for j in range(cols):
-            a[i,j] = (int(m[i]) >> j) & 1
-    return a
-
-            
-def create_bitmatrices():
-    """yield a bit matrix as a list of integers """
-    for rows in range(8):
-        for cols in range(8):
-            m = rand_bit_matrix(rows, cols)
-            yield m, cols
-        
-        
-@pytest.mark.qstate
-def test_bitmatrix_t(verbose = 0):
-    """Test the transposition of a bit matrix"""
-    for ntest, (m, cols) in enumerate(create_bitmatrices()):
-        t = bitmatrix64_t(m, cols)
-        m1 = as_bit_array(m, cols)
-        #print(m1, "shp", m1.shape)
-        t1 = as_bit_array(t, len(m))
-        if verbose:
-            print("Test %d: " % ntest)
-            print("Transpose %s bit matrix, m =" % str(m1.shape))
-            print(m1, "\nTransposed: %s\n%s" % (str(t1.shape), t1))
-        assert m1.T.shape == t1.shape, (m1.shape, t1.shape)
-        assert (m1.T == t1).all()
-
-
-
-        

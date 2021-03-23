@@ -831,6 +831,8 @@ def qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e):
 ####################################################################
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def xsp2co1_chain_short_3(QState12 qstate, src, dest):
     cdef uint64_t[:] src_view = src
     cdef uint64_t[:] dest_view = dest
@@ -841,6 +843,8 @@ def xsp2co1_chain_short_3(QState12 qstate, src, dest):
         chk_qstate12(cl.xsp2co1_chain_short_3(pqs, length, &src_view[0],
             &dest_view[0]))
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def xsp2co1_elem_to_qs_i(elem):
     assert len(elem) >= 26 
     cdef uint64_t e[26]
@@ -853,6 +857,8 @@ def xsp2co1_elem_to_qs_i(elem):
     chk_qstate12(cl.qstate12_copy(&qs0, pqs))
     return result
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def xsp2co1_elem_to_qs(elem):
     cdef uint64_t[:] elem_view = elem
     result = QState12(12, 12)
@@ -861,6 +867,8 @@ def xsp2co1_elem_to_qs(elem):
     return result
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
     cdef p_qstate12_type pqs = pqs12(qstate)
     result = np.zeros(26, dtype = np.uint64)
@@ -874,6 +882,8 @@ def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
 ####################################################################
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def bitmatrix64_t(m, uint32_t ncols):
     m1 = np.array(m, dtype = np.uint64)
     m2 = np.zeros(ncols, dtype = np.uint64)
@@ -884,3 +894,19 @@ def bitmatrix64_t(m, uint32_t ncols):
             &m1_view[0], len(m1), ncols, &m2_view[0]))
     return m2        
 
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_cap_h(m1, m2, uint32_t j0, uint32_t n):
+    cdef uint64_t[:] m1_view = m1
+    cdef uint64_t[:] m2_view = m2
+    cdef uint32_t i1 = len(m1)
+    cdef uint32_t i2 = len(m2)
+    cdef uint32_t rows1 = cl.bitmatrix64_echelon_h(&m1_view[0], i1, j0, n)
+    cdef uint32_t rows2 = cl.bitmatrix64_echelon_h(&m2_view[0], i2, j0, n)
+    cdef uint32_t cap = cl.bitmatrix64_cap_h(&m1_view[0], &m2_view[0], 
+         i1, i2, j0, n)
+    return rows1 - cap, rows2 - cap
+
+
+    

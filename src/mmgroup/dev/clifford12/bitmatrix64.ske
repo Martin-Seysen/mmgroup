@@ -5,6 +5,11 @@
   stored in the array ``a`` then entry ``m[i,j]`` is given
   by bit ``j`` of the entry ``a[i]`` of the array ``a``. 
   Here bit ``j`` has valence \f$2^j\f$.
+  
+  In functions dealing with bit matrices we always give the number
+  of rows as a parameter. In some functions we also give the 
+  number of columns. In other functions we assume that there
+  are 64 coumns, with unused columns ignored.
 */
 
 /*************************************************************************
@@ -32,74 +37,6 @@ extern "C" {
 // %%GEN c
 
 
-
-
-
-/*************************************************************************
-*** Echelonize a bit matrix 
-*************************************************************************/
-
-/**
-   @brief Convert bit matrix ``m`` to reduced row echelon form.
-
-   Matrix ``m`` has ``nrows`` rows and ``ncols`` columns. Here
-   we assume that the leading bit of a row of matrix ``m`` is 
-   the most significant bit in that row.
-*/
-// %%EXPORT px
-void bitmatrix64_echelon_h(uint64_t *m, uint32_t nrows, uint32_t ncols)
-{
-
-    int_fast32_t row_pos = 0, col, j, k;
-    uint64_t v, col_mask = ONE << (ncols - 1);
-    if (ncols > 64) ncols = 64;
-    if (nrows == 0 || ncols == 0) return;
-    for (col = (int_fast32_t)ncols - 1; col >= 0; --col) {
-        col_mask = ONE << col;
-        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
-            if (m[j] &  col_mask) {
-                 v = m[j];
-                 for (k = j - 1; k >= 0; --k) {
-                     m[k] ^= (m[k] & col_mask) ? v : 0;
-                 }
-                 m[j] = m[row_pos]; m[row_pos++] = v;
-            }
-        }
-    }     
-}
-
-
-/**
-   @brief Convert bit matrix ``m`` to reduced row echelon form.
-
-   Matrix ``m`` has ``nrows`` rows and ``ncols`` columns. Here
-   we assume that the leading bit of a row of matrix ``m`` is 
-   the least significant bit in that row.
-*/
-// %%EXPORT px
-void bitmatrix64_echelon_l(uint64_t *m, uint32_t nrows, uint32_t ncols)
-{
-
-    int_fast32_t row_pos = 0, col, j, k;
-    uint64_t v, col_mask = ONE << (ncols - 1);
-    if (ncols > 64) ncols = 64;
-    if (nrows == 0 || ncols == 0) return;
-    for (col = 0; col < ncols; ++col) {
-        col_mask = ONE << col;
-        for (j = (int_fast32_t)nrows - 1; j >= row_pos; --j) {
-            if (m[j] &  col_mask) {
-                 v = m[j];
-                 for (k = j - 1; k >= 0; --k) {
-                     m[k] ^= (m[k] & col_mask) ? v : 0;
-                 }
-                 m[j] = m[row_pos]; m[row_pos++] = v;
-            }
-        }
-    }     
-}
-
-
-
 /*************************************************************************
 *** Bit matrix transposition
 *************************************************************************/
@@ -124,6 +61,176 @@ int32_t bitmatrix64_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
         m2[j1] = v;
     }
     return 0;
+}
+
+
+
+/*************************************************************************
+*** Echelonize a bit matrix 
+*************************************************************************/
+
+/**
+   @brief Convert bit matrix ``m`` to reduced row echelon form.
+
+   Matrix ``m`` has ``i`` rows. Here we assume that the leading bit 
+   of a row of matrix ``m`` is the most significant bit in that row.
+   For echelonizing ``m``, we pivot over nolumns
+   ``j0-1,...,j0-n`` in that order, ignoring the other columns.
+   
+   The function returns the number of rows in the (echelonized)
+   matrix ``m`` that have a nonzero bit in at least one of the
+   pivoted columns.
+*/
+// %%EXPORT px
+uint32_t bitmatrix64_echelon_h(uint64_t *m, uint32_t i, uint32_t j0, uint32_t n)
+{
+
+    int_fast32_t row_pos = 0, col, k1, k2;
+    uint64_t v, col_mask ;
+    if (j0 > 64) j0 = 64;
+    if (n > j0) n = j0;
+    if (i == 0 || n == 0) return 0;
+    for (col = (int_fast32_t)j0 - 1; col >= (int_fast32_t)(j0 - n); --col) {
+        col_mask = ONE << col;
+        for (k1 = (int_fast32_t)i - 1; k1 >= row_pos; --k1) {
+            if (m[k1] &  col_mask) {
+                v = m[k1];
+                for (k2 = k1 - 1; k2 >= 0; --k2) {
+                    m[k2] ^= (m[k2] & col_mask) ? v : 0;
+                }
+                m[k1] = m[row_pos]; m[row_pos++] = v;
+            }
+        }
+    }   
+    return row_pos;    
+}
+
+
+/**
+   @brief Convert bit matrix ``m`` to reduced row echelon form.
+
+   Matrix ``m`` has ``i`` rows. Here we assume that the leading bit 
+   of a row of matrix ``m`` is the least significant bit in that row.
+   For echelonizing ``m``, we pivot over nolumns
+   ``j0,...,j0+n-1`` in that order, ignoring the other columns.
+   
+   The function returns the number of rows in the (echelonized)
+   matrix ``m`` that have a nonzero bit in at least one of the
+   pivoted columns.
+*/
+// %%EXPORT px
+uint32_t bitmatrix64_echelon_l(uint64_t *m, uint32_t i, uint32_t j0, uint32_t n)
+{
+
+    int_fast32_t row_pos = 0, col, k1, k2;
+    uint64_t v, col_mask;
+    if (j0 >= 64 || i == 0 || n == 0) return 0;
+    if (j0 + n > 64) n = 64 - j0;
+    for (col = j0; col < (int_fast32_t)(j0 + n); ++col) {
+        col_mask = ONE << col;
+        for (k1 = (int_fast32_t)i - 1; k1 >= row_pos; --k1) {
+            if (m[k1] &  col_mask) {
+                 v = m[k1];
+                 for (k2 = k1 - 1; k2 >= 0; --k2) {
+                     m[k2] ^= (m[k2] & col_mask) ? v : 0;
+                 }
+                 m[k1] = m[row_pos]; m[row_pos++] = v;
+            }
+        }
+    }     
+    return row_pos;    
+}
+
+
+/*************************************************************************
+*** New function
+*************************************************************************/
+
+
+static inline void restore_cap_h(uint64_t *ma, uint32_t i, uint64_t *m, 
+    uint32_t j0, uint32_t n, uint32_t n_cap,
+    uint64_t row_used,  uint64_t row_cap)
+{
+    int col, row = 0, row_h = i - n_cap;
+    for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
+        if ((row_used >> col) & 1) {
+            if ((row_cap >> col) & 1) {
+                if (row_h < (int)j0) m[row_h++] = ma[col];
+            }
+            else if (row < (int)j0) m[row++] = ma[col];
+        }
+    } 
+}
+
+/**
+   @brief Yet to be documented!!!
+*/
+// %%EXPORT px
+uint32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, uint32_t j0, uint32_t n)
+{
+    int row_pos1 = 0, row_pos2 = 0, col, row, n_cap = 0;
+    uint64_t b1, b2, v1, v2;
+    uint64_t col_mask, mask, row_used1 = 0, row_used2 = 0, row_cap = 0;
+    uint64_t m1a[64], m2a[64];
+
+    if (j0 > 64) j0 = 64;
+    if (n > j0) n = j0;
+    if (n == 0) return 0;
+
+    mask = (((ONE + ONE) << (n - 1)) - 1) << (n - j0);
+    while (i1 > 0 && (m1[i1 - 1] & mask) == 0) --i1;
+    while (i2 > 0 && (m1[i2 - 1] & mask) == 0) --i2;
+    if (i1 == 0 || i2 == 0) return 0;
+
+    for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
+        col_mask = ONE << col;
+        b1 = row_pos1 < (int)i1 ? (m1[row_pos1] & col_mask) : 0;
+        b2 = row_pos2 < (int)i2 ? (m2[row_pos2] & col_mask) : 0;
+        row_used1 |= b1; row_used1 |= b2;
+
+        if (b1) {
+            if (b2) {
+                m1a[col] = m1[row_pos1++];
+                m2a[col] = m2[row_pos2++];
+                row_cap |= col_mask;
+                ++n_cap;
+            } else { 
+                m1a[col] = v1 = m1[row_pos1++];
+                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                    m1a[row] ^= v1 &
+                       (0 - ((row_cap >> row) & (m2a[row] >> col) & ONE));
+                }       
+            }
+        } else {
+            if (b2) {
+                m2a[col] = v2 = m2[row_pos1++];
+                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                    m2a[row] ^= v2 &
+                       (0 - ((row_cap >> row) & (m2a[row] >> col) & ONE));
+                }       
+            } else {
+                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                    if (((m1a[row] ^ m2a[row]) >> col) & 
+                        (row_cap >> row) &  ONE)  {
+                        row_cap &= ~(ONE << row);
+                        v1 = m1a[row]; v2 = m2a[row];
+                        --n_cap;
+                        ++row;
+                        break;
+                    }
+                }
+                for (; row < (int)j0; ++row) { 
+                    if (((m1a[row] ^ m2a[row]) >> col) & 
+                        (row_cap >> row) &  ONE)  {
+                        m1a[row] ^= v1; m2a[row] ^= v2;
+                    }
+                }       
+            }
+        } 
+    }   
+    restore_cap_h(m1a, i1, m1, j0, n, n_cap, row_used1, row_cap);
+    restore_cap_h(m2a, i2, m1, j0, n, n_cap, row_used2, row_cap);
+    return n_cap;
 }
 
 /*************************************************************************
