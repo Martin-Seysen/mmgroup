@@ -14,6 +14,8 @@ import pytest
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import bitmatrix64_echelon_h
 from mmgroup.clifford12 import bitmatrix64_echelon_l
+from mmgroup.clifford12 import bitmatrix64_cap_h
+from mmgroup.clifford12 import bitmatrix64_error_pool
 
  
 
@@ -65,17 +67,17 @@ def test_bitmatrix_t(verbose = 0):
 
 
 
-def create_echelon_h_matrices():
+def create_echelon_matrices():
     """yield a bit matrix as a list of integers """
     for rows in range(8):
-        for cols in range(8):
+        for _ in range(8):
             m = rand_bit_matrix(rows, 64)
             i, j = randint(0,63), randint(0,63)
             yield m, min(i,j), max(i,j)
 
  
-def ref_echelon(m, j0, n, high = True):
-    m = list(m[:])
+def ref_echelon(m, j0 = 64, n = 64, high = True):
+    m = [int(x) for x in m]
     row = 0
     if high:
         assert n <= j0
@@ -100,7 +102,7 @@ def ref_echelon(m, j0, n, high = True):
 
 @pytest.mark.qstate
 def test_bitmatrix_echelon(verbose = 0):
-    for ntest, (m, imin, imax) in enumerate(create_echelon_h_matrices()):
+    for ntest, (m, imin, imax) in enumerate(create_echelon_matrices()):
          m1h = np.array(m, dtype = np.uint64, copy = True)
          j0h, nh = imax + 1, imax - imin
          lenh = bitmatrix64_echelon_h(m1h, len(m1h), j0h, nh)
@@ -130,4 +132,93 @@ def test_bitmatrix_echelon(verbose = 0):
               if not ok_l:
                   err = "Error in function bitmatrix64_echelon_l"
                   raise ValueError(err)
+
+
+#####################################################################
+# Test functions bitmatrix64_cap_h()
+#####################################################################
+
+def create_cap_matrices():
+    """yield a bit matrix as a list of integers """
+    test_matrices = [
+        ([3,7,11], [3,1], 0,4)
+    ]
+    for t in test_matrices:
+        yield t
+    for rows1 in range(5):
+        for rows2 in range(5):
+            m1 = rand_bit_matrix(rows1, 5)
+            m2 = rand_bit_matrix(rows2, 5)
+            i, j = randint(0,6), randint(0,6)
+            yield m1, m2, min(i,j), max(i,j)
+    for rows1 in range(1,65,7):
+        for rows2 in range(1,65,7):
+            m1 = rand_bit_matrix(rows1, 64)
+            m2 = rand_bit_matrix(rows2, 64)
+            i, j = randint(0,63), randint(0,63)
+            yield m1, m2, min(i,j), max(i,j)
+
+
+
+
+def basis_to_set(b):
+    if len(b) == 0:
+        return set([0])
+    s0 = basis_to_set(b[1:])
+    b0 = b[0]
+    return s0 | set((x ^ b0 for x in s0))
+
+def as_set(m, mask):
+    m = [int(x) & int(mask) for x in m]
+    return basis_to_set(m)
+        
+
+
+@pytest.mark.qstate
+def test_bitmatrix_cap(verbose = 0):
+    for ntest, (m1, m2, imin, imax) in enumerate(create_cap_matrices()):
+         if verbose:
+             print("Test", ntest+1, "imin =", imin, "imax =", imax )
+             print("m1 =", [hex(x) for x in m1])
+             print("m2 =", [hex(x) for x in m2])
+         m1h = np.array(m1, dtype = np.uint64, copy = True)
+         m2h = np.array(m2, dtype = np.uint64, copy = True)
+         j0h, nh = imax + 1, imax - imin + 1 
+         l1h, l2h = bitmatrix64_cap_h(m1h, m2h, j0h, nh)
+         m1h, m2h = list(m1h), list (m2h)
+         if verbose:
+             print("Non intersecting parts of m1 and m2")
+             print("out1 =", [hex(x) for x in m1h[:l1h]])
+             print("out2 =", [hex(x) for x in m2h[:l2h]])
+             mask = (1 << (imax + 1)) - (1 << imin)
+             print("Intersecting parts (mask = %s):" % hex(mask))
+             print("out1 =", [hex(x) for x in m1h[l1h:]])
+             print("out2 =", [hex(x) for x in m2h[l2h:]])
+         if verbose > 1:    
+             print("Intermediate results") 
+             pool = np.zeros(20, dtype = np.uint64)
+             bitmatrix64_error_pool(pool, 20)
+             for i in range(20): print(i,  hex(pool[i]))
+
+         assert len(m1) == len(m1h) and len(m2) == len(m2h)
+         assert ref_echelon(m1) == ref_echelon(m1h)
+         assert ref_echelon(m2) == ref_echelon(m2h)
+         mask = (1 << (imax + 1)) - (1 << imin)
+         l1, l2 = len(m1), len(m2)
+         while l1 and int(m1h[l1-1]) & mask == 0: 
+             l1 -= 1
+         while l2 and int(m2h[l2-1]) & mask == 0: 
+             l2 -= 1
+         assert l1-l1h == l2-l2h, (l1, l1h, l2, l2h)
+         if len(m1) < 5 and len(m2) < 5:
+             set1 = as_set(m1h, mask)
+             set2 = as_set(m2h, mask)
+             cap  = set1 & set2
+             set_cap1 = as_set(m1h[l1h:], mask)
+             set_cap2 = as_set(m2h[l2h:], mask)
+             assert cap == set_cap1 , (set1, set2, cap, set_cap1)
+             assert cap == set_cap2 , (set1, set2, cap, set_cap2)
+             if verbose:
+                 print("Intersection testd successfully")
+            
 

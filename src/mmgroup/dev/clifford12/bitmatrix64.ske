@@ -38,6 +38,87 @@ extern "C" {
 
 
 /*************************************************************************
+*** Basic definitions
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+// If ERROR_POOL is defined then function xsp2co1_error_pool() can
+// read data from an "error pool" that contains debug information
+// for certain functions after calling them.
+#define ERROR_POOL
+
+// Number of entries of type uit64_t of the ERROR_POOL
+#define LEN_ERROR_POOL 20
+
+
+/// @endcond 
+
+
+/*************************************************************************
+*** Using a pool for recording errors (for debugging)
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+#ifdef  ERROR_POOL
+static uint64_t error_pool[LEN_ERROR_POOL];
+#endif
+
+/**
+@brief Used for debugging only
+*/
+// %%EXPORT px
+uint32_t bitmatrix64_error_pool(uint64_t *dest, uint32_t length)
+{
+  #ifdef ERROR_POOL
+    uint32_t i;
+    if (length > LEN_ERROR_POOL) length = LEN_ERROR_POOL;
+    for (i = 0; i < length; ++i) dest[i] = error_pool[i];   
+    return length;
+  #else
+    return 0;  // Dummy if  ERROR_POOL is not #defined.
+  #endif   // #ifdef  ERROR_POOL 
+}
+
+/// @endcond 
+
+
+/*************************************************************************
+*** Static auxuliary functions
+*************************************************************************/
+
+
+/**
+ @brief Returns the bit weight of a 64-bit integer ``v``.      
+*/ 
+static inline uint32_t bw64(uint64_t v)
+{
+   v = (v & 0x5555555555555555ULL) + ((v & 0xaaaaaaaaaaaaaaaaULL) >> 1); 
+   v = (v & 0x3333333333333333ULL) + ((v & 0xccccccccccccccccULL) >> 2);
+   v = (v + (v >> 4)) & 0xf0f0f0f0f0f0f0fULL;
+   v = (v + (v >> 8)) &  0xff00ff00ff00ffULL;
+   v = (v + (v >> 16)) &   0xffff0000ffffULL;
+   return (uint32_t)((v + (v >> 32)) & 0x7f); 
+}    
+
+/**
+ @brief Returns the bit length of a 64-bit integer ``v``.      
+*/ 
+static inline uint32_t bitlen64(uint64_t v)
+{
+   uint32_t result = 0;
+   if (v & 0xffffffff00000000ULL) {result += 32; v >>= 32;}
+   if (v & 0xffff0000UL) {result += 16; v >>= 16;}
+   if (v & 0xff00) {result += 8; v >>= 8;}
+   if (v & 0xf0) {result += 4; v >>= 4;}
+   return result + (uint32_t)((0x4444444433332210ULL >> (v << 2)) & 0xf); 
+}
+
+/*************************************************************************
 *** Bit matrix transposition
 *************************************************************************/
 
@@ -147,19 +228,24 @@ uint32_t bitmatrix64_echelon_l(uint64_t *m, uint32_t i, uint32_t j0, uint32_t n)
 *************************************************************************/
 
 
-static inline void restore_cap_h(uint64_t *ma, uint32_t i, uint64_t *m, 
-    uint32_t j0, uint32_t n, uint32_t n_cap,
-    uint64_t row_used,  uint64_t row_cap)
+static uint32_t restore_cap_h(uint64_t *ma, uint64_t *m, 
+    uint64_t rows_used,  uint64_t rows_cap)
 {
-    int col, row = 0, row_h = i - n_cap;
-    for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
-        if ((row_used >> col) & 1) {
-            if ((row_cap >> col) & 1) {
-                if (row_h < (int)j0) m[row_h++] = ma[col];
-            }
-            else if (row < (int)j0) m[row++] = ma[col];
-        }
+    int i_max, n_used, n_cap, i, row = 0, row_h;
+    i_max = bitlen64(rows_used);
+    n_used = bw64(rows_used);
+    rows_cap &= rows_used;
+    n_cap = bw64(rows_cap);
+    row_h = n_used - n_cap;
+  #ifdef ERROR_POOL
+     error_pool[18] =  i_max;
+     error_pool[19] =  row_h;
+  #endif
+    for (i = 0; i < i_max; ++i) if ((rows_used >> i) & 1) {
+        if ((rows_cap >> i) & 1)  m[row_h++] = ma[i];
+        else  m[row++] = ma[i];
     } 
+    return n_cap;
 }
 
 /**
@@ -168,69 +254,83 @@ static inline void restore_cap_h(uint64_t *ma, uint32_t i, uint64_t *m,
 // %%EXPORT px
 uint32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, uint32_t j0, uint32_t n)
 {
-    int row_pos1 = 0, row_pos2 = 0, col, row, n_cap = 0;
+    int row_pos = 0, row_pos1 = 0, row_pos2 = 0, col, row;
     uint64_t b1, b2, v1, v2;
-    uint64_t col_mask, mask, row_used1 = 0, row_used2 = 0, row_cap = 0;
+    uint64_t mask, row_used1 = 0, row_used2 = 0, row_cap = 0;
     uint64_t m1a[64], m2a[64];
 
     if (j0 > 64) j0 = 64;
     if (n > j0) n = j0;
     if (n == 0) return 0;
 
-    mask = (((ONE + ONE) << (n - 1)) - 1) << (n - j0);
+    mask = (((ONE + ONE) << (n - 1)) - 1) << (j0 -n);
     while (i1 > 0 && (m1[i1 - 1] & mask) == 0) --i1;
-    while (i2 > 0 && (m1[i2 - 1] & mask) == 0) --i2;
+    while (i2 > 0 && (m2[i2 - 1] & mask) == 0) --i2;
     if (i1 == 0 || i2 == 0) return 0;
 
     for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
-        col_mask = ONE << col;
-        b1 = row_pos1 < (int)i1 ? (m1[row_pos1] & col_mask) : 0;
-        b2 = row_pos2 < (int)i2 ? (m2[row_pos2] & col_mask) : 0;
-        row_used1 |= b1; row_used1 |= b2;
+        b1 = row_pos1 < (int)i1 ? ((m1[row_pos1] >> col) & 1) : 0;
+        b2 = row_pos2 < (int)i2 ? ((m2[row_pos2] >> col) & 1) : 0;
+        row_used1 |= b1 << row_pos; row_used2 |= b2 << row_pos;
 
         if (b1) {
             if (b2) {
-                m1a[col] = m1[row_pos1++];
-                m2a[col] = m2[row_pos2++];
-                row_cap |= col_mask;
-                ++n_cap;
+                m1a[row_pos] = m1[row_pos1++];
+                m2a[row_pos] = m2[row_pos2++];
+                row_cap |= ONE << row_pos;
+                ++row_pos;
             } else { 
-                m1a[col] = v1 = m1[row_pos1++];
-                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                m1a[row_pos] = v1 = m1[row_pos1++];
+                for (row = row_pos - 1; row >= 0; --row) { 
                     m1a[row] ^= v1 &
                        (0 - ((row_cap >> row) & (m2a[row] >> col) & ONE));
                 }       
+                ++row_pos;
             }
         } else {
             if (b2) {
-                m2a[col] = v2 = m2[row_pos1++];
-                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                m2a[row_pos] = v2 = m2[row_pos2++];
+                for (row = row_pos - 1; row >= 0; --row) { 
                     m2a[row] ^= v2 &
-                       (0 - ((row_cap >> row) & (m2a[row] >> col) & ONE));
+                       (0 - ((row_cap >> row) & (m1a[row] >> col) & ONE));
                 }       
+                ++row_pos;
             } else {
-                for (row = (int)col + 1; row < (int)j0; ++row) { 
+                for (row = row_pos - 1; row >= 0; --row) { 
                     if (((m1a[row] ^ m2a[row]) >> col) & 
                         (row_cap >> row) &  ONE)  {
-                        row_cap &= ~(ONE << row);
-                        v1 = m1a[row]; v2 = m2a[row];
-                        --n_cap;
-                        ++row;
-                        break;
+                            row_cap &= ~(ONE << row);
+                            v1 = m1a[row]; v2 = m2a[row];
+                            break;
                     }
                 }
-                for (; row < (int)j0; ++row) { 
+                for (--row; row >= 0; --row) { 
                     if (((m1a[row] ^ m2a[row]) >> col) & 
                         (row_cap >> row) &  ONE)  {
-                        m1a[row] ^= v1; m2a[row] ^= v2;
+                            m1a[row] ^= v1; m2a[row] ^= v2;
                     }
                 }       
             }
         } 
     }   
-    restore_cap_h(m1a, i1, m1, j0, n, n_cap, row_used1, row_cap);
-    restore_cap_h(m2a, i2, m1, j0, n, n_cap, row_used2, row_cap);
-    return n_cap;
+  #ifdef ERROR_POOL
+    for (row = 0; row < 4; ++row) {
+        error_pool[row] = m1a[row]; 
+        error_pool[row+4] = m2a[row];
+     }
+     error_pool[8] =  row_used1;
+     error_pool[9] =  row_used2;   
+     error_pool[10] =  row_cap;
+     error_pool[11] =  row_pos1;
+     error_pool[12] =  row_pos2;
+     error_pool[13] =  row_pos;
+     error_pool[14] =  j0;
+     error_pool[15] =  n;
+     error_pool[16] =  i1;
+     error_pool[17] =  i2;
+  #endif
+    restore_cap_h(m1a, m1, row_used1, row_cap);
+    return restore_cap_h(m2a, m2, row_used2, row_cap);
 }
 
 /*************************************************************************
