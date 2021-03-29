@@ -884,6 +884,22 @@ def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+def bitmatrix64_add_diag(m, uint32_t j):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cl.bitmatrix64_add_diag(&m_view[0], i, j)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_mask_rows(m, uint64_t mask):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cl.bitmatrix64_mask_rows(&m_view[0], i, mask)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def bitmatrix64_t(m, uint32_t ncols):
     m1 = np.array(m, dtype = np.uint64)
     m2 = np.zeros(ncols, dtype = np.uint64)
@@ -909,5 +925,35 @@ def bitmatrix64_cap_h(m1, m2, uint32_t j0, uint32_t n):
     chk_qstate12(cap)
     return rows1 - cap, rows2 - cap
 
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_mul(m1, m2):
+    cdef uint64_t[:] m1_view = m1
+    cdef uint64_t[:] m2_view = m2
+    cdef uint32_t i1 = len(m1)
+    cdef uint32_t i2 = len(m2)
+    m3 = np.zeros(i1, dtype = np.uint64)
+    cdef uint64_t[:] m3_view = m3
+    cl.bitmatrix64_mul(&m1_view[0], &m2_view[0], i1, i2,
+        &m3_view[0])
+    return m3
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_rot_bits(m, int32_t rot, uint32_t nrot, uint32_t n0):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cdef uint32_t res = cl.bitmatrix64_rot_bits(&m_view[0], i, rot, nrot, n0)
+    chk_qstate12(res)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_xch_bits(m, uint32_t sh, uint64_t mask):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cdef uint32_t res = cl.bitmatrix64_xch_bits(&m_view[0], i, sh, mask)
+    chk_qstate12(res)
 
     
