@@ -91,6 +91,7 @@ uint32_t bitmatrix64_error_pool(uint64_t *dest, uint32_t length)
 *** Static auxuliary functions
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 /**
  @brief Returns the bit weight of a 64-bit integer ``v``.      
@@ -117,6 +118,9 @@ static inline uint32_t bitlen64(uint64_t v)
    if (v & 0xf0) {result += 4; v >>= 4;}
    return result + (uint32_t)((0x4444444433332210ULL >> (v << 2)) & 0xf); 
 }
+
+/// @endcond 
+
 
 /*************************************************************************
 *** Bit matrix transposition
@@ -157,6 +161,8 @@ int32_t bitmatrix64_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
    of a row of matrix ``m`` is the most significant bit in that row.
    For echelonizing ``m``, we pivot over nolumns
    ``j0-1,...,j0-n`` in that order, ignoring the other columns.
+   We perform row operations (on all possible columns 0,...,63) 
+   for changing matrix ``m``.
    
    The function returns the number of rows in the (echelonized)
    matrix ``m`` that have a nonzero bit in at least one of the
@@ -192,8 +198,10 @@ uint32_t bitmatrix64_echelon_h(uint64_t *m, uint32_t i, uint32_t j0, uint32_t n)
 
    Matrix ``m`` has ``i`` rows. Here we assume that the leading bit 
    of a row of matrix ``m`` is the least significant bit in that row.
-   For echelonizing ``m``, we pivot over nolumns
+   For echelonizing ``m``, we pivot over columns
    ``j0,...,j0+n-1`` in that order, ignoring the other columns.
+   We perform row operations (on all possible columns 0,...,63) 
+   for changing matrix ``m``.
    
    The function returns the number of rows in the (echelonized)
    matrix ``m`` that have a nonzero bit in at least one of the
@@ -224,12 +232,13 @@ uint32_t bitmatrix64_echelon_l(uint64_t *m, uint32_t i, uint32_t j0, uint32_t n)
 
 
 /*************************************************************************
-*** New function
+*** Intersection of row spaces of two bit matrices
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
-static uint32_t restore_cap_h(uint64_t *ma, uint64_t *m, 
-    uint64_t rows_used,  uint64_t rows_cap)
+static int32_t restore_cap_h(uint64_t *ma, uint64_t *m, 
+    uint64_t rows_used,  uint64_t rows_cap, int32_t max_rows)
 {
     int i_max, n_used, n_cap, i, row = 0, row_h;
     i_max = bitlen64(rows_used);
@@ -241,6 +250,7 @@ static uint32_t restore_cap_h(uint64_t *ma, uint64_t *m,
      error_pool[18] =  i_max;
      error_pool[19] =  row_h;
   #endif
+    if (max_rows < n_used) return ERR_QSTATE12_INTERN_PAR; 
     for (i = 0; i < i_max; ++i) if ((rows_used >> i) & 1) {
         if ((rows_cap >> i) & 1)  m[row_h++] = ma[i];
         else  m[row++] = ma[i];
@@ -248,26 +258,70 @@ static uint32_t restore_cap_h(uint64_t *ma, uint64_t *m,
     return n_cap;
 }
 
+/// @endcond  
+
+
 /**
-   @brief Yet to be documented!!!
+   @brief Compute intersection of row spaces of two bit matrices
+ 
+   Bit matrix ``m1`` has ``i1`` rows, and bit matrix ``m2`` has ``i2`` rows.
+   Both matrices, ``m1`` and ``m2``, must be given in reduced echelon form
+   in the sense of function ``bitmatrix64_echelon_h``.
+
+   The function changes  ``m1`` and ``m2`` using row operations in such a
+   way that the lower rows of ``m1`` and ``m2`` contain the intersection
+   of the rows spaces of the two matrices. For computing that intersection
+   we consider only columns ``j0-1,...,j0-n`` of matrices ``m1`` and ``m2``.
+   However, we do each row operation on all possible columns ``63,...,0``.
+   
+   The function returns the dimension ``n_cap`` of the intersection
+   of the row spaces of ``m1`` and ``m2``, ignoring all columns
+   except for columns ``j0-1,...,j0-n``.
+   
+   Assume that the echelonized input matrices ``m1`` (and ``m2``) have 
+   ``r1`` (and  ``r2``) leading rows that have at least one nonzero bit 
+   in columns ``j0-1,...,j0-n``, respectively. Then the function changes
+   the leading ``r1`` rows  of ``m1`` and the leading ``r2`` rows  of 
+   ``m2`` only. These rows are changed in such a way that the last
+   ``n_cap`` of these rows of the two matrices are equal in columns
+   ``j0-1,...,j0-n``. So these last rows contain the intersection of
+   the row spaces of ``m1`` and `m2``, ignoring all columns but   
+   ``j0-1,...,j0-n``.
+   
+   Parameters ``j0`` and ``n`` must be the same  in this function, and 
+   in the previous two calls to function ``bitmatrix64_echelon_h`` used 
+   for echelonizing  matrices ``m1`` and ``m2``. This function computes 
+   garbage in the arrays ``m1`` and ``m2``, unless both matrices, ``m1`` 
+   and ``m2``, have been echelonized in that way before calling this 
+   function.
+   
+   A negative return value ``n_cap`` means that at least one of the 
+   input matrices ``m1`` and ``m2`` has not been echelonized correctly.
+   This function may or may not detect an incorrect echelonization
+   of an input matrix.
+   
 */
 // %%EXPORT px
-uint32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, uint32_t j0, uint32_t n)
+int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, uint32_t j0, uint32_t n)
 {
-    int row_pos = 0, row_pos1 = 0, row_pos2 = 0, col, row;
+    int_fast32_t row_pos = 0, row_pos1 = 0, row_pos2 = 0, col, row, res;
     uint64_t b1, b2, v1, v2;
     uint64_t mask, row_used1 = 0, row_used2 = 0, row_cap = 0;
     uint64_t m1a[64], m2a[64];
 
+    // Adjust ``j0`` and ``n`` to the maximal number of colums 
     if (j0 > 64) j0 = 64;
     if (n > j0) n = j0;
     if (n == 0) return 0;
 
+    // Delete trailing zero row of ``m1`` and ``m2``.
     mask = (((ONE + ONE) << (n - 1)) - 1) << (j0 -n);
     while (i1 > 0 && (m1[i1 - 1] & mask) == 0) --i1;
     while (i2 > 0 && (m2[i2 - 1] & mask) == 0) --i2;
+    // Return 0 if zero rows remaining for ``m1`` or ``m2``
     if (i1 == 0 || i2 == 0) return 0;
-
+    
+    // TODO: The main loop is yet to be commented!!!
     for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
         b1 = row_pos1 < (int)i1 ? ((m1[row_pos1] >> col) & 1) : 0;
         b2 = row_pos2 < (int)i2 ? ((m2[row_pos2] >> col) & 1) : 0;
@@ -329,8 +383,11 @@ uint32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2,
      error_pool[16] =  i1;
      error_pool[17] =  i2;
   #endif
-    restore_cap_h(m1a, m1, row_used1, row_cap);
-    return restore_cap_h(m2a, m2, row_used2, row_cap);
+  
+    // Restore reordered rows of ``m1`` and ``m2``
+    res = restore_cap_h(m1a, m1, row_used1, row_cap, i1);
+    if (res < 0) return res;
+    return restore_cap_h(m2a, m2, row_used2, row_cap, i2);
 }
 
 /*************************************************************************

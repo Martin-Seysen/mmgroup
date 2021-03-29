@@ -906,6 +906,7 @@ def bitmatrix64_cap_h(m1, m2, uint32_t j0, uint32_t n):
     cdef uint32_t rows2 = cl.bitmatrix64_echelon_h(&m2_view[0], i2, j0, n)
     cdef uint32_t cap = cl.bitmatrix64_cap_h(&m1_view[0], &m2_view[0], 
          i1, i2, j0, n)
+    chk_qstate12(cap)
     return rows1 - cap, rows2 - cap
 
 
