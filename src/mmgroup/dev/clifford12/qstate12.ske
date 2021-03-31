@@ -714,25 +714,11 @@ int32_t qstate12_mul_Av(qstate12_type *pqs, uint64_t v, uint64_t *pw)
 // %%EXPORT p
 int32_t qstate12_rot_bits(qstate12_type *pqs, int32_t rot, uint32_t nrot, uint32_t n0)
 {
-    uint64_t *m = pqs->data, mask_h, mask_l, mask;
-    uint32_t k, sh;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (nrot + n0 > pqs->ncols) return ERR_QSTATE12_QUBIT_INDEX;
     if (nrot < 2) return 0;
     pqs->reduced = 0;
-    if (rot < 0) rot += nrot * (-rot / nrot) + nrot;
-    rot %= nrot;
-    if (rot == 0) return 0;
-    mask_l = (ONE << (nrot + n0 - rot));
-    mask_h = (ONE << (nrot + n0)) -  mask_l;
-    mask_l -= (ONE << n0);
-    mask = ~(mask_l | mask_h);
-    sh = nrot - rot;
-    for (k = 0; k < pqs->nrows; ++k) {
-         m[k] = (m[k] & mask) | ((m[k] & mask_l) << rot) 
-                              | ((m[k] & mask_h) >> sh);
-    }
-    return 0;    
+    return bitmatrix64_rot_bits(pqs->data, pqs->nrows, rot, nrot, n0);
 }
 
 
@@ -759,20 +745,12 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 // E.g.  qstate12_xch_bits(pqs, 1, 0x11) changes qs to qs' with
 // qs'(...,x6,x5,x4,x3,x2,x1,x0) = qs(...,x6,x4,x5,x3,x2,x0,x1).
 {
-    uint64_t *m = pqs->data, v;
-    uint_fast32_t k;
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;
     if (mask == 0) return 0;
     pqs->reduced = 0;
     if (sh >= pqs->ncols ||  mask & ((mask | ((0-ONE) << pqs->ncols)) >> sh)) 
         return ERR_QSTATE12_QUBIT_INDEX;
-
-    // Here we simply exchange column j1 with row j2 of matrix A
-    for (k = 0; k < pqs->nrows; ++k) {
-        v = (m[k] ^ (m[k] >> sh)) & mask;
-        m[k] ^= v ^ (v << sh);   
-    }
-    return 0;
+    return bitmatrix64_xch_bits(pqs->data, pqs->nrows, sh, mask);
 }
 
 

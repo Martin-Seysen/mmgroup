@@ -11,11 +11,17 @@ from operator import __or__
 import numpy as np
 import pytest
 
+from mmgroup.bitfunctions import bit_mat_mul, bit_mat_inverse
+
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import bitmatrix64_echelon_h
 from mmgroup.clifford12 import bitmatrix64_echelon_l
 from mmgroup.clifford12 import bitmatrix64_cap_h
+from mmgroup.clifford12 import bitmatrix64_mul
+from mmgroup.clifford12 import bitmatrix64_inv
 from mmgroup.clifford12 import bitmatrix64_error_pool
+
+
 
  
 
@@ -222,3 +228,42 @@ def test_bitmatrix_cap(verbose = 0):
                  print("Intersection testd successfully")
             
 
+#####################################################################
+# Test functions bitmatrix64_mul() and bitmatrix64_inv()
+#####################################################################
+
+# This tests also function bitmatrix64_mask_rows()
+# and  bitmatrix64_add_diag().
+
+
+def create_mul_inv_matrices():
+    """yield a bit matrix as a list of integers """
+    for i in [1, 3, 5, 7, 17, 24, 31, 32]:
+        m2i = None
+        for _ in range(1000):
+            m2 = rand_bit_matrix(i, i)
+            try:
+                m2i = bit_mat_inverse(m2)
+                break
+            except ZeroDivisionError:       
+                pass
+        for j in [1,2,7,32, 63, 64]:
+            m1 = rand_bit_matrix(j, i)
+            yield m1, m2, m2i
+            m2i = None
+             
+@pytest.mark.qstate
+def test_bitmatrix_mul_inv(verbose = 0):
+    for ntest, (m1, m2, m2i) in enumerate(create_mul_inv_matrices()):
+         #print(m1, m2, m2i)
+         m1a = np.array(m1, dtype = np.uint64, copy = True)
+         m2a = np.array(m2, dtype = np.uint64, copy = True)
+         m3 =  bit_mat_mul(m1, m2)
+         m3a = bitmatrix64_mul(m1a, m2a)
+         assert list(m3a) == m3
+         if m2i is not None:
+            m2ia = bitmatrix64_inv(m2)
+            assert list(m2ia) == m2i 
+
+
+   

@@ -957,3 +957,15 @@ def bitmatrix64_xch_bits(m, uint32_t sh, uint64_t mask):
     chk_qstate12(res)
 
     
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_inv(m):
+    cdef uint32_t i = len(m), j
+    m1 = np.zeros(i, dtype = np.uint64)
+    for j in range(i):
+        m1[j] = m[j]   
+    cdef uint64_t[:] m1_view = m1
+    cdef uint32_t res = cl.bitmatrix64_inv(&m1_view[0], i)
+    chk_qstate12(res)
+    return m1
+

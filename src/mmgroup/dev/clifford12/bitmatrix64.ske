@@ -9,7 +9,7 @@
   In functions dealing with bit matrices we always give the number
   of rows as a parameter. In some functions we also give the 
   number of columns. In other functions we assume that there
-  are 64 coumns, with unused columns ignored.
+  are 64 columns, with unused columns ignored.
 */
 
 /*************************************************************************
@@ -123,11 +123,11 @@ static inline uint32_t bitlen64(uint64_t v)
 
 
 /*************************************************************************
-*** Simple bit matrix opercationa
+*** Simple bit matrix operations
 *************************************************************************/
 
 /**
-  @brief Add a diagonal to a bit matrix
+  @brief Add a diagonal matrix to a bit matrix
 
   Here bit matrix ``m`` has ``i`` rows.
   
@@ -161,7 +161,7 @@ void bitmatrix64_add_diag(uint64_t *m, uint32_t i, uint32_t j)
 void bitmatrix64_mask_rows(uint64_t *m, uint32_t i, uint64_t mask)
 {
     uint_fast32_t k;
-    for (k = 0; k < i; ++k)  m[k] ^= mask;
+    for (k = 0; k < i; ++k)  m[k] &= mask;
 }
 
 /*************************************************************************
@@ -197,6 +197,8 @@ void bitmatrix64_mul(uint64_t *m1,  uint64_t *m2, uint32_t i1, uint32_t i2, uint
          m3[i] = mo;
     }
 }
+
+
 
 
 
@@ -477,8 +479,8 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     int_fast32_t res;          // contains result of a called function
     uint64_t b1, b2;           // nonzero if ``m1`` (or ``m2``) has a row  
                                // with leading column ``col``, respectively
-    uint64_t v1, v2;           // row of ``m1`` (or ``m2``) used for pivoting
-    uint64_t mask;
+    uint64_t v1 = 0, v2 = 0;   // row of ``m1`` (or ``m2``) used for pivoting
+    uint64_t mask;             // mask for relevant columns
 
     // Adjust ``j0`` and ``n`` to the maximal number of colums 
     if (j0 > 64) j0 = 64;
@@ -504,6 +506,10 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     // the current column being pivoted ,will be equal. We mark the
     // the rows of matrices ``m1a`` and ``m2a``, where the leading
     // columns can be equalized, in the bit array ``rows_equ``.
+    //
+    // An operation similar to this main loop is described  
+    // in  'The mmgroup API reference',
+    // section 'An algorithm for multiplying quadratic mappings'.
     for (col = (int)j0 - 1; col >= (int)(j0 - n); --col) {
         b1 = row_pos1 < (int)i1 ? ((m1[row_pos1] >> col) & 1) : 0;
         b2 = row_pos2 < (int)i2 ? ((m2[row_pos2] >> col) & 1) : 0;
@@ -604,6 +610,37 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     // Restore the rows of ``m2`` fromthe used rows of ``m2a``; put
     // the rows equal to corresponing rows of ``m1a`` at the bottom.
     return restore_cap_h(m2a, m2, rows_used2, rows_equ, i2);
+}
+
+
+/*************************************************************************
+*** Bit matrix inversion
+*************************************************************************/
+
+/**
+  @brief Bit matrix inversion
+
+  Here ``m``has ``i`` rows and ``i`` columns. ``i <= 32`` must hold. 
+  The function inverts matrix ``m`` in place. 
+  
+  It returns 0 in case of success and ``ERR_QSTATE12_MATRIX_INV``
+  if ``m`` is not invertible.
+*/
+// %%EXPORT p
+int32_t bitmatrix64_inv(uint64_t *m, uint32_t i)
+{
+    int_fast32_t res;
+    if (i > 32) return ERR_QSTATE12_TOOLARGE;
+    if (i == 0) return 0;
+    bitmatrix64_mask_rows(m, i, (ONE << i) - 1);
+    bitmatrix64_add_diag(m, i, i);
+    res = bitmatrix64_echelon_l(m, i, 0, 2*i);
+    if (res < 0) return res;
+    if ((m[i-1] & ((ONE << i) - 1)) == 0) return ERR_QSTATE12_MATRIX_INV;
+    res = bitmatrix64_rot_bits(m, i, i, 2*i, 0);
+    if (res < 0) return res;
+    bitmatrix64_mask_rows(m, i, (ONE << i) - 1);
+    return 0;
 }
 
 /*************************************************************************
