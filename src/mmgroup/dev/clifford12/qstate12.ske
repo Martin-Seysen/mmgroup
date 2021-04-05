@@ -1220,7 +1220,7 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
   following state ``qs1`` depending  on ``n1 = n - nqb`` qubits:
   
   ``qs1(x[n1-1],...,x[0])`` is equal to 
-  ``qs(x[n1-1],...,x[j],0,...,0,x[-1],...,x[0])``. 
+  ``qs(x[n1-1],...,x[j],0,...,0,x[j-1],...,x[0])``. 
   So we decrement ``pqs->ncols`` by ``nqb``.
  
   The output is not reduced.
@@ -1474,7 +1474,7 @@ static const int8_t  PHASES[8][2] = {
 
 #define SQRT2 1.414213562373095048801688724209L 
 
-static void set_complex_factors(int32_t e, double  *p_real, double *p_imag)
+static uint32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
 {
     double f;
     int i;
@@ -1486,6 +1486,17 @@ static void set_complex_factors(int32_t e, double  *p_real, double *p_imag)
         p_real[i] = f * PHASES[(2*i + e) & 7][0];       
         p_imag[i] = f * PHASES[(2*i + e) & 7][1];   
     }        
+    if (e & 3) return 4;    // return 4 if entry 0 is complex
+    if (e & 0x10) return 3; // return 3 entry 0 is real and not rational
+    return (e >= 0) ? 1 : 2;  
+    // return 2 if entry 0 is rational
+    // return 1 if entry 0 an integer   
+}
+
+
+static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
+{
+     return (qf_all & 1) ? 4 : res;
 }
 
 
@@ -1515,11 +1526,14 @@ const uint8_t qstate12_lsbtab[64] = {
 
   Caution: The function sets ``2 * 2**pqs->ncols`` entries 
   in the array ``pc``.
+
+  Return value is as in function ``qstate12_entries``.
 */
 // %%EXPORT p
 int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
 {    
     uint64_t qf = 0;    // current value of quadratic form Q[i]
+    uint64_t qf_all = 0; // OR sum of all values qf obtained
     uint64_t *m;        // pointer to pqs->data
     uint64_t *m_end;    // pointer to pqs->data + pqs->nrows - 1
     uint64_t ncols;     // equal to pqs->ncols
@@ -1542,12 +1556,13 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
     nrc = ncols + pqs->nrows - 1; 
     n_iterations = ONE << (pqs->nrows - 1); 
     mask = (ONE << ncols) - 1; 
-    set_complex_factors(pqs->factor, freal, fimag);
+    res = set_complex_factors(pqs->factor, freal, fimag);
    
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1, diag, index;
         int64_t d, d1;
         index = (assoc & mask) << 1;
+        qf_all |= qf;
         pc[index] = freal[qf & 3];
         pc[index + 1] = fimag[qf & 3];
         d1 = d = qstate12_lsbtab[(i1 = i) & 63];
@@ -1559,7 +1574,7 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
         diag = (m_end[-d] >> (nrc - d)) & 1;
         qf += ((assoc >> (nrc - 1 - d)) & 2) + diag;
         assoc ^= m_end[-d];
-        /* A simpler implementation of the last 3 rows would be:
+        /* A simpler implementation of the last 3 lines would be:
         diag = (m[d+1] >> (ncols + d + 1)) & 1;
         qf += ((assoc >> (ncols + d)) & 2) + diag;
         assoc ^= m[d+1];
@@ -1567,7 +1582,7 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
         // write accesses to the array ``pc``.
         */
     } 
-    return 0;       
+    return qf_result_type(res, qf_all);       
 }
 
 
@@ -1583,6 +1598,19 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
   Caution: The function sets ``2 * n`` entries   in the 
   array ``pc``.
 
+  Depending on the computed matrix entries, the function returns
+ 
+   4  if all entries are complex, but not all are real.
+ 
+   3  if all entries are real, but not all are rational
+ 
+   2  if all entries are rational, but not all are integers.
+
+   1  if all entries are integers, but not all are zero.
+
+   0  if all entries are zero.
+
+  A negative return value indicates an error. 
 */
 // %%EXPORT p
 int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc)
@@ -1593,7 +1621,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 // ``pqs`` is reduced. ``pqs->shape1`` is ignored.
 {
     uint8_t row_table[MAXCOLS+1];
-    int32_t factor, res, j;
+    int32_t factor, factor_all = 0, res, j;
     uint32_t i,sh; 
     uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
     double freal[5], fimag[5];
@@ -1606,7 +1634,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
         return 0;
     }
 
-    set_complex_factors(pqs->factor, freal, fimag);
+    res = set_complex_factors(pqs->factor, freal, fimag);
     freal[4] = fimag[4] = 0.0;
     qstate12_row_table(pqs, row_table);
     while (n--) {
@@ -1628,11 +1656,13 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
             }
         }
         factor &= 3;
+        factor_all |= factor | 4;
       factor_done:           
         *pc++ = freal[factor];
         *pc++ = fimag[factor];
     }
-    return 0;
+    if ((factor_all & 4) == 0) return 0;
+    return qf_result_type(res, factor_all);
 }
 
 

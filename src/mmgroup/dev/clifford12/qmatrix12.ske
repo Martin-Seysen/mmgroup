@@ -316,6 +316,60 @@ int32_t qstate12_mat_t(qstate12_type *pqs)
     return qstate12_rot_bits(pqs, nqb, pqs->ncols, 0);
 }
 
+
+
+/*************************************************************************
+*** Trace of a quadratic state matrix
+*************************************************************************/
+
+
+/**
+  @brief Compute the trace of a quadratic state matrix
+
+  The function computes the trace of the quadratic state matrix
+  ``qs`` referred by ``pqs``. The real part of the trace is
+  stored in ``ptrace[0]`` and the imaginary part is stored in
+  ``ptrace[1]``. The state ``qs`` is reduced.
+
+  Return value is as in function ``qstate12_entries``.
+*/  
+// %%EXPORT p
+int32_t qstate12_mat_trace(qstate12_type *pqs, double *ptrace) 
+{   
+    int32_t res;
+    uint32_t i, nrows = pqs->shape1;
+    qstate12_type qs1;
+    uint64_t qs1_data[MAXROWS];
+
+    // Reduce qs and check that it is a square matrix.
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    if (2*nrows != pqs->ncols) return ERR_QSTATE12_SHAPE_OP;
+    
+    // Create temporary copy qs1 of *pqs
+    res = qstate12_copy_alloc(pqs, &qs1, qs1_data, MAXROWS);
+    if (res < 0) return res;
+
+    // Move diagonal entries of matrix qs1 to row 0
+    for (i = 0; i < nrows; ++i) {
+        res = qstate12_gate_ctrl_not(&qs1, ONE << i, 
+            ONE << (nrows + i));
+        if (res < 0) return res;
+    }
+
+    // Delete all rows except row 0
+    res = qstate12_restrict(&qs1, nrows, nrows);
+    if (res < 0) return res;
+
+    // Sum up all entries in the remaining row 0
+    res =  qstate12_sum_cols(&qs1, 0, nrows);
+
+    // Check that the matrix is now a scalar
+    if (qs1.ncols) return ERR_QSTATE12_INTERN_PAR;
+
+    // Output that scalar
+    return  qstate12_complex(&qs1, ptrace);
+}
+
 /*************************************************************************
 *** 'Multiplying' states and matrices of states
 *************************************************************************/

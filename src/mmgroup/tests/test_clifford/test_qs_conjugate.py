@@ -179,6 +179,7 @@ def test_pauli_multiplication(verbose = 0):
 
 
 def create_exp_data():
+    yield qs_unit_matrix(2), 0
     yield qs_unit_matrix(4), -3
     for n in range(1, 13):
         for i in range(10):
@@ -204,12 +205,15 @@ def ref_power(m, e):
         return  ref_power(mi, -e)
     
 
+def ref_trace(m):
+    return np.trace(m.complex())
 
-@pytest.mark.qstate
-def test_matrix_power(verbose = 0):
+@pytest.mark.qstate1
+def test_matrix_power(verbose = 1):
     MAX_ORDER = (2**8-1)*(2**6-1)*2**10
-    """Test the conjugation of Pauli matrix with unitary matrix"""
+    """Test matrix exponentiation can commputation of trace"""
     for ntest, (m, e) in enumerate(create_exp_data()):
+        # Test exponentiation
         me = m.power(e)
         me_ref = ref_power(m, e)
         ok = me == me_ref
@@ -223,11 +227,39 @@ def test_matrix_power(verbose = 0):
                 raise ValueError("Matrix exponentiation failed")
         nqb = m.shape[0]
         m.mul_scalar(-m.lb_norm2())
-        assert m.H == m.inv() 
+        assert m.H == m.inv()
+
+        # Test computation of trace
+        if nqb > 8:
+            continue
+        tr = m.trace()
+        tr_ref = ref_trace(m)
+        if tr == 0:
+            ok = tr_ref == 0
+        else:
+            ok = abs(tr_ref / tr - 1) < 1.0e-6
+        if verbose or not ok:
+            print("\nTrace of m:",  tr)
+            if not ok:
+                print("m =", m.reduce())
+                if nqb < 3:
+                    print("m =\n", m.complex())
+                print("\nTrace expected:",  tr_ref)
+                print("Intermediate")
+                m1 = m.copy()
+                for i in range(nqb):
+                     m1.gate_ctrl_not(1 << i, 1 << (nqb + i));
+                print(m1)
+                m1 = m1.restrict(nqb, nqb)
+                print(m1)
+                raise ValueError("Computation of trace failed")
+
+        # Testing order 
         if nqb > 4:
             continue
         order = m.order(MAX_ORDER)
         if verbose:
             s = print("Scaled matrix m has order %d" % order)
         assert m.power(order) == qs_unit_matrix(m.shape[0])
+
                 

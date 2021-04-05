@@ -278,11 +278,30 @@ cdef class QState12(object):
         return self
 
     def lb_rank(self):
-        """Yet to be documented"""
+        """Return binary logarithm of the rank of a matrix.
+
+        Return -1 if that rank is zero.
+        """
         cdef int32_t res = cl.qstate12_mat_lb_rank(&self.qs)
         if (res >= -1):
             return res
         chk_qstate12(res)
+
+    def trace(self):
+        """Return the trace of a square matrix.
+
+        The trace is returned as an integer, a floating point
+        number, or a complex number.
+        """
+        cdef double tr[2]
+        cdef double[:] tr_view = tr
+        cdef int32_t res = cl.qstate12_mat_trace(
+            &self.qs, &tr_view[0])
+        if res == 4:
+            return tr[0] + 1j * tr[1]
+        if (res >= 2 or abs(tr[0]) > (1 << 64)):
+            return tr[0]
+        return int(tr[0])
         
     def set_zero(self):
         """Set state matrix to zero"""
@@ -605,7 +624,7 @@ cdef class QState12(object):
     #########################################################################
     # Obtain complex entries of a state
     
-        
+    @cython.boundscheck(False)    
     def entries(self, indices):
         """Return complex entries of a state.
         
@@ -625,11 +644,15 @@ cdef class QState12(object):
         cdef unsigned int n = len(indices)
         a = np.empty(2 * n, dtype = np.double, order = 'C')
         cdef double[:] a_view = a
+        cdef int32_t res = 0
         if n:
-            chk_qstate12(cl.qstate12_entries(
+            res = chk_qstate12(cl.qstate12_entries(
                 &self.qs, n, &ind_view[0], &a_view[0]))
-        c = a[0::2] + 1j * a[1::2]
-        del a
+        if res == 4:
+            c = a[0::2] + 1j * a[1::2] 
+            del a
+        else:
+            c = a[0::2] 
         return c
 
     #########################################################################
