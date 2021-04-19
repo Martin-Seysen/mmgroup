@@ -298,8 +298,8 @@ const uint32_t MAT24_RECIP_BASIS[24+8] = {
 // %%TABLE Mat24_recip_basis, uint32
 };
 
-// %%USE_TABLE
-static const uint16_t MAT24_SYNDROME_TABLE[0x800] = { 
+// %%EXPORT_TABLE p
+const uint16_t MAT24_SYNDROME_TABLE[0x800] = { 
 // %%TABLE Mat24_syndrome_table, uint16
 };
 
@@ -309,6 +309,14 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 /// @cond DO_NOT_DOCUMENT 
 
 // %%GEN h
+
+
+/** @file mat24_functions.h
+ Header file for ``mat24_functions.c`` 
+*/
+
+
+
 
 /**
   @def mat24_def_octad_to_gcode(o)
@@ -332,6 +340,23 @@ static const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 #define mat24_def_gcode_to_octad(v) \
   ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
     + 3 * ((v & 0x7ff) >> 3) - %{Mat24_oct_enc_offset})
+
+
+
+/**
+  @def  mat24_def_not_nonstrict_octad(v)
+  @brief Check if ``v`` (or its complement) is an octad.
+
+  Returns 0 if ``v`` (or its complement) is an 
+  octad and 1 otherwise.
+
+  Vector ``v`` must be given in ``gcode`` representation
+*/
+#define mat24_def_not_nonstrict_octad(v) \
+    (((MAT24_OCT_ENC_TABLE[(v) & 0x7ff] + 2) & 0x100) >> 8)
+
+
+
 // %%GEN c
 
 /// @endcond 

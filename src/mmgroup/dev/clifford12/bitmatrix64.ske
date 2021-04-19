@@ -164,6 +164,28 @@ void bitmatrix64_mask_rows(uint64_t *m, uint32_t i, uint64_t mask)
     for (k = 0; k < i; ++k)  m[k] &= mask;
 }
 
+
+/**
+  @brief Find (masked) row of a bit matrix with a certain value
+
+  Here bit matrix ``m`` has ``i`` rows.
+  
+  The function returns the lowest index ``k`` such that
+  ``m[k] & mask == v`` holds. The function returns ``-1`` if
+  no such ``k`` exists.  
+
+*/
+// %%EXPORT p
+int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint64_t v)
+{
+    uint_fast32_t k;
+    for (k = 0; k < i; ++k)  {
+        if ((m[k] & mask) == v) return k;
+    }
+    return -1;
+}
+
+
 /*************************************************************************
 *** Bit matrix multiplication
 *************************************************************************/

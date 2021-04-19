@@ -923,6 +923,16 @@ def bitmatrix64_mask_rows(m, uint64_t mask):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+def bitmatrix64_find_masked_row(m, uint64_t mask, uint64_t v):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cdef int32_t res
+    res = cl.bitmatrix64_find_masked_row(&m_view[0], i, mask, v)
+    return res
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def bitmatrix64_t(m, uint32_t ncols):
     m1 = np.array(m, dtype = np.uint64)
     m2 = np.zeros(ncols, dtype = np.uint64)

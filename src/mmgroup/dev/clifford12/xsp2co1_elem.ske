@@ -1,0 +1,46 @@
+/** @file xsp2co1_elem.c
+  File ``xsp2co1_elem.c`` contains  functions for 
+  analyzing elements of the  subgroup \f$G_{x0}\f$ 
+  (of structure \f$2^{1+24}.\mbox{Co}_1\f$)  of the monster. 
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+/*************************************************************************
+*** Functions
+*************************************************************************/
+
+
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif

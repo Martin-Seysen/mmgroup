@@ -328,8 +328,11 @@ def chisquare_v3(obtained_dict, expected_dict):
 def test_chisq_type4(n = 50000):
     d = rand_v3_dict(n)  
     print("Check distribution of type-4 vectors mod 3") 
-    chisq, p =  chisquare_v3(d, P)
-    print("Chisq = %.3f, p = %.4f" % (chisq, p))
+    for i in range(4):
+        chisq, p =  chisquare_v3(d, P)
+        print("Chisq = %.3f, p = %.4f" % (chisq, p))
+        if p > 0.01: return
+    raise ValueError("Chisquare test failed") 
 
 #*************************************************************************
 #** Self test from C file

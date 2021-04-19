@@ -23,6 +23,7 @@ Description of the ``mmgroup.mat24`` extension
 C interface
 -----------
 
+
 .. doxygenfile:: mat24_functions.c
 
 

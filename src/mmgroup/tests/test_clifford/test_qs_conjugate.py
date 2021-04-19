@@ -208,8 +208,8 @@ def ref_power(m, e):
 def ref_trace(m):
     return np.trace(m.complex())
 
-@pytest.mark.qstate1
-def test_matrix_power(verbose = 1):
+@pytest.mark.qstate
+def test_matrix_power(verbose = 0):
     MAX_ORDER = (2**8-1)*(2**6-1)*2**10
     """Test matrix exponentiation can commputation of trace"""
     for ntest, (m, e) in enumerate(create_exp_data()):

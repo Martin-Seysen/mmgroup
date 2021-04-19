@@ -6,12 +6,15 @@ from __future__ import  unicode_literals
 from random import randint #, shuffle, sample
 from functools import reduce
 from operator import __or__
+from multiprocessing import Pool
 
 import numpy as np
 import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_is_type2
+from mmgroup.generators import gen_leech2_is_type2_selftest
 from mmgroup.generators import gen_leech2_op_word
 
 
@@ -186,6 +189,14 @@ def check_leech_type(x, t_expected):
         display_leech_vector(x)
         err = "Error in computing Leech type"
         raise ValueError(err)
+    is_type2 = (t_expected >> 4) == 2
+    found_type2 = gen_leech2_is_type2(x) 
+    ok = is_type2 == found_type2
+    if not ok:
+        print("Error:  v = %s, Leech type: %s" % (
+            hex(x),  hex(t_expected)), is_type2, hex(found_type2))
+        err = "Function gen_leech2_is_type2 failed"
+        raise ValueError(err)
         
 
 @pytest.mark.qstate
@@ -197,9 +208,41 @@ def test_xsp2_type(verbose = 0):
             print("Expected type", hex(vtype))
             display_leech_vector(x)
         check_leech_type(x, vtype)
-        for i in range(100):
+        for i in range(200):
             g =  rand_n_elem()
             x = g.xsp_conjugate(x)
             if verbose:
                 display_leech_vector(x)
             check_leech_type(x, vtype)
+
+
+
+
+#####################################################################
+# Test function gen_leech2_is_type2 via selftest in C file
+#####################################################################
+
+def one_selftest_leech_type2(data):
+    return  gen_leech2_is_type2_selftest(*data)
+
+
+def gen_selftest_inputs(n):
+    assert 0x1000000 % n == 0
+    q = 0x1000000 // n
+    for  i in range(n):
+        yield i*q, q
+
+
+@pytest.mark.qstate
+def test_leech2_self(verbose = 0):
+    NPROCESSES = 4
+    if verbose:
+        print("Testing gen_leech2_is_type2() ... ", end = "")
+    with Pool(processes = NPROCESSES) as pool:
+        results = pool.map(one_selftest_leech_type2, 
+                   gen_selftest_inputs(NPROCESSES))
+    pool.join()
+    result = sum(results)
+    assert result == 98280, result
+    if verbose:
+        print("passed")

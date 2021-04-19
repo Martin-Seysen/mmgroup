@@ -158,9 +158,9 @@ uint32_t gen_leech2_type(uint64_t v2)
 // ``2^11. Mat_24``, with ``Mat_24`` the Mathieu group operating
 // on 24 elements.
 //
-// In :cite`:`Con85` a vector in th Leech lattice is
+// In :cite`:`Con85` a vector in the Leech lattice is
 // denotes by ``x_d * x_delta``, where ``d`` is an element of
-// the Golay code and ``delta`` is an eöment of it cocode. 
+// the Golay code and ``delta`` is an element of it cocode. 
 // Subtypes can be described as follows:
 //
 // 0: The set contains an element with ``delta = 0``
@@ -232,6 +232,79 @@ uint32_t gen_leech2_type(uint64_t v2)
 }
 
 
+/**
+  @brief Check vector in Leech lattice mod 2 is of type 2
+
+  This function returns 1 if the vector \f$v_2\f$ in the Leech 
+  lattice modulo 2 is of type 2 and 0 otherwise.
+
+  It is much faster than function ``gen_leech2_type()``.
+  
+*/
+// %%EXPORT px
+uint32_t gen_leech2_is_type2(uint64_t v2)
+{
+    uint_fast32_t  x1, theta, tab, scalar, b1, b0, vect, lsb, syn, w;
+    x1 = (uint_fast32_t)v2;
+    // Deal with odd cocode words
+    if (x1 & 0x800) {   // Deal with odd cocode words
+         // Let tab be the syndrome table entry for the cocode part
+         theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+         tab = MAT24_SYNDROME_TABLE[(theta ^ x1) & 0x7ff];
+         // Return 0 if tab does not encode a cocode word of length 1
+         if ((tab & 0x3ff) < (24 << 5)) return 0;
+         // Return  scalar product <code, cocode> + 1   (mod 2)
+         scalar = (x1 >> 12) &  x1 & 0xfff;
+         scalar ^= scalar >> 6;
+         scalar ^= scalar >> 3;
+         scalar = (0x69 >> (scalar & 7)) & 1;
+         return scalar;
+    }
+    // Deal with Golay code word 0
+    if ((x1 & 0x7ff000L) == 0) {
+         // Let tab be the syndrome table entry for the cocode part 
+         // XORed with basis vector 0. 
+         tab = MAT24_SYNDROME_TABLE[(x1 ^ MAT24_RECIP_BASIS[0]) & 0x7ff];
+         // Set b1 True iff tab encodes a cocode word of length 3
+         b1 =  (tab & 0x3ff) < (24 << 5);
+         // Set b0  True iff tab encodes a cocode word with bit 0 not set
+         b0 =  (tab & 0x1f) !=  0;
+         //  b0 ^ b1 is True iff (the even) cocode word has length 2
+         return b0 ^ b1;
+    }
+    // If v2 is of type 2 here, it must be a suboctad
+
+    // Return 0 if v2 is not a (possibly complemented) octad
+    if (mat24_def_not_nonstrict_octad(x1 >> 12)) return 0;
+
+    // let vect = Golay code in vector representation
+    vect = mat24_gcode_to_vect(x1 >> 12);
+    // Put  w =  weight(code word) / 8     (mod 2);
+    // so w is True iff the Golay code word is an octad.
+    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+    w = ((x1 >> 23) ^ (theta >> 13)) & 1;  
+    // Complement vect if it is not an octad
+    vect ^= w - 1;
+    // let lsb be the least significant bit of vect
+    lsb = mat24_lsbit24(vect);
+    // Let tab be the table entry for the cocode part XORed
+    // with basis vector ``lsb``. 
+    tab = MAT24_SYNDROME_TABLE[
+        (x1 ^ theta ^ MAT24_RECIP_BASIS[lsb]) & 0x7ff];
+    // Compute cocode syndrome from tab
+    syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
+                               ^ (1 << ((tab >> 10) & 31));
+    // Return 0 if syndrome is not a subword of ``vect``
+    if ((vect & syn) != syn) return 0;
+    // Set b1 True iff tab encodes a cocode word of length 3
+    b1 =  (tab & 0x3ff) < (24 << 5);
+    // Set b0 True iff tab encodes a cocode word with bit ``lsb`` not set
+    b0 =  (tab & 0x1f) !=  lsb;
+    // Put b0 = 0 if cocode word has length 0 or 4 
+    // Put b0 = 1 if cocode word has length 2 
+    b0 ^= b1;
+    return b0 ^ w;
+}
 
 
 
@@ -848,6 +921,28 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
     for (i = 0x50; i < 0x100; ++i) result[0x10] += type_count[i];
     return n_success;
 }
+
+
+
+
+
+/** 
+  @brief Test function for function ``gen_leech2_is_type2`` 
+
+  The function returns the number of type-2 vectors ``v`` in
+  the Leech lattice modulo 2 with ``start <= v < start + n``.
+   
+*/
+// %%EXPORT px
+uint32_t gen_leech2_is_type2_selftest(uint32_t start, uint32_t n)
+{
+    uint32_t count = 0, v;
+    for (v = start; v < start + n; ++v) {
+        count += gen_leech2_is_type2(v);
+    }    
+    return count;
+}
+
 
 
 /************************************************************************
