@@ -308,6 +308,10 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
+// In the following procedure we'll store 1 << LSTEPS vectors for speed up
+#define LSTEPS 6
+/// @endcond  
 
 
 /**
@@ -325,7 +329,6 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
 // %%EXPORT px
 uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
 {
-    #define LSTEPS 6
     uint32_t b[1 << LSTEPS];
     uint_fast32_t count, i, j, l, n0, bigsteps, v;
     
@@ -334,7 +337,6 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
     ++a; --n;
     n0 = n  < LSTEPS ? n : LSTEPS;
     bigsteps = 1 << (n - n0);
-    #undef LSTEPS
     l = 1;  
     for (i = 0; i < n0; ++i) {
         for (j = 0; j < l; ++j) b[l + j] = b[j] ^ a[i];
@@ -351,6 +353,10 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
     }
     return count;
 }
+
+
+#undef LSTEPS
+
 
 /************************************************************************
 *************************************************************************
