@@ -206,12 +206,17 @@ def ref_power(m, e):
     
 
 def ref_trace(m):
-    return np.trace(m.complex())
+    mc = m.complex()
+    norm = np.amax(abs(mc))
+    tr = np.trace(mc)
+    if norm > 0 and abs(tr / norm) < 1.0e-8:
+        return 0
+    return np.trace(mc)
 
 @pytest.mark.qstate
 def test_matrix_power(verbose = 0):
     MAX_ORDER = (2**8-1)*(2**6-1)*2**10
-    """Test matrix exponentiation can commputation of trace"""
+    """Test matrix exponentiation and commputation of trace"""
     for ntest, (m, e) in enumerate(create_exp_data()):
         # Test exponentiation
         me = m.power(e)
