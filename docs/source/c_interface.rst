@@ -24,6 +24,8 @@ C interface
 -----------
 
 
+.. doxygenfile:: mat24_functions.h
+
 .. doxygenfile:: mat24_functions.c
 
 

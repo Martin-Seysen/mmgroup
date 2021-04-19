@@ -200,7 +200,7 @@ def check_leech_type(x, t_expected):
         
 
 @pytest.mark.qstate
-def test_xsp2_type(verbose = 0):
+def test_xsp2_type(verbose = 1):
     for ntest, (pl, cocode, vtype) in enumerate(type_data):
         x = xs_vector(pl, cocode)
         if verbose:

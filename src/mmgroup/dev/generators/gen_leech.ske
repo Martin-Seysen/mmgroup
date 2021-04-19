@@ -220,7 +220,7 @@ uint32_t gen_leech2_type(uint64_t v2)
             gcodev = mat24_gcode_to_vect(x1 >> 12); 
             // Put coccodev = cocode word (in vector rep), such that
             // the cocode word is a suboctad of gcodev if possible
-            lsb = mat24_lsbit24(gcodev);
+            lsb = mat24_def_lsbit24(gcodev);
             cocodev = mat24_cocode_syndrome(x1 ^ theta, lsb); 
             // Put cw = 0x22 if (w ^ cw) & 2 is 2, else put cw = 0x42
             cw = 0x42 - (((w ^ cw) & 2) << 4);
@@ -286,7 +286,7 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
     // Complement vect if it is not an octad
     vect ^= w - 1;
     // let lsb be the least significant bit of vect
-    lsb = mat24_lsbit24(vect);
+    lsb = mat24_def_lsbit24(vect);
     // Let tab be the table entry for the cocode part XORed
     // with basis vector ``lsb``. 
     tab = MAT24_SYNDROME_TABLE[

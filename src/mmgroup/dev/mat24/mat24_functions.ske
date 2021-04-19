@@ -36,12 +36,20 @@
 // %%EXPORT_KWD MAT24_API
 
 
+
+
+
+
+
 // %%GEN h
 #ifndef MAT24_FUNCTIONS_H
 #define MAT24_FUNCTIONS_H
 
 #include <stdint.h>
 
+/** @file mat24_functions.h
+  File ``mat24_functions.h`` is the header file for ``mat24_functions.c``. 
+*/
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -85,28 +93,29 @@
 
 /// @endcond
 
-#define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
-
 // %%GEN ch
-#ifdef __cplusplus
-extern "C" {
-#endif
-// %%GEN c
-
-
-/*************************************************************************
-*** Some general bit operations
-*************************************************************************/
-
 
 /// @cond DO_NOT_DOCUMENT 
 
-// %%USE_TABLE
-static const uint8_t MAT24_LSBIT_TABLE[32] = { 
+// %%GEN c
+
+// %%EXPORT_TABLE p
+const uint8_t MAT24_LSBIT_TABLE[32] = { 
 // %%TABLE Mat24_lsbit_table, uint8
 };
 
+// %%GEN ch
+
 /// @endcond  
+
+
+// %%GEN h
+
+/**
+ @def MAT24_ORDER 
+ @brief Order of Mathieu group ``Mat24``. This is equal to 244823040. 
+*/
+#define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
 
 /**
  @def mat24_def_lsbit24(v1) 
@@ -123,6 +132,60 @@ static const uint8_t MAT24_LSBIT_TABLE[32] = {
  ``v1`` must be  power of two. 
 */
 #define mat24_def_lsbit24_pwr2(v1)  %{MAT24_LSBIT:v1,1}
+
+/**
+  @def mat24_def_octad_to_gcode(o)
+  @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
+
+  ``mat24_def_octad_to_gcode(o)`` returns the  number 
+  of the Golay code word corresponding to octad ``o``. 
+  Parameter ``o`` is not checked.
+*/
+#define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
+
+
+/**
+  @def  mat24_def_gcode_to_octad(v)
+  @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
+
+  ``mat24_def_gcode_to_octad(v)`` returns the  number of the
+  octad corresponding to Golay code vector ``v``, with ``v``
+  in ``gcode``. It returns garbage if ``v`` is not an octad. 
+*/
+#define mat24_def_gcode_to_octad(v) \
+  ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
+    + 3 * ((v & 0x7ff) >> 3) - %{Mat24_oct_enc_offset})
+
+
+
+/**
+  @def  mat24_def_not_nonstrict_octad(v)
+  @brief Check if ``v`` (or its complement) is an octad.
+
+  Returns 0 if ``v`` (or its complement) is an 
+  octad and 1 otherwise.
+
+  Vector ``v`` must be given in ``gcode`` representation
+*/
+#define mat24_def_not_nonstrict_octad(v) \
+    (((MAT24_OCT_ENC_TABLE[(v) & 0x7ff] + 2) & 0x100) >> 8)
+
+/// @cond DO_NOT_DOCUMENT 
+//  Do not document C functions in the header file!
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+/*************************************************************************
+*** Some general bit operations
+*************************************************************************/
+
+
+
 
 
 /**
@@ -306,60 +369,6 @@ const uint16_t MAT24_SYNDROME_TABLE[0x800] = {
 /// @endcond 
 
 
-/// @cond DO_NOT_DOCUMENT 
-
-// %%GEN h
-
-
-/** @file mat24_functions.h
- Header file for ``mat24_functions.c`` 
-*/
-
-
-
-
-/**
-  @def mat24_def_octad_to_gcode(o)
-  @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
-
-  ``mat24_def_octad_to_gcode(o)`` returns the  number 
-  of the Golay code word corresponding to octad ``o``. 
-  Parameter ``o`` is not checked.
-*/
-#define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
-
-
-/**
-  @def  mat24_def_gcode_to_octad(v)
-  @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
-
-  ``mat24_def_gcode_to_octad(v)`` returns the  number of the
-  octad corresponding to Golay code vector ``v``, with ``v``
-  in ``gcode``. It returns garbage if ``v`` is not an octad. 
-*/
-#define mat24_def_gcode_to_octad(v) \
-  ((MAT24_OCT_ENC_TABLE[v & 0x7ff] >> 1) \
-    + 3 * ((v & 0x7ff) >> 3) - %{Mat24_oct_enc_offset})
-
-
-
-/**
-  @def  mat24_def_not_nonstrict_octad(v)
-  @brief Check if ``v`` (or its complement) is an octad.
-
-  Returns 0 if ``v`` (or its complement) is an 
-  octad and 1 otherwise.
-
-  Vector ``v`` must be given in ``gcode`` representation
-*/
-#define mat24_def_not_nonstrict_octad(v) \
-    (((MAT24_OCT_ENC_TABLE[(v) & 0x7ff] + 2) & 0x100) >> 8)
-
-
-
-// %%GEN c
-
-/// @endcond 
 
 
 /**
@@ -2660,6 +2669,10 @@ void mat24_op_all_cocode(uint32_t c1, uint8_t *a_out)
 }
 #endif
 // %%GEN h
+
+/// @endcond  
+//  End condition: Do not document C functions in the header file!
+
 #endif  // #ifndef MAT24_FUNCTIONS_H
 
 
