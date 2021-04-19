@@ -308,6 +308,50 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
 
 
 
+
+
+/**
+  @brief Count type-2 vectors in an affine subspace of the Leech lattice mod 2
+
+  This function returns the number of type-2 vectors in an affine 
+  subspace \f$V\f$  of the Leech lattice mod 2. Subspace \f$V\f$ is
+  defined by an array \f$a\f$ of length \f$n\f$ of bit vectors. 
+  If \f$a_1,\ldots,a_{n-1}\f$ are linear independent then \f$V\f$ is
+  given by:
+
+  \f$V = \{a_0 + \sum_{i=1}^{n-1} \lambda_i a_i \mid \lambda_i=0,1\}\f$.
+  
+*/
+// %%EXPORT px
+uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
+{
+    #define LSTEPS 6
+    uint32_t b[1 << LSTEPS];
+    uint_fast32_t count, i, j, l, n0, bigsteps, v;
+    
+    if (n == 0) return 0;
+    b[0] = a[0];
+    ++a; --n;
+    n0 = n  < LSTEPS ? n : LSTEPS;
+    bigsteps = 1 << (n - n0);
+    #undef LSTEPS
+    l = 1;  
+    for (i = 0; i < n0; ++i) {
+        for (j = 0; j < l; ++j) b[l + j] = b[j] ^ a[i];
+        l += l;
+    }
+    a += n0;
+    count = v = 0;
+    for (i = 1; ; ++i) {
+         for (j = 0; j < l; ++j) {
+             count += gen_leech2_is_type2(v ^ b[j]);
+         }
+         if (i == bigsteps) break;
+         v ^= a[mat24_def_lsbit24(i)];
+    }
+    return count;
+}
+
 /************************************************************************
 *************************************************************************
 *** Leech lattice mod 2
@@ -925,23 +969,6 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
 
 
-
-/** 
-  @brief Test function for function ``gen_leech2_is_type2`` 
-
-  The function returns the number of type-2 vectors ``v`` in
-  the Leech lattice modulo 2 with ``start <= v < start + n``.
-   
-*/
-// %%EXPORT px
-uint32_t gen_leech2_is_type2_selftest(uint32_t start, uint32_t n)
-{
-    uint32_t count = 0, v;
-    for (v = start; v < start + n; ++v) {
-        count += gen_leech2_is_type2(v);
-    }    
-    return count;
-}
 
 
 

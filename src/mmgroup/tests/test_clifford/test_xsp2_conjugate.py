@@ -7,6 +7,7 @@ from random import randint #, shuffle, sample
 from functools import reduce
 from operator import __or__
 from multiprocessing import Pool
+import time
 
 import numpy as np
 import pytest
@@ -14,9 +15,8 @@ import pytest
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_is_type2
-from mmgroup.generators import gen_leech2_is_type2_selftest
+from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
-
 
 
 #####################################################################
@@ -178,7 +178,7 @@ def display_leech_vector(x):
     else:
         pos = 0
     cocode = Cocode(x) + gcode.theta()
-    print ("Cocode:", cocode.syndrome_list(pos).bit_list)
+    print ("Cocode:", cocode.syndrome_list(pos))
 
 def check_leech_type(x, t_expected):
     t = gen_leech2_type(x)
@@ -200,7 +200,7 @@ def check_leech_type(x, t_expected):
         
 
 @pytest.mark.qstate
-def test_xsp2_type(verbose = 1):
+def test_xsp2_type(verbose = 0):
     for ntest, (pl, cocode, vtype) in enumerate(type_data):
         x = xs_vector(pl, cocode)
         if verbose:
@@ -222,27 +222,17 @@ def test_xsp2_type(verbose = 1):
 # Test function gen_leech2_is_type2 via selftest in C file
 #####################################################################
 
-def one_selftest_leech_type2(data):
-    return  gen_leech2_is_type2_selftest(*data)
-
-
-def gen_selftest_inputs(n):
-    assert 0x1000000 % n == 0
-    q = 0x1000000 // n
-    for  i in range(n):
-        yield i*q, q
-
 
 @pytest.mark.qstate
 def test_leech2_self(verbose = 0):
-    NPROCESSES = 4
     if verbose:
-        print("Testing gen_leech2_is_type2() ... ", end = "")
-    with Pool(processes = NPROCESSES) as pool:
-        results = pool.map(one_selftest_leech_type2, 
-                   gen_selftest_inputs(NPROCESSES))
-    pool.join()
-    result = sum(results)
+        print("Testing gen_leech2_is_type2() ... ")
+    a = np.array([0]+[1 << i for i in range(24)], dtype = np.uint32)
+    #a = np.array([0]+[0x800000 >> i for i in range(24)], dtype = np.uint32)
+    t_start = time.time()
+    result = gen_leech2_count_type2(a, 25)
+    t = time.time() - t_start
     assert result == 98280, result
     if verbose:
-        print("passed")
+        print("passed, %.3f ms" % (1000*t))
+
