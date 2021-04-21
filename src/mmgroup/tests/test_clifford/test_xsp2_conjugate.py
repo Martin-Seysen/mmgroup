@@ -17,6 +17,7 @@ from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_is_type2
 from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
+from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 
 
 #####################################################################
@@ -180,6 +181,11 @@ def display_leech_vector(x):
     cocode = Cocode(x) + gcode.theta()
     print ("Cocode:", cocode.syndrome_list(pos))
 
+
+def alternative_is_type2(v):
+    a = np.array([0, v], dtype = np.uint64)
+    return xsp2co1_leech2_count_type2(a, 2)
+
 def check_leech_type(x, t_expected):
     t = gen_leech2_type(x)
     ok = t == t_expected
@@ -193,10 +199,17 @@ def check_leech_type(x, t_expected):
     found_type2 = gen_leech2_is_type2(x) 
     ok = is_type2 == found_type2
     if not ok:
-        print("Error:  v = %s, Leech type: %s" % (
+        print("Error:  x = %s, Leech type: %s" % (
             hex(x),  hex(t_expected)), is_type2, hex(found_type2))
         err = "Function gen_leech2_is_type2 failed"
         raise ValueError(err)
+    alt_found_type2 = alternative_is_type2(x)
+    ok = is_type2 == alt_found_type2
+    if not ok:
+        print("Error:  x = %s, Leech type: %s" % (
+            hex(x),  hex(t_expected)), is_type2, alt_found_type2)
+        err = "Function xsp2co1_leech2_count_type2 failed"
+        #raise ValueError(err)
         
 
 @pytest.mark.qstate
@@ -224,13 +237,14 @@ def test_xsp2_type(verbose = 0):
 
 
 @pytest.mark.qstate
-def test_leech2_self(verbose = 0):
+def test_leech2_self(fast = 1, verbose = 0):
+    f = xsp2co1_leech2_count_type2 if fast else gen_leech2_count_type2
+    a_type = np.uint64 if fast else np.uint32
     if verbose:
         print("Testing gen_leech2_is_type2() ... ")
-    a = np.array([0]+[1 << i for i in range(24)], dtype = np.uint32)
-    #a = np.array([0]+[0x800000 >> i for i in range(24)], dtype = np.uint32)
+    a = np.array([0]+[1 << i for i in range(24)], dtype = a_type)
     t_start = time.time()
-    result = gen_leech2_count_type2(a, 25)
+    result = f(a, 25)
     t = time.time() - t_start
     assert result == 98280, result
     if verbose:

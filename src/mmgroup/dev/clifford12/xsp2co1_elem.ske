@@ -33,11 +33,143 @@ extern "C" {
 *** Functions
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+// In the following procedure we'll store 1 << LSTEPS vectors for speed up
+#define LSTEPS 7
+/// @endcond  
+
+
+/**
+  @brief Count type-2 vectors in an affine subspace of the Leech lattice mod 2
+
+  This function returns the number of type-2 vectors in an affine 
+  subspace \f$V\f$  of the Leech lattice mod 2. Subspace \f$V\f$ is
+  defined by an array \f$a\f$ of length \f$n\f$ of bit vectors. 
+  \f$V\f$ is  given by:
+
+  \f$V = \{a_0 + \sum_{i=1}^{n-1} \lambda_i a_i \mid \lambda_i=0,1\}\f$.
+  
+   Caution:
+   
+   The function may change the description of the affine space \f$V\f$ in
+   the array \f$a\f$ to a different description of the same space \f$V\f$. 
+   
+   Remark:
+   
+   This function is a much faster version of the
+   function ``gen_leech2_count_type2`` in file ``gen_leech.c``.
+   The implementation of the latter function is much simpler; so we
+   keep it for test purposes.
+  
+*/
+// %%EXPORT pxu
+uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
+{
+    uint16_t b[1 << LSTEPS];
+    uint_fast32_t v, count, i, j, nh, babysteps, bigsteps;
+
+    if (n == 0) return 0;
+    bitmatrix64_xch_bits(a, n, 12, 0x800);
+    v = (uint_fast32_t)a[0];
+    ++a; --n; babysteps = 1;
+    n = bitmatrix64_echelon_h(a, n, 24, 24);
+    b[0] = 0;
+    for (nh = 0; nh < n; ) {
+        uint64_t vh = a[n - nh - 1];
+        uint16_t vh1 = (uint16_t)(vh & 0xfff);
+        if (nh == LSTEPS || vh & 0xfff000L) break;
+        for (j = 0; j < babysteps; ++j) b[j + babysteps] = b[j] ^ vh1;
+        babysteps <<= 1;
+        ++nh;
+    }
+    n -= nh;
+    bigsteps = 1UL << n;
+    
+
+    count = 0;
+    for (i = 1; ; ++i) {
+        if (v & 0x800000L) {
+            // Deal with odd cocode words
+            uint_fast32_t theta, tab, scalar, gcode;
+            gcode = (v >> 12) & 0xfff;
+            theta = MAT24_THETA_TABLE[gcode & 0x7ff] ^ v;
+            for (j = 0; j < babysteps; ++j) {
+                // Let tab be the syndrome table entry for the cocode part
+                tab = MAT24_SYNDROME_TABLE[(theta ^ b[j]) & 0x7ff];
+                // Abort if tab does not encode a cocode word of length 1
+                if ((tab & 0x3ff) < (24 << 5)) continue;
+                // Put scalar = scalar product <code, cocode> + 1  (mod 2)
+                scalar = gcode &  (v ^ b[j]);
+                scalar ^= scalar >> 6;
+                scalar ^= scalar >> 3;
+                scalar = (0x69 >> (scalar & 7)) & 1;
+                count += scalar;
+            }
+        } else if ((v & 0x7ff000L) == 0) {
+            // Deal with Golay code word 0
+            uint_fast32_t basis0, tab, b0, b1;
+            basis0 = MAT24_RECIP_BASIS[0] ^ v;
+            for (j = 0; j < babysteps; ++j) {
+                // Let tab be the syndrome table entry for the cocode
+                // part  ORed with basis vector 0. 
+                tab = MAT24_SYNDROME_TABLE[(b[j] ^ basis0) & 0x7ff];
+                // Set b1 True iff tab encodes a cocode word of length 3
+                b1 =  (tab & 0x3ff) < (24 << 5);
+                // Set b0 True iff tab encodes a cocode word with bit 0 = 0
+                b0 =  (tab & 0x1f) !=  0;
+                //  b0 ^ b1 is True iff (the even) cocode word has length 2
+                count += b0 ^ b1;
+            }
+        } else if (mat24_def_not_nonstrict_octad(v >> 12) == 0) {
+            uint_fast32_t vect, w0, lsb, theta, tab, syn, b0, b1;
+            // Deal with octads
+            // let vect = Golay code in vector representation
+            vect = mat24_gcode_to_vect((v >> 12) & 0x7ff);
+            // Put  w0 =  weight(code word) / 8     (mod 2);
+            // so w0 is True iff the Golay code word is an octad.
+            theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+            w0 = (theta >> 13) & 1;  
+            // Complement vect if it is not an octad
+            vect ^= w0 - 1;
+            // Adjust w0
+            w0 ^= (v >> 11) & 1;
+            // let lsb be the least significant bit of vect
+            lsb = mat24_def_lsbit24(vect);
+            // Adjust theta 
+            theta ^= v ^ MAT24_RECIP_BASIS[lsb];
+            for (j = 0; j < babysteps; ++j) {
+                // Let tab be the table entry for the cocode part XORed
+                // with basis vector ``lsb``. 
+                tab = MAT24_SYNDROME_TABLE[(b[j] ^ theta) & 0x7ff];
+                // Compute cocode syndrome from tab
+                syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
+                                ^ (1 << ((tab >> 10) & 31));
+                // Abort if syndrome is not a subword of ``vect``
+                if ((vect & syn) != syn) continue;
+                // Set b1 True iff tab encodes a cocode word of length 3
+                b1 =  (tab & 0x3ff) < (24 << 5);
+                // Set b0 True iff tab encodes a cocode word with 
+                // bit ``lsb`` not set
+                b0 =  (tab & 0x1f) !=  lsb;
+                // Put b0 = 0 if cocode word has length 0 or 4 
+                // Put b0 = 1 if cocode word has length 2 
+                b0 ^= b1;
+                count += b0 ^ w0 ^ (b[j] >> 11);
+            }
+        }
+ 
+        if (i == bigsteps) break;
+        v ^= (uint_fast32_t)(a[mat24_def_lsbit24(i)]);
+    }
+
+    --a; n += nh + 1;
+    bitmatrix64_xch_bits(a, n, 12, 0x800);
+    return count;
+}
 
 
 
-
-
+#undef LSTEPS
 
 
 // %%GEN ch
