@@ -322,19 +322,22 @@ int32_t qstate12_mat_t(qstate12_type *pqs)
 *** Trace of a quadratic state matrix
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+
 
 /**
   @brief Compute the trace of a quadratic state matrix
 
   The function computes the trace of the quadratic state matrix
-  ``qs`` referred by ``pqs``. The real part of the trace is
-  stored in ``ptrace[0]`` and the imaginary part is stored in
-  ``ptrace[1]``. The state ``qs`` is reduced.
+  ``qs`` referred by ``pqs``. The trace is stored as an integer
+  of type ``uint32_t`` encoded a the parameter ``factor`` in
+  function ``qstate12_factor_to_complex``.
 
   Return value is as in function ``qstate12_entries``.
 */  
 // %%EXPORT p
-int32_t qstate12_mat_trace(qstate12_type *pqs, double *ptrace) 
+int32_t qstate12_mat_trace_factor(qstate12_type *pqs, int32_t *pfactor) 
 {   
     int32_t res;
     uint32_t i, nrows = pqs->shape1;
@@ -362,13 +365,57 @@ int32_t qstate12_mat_trace(qstate12_type *pqs, double *ptrace)
 
     // Sum up all entries in the remaining row 0
     res =  qstate12_sum_cols(&qs1, 0, nrows);
+    if ((res = qstate12_reduce(&qs1)) < 0) return res;
 
     // Check that the matrix is now a scalar
     if (qs1.ncols) return ERR_QSTATE12_INTERN_PAR;
 
     // Output that scalar
-    return  qstate12_complex(&qs1, ptrace);
+    *pfactor = qs1.nrows ? (qs1.factor & FACTOR_MASK) : 8;
+    return res;
 }
+
+
+/// @endcond  
+
+
+/**
+  @brief Compute the trace of a quadratic state matrix
+
+  The function computes the trace of the quadratic state matrix
+  ``qs`` referred by ``pqs``. The real part of the trace is
+  stored in ``p_trace[0]`` and the imaginary part is stored in
+  ``p_trace[1]``. The state ``qs`` is reduced.
+
+  Return value is as in function ``qstate12_factor_to_complex``.
+*/  
+// %%EXPORT p
+int32_t qstate12_mat_trace(qstate12_type *pqs, double *p_trace) 
+{ 
+    int32_t factor;
+    int32_t res = qstate12_mat_trace_factor(pqs, &factor);
+    return  res < 0 ? res : qstate12_factor_to_complex(factor, p_trace);
+}
+
+
+/**
+  @brief Compute the trace of a quadratic state matrix
+
+  Similar to function ``qstate12_mat_trace``, buth the trace is
+  stored as an integer in ``p_itrace[0]``.
+  
+  Return value is as in function ``qstate12_factor_to_int32``.
+
+*/  
+// %%EXPORT p
+int32_t qstate12_mat_itrace(qstate12_type *pqs, int32_t *p_itrace) 
+{ 
+    int32_t factor;
+    int32_t res = qstate12_mat_trace_factor(pqs, &factor);
+    return  res < 0 ? res : qstate12_factor_to_int32(factor, p_itrace);
+}
+
+
 
 /*************************************************************************
 *** 'Multiplying' states and matrices of states

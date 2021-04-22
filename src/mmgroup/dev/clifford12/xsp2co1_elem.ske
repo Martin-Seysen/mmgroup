@@ -39,6 +39,12 @@ extern "C" {
 /// @endcond  
 
 
+
+/*************************************************************************
+*** Count type-2 vectors in subspaces of the Leech lattice mod 2
+*************************************************************************/
+
+
 /**
   @brief Count type-2 vectors in an affine subspace of the Leech lattice mod 2
 
@@ -62,7 +68,7 @@ extern "C" {
    keep it for test purposes.
   
 */
-// %%EXPORT pxu
+// %%EXPORT px
 uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 {
     uint16_t b[1 << LSTEPS];
@@ -170,6 +176,104 @@ uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 
 
 #undef LSTEPS
+
+/*************************************************************************
+*** Compute traces of an element of G_x0
+*************************************************************************/
+
+
+// %%EXPORT px
+int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace)
+{
+    uint64_t data[25], *pa, mask = 0x1000001ULL;
+    uint_fast32_t i, n;
+    int_fast32_t res;
+
+    pa = data + 1;
+    for (i = 0; i < 24; ++i) pa[i] = ONE << i;
+    res = xsp2co1_xspecial_conjugate(elem, 24, pa, 0);
+    if (res < 0) return res;
+    for (i = 0; i < 24; ++i) {
+         pa[i] = ((pa[i] & 0xffffffULL) << 24) ^ mask;
+         mask <<= 1;
+    }
+    n = bitmatrix64_echelon_h(pa, 24, 48, 24);
+    pa += n;
+    n = 24 - n;
+    *ptrace = 0;
+    if (n == 0) return 0;
+    // TODO: Later: special treatment for n = 24 
+    res = xsp2co1_xspecial_conjugate(elem, 24, pa, 1);
+    if (res < 0) return res;
+    i = bitmatrix64_echelon_h(pa, n, 25, 1);
+    if (i) {
+        *ptrace = 0 - xsp2co1_leech2_count_type2(pa, n);
+    } else {
+        --pa; ++n; 
+    }
+    pa[0] = 0;
+    *ptrace += xsp2co1_leech2_count_type2(pa, n);
+    return 0;
+}
+
+
+// %%EXPORT px
+int32_t xsp2co1_trace_4096(uint64_t *elem, int32_t *ptrace)
+{
+    qstate12_type qs, qs1;
+    uint64_t data[26];
+    int32_t res, trace;
+
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs, &qs1, data, 26);
+    if (res < 0) return res;
+    return qstate12_mat_itrace(&qs1, ptrace);
+}
+
+
+// %%EXPORT px
+int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
+{
+    int8_t a[24][24];
+    int32_t res;
+    int_fast32_t i, j, acc;
+    res = xsp2co1_elem_to_leech_op(elem, (int8_t*)a);
+
+    acc = 0;
+    for (i = 0; i < 24; ++i) acc+= a[i][i];
+    if (acc & 7) return ERR_QSTATE12_SCALAR_OVFL;
+    ptrace[0] = acc >> 3; 
+
+    acc = 0;
+    for (i = 0; i < 24; ++i) {
+        for (j = 0; j < 24; ++j) acc+= a[i][j] * a[j][i];
+    }
+    if (acc & 63) return ERR_QSTATE12_SCALAR_OVFL;
+    ptrace[1] = acc >> 6; 
+
+    return (ptrace[0] & ptrace[1] & 1) ? ERR_QSTATE12_SCALAR_OVFL : 0;    
+}
+
+// %%EXPORT px
+int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
+{
+    int32_t res;
+    res = xsp2co1_traces_small(elem, ptrace);
+    if (res < 0) return res;
+    res = xsp2co1_trace_4096(elem, ptrace);
+    if (res < 0) return res;
+    res = xsp2co1_trace_98280(elem, ptrace); 
+    if (res < 0) return res;
+    if (ptrace[0] < 0) {
+        ptrace[0] = -ptrace[0]; 
+        ptrace[2] = -ptrace[2]; 
+    } else if (ptrace[0] == 0 && ptrace[2] < 0) {
+        ptrace[2] = -ptrace[2]; 
+    } 
+    return 0;    
+}
+
 
 
 // %%GEN ch

@@ -250,6 +250,8 @@ def test_matrix_power(verbose = 0):
                 if nqb < 3:
                     print("m =\n", m.complex())
                 print("\nTrace expected:",  tr_ref)
+                s, f = m._trace_factor()
+                print("Low level trace result:", s, hex(f))
                 print("Intermediate")
                 m1 = m.copy()
                 for i in range(nqb):

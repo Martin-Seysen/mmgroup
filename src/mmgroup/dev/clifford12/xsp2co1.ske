@@ -664,7 +664,7 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uin
     else for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial_nosign((uint32_t)ax[i]);
     }
-    res = qstate12_pauli_conjugate(&qs, n, ax, sign);
+    res = qstate12_pauli_conjugate(&qs1, n, ax, sign);
     if (res < 0) return res;
     if (sign) for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);

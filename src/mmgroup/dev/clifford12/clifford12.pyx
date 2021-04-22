@@ -36,9 +36,10 @@ QSTATE12_ERROR_STRINGS = {
  -6: "Bit matrix part Q of QStateMatrix is not symmetric",
  -7: "Bad row index for bit matrix in a QStateMatrix",
  -8: "Internal parameter error in a QStateMatrix",
- -9: "Overflow in scalar factor in a QStateMatrix",
+ -9: "Overflow or underflow in scalar factor in a QStateMatrix",
  -10: "A qubit in a ctrl-not gate cannot control itself",
  -11: "Shape mismatch in QStateMatrix comparison",
+ -12: "Scalar factor in QStateMatrix is not an integer",
  -101: "Shape mismatch in QStateMatrix operation",
  -102: "QStateMatrix is not invertible",
  -103: "QStateMatrix is not in the Pauli group",
@@ -303,6 +304,13 @@ cdef class QState12(object):
             return tr[0]
         return int(tr[0])
         
+
+    def _trace_factor(self):
+        cdef int32_t factor = 0
+        cdef int32_t res = cl.qstate12_mat_trace_factor(
+            &self.qs, &factor)
+        return res, factor
+
     def set_zero(self):
         """Set state matrix to zero"""
         self.qs.factor = self.qs.nrows = self.reduced = 0

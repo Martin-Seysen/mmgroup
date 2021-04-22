@@ -1611,7 +1611,24 @@ Correctness of the implementation of the Hadamard gate
 
 
 
+Computing the trace of a quadratic state matrix
+...............................................
 
+ We briefly explain the computation of the trace of a quadratic state 
+ matrix :math:`S` of shape :math:`(n, n)`. Such a matrix is considered 
+ as a mapping  :math:`\mathbb{F}_2^{n} \times \mathbb{F}_2^{n}
+ \rightarrow \mathbb{C}`. So there are :math:`n` qubits corresponding
+ to the rows and :math:`n` qubits corresponding the columns of the 
+ matrix.
+
+ For :math:`i = 0, \ldots, n-1` we apply a control not gate to the 
+ :math:`i`-th row qubit, controlled by the :math:`i`-th column qubit. 
+ This moves the diagonal entries of the matrix :math:`S` to 
+ row :math:`0`. 
+ 
+ Using the techniques described above we may restrict the modified
+ matrix to row 0, and sum up all entries of that row. This leads
+ to a scalar that has the value of the trace of  :math:`S`.
 
 """
 

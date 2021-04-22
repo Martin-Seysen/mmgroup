@@ -41,6 +41,7 @@
 *************************************************************************/
 
 #include <string.h>
+#include <math.h>
 /// @cond DO_NOT_DOCUMENT 
 #define CLIFFORD12_INTERN
 /// @endcond 
@@ -165,10 +166,11 @@ enum qstate12_error_type
     ERR_QSTATE12_BAD_ROW = -7,      ///< Bad row index for bit matrix 
     ERR_QSTATE12_INTERN_PAR = -8,    
        ///< Internal parameter error. Usually a bad row has been requested
-    ERR_QSTATE12_SCALAR_OVFL = -9,  ///< Overflow in scalar factor
+    ERR_QSTATE12_SCALAR_OVFL = -9,  ///< Overflow or underflow in scalar factor
     ERR_QSTATE12_CTRL_NOT = -10,    
        ///< Bad control_not gate. A qubit in a ctrl-not gate cannot control itself.
     ERR_QSTATE12_SHAPE_COMP = -11,  ///< Shape mismatch in comparing matrices
+    ERR_QSTATE12_SCALAR_INT = -12,  ///< Scalar factor is not an integer
 	
     ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
@@ -532,6 +534,114 @@ int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *
     return 0;
 }
 
+/*************************************************************************
+*** Operations on scalars
+*************************************************************************/
+
+// Although complex numbers have been invented more than 200 years
+// ago and standardized in C99 about 20 years ago, it is still too
+// annoying to deal with the peculiarites of the data type 
+// 'double complex' in the various compilers being used.
+// So we output an array of type double[] of real numbers of 
+// doubled length, where an adjacent pair of entries gives the
+// real and the imaginary part of a complex number. We let Python
+// do the conversion from that real array to a complex array. See:
+// 
+// https://stackoverflow.com/questions/2598734/numpy-creating-a-complex-array-from-2-real-ones
+
+
+
+
+/**
+  @brief Convert a scalar factor to a complex number
+
+  The function takes a scalar ``factor`` (as given by the 
+  component ``factor`` in the structure ``qstate12``) and
+  converts that factor to a complex number. The real part of 
+  the result is  returned in ``pcomplex[0]`` 
+  and the imaginary part in ``pcomplex[1]``.
+
+  Caution:
+
+  If bit 3 of ``factor`` is set then the function calculates 
+  the complex number 0.
+
+  The function returns:
+
+   4  if the result is complex, but not real.
+ 
+   3  if the result is real, but not rational.
+ 
+   2  if the result is rational, but not integral.
+
+   1  if the result is integral, but not  zero.
+
+   0  if the result is zero.
+
+   ERR_QSTATE12_SCALAR_OVFL in case of overflow or underflow
+
+*/
+// %%EXPORT p
+int32_t qstate12_factor_to_complex(int32_t factor, double *pcomplex)
+{
+    int phi = factor & 7, exp = factor >> 4;
+    double f;
+
+    static const int8_t  PHASES[8][2] = {
+        {1,0},  {1,1},   {0,1},  {-1,1}, 
+        {-1,0}, {-1,-1}, {0,-1}, {1,-1}
+    };  
+
+    pcomplex[0] = pcomplex[1] = 0.0;
+    if (factor & 8)  return 0;
+    exp -= phi & 1; 
+    f = (exp & 1) ? 1.414213562373095048801688724209 : 1.0;
+    f = ldexp(f, exp >> 1);
+    if (PHASES[phi][0]) pcomplex[0] = copysign(f, PHASES[phi][0]);
+    if (PHASES[phi][1]) pcomplex[1] = copysign(f, PHASES[phi][1]);
+    if (f >= HUGE_VAL || f == 0.0) return ERR_QSTATE12_SCALAR_OVFL;
+    if (phi & 3) return 4;
+    if (exp & 1) return 3;
+    return exp < 0 ? 2 : 1;    
+}
+
+
+
+/**
+  @brief Convert a scalar factor to a 32-bit integer
+  
+  The function takes a scalar ``factor`` (as given by the 
+  component ``factor`` in the structure ``qstate12``) and
+  converts that factor to an integer. That integer is 
+  stored in ``pi[0]``.
+
+  Caution:
+
+  If bit 3 of ``factor`` is set then the function calculates 
+  the integer zero.
+
+  The function returns:
+
+   1  if the result is integral, but not  zero.
+
+   0  if the result is zero.
+
+   ERR_QSTATE12_SCALAR_OVFL in case of overflow or underflow
+   
+   ERR_QSTATE12_SCALAR_INT  if the result is not an integer
+
+*/
+// %%EXPORT p
+int32_t qstate12_factor_to_int32(int32_t factor, int32_t *pi)
+{
+    *pi = 0;
+    if (factor & 8)  return 0;
+    if (factor < 0 || factor & 0x13) return ERR_QSTATE12_SCALAR_INT;
+    if (factor >= (62 << 4)) return ERR_QSTATE12_SCALAR_OVFL;
+    *pi = 1L << (factor >> 5);
+    if (factor & 4) *pi = -*pi;
+    return 1;   
+}
 
 
 
@@ -1451,52 +1561,31 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 // https://en.cppreference.com/w/c/numeric/complex
 
 
-// Although complex numbers have been invented more than 200 years
-// ago and standardized in C99 about 20 years ago, it is still too
-// annoying to deal with the peculiarites of the data type 
-// 'double complex' in the various compilers being used.
-// So we output an array of type double[] of real numbers of 
-// doubled length, where an adjacent pair of entries gives the
-// real and the imaginary part of a complex number. We let Python
-// do the conversion from that real array to a complex array. See:
-// 
-// https://stackoverflow.com/questions/2598734/numpy-creating-a-complex-array-from-2-real-ones
 
-
-
-/// @cond DO_NOT_DOCUMENT 
-
-static const int8_t  PHASES[8][2] = {
-   {1,0}, {1,1}, {0,1}, {-1,1}, 
-   {-1,0}, {-1,-1}, {0,-1}, {1,-1},
-};  
-
-
-#define SQRT2 1.414213562373095048801688724209L 
-
-static uint32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
+static int32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
+// Let ``c`` be the complex number ``qstate12_factor_to_complex(e)``.
+// We store ``c * (1 + 0j)**k)`` in ``(p_real[k], p_imag[k]``.
+// for  ``k = 0,...,3``.
 {
-    double f;
-    int i;
-    if (e >= 0) f = (double)(ONE << (e >> 5));
-    else f = 1.0 / (ONE << ((0x10 - (e & ~0xfLL)) >> 5));
-    if ((e & 0x10) && !(e & 1)) f *= SQRT2;
-    if (!(e & 0x10) && (e & 1)) f *= (1.0L / SQRT2);
-    for (i = 0; i < 4; ++i) {
-        p_real[i] = f * PHASES[(2*i + e) & 7][0];       
-        p_imag[i] = f * PHASES[(2*i + e) & 7][1];   
-    }        
-    if (e & 3) return 4;    // return 4 if entry 0 is complex
-    if (e & 0x10) return 3; // return 3 entry 0 is real and not rational
-    return (e >= 0) ? 1 : 2;  
-    // return 2 if entry 0 is rational
-    // return 1 if entry 0 an integer   
+     int32_t res = qstate12_factor_to_complex(e, p_real);
+     // Put (p_real, p_imag)[0] = complex result
+     p_imag[0] = p_real[1];
+     // Put (p_real, p_imag)[2] = - result
+     // We don't like a negative floatingg point zero
+     p_real[2] = p_real[0] ? -p_real[0] : 0;
+     p_imag[2] = p_imag[0] ? -p_imag[0] : 0;
+     // (p_real, p_imag)[1] = (0 + 1j) * result;
+     p_real[1] = p_imag[2];
+     p_imag[1] = p_real[0];
+     // (p_real, p_imag)[1] = (0 - 1j) * result;
+     p_real[3] = p_imag[0];
+     p_imag[3] = p_real[2];
+     return res;
 }
-
 
 static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
 {
-     return (qf_all & 1) ? 4 : res;
+     return (qf_all & 1 && res < 4) ? 4 : res;
 }
 
 
@@ -1556,7 +1645,7 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
     nrc = ncols + pqs->nrows - 1; 
     n_iterations = ONE << (pqs->nrows - 1); 
     mask = (ONE << ncols) - 1; 
-    res = set_complex_factors(pqs->factor, freal, fimag);
+    res = set_complex_factors(pqs->factor & FACTOR_MASK , freal, fimag);
    
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1, diag, index;
