@@ -159,12 +159,15 @@ class Xsp2_Co1_Word(AbstractGroupWord):
 
 def cocode_to_xsp2co1(g, c):
     res =  g.word_type(group = g)
-    chk_qstate12(xsp2co1_op_delta_pi(res._data, c.cocode, 0))
+    chk_qstate12(xsp2co1_elem_xspecial(res._data, c.value & 0xfff))
     return res
 
 def autpl_to_xsp2co1(g, aut):
     res =  g.word_type(group = g)
-    chk_qstate12(xsp2co1_op_delta_pi(res._data, aut.cocode, aut.perm_num))
+    a = np.zeros(2, dtype = uint32)
+    a[0] = 0x10000000 + (aut._cocode & 0xfff)   # tag 'd'
+    a[1] = 0x20000000 + aut._perm_num           # tag 'p'
+    chk_qstate12(xsp2co1_set_elem_word(res._data, a, 2))
     return res
 
 def mmgroup_to_xsp2co1(g, mm):
@@ -192,7 +195,7 @@ class Xsp2_Co1_Group(AbstractGroup):
     Depending on its type each parameter in **\*data** is  
     interpreted as follows:
 
-    .. table:: Legal types for constructor of class ``AutPL``
+    .. table:: Legal types for constructor of class ``Xsp2_Co1_Group``
       :widths: 25 75
 
       ===================== ==================================================

@@ -77,7 +77,7 @@ def conj_x_by_word(x, g_mm):
     return gen_leech2_op_word(x, w_g, len(w_g))
 
     
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_xsp2_conjugate(verbose = 0):
     """Test the conjugation of Pauli matrix with unitary matrix"""
     l0, l1, l2 = Xsp2_Co1(), Xsp2_Co1(('l', 1)),  Xsp2_Co1(('l', 2))
@@ -212,7 +212,7 @@ def check_leech_type(x, t_expected):
         #raise ValueError(err)
         
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_xsp2_type(verbose = 0):
     for ntest, (pl, cocode, vtype) in enumerate(type_data):
         x = xs_vector(pl, cocode)
@@ -236,7 +236,7 @@ def test_xsp2_type(verbose = 0):
 #####################################################################
 
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_leech2_self(fast = 1, verbose = 0):
     f = xsp2co1_leech2_count_type2 if fast else gen_leech2_count_type2
     a_type = np.uint64 if fast else np.uint32

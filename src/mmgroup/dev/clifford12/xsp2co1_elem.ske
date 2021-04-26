@@ -182,8 +182,11 @@ uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 *************************************************************************/
 
 
+static int32_t TAB_TRACE_98280[5] = {98280, 0, 4072, -24, -24};
+
+
 // %%EXPORT px
-int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace)
+int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
 {
     uint64_t data[25], *pa, mask = 0x1000001ULL;
     uint_fast32_t i, n;
@@ -202,7 +205,18 @@ int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace)
     n = 24 - n;
     *ptrace = 0;
     if (n == 0) return 0;
-    // TODO: Later: special treatment for n = 24 
+    if (use_table && n == 24) {
+        // Special treatment for n = 24, 
+        // i.e. elem is in extraspecial subgroup
+        int32_t v = xsp2co1_xspecial_vector(elem), vt;
+        if (v >= 0) {
+            vt = gen_leech2_type(v) >> 4;
+            if (vt == 0 || (vt >= 2 && vt <= 4)) {
+                *ptrace = TAB_TRACE_98280[vt];
+                return 0;
+            }
+        }
+    }
     res = xsp2co1_xspecial_conjugate(elem, 24, pa, 1);
     if (res < 0) return res;
     i = bitmatrix64_echelon_h(pa, n, 25, 1);
@@ -261,9 +275,9 @@ int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
     int32_t res;
     res = xsp2co1_traces_small(elem, ptrace);
     if (res < 0) return res;
-    res = xsp2co1_trace_4096(elem, ptrace);
+    res = xsp2co1_trace_4096(elem, ptrace + 2);
     if (res < 0) return res;
-    res = xsp2co1_trace_98280(elem, ptrace); 
+    res = xsp2co1_trace_98280(elem, ptrace + 3, 1); 
     if (res < 0) return res;
     if (ptrace[0] < 0) {
         ptrace[0] = -ptrace[0]; 

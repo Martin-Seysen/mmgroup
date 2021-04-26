@@ -169,7 +169,7 @@ def map_v3(v, g, expected = None, verbose = 1):
 #####################################################################
 
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_vector(verbose = 0):
     for ntest, (x4096, x24, g) in enumerate(create_test_vectors()):
         if verbose:
@@ -286,7 +286,7 @@ def conjugate_vector_testdata():
 
 
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_conjugate_mat24xi(verbose = 0):
     for g in conjugate_group_testdata():
         for x in conjugate_vector_testdata():
@@ -319,7 +319,7 @@ def create_test_elements():
         g2 = rand_element("xydplyplyplxydp")
         yield g1, g2
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_group(verbose = 0):
     unit = Xsp2_Co1()
     for ntest, (g1, g2) in enumerate(create_test_elements()):

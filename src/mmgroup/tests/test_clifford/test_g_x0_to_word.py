@@ -182,7 +182,7 @@ def make_testwords(ntests = 100, monomial = True):
 # Test function monomial_to_word
 #######################################################################
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_monomial_to_word(ntests = 10, verbose = 0):
     print("Test function test_monomial_to_word()")
     for i, w in enumerate(make_testwords()):
@@ -219,7 +219,7 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
 # Test function elem_to_word
 #######################################################################
 
-@pytest.mark.qstate
+@pytest.mark.xsp2co1
 def test_elem_to_word(ntests = 50, verbose = 0):
     print("Test function test_elem_to_word()")
     for i, w in enumerate(make_testwords(monomial=False)):
