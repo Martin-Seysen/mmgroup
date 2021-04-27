@@ -7,6 +7,7 @@ from random import randint #, shuffle, sample
 from functools import reduce
 from operator import __or__
 from multiprocessing import Pool
+from collections import defaultdict
 import time
 
 import numpy as np
@@ -19,6 +20,12 @@ from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 from mmgroup.clifford12 import xsp2co1_trace_98280
+from mmgroup.clifford12 import xsp2co1_trace_4096
+from mmgroup.clifford12 import xsp2co1_traces_small
+from mmgroup.clifford12 import xsp2co1_traces_all
+
+from mmgroup.tests.test_mm.check_monster_orders import ClassOrders
+from mmgroup.tests.test_mm.check_monster_orders import CharacterValues
 
 #####################################################################
 # Create test matrices
@@ -52,9 +59,9 @@ def xsp2xco1_v2type(vtype):
         raise ValueError("No Leech lattice vector of type", vtype)
 
 
-@pytest.mark.xsp2co1a
+@pytest.mark.xsp2co1
 def test_xsp2_count_table():
-    use_table = 0
+    use_table = 1
     table = [0] * 5
     for vtype in [0,2,3,4]:
         tr = np.zeros([2], dtype = np.int32)
@@ -64,7 +71,7 @@ def test_xsp2_count_table():
         for j in range(2):
             w = rand_xsp2co1_elem()
             elem_v1 = w**-1 * elem_v  * w
-            xsp2co1_trace_98280(elem_v1._data, tr[1:], use_table)
+            xsp2co1_trace_98280(elem_v1._data, tr[1:], 0)
             assert tr[1] == tr[0]
     print(table)
 
@@ -75,9 +82,54 @@ def test_xsp2_count_table():
 # Test conjugtion of extraspecial elements in group G_{x1}
 #####################################################################
 
-Co_1_ORDERS = set(list(range(1,17)) + 
-      [18,20,21,22,23,24,26,28,30,33,35,36,39,40,42,60])
-Gx0_ORDERS = set([x*y for x in Co_1_ORDERS for y in [1, 2, 4]])
+
+
+assert len(ClassOrders) == len(CharacterValues)
+
+CharacterDict = defaultdict(set)
+for order, char_value in zip(ClassOrders, CharacterValues):
+    CharacterDict[order].add(char_value)
+
+#print(CharacterDict)
+ 
+
+Xsp2_Co1_Element = type(Xsp2_Co1())
+
+def character(g, verbose = 0):
+    assert isinstance(g, Xsp2_Co1_Element)
+    a = np.zeros(4, dtype = np.int32)
+    res = xsp2co1_traces_all(g._data, a)
+    if verbose: print("Subcharacters", [int(x) for x in a])
+    assert res >= 0, res
+    chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
+    chi299 = (chi24**2 + chisq24) // 2 - 1
+    assert chi24 >= 0
+    if chi24 == 0: assert chi4096 >= 0
+    return chi299 + chi98260 + chi24 * chi4096
+
+
+def character_testcases():
+    data = [
+        [],
+        [("x", 0x1f4c), ("d", 0x375)],
+    ]
+    for d in data:
+        yield Xsp2_Co1(*d)
+    for i in range(100):
+        yield  rand_xsp2co1_elem()
+
+@pytest.mark.xsp2co1
+def test_xsp2_characters(verbose = 0):
+    if verbose:
+        print("Test character calculation in G_x0")
+    for n, g in enumerate(character_testcases()):
+        if verbose: print("Test %d, g=" % (n+1), g)
+        o = g.order()
+        good_orders = CharacterDict[o] 
+        if verbose: print("Order =", o, ", chars =", good_orders)
+        chi = character(g, verbose)
+        if verbose:  print("Character =", chi)
+        assert chi in good_orders, (o, chi, good_orders)
 
 
 

@@ -217,7 +217,7 @@ int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
             }
         }
     }
-    res = xsp2co1_xspecial_conjugate(elem, 24, pa, 1);
+    res = xsp2co1_xspecial_conjugate(elem, n, pa, 1);
     if (res < 0) return res;
     i = bitmatrix64_echelon_h(pa, n, 25, 1);
     if (i) {
@@ -249,24 +249,25 @@ int32_t xsp2co1_trace_4096(uint64_t *elem, int32_t *ptrace)
 // %%EXPORT px
 int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
 {
-    int8_t a[24][24];
+    int8_t a[576];
     int32_t res;
     int_fast32_t i, j, acc;
-    res = xsp2co1_elem_to_leech_op(elem, (int8_t*)a);
+    res = xsp2co1_elem_to_leech_op(elem, a);
+    if (res < 0) return res;
 
     acc = 0;
-    for (i = 0; i < 24; ++i) acc+= a[i][i];
+    for (i = 0; i < 24; ++i) acc+= a[25*i];
     if (acc & 7) return ERR_QSTATE12_SCALAR_OVFL;
     ptrace[0] = acc >> 3; 
 
     acc = 0;
     for (i = 0; i < 24; ++i) {
-        for (j = 0; j < 24; ++j) acc+= a[i][j] * a[j][i];
+        for (j = 0; j < 24; ++j) acc+= a[24*i+j] * a[24*j+i];
     }
     if (acc & 63) return ERR_QSTATE12_SCALAR_OVFL;
     ptrace[1] = acc >> 6; 
 
-    return (ptrace[0] & ptrace[1] & 1) ? ERR_QSTATE12_SCALAR_OVFL : 0;    
+    return ((ptrace[0] + ptrace[1]) & 1) ? ERR_QSTATE12_SCALAR_OVFL : 0;    
 }
 
 // %%EXPORT px
