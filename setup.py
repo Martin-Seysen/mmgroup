@@ -25,6 +25,7 @@ import shutil
 
 import setuptools
 from setuptools import setup, find_packages
+from collections import defaultdict
 from distutils.errors import *
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
 from build_ext_steps import BuildExtCmd
@@ -392,9 +393,18 @@ C_SOURCES_P = [
     "mm{P}_op_word",
 ]
 
+
+# Additions for the list C_SOURCES_P for spcific values p
+C_SOURCES_SPECIFIC_P = defaultdict(list)
+C_SOURCES_SPECIFIC_P.update( {
+    15: ["mm{P}_op_check_gx0"],
+} )
+
+
+
 def list_source_files(p):
     sources = [os.path.join(PXD_DIR, PYX_SOURCE_P.format(P = p))]
-    for f in C_SOURCES_P:
+    for f in C_SOURCES_P + C_SOURCES_SPECIFIC_P[p]:
          sources.append(os.path.join(C_DIR, f.format(P = p) + ".c"))
     return sources
 
@@ -404,7 +414,7 @@ for p in PRIMES:
         Extension("mmgroup.mm%d" % p,
             sources = list_source_files(p),
             #libraries=["m"] # Unix-like specific
-            include_dirs = [ C_DIR ], 
+            include_dirs = [ C_DIR ] , 
             library_dirs = [PACKAGE_DIR, C_DIR ],
             libraries = shared_libs_stage2, 
                 # for openmp add "libgomp" 

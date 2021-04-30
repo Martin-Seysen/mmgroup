@@ -148,6 +148,7 @@ import sys
 import os
 import re
 import collections
+from collections import defaultdict
 import warnings
 from numbers import Integral
 
@@ -198,8 +199,11 @@ C_FILE_SKELETONS = [
     "mm{P}_op_word",
 ]
 
-
-
+# Additions for the list C_FILE_SKELETONS for spcific values p
+C_FILE_SPECIFIC_SKEKETONS = defaultdict(list)
+C_FILE_SPECIFIC_SKEKETONS.update( {
+    15: ["mm{P}_op_check_gx0"],
+} )
 
 
 ##########################################################################
@@ -256,7 +260,7 @@ from cython.parallel cimport parallel
 cimport openmp
 
 from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t
-from libc.stdint cimport uint16_t
+from libc.stdint cimport uint64_t
 from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t
 
 
@@ -352,7 +356,7 @@ def make_c_h_pxd(p):
         ske_file = name.format(P = "") + ".ske"
         ske_path = os.path.join(SKE_DIR, ske_file)
         all_ske_files.append(ske_path)
-    for name in C_FILE_SKELETONS:
+    for name in C_FILE_SKELETONS + C_FILE_SPECIFIC_SKEKETONS[p]:
         ske_file = name.format(P = "") + ".ske"
         ske_path = os.path.join(SKE_DIR, ske_file)
         c_file = name.format(P = p) + ".c"

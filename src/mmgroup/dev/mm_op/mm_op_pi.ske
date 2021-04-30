@@ -71,17 +71,17 @@ static void pi24_n(
         // %%END IF
         p_dest[%{i}] = sgn_perm  ^ (
         // %%JOIN*  " |", ");"
-        // %%FOR* j in range(i * INT_FIELDS, (i+1) * INT_FIELDS)
-        // %%FOR* j2, j_mod in [(2 * j, j * FIELD_BITS % INT_BITS)]
+        // %%FOR* j in range(i * INT_FIELDS, min(24, (i+1) * INT_FIELDS))
+        // %%WITH* j2, j_mod  =  2 * j, j * FIELD_BITS % INT_BITS
             (((ps[pf[%{j2}]] >> pf[%{int:j2+1}]) & %{P}) << %{j_mod})
-        // %%END FOR   #  FOR j2, j_mod
+        // %%END WITH
         // %%END FOR   #  FOR j
         // %%END FOR   #  FOR i
         // %%FOR* i in range(V24_INTS_USED, V24_INTS)
         p_dest[%{i}] = 0;
         // %%END FOR
         p_dest +=  %{V24_INTS};      
-        }
+    }
   // %%END IF # GENERATE_CODE
 }
 

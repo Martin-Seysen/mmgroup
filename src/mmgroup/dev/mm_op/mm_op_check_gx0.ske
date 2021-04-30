@@ -1,0 +1,98 @@
+// %%COMMENT
+// TODO: comment this!!!!
+
+#include "clifford12.h"
+#include "mm_op%{P}.h"   
+   
+
+// %%IF P != 15
+#error File mm_op_check_gx0.c works for modulus P = 15 only!
+// %%END IF 
+
+// %%IF INT_BITS != 64
+#error File mm_op_check_gx0.c works in the 64-bit version only!
+// %%END IF 
+
+enum tag_offsets {
+    OFS_NORM_A = 0,
+    OFS_DIAG_VA = 1,
+    OFS_WATERMARK_PERM = 2,
+    OFS_TAGS_Y = 26,
+    OFS_SOLVE_Y = 37,
+    OFS_TAGS_X = 48,
+    OFS_SOLVE_X = 72,
+    OFS_TAG_SIGN = 96,
+};
+
+
+// %%EXPORT px
+uint32_t mm_op%{P}_norm_A(uint64_t *v)
+{
+    uint64_t w;
+    uint_fast32_t i, a[16], norm;
+
+    for (i = 0; i < 16; ++i) a[i] = 0;
+    for (i = 0; i < 48; i += 2) {
+        w = v[i];
+        // %%FOR j in range(0, 64, 4)
+        ++a[(w >> %{j}) & 0xf];
+        // %%END FOR
+        w = v[i+1];
+        // %%FOR j in range(0, 32, 4)
+        ++a[(w >> %{j}) & 0xf];
+        // %%END FOR
+    }
+    norm = a[1] + a[14];
+    // %%FOR j in range(2,8)
+    norm += (a[%{j}] + a[%{int:15-j}]) * %{int:(j*j)%15};
+    // %%END FOR
+    return norm % 15;
+}
+
+
+
+
+
+
+// %%EXPORT px
+uint32_t mm_op%{P}_check_in_gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+{
+     uint64_t a[48], w;
+     int32_t res, v_y;
+     uint_fast32_t w3, w_type4, i, len, perm_num;
+
+     if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
+
+     w3 = (uint32_t)leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
+     if (w3 == 0) return 0x102;
+     w_type4 = (uint32_t)gen_leech3to2_type4(w3);
+     if (w_type4 == 0) return 0x103;
+
+     res = gen_leech2_reduce_type4(w_type4, g);
+     if (res < 0) return res;
+     len = res;
+
+     for (i = 0; i < 48; ++i) a[i] = v[i];
+     mm_op%{P}_word_tag_A(a, g, len, 1);
+     
+     res = leech3matrix_watermark_perm_num(%{P}, 
+         tags + OFS_WATERMARK_PERM, a);
+     if (res < 0) return 0x104;
+     perm_num = res;
+     if (perm_num) {
+         g[len] = 0xA0000000 + perm_num;
+         mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         len += 1;
+     }
+
+     v_y = mm_aux_mmv_extract_sparse_signs(%{P}, a, 
+         tags + OFS_TAGS_Y, 11);
+     if (v_y < 0) return 0x105;
+
+     return len;
+}
+
+
+
+
+

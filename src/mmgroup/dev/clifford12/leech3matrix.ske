@@ -399,9 +399,17 @@ int32_t leech2matrix_add_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64
  
  The function returns the solution ``w`` of the equation
  ``w * A = v``.
+
+ Caution:
+
+ Here ``m`` is of of type ``uint32_t *``, but the corresponding
+ parameter in function ``leech2matrix_add_eqn`` is of type
+ ``uint64_t *``. This simplifies the use of this function in
+ most pplications. 
+  
 */
 // %%EXPORT px
-uint64_t leech2matrix_solve_eqn(uint64_t *m, uint32_t ncols, uint64_t v)
+uint32_t leech2matrix_solve_eqn(uint32_t *m, uint32_t ncols, uint64_t v)
 {
     uint_fast32_t row = 0;
     uint64_t mask = ONE, w = 0;
@@ -410,7 +418,7 @@ uint64_t leech2matrix_solve_eqn(uint64_t *m, uint32_t ncols, uint64_t v)
         w ^=  (v & mask) ? m[row] : 0; 
         mask <<= 1;
     }
-    return  w & (mask - 1);     
+    return  (uint32_t)(w & (mask - 1));     
 }
 
 

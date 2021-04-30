@@ -226,7 +226,8 @@ def one_test_leech2matrix_eqn(n, verbose = 0):
             l_bad = ml[0] ^ ml[3] ^ ml[6] ^ ml[9]
             assert leech2matrix_add_eqn(m, rows, n, l_bad) == 0
     v = randint(0, (1 << n) - 1) 
-    w = leech2matrix_solve_eqn(m, n, v)
+    m32 = np.array(m, dtype = np.uint32)
+    w = leech2matrix_solve_eqn(m32, n, v)
     if verbose:
         print("inv =", [hex(int(x)) for x in m])
         print("v =", hex(v), ";", hex(w), " * m = v" )

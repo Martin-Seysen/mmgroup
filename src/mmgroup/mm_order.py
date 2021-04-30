@@ -25,6 +25,7 @@ from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
 from mmgroup.mm15 import op_omega as mm_op15_omega 
+from mmgroup.mm15 import op_norm_A as mm_op15_norm_A 
 
 
 
@@ -36,8 +37,20 @@ assert  MMV15.group == MM
 
 
 ORDER_VECTOR = None
-DIAG_VA = TAGS_Y = TAGS_X = TAG_SIGN = None
-WATERMARK_PERM = SOLVE_X = SOLVE_Y = None
+ORDER_TAGS = None
+
+#DIAG_VA = TAGS_Y = TAGS_X = TAG_SIGN = None
+#WATERMARK_PERM = SOLVE_X = SOLVE_Y = None
+
+
+OFS_NORM_A = 0
+OFS_DIAG_VA = 1
+OFS_WATERMARK_PERM = 2
+OFS_TAGS_Y = 26
+OFS_SOLVE_Y = 37
+OFS_TAGS_X = 48
+OFS_SOLVE_X = 72
+OFS_TAG_SIGN = 96
 
 
 #######################################################################
@@ -106,8 +119,7 @@ def map_x(x_index):
 
 
 def compute_order_vector(recompute = False, verbose = 0):
-    global ORDER_VECTOR, DIAG_VA, TAGS_Y, TAGS_X, TAG_SIGN 
-    global WATERMARK_PERM, SOLVE_Y, SOLVE_X
+    global  ORDER_VECTOR, ORDER_TAGS
 
     try:
         assert not recompute
@@ -126,7 +138,6 @@ def compute_order_vector(recompute = False, verbose = 0):
     )
     assert ORDER_VECTOR is not None
     OV = ORDER_VECTOR.data
-    DIAG_VA = order_vector_data.DIAG_VA
     TAGS_Y = np.array(order_vector_data.TAGS_Y, dtype = np.uint32) 
     TAGS_X = np.array(order_vector_data.TAGS_X, dtype = np.uint32)
     TAG_SIGN =  np.array(order_vector_data.TAG_SIGN, dtype = np.uint32) 
@@ -142,7 +153,8 @@ def compute_order_vector(recompute = False, verbose = 0):
         nrows += leech2matrix_add_eqn(SOLVE_YT, nrows, 11, eqn)
         #print(i, hex(y), hex(eqn), nrows)
     assert nrows == 11, nrows
-    SOLVE_Y = bitmatrix64_t(SOLVE_YT, 24)
+    SOLVE_Y = list(bitmatrix64_t(SOLVE_YT, 11))
+    assert len(SOLVE_Y) == 11
     assert mm_aux_mmv_extract_sparse_signs(15, OV, TAGS_Y, 11) == 0
     
     SOLVE_XT = np.zeros(24, dtype = np.uint64)
@@ -153,9 +165,17 @@ def compute_order_vector(recompute = False, verbose = 0):
         nrows += leech2matrix_add_eqn(SOLVE_XT, nrows, 24, eqn)
         #print("SOLVE_XT", i, hex(x), hex(eqn), nrows)
     assert nrows == 24, nrows
-    SOLVE_X = bitmatrix64_t(SOLVE_XT, 24)
-    #for i in range(24): print("MAT_X", i, "%08x" %(int(SOLVE_X[i]) % 2**32))
-    assert mm_aux_mmv_extract_sparse_signs(15, OV, TAGS_X, 24) == 0
+    SOLVE_X = list(bitmatrix64_t(SOLVE_XT, 24))
+    
+    # Concatenate computed lists to the global numpy array 'ORDER_TAGS'
+    ORDER_TAGS = np.array(sum(map(list, [
+        [mm_op15_norm_A(OV), order_vector_data.DIAG_VA], 
+        WATERMARK_PERM, TAGS_Y, SOLVE_Y, TAGS_X, SOLVE_X, [TAG_SIGN] 
+    ]), []), dtype = np.uint32)
+    assert len(ORDER_TAGS) == 97, len(ORDER_TAGS)
+    t0 = mm_aux_mmv_extract_sparse_signs(
+        15, OV, ORDER_TAGS[OFS_TAGS_X:], 24)
+    assert t0 == 0
 
 
 def get_order_vector(recompute = False, verbose = 0):
@@ -264,58 +284,66 @@ def check_mm_in_g_x0(g):
     
     ``g`` must be an instance of class 
     ``mmgroup.mm_group.MMGroupWord``.
-   
-    Not yet tested!!!
-    
     """
     global err_in_g_x0
+    err_in_g_x0 = 0
     assert isinstance(g, MMGroupWord)
     v = get_order_vector().data
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op15_copy(v, w)
-    mm_op15_word(w, g.data, len(g), 1, work)
+    res = mm_op15_word(w, g.data, len(g), 1, work)
+    assert res == 0
     len_g1 = 0
     g1i = np.zeros(11, dtype = np.uint32)
-    w3 = leech3matrix_kernel_vector(15, w.data, DIAG_VA)
-    if w3 == 0: 
+    if mm_op15_norm_A(w.data) != ORDER_TAGS[OFS_NORM_A]:
         err_in_g_x0 = 1
+        return None        
+    w3 = leech3matrix_kernel_vector(15, w.data, ORDER_TAGS[OFS_DIAG_VA])
+    if w3 == 0: 
+        err_in_g_x0 = 2
         return None
     w_type4 = gen_leech3to2_type4(w3)
     if w_type4 == 0: 
-        err_in_g_x0 = 2
+        err_in_g_x0 = 3
         return None
     wA = np.array(w[:2*24], copy = True)
     len_g1 = gen_leech2_reduce_type4(w_type4, g1i)
-    assert len_g1 >= 0 
-    mm_op15_word_tag_A(wA, g1i, len_g1, 1)
-    perm_num = leech3matrix_watermark_perm_num(15, WATERMARK_PERM, wA)
+    assert 0 <= len_g1 <= 6 
+    res = mm_op15_word_tag_A(wA, g1i, len_g1, 1)
+    assert res == 0
+    perm_num = leech3matrix_watermark_perm_num(15, 
+       ORDER_TAGS[OFS_WATERMARK_PERM:], wA)
     if perm_num < 0: 
-        err_in_g_x0 = 3
-        return None
-    if perm_num > 0:
-        g1i[len_g1] = 0xA0000000 + perm_num
-        mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
-        len_g1 += 1
-    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, TAGS_Y, 11)
-    if v_y < 0:
         err_in_g_x0 = 4
         return None
-    y = leech2matrix_solve_eqn(SOLVE_Y, 11, v_y)
+    if perm_num > 0:
+        g1i[len_g1] = 0xA0000000 + perm_num 
+        res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
+        assert res  == 0
+        len_g1 += 1
+    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, 
+        ORDER_TAGS[OFS_TAGS_Y:], 11)
+    if v_y < 0:
+        err_in_g_x0 = 5
+        return None
+    y = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_Y:], 11, v_y)
     if y > 0:
         g1i[len_g1] = 0xC0000000 + y
         mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
         len_g1 += 1
     if (wA != v[:2*24]).all():
-        err_in_g_x0 = 5
-        return None
-    mm_op15_word(w, g1i, len_g1, 1, work)
-    v_x = mm_aux_mmv_extract_sparse_signs(15, w, TAGS_X, 24)
-    #print("v_x", hex(v_x))
-    if v_x < 0:
         err_in_g_x0 = 6
         return None
-    x = leech2matrix_solve_eqn(SOLVE_X, 24, v_x)
+    res = mm_op15_word(w, g1i, len_g1, 1, work)
+    assert res == 0
+    v_x = mm_aux_mmv_extract_sparse_signs(15, w, 
+        ORDER_TAGS[OFS_TAGS_X:], 24)
+    #print("v_x", hex(v_x))
+    if v_x < 0:
+        err_in_g_x0 = 7
+        return None
+    x = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_X:], 24, v_x)
     #print("x", hex(x), "theta", hex(ploop_theta(x >> 12)))
     d = (x ^ ploop_theta(x >> 12)) & 0xfff
     x = (x >> 12) & 0xfff 
@@ -327,18 +355,20 @@ def check_mm_in_g_x0(g):
     if d > 0:
         g1i[len_g1 + len_g1_new] = 0x90000000 + d
         len_g1_new += 1
-    mm_op15_word(w, g1i[len_g1:], len_g1_new, 1, work)    
+    res = mm_op15_word(w, g1i[len_g1:], len_g1_new, 1, work)  
+    assert res == 0   
     len_g1 += len_g1_new
-    sign = mm_aux_mmv_extract_sparse_signs(15, w, TAG_SIGN, 1)
+    sign = mm_aux_mmv_extract_sparse_signs(15, w, 
+        ORDER_TAGS[OFS_TAG_SIGN:], 1)
     if sign < 0:
-        err_in_g_x0 = 7
+        err_in_g_x0 = 8
         return None
     if sign:
         mm_op15_omega(w, sign << 12) 
         g1i[len_g1] = 0xB0001000 
         len_g1 += 1
     if mm_op15_compare(v, w):
-        err_in_g_x0 = 8
+        err_in_g_x0 = 9
         return None
     g._extend(11)
     g.length = len_g1
