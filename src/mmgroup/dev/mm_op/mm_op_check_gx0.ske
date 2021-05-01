@@ -55,11 +55,11 @@ uint32_t mm_op%{P}_norm_A(uint64_t *v)
 
 
 // %%EXPORT px
-uint32_t mm_op%{P}_check_in_gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
      uint64_t a[48], w;
      int32_t res, v_y;
-     uint_fast32_t w3, w_type4, i, len, perm_num;
+     uint_fast32_t w3, w_type4, i, len, perm_num, y;
 
      if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
 
@@ -88,6 +88,14 @@ uint32_t mm_op%{P}_check_in_gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint3
      v_y = mm_aux_mmv_extract_sparse_signs(%{P}, a, 
          tags + OFS_TAGS_Y, 11);
      if (v_y < 0) return 0x105;
+     y = leech2matrix_solve_eqn(tags + OFS_SOLVE_Y, 11, v_y);
+     if (y > 0) {
+         g[len] = 0xC0000000 + y;
+         mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         len += 1;
+     }
+
+     if (mm_op%{P}_compare_len(v, a, 48)) return 0x106;
 
      return len;
 }

@@ -236,7 +236,7 @@ int32_t xsp2co1_trace_4096(uint64_t *elem, int32_t *ptrace)
 {
     qstate12_type qs, qs1;
     uint64_t data[26];
-    int32_t res, trace;
+    int32_t res;
 
     res = xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;

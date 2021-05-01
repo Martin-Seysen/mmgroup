@@ -17,15 +17,14 @@ uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 // %%EXPORT px
-uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
-//  Compare two vectors of the monster group representation modulo %{P}..
-//  Comparison is done modulo %{P}.
+uint32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
+//  Compare parts of two vectors of the monster group representation 
+//  modulo %{P}. Two vectors of ``len`` integers of type
+//  ``uint_mmv_t`` are compared modulo %{P}. 
 //  The function returns 0 in case of equality and 1 otherwise.
-//  Warning: This function has not yet been tested!
 {
-    uint_fast32_t len = %{MMV_INTS};
     uint_mmv_t a, b, t, c;
-    do {
+    while (len--) {
         a = *mv1++;
         b = *mv2++;
         // Next we compare integers a and b modulo p. 
@@ -41,8 +40,18 @@ uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
         t &= a;
         t = (t ^ (t >> 1)) & %{smask:P>>1}; // t = 0 iff old t in [0,p]
         if (c | t) return 1;
-    } while (--len);
+    }
     return 0; 
+}
+
+
+// %%EXPORT px
+uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
+//  Compare two vectors of the monster group representation modulo %{P}..
+//  Comparison is done modulo %{P}.
+//  The function returns 0 in case of equality and 1 otherwise.
+{
+    return mm_op%{P}_compare_len(mv1, mv2, %{MMV_INTS}); 
 }
    
     

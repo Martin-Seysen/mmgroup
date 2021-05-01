@@ -257,7 +257,7 @@ uint32_t gen_xi_leech_to_short(uint32_t x)
                 y1 = mat24_lsbit24(cocodev); 
                 cocodev ^= 1 << y1;  
                 y2 = mat24_lsbit24(cocodev); 
-                if (cocodev != (1 << y2) || y1 >= 24)  return 0;
+                if (cocodev != (1UL << y2) || y1 >= 24)  return 0;
                 code = 384 * (w & 2) + (y2 << 5) + y1;
                 box = 1;
                 break;
@@ -438,7 +438,7 @@ void gen_xi_invert_table(uint16_t *ptab, uint32_t len, uint32_t ncols, uint16_t 
     for (i = 0; i < len; ++i) {
         r = ptab[i];
         if ((i & 31) < ncols && (r & 0x7fff) < len_res) {
-            pres[r & 0x7fff] = i | (r & 0x8000);
+            pres[r & 0x7fff] = (uint16_t)(i | (r & 0x8000));
         }
     }
 }

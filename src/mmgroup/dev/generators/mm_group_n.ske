@@ -486,9 +486,7 @@ uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
 // to store at least   l1 + 2 * abs(e) * l2   entries of type 
 // uint32_t. Here the user must provide sufficient space!
 {
-
-    uint_fast32_t round, i;
-    int32_t i_start = 0, i_stop = l2, i_step = 1;
+    int32_t i_start = 0, i_stop = l2, i_step = 1, round, i;
     uint32_t sign = 0;
     uint32_t gn[5], pending;
     l1 =  mm_group_split_word_n(w1, l1, gn);
