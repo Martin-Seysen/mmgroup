@@ -14,6 +14,7 @@ from mmgroup.generators import mm_group_n_mul_element
 from mmgroup.generators import mm_group_n_reduce_word 
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
+from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import uint64_parity
 from mmgroup.clifford12 import leech3matrix_kernel_vector
 from mmgroup.clifford12 import leech3matrix_watermark
@@ -27,6 +28,8 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
 from mmgroup.mm15 import op_omega as mm_op15_omega 
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A 
+from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
+from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 
 
@@ -275,6 +278,9 @@ err_in_g_x0 = 0
 
 def find_in_Q_x0(w):
     global err_in_g_x0
+    if FAST:
+        v = get_order_vector().data
+        res = mm_op15_find_in_Qx0(w, ORDER_TAGS, v)
     w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
         ORDER_TAGS[OFS_TAGS_X:], 24)
     if w_x < 0:
@@ -303,7 +309,7 @@ def find_in_G_x0(w):
     g1i = np.zeros(11, dtype = np.uint32)
     if FAST:
         v = get_order_vector().data
-        res =  mm_op15_check_in_Gx0(w, ORDER_TAGS, v, g1i)
+        res =  mm_op15_find_in_Gx0(w, ORDER_TAGS, v, g1i)
         assert res >= 0
         if res >= 0x100:
             err_in_g_x0 = res - 0x100
@@ -378,6 +384,19 @@ def check_mm_in_g_x0(g):
     mm_op15_copy(v, w)
     res = mm_op15_word(w.data, g.data, len(g), 1, work)
     assert res == 0
+    if FAST:
+        g1 = np.zeros(11, dtype = np.uint32)
+        res = chk_qstate12(mm_op15_check_in_Gx0(w, ORDER_TAGS, v, g1))
+        if res >= 0x100:
+            err_in_g_x0 = res - 0x100
+            return None
+        assert res < 11
+        g._extend(res)
+        g.length = res
+        g._data[:res] = g1[:res]
+        g.reduced = 0
+        g.reduce()
+        return g
 
     g1i = find_in_G_x0(w)
     if g1i is None:

@@ -1,6 +1,9 @@
 // %%COMMENT
 // TODO: comment this!!!!
 
+#include <malloc.h>
+
+#include "mat24_functions.h"
 #include "clifford12.h"
 #include "mm_op%{P}.h"   
    
@@ -55,55 +58,119 @@ uint32_t mm_op%{P}_norm_A(uint64_t *v)
 
 
 // %%EXPORT px
-uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
-     uint64_t a[48], w3;
-     int32_t res, v_y;
-     uint_fast32_t w_type4, i, len, perm_num, y;
+    uint64_t a[48], w3;
+    int32_t res, v_y;
+    uint_fast32_t w_type4, i, len, perm_num, y;
 
-     if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
+    if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
 
-     w3 = leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
-     if (w3 == 0) return 0x102;
-     w_type4 = (uint_fast32_t)(gen_leech3to2_type4(w3));
-     if (w_type4 == 0) return 0x103;
+    w3 = leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
+    if (w3 == 0) return 0x102;
+    w_type4 = (uint_fast32_t)(gen_leech3to2_type4(w3));
+    if (w_type4 == 0) return 0x103;
 
-     res = gen_leech2_reduce_type4(w_type4, g);
-     if (res < 0) return res;
-     len = res;
+    res = gen_leech2_reduce_type4(w_type4, g);
+    if (res < 0) return res;
+    len = res;
 
-     for (i = 0; i < 48; ++i) a[i] = v[i];
-     res = mm_op%{P}_word_tag_A(a, g, len, 1);
-     if (res < 0) return res;
+    for (i = 0; i < 48; ++i) a[i] = v[i];
+    res = mm_op%{P}_word_tag_A(a, g, len, 1);
+    if (res < 0) return res;
      
-     res = leech3matrix_watermark_perm_num(%{P}, 
-         tags + OFS_WATERMARK_PERM, a);
-     if (res < 0) return 0x104;
-     perm_num = res;
-     if (perm_num) {
-         g[len] = 0xA0000000 + perm_num;
-         res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
-         if (res < 0) return res;
-         len += 1;
-     }
+    res = leech3matrix_watermark_perm_num(%{P}, 
+        tags + OFS_WATERMARK_PERM, a);
+    if (res < 0) return 0x104;
+    perm_num = res;
+    if (perm_num) {
+        g[len] = 0xA0000000 + perm_num;
+        res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+        if (res < 0) return res;
+        len += 1;
+    }
 
-     v_y = mm_aux_mmv_extract_sparse_signs(%{P}, a, 
-         tags + OFS_TAGS_Y, 11);
-     if (v_y < 0) return 0x105;
-     y = leech2matrix_solve_eqn(tags + OFS_SOLVE_Y, 11, v_y);
-     if (y > 0) {
-         g[len] = 0xC0000000 + y;
-         res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
-         if (res < 0) return res;
-         len += 1;
-     }
+    v_y = mm_aux_mmv_extract_sparse_signs(%{P}, a, 
+        tags + OFS_TAGS_Y, 11);
+    if (v_y < 0) return 0x105;
+    y = leech2matrix_solve_eqn(tags + OFS_SOLVE_Y, 11, v_y);
+    if (y > 0) {
+        g[len] = 0xC0000000 + y;
+        res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+        if (res < 0) return res;
+        len += 1;
+    }
 
-     if (mm_op%{P}_compare_len(v0, a, 48)) return 0x106;
+    if (mm_op%{P}_compare_len(v0, a, 48)) return 0x106;
 
-     return len;
+    return len;
 }
 
 
 
+// %%EXPORT px
+uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0)
+{
+    int32_t v_x, sign;
+    uint_fast32_t x, v_sign;
+    uint32_t aa;
+
+    v_x = mm_aux_mmv_extract_sparse_signs(15, v, tags + OFS_TAGS_X, 24);
+    if (v_x < 0) return 0x107;
+
+    x = leech2matrix_solve_eqn(tags + OFS_SOLVE_X, 24, v_x) &  0xffffff;
+    v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
+    aa = tags[OFS_TAG_SIGN] ^ (v_sign << 14);
+    sign = mm_aux_mmv_extract_sparse_signs(15, v, &aa, 1);
+    if (v_x < 0) return 0x107;
+
+    sign ^= uint64_parity(x & (x >> 12) & 0x7ff);
+    x ^=  (sign & 1) << 24;
+    x ^= mat24_ploop_theta(x >> 12);
+    return x;   
+}
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+{
+    int32_t res, len, i;
+    uint64_t *w = NULL, *work;
+    uint_fast32_t x, tmp;
+
+    res = mm_op%{P}_find_in_Gx0(v, tags, v0, g);
+    if (res >= 0x100 || res < 0) return res;
+    len = res;
+
+    w = calloc(2 * %{MMV_INTS}, sizeof(uint64_t));
+    if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
+    work = w + %{MMV_INTS};
+    mm_op15_copy(v, w);
+    res = mm_op15_word(w, g, len, 1, work);
+    if (res < 0) goto done;
+
+    res = mm_op%{P}_find_in_Qx0(w, tags, v0);
+    if (res < 0) goto done;
+    x = res;
+    g[len] = 0x90000000 + (x & 0xfff); 
+    g[len + 1] = 0xB0000000 + ((x >> 12) & 0x1fff);
+
+    res = mm_op15_word(w, g + len, 2, 1, work);  
+    if (res < 0) goto done;
+    res = mm_op15_compare(w, v0);
+    if (res) {
+        res = 0x209;
+    } else {
+        res = len = len + 2;
+        for (i = 0; i < len >> 1; ++i) {
+            tmp = g[i]; g[i] = g[len-1-i]; g[len-1-i] = tmp; 
+        }
+        for (i = 0; i < len; ++i) g[i] ^= 0x80000000;        
+    }
+    
+done:
+    if (w != NULL) free(w);
+    return res;    
+}
 
 

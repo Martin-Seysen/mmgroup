@@ -49,7 +49,7 @@ def in_gx0_testdata():
         assert o & 1 == 0
         yield g ** (o >> 1), True
     # Yield some elements of ``G_x0``.
-    for n in range(500):
+    for n in range(10):
         for i in range(2,5):
             yield MM(*[(tag, 'n') for tag in "xydpl"*i]), True
     
