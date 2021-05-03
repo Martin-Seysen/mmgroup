@@ -1010,14 +1010,14 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
     uint_fast32_t i, v1 = 0, t;
     uint32_t sp1[32];
 
-    if (mm_aux_bad_p(p)) return 0-1ULL;
-    if (length > 31) return 0-1ULL;
+    if (mm_aux_bad_p(p)) return -1L;
+    if (length > 31) return -1L;
     for (i = 0; i < length; ++i) sp1[i] = sp[i] & 0xffffff00UL;
     mm_aux_mmv_extract_sparse(p, mv, sp1, length);
     for (i = 0; i < length; ++i) {
-        if ((sp1[i] & p) == 0) return 0-1ULL;
+        if ((sp1[i] & p) == 0) return -1L;
         t = (sp[i] ^ sp1[i]) & p;
-        if ((t != 0) && (t != p)) return 0-1ULL;
+        if ((t != 0) && (t != p)) return -1L;
         v1 |= (t & 1) << i;
     }
     return (int32_t)v1;

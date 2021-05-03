@@ -1561,6 +1561,7 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 // https://en.cppreference.com/w/c/numeric/complex
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static int32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
 // Let ``c`` be the complex number ``qstate12_factor_to_complex(e)``.

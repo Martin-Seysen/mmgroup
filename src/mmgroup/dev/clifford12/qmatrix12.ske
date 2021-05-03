@@ -909,7 +909,7 @@ int32_t qstate12_pauli_matrix(qstate12_type *pqs, uint32_t nqb, uint64_t v)
   The function returns the product ``v1 * v2`` encoded in the same
   way.
 */
-// %%EXPORT p
+// %%EXPORT px
 uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
 // Yet to be documented!!
 {
@@ -936,7 +936,7 @@ uint64_t qstate12_pauli_vector_mul(uint32_t nqb, uint64_t v1, uint64_t v2)
   ``qstate12_pauli_vector_exp(nqb, v1, 3)`` returns the inverse
   of ``v1``.
 */
-// %%EXPORT p
+// %%EXPORT px
 uint64_t qstate12_pauli_vector_exp(uint32_t nqb, uint64_t v, uint32_t e)
 {
     uint64_t s = 0;

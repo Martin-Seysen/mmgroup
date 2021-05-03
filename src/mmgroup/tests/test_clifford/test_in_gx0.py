@@ -36,7 +36,7 @@ def in_gx0_testdata():
         g = [('p', 'r'), ('y', 'r'), ('l', e[0]), ('t', e[1]), ('l', e[2]),
              ('p', 'r'), ('y', 'r'), ('x', 'r'), ('d', 'r'), ]
         yield  MM(*g), False
-    # Yield some less obvous examples. Let ``d`` be a random 2A 
+    # Yield some less obvious examples. Let ``d`` be a random 2A 
     # involution and ``z`` be the 2B involution in the center of
     # ``G_x0``. Then ``g = z * d`` has even order ``o``, and we 
     # yield ``g ** (o/2)``, which is in ``G_x0``.
@@ -49,7 +49,7 @@ def in_gx0_testdata():
         assert o & 1 == 0
         yield g ** (o >> 1), True
     # Yield some elements of ``G_x0``.
-    for n in range(5):
+    for n in range(500):
         for i in range(2,5):
             yield MM(*[(tag, 'n') for tag in "xydpl"*i]), True
     
@@ -76,6 +76,5 @@ def test_in_gx0(verbose = 0):
             assert g1 is None
         if g1:
             assert g == g1 
-            print("in G_x0", g1)
             
      

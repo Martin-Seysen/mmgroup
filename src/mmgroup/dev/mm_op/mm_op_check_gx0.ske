@@ -57,15 +57,15 @@ uint32_t mm_op%{P}_norm_A(uint64_t *v)
 // %%EXPORT px
 uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
-     uint64_t a[48], w;
+     uint64_t a[48], w3;
      int32_t res, v_y;
-     uint_fast32_t w3, w_type4, i, len, perm_num, y;
+     uint_fast32_t w_type4, i, len, perm_num, y;
 
      if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
 
-     w3 = (uint32_t)leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
+     w3 = leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
      if (w3 == 0) return 0x102;
-     w_type4 = (uint32_t)gen_leech3to2_type4(w3);
+     w_type4 = (uint_fast32_t)(gen_leech3to2_type4(w3));
      if (w_type4 == 0) return 0x103;
 
      res = gen_leech2_reduce_type4(w_type4, g);
@@ -73,7 +73,8 @@ uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint3
      len = res;
 
      for (i = 0; i < 48; ++i) a[i] = v[i];
-     mm_op%{P}_word_tag_A(a, g, len, 1);
+     res = mm_op%{P}_word_tag_A(a, g, len, 1);
+     if (res < 0) return res;
      
      res = leech3matrix_watermark_perm_num(%{P}, 
          tags + OFS_WATERMARK_PERM, a);
@@ -81,7 +82,8 @@ uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint3
      perm_num = res;
      if (perm_num) {
          g[len] = 0xA0000000 + perm_num;
-         mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         if (res < 0) return res;
          len += 1;
      }
 
@@ -91,11 +93,12 @@ uint32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint3
      y = leech2matrix_solve_eqn(tags + OFS_SOLVE_Y, 11, v_y);
      if (y > 0) {
          g[len] = 0xC0000000 + y;
-         mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
+         if (res < 0) return res;
          len += 1;
      }
 
-     if (mm_op%{P}_compare_len(v, a, 48)) return 0x106;
+     if (mm_op%{P}_compare_len(v0, a, 48)) return 0x106;
 
      return len;
 }

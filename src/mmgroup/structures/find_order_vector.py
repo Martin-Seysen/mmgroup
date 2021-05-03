@@ -420,10 +420,9 @@ def eqn_system(vector, tag_indices, map_f, n):
 
 
 def eqn_sign(vector):
-    for i in range(2):
-        for j in range(24):
-            if 1 <= vector["Z", i, j] < 15:
-                return [ MMV15.index_to_sparse("Z", i, j) ]
+    for j in range(24):
+        if 1 <= vector["Z", 0, j] < 15:
+            return [ MMV15.index_to_sparse("Z", 0, j) ]
     return None
 
 
@@ -515,9 +514,15 @@ def find_order_vector(verbose = 1):
     return result
 
 
+HEADER = """# This file has been created automatically, do not change!
+# For documentation see module mmgroup.structures.find_order_vector.py.
+
+"""
+
 def write_order_vector(result):
     print("Writing file " + PY_FILENAME)
     f = open(PY_FILENAME, "wt")
+    print(HEADER, file = f)
     for text, data in result.items():
         print(str_data(text, data), file = f)
     f.close()
@@ -527,4 +532,3 @@ if __name__ == "__main__":
     result = find_order_vector(verbose = 1)
     write_order_vector(result)
 
-# AAAAAAAAAA

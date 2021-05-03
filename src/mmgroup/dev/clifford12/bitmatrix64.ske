@@ -94,6 +94,16 @@ uint32_t bitmatrix64_error_pool(uint64_t *dest, uint32_t length)
 /// @cond DO_NOT_DOCUMENT 
 
 /**
+ @brief Returns the parity of a 64-bit integer ``v``.      
+*/ 
+static inline uint32_t parity64(uint64_t v)
+{
+   v ^= v >> 32; v ^= v >> 16; v ^= v >> 8; v ^= v >> 4; 
+   return (uint32_t)((0x6996 >> (v & 0xf)) & 1);
+}    
+
+
+/**
  @brief Returns the bit weight of a 64-bit integer ``v``.      
 */ 
 static inline uint32_t bw64(uint64_t v)
@@ -120,6 +130,23 @@ static inline uint32_t bitlen64(uint64_t v)
 }
 
 /// @endcond 
+
+
+
+/*************************************************************************
+*** Integer operations
+*************************************************************************/
+
+
+
+/**
+ @brief Returns the parity of a 64-bit integer ``v``.      
+*/ 
+// %%EXPORT px
+uint32_t uint64_parity(uint64_t v)
+{
+   return parity64(v);
+}   
 
 
 /*************************************************************************

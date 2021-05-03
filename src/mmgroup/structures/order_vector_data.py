@@ -1,3 +1,7 @@
+# This file has been created automatically, do not change!
+# For documentation see module mmgroup.structures.find_order_vector.py.
+
+
 S_G71 = "M<t_2*l_2*y_497h*x_161fh*d_0be5h*p_100081955>"
 
 S_V71 = "v<-T_479_2ch-T_732_5h-X_0bh_20-X_477h_5+X_6f0h_0>"
@@ -26,4 +30,3 @@ TAGS_X = [
 TAG_SIGN = [
    0xc000007, 
 ]
-
