@@ -2,56 +2,13 @@
 The functions in file ``mm_group_n.c`` implement the subgroup
 \f$N_0\f$ of structure 
 \f$2^{2+11+2\cdot11}.(\mbox{Sym}_3 \times \mbox{Mat}_{24})\f$
-on the monster group.
+on the monster group. Elements of \f$N_0\f$ are  represented
+as arrays of five integers of type ``uint32_t`` as described in
+the document *The C interface of the mmgroup project*. 
 */
 
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// This is a fast little calculator for the subgroup N_0 of the monster.
-//
-// That group N_0 is described in [Conw85] and [Seys19]. More precisely, 
-// we actually calculate in the fourfold cover N of N_0 structure
-// 2**2 . 2**2 . 2**11 . 2**(11+11) . (Sym3 \times Mat24),
-// using the notation in [Seys19]. Here Sym3 is the symmetric permutation
-// group of 3 elements and Mat24 is the Mathieu group acting on 24 elements. 
-// An element of N is representd as a 5-tuple (exp, f, e, delta, pi) of 
-// integers of type uint32_t. Here
-// 
-// exp    represents the element t**exp for the triality element t;
-// f      represents the element y_f, 0 <= f < 0x2000 an element of Pl;   
-// e      represents the element x_e, 0 <= e < 0x2000 an element of Pl;   
-// delta  represents the element x_delta, 0 <= delta < 0x1000 an element 
-//        of the Golay cocode C*;
-// pi     represents the element (pi) of Mat24 with number pi.  
-//        More precisely, pi represents the preimage of (pi) in the 
-//        automorphism group AutPl of the Parker loop Pl that maps all 
-//        basis vectors of Pl to positive elements of Pl.
-//        
-//
-// For the numbering of the elements of the Parker loop Pl, the Golay
-// cocode C*, and the Mathieu group Mat24, see module mat24_functions.c.
-// The basis of the Parker loop Pl is also given in that module.
-// For the notion of a positive element of the Parker loop (with 
-// respect to a certain cocycle) of the Parker loop see [Seys19]. The 
-// cocycle selected for PL is also given in mat24_functions.c.
-// The elements of N are multiplied in the order given by the 5-tuple.
-//
-// Almost all functions in this module take a pointer to a 5-tuple
-// (exp, f, e, delta, pi) representing an element g of the group N
-// as their first argument. The tuple representing g is modified 
-// to a tuple representing an element g2 = g * g1, with the element 
-// g1 of N given by one or more subsequent arguments of the function.
-// All these 5-tuples are implemented as arrays of type uint32_t[5].
-//
-// The functions in this module cause some overhead mainly due to 
-// the fact that a permutation in Mat24 is reresented as an integer.
-// But compared to an operation of the monster on its 196884-
-// dimensional the cost for such a function is negligible. 
-//
-// The correctness of the functions in this module follows directly
-// from Theorem 5.1 in [Seys19] and from the representation of
-// Pl, C*, and Mat24 in module mat24_functions.c
+
 
 #include "mat24_functions.h"
 #include "mmgroup_generators.h"
@@ -106,9 +63,18 @@ static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi
 
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$x_\delta x_\pi\f$.
+
+ Put \f$g = g x_\delta x_\pi\f$. Here the integer  \f$\delta\f$
+ represents an element of the Golay cocode and \f$\pi\f$ is the number of
+ an element of \f$M_{24}\f$ corresponding to a standard representative in 
+ the automorphism group \f$\mbox{AUT}{(\mbox{PL})}\f$ of the Parker loop.
+  
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
 void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
-// Put g = g * x_delta * (pi), delta in C*, (pi) in AutPl as 
 // above. Here g is given as an array of five 32-bit integers.
 {
     if (pi >= MAT24_ORDER) pi = 0;
@@ -137,10 +103,15 @@ void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$(x_\delta x_\pi)^{-1}\f$.
+
+ Put \f$g = g \cdot (x_\delta x_\pi)^{-1}\f$. Here 
+ \f$g\f$, \f$x_\delta\f$, and \f$x_\pi\f$ are as in 
+ function ``mm_group_n_mul_delta_pi``.
+*/
 // %%EXPORT px
 void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
-// Put g = g * (x_delta * (pi))**(-1), delta in C*, (pi) in AutPl as 
-// above. Here g is given as an array of five 32-bit integers.
 {
     if (pi >= MAT24_ORDER) pi = 0;
     delta &= 0xfff;
@@ -172,11 +143,16 @@ void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$x_e\f$.
 
+ Put \f$g = g \cdot x_e\f$.  Here the integer \f$e\f$ represents an 
+ element of the Parker loop.
+  
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
 void mm_group_n_mul_x(uint32_t * g, uint32_t e)
-// Put g = g * x_e. 
-// Here g is given as an array of five 32-bit integers.
 {
     e = mm_group_op_pl_inv_autpl(e, g[I_d], g[I_pi]);
     // Assuming g = g0 * x_a * g1  we now have:
@@ -186,10 +162,16 @@ void mm_group_n_mul_x(uint32_t * g, uint32_t e)
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$y_f\f$.
+
+ Put \f$g = g \cdot y_f\f$.  Here the integer \f$f\f$ represents an 
+ element of the Parker loop.
+  
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
 void mm_group_n_mul_y(uint32_t * g, uint32_t f)
-// Put g = g * y_f.
-// Here g is given as an array of five 32-bit integers.
 {
     uint_fast32_t sign_c, sign_x, sign_y;
     f = mm_group_op_pl_inv_autpl(f, g[I_d], g[I_pi]);
@@ -213,24 +195,28 @@ void mm_group_n_mul_y(uint32_t * g, uint32_t f)
     g[I_y] ^= f ^ (sign_y << 12);
 }
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$t^\tau\f$.
+
+ Put \f$g = g \cdot t^\tau\f$.    
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
-void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
-// Put g = g * t**exp, for the triality element t.
-// Here g is given as an array of five 32-bit integers.
+void mm_group_n_mul_t(uint32_t * g, uint32_t tau)
 {
     uint_fast32_t a1, b1;
-    exp %= 3;
-    if (exp == 0) return;  // No action if t == 0 (mod 3)
-    exp = (exp ^ (g[I_d] >> 11)) & 1;
-    // Assume g = g0 * y_b * x_a * g1, 1 <= exp <= 2. Put 
-    //    exp1 = 2 - exp  if g1 is even
-    //    exp1 = exp - 1 if g1 is odd
-    // and store exp1 with 0 <= exp1 <= 1 in exp. Thus
-    // 2 - exp1 = (-1)**parity(g1) * exp  (mod 3). Then
-    // g * t**exp = g0 * z_b * y_a * t**(2-exp1) * g1
-    // g * t**exp = t**(2-exp1) * g0 * z_b * y_a * g1 if exp1 == 1 
-    // g * t**exp = t**(2-exp1) * g0 * x_b * z_a * g1 if exp1 == 0
-    if (exp) {  // case (-1)**parity(g1) * exp = 1 (mod 3)
+    tau %= 3;
+    if (tau == 0) return;  // No action if t == 0 (mod 3)
+    tau = (tau ^ (g[I_d] >> 11)) & 1;
+    // Assume g = g0 * y_b * x_a * g1, 1 <= tau <= 2. Put 
+    //    tau1 = 2 - tau  if g1 is even
+    //    tau1 = tau - 1 if g1 is odd
+    // and store tau1 with 0 <= tau1 <= 1 in tau. Thus
+    // 2 - tau1 = (-1)**parity(g1) * tau  (mod 3). Then
+    // g * t**tau = g0 * z_b * y_a * t**(2-tau1) * g1
+    // g * t**tau = t**(2-tau1) * g0 * z_b * y_a * g1 if tau1 == 1 
+    // g * t**tau = t**(2-tau1) * g0 * x_b * z_a * g1 if tau1 == 0
+    if (tau) {  // case (-1)**parity(g1) * tau = 1 (mod 3)
         a1 = g[I_y];
         a1 ^=  MAT24_THETA_TABLE[a1 & 0x7ff] & 0x1000;
         // Now z_b * y_a = y_a1 * x_a1 * y_a
@@ -238,7 +224,7 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
         a1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
         b1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
         // Now z_b * y_a = y_b1 * x_a1
-    } else {    // case (-1)**parity(g1) * exp = 2 (mod 3)
+    } else {    // case (-1)**parity(g1) * tau = 2 (mod 3)
         b1 = g[I_x];
         b1 ^=  MAT24_THETA_TABLE[b1  & 0x7ff] & 0x1000;
         // Now x_b * z_a = x_b * y_b1 * x_b1
@@ -246,22 +232,25 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t exp)
         b1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
         a1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
     }      
-    exp = g[I_t] + 3 - exp;  
-    g[I_t] = ((exp + (exp >> 2)) & 3) - 1;
+    tau = g[I_t] + 3 - tau;  
+    g[I_t] = ((tau + (tau >> 2)) & 3) - 1;
     g[I_y] = b1;
     g[I_x] = a1;
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1 \in N_{x0}\f$.
 
+ Put \f$g = g \cdot g_1\f$.   
+ \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
+
+*/
 // %%EXPORT px
-void mm_group_n_mul_element(uint32_t *g, uint32_t *g1)
-// Put g = g * g1.
-// Here g and g1 are given as arrays of five 32-bit integers.
-// These two arrays may overlap.
+void mm_group_n_mul_element(uint32_t *g, uint32_t *g_1)
 {
-    uint32_t g2[5], i;   // beware of overlapping of g and g1.
-    for (i = 0; i < 5; ++i) g2[i] = g1[i];
+    uint32_t g2[5], i;   // beware of overlapping of g and g_1.
+    for (i = 0; i < 5; ++i) g2[i] = g_1[i];
     mm_group_n_mul_t(g, g2[I_t]);
     mm_group_n_mul_y(g, g2[I_y]);
     mm_group_n_mul_x(g, g2[I_x]);
@@ -269,14 +258,18 @@ void mm_group_n_mul_element(uint32_t *g, uint32_t *g1)
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1^{-1} \in N_{x0}\f$.
+
+ Put \f$g = g \cdot g_1^{-1}\f$.    
+ \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
-void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g1)
-// Put g = g * g1**(-1).
-// Here g and g1 are given as arrays of five 32-bit integers.
+void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g_1)
 // These two arrays may overlap.
 {
-    uint32_t g2[5], i;   // beware of overlapping of g and g1.
-    for (i = 0; i < 5; ++i) g2[i] = g1[i];
+    uint32_t g2[5], i;   // beware of overlapping of g and g_1.
+    for (i = 0; i < 5; ++i) g2[i] = g_1[i];
     mm_group_n_mul_inv_delta_pi(g, g2[I_d], g2[I_pi]);
     mm_group_n_mul_x(g, g2[I_x] 
         ^ (MAT24_THETA_TABLE[(g2[I_x]) & 0x7ff] & 0x1000));
@@ -285,7 +278,12 @@ void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g1)
     mm_group_n_mul_t(g, 3 - g2[I_t]);
 }
 
+/**
+ @brief Set \f$g \in N_{x0}\f$ to the value of the nuetral element.
 
+ Put \f$g = 1\f$.    
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
 // %%EXPORT px
 void mm_group_n_clear(uint32_t *g)
 // Set g to neutral element of the group N.
@@ -294,6 +292,18 @@ void mm_group_n_clear(uint32_t *g)
 }
 
 
+/**
+ @brief Multiply \f$g \in N_{x0}\f$ with an atom.
+
+ Put \f$g = g \cdot a\f$. Here  \f$a\f$ is the generator of the group
+ \f$N_{x0}\f$ given by parameter ``atom`` as described in the header
+ file ``mmgroup_generators.h``.
+ 
+ \f$g\f$ is given as an array of five 32-bit integers.
+
+ The function returns 0 in case of success and the (possibly modified) 
+ value of parameter ``atom`` in case of failure. 
+*/
 // %%EXPORT px
 uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
 // Multiply the element g of the group MM with an atom.
@@ -380,6 +390,18 @@ static uint16_t ker_table_yx[4] = {
 /// @endcond 
 
 
+/**
+ @brief Reduce \f$g \in N_{x0}\f$ to a standard form.
+
+ The representation of \f$g\f$ is reduced to a standard form.
+
+ Technically, we reduce the product \f$y_f x_e\f$ to
+ \f$y_{f'} x_{e'}\f$, such that \f$0 \leq f' < \mbox{0x800}\f$
+ holds. If \f$x_e\f$ is in the center of the Parker loop, but
+ \f$x_f\f$ is not in that center then we put \f$x_{e'}=0\f$.
+
+ \f$g\f$ is given as an array of five 32-bit integers. 
+*/
 // %%EXPORT px
 uint32_t mm_group_n_reduce_word(uint32_t *g)
 // Reduce the element g of the group N.
@@ -400,7 +422,21 @@ uint32_t mm_group_n_reduce_word(uint32_t *g)
     return g[0] | g[1] | g[2] | g[3] | g[4];
 }
 
+/**
+ @brief Convert \f$g \in N_{x0}\f$ to a word of generators.
 
+ The representation of \f$g\f$ is converted to a word of
+ generators of the monster group. The entries of that word are
+ stored in the buffer referred by parameter ``w``. The entries
+ of that word are encoded as described in 
+ file  ``mmgroup_generators.h``. Word ``w`` may have up to five
+ entries. The function returns the length of the word ``w``.
+
+ \f$g\f$ is given as an array of five 32-bit integers.
+
+ The element :math:`g` is reduced with 
+ function ``mm_group_n_reduce_word``.  
+*/
 // %%EXPORT px
 uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 // Convert the element g of the group N to an array 'word' of atoms
@@ -409,6 +445,7 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 // The word g is reduced with function mm_group_n_reduce_word()
 {
    uint_fast32_t len = 0;
+   mm_group_n_reduce_word(g);
    if (g[0]) word[len++] = (g[0] & 0xfffffff) | 0x50000000;
    if (g[1]) word[len++] = (g[1] & 0x1fff) | 0x40000000;
    if (g[2]) word[len++] = (g[2] & 0x1fff) | 0x30000000;

@@ -47,6 +47,10 @@ Installation
 
 .. include:: installation.inc
 
+
+
+.. _basic_label:
+
 Basic structures
 ================
 
