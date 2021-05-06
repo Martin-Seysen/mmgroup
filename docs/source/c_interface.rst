@@ -156,7 +156,18 @@ Basic table-providing classes for module ``mmgroup.mm``
 
 
 
-More details will be documented in a future version of this project.
+Header file mm_basics.h
+--------------------------------
+
+.. doxygenfile::  mm_basics.h
+ 
+
+C interface for file mm_aux.c
+---------------------------------------
+
+.. doxygenfile:: mm_aux.c
+
+
 
 
 Description of the ``mmgroup.mm<p>`` extensions

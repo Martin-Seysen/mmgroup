@@ -146,7 +146,7 @@ void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 /**
  @brief Multiply \f$g \in N_{x0}\f$ with \f$x_e\f$.
 
- Put \f$g = g \cdot x_e\f$.  Here the integer \f$e\f$ represents an 
+ Put \f$g = g \cdot x_e\f$.  Here the integer \f$e\f$ represents an
  element of the Parker loop.
   
  \f$g\f$ is given as an array of five 32-bit integers.
@@ -165,7 +165,7 @@ void mm_group_n_mul_x(uint32_t * g, uint32_t e)
 /**
  @brief Multiply \f$g \in N_{x0}\f$ with \f$y_f\f$.
 
- Put \f$g = g \cdot y_f\f$.  Here the integer \f$f\f$ represents an 
+ Put \f$g = g \cdot y_f\f$.  Here the integer \f$f\f$ represents an
  element of the Parker loop.
   
  \f$g\f$ is given as an array of five 32-bit integers.
@@ -196,27 +196,27 @@ void mm_group_n_mul_y(uint32_t * g, uint32_t f)
 }
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$t^\tau\f$.
+ @brief Multiply \f$g \in N_{x0}\f$ with the triality element.
 
- Put \f$g = g \cdot t^\tau\f$.    
- \f$g\f$ is given as an array of five 32-bit integers.
+ Put\f$g = g \cdot \tau^t\f$, where \f$\tau\f$ is the triality
+ element. \f$g\f$ is given as an array of five 32-bit integers.
 */
 // %%EXPORT px
-void mm_group_n_mul_t(uint32_t * g, uint32_t tau)
+void mm_group_n_mul_t(uint32_t * g, uint32_t t)
 {
     uint_fast32_t a1, b1;
-    tau %= 3;
-    if (tau == 0) return;  // No action if t == 0 (mod 3)
-    tau = (tau ^ (g[I_d] >> 11)) & 1;
-    // Assume g = g0 * y_b * x_a * g1, 1 <= tau <= 2. Put 
-    //    tau1 = 2 - tau  if g1 is even
-    //    tau1 = tau - 1 if g1 is odd
-    // and store tau1 with 0 <= tau1 <= 1 in tau. Thus
-    // 2 - tau1 = (-1)**parity(g1) * tau  (mod 3). Then
-    // g * t**tau = g0 * z_b * y_a * t**(2-tau1) * g1
-    // g * t**tau = t**(2-tau1) * g0 * z_b * y_a * g1 if tau1 == 1 
-    // g * t**tau = t**(2-tau1) * g0 * x_b * z_a * g1 if tau1 == 0
-    if (tau) {  // case (-1)**parity(g1) * tau = 1 (mod 3)
+    t %= 3;
+    if (t == 0) return;  // No action if t == 0 (mod 3)
+    t = (t ^ (g[I_d] >> 11)) & 1;
+    // Assume g = g0 * y_b * x_a * g1, 1 <= t <= 2. Put 
+    //    t1 = 2 - t  if g1 is even
+    //    t1 = t - 1 if g1 is odd
+    // and store t1 with 0 <= t1 <= 1 in t. Thus
+    // 2 - t1 = (-1)**parity(g1) * t  (mod 3). Then
+    // g * \tau**t = g0 * z_b * y_a * \tau**(2-t1) * g1
+    // g * \tau**t = \tau**(2-t1) * g0 * z_b * y_a * g1 if t1 == 1 
+    // g * \tau**t = \tau**(2-t1) * g0 * x_b * z_a * g1 if t1 == 0
+    if (t) {  // case (-1)**parity(g1) * t = 1 (mod 3)
         a1 = g[I_y];
         a1 ^=  MAT24_THETA_TABLE[a1 & 0x7ff] & 0x1000;
         // Now z_b * y_a = y_a1 * x_a1 * y_a
@@ -224,7 +224,7 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t tau)
         a1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
         b1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
         // Now z_b * y_a = y_b1 * x_a1
-    } else {    // case (-1)**parity(g1) * tau = 2 (mod 3)
+    } else {    // case (-1)**parity(g1) * t = 2 (mod 3)
         b1 = g[I_x];
         b1 ^=  MAT24_THETA_TABLE[b1  & 0x7ff] & 0x1000;
         // Now x_b * z_a = x_b * y_b1 * x_b1
@@ -232,8 +232,8 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t tau)
         b1 ^= mat24_ploop_comm(g[I_x], g[I_y]) << 12;
         a1 ^= mat24_ploop_cocycle(g[I_x], g[I_y]) << 12;
     }      
-    tau = g[I_t] + 3 - tau;  
-    g[I_t] = ((tau + (tau >> 2)) & 3) - 1;
+    t = g[I_t] + 3 - t;  
+    g[I_t] = ((t + (t >> 2)) & 3) - 1;
     g[I_y] = b1;
     g[I_x] = a1;
 }
@@ -242,7 +242,7 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t tau)
 /**
  @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1 \in N_{x0}\f$.
 
- Put \f$g = g \cdot g_1\f$.   
+ Put \f$g = g \cdot g_1\f$. Elements  
  \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
 
 */
@@ -261,7 +261,7 @@ void mm_group_n_mul_element(uint32_t *g, uint32_t *g_1)
 /**
  @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1^{-1} \in N_{x0}\f$.
 
- Put \f$g = g \cdot g_1^{-1}\f$.    
+ Put \f$g = g \cdot g_1^{-1}\f$. Elements    
  \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
 */
 // %%EXPORT px
@@ -281,7 +281,7 @@ void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g_1)
 /**
  @brief Set \f$g \in N_{x0}\f$ to the value of the nuetral element.
 
- Put \f$g = 1\f$.    
+ Put \f$g = 1\f$.  Element   
  \f$g\f$ is given as an array of five 32-bit integers.
 */
 // %%EXPORT px
@@ -320,7 +320,7 @@ uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
 //  2:  x_pi      28      pi a permutation number  
 //  3:  x_d       13      d an element of the parker loop
 //  4:  y_d       13      d an element of the parker loop
-//  5:  t**e      28      exponent e
+//  5:  tau**e    28      exponent e
 //  6:  xi**e     28      exponent e
 //  7   illegal                  
 // If the sign bit is set, the operand is inverted.

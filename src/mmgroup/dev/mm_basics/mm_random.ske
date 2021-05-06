@@ -11,6 +11,15 @@
 
 // %%EXPORT_KWD MM_BASICS_API
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 /******************************************************************
@@ -336,5 +345,17 @@ void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
    seed[POS_J] = j;
 }
 
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c
 
 

@@ -19,6 +19,16 @@ typedef struct {
 // %%GEN c
 
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
 
 // Sign table for xi**1: map tag BC to tag BC
 static uint32_t TAB_SIGN_XI_11[] = {
@@ -138,4 +148,17 @@ uint32_t mm_sub_get_table_xi(uint32_t e, uint32_t i, uint32_t j, uint32_t k)
     if (k) return mm_sub_table_xi[e][i].p_sign[j];
     return mm_sub_table_xi[e][i].p_perm[j];
 }
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c
+
 

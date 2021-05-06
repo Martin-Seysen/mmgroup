@@ -16,7 +16,7 @@ Using the notation in section :ref:`mmgroup-label` we may describe an
 element of  :math:`N_{0}` as a product:
 
 .. math::
-    t^\tau y_f x_e x_\delta x_\pi \; ; \quad 0 \leq \tau < 3; \; 
+    \tau^t y_f x_e x_\delta x_\pi \; ; \quad 0 \leq t < 3; \; 
     e, f \in   \mathcal{P}; \; \delta \in \mathcal{C}^*; \;
     \pi \in  {{\rm Aut}_{{\rm St}} \mathcal{P}} \; .
 
@@ -28,7 +28,7 @@ transversal of :math:`\mathcal{P} / Z(\mathcal{P})` and
 :ref:`aut_ploop_label`.
 
 We store an element of :math:`N_{0}` an a quintuple
-:math:`\tau, f, e, \delta, \pi` of five integers of type ``uint32_t``.
+:math:`t, f, e, \delta, \pi` of five integers of type ``uint32_t``.
 For :math:`f, e` we use the numbering in class ``PLoop`` in module
 ``mmgroup``; for :math:`\delta` we use the numbering in class 
 ``Cocode`` in module ``mmgroup``. Here :math:`\pi` refers to a standard 
@@ -39,10 +39,10 @@ of :math:`\mbox{M}_{24}` described in class ``AutPL|`` in module
 ``mmgroup``. 
 
 Most functions in module ``mm_group_n.c`` take a pointer to a 5-tuple
-:math:`(\tau, f, e, \delta, \pi)` representing an element :math:`g` 
+:math:`(t, f, e, \delta, \pi)` representing an element :math:`g` 
 of the :math:`N_{0}`  as their first argument. Then the tuple 
 representing :math:`g` is modified  to a tuple representing an 
-element :math:`g_2 = g \cdot g1`, with the element :math:`g_1` of 
+element :math:`g_2 = g \cdot g_1`, with the element :math:`g_1` of 
 :math:`N` given by one or more subsequent arguments of the function.
 
 The functions in module ``mm_group_n.c`` may cause some overhead due 

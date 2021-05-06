@@ -51,6 +51,16 @@ typedef struct {
 
 
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
 
 
 
@@ -448,3 +458,14 @@ void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint
 
 
 
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c

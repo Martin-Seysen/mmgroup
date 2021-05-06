@@ -27,6 +27,15 @@
 // 3. length of the sparse vector
 // 4. any other parameters
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 /**********************************************************************
@@ -389,3 +398,15 @@ void mm_sparse_mul(uint32_t p, uint32_t *sp, uint32_t length, int32_t factor)
     }
 }
 
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c

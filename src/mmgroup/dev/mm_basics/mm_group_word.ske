@@ -27,6 +27,17 @@ typedef struct {
 
 
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
 #define END_WORD 0xffffffff
 
 static inline void mm_group_iter_next_atom(mm_group_iter_t *pit)
@@ -131,4 +142,16 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
 
 }
 
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c
 

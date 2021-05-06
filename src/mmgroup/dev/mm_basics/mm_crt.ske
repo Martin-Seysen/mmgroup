@@ -5,6 +5,15 @@
 
 // %%EXPORT_KWD MM_BASICS_API
 
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 // Entry 32 * i7 + i31 of the following table is equal to
@@ -330,3 +339,15 @@ uint32_t mm_crt_v2_int32(int32_t *pv)
         | mm_crt_v2_int32_32(pv + MM_AUX_OFS_X, 3 * 2048, 24);
     return mat24_lsbit24(res);  
 }
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c
