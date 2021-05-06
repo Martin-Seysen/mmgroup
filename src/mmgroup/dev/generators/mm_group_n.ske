@@ -434,7 +434,7 @@ uint32_t mm_group_n_reduce_word(uint32_t *g)
 
  \f$g\f$ is given as an array of five 32-bit integers.
 
- The element :math:`g` is reduced with 
+ The element \f$g\f$ is reduced with 
  function ``mm_group_n_reduce_word``.  
 */
 // %%EXPORT px
@@ -456,16 +456,24 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 }
 
 
+/**
+ @brief Split an element of \f$N_{x0}\f$ from a word of generators.
 
+ Given a array ``word`` of generators of the monster group of a 
+ given ``length``, that word is split  into a possibly shorter 
+ word ``word1`` and an element ``g`` of the group \f$N_{x0}\f$ such 
+ that ``word`` =  ``word1`` * ``g``. Then ``word1`` is a prefix 
+ of ``word``. The function returns the length of the prefix ``word1``
+ of ``word``. It does not change ``word``.
+ Here we just scan the ``word`` from the right, checking for atoms 
+ ordered in a way compatible to our representation of \f$N_{x0}\f$.
+
+ Words of generators of the monster are implemented as described in 
+ file  ``mmgroup_generators.h``. Output \f$g\f$ is given as an array 
+ of five 32-bit integers.
+*/
 // %%EXPORT px
 uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
-// Given a array 'word' of atoms of a given 'length', that word is split 
-// into a possibly shorter word 'word1' and an element g of the group N such 
-// that 'word' =  'word1' * g. Then 'word1' is a prefix of 'word'. 
-// The function returns the length of the prefix 'word1' of 
-// 'word'. It does not change 'word'.
-// Here we just scan the word from the right, checking for
-// atoms ordered in a way compatible to our representation of N.
 {
     unsigned int status = 0;
     g[0] = g[1] = g[2] = g[3] = g[4] = 0;
@@ -505,23 +513,33 @@ uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
 }
 
 
+
+/**
+ @brief Multiply a word of generators of the monster.
+
+ Given a word  ``w1`` of length ``l1`` and a word ``w2`` of
+ length ``l2`` of generators of the monster group, we compute
+ the product ``w3`` = ``w1 * w2**e``. Here ``**`` means
+ exponentiation; negative exponents are supported.
+ The word ``w1`` is replaced by the word ``w3``. The funcion
+ returns the length of the word ``w3``.
+
+ A word representing ``w2**e`` is appended to word ``w1`` and
+ then the result is simplified using the relations inside
+ the group \f$N_{x0}\f$. The result ``w3`` is reduced (with
+ respect to these relations) if input ``w1`` is reduced.
+
+ Caution!
+
+ The buffer for the word ``w1`` referred by pointer ``w1`` must
+ be able to store at least  ``l1 + 2 * abs(e) * l2`` entries of
+ type ``uint32_t``. Here the user must provide sufficient space!
+
+ Words of generators of the monster are implemented as described
+ in file  ``mmgroup_generators.h``.
+*/
 // %%EXPORT px
 uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, int32_t e)
-// Compute w1 = w1 * w2**e. Here w1 and w2 are words of the group 
-// MM of length l1 and l2, respectively. A word of the group MM is 
-// implemented as an array of uint32_t, with each entry of the 
-// array as described in function mm_group_n_mul_atom().
-// A word representing w2**e is appended to word w1 and then  
-// the resulting word is simplified using the relations inside 
-// the group N_0.
-// The function stores w3 = w1 * w2**e in the buffer for w1 and 
-// returns the length of the simplified word w3.
-// The result w3 is reduced (modulo the relations in N_0) if
-// input w1 is reduced.
-// Caution:
-// The buffer for word w1 referred by pointer w1 must be able  
-// to store at least   l1 + 2 * abs(e) * l2   entries of type 
-// uint32_t. Here the user must provide sufficient space!
 {
     int32_t i_start = 0, i_stop = l2, i_step = 1, round, i;
     uint32_t sign = 0;
@@ -558,24 +576,32 @@ uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
 }
 
 
+/**
+ @brief Check if a words of generators of the monster is in \f$N_{x0}\f$.
 
+ We check if the word ``w1`` of length ``l1`` of generators of the
+ monster group is in the subroup  \f$N_{x0}\f$. If this is the case
+ then we store the word ``w1`` as an element of \f$N_{x0}\f$ in
+ the array ``g_out`` of five 32-bit integers as desribed above.
+ The function returns the following status information:
+
+
+ 0: ``w1`` is the neutral element the monster group
+
+ 1: ``w1`` is in \f$N_{x0}\f$, but not the neutral element
+
+ 2: ``w1`` is not in \f$N_{x0}\f$
+
+ 3: Nothing is known about ``w1``
+
+ We check the relations in the generators \f$N_{x0}\f$ only. The output
+ in ``g_out`` is valid only if the function returns 0 or 1.
+
+ Words of generators of the monster are implemented as described
+ in file ``mmgroup_generators.h``.
+*/
 // %%EXPORT px
 uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
-// Check if the word w1 of the group MM of length l1 is in the 
-// subgroup N_0. If this is the case then we store the word as an 
-// element of the group N in the array g_out of length 5. The 
-// function returns the following status information:
-//
-//    0: w1 is the neutral element 1 of MM
-//    1: w1 is in N_0 and not equal to 1
-//    2: w1 is not in N_0
-//    3: Nothing is known about w1
-// 
-// Only simple checks are made. Output g_out is computed only
-// if the returned status is 0 or 1. 
-//
-// Function mm_group_n_to_word() may be used to convert the output
-// g_out (if it has been calculated) to a word in the group MM.
 {
     uint_fast32_t  i, w, status = 0, num_xi = 0;
     uint32_t g[5];
@@ -598,24 +624,34 @@ uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
 }
 
 
+/**
+ @brief Check if two word of generators of the monster are equal.
+
+ We check if the word ``w1`` of length `l1` of generators of the 
+ monster group is equal to the word  ``w2`` of length `l2`  of
+ generators. The function returns the following status information:
+
+
+ 0: ``w1`` == ``w2``
+
+ 1: ``w1`` != ``w2`
+
+ Greater than 1: equality of ``w1`` and ``w2`` is not known 
+
+ If the function cannot check the equality of ``w1`` and ``w2``
+ then it computes a word ``w3`` of length ``l3`` of generators of 
+ the monster group such that ``w1`` == ``w2`` if and only
+ if ``w3`` is the neutral element. Then the function stores the
+ word ``w3`` in the buffer ``work`` and it returns ``l3 + 2``. 
+
+ Buffer ``work`` must have size at
+ least ``max(2 * l1, l1 + 2 * l2)``. 
+
+ Words of generators of the monster are implemented as described
+ in file  ``mmgroup_generators.h``.
+*/
 // %%EXPORT px
 uint32_t mm_group_words_equ(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2, uint32_t *work)
-// Check if the words w1 and w2 of the group MM of length l1 and
-// l2 are equal. The function returns the following status 
-// information:
-//
-//   0:    w1 == w2
-//   1:    w1 != w2
-//   >= 2: equality of w1 and w2 is not known
-//
-//  If the function cannot check the equality of w1 and w2
-//  then it returns a number 2+l3 and a word w of length l3
-//  in buffer ``work``. In that case we have
-//  
-//     w1 == w2  if an only if w == 0.
-//
-//  The work buffer must have size at least 
-//  max(2 * l1, l1 + 2 * l2). 
 {
     uint_fast32_t  minlen, minlen0, status = 0;
     uint32_t *we1, *we2, gn[5];
