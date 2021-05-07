@@ -95,6 +95,8 @@ extern "C" {
   be a multiple of the number of entries in an integer
   of ``type uint_mmv_t``. It is ok if ``len`` is a multiple of 32. 
   Output vector ``b`` is reduced modulo ``p``.
+
+  Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
 void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
@@ -129,6 +131,8 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
   Same operation as in function ``mm_aux_read_mmv1()``, but the
   output vector ``b`` is not reduced. This is for debugging and less 
   optimized than ``mm_aux_read_mmv1()``. 
+
+  Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
 void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
@@ -156,6 +160,8 @@ void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t le
   the number of entries to be written. ``len`` must be a multiple 
   of the number of entries in an integer of type ``uint_mmv_t``. 
   It is ok if len is a multiple of 32. 
+
+  Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
 void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
@@ -182,14 +188,21 @@ void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
     }
 }
 
+/**
+  @brief Read blocks of length 24 from vector in internal representation
 
+  Read entries of vector ``mv`` with modulus ``p`` and store these 
+  entries in the array ``b``. Here ``mv`` is a vector of blocks
+  of 24  entries, with 8 entries slack after each block. ``len``
+  is the number of such blocks to be read. So  altogether 24 * ``len``
+  entries are read from ``mv`` and written to array ``b``; the 8
+  bytes slack after each 24-byte block are dropped.
+  Vector ``b`` is reduced modulo ``p``.
+
+  Here ``p`` must be a legal modulus.
+*/
 // %%EXPORT px
 void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
-// Read entries of vector mv with modulus p and store these entries in
-// the array b. mv is a vector of contigous small arrays with 24 
-// entries. len is the number of small arrays to be read. So
-// altogether 24 * len entries are read from mv and written to array b.
-// Vector b is reduced modulo p.
 {
     uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
@@ -219,13 +232,21 @@ void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 }    
 
 
+/**
+  @brief Write blocks of length 24 to vector in internal representation
 
+  Write data from the array ``b`` to the vector ``mv`` with 
+  modulus ``p``. We take ``24 * len`` bytes from the array b
+  and write them to the vector ``mv``. Here ``mv`` is considered
+  as a vector of blocks of 24 entries, with 8 entries slack 
+  after each block; so ``len`` is the number of such 24-byte
+  blocks to be written. The entries in the slack after each 
+  block written to ``mv`` are set to zero.
+
+  Here ``p`` must be a legal modulus.
+*/
 // %%EXPORT px
 void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
-// Write data from the array b to the vector mv with modulus p. 
-// mv is a vector of contiguous small arrays with 24 entries. 
-// len is the number of small arrays to be written. So altogether 
-// 24 * len entries are read from b and written to the vector mv.
 {
     uint_fast32_t i;  
     uint_mmv_t dest;
@@ -259,11 +280,17 @@ void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 } 
 
 
+/**
+  @brief Read one entry from vector in internal representation
 
+  The  function returns the entry with index ``i`` of the
+  vector ``mv`` with modulus ``p``. The return value
+  is reduced modulo ``p``.
+
+  Here ``p`` must be a legal modulus.
+*/
 // %%EXPORT px
 uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
-// Return the entry with given index of vector mv with modulus p.
-// The result is reduced modulo p.
 {
     uint_fast32_t  c, j, res;
 
@@ -279,6 +306,20 @@ uint8_t mm_aux_get_mmv1(uint32_t p, uint_mmv_t *mv, uint32_t i)
 }
 
 
+/**
+  @brief Write one entry to a vector in internal representation
+
+  The  function set the entry of the vector ``mv`` with modulus ``p``
+  at the index ``i`` to the given value. ``0 <= value <= p``
+  must hold.
+
+  Caution:
+
+  This is a low-level function. An illegal write operation might
+  lead to an inconsistent vector ``mv``!
+
+  Here ``p`` must be a legal modulus.
+*/
 // %%EXPORT px
 void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 // Set the entry of the vector mv with modulus p at the  index i  
@@ -303,19 +344,34 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 *** uint_mmv_t[]. For modulus p, p + 1 must be a power of two.
 **********************************************************************/
 
+/**
+  @brief Return the size of a vector in internal representation
 
+  The  function  return number of integers of type ``uint_mmv_t``
+  required to store a vector with modulus ``p`` in internal
+  representation.
+
+  The functiion returns 0 if ``p`` is illegal modulus.
+*/
 // %%EXPORT px
 uint32_t mm_aux_mmv_size(uint32_t p)
-// Return number of integers of type uint_mmv_t required to store
+// Returns the number of integers of type uint_mmv_t required to store
 // a vector of the representation R_p for a given p.
 {
     uint_fast32_t tbl;
+    if (mm_aux_bad_p(p)) return 0;
     // %%MMV_LOAD_CONST  p, tbl
     // return the value MMV_INTS for the specified p
     return%{MMV_CONST:MMV_INTS,tbl};
 }
 
 
+/**
+  @brief Zero a vector in internal representation
+
+  The  function sets all entries of the vector ``mv`` with 
+  modulus ``p`` in internal  representation to zero.
+*/
 // %%EXPORT px
 void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 // Zero the vector of the representation R_p referred by mv,
@@ -331,6 +387,14 @@ void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 
 
 
+/**
+  @brief Read entry at index from vector in internal representation
+
+  The  function returns the entry with index ``i`` of the
+  vector ``mv`` with modulus ``p``. The return value is reduced 
+  modulo ``p``. Index ``i`` must be given in external 
+  representation. The function returns 0 in case  ``i >= 198884``.
+*/
 // %%EXPORT px
 uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 // Return the entry of the vector mv in R_p at  index  i.
@@ -373,11 +437,18 @@ uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 
 
 
+/**
+  @brief Write entry to a vector at an index in internal representation
 
+  The  function sets the entry of the vector ``mv`` with modulus ``p``
+  at the index ``i`` to the given value. ``0 <= value <= p``
+  must hold.
+
+  Here the index ``i`` must be given in external representation.
+  Writing at an index ``i >= 198884`` performs no action.
+*/
 // %%EXPORT px
 void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
-// Set the entry of the vector mv in R_p at index i to the 
-// given value. 0 <= value <= p must hold.
 {
 
     uint_fast32_t  j, sh, diff;
@@ -416,11 +487,17 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 }
 
 
+/**
+  @brief Randomize a vector in internal representation
 
+  The function randomizes all entries of the vector ``mv`` with 
+  modulus ``p`` in internal representation uniformly using the 
+  internal random generator in file ``mm_random.c``. 
+  Parameter ``seed`` must be a seed for a random generator as 
+  descibed in file ``mm_random.c``.
+*/
 // %%EXPORT px
 void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
-// Randomize the vector mv in R_p with the internal random generator.
-// The random generator must be seeded by function mm_rng_seed().
 {
     uint8_t b1[3072];
     uint_fast32_t i, c;
@@ -455,21 +532,38 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
 *** Reducing and checking a vector in R_p
 **********************************************************************/
 
+/**
+  @brief Reduce a vector in internal representation
 
+  The function reduces all entries of the vector ``mv`` with 
+  modulus ``p`` in internal representation to a standard form, so 
+  that equal vectors are represented by equal arrays of integers.
+
+  Note that a zero entry in such a vactor can be represented either 
+  by the bit string  ``0...0`` or by ``1...1``. This functions sets 
+  all zero entries of the vector to ``0...0``.
+
+  The function returns 0 if it detects no error.
+  It may return the following error codes:
+
+  -1: Bad modulus ``p``
+
+  -2: A one bit outside a valid bit field for an entry has been found
+*/
 // %%EXPORT px
 int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
-// Reduce the vector mv in R_p modulo p. Note that a zero entry
-// is represented either by 0...0 or by 1...1. This functions sets 
-// all zero entries of the vector mv to 0...0.
-// The function returns 0 if it detects no error.
-// It may return the following error codes:
-//  -1: Bad input value p
-//  -2: A one bit outside a field has been found
 {
     return mm_aux_reduce_mmv_fields(p, mv, MM_AUX_OFS_E);
 }
 
+/**
+  @brief Auxiliary function of function ``mm_aux_reduce_mmv``
 
+  The function performs the same operation as 
+  function ``mm_aux_reduce_mmv``. But instead of all entries 
+  of the vector ``mv``, it reduces the first ``len`` entries
+  only.
+*/
 // %%EXPORT px
 int32_t mm_aux_reduce_mmv_fields(uint32_t p, uint_mmv_t *mv, uint32_t nfields)
 {
@@ -512,6 +606,7 @@ int32_t mm_aux_reduce_mmv_fields(uint32_t p, uint_mmv_t *mv, uint32_t nfields)
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static int32_t check24(uint32_t p, uint_mmv_t *mv, uint32_t length)
 {
@@ -591,18 +686,30 @@ static int32_t check_mmv_buffer(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
     return check_sym(p, mv, buffer); // Errors -4, -5 may occur here
 }
 
+/// @endcond
 
+
+/**
+  @brief Check a vector in internal representation for errors
+
+  The function checks all entries of the vector ``mv`` with 
+  modulus ``p`` in internal representation for errors. It returns 0 
+  if it detects no error. It may return the following error codes:
+
+  -1: Bad modulus ``p``
+
+  -2: A one bit outside a valid bit field for an entry has been found
+
+  -3: A subfield of 24 entries has an illegal nonzero entry at index >= 24
+
+  -4: The vector has an illegal nonzero diagonal entry 
+
+  -5: The symmetric part of the vector is not actually symmetric 
+
+As a side effect, ``mv`` is reduced with function ``mm_aux_reduce_mmv``.
+*/
 // %%EXPORT px
 int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
-// Check the vector mv in R_p modulo p. 
-// The function returns 0 if it detects no error.
-// It may return the following error codes:
-//  -1: Bad input value p
-//  -2: A one bit outside a field has been found
-//  -3: A subfield has an illegal nonzero entry at index >= 24
-//  -4: Illegal nonzero diagonal entry 
-//  -5: Symmetric part of vector is not symmetric 
-// As a side effect, mv is reduced with mm_aux_reduce_mmv(p, mv).
 {
     uint8_t buffer[72*32];
     return check_mmv_buffer(p, mv, buffer);
@@ -612,6 +719,25 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
 *** Low-level functions supperting external rep of vectors in R_p
 **********************************************************************/
 
+/** 
+  @brief Convert part of vector from external to internal representation
+
+  Conversion between the internal and the external representation 
+  of a vector is straightforward, except for entries with
+  tags ``A, B, C``. The entries with these tags are stored in the 
+  first 852 entries of the external representation. In the internal
+  representation the entries with these tags are spread over three
+  symmetric 24 times 24 times matrices. 
+ 
+  This function maps the 852 entries of the array ``b_src`` 
+  (corresponding to tags ``A, B, C``) to the array ``b_dest`` of
+  size 3 * 24 * 24 (corrsponding to three
+  symmetric 24 times 24 times matrices). 
+  Function ``mm_aux_write_mmv24`` can be used to write the data
+  from the array ``b_dest`` to the initial segment of the internal
+  representation of a vector.
+  
+*/
 // %%EXPORT px
 void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
 //
@@ -636,8 +762,26 @@ void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
     }
 }
 
+/** 
+  @brief Convert part of vector from internal to external representation
 
+  Conversion between the internal and the external representation 
+  of a vector is straightforward, except for entries with
+  tags ``A, B, C``. The entries with these tags are stored in the 
+  first 852 entries of the external representation. In the internal
+  representation the entries with these tags are spread over three
+  symmetric 24 times 24 times matrices. 
+ 
+  This function maps the 3 * 24 * 24 entries of the array ``b_src``
+  (corrsponding to three symmetric 24 times 24 times matrices)
+  to the  852 entries of the array ``b_dest``  (corresponding to 
+  tags ``A, B, C`` in external representation).
 
+  This reverses the effect of function ``mm_aux_small24_expand``.
+  Function ``mm_aux_read_mmv24`` can be used to read the data
+  from the initial segment of the internal representation of a 
+  vector to the array ``b_src``, before calling this function. 
+*/
 // %%EXPORT px
 void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 //
@@ -671,15 +815,23 @@ void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 
 
 
+/**
+  @brief Convert vector from internal to external representation
 
+  Read all entries of vector ``mv`` (stored in internal
+  representation with modulus ``p``) and store these entries 
+  in the array ``b`` in external representation.
+
+  Output vector ``b`` is reduced modulo ``p``. It must have 
+  length 196884.
+*/
 // %%EXPORT px
 void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
-// Convert the vector mv in R_p to an array b of bytes. p is the
-// modulus for mv. b must have length 196884.  
 {
     uint8_t b1[3*576]; 
     uint_fast32_t c;
 
+    if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, c
     c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
     
@@ -694,15 +846,25 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 }
 
 
+/**
+  @brief Convert vector from external to internal representation
 
+  Read all entries of the array ```b`` (of length 196884, containing 
+  a vector in external representation) and store these entries the 
+  vector ``mv``. Here ``mv`` is a vector stored in internal
+  representation with modulus ``p``. 
+
+  Any entry ``x`` in the array ``b`` must satisfy ``0 <= x <= p``.
+  The vector ``mv`` is an array of ``n`` integers of type
+  ``uint_mmv_t`` with ``n =  mm_aux_mmv_size(p)``.
+*/
 // %%EXPORT px
 void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
-// Convert the array b of 196884 bytes to the vector mv in R_p to.
-// p is the modulus for mv.  
 {
     uint8_t b1[3*576];
     uint_fast32_t  c;
 
+    if (mm_aux_bad_p(p)) return;
     // %%MMV_LOAD_CONST  p, c
     c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
 
@@ -723,13 +885,23 @@ void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 *** Conversion between internal and sparse rep of vectors in R_p
 **********************************************************************/
 
+/**
+  @brief Convert vector from internal to sparse representation
+
+  Read all entries of vector ``mv`` (stored in internal
+  representation with modulus ``p``) and store these entries
+  in the array ``sp`` in sparse representation. Each entry
+  in the array ``sp`` represents a nonzero entry of the vector.
+  The function returns the length of the output array ``sp``
+  or an negative value in case of error. Negative return
+  values are as in function ``check_mmv_buffer``.
+
+  Output vector ``sp`` is reduced modulo ``p``. The buffer for
+  array ``sp`` must have length 196884. Input vector ``mv``
+  is checked with function ``check_mmv_buffer``.
+*/
 // %%EXPORT px
 int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
-// Convert the vector 'mv' in the representation R_p of the monster, 
-// with 'mv' given in internal representation, to sparse format. The
-// function writes the entries of the vector in sparse format to the
-// array referred by 'sp' and returns the number of entries written
-// to 'sp'. The array 'sp' may have up to 196884 entries.
 {
     int32_t status;
     uint_fast32_t row, row_end,i, j, isp = 0, value;
@@ -780,22 +952,31 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
     return (int32_t)isp; 
 }
 
+/**
+  @brief Extract entries from a vector in internal representation
+
+  The function extracts certain entries from the vector ``mv`` 
+  depending on the vector ``sp``. Here ``mv`` is a vector stored 
+  in internal representation with modulus ``p``.  Vector ``sp``
+  is a vector of length ``length`` in sparse representation.
+
+  The entries of vector ``sp`` are updated with the corresponding 
+  entries of ``mv``. If ``sp`` has an entry with a certain label
+  then the coordinate of that entry is set to the corresponding 
+  coordinate of vector ``mv``. If several entries of ``sp`` have the 
+  same label then the same coordinate is taken from ``mv`` 
+  several times.
+
+  Bit 7,...,0 of any entry of ``sp`` should be either 0 or p. If that
+  value is 0 then the coordinate is read to bits 7,...,0 of that entry. 
+  If that entry is ``p`` then the negative coordinate is read instead. 
+  Other values of these bits are strongly discouraged; but technically 
+  we XOR the corresponding coordinate of vector ``mv`` to these bits; 
+  and we then change a result ``p`` to zero. There is a special case 
+  where this detail is relevant.   
+*/
 // %%EXPORT px
 void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
-// Extract certain entries of the vector  'mv' depending on the 
-// vector 'sp'. The entries of vector 'sp' are updated with the
-// corresponding entries of 'mv'. Here 'mv'  and 'sp' are vectors 
-// in the representation R_p of the monster, with 'mv' given in 
-// internal representation and 'sp' given in sparse format. 'sp' 
-// has  length 'length'. If 'sp' has an entry with a certain label
-// then the coordinate of that entry is set to the corresponding 
-// coordinate of vector 'mv'. If several entries of 'sp' have the 
-// same label then the same coordinate is taken from 'mv' 
-// several times.
-// Bit 7,...,0 of any entry of 'sp' must be either 0 or p. If that
-// value is 0, the coordinate is read to bits 7,...,0 of that entry. 
-// If the entry is p the negative coordinate is read instead. In 
-// other case that entry of 'sp' contains garbage.
 {
     uint_fast32_t i0, lg_int_fields, lg_field_bits, p_bits, index_mask;
 
@@ -840,18 +1021,24 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
 }
 
 
+/**
+  @brief Extract one entry of a vector in internal representation
 
+  The statement ``uint32_t sp1 = mm_aux_mmv_get_sparse(p, mv, sp);`` 
+  is equivalent to
+
+        uint32_t sp1 = sp; mm_aux_mmv_extract_sparse(p, mv, &sp1, 1);
+      
+*/
 // %%EXPORT px
 uint32_t mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
-// Equivalent to 
-//
-//      mm_aux_mmv_extract_sparse(p, mv, &sp, 1); return sp;
 {
      mm_aux_mmv_extract_sparse(p, mv, &sp, 1);
      return sp;
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 #define add_sparse_value(index, value) \
     { \
@@ -862,14 +1049,22 @@ uint32_t mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
         new_value = (new_value + (new_value >> p_bits)) & p; \
         mv[idx]  ^=  (old_value ^ new_value) << sh; \
     }
-        
+ 
+/// @endcond 
 
+       
+
+/**
+  @brief Add vector in sparse rep to vector in internal representation
+
+  The function adds a vector ``sp`` in sparse representation to a
+  vector ``mv`` in internal representation with modulus ``p``. 
+  Vector ``sp`` has length ``length``, and each value ``x`` in an 
+  entry of vector ``sp`` must satisfy ``0 <= x <= p``. Different 
+  entries in ``sp`` with the same index are added up.
+*/
 // %%EXPORT px
 void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t *mv)
-// Add vector 'sp' to vector 'mv'. Here 'mv' in and 'sp' are vectors 
-// in the representation R_p of the monster, with 'mv' given in internal
-// representation and 'sp' given in sparse format. 'sp' has length 
-// 'length'. Entries in 'sp' with the same index are added up.
 {
     uint_fast32_t i0, lg_int_fields, lg_field_bits, p_bits, index_mask;
 
@@ -914,6 +1109,7 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
 
 
     
+/// @cond DO_NOT_DOCUMENT 
 
 #define set_sparse_value(index, v) \
     { \
@@ -923,17 +1119,31 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
         mv[idx]  ^= value << sh; \
     }
 
+/// @endcond  
 
 
+/**
+  @brief Set certain entries of a vector in internal representation
 
+  The function sets certain entries of the vector ``mv `` depending on 
+  the vector ``sp ``. Vector ``mv`` is given in internal representation 
+  with modulus ``p``.  Vector ``sp`` is given in sparse representation 
+  and has length ``length``. 
+
+  If  ``sp `` has an entry with a certain label then the corresponding 
+  entry of ``mv `` is set to to the value coded in that entry of ``sp ``.
+  Each of these values ``x`` must  satisfy ``0 <= x <= p``. 
+  Duplicate entries in ``sp `` with the same label and different values
+  are illegal; in that case the value of ``mv `` is undefined.
+*/
 // %%EXPORT px
 void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
-// Set certain entries of the vector  'mv' depending on the vector
-// 'sp'. Here 'mv' in and 'sp' are vectors in the representation R_p 
-// of the monster, with 'mv' given in internal representation and 
-// 'sp' given in sparse format. 'sp' has  length 'length'.
-// If 'sp' has an entry with label 'l' then the corresponding entry 
-// of 'mv' is set to to the value coded in the entry of 'sp'.
+// Set certain entries of the vector   ``mv `` depending on the vector
+//  ``sp ``. Here  ``mv `` in and  ``sp `` are vectors in the representation R_p 
+// of the monster, with  ``mv `` given in internal representation and 
+//  ``sp `` given in sparse format.  ``sp `` has  length  ``length ``.
+// If  ``sp `` has an entry with label  ``l `` then the corresponding entry 
+// of  ``mv `` is set to to the value coded in the entry of  ``sp ``.
 {
     uint_fast32_t i0, lg_int_fields, lg_field_bits, index_mask;
 
@@ -976,7 +1186,23 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 
 
 
+/**
+  @brief Extract signs of a vector in internal representation
 
+  The function extracts the signs of certain entries of the
+  vector ``mv`` depending on the vector ``sp ``. Vector ``mv`` is 
+  given in internal representation  with modulus ``p``.  Vector ``sp`` 
+  is given in sparse representation  and has length ``length``. 
+
+  Entry ``sp[i]`` specifies a multiple ``c[i] * u[i]`` of a unit 
+  vector ``u[i]``. Let ``m[i]`` be the coordinate of
+  vector ``mv`` with respect to the unit vector ``u[i]``. We
+  put ``s[i] = 0`` if ``m[i] = c[i]`` and ``s[i] = 1`` 
+  if ``m[i] = -c[i]``. In all other cases we assign a random
+  value 0 or 1 to ``s[i]``. Then the function returns the sum of
+  the values ``s[i] << i``, where ``i`` ranges from ``0``
+  to ``length - 1``.
+*/
 // %%EXPORT px
 int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
 {
@@ -1002,7 +1228,17 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
 **********************************************************************/
 
 
+/**
+  @brief Convert an index from external to sparse representation
 
+  The function converts an index ``i`` for the external representation 
+  of a vector to an index for the sparse representation of a vector
+  and returns the converted index. The function returns 0 in case
+  ``i >= 196884```. 
+
+  Indices for the sparse representation are defined as 
+  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
+*/
 // %%EXPORT px
 uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
 // Convert external index i to sparse index.
@@ -1036,21 +1272,35 @@ uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
 }
 
 
+/**
+  @brief Convert index array from external to sparse representation
 
+  The function converts an array ``a`` of indices for the external 
+  representation to an array of indices for the sparse representation 
+  of a vector. All indices in the array ``a`` of length ``len`` are
+  converted in place, using function ``mm_aux_index_extern_to_sparse``.
+*/
 // %%EXPORT px
 void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
-// Convert array a of external indices to sparse indices in place.
-// Each index is converted using mm_aux_index_extern_to_sparse() 
 {
     for(; len--; ++a) *a = mm_aux_index_extern_to_sparse(*a); 
 }
 
 
+/**
+  @brief Convert an index from sparse to external representation
 
+  The function converts an index ``i`` for the sparse representation 
+  of a vector to an index for the external representation of a vector
+  and returns the converted index. The function returns -1 if the
+  input ``i`` denots an illegal index. The coordinate value encoded
+  in the input ``i`` is ignored.
+ 
+  Indices for the sparse representation are defined as 
+  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
+*/
 // %%EXPORT px
 int32_t mm_aux_index_sparse_to_extern(uint32_t i)
-// Convert sparse index i to external index.
-// Return -1 if index i is bad
 {
     uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f;
     i = (i >> 14) & 0x7ff;
@@ -1078,7 +1328,20 @@ int32_t mm_aux_index_sparse_to_extern(uint32_t i)
     }
 }
 
+/**
+  @brief Convert sparse index to a short vector in the Leech lattice
 
+  The function converts an index ``i`` for the sparse representation
+  of a vector to a vector ``v`` in the Leech lattice. This conversion 
+  is successful if ``i`` denotes a legal index for one of the tags
+  tags ``B, C, T, X``. Then the function computes a short Leech 
+  lattice vector  (scaled to norm 32)  in the array ``v``. 
+  Output ``v`` is determined up to sign only; that sign is 
+  implementation dependent.
+
+  The function returns 0 in case of a successful conversion and -1
+  in case of failure.
+*/
 // %%EXPORT px
 int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 // Convert sparse index i to a short vector v in the Leech lattice.
@@ -1119,12 +1382,21 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 }
 
 
+/**
+  @brief Convert sparse index to a short vector in the Leech lattice mod 2
 
+  The function converts an index ``i`` for the sparse representation
+  of a vector to a vector ``v`` in the Leech lattice mod 2. This 
+  conversion  is successful if ``i`` denotes a legal index for one of 
+  the tags tags ``B, C, T, X``. The function returns a short Leech 
+  lattice vector modulo 2, encoded in **Leech lattice coding**, as
+  descrbed in 
+  section **Description of the mmgroup.generators extension**. 
+
+  The function returns 0 in case of failure.
+*/
 // %%EXPORT px
 uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
-// Convert sparse index i to a short vector v in the Leech lattice
-// modulo 2 in "Leech lattice coding"
-// Return 0 if index i is bad or does not map to a short vector
 {
     uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f,  res = 0;
     i = (i >> 14) & 0x7ff;
