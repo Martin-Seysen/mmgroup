@@ -325,7 +325,7 @@ def make_basics():
     h_path =  os.path.join(C_DIR, h_file)
     pxd_file =  PXD_BASICS_NAME
     print("Creating %s from previous .ske files" % h_file)
-    print(all_ske_files)
+    #print(all_ske_files)
     tg.generate(all_ske_files, None, h_path)
     print("Creating %s" % pxd_file)
     tg.generate_pxd(

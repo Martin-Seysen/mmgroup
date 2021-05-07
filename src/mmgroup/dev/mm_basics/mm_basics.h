@@ -2,8 +2,13 @@
 
 /** @file mm_basics.h
 
- This is file mm_basics.h. It is yet to be documented.
+ The header file ``mm_basics.h`` contains basic definitions for dealing with 
+ vectors of the 198884-dimensional representation of the monster group.
 
+ It also contains prototypes for the C files in the ``mm`` extension. This 
+ extension comprises the  files ``mm_aux.c``,  ``mm_crt.c``,  
+``mm_group_word.c``, ``mm_random.c``, ``mm_tables.c``, 
+``mm_tables_xi.c``. 
 */
 
 #include <stdint.h>
@@ -55,9 +60,18 @@
 
 
 
-typedef uint%{INT_BITS}_t uint_mmv_t;
 
 /// @endcond  
+
+/** @var typedef uint%{INT_BITS}_t uint_mmv_t
+    @brief Used for the representation of the monster group
+
+    Internally, a vector in the 196884-dimensional representation of 
+    the monster is stored as an array of integers of 
+    type ``uint_mmv_t``. Here several entries are stored in such
+    an integer. See ``enum MM_AUX_OFS_type`` for more details.
+*/
+typedef uint%{INT_BITS}_t uint_mmv_t;
 
 
 /**********************************************************************
@@ -65,44 +79,83 @@ typedef uint%{INT_BITS}_t uint_mmv_t;
 **********************************************************************/
 
 // %%GEN h
-// Return nonzero value if p is a bad modulus,  
-// i.e. not p = 2**k - 1 for some 2 <= k <= 8
+
+/** 
+  Offsets for tags A,B,C,T,X,Z,Y at a vector in the 196884-dimensional 
+  representation of the monster (stored in the internal representation).
+
+  Such an offset counts the number of entries starting at the 
+  beginning of th vector. Note that several entries of a vector are 
+  stored in a %{INT_BITS}-bit integer. Also there may be duplicate or
+  unused entries in a vector, in order to speed up the operation
+  of the monster group on a vector.
+*/
+enum MM_AUX_OFS {
+  MM_AUX_OFS_A =      0UL, /**< Offset for tag A */ 
+  MM_AUX_OFS_B =    768UL, /**< Offset for tag B */
+  MM_AUX_OFS_C =   1536UL, /**< Offset for tag C */
+  MM_AUX_OFS_T =   2304UL, /**< Offset for tag T */
+  MM_AUX_OFS_X =  50880UL, /**< Offset for tag X */
+  MM_AUX_OFS_Z = 116416UL, /**< Offset for tag Z */
+  MM_AUX_OFS_Y = 181952UL, /**< Offset for tag Y */
+  MM_AUX_OFS_E = 247488UL  /**< Total length of the internal representation */
+};
+
+
+/** 
+  Offsets for tags A,B,C,T,X,Z,Y at a vector in the 196884-dimensional 
+  representation of the monster (stored in the external representation).
+
+  In external representation, a vector is stored as a contiguous 
+  array of bytes.
+*/
+enum MM_AUX_XOFS {
+  MM_AUX_XOFS_D =      0UL, /**< Offset for diagonal entries of tag A */ 
+  MM_AUX_XOFS_A =     24UL, /**< Offset for tag A */ 
+  MM_AUX_XOFS_B =    300UL, /**< Offset for tag B */ 
+  MM_AUX_XOFS_C =    576UL, /**< Offset for tag C */ 
+  MM_AUX_XOFS_T =    852UL, /**< Offset for tag T */ 
+  MM_AUX_XOFS_X =  49428UL, /**< Offset for tag X */ 
+  MM_AUX_XOFS_Z =  98580UL, /**< Offset for tag Z */ 
+  MM_AUX_XOFS_Y = 147732UL, /**< Offset for tag Y */ 
+  MM_AUX_XOFS_E = 196884UL  /**< Total length of the external representation */
+};
+
+
+/**
+  Entries of a vector of the representation of the monster can also
+  be adressed as tuples ``(tag, par1, par2)``. For the calculation of
+  the offset of such an entry we encode that tuple in an integer of
+  type ``uint32_t`` as follows:
+
+      Bits 27,...,25:  tag (as indicated below)
+ 
+      Bits 24,...,14:  par1 (an integer of up to 11 bits)
+
+      Bits 13,..., 8:  par2 (an integer of up to 6 bits)
+  
+      Bits  7,..., 0:  (Reserved for the value of an entry)
+*/
+enum MM_SPACE_TAG {
+  MM_SPACE_TAG_A =    0x2000000UL, /**< Encodes tag A */ 
+  MM_SPACE_TAG_B =    0x4000000UL, /**< Encodes tag B */
+  MM_SPACE_TAG_C =    0x6000000UL, /**< Encodes tag C */
+  MM_SPACE_TAG_T =    0x8000000UL, /**< Encodes tag T */
+  MM_SPACE_TAG_X =    0xA000000UL, /**< Encodes tag X */
+  MM_SPACE_TAG_Z =    0xC000000UL, /**< Encodes tag Z */
+  MM_SPACE_TAG_Y =    0xE000000UL  /**< Encodes tag Y */
+};
+
+
+
+/** @def mm_aux_bad_p(p)
+    @brief Return 0 if ``p`` is a good modulus and a nonzero value otherwise 
+*/
 #define mm_aux_bad_p(p) (((p) & ((p)+1)) | (((p)-3) & ((0UL-256UL))))
 
-// Offsets for tags A,B,C,T,X,Z,Y in the internal representation
-#define MM_AUX_OFS_A       0UL
-#define MM_AUX_OFS_B     768UL    //    24*32
-#define MM_AUX_OFS_C    1536UL    //  2*24*32
-#define MM_AUX_OFS_T    2304UL    //  3*24*32
-#define MM_AUX_OFS_X   50880UL    //  MM_AUX_OFS_T +    759*64
-#define MM_AUX_OFS_Z  116416UL    //  MM_AUX_OFS_X +   2048*32
-#define MM_AUX_OFS_Y  181952UL    //  MM_AUX_OFS_X + 2*2048*32
-#define MM_AUX_OFS_E  247488UL    //  MM_AUX_OFS_X + 3*2048*32. i.e
-                                  //  total length of internal rep
 
-// Offsets for tags A,B,C,T,X,Z,Y in the external representation
-#define MM_AUX_XOFS_A      24UL
-#define MM_AUX_XOFS_B     300UL    //  24 + 1*276
-#define MM_AUX_XOFS_C     576UL    //  24 + 2*276
-#define MM_AUX_XOFS_T     852UL    //  24 + 3*276
-#define MM_AUX_XOFS_X   49428UL    //  MM_AUX_XOFS_T +    759*64
-#define MM_AUX_XOFS_Z   98580UL    //  MM_AUX_XOFS_X +   2048*24
-#define MM_AUX_XOFS_Y  147732UL    //  MM_AUX_XOFS_X + 2*2048*24
-#define MM_AUX_XOFS_E  196884UL    //  MM_AUX_XOFS_X + 3*2048*24. i.e
-                                   //  total length of external rep
+/// @cond DO_NOT_DOCUMENT 
 
-
-// Tags for labels and values of vectors in the representation space
-// A multiple of a unit vector with coordinate 'coord' is encoded
-// in the bit fields of a 32-bit integers in the form. 
-//   coord (tag, par1, par2) 
-#define MM_SPACE_TAG_A      0x2000000
-#define MM_SPACE_TAG_B      0x4000000
-#define MM_SPACE_TAG_C      0x6000000
-#define MM_SPACE_TAG_T      0x8000000
-#define MM_SPACE_TAG_X      0xA000000
-#define MM_SPACE_TAG_Z      0xC000000
-#define MM_SPACE_TAG_Y      0xE000000 
 // Mask for all tags:
 // Use y = (x & MM_SPACE_MASK_PAR1) << MM_SPACE_SHIFT_PAR1
 // to set parameter par1 in y to the value x.
@@ -124,5 +177,5 @@ typedef uint%{INT_BITS}_t uint_mmv_t;
 // use only the lowest k bits of the coordinate.
 #define MM_SPACE_COORD_PAR1    0x1FFC000   
 
-
+/// @endcond
 
