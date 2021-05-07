@@ -1,17 +1,37 @@
 /** @file mm_aux.c
 
- This is file mm_aux.c. It is yet to be documented.
+ File ``mm_aux.c`` provides the basic functions for dealing with the
+ representations  of the monster group  modulo various small 
+ integers ``p = 2**n-1``,  ``2 <= n <= 8``.
+ Here the integer ``p`` is called the modulus. 
+
+ Especially, we deal with vectors in such a representation as 
+ desrcibed in  *The C interface of the mmgroup project*, 
+ section *Description of the mmgroup.mm extension*.
+
+ For such a vector there is an internal representation, an external
+ representation, and also a sparse representation, as described in the
+ documentation mentioned above.
+
+ The functions in this file provide access to the internal representation 
+ of such a vector. The also support the conversion between the differnt 
+ representations of a vector.  
+
+ Usually, the order of the parameters of functions in this file is:
+      
+       1. Modulus p, if present
+
+       2. The input value or the input data array
+
+       3. Any parameters that do not affect the positions in the output array
+
+       4. The output data array
+
+       5. Parameters (e.g. lengths, indices) that affect the positions of the 
+          data being modified in the output array
 
 */
 
-// %%COMMENT
-// %%PY_DOCSTR MM_DOC
-
-// %%COMMENT
-// %%PY_DOCSTR MM_BASICS_DOC
-
-// %%COMMENT
-// %%PY_DOCSTR MM_AUX
 
 
 #include <stdlib.h>
@@ -30,7 +50,6 @@ static const uint32_t MMV_CONST_TABLE[] = {
 };
 
 
-// %%COMMENT
 // %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
 static const uint16_t MM_AUX_TBL_ABC[] = {
 // %%TABLE MM_AUX_TBL_ABC, uint16
@@ -38,7 +57,6 @@ static const uint16_t MM_AUX_TBL_ABC[] = {
 
 
 
-// %%COMMENT
 // %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
 static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 // %%TABLE MM_AUX_TBL_REDUCE, uint%{INT_BITS}
@@ -47,16 +65,6 @@ static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 /// @endcond  
 
 
-
-// %%COMMENT
-// The order of the parameters of functions in this file is:
-//
-// 1. Modulus p, if present
-// 2. The input data array
-// 3. Any parameters that do not affect the positions in the output array
-// 4. The output data array
-// 5. Parameters (e.g. lengths, indices) that affect the positions of the 
-//    data being modified in the output array
 
 
 
@@ -72,21 +80,24 @@ extern "C" {
 
 
 
-// %%COMMENT
 /**********************************************************************
 *** Low-level functions supporting vectors of type uint_mmv_t[]
 **********************************************************************/
 
 
 
+/**
+  @brief Read entries from vector in internal representation
 
+  Read entries of vector ``mv`` (stored in internal representation
+  with modulus ``p``) and store these entries  in the array ``b``.
+  Here ``len`` is the number of entries to be read. ``len`` must 
+  be a multiple of the number of entries in an integer
+  of ``type uint_mmv_t``. It is ok if ``len`` is a multiple of 32. 
+  Output vector ``b`` is reduced modulo ``p``.
+*/
 // %%EXPORT px
 void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
-// Read entries of vector mv with modulus p and store these entries
-// in the array b. len is the number of entries to be read.
-// len must be a multiple of the number of entries in an integer
-// of type uint_mmv_t. It is ok if len is a multiple of 32. 
-// Vector b is reduced modulo p.
 {
     uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
@@ -111,10 +122,16 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
     }
 }
 
+
+/**
+  @brief Read entries from vector in internal representation
+
+  Same operation as in function ``mm_aux_read_mmv1()``, but the
+  output vector ``b`` is not reduced. This is for debugging and less 
+  optimized than ``mm_aux_read_mmv1()``. 
+*/
 // %%EXPORT px
 void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
-// Same operation as mm_aux_read_mmv1(), but vector b is not reduced.
-// This is for debugging and less optimized than mm_aux_read_mmv1(). 
 {
     uint_fast32_t i, j;  
     uint_mmv_t source;
@@ -131,13 +148,17 @@ void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t le
 }
 
 
+/**
+  @brief Write data to a vector in internal representation
 
+  Write data from the array ``b`` to the vector ``mv`` (stored 
+  in internal representation with modulus ``p``). Here ``len`` is 
+  the number of entries to be written. ``len`` must be a multiple 
+  of the number of entries in an integer of type ``uint_mmv_t``. 
+  It is ok if len is a multiple of 32. 
+*/
 // %%EXPORT px
 void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
-// Write data from the array b to the vector mv with modulus p. 
-// len is the number of entries to be written.
-// len must be a multiple of the number of entries in an integer
-// of type uint_mmv_t. It is ok if len is a multiple of 32. 
 {
     uint_fast32_t i;  
     uint_mmv_t dest;
@@ -276,7 +297,6 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 }
 
 
-// %%COMMENT
 /**********************************************************************
 *** Functions for data transfer from and to vectors in R_p.
 *** Here such a vector is given in internal representation and of type 
@@ -431,7 +451,6 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
 }
 
 
-// %%COMMENT
 /**********************************************************************
 *** Reducing and checking a vector in R_p
 **********************************************************************/
@@ -589,7 +608,6 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
     return check_mmv_buffer(p, mv, buffer);
 }
 
-// %%COMMENT
 /**********************************************************************
 *** Low-level functions supperting external rep of vectors in R_p
 **********************************************************************/
@@ -643,7 +661,6 @@ void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 
 
 
-// %%COMMENT
 /**********************************************************************
 *** Conversion between internal and external rep of vectors in R_p
 **********************************************************************/
@@ -702,7 +719,6 @@ void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 
 
 
-// %%COMMENT
 /**********************************************************************
 *** Conversion between internal and sparse rep of vectors in R_p
 **********************************************************************/
@@ -981,7 +997,6 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
 }
 
 
-// %%COMMENT
 /**********************************************************************
 *** Index conversion between external and sparse rep of vectors in R_p
 **********************************************************************/

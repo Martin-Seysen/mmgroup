@@ -379,12 +379,13 @@ def generate_files():
 ##########################################################################
 
 
-C_FILES_DOCUMENTED = ["mm_random", "mm_aux", "mm_tables" ]
+C_FILES_DOCUMENTED = ["mm_random",  "mm_tables" ]
 
 
 def generate_doc():
     """Function for generating documentation from the genrated C files
 
+    Function is deprecated!!!
     """
     print("Generating documentation for module mm, deprecated!")
     for c_file in C_FILES_DOCUMENTED:

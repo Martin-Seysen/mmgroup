@@ -3,7 +3,10 @@
 /** @file mm_basics.h
 
  The header file ``mm_basics.h`` contains basic definitions for dealing with 
- vectors of the 198884-dimensional representation of the monster group.
+ vectors of the 198884-dimensional representation of the monster group,
+ as described in  *The C interface of the mmgroup project*, 
+ section *Description of the mmgroup.mm extension*.
+
 
  It also contains prototypes for the C files in the ``mm`` extension. This 
  extension comprises the  files ``mm_aux.c``,  ``mm_crt.c``,  
@@ -81,8 +84,9 @@ typedef uint%{INT_BITS}_t uint_mmv_t;
 // %%GEN h
 
 /** 
-  Offsets for tags A,B,C,T,X,Z,Y at a vector in the 196884-dimensional 
-  representation of the monster (stored in the internal representation).
+  This enumeration contains the  offsets for the tags ``A,B,C,T,X,Z,Y``
+  in a vector in the 196884-dimensional representation of the monster,
+  stored in the internal representation.
 
   Such an offset counts the number of entries starting at the 
   beginning of th vector. Note that several entries of a vector are 
@@ -103,8 +107,9 @@ enum MM_AUX_OFS {
 
 
 /** 
-  Offsets for tags A,B,C,T,X,Z,Y at a vector in the 196884-dimensional 
-  representation of the monster (stored in the external representation).
+  This enumeration contains the offsets for the tags ``A,B,C,T,X,Z,Y``
+  in a vector in the 196884-dimensional representation of the monster,
+  stored in the external representation.
 
   In external representation, a vector is stored as a contiguous 
   array of bytes.
@@ -123,9 +128,12 @@ enum MM_AUX_XOFS {
 
 
 /**
-  Entries of a vector of the representation of the monster can also
-  be adressed as tuples ``(tag, par1, par2)``. For the calculation of
-  the offset of such an entry we encode that tuple in an integer of
+  This enumeration defines the values of the tags ``A,B,C,T,X,Z,Y``
+  in a vector in the 196884-dimensional representation of the monster,
+  stored in the sparse representation.
+
+  In the sparse representation an entry of a vector is stored as a tuple
+  of bit  fields ``(tag, par1, par2, value)`` inside an integer of
   type ``uint32_t`` as follows:
 
       Bits 27,...,25:  tag (as indicated below)
@@ -134,7 +142,7 @@ enum MM_AUX_XOFS {
 
       Bits 13,..., 8:  par2 (an integer of up to 6 bits)
   
-      Bits  7,..., 0:  (Reserved for the value of an entry)
+      Bits  7,..., 0:  value (Reserved for the value of an entry)
 */
 enum MM_SPACE_TAG {
   MM_SPACE_TAG_A =    0x2000000UL, /**< Encodes tag A */ 

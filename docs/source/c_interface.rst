@@ -132,8 +132,11 @@ Description of the ``mmgroup.mm`` extension
 ===========================================
 
 
-Module ``mmgroup.mm`` provides basic functions for the representation
-of the monster. 
+Module ``mmgroup.mm`` provides basic functions for the representations
+of the monster modulo small numbers ``p``.  For each supported
+modulus ``p`` there is also a specific module ``mmgroup.mm<p>`` 
+containing highly optimized C programs dealing with the
+representation modulo ``p``.
 
 Module ``mmgroup.mm`` is implemented as an extension with ``Cython``.
 The main source file for that extension is ``mm_basics.pyx`` in
