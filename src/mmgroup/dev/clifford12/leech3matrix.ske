@@ -1,5 +1,5 @@
-/** @file leech_mod3.c
-  File ``leech_mod3.c`` contains  functions for computing with
+/** @file leech3matrix.c
+  File ``leech3matrix.c`` contains  functions for computing with
   symmetric matrices on the Leech lattice mod 3. 
 */
 

@@ -1,4 +1,25 @@
+/** @file mm_tables.c
 
+ File ``mm_tables.c`` contains functions for supporting the 
+ operations \f$x_\delta x_\pi\f$ and \f$y_f x_e x_\delta\f$ on 
+ the vectors of the 198884-dimesional represention  \f$\rho_p\f$
+ modulo a small number \f$p\f$. These operations are implemented
+ in separate packages for the differnet values of \f$p\f$. But
+ there are commom preprocessing steps required for all
+ values \f$p\f$. These common preprocessing steps are 
+ implemented here. 
+ 
+ The monomial operations \f$x_\delta, x_\pi, y_f, x_e\f$ are as
+ defined in the **API Reference**, section **The monster group**.
+ Here \f$\delta\f$ is an element of the Golay cocode represented
+ as a 12-bit integer. \f$f\f$ and \f$e\f$ are elements of the
+ Parker loop represented as 13-bit integers.  \f$\pi\f$ is
+ a automorphism of the Parker loop. In the **API Reference**,
+ section **Automorphisms of the Parker loop**  we number
+ a certain set of these automorphisms in the same way as the
+ elements of the Mathieu group \f$M_{24}\f$. We denote
+ such a  \f$\pi\f$ by its number.
+*/
 #include <stdint.h>
 
 #include "mat24_functions.h"
@@ -9,15 +30,24 @@
 
 // %%GEN h
 
-// Auxiliary structure for mm_sub_op_pi_type
+
+/** @struct mm_sub_op_pi64_type "mm_basics.h"
+
+  @brief Auxiliary structure for type ``mm_sub_op_pi_type``
+
+
+*/
 typedef struct {
    uint16_t preimage;
    uint8_t perm[6];
 } mm_sub_op_pi64_type;
 
 
+/** @struct mm_sub_op_pi_type "mm_basics.h"
 
-// Structure used for preparing an operation x_delta * x_pi
+  @brief Structure used for preparing an operation \f$x_\delta  x_\pi\f$
+
+*/
 // See corresponding comment in file mm_tables.c.
 typedef struct {
     uint32_t d;            
@@ -34,7 +64,12 @@ typedef struct {
 
 
 // %%GEN h
-// Structure used for preparing an operation y_f * x_e *x_eps
+
+/** @struct mm_sub_op_xy_type "mm_basics.h"
+
+  @brief Structure used for preparing an operation \f$y_f x_e x_\epsilon\$
+
+*/
 // See corresponding comment in file mm_tables.c.
 typedef struct {
     uint32_t f;            
@@ -47,6 +82,7 @@ typedef struct {
     uint8_t sign_XYZ[2048];
     uint16_t s_T[759];
 } mm_sub_op_xy_type;
+
 // %%GEN c
 
 
@@ -71,6 +107,9 @@ extern "C" {
 const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = { 
     // %%TABLE MM_OctadElementsTable, uint8
 };
+
+
+/// @cond DO_NOT_DOCUMENT 
 
 
 // Let o be an octad. Let {i},{j}, i != j be the even cocode word 
@@ -98,15 +137,14 @@ const uint8_t MM_SUBOCTAD_TABLE[128] = {
 };
 
 
+/// @endcond 
 
 
 
-// %%COMMENT
 /**********************************************************************
 *** Subroutines for mm*_op_pi
 **********************************************************************/
 
-// %%COMMENT
 /**********************************************************************
 Preparing an operation x_delta * x_pi
 
@@ -328,11 +366,11 @@ void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
 
 
 
-// %%COMMENT
 /**********************************************************************
 *** Subroutines for mm*_op_pi
 **********************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 #define PwrMapH(d) (MAT24_THETA_TABLE[d])
 #define PwrMap(d) ((MAT24_THETA_TABLE[(d) & 0x7ff] >> 12) & 1)
@@ -344,6 +382,7 @@ void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
     + ((v >> (po[4] - 4)) & 16) + ((v >> (po[5] - 5)) & 32) \
     + ((v >> (po[6] - 6)) & 64) ]
 
+/// @endcond  
 
 
 // %%EXPORT 

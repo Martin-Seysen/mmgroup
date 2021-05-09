@@ -116,8 +116,9 @@ elements of ``M``:
 
   :math:`x_\pi`        ``M(pi)``, ``pi`` an instance of class |AutPL|;
 
-                       ``M(('d', c), ('p', n))`` returns 
-                       ``M(AutPL(('d', c), ('p', n)))``.
+                       ``M(('d', delta), ('p', n))`` returns 
+                       ``M(AutPL(('d', delta), ('p', n)))`` 
+                       for ``0 <= delta < 0x1000``, ``0 <= n < 244823040`` .
 
   :math:`x_e`          ``M(('x', e))``, ``x`` an  instance of class |PLoop|;
 

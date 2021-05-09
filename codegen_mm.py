@@ -379,7 +379,7 @@ def generate_files():
 ##########################################################################
 
 
-C_FILES_DOCUMENTED = ["mm_random",  "mm_tables" ]
+C_FILES_DOCUMENTED = ["mm_random"]
 
 
 def generate_doc():

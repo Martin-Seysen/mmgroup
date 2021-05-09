@@ -171,6 +171,10 @@ C interface for file mm_aux.c
 .. doxygenfile:: mm_aux.c
 
 
+C interface for file mm_tables.c
+---------------------------------------
+
+.. doxygenfile:: mm_tables.c
 
 
 Description of the ``mmgroup.mm<p>`` extensions
