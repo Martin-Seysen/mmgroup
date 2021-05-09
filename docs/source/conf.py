@@ -100,7 +100,8 @@ html_static_path = ['_static']
 
 # Sidebars in tables in html are ugly! Here we disable them: 
 def setup(app):
-    app.add_stylesheet('custom.css')
+    #app.add_stylesheet('custom.css') # appears to be deprecated!
+    app.add_css_file('custom.css') 
 
 # -- Options for latex output ------------------------------------------------
 # The following option should remove excessive blank pages.

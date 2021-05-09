@@ -18,7 +18,7 @@
  section **Automorphisms of the Parker loop**  we number
  a certain set of these automorphisms in the same way as the
  elements of the Mathieu group \f$M_{24}\f$. We denote
- such a  \f$\pi\f$ by its number.
+ such an automorphism  \f$\pi\f$ by its number.
 */
 #include <stdint.h>
 
