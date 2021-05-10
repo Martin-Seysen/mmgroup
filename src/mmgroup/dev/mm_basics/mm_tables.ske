@@ -145,6 +145,12 @@ typedef struct {
     /**
        A description of the operation of \f$x_\epsilon  x_\pi\f$ on the
        entries with tag ``T``,  see structure ``mm_sub_op_pi64_type``.
+       Entry ``d`` of the Arrary refers to the octad ``o(d)`` with 
+       number ``d``. It contains the followint information_
+       
+       Bits 5,...,0: Associator ``\delta' = A(o(d), f))`` encoded as a suboctad
+       
+       Bits 11,...,6: Associator ``a = A(o(d), ef))`` encoded as a suboctad.
     */
     mm_sub_op_pi64_type tbl_perm64[759];
 } mm_sub_op_pi_type;
@@ -158,17 +164,100 @@ typedef struct {
 /** @struct mm_sub_op_xy_type "mm_basics.h"
 
   @brief Structure used for preparing an operation \f$y_f x_e x_\epsilon\f$
+  
+  The operation of \f$g = y_f x_e x_\epsilon\f$, (or, more precisely, of its 
+  inverse \f$g^{-1}\f$) on the representation of the monster group is 
+  described in section **Implementing generators of the Monster group** in 
+  the **The mmgroup guide for developers**. 
+  
+  Function ``mm_sub_prep_xy`` in file ``mm_tables.c`` collects the data
+  required for this operation in a structure of type ``mm_sub_op_xy_type``.
 
 */
 typedef struct {
+    /**
+       A 13-bit integer describing an element  \f$f\f$ of the Parker loop.
+    */
     uint32_t f;            
+    /**
+       A 13-bit integer describing an element  \f$e\f$ of the Parker loop.
+    */
     uint32_t e;
+    /**
+       A 12-bit integer describing an element  \f$\epsilon\f$ of
+       the Golay cocode.
+    */
     uint32_t eps;
+    /**
+       Bit \f$i\f$ of member ``f_i`` is the scalar product of \f$f\f$ and
+       the singleton cocode word  \f$(i)\f$.
+       
+       These bits are used for the operation of  \f$g^{-1}\f$ on
+       entries with tag ``A``.
+    */
     uint32_t f_i;
+    /**
+       Bit \f$i\f$ of member ``ef_i`` is the scalar product of \f$ef\f$ and
+       the singleton cocode word  \f$(i)\f$.
+       
+       These bits are used for the operation of  \f$g^{-1}\f$ on
+       entries with tags ``B``, and ``C``.
+    */
     uint32_t ef_i;
+    /**
+       Put  \f$g_0 = e\f$,  \f$g_1 = g_2 = f\f$.
+       For ``k = 0, 1,2``, the bit \f$i\f$ of member ``lin_i[k]`` is the scalar
+       product of \f$g_k\f$ and  the singleton cocode word  \f$(i)\f$.
+       
+       These bits are used for the operation of  \f$g^{-1}\f$ on
+       entries with tags ``X``, ``Z``, and ``Y``.
+    */
     uint32_t lin_i[3];
+    /**
+       Let ``U_k = X, Z, Y`` for ``k = 0, 1, 2``. If the cocode
+       element \f$\epsilon\f$ is even then we put ``U'_k = U_k``, otherwise 
+       we put  ``U'_k = X, Y, Z``   for ``k = 0, 1, 2``. The
+       operation \f$g^{-1}\f$ maps the vector with tag ``(U_k, d, i)`` 
+       to ``(-1)**s`` times the vector with tag ``(U'_k, d ^ lin[d], i)``. 
+       Here ``**`` denotes exponentiation and we have
+       
+       ``s`` =  ``s(k, d, i)`` = ``(lin_d[k] >> i) + (sign_XYZ[d] >> k)``.      
+    */
     uint32_t lin_d[3];
+    /**
+       Used for calculations of signs as described above.
+    */
     uint8_t sign_XYZ[2048];
+    /**
+       Entry ``d`` of the following array refers to the octad ``o(d)``
+       with number ``d``. The bits of entry ``d`` are interpreted as
+       follows: 
+    
+       Bits 5,...,0: The asscociator ``delta' = A(o(d), f)`` encoded
+       as a suboctad of octad ``o(d))``.
+       
+       Bits 13,...,8: The asscociator ``alpha = A(o(d), ef)`` encoded
+       as a suboctad of octad ``o(d))``. From his information we can
+       compute the scalar product ``<ef, \delta>`` for each suboctad 
+       ``delta`` of ``o(d)`` as an  intersection of tow suboctads.
+       Here we assume that ``delta`` is represented as such a suboctad.
+       
+       Bit 14: The sign bit ``s(d) = P(d) + P(de) + <d, eps>``, where
+       ``P(.)`` is the squaring map in the Parker loop.
+       
+       Bit 15: Parity bit ``|eps|`` of the cocode word ``eps``.
+       
+       Then \f$g^{-1}\f$ maps the vector with tag ``(T, d, delta)`` 
+       to ``(-1)**s'`` times  the vector with 
+       tag ``(T, d, \delta ^ delta')``. 
+       Here ``**`` denotes exponentiation and we have
+       
+       ``s'`` = ``s'(T, d, delta)`` 
+       = ``s(d)`` + ``<\alpha, \delta>`` + ``|delta| * |eps| / 2``. 
+       
+       Here the product ``<\alpha, \delta>`` must be computed as the
+       bit length of an intersection of two suboctads.        
+    */
     uint16_t s_T[759];
 } mm_sub_op_xy_type;
 
@@ -364,7 +453,10 @@ void  mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
 #define PwrMapH(d) (MAT24_THETA_TABLE[d])
 #define PwrMap(d) ((MAT24_THETA_TABLE[(d) & 0x7ff] >> 12) & 1)
     
-
+// Compute interssection of vector ``v`` in ``{0,1}^24`` and the
+// octad referred by the pointer ``po`` to an antry of the
+// octad table ``MM_SUB_OCTAD_ELEMENT_TABLEE``. Return the
+// result as a 6-bit number denoting a suboctad.
 #define to_suboctad(v, po) MM_SUBOCTAD_TABLE[ \
     ((v >> po[0]) & 1) + ((v >> (po[1] - 1)) & 2) \
     + ((v >> (po[2] - 2)) & 4) + ((v >> (po[3] - 3)) & 8) \
@@ -373,13 +465,17 @@ void  mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
 
 /// @endcond  
 
-
+/**
+  @brief Compute information for operation \f$y_f x_e x_\epsilon\f$
+  
+  Given an element  \f$y_f x_e x_\epsilon\f$ of the monster by 
+  parameters ``f``, ``e``, and ``eps``, the function computes the
+  relevant data for performing that operation on the representation
+  of the monster. These data are stored in the structure of
+  type ``mm_sub_op_xy_type`` referred by parameter ``p_op``.
+*/
 // %%EXPORT 
 void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_op)
-// Prepare operation y_f *x_e * x_eps, see comment above, with 
-// input parameters f, e and eps. It fills the stucture of type 
-// mm_sub_op_pi_type referred by p_op with data required for that
-// operation.
 {
     p_op->f = f = f & 0x1fff;            
     p_op->e = e = e & 0x1fff; 
@@ -456,6 +552,7 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 // %%EXPORT px
 void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint32_t *p_tbl)
@@ -484,7 +581,7 @@ void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint
     } 
 }
 
-
+/// @endcond 
 
 
 //  %%GEN h
