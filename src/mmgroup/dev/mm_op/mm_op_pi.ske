@@ -237,7 +237,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
     a_dest[0] = v_out + MM_OP%{P}_OFS_X;
     a_src[1] = v_in + MM_OP%{P}_OFS_Z;
     a_src[2] = v_in + MM_OP%{P}_OFS_Y;
-    if (p_op->d & 0x800) {
+    if (p_op->eps & 0x800) {
         a_dest[1] = v_out + MM_OP%{P}_OFS_Y;
         a_dest[2] = v_out + MM_OP%{P}_OFS_Z;
     } else {
@@ -271,7 +271,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
     }
 
     // If d is odd: negate some entries    
-    if (p_op->d & 0x800) {
+    if (p_op->eps & 0x800) {
         uint_fast16_t i;
         uint_mmv_t *v = v_out + MM_OP%{P}_OFS_T;
 
