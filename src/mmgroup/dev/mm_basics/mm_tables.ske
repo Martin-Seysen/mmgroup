@@ -45,18 +45,9 @@
 
  Entry ``i1`` of the array of type ``mm_sub_op_pi64_type[759]``
  describes the preimage of ``(T, i1, j1)`` for all ``0 <= j1 < 64``
- as follows:
-
- Member ``preimage``
-
- Bits 9...0 : preimage ``i`` such that ``(T, i, .)`` maps to ``+-(T, i1, .)``
-
- Bit 12: sign bit: ``(T, i, .)`` maps to ``-(T, i1, .)`` if bit 12 is set
-
- Member  ``perm[k]``, ``0 <= k < 6``
-
- This is a value ``v ``such that ``(T, i, v)`` maps to ``+-(T, i1, 2 * 2**k - 1)``
-
+ as documented in the description of the members ``preimage``
+ and  ``perm``.
+ 
  Note that the values 1, 3, 7, 15, 31, 63 occur as
  differences `` j1 ^ (j1 - 1)`` when counting ``j1`` from 0 up to 63. So the
  preimage of ``(T, i1, j1)`` can be computed from the preimage
@@ -68,9 +59,21 @@
  infomration in this structure. Then entry ``(T, i, j)`` has to be negated
  if the bit weight of the subset of octade ``i`` corresponding to
  index ``j`` has bit weight 2 modulo 4.
+ 
+ In the sequel we describe the meaning of entry ``i1`` an an array of 
+ elements of type ``mm_sub_op_pi64_type``.
 */
 typedef struct {
+   /**
+   Bits 9...0 : preimage ``i`` such that ``(T, i, .)`` maps to ``+-(T, i1, .)``
+
+   Bit 12: sign bit: ``(T, i, .)`` maps to ``-(T, i1, .)`` if bit 12 is set
+   */
    uint16_t preimage;
+   /**
+   Member ``perm[k]`` is a value ``v ``such that ``(T, i, v)`` maps 
+   to ``+-(T, i1, 2 * 2**k - 1)``
+   */
    uint8_t perm[6];
 } mm_sub_op_pi64_type;
 
@@ -87,7 +90,7 @@ typedef struct {
 */
 typedef struct {
     /**
-       A 12-bit integer delta describing an element  \f$\epsilon\f$ of
+       A 12-bit integer describing an element  \f$\epsilon\f$ of
        the Golay cocode.
     */
     uint32_t eps; 
@@ -154,10 +157,9 @@ typedef struct {
 
 /** @struct mm_sub_op_xy_type "mm_basics.h"
 
-  @brief Structure used for preparing an operation \f$y_f x_e x_\epsilon\$
+  @brief Structure used for preparing an operation \f$y_f x_e x_\epsilon\f$
 
 */
-// See corresponding comment in file mm_tables.c.
 typedef struct {
     uint32_t f;            
     uint32_t e;
@@ -187,9 +189,13 @@ extern "C" {
 
 
 
+/**
+  @var MM_SUB_OCTAD_ELEMENT_TABLE
 
-// Entries 8*i,...8*i+7 in the following table are the
-// bit positions of octad with the number i.
+  For ``0 <= i < 759``, the entries ``8*i,...8*i+7`` in the
+  table ``MM_SUB_OCTAD_ELEMENT_TABLE`` are the bit positions of the
+  octad with the number ``i`` (in natural order).
+*/
 // %%EXPORT_TABLE
 const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = { 
     // %%TABLE MM_OctadElementsTable, uint8
@@ -205,7 +211,7 @@ const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = {
 // entry  8 * i + j  in the folllowing table is the number of the
 // subocatad  {i},{j} in the standard numbering given in module
 // mm_aux.c.
-const uint8_t MM_SUB_PERM64_TABLE[64] = { 
+static const uint8_t MM_SUB_PERM64_TABLE[64] = { 
     // %%TABLE MM_PERM64_TABLE, uint8
 };
 
@@ -219,7 +225,7 @@ const uint8_t MM_SUB_PERM64_TABLE[64] = {
 // number of the suboctad sum (x_i * b_i) for 0 <= x < 128.
 // Note that bit b_7 can be computed from bits b_0,...,b_6
 // as the even parity bit.
-const uint8_t MM_SUBOCTAD_TABLE[128] = { 
+static const uint8_t MM_SUBOCTAD_TABLE[128] = { 
     // %%TABLE MM_SUBOCTAD_TABLE, uint8
 };
 
@@ -232,13 +238,17 @@ const uint8_t MM_SUBOCTAD_TABLE[128] = {
 *** Subroutines for mm*_op_pi
 **********************************************************************/
 
-
+/**
+  @brief Compute information for operation \f$x_\epsilon  x_\pi\f$
+  
+  Given an element  \f$x_\epsilon  x_\pi\f$ of the monster by 
+  parameters ``eps`` and ``pi``, the function computes the
+  relevant data for performing that operation on the representation
+  of the monster. These data are stored in the structure of
+  type ``mm_sub_op_pi_type`` referred by parameter ``p_op``.
+*/
 // %%EXPORT 
-void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
-// Prepare operation x_delta * x_pi, see comment above, with input
-// parameters delta and pi. It fills the stucture of type 
-// mm_sub_op_pi_type referred by p_op with data required for that
-// operation.
+void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
 {
     uint16_t *p_24big = p_op->tbl_perm24_big;
 
@@ -246,7 +256,7 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
     // Prepare permutation of the 2048 rows of 24 entries for tags X, Z, Y
     {
         uint32_t rep_autpl[12];
-        p_op->eps = delta & 0xfff;
+        p_op->eps = eps & 0xfff;
         p_op->pi = pi % MAT24_ORDER;
         mat24_m24num_to_perm(p_op->pi, p_op->perm);
         mat24_perm_to_iautpl(p_op->eps, p_op->perm, p_op->inv_perm, rep_autpl);
@@ -261,7 +271,7 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
             p_24big[i + 2048] = (uint16_t)t;   
             p_24big[i + 2048 + 24] = (uint16_t)(t + 24);   
             p_24big[i + 2048 + 48] 
-                = (uint16_t)((t + 48) | ((delta & 0x800) << 4));  
+                = (uint16_t)((t + 48) | ((eps & 0x800) << 4));  
         }
     }
 
@@ -278,12 +288,12 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
 
         p_out = p_op->tbl_perm64;
         for (i = 0; i < 24; ++i) p_inv[i] = p_op->inv_perm[i];
-        delta &= 0x800;
+        eps &= 0x800;
         for (i = 0; i < 759; ++i) {
             {
                 uint_fast16_t sign, dest;
                 dest = mat24_def_octad_to_gcode(i);
-                src =  ((dest & delta) << 1)
+                src =  ((dest & eps) << 1)
                       ^ p_24big[dest & 0x7ff];
                 sign = src & 0x1000;
                 src = src  & 0xfff;
@@ -318,15 +328,23 @@ void  mm_sub_prep_pi(uint32_t delta, uint32_t pi, mm_sub_op_pi_type *p_op)
 
 }
 
+/**
+  @brief For internal use only!
+  
+  This is an auxiliary function for testing function ``mm_sub_prep_pi``.
+
+  Given ``eps`` and ``pi`` as in function ``mm_sub_prep_pi``, 
+  this function executes function ``mm_sub_prep_p(eps, pi, p_op)``
+  and stores the output ``p_op->tbl_perm64`` (as an array
+  of  length  759 * (1 + 6)) in the array referred by ``p_tbl``. 
+
+*/
 // %%EXPORT px
-void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
-// Auxiliary function for debugging. Given delta and pi as in 
-// function mm_sub_prep_pi(), components of tbl_perm64 (of length 
-// 759 * 7) in structure mm_sub_prep_p  is stored to p_tbl[]. 
+void  mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
 {
     mm_sub_op_pi_type op_pi;
     uint_fast32_t i,j;
-    mm_sub_prep_pi(delta, pi, &op_pi);
+    mm_sub_prep_pi(eps, pi, &op_pi);
     for (i = 0; i < 759; ++i) {
         p_tbl[0] = op_pi.tbl_perm64[i].preimage;
         for (j = 0; j < 6; ++j)  p_tbl[j+1] = op_pi.tbl_perm64[i].perm[j];
@@ -338,7 +356,7 @@ void  mm_sub_test_prep_pi_64(uint32_t delta, uint32_t pi, uint32_t *p_tbl)
 
 
 /**********************************************************************
-*** Subroutines for mm*_op_pi
+*** Subroutines for mm*_op_xy
 **********************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -441,7 +459,7 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
 
 // %%EXPORT px
 void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint32_t *p_tbl)
-// Auxiliary function for debugging. Given delta and pi as in 
+// Auxiliary function for debugging. Given eps and pi as in 
 // function mm_sub_prep_pi(), various components (dependding
 // on n) in structure mm_sub_prep_p are stored to p_tbl[]. 
 {
