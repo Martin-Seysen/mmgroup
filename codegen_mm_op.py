@@ -152,7 +152,7 @@ from collections import defaultdict
 import warnings
 from numbers import Integral
 
-from config import SRC_DIR, DEV_DIR,  C_DIR, DOC_DIR, PXD_DIR
+from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR 
 sys.path.append(REAL_SRC_DIR)
 
@@ -165,7 +165,7 @@ from mmgroup.generate_c import TableGenerator, make_doc, format_item
 from mmgroup.generate_c import pxd_to_pyx, pxd_to_function_list
 
 from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
-from mmgroup.dev.mm_basics import mm_tables_xi, mm_random
+from mmgroup.dev.mm_basics import mm_tables_xi
 
 from mmgroup.dev.hadamard import hadamard_t 
 from mmgroup.dev.hadamard import hadamard_xi 

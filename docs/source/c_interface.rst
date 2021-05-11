@@ -176,6 +176,11 @@ C interface for file mm_tables.c
 
 .. doxygenfile:: mm_tables.c
 
+C interface for file mm_random.c
+---------------------------------------
+
+.. doxygenfile:: mm_random.c
+
 
 Description of the ``mmgroup.mm<p>`` extensions
 ===============================================

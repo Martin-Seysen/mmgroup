@@ -37,7 +37,7 @@ import config
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
 from config import ROOT_DIR, SRC_DIR, PACKAGE_DIR, DEV_DIR
 from config import REAL_SRC_DIR
-from config import C_DIR, DOC_DIR,  PXD_DIR
+from config import C_DIR, PXD_DIR
 from config import PRIMES
 
 
@@ -51,7 +51,6 @@ from config import PRIMES
 # if the command line option -f or --force has been set
 ext_delete = [
     os.path.join("C_DIR", "*.*"),
-    os.path.join("DOC_DIR", "*.*"),
     os.path.join("PXD_DIR", "*.*"),
     os.path.join(PACKAGE_DIR, "*.dll"), 
     os.path.join(PACKAGE_DIR, "*.pyd"),
@@ -176,7 +175,6 @@ def copy_pyx_sources():
 
 general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "c_files"],
-  [make_dir, "src", "mmgroup", "dev", "c_doc"],
   [make_dir, "src", "mmgroup", "dev", "pxd_files"],
   [force_delete],
   [copy_pyx_sources],

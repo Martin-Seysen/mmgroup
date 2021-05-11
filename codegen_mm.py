@@ -118,7 +118,6 @@ name of a directory.
 
 Files with extension .c, .h go to the directory ``C_DIR``. Files with
 extension .pxd, .pxi, .pyx go to the directory ``PXD_DIR``. 
-Documentaion files with extension .txt go to the directory ``DOC_DIR``.
 
 """
 
@@ -135,7 +134,7 @@ import warnings
 from numbers import Integral
 
 
-from config import SRC_DIR, DEV_DIR,  C_DIR, DOC_DIR, PXD_DIR
+from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR 
 sys.path.append(REAL_SRC_DIR)
 
@@ -147,7 +146,7 @@ from mmgroup.generate_c import pxd_to_pyx
 
 import mmgroup.dev.mm_basics
 from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
-from mmgroup.dev.mm_basics import mm_tables_xi, mm_random, mm_crt
+from mmgroup.dev.mm_basics import mm_tables_xi, mm_crt
 
 
 
@@ -248,7 +247,6 @@ MORE_BASIC_TABLE_CLASSES = [
     mm_basics.MM_Const,
     mm_aux.MM_IO24,
     mm_tables.MM_OctadTable,
-    mm_random.MM_Random_Doc,
     mm_crt.MM_CrtCombine,  
 ]
 
@@ -375,27 +373,12 @@ def generate_files():
 
 
 ##########################################################################
-# Functions of this module for generating documentation
+# Main function
 ##########################################################################
 
 
-C_FILES_DOCUMENTED = ["mm_random"]
-
-
-def generate_doc():
-    """Function for generating documentation from the genrated C files
-
-    Function is deprecated!!!
-    """
-    print("Generating documentation for module mm, deprecated!")
-    for c_file in C_FILES_DOCUMENTED:
-        c_path = os.path.join(C_DIR, c_file + ".c")
-        doc_path = os.path.join(DOC_DIR, c_file + "_c_doc.txt")
-        make_doc(c_path, doc_path)
-    print("Documentation for module mm generated successfully")
 
 
 
 if __name__ == "__main__":
     generate_files()
-    generate_doc()

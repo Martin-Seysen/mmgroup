@@ -1,11 +1,48 @@
-// %%COMMENT
-// %%PY_DOCSTR  MM_RANDOM_DOC
 
+
+/** @file mm_random.c
+
+A fast random generator for the representation of the monster
+group is provided in C. This generator supports very fast
+generation of long random vectors of integers modulo ``p``
+for ``p <= 256``.
+
+The seed for such a random generator is given by an array of type
+``uint8_t seed[MM_RNG_SIZE]``. In this version we have
+``MM_RNG_SIZE = 266``.
+
+The function ``mm_rng_seed(uint8_t *seed, ...)`` fills an existing
+array ``seed`` of that type with seed data. See description of
+that function for details.
+
+The function
+``mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)``
+writes ``len`` uniform random numbers ``x_i`` with ``0 <= x_i < p``
+to the array referred by the pointer ``out``.
+Here ``1 < p <= 256`` must hold.
+
+This function is optimized for generating large random vectors
+with, say, ``len >= 1000``, as required for the representation of
+the monster. 
+
+Internal operation.
+
+We use the RC4 random generator which generates bytes in a fast
+and secure manner. The RC4 random generator also initializes a
+63-bit LFSR. For generating a random number modulo ``p``, a byte 
+is taken from the RC4 generator and it is mixed with 48 bits taken 
+from the LFSR so that we obtain an uniform distributed random
+number between 0 and 1. That number is multiplied by ``p`` and
+the integral part of that product is returned. The LFSR is
+shifted by 32 bytes in each step.
+
+*/
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+
 
 #include "mm_basics.h"
 
@@ -26,6 +63,9 @@ extern "C" {
 *** The following #defines determine which volatile input sources
 *** are used for seeding the volatile random genertor number 0
 ******************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
 
 #define INT_BITS  %{INT_BITS} // must be 32 of 64
 
@@ -51,6 +91,9 @@ extern "C" {
 
 static volatile  int call_number;
 
+/// @endcond  
+
+
 // %%GEN h
 #define MM_RNG_SIZE 266
 // %%GEN c
@@ -59,6 +102,9 @@ static volatile  int call_number;
 /*****************************************************************************
 *** Expanding the seeding data to a 256-bit RC4 key
 *****************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
 
 static void mm_rng_expand_key(uint32_t no, uint8_t *key, uint32_t len, uint8_t *res)
 // Expand seeding data to a 256-bit RC4 key
@@ -128,27 +174,41 @@ static void mm_rng_expand_key(uint32_t no, uint8_t *key, uint32_t len, uint8_t *
     // for (i=0;i<256;++i) printf("%02x ", res[i]);printf("\n\n");
 }
 
+/// @endcond  
 
 
 /*****************************************************************************
 *** Seeding the random generator
 *****************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 #define POS_I 256      // position of counter i for RC4 generator 
 #define POS_J 257      // position of counter j for RC4 generator 
 #define POS_LFSR 258   // position of 63-bit LFSR (8 bytes long)
 
+/// @endcond  
 
+
+/**
+   @brief Seed the random generator
+
+   Seed the random generator in the variable ``seed`` of
+   type ``uint8_t[MM_RNG_SIZE]``. Inputs are:
+
+   ``no``:    Number of the random generator.
+
+   ``key``:   An array of ``len`` data bytes that enter into the seed
+
+    In case ``no = 0`` we seed a volatile random generator from the
+    time, and also from other random input, if supported by the os.
+    For any other value of ``no`` we seed a reproducible generator.
+     
+    At most 250 bytes from the input ``key`` are used.
+
+*/
 // %%EXPORT px
 void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
-// Seed the random generator in the variable 'seed' ot type
-// uint8_t[MM_RNG_SIZE]. Inputs are:
-// no:     Number of the random generator.
-//         0 means a voaltile generator, seeded from the time.
-//         Any other number means a reproducible generator
-// key:    An array of 'len' data bytes that enter into the seed
-//         No more than 250 bytes are used
 {
    uint_fast32_t i, j, temp, sum;
    uint8_t ekey[256];
@@ -211,19 +271,64 @@ void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
    // for (i=0;i<266;++i) printf("%02x ", seed[i]); printf("\n\n");
 }
 
-
-
 /*****************************************************************************
-*** Generating a random array of integers modulo p, p < 256
+*** Generating a random array of bytes
 *****************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
-// %%EXPORT px
-void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
-// Generate an array of random 'len' integers modulo p, 1 < p < 256.
-// These random integers are written to the array referred by 'out'. 
+static void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
+// Generate an array of random 'len' bytes.
+// These random bytes are written to the array referred by 'out'. 
 // 'seed' is the seed for the random generator. It must have been 
 // created by function  mm_rng_seed().
+{
+   uint_fast8_t i, j, temp;                       // for RC4
+
+   // Restore RC4 counters from seed
+   i = seed[POS_I];
+   j = seed[POS_J];
+
+   // Random generation loop
+   while(len-- > 0)
+   {
+      // Adjust indices of RC4 generator
+      i = (i + 1) &  0xff;
+      j = (j + seed[i]) &  0xff;
+ 
+      // Swap the values of seed[i] and seed[j]
+      temp = seed[i];
+      seed[i] = seed[j];
+      seed[j] = temp;
+
+      // Compute random output byte from RC4 
+      *out++ = seed[(seed[i] + seed[j]) & 0xff];
+   }
+
+   // Restore RC4 counters to seed
+   seed[POS_I] = i;
+   seed[POS_J] = j;
+}
+
+/// @endcond  
+
+/*****************************************************************************
+*** Generating a random array of integers modulo p, p <= 256
+*****************************************************************************/
+
+/**
+  @brief Generate random integers modulo a small number ``p``
+
+  Generate an array of length ``len`` of random integers ``x``
+  with ``0 <= x < p``. Here ``1 < p <= 256`` must hold.
+ 
+  These random integers are written to the array referred by ``out``.
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been  created by function ``mm_rng_seed``.
+*/
+// %%EXPORT px
+void mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
 {
    uint_fast8_t i, j, temp;                       // for RC4
    #if INT_BITS == 64
@@ -231,6 +336,12 @@ void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
    #else
       uint_fast32_t h = 0, l = 0, temp32;         // for LFSR  
    #endif 
+
+   // Deal with p >= 256
+   if (p >= 256) {
+       if (p == 256) mm_rng_gen_bytes(seed, out, len);
+       return;
+   }
 
    // Restore LFSR from seed
    #if INT_BITS == 64
@@ -306,44 +417,6 @@ void mm_rng_gen_modp(uint8_t p, uint8_t *seed, uint8_t *out, uint32_t len)
    #endif
 }
 
-/*****************************************************************************
-*** Generating a random array of bytes
-*****************************************************************************/
-
-
-// %%EXPORT px
-void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
-// Generate an array of random 'len' bytes.
-// These random bytes are written to the array referred by 'out'. 
-// 'seed' is the seed for the random generator. It must have been 
-// created by function  mm_rng_seed().
-{
-   uint_fast8_t i, j, temp;                       // for RC4
-
-   // Restore RC4 counters from seed
-   i = seed[POS_I];
-   j = seed[POS_J];
-
-   // Random generation loop
-   while(len-- > 0)
-   {
-      // Adjust indices of RC4 generator
-      i = (i + 1) &  0xff;
-      j = (j + seed[i]) &  0xff;
- 
-      // Swap the values of seed[i] and seed[j]
-      temp = seed[i];
-      seed[i] = seed[j];
-      seed[j] = temp;
-
-      // Compute random output byte from RC4 
-      *out++ = seed[(seed[i] + seed[j]) & 0xff];
-   }
-
-   // Restore RC4 counters to seed
-   seed[POS_I] = i;
-   seed[POS_J] = j;
-}
 
 
 

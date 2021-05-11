@@ -72,7 +72,6 @@ REAL_SRC_DIR = os.path.realpath(SRC_DIR)
 
 
 C_DIR = os.path.join(DEV_DIR, "c_files")
-DOC_DIR = os.path.join(DEV_DIR, "c_doc")
 PXD_DIR = os.path.join(DEV_DIR, "pxd_files")
 
 
