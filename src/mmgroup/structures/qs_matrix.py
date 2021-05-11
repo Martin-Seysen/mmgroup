@@ -83,7 +83,8 @@ class QStateMatrix(QState12):
 
       * A list of integers. Then that list of integers must encode 
         a valid pair ``(A, Q)`` of bit matrices that make up a 
-        state, as dscribed in the *guide*. 
+        state, as described in :ref:`clifford-group-label`,
+        subsection **Quadratic state matrices**. 
         In this case parameter ``mode`` is evaluated as follows:
               
           * 1: create matrix ``Q`` from lower triangular part
@@ -488,6 +489,15 @@ class QStateMatrix(QState12):
         if m.nrows == 0:
             return -1
         return m.factor[0] + m.nrows - 1 - m.lb_rank() 
+
+    def trace(self):
+        """Return the trace of a square matrix.
+
+        The trace is returned as an integer, a floating point
+        number, or a complex number.
+        """
+        return super(QStateMatrix, self).trace()
+
 
     def inv(self):
         r"""Return inverse matrix

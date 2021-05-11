@@ -251,7 +251,6 @@ Header file ``clifford12.h``
 ----------------------------
    .. doxygenfile:: clifford12.h
 
-
 Module ``bitmatrix64.c``
 ------------------------
 
@@ -265,8 +264,7 @@ Module ``qstate12.c``
 
 Module ``qmatrix12.c``
 ----------------------
-   
-   
+     
    .. doxygenfile:: qmatrix12.c
 
 
@@ -281,5 +279,11 @@ C functions dealing with the subgroup :math:`G_{x0}` of the monster
 Module ``xsp2co1.c``
 ----------------------
 
-
    .. doxygenfile:: xsp2co1.c
+
+
+Module ``xsp2co1_elem.c``
+--------------------------
+
+   .. doxygenfile:: xsp2co1_elem.c
+

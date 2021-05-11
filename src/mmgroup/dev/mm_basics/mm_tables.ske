@@ -222,12 +222,16 @@ typedef struct {
        Here ``**`` denotes exponentiation and we have
        
        ``s`` =  ``s(k, d, i)`` = ``(lin_i[k] >> i) + (sign_XYZ[d] >> k)``.
+
+       If ``k = 0`` and \f$\epsilon\f$  is odd then we have to 
+       correct ``s(k, d, i)``  by a  term ``<d, i>``.
     */
     uint32_t lin_d[3];
     /**
-       Used for calculations of signs as described above. Here ew use the
+       Used for calculations of signs as described above. Here we use the
        formula in section **Implementing generators of the Monster group**
-       of the  **mmgroup guide for developers**.
+       of the  **mmgroup guide for developers**, dropping all terms
+       depending on ``i``.
     */
     uint8_t sign_XYZ[2048];
     /**

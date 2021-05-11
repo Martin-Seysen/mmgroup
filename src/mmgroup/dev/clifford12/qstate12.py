@@ -1072,6 +1072,8 @@ stabilizer state on a quantum computer, see e.g.
 :cite:`AG04`.
 
 
+
+
 Quadratic state matrices
 ........................
 
@@ -1112,6 +1114,30 @@ On the C level, a quadratic state matrix is implemented as a
 structure of type ``qstate12_type`` as defined in file 
 ``clifford12.h``.  E.g. function ``qstate12_matmul`` in file 
 ``qmatrix12.c`` multiplies two such quadratic state matrices.
+
+For practical calculations with quadratic state matrices it
+is vital to keep the following correspondences in mind.
+
+Let  :math:`S` be a :math:`2^{n_0} \times 2^{n_1}` quadratic 
+state matrix. We put  :math:`n = {n_0}+ {n_1}`. We implement 
+Let  :math:`S` as a quadratic state vector 
+:math:`V = f(e, A, Q)`, where :math:`A` is a :math:`m \times n` 
+bit matrix and :math:`Q` is a symmetric :math:`m \times m` bit 
+matrix :math:`Q`. So entry :math:`S[i_0, i_1]` corresponds to
+entry :math:`i_0 \cdot 2^{n_1} + i_1` of that quadratic state
+vector :math:`V` for :math:`0 \leq i_0 <  2^{n_0}` and  
+:math:`0 \leq i_1 <  2^{n_1}`. Also, entry :math:`i` of the
+quadratic state vector :math:`V` corresponds to a row
+vector of  :math:`n` bits containg the binary representation
+of :math:`i`.
+
+We concatenate matrices :math:`A` and :math:`Q` to a  
+:math:`m \times (n + m)` bit matrix :math:`M` with 
+:math:`M[i,j] = A[i,j]` and :math:`M[i,j+n] = Q[i,j]`.
+In C and in python we implement the bit matrix as an
+array of unsigned 64-bit integers, so that bit :math:`M[i,j]`
+corresponds to  bit :math:`j` (of valence :math:`2^j`)
+of entry :math:`i` of that array.
 
 
 Displaying quadratic state vectors and matrices

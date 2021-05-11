@@ -29,6 +29,11 @@ extern "C" {
 // %%GEN c
 
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
 /*************************************************************************
 *** Functions
 *************************************************************************/
@@ -55,18 +60,17 @@ extern "C" {
 
   \f$V = \{a_0 + \sum_{i=1}^{n-1} \lambda_i a_i \mid \lambda_i=0,1\}\f$.
   
-   Caution:
+  Caution:
    
-   The function may change the description of the affine space \f$V\f$ in
-   the array \f$a\f$ to a different description of the same space \f$V\f$. 
+  The function may change the description of the affine space \f$V\f$ in
+  the array \f$a\f$ to a different description of the same space \f$V\f$. 
    
-   Remark:
+  Remark:
    
-   This function is a much faster version of the
-   function ``gen_leech2_count_type2`` in file ``gen_leech.c``.
-   The implementation of the latter function is much simpler; so we
-   keep it for test purposes.
-  
+  This function is a much faster version of the
+  function ``gen_leech2_count_type2`` in file ``gen_leech.c``.
+  The implementation of the latter function is much simpler; so we
+  keep it for test purposes.
 */
 // %%EXPORT px
 uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
@@ -181,8 +185,9 @@ uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 *** Compute traces of an element of G_x0
 *************************************************************************/
 
-
+/// @cond DO_NOT_DOCUMENT 
 static int32_t TAB_TRACE_98280[5] = {98280, 0, 4072, -24, -24};
+/// @endcond 
 
 
 // %%EXPORT px
@@ -289,6 +294,9 @@ int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
     return 0;    
 }
 
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
 
 
 // %%GEN ch

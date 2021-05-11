@@ -214,6 +214,9 @@ a lot of attention from the theory of quantum computation, see e.g.
 computing in :math:`\mathcal{X}_{n}` and in its :math:`2^{n}` 
 dimensional complex representation.
 
+
+
+
 .. automodule:: mmgroup.dev.clifford12.qstate12
 
 
@@ -227,7 +230,7 @@ Class ``QStateMatrix`` modelling a quadratic state matrix
              gate_not, gate_ctrl_not, gate_phi, gate_ctrl_phi, gate_h,
              extend_zero, extend, restrict_zero, restrict, sumup,
              lb_rank, lb_norm2, inv, power, order,
-             pauli_vector, pauli_conjugate, show
+             pauli_vector, pauli_conjugate, show, trace
 
 .. autofunction:: mmgroup.structures.qs_matrix.qs_unit_matrix
 
