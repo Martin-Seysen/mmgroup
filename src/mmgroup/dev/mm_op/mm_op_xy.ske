@@ -1,6 +1,4 @@
 
-// %%COMMENT
-// TODO: Adjust this to new order of basis vectors rep!!!
 
 #include <string.h>
 #include "mm_op%{P}.h"   
@@ -8,6 +6,39 @@
 
 
 // %%IF* GENERATE_CODE
+
+// Tables TABLE_PERM64_LOW, TABLE_PERM64_HIGH contain the following data.
+//
+// For bits e, s and suboctads 0 <= alpha, delta < 64 define the bit
+// TP(e, s, alpha, delta) = e * |delta| / 2 + s + <alpha, delta> (mod 2),
+// and put T(128*e + 64*s + alpha, delta) = TP(e, s, alpha, delta).
+// Here |delta| is the bit weight of the suboctad delta (modulo 4),
+// which can be computed as the bit weight of  2*delta + Par(delta), 
+// where Par(delta) is the bit parity of delta.   <alpha, delta> is the
+// parity of the intersection of suboctads alpha and delta, which can be 
+// computed as   Par(alpha & delta) ^ (Par(alpha) & Par(delta)).
+// 
+// Note that TP() is linear in the bit vector alpha; so  T(x, delta)
+// can be decomposed as 
+//
+//  T(x, delta) = TH(x >> 4, delta) ^ TL(x & 0xf, delta)
+//
+//  for 0 <= x < 256, 0 <= delta < 64.
+// 
+// The array TABLE_PERM64_LOW[%{V64_INTS}*x,..., %{V64_INTS}*x + %{int:V64_INTS-1}]
+// contains the vector TL(x) = (TL(x, 0) * %{P}, ..., TL(x, 63) * %{P}),
+// stored as a vector of length 64 in internal representation.
+// 
+// The array TABLE_PERM64_HIGH[%{V64_INTS}*x,..., %{V64_INTS}*x + %{int:V64_INTS-1}]
+// contains the vector TH(x) = (TH(x, 0) * %{P}, ..., TH(x, 63) * %{P}),
+// stored as a vector of length 64 in internal representation.
+//
+// Let V be a vector of length 64 in internal representation
+// containing entries with tags  ('T', d, 0), ...,  ('T', d, 63).
+// Then XORing vectors  TL(x) and TH(x) to the vector V is equivalent
+// multiplying the sign of the entry with tag  ('T', d, delta) by
+// (-1) ** T(x, delta) for 0 <= delta < 64. Here '**' denotes
+// exponentiation. 
 
 
 static const uint_mmv_t TABLE_PERM64_LOW[] = {
@@ -20,8 +51,9 @@ static const uint_mmv_t TABLE_PERM64_HIGH[] = {
 }; 
 
 
+
 static const uint32_t TABLE24_START[4] = {
-   MM_OP%{P}_OFS_X, MM_OP%{P}_OFS_Z, MM_OP%{P}_OFS_Y, MM_OP%{P}_OFS_A
+   MM_OP%{P}_OFS_X, MM_OP%{P}_OFS_Z, MM_OP%{P}_OFS_Y
 };
 
 
@@ -36,7 +68,7 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
   // %%IF* GENERATE_CODE
     for (i = 0; i < MM_OP%{P}_OFS_E; ++i) v_out[i] = 0;
     
-    // Step 1: do rows with 24 entries 
+    // Step 1: do rows with 24 entries, tags X, Z, Y 
     {
         uint32_t table24_dest[3];
         // TODO: comment properly!!!!

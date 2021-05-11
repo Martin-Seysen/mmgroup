@@ -221,11 +221,13 @@ typedef struct {
        to ``(-1)**s`` times the vector with tag ``(U'_k, d ^ lin[d], i)``. 
        Here ``**`` denotes exponentiation and we have
        
-       ``s`` =  ``s(k, d, i)`` = ``(lin_d[k] >> i) + (sign_XYZ[d] >> k)``.      
+       ``s`` =  ``s(k, d, i)`` = ``(lin_i[k] >> i) + (sign_XYZ[d] >> k)``.
     */
     uint32_t lin_d[3];
     /**
-       Used for calculations of signs as described above.
+       Used for calculations of signs as described above. Here ew use the
+       formula in section **Implementing generators of the Monster group**
+       of the  **mmgroup guide for developers**.
     */
     uint8_t sign_XYZ[2048];
     /**
