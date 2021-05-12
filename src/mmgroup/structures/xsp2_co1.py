@@ -6,6 +6,7 @@ from __future__ import  unicode_literals
 import re
 import numpy as np
 import warnings
+from functools import partial
 
 from mmgroup.structures.auto_group import AbstractGroupWord
 from mmgroup.structures.auto_group import AbstractGroup
@@ -31,10 +32,11 @@ from mmgroup.clifford12 import xsp2co1_mul_elem_word
 from mmgroup.clifford12 import xsp2co1_xspecial_vector
 from mmgroup.clifford12 import xsp2co1_xspecial_conjugate
 from mmgroup.clifford12 import xsp2co1_elem_xspecial
+from mmgroup.clifford12 import xsp2co1_elem_to_word
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
-from mmgroup.mm_group import gen_atom, MM
+from mmgroup.mm_group import gen_atom, MM, MMGroupWord
 
 FORMAT_REDUCED = True
 
@@ -43,6 +45,16 @@ FORMAT_REDUCED = True
 ###########################################################################
 # Word class for the group G_{x0}
 ###########################################################################
+
+
+
+def xsp2co1_to_mm(mmgroup, xsp):
+    g = mmgroup()
+    assert isinstance(g, MMGroupWord)
+    g._extend(10)
+    g.length = chk_qstate12(xsp2co1_elem_to_word(xsp._data, g._data))
+    g.reduced = 0 
+    return g
 
 
 
@@ -149,7 +161,8 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         xsp2co1_mul_elem_word(self._data, a_atoms, len(a_atoms))
         return self
 
-
+    def as_mm(self, mmgroup = MM):
+        return xsp2co1_to_mm(mmgroup, self)
 
 ###########################################################################
 # The class representing the group G_x0
@@ -330,9 +343,10 @@ class Xsp2_Co1_Group(AbstractGroup):
 
 
 
+
 Xsp2_Co1 = Xsp2_Co1_Group()
 Xsp2_Co1.set_preimage(MM, tuple)
-MM.set_preimage(Xsp2_Co1, tuple)
+MM.set_preimage(Xsp2_Co1, partial(xsp2co1_to_mm, MM))
 
 
 

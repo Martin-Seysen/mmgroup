@@ -219,7 +219,12 @@ from random import randint, sample
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
-from mmgroup.structures.parse_atoms import  AtomDict      
+from mmgroup.structures.parse_atoms import  AtomDict
+from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
+from mmgroup.clifford12 import xsp2co1_reduce_word      
+from mmgroup.clifford12 import chk_qstate12
+from mmgroup.mm import mm_vector
+from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 
 try:
     from mmgroup.mat24 import MAT24_ORDER, pow_ploop
@@ -351,6 +356,42 @@ class MMGroupWord(AbstractGroupWord):
         if check_mm_order is None:
             import_mm_order_functions()
         return check_mm_order(self, max_order)
+
+
+    def in_G_x0(self):
+        """Check if the element is in the subgroup :math:`G_{x0}`
+
+        The function returns True if this is the case. If this is
+        the case then the element is converted to a word in the
+        generators of :math:`G_{x0}`.
+        """
+        status = xsp2co1_check_word_g_x0(self._data, self.length)
+        if status == 1:
+            return False
+        if status == 0:
+            if self.length > 10:
+                g1 = np.array(10, dtype = np.uint32)
+                l1 = xsp2co1_reduce_word(self._data, self.length, g1)
+                self._data[:l1] = g1[:l1]
+                self.length = l1 
+                self.reduced = 0 
+            return True
+        from mmgroup.mm_order import ORDER_VECTOR, ORDER_TAGS
+        w = mm_vector(15)
+        work = mm_vector(15)
+        mm_op15_copy(ORDER_VECTOR.data, w)
+        chk_qstate12(mm_op15_word(
+            w, self._data, self.length, 1, work))
+        g1 = np.zeros(11, dtype = np.uint32)
+        l1 = chk_qstate12(mm_op15_check_in_Gx0(
+            w, ORDER_TAGS, ORDER_VECTOR, g1))
+        if l1 >= 0x100:
+            return False
+        self._data[:l1] = a[:l1]
+        self.length = l1 
+        self.reduced = 0 
+        return True
+                          
 
 ###########################################################################
 # Atoms for the group M

@@ -1518,7 +1518,47 @@ int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
 
 
 
+/*************************************************************************
+*** Check if a words of generators of the monster is in G_{x0}
+*************************************************************************/
 
+
+
+/**
+ @brief Check if a word of generators of the monster is in \f$G_{x0}\f$.
+
+ We check if the word ``w`` of length ``n`` of generators of the
+ monster group is in the subgroup  \f$G_{x0}\f$. 
+ The function returns the following status information:
+
+ 0: ``w`` is in \f$G_{x0}\f$
+
+ 1: ``w`` is not in \f$G_{x0}\f$
+
+ 2: Nothing is known about ``w``
+
+ Words of generators of the monster are implemented as described
+ in file ``mmgroup_generators.h``.
+*/
+// %%EXPORT px
+uint32_t xsp2co1_check_word_g_x0(uint32_t *w, uint32_t n)
+{
+    uint_fast32_t  i, v, tag, num_t = 0;
+    for (i = 0; i < n; ++i) {
+        v = w[i];
+        tag = (v >> 28) & 7;
+        switch(tag) {
+            case 7:
+                return 2;
+            case 5:
+                if ((v & 0xfffffffUL) % 3) ++num_t;
+                break;
+            default:
+                break;
+        }
+    }
+    return num_t > 1 ? 2 : num_t;
+}
 
 /*************************************************************************
 *** Convert element of G_{x0} to a vector of the monster rep modulo 3

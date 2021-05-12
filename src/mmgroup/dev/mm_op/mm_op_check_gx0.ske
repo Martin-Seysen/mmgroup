@@ -56,7 +56,27 @@ uint32_t mm_op%{P}_norm_A(uint64_t *v)
 
 
 
+/**
+  @brief Auxiliary function for function ``mm_op%{P}_check_in_Gx0``
 
+  Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
+  function ``mm_op%{P}_check_in_Gx0``. 
+
+  Assume that ``v`` is an image of ``v0`` under an unknown element
+  \f$g\f$ of the monster. We want to find that element \f$g\f$ if
+  it is in the subgroup \f$G_{x0}\f$ of the monster.
+
+  The function computes an element \f$g_1\f$ such
+  that \f$g^{-1} g_1\in Q_{x0}\f$ holds in case \f$g \in G_{x0}\f$.
+  If \f$g \notin G_{x0}\f$  then the function detects this
+  fact with high probability.
+
+  In case of success the function writes the element \f$g_1\f$ into the
+  array ``g`` is the same way as function ``mm_op%{P}_check_in_Gx0``
+  writes its result int that array.
+  
+  The function does not change the inputs ``v``, ``tags``, and ``v0``.  
+*/
 // %%EXPORT px
 int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
@@ -102,18 +122,51 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
     }
 
     if (mm_op%{P}_compare_len(v0, a, 48)) return 0x106;
+    for (i = len; i <10; ++i) g[i] = 0;
 
     return len;
 }
 
 
 
+
+
+
+/**
+  @brief Auxiliary function for function ``mm_op%{P}_check_in_Gx0``
+
+  Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
+  function ``mm_op%{P}_check_in_Gx0``.  Parameter ``g`` must contain 
+  the corrsponding output of function ``mm_op%{P}_check_in_Gx0``, when
+  called successfully with the same input parameters. The function also 
+  requires an array `` work`` of length %{MMV_INTS} as a work buffer.
+
+  Assume that ``v`` is an image of ``v0`` under an unknown element
+  \f$g\f$ of the monster. We want to find that element \f$g\f$ if
+  it is in the subgroup \f$G_{x0}\f$ of the monster.
+
+  In case of success the function writes the element \f$g_1\f$ into the
+  array ``g`` is the same way as function ``mm_op%{P}_check_in_Gx0``
+  writes its result int that array. 
+  
+  The function does not change the inputs ``tags``, and ``v0``. 
+
+  Caution:
+
+  This function destroys the input ``v``!  
+*/
 // %%EXPORT px
-uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0)
+uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g, uint64_t *work)
 {
-    int32_t v_x, sign;
-    uint_fast32_t x, v_sign;
+    int32_t v_x, sign, len = 10, res, len1, i;
+    uint_fast32_t x, v_sign, tmp;
     uint32_t aa;
+    
+    while (len && g[len-1] == 0) --len;
+    if (g[0]) {
+        res = mm_op15_word(v, g, len, 1, work);
+        if (res < 0) return res;
+    }
 
     v_x = mm_aux_mmv_extract_sparse_signs(15, v, tags + OFS_TAGS_X, 24);
     if (v_x < 0) return 0x107;
@@ -122,54 +175,82 @@ uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0)
     v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
     aa = tags[OFS_TAG_SIGN] ^ (v_sign << 14);
     sign = mm_aux_mmv_extract_sparse_signs(15, v, &aa, 1);
-    if (v_x < 0) return 0x107;
+    if (v_x < 0) return 0x108;
 
     sign ^= uint64_parity(x & (x >> 12) & 0x7ff);
     x ^=  (sign & 1) << 24;
     x ^= mat24_ploop_theta(x >> 12);
-    return x;   
+    
+    len1 = len;
+    if (x & 0xfff) g[len1++] = 0x90000000 + (x & 0xfff); 
+    x = (x >> 12) & 0x1fff;
+    if (x) g[len1++] = 0xB0000000 + x;
+
+    if (len1 > len) {
+        res = mm_op15_word(v, g + len, len1 - len, 1, work);  
+        if (res < 0) return res;
+    }    
+    res = mm_op15_compare(v, v0);
+    if (res)  return  0x209;
+    for (i = 0; i < len1 >> 1; ++i) {
+        tmp = g[i]; g[i] = g[len1-1-i]; g[len1-1-i] = tmp; 
+    }
+    for (i = 0; i < len1; ++i) g[i] ^= 0x80000000;        
+    return len1;   
 }
 
 
+/**
+  @brief Check if a vector is an image under an element of \f$G_{x0}\f$
+
+  Let ``v0`` be an order vector in the representation \f$\rho_{15}\f$
+  of the monster group. This is a vector whose stabilizer in the monster
+  is the neutral element, satisfying some additional conditions as
+  described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
+  order vector is the object ORDER_VECTOR in module ``mmgroup.mm_order.py``.
+
+  Assume that ``v`` is an image of ``v0`` under an unknown element
+  \f$g\f$ of the monster. The function comutpes the element\f$g\f$ if
+  it is in the subgroup \f$G_{x0}\f$ of the monster; otherwise we have
+  hardly any chance to find it.
+
+  The function also requires a parameter ``tags`` describing some
+  properties of vector ``v0``, corresponding to the array ``ORDER_TAGS``
+  computed in module ``mmgroup.mm_order.py``.
+
+  In case of success the function writes the element \f$g\f$ into
+  the array ``g`` of length 10, padded with zeros. If inputs ``tags``
+  and ``v0`` have been  constructed properly then the function finds 
+  such an element \f$g\f$ if it exists.
+  
+  If a suitable element \f$g\f$ has been found then function returns a 
+  nonnegative number less or equal to 10 denoting the actual length
+  of the word in the array ``g`` without padding zeros.
+
+  If no such element \f$g_1\f$ has been found then the function returns 
+  a number greater than 256. Then the exact return value gives some
+  indication why no such element \f$g\f$ has been found; this is for 
+  debugging only.
+
+  A negative return value indicates an error. 
+
+  The function does not change the inputs ``v``, ``tags``, and ``v0``.  
+*/
 // %%EXPORT px
 int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
-    int32_t res, len, i;
-    uint64_t *w = NULL, *work;
-    uint_fast32_t x, tmp;
+    int32_t res;
+    uint64_t *w, *work;
 
     res = mm_op%{P}_find_in_Gx0(v, tags, v0, g);
     if (res >= 0x100 || res < 0) return res;
-    len = res;
 
     w = calloc(2 * %{MMV_INTS}, sizeof(uint64_t));
     if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
     work = w + %{MMV_INTS};
-    mm_op15_copy(v, w);
-    res = mm_op15_word(w, g, len, 1, work);
-    if (res < 0) goto done;
-
-    res = mm_op%{P}_find_in_Qx0(w, tags, v0);
-    if (res < 0) goto done;
-    x = res;
-    g[len] = 0x90000000 + (x & 0xfff); 
-    g[len + 1] = 0xB0000000 + ((x >> 12) & 0x1fff);
-
-    res = mm_op15_word(w, g + len, 2, 1, work);  
-    if (res < 0) goto done;
-    res = mm_op15_compare(w, v0);
-    if (res) {
-        res = 0x209;
-    } else {
-        res = len = len + 2;
-        for (i = 0; i < len >> 1; ++i) {
-            tmp = g[i]; g[i] = g[len-1-i]; g[len-1-i] = tmp; 
-        }
-        for (i = 0; i < len; ++i) g[i] ^= 0x80000000;        
-    }
-    
-done:
-    if (w != NULL) free(w);
+    mm_op15_copy(v, w);    
+    res = mm_op%{P}_find_in_Qx0(w, tags, v0, g, work);
+    free(w);
     return res;    
 }
 

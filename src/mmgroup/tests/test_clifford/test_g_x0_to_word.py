@@ -228,6 +228,8 @@ def test_elem_to_word(ntests = 50, verbose = 0):
             print("\nTest %d:" % (i+1))
             print("Testing word\n%s" % m)
         elem = Xsp2_Co1(*w)
+        if i < 100:
+            assert m == MM(elem)
         if verbose:
             print("This is element\n%s" % elem)
         word = elem_to_word(elem, verbose > 1)

@@ -279,7 +279,7 @@ void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g_1)
 }
 
 /**
- @brief Set \f$g \in N_{x0}\f$ to the value of the nuetral element.
+ @brief Set \f$g \in N_{x0}\f$ to the value of the neutral element.
 
  Put \f$g = 1\f$.  Element   
  \f$g\f$ is given as an array of five 32-bit integers.
