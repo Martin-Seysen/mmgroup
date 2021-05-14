@@ -19,7 +19,10 @@ from mmgroup.clifford12 import xsp2co1_elem_monomial_to_xsp
 from mmgroup.clifford12 import xsp2co1_xspecial_vector
 from mmgroup.clifford12 import xsp2co1_elem_to_word
 from mmgroup.clifford12 import xsp2co1_reduce_word
-
+from mmgroup.clifford12 import xsp2co1_order_elem
+from mmgroup.clifford12 import xsp2co1_half_order_word
+from mmgroup.clifford12 import xsp2co1_order_word
+from mmgroup.clifford12 import xsp2co1_power_elem
 
 #######################################################################
 # Function monomial_to_word
@@ -222,7 +225,7 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
 @pytest.mark.xsp2co1
 def test_elem_to_word(ntests = 50, verbose = 0):
     print("Test function test_elem_to_word()")
-    for i, w in enumerate(make_testwords(monomial=False)):
+    for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
         m = MM.word(*w)
         if verbose:
             print("\nTest %d:" % (i+1))
@@ -251,6 +254,110 @@ def test_elem_to_word(ntests = 50, verbose = 0):
         assert (word1_C == word).all(), (word1_C, word)
             
 
+
+#######################################################################
+# Test computing the power of an element of G_x0
+#######################################################################
+
+def xsp2co1_ref_power(wx, e):
+    """Foolproof exponentiation in G_x0"""
+    assert isinstance(wx, Xsp2_Co1_Word)
+    if e > 1:
+        h = xsp2co1_ref_power(wx, e >> 1)  
+        return h * h * wx if e & 1 else h * h
+    if e == 1:
+        return wx
+    if e == 0:
+        return Xsp2_Co1()
+    return (wx**(-1)) ** (-e)
+
+
+def xsp2co1_fast_power(wx, e):
+    """The safe exponentiation in G_x0 to be tested"""
+    assert isinstance(wx, Xsp2_Co1_Word)
+    power = Xsp2_Co1()
+    chk_qstate12(xsp2co1_power_elem(wx._data, e, power._data))
+    return power
+
+@pytest.mark.xsp2co1
+def test_elem_power(ntests = 50, verbose = 0):
+    print("Test function computation a of power in G_x0")
+    for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
+        e = randint(-2**35, 2**35)
+        #print("Test ", i, "e", e)
+        wx = Xsp2_Co1(*w)
+        power =  xsp2co1_fast_power(wx, e)
+        ref_power = xsp2co1_ref_power(wx, e) # wx ** e
+        assert power == ref_power, e
+        if i < 10:
+            e1 = i - 5
+            power =  xsp2co1_fast_power(wx, e1)
+            assert power == xsp2co1_ref_power(wx, e1) 
+
+
+#######################################################################
+# Test computing the order of an element of G_x0
+#######################################################################
+
+
+def xsp2co1_ref_order(wx):
+    assert isinstance(wx, Xsp2_Co1_Word)
+    o = wx.qs.order(120)
+    if o & 1 == 0:
+        o = o >> 1
+    unit, pw = wx.group(), wx**o
+    if pw == unit:
+         return o
+    for i in range(2):
+        o, pw = 2*o, pw * pw
+        if pw == unit:
+            return o
+    err = "Order of QStateMatrix object not found" 
+    raise ValueError(err)
+
+def xsp2co1_fast_order(wx, via_word = True):
+    assert isinstance(wx, Xsp2_Co1_Word)
+    if not via_word:
+        return chk_qstate12(xsp2co1_order_elem(wx._data))
+    m = wx.as_mm()
+    return xsp2co1_order_word(m._data, m.length)
+
+def xsp2co1_fast_half_order(wx):
+    assert isinstance(wx, Xsp2_Co1_Word)
+    buf = np.zeros(10, dtype = np.uint32)
+    m = wx.as_mm()
+    res = chk_qstate12(xsp2co1_half_order_word(m._data, m.length, buf))
+    o, l = divmod(res, 256)
+    assert 0 <= l <= 10
+    out = Xsp2_Co1()
+    chk_qstate12(xsp2co1_mul_elem_word(out._data, buf, l))
+    return o, out
+
+
+@pytest.mark.xsp2co1
+def test_elem_order(ntests = 50, verbose = 0):
+    neutral = Xsp2_Co1()
+    print("Test function computation of order in G_x0")
+    for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
+        wx = Xsp2_Co1(*w)
+        o_ref = xsp2co1_ref_order(wx)
+        o = xsp2co1_fast_order(wx, via_word = i & 1)
+        ok = o == o_ref
+        if verbose or not ok:
+            print("Test", i+1)
+            print("g = ", MM(*w))
+            print("order =", o)
+            if not ok:
+                print("expected:", o_ref)
+                raise ValueError("Computation or order has failed")
+
+        o1, invol = xsp2co1_fast_half_order(wx)
+        assert o1 == o
+        if (o & 1):
+            assert invol == neutral
+        else:
+            assert xsp2co1_fast_power(wx, o >> 1) == invol
+            assert invol * invol == neutral
 
 #######################################################################
 # benchmark

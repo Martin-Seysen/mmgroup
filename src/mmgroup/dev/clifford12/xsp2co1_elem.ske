@@ -46,6 +46,239 @@ extern "C" {
 
 
 /*************************************************************************
+*** Power and order of an element of G_x0
+*************************************************************************/
+
+/**
+   @brief Exponentiation of an element of the group \f$G_{x0}\f$.
+   
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   in **G_x0 representation**. The function computes the
+   power \f$g^e\f$ and stores the result in the array  ``elem2``
+   in **G_x0 representation**. Here \f$-2^{63} < e < 2^{63}\f$
+   must hold.
+   
+   A negative return value indicates an error.
+   
+   Any kind of overlapping beween the arrays ``elem1`` and ``elem2``
+   is allowed.
+*/
+// %%EXPORT px
+int32_t xsp2co1_power_elem(uint64_t *elem1, int64_t e, uint64_t *elem2)
+{
+    uint64_t elem[26], ee, mask = ONE;
+    int32_t res;
+
+    // Deal with exponent 0
+    if (e == 0) {
+        xsp2co1_unit_elem(elem2);
+        return 0;
+    }
+
+    // Put ``elem2 = elem == elem2**sign(e)``, ``ee = abs(e)``
+    if (e < 0) {
+        ee = e = -e;
+        if (e < 0) return ERR_QSTATE12_SCALAR_OVFL; // case e == -2**63
+        res =  xsp2co1_inv_elem(elem1, elem);
+        if (res < 0) return res;
+    } else {
+        ee = e;
+        xsp2co1_copy_elem(elem1, elem);
+    }
+    if (ee >= (ONE << 63)) return ERR_QSTATE12_SCALAR_OVFL;
+    xsp2co1_copy_elem(elem, elem2);
+
+    // Put ``mask = 1 << (bit_length(ee) - 1)``
+    while (mask <= (uint64_t)ee)  mask += mask;
+    mask >>= 1; mask >>= 1;
+
+    // Compute ``elem2 = elem**ee`` with square and multiply
+    while (mask) {
+        res = xsp2co1_mul_elem(elem2, elem2, elem2);
+        if (res < 0) return res;
+        if (ee & mask) {
+            res = xsp2co1_mul_elem(elem, elem2, elem2);
+            if (res < 0) return res;
+        }
+        mask >>= 1;
+    }
+    return 0;
+}
+
+/// @cond DO_NOT_DOCUMENT 
+
+// Return 1 if ``bm`` refers to a 24 x 24 unit bit matrix an 0 otherwise
+static inline uint32_t is_neutral_Co1(uint64_t *bm)
+{
+    uint64_t i, acc = 0;
+    for (i = 0; i < 24; ++i) acc |= bm[i] ^ (ONE << i);
+    return (acc & 0xffffff) == 0;
+}
+
+
+// Return the odd part ``i`` of the order of the element ``elem``
+// such that ``elem**(2**k*odd) = 1`` for an integer k.
+static inline int32_t elem_odd_order(uint64_t *elem)
+{
+    uint64_t bm1[24], bm2[24];
+    int32_t i, res;
+
+    // Let ``bm1`` be the 24 times 24 bit matrix representing
+    // the image of ``elem`` in ``Co_1`` 
+    for (i = 0; i < 24; ++i) bm1[i] = 1ULL << i;
+    res = xsp2co1_xspecial_conjugate(elem, 24, bm1, 0);
+    for (i = 0; i < 24; ++i) bm1[i]  &= 0xffffff;
+    if (res < 0) return res;
+
+    // Raise ``bm1`` to the power of 16. Note that the group
+    // ``Co_1`` has no element of order 32.
+    for (i = 0; i < 2; ++i) {
+        bitmatrix64_mul(bm1, bm1, 24, 24, bm2);
+        bitmatrix64_mul(bm2, bm2, 24, 24, bm1);
+    }
+
+    // Return 1 if ``bm1`` is the unit matrix
+    if (is_neutral_Co1(bm1)) return 1;
+
+    // Put ``bm2 = bm1 ** 2``
+    bitmatrix64_mul(bm1, bm1, 24, 24, bm2);
+
+    // Return ``i`` if ``bm1**i == 1`` for odd ``3 <= i < 39``
+    // Note that the group ``Co_1`` has no element of order 
+    // ``2**k * i`` for any ``i > 39``.
+    for (i = 3; i <= 39; i += 2) {
+        bitmatrix64_mul(bm1, bm2, 24, 24, bm1); 
+        if (is_neutral_Co1(bm1)) return i;
+    }
+    
+    return -1;
+}
+
+/// @endcond 
+
+
+/**
+   @brief Compute (halved) order of an element of the group \f$G_{x0}\f$.
+   
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   in **G_x0 representation**. The function returns the order
+   of the element \f$g\f$.
+
+   If the order  \f$o\f$ of \f$g\f$ is even then the function
+   stores \f$g^{o/2}\f$ in the array  ``elem2``
+   in **G_x0 representation**. Otherwise it stores the
+   neutral element in ``elem2``.
+
+   A negative return value indicates an error.
+   
+   Any kind of overlapping beween the arrays ``elem1`` and ``elem2``
+   is allowed.
+*/
+// %%EXPORT px
+int32_t xsp2co1_half_order_elem(uint64_t *elem1, uint64_t *elem2)
+{
+    int32_t i, o, res;
+    uint64_t elem_h[26];
+
+    o = elem_odd_order(elem1);
+    if (o <=  0) return o ? o : -1;
+    res = xsp2co1_power_elem(elem1, o, elem_h);
+    if (res < 0) return res;
+    if (elem2 != NULL) xsp2co1_unit_elem(elem2);
+    for (i = 0; i < 6; ++i) {
+        if (xsp2co1_is_unit_elem(elem_h)) return o;
+        if (elem2 != NULL) xsp2co1_copy_elem(elem_h, elem2);
+        res = xsp2co1_mul_elem(elem_h, elem_h, elem_h);
+        if (res < 0) return res;
+        o += o;
+    }
+    return -1;
+}
+
+
+/**
+   @brief Compute order of an element of the group \f$G_{x0}\f$.
+   
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   in **G_x0 representation**. The function returns the order
+   of the element \f$g\f$.
+
+   A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_order_elem(uint64_t *elem)
+{
+    return xsp2co1_half_order_elem(elem, NULL);
+}
+
+
+
+/**
+  @brief Compute (halved) order of a word of the group \f$G_{x0}\f$.
+   
+  Let \f$w\f$ be a word in the generators of  \f$G_{x0}\f$
+  of length ``n``. \f$w\f$ is stored in the array ``a1``, and each
+  entry of ``a1`` encodes a generator of   \f$G_{x0}\f$ as
+  described in file ``mmgroup_generators.h``.
+
+  If the order  \f$o\f$ of the word \f$w\f$ is even then the function
+  stores \f$w^{o/2}\f$ in the array  ``a2`` in the same format
+  as the word \f$w\f$. Otherwise it stores the empty word in ``a2``.
+  The length ``k`` of the word in ``a2`` is at most 10.
+
+  The function returns the value ``0x100 *o + k``.
+
+  A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_half_order_word(uint32_t *a1, uint32_t n, uint32_t *a2)
+{
+    int32_t len = 0, o, res;
+    uint64_t elem[26];
+
+    // Deal with empty word ``w``
+    if (n == 0) return 0x100;
+
+    // Convert word ``w`` to element ``elem`` 
+    res = xsp2co1_set_elem_word(elem, a1, n);
+    if (res < 0) return res;
+
+    // Compute order ``o`` of ``elem``; put ``elem``= ``elem ** (o/2)``
+    o = xsp2co1_half_order_elem(elem, elem);
+    if (o < 0) return o;
+
+    // Output ``elem ** (o/2)`` if available and requested
+    if ((o & 1) == 0 && a2 != NULL) {
+        len = xsp2co1_elem_to_word(elem, a2);
+        if (len < 0) return len;
+    }  
+
+    // return result
+    return (o << 8) + len;     
+}
+
+
+/**
+  @brief Compute order of a word of the group \f$G_{x0}\f$.
+   
+  Let \f$w\f$ be a word in the generators of  \f$G_{x0}\f$ 
+  of length ``n``. \f$w\f$ is stored in the array ``a``, and each
+  entry of ``a`` encodes a generator of   \f$G_{x0}\f$ as 
+  described in file ``mmgroup_generators.h``. 
+
+  The function returns the order of \f$w\f$ .
+
+  A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_order_word(uint32_t *a, uint32_t n)
+{
+    int32_t res = xsp2co1_half_order_word(a, n, NULL);
+    return (res < 0) ?  res : (res >> 8);
+}
+
+
+/*************************************************************************
 *** Count type-2 vectors in subspaces of the Leech lattice mod 2
 *************************************************************************/
 
@@ -186,6 +419,9 @@ uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
+// Entry ``t`` of the following table contains the the character of 
+// the 98280-dimensional rep of an element of ``Q_x0`` corresponding
+// to a Leech lattice vector of type ``t``.
 static int32_t TAB_TRACE_98280[5] = {98280, 0, 4072, -24, -24};
 /// @endcond 
 

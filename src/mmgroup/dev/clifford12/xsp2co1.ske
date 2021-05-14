@@ -740,8 +740,26 @@ void xsp2co1_unit_elem(uint64_t *elem)
 
 
 
+/**
+@brief Check if ``elem`` is neutral element of \f$G_{x0}\f$ 
 
-
+The function returns 1 if ``elem`` is the neutral element 
+of \f$G_{x0}\f$ and 0 otherwise. 
+*/
+// %%EXPORT px
+uint32_t xsp2co1_is_unit_elem(uint64_t *elem)
+{
+    uint_fast32_t i;
+    uint64_t mask = 0x800800ULL, acc;
+    acc = elem[0] ^ STD_V3;
+    acc |= elem[1];
+    for (i = 2; i < 14; ++i) {
+        acc |= elem[i] ^ mask;
+        mask >>= 1;
+    }
+    for (i = 14; i < 26; ++i) acc |= elem[i];
+    return acc == 0;
+}
 
 
 

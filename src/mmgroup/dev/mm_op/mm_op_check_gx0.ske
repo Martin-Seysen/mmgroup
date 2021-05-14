@@ -207,7 +207,8 @@ uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
   of the monster group. This is a vector whose stabilizer in the monster
   is the neutral element, satisfying some additional conditions as
   described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
-  order vector is the object ORDER_VECTOR in module ``mmgroup.mm_order.py``.
+  order vector is the object ORDER_VECTOR in 
+  module ``mmgroup.mm_order.py``.
 
   Assume that ``v`` is an image of ``v0`` under an unknown element
   \f$g\f$ of the monster. The function comutpes the element\f$g\f$ if
@@ -218,18 +219,19 @@ uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
   properties of vector ``v0``, corresponding to the array ``ORDER_TAGS``
   computed in module ``mmgroup.mm_order.py``.
 
-  In case of success the function writes the element \f$g\f$ into
-  the array ``g`` of length 10, padded with zeros. If inputs ``tags``
-  and ``v0`` have been  constructed properly then the function finds 
-  such an element \f$g\f$ if it exists.
+  In case of success the function writes the element \f$g\f$ into the
+  array ``g`` as a word generators of the monster group of length at
+  most 10; and the function returns the length of that word. If
+  inputs ``tags`` and ``v0`` have been  constructed properly then
+  the function finds such an element \f$g\f$ if it exists.
   
-  If a suitable element \f$g\f$ has been found then function returns a 
-  nonnegative number less or equal to 10 denoting the actual length
+  If a suitable element \f$g\f$ has been found then function returns
+  a nonnegative number less or equal to 10 denoting the actual length
   of the word in the array ``g`` without padding zeros.
 
-  If no such element \f$g_1\f$ has been found then the function returns 
+  If no such element \f$g_1\f$ has been found then the function returns
   a number greater than 256. Then the exact return value gives some
-  indication why no such element \f$g\f$ has been found; this is for 
+  indication why no such element \f$g\f$ has been found; this is for
   debugging only.
 
   A negative return value indicates an error. 
@@ -254,4 +256,82 @@ int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
     return res;    
 }
 
+
+/**
+  @brief Compute exponent \f$e\f$ such that \f$g^e \in G_{x0}\f$
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array ``g`` as a word of generators of the monster group of
+  length ``n``.
+
+  The function computes the smallest exponent \f$e\f$ such
+  that  \f$g^e\f$ is in \f$G_{x0}\f$. Then the function
+  writes \f$h = g^e\f$ into the buffer ``h`` as a word of
+  generators \f$G_{x0}\f$ of length at most 10. Let ``k`` be the
+  length of the word representing ``h``. Then the function returns
+  the value ``0x100 * e + k``; here we have ``1 <= e <= 119``
+  and ``0 <= k <= 10``.
+   
+  Computation of ``e`` is time consuming, and in some cases we
+  are interested in small values of ``e`` only.
+  Parameter ``o`` is an upper bound for the exponent ``e``.
+  The function returns 0 in case ``e > o``; then the data in
+  buffer ``h`` are invalid.
+
+  Inputs parameters ``v`` and ``tags`` are as in 
+  function ``mm_op%{P}_check_in_Gx0``; they are not changed.
+
+  A negative return value indicates an error. 
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t *h, uint32_t o)
+{
+    int32_t res;
+    uint_fast32_t i;
+    uint64_t *w = NULL, *w1, *work;
+    uint64_t elem[26];
+
+    if (o < 1) o = 1;
+    if (o > 119) o = 119;
+    res = xsp2co1_check_word_g_x0(g, n);
+    if (res == 0) {
+        if (n <= 10) {
+            for (i = 0; i < n; ++i) h[i] = g[i];
+            return n + 0x100;
+        } else {
+            res = xsp2co1_set_elem_word(elem, g, n);
+            if (res < 0) return res;
+            res = xsp2co1_elem_to_word(elem, h);
+            if (res < 0) return res;
+            return res + 0x100;
+        }
+    }
+    if (res == 1 && o == 1) return 0;
+
+    w = calloc(3 * %{MMV_INTS}, sizeof(uint64_t));
+    if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
+    w1 = w + %{MMV_INTS};
+    work = w1 + %{MMV_INTS};
+
+    mm_op15_copy(v0, w); 
+    for (i = 1; i <= o; ++i) {   
+        res = mm_op%{P}_word(w, g, n, 1, work);
+        if (res < 0) goto done;
+        res = mm_op%{P}_find_in_Gx0(w, tags, v0, h);
+        if (res >= 0x100) continue;
+        if (res < 0) goto done;
+        mm_op15_copy(w, w1);    
+        res = mm_op%{P}_find_in_Qx0(w1, tags, v0, h, work);
+        if (res < 0) goto done;
+        if (res < 0x100) {
+            res += i << 8;
+            goto done;
+        } 
+    }  
+    res = 0;
+
+  done:
+    if (w) free(w);
+    return res;
+}
 
