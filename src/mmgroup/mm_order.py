@@ -22,6 +22,8 @@ from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
+from mmgroup.clifford12 import xsp2co1_half_order_word
+from mmgroup.clifford12 import xsp2co1_power_word
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
@@ -32,6 +34,7 @@ from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
 from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 from mmgroup.mm15 import op_order as mm_op15_order
+from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
 
 
 
@@ -290,7 +293,7 @@ def check_mm_half_order(g, max_order = 119):
     """Return (halved) order of monster group element ``g``.
 
     ``g`` must be an instance of class ``MMGroupWord``.  The function
-    retrurns a pair ``(o, h)`` where ``o`` is the order of ``g``, and
+    returns a pair ``(o, h)`` where ``o`` is the order of ``g``, and
     ``h = g**(o/2)`` for an even ``o``. We put ``h = None`` if
     ``o`` is odd.
 
@@ -301,10 +304,30 @@ def check_mm_half_order(g, max_order = 119):
     """
     assert isinstance(g, MMGroupWord)
     g.reduce()
+    h = np.zeros(10, dtype = np.uint32)
     v = get_order_vector().data
-    o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
-    return  chk_qstate12(o)
-
+    o1 = mm_op15_order_Gx0(g._data, g.length, ORDER_TAGS, v, h, max_order)
+    chk_qstate12(o1)
+    if o1 == 0:
+        return 0, None
+    h = h[:o1 & 0xff]
+    o1 >>= 8
+    o2 = xsp2co1_half_order_word(h, len(h), h2)
+    h = h[:o2 & 0xff]
+    o2 >>= 8
+    o = o1 * o2
+    if (o & 1):
+        return o, None
+    if o2 == 1:
+        return o, g ** (o1 >> 2)
+    # compute q, r, such that the result is g**r * (g**o1)**q
+    q, r = divmod(o >> 1, o1) 
+    w = g.group()
+    w._extend(10)
+    w.length = chk_qstate12(xsp2co1_power_word(h, len(h), q, w._data))
+    res = g**r * w if r else w
+    res.reduce()
+    return o, res
 
 ###########################################################################
 # Check if an element of the monster is in the subgroup G_x0
