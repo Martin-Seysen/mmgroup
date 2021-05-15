@@ -3,7 +3,206 @@ import pytest
 
 from mmgroup import MM
 import mmgroup.mm_order
-from mmgroup.mm_order import check_mm_in_g_x0
+
+from mmgroup.mat24 import ploop_theta
+from mmgroup.generators import gen_leech3to2_type4
+from mmgroup.generators import gen_leech2_reduce_type4
+from mmgroup.clifford12 import chk_qstate12
+from mmgroup.clifford12 import uint64_parity
+from mmgroup.clifford12 import leech3matrix_kernel_vector
+from mmgroup.clifford12 import leech3matrix_watermark_perm_num
+from mmgroup.clifford12 import leech2matrix_solve_eqn
+
+
+from mmgroup.mm_order import get_order_vector
+from mmgroup.mm_group import MMGroup, MMGroupWord
+from mmgroup.mm import mm_vector
+
+from mmgroup.mm15 import op_copy as mm_op15_copy
+from mmgroup.mm15 import op_compare as mm_op15_compare
+from mmgroup.mm15 import op_word as mm_op15_word
+from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
+from mmgroup.mm15 import op_omega as mm_op15_omega 
+from mmgroup.mm15 import op_norm_A as mm_op15_norm_A 
+from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
+from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
+from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
+
+from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
+
+
+###########################################################################
+# Python implementation of check_mm_in_g_x0() using low-level functions
+###########################################################################
+
+# Here we implement the python version of function check_mm_in_g_x0()
+# that has been used in the development phase.
+
+get_order_vector()
+from mmgroup.mm_order import ORDER_TAGS, check_mm_in_g_x0
+from mmgroup.mm_order import OFS_NORM_A, OFS_DIAG_VA, OFS_WATERMARK_PERM
+from mmgroup.mm_order import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
+from mmgroup.mm_order import OFS_SOLVE_X, OFS_TAG_SIGN 
+
+FAST =  False
+
+err_in_g_x0 = 0 
+
+def find_in_Q_x0(w):
+    global err_in_g_x0
+    if FAST:
+        v = get_order_vector().data
+        res = mm_op15_find_in_Qx0(w, ORDER_TAGS, v)
+    w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
+        ORDER_TAGS[OFS_TAGS_X:], 24)
+    if w_x < 0:
+        err_in_g_x0 = 7
+        return None
+    x = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_X:], 24, w_x)
+    w_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800)
+    aa = np.array(ORDER_TAGS[OFS_TAG_SIGN:] ^ (w_sign << 14),
+        dtype = np.uint32)
+    sign = mm_aux_mmv_extract_sparse_signs(15, w, aa, 1)
+    if sign < 0:
+        err_in_g_x0 = 8
+        return None
+    x &= 0xffffff
+    sign ^= uint64_parity(x & (x >> 12) & 0x7ff)
+    x ^=  (sign & 1) << 24
+    x ^= ploop_theta(x >> 12)
+    #print("final x =", hex(x))
+    return x
+
+
+def find_in_G_x0(w):
+    global err_in_g_x0
+    g1i = np.zeros(11, dtype = np.uint32)
+    if FAST:
+        v = get_order_vector().data
+        res =  mm_op15_find_in_Gx0(w, ORDER_TAGS, v, g1i)
+        assert res >= 0
+        if res >= 0x100:
+            err_in_g_x0 = res - 0x100
+            return None
+        return g1i[:res]
+
+    if mm_op15_norm_A(w) != ORDER_TAGS[OFS_NORM_A]:
+        err_in_g_x0 = 1
+        return None        
+    w3 = leech3matrix_kernel_vector(15, w, ORDER_TAGS[OFS_DIAG_VA])
+    if w3 == 0: 
+        err_in_g_x0 = 2
+        return None
+    w_type4 = gen_leech3to2_type4(w3)
+    if w_type4 == 0: 
+        err_in_g_x0 = 3
+        return None
+    wA = np.array(w[:2*24], copy = True)
+    len_g1 = gen_leech2_reduce_type4(w_type4, g1i)
+    assert 0 <= len_g1 <= 6 
+    res = mm_op15_word_tag_A(wA, g1i, len_g1, 1)
+    assert res == 0
+    perm_num = leech3matrix_watermark_perm_num(15, 
+        ORDER_TAGS[OFS_WATERMARK_PERM:], wA)
+    if perm_num < 0: 
+        err_in_g_x0 = 4
+        return None
+    if perm_num > 0:
+        g1i[len_g1] = 0xA0000000 + perm_num 
+        res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
+        assert res  == 0
+        len_g1 += 1
+    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, 
+        ORDER_TAGS[OFS_TAGS_Y:], 11)
+    if v_y < 0:
+        err_in_g_x0 = 5
+        return None
+    y = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_Y:], 11, v_y)
+    if y > 0:
+        g1i[len_g1] = 0xC0000000 + y
+        res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
+        assert res  == 0
+        len_g1 += 1
+    if (wA != get_order_vector().data[:2*24]).all():
+        err_in_g_x0 = 6
+        return None
+    #print("g1i", g1i[:len_g1])
+    return g1i[:len_g1]
+
+
+def low_level_check_mm_in_g_x0(g):
+    """Check if ``g`` is in the subgroup ``G_x0`` of the monster
+   
+    If ``g`` is in the subgroup ``G_x0`` of the monster then the
+    function changes the word representing ``g`` to a (uniquely 
+    defined) word in the generators of the subgroup ``G_x0`` and
+    returns ``g``.  
+    
+    Otherwise the function does not change ``g`` and returns ``None``.
+    
+    ``g`` must be an instance of class 
+    ``mmgroup.mm_group.MMGroupWord``.
+    """
+    global err_in_g_x0
+    err_in_g_x0 = 0
+    assert isinstance(g, MMGroupWord)
+    v = get_order_vector().data
+    w = mm_vector(15)
+    work = mm_vector(15)
+    mm_op15_copy(v, w)
+    res = mm_op15_word(w.data, g.data, len(g), 1, work)
+    assert res == 0
+    if FAST:
+        g1 = np.zeros(11, dtype = np.uint32)
+        res = chk_qstate12(mm_op15_check_in_Gx0(w, ORDER_TAGS, v, g1))
+        if res >= 0x100:
+            err_in_g_x0 = res - 0x100
+            return None
+        assert res < 11
+        g._extend(res)
+        g.length = res
+        g._data[:res] = g1[:res]
+        g.reduced = 0
+        g.reduce()
+        return g
+
+    g1i = find_in_G_x0(w)
+    if g1i is None:
+        return None
+    res = mm_op15_word(w, g1i, len(g1i), 1, work)
+    assert res == 0
+
+    x = find_in_Q_x0(w)
+    if x == None:
+        return None
+
+    g2i = np.array([0x90000000 + (x & 0xfff), 
+        0xB0000000 + ((x >> 12) & 0x1fff)], dtype = np.uint32)
+    res = mm_op15_word(w, g2i, 2, 1, work)  
+    assert res == 0   
+    g1i = np.append(g1i, g2i)
+ 
+    assert res == 0   
+    if mm_op15_compare(v, w):
+        #print("vW", v, "\n",  w)
+        err_in_g_x0 = 9
+        return None
+
+    g._extend(11)
+    g.length = len(g1i)
+    g.reduced = 0
+    for i in range(len(g1i)):
+        g._data[i] = g1i[len(g1i) - 1 - i] ^ 0x80000000
+    g.reduce()
+    return g
+    
+
+
+
+###########################################################################
+# Test data for function  check_mm_in_g_x0() 
+###########################################################################
+
 
 def in_gx0_testdata():
     """Test data for testing function mgroup.mm_order.check_mm_in_g_x0
@@ -54,6 +253,9 @@ def in_gx0_testdata():
             yield MM(*[(tag, 'n') for tag in "xydpl"*i]), True
     
 
+###########################################################################
+# Test function  check_mm_in_g_x0() 
+###########################################################################
 
 
 @pytest.mark.mm
@@ -76,5 +278,6 @@ def test_in_gx0(verbose = 0):
             assert g1 is None
         if g1:
             assert g == g1 
-            
-     
+        assert g1 == low_level_check_mm_in_g_x0(g)
+        assert g.in_G_x0() == bool(g1)
+

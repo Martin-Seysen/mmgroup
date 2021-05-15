@@ -17,7 +17,7 @@ ref_group = ref_space.group
 
 
 ########################################################################
-# Test computation of the order of a group element
+# Computing the order of a group element using a random vector
 ########################################################################
 
 def ref_order_random_v(g):
@@ -55,6 +55,10 @@ def ref_order(g):
     assert order < 120
     return order
 
+
+########################################################################
+# Test computation of the order of a group element
+########################################################################
 
 def order_testcases(group):
     yield group(), 1

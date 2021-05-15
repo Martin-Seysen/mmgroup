@@ -247,7 +247,7 @@ check_mm_half_order = None
 check_mm_in_g_x0 = None
 
 ###########################################################################
-# Importing functions check_mm_order and check_mm_equal 
+# Importing functions from module ``mmgroup.mm_order``
 ###########################################################################
 
 def import_mm_order_functions():
@@ -371,33 +371,53 @@ class MMGroupWord(AbstractGroupWord):
         the case then the element is converted to a word in the
         generators of :math:`G_{x0}`.
         """
-        status = xsp2co1_check_word_g_x0(self._data, self.length)
-        if status == 1:
-            return False
-        if status == 0:
-            if self.length > 10:
-                g1 = np.array(10, dtype = np.uint32)
-                l1 = xsp2co1_reduce_word(self._data, self.length, g1)
-                self._data[:l1] = g1[:l1]
-                self.length = l1 
-                self.reduced = 0 
-            return True
-        from mmgroup.mm_order import ORDER_VECTOR, ORDER_TAGS
-        w = mm_vector(15)
-        work = mm_vector(15)
-        mm_op15_copy(ORDER_VECTOR.data, w)
-        chk_qstate12(mm_op15_word(
-            w, self._data, self.length, 1, work))
-        g1 = np.zeros(11, dtype = np.uint32)
-        l1 = chk_qstate12(mm_op15_check_in_Gx0(
-            w, ORDER_TAGS, ORDER_VECTOR, g1))
-        if l1 >= 0x100:
-            return False
-        self._data[:l1] = a[:l1]
-        self.length = l1 
-        self.reduced = 0 
-        return True
+        if check_mm_order is None:
+            import_mm_order_functions()
+        return bool(check_mm_in_g_x0(self))
                           
+    def chi_G_x0(self):
+        r"""Compute characters of element of subgroup :math:`G_{x0}`
+
+        If the element is in the subgroup :math:`G_{x0}` then the 
+        function returns a tuple 
+        :math:`(\chi_M, \chi_{299}, \chi_{24}, \chi_{4096})`
+        of integers. Otherwise it raises ``ValueError``.
+
+        Here :math:`\chi_M` is the character of the element in the
+        196833-dimensional rep :math:`198883_x` of the monster.
+
+        By Conway's construction of the monster we have:
+
+        :math:`198883_x =  299_x \oplus 24_x \otimes  4096_x
+        \oplus 98280_x`,
+
+        for suitable irreducible representations 
+        :math:`299_x, 24_x, 4096_x, 98280_x` of the group 
+        :math:`G_{x0}`. The corresponding characters of the
+        element of  :math:`G_{x0}` are returned in the tuple
+        given above.  
+
+        While the product :math:`\chi_{24} \cdot \chi_{4096}`
+        is well defined, the factors  :math:`\chi_{24}` and 
+        :math:`\chi_{4096}` are defined up to sign only. We
+        normalize these factors such that the first nonzero value 
+        of the pair :math:`(\chi_{24}, \chi_{4096})` is positive.           
+        """
+        if not self.in_G_x0():
+            err = "Element is not in the subgroup G_x0 of the monster"
+            raise ValueError(err)
+
+        from mmgroup.structures import Xsp2_Co1
+        elem = Xsp2_Co1(*self.group.as_tuples(self))
+
+        a = np.zeros(4, dtype = np.int32)
+        res = chk_qstate12(xsp2co1_traces_all(elem._data, a))
+        chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
+        chi299 = (chi24**2 + chisq24) // 2 - 1
+        chi_M = chi299 + chi98260 + chi24 * chi4096
+        return chi_M, chi299, chi24, chi4096
+       
+        
 
 ###########################################################################
 # Atoms for the group M

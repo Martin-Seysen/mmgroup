@@ -27,11 +27,13 @@ from mmgroup.clifford12 import xsp2co1_power_word
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
-from mmgroup.mm15 import op_omega as mm_op15_omega 
+
+#from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
+#from mmgroup.mm15 import op_omega as mm_op15_omega 
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A 
-from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
-from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
+#from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
+#from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
+
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
@@ -333,6 +335,8 @@ def check_mm_half_order(g, max_order = 119):
 # Check if an element of the monster is in the subgroup G_x0
 ###########################################################################
  
+
+""
 err_in_g_x0 = 0 
 
 
@@ -422,7 +426,7 @@ def find_in_G_x0(w):
 
 
  
-def check_mm_in_g_x0(g):
+def check_mm_in_g_x0_old(g):
     """Check if ``g`` is in the subgroup ``G_x0`` of the monster
    
     If ``g`` is in the subgroup ``G_x0`` of the monster then the
@@ -490,13 +494,45 @@ def check_mm_in_g_x0(g):
     
 
 
+def check_mm_in_g_x0(g):
+    """Check if ``g`` is in the subgroup ``G_x0`` of the monster
+   
+    If ``g`` is in the subgroup ``G_x0`` of the monster then the
+    function changes the word representing ``g`` to a (uniquely 
+    defined) word in the generators of the subgroup ``G_x0`` and
+    returns ``g``.  
+    
+    Otherwise the function does not change ``g`` and returns ``None``.
+    
+    ``g`` must be an instance of class 
+    ``mmgroup.mm_group.MMGroupWord``.
+    """
+    g1 = np.zeros(10, dtype = np.uint32)
+    v = get_order_vector().data
+    res = chk_qstate12(mm_op15_order_Gx0(g.data, len(g), 
+        ORDER_TAGS, v, g1, 1))
+    if ((res >> 8) != 1):
+        return None 
+    length = res & 0xff
+    assert length <= 10
+    g._extend(10)
+    g._data[:length] = g1[:length]
+    g.length = length
+    g.reduced = 0
+    g.reduce()
+    return g
+
+
+
 ###########################################################################
 # Main program (for testing)
 ###########################################################################
 
 
 if __name__ == "__main__":
-   get_order_vector(recompute = 0, verbose = 1)
+    get_order_vector(recompute = 0, verbose = 1)
+    assert isinstance(g, MMGroupWord)
+
 
 
 
