@@ -31,6 +31,7 @@ from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
 from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
+from mmgroup.mm15 import op_order as mm_op15_order
 
 
 
@@ -42,9 +43,6 @@ assert  MMV15.group == MM
 
 ORDER_VECTOR = None
 ORDER_TAGS = None
-
-#DIAG_VA = TAGS_Y = TAGS_X = TAG_SIGN = None
-#WATERMARK_PERM = SOLVE_X = SOLVE_Y = None
 
 
 OFS_NORM_A = 0
@@ -230,7 +228,7 @@ def check_mm_equal(g1, g2, mode = 0):
 ###########################################################################
 
 
-def check_mm_order(g, max_order = 119, mode = 0):
+def check_mm_order_old(g, max_order = 119, mode = 0):
     """Return order of monster group element ``g``.
 
     if ``order(g) < max_order`` return ``order(g)``; else return ``0``.
@@ -267,6 +265,45 @@ def check_mm_order(g, max_order = 119, mode = 0):
             return i
     return 0
 
+
+
+
+def check_mm_order(g, max_order = 119):
+    """Return order of monster group element ``g``.
+
+    ``g`` must be an instance of class ``MMGroupWord``.  The function
+    returns the order of ``g`` if ``max_order`` is set to its default
+    value. 
+
+    Computing the order of an element of the monster is time consuming; 
+    and in some cases we are interested in small orders only.   
+    If ``max_order``is given then the function may return 0 if the
+    order of ``g`` is greater than ``max_order``.
+    """
+    assert isinstance(g, MMGroupWord)
+    g.reduce()
+    v = get_order_vector().data
+    o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
+    return  chk_qstate12(o)
+
+def check_mm_half_order(g, max_order = 119):
+    """Return (halved) order of monster group element ``g``.
+
+    ``g`` must be an instance of class ``MMGroupWord``.  The function
+    retrurns a pair ``(o, h)`` where ``o`` is the order of ``g``, and
+    ``h = g**(o/2)`` for an even ``o``. We put ``h = None`` if
+    ``o`` is odd.
+
+    Parameter ``max_order`` is as in function ``check_mm_order``. 
+
+    If ``h`` is in the subgroup :math:`G_{x0}`` then ``h`` is 
+    returned as a word in the generators of that subgroup.
+    """
+    assert isinstance(g, MMGroupWord)
+    g.reduce()
+    v = get_order_vector().data
+    o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
+    return  chk_qstate12(o)
 
 
 ###########################################################################

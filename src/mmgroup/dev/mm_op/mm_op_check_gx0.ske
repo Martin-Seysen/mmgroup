@@ -257,6 +257,8 @@ int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
 }
 
 
+
+
 /**
   @brief Compute exponent \f$e\f$ such that \f$g^e \in G_{x0}\f$
 
@@ -278,7 +280,7 @@ int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
   The function returns 0 in case ``e > o``; then the data in
   buffer ``h`` are invalid.
 
-  Inputs parameters ``v`` and ``tags`` are as in 
+  Input parameters ``v0`` and ``tags`` are as in 
   function ``mm_op%{P}_check_in_Gx0``; they are not changed.
 
   A negative return value indicates an error. 
@@ -333,5 +335,42 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
   done:
     if (w) free(w);
     return res;
+}
+
+
+
+
+/**
+  @brief Compute order of an element \f$g\f$ of the monster
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array ``g`` as a word of generators of the monster group of
+  length ``n``.
+
+  The function returns the order of \f$g\f$.
+   
+  Computation of the order is time consuming, and in some cases 
+  we are interested in small orders only.
+  Parameter ``o`` is an upper bound for the order. The function 
+  may return 0 if the order is greater than ``o``.
+
+  Input parameters ``v0`` and ``tags`` are as in 
+  function ``mm_op%{P}_check_in_Gx0``; they are not changed.
+
+  A negative return value indicates an error. 
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_order(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t o)
+{
+    int32_t res, e;
+    int32_t h[10];
+
+    res = mm_op%{P}_order_Gx0(g, n, tags, v0, h, o);
+    if (res <= 0) return res;
+    e =  res >> 8;
+    if ((res & 0xff) > 10) return ERR_QSTATE12_BUFFER_OVFL;
+    res = xsp2co1_order_word(h, res & 0xff);
+    if (res <= 0) return res ? res : ERR_QSTATE12_SCALAR_OVFL;
+    return e * res;
 }
 

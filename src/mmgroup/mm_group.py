@@ -243,23 +243,29 @@ from mmgroup.generators import mm_group_mul_words
 # Functions to be imported from module mmgroup.mm_order
 check_mm_order = None
 check_mm_equal = None
-
+check_mm_half_order = None
+check_mm_in_g_x0 = None
 
 ###########################################################################
 # Importing functions check_mm_order and check_mm_equal 
 ###########################################################################
 
 def import_mm_order_functions():
-    """Import functions ``check_mm_order, check_mm_equal``.
+    """Import functions from module ``mmgroup.mm_order``.
 
     We import these functions from module ``mmgroup.mm_order``
     on demand. This avoids an infinite recursion of imports.
     """
     global check_mm_order, check_mm_equal
+    global check_mm_half_order, check_mm_in_g_x0
     from mmgroup.mm_order import check_mm_order as f
     check_mm_order = f
     from mmgroup.mm_order import check_mm_equal as f
     check_mm_equal = f
+    from mmgroup.mm_order import check_mm_half_order as f
+    check_mm_half_order = f
+    from mmgroup.mm_order import check_mm_in_g_x0 as f
+    check_mm_in_g_x0 = f
 
 ###########################################################################
 # Word class for the group MM

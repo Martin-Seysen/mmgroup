@@ -105,6 +105,45 @@ int32_t xsp2co1_power_elem(uint64_t *elem1, int64_t e, uint64_t *elem2)
     return 0;
 }
 
+
+/**
+  @brief Exponentiation of an word of the group \f$G_{x0}\f$.
+
+  Let \f$w\f$ be a word in the generators of  \f$G_{x0}\f$
+  of length ``n``. \f$w\f$ is stored in the array ``a1``, and each
+  entry of ``a1`` encodes a generator of   \f$G_{x0}\f$ as
+  described in file ``mmgroup_generators.h``.
+
+  The function stores\f$w^e\f$ in the array  ``a2`` in the same 
+  format as the word \f$w\f$ and returns the length of the
+  computed word, which is at most 10.
+
+  A negative return value indicates an error.
+   
+  Any kind of overlapping beween the arrays ``a1`` and ``a2``
+  is allowed.
+*/
+// %%EXPORT px
+int32_t xsp2co1_power_word(uint32_t *a1, uint32_t n, int64_t e, uint32_t *a2)
+{
+    int32_t res;
+    uint64_t elem[26];
+
+    // Deal with empty word ``w``
+    if (n == 0) return 0;
+
+    // Convert word ``w`` to element ``elem`` 
+    res = xsp2co1_set_elem_word(elem, a1, n);
+    if (res < 0) return res;
+
+    // Compute  ``elem ** e``
+    res = xsp2co1_power_elem(elem, e, elem);
+    if (res) return res;
+
+    // Output result 
+    return xsp2co1_elem_to_word(elem, a2);
+}
+
 /// @cond DO_NOT_DOCUMENT 
 
 // Return 1 if ``bm`` refers to a 24 x 24 unit bit matrix an 0 otherwise
