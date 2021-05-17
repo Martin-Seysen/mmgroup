@@ -363,7 +363,7 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
 int32_t mm_op%{P}_order(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t o)
 {
     int32_t res, e;
-    int32_t h[10];
+    uint32_t h[10];
 
     res = mm_op%{P}_order_Gx0(g, n, tags, v0, h, o);
     if (res <= 0) return res;

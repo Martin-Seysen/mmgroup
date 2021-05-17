@@ -38,14 +38,15 @@ def quot_ms(f, *args):
     return "%9.6f" % (1000 * quot(f, *args))
 
 
-print("""
-Benchmarking monster operations a %d-bit system.
-All times in milliseconds
-""" % (INT_BITS)
-)
+
 
 
 def benchmark():
+    print("""
+Benchmarking monster operations a %d-bit system.
+All times are given in milliseconds.
+""" % (INT_BITS)
+    )    
     for p in characteristics():    
         print("Operation modulo", p)
         op = [('p', 22), ('d', 127)]

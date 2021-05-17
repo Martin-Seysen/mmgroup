@@ -79,7 +79,7 @@ def test_xsp2_count_table():
 
 
 #####################################################################
-# Test conjugtion of extraspecial elements in group G_{x1}
+# Test computation of characters in group G_{x1}
 #####################################################################
 
 
@@ -105,7 +105,11 @@ def character(g, verbose = 0):
     chi299 = (chi24**2 + chisq24) // 2 - 1
     assert chi24 >= 0
     if chi24 == 0: assert chi4096 >= 0
-    return chi299 + chi98260 + chi24 * chi4096
+    chi_M = chi299 + chi98260 + chi24 * chi4096
+    #print("MMMM", MM(g))
+    chi_g = MM(g).chi_G_x0()
+    assert chi_g == (chi_M, chi299, chi24, chi4096)
+    return chi_M
 
 
 def character_testcases():
@@ -115,7 +119,7 @@ def character_testcases():
     ]
     for d in data:
         yield Xsp2_Co1(*d)
-    for i in range(100):
+    for i in range(200):
         yield  rand_xsp2co1_elem()
 
 @pytest.mark.xsp2co1

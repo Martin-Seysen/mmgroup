@@ -314,184 +314,28 @@ def check_mm_half_order(g, max_order = 119):
         return 0, None
     h = h[:o1 & 0xff]
     o1 >>= 8
+    h2 = np.zeros(10, dtype = np.uint32)
     o2 = xsp2co1_half_order_word(h, len(h), h2)
-    h = h[:o2 & 0xff]
+    h2 = h2[:o2 & 0xff]
     o2 >>= 8
     o = o1 * o2
+    if (o2 & 1) == 0:
+        return o, g.group.from_data(h2).reduce()
     if (o & 1):
         return o, None
     if o2 == 1:
-        return o, g ** (o1 >> 2)
-    # compute q, r, such that the result is g**r * (g**o1)**q
+        return o, g ** (o1 >> 1)
+    # compute q, r, such that the result is  (g**o1)**q  * g**r
     q, r = divmod(o >> 1, o1) 
-    w = g.group()
-    w._extend(10)
-    w.length = chk_qstate12(xsp2co1_power_word(h, len(h), q, w._data))
-    res = g**r * w if r else w
-    res.reduce()
-    return o, res
+    w = g.group.from_data(h)
+    return o, (w**q * g**r).reduce()
 
 ###########################################################################
 # Check if an element of the monster is in the subgroup G_x0
 ###########################################################################
  
 
-""
-err_in_g_x0 = 0 
 
-
-def find_in_Q_x0(w):
-    global err_in_g_x0
-    if FAST:
-        v = get_order_vector().data
-        res = mm_op15_find_in_Qx0(w, ORDER_TAGS, v)
-    w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
-        ORDER_TAGS[OFS_TAGS_X:], 24)
-    if w_x < 0:
-        err_in_g_x0 = 7
-        return None
-    x = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_X:], 24, w_x)
-    w_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800)
-    aa = np.array(ORDER_TAGS[OFS_TAG_SIGN:] ^ (w_sign << 14),
-        dtype = np.uint32)
-    sign = mm_aux_mmv_extract_sparse_signs(15, w, aa, 1)
-    if sign < 0:
-        err_in_g_x0 = 8
-        return None
-    x &= 0xffffff
-    sign ^= uint64_parity(x & (x >> 12) & 0x7ff)
-    x ^=  (sign & 1) << 24
-    x ^= ploop_theta(x >> 12)
-    #print("final x =", hex(x))
-    return x
-
-
-FAST = True
- 
-def find_in_G_x0(w):
-    global err_in_g_x0
-    g1i = np.zeros(11, dtype = np.uint32)
-    if FAST:
-        v = get_order_vector().data
-        res =  mm_op15_find_in_Gx0(w, ORDER_TAGS, v, g1i)
-        assert res >= 0
-        if res >= 0x100:
-            err_in_g_x0 = res - 0x100
-            return None
-        return g1i[:res]
-
-    if mm_op15_norm_A(w) != ORDER_TAGS[OFS_NORM_A]:
-        err_in_g_x0 = 1
-        return None        
-    w3 = leech3matrix_kernel_vector(15, w, ORDER_TAGS[OFS_DIAG_VA])
-    if w3 == 0: 
-        err_in_g_x0 = 2
-        return None
-    w_type4 = gen_leech3to2_type4(w3)
-    if w_type4 == 0: 
-        err_in_g_x0 = 3
-        return None
-    wA = np.array(w[:2*24], copy = True)
-    len_g1 = gen_leech2_reduce_type4(w_type4, g1i)
-    assert 0 <= len_g1 <= 6 
-    res = mm_op15_word_tag_A(wA, g1i, len_g1, 1)
-    assert res == 0
-    perm_num = leech3matrix_watermark_perm_num(15, 
-        ORDER_TAGS[OFS_WATERMARK_PERM:], wA)
-    if perm_num < 0: 
-        err_in_g_x0 = 4
-        return None
-    if perm_num > 0:
-        g1i[len_g1] = 0xA0000000 + perm_num 
-        res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
-        assert res  == 0
-        len_g1 += 1
-    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, 
-        ORDER_TAGS[OFS_TAGS_Y:], 11)
-    if v_y < 0:
-        err_in_g_x0 = 5
-        return None
-    y = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_Y:], 11, v_y)
-    if y > 0:
-        g1i[len_g1] = 0xC0000000 + y
-        res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
-        assert res  == 0
-        len_g1 += 1
-    if (wA != get_order_vector().data[:2*24]).all():
-        err_in_g_x0 = 6
-        return None
-    print("g1i", g1i[:len_g1])
-    return g1i[:len_g1]
-
-
-
- 
-def check_mm_in_g_x0_old(g):
-    """Check if ``g`` is in the subgroup ``G_x0`` of the monster
-   
-    If ``g`` is in the subgroup ``G_x0`` of the monster then the
-    function changes the word representing ``g`` to a (uniquely 
-    defined) word in the generators of the subgroup ``G_x0`` and
-    returns ``g``.  
-    
-    Otherwise the function does not change ``g`` and returns ``None``.
-    
-    ``g`` must be an instance of class 
-    ``mmgroup.mm_group.MMGroupWord``.
-    """
-    global err_in_g_x0
-    err_in_g_x0 = 0
-    assert isinstance(g, MMGroupWord)
-    v = get_order_vector().data
-    w = mm_vector(15)
-    work = mm_vector(15)
-    mm_op15_copy(v, w)
-    res = mm_op15_word(w.data, g.data, len(g), 1, work)
-    assert res == 0
-    if FAST:
-        g1 = np.zeros(11, dtype = np.uint32)
-        res = chk_qstate12(mm_op15_check_in_Gx0(w, ORDER_TAGS, v, g1))
-        if res >= 0x100:
-            err_in_g_x0 = res - 0x100
-            return None
-        assert res < 11
-        g._extend(res)
-        g.length = res
-        g._data[:res] = g1[:res]
-        g.reduced = 0
-        g.reduce()
-        return g
-
-    g1i = find_in_G_x0(w)
-    if g1i is None:
-        return None
-    res = mm_op15_word(w, g1i, len(g1i), 1, work)
-    assert res == 0
-
-    x = find_in_Q_x0(w)
-    if x == None:
-        return None
-
-    g2i = np.array([0x90000000 + (x & 0xfff), 
-        0xB0000000 + ((x >> 12) & 0x1fff)], dtype = np.uint32)
-    res = mm_op15_word(w, g2i, 2, 1, work)  
-    assert res == 0   
-    g1i = np.append(g1i, g2i)
- 
-    assert res == 0   
-    if mm_op15_compare(v, w):
-        print("vW", v, "\n",  w)
-        err_in_g_x0 = 9
-        return None
-
-    g._extend(11)
-    g.length = len(g1i)
-    g.reduced = 0
-    for i in range(len(g1i)):
-        g._data[i] = g1i[len(g1i) - 1 - i] ^ 0x80000000
-    g.reduce()
-    return g
-    
 
 
 def check_mm_in_g_x0(g):
@@ -511,6 +355,7 @@ def check_mm_in_g_x0(g):
     v = get_order_vector().data
     res = chk_qstate12(mm_op15_order_Gx0(g.data, len(g), 
         ORDER_TAGS, v, g1, 1))
+    #print("RES", hex(res))
     if ((res >> 8) != 1):
         return None 
     length = res & 0xff

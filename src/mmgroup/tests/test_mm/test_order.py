@@ -92,6 +92,12 @@ def test_order(verbose = 0):
             print("computed order =",order)
             err = "Error in computation order of group element"
             raise ValueError(err)
+        ho, g2 = g.copy().half_order()
+        assert ho == order
+        if order & 1:
+            assert g2 == None
+        else:
+            assert g2 == g ** (order // 2)
     print("Test passed")
    
    

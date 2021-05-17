@@ -222,9 +222,12 @@ from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
 from mmgroup.clifford12 import xsp2co1_reduce_word      
+from mmgroup.clifford12 import xsp2co1_traces_all      
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.mm import mm_vector
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
+
+
 
 try:
     from mmgroup.mat24 import MAT24_ORDER, pow_ploop
@@ -363,6 +366,24 @@ class MMGroupWord(AbstractGroupWord):
             import_mm_order_functions()
         return check_mm_order(self, max_order)
 
+    def half_order(self, max_order = 119):
+        """Return the (halved) order of the element of the monster group
+
+        The function  returns a pair ``(o, h)``, where ``o`` is the 
+        order of the element.
+
+        If ``o`` is even then the function returns the pair ``(o, h)``,
+        where ``h`` is the element raised to to the ``(o/2)``-th power. 
+        Otherwise the function returns the pair ``(o, None)``.
+   
+        Parameter ``max_order`` is as in function ``check_mm_order``. 
+
+        If ``h`` is in the subgroup :math:`G_{x0}`` then ``h`` is 
+        returned as a word in the generators of that subgroup.
+        """
+        if check_mm_half_order is None:
+            import_mm_order_functions()
+        return check_mm_half_order(self, max_order)
 
     def in_G_x0(self):
         """Check if the element is in the subgroup :math:`G_{x0}`
@@ -371,7 +392,7 @@ class MMGroupWord(AbstractGroupWord):
         the case then the element is converted to a word in the
         generators of :math:`G_{x0}`.
         """
-        if check_mm_order is None:
+        if check_mm_in_g_x0 is None:
             import_mm_order_functions()
         return bool(check_mm_in_g_x0(self))
                           
@@ -403,11 +424,11 @@ class MMGroupWord(AbstractGroupWord):
         normalize these factors such that the first nonzero value 
         of the pair :math:`(\chi_{24}, \chi_{4096})` is positive.           
         """
-        if not self.in_G_x0():
+        if self.in_G_x0() is None:
             err = "Element is not in the subgroup G_x0 of the monster"
             raise ValueError(err)
 
-        from mmgroup.structures import Xsp2_Co1
+        from mmgroup.structures.xsp2_co1 import Xsp2_Co1
         elem = Xsp2_Co1(*self.group.as_tuples(self))
 
         a = np.zeros(4, dtype = np.int32)
