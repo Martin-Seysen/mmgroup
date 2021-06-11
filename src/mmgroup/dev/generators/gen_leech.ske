@@ -88,8 +88,9 @@ uint64_t gen_leech3_op_y(uint64_t v3, uint32_t d)
 /**
   @brief Scalar product of two vectors in the Leech lattice mod 3
 
-  The function returns of vectors \f$v_{3,1}, $v_{3,1}\f$. The
-  parameters and the result are given Leech lattice mod 3 encoding.
+  The function returns the scalar product of the 
+  vectors \f$v_{3,1}, $v_{3,1}\f$. The parameters are given Leech 
+  lattice mod 3 encoding. The result is between 0 and 2.
 */
 static inline uint32_t short_3_scalprod(uint64_t v3_1, uint64_t v3_2)
 {
@@ -101,19 +102,19 @@ static inline uint32_t short_3_scalprod(uint64_t v3_1, uint64_t v3_2)
     // Each scalar product is >= 0 and <= 2.
     res = (v3_1 ^ v3_2) & 0xffffff000000ULL;
     res = (res & (zero << 24)) | (zero & ~(res >> 24));
-    // Sum up entries of res, counting the high 24 bits twice
+    // Sum up the 48 bits of res, counting the high 24 bits twice
     res = (res & 0x555555555555ULL) + ((res >> 1) & 0x555555555555ULL);
     res = (res & 0x333333333333ULL) + ((res >> 2) & 0x333333333333ULL);
     res = (res & 0x0f0f0f0f0f0fULL) + ((res >> 4) & 0x0f0f0f0f0f0fULL);
     res = (res & 0xffffffULL) + ((res >> 23) & 0x1fffffeULL);
     res = ((res >> 16) + (res >> 8) + res) & 0xff;
     // Reduce res modulo 3; we have 0 <= res <= 48
-    res = (res & 3) + (res >> 2) + 1; // res <= 19; res is one too big
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 7
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 4
-    res =  (res & 3) + (res >> 2);    // 1 <= res <= 3
-    return (uint32_t)res - 1;
+    res = (res & 3) + (res >> 2); // res <= 19
+    res = (0x924924924924924ULL >> (res << 1)) & 3;
+    return (uint32_t)res;
 }
+
+
 
 
 /// @endcond  
@@ -985,6 +986,62 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 *************************************************************************/
 
 /*************************************************************************
+** Simple functions for Leech lattice vectors modulo 3
+*************************************************************************/
+
+
+
+/**
+  @brief Scalar product of two vectors in the Leech lattice mod 3
+
+  The function returns the scalar product of the 
+  vectors \f$v_{3,1}, v_{3,2}\f$. The parameters are given in 
+  Leech lattice mod 3 encoding. The result is between 0 and 2.
+*/
+// %%EXPORT px
+uint32_t gen_leech3_scalprod(uint64_t v3_1, uint64_t v3_2)
+{
+    return short_3_scalprod(v3_1, v3_2);
+}
+
+
+/**
+  @brief Add two vectors in the Leech lattice mod 3
+
+  The function returns the sum of the 
+  vectors \f$v_{3,1}, v_{3,2}\f$. The parameters and the
+  result are given in Leech lattice mod 3 encoding. 
+*/
+// %%EXPORT px
+uint64_t gen_leech3_add(uint64_t v3_1, uint64_t v3_2)
+{
+    // quick and dirty implementation, not optimized.
+    uint64_t res, sum, cy;
+    v3_1 = short_3_reduce(v3_1);
+    v3_2 = short_3_reduce(v3_2);
+    sum = v3_1 ^ v3_2; 
+    cy = v3_1 & v3_2;
+    res = sum | ((cy & 0xffffffL) << 24) | ((cy >> 24) & 0xffffffL);    
+    return short_3_reduce(res);
+}
+
+
+/**
+  @brief Negate a vector in the Leech lattice mod 3
+
+  The function returns the negated vector  \f$v_{3}\f$.
+  The parameter and the result are given in Leech lattice 
+  mod 3 encoding. 
+*/
+// %%EXPORT px
+uint64_t gen_leech3_neg(uint64_t v3)
+{
+    uint64_t res;
+    res = ((v3 & 0xffffffL) << 24) | ((v3 >> 24) & 0xffffffL);    
+    return short_3_reduce(res);
+}
+
+/*************************************************************************
 ** Convert a short vector (mod 2) to a short vector (mod 3)
 *************************************************************************/
 
@@ -1154,10 +1211,10 @@ static inline uint32_t parity24(uint64_t x)
 /**
   @brief Map type-4 vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
 
-  Here parmeter \f$v_3\f$ is a type-4 vector 
+  Here parameter \f$v_3\f$ is a type-4 vector 
   in \f$\Lambda/3\Lambda\f$ in Leech lattice mod 3 encoding. 
 
-  The function returns a short vector in \f$\Lambda/2\Lambda\f$
+  The function returns a type-4 vector in \f$\Lambda/2\Lambda\f$
   corresponding to \f$v_3\f$ in Leech lattice encoding.
 
   The result is unique. The function returns 0 if \f$v_3\f$ is not of
@@ -1171,7 +1228,7 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
     // Let h be the support of v3, i.e. the bit vector of nonzero
     // coordinates of the vector v3 (modulo 3)
     h = ((v3 >> 24) | v3) & 0xffffff;
-    // Let w1 and w2 be the number of indices with coordinate 1 and 2
+    // Let w be the number of indices with coordinate 1 or 2
     w = mat24_bw24((uint32_t)h);
     // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
     // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
@@ -1209,7 +1266,7 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
         case 13:
             // type (4**1, 2**12, 0**11)
         case 10:
-            // type (4**2, 2**10, 0**14)
+            // type (4**2, 2**8, 0**14)
             syn = mat24_syndrome(h & 0xffffff, 0);
             if ((h & syn) != syn) return 0;                  
             gcodev = h ^ syn;
@@ -1252,6 +1309,85 @@ uint64_t gen_leech3to2_type4(uint64_t v3)
     return res;
 }
 
+
+
+
+/**
+  @brief Map type-3 vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
+
+  Here parameter \f$v_3\f$ is a type-3 vector 
+  in \f$\Lambda/3\Lambda\f$ in Leech lattice mod 3 encoding. 
+
+  The function returns a type-3 vector in \f$\Lambda/2\Lambda\f$
+  corresponding to \f$v_3\f$ in Leech lattice encoding.
+
+  The result is unique. The function returns 0 if \f$v_3\f$ is not of
+  type 3.
+*/
+// %%EXPORT px
+uint64_t gen_leech3to2_type3(uint64_t v3)
+{
+    uint_fast32_t  gcodev, cocodev, h, w, w1, syn, omega, res;
+    v3 = short_3_reduce(v3);
+    // Let h be the support of v3, i.e. the bit vector of nonzero
+    // coordinates of the vector v3 (modulo 3)
+    h = ((v3 >> 24) | v3) & 0xffffff;
+    // Let w be the number of indices with coordinate 1 or 2
+    w = mat24_bw24((uint32_t)h);
+    // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
+    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
+    // has to be corrected by a term 0xffffff. At the end of the
+    // switch statemnt, ``gcode`` might not correspond to a Golay
+    // code vector; this means that v3 is not of type 3.
+    switch (w) {
+        case 24:
+            // type (5**1, 1**23)
+            cocodev = mat24_syndrome((uint32_t)v3, 0);
+            gcodev = (v3 ^ cocodev) & 0xffffff;
+            if ((cocodev == 0) || (cocodev & (cocodev-1))) return 0;
+            omega = 0;
+            break;              
+        case 21:
+            // type (3**3, 1**21)
+            syn = mat24_syndrome((uint32_t)v3, 0);
+            gcodev = (v3 ^ syn) & 0xffffff;
+            cocodev = 0xffffff & ~h;
+            if ((syn & cocodev) != syn) return 0;
+            omega = 0;
+            break;              
+        case 12:
+            // type (2**12, 0**12)
+            gcodev = h;
+            syn = mat24_syndrome(h, 0);
+            cocodev = v3 & 0xffffff;
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + 1;
+            break; 
+        case 9:
+            // type (4**1, 2**8, 0**15)
+            syn = mat24_syndrome(h, 0);
+            if ((h & syn) != syn) return 0;                  
+            gcodev = h ^ syn;
+            cocodev = syn | (v3 & ~syn & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + parity24(syn & v3);
+            break; 
+        default:
+            return 0;
+    }
+    gcodev = mat24_vect_to_gcode(gcodev); 
+    if (gcodev & 0xfffff000UL) return 0;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    // correct ``gcodev`` by term ``Omega`` if omega is odd
+    gcodev ^= (omega & 1) << 11;         
+    res = (gcodev << 12) ^ cocodev;
+    // Correct an odd result by a term of Omega if required
+    if (w >= 21 && parity12(res & (res >> 12)) == 0) res ^= 0x800000;
+    return res;
+}
 
 
 /*************************************************************************
