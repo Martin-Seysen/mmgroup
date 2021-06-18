@@ -82,6 +82,23 @@ extern "C" {
 #endif
 
 
+#if (defined  __GNUC__)
+#define HAS_GETPID
+#include <unistd.h>
+#include <sys/types.h>
+static inline my_getpid(void)
+{
+    return (int)(getpid());
+}
+#elif  (defined _MSC_VER && defined _WIN32)
+#define HAS_GETPID
+#include <process.h>
+static inline my_getpid(void)
+{
+    return (int)(_getpid());
+}
+#endif
+
 
 
 
@@ -157,6 +174,13 @@ static void mm_rng_expand_key(uint32_t no, uint8_t *key, uint32_t len, uint8_t *
           memcpy(res + rlen, &rnd, sizeof(rnd));
           rlen += sizeof(rnd);
        } 
+       #endif
+       #ifdef  HAS_GETPID
+       {
+          int rnd = my_getpid();
+          memcpy(res + rlen, &rnd, sizeof(rnd));
+          rlen += sizeof(rnd);
+       }
        #endif
        if (len > 255 - rlen) len = 255 - rlen;
     }
@@ -271,46 +295,7 @@ void mm_rng_seed(uint8_t *seed, uint32_t no, uint8_t *key, uint32_t len)
    // for (i=0;i<266;++i) printf("%02x ", seed[i]); printf("\n\n");
 }
 
-/*****************************************************************************
-*** Generating a random array of bytes
-*****************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
-
-static void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
-// Generate an array of random 'len' bytes.
-// These random bytes are written to the array referred by 'out'. 
-// 'seed' is the seed for the random generator. It must have been 
-// created by function  mm_rng_seed().
-{
-   uint_fast8_t i, j, temp;                       // for RC4
-
-   // Restore RC4 counters from seed
-   i = seed[POS_I];
-   j = seed[POS_J];
-
-   // Random generation loop
-   while(len-- > 0)
-   {
-      // Adjust indices of RC4 generator
-      i = (i + 1) &  0xff;
-      j = (j + seed[i]) &  0xff;
- 
-      // Swap the values of seed[i] and seed[j]
-      temp = seed[i];
-      seed[i] = seed[j];
-      seed[j] = temp;
-
-      // Compute random output byte from RC4 
-      *out++ = seed[(seed[i] + seed[j]) & 0xff];
-   }
-
-   // Restore RC4 counters to seed
-   seed[POS_I] = i;
-   seed[POS_J] = j;
-}
-
-/// @endcond  
 
 /*****************************************************************************
 *** Generating a random array of integers modulo p, p <= 256
@@ -326,9 +311,13 @@ static void mm_rng_gen_bytes(uint8_t *seed, uint8_t *out, uint32_t len)
 
   Parameter ``seed`` points to the seed for the random generator.
   That seed must have been  created by function ``mm_rng_seed``.
+  
+  The function returns zero in case of success and a nonzero value
+  otherwise.
+
 */
 // %%EXPORT px
-void mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
+uint32_t mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
 {
    uint_fast8_t i, j, temp;                       // for RC4
    #if INT_BITS == 64
@@ -337,12 +326,7 @@ void mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
       uint_fast32_t h = 0, l = 0, temp32;         // for LFSR  
    #endif 
 
-   // Deal with p >= 256
-   if (p >= 256) {
-       if (p == 256) mm_rng_gen_bytes(seed, out, len);
-       return;
-   }
-
+ 
    // Restore LFSR from seed
    #if INT_BITS == 64
       for (i = 0; i < 8; ++i) {
@@ -359,47 +343,86 @@ void mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
    // Restore RC4 counters from seed
    i = seed[POS_I];
    j = seed[POS_J];
+   if (p > 0 && p < 256) {
+       // Random generation loop for 0 < p < 256
+       while(len-- > 0)
+       {
+          // Adjust indices of RC4 generator
+          i = (i + 1) &  0xff;
+          j = (j + seed[i]) &  0xff;
+     
+          // Swap the values of seed[i] and seed[j]
+          temp = seed[i];
+          seed[i] = seed[j];
+          seed[j] = temp;
 
-   // Random generation loop
-   while(len-- > 0)
-   {
-      // Adjust indices of RC4 generator
-      i = (i + 1) &  0xff;
-      j = (j + seed[i]) &  0xff;
- 
-      // Swap the values of seed[i] and seed[j]
-      temp = seed[i];
-      seed[i] = seed[j];
-      seed[j] = temp;
+          #if INT_BITS == 64
+             // Update the LFSR
+             temp64 = l >> 31;
+             l = ((l & 0x7fffffff) << 32) ^ temp64 ^ (temp64 << 31);
 
-      #if INT_BITS == 64
-         // Update the LFSR
-         temp64 = l >> 31;
-         l = ((l & 0x7fffffff) << 32) ^ temp64 ^ (temp64 << 31);
+             // Combine random output from RC4 and LFSR
+             temp64 = seed[(seed[i] + seed[j]) & 0xff];
+             temp64 = (temp64 << 40) + (l >> 15);
+             temp64 = (temp64 & 0xffffffffffffULL) * p;
+               
+             // store random number < p to output stream
+             *out++ = (temp64 >> 48) & 0xff;
+          #else
+             // Update the LFSR
+             temp32 = h ^ l ^ (h >> 31);
+             l = h << 1;
+             h = temp32;
 
-         // Combine random output from RC4 and LFSR
-         temp64 = seed[(seed[i] + seed[j]) & 0xff];
-         temp64 = (temp64 << 40) + (l >> 15);
-         temp64 = (temp64 & 0xffffffffffffULL) * p;
-           
-         // store random number < p to output stream
-         *out++ = (temp64 >> 48) & 0xff;
-      #else
-         // Update the LFSR
-         temp32 = h ^ l ^ (h >> 31);
-         l = h << 1;
-         h = temp32;
+             // Combine random output from RC4 and LFSR
+             temp32 = seed[(seed[i] + seed[j]) & 0xff];
+             temp32 = (((temp32 << 16) + (h >> 8)) & 0xffffff) * p; 
+             temp32 += ((((h & 0xff) << 16) + (l >> 16)) * p) >> 24;  
+               
+             // store random number < p to output stream
+             *out++ = (temp32 >> 24) & 0xff;
+          #endif
+       }
+   } else if (p == 256) {
+       // Random generation loop for p == 256
+       while(len-- > 0)
+       {
+          // Adjust indices of RC4 generator
+          i = (i + 1) &  0xff;
+          j = (j + seed[i]) &  0xff;
+     
+          // Swap the values of seed[i] and seed[j]
+          temp = seed[i];
+          seed[i] = seed[j];
+          seed[j] = temp;
 
-         // Combine random output from RC4 and LFSR
-         temp32 = seed[(seed[i] + seed[j]) & 0xff];
-         temp32 = (((temp32 << 16) + (h >> 8)) & 0xffffff) * p; 
-         temp32 += ((((h & 0xff) << 16) + (l >> 16)) * p) >> 24;  
-           
-         // store random number < p to output stream
-         *out++ = (temp32 >> 24) & 0xff;
-      #endif
-   }
+          #if INT_BITS == 64
+             // Update the LFSR
+             temp64 = l >> 31;
+             l = ((l & 0x7fffffff) << 32) ^ temp64 ^ (temp64 << 31);
 
+             // Combine random output from RC4 and LFSR
+             temp64 = seed[(seed[i] + seed[j]) & 0xff];
+             temp64 ^= l >> 55;
+               
+             // store random number < p to output stream
+             *out++ = temp64 & 0xff;
+          #else
+             // Update the LFSR
+             temp32 = h ^ l ^ (h >> 31);
+             l = h << 1;
+             h = temp32;
+
+             // Combine random output from RC4 and LFSR
+             temp32 = seed[(seed[i] + seed[j]) & 0xff];
+             temp32 ^= h >> 24;  
+               
+             // store random number < p to output stream
+             *out++ = temp32 & 0xff;
+          #endif
+       }  
+   } else return (uint32_t)(0-1);
+   
    // Restore RC4 counters to seed
    seed[POS_I] = i;
    seed[POS_J] = j;
@@ -415,6 +438,7 @@ void mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
          seed[POS_LFSR + i + 4] = (h >> (i << 3)) & 0xff;
       }
    #endif
+   return 0;
 }
 
 
