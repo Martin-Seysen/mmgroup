@@ -1,0 +1,610 @@
+
+
+/** @file mm_random.c
+
+A fast random generator for the representation of the monster
+group is provided in C. This generator supports very fast
+generation of long random vectors of integers modulo ``p``
+for ``p <= 256``.
+
+The seed for such a random generator is given by an array of type
+``uint64_t seed[MM_GEN_RNG_SIZE]``. In this version we have
+``MM_GEN_RNG_SIZE = 4``.
+
+The function ``gen_rng_seed_rnd(uint64_t *seed, ...)`` fills an 
+existing array ``seed`` of that type with random seed data. See 
+description of that function for details. There is also a 
+function ``gen_rng_seed_no`` for a determistic intialization of 
+the ``seed``.
+
+The function
+``gen_rng_bytes_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)``
+writes ``len`` uniform random numbers ``x_i`` with ``0 <= x_i < p``
+to the array referred by the pointer ``out``.
+Here ``1 < p <= 256`` must hold.
+
+This function is optimized for generating large random vectors
+with, say, ``len >= 1000``, as required for the representation of
+the monster. 
+
+Internal operation.
+
+We use the  xoshiro256** pseudo random number generator, see
+
+http://creativecommons.org/publicdomain/zero/1.0/
+
+For seeding the random generator with random data, we take
+information from various sources, e.g. the system time, and the 
+process id. Then we mix that information using the 
+round function of the MD5 hash algorithm.
+
+*/
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+
+
+#include "mmgroup_generators.h"
+
+// %%EXPORT_KWD  MAT24_API
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/******************************************************************
+*** The following #defines determine which volatile input sources
+*** are used for seeding the volatile random genertor number 0
+******************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// The following funtions are standard C functions.
+// They should usually be available on any operating system
+#define HAS_TIME  // function time() is present if #defined
+#define HAS_CLOCK // function clock() is present if #defined
+
+
+// __sync_fetch_and_add is avaibale in GNU C  only
+#ifdef __GNUC__
+#define HAS_SYNC_FETCH_AND_ADD
+#endif
+
+
+#if (defined  __GNUC__)
+#define HAS_GETPID
+#include <unistd.h>
+#include <sys/types.h>
+static inline uint64_t  my_getpid(void)
+{
+    return (uint64_t)(getpid());
+}
+#elif  (defined _MSC_VER && defined _WIN32)
+#define HAS_GETPID
+#include <process.h>
+static inline uint64_t my_getpid(void)
+{
+    return (uint64_t)(_getpid());
+}
+#endif
+
+
+
+
+#if (defined HAS_TIME) | (defined HAS_CLOCK)
+#include <time.h>
+#endif
+
+static volatile  int call_number;
+
+/// @endcond  
+
+
+// %%GEN h
+#define MM_GEN_RNG_SIZE 4
+// %%GEN c
+
+
+
+/*****************************************************************************
+*** MD5 round function
+*****************************************************************************/
+
+// The good old MD5 round function is certainly sufficient to mix inputs
+// from various sources in order to seed a non-secure random generrator.
+// Implementation see 
+// https://www.ietf.org/rfc/rfc1321.txt
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/* Basic MD5 functions F, G, H, I */
+#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
+#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
+#define H(x, y, z) ((x) ^ (y) ^ (z))
+#define I(x, y, z) ((y) ^ ((x) | (~z))) 
+
+/* ROT_LEFT rotates x left by n bits */
+#define ROT_LEFT(x, n) (((x) << (n)) | ((x) >> (32-(n))))
+
+/* FF, GG, HH, and II are transformations for rounds 1, 2, 3, and 4 */
+#define FF(a, b, c, d, x, s, ac) \
+   (a) += F((b), (c), (d)) + (x) + (uint32_t)(ac); \
+   (a) = ROT_LEFT ((a), (s)); \
+   (a) += (b)   
+
+#define GG(a, b, c, d, x, s, ac) \
+   (a) += G((b), (c), (d)) + (x) + (uint32_t)(ac); \
+   (a) = ROT_LEFT ((a), (s)); \
+   (a) += (b)   
+   
+#define HH(a, b, c, d, x, s, ac) \
+   (a) += H((b), (c), (d)) + (x) + (uint32_t)(ac); \
+   (a) = ROT_LEFT ((a), (s)); \
+   (a) += (b)   
+ 
+#define II(a, b, c, d, x, s, ac) \
+   (a) += I((b), (c), (d)) + (x) + (uint32_t)(ac); \
+   (a) = ROT_LEFT ((a), (s)); \
+   (a) += (b) 
+
+
+static void md5_round(uint32_t *data, uint32_t *hash)
+{
+  uint32_t a = hash[0], b = hash[1], c = hash[2], d = hash[3];
+
+  FF(a, b, c, d, data[ 0],  7, 0xd76aa478UL);
+  FF(d, a, b, c, data[ 1], 12, 0xe8c7b756UL);
+  FF(c, d, a, b, data[ 2], 17, 0x242070dbUL);
+  FF(b, c, d, a, data[ 3], 22, 0xc1bdceeeUL);
+  FF(a, b, c, d, data[ 4],  7, 0xf57c0fafUL);
+  FF(d, a, b, c, data[ 5], 12, 0x4787c62aUL);
+  FF(c, d, a, b, data[ 6], 17, 0xa8304613UL);
+  FF(b, c, d, a, data[ 7], 22, 0xfd469501UL);
+  FF(a, b, c, d, data[ 8],  7, 0x698098d8UL);
+  FF(d, a, b, c, data[ 9], 12, 0x8b44f7afUL);
+  FF(c, d, a, b, data[10], 17, 0xffff5bb1UL);
+  FF(b, c, d, a, data[11], 22, 0x895cd7beUL);
+  FF(a, b, c, d, data[12],  7, 0x6b901122UL);
+  FF(d, a, b, c, data[13], 12, 0xfd987193UL);
+  FF(c, d, a, b, data[14], 17, 0xa679438eUL);
+  FF(b, c, d, a, data[15], 22, 0x49b40821UL);
+
+  GG(a, b, c, d, data[ 1],  5, 0xf61e2562UL);
+  GG(d, a, b, c, data[ 6],  9, 0xc040b340UL);
+  GG(c, d, a, b, data[11], 14, 0x265e5a51UL);
+  GG(b, c, d, a, data[ 0], 20, 0xe9b6c7aaUL);
+  GG(a, b, c, d, data[ 5],  5, 0xd62f105dUL);
+  GG(d, a, b, c, data[10],  9, 0x02441453UL);
+  GG(c, d, a, b, data[15], 14, 0xd8a1e681UL);
+  GG(b, c, d, a, data[ 4], 20, 0xe7d3fbc8UL);
+  GG(a, b, c, d, data[ 9],  5, 0x21e1cde6UL);
+  GG(d, a, b, c, data[14],  9, 0xc33707d6UL);
+  GG(c, d, a, b, data[ 3], 14, 0xf4d50d87UL);
+  GG(b, c, d, a, data[ 8], 20, 0x455a14edUL);
+  GG(a, b, c, d, data[13],  5, 0xa9e3e905UL);
+  GG(d, a, b, c, data[ 2],  9, 0xfcefa3f8UL);
+  GG(c, d, a, b, data[ 7], 14, 0x676f02d9UL);
+  GG(b, c, d, a, data[12], 20, 0x8d2a4c8aUL);
+ 
+  HH(a, b, c, d, data[ 5],  4, 0xfffa3942UL);
+  HH(d, a, b, c, data[ 8], 11, 0x8771f681UL);
+  HH(c, d, a, b, data[11], 16, 0x6d9d6122UL);
+  HH(b, c, d, a, data[14], 23, 0xfde5380cUL);
+  HH(a, b, c, d, data[ 1],  4, 0xa4beea44UL);
+  HH(d, a, b, c, data[ 4], 11, 0x4bdecfa9UL);
+  HH(c, d, a, b, data[ 7], 16, 0xf6bb4b60UL);
+  HH(b, c, d, a, data[10], 23, 0xbebfbc70UL);
+  HH(a, b, c, d, data[13],  4, 0x289b7ec6UL);
+  HH(d, a, b, c, data[ 0], 11, 0xeaa127faUL);
+  HH(c, d, a, b, data[ 3], 16, 0xd4ef3085UL);
+  HH(b, c, d, a, data[ 6], 23, 0x04881d05UL);
+  HH(a, b, c, d, data[ 9],  4, 0xd9d4d039UL);
+  HH(d, a, b, c, data[12], 11, 0xe6db99e5UL);
+  HH(c, d, a, b, data[15], 16, 0x1fa27cf8UL);
+  HH(b, c, d, a, data[ 2], 23, 0xc4ac5665UL);
+ 
+  II(a, b, c, d, data[ 0],  6, 0xf4292244UL);
+  II(d, a, b, c, data[ 7], 10, 0x432aff97UL);
+  II(c, d, a, b, data[14], 15, 0xab9423a7UL);
+  II(b, c, d, a, data[ 5], 21, 0xfc93a039UL);
+  II(a, b, c, d, data[12],  6, 0x655b59c3UL);
+  II(d, a, b, c, data[ 3], 10, 0x8f0ccc92UL);
+  II(c, d, a, b, data[10], 15, 0xffeff47dUL);
+  II(b, c, d, a, data[ 1], 21, 0x85845dd1UL);
+  II(a, b, c, d, data[ 8],  6, 0x6fa87e4fUL);
+  II(d, a, b, c, data[15], 10, 0xfe2ce6e0UL);
+  II(c, d, a, b, data[ 6], 15, 0xa3014314UL);
+  II(b, c, d, a, data[13], 21, 0x4e0811a1UL);
+  II(a, b, c, d, data[ 4],  6, 0xf7537e82UL);
+  II(d, a, b, c, data[11], 10, 0xbd3af235UL);
+  II(c, d, a, b, data[ 2], 15, 0x2ad7d2bbUL);
+  II(b, c, d, a, data[ 9], 21, 0xeb86d391UL);
+
+  hash[0] += a;
+  hash[1] += b;
+  hash[2] += c;
+  hash[3] += d;
+}
+
+
+
+static inline void md5_init(uint32_t *hash)
+{
+  hash[0] =  0x67452301UL;
+  hash[1] =  0xefcdab89UL;
+  hash[2] =  0x98badcfeUL;
+  hash[3] =  0x10325476UL;
+}
+
+
+/// @endcond  
+
+
+
+
+/*****************************************************************************
+*** Seed random generator with entropy
+*****************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+#define MAGIC 0xaf9cd734UL
+
+
+
+static inline void seed_rand_data(uint32_t *data, uint64_t user_rnd)
+{
+    uint_fast32_t i;
+
+    for (i = 0; i < 16; ++i) data[i] = 0;     
+
+    #ifdef HAS_SYNC_FETCH_AND_ADD
+        data[1] = __sync_fetch_and_add(&call_number, 1); 
+    #else
+        data[1] = ++call_number;
+    #endif
+
+    #ifdef HAS_TIME
+    {
+        time_t tm;
+        uint64_t t[2];
+        t[0] = t[1] = 0;
+        time(&tm);
+        memcpy(t, &tm, sizeof(tm));
+        t[0] += t[1];
+        data[2] = (uint32_t) t[0];
+        data[3] = (uint32_t) (t[0] >> 32);
+    }
+    #endif
+
+    #ifdef HAS_CLOCK
+    {
+        clock_t clk = clock();
+        data[4] = (uint32_t)clk;
+    } 
+    #endif
+
+    data[5] = (uint32_t) user_rnd;
+    data[6] = (uint32_t) (user_rnd >> 32);
+
+    #ifdef  HAS_GETPID
+    {
+        uint64_t pid = my_getpid();
+        data[7] = (uint32_t) pid;
+        data[8] = (uint32_t) (pid >> 32);
+    }
+    #endif
+
+    data[9] = (uint32_t)((uint64_t)(&i) & 0xffffffff);
+
+
+    data[10] = MAGIC;
+
+    // Do not use the C function rand(), since it is not thread safe.
+}
+
+
+
+static inline int check_hash(uint32_t *hash)
+// Reject a hash value if the Hamming weight of any of its words
+// is less than 2 or greater than 30.
+// The function returns 0 iff it accepts the hash value.
+{
+    uint_fast32_t i, t;
+    for (i = 0; i < 4; ++i) {
+        t = hash[i] & 0xffffffff;
+        if ((t & (t-1)) == 0) return -1;
+        t ^= 0xffffffff;
+        if ((t & (t-1)) == 0) return -1;
+    }
+    return 0;
+}
+
+
+
+/// @endcond  
+
+
+
+/**
+   @brief Seed the random generator with random data
+
+   Here ``seed`` is an array of 4 integers of type ``uint64_t``.
+   
+   The function fills the ``seed`` with random data, using various
+   sources, e.g. the system time, the process id, etc. Parameter
+   ``user_rand`` is a user input for seeding the random generator.
+
+*/
+// %%EXPORT px
+void gen_rng_seed_rnd(uint64_t *seed, uint64_t user_rand)
+{
+    uint32_t data[16], hash[4], i;
+    uint64_t d;
+
+    seed_rand_data(data, user_rand);
+    for (i = 0; i < 2; ++i) {
+        data[0] = i;
+        // The xoshiro256** random generator is weak when initalized
+        // with many zero bits. So we'd better make sure the the words
+        // of the MD5 output have reasonable Hamming weights.
+        do {
+            md5_init(hash);
+            data[0] += 2;
+            md5_round(data, hash);
+        } while (check_hash(hash));
+        d = hash[0];
+        d = (d << 32) +  hash[1];
+        seed[2*i] = d;
+        d = hash[2];
+        d = (d << 32) +  hash[3];
+        seed[2*i + 1] = d;
+    }
+}
+
+
+/*****************************************************************************
+*** Seeding the random generator with entropy
+*****************************************************************************/
+
+
+
+
+/**
+   @brief Seed the random generator deterministically
+
+   Here ``seed`` is an array of 4 integers of type ``uint64_t``.
+   
+   The function fills the ``seed`` with data depending on
+   the  number ``seed_no``.
+
+*/
+// %%EXPORT px
+void gen_rng_seed_no(uint64_t *seed, uint64_t seed_no)
+{
+    uint64_t z, i;
+
+    // Generate four 64-bit integers with Splitmix64 using ``seed_no`` as state
+    for (i = 0; i < 4; ++i) {
+        seed_no += 0x9e3779b97f4a7c15;            /* increment the state variable */
+        z = seed_no;                              /* copy the state to a working variable */
+        z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9; /* xor the variable with the variable right bit shifted 30 then multiply by a constant */
+        z = (z ^ (z >> 27)) * 0x94d049bb133111eb; /* xor the variable with the variable right bit shifted 27 then multiply by a constant */
+        seed[i] =  z ^ (z >> 31);                 /* return the variable xored with itself right bit shifted 31 */
+    }
+}
+
+
+
+/*****************************************************************************
+*** The xoshiro256**
+*****************************************************************************/
+
+
+
+/*  Written in 2018 by David Blackman and Sebastiano Vigna (vigna@acm.org)
+
+To the extent possible under law, the author has dedicated all copyright
+and related and neighboring rights to this software to the public domain
+worldwide. This software is distributed without any warranty.
+
+See <http://creativecommons.org/publicdomain/zero/1.0/>. */
+
+#include <stdint.h>
+
+/* This is xoshiro256** 1.0, one of our all-purpose, rock-solid
+   generators. It has excellent (sub-ns) speed, a state (256 bits) that is
+   large enough for any parallel application, and it passes all tests we
+   are aware of.
+
+   For generating just floating-point numbers, xoshiro256+ is even faster.
+
+   The state must be seeded so that it is not everywhere zero. If you have
+   a 64-bit seed, we suggest to seed a splitmix64 generator and use its
+   output to fill s. */
+
+static inline uint64_t rotl(const uint64_t x, int k) {
+	return (x << k) | (x >> (64 - k));
+}
+
+
+
+static inline uint64_t xoro_next(uint64_t s[4]) 
+{
+	const uint64_t result = rotl(s[1] * 5, 7) * 9;
+
+	const uint64_t t = s[1] << 17;
+
+	s[2] ^= s[0];
+	s[3] ^= s[1];
+	s[1] ^= s[2];
+	s[0] ^= s[3];
+
+	s[2] ^= t;
+
+	s[3] = rotl(s[3], 45);
+
+	return result;
+}
+
+
+/* This is the jump function for the generator. It is equivalent
+   to 2^128 calls to next(); it can be used to generate 2^128
+   non-overlapping subsequences for parallel computations. */
+
+static inline void xoro_jump(uint64_t s[4]) {
+    static const uint64_t JUMP[] = { 
+        0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 
+        0xa9582618e03fc9aa, 0x39abdc4529b1661c 
+    };
+
+    uint64_t s0 = 0;
+    uint64_t s1 = 0;
+    uint64_t s2 = 0;
+    uint64_t s3 = 0;
+    for(int i = 0; i < sizeof JUMP / sizeof *JUMP; i++) {
+        for(int b = 0; b < 64; b++) {
+            if (JUMP[i] & UINT64_C(1) << b) {
+                s0 ^= s[0];
+                s1 ^= s[1];
+                s2 ^= s[2];
+                s3 ^= s[3];
+            }
+            xoro_next(s);	
+        }
+    }	
+	
+    s[0] = s0;
+    s[1] = s1;
+    s[2] = s2;
+    s[3] = s3;
+}
+
+/*****************************************************************************
+*** Create a child of a seed
+*****************************************************************************/
+
+/**
+   @brief Create child seed from a seed
+
+   Here ``seed`` and ``child_seed`` are arrays of 4 integers of 
+   type ``uint64_t``.
+   
+   Given a ``seed`` of the random generator, the function creates 
+   a ``child_seed`` from that seed which can be used as another
+   seed for a random generator.
+
+   Caution!
+
+   It is illegal to use the child seed as the first parameter of this
+   function. So we must not create a grandchild seed from a child seed.
+   The is no way to detect this kind of error!
+*/
+// %%EXPORT px
+void gen_rng_seed_child(uint64_t *seed, uint64_t *child_seed)
+{
+    int i;
+    for (i = 0; i < 4; ++i) child_seed[i] = seed[i];
+    xoro_jump(seed);
+}
+
+
+
+/*****************************************************************************
+*** Generating a random array of integers modulo p, p <= 256
+*****************************************************************************/
+
+/**
+  @brief Generate random integers modulo a small number ``p``
+
+  Generate an array of length ``len`` of random 8-bit integers ``x``
+  with ``0 <= x < p``. Here ``1 < p <= 256`` must hold.
+ 
+  These random integers are written to the array referred by ``out``.
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been  created by function `gen_rng_seed_rnd``
+  or by a similar function.
+  
+  The function returns zero in case of success and a nonzero value
+  otherwise.
+
+*/
+// %%EXPORT px
+int32_t gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *seed)
+{
+    uint64_t r;
+    if (p >= 256 || p == 0) return -1;
+    if (p & (p-1)) {
+        while (len >= 3) {
+            r = xoro_next(seed) >> 8;
+            r *= p;
+            out[0] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffff;
+            r *= p;
+            out[1] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffff;
+            r *= p;
+            out[2] = (uint8_t)(r >> 56);
+            out += 3; len -= 3;
+        }
+        r = xoro_next(seed) >> 8;
+        while (len) {
+            r *= p;
+            out[0] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffff;
+            ++out; --len;
+        }
+    } else {
+        uint64_t mask = p-1; 
+        while (len >= 8) {
+            r = xoro_next(seed);
+            out[0] = (uint8_t)((r >> 0) & mask);
+            out[1] = (uint8_t)((r >> 8) & mask);
+            out[2] = (uint8_t)((r >> 16) & mask);
+            out[3] = (uint8_t)((r >> 24) & mask);
+            out[4] = (uint8_t)((r >> 32) & mask);
+            out[5] = (uint8_t)((r >> 40) & mask);
+            out[6] = (uint8_t)((r >> 48) & mask);
+            out[7] = (uint8_t)((r >> 56) & mask);
+            out += 8; len -= 8;
+        }
+        r = xoro_next(seed);
+        while (len) {
+            out[0] = (uint8_t)(r & mask);
+            r >>= 8;
+            ++out; --len;
+        }
+    }
+    return 0;
+}
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c
+
+

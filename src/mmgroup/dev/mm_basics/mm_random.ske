@@ -1,6 +1,7 @@
 
-
 /** @file mm_random.c
+
+This module is deprecatiod an no longer in use!!!!
 
 A fast random generator for the representation of the monster
 group is provided in C. This generator supports very fast
@@ -86,7 +87,7 @@ extern "C" {
 #define HAS_GETPID
 #include <unistd.h>
 #include <sys/types.h>
-static inline my_getpid(void)
+static inline int my_getpid(void)
 {
     return (int)(getpid());
 }

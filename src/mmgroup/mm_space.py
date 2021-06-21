@@ -191,7 +191,7 @@ from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 from mmgroup.mm_group  import MMGroup, MMGroupWord, MM
 
-
+from mmgroup.generators import rand_get_seed
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
 from mmgroup.mm import mm_aux_zero_mmv, mm_aux_reduce_mmv
 from mmgroup.mm import mm_aux_mmv_to_sparse, mm_aux_mmv_add_sparse
@@ -199,7 +199,7 @@ from mmgroup.mm import mm_aux_mmv_extract_sparse
 from mmgroup.mm import mm_aux_mmv_set_sparse, mm_aux_mmv_add_sparse
 from mmgroup.mm import mm_aux_bytes_to_mmv, mm_aux_mmv_to_bytes
 from mmgroup.mm import mm_aux_get_mmv, mm_aux_put_mmv
-from mmgroup.mm import mm_rng_make_seed
+#from mmgroup.mm import mm_rng_make_seed
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 from mmgroup.mm import mm_aux_check_mmv
 from mmgroup.mm import mm_aux_get_mmv1
@@ -209,7 +209,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
-standard_seed = mm_rng_make_seed()
+#standard_seed = mm_rng_make_seed()
 standard_mm_group = MM
 
 
@@ -502,9 +502,8 @@ class MMSpace(AbstractMmRepSpace):
         the operating system and from the clock are entered into the seed.
         """
         v = MMSpaceVector(self)
-        if seed is None:
-            seed = standard_seed
-        mm_aux_random_mmv(self.p, seed, v.data) 
+        seed = rand_get_seed(seed)
+        mm_aux_random_mmv(self.p, v.data, seed) 
         return v
 
     #######################################################################

@@ -152,6 +152,7 @@ GENERATORS_C_FILES = [
     "gen_xi_functions",
     "mm_group_n",
     "gen_leech",
+    "gen_random",
 ]
 
 

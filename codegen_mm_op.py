@@ -256,9 +256,6 @@ PYX_DECLARATIONS = """
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
-from cython.parallel cimport parallel
-cimport openmp
-
 from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t
 from libc.stdint cimport uint64_t
 from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t

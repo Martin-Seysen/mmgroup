@@ -173,6 +173,8 @@ def copy_pyx_sources():
     for filename in pyx_sources:
         shutil.copy(filename, PXD_DIR)
 
+    
+
 general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "c_files"],
   [make_dir, "src", "mmgroup", "dev", "pxd_files"],
@@ -243,6 +245,7 @@ mat24_shared = SharedExtension(
         os.path.join(C_DIR, "gen_xi_functions.c"),
         os.path.join(C_DIR, "mm_group_n.c"),
         os.path.join(C_DIR, "gen_leech.c"),
+        os.path.join(C_DIR, "gen_random.c"),
     ],
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],

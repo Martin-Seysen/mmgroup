@@ -497,7 +497,7 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
   descibed in file ``mm_random.c``.
 */
 // %%EXPORT px
-void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
+void mm_aux_random_mmv(uint32_t p, uint_mmv_t *mv, uint64_t *seed)
 {
     uint8_t b1[3072];
     uint_fast32_t i, c;
@@ -507,21 +507,21 @@ void mm_aux_random_mmv(uint32_t p, uint8_t *seed, uint_mmv_t *mv)
     c = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
 
     // Do the small part
-    mm_rng_gen_modp((uint8_t)p, seed, (uint8_t *)(mv), 24 + 3 * 276);
+    gen_rng_bytes_modp(p,  (uint8_t *)(mv), 24 + 3 * 276, seed);
     mm_aux_small24_expand((uint8_t *)(mv), b1);
     mm_aux_write_mmv24(p, b1, mv, 72);
     mv += MM_AUX_OFS_T >> c;
 
     // Do the 759 * 64 vector; note that 759 = 11 * 69
     for (i = 0; i < 22; ++i) {
-        mm_rng_gen_modp((uint8_t)p, seed, b1, 69 * 32);
+        gen_rng_bytes_modp(p, b1, 69 * 32, seed);
         mm_aux_write_mmv1(p, b1, mv, 69 * 32);
         mv += (69 * 32) >> c;
     } 
 
     // Do the 6144 * 24 vector
     for (i = 0; i < 48; ++i) {  
-        mm_rng_gen_modp((uint8_t)p, seed, b1, 3072);
+        gen_rng_bytes_modp(p, b1, 3072, seed);
         mm_aux_write_mmv24(p, b1, mv, 128);
         mv += 4096 >> c;
     } 
