@@ -216,6 +216,7 @@ import numpy as np
 from random import randint, sample
 
 
+from mmgroup.generators import rand_get_seed
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -224,6 +225,7 @@ from mmgroup.clifford12 import xsp2co1_check_word_g_x0
 from mmgroup.clifford12 import xsp2co1_reduce_word      
 from mmgroup.clifford12 import xsp2co1_traces_all      
 from mmgroup.clifford12 import chk_qstate12
+from mmgroup.clifford12 import xsp2co1_rand_word
 from mmgroup.mm import mm_vector
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 
@@ -279,7 +281,7 @@ def import_mm_order_functions():
 
 
 class MMGroupWord(AbstractGroupWord):
-    """Models an element of the monster group :math:`\mathbb{M}`
+    r"""Models an element of the monster group :math:`\mathbb{M}`
 
     Let ``M`` be an instance of class ``MMGroup``, and let ``g1``, 
     ``g2`` be elements of ``M``.  Then
@@ -438,7 +440,9 @@ class MMGroupWord(AbstractGroupWord):
         chi_M = chi299 + chi98260 + chi24 * chi4096
         return chi_M, chi299, chi24, chi4096
        
-        
+ 
+
+       
 
 ###########################################################################
 # Atoms for the group M
@@ -787,6 +791,26 @@ class MMGroup(AbstractGroup):
 
         """
         return self.word_type(data, group = self)
+
+    def rand_G_x0(self, seed = None):
+        r"""Return random element of subgroup :math:`G_{x0}`
+
+        The function returns a uniform distributed random element
+        of the subgroup :math:`G_{x0}`. The function uses the
+        internal random generator of the ``mmgroup`` package.
+
+        ``seed`` is a seed for the random generator. The current version 
+        supports the default seed only. Here some random data taken from 
+        the operating system and from the clock are entered into the seed.     
+        """
+        buf = np.zeros(10, dtype = np.uint32)
+        seed = rand_get_seed(seed)
+        length = xsp2co1_rand_word(buf, seed) 
+        if not 0 <= length <= 10:
+            err = "Error in generating random element of G_x0"
+            raise ValueError(err)
+        return self.from_data(buf)
+
 
 # Predefine a standard instance of class MMGroup
 MM =  MMGroup()

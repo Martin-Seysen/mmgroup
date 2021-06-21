@@ -569,6 +569,71 @@ int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
     return 0;    
 }
 
+
+
+/*************************************************************************
+*** Generate a random element of G_x0
+*************************************************************************/
+
+
+
+/**
+  @brief Generate a random elment of the group \f$G_{x0}\f$.
+   
+  The function computes a uniform distributed random element \f$g\f$
+  of the group \f$G_{x0}\f$. It stores a word representing the
+  element \f$g\f$ in the buffer ``w`` and returns the length of
+  that word.
+  
+  The length of the word in the buffer ``w`` is at most 10.
+
+  The function uses the internal random generator in 
+  file ``gen_random.c``. Parameter ``seed`` must be a seed for 
+  a random generator as  described in file ``gen_random.c``.
+
+  A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_rand_word(uint32_t *w, uint64_t *seed)
+{
+    static uint32_t w_tag_sizes[4] = {
+        MMGROUP_ATOM_TAG_Y +  0x800,
+        MMGROUP_ATOM_TAG_X + 0x2000,
+        MMGROUP_ATOM_TAG_D + 0x1000,
+        MMGROUP_ATOM_TAG_P + MAT24_ORDER
+    };
+    
+    uint32_t *pw = w;
+    uint32_t length, v, i, ag1[6];
+
+    // Generate random product g_0 of atoms with tags y, x, d, p.
+    // Then g_0 is a random element of the centralizer of the
+    // standard type-4 vector \Omega. 
+    for (i = 0; i < 4;++i) {
+        uint32_t t = w_tag_sizes[i];
+        uint32_t k = gen_rng_modp(t & ~MMGROUP_ATOM_TAG_ALL, seed);
+        if (k) *pw++ = (t & MMGROUP_ATOM_TAG_ALL) + k;
+    }
+
+    // Let v be a random type 4 vector in the Leech lattice mod 2
+    do {
+        v =  gen_rng_modp(0x1000000, seed);
+    } while ((gen_leech2_type(v) & 0xf0) != 0x40);
+
+    // Generate an element g_1 of G_x0 that maps v to \Omega. Store the 
+    // element g_1 (of length 'length') in the array referred by ag1. 
+    length = gen_leech2_reduce_type4(v, ag1);
+    if (length < 0) return length;
+
+    // Compute the result  g = g_0 * g_1**(-1)  in w
+    for (i = 0; i < length; ++i) pw[i] = ag1[length-1-i] ^ 0x80000000;
+
+    // Return length of the result g
+    return (int32_t)((pw - w) + length);
+}
+
+
+
 //  %%GEN h
 /// @endcond 
 //  %%GEN c

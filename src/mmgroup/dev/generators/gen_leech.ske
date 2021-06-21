@@ -126,7 +126,7 @@ static inline uint32_t short_3_scalprod(uint64_t v3_1, uint64_t v3_2)
 
 
 /*************************************************************************
-*** Subype of a vector in the Leech lattice mod 2
+*** Subtype of a vector in the Leech lattice mod 2
 *************************************************************************/
 
 //  %%GEN h
@@ -926,7 +926,7 @@ int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
 /** 
   @brief Test functions ``gen_leech2_type`` and ``gen_leech2_reduce_type4``
 
-  Funvtion ``gen_leech2_type`` may tested as follows: 
+  Function ``gen_leech2_type`` may tested as follows: 
 
   We compute the subtypes of all \f$2^{24}\f$ vectors 
   \f$v \in \Lambda / 2 \Lambda\f$ and we count the obtained 

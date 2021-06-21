@@ -498,7 +498,7 @@ class MMSpace(AbstractMmRepSpace):
         """Return a uniform distributed random vector.
 
         ``seed`` is a seed for the random generator. The current version 
-        support the default seed only. Here some random data taken from 
+        supporst the default seed only. Here some random data taken from 
         the operating system and from the clock are entered into the seed.
         """
         v = MMSpaceVector(self)

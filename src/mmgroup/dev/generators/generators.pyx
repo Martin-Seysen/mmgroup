@@ -108,7 +108,7 @@ cdef p_uint64_t c_rng_get_seed(seed):
         return &a1[0]
        
 
-def rand_get_seed(seed):
+def rand_get_seed(seed = None):
     cdef uint64_t[::1] a1
     if seed is None:
         try:
@@ -165,7 +165,6 @@ cpdef rand_bytes_modp(uint32_t p, uint32_t num_bytes, seed = None):
 cpdef rand_fill_bytes_modp(uint32_t p, array_bytes, seed = None):
     cdef uint32_t p1 = p
     cdef uint32_t n1 = len(array_bytes)
-    a = np.zeros(n1, dtype = np.uint8)
     cdef uint8_t[::1] a1 = array_bytes 
     cdef p_uint64_t p_seed = c_rng_get_seed(seed)
     cdef int32_t status
@@ -174,3 +173,10 @@ cpdef rand_fill_bytes_modp(uint32_t p, array_bytes, seed = None):
         err = "Bad modulus for generating random bytes"
         raise ValueError(err)
     
+cpdef uint32_t rand_gen_modp(p, seed = None):
+    assert 1 <= p < 0x100000000
+    cdef uint32_t p1 = p & 0xffffffff
+    cdef p_uint64_t p_seed = c_rng_get_seed(seed)
+    cdef int32_t result = g.gen_rng_modp(p1, p_seed)
+    return result
+     

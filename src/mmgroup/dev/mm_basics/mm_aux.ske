@@ -492,9 +492,9 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 
   The function randomizes all entries of the vector ``mv`` with 
   modulus ``p`` in internal representation uniformly using the 
-  internal random generator in file ``mm_random.c``. 
+  internal random generator in file ``gen_random.c``. 
   Parameter ``seed`` must be a seed for a random generator as 
-  descibed in file ``mm_random.c``.
+  described in file ``gen_random.c``.
 */
 // %%EXPORT px
 void mm_aux_random_mmv(uint32_t p, uint_mmv_t *mv, uint64_t *seed)

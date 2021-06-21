@@ -1,6 +1,6 @@
 
 
-/** @file mm_random.c
+/** @file gen_random.c
 
 A fast random generator for the representation of the monster
 group is provided in C. This generator supports very fast
@@ -18,7 +18,7 @@ function ``gen_rng_seed_no`` for a determistic intialization of
 the ``seed``.
 
 The function
-``gen_rng_bytes_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)``
+``gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *seed)``
 writes ``len`` uniform random numbers ``x_i`` with ``0 <= x_i < p``
 to the array referred by the pointer ``out``.
 Here ``1 < p <= 256`` must hold.
@@ -549,27 +549,7 @@ int32_t gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *see
 {
     uint64_t r;
     if (p >= 256 || p == 0) return -1;
-    if (p & (p-1)) {
-        while (len >= 3) {
-            r = xoro_next(seed) >> 8;
-            r *= p;
-            out[0] = (uint8_t)(r >> 56);
-            r &= 0xffffffffffffff;
-            r *= p;
-            out[1] = (uint8_t)(r >> 56);
-            r &= 0xffffffffffffff;
-            r *= p;
-            out[2] = (uint8_t)(r >> 56);
-            out += 3; len -= 3;
-        }
-        r = xoro_next(seed) >> 8;
-        while (len) {
-            r *= p;
-            out[0] = (uint8_t)(r >> 56);
-            r &= 0xffffffffffffff;
-            ++out; --len;
-        }
-    } else {
+    if ((p & (p-1)) == 0) {
         uint64_t mask = p-1; 
         while (len >= 8) {
             r = xoro_next(seed);
@@ -589,11 +569,91 @@ int32_t gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *see
             r >>= 8;
             ++out; --len;
         }
+    } else if (p < 16) {
+        while (len >= 7) {
+            r = xoro_next(seed) >> 4;
+            r *= p;
+            out[0] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[1] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[2] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[3] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[4] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[5] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[6] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            r *= p;
+            out[7] = (uint8_t)(r >> 60);
+            out += 7; len -= 7;
+        }
+        r = xoro_next(seed) >> 4;
+        while (len) {
+            r *= p;
+            out[0] = (uint8_t)(r >> 60);
+            r &= 0xfffffffffffffffULL;
+            ++out; --len;
+        }
+    } else {
+        while (len >= 3) {
+            r = xoro_next(seed) >> 8;
+            r *= p;
+            out[0] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffffULL;
+            r *= p;
+            out[1] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffffULL;
+            r *= p;
+            out[2] = (uint8_t)(r >> 56);
+            out += 3; len -= 3;
+        }
+        r = xoro_next(seed) >> 8;
+        while (len) {
+            r *= p;
+            out[0] = (uint8_t)(r >> 56);
+            r &= 0xffffffffffffffULL;
+            ++out; --len;
+        }
     }
     return 0;
 }
 
 
+
+
+/**
+  @brief Generate one random integer a small number ``p``
+
+  Generate an integers ``x`` with ``0 <= x < p``.  
+  here ``0 <= p < 2**32`` must hold. ``p = 0`` is interpreted 
+  as ``p = 2**32``. 
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been  created by function `gen_rng_seed_rnd``
+  or by a similar function.
+  
+  The function returns the random number ``x``.
+
+*/
+// %%EXPORT px
+uint32_t gen_rng_modp(uint32_t p, uint64_t *seed)
+{
+    uint64_t r = xoro_next(seed);
+
+    if ((p & (p-1)) == 0) return (uint32_t)(r & (p - 1));
+    r = (r >> 32) * p + ((r * (p & 0xffffffffUL)) >> 32);
+    return (uint32_t)(r >> 32);
+}
 
 
 //  %%GEN h
