@@ -810,7 +810,7 @@ class MMGroup(AbstractGroup):
         if not 0 <= length <= 10:
             err = "Error in generating random element of G_x0"
             raise ValueError(err)
-        return self.from_data(buf)
+        return self.from_data(buf[:length])
 
     def rand_N_x0(self, in_N_x0 = False, even = False, seed = None):
         r"""Return random element of subgroup :math:`N_{x0}`
@@ -842,11 +842,11 @@ class MMGroup(AbstractGroup):
         """
         buf = np.zeros(10, dtype = np.uint32)
         seed = rand_get_seed(seed)
-        length = xsp2co1_rand_word_G_x0(buf, in_N_x0, even, seed) 
+        length = xsp2co1_rand_word_N_x0(buf, in_N_x0, even, seed) 
         if not 0 <= length <= 10:
             err = "Error in generating random element of G_x0"
             raise ValueError(err)
-        return self.from_data(buf)
+        return self.from_data(buf[:length])
 
 
 # Predefine a standard instance of class MMGroup
