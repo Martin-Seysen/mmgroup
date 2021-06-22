@@ -2,19 +2,19 @@
 
 /** @file gen_random.c
 
-A fast random generator for the representation of the monster
-group is provided in C. This generator supports very fast
-generation of long random vectors of integers modulo ``p``
-for ``p <= 256``.
+File ``gen_random.c`` provides a fast random generator for creating
+random vectors in the representations of the monster group. This
+generator supports very fast generation of long random vectors of
+integers modulo ``p`` for ``p <= 256``.
 
 The seed for such a random generator is given by an array of type
 ``uint64_t seed[MM_GEN_RNG_SIZE]``. In this version we have
 ``MM_GEN_RNG_SIZE = 4``.
 
-The function ``gen_rng_seed_rnd(uint64_t *seed, ...)`` fills an 
-existing array ``seed`` of that type with random seed data. See 
-description of that function for details. There is also a 
-function ``gen_rng_seed_no`` for a determistic intialization of 
+The function ``gen_rng_seed_rnd(uint64_t *seed, ...)`` fills an
+existing array ``seed`` of that type with random seed data. See
+description of that function for details. There is also a
+function ``gen_rng_seed_no`` for a determistic intialization of
 the ``seed``.
 
 The function
@@ -25,17 +25,20 @@ Here ``1 < p <= 256`` must hold.
 
 This function is optimized for generating large random vectors
 with, say, ``len >= 1000``, as required for the representation of
-the monster. 
+the monster.
+
+Function ``gen_rng_modp`` generates a single random number ``x``
+with ``0 <= x < p`` for a 32-bit number ``p``.
 
 Internal operation.
 
 We use the  xoshiro256** pseudo random number generator, see
 
-http://creativecommons.org/publicdomain/zero/1.0/
+https://bashtage.github.io/randomgen/bit_generators/xoshiro256.html
 
 For seeding the random generator with random data, we take
-information from various sources, e.g. the system time, and the 
-process id. Then we mix that information using the 
+information from various sources, e.g. the system time, and the
+process id. Then we mix that information using the
 round function of the MD5 hash algorithm.
 
 */
@@ -415,6 +418,7 @@ void gen_rng_seed_no(uint64_t *seed, uint64_t seed_no)
 *****************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 /*  Written in 2018 by David Blackman and Sebastiano Vigna (vigna@acm.org)
 
@@ -494,6 +498,10 @@ static inline void xoro_jump(uint64_t s[4]) {
     s[3] = s3;
 }
 
+
+/// @endcond 
+
+
 /*****************************************************************************
 *** Create a child of a seed
 *****************************************************************************/
@@ -501,10 +509,10 @@ static inline void xoro_jump(uint64_t s[4]) {
 /**
    @brief Create child seed from a seed
 
-   Here ``seed`` and ``child_seed`` are arrays of 4 integers of 
+   Here ``seed`` and ``child_seed`` are arrays of 4 integers of
    type ``uint64_t``.
    
-   Given a ``seed`` of the random generator, the function creates 
+   Given a ``seed`` of the random generator, the function creates
    a ``child_seed`` from that seed which can be used as another
    seed for a random generator.
 
@@ -632,14 +640,14 @@ int32_t gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *see
 
 
 /**
-  @brief Generate one random integer a small number ``p``
+  @brief Generate one random integer modulo a number ``p``
 
-  Generate an integers ``x`` with ``0 <= x < p``.  
-  here ``0 <= p < 2**32`` must hold. ``p = 0`` is interpreted 
-  as ``p = 2**32``. 
+  Generate an integers ``x`` with ``0 <= x < p``.
+  Here ``0 <= p < 2**32`` must hold. ``p = 0`` is interpreted
+  as ``p = 2**32``.
 
   Parameter ``seed`` points to the seed for the random generator.
-  That seed must have been  created by function `gen_rng_seed_rnd``
+  That seed must have been created by function ``gen_rng_seed_rnd``
   or by a similar function.
   
   The function returns the random number ``x``.

@@ -62,26 +62,7 @@ def mm_vector(p, *args):
     return result
 
 
-"""
-# deprecated!!!
-def mm_rng_make_seed(rng_no = 0, data = None):
-    ""Create a seed for the internal random generator
 
-    Here rng_no is the number of the random generator, data is an
-    array of bytes used for seeding it, see module mm_random.ske.
-    ""
-    seed = numpy.zeros(266, dtype = numpy.uint8)
-    cdef uint8_t[::1] seed_v_ = seed
-    if data and len(data):
-       a_data =  numpy.array(data, dtype =  numpy.uint8)
-       length = len(a_data)
-    else:
-       length, a_data = 0, numpy.zeros(1, dtype =  numpy.uint8)
-    cdef uint8_t[::1] a_data_v_ = a_data
-    mm_rng_seed(seed_v_, rng_no, a_data_v_, len(a_data)) 
-    del a_data
-    return seed
-"""
 
 
 

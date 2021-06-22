@@ -166,7 +166,7 @@ H_BASICS_SKELETONS = [
 C_BASICS_SKELETONS = [
    "mm_aux",
  #  "mm_sparse",  # deprecated!
-   "mm_random",
+ #  "mm_random",  # deprecated!
    "mm_tables",
    "mm_group_word",
    "mm_tables_xi",

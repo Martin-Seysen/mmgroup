@@ -128,6 +128,13 @@ C interface for file gen_xi_functions.c
 .. doxygenfile:: gen_xi_functions.c
 
 
+C interface for file gen_random.c
+---------------------------------------
+
+.. doxygenfile:: gen_random.c
+
+
+
 Description of the ``mmgroup.mm`` extension
 ===========================================
 
@@ -179,7 +186,7 @@ C interface for file mm_tables.c
 C interface for file mm_random.c
 ---------------------------------------
 
-.. doxygenfile:: mm_random.c
+Module ``mm_random.c`` is deprecated an no longer in use.
 
 
 Description of the ``mmgroup.mm<p>`` extensions
