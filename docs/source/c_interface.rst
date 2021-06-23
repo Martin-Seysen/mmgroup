@@ -98,7 +98,7 @@ Implementing the group :math:`N_{0}`
 .. automodule:: mmgroup.dev.generators.mm_group_n_doc
 
 C interface for file mm_group_n.c
----------------------------------------
+..................................
 
 .. doxygenfile:: mm_group_n.c
 
@@ -111,8 +111,9 @@ Operation of the group :math:`G_{x0}` on the Leech lattice
 
 .. automodule:: mmgroup.dev.generators.gen_leech_doc
 
+
 C interface for file gen_leech.c
---------------------------------
+.................................
 
 .. doxygenfile:: gen_leech.c
 
@@ -123,13 +124,20 @@ Support for the generator  :math:`\xi` of the monster group
 .. automodule:: mmgroup.dev.generators.gen_xi_ref
 
 C interface for file gen_xi_functions.c
----------------------------------------
+........................................
 
 .. doxygenfile:: gen_xi_functions.c
 
 
+A random generator
+------------------
+
+.. automodule:: mmgroup.dev.generators.gen_random_doc
+
+
+
 C interface for file gen_random.c
----------------------------------------
+..................................
 
 .. doxygenfile:: gen_random.c
 

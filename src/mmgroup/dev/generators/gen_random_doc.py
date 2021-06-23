@@ -27,6 +27,11 @@ A seed created by function ``rand_make_seed`` may be initalized
 from a volatile source or from a fixed source (which is a 
 64-bit integer). Such a seed may be used by one thread only.
 
+
+Python functions in module ``mmgroup.generators``
+.................................................
+
+
 The following functions should be imported from
 module ``mmgroup.generators``.
 
