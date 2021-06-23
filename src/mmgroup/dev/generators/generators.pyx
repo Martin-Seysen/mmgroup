@@ -121,27 +121,33 @@ def rand_get_seed(seed = None):
         return seed
 
 
+def rand_make_seed(value = None):
+    a = np.zeros(4, dtype = np.uint64)
+    rand_set_seed(a, value)
+    return a
+        
 
-
-def rand_set_seed(seed = None):
+def rand_set_seed(seed = None, value = None):
     cdef uint64_t[::1] a1
     cdef uint64_t thread_id
+    cdef uint64_t seed_value
     global _seed_dict
     if seed is None:
+        if value is None:
+           _seed_dict.clear()
+        else:
+             err = "Illegal value for seeding the default random generator."
+             raise TypeError, err
         _seed_dict.clear()
     else:
         a1 = seed
         assert len(seed) >= 4
-        thread_id = get_native_id()
-        g.gen_rng_seed_rnd(&a1[0], thread_id)
-
-
-
-def rand_set_seed_value(seed, uint64_t value):
-    cdef uint64_t[::1] a1
-    a1 = seed
-    assert len(seed) >= 4
-    g.gen_rng_seed_no(&a1[0], value)
+        if value is None:
+            thread_id = get_native_id()
+            g.gen_rng_seed_rnd(&a1[0], thread_id)
+        else:
+            seed_value = value
+            g.gen_rng_seed_no(&a1[0], seed_value)
 
 
 @cython.wraparound(False)
