@@ -72,7 +72,8 @@ SKE_DIR = os.path.join(DEV_DIR, "clifford12")
 
 SIMPLE_SKE_FILES = ["qstate12", "qmatrix12"]
 PXI_SKE_FILES = [
-    "bitmatrix64", "xsp2co1", "leech3matrix", "xsp2co1_elem"
+    "bitmatrix64", "xsp2co1", "leech3matrix", "xsp2co1_elem",
+    "involutions",
 ]
 SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
 
@@ -99,7 +100,9 @@ H_FILE_BEGIN = """
  File ``clifford.h`` is the header file for shared library 
  ``mmgroup_clifford12``. This comprises the C modules
 
-          qstate12.c, qmatrix12.c, xsp2co1.c .
+  qstate12.c, qmatrix12.c,
+  bitmatrix64.c, xsp2co1.c, leech3matrix.c, xsp2co1_elem.c 
+  involutions.c,
 */
 
 #ifndef CLIFFORD12_H

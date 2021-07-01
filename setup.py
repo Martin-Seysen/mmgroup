@@ -265,6 +265,7 @@ clifford12_shared = SharedExtension(
         os.path.join(C_DIR, "xsp2co1.c"),
         os.path.join(C_DIR, "leech3matrix.c"),
         os.path.join(C_DIR, "xsp2co1_elem.c"),
+        os.path.join(C_DIR, "involutions.c"),
     ],
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],

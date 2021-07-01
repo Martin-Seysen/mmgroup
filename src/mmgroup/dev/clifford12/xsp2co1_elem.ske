@@ -637,7 +637,7 @@ int32_t xsp2co1_rand_word_N_x0(uint32_t *w, uint32_t in_N_x0, uint32_t even, uin
     }
 
     // Return length of result
-    return pw - w;
+    return (int32_t)(pw - w);
 }
 
 
