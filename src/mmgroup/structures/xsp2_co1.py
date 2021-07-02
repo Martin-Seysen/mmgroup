@@ -33,6 +33,8 @@ from mmgroup.clifford12 import xsp2co1_xspecial_vector
 from mmgroup.clifford12 import xsp2co1_xspecial_conjugate
 from mmgroup.clifford12 import xsp2co1_elem_xspecial
 from mmgroup.clifford12 import xsp2co1_elem_to_word
+from mmgroup.clifford12 import xsp2co1_involution_invariants
+from mmgroup.clifford12 import xsp2co1_involution_orthogonal
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -163,6 +165,14 @@ class Xsp2_Co1_Word(AbstractGroupWord):
 
     def as_mm(self, mmgroup = MM):
         return xsp2co1_to_mm(mmgroup, self)
+
+    def _involution_invariants(self):
+        """Wrapper for C function  xsp2co1_involution_invariants"""
+        invar = np.zeros(12, dtype = np.uint64)
+        xsp2co1_involution_invariants(self._data, invar)
+        v1 = xsp2co1_involution_orthogonal(invar, 1)
+        v0 = xsp2co1_involution_orthogonal(invar, 0)
+        return invar, v1, v0
 
 ###########################################################################
 # The class representing the group G_x0

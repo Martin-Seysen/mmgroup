@@ -77,7 +77,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
     x &= (x >> 12);
     x ^= x >> 6; 
     x ^= x >> 3;
-    return (0x69ULL >> (x & 7)) & 1;
+    return (0x96ULL >> (x & 7)) & 1;
 }
 
 /// @endcond 
@@ -113,7 +113,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
 int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 {
    uint64_t x;
-   uint32_t i, j, m;
+   uint32_t i, m;
 
    if (k > 24) return -1;
 
@@ -121,17 +121,13 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    // the array b and a 24 times 24 matrix Bl in columns 0,...,23
    // of the array b.
 
-   // Put Bh = A^T (with A^T the transposed matrix of A)
-   for (i = 0; i < 24; ++i) {
-       x = 0;
-       for (j = 0; j < k; ++j) x |= ((a[j] >> i) & 1) << j;  
-       b[i] = x << 24;    
-   }
+   // Put Bl = A^T (with A^T the transposed matrix of A)
+   bitmatrix64_t(a, k, 24, b);
 
    // Let Q be the scalar product matrix for the Leech lattice mod 2.
-   // Put Bh = Q * A^T, i.e. exchange row i of Bh with row i+12.
+   // Put Bh = Q * A^T, i.e. exchange row i of A^T with row i+12.
    for (i = 0; i < 12; ++i) {
-       x = b[i]; b[i] = b[i+12]; b[i+12] = x;
+       x = b[i]; b[i] = b[i+12] << 24; b[i+12] = x << 24;
    }
 
    // Store the unit matrix in Bl 
@@ -240,7 +236,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 {
     uint64_t data[40], *pa = data + 16;
-    uint64_t x, t0, t1;
+    uint64_t t0, t1;
     uint_fast32_t i, n;
     int_fast32_t status;
 
@@ -258,7 +254,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
     if (status < 0) return status;
 
     // Next we store two matrices PAH, PAL in pa, with PAL
-    // in the lower 32 columns and PAH in the higher 32 columns
+    // in the lower 32 columns and PAH in the upper 32 columns
     // Put PAH = 1, PAL = A_1, where A_1 = A - 1 
     for (i = 0; i < 24; ++i) {
          pa[i] &=  0xffffffULL;
@@ -272,23 +268,18 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
     // Echelonize PAL. So we left multiply both, PAH and PAL with a 
     // nonsingular matrix T auch that T * A_1 is echelonized. Then
     // PAH will contain T and PAL will contain  T * A_1.
-    // The upper n rows of PAL will contain the image \im A_1
-    // The upper n rows of PAH will contain preimages of the rows of PAL
-    // The lower 24 - n rows of PAH will contain the kernel \ker A_1
-    // The lower 24 - n rows of PAL will be zero
     n = bitmatrix64_echelon_h(pa, 24, 24, 24);
+    // Now the upper n rows of PAL contain the image \im A_1.
+    // The upper n rows of PAH contain preimages of the rows of PAL.
+    // The lower 24 - n rows of PAH contain the kernel \ker A_1.
+    // The lower 24 - n rows of PAL are zero.
 
     // Deal with the A_1 == 0, i.e. `elem` is in O_2(G_x0) or,
     // equivalently, `elem` is neutral modulo Co_1.
     if (n == 0) {
-        x = xsp2co1_xspecial_vector(pa);
-        if (x == 0) {
-             *invar = 0;
-             return 0;
-        }
-        x ^= leech_type_mod2(x) << 24;
-        x ^= 0x6000000;
-        invar[0] = x;
+        invar[0]  = xsp2co1_xspecial_vector(elem) & 0xffffff;
+        if (invar[0] == 0)  return 0;
+        invar[0] |= (leech_type_mod2(invar[0]) << 24) | 0x4000000;
         return 1;
     }
       
@@ -302,15 +293,15 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 
         // Make sure that at most the first row of \ker A_1
         // has negative sign
-        bitmatrix64_echelon_h(pa+8, 16, 25, 1);
+        bitmatrix64_echelon_h(pa + 8, 16, 25, 1);
 
         // Copy the image \im A_1 to output rows t1,...,t1+7, with
         // t1 = 0 if all entries of  \ker A_1 have positive sign
         // and t1 = 1 otherwise.
-        t1 = (pa[0] >> 24) & 1;
+        t1 = (pa[8] >> 24) & 1;
         for (i = 0; i < 8; ++i) invar[t1 + i] = pa[i];
 
-        // Skip the following steps for n == 8 in case t1 = 0.
+        // Skip the following steps for n == 8 if t1 is 0.
         if (t1 == 0) goto final_echelonize;
 
         // Now the first row vector of the matrix PAL[8..23] 
@@ -323,29 +314,29 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
         // orthogonal complement of \ker A_1 (which is \im A_1) in
         // such a way that we can find an vector in (\im A_1)^+
         // that is not in \im A_1. 
-        xsp2co1_orthogonal_complement(pa, data, 16);
+        xsp2co1_orthogonal_complement(pa + 8, data, 16);
         // Now we have computed a basis V of the Leech lattice mod 2
         // (in the array ``data``) such that V[16],...V[23] spans
         // the orthogonal complement \im A_1 of \ker A_1. By
         // definition of function ``xsp2co1_orthogonal_complement`` 
         // the vector v0 = V[0] is orthognal to (\ker A_1)^+, 
-        // but not to  \ker A_1. 
+        // but not to vector \ker A_1. 
 
         // Thus v0 is in  (\im A_1)^+ but not in \im A_1.
-        // Copy the v0 to the output 0.
-        invar[0] = data[0];
+        // Copy the v0 to the output row 0.
+        invar[0] = data[0] & 0xffffff;
 
-        // Set bits 25 and 26 of row i to 1 if i == 0 and to 0 otherwise.
-        invar[0] |= 0x6000000;
+        // Set bit 26 of output row 0 to 1.
+        invar[0] |= 0x4000000;
 
         // Set bit 24 of output row 0 to t0, with t0 = type(v0) (mod 2).
         t0 = leech_type_mod2(invar[0]);
         invar[0] |= t0 << 24;
 
-        // Set bit 24 of the other output rows i = 1,...8 to t[i] to
+        // Set bit 24 of the other output rows i = 1,...8 to t[i] with
         // t[i] = t0 + type(v0 + x[i])   (mod 2) .
         // Here x[i] is the output vector in row i.
-        for (i = 0; i < 8; ++i) {
+        for (i = 1; i < 9; ++i) {
             t1 = t0 ^ leech_type_mod2(invar[0] ^ invar[i]);
             invar[i] |= t1 << 24; 
         }
@@ -381,7 +372,7 @@ final_echelonize:
     // Comment this later!!
     bitmatrix64_xch_bits(invar, n, 12, 0x800);
     bitmatrix64_rot_bits(invar, n, 1, 12,0);
-    bitmatrix64_echelon_h(invar, n, 26, 26);
+    bitmatrix64_echelon_h(invar, n, 27, 27);
     bitmatrix64_rot_bits(invar, n, 11, 12,0);
     bitmatrix64_xch_bits(invar, n, 12, 0x800);
 
@@ -422,7 +413,7 @@ final_echelonize:
 int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
 {
    uint64_t M[12], T[24], v, *pA;
-   int32_t status, n, i;
+   int32_t n, i;
 
    // Select column `c` of input matrix a;
    // abort if ``col`` or ``invar`` is erroneous.
@@ -442,6 +433,12 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
    // and P be the relevant part of the preimage of A
    // A is in columns 23,...,0 and P is in columns 55,...,32.
 
+   // Store column `c` of input matrix a in bit vector v.
+   // Return 0 if that column is zero
+   v = 0;
+   for (i = 0; i < n; ++i) v |= ((pA[i] >> col) & ONE) << i; 
+   if (v == 0) return 0;
+
    // Put M = (A, P), with columns used as above.
    for (i = 0; i < n; ++i) M[i] = pA[i];
    bitmatrix64_rot_bits(M, n, 32, 64, 0);
@@ -459,11 +456,7 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
 
    // Put M = J, with J = ( A * Q * P^T) ** (-1);
    // abort if inverse dose not exist.
-   if ((status = bitmatrix64_inv(M, n)) < 0) return status;
-
-   // Store column `c` of input matrix a in bit vector v.
-   v = 0;
-   for (i = 0; i < n; ++i) v |= ((invar[i] >> col) & ONE) << i; 
+   if (bitmatrix64_inv(M, n) < 0) return -1;
 
    // Put v = c * J
    bitmatrix64_mul(&v, M, 1, n, &v);
