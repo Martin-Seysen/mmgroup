@@ -302,3 +302,10 @@ Module ``xsp2co1_elem.c``
 
    .. doxygenfile:: xsp2co1_elem.c
 
+
+Module ``involutions.c``
+--------------------------
+
+   .. doxygenfile:: involutions.c
+
+

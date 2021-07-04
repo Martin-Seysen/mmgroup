@@ -442,7 +442,39 @@ class MMGroupWord(AbstractGroupWord):
         return chi_M, chi299, chi24, chi4096
        
  
+    def in_Q_x0(self):
+        """Check if the element is in the subgroup :math:`Q_{x0}`
 
+        The function returns True if this is the case. If this is
+        the case then the element is converted to a word in the
+        generators of :math:`Q_{x0}`.
+        """
+        if check_mm_in_g_x0 is None:
+            import_mm_order_functions()
+        if not (check_mm_in_g_x0(self)):
+            return False
+        self.reduce()
+        for atom in self._data:
+            if (d & 0x70000000) not in [0x10000000,  0x30000000]:
+                return False
+        return True
+       
+    def in_N_x0(self):
+        """Check if the element is in the subgroup :math:`N_{x0}`
+
+        The function returns True if this is the case. If this is
+        the case then the element is converted to a word in the
+        generators of :math:`Q_{x0}`.
+        """
+        if check_mm_in_g_x0 is None:
+            import_mm_order_functions()
+        if not (check_mm_in_g_x0(self)):
+            return False
+        self.reduce()
+        for atom in self._data:
+            if ((d >> 28) & 7) > 4:
+                return False
+        return True
        
 
 ###########################################################################
