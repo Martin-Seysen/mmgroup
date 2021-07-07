@@ -28,7 +28,7 @@ ctypedef qstate12_type *p_qstate12_type
 
 # Messages for error codes returned by the functions in module qstate12.c
 QSTATE12_ERROR_STRINGS = {
- -1: "No bit with requested property found in QStateMatrix",
+ -1: "No object with requested property found",
  -2: "Inconststent data in QStateMatrix",
  -3: "Qubit index error at QStateMatrix",
  -4: "State or matrix is too large for a QStateMatrix",
@@ -40,6 +40,7 @@ QSTATE12_ERROR_STRINGS = {
  -10: "A qubit in a ctrl-not gate cannot control itself",
  -11: "Shape mismatch in QStateMatrix comparison",
  -12: "Scalar factor in QStateMatrix is not an integer",
+ -13: "General Parameter error",
  -101: "Shape mismatch in QStateMatrix operation",
  -102: "QStateMatrix is not invertible",
  -103: "QStateMatrix is not in the Pauli group",
@@ -47,9 +48,10 @@ QSTATE12_ERROR_STRINGS = {
  
  # Additional error codes taken from file xsp2co1.c
  -201: "Internal error in operation of group Co_0",
- -202: "Internal Error in operation of group 2^{1+24}.Co_1",
- -203: "Element of 2^{1+24}.Co_1 is not in subroup 2^{1+24}",
- -204: "Bad tag for atom in group 2^{1+24}.Co_1", 
+ -202: "Internal Error in operation of group G_x0",
+ -203: "Element of G_x0 is not in subroup 2^{1+24}",
+ -204: "Bad tag for atom in group G_x0", 
+ -205: "Bad element of the group G_x0", 
 
 }
 

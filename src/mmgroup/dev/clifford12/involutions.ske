@@ -165,12 +165,12 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in the
    array given by parameter ``elem``. Let \f$\Lambda_2\f$ be the
    Leech lattice mod 2, with vectors in \f$\Lambda_2\f$ coded
-   in **Leech lattice encoding** as usual. Conjugation by \f$g\f$ ia a
+   in **Leech lattice encoding** as usual. Conjugation by \f$g\f$ is a
    linear operation on  \f$\Lambda_2\f$, since the vectors
    in \f$\Lambda_2\f$ correspond to the elements of the normal
    subgroup \f$Q_{x0}\f$ of structure \f$2^{1+24}\f$ (modulo the
    centre of \f$G_{x0}\f$). Let \f$A = A(g)\f$ be the \f$24 \times 24\f$
-   bit matrix that performs thist operation on \f$\Lambda_2\f$ by
+   bit matrix that performs this operation on \f$\Lambda_2\f$ by
    right multiplication. Put  \f$A_1 = A - 1\f$ and let
    \f$I_1\f$ be the iamge of matrix  \f$A_1\f$. 
 
@@ -203,7 +203,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    In bits 24,...,26  of the output matrix we return the following 
    linear forms of the basis vectors:
 
-   Case 1:  \f$I_1 = (I_1)^+  \cap \ker A_1 \f$
+   Case 1:  \f$I_1 = (I_1)^+\f$ or \f$I_1 = \ker A_1 \f$
 
    Then we return a basis of \f$I_1\f$.
    
@@ -213,7 +213,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 
    Bit 24:    sign of basis vector in \f$I_1\f$
 
-   Case 2:  \f$I_1 \neq (I_1)^+  \cap \ker A_1 \f$
+   Case 2:  \f$I_1 \neq (I_1)^+\f$ and  \f$I_1 \neq \ker A_1 \f$
 
    Then we return a basis of \f$(I_1)^+\f$.
 
@@ -524,7 +524,7 @@ static inline uint32_t expand_affine(
     of length ``n0, n1,`` and ``n2`` respectively. ``a0`` and ``a1,``
     are input arrays and ``a2`` is an output array.
 
-    The function runs through`` all vectors ``a0[i0] + a1[i1]``
+    The function runs through all vectors ``a0[i0] + a1[i1]``
     with ``0 <= i0 < n0`` and ``0 <= i1 < n1``. Let ``V`` be
     the set of these vectors. All vectors in the set ``V``
     must be of Leech lattice type 0, 2, or 4; otherwise the function
@@ -644,7 +644,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
             if (i2 < n2) pv2[i2++] = v;
        }
    }
-   // When searching for type 4 a dodeecad has been found then
+   // When searching for type 4 a dodecad has been found then
    // return that dodecad. Otherwise return zero.
    return find_type4 ? v_out : 0;
 }
@@ -659,7 +659,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
    TODO: document this!!!
 
    Let \f$g\f$ be the element of the group \f$G_{x0}\f$,
-   and for that element \f$g\f$  
+   and for that element \f$g\f$ and
    let \f$A, A_1, I_1\f$, and \f$(I_1)^+\f$
    be as in function ``xsp2co1_involution_invariants``. 
 
@@ -667,17 +667,21 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
    of function ``xsp2co1_involution_invariants`` applied to the
    element \f$g\f$.
 
-   We return a ``nice`` type-4 vector in \f$(I_1)^+\f$, if
-   any type-4 vector exists in \f$(I_1)^+\f$; otherwise we
-   return 0.
+   In case ``coset = 0`` we return a **nice** type-4 vector 
+   in \f$(I_1)^+\f$, if any type-4 vector exists in \f$(I_1)^+\f$; 
+   otherwise we return 0.
+
+   TODO: Document the case ``coset = 1``!!!
 
    Preliminary!! This is subject to change. 
 */
 // %%EXPORT px
-int32_t xsp2co1_involution_find_type4(uint64_t *invar)
+int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 {
    uint64_t *pInv;
-   uint32_t n, n0, n1, a[32];
+   uint32_t n, n0, n1, a[49], v;
+
+   coset = coset ? 0xffffff : 0; 
 
    // Abort if ``invar`` is erroneous.
    if (invar[0] & 0x8000000) return 0;
@@ -696,19 +700,76 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar)
    // Now the relevant space V is generated py pInv[i], 0 <= i < 8
 
    // Abort if V is has dimension 0, and delete leading rows 
-   // of generating rows of V unteil V has dimension <= 8.
+   // of generating rows of V until V has dimension <= 8.
    if (n == 0) return 0;
    while (n > 8) { 
        ++pInv; --n;
    }
    
-   n0 = expand_affine(pInv, n, 4, 0, a);
+   n0 = expand_affine(pInv, n, 4, coset & invar[0], a);
    if (n - n0 > 4) return 0;
    n1 = expand_affine(pInv, n - n0, n - n0, 0, a);
 
-   return xsp2co1_involution_sub_find_type(a, 1 << n0, 1 << n1, 0);   
+   v = xsp2co1_involution_sub_find_type(a, 1 << n0, 1 << n1, coset & 16);  
+
+   if (coset == 0) return v;
+
+   a[48] = a[32];
+   return xsp2co1_involution_sub_find_type(a, 16, 1,0); 
 }
 
+
+
+/**
+   TODO: Improve documentation
+
+   Find type-4 vector that simplifies an involution in G_x0. 
+
+   Bits 28:     Continue using vector in low bits if this bit is set
+
+   Bits 27:     There is no solution if this bit is set
+
+   Bits 26..24: Type information to be returned if 28 and 27 are zero
+
+   Bits 23..0:  Type 4 vector to be used in the next step.
+
+*/
+// %%EXPORT px
+uint32_t xsp2co1_elem_find_type4(uint64_t *elem)
+{
+   uint64_t invar[12];   
+   uint32_t v, t;
+   int32_t n = xsp2co1_involution_invariants(elem, invar);
+
+   if ((v = xsp2co1_xspecial_vector(elem)) >= 0) {
+       if (v == 0) return 0;
+       if (v == 0x1000000UL) return 0x4000000UL;
+       t = gen_leech2_type(v) >> 4;
+       if (t < 4) return t << 24;
+       return (v & 0xffffff) | 0x10000000UL;   
+   }
+   switch (n) {
+       case 8:
+           return xsp2co1_involution_find_type4(invar, 0);
+       case 9:
+           v = xsp2co1_involution_orthogonal(invar, 0);
+           t = gen_leech2_type(v) >> 4;
+           if (t == 4) return  (v & 0xffffff) | 0x10000000UL; 
+           if (t != 0) return 0x8000000UL;
+           if ( ((invar[0] >> 24) & 7) != 5 
+               ||  ((invar[1] >> 24) & 7) != 0 ) return  0x8000000UL;
+           v = xsp2co1_involution_find_type4(invar, 1);
+           if ((gen_leech2_type(v) >> 4) != 4) return 0x8000000UL; 
+           return  (v & 0xffffff) | 0x10000000UL; 
+       case 12:
+           v = xsp2co1_involution_orthogonal(invar, 1);
+           t = gen_leech2_type(v) >> 4;
+           if (t == 4) return  (v & 0xffffff) | 0x10000000UL; 
+           return 0x8000000UL;
+       default:    
+           return 0x8000000UL;
+   }
+}
 
 
 //  %%GEN h

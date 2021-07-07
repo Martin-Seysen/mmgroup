@@ -198,8 +198,8 @@ void bitmatrix64_mask_rows(uint64_t *m, uint32_t i, uint64_t mask)
   Here bit matrix ``m`` has ``i`` rows.
   
   The function returns the lowest index ``k`` such that
-  ``m[k] & mask == v`` holds. The function returns ``-1`` if
-  no such ``k`` exists.  
+  ``m[k] & mask == v`` holds. The function returns 
+  ERR_QSTATE12_NOTFOUND if no such ``k`` exists.  
 
 */
 // %%EXPORT p
@@ -209,7 +209,7 @@ int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint
     for (k = 0; k < i; ++k)  {
         if ((m[k] & mask) == v) return k;
     }
-    return -1;
+    return ERR_QSTATE12_NOTFOUND;
 }
 
 
@@ -348,7 +348,7 @@ int32_t bitmatrix64_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
 {
     uint64_t v;
     uint32_t i1, j1;
-    if (i > 64 || j > 64) return -5;
+    if (i > 64 || j > 64) return ERR_QSTATE12_BUFFER_OVFL;
     for (j1 = 0; j1 < j; ++j1) {
         v = 0;
         for (i1 = 0; i1 < i; ++i1) v |= ((m1[i1] >> j1) & 1) << i1;

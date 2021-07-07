@@ -156,7 +156,7 @@ typedef struct {
 */
 enum qstate12_error_type
 {
-    ERR_QSTATE12_NOTFOUND = -1,     ///< No qubit with the requested property found. 
+    ERR_QSTATE12_NOTFOUND = -1,     ///< No object with the requested property found. 
     ERR_QSTATE12_INCONSISTENT = -2, ///< State is inconsistent
     ERR_QSTATE12_QUBIT_INDEX = -3,  ///< Qubit index error
     ERR_QSTATE12_TOOLARGE = -4,     ///< State is too large for this module
@@ -171,6 +171,7 @@ enum qstate12_error_type
        ///< Bad control_not gate. A qubit in a ctrl-not gate cannot control itself.
     ERR_QSTATE12_SHAPE_COMP = -11,  ///< Shape mismatch in comparing matrices
     ERR_QSTATE12_SCALAR_INT = -12,  ///< Scalar factor is not an integer
+    ERR_QSTATE12_PARAM = -13,       ///< Parameter error
 	
     ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
@@ -178,9 +179,10 @@ enum qstate12_error_type
     ERR_QSTATE12_NOT_MONOMIAL = -104, ///< Matrix is not monomial
 
     ERR_QSTATE12_LEECH_OP = -201,  ///< Internal error in operation of group Co_0
-    ERR_QSTATE12_REP_GX1 = -202,   ///< Error in operation of group 2^{1+24}.Co_1
-    ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of 2^{1+24}.Co_1 not in 2^{1+24}
-    ERR_QSTATE12_GX1_TAG = -204    ///< Bad tag for atom in group 2^{1+24}.Co_1 
+    ERR_QSTATE12_REP_GX0 = -202,   ///< Error in operation of group 2^{1+24}.Co_1
+    ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of G_x0 not in 2^{1+24}
+    ERR_QSTATE12_GX0_TAG = -204,   ///< Bad tag for atom in group G_x0 
+    ERR_QSTATE12_GX0_BAD_ELEM = -205 ///< Bad element of group G_x0 
 
 };
 
@@ -1406,7 +1408,7 @@ int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
     x = v & vc;
     x ^= x >> 32; x ^= x >> 16; x ^= x >> 8; x ^= x >> 4;
     x = (0x6996 >> (x & 0xf)) & 1;
-    if (x) return -10;
+    if (x) return ERR_QSTATE12_CTRL_NOT;
 
     if ((res = qstate12_mul_Av(pqs, vc, &wc)) < 0) 
         return ERR_QSTATE12_CTRL_NOT;

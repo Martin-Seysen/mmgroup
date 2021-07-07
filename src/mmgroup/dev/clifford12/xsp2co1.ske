@@ -1099,7 +1099,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
             case MMGROUP_ATOM_TAG_IT:
             case MMGROUP_ATOM_TAG_T:
                v = v % 3;
-               if (v) return ERR_QSTATE12_GX1_TAG;
+               if (v) return ERR_QSTATE12_GX0_TAG;
                break;
             case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;
@@ -1111,7 +1111,7 @@ xsp2co1_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_
                }
                break;
             default:
-               return ERR_QSTATE12_GX1_TAG;
+               return ERR_QSTATE12_GX0_TAG;
         }
         res = 0;
         if (multiply) res = qstate12_matmul(&qs_atom, &qs, &qs);
@@ -1655,14 +1655,14 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     if (res < 0) return res;
     res = qstate12_reduce(&qs2);
     if (res < 0) return res;
-    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX1;
+    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX0;
     sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
     x = elem[0] ^ (0 - sign);
     x_data[0] = xsp2co1_to_vect_mod3(x);
     x_data[1] = xsp2co1_to_vect_mod3(~x);
 
     ncols = qs2.ncols; 
-    if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX1;
+    if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX0;
     for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
     if (qs2.nrows == 0) return 0; // Vector is zero
     n_iterations = ONE << (qs2.nrows - 1);

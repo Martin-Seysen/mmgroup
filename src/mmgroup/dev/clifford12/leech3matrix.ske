@@ -126,7 +126,7 @@ int32_t leech3matrix_load(uint32_t p, uint64_t *v, uint64_t *a)
 {
     if (p == 3) return leech3matrix_load_3(v, a);
     if (p == 15) return leech3matrix_load_15(v, a);
-    return -1;
+    return ERR_QSTATE12_PARAM;
 }
 
 
@@ -261,13 +261,14 @@ int32_t leech3matrix_watermark(uint32_t p, uint64_t *v, uint32_t *w)
         }
         insertsort(w, 24);
         for (i = 0; i < 23; ++i) {
-            if (((w[i] ^ w[i+1]) & 0xffffffe0) == 0) return -1;
+            if (((w[i] ^ w[i+1]) & 0xffffffe0) == 0) 
+               return ERR_QSTATE12_INTERN_PAR;
         }
         return 0;
     }
     else {
         for (i = 0; i < 24; ++i) w[i] = 24;
-        return -1;
+        return ERR_QSTATE12_INTERN_PAR;
     }
 }
 
@@ -280,13 +281,16 @@ int32_t leech3matrix_watermark_perm_num(uint32_t p, uint32_t *w, uint64_t *v)
     uint8_t perm[32];
     uint_fast32_t i;
     
-    if (leech3matrix_watermark(p, v, w1) < 0) return -1;
+    if (leech3matrix_watermark(p, v, w1) < 0) 
+        return ERR_QSTATE12_INTERN_PAR;
     for (i = 0; i < 24; ++i) perm[i] = 24;
     for (i = 0; i < 24; ++i) {
-        if ((w[i] ^ w1[i]) & 0xffffffe0) return -1;
+        if ((w[i] ^ w1[i]) & 0xffffffe0) 
+            return ERR_QSTATE12_INTERN_PAR;
         perm[w[i] & 0x1f] = w1[i] & 0x1f;
     }
-    if (mat24_perm_check(perm)) return -1;
+    if (mat24_perm_check(perm)) 
+        return ERR_QSTATE12_INTERN_PAR;
     return mat24_perm_to_m24num(perm);
 }
 

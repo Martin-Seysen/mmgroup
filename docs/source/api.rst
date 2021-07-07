@@ -139,7 +139,7 @@ Python classes implementing the monster group
 
 .. autoclass:: mmgroup.MMGroup
    :members: atom, neutral, rand_word, rand_atom,
-             sample, word, from_data, rand_G_x0, rand_N_x0 
+             sample, word, from_data, rand_G_x0, rand_N_0
 
 
 .. autoclass:: mmgroup.MMGroupWord

@@ -1141,7 +1141,7 @@ int32_t qstate12_mat_lb_rank(qstate12_type *pqs)
 int32_t qstate12_mat_inv(qstate12_type *pqs) 
 // Let qs be the quadratic state matrix of shape (pqs->ncols - nqb, nqb)
 // referred by pqs. The function inverts the matrix qs in place,
-// It returns -11 if qs is not invertible.
+// It returns ERR_QSTATE12_MATRIX_INV if qs is not invertible.
 // The result is reduced.
 {
     int_fast32_t rk = 0, f, res;
