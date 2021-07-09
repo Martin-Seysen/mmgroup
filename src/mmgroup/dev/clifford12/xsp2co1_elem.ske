@@ -43,6 +43,162 @@ extern "C" {
 #define LSTEPS 7
 /// @endcond  
 
+/*************************************************************************
+*** Conjugation between G_x0 and N_0
+*************************************************************************/
+
+/**
+   @brief Convert element of \f$G_{x0}\f$ to element of \f$N_{0}\f$.
+
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   in **G_x0 representation**. The function converts \f$g\f$ to
+   an element \f$N_0\f$, as described in the documentation of 
+   file ``mm_group_n.c``. The result is stored in the array
+   of length 5 referred by parameter ``g``.
+
+   The function returns 0 in case of success 
+   and ``ERR_QSTATE12_GX0_BAD_ELEM`` if \f$g\f$  is not
+   and \f$N_0\f$.
+*/
+int32_t xsp2co1_elem_to_N0(uint64_t *elem, uint32_t *g)
+{
+   uint32_t a[10], atom;
+   int32_t len_a, i;
+   len_a = xsp2co1_elem_to_word(elem, a);
+   mm_group_n_clear(g);
+   if (len_a < 0) return len_a;
+   for (i = 0; i < len_a; ++i) {
+       atom = mm_group_n_mul_atom(g, a[i]);
+       if (atom) return ERR_QSTATE12_GX0_BAD_ELEM;
+   }
+   return 0;
+}
+
+
+
+/**
+   @brief Convert element of \f$N_{0}\f$ to element of \f$G_{x0}\f$.
+
+   Let \f$g \in N_{0}\f$ be stored in the array of length 5 
+   referred by parameter ``g`` as described in the documentation
+   of file ``mm_group_n.c``. We convert  \f$g\f$ to an element
+   in **G_x0 representation** and store the result in the
+   array ``elem``.
+
+   The function returns 0 in case of success 
+   and ``ERR_QSTATE12_GX0_BAD_ELEM`` if \f$g\f$  is not
+   in \f$G_{x0}\f$.
+*/
+int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
+{
+   uint32_t g1[5], len_g;
+   mm_group_n_reduce_element(g);
+   if (g[0] & 0xfffffff) return ERR_QSTATE12_GX0_BAD_ELEM;
+   len_g = mm_group_n_to_word(g, g1);
+   return xsp2co1_set_elem_word(elem, g1, len_g);
+}
+
+/*************************************************************************
+*** Conjugation of an element of G_x0
+*************************************************************************/
+
+/**
+   @brief Conjugate element of \f$G_{x0}\f$ by an element of monster group.
+   
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   in **G_x0 representation**. Let \f$w\f$ be a word in the 
+   generators of  the monster group  of length ``n``. \f$w\f$ is 
+   stored in the array ``a``, and each entry of ``a`` encodes a 
+   generator of the monster group described in 
+   file ``mmgroup_generators.h``.
+
+   The function tries to replace  \f$g\f$ by \f$h = w^{-1} g w\f$.
+   THe function succeeds if  \f$h\f$ is in \f$G_{x0}\f$ and for any 
+   prefix \f$w_i\f$ of the word \f$w\f$ we 
+   have  \f$w_i^{-1} g w_i \in G_{x0} \cup N_0\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
+{
+    int_fast32_t use_N, res;
+    uint32_t a_N[5], atom, e_N[5], v, i;
+    uint64_t elem_a[26];
+
+   
+    // let ``a`` be the prefix of ``w`` processed so far
+    // Store ``a`` in rep N_0; start with ``a`` = 1
+    use_N = 1;
+    mm_group_n_clear(a_N);
+    for (i = 0; i <= n; ++i) {
+        v = i < n ?  a[i] : 0;
+        if (use_N) {
+            // Here we work with ``a`` in N_0 rep.
+            // Multiply ``a`` by v. Let atom be the part 
+            // of v that could not be processed
+            atom = mm_group_n_mul_atom(a_N, v);
+            // Nothing to do if multiplication was successful
+            // an we are not yet processing the final  v = 0 
+            if (atom == 0 && i < n) continue;
+            // Otherwise deal with the unprocessed atom 
+            // (or the final zero atom)
+            mm_group_n_reduce_element(a_N); // simplify ``a``
+            if (a_N[0]) {
+                // Here the accumulated ``a`` is not in G_x0
+                // So we have to conjugate with the accumulated ``a``
+                // Switch rep of elem from G_x0 to N_0
+                res = xsp2co1_elem_to_N0(elem, e_N);
+                if (res < 0) return res;
+                // Try to conjugate elem with accumulated ``a``
+                mm_group_n_conjugate_element(e_N, a_N);
+                // Switch rep of elem back from N_0 to G_x0
+                res = xsp2co1_elem_from_N0(elem, e_N);
+                if (res < 0) return res;
+                // Switch rep of ``a`` from N_0 to G_x0
+                // and store remaining atom in rep  G_x0
+                use_N = 0;
+                res = xsp2co1_set_elem_atom(elem_a, atom);
+                if (res < 0) return res;
+            } else {
+                 // Switch rep of ``a`` from N_0 to G_x0
+                 use_N = 0;
+                 res = xsp2co1_elem_from_N0(elem_a, e_N);
+                 if (res < 0) return res;
+                 // Multiply ``a`` with atom 
+                 res = xsp2co1_mul_elem_atom(elem_a, atom);
+                 if (res < 0) return res;
+            }
+            // Done after processing the final v = 0
+            if (i == n) return 0;
+        } else {
+            // Here we work with ``a`` in N_0 rep
+            // Multiply ``a`` by v. 
+            res = xsp2co1_mul_elem_atom(elem_a, v);
+            // Nothing to do if multiplication was successful
+            // an we are not yet processing the final  v = 0 
+            if (res >= 0 && i < n) continue;
+            // In case of a non-fatal error deal with the unprocessed atom 
+            // unprocessed atom ( or the fial v = 0)
+            if (res == ERR_QSTATE12_GX0_TAG || i == n) {
+                // Conjugate elem with ``a``
+                res = xsp2co1_conj_elem(elem, elem_a, elem); 
+                if (res < 0) return res;
+                // Done after processing the final v = 0
+                if (i == n) return 0;
+                // Switch rep of ``a`` from N_0 to G_x0
+                use_N = 1;
+                mm_group_n_clear(a_N);
+                // Multiply a with the non yet processed atom,
+                // abort if this fails
+                res = mm_group_n_mul_atom(a_N, v);
+                if (res < 0) return res;
+            } else {
+                // Abort in case of a fatal error
+                return res;
+            }
+        }
+    }  
+    return 0;
+}
 
 
 /*************************************************************************

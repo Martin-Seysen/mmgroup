@@ -64,7 +64,7 @@ static uint32_t mm_group_op_pl_inv_autpl(uint32_t e, uint32_t delta, uint32_t pi
 
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$x_\delta x_\pi\f$.
+ @brief Multiply \f$g \in N_{0}\f$ with \f$x_\delta x_\pi\f$.
 
  Put \f$g = g x_\delta x_\pi\f$. Here the integer  \f$\delta\f$
  represents an element of the Golay cocode and \f$\pi\f$ is the number of
@@ -104,7 +104,7 @@ void mm_group_n_mul_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$(x_\delta x_\pi)^{-1}\f$.
+ @brief Multiply \f$g \in N_{0}\f$ with \f$(x_\delta x_\pi)^{-1}\f$.
 
  Put \f$g = g \cdot (x_\delta x_\pi)^{-1}\f$. Here 
  \f$g\f$, \f$x_\delta\f$, and \f$x_\pi\f$ are as in 
@@ -144,7 +144,7 @@ void mm_group_n_mul_inv_delta_pi(uint32_t *g, uint32_t delta, uint32_t pi)
 
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$x_e\f$.
+ @brief Multiply \f$g \in N_{0}\f$ with \f$x_e\f$.
 
  Put \f$g = g \cdot x_e\f$.  Here the integer \f$e\f$ represents an
  element of the Parker loop.
@@ -163,7 +163,7 @@ void mm_group_n_mul_x(uint32_t * g, uint32_t e)
 
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$y_f\f$.
+ @brief Multiply \f$g \in N_0\f$ with \f$y_f\f$.
 
  Put \f$g = g \cdot y_f\f$.  Here the integer \f$f\f$ represents an
  element of the Parker loop.
@@ -196,7 +196,7 @@ void mm_group_n_mul_y(uint32_t * g, uint32_t f)
 }
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with the triality element.
+ @brief Multiply \f$g \in N_0\f$ with the triality element.
 
  Put\f$g = g \cdot \tau^t\f$, where \f$\tau\f$ is the triality
  element. \f$g\f$ is given as an array of five 32-bit integers.
@@ -239,8 +239,21 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t t)
 }
 
 
+
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1 \in N_{x0}\f$.
+ @brief Copy \f$g \in N_0\f$ to \f$g_1 \in N_0\f$.
+
+*/
+// %%EXPORT px
+void mm_group_n_copy_element(uint32_t *g, uint32_t *g_1)
+{
+    uint32_t i;  
+    for (i = 0; i < 5; ++i) g_1[i] = g[i];
+}
+
+
+/**
+ @brief Multiply \f$g \in N_0\f$ with \f$g_1 \in N_0\f$.
 
  Put \f$g = g \cdot g_1\f$. Elements  
  \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
@@ -259,7 +272,7 @@ void mm_group_n_mul_element(uint32_t *g, uint32_t *g_1)
 
 
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with \f$g_1^{-1} \in N_{x0}\f$.
+ @brief Multiply \f$g \in N_0\f$ with \f$g_1^{-1} \in N_0\f$.
 
  Put \f$g = g \cdot g_1^{-1}\f$. Elements    
  \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
@@ -278,8 +291,45 @@ void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g_1)
     mm_group_n_mul_t(g, 3 - g2[I_t]);
 }
 
+
 /**
- @brief Set \f$g \in N_{x0}\f$ to the value of the neutral element.
+ @brief Invert \f$g \in N_0\f$ in place.
+
+ Put \f$g = g_1^{-1}\f$. Element \f$g\f$ is given 
+ as an array of five 32-bit integers.
+*/
+// %%EXPORT px
+void mm_group_n_inv_element(uint32_t *g)
+{
+    uint32_t g2[5], i;
+    mm_group_n_clear(g2);
+    mm_group_n_mul_inv_element(g2, g);
+    for (i = 0; i < 5; ++i) g[i] = g2[i];
+}
+
+
+
+/**
+ @brief Conjugate \f$g \in N_0\f$ with \f$g_1 \in N_0\f$.
+
+ Put \f$g = g_1^{-1} \cdot g \cdot g_1\f$. Elements  
+ \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
+
+*/
+// %%EXPORT px
+void mm_group_n_conjugate_element(uint32_t *g, uint32_t *g_1)
+{
+    uint32_t g2[5];   // beware of overlapping of g and g_1.
+    mm_group_n_copy_element(g_1, g2);
+    mm_group_n_inv_element(g2);
+    mm_group_n_mul_element(g2, g);
+    mm_group_n_mul_element(g2, g_1);
+    mm_group_n_copy_element(g2, g);
+}
+
+
+/**
+ @brief Set \f$g \in N_0\f$ to the value of the neutral element.
 
  Put \f$g = 1\f$.  Element   
  \f$g\f$ is given as an array of five 32-bit integers.
@@ -292,21 +342,21 @@ void mm_group_n_clear(uint32_t *g)
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
+
 /**
- @brief Multiply \f$g \in N_{x0}\f$ with an atom.
+ @brief Multiply \f$g \in N_0\f$ with an element of the monster.
 
- Put \f$g = g \cdot a\f$. Here  \f$a\f$ is the generator of the group
- \f$N_{x0}\f$ given by parameter ``atom`` as described in the header
- file ``mmgroup_generators.h``.
- 
- \f$g\f$ is given as an array of five 32-bit integers.
-
- The function returns 0 in case of success and the (possibly modified) 
- value of parameter ``atom`` in case of failure. 
+ Workhorse for function ``mm_group_n_mul_word_scan``. If
+ parameter ``index`` is nonzero, this is equivalent 
+ to ``mm_group_n_mul_word_scan(g, w, n)``. Otherwise the
+ first non-processed (possibly simplified) atom of the 
+ word ``w`` is returned, and 0 is returned if all words have 
+ been processed.
 */
-// %%EXPORT px
-uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
-// Multiply the element g of the group MM with an atom.
+static 
+uint32_t _mul_word_scan(uint32_t *g, uint32_t *w, uint32_t n, uint32_t index)
+// Multiplying the element g of the group MM with an atom:
 // An atom is interpreted as follows:
 // Bit 31:      sign 
 // Bit 30..28   tag
@@ -324,53 +374,125 @@ uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
 //  6:  xi**e     28      exponent e
 //  7   illegal                  
 // If the sign bit is set, the operand is inverted.
-// 
-// The function updates g with g * atom and returns 0 if possible.
-// If this is not possible the function does not change g and it
-// returns the (possibly modified) atom. Tags 6 and 7 are
-// not processed.
 {
-    uint_fast32_t tag, op;
-    tag = (atom >> 28) & 0xf;
-    op = atom & 0xfffffff;
-    switch(tag) {
-        case 8:
-        case 0:
-           return 0;
-        case 8 + 1:
-        case 1:
-           mm_group_n_mul_delta_pi(g, op & 0xfff, 0);
-           return 0;
-        case 8 + 2:
-           mm_group_n_mul_inv_delta_pi(g, 0, op);
-           return 0;
-        case 2:
-           mm_group_n_mul_delta_pi(g, 0, op);
-           return 0;
-        case 8 + 3:
-           op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
-        case 3:
-           mm_group_n_mul_x(g, op & 0x1fff);
-           return 0;
-        case 8 + 4:
-           op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
-        case 4:
-           mm_group_n_mul_y(g, op & 0x1fff);
-           return 0;
-        case 8 + 5:
-           op ^= 0xfffffff;
-        case 5:
-           mm_group_n_mul_t(g, op);
-           return 0;
-        case 8 + 6:
-           op ^= 0xfffffff;
-        case 6:
-           op %= 3;
-           return op ? 0x60000000 + op : 0;
-        default:
-           return atom;
-    }
+   uint_fast32_t i, atom, tag, op;
+   for (i = 0; i < n; ++i) {
+      atom = w[i];
+      tag = (atom >> 28) & 0xf;
+      op = atom & 0xfffffff;
+      switch(tag) {
+         case 8:
+         case 0:
+            break;
+         case 8 + 1:
+         case 1:
+            mm_group_n_mul_delta_pi(g, op & 0xfff, 0);
+            break;
+         case 8 + 2:
+            mm_group_n_mul_inv_delta_pi(g, 0, op);
+            break;
+         case 2:
+            mm_group_n_mul_delta_pi(g, 0, op);
+            break;
+         case 8 + 3:
+            op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
+         case 3:
+            mm_group_n_mul_x(g, op & 0x1fff);
+            break;
+         case 8 + 4:
+            op ^= MAT24_THETA_TABLE[op & 0x7ff] & 0x1000;
+         case 4:
+            mm_group_n_mul_y(g, op & 0x1fff);
+            break;
+         case 8 + 5:
+            op ^= 0xfffffff;
+         case 5:
+            mm_group_n_mul_t(g, op);
+            break;
+         case 8 + 6:
+            op ^= 0xfffffff;
+         case 6:
+            op = op % 3;
+            if (op) return index ? i : 0x60000000 + op;
+            break;
+         default:
+            return index ? i : atom;
+      }
+   }
+   return index ? n : 0;
 }
+
+/// @endcond  
+
+
+
+/**
+ @brief Multiply \f$g \in N_0\f$ with an element of the monster.
+
+ Let ``w`` be a word of generators of the monster group of
+ length ``n``. Let ``k`` be the greatest number such that all
+ prefixes of ``w`` of length at most ``k`` are in the
+ group \f$N_{0}\f$. Let \f$a\f$ be the element of \f$N_{0}\f$
+ corresponding to the prefix of ``w`` of length ``k``.
+
+ Let \f$g \in N_{0}\f$ is given as an array ``g`` of five
+ 32-bit integers.
+
+ Then the function replaces the value \f$g\f$ in the array ``g``
+ by  \f$g \cdot a\f$. It returns the number ``k`` of atoms of
+ the word ``w`` processed.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_mul_word_scan(uint32_t *g, uint32_t *w, uint32_t n)
+{
+    return _mul_word_scan(g, w, n, 1);
+}
+
+
+
+/**
+ @brief Multiply \f$g \in N_{0}\f$ with an atom.
+
+ Put \f$g = g \cdot a\f$. Here  \f$a\f$ is the generator of the group
+ \f$N_0\f$ given by parameter ``atom`` as described in the header
+ file ``mmgroup_generators.h``.
+ 
+ \f$g\f$ is given as an array of five 32-bit integers.
+
+ The function returns 0 in case of success and the (possibly
+ simplified) atom in case of failure.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_mul_atom(uint32_t *g, uint32_t atom)
+{
+    return _mul_word_scan(g, &atom, 1, 0);
+}
+
+
+
+/**
+ @brief Scan word of generators of the monster for membership in \f$N_{0}\f$
+
+ Let ``w`` be a word of generators of the monster group of
+ length ``n``. The function returns the greatest number ``k``
+ such that all prefixes of ``w`` of length at most ``k`` are
+ in the group \f$N_{0}\f$. 
+*/
+// %%EXPORT px
+uint32_t mm_group_n_scan_word(uint32_t *w, uint32_t n)
+{
+    uint32_t i;
+    for (i = 0; i < n; ++i) {
+        uint_fast32_t atom = w[i] & 0x7fffffff;
+        if (atom < 0x60000001) continue;
+        if (atom >= 0x70000000) return i;
+        if ((atom & 0xfffffff) % 3) return i;
+    }
+    return n;
+}
+
+
+
 
 
 
@@ -391,7 +513,7 @@ static uint16_t ker_table_yx[4] = {
 
 
 /**
- @brief Reduce \f$g \in N_{x0}\f$ to a standard form.
+ @brief Reduce \f$g \in N_0\f$ to a standard form.
 
  The representation of \f$g\f$ is reduced to a standard form.
 
@@ -403,7 +525,7 @@ static uint16_t ker_table_yx[4] = {
  \f$g\f$ is given as an array of five 32-bit integers. 
 */
 // %%EXPORT px
-uint32_t mm_group_n_reduce_word(uint32_t *g)
+uint32_t mm_group_n_reduce_element(uint32_t *g)
 // Reduce the element g of the group N.
 // We reduce g modulo the kernel K_0 using the relations
 // y_Omega = x_(-1), y_(-1) = x_(-Omega).
@@ -423,7 +545,7 @@ uint32_t mm_group_n_reduce_word(uint32_t *g)
 }
 
 /**
- @brief Convert \f$g \in N_{x0}\f$ to a word of generators.
+ @brief Convert \f$g \in N_0\f$ to a word of generators.
 
  The representation of \f$g\f$ is converted to a word of
  generators of the monster group. The entries of that word are
@@ -435,17 +557,17 @@ uint32_t mm_group_n_reduce_word(uint32_t *g)
  \f$g\f$ is given as an array of five 32-bit integers.
 
  The element \f$g\f$ is reduced with 
- function ``mm_group_n_reduce_word``.  
+ function ``mm_group_n_reduce_element``.  
 */
 // %%EXPORT px
 uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 // Convert the element g of the group N to an array 'word' of atoms
 // as specififed in function mm_group_n_mul_atom() and return the
 // length of that array. That array may have length up to 5.
-// The word g is reduced with function mm_group_n_reduce_word()
+// The word g is reduced with function mm_group_n_reduce_element()
 {
    uint_fast32_t len = 0;
-   mm_group_n_reduce_word(g);
+   mm_group_n_reduce_element(g);
    if (g[0]) word[len++] = (g[0] & 0xfffffff) | 0x50000000;
    if (g[1]) word[len++] = (g[1] & 0x1fff) | 0x40000000;
    if (g[2]) word[len++] = (g[2] & 0x1fff) | 0x30000000;
@@ -457,16 +579,16 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
 
 
 /**
- @brief Split an element of \f$N_{x0}\f$ from a word of generators.
+ @brief Split an element of \f$N_0\f$ from a word of generators.
 
  Given a array ``word`` of generators of the monster group of a 
  given ``length``, that word is split  into a possibly shorter 
- word ``word1`` and an element ``g`` of the group \f$N_{x0}\f$ such 
+ word ``word1`` and an element ``g`` of the group \f$N_0\f$ such 
  that ``word`` =  ``word1`` * ``g``. Then ``word1`` is a prefix 
  of ``word``. The function returns the length of the prefix ``word1``
  of ``word``. It does not change ``word``.
  Here we just scan the ``word`` from the right, checking for atoms 
- ordered in a way compatible to our representation of \f$N_{x0}\f$.
+ ordered in a way compatible to our representation of \f$N_0\f$.
 
  Words of generators of the monster are implemented as described in 
  file  ``mmgroup_generators.h``. Output \f$g\f$ is given as an array 
@@ -526,7 +648,7 @@ uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
 
  A word representing ``w2**e`` is appended to word ``w1`` and
  then the result is simplified using the relations inside
- the group \f$N_{x0}\f$. The result ``w3`` is reduced (with
+ the group \f$N_0\f$. The result ``w3`` is reduced (with
  respect to these relations) if input ``w1`` is reduced.
 
  Caution!
@@ -553,7 +675,7 @@ uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
         for (i = i_start; i != i_stop; i += i_step) {
             pending = mm_group_n_mul_atom(gn, w2[i] ^ sign);
             if (pending) {
-                mm_group_n_reduce_word(gn);
+                mm_group_n_reduce_element(gn);
                 l1 +=  mm_group_n_to_word(gn, w1 + l1);
                 mm_group_n_clear(gn);
                 if ((pending & 0x70000000) == 0x60000000 && l1
@@ -570,31 +692,53 @@ uint32_t mm_group_mul_words(uint32_t *w1, uint32_t l1, uint32_t *w2, uint32_t l2
             }
         }
     }
-    mm_group_n_reduce_word(gn);
+    mm_group_n_reduce_element(gn);
     l1 +=  mm_group_n_to_word(gn, w1 + l1);
     return l1;
 }
 
 
 /**
- @brief Check if a words of generators of the monster is in \f$N_{x0}\f$.
+ @brief Invert a word of generators of the monster.
+
+ Given a word  ``w`` of length ``l`` the function changes
+ the word in the buffer ``w`` to its inverse in place.
+
+ Words of generators of the monster are implemented as described
+ in file  ``mmgroup_generators.h``.
+*/
+// %%EXPORT px
+void mm_group_invert_word(uint32_t *w, uint32_t l)
+{
+    uint32_t i, tmp;
+    for (i = 0; i < l; ++i) w[i] ^= 0x80000000;
+    for (i = 0; i < l >> 1; ++i) {
+        tmp = w[i];
+        w[i] = w[l - 1 - i];
+        w[l - 1 - i] = tmp;
+    }
+}
+
+
+/**
+ @brief Check if a words of generators of the monster is in \f$N_0\f$.
 
  We check if the word ``w1`` of length ``l1`` of generators of the
- monster group is in the subroup  \f$N_{x0}\f$. If this is the case
- then we store the word ``w1`` as an element of \f$N_{x0}\f$ in
+ monster group is in the subroup  \f$N_0\f$. If this is the case
+ then we store the word ``w1`` as an element of \f$N_0\f$ in
  the array ``g_out`` of five 32-bit integers as desribed above.
  The function returns the following status information:
 
 
  0: ``w1`` is the neutral element the monster group
 
- 1: ``w1`` is in \f$N_{x0}\f$, but not the neutral element
+ 1: ``w1`` is in \f$N_0\f$, but not the neutral element
 
- 2: ``w1`` is not in \f$N_{x0}\f$
+ 2: ``w1`` is not in \f$N_0\f$
 
  3: Nothing is known about ``w1``
 
- We check the relations in the generators \f$N_{x0}\f$ only. The output
+ We check the relations in the generators \f$N_0\f$ only. The output
  in ``g_out`` is valid only if the function returns 0 or 1.
 
  Words of generators of the monster are implemented as described
@@ -617,7 +761,7 @@ uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
         }
         if (num_xi) return 2;
         for (i = 0; i < l1; ++i) mm_group_n_mul_atom(g, w1[i]);
-        status = mm_group_n_reduce_word(g) != 0;
+        status = mm_group_n_reduce_element(g) != 0;
     }
     for (i = 0; i < 5; ++i) g_out[i] = g[i];
     return status;

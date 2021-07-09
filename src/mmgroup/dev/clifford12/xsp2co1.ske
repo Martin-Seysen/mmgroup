@@ -549,6 +549,54 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 *** Multiplication and inversion in the group G_{x0}
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+   @brief Image of short vector in Leech lattice under \f$G_{x0}\f$.
+
+   Let ``pqs`` point to a quadratic state matrix ``qs`` that 
+   corresponds to an element \f$g\f$ of the factor \f$4096_x\f$
+   the representation  \f$24_x \otimes 4096_x\f$ of \f$G_{x0}\f$.
+   Note that the operation of f$g\f$ on the Leech lattice
+   (by conjugation) is determined up to sign only.
+
+   Assuming that ``qs`` maps the short vector ``src1`` in the Leech
+   lattice (modulo 3) to ``dest1``, the sign mentioned above is
+   determined. Then we may compute the image ``dest2`` of any short
+   vector ``src2`` in the Leech lattice (modulo 3).
+
+   Given ``qs``, ``src1``, ``dest1``, and ``src2``, the function
+   returns the image ``dest2`` of ``src2``. All short Leech lattice
+   vectors (modulo 3) are given in **Leech lattice mod 3 encoding**.
+
+   The function returns a negative value in case of error.
+   If ``dest1`` is not a valid image of ``src1`` then the result is
+   undefined. The function may or may not detect such an error.
+*/
+static inline int64_t map_short3(
+     qstate12_type *pqs,
+     uint64_t src1,
+     uint64_t dest1,
+     uint64_t src2
+)
+{
+     uint64_t asrc[3], adest[3];
+     int32_t res;
+     asrc[0] = src1;
+     adest[0] = dest1;
+     asrc[2] = src2;
+     asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
+     res = xsp2co1_chain_short_3(pqs, 3, asrc, adest);
+     #ifdef ERROR_POOL
+        memcpy(error_pool+9, asrc, 3 * sizeof(uint64_t));
+        memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
+     #endif    
+     if (res < 0) return res;
+     return adest[2];
+}
+
+/// @endcond 
+
 
 /**
    @brief Multiply two elements of the group \f$G_{x0}\f$.
@@ -564,9 +612,11 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 // %%EXPORT px
 int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 {
-    int32_t res;
+    int64_t res;
     qstate12_type qs1, qs2, qs3;
-    uint64_t data3[MAXROWS_ELEM], asrc[3], adest[3];
+    uint64_t data3[MAXROWS_ELEM];
+    int64_t v;
+
     res = xsp2co1_elem_to_qs_i(elem1, &qs1);
     if (res < 0) return res;
     res = xsp2co1_elem_to_qs_i(elem2, &qs2);
@@ -575,18 +625,10 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     if (res < 0) return res;
     res = qstate12_matmul(&qs2, &qs1, &qs3);
     if (res < 0) return res;
-    
-    asrc[0] = STD_V3;
-    adest[0] = elem2[0];
-    asrc[2] = elem1[0];
-    asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
-    res = xsp2co1_chain_short_3(&qs2, 3, asrc, adest);
-    #ifdef ERROR_POOL
-        memcpy(error_pool+9, asrc, 3 * sizeof(uint64_t));
-        memcpy(error_pool+12, adest, 3 * sizeof(uint64_t));
-    #endif    
-    if (res < 0) return res;
-    res = xsp2co1_qs_to_elem_i(&qs3, adest[2], elem3);
+
+    v = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
+    if (v < 0) return (int32_t) v;
+    res = xsp2co1_qs_to_elem_i(&qs3, v, elem3);
     return res;
 }
 
@@ -607,7 +649,9 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 {
     int32_t res;
     qstate12_type qs1, qs2;
-    uint64_t data2[MAXROWS_ELEM], asrc[3], adest[3];
+    uint64_t data2[MAXROWS_ELEM];
+    int64_t v;
+
     res = xsp2co1_elem_to_qs_i(elem1, &qs1);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
@@ -615,17 +659,62 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
     res = qstate12_mat_inv(&qs2);
     if (res < 0) return res;
 
-    asrc[0] = elem1[0];
-    adest[0] = STD_V3;
-    asrc[2] = STD_V3;
-    asrc[1] = xsp2co1_find_chain_short_3(asrc[0], asrc[2]);
-    res = xsp2co1_chain_short_3(&qs2, 3, asrc, adest);
-    if (res < 0) return res;
-    res = xsp2co1_qs_to_elem_i(&qs2, adest[2], elem2);
+    v = map_short3(&qs2, elem1[0], STD_V3, STD_V3);
+    if (v < 0) return (int32_t) v;
+    res = xsp2co1_qs_to_elem_i(&qs2, v, elem2);
     return res;
 }
 
 
+
+/**
+   @brief Conjugate elements of the group \f$G_{x0}\f$.
+   
+   Let \f$g_1, g_2 \in G_{x0}\f$ be stored in the arrays ``elem1``,
+   ``elem2`` in **G_x0 representation**. The function computes
+   \f$g_2^{-1} \cdot g_1 \cdot g_2 \f$ and stores the result in 
+   the array ``elem3`` in **G_x0 representation**.
+   
+   Any kind of overlapping beween the arrays ``elem1``, ``elem2``,
+   and ``elem3``  is allowed.  
+*/
+// %%EXPORT px
+int32_t xsp2co1_conj_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
+{ 
+    int32_t res;
+    qstate12_type qs1, qs2, qs3;
+    uint64_t data3[MAXROWS_ELEM];
+    int64_t v;
+
+    // Put qs2 = elem2, qs3 = elem2**(-1)
+    res = xsp2co1_elem_to_qs_i(elem2, &qs2);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs2, &qs3, data3, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_mat_inv(&qs3);
+    if (res < 0) return res;
+
+    // Put qs3 = elem2**(-1) * elem1
+    res = xsp2co1_elem_to_qs_i(elem1, &qs1);
+    if (res < 0) return res;
+    res = qstate12_matmul(&qs1, &qs3, &qs3);
+    if (res < 0) return res;
+
+    // Put qs3 = elem2**(-1) * elem1 * elem2
+    res = qstate12_matmul(&qs2, &qs3, &qs3);
+    if (res < 0) return res;
+
+    // Compute image of STD_V3 under qs3
+    v = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
+    if (v < 0) return (int32_t) v;
+    // Now qs3 maps elem2[0] to v
+    v = map_short3(&qs2, elem2[0], v, STD_V3);
+    if (v < 0) return (int32_t) v;
+
+    // Compute result from qs3 and v
+    res = xsp2co1_qs_to_elem_i(&qs3, v, elem3);
+    return res;
+}
 
 /*************************************************************************
 *** Conjugate elements of Q_{x0} with an element of G_{x0}

@@ -107,7 +107,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
    The basis \f$B = b_0\ldots, b_{23}\f$ is stored in the array ``b``.
 
    We require \f$k \leq 24\f$. The function returns \f$m \geq 0\f$
-   in case of success and  -1 in case of failure.
+   in case of success anegative value in case of failure.
 */
 // %%EXPORT px
 int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
@@ -115,7 +115,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    uint64_t x;
    uint32_t i, m;
 
-   if (k > 24) return -1;
+   if (k > 24) return ERR_QSTATE12_PARAM;
 
    // We store a 24 times k matrix Bh in columns 24,...,24+k-1 of 
    // the array b and a 24 times 24 matrix Bl in columns 0,...,23
@@ -171,11 +171,14 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    subgroup \f$Q_{x0}\f$ of structure \f$2^{1+24}\f$ (modulo the
    centre of \f$G_{x0}\f$). Let \f$A = A(g)\f$ be the \f$24 \times 24\f$
    bit matrix that performs this operation on \f$\Lambda_2\f$ by
-   right multiplication. Put  \f$A_1 = A - 1\f$ and let
+   right multiplication. Put  \f$A_1 = A - 1\f$, and let
    \f$I_1\f$ be the iamge of matrix  \f$A_1\f$. 
 
-   In this function we require \f$A^2 = 1\f$, otherwise the
-   function fails. Then  \f$A_1^2 = 0\f$ and we have 
+   In this function we require that the image of \f$g\f$ in the
+   factor group  \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order
+   1 or 2; othereise the function fails. That condition is
+   equivalent to \f$A^2 = 1\f$, and also to \f$A_1^2 = 0\f$. If
+   this is the case the we have:
 
    \f$(\ker A_1)^\perp = I_1  \subset \ker A_1 = (I_1)^\perp\f$. 
 
@@ -232,6 +235,11 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
  
    Parameter ``invar`` must be an array of length 12. Zero lines are
    appeded to that array so that its length will be 12.
+
+   The function returns the dmenstion of the returned basis, and a 
+   negative value in case of error. The return value 
+   ERR_QSTATE12_GX0_BAD_ELEM means that that the image of \f$g\f$ in 
+   the \f$\mbox{Co}_1\f$ has order grater than f$2\f$.
 */
 // %%EXPORT px
 int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
@@ -245,7 +253,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
     invar[0] = 0x8000000;
     for (i = 1; i < 12; ++i) invar[i] = 0;
 
-    // Let `pa` be the 24 time 24 unit matrix 1
+    // Let `pa` be the 24 times 24 unit matrix 1
     for (i = 0; i < 24; ++i) pa[i] = ONE << i;
 
     // Conjugate row vectors of unit matrix pa with element
@@ -264,7 +272,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 
     // The group element `elem` is an involution (modulo the group  
     // Co_1) iff we have A_1**2 == 0. Otherwise we abort with an error.
-    if (square_mat24_nonzero(pa)) return -1; 
+    if (square_mat24_nonzero(pa)) return ERR_QSTATE12_GX0_BAD_ELEM; 
 
     // Echelonize PAL. So we left multiply both, PAH and PAL with a 
     // nonsingular matrix T auch that T * A_1 is echelonized. Then
@@ -364,7 +372,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
         }
     } else {
         // Report failure
-        return -1;
+        return ERR_QSTATE12_REP_GX0;
     }
 
 
@@ -419,7 +427,8 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
 
    // Select column `c` of input matrix a;
    // abort if ``col`` or ``invar`` is erroneous.
-   if (col > 1 || invar[0] & 0x8000000) return -1;
+   if (col > 1) return ERR_QSTATE12_PARAM;
+   if (invar[0] & 0x8000000) return ERR_QSTATE12_GX0_BAD_ELEM;
    col += 24;
 
    // Extract relevant rows of matrix a of invariants
@@ -458,7 +467,7 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
 
    // Put M = J, with J = ( A * Q * P^T) ** (-1);
    // abort if inverse dose not exist.
-   if (bitmatrix64_inv(M, n) < 0) return -1;
+   if (bitmatrix64_inv(M, n) < 0) return ERR_QSTATE12_REP_GX0;
 
    // Put v = c * J
    bitmatrix64_mul(&v, M, 1, n, &v);
@@ -720,57 +729,154 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 
 
 
-/**
+/** 
    TODO: Improve documentation
 
-   Find type-4 vector that simplifies an involution in G_x0. 
 
-   Bits 28:     Continue using vector in low bits if this bit is set
-
-   Bits 27:     There is no solution if this bit is set
-
-   Bits 26..24: Type information to be returned if 28 and 27 are zero
-
-   Bits 23..0:  Type 4 vector to be used in the next step.
+   A negative value indicates an error. Here
+   ERR_QSTATE12_GX0_BAD_ELEM means that no further simplification
+   is possble.
 
 */
 // %%EXPORT px
-uint32_t xsp2co1_elem_find_type4(uint64_t *elem)
+int32_t xsp2co1_elem_find_type4(uint64_t *elem)
 {
-   uint64_t invar[12];   
-   uint32_t v, t;
-   int32_t n = xsp2co1_involution_invariants(elem, invar);
+    uint64_t invar[12];   
+    int_fast32_t v, t, n;
 
-   if ((v = xsp2co1_xspecial_vector(elem)) >= 0) {
-       if (v == 0) return 0;
-       if (v == 0x1000000UL) return 0x4000000UL;
-       t = gen_leech2_type(v) >> 4;
-       if (t < 4) return t << 24;
-       return (v & 0xffffff) | 0x10000000UL;   
-   }
-   switch (n) {
-       case 8:
-           return xsp2co1_involution_find_type4(invar, 0);
-       case 9:
-           v = xsp2co1_involution_orthogonal(invar, 0);
-           t = gen_leech2_type(v) >> 4;
-           if (t == 4) return  (v & 0xffffff) | 0x10000000UL; 
-           if (t != 0) return 0x8000000UL;
-           if ( ((invar[0] >> 24) & 7) != 5 
-               ||  ((invar[1] >> 24) & 7) != 0 ) return  0x8000000UL;
-           v = xsp2co1_involution_find_type4(invar, 1);
-           if ((gen_leech2_type(v) >> 4) != 4) return 0x8000000UL; 
-           return  (v & 0xffffff) | 0x10000000UL; 
-       case 12:
-           v = xsp2co1_involution_orthogonal(invar, 1);
-           t = gen_leech2_type(v) >> 4;
-           if (t == 4) return  (v & 0xffffff) | 0x10000000UL; 
-           return 0x8000000UL;
-       default:    
-           return 0x8000000UL;
-   }
+    if (xsp2co1_xspecial_vector(elem) >= 0) return 0x800000;
+
+    n = xsp2co1_involution_invariants(elem, invar);
+    if (n < 0) return n;
+    switch (n) {
+        case 8:
+            return xsp2co1_involution_find_type4(invar, 0);
+        case 9:
+            v = xsp2co1_involution_orthogonal(invar, 0);
+            t = gen_leech2_type(v) >> 4;
+            if (t & 0xfffffffbUL) return ERR_QSTATE12_GX0_BAD_ELEM;
+            if (t == 0) {
+                 v = xsp2co1_involution_find_type4(invar, 1);
+                 if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+            } 
+            return v;
+        case 12:
+            v = xsp2co1_involution_orthogonal(invar, 1);
+            t = gen_leech2_type(v) >> 4;
+            if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
+            return v;
+        default:    
+            return ERR_QSTATE12_GX0_BAD_ELEM;
+    }
 }
 
+/********************************************
+// Deprecated!!!!
+int32_t xsp2co1_elem_find_type4_old(uint64_t *elem, int32_t last_action)
+{
+    uint64_t invar[12];   
+    int_fast32_t v, t, n, i;
+    uint32_t w[10], x, y, cocode;
+
+    if ((v = xsp2co1_xspecial_vector(elem)) >= 0) {
+        if (v == 0x800000) return 0x4000001;
+        if (v == 0x1800000) return 0x4000002;
+        if ((gen_leech2_type(v) >> 4) != 4) return v;
+        return 0x2000000 | (v & 0xffffff);
+    }
+
+    if (last_action & 0x2000000) goto skip_type4;
+    n = xsp2co1_involution_invariants(elem, invar);
+    if (n < 0) return n;
+    switch (n) {
+        case 8:
+            return xsp2co1_involution_find_type4(invar, 0);
+        case 9:
+            v = xsp2co1_involution_orthogonal(invar, 0);
+            t = gen_leech2_type(v) >> 4;
+            if (t & 0xfffffffbUL) return ERR_QSTATE12_GX0_BAD_ELEM;
+            if (t == 0) {
+                 v = xsp2co1_involution_find_type4(invar, 1);
+                 if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+            } 
+            break;
+        case 12:
+            v = xsp2co1_involution_orthogonal(invar, 1);
+            t = gen_leech2_type(v) >> 4;
+            if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
+            break;
+        default:    
+            return ERR_QSTATE12_GX0_BAD_ELEM;
+    }
+    v &= 0xffffffUL;
+    if (v != 0x800000) return 0x2000000 | v;
+ 
+  skip_type4:
+    x = y = cocode = 0;
+    n = xsp2co1_elem_to_word(elem, w);
+    if (n < 0) return n;
+    for (i = 0; i < n; ++i) {
+       switch ((w[i] >> 28) & 7) {
+            case 0:  
+                // ignore tag:
+                break;
+            case 1:
+                cocode ^= w[i] & 0x800; 
+                break;
+            case 3:
+                // tag x: accumulate in x
+                x ^= w[i] & 0x7ff;
+                break;
+            case 4:
+                // tag y: accumulate in y
+                y ^= w[i] & 0x7ff;
+                break;
+            default:
+                return ERR_QSTATE12_GX0_BAD_ELEM; 
+        }
+    }
+    if (y == 0) return ERR_QSTATE12_REP_GX0;
+    if (cocode & 0x800) return ERR_QSTATE12_GX0_BAD_ELEM;
+    if (x == 0) return 0x40000001; 
+    if (x == y) return 0x40000002;
+    return ERR_QSTATE12_GX0_BAD_ELEM;
+}
+********************************************/
+
+/*********************************
+// deprecated
+static inline int32_t transform_xsp(uint64_t *elem, uint32_t *a, uint32_t len_a)
+{
+     int32_t last = 0, len, res, i;
+     uint32_t *pa = a;
+     uint64_t elem1[26];
+     
+     for (i = 0; i < 4; ++i) {
+         last = xsp2co1_elem_find_type4(elem, last);
+         if (last < 0x2000000) return ((uint32_t)(pa -a) << 25) + last;
+         if (last & 0x4000000) {
+             if (len_a < 6) return ERR_QSTATE12_BUFFER_OVFL; 
+             len =  gen_leech2_reduce_type4(last, pa);
+             if (len < 0) return len;
+         } else if (last & 0x4000000) {
+             if (len < 1) return ERR_QSTATE12_BUFFER_OVFL; 
+             pa[0] = MMGROUP_ATOM_TAG_T + (last & 3);
+             len = 1;
+         } else return ERR_QSTATE12_REP_GX0; 
+         mm_group_invert_word(pa, len);
+         res = xsp2co1_set_elem_word(elem1, pa, len);
+         if (res < 0) return res;
+         res = xsp2co1_mul_elem(elem1, elem, elem);
+         if (res < 0) return res;
+         mm_group_invert_word(a, len);
+         res =  xsp2co1_mul_elem_word(elem, pa, len);
+         if (res < 0) return res;
+         pa +=len; len_a -= len;
+     }  
+     return ERR_QSTATE12_REP_GX0;   
+}
+
+**************************************************/
 
 //  %%GEN h
 /// @endcond 

@@ -11,7 +11,7 @@ from mmgroup.mm_space import MMSpace
 from mmgroup.generators import mm_group_check_word_n
 from mmgroup.generators import mm_group_words_equ
 from mmgroup.generators import mm_group_n_mul_element
-from mmgroup.generators import mm_group_n_reduce_word 
+from mmgroup.generators import mm_group_n_reduce_element 
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import chk_qstate12
@@ -256,7 +256,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
             n1 = np.copy(n0)
             for i in range(2, max_order+1):
                 mm_group_n_mul_element(n1, n0)
-                if not mm_group_n_reduce_word(n1):
+                if not mm_group_n_reduce_element(n1):
                     return i
             return 0
 
