@@ -120,82 +120,30 @@ int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 // %%EXPORT px
 int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
 {
-    int_fast32_t use_N, res;
-    uint32_t a_N[5], atom, e_N[5], v, i;
+    int_fast32_t  res, k;
+    uint32_t a_N[5], e_N[5];
     uint64_t elem_a[26];
-
    
-    // let ``a`` be the prefix of ``w`` processed so far
-    // Store ``a`` in rep N_0; start with ``a`` = 1
-    use_N = 1;
-    mm_group_n_clear(a_N);
-    for (i = 0; i <= n; ++i) {
-        v = i < n ?  a[i] : 0;
-        if (use_N) {
-            // Here we work with ``a`` in N_0 rep.
-            // Multiply ``a`` by v. Let atom be the part 
-            // of v that could not be processed
-            atom = mm_group_n_mul_atom(a_N, v);
-            // Nothing to do if multiplication was successful
-            // an we are not yet processing the final  v = 0 
-            if (atom == 0 && i < n) continue;
-            // Otherwise deal with the unprocessed atom 
-            // (or the final zero atom)
-            mm_group_n_reduce_element(a_N); // simplify ``a``
-            if (a_N[0]) {
-                // Here the accumulated ``a`` is not in G_x0
-                // So we have to conjugate with the accumulated ``a``
-                // Switch rep of elem from G_x0 to N_0
-                res = xsp2co1_elem_to_N0(elem, e_N);
-                if (res < 0) return res;
-                // Try to conjugate elem with accumulated ``a``
-                mm_group_n_conjugate_element(e_N, a_N);
-                // Switch rep of elem back from N_0 to G_x0
-                res = xsp2co1_elem_from_N0(elem, e_N);
-                if (res < 0) return res;
-                // Switch rep of ``a`` from N_0 to G_x0
-                // and store remaining atom in rep  G_x0
-                use_N = 0;
-                res = xsp2co1_set_elem_atom(elem_a, atom);
-                if (res < 0) return res;
-            } else {
-                 // Switch rep of ``a`` from N_0 to G_x0
-                 use_N = 0;
-                 res = xsp2co1_elem_from_N0(elem_a, e_N);
-                 if (res < 0) return res;
-                 // Multiply ``a`` with atom 
-                 res = xsp2co1_mul_elem_atom(elem_a, atom);
-                 if (res < 0) return res;
-            }
-            // Done after processing the final v = 0
-            if (i == n) return 0;
-        } else {
-            // Here we work with ``a`` in N_0 rep
-            // Multiply ``a`` by v. 
-            res = xsp2co1_mul_elem_atom(elem_a, v);
-            // Nothing to do if multiplication was successful
-            // an we are not yet processing the final  v = 0 
-            if (res >= 0 && i < n) continue;
-            // In case of a non-fatal error deal with the unprocessed atom 
-            // unprocessed atom ( or the fial v = 0)
-            if (res == ERR_QSTATE12_GX0_TAG || i == n) {
-                // Conjugate elem with ``a``
-                res = xsp2co1_conj_elem(elem, elem_a, elem); 
-                if (res < 0) return res;
-                // Done after processing the final v = 0
-                if (i == n) return 0;
-                // Switch rep of ``a`` from N_0 to G_x0
-                use_N = 1;
-                mm_group_n_clear(a_N);
-                // Multiply a with the non yet processed atom,
-                // abort if this fails
-                res = mm_group_n_mul_atom(a_N, v);
-                if (res < 0) return res;
-            } else {
-                // Abort in case of a fatal error
-                return res;
-            }
+    while (n) {
+        k = xsp2co1_set_elem_word_scan(elem_a, a, n);
+        if (k < 0) return k;
+        if (k > 0) {
+            res = xsp2co1_conj_elem(elem, elem_a, elem);
+            if (res < 0) return res;
+            a += k; n -= k;
         }
+        if (n == 0) return 0;
+
+        mm_group_n_clear(a_N);
+        k = mm_group_n_mul_word_scan(a_N, a, n);
+        if (k < 0) return k;
+        if (k == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+        res = xsp2co1_elem_to_N0(elem, e_N);
+        if (res < 0) return res;
+        mm_group_n_conjugate_element(e_N, a_N, e_N);
+        res = xsp2co1_elem_from_N0(elem, e_N);
+        if (res < 0) return res;
+        a += k; n -= k;
     }  
     return 0;
 }

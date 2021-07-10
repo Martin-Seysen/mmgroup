@@ -255,7 +255,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
         if status == 1:
             n1 = np.copy(n0)
             for i in range(2, max_order+1):
-                mm_group_n_mul_element(n1, n0)
+                mm_group_n_mul_element(n1, n0, n1)
                 if not mm_group_n_reduce_element(n1):
                     return i
             return 0

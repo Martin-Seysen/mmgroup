@@ -108,6 +108,7 @@ from mmgroup.structures.parse_atoms import ihex
 
 from mmgroup.generators import mm_group_n_mul_atom
 from mmgroup.generators import mm_group_n_mul_element
+from mmgroup.generators import mm_group_n_inv_element
 from mmgroup.generators import mm_group_n_mul_inv_element
 from mmgroup.generators import mm_group_n_mul_delta_pi, mm_group_n_mul_x
 from mmgroup.generators import mm_group_n_mul_inv_delta_pi
@@ -201,12 +202,12 @@ class GroupN(AbstractGroup):
 
         
     def _imul(self, g1, g2):
-        mm_group_n_mul_element(g1.data, g2.data)
+        mm_group_n_mul_element(g1.data, g2.data, g1.data)
         return g1
 
     def _invert(self, g1):
         g2 = GroupN_Word(group=self)
-        mm_group_n_mul_inv_element(g2.data, g1.data)
+        mm_group_n_inv_element(g1.data, g2.data)
         return g2
 
     ####################################################################
@@ -215,7 +216,7 @@ class GroupN(AbstractGroup):
 
     def mul(self, g1, g2):
         assert g2.group == self
-        mm_group_n_mul_element(g1.data, g2.data)
+        mm_group_n_mul_element(g1.data, g2.data, g1.data)
         return g1
 
     def mul_atoms(self, g1, g2):
@@ -226,7 +227,7 @@ class GroupN(AbstractGroup):
 
     def div(self, g1, g2):
         assert g2.group == self
-        mm_group_n_mul_inv_element(g1.data, g2.data)
+        mm_group_n_mul_inv_element(g1.data, g2.data, g1.data)
         return g1
 
     def div_atoms(self, g1, g2):

@@ -241,105 +241,157 @@ void mm_group_n_mul_t(uint32_t * g, uint32_t t)
 
 
 /**
- @brief Copy \f$g \in N_0\f$ to \f$g_1 \in N_0\f$.
-
-*/
-// %%EXPORT px
-void mm_group_n_copy_element(uint32_t *g, uint32_t *g_1)
-{
-    uint32_t i;  
-    for (i = 0; i < 5; ++i) g_1[i] = g[i];
-}
-
-
-/**
- @brief Multiply \f$g \in N_0\f$ with \f$g_1 \in N_0\f$.
-
- Put \f$g = g \cdot g_1\f$. Elements  
- \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
-
-*/
-// %%EXPORT px
-void mm_group_n_mul_element(uint32_t *g, uint32_t *g_1)
-{
-    uint32_t g2[5], i;   // beware of overlapping of g and g_1.
-    for (i = 0; i < 5; ++i) g2[i] = g_1[i];
-    mm_group_n_mul_t(g, g2[I_t]);
-    mm_group_n_mul_y(g, g2[I_y]);
-    mm_group_n_mul_x(g, g2[I_x]);
-    mm_group_n_mul_delta_pi(g, g2[I_d], g2[I_pi]);
-}
-
-
-/**
- @brief Multiply \f$g \in N_0\f$ with \f$g_1^{-1} \in N_0\f$.
-
- Put \f$g = g \cdot g_1^{-1}\f$. Elements    
- \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
-*/
-// %%EXPORT px
-void mm_group_n_mul_inv_element(uint32_t *g, uint32_t *g_1)
-// These two arrays may overlap.
-{
-    uint32_t g2[5], i;   // beware of overlapping of g and g_1.
-    for (i = 0; i < 5; ++i) g2[i] = g_1[i];
-    mm_group_n_mul_inv_delta_pi(g, g2[I_d], g2[I_pi]);
-    mm_group_n_mul_x(g, g2[I_x] 
-        ^ (MAT24_THETA_TABLE[(g2[I_x]) & 0x7ff] & 0x1000));
-    mm_group_n_mul_y(g, g2[I_y] 
-        ^ (MAT24_THETA_TABLE[(g2[I_y]) & 0x7ff] & 0x1000));
-    mm_group_n_mul_t(g, 3 - g2[I_t]);
-}
-
-
-/**
- @brief Invert \f$g \in N_0\f$ in place.
-
- Put \f$g = g_1^{-1}\f$. Element \f$g\f$ is given 
- as an array of five 32-bit integers.
-*/
-// %%EXPORT px
-void mm_group_n_inv_element(uint32_t *g)
-{
-    uint32_t g2[5], i;
-    mm_group_n_clear(g2);
-    mm_group_n_mul_inv_element(g2, g);
-    for (i = 0; i < 5; ++i) g[i] = g2[i];
-}
-
-
-
-/**
- @brief Conjugate \f$g \in N_0\f$ with \f$g_1 \in N_0\f$.
-
- Put \f$g = g_1^{-1} \cdot g \cdot g_1\f$. Elements  
- \f$g\f$ and \f$g_1\f$ are given as an array of five 32-bit integers.
-
-*/
-// %%EXPORT px
-void mm_group_n_conjugate_element(uint32_t *g, uint32_t *g_1)
-{
-    uint32_t g2[5];   // beware of overlapping of g and g_1.
-    mm_group_n_copy_element(g_1, g2);
-    mm_group_n_inv_element(g2);
-    mm_group_n_mul_element(g2, g);
-    mm_group_n_mul_element(g2, g_1);
-    mm_group_n_copy_element(g2, g);
-}
-
-
-/**
  @brief Set \f$g \in N_0\f$ to the value of the neutral element.
 
- Put \f$g = 1\f$.  Element   
- \f$g\f$ is given as an array of five 32-bit integers.
+ Put \f$g = 1\f$.  Element  \f$g\f$ of  \f$N_0\f$ is given as
+ an array of five 32-bit integers.
 */
 // %%EXPORT px
 void mm_group_n_clear(uint32_t *g)
-// Set g to neutral element of the group N.
 {
     g[0] = g[1] = g[2] = g[3] = g[4] = 0; 
 }
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void mm_group_n_copy(uint32_t *g_1, uint32_t *g_2)
+// Copy the element \f$g_1\f$ of \f$N_0\f$ to \f$g_2\f$.
+// Elements \f$g_1, g_2\f$ of \f$N_0\f$ are given as arrays 
+// of five 32-bit integers.
+{
+    g_2[0] = g_1[0]; g_2[1] = g_1[1]; g_2[2] = g_1[2];
+    g_2[3] = g_1[3]; g_2[4] = g_1[4]; 
+}
+
+
+static inline void mm_group_n_mul(uint32_t *g, uint32_t *g_1)
+// Put \f$g = g \cdot g_1\f$. Elements  \f$g\f$ and \f$g_1\f$ of
+// \f$N_0\f$ are given as arrays of five 32-bit integers.
+// \These two arrays must not overlap.
+{
+    mm_group_n_mul_t(g, g_1[I_t]);
+    mm_group_n_mul_y(g, g_1[I_y]);
+    mm_group_n_mul_x(g, g_1[I_x]);
+    mm_group_n_mul_delta_pi(g, g_1[I_d], g_1[I_pi]);
+}
+
+
+
+static inline void mm_group_n_mul_inv(uint32_t *g, uint32_t *g_1)
+// Put \f$g = g \cdot g_1^{-1}\f$. Elements \f$g\f$ and \f$g_1\f$ 
+// are given as arrays of five 32-bit integers.
+// These two arrays must not overlap.
+{
+    mm_group_n_mul_inv_delta_pi(g, g_1[I_d], g_1[I_pi]);
+    mm_group_n_mul_x(g, g_1[I_x] 
+        ^ (MAT24_THETA_TABLE[(g_1[I_x]) & 0x7ff] & 0x1000));
+    mm_group_n_mul_y(g, g_1[I_y] 
+        ^ (MAT24_THETA_TABLE[(g_1[I_y]) & 0x7ff] & 0x1000));
+    mm_group_n_mul_t(g, 3 - g_1[I_t]);
+}
+
+
+/// @endcond  
+
+
+
+/**
+ @brief Copy the element \f$g_1\f$ of \f$N_0\f$ to \f$g_2\f$.
+ 
+  Elements \f$g_1, g_2\f$ of \f$N_0\f$ are given as arrays
+  of five 32-bit integers.
+
+*/
+// %%EXPORT px
+void mm_group_n_copy_element(uint32_t *g_1, uint32_t *g_2)
+{
+    uint32_t g[5];
+    mm_group_n_copy(g_1, g);
+    mm_group_n_copy(g, g_2);
+}
+
+
+
+
+/**
+ @brief Multiply elemnts of the group  \f$ N_0\f$.
+
+ Put \f$g_3 = g_1 \cdot g_2\f$. Elements  \f$g_1, g_2, g_3\f$
+ of \f$N_0\f$ are given as an array of five 32-bit integers.
+ 
+ These arrays may overlap.
+*/
+// %%EXPORT px
+void mm_group_n_mul_element(uint32_t *g_1, uint32_t *g_2, uint32_t *g_3)
+{
+    uint32_t g[5];
+    mm_group_n_copy(g_1, g);
+    mm_group_n_mul(g, g_2);
+    mm_group_n_copy(g, g_3);
+}
+
+
+/**
+ @brief Multiply \f$g_1 \in N_0\f$ with \f$g_2^{-1} \in N_0\f$.
+
+ Put \f$g_3 = g_1 \cdot g_2^{-1}\f$. Elements \f$g_1, g_2, g_3\f$
+ of \f$N_0\f$ are given as arrays of five 32-bit integers.
+
+ These arrays may overlap.
+*/
+// %%EXPORT px
+void mm_group_n_mul_inv_element(uint32_t *g_1, uint32_t *g_2, uint32_t *g_3)
+// These two arrays may overlap.
+{
+    uint32_t g[5];
+    mm_group_n_copy(g_1, g);
+    mm_group_n_mul_inv(g, g_2);
+    mm_group_n_copy(g, g_3);
+}
+
+
+
+/**
+ @brief Invert an element \f$g_1\f$ of \f$N_0\f$.
+
+ Put \f$g_2 = g_1^{-1}\f$. Elements \f$g_1, g_2\f$ of \f$N_0\f$
+ are given as arrays of five 32-bit integers.
+
+ These arrays may overlap.
+*/
+// %%EXPORT px
+void mm_group_n_inv_element(uint32_t *g_1, uint32_t *g_2)
+{
+    uint32_t g[5];
+    g[0] = g[1] = g[2] = g[3] = g[4] = 0; 
+    mm_group_n_mul_inv(g, g_1);
+    mm_group_n_copy(g, g_2);
+}
+
+
+
+/**
+ @brief Conjugate \f$g_1 \in N_0\f$ with \f$g_2 \in N_0\f$.
+
+ Put \f$g_3 = g_2^{-1} \cdot g_1 \cdot g_2\f$.
+ Elements  \f$g_1, g_2, g_3\f$ of \f$N_0\f$
+ are given as arrays of five 32-bit integers.
+
+ These arrays may overlap.
+*/
+// %%EXPORT px
+void mm_group_n_conjugate_element(uint32_t *g_1, uint32_t *g_2, uint32_t *g_3)
+{
+    uint32_t g[5];
+    g[0] = g[1] = g[2] = g[3] = g[4] = 0; 
+    mm_group_n_mul_inv(g, g_2);
+    mm_group_n_mul(g, g_1);
+    mm_group_n_mul(g, g_2);
+    mm_group_n_copy(g, g_3);
+}
+
+
 
 
 /// @cond DO_NOT_DOCUMENT 
