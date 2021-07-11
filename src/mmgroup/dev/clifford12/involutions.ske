@@ -159,20 +159,17 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 /**
    @brief Compute invariant spaces for an involution in \f$G_{x0}\f$
 
-   TODO: Documentation yet to be improved!!!
-
-
-   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in the
-   array given by parameter ``elem``. Let \f$\Lambda_2\f$ be the
-   Leech lattice mod 2, with vectors in \f$\Lambda_2\f$ coded
-   in **Leech lattice encoding** as usual. Conjugation by \f$g\f$ is a
-   linear operation on  \f$\Lambda_2\f$, since the vectors
+   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in
+   the array given by parameter ``elem``. Let \f$\Lambda_2\f$ be
+   the Leech lattice mod 2, with vectors in \f$\Lambda_2\f$ coded
+   in **Leech lattice encoding** as usual. Conjugation by \f$g\f$
+   is a linear operation on  \f$\Lambda_2\f$, since the vectors
    in \f$\Lambda_2\f$ correspond to the elements of the normal
    subgroup \f$Q_{x0}\f$ of structure \f$2^{1+24}\f$ (modulo the
-   centre of \f$G_{x0}\f$). Let \f$A = A(g)\f$ be the \f$24 \times 24\f$
-   bit matrix that performs this operation on \f$\Lambda_2\f$ by
-   right multiplication. Put  \f$A_1 = A - 1\f$, and let
-   \f$I_1\f$ be the iamge of matrix  \f$A_1\f$. 
+   centre of \f$G_{x0}\f$). Let \f$A = A(g)\f$ be
+   the \f$24 \times 24\f$ bit matrix that performs this operation
+   on \f$\Lambda_2\f$ by right multiplication. Put \f$A_1 = A - 1\f$,
+   and let \f$I_1\f$ be the image of matrix  \f$A_1\f$.
 
    In this function we require that the image of \f$g\f$ in the
    factor group  \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order
@@ -180,66 +177,76 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    equivalent to \f$A^2 = 1\f$, and also to \f$A_1^2 = 0\f$. If
    this is the case the we have:
 
-   \f$(\ker A_1)^\perp = I_1  \subset \ker A_1 = (I_1)^\perp\f$. 
+   \f$(\ker A_1)^\perp = I_1  \subset \ker A_1 = (I_1)^\perp\f$.
 
-   Any element \f$v \in \ker A_1\f$ is invariant under \f$g\f$, and so
-   the corresponding element in \f$Q_{x0}\f$ is invariant up to sign.
-   The elements of \f$Q_{x0}\f$ invariant under  \f$g\f$ (modulo
-   the center of \f$Q_{x0}\f$) form a subspace\f$(\ker A_1)^+\f$ 
-   of \f$\ker A_1\f$ of codimension \f$0\f$ or \f$1\f$. 
-   Let  \f$(I_1)^+\f$ be the orthogonal complement 
-   of  \f$(\ker A_1)^+\f$. Then  \f$I_1\f$ has the 
-   same codimension in  \f$(\ker A_1)^+\f$. The purpose of this
-   function is to compute the smaller of the two 
-   spaces  \f$(I_1)^+\f$ or \f$\ker A_1\f$.
+   Any element \f$v \in \ker A_1\f$ is invariant under \f$g\f$, and
+   so the corresponding element in \f$Q_{x0}\f$ is invariant up to
+   sign. The elements of \f$Q_{x0}\f$ invariant under \f$g\f$ (modulo
+   the center of \f$Q_{x0}\f$) form a subspace \f$(\ker A_1)^+\f$
+   of \f$\ker A_1\f$ of codimension \f$0\f$ or \f$1\f$.
+   Let \f$(I_1)^+\f$ be the orthogonal complement
+   of \f$(\ker A_1)^+\f$. Then \f$I_1\f$ has the same codimension
+   in \f$(\ker A_1)^+\f$. The purpose of this function is to compute
+   a basis of the smaller of the two spaces \f$(I_1)^+\f$
+   or \f$\ker A_1\f$.
 
-   We use the follwing column bits of the output matrix
+   We compute an output matrix in the array ``invar`` and return the
+   number ``k`` of rows of that matrix in case of success.
+   We use the following column bits of the output matrix.
     
    23,...,0:   Basis vector \f$v_i\f$ of \f$I_1\f$ or \f$(I_1)^+\f$
 
    55,...,32:  Preimage (under \f$A_1\f$) of basis vector \f$v_i\f$,
                undefined if \f$v_i \notin I_1\f$
    
-   28:         A nozero bit in row 0 indicates an error.
+   27:         Here a nonzero bit in row 0 indicates an error.
    
 
-   In bits 24,...,26  of the output matrix we return the following 
-   linear forms of the basis vectors:
+   In bits 24,...,26  of the output matrix we return the following
+   linear forms on the space spanned by basis vectors:
 
    Case 1:  \f$I_1 = (I_1)^+\f$ or \f$I_1 = \ker A_1 \f$
 
-   Then we return a basis of \f$I_1\f$.
+   Then we return a basis of \f$I_1\f$ and we have \f$k = 12\f$
    
-   Bit 26:    0
+   Bit 26:  0
 
-   Bit 25:    type of basis vector (modulo 2).
+   Bit 25:  type of basis vector (modulo 2)
 
-   Bit 24:    sign of basis vector in \f$I_1\f$
+   Bit 24:  sign of basis vector in \f$I_1\f$
 
    Case 2:  \f$I_1 \neq (I_1)^+\f$ and  \f$I_1 \neq \ker A_1 \f$
 
-   Then we return a basis of \f$(I_1)^+\f$.
+   Then we return a basis of \f$(I_1)^+\f$ and we
+   have \f$k =\in \{ 0, 1, 8, 9\}\f$.
 
-   Bit 26:    0 iff basis vector  is in \f$I_1\f$
+   Bit 26:  0 if and only if the basis vector  is in \f$I_1\f$
 
-   Bit 25:    0 
+   Bit 25:  0
 
-   Bit 24:    sign of basis vector if vector is in \f$I_1\f$
-              type of basis vector (mod 2) otherwise
+   Bit 24:  sign of the basis vector if the vector is in \f$I_1\f$,
+            and type of the basis vector (mod 2) otherwise
 
 
-   Bits 26,...,0  are  echelonized, so that bit 26 may be set in
-   row 0 only.
+   Parameter ``invar`` must be an array of length 12. Zero lines
+   are appeded to that array so that its length will be 12.
 
-   TODO: document special echelonization of basis vector!!!
- 
-   Parameter ``invar`` must be an array of length 12. Zero lines are
-   appeded to that array so that its length will be 12.
+   The function returns the dimension ``k`` of the computed basis,
+   and a negative value in case of error. The return value
+   ERR_QSTATE12_GX0_BAD_ELEM means that that the image of \f$g\f$
+   in \f$\mbox{Co}_1\f$ has order greater than \f$2\f$.
 
-   The function returns the dmenstion of the returned basis, and a 
-   negative value in case of error. The return value 
-   ERR_QSTATE12_GX0_BAD_ELEM means that that the image of \f$g\f$ in 
-   the \f$\mbox{Co}_1\f$ has order grater than f$2\f$.
+   Bits 26,...,0  of the output matrix are echelonized in a special
+   way.  Here the columns are processed in the order: 
+
+   26, 25, 24, 11, 22, 21, ..., 13, 12, 10, 9, ..., 1, 0, 23.
+
+   One of the advantages of this echelonization is that the
+   vector \f$\Omega\f$ (encoded as 0x800000) will occur in the
+   basis if it is in the subspace, and that there are many even
+   vectors (i.e. vectors orthogonal to \f$\Omega\f$) in the basis.
+   Also, bits 26, 25, 24 may be nonzero at most in the first two
+   columns of the output matrix.
 */
 // %%EXPORT px
 int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
@@ -377,8 +384,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 
 
 final_echelonize:
-    // Echelonize the final result
-    // Comment this later!!
+    // Echelonize the final result as documented above.
     bitmatrix64_xch_bits(invar, n, 12, 0x800);
     bitmatrix64_rot_bits(invar, n, 1, 12,0);
     bitmatrix64_echelon_h(invar, n, 27, 27);
@@ -735,7 +741,7 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 
    A negative value indicates an error. Here
    ERR_QSTATE12_GX0_BAD_ELEM means that no further simplification
-   is possble.
+   is possible.
 
 */
 // %%EXPORT px

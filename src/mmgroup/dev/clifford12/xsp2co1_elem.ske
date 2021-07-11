@@ -65,8 +65,8 @@ int32_t xsp2co1_elem_to_N0(uint64_t *elem, uint32_t *g)
    uint32_t a[10], atom;
    int32_t len_a, i;
    len_a = xsp2co1_elem_to_word(elem, a);
-   mm_group_n_clear(g);
    if (len_a < 0) return len_a;
+   mm_group_n_clear(g);
    for (i = 0; i < len_a; ++i) {
        atom = mm_group_n_mul_atom(g, a[i]);
        if (atom) return ERR_QSTATE12_GX0_BAD_ELEM;
@@ -93,7 +93,7 @@ int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 {
    uint32_t g1[5], len_g;
    mm_group_n_reduce_element(g);
-   if (g[0] & 0xfffffff) return ERR_QSTATE12_GX0_BAD_ELEM;
+   if (g[0]) return ERR_QSTATE12_GX0_BAD_ELEM;
    len_g = mm_group_n_to_word(g, g1);
    return xsp2co1_set_elem_word(elem, g1, len_g);
 }
@@ -105,17 +105,16 @@ int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 /**
    @brief Conjugate element of \f$G_{x0}\f$ by an element of monster group.
    
-   Let \f$g \in G_{x0}\f$ be stored in the array ``elem1``
+   Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
    in **G_x0 representation**. Let \f$w\f$ be a word in the 
    generators of  the monster group  of length ``n``. \f$w\f$ is 
    stored in the array ``a``, and each entry of ``a`` encodes a 
    generator of the monster group described in 
    file ``mmgroup_generators.h``.
 
-   The function tries to replace  \f$g\f$ by \f$h = w^{-1} g w\f$.
-   THe function succeeds if  \f$h\f$ is in \f$G_{x0}\f$ and for any 
-   prefix \f$w_i\f$ of the word \f$w\f$ we 
-   have  \f$w_i^{-1} g w_i \in G_{x0} \cup N_0\f$.
+   The function tries to replace  \f$g\f$ by \f$h = w^{-1} g w\f$. The
+   function succeeds if for any prefix \f$w_i\f$ of the word \f$w\f$ we 
+   have \f$w_i^{-1} g w_i \in G_{x0}\f$.
 */
 // %%EXPORT px
 int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
@@ -123,7 +122,7 @@ int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
     int_fast32_t  res, k;
     uint32_t a_N[5], e_N[5];
     uint64_t elem_a[26];
-   
+
     while (n) {
         k = xsp2co1_set_elem_word_scan(elem_a, a, n);
         if (k < 0) return k;
