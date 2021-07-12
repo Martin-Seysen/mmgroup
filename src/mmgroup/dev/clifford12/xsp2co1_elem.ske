@@ -60,6 +60,7 @@ extern "C" {
    and ``ERR_QSTATE12_GX0_BAD_ELEM`` if \f$g\f$  is not
    and \f$N_0\f$.
 */
+// %%EXPORT px
 int32_t xsp2co1_elem_to_N0(uint64_t *elem, uint32_t *g)
 {
    uint32_t a[10], atom;
@@ -89,6 +90,7 @@ int32_t xsp2co1_elem_to_N0(uint64_t *elem, uint32_t *g)
    and ``ERR_QSTATE12_GX0_BAD_ELEM`` if \f$g\f$  is not
    in \f$G_{x0}\f$.
 */
+// %%EXPORT px
 int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 {
    uint32_t g1[5], len_g;

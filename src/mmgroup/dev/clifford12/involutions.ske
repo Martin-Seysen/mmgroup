@@ -107,7 +107,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
    The basis \f$B = b_0\ldots, b_{23}\f$ is stored in the array ``b``.
 
    We require \f$k \leq 24\f$. The function returns \f$m \geq 0\f$
-   in case of success anegative value in case of failure.
+   in case of success a negative value in case of failure.
 */
 // %%EXPORT px
 int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
@@ -175,7 +175,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    factor group  \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order
    1 or 2; othereise the function fails. That condition is
    equivalent to \f$A^2 = 1\f$, and also to \f$A_1^2 = 0\f$. If
-   this is the case the we have:
+   this is the case then we have:
 
    \f$(\ker A_1)^\perp = I_1  \subset \ker A_1 = (I_1)^\perp\f$.
 
@@ -186,7 +186,7 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
    of \f$\ker A_1\f$ of codimension \f$0\f$ or \f$1\f$.
    Let \f$(I_1)^+\f$ be the orthogonal complement
    of \f$(\ker A_1)^+\f$. Then \f$I_1\f$ has the same codimension
-   in \f$(\ker A_1)^+\f$. The purpose of this function is to compute
+   in \f$(I_1)^+\f$. The purpose of this function is to compute
    a basis of the smaller of the two spaces \f$(I_1)^+\f$
    or \f$\ker A_1\f$.
 
@@ -207,7 +207,8 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 
    Case 1:  \f$I_1 = (I_1)^+\f$ or \f$I_1 = \ker A_1 \f$
 
-   Then we return a basis of \f$I_1\f$ and we have \f$k = 12\f$
+   Then we return a basis of \f$I_1\f$, and we 
+   have \f$k = \dim I_1 = \dim (I_1)^+ \in \{0, 8, 12\}\f$
    
    Bit 26:  0
 
@@ -217,8 +218,8 @@ int32_t xsp2co1_orthogonal_complement(uint64_t *a, uint64_t *b, uint32_t k)
 
    Case 2:  \f$I_1 \neq (I_1)^+\f$ and  \f$I_1 \neq \ker A_1 \f$
 
-   Then we return a basis of \f$(I_1)^+\f$ and we
-   have \f$k =\in \{ 0, 1, 8, 9\}\f$.
+   Then we return a basis of \f$(I_1)^+\f$, and we
+   have \f$k - 1 = \dim (I_1)^+ - 1 = \dim I_1 \in \{0, 8\}\f$.
 
    Bit 26:  0 if and only if the basis vector  is in \f$I_1\f$
 
@@ -408,22 +409,42 @@ final_echelonize:
 /**
    @brief Compute some orthogonal complement for involution invariants
 
-   TODO: document this!!!
+   Let \f$g\f$ be an element of the group \f$G_{x0}\f$ such
+   that the image of \f$g\f$ in \f$\mbox{Co}_1\f$ has order 1
+   or 2. For that element \f$g\f$, let \f$A, A_1\f$,
+   and \f$I_1\f$ be as in function ``xsp2co1_involution_invariants``.
 
-   Let \f$g\f$ be the element of the group \f$G_{x0}\f$,
-   and for that element \f$g\f$  
-   let \f$A, A_1, I_1\f$, and \f$(I_1)^+\f$
-   be as in function ``xsp2co1_involution_invariants``. 
+   In this function the input parameter ``invar`` must be equal to
+   the  output ``invar`` of function ``xsp2co1_involution_invariants``
+   applied to the element \f$g\f$.
 
-   Here input parameter ``invar`` must be the output ``invar`` 
-   of function ``xsp2co1_involution_invariants`` applied to the
-   element \f$g\f$.
+   There is a nondegenerate bilinear
+   form \f$ \langle \langle .,. \rangle \rangle\f$ on  \f$I_1\f$
+   given by
 
-   We return a ``nice`` type-4 vector in \f$(I_1)^+\f$, if
-   any type-4 vector exists in \f$(I_1)^+\f$; otherwise we
-   return 0.
+   \f$\langle \langle x,y \rangle \rangle = \langle \pi(x),y \rangle\f$,
 
-   Preliminary!! This is subject to change. 
+   where \f$\pi(x)\f$ is any preimage of \f$x\f$ under \f$A_1\f$,
+   and \f$\langle .,. \rangle\f$ is the scalar product on the
+   Leech lattice modulo 2. The
+   form \f$\langle \langle .,. \rangle \rangle \f$ is also called
+   the **Wall parametrization**, see [Wal63]. If  the image
+   of \f$g\f$ in \f$\mbox{Co}_1\f$ has order at most two then
+   the Wall parametrization is a symmetric bilinear form.
+
+   The function computes the orthogonal complement \f$v\f$ of a
+   linear form \f$l\f$ on the Leech lattice modulo 2 under the Wall
+   parametrization. Then \f$v\f$ is a vector in the Leech lattice
+   modulo two. If parameter ``col`` is 0 or 1 then we let
+   \f$l\f$ be the linear form in column ``col + 25`` of
+   matrix ``invar``.
+
+   The function returns \f$v\f$ in case of success and a negative
+   value in case of failure.
+
+   [Wal63] G. E. Wall. On the conjugacy classes in the unitary,
+   symplectic and orthogonal groups.
+   J. Australian Math. Soc. 3, pp 1–63, 1963.
 */
 // %%EXPORT px
 int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
@@ -446,7 +467,7 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
    }
    if (n == 0) return 0;
    // Now the relevant rows of a are pA[j], 0 <= j < n;
-   // Let A be the relevant part of the kernel in a
+   // Let A be the relevant part of the image \f$I_1\f$ in a
    // and P be the relevant part of the preimage of A
    // A is in columns 23,...,0 and P is in columns 55,...,32.
 
@@ -472,7 +493,7 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
    bitmatrix64_mul(M, T, n, 24, M);
 
    // Put M = J, with J = ( A * Q * P^T) ** (-1);
-   // abort if inverse dose not exist.
+   // abort if that inverse dose not exist.
    if (bitmatrix64_inv(M, n) < 0) return ERR_QSTATE12_REP_GX0;
 
    // Put v = c * J
@@ -498,51 +519,46 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
 
 /** @brief  List all vectors in an affine space.
 
-    Let ``a``  = \f$a_0,...,a_{n-1}\f$ be a matrix of bit vectors and 
-    let \f$a_a\f$  be the bit vector stored in ``aa``. Let 
+    Let ``a``  = \f$a_0,...,a_{k-1}\f$ be a matrix of bit vectors,
+    and let \f$a_a\f$  be the bit vector stored in ``aa``. Let 
 
-    \f$b_m = a_{a} + \sum_{i = 0}^{k-1} \cdot m_i a_{n-1-i}\f$,
+    \f$b_m = a_{a} + \sum_{i = 0}^{k-1} \cdot m_i a_{k-1-i}\f$,
 
     where \f$m_{k-1},\ldots,m_0\f$ is the binary representation
     of \f$m\f$.
     
     We write \f$b_m\f$ to ``b[m]`` for \f$0 \leq m < 2^k\f$.
-    We change \f$k\f$ to \f$\max(0, \min(24, n ,k))\f$ and 
-    return the changed value \f$k\f$.   
 */
-static inline uint32_t expand_affine(
-    uint64_t *a, uint32_t n, int32_t k, uint64_t a0, uint32_t *b
+static inline void expand_affine(
+    uint64_t *a, uint32_t k, uint64_t aa, uint32_t *b
 )
 {
-    uint32_t exp, i, j, v;
-    b[0] = (uint32_t)(a0);
-    if (k <= 0) return 0;
-    if ((uint32_t)k > n) k = n;
-    if (k > 24) k = 24;
+    uint_fast32_t exp, i, j, v;
+    b[0] = (uint32_t)(aa);
     exp = 1;
-    for (i = 0; i < (uint32_t)k; ++i) {
+    for (i = 0; i < k; ++i) {
         v = (uint32_t)(a[k-i-1]);
         for (j = 0; j < exp; ++j) b[exp + j] = v ^ b[j];
         exp <<= 1;
     }
-    return k;              
 }
 /// @endcond 
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
-/** @brief yet to be documented.
+/** Find a **nice** type-2 or type-4 vector in subset of Leech lattice mod 2
 
-    Here ``a`` is a sequence of three arrays ``a0, a1,`` and ``a2``
-    of elements of the Leech lattice mod 2
-    of length ``n0, n1,`` and ``n2`` respectively. ``a0`` and ``a1,``
-    are input arrays and ``a2`` is an output array.
+    Here ``a`` is a sequence of three concatenated arrays ``a0, a1,`` 
+    and ``a2`` of elements of the Leech lattice mod 2
+    of length ``n0, n1,`` and ``n2`` respectively. ``a0`` and ``a1``
+    are input arrays, and ``a2`` is an output array.
 
     The function runs through all vectors ``a0[i0] + a1[i1]``
     with ``0 <= i0 < n0`` and ``0 <= i1 < n1``. Let ``V`` be
-    the set of these vectors. All vectors in the set ``V``
-    must be of Leech lattice type 0, 2, or 4; otherwise the function
+    the set of these vectors. All vectors in the set ``V`` must
+    be of Leech lattice type 0, 2, or 4; otherwise the function
     computes garbage.
 
     If ``n2`` is zero then the function returns a type-4 vector
@@ -550,12 +566,13 @@ static inline uint32_t expand_affine(
 
     If ``n2`` is positive then the function stores up to
     ``n2`` vectors of type 2 in the array ``a2`` and pads that
-    array with zero vectors. The it  returns 0.
+    array with zero vectors. Then the function returns the 
+    number of type-2 vectors found.
 
     The function tries to find a **nice** type-4 vector, provided
     that the input has been echelonized properly (as e.g. in
-    function ``xsp2co1_involution_invariants``) and expanded properly
-    as e.g. in function ``xsp2co1_involution_find_type4``. 
+    function ``xsp2co1_involution_invariants``) and expanded 
+    properly as e.g. in function ``uint32_t expand_affine``. 
 */
 // %%EXPORT px
 uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t n2)
@@ -573,12 +590,14 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
            // let v be the word to be analyzed
            v = (a[i0] ^ a1) & 0xffffff;
 
+           // Next we put is_type4 = 1 if v is of type 4, is_type4 = 0
+           // v is of type 2, and continue the loop if v is of type 0.
            if (v & 0x800UL) {
-                // Deal with odd cocode words
+                // Deal with an odd cocode word
                 uint_fast32_t theta, tab, gcode;
-                // Return a pre-stored even vector if present 
-                // and if n2 is zero.
-                if (v_out && n2 == 0) break;
+                // Return a pre-stored even vector v_out of type 4 
+                // if present and if n2 is zero.
+                if (v_out && find_type4) return v_out & 0xffffff;
                 // Otherwise we'll have to check the odd vector v
                 gcode = (v >> 12);
                 theta = MAT24_THETA_TABLE[gcode & 0x7ff] ^ v;
@@ -589,10 +608,10 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
             } else if ((v & 0x7ff000L) == 0) {
                 // Deal with Golay code word 0 and even cocode word
                 uint_fast32_t basis0, tab, b0, b1;
-                // First reject the zero word
+                // First reject the zero vector v
                 if (v == 0) continue;
 
-                // Let basis0 = cocode vector, flip bit 0 in cocode
+                // Let basis0 = cocode vector, flip bit 0 in basis0
                 basis0 = MAT24_RECIP_BASIS[0] ^ v;            
                 // Let tab be the syndrome table entry for the cocode
                 // part XORed with basis vector 0. 
@@ -606,26 +625,27 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
                 is_type4 = b0 ^ b1; 
             } else if (mat24_def_not_nonstrict_octad(v >> 12) == 0) {
                 uint_fast32_t vect, w0, lsb, theta, tab, syn, b0, b1;
-                // Deal with code word that are octads
-                // let vect = Golay code in vector representation
-                vect = mat24_gcode_to_vect((v >> 12) & 0x7ff);
-                // Put  w0 =  weight(code word) / 8     (mod 2);
-                // so w0 is True iff the Golay code word is an octad.
+                // Deal with a Golay code word that is an octad.
+                // Let vect = Golay code in vector representation
+                vect = mat24_gcode_to_vect((v >> 12) & 0xfff);
+                // Put  w0 =  weight(code word) / 8     (mod 2); so w0
+                // is True iff the Golay code word is really an octad.
                 theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
                 w0 = ((theta >> 13) ^ (v >> 23)) & 1;  
                 // Complement vect if it is not an octad
                 vect ^= w0 - 1;
                 // Let lsb be the least significant bit of vect
                 lsb = mat24_def_lsbit24(vect);
-                // Adjust theta to be the odd cocode word correspodning
-                // to ``v``  bit at position ``lsb`` set 
-                // with the octad `vect` in `lsb` if it has length 4.
+                // Adjust theta to be the odd cocode word corresponding
+                // to ``v``  bit at position ``lsb`` flipped.
                 theta ^= v ^ MAT24_RECIP_BASIS[lsb];
             
-                // Let tab be the table entry for the cocode part XORed
+                // Let ``tab`` be the table entry encoding bits 
+                // (i1, i2, i3) of the code word ``theta`` with
+                // i2 = i3 = 24, if bot, i2 and i3, are not present.
                 // with basis vector ``lsb`` flipped 
                 tab = MAT24_SYNDROME_TABLE[(theta) & 0x7ff];
-                // Compute cocode syndrome from tab
+                // Compute cocode syndrome from that table entry
                 syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
                                 ^ (1 << ((tab >> 10) & 31));
                 // v has type 4 if  syndrome is not a subword of ``vect``
@@ -639,39 +659,40 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
                 // Put b0 = 1 if cocode word has length 0 or 4 
                 // Put b0 = 0 if cocode word has length 2 
                 b0 ^= b1;
-                // ``v`` may be of type 2 if length/2 != w0 (mod 2)
+                // ``v`` may be of type 2 if length/2 != w0 (mod 2),
+                // i.e if b0 != w0.
                 is_type4 |= b0 ^ w0;
             } else  {
                 // Deal with docecad:
                 // Since no dodecad is of type 2, we save the first dodecad
                 // found and wait for something better to come.
-                // We might put is_type4 = True here.
+                // We could have put is_type4 = True here.
                 if (v_out == 0) v_out = v;
                 continue;
             } ;
             // Continue when searching for type 4 and found type 2 
             // or vice versa
             if (find_type4 != is_type4) continue;
-            // Otherwise done if found a type-4 vector
+            // Otherwise done if we have found a type-4 vector
             if (is_type4) return v;
-            // .. and store a type-2 vector if found and yet 
+            // .. and store a type-2 vector if found and there is yet 
             // enough space.
             if (i2 < n2) pv2[i2++] = v;
        }
    }
-   // When searching for type 4 a dodecad has been found then
-   // return that dodecad. Otherwise return zero.
-   return find_type4 ? v_out : 0;
+   // When searching for type 4 and a dodecad has been found then
+   // return that dodecad. Otherwise return the number of type-2
+   // vectors found.
+   return find_type4 ? v_out : i2;
 }
 
+/// @endcond 
 
 
 
 
 /**
    Find type-4 vector in a space computed by ``xsp2co1_involution_invariants``. 
-
-   TODO: document this!!!
 
    Let \f$g\f$ be the element of the group \f$G_{x0}\f$,
    and for that element \f$g\f$ and
@@ -680,23 +701,25 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
 
    Here input parameter ``invar`` must be the output ``invar`` 
    of function ``xsp2co1_involution_invariants`` applied to the
-   element \f$g\f$.
+   element \f$g\f$. This function is successful in case
+   \f$\dim I_1 = 8\f$ only.
 
-   In case ``coset = 0`` we return a **nice** type-4 vector 
-   in \f$(I_1)^+\f$, if any type-4 vector exists in \f$(I_1)^+\f$; 
-   otherwise we return 0.
+   In case ``coset == 0`` we return a type-4 vector the
+   space \f$I_1\f$. If no such vector exists then we return 0.
 
-   TODO: Document the case ``coset = 1``!!!
-
-   Preliminary!! This is subject to change. 
+   In case ``coset == 1`` we return a type-4 vector that
+   is a sum of two type-2 vectors in the
+   space \f$(I_1)^+ \setminus I_1\f$. If no such vector exists 
+   then we return 0. In this case we use the fact that the space 
+   of the relevant type-2 vectors is an affine subspace 
+   of \f$(I_1)^+\f$, and that any two such vectors are 
+   orthogonal in the Leech lattice, unless equal or opposite. 
 */
 // %%EXPORT px
 int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 {
    uint64_t *pInv;
-   uint32_t n, n0, n1, a[49], v;
-
-   coset = coset ? 0xffffff : 0; 
+   uint32_t n, a[48], v;
 
    // Abort if ``invar`` is erroneous.
    if (invar[0] & 0x8000000) return 0;
@@ -705,44 +728,77 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
    n = 12;
    while (n > 0 && (invar[n-1] & 0xffffff) == 0) --n;
 
-   // Delete leading zero rows of matrix ``invar`` which are not
-   // in  \f$(I_1)^+\f$ or have odd scalar product with
-   // the vector \f$\Omega\f$ in the Leech lattice.
+   // Put pInv = invar, and delete leading rows of matrix ``pInv`` 
+   // which are not in \f$I_1\f$. 
    pInv = invar;
-   while (n > 0 && (pInv[0] && 0xf000800) != 0) { 
+   while (n > 0 && (pInv[0] && 0xf000000) != 0) { 
        ++pInv; --n;
    }
-   // Now the relevant space V is generated py pInv[i], 0 <= i < 8
-
-   // Abort if V is has dimension 0, and delete leading rows 
-   // of generating rows of V until V has dimension <= 8.
-   if (n == 0) return 0;
-   while (n > 8) { 
-       ++pInv; --n;
-   }
-   
-   n0 = expand_affine(pInv, n, 4, coset & invar[0], a);
-   if (n - n0 > 4) return 0;
-   n1 = expand_affine(pInv, n - n0, n - n0, 0, a);
-
-   v = xsp2co1_involution_sub_find_type(a, 1 << n0, 1 << n1, coset & 16);  
-
+   // Abort if the dimension n of pInv is not 8.
+   if (n != 8) return 0;
+   // Now the relevant space V is generated py pInv[i], 0 <= i < 8.
+ 
+   // Let V_1 =  V + coset * invar[0]. Store vectors in 
+   // A0 = (a[0],..,a[15]) and A1 = (a[16],..,a[31]) such that
+   // V_1 = {x0 + x1, x0 \in A0, x1 \in A1}. 
+   expand_affine(pInv, 4, coset ? invar[0] : 0, a + 16);
+   expand_affine(pInv + 4, 4, 0, a);
+ 
+   // If coset == 0 then return a type-4 vector in V_1.
+   // Otherwise store the type-2 vectors in V_1 in the
+   // array A2 =  (a[32],..,a[47]).
+   v = xsp2co1_involution_sub_find_type(a, 16, 16, coset ? 16 : 0);  
    if (coset == 0) return v;
 
-   a[48] = a[32];
-   return xsp2co1_involution_sub_find_type(a, 16, 1,0); 
+   // Here coset must be True.  Abort if less than 16 type-2 
+   // vectors (s_0,...,s_15) have been found
+   if (v < 16) return 0;
+
+   // Return a vector v_i = s_0 + s_i, 0 <= i < 16; if v_i is 
+   // of type 4; abort if no such v_i has been found.
+   a[31] = a[32];
+   return xsp2co1_involution_sub_find_type(a + 31, 1, 16, 0); 
 }
 
 
 
 /** 
-   TODO: Improve documentation
+   Try to simplify an involution in \f$G_{x0}\f$ via conjugation
 
+   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored
+   in the array given by parameter ``elem``. In this function
+   we require that the image of \f$g\f$ in the factor
+   group \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order 1 or 2;
+   othereise the function fails.
 
-   A negative value indicates an error. Here
-   ERR_QSTATE12_GX0_BAD_ELEM means that no further simplification
-   is possible.
+   Let \f$\Lambda_2\f$ be the Leech lattice mod 2, with vectors 
+   in \f$\Lambda_2\f$ coded in **Leech lattice encoding** as 
+   usual. Let \f$\Omega\f$ be the standard frame in \f$\Lambda_2\f$.
 
+   Then the function tries to find a vector  \f$v \in \Lambda_2\f$
+   with the following property:
+
+   For any \f$h \in G_{x0}\f$ with \f$v \cdot h = \Omega\f$ we have
+   \f$h^{-1} g h \in  N_{x0}\f$.
+
+   The function returns \f$v\f$ in case of success and a negative
+   value in case of an error. It returns ``ERR_QSTATE12_GX0_BAD_ELEM``
+   if no suitable vector \f$v\f$ has been found.
+
+   The function succeeds if the following two conditions hold:
+
+    -  \f$g\f$ is in class 1A, 2A, 2B or 4A of the monster group
+
+    -  \f$g^2\f$ is in subgroup \f$Q_{x0}\f$ of \f$G_{x0}\f$.
+
+   In these two cases there is also a power \f$\tau^e\f$ of the
+   triality element \f$\tau\f$  with
+
+   \f$\tau^{-e} h^{-1} g h \tau^e \in  Q_{x0}\f$.
+
+   Caution:
+
+   The last statement has been checked for classes 1A, 2A and 2B only!
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_find_type4(uint64_t *elem)
@@ -750,139 +806,167 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
     uint64_t invar[12];   
     int_fast32_t v, t, n;
 
+    // Nothing to do if \f$g \in Q_{x0}\f$:
+    // The we return \f$\Omega\f$.
     if (xsp2co1_xspecial_vector(elem) >= 0) return 0x800000;
 
+    // Compute involution invariants; abort if this fails.
+    // Let \f$A, A_1, I_1, (I_1^+)\f$, and \f$(\ker A_1^+)\f$ 
+    // be as in  function ``xsp2co1_involution_invariants``.
     n = xsp2co1_involution_invariants(elem, invar);
     if (n < 0) return n;
+    // Now ``invar`` essentially contains a basis of one of the
+    // spaces \f$A\f$ or \f$(I_1^+)\f$ of dimension n
+
     switch (n) {
         case 8:
+            // Then \f$(I_1^+) = I_1\f$ has dimension 8. Here
+            // any type-4 vector in \f$I_1\f$ will do.
             return xsp2co1_involution_find_type4(invar, 0);
         case 9:
+            // Then the proper subspace \f$I_1\f$ of \f$(I_1^+)\f$ 
+            // has dimension 8. Let \f$l\f$ be the linear form
+            // on \f$I_1\f$ with \f$l(u) = 0\f$ 
+            // iff \f$u \in (\ker A_1^+)\f$. Let \f$v \in I_1\f$
+            // be the orthogonal complement of  \f$l\f$ under
+            // Wall parametrization
             v = xsp2co1_involution_orthogonal(invar, 0);
+            // Let t be the type the vector \f$v\f$ in the
+            // Leech lattice modulo 2. Then t is 0, 2 or 4.
             t = gen_leech2_type(v) >> 4;
-            if (t & 0xfffffffbUL) return ERR_QSTATE12_GX0_BAD_ELEM;
+            // The function fails if t is not 0 or 4
+            if (t & 0xfffffffdUL) return ERR_QSTATE12_GX0_BAD_ELEM;
+            // In case t == 0 we look for a pair of type-2 vectors
+            // in \f$(I_1^+) \setminus I_1\f$ that sums up to
+            // a type-4 vector in \f$I_1\f$. We return that sum if
+            // such a pair has been found, and fail if not found. 
             if (t == 0) {
                  v = xsp2co1_involution_find_type4(invar, 1);
                  if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
             } 
+            // In case t == 4 we simply return v.
             return v;
         case 12:
+            // Then \f$I_1\f$ has dimension 12, and the type
+            // function on the Leech lattice mod 2 is a linear 
+            // form \f$l\f$ on  \f$I_1\f$. If the orthogonal
+            // complement \f$v\f$ of \f$l\f$ in \f$I_1\f$ 
+            // (with respect to the Wall parametrization) has
+            // type 4, we return f$v\f$; otherwise we fail.
             v = xsp2co1_involution_orthogonal(invar, 1);
             t = gen_leech2_type(v) >> 4;
             if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
             return v;
         default:    
+            // Any other case is illegal; so we fail.
             return ERR_QSTATE12_GX0_BAD_ELEM;
     }
 }
 
-/********************************************
-// Deprecated!!!!
-int32_t xsp2co1_elem_find_type4_old(uint64_t *elem, int32_t last_action)
+
+
+
+/** 
+   Map a 2B involution in \f$G_{x0}\f$ to the centre of  \f$G_{x0}\f$
+
+   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in
+   the array given by parameter ``elem``. In this function we require
+   that \f$g\f$ is an invluotion of class \f$\mbox{2B}\f$ in the
+   monster group; otherwise the function fails.
+
+   The function computes an element \f$a\f$ in the monster such that
+   \f$a^{-1} g a\f$ is in the centre of  \f$G_{x0}\f$. The element
+   \f$a\f$ is stored in the array ``a`` as a word of generators of
+   the monster group. The function returns the length of the
+   array ``a`` in case of success, and a negative value in case of
+   failure. It returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if  \f$g\f$
+   is not a \f$\mbox{2B}\f$ involution in the monster group
+
+   The array ``a`` must have legth at least \f$22\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_conj_2B_involution(uint64_t *elem, uint32_t *a)
 {
-    uint64_t invar[12];   
-    int_fast32_t v, t, n, i;
-    uint32_t w[10], x, y, cocode;
+   uint64_t elem1[26];
+   uint32_t e_N[5];
+   int32_t v, len, l1, res;
 
-    if ((v = xsp2co1_xspecial_vector(elem)) >= 0) {
-        if (v == 0x800000) return 0x4000001;
-        if (v == 0x1800000) return 0x4000002;
-        if ((gen_leech2_type(v) >> 4) != 4) return v;
-        return 0x2000000 | (v & 0xffffff);
-    }
+   // Let \f$\Lambda_2\f$ be the Leech lattice modulo 2.
+   // find a vector \f$v_1 \in \Lambda_2\f$ with the following property:
 
-    if (last_action & 0x2000000) goto skip_type4;
-    n = xsp2co1_involution_invariants(elem, invar);
-    if (n < 0) return n;
-    switch (n) {
-        case 8:
-            return xsp2co1_involution_find_type4(invar, 0);
-        case 9:
-            v = xsp2co1_involution_orthogonal(invar, 0);
-            t = gen_leech2_type(v) >> 4;
-            if (t & 0xfffffffbUL) return ERR_QSTATE12_GX0_BAD_ELEM;
-            if (t == 0) {
-                 v = xsp2co1_involution_find_type4(invar, 1);
-                 if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
-            } 
-            break;
-        case 12:
-            v = xsp2co1_involution_orthogonal(invar, 1);
-            t = gen_leech2_type(v) >> 4;
-            if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
-            break;
-        default:    
-            return ERR_QSTATE12_GX0_BAD_ELEM;
-    }
-    v &= 0xffffffUL;
-    if (v != 0x800000) return 0x2000000 | v;
- 
-  skip_type4:
-    x = y = cocode = 0;
-    n = xsp2co1_elem_to_word(elem, w);
-    if (n < 0) return n;
-    for (i = 0; i < n; ++i) {
-       switch ((w[i] >> 28) & 7) {
-            case 0:  
-                // ignore tag:
-                break;
-            case 1:
-                cocode ^= w[i] & 0x800; 
-                break;
-            case 3:
-                // tag x: accumulate in x
-                x ^= w[i] & 0x7ff;
-                break;
-            case 4:
-                // tag y: accumulate in y
-                y ^= w[i] & 0x7ff;
-                break;
-            default:
-                return ERR_QSTATE12_GX0_BAD_ELEM; 
-        }
-    }
-    if (y == 0) return ERR_QSTATE12_REP_GX0;
-    if (cocode & 0x800) return ERR_QSTATE12_GX0_BAD_ELEM;
-    if (x == 0) return 0x40000001; 
-    if (x == y) return 0x40000002;
-    return ERR_QSTATE12_GX0_BAD_ELEM;
-}
-********************************************/
+   // For any \f$a_1 \in G_{x0}\f$ with \f$v_1 \cdot a_1 = \Omega\f$ we
+   // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1v\f$
+   // exists.
 
-/*********************************
-// deprecated
-static inline int32_t transform_xsp(uint64_t *elem, uint32_t *a, uint32_t len_a)
-{
-     int32_t last = 0, len, res, i;
-     uint32_t *pa = a;
-     uint64_t elem1[26];
-     
-     for (i = 0; i < 4; ++i) {
-         last = xsp2co1_elem_find_type4(elem, last);
-         if (last < 0x2000000) return ((uint32_t)(pa -a) << 25) + last;
-         if (last & 0x4000000) {
-             if (len_a < 6) return ERR_QSTATE12_BUFFER_OVFL; 
-             len =  gen_leech2_reduce_type4(last, pa);
-             if (len < 0) return len;
-         } else if (last & 0x4000000) {
-             if (len < 1) return ERR_QSTATE12_BUFFER_OVFL; 
-             pa[0] = MMGROUP_ATOM_TAG_T + (last & 3);
-             len = 1;
-         } else return ERR_QSTATE12_REP_GX0; 
-         mm_group_invert_word(pa, len);
-         res = xsp2co1_set_elem_word(elem1, pa, len);
-         if (res < 0) return res;
-         res = xsp2co1_mul_elem(elem1, elem, elem);
-         if (res < 0) return res;
-         mm_group_invert_word(a, len);
-         res =  xsp2co1_mul_elem_word(elem, pa, len);
-         if (res < 0) return res;
-         pa +=len; len_a -= len;
-     }  
-     return ERR_QSTATE12_REP_GX0;   
+   v = xsp2co1_elem_find_type4(elem);
+   if (v < 0) return v;
+
+   // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of
+   // generators of the monster of length ``len`` in the array ``a``. 
+   len = gen_leech2_reduce_type4(v, a);
+   if (len < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+
+   // Put ``elem1`` = \f$g_1 = a_1^{-1} g a_1 \in  N_{x0}\f$.
+   xsp2co1_copy_elem(elem, elem1);
+   res = xsp2co1_conjugate_elem(elem1, a, len);
+   if (res < 0) return res;
+
+   // Copy \f$g_1\f$ from ``elem1`` (representing an element 
+   // of \f$G_{x0}\f$) to ``e_N`` (representing an element 
+   // of \f$N_{0}\f$). Abort if 
+   // \f$g_1 \notin G_{x0} \cap N_{0} = G_{x0}\f$.
+   res = xsp2co1_elem_to_N0(elem1, e_N);
+   if (res < 0) return res;
+
+   // Find a power \f$a_2 = \tau^e\f$ of the triality element \f$\tau\f$
+   // such that \f$g_2 = a_2^{-1} g_1 a_2 \in  Q_{x0}\f$. Abort if this
+   // fails.
+   v = mm_group_n_conj_to_Q_x0(e_N); 
+   if (v < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+   // f$g_2\f$ is in bits 24,...,0 of \f$v\f$ and \f$-e\f$ in bits 26,25.
+
+   // Store \f$a_1 a_2\f$ in the array ``a`` and put \f$v = g_2\f$,
+   // with   \f$g_2\f$ in Leech lattice encoding.
+   if (v & 0x6000000UL)  a[len++] = 0xf0000000UL + ((v >> 25) & 3);
+
+   // Return \f$a_1 a_2\f$ if  \f$g_2\f$ is the central involution
+   // in \f$Q_{x0}\f$; and fail in case \f$g_2 = 1\f$.
+   v &= 0x1ffffffUL;
+   if ((v & 0xffffffUL) == 0) {
+       return (v & 0x1000000UL) ? len : ERR_QSTATE12_GX0_BAD_ELEM;
+   }
+
+   // Now \f$g_2 \in Q_{x0}\f$ is stored in ``v`` in Leech lattice
+   // encoding. We will be successful if the vector in \f$\Lambda_2\f$
+   // 2 corresponding to \f$g_2\f$ is of type 4.
+   
+   // Compute \f$a_3 \in \G_{x0}\f$ from \f$g_2\f$ such that 
+   // \f$a_3^{-1} g2 a_2 = \pm \Omega\f$, with 
+   // \f$\Omega \in Q_{x0}\f$ the (positive) element corresponding
+   // to the standard frame of the Leech lattice.
+   // We will append  \f$a_3\f$ (of length ``l1``) to the 
+   // word \f$a_1 a_2\f$ in the array ``a`` (of length ``len``).
+   l1 = gen_leech2_reduce_type4(v, a + len);
+   if (l1 < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+
+   // Next we compute \f$g_3 = a_3^{-1} g2 a_2\f$ in the vector ``v``.
+   v = gen_leech2_op_word(v, a + len, l1);
+   // Internal error if result differs from \f$ \pm \Omega\f$.
+   if ((v & ~0x1000000UL) != 0x800000) return ERR_QSTATE12_LEECH_OP;
+
+   // Store \f$a_{13} = a_1 a_2 a_3\f$ in the array ``a``
+   len += l1; 
+
+   // Finally, transform \f$g_3 = x_{\pm \Omega}\f$ to the central
+   // element  \f$x_{-1}\f$. We have to conjugate \f$x_{\Omega}\f$ 
+   // with \f$\tau\f$ and \f$x_{-\Omega}\f$ with \f$\tau^2\f$.
+   // So we append the approprate power of  \f$\tau\f$ to ``a``.
+   a[len++] = 0xf0000002 - ((v >> 24) & 1);
+
+   // Return the length of the word in the array ``a``.
+   return len;
 }
 
-**************************************************/
 
 //  %%GEN h
 /// @endcond 
