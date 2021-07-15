@@ -550,7 +550,7 @@ static inline void expand_affine(
 
 /** Find a **nice** type-2 or type-4 vector in subset of Leech lattice mod 2
 
-    Here ``a`` is a sequence of three concatenated arrays ``a0, a1,`` 
+    Here ``a`` is a sequence of three concatenated arrays ``a0, a1,``
     and ``a2`` of elements of the Leech lattice mod 2
     of length ``n0, n1,`` and ``n2`` respectively. ``a0`` and ``a1``
     are input arrays, and ``a2`` is an output array.
@@ -564,130 +564,70 @@ static inline void expand_affine(
     If ``n2`` is zero then the function returns a type-4 vector
     in ``V`` if such a vector exists; otherwise it returns zero.
 
-    If ``n2`` is positive then the function stores up to
-    ``n2`` vectors of type 2 in the array ``a2`` and pads that
-    array with zero vectors. Then the function returns the 
-    number of type-2 vectors found.
+    If ``n2`` is positive then the function stores up to ``n2``
+    vectors of type 2 in the array ``a2``. Then the
+    function returns the number of type-2 vectors found.
 
     The function tries to find a **nice** type-4 vector, provided
     that the input has been echelonized properly (as e.g. in
-    function ``xsp2co1_involution_invariants``) and expanded 
-    properly as e.g. in function ``uint32_t expand_affine``. 
+    function ``xsp2co1_involution_invariants``) and expanded
+    properly as e.g. in function ``uint32_t expand_affine``.
 */
 // %%EXPORT px
 uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t n2)
 {  
-   uint32_t i0, i1, i2, a1, v, v_out = 0;
-   uint32_t is_type4;  // This will be True if a vector is of type 4
-   uint32_t find_type4 = n2 == 0;
-   uint32_t *pv2 = a + n0 + n1;
+    uint32_t find_type2 = n2 > 0; // True if looking for type-2 vectors
+    uint32_t v;                   // The current vector being analysed
+    uint32_t is_type2;            // True if current vector is of type 2
+    uint32_t v_out = 0;           // 0 or a saved type-4 vector
+    uint32_t *pa2 = a + n0 + n1;  // Pointer to output array
+    uint32_t i2 = 0;              // Number of type-2 vectors found
+    uint32_t i0, i1;
 
-   for (i2 = 0; i2 < n2; ++i2) pv2[i2] = 0;
-   i2 = 0;
-   for (i1 = 0; i1 < n1; ++i1) {
-       a1 = a[n0 + i1];
-       for (i0 = 0; i0 < n0; ++i0) {
-           // let v be the word to be analyzed
-           v = (a[i0] ^ a1) & 0xffffff;
-
-           // Next we put is_type4 = 1 if v is of type 4, is_type4 = 0
-           // v is of type 2, and continue the loop if v is of type 0.
-           if (v & 0x800UL) {
-                // Deal with an odd cocode word
-                uint_fast32_t theta, tab, gcode;
-                // Return a pre-stored even vector v_out of type 4 
-                // if present and if n2 is zero.
-                if (v_out && find_type4) return v_out & 0xffffff;
-                // Otherwise we'll have to check the odd vector v
-                gcode = (v >> 12);
-                theta = MAT24_THETA_TABLE[gcode & 0x7ff] ^ v;
-                tab = MAT24_SYNDROME_TABLE[theta & 0x7ff];
-                // v has type 4 if tab is does not encode
-                // a cocode word of length 1
-                is_type4 = (tab & 0x3ff) < (24 << 5);
-            } else if ((v & 0x7ff000L) == 0) {
-                // Deal with Golay code word 0 and even cocode word
-                uint_fast32_t basis0, tab, b0, b1;
-                // First reject the zero vector v
-                if (v == 0) continue;
-
-                // Let basis0 = cocode vector, flip bit 0 in basis0
-                basis0 = MAT24_RECIP_BASIS[0] ^ v;            
-                // Let tab be the syndrome table entry for the cocode
-                // part XORed with basis vector 0. 
-                tab = MAT24_SYNDROME_TABLE[basis0 & 0x7ff];
-                // Set b1 True iff tab encodes a cocode word of length 3
-                b1 =  (tab & 0x3ff) < (24 << 5);
-                // Set b0 True iff tab encodes a cocode word with bit 0 = 1
-                b0 =  (tab & 0x1f) ==  0;
-                //  b0 ^ b1 is True iff (the even) cocode word has length 4
-                //  v has type 4 iff the cocode word has length 4
-                is_type4 = b0 ^ b1; 
-            } else if (mat24_def_not_nonstrict_octad(v >> 12) == 0) {
-                uint_fast32_t vect, w0, lsb, theta, tab, syn, b0, b1;
-                // Deal with a Golay code word that is an octad.
-                // Let vect = Golay code in vector representation
-                vect = mat24_gcode_to_vect((v >> 12) & 0xfff);
-                // Put  w0 =  weight(code word) / 8     (mod 2); so w0
-                // is True iff the Golay code word is really an octad.
-                theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
-                w0 = ((theta >> 13) ^ (v >> 23)) & 1;  
-                // Complement vect if it is not an octad
-                vect ^= w0 - 1;
-                // Let lsb be the least significant bit of vect
-                lsb = mat24_def_lsbit24(vect);
-                // Adjust theta to be the odd cocode word corresponding
-                // to ``v``  bit at position ``lsb`` flipped.
-                theta ^= v ^ MAT24_RECIP_BASIS[lsb];
+    for (i0 = 0; i0 < n0; ++i0) {
+        for (i1 = 0; i1 < n1; ++i1) {
+            // let v be the vector in the Leech lattice mod 2
+            // to be analysed. v must be of type 0, 2, or 4.
+            v = (a[i0] ^ a[n0 + i1]) & 0xffffffUL;
+            // Continue if v is not of the type that we are looking for.
+            is_type2 = gen_leech2_is_type2(v);
+            if (find_type2 != is_type2) continue;
             
-                // Let ``tab`` be the table entry encoding bits 
-                // (i1, i2, i3) of the code word ``theta`` with
-                // i2 = i3 = 24, if bot, i2 and i3, are not present.
-                // with basis vector ``lsb`` flipped 
-                tab = MAT24_SYNDROME_TABLE[(theta) & 0x7ff];
-                // Compute cocode syndrome from that table entry
-                syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
-                                ^ (1 << ((tab >> 10) & 31));
-                // v has type 4 if  syndrome is not a subword of ``vect``
-                is_type4 = ((vect & syn) != syn);
-                // Otherwise it might have type 2
-                // Set b1 True iff tab encodes a cocode word of length 3
-                b1 =  (tab & 0x3ff) < (24 << 5);
-                // Set b0 True iff tab encodes a cocode word with 
-                // bit ``lsb``  set
-                b0 =  (tab & 0x1f) ==  lsb;
-                // Put b0 = 1 if cocode word has length 0 or 4 
-                // Put b0 = 0 if cocode word has length 2 
-                b0 ^= b1;
-                // ``v`` may be of type 2 if length/2 != w0 (mod 2),
-                // i.e if b0 != w0.
-                is_type4 |= b0 ^ w0;
-            } else  {
-                // Deal with docecad:
-                // Since no dodecad is of type 2, we save the first dodecad
-                // found and wait for something better to come.
-                // We could have put is_type4 = True here.
-                if (v_out == 0) v_out = v;
+            // Here we look for vectors of type 2 ...
+            if (find_type2) {
+                // Store the type-2 vector v if still enough space.
+                if (i2 < n2) pa2[i2++] = v;
                 continue;
-            } ;
-            // Continue when searching for type 4 and found type 2 
-            // or vice versa
-            if (find_type4 != is_type4) continue;
-            // Otherwise done if we have found a type-4 vector
-            if (is_type4) return v;
-            // .. and store a type-2 vector if found and there is yet 
-            // enough space.
-            if (i2 < n2) pv2[i2++] = v;
-       }
-   }
-   // When searching for type 4 and a dodecad has been found then
-   // return that dodecad. Otherwise return the number of type-2
-   // vectors found.
-   return find_type4 ? v_out : i2;
+            }
+            
+            // Here we look for a vector of type 4 ...
+            
+            // Deal with an odd cocode word.
+            // Return the pre-stored even vector v_out of type 4 
+            // if present and return v otherwise.
+            if (v & 0x800UL) return v_out ? v_out : v;
+                         
+            // Deal with Golay code word 0 or Omega and even cocode word.
+            if ((v & 0x7ff000UL) == 0) {
+                if (v == 0) continue;  // Zero vector is not of type 4   
+                return v;              // Otherwise return v
+            }
+            
+            // Return v if its Golay code word is an octad.
+            if (mat24_def_not_nonstrict_octad(v >> 12) == 0) return v;
+
+            // Special case: Golay code word is a dodecad.
+            // Here we'll wait for something better to come.
+            // Save v in v_out if we have not yet done so.
+            if (v_out == 0) v_out = v;
+        }
+    }
+    // When searching for type 4 and a dodecad has been found then return
+    // that dodecad. Otherwise return the number of type-2 vectors found.
+    return find_type2 ? i2 : v_out;
 }
 
 /// @endcond 
-
 
 
 
@@ -695,7 +635,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
    Find type-4 vector in a space computed by ``xsp2co1_involution_invariants``. 
 
    Let \f$g\f$ be the element of the group \f$G_{x0}\f$,
-   and for that element \f$g\f$ and
+   and for that element \f$g\f$
    let \f$A, A_1, I_1\f$, and \f$(I_1)^+\f$
    be as in function ``xsp2co1_involution_invariants``. 
 
@@ -719,46 +659,54 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
 int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 {
    uint64_t *pInv;
-   uint32_t n, a[48], v;
+   uint32_t a[48], v, n, n0, n1, e0, e1, e2;
 
    // Abort if ``invar`` is erroneous.
-   if (invar[0] & 0x8000000) return 0;
+   if (invar[0] & 0x8000000UL) return -901;
 
    // Delete tailing zero rows of matrix ``invar``
    n = 12;
-   while (n > 0 && (invar[n-1] & 0xffffff) == 0) --n;
+   while (n > 0 && (invar[n-1] & 0xffffffUL) == 0) --n;
 
    // Put pInv = invar, and delete leading rows of matrix ``pInv`` 
    // which are not in \f$I_1\f$. 
    pInv = invar;
-   while (n > 0 && (pInv[0] && 0xf000000) != 0) { 
+   while (n > 0 && (pInv[0] & 0xf000000UL) != 0) { 
        ++pInv; --n;
    }
-   // Abort if the dimension n of pInv is not 8.
-   if (n != 8) return 0;
+   // Abort if the dimension n of pInv is > 8.
+   if (n > 8) return -1000 - n;
    // Now the relevant space V is generated py pInv[i], 0 <= i < 8.
  
    // Let V_1 =  V + coset * invar[0]. Store vectors in 
    // A0 = (a[0],..,a[15]) and A1 = (a[16],..,a[31]) such that
    // V_1 = {x0 + x1, x0 \in A0, x1 \in A1}. 
-   expand_affine(pInv, 4, coset ? invar[0] : 0, a + 16);
-   expand_affine(pInv + 4, 4, 0, a);
+   n1 = n < 4 ? n : 4; n0 = n - n1;
+   e0 = 1 << n0; e1 = 1 << n1;
+   expand_affine(pInv, n0, coset ? invar[0] : 0, a);
+   expand_affine(pInv + n0, n1, 0, a + e0);
  
    // If coset == 0 then return a type-4 vector in V_1.
    // Otherwise store the type-2 vectors in V_1 in the
    // array A2 =  (a[32],..,a[47]).
-   v = xsp2co1_involution_sub_find_type(a, 16, 16, coset ? 16 : 0);  
+   v = xsp2co1_involution_sub_find_type(a, e0, e1, coset ? 16 : 0); 
    if (coset == 0) return v;
+   
+   
 
-   // Here coset must be True.  Abort if less than 16 type-2 
-   // vectors (s_0,...,s_15) have been found
-   if (v < 16) return 0;
+   // Here coset must be True.  Abort if no type-2  vector found
+   e2 = v;
+   if (e2 == 0) return -903;
 
    // Return a vector v_i = s_0 + s_i, 0 <= i < 16; if v_i is 
    // of type 4; abort if no such v_i has been found.
-   a[31] = a[32];
-   return xsp2co1_involution_sub_find_type(a + 31, 1, 16, 0); 
+   a[e0 + e1 - 1] = a[e0 + e1];
+   return xsp2co1_involution_sub_find_type(a + e0 + e1 - 1, 1, e2, 0); 
 }
+
+
+
+
 
 
 
@@ -835,7 +783,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             // Leech lattice modulo 2. Then t is 0, 2 or 4.
             t = gen_leech2_type(v) >> 4;
             // The function fails if t is not 0 or 4
-            if (t & 0xfffffffdUL) return ERR_QSTATE12_GX0_BAD_ELEM;
+            if (t & ~4UL) return ERR_QSTATE12_GX0_BAD_ELEM;
             // In case t == 0 we look for a pair of type-2 vectors
             // in \f$(I_1^+) \setminus I_1\f$ that sums up to
             // a type-4 vector in \f$I_1\f$. We return that sum if

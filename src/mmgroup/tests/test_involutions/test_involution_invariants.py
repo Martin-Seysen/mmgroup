@@ -18,6 +18,8 @@ import pytest
 from mmgroup import MM, AutPL, PLoop, Cocode, Xsp2_Co1
 from mmgroup.generators import gen_leech2_type
 from mmgroup.tests.test_involutions.make_involution_samples import invariant_count_type2
+from mmgroup.clifford12 import xsp2co1_elem_find_type4
+from mmgroup.clifford12 import xsp2co1_involution_find_type4
 
 try:
     from mmgroup.tests.test_involutions import involution_samples
@@ -46,6 +48,26 @@ def make_involution_samples():
             h.in_G_x0()
             yield  h, invar
 
+
+
+def invariant_status(ref_invariants):
+    ref_ord, ref_chi, ref_involution_invariants = ref_invariants
+    length = ref_involution_invariants[0]
+    if length <= 8:
+        return 2;
+    if length == 9:
+        t =  ref_involution_invariants[3]
+        if ref_involution_invariants[4] == 16:
+            # Then this is a 2B or 4A eklement in the monster
+            return 2
+        elif  ref_involution_invariants[3] == 4:
+            # Then there is a dedicated type-4 vector
+            return 1
+        return 0
+    if length == 12:
+        if ref_involution_invariants[1] & 2 == 0:
+            return 0
+        return 1
 
 def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     gg = Xsp2_Co1(g)
@@ -81,6 +103,32 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
             print([hex(x) for x in (preim, im, g_im, g_im2, t)])
         assert (preim ^ im ^ g_im) & 0xffffff == 0
         assert g_im2 == im & 0xffffff
+
+    # test conjugation
+    istate = invariant_status(ref_invariants)
+    v = xsp2co1_elem_find_type4(gg._data)
+    if istate == 0:
+        ok = v <= 0
+    else:
+        ok = v > 0
+    if not ok:
+        print("\nError in conjugating involution invariants")
+        print("Invariants:", ref_invariants)
+        print("Conjugtion status expected:", istate)
+        print("Conjugation vector:", hex(v))
+        print("Involution invariants")
+        for x in invar: print(" 0x%014x" % x)
+        length = ref_invariants[2][0]
+        if 8 <= length <= 9: 
+            coset = ref_invariants[2][4] > 0
+            _invar = np.array(invar + [0]*12, dtype= np.uint64)
+            v1 =  xsp2co1_involution_find_type4(_invar, coset)
+            print("Low level conjugation vector:", hex(v1))
+        err = "Search for conjugation vector failed"
+        raise ValueError(err)
+
+
+        
 
 
 @pytest.mark.mmm
