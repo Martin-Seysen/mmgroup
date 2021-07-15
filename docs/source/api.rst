@@ -144,7 +144,8 @@ Python classes implementing the monster group
 
 .. autoclass:: mmgroup.MMGroupWord
    :members:  as_tuples, copy,  is_reduced, reduce, order, data,
-              in_G_x0, chi_G_x0, half_order
+              half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
+              as_Q_x0_atom, type_Q_x0
 
 
 .. _mmrep-label:

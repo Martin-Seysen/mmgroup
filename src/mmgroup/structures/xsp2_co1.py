@@ -16,7 +16,7 @@ from mmgroup.structures.ploop import Cocode, PLoop
 from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
 
 
-
+from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
 from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
 from mmgroup.clifford12 import xsp2co1_chain_short_3 
@@ -145,6 +145,22 @@ class Xsp2_Co1_Word(AbstractGroupWord):
 
     def as_xsp(self):
         return chk_qstate12(xsp2co1_xspecial_vector(self._data))
+
+    as_Q_x0_atom = as_xsp
+
+    def type_Q_x0(self):
+        """Return type of element if it is in the subgroup :math:`Q_{x0}`
+
+        If the element is in the subgroup :math:`Q_{x0}` of the monster
+        then the function returns the type of the vector in the Leech 
+        lattice modulo 2 corresponding to this element. That type is
+        0, 2, 3, or 4.
+
+        The function raises ValueError if the element is not
+        in the subgroup :math:`Q_{x0}`. 
+        """
+        v = self.as_Q_x0_atom()
+        return gen_leech2_type(v) >> 4
 
     def xsp_conjugate(self, v, sign = True):
         v = np.array(v, dtype = np.uint64, copy=True)

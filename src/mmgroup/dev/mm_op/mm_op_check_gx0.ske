@@ -297,9 +297,8 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
     if (o > 119) o = 119;
     res = xsp2co1_check_word_g_x0(g, n);
     if (res == 0) {
-        if (n <= 10) {
-            for (i = 0; i < n; ++i) h[i] = g[i];
-            return n + 0x100;
+        if (n == 0) {
+            return 0x100;
         } else {
             res = xsp2co1_set_elem_word(elem, g, n);
             if (res < 0) return res;

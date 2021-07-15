@@ -216,7 +216,7 @@ import numpy as np
 from random import randint, sample
 
 
-from mmgroup.generators import rand_get_seed
+from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -442,6 +442,22 @@ class MMGroupWord(AbstractGroupWord):
         chi_M = chi299 + chi98260 + chi24 * chi4096
         return chi_M, chi299, chi24, chi4096
        
+    def in_N_x0(self):
+        """Check if the element is in the subgroup :math:`N_{x0}`
+
+        The function returns True if this is the case. If this is
+        the case then the element is converted to a word in the
+        generators of :math:`N_{x0}`.
+        """
+        if check_mm_in_g_x0 is None:
+            import_mm_order_functions()
+        if not (check_mm_in_g_x0(self)):
+            return False
+        self.reduce()
+        for atom in self.data:
+            if ((d >> 28) & 7) > 4:
+                return False
+        return True
  
     def in_Q_x0(self):
         """Check if the element is in the subgroup :math:`Q_{x0}`
@@ -455,28 +471,53 @@ class MMGroupWord(AbstractGroupWord):
         if not (check_mm_in_g_x0(self)):
             return False
         self.reduce()
-        for atom in self._data:
-            if (d & 0x70000000) not in [0x10000000,  0x30000000]:
+        for atom in self.data:
+            if (atom & 0x70000000) not in [0x10000000,  0x30000000]:
                 return False
         return True
-       
-    def in_N_x(self):
-        """Check if the element is in the subgroup :math:`N_{x}`
+             
+    def as_Q_x0_atom(self):
+        """Return element as an atom of the subgroup :math:`Q_{x0}`
 
-        The function returns True if this is the case. If this is
-        the case then the element is converted to a word in the
-        generators of :math:`Q_{x0}`.
+        If this element is in the subgroup :math:`Q_{x0}` of the monster
+        then the function returns a number ``x`` such that this element
+        ``self`` is equal to ``self.group(('q', x))``.
+
+        Otherwise the function raises ValueError.
         """
+        err = "Element of monster group is not in subgroup Q_x0"
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
-        if not (check_mm_in_g_x0(self)):
-            return False
+        if check_mm_in_g_x0(self) is None:
+            raise ValueError(err)
         self.reduce()
-        for atom in self._data:
-            if ((d >> 28) & 7) > 4:
-                return False
-        return True
-       
+        res = 0;
+        for atom in self.data:
+            tag = (atom >> 28) & 0x0f
+            if res == 0 and tag == 3:
+                res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
+            elif tag == 1:
+                res ^= atom & 0xfff
+            elif tag:
+                 raise ValueError(err)
+        return res
+    
+
+    def type_Q_x0(self):
+        """Return type of element if it is in the subgroup :math:`Q_{x0}`
+
+        If the element is in the subgroup :math:`Q_{x0}` of the monster
+        then the function returns the type of the vector in the Leech 
+        lattice modulo 2 corresponding to this element. That type is
+        0, 2, 3, or 4.
+
+        The function raises ValueError if the element is not
+        in the subgroup :math:`Q_{x0}`. 
+        """
+        v = self.as_Q_x0_atom()
+        return gen_leech2_type(v) >> 4
+    
+
 
 ###########################################################################
 # Atoms for the group M
@@ -869,7 +910,7 @@ class MMGroup(AbstractGroup):
         return self.from_data(buf[:length])
 
     def rand_N_0(self, in_N_x0 = False, even = False, seed = None):
-        r"""Return random element of subgroup :math:`N_{x}`
+        r"""Return random element of subgroup :math:`N_{0}`
 
         The function returns a uniform distributed random element
         of the subgroup :math:`N_{x}` of the monster of structure
@@ -903,6 +944,7 @@ class MMGroup(AbstractGroup):
             err = "Error in generating random element of G_x0"
             raise ValueError(err)
         return self.from_data(buf[:length])
+
 
 
 # Predefine a standard instance of class MMGroup
