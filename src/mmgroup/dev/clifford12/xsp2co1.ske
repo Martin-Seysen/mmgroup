@@ -706,7 +706,7 @@ int32_t xsp2co1_conj_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 
     // Compute image of STD_V3 under qs3
     v2 = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
-    if (v < 0) return (int32_t) v;
+    if (v2 < 0) return (int32_t) v2;
     // Now elem2 maps elem1[0] to v2. Note that 
     // (elem2**(-1) * elem1)  maps elem2[0] to elem1[0].
     // Thus the result  elem3 = (elem2**(-1) * elem1 * elem2)
@@ -1307,13 +1307,15 @@ of length at most ``k`` are in the group \f$G_{x0}\f$. Let \f$a_k\f$
 be the element of \f$G_{x0}\f$  corresponding to the prefix
 of ``a`` of length ``k``.
 
-We convert the word \f$a_k\f$ to an element of  \f$G_{x0}\f$
-in **G_x0 representation** and store the result in the array ``elem``.
+If parameter ``mul`` is zero then we convert the word \f$a_k\f$ to an 
+element of  \f$G_{x0}\f$  in **G_x0 representation** and store the 
+result in the array ``elem``. Otherwise we multiply the element
+``elem`` with the word \f$a_k\f$ and store the array in ``elem``.
 */
 // %%EXPORT px
-int32_t xsp2co1_set_elem_word_scan(uint64_t *elem, uint32_t *a, uint32_t n)
+int32_t xsp2co1_set_elem_word_scan(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t mul)
 {
-    return _mul_set_elem_word(elem, a, n, 1);
+    return _mul_set_elem_word(elem, a, n, !mul);
 }
 
 

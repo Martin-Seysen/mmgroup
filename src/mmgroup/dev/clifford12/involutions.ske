@@ -836,9 +836,7 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
 {
    uint64_t elem1[26];
    uint32_t e_N[5];
-   int32_t i, v, len, res;
-
-   for (i = 0; i < 7; ++i) a[i] = 0; // Zero the array ``a``.
+   int32_t v, len, res;
 
    // Let \f$\Lambda_2\f$ be the Leech lattice modulo 2.
    // find a vector \f$v_1 \in \Lambda_2\f$ with the following property:
@@ -873,12 +871,11 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    v = mm_group_n_conj_to_Q_x0(e_N); 
    if (v < 0) return ERR_QSTATE12_GX0_BAD_ELEM - 20000;
    // \f$a_2\f$ is in bits 24,...,0 of \f$v\f$ and \f$-e\f$ in bits 26,25.
-
    // Store \f$a_1 a_2\f$ in the array ``a`` and put \f$v = g_2\f$,
    // with   \f$g_2\f$ in Leech lattice encoding.
    if (v & 0x6000000UL)  a[len++] = 0xd0000000UL + ((v >> 25) & 3);
 
-   // Return the pair (len, v) as documented.
+   // Return the pair (len, v) as documented above.
    v &= 0x1ffffff; 
    return v | ((len & 7) << 25);
 }
@@ -900,79 +897,45 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    failure. It returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if  \f$g\f$
    is not a \f$\mbox{2B}\f$ involution in the monster group
 
-   The array ``a`` must have legth at least \f$22\f$.
+   The array ``a`` must have legth at least \f$14\f$.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_conj_2B_involution(uint64_t *elem, uint32_t *a)
 {
-   uint64_t elem1[26];
-   uint32_t e_N[5];
-   int32_t v, len, l1, res;
+   int32_t v, len, l1;
 
-   // Let \f$\Lambda_2\f$ be the Leech lattice modulo 2.
-   // find a vector \f$v_1 \in \Lambda_2\f$ with the following property:
-
-   // For any \f$a_1 \in G_{x0}\f$ with \f$v_1 \cdot a_1 = \Omega\f$ we
-   // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1v\f$
-   // exists.
-
-   v = xsp2co1_elem_find_type4(elem);
+   // Find a \f$g_1 \in Q_{x0}\f$  and an element \f$a_1\f$ in
+   // the monster with \f$a_1^{-1} g a_1 = g_1\f$. Store  \f$g_1\f$
+   // in ``v`` and \f$a_1\f$ in the buffer ``a`` as a word of generators
+   // generators of the monster of length ``len``. Abort if this fails.
+   v = xsp2co1_elem_conj_G_x0_to_Q_x0(elem, a);
    if (v < 0) return v;
+   len = v >> 25; v &= 0x1ffffffUL; 
 
-   // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of
-   // generators of the monster of length ``len`` in the array ``a``. 
-   len = gen_leech2_reduce_type4(v, a);
-   if (len < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+   // Error if v = 0
+   if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
 
-   // Put ``elem1`` = \f$g_1 = a_1^{-1} g a_1 \in  N_{x0}\f$.
-   xsp2co1_copy_elem(elem, elem1);
-   res = xsp2co1_conjugate_elem(elem1, a, len);
-   if (res < 0) return res;
+   // Otherwise: Done if v is in the centre of Q_x0 
+   if (v == 0x1000000UL) return len;
 
-   // Copy \f$g_1\f$ from ``elem1`` (representing an element 
-   // of \f$G_{x0}\f$) to ``e_N`` (representing an element 
-   // of \f$N_{0}\f$). Abort if 
-   // \f$g_1 \notin G_{x0} \cap N_{0} = G_{x0}\f$.
-   res = xsp2co1_elem_to_N0(elem1, e_N);
-   if (res < 0) return res;
-
-   // Find a power \f$a_2 = \tau^e\f$ of the triality element \f$\tau\f$
-   // such that \f$g_2 = a_2^{-1} g_1 a_2 \in  Q_{x0}\f$. Abort if this
-   // fails.
-   v = mm_group_n_conj_to_Q_x0(e_N); 
-   if (v < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
-   // f$g_2\f$ is in bits 24,...,0 of \f$v\f$ and \f$-e\f$ in bits 26,25.
-
-   // Store \f$a_1 a_2\f$ in the array ``a`` and put \f$v = g_2\f$,
-   // with   \f$g_2\f$ in Leech lattice encoding.
-   if (v & 0x6000000UL)  a[len++] = 0xf0000000UL + ((v >> 25) & 3);
-
-   // Return \f$a_1 a_2\f$ if  \f$g_2\f$ is the central involution
-   // in \f$Q_{x0}\f$; and fail in case \f$g_2 = 1\f$.
-   v &= 0x1ffffffUL;
-   if ((v & 0xffffffUL) == 0) {
-       return (v & 0x1000000UL) ? len : ERR_QSTATE12_GX0_BAD_ELEM;
-   }
-
-   // Now \f$g_2 \in Q_{x0}\f$ is stored in ``v`` in Leech lattice
+   // Now \f$g_1 \in Q_{x0}\f$ is stored in ``v`` in Leech lattice
    // encoding. We will be successful if the vector in \f$\Lambda_2\f$
-   // 2 corresponding to \f$g_2\f$ is of type 4.
+   // corresponding to \f$g_2\f$ is of type 4.
    
-   // Compute \f$a_3 \in \G_{x0}\f$ from \f$g_2\f$ such that 
-   // \f$a_3^{-1} g2 a_2 = \pm \Omega\f$, with 
+   // Compute \f$a_2 \in \G_{x0}\f$ from \f$g_1\f$ such that 
+   // \f$a_2^{-1} g1 a_2 = \pm \Omega\f$, with 
    // \f$\Omega \in Q_{x0}\f$ the (positive) element corresponding
    // to the standard frame of the Leech lattice.
-   // We will append  \f$a_3\f$ (of length ``l1``) to the 
-   // word \f$a_1 a_2\f$ in the array ``a`` (of length ``len``).
    l1 = gen_leech2_reduce_type4(v, a + len);
    if (l1 < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
 
-   // Next we compute \f$g_3 = a_3^{-1} g2 a_2\f$ in the vector ``v``.
+   // Next we compute \f$g_2 = a_2^{-1} g1 a_2\f$ in the vector ``v``.
    v = gen_leech2_op_word(v, a + len, l1);
    // Internal error if result differs from \f$ \pm \Omega\f$.
    if ((v & ~0x1000000UL) != 0x800000) return ERR_QSTATE12_LEECH_OP;
 
-   // Store \f$a_{13} = a_1 a_2 a_3\f$ in the array ``a``
+   // Append  \f$a_2\f$ (of length ``l1``) to the 
+   // word \f$a_1\f$ in the array ``a`` (of length ``len``).
    len += l1; 
 
    // Finally, transform \f$g_3 = x_{\pm \Omega}\f$ to the central

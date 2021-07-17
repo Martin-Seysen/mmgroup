@@ -121,32 +121,84 @@ int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 // %%EXPORT px
 int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
 {
-    int_fast32_t  res, k;
-    uint32_t a_N[5], e_N[5];
-    uint64_t elem_a[26];
-
+    int32_t res;
+    int32_t k;   // Number of atoms scanned from ``a`` in one step
+    uint64_t elem_a[26]; // Internal buffer for the part of ``a``
+                         // scanned (as an element of G_x0).
+    uint32_t a_N[5];     // Internal buffer for the part of ``a``
+                         // scanned (as an element of N_x).
+    uint32_t e_N[5];     // Temporary buffer for ``elem``
+                         // (as an element of N_x0).
+    uint32_t a_pending;  // Data in ``elem_a`` are yet to
+                         // be processed if this is nonzero
+    a_pending = 0;
     while (n) {
-        k = xsp2co1_set_elem_word_scan(elem_a, a, n);
-        if (k < 0) return k;
-        if (k > 0) {
-            res = xsp2co1_conj_elem(elem, elem_a, elem);
-            if (res < 0) return res;
-            a += k; n -= k;
+        // Scan a prefix of the word ``a`` that is in G_x0 and store
+        // it in ``elem_a`` (or rigth multiply it with ``elem_a``
+        // if ``elem_a`` is not empty)
+        k = xsp2co1_set_elem_word_scan(elem_a, a, n, a_pending);
+        if (k < 0) return k;    // abort in case of error
+        if (k > 0) {         
+            // If such a prefix has been found:
+            a_pending = 1;      // Declare ``elem_a`` not empty
+            a += k; n -= k;     // Eat up the prefix of ``a``
+            if (n == 0) break;  // Done if no atom left in ``a``
         }
-        if (n == 0) return 0;
-
+        // Next Scan a prefix of the word ``a`` that is in N_0 and 
+        // store that prefix in a_N
         mm_group_n_clear(a_N);
         k = mm_group_n_mul_word_scan(a_N, a, n);
-        if (k < 0) return k;
+        if (k < 0) return k;    // Abort in case of error
+        // Give up if no such prefix has been found
         if (k == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+        // If a prefix of ``a`` has been found then eat it up
+        a += k; n -= k;  
+        // Continue if that prefix is the neutral element
+        if (mm_group_n_reduce_element(a_N) == 0) continue;
+
+        // If a_N is in N_x0 then copy it to ``elem_a`` (or right 
+        // multipy it with ``elem_a`` if  ``elem_a`` is not empty) 
+        if (a_N[0] == 0) {
+            // First convert a_N to a word of atoms
+            uint32_t len_a_N = mm_group_n_to_word(a_N, a_N);
+            // Then copy it to or multiply it with ``elem_a``
+            res = xsp2co1_set_elem_word_scan(elem_a, 
+                a_N, len_a_N, a_pending);
+            if (res != (int32_t)len_a_N) { // Abort in case of error
+                return res < 0 ? res : ERR_QSTATE12_GX0_BAD_ELEM;
+            }
+            a_pending = 1;  // Mark ``elem_a`` as not empty
+            continue;       // This case has been done
+        } 
+
+        // Here a_N is not in N_0. First get rid of ``elem_a``.
+        if (a_pending) {
+            // Conjugate ``elem`` with ``elem_a`` if ``elem_a``
+            // is not empty; and then mark ``elem_a`` as empty
+            res = xsp2co1_conj_elem(elem, elem_a, elem);
+            if (res < 0) return res; // abort in case of error
+            a_pending = 0;           // Mark ``elem_a`` as not empty
+        }
+            
+        // Now convert ``elem`` to an element of N_0 and store 
+        // the result in e_N; abort if this fails
         res = xsp2co1_elem_to_N0(elem, e_N);
         if (res < 0) return res;
+        // Conjugate e_N with a_N
         mm_group_n_conjugate_element(e_N, a_N, e_N);
+        // Convert e_N back to an element of G_x_0; store
+        // the result in ``elem``; abort if this fails.
         res = xsp2co1_elem_from_N0(elem, e_N);
-        if (res < 0) return res;
-        a += k; n -= k;
+        if (res < 0) return res;  
     }  
-    return 0;
+
+    // Finally, process a pending element ``elem_a`` if not empty
+    if (a_pending) {
+        // Conjugate ``elem`` with ``elem_a``
+        res = xsp2co1_conj_elem(elem, elem_a, elem);
+        if (res < 0) return res; // abort in case of error
+    }
+    return 0;  // Well done: report success
 }
 
 

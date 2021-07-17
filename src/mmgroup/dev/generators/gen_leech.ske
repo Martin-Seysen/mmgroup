@@ -528,13 +528,14 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
 //  2:  x_pi      28      pi a permutation number  
 //  3:  x_d       13      d an element of the parker loop
 //  4:  y_d       13      d an element of the parker loop
-//  5:  t**e      28      exponent e, illegal here
+//  5:  t**e      28      exponent e, legal in special cases only
 //  6:  xi**e     28      exponent e
 //  7   illegal                  
 // 
 // 
 {
     uint_fast32_t tag, i, v, y;
+    static uint8_t  o[2][4] = {{0,2,3,1},{0,3,1,2}};
  
     q0 &= 0x1ffffff;
     for (i = 0; i < n; ++i) {
@@ -567,8 +568,13 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
                q0 = op_y(q0, y & 0x1fff);
                break;
             case MMGROUP_ATOM_TAG_IT:
+               v ^= 0xfffffff;
             case MMGROUP_ATOM_TAG_T:
-               if (v % 3) return (uint32_t)(0-1UL);
+               v = v % 3;
+               if (v) {
+                   if (q0 & 0x7fffffUL) return (uint32_t)(0-1UL);
+                   q0 = (uint32_t)(o[v-1][(q0 >> 23) & 3]) << 23UL;
+               }
                break;
             case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;

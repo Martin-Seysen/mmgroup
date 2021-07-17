@@ -610,6 +610,8 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
 
  The element \f$g\f$ is reduced with 
  function ``mm_group_n_reduce_element``.  
+
+ It is legal to put ``w`` = ``g``.
 */
 // %%EXPORT px
 uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)

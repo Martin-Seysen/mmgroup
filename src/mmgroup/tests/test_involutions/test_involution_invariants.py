@@ -134,16 +134,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
             print(g)
             print("%-28s" % h, ref_invariants)
             h1 = conj_G_x0_to_Q_x0(g)
-            """
-            print(g, mv**-1)
-            print("%-28s" % h, ref_invariants)
-            h1 = conj_G_x0_to_Q_x0(g)
-            h1.in_Q_x0()
-            h2 = g **h1
-            h2.in_Q_x0()
-            print("%-28s" % h2, ref_invariants);print("")
-            assert  h2.in_Q_x0(), (h2, h2.in_Q_x0())  
-            """
+            assert (g**h1).in_Q_x0(), (g, h1, g**h1, ref_invariants)
             print("")
             
     if not ok:
