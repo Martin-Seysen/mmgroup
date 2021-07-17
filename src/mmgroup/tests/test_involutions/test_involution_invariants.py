@@ -20,6 +20,8 @@ from mmgroup.generators import gen_leech2_type
 from mmgroup.tests.test_involutions.make_involution_samples import invariant_count_type2
 from mmgroup.clifford12 import xsp2co1_elem_find_type4
 from mmgroup.clifford12 import xsp2co1_involution_find_type4
+from mmgroup.clifford12 import xsp2co1_elem_conj_G_x0_to_Q_x0
+from mmgroup.clifford12 import chk_qstate12
 
 try:
     from mmgroup.tests.test_involutions import involution_samples
@@ -53,21 +55,32 @@ def make_involution_samples():
 def invariant_status(ref_invariants):
     ref_ord, ref_chi, ref_involution_invariants = ref_invariants
     length = ref_involution_invariants[0]
-    if length <= 8:
-        return 2;
-    if length == 9:
-        t =  ref_involution_invariants[3]
-        if ref_involution_invariants[4] == 16:
-            # Then this is a 2B or 4A eklement in the monster
-            return 2
-        elif  ref_involution_invariants[3] == 4:
-            # Then there is a dedicated type-4 vector
-            return 1
-        return 0
-    if length == 12:
+    if length <= 9:
+        st = 1;
+    elif length == 12:
         if ref_involution_invariants[1] & 2 == 0:
-            return 0
-        return 1
+            st = 0
+        else:
+            st = 1
+    else:
+        st = 0
+    if ref_chi[0] in (196883, 275, 4371):
+        assert st == 1
+        st = 2
+    return st
+
+
+def conj_G_x0_to_Q_x0(g):
+    gg = Xsp2_Co1(g)
+    a = np.zeros(7, dtype = np.uint32)
+    lv = chk_qstate12(xsp2co1_elem_conj_G_x0_to_Q_x0(gg._data, a))
+    length, q = lv >> 25, lv & 0x1ffffff
+    h = MM.from_data(a[:length])
+    gh = MM(g)**h
+    assert gh.in_Q_x0()
+    assert gh == MM(('q', q))
+    return h
+
 
 def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     gg = Xsp2_Co1(g)
@@ -106,11 +119,33 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
 
     # test conjugation
     istate = invariant_status(ref_invariants)
+    if ref_chi[0] in (196883, 275, 4371):
+        # The g is of type 2A, 2B or 2A in the monster
+        assert istate == 2, (istate, ref_invariants)
     v = xsp2co1_elem_find_type4(gg._data)
     if istate == 0:
         ok = v <= 0
     else:
         ok = v > 0
+        mv = MM(("c", v))**-1
+        h = g**mv
+        if istate > 1: 
+            assert h.in_N_x0(), (g, h, ref_invariants)
+            print(g)
+            print("%-28s" % h, ref_invariants)
+            h1 = conj_G_x0_to_Q_x0(g)
+            """
+            print(g, mv**-1)
+            print("%-28s" % h, ref_invariants)
+            h1 = conj_G_x0_to_Q_x0(g)
+            h1.in_Q_x0()
+            h2 = g **h1
+            h2.in_Q_x0()
+            print("%-28s" % h2, ref_invariants);print("")
+            assert  h2.in_Q_x0(), (h2, h2.in_Q_x0())  
+            """
+            print("")
+            
     if not ok:
         print("\nError in conjugating involution invariants")
         print("Invariants:", ref_invariants)
@@ -128,7 +163,8 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
         raise ValueError(err)
 
 
-        
+ 
+
 
 
 @pytest.mark.mmm

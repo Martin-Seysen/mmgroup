@@ -63,15 +63,13 @@ extern "C" {
 // %%EXPORT px
 int32_t xsp2co1_elem_to_N0(uint64_t *elem, uint32_t *g)
 {
-   uint32_t a[10], atom;
-   int32_t len_a, i;
-   len_a = xsp2co1_elem_to_word(elem, a);
-   if (len_a < 0) return len_a;
+   uint32_t a[10], len_a;
+   int32_t res;
+   len_a = res = xsp2co1_elem_to_word(elem, a);
+   if (res < 0) return res;
    mm_group_n_clear(g);
-   for (i = 0; i < len_a; ++i) {
-       atom = mm_group_n_mul_atom(g, a[i]);
-       if (atom) return ERR_QSTATE12_GX0_BAD_ELEM;
-   }
+   if (mm_group_n_mul_word_scan(g, a, len_a) < len_a)
+                           return ERR_QSTATE12_GX0_BAD_ELEM;
    return 0;
 }
 
@@ -103,6 +101,8 @@ int32_t xsp2co1_elem_from_N0(uint64_t *elem, uint32_t *g)
 /*************************************************************************
 *** Conjugation of an element of G_x0
 *************************************************************************/
+
+
 
 /**
    @brief Conjugate element of \f$G_{x0}\f$ by an element of monster group.
@@ -148,6 +148,7 @@ int32_t xsp2co1_conjugate_elem(uint64_t *elem, uint32_t *a, uint32_t n)
     }  
     return 0;
 }
+
 
 
 /*************************************************************************

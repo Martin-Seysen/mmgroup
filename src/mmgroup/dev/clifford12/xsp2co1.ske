@@ -684,7 +684,7 @@ int32_t xsp2co1_conj_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     int32_t res;
     qstate12_type qs1, qs2, qs3;
     uint64_t data3[MAXROWS_ELEM];
-    int64_t v;
+    int64_t v, v2;
 
     // Put qs2 = elem2, qs3 = elem2**(-1)
     res = xsp2co1_elem_to_qs_i(elem2, &qs2);
@@ -705,10 +705,14 @@ int32_t xsp2co1_conj_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     if (res < 0) return res;
 
     // Compute image of STD_V3 under qs3
-    v = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
+    v2 = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
     if (v < 0) return (int32_t) v;
-    // Now qs3 maps elem2[0] to v
-    v = map_short3(&qs2, elem2[0], v, STD_V3);
+    // Now elem2 maps elem1[0] to v2. Note that 
+    // (elem2**(-1) * elem1)  maps elem2[0] to elem1[0].
+    // Thus the result  elem3 = (elem2**(-1) * elem1 * elem2)
+    // maps elem2[0] to v2.
+    v = map_short3(&qs3, elem2[0], v2, STD_V3);
+    // Now elem3 maps STD_V3 to v.
     if (v < 0) return (int32_t) v;
 
     // Compute result from qs3 and v

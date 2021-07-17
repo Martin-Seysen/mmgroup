@@ -691,12 +691,9 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
    // array A2 =  (a[32],..,a[47]).
    v = xsp2co1_involution_sub_find_type(a, e0, e1, coset ? 16 : 0); 
    if (coset == 0) return v;
-   
-   
-
+     
    // Here coset must be True.  Abort if no type-2  vector found
-   e2 = v;
-   if (e2 == 0) return -903;
+   if ((e2 = v) == 0) return 0; // e2 = Number of type-2 vectors found
 
    // Return a vector v_i = s_0 + s_i, 0 <= i < 16; if v_i is 
    // of type 4; abort if no such v_i has been found.
@@ -710,8 +707,7 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
 
 
 
-/** 
-   Try to simplify an involution in \f$G_{x0}\f$ via conjugation
+/** @brief Try to simplify an element in \f$G_{x0}\f$ via conjugation
 
    Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored
    in the array given by parameter ``elem``. In this function
@@ -782,18 +778,17 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             // Let t be the type the vector \f$v\f$ in the
             // Leech lattice modulo 2. Then t is 0, 2 or 4.
             t = gen_leech2_type(v) >> 4;
-            // The function fails if t is not 0 or 4
-            if (t & ~4UL) return ERR_QSTATE12_GX0_BAD_ELEM;
-            // In case t == 0 we look for a pair of type-2 vectors
-            // in \f$(I_1^+) \setminus I_1\f$ that sums up to
-            // a type-4 vector in \f$I_1\f$. We return that sum if
-            // such a pair has been found, and fail if not found. 
+            // In case t == 4 we simply return v.
+            if (t == 4) return v;
+            // In case t = 0 try to$A, A_1, I find a sum of two type-2
+            // vectors in \f$(I_1^+) \setminus I_1\f$
             if (t == 0) {
                  v = xsp2co1_involution_find_type4(invar, 1);
-                 if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+                 if (v > 0) return v;
             } 
-            // In case t == 4 we simply return v.
-            return v;
+            // If this fails (or we have t == 2) then return a
+            // vector in \f$I_1\f$ orthogonal to  v.
+            return xsp2co1_involution_find_type4(invar, 0);
         case 12:
             // Then \f$I_1\f$ has dimension 12, and the type
             // function on the Leech lattice mod 2 is a linear 
@@ -812,6 +807,81 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
 }
 
 
+/** @brief Try to map an element of \f$G_{x0}\f$ to \f$Q_{x0}\f$
+
+   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in
+   the array given by parameter ``elem``. The function tries to
+   find an element \f$h\f$ in the monster group with
+   \f$h^{-1} g h = q \in Q_{x0}\f$.
+
+   The function succeeds if the following two conditions hold:
+
+    -  \f$g\f$ is in class 1A, 2A, 2B or 4A of the monster group
+
+    -  \f$g^2\f$ is in subgroup \f$Q_{x0}\f$ of \f$G_{x0}\f$.
+
+   The function stores  \f$h\f$ in the output array ``a`` as a
+   word of generators of the monster group. Array ``a``  must
+   be of length 7 . The function returns \f$q\f$ in bits
+   ``24,...,0`` of the return value, and number of atoms in
+   the array ``a`` in bits ``27, 26, 25`` of the return value
+   The data in the array ``a`` are padded with zeros.
+
+   The function returns a negative value in case of failure.
+   It returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if no suitable
+   element \f$h\f$ can be found.   
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
+{
+   uint64_t elem1[26];
+   uint32_t e_N[5];
+   int32_t i, v, len, res;
+
+   for (i = 0; i < 7; ++i) a[i] = 0; // Zero the array ``a``.
+
+   // Let \f$\Lambda_2\f$ be the Leech lattice modulo 2.
+   // find a vector \f$v_1 \in \Lambda_2\f$ with the following property:
+
+   // For any \f$a_1 \in G_{x0}\f$ with \f$v_1 \cdot a_1 = \Omega\f$ we
+   // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1\f$
+   // exists.
+
+   v = xsp2co1_elem_find_type4(elem);
+   if (v < 0) return v;
+
+   // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of
+   // generators of the monster of length ``len`` in the array ``a``. 
+   len = gen_leech2_reduce_type4(v, a);
+   if (len < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+
+   // Put ``elem1`` = \f$g_1 = a_1^{-1} g a_1 \in  N_{x0}\f$.
+   xsp2co1_copy_elem(elem, elem1);
+   res = xsp2co1_conjugate_elem(elem1, a, len);
+   if (res < 0) return res;
+
+   // Copy \f$g_1\f$ from ``elem1`` (representing an element 
+   // of \f$G_{x0}\f$) to ``e_N`` (representing an element 
+   // of \f$N_{0}\f$). Abort if 
+   // \f$g_1 \notin G_{x0} \cap N_{0} = G_{x0}\f$.
+   res = xsp2co1_elem_to_N0(elem1, e_N);
+   if (res < 0) return res - 10000;
+
+   // Find a power \f$a_2 = \tau^e\f$ of the triality element \f$\tau\f$
+   // such that \f$g_2 = a_2^{-1} g_1 a_2 \in  Q_{x0}\f$. Abort if this
+   // fails.
+   v = mm_group_n_conj_to_Q_x0(e_N); 
+   if (v < 0) return ERR_QSTATE12_GX0_BAD_ELEM - 20000;
+   // \f$a_2\f$ is in bits 24,...,0 of \f$v\f$ and \f$-e\f$ in bits 26,25.
+
+   // Store \f$a_1 a_2\f$ in the array ``a`` and put \f$v = g_2\f$,
+   // with   \f$g_2\f$ in Leech lattice encoding.
+   if (v & 0x6000000UL)  a[len++] = 0xd0000000UL + ((v >> 25) & 3);
+
+   // Return the pair (len, v) as documented.
+   v &= 0x1ffffff; 
+   return v | ((len & 7) << 25);
+}
 
 
 /** 

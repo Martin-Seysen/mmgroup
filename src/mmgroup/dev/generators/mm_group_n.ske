@@ -636,7 +636,7 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
   Let \f$g \in N_x0\f$ be stored in the array ``g`` of
   five 32-bit integers.
 
-  The function tries to calculate a number \f$0 \leq e < 0\f$ and an
+  The function tries to calculate a number \f$0 \leq e < 3\f$ and an
   element \f$q\f$ of the subgroup \f$Q_{x0}\f$ of \f$N_0\f$ with
   \f$g = \tau^{-e} q \tau^e\f$. Here  \f$\tau\f$ is the triality
   element in \f$N_0\f$.
@@ -688,7 +688,7 @@ success:
    x = g1[I_x] & 0x1fff;
    x = (x << 12) ^ (MAT24_THETA_TABLE[x & 0x7ff] & 0xfff);
    x ^= g1[I_d] & 0xfff;
-   // return the pair (e, x)
+   // Return the pair (e, x)
    return x + (e << 25);
 }
 

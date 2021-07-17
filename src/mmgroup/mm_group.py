@@ -221,6 +221,9 @@ from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import  AtomDict
+from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_reduce_type4
+from mmgroup.generators import mm_group_invert_word
 from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
 from mmgroup.clifford12 import xsp2co1_reduce_word      
 from mmgroup.clifford12 import xsp2co1_traces_all      
@@ -398,7 +401,7 @@ class MMGroupWord(AbstractGroupWord):
         """
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
-        return bool(check_mm_in_g_x0(self))
+        return check_mm_in_g_x0(self) is not None
                           
     def chi_G_x0(self):
         r"""Compute characters of element of subgroup :math:`G_{x0}`
@@ -451,11 +454,11 @@ class MMGroupWord(AbstractGroupWord):
         """
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
-        if not (check_mm_in_g_x0(self)):
+        if check_mm_in_g_x0(self) is None:
             return False
         self.reduce()
         for atom in self.data:
-            if ((d >> 28) & 7) > 4:
+            if ((atom >> 28) & 7) > 4:
                 return False
         return True
  
@@ -468,7 +471,7 @@ class MMGroupWord(AbstractGroupWord):
         """
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
-        if not (check_mm_in_g_x0(self)):
+        if check_mm_in_g_x0(self) is None:
             return False
         self.reduce()
         for atom in self.data:
@@ -587,15 +590,48 @@ def gen_tl(tag, r = "r"):
     return  [ tag_dict[tag] + e % 3] 
 
 
+ERR_Q_x0 = "Object must represent an element of the subgroup Q_x0 of the monster"
+
+
 def gen_q(tag, r = "r"):
     e = r
     if isinstance(r, str):
         e = randint(0, 0x1ffffff) 
+    elif not isinstance(r, Integral):
+        try:
+            e = r.as_Q_x0_atom()
+            assert isinstance(e, Integral)
+        except:
+            raise TypeError(ERR_Q_x0)
     d = (e >> 12) & 0x1fff
     delta = (e ^ ploop_theta(d)) & 0xfff
     return [tag_dict['x'] + d, tag_dict['d'] + delta]
 
 
+
+
+ERR_LEECH2 = "Object must represent a type-4 vector in Leech lattice mod 2"
+
+def gen_c(tag, r = "r"):
+    if isinstance(r, str):
+        c = 0
+        while gen_leech2_type(c) >> 4 != 4:
+           c = randint(0, 0xffffff) 
+    elif isinstance(r, Integral):
+        c = r
+    else:
+        try:
+            c = r.as_Q_x0_atom()
+            assert isinstance(c, Integral)
+        except:
+            raise TypeError(ERR_LEECH2)
+    if gen_leech2_type(c) >> 4 != 4:
+        raise ValueError(ERR_LEECH2)
+    a = np.zeros(6, dtype = np.uint32)
+    len_a = gen_leech2_reduce_type4(c, a)
+    mm_group_invert_word(a, len_a)
+    return list(a[:len_a])
+            
 
 gen_tag_dict = {
         "d": gen_d, 
@@ -606,6 +642,7 @@ gen_tag_dict = {
         "t": gen_tl, 
         "l": gen_tl, 
         "q": gen_q, 
+        "c": gen_c, 
 }
 
 
@@ -631,11 +668,14 @@ def gen_atom(tag = None, number = "r"):
 
 
 def cocode_to_mmgroup(g, c):
-    return g.word_type([0x10000000 + c.cocode], group = g)
+    return g.word_type([0x10000000 + (c.cocode & 0xfff)], group = g)
 
 def autpl_to_mmgroup(g, aut):
     return g.word_type([0x10000000 + (aut.cocode & 0xfff), 
                   0x20000000 + aut.perm_num], group = g)
+
+def ploop_to_mmgroup(g, pl):
+    return g.word_type([0x30000000 + (pl.value & 0x1fff)],  group = g)
 
 
 class MMGroup(AbstractGroup):
@@ -666,9 +706,17 @@ class MMGroup(AbstractGroup):
       | tuple (``tag, i``)  | ``M((tag, i))`` is equivalent to          |
       |                     | ``M.atom(tag, i)``                        |
       +---------------------+-------------------------------------------+
+      | class |PLoop|       | The Parker loop element :math:`d`         | 
+      |                     | given by that object is mapped to         |
+      |                     | :math:`x_d \in \mathbb{M}`                |
+      +---------------------+-------------------------------------------+
       | class |AutPL|       | The Parker loop automorphism :math:`\pi`  | 
       |                     | given by that object is mapped to         |
       |                     | :math:`x_\pi \in \mathbb{M}`              |
+      +---------------------+-------------------------------------------+
+      | class |Cocode|      | The Golay cocode element :math:`\delta`   | 
+      |                     | given by that object is mapped to         |
+      |                     | :math:`x_\delta \in \mathbb{M}`           |
       +---------------------+-------------------------------------------+
       | class |MMGroupWord| | A deep copy of the given element of       | 
       |                     | :math:`\mathbb{M}` is made                |
@@ -695,6 +743,7 @@ class MMGroup(AbstractGroup):
     atom_parser = {}               # see method parse()
     conversions = {
         Cocode: cocode_to_mmgroup,
+        PLoop: ploop_to_mmgroup,
         #AutPlElement: autpl_to_mmgroup,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
@@ -754,6 +803,8 @@ class MMGroup(AbstractGroup):
           +-------+-----------------+----------------------------------------+
           |``'q'``| ``0-0x1ffffff`` | See remark below.                      |
           +-------+-----------------+----------------------------------------+
+          |``'c'``| ``0-0xffffff``  | See remark below.                      |
+          +-------+-----------------+----------------------------------------+
 
          
         If ``i`` is the string ``'r'`` then a random element with the   
@@ -792,6 +843,15 @@ class MMGroup(AbstractGroup):
         :math:`\in \mathcal{C}^*`,  
         and   :math:`\theta: \mathcal{P} \rightarrow \mathcal{C}^*`
         the cocycle of the Parker loop.
+
+        The tag ``'c'`` with index ``i`` encodes a representative
+        of the right coset :math:`N_{x0} g, g \in G_{x0}` of  
+        :math:`N_{x0}` in :math:`G_{x0}` that maps the standard
+        frame  :math:`\Omega` in the Leech lattice modulo 2 to 
+        a type-4 vector given by the index ``i``.
+        Here ``i`` ecodes a vector in the Leech lattice modulo 2
+        as in the description for tag  ``'q'``. That vector must
+        be of type 4. The sign bit of that vector is ignored.
         """
         return self.word_type(gen_atom(tag, i), group = self)
 

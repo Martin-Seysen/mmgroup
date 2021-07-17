@@ -279,5 +279,5 @@ def test_in_gx0(verbose = 0):
         if g1:
             assert g == g1 
         assert g1 == low_level_check_mm_in_g_x0(g)
-        assert g.in_G_x0() == bool(g1)
+        assert g.in_G_x0() == in_g_x0
 

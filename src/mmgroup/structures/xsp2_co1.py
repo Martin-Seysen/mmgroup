@@ -35,6 +35,7 @@ from mmgroup.clifford12 import xsp2co1_elem_xspecial
 from mmgroup.clifford12 import xsp2co1_elem_to_word
 from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_involution_orthogonal
+from mmgroup.clifford12 import xsp2co1_conjugate_elem
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -80,7 +81,7 @@ class Xsp2_Co1_Word(AbstractGroupWord):
   
     """
     MIN_LEN = 16
-    __slots__ =  "_data" 
+    __slots__ =  "_data", "group" 
     def __init__(self, atoms = [], **kwds):
         self.group = kwds['group']
         self._data = np.zeros(26, dtype = np.uint64)
@@ -189,6 +190,20 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         v1 = xsp2co1_involution_orthogonal(invar, 1)
         v0 = xsp2co1_involution_orthogonal(invar, 0)
         return invar, v1, v0
+
+    def conjugate_mm(self, g, mmgroup = MM):
+        """Try to compute g**(-1) * self * g, for g in the monster
+
+        This is a wrapper for the C function ``xsp2co1_conjugate_elem``.
+        In case of success the result is returned as an element 
+        of ``self.group``.
+        """
+        if isinstance(g, Xsp2_Co1_Word):
+            g = gg.as_mm(mmgroup)
+        res = self.group(self)
+        status = xsp2co1_conjugate_elem(res._data, g._data, g.length)
+        chk_qstate12(status)
+        return res 
 
 ###########################################################################
 # The class representing the group G_x0
