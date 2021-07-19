@@ -53,6 +53,28 @@ def make_involution_samples():
 
 
 def invariant_status(ref_invariants):
+    """Return invariant status 
+
+    Here parameter ``ref_invariants`` must be en entry of the list 
+    ``INVOLUTION_SAMPLES`` defined in file ``involution_sample.py``.
+    This list shows some invariants of all classes in the subgroup 
+    :math:`G_x0` of the monster that square up to an element of 
+    :math:`Q_x0`. Let :math:`g` be an element of the subgroup  
+    :math:`G_{x0}` of the monster that has inariants as given by
+    parameter  ``ref_invariants``. The function returns:
+
+    0 if :math:`g` cannot be mapped to :math:`N_{x0}` by conjugation
+
+    1 if :math:`g` can be mapped to :math:`N_{x0}`, but not to 
+    :math:`Q_{x0}`.
+
+    2 if math:`g` can be mapped to :math:`Q_{x0}`, but not to 
+    the central involution of :math:`Q_{x0}`. Then  math:`g`
+    is of type 1A, 2A, 2B or 4A in the monster.
+
+    3 if math:`g` can be mapped to the central involution of 
+    :math:`Q_{x0}`. Then  math:`g`  is of type 2B in the monster.
+    """
     ref_ord, ref_chi, ref_involution_invariants = ref_invariants
     length = ref_involution_invariants[0]
     if length <= 9:
@@ -66,7 +88,7 @@ def invariant_status(ref_invariants):
         st = 0
     if ref_chi[0] in (196883, 275, 4371):
         assert st == 1
-        st = 2
+        st = 3 if (ref_chi[0] == 275 and ref_ord[0] == 2) else 2
     return st
 
 
@@ -81,6 +103,7 @@ def conj_G_x0_to_Q_x0(g):
     assert gh == MM(('q', q))
     return h
 
+Z = MM(('x', 0x1000))
 
 def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     gg = Xsp2_Co1(g)
@@ -121,24 +144,39 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     istate = invariant_status(ref_invariants)
     if ref_chi[0] in (196883, 275, 4371):
         # The g is of type 2A, 2B or 2A in the monster
-        assert istate == 2, (istate, ref_invariants)
+        assert istate >= 2, (istate, ref_invariants)
     v = xsp2co1_elem_find_type4(gg._data)
+    err = ""
     if istate == 0:
         ok = v <= 0
+        if not ok: 
+            err = "xsp2co1_elem_find_type4() succeeded but should not"
     else:
         ok = v > 0
+        if not ok: 
+            err = "xsp2co1_elem_find_type4() not successful"
         mv = MM(("c", v))**-1
         h = g**mv
-        if istate > 1: 
-            assert h.in_N_x0(), (g, h, ref_invariants)
-            print(g)
-            print("%-28s" % h, ref_invariants)
-            h1 = conj_G_x0_to_Q_x0(g)
-            assert (g**h1).in_Q_x0(), (g, h1, g**h1, ref_invariants)
-            print("")
-            
+        if ok and istate > 1: 
+            ok = ok and  h.in_N_x0(), (g, h, ref_invariants)
+            if not ok:
+                err = "Could not conjugate element to N_x0"
+            #print(g)
+            #print("%-28s" % h, ref_invariants)
+            if ok:
+                h1 = conj_G_x0_to_Q_x0(g)
+                ok = ok and  (g**h1).in_Q_x0()
+                if not ok:
+                    err = "Could not conjugate element to Q_x0"
+    if ok and istate == 3:
+        a = gg.conjugate_2B_involution()
+        ok = ok and  g**a == Z
+        if not ok:
+           err = "Could not conjugate element to centre of Q_x0" 
     if not ok:
         print("\nError in conjugating involution invariants")
+        print(err)
+        print("istate =", istate)
         print("Invariants:", ref_invariants)
         print("Conjugtion status expected:", istate)
         print("Conjugation vector:", hex(v))

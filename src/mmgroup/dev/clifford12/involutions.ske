@@ -900,7 +900,7 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    The array ``a`` must have legth at least \f$14\f$.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_conj_2B_involution(uint64_t *elem, uint32_t *a)
+int32_t xsp2co1_elem_conjugate_2B_involution(uint64_t *elem, uint32_t *a)
 {
    int32_t v, len, l1;
 

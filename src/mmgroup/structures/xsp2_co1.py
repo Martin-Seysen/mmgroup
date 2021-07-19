@@ -36,6 +36,7 @@ from mmgroup.clifford12 import xsp2co1_elem_to_word
 from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_involution_orthogonal
 from mmgroup.clifford12 import xsp2co1_conjugate_elem
+from mmgroup.clifford12 import xsp2co1_elem_conjugate_2B_involution
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -204,6 +205,33 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         status = xsp2co1_conjugate_elem(res._data, g._data, g.length)
         chk_qstate12(status)
         return res 
+
+    def conjugate_2B_involution(self, mmgroup = MM):
+        """Find an element conjugating an involution into the centre
+
+        If the element :math:`g` given by ``self`` is a 2B involution 
+        in  the monster then the method computes an element :math:`h` 
+        of the monster   with  :math:`h^{-1} g h = z`, where  
+        :math:`z` is the central involution in the 
+        subgroup :math:`G_{x0}` of the  monster.
+
+        The function returns  :math:`h` as an element of the instance
+        ``MM`` of class ``MMGroup``. It raises ``ValueError``
+        if :math:`g` is not a 2B involution in the monster. 
+
+        This is a wrapper for the C 
+        function ``xsp2co1_elem_conjugate_2B_involution``.
+
+        If parameter ``mmgroup`` is an instance of class ``MMGroup``
+        then the function returns :math:`h` as an element of the 
+        group given by ``mmgroup``.
+        """
+        a = np.zeros(14, dtype = np.uint32)
+        len_a = xsp2co1_elem_conjugate_2B_involution(self._data, a)
+        chk_qstate12(len_a)
+        return mmgroup.from_data(a[:len_a])
+
+
 
 ###########################################################################
 # The class representing the group G_x0
