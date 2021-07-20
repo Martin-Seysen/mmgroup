@@ -1,4 +1,6 @@
 import numpy as np
+import datetime
+import time
 
 from mmgroup import MMGroup, MMGroupWord
 from mmgroup.mm_order import check_mm_order
@@ -82,3 +84,43 @@ def mm_conjugate_2B(g, check=True, ntrials=20, verbose = 0):
         return t
     err = "Conjugation of element to central involution failed"
     raise ValueError(err)
+
+
+def reduce_via_power(g, ntrials=20, verbose = 0):
+    if verbose:
+        print("\nTrying to shorten the element g of the monster:")
+        print("g =", g)
+    for i in range(ntrials):
+        x0 = g.group.rand_mm(max(1, (i >> 2)))
+        #x0 = g.group.rand_G_x0()
+        g1 = g * x0
+        o, g2 = g1.half_order()
+        if o & 1 or g2 is None:
+            continue
+        try:
+            h = mm_conjugate_2B(g2, check=False, ntrials=1, verbose = 0)
+        except ValueError:
+            if verbose:
+                err = "Conjugation of element to central involution failed"
+            print(err + "\n")
+            continue
+        # Now g2**h = z, so g1**h  is in G_x0
+        g1h = g1**h
+        g1h.in_G_x0()
+        g1_new = g1h**(h**-1)
+        if verbose:
+            assert g1_new == g1
+        g_new = g1_new * x0**-1
+        g_new.reduce()
+        if verbose:
+            print("Shortened value of element g:")
+            print(g_new)
+            assert g_new == g
+            s = "Element of the monster has been shortened successfully"
+            print(s + "\n")
+        return g_new
+    err = "Shortening of an element of the monster failed"
+    raise ValueError(err)
+
+        
+
