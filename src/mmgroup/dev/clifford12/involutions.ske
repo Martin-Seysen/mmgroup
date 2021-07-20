@@ -942,7 +942,7 @@ int32_t xsp2co1_elem_conjugate_2B_involution(uint64_t *elem, uint32_t *a)
    // element  \f$x_{-1}\f$. We have to conjugate \f$x_{\Omega}\f$ 
    // with \f$\tau\f$ and \f$x_{-\Omega}\f$ with \f$\tau^2\f$.
    // So we append the approprate power of  \f$\tau\f$ to ``a``.
-   a[len++] = 0xf0000002 - ((v >> 24) & 1);
+   a[len++] = 0xed0000002 - ((v >> 24) & 1);
 
    // Return the length of the word in the array ``a``.
    return len;

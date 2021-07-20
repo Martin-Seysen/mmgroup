@@ -217,6 +217,7 @@ from random import randint, sample
 
 
 from mmgroup.generators import rand_get_seed, gen_leech2_type
+from mmgroup.generators import gen_rng_modp
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -539,7 +540,7 @@ class MMGroupWord(AbstractGroupWord):
         v = self.as_Q_x0_atom()
         return gen_leech2_type(v) >> 4
 
-    def conjugate_2B_involution(self, check=True, ntrials=3):
+    def conjugate_2B_involution(self, check=True, ntrials=10, verbose=0):
         """Find an element conjugating an involution into the centre
 
         If the element :math:`g` given by ``self`` is a 2B involution 
@@ -563,7 +564,7 @@ class MMGroupWord(AbstractGroupWord):
         """
         if mm_conjugate_2B is None: 
             import_Xsp2_Co1()
-        return mm_conjugate_2B(self, check, ntrials)
+        return mm_conjugate_2B(self, check, ntrials, verbose)
 
 
 ###########################################################################
@@ -1051,6 +1052,38 @@ class MMGroup(AbstractGroup):
             raise ValueError(err)
         return self.from_data(buf[:length])
 
+
+    def rand_mm(self, quality = None, seed = None):
+        r"""Return a random element of the monster group
+
+        The function returns a random element of the monster group.
+        Here ``quality`` means a measure for the quality of the
+        randimization process, where a higher value menas that
+        the distribution of the elements is closer to uniform.
+
+        If ``quality`` is an integer ``k`` then a product containing
+        ``k`` powers of the triality element it generated. Here the
+        default value creates an almost uniform distribution.
+
+        In future versions the default value of parameter ``quality``
+        may correspond to the generation of a truly uniform
+        distribution.
+
+        ``seed`` is a seed for the random generator. The current version 
+        supports the default seed only. Here some random data taken from 
+        the operating system and from the clock are entered into the seed.     
+        """
+        if quality is None: quality = 12
+        seed = rand_get_seed(seed)
+        g = self.rand_G_x0(seed)
+        for k in range(quality):
+            t = 1 + gen_rng_modp(2, seed)
+            g *= self.atom('t', t)
+            c = 0
+            while gen_leech2_type(c) >> 4 != 4:
+                c = gen_rng_modp(0x1000000, seed) 
+            g *= self.atom('c', c)
+        return g
 
 
 # Predefine a standard instance of class MMGroup

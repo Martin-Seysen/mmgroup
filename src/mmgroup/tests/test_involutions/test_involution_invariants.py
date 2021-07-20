@@ -44,7 +44,8 @@ def make_involution_samples():
     for invar, _, g in INVOLUTION_SAMPLES:
         g = MM(g)
         yield g, invar
-        for i in range(20): 
+        n_samples = 40 if invariant_status(invar) == 3 else 20
+        for i in range(n_samples): 
             t = MM.rand_G_x0()
             h = g**t
             h.in_G_x0()
@@ -196,7 +197,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
 
 
 
-@pytest.mark.mmm
+@pytest.mark.involution
 def test_xx(verbose = 0):
     for i, (g, n) in enumerate(make_involution_samples()):
          if verbose:
