@@ -40,7 +40,7 @@ from mmgroup.clifford12 import xsp2co1_elem_conjugate_2B_involution
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
-from mmgroup.mm_group import gen_atom, MM, MMGroupWord
+from mmgroup.mm_group import gen_atom, MM, MMGroupWord, MMGroup
 
 FORMAT_REDUCED = True
 
@@ -51,14 +51,6 @@ FORMAT_REDUCED = True
 ###########################################################################
 
 
-
-def xsp2co1_to_mm(mmgroup, xsp):
-    g = mmgroup()
-    assert isinstance(g, MMGroupWord)
-    g._extend(10)
-    g.length = chk_qstate12(xsp2co1_elem_to_word(xsp._data, g._data))
-    g.reduced = 0 
-    return g
 
 
 
@@ -88,15 +80,6 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         self._data = np.zeros(26, dtype = np.uint64)
         a_atoms = np.array(atoms, dtype = np.uint32)
         xsp2co1_set_elem_word(self._data, a_atoms, len(a_atoms))
-        """
-        if len(atoms):
-            chk_qstate12(xsp2co1_mul_elem_atom(self._data, atoms[0], 1))
-            for v in atoms[1:]:
-                chk_qstate12(xsp2co1_mul_elem_atom(self._data, v, 0))
-        else:
-            xsp2co1_unit_elem(self._data)
-        """
-
          
     @property
     def data(self):
@@ -253,7 +236,18 @@ def autpl_to_xsp2co1(g, aut):
     return res
 
 def mmgroup_to_xsp2co1(g, mm):
-    raise NotImplementedError
+    res =  g.word_type(group = g)
+    chk_qstate12(xsp2co1_set_elem_word(res._data, mm._data, mm.length))
+    return res
+
+
+def xsp2co1_to_mm(mmgroup, xsp):
+    g = mmgroup()
+    g._extend(10)
+    g.length = chk_qstate12(xsp2co1_elem_to_word(xsp._data, g._data))
+    g.reduced = 0 
+    return g
+
 
 
 class Xsp2_Co1_Group(AbstractGroup):
@@ -323,6 +317,7 @@ class Xsp2_Co1_Group(AbstractGroup):
     conversions = {
         Cocode: cocode_to_xsp2co1,
         AutPL: autpl_to_xsp2co1,
+        MMGroupWord: mmgroup_to_xsp2co1,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
@@ -414,9 +409,8 @@ class Xsp2_Co1_Group(AbstractGroup):
 
 
 Xsp2_Co1 = Xsp2_Co1_Group()
-Xsp2_Co1.set_preimage(MM, tuple)
-MM.set_preimage(Xsp2_Co1, partial(xsp2co1_to_mm, MM))
-
+#Xsp2_Co1.set_preimage(MM, tuple)
+MMGroup.conversions[Xsp2_Co1_Word] = xsp2co1_to_mm
 
 
 _dict_pm3 = {0: '0', 1:'+', 0x1000000:'-', 0x1000001:'0'}

@@ -570,6 +570,8 @@ class AbstractGroup(object):
         g1 = g
         if isinstance(g, str):
             g = self.parse(g)
+        elif type(g) in self.conversions:
+            return self.conversions[type(g)](self, g)
         if isinstance(g, AbstractGroupWord):
             og = g.group
             if og == self:
@@ -582,8 +584,6 @@ class AbstractGroup(object):
             return self.atom(*g)
         elif g == 1:
             return self.neutral()
-        elif type(g) in self.conversions:
-            return self.conversions[type(g)](self, g)
         raise TypeError(self.ERR_CONV % type(g))
            
 

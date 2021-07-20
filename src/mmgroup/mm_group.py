@@ -250,6 +250,12 @@ from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj
 
 from mmgroup.generators import mm_group_mul_words
 
+# Functions to be imported from modules mmgroup.structures.xsp2_co1
+# and mmgroup.structures.involutions
+Xsp2_Co1 = None
+xsp2co1_to_mm = None
+mm_conjugate_2B = None
+
 # Functions to be imported from module mmgroup.mm_order
 check_mm_order = None
 check_mm_equal = None
@@ -276,6 +282,19 @@ def import_mm_order_functions():
     check_mm_half_order = f
     from mmgroup.mm_order import check_mm_in_g_x0 as f
     check_mm_in_g_x0 = f
+
+
+
+def import_Xsp2_Co1():
+    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_2B
+    from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
+    Xsp2_Co1 = f
+    from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
+    xsp2co1_to_mm = f
+    from mmgroup.structures.involutions import mm_conjugate_2B as f
+    mm_conjugate_2B = f    
+
+
 
 ###########################################################################
 # Word class for the group MM
@@ -519,7 +538,32 @@ class MMGroupWord(AbstractGroupWord):
         """
         v = self.as_Q_x0_atom()
         return gen_leech2_type(v) >> 4
-    
+
+    def conjugate_2B_involution(self, check=True, ntrials=3):
+        """Find an element conjugating an involution into the centre
+
+        If the element :math:`g` given by ``self`` is a 2B involution 
+        in  the monster then the method computes an element :math:`h` 
+        of the monster   with  :math:`h^{-1} g h = z`, where  
+        :math:`z` is the central involution in the 
+        subgroup :math:`G_{x0}` of the  monster.
+
+        The function returns the element :math:`h` of the monster. It
+        raises ``ValueError`` if :math:`g` is not a 2B involution in
+        the monster, or no suitable element  :math:`h` can be foound. 
+
+        This function may take a long time. Parameter  ``ntrials``
+        gives the number of trials to find a suitable element
+        :math:`h`. Default is  ``ntrials = 3``.
+
+        If parameter ``check`` is True (default) then the function 
+        first checks if ``g`` is an involution.
+
+        In future versions support for multiprocessing may be added.
+        """
+        if mm_conjugate_2B is None: 
+            import_Xsp2_Co1()
+        return mm_conjugate_2B(self, check, ntrials)
 
 
 ###########################################################################
@@ -757,6 +801,8 @@ class MMGroup(AbstractGroup):
         super(MMGroup, self).__init__()
         self.atom_parser = AtomDict(self.atom)
         self.set_preimage(StdAutPlGroup,  tuple)
+
+
 
     def atom(self, tag = None, i = "r"):
         r"""Return an atomic element of this group
