@@ -80,19 +80,30 @@ class AbstractGroupWord(object):
         g = self.group
         return g._imul(self, g._to_group(other))
 
-
     def __mul__(self, other):
         """Implementation of the group multiplication"""
         g = self.group
-        return g._imul(g.copy_word(self), g._to_group(other))
-
+        try:
+            return g._imul(g.copy_word(self), g._to_group(other))
+        except (TypeError, NotImplementedError) as exc:
+            try:
+                myself = other.group._to_group(self)
+                return myself.__imul__(other)
+            except:
+                raise exc
     def __rmul__(self, other):
         """Implementation of the reverse group multiplication"""
         g = self.group
         if isinstance(other, Parity):
             return other
-        return g._imul(g._to_group(other), self)
- 
+        try:
+            return g._imul(g._to_group(other), self)
+        except (TypeError, NotImplementedError) as exc:
+            try:
+                myself = other.group._to_group(self)
+                return other.__imul__(myself)
+            except:
+                raise exc
 
     def __itruediv__(self, other):
         """Implementation of the group division
@@ -206,6 +217,7 @@ class AbstractGroup(object):
     atom_parser = {}               # see method parse()
     FRAME = re.compile(r"^(\w*)$") # see method parse()
     conversions = {}               # see method __call__
+    implicit_conversions = {}      # see method _to_group
     ERR_CONV = "Cannot convert '%s' object to group word"
 
     def __init__(self, *data, **kwds):
@@ -519,6 +531,11 @@ class AbstractGroup(object):
          
         We make no attempt to compute the transitive closure 
         of the morphisms defined by this function.
+
+        The relation made up by (the transitive closure of) these
+        morphisms should be asymmetric. E.g. if the integers are
+        a preimage of the real numbers then an integer is casted to 
+        a real number whenever it is multipied by a real number.
         """
         if morphism == tuple:
             morphism = self.convert_via_tuple
@@ -541,7 +558,14 @@ class AbstractGroup(object):
         """Try to convert element g to an element of the group g
 
         This function is used in the implementation of the group
-        operation.
+        operation. It is equivalent to method ``_cast`` with the 
+        following restrictions:
+
+        A tuple ``g`` is not converted.
+
+        If type(g) is contained in the dictionary 'cls.conversions' 
+        (but not in the dictionary 'cls.implicit_conversions') of 
+        the class then g not converted. 
         """
         if isinstance(g, AbstractGroupWord):
             og = g.group
@@ -552,6 +576,8 @@ class AbstractGroup(object):
             except KeyError:
                 raise TypeError(self.ERR_CONV % type(g))
             return morphism(g)
+        elif type(g) in self.implicit_conversions:
+            return self.implicit_conversions[type(g)](self, g)
         elif isinstance(g, Number):
             return self._embed_number(g)
         else:
@@ -567,18 +593,20 @@ class AbstractGroup(object):
         In case of success it returns an element of the group
         'self'. Otherwise it raises TypeError.
         """
-        g1 = g
+        conv_dict = {**self.conversions, **self.implicit_conversions}
         if isinstance(g, str):
             g = self.parse(g)
-        elif type(g) in self.conversions:
-            return self.conversions[type(g)](self, g)
+        elif type(g) in conv_dict:
+            return conv_dict[type(g)](self, g)
         if isinstance(g, AbstractGroupWord):
             og = g.group
             if og == self:
                 return g
-            for group, morphism in  self.preimages.items():
-                if og == group:
-                    return morphism(g)
+            try:
+                morphism = self.preimages[og]
+            except KeyError:
+                raise TypeError(self.ERR_CONV % type(g))
+            return morphism(g)
             raise TypeError(self.ERR_CONV % type(g))
         elif isinstance(g, tuple):
             return self.atom(*g)
@@ -610,10 +638,14 @@ class AbstractGroup(object):
           using the conversion methods listed above.
 
         - If type(g) is contained in the dictionary
-          'cls.conversions' of the class, then g is replaced
-          cls.conversions[type(g)](self, g). Conversion should 
-          be considered as fixed built-in functions of a class
-          representing a group.
+          'cls.conversions' of the class, then g is replaced by
+          cls.conversions[type(g)](self, g). These conversions 
+          should be considered as fixed built-in functions of a 
+          class representing a group.
+
+        - If type(g) is contained in the dictionary
+          'cls.implicit_conversions' of the class, then g is 
+          replaced by cls.implicit_conversions[type(g)](self, g). 
 
         If none of these condition is met, we raise TypeError.
         """

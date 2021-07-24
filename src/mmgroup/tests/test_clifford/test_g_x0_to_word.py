@@ -8,11 +8,11 @@ import time
 import numpy as np
 import pytest
 
-from mmgroup import MM, Xsp2_Co1
+from mmgroup import MM
 from mmgroup import mat24
 from mmgroup.mat24 import MAT24_ORDER 
 from mmgroup.generators import gen_leech2_reduce_type4
-from mmgroup.structures.xsp2_co1 import Xsp2_Co1_Word
+from mmgroup.structures.xsp2_co1 import Xsp2_Co1_Word, Xsp2_Co1
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_mul_elem_word
 from mmgroup.clifford12 import xsp2co1_elem_monomial_to_xsp
@@ -23,6 +23,8 @@ from mmgroup.clifford12 import xsp2co1_order_elem
 from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_order_word
 from mmgroup.clifford12 import xsp2co1_power_elem
+
+
 
 #######################################################################
 # Function monomial_to_word

@@ -102,7 +102,7 @@ def reduce_via_power(g, ntrials=20, verbose = 0):
         except ValueError:
             if verbose:
                 err = "Conjugation of element to central involution failed"
-            print(err + "\n")
+                print(err + "\n")
             continue
         # Now g2**h = z, so g1**h  is in G_x0
         g1h = g1**h

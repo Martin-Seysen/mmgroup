@@ -71,7 +71,7 @@ def test_reduce_via_power(verbose = 1, ntests = 10):
         if verbose:
             print("\nTest", i+1)
         g = MM.rand_mm(18)
-        g1 = reduce_via_power(g, ntrials=20, verbose = verbose)
+        g1 = reduce_via_power(g, ntrials=40, verbose = verbose)
         assert g1 == g
     end_time = datetime.datetime.now()
     diff_time = end_time - start_time

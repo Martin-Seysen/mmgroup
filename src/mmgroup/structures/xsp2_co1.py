@@ -15,7 +15,7 @@ from mmgroup.structures.parse_atoms import AtomDict, ihex
 from mmgroup.structures.ploop import Cocode, PLoop
 from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
 
-
+from mmgroup.mat24 import ploop_theta
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
 from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
@@ -227,6 +227,14 @@ def cocode_to_xsp2co1(g, c):
     chk_qstate12(xsp2co1_elem_xspecial(res._data, c.value & 0xfff))
     return res
 
+def ploop_to_xsp2co1(g, pl):
+    res =  g.word_type(group = g)
+    value = (c.value & 0x1fff)
+    value = (value << 12) ^ ploop_theta(value)
+    chk_qstate12(xsp2co1_elem_xspecial(res._data, value))
+    return res
+
+
 def autpl_to_xsp2co1(g, aut):
     res =  g.word_type(group = g)
     a = np.zeros(2, dtype = uint32)
@@ -309,6 +317,7 @@ class Xsp2_Co1_Group(AbstractGroup):
     
     
     """
+    __instance = None
     __slots__ = "data"
     STD_V3  = 0x8000004
     word_type = Xsp2_Co1_Word
@@ -316,11 +325,20 @@ class Xsp2_Co1_Group(AbstractGroup):
     atom_parser = {}               # see method parse()
     conversions = {
         Cocode: cocode_to_xsp2co1,
-        AutPL: autpl_to_xsp2co1,
         MMGroupWord: mmgroup_to_xsp2co1,
+        PLoop: ploop_to_xsp2co1,
+    }
+    implicit_conversions = {
+        AutPL: autpl_to_xsp2co1,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
+
+    def __new__(cls):
+        if Xsp2_Co1_Group.__instance is None:
+             Xsp2_Co1_Group.__instance = AbstractGroup.__new__(cls)
+        return Xsp2_Co1_Group.__instance
+
 
     def __init__(self):
         """ TODO: Yet to be documented     
@@ -329,7 +347,6 @@ class Xsp2_Co1_Group(AbstractGroup):
         """
         super(Xsp2_Co1_Group, self).__init__()
         self.atom_parser = AtomDict(self.atom)
-        self.set_preimage(StdAutPlGroup,  tuple)
 
 
     def atom(self, tag = None, i = "r"):
@@ -406,11 +423,9 @@ class Xsp2_Co1_Group(AbstractGroup):
         return self.word_type(data, group = self)
 
 
-
-
 Xsp2_Co1 = Xsp2_Co1_Group()
-#Xsp2_Co1.set_preimage(MM, tuple)
-MMGroup.conversions[Xsp2_Co1_Word] = xsp2co1_to_mm
+
+MMGroup.implicit_conversions[Xsp2_Co1_Word] = xsp2co1_to_mm
 
 
 _dict_pm3 = {0: '0', 1:'+', 0x1000000:'-', 0x1000001:'0'}
@@ -435,6 +450,11 @@ try:
 except:
     def get_error_pool(length):        
         return []    
+
+
+
+
+
 
 
 

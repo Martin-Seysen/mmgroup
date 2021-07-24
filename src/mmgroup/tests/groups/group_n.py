@@ -115,9 +115,11 @@ from mmgroup.generators import mm_group_n_mul_inv_delta_pi
 from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
 
 
-from mmgroup.mm_group import gen_atom, tags
+from mmgroup.mm_group import gen_atom, tags, MMGroupWord
 
 from mmgroup.mat24 import pow_ploop
+
+
 
 ######################################################################
 # Modelling an element of the group
@@ -148,15 +150,28 @@ class GroupN_Word(AbstractGroupWord):
 ######################################################################
 
 class GroupN(AbstractGroup):
+    __instance = None
     FRAME = re.compile(r"M?N?\<([0-9a-zA-Z _*+/-]*)\>")
     STR_FORMAT = r"N<%s>"
     word_type = GroupN_Word  # type of an element (=word) in the group 
     tag_order = "tyxdp"
     formats = {'t':str, 'y':ihex, 'x':ihex, 'd':ihex, 'p':str}
+    conversions = {
+        MMGroupWord: tuple,
+    }
+
+
+    def __new__(cls):
+        if GroupN.__instance is None:
+             GroupN.__instance = AbstractGroup.__new__(cls)
+        return GroupN.__instance
+
 
     def __init__(self):
-        self.atom_parser = AtomDict(self.atom)
         super(GroupN, self).__init__()
+        self.atom_parser = AtomDict(self.atom)
+        from mmgroup import MM
+        
 
 
     def atom(self, *data):

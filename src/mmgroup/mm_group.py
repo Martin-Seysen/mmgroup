@@ -247,7 +247,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 from mmgroup.structures.ploop import Cocode, PLoop
-from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj
+from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj, AutPL
 
 from mmgroup.generators import mm_group_mul_words
 
@@ -455,7 +455,8 @@ class MMGroupWord(AbstractGroupWord):
             err = "Element is not in the subgroup G_x0 of the monster"
             raise ValueError(err)
 
-        from mmgroup.structures.xsp2_co1 import Xsp2_Co1
+        if Xsp2_Co1 is None: 
+            import_Xsp2_Co1()
         elem = Xsp2_Co1(*self.group.as_tuples(self))
 
         a = np.zeros(4, dtype = np.int32)
@@ -783,16 +784,24 @@ class MMGroup(AbstractGroup):
     Elements ``g1``, ``g2`` that belong to different instances of
     class |MMGroup| are considered unequal.
     """
+    __instance = None
     word_type = MMGroupWord
     tags, formats = " dpxytl", [None, ihex, str, ihex, ihex, str, str]
     atom_parser = {}               # see method parse()
     conversions = {
         Cocode: cocode_to_mmgroup,
         PLoop: ploop_to_mmgroup,
-        #AutPlElement: autpl_to_mmgroup,
+    }
+    implicit_conversions = {
+        AutPL: autpl_to_mmgroup,
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
+
+    def __new__(cls):
+        if MMGroup.__instance is None:
+             MMGroup.__instance = AbstractGroup.__new__(cls)
+        return MMGroup.__instance
 
     def __init__(self):
         """ TODO: Yet to be documented     
@@ -801,7 +810,7 @@ class MMGroup(AbstractGroup):
         """
         super(MMGroup, self).__init__()
         self.atom_parser = AtomDict(self.atom)
-        self.set_preimage(StdAutPlGroup,  tuple)
+        #self.set_preimage(StdAutPlGroup,  tuple)
 
 
 
