@@ -37,14 +37,14 @@ indices for a basis vector are described in the table below.
 Vector addition, subtraction and scalar multiplication can be done with
 operators ``+``, ``-`` and ``*`` as usual. Elements of the monster group
 operate on vectors by right multiplication. Only vectors in the same 
-space can be added. An instance ``M`` of the monster group (of class
+space can be added. An instance ``MM`` of the monster group (of class
 |MMGroup|) must be given in the constructor of a vector space ``V``. 
-Then only elements of that instance ``M`` of the monster group can 
+Then only elements of that instance ``MM`` of the monster group can 
 act on vectors in ``V`` by right multiplication.
 
-The following code example generates an instance ``M`` of the
+The following code example generates an instance ``MM`` of the
 monster group operating on a vector space  ``V`` of integers
-modulo ``3``. It creates an element ``g`` of ``M`` and a vector
+modulo ``3``. It creates an element ``g`` of ``MM`` and a vector
 ``v`` in ``V`` and displays the result ``g * v`` of the 
 operation of ``g`` on ``v``. Note that a basis vector
 ``(tag, i0, i1)`` is displayed in the form ``tag_i0_i1``.
@@ -56,12 +56,12 @@ hexadecimal notation.
 
   >>> from mmgroup import MMGroup
   >>> from mmgroup import MMSpace
-  >>> # Create an instance M of the monster group
-  >>> M = MMGroup()
-  >>> # Create representation space V for M (modulo 3)
-  >>> V = MMSpace(3, M)
-  >>> # Create an element g of M 
-  >>> g = M(('d', 0x123), ('p', 217821225))
+  >>> # Create an instance MM of the monster group
+  >>> MM = MMGroup()
+  >>> # Create representation space V for MM (modulo 3)
+  >>> V = MMSpace(3, MM)
+  >>> # Create an element g of MM 
+  >>> g = MM(('d', 0x123), ('p', 217821225))
   >>> # Create a vector v in V 
   >>> v = V(('T', 712, 13), (2, 'X', 0x345, 13))
   >>> # Let g operate on v by right multiplication
@@ -359,9 +359,9 @@ class MMSpace(AbstractMmRepSpace):
         of class |MMGroup|. 
 
 
-    Thus the instruction ``V = MMSpace(3, M)``, with ``M`` an instance of
+    Thus the instruction ``V = MMSpace(3, MM)``, with ``MM`` an instance of
     class |MMGroup| creates a representation space ``V`` of characteristic
-    ``3`` on which the monster group ``M`` operates.
+    ``3`` on which the monster group ``MM`` operates.
 
     See function ``MMS`` for creating a standard representation space.
 

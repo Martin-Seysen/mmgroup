@@ -60,33 +60,30 @@ Creating an instance of the monster group
 .........................................
 
 
-For dealing with the monster :math:`\mathbb{M}` the user must 
-first create an instance ``M`` of class |MMGroup|, which 
-represents an instance of the monster group :math:`\mathbb{M}`::
+For dealing with the monster group :math:`\mathbb{M}` the user must 
+first create an instance ``MM`` of class |MMGroup|, which 
+represents the monster group :math:`\mathbb{M}`::
 
-      M = MMGroup()
+      MM = MMGroup()
 
 
-A user can create several disjoint instances of :math:`\mathbb{M}`. Elements
-of the monster are created by calling that instance ``M`` as a function with
-a variable number of arguments. Here each argument describes an element of
-:math:`\mathbb{M}` which is (usually) one of the generators listed above.
-The the function returns the product of all these elements as an instance
-of class |MMGroupWord|. Instances of class  |MMGroupWord| model elements
-of (an instance of) the Monster group :math:`\mathbb{M}`.
+Class |MMGroup| is implemented as a singleton. Calling the constructor
+of that class always returns the same instance of that class. There is
+the predefined instance ``mmgroup.MM`` of class |MMGroup|.
 
-An argument passed to an instance ``M`` of class  |MMGroup| may be a pair 
+Elements of the monster group are created by calling that instance ``MM`` 
+as a function with a variable number of arguments. Here each argument 
+describes an element of :math:`\mathbb{M}` which is (usually) one of the 
+generators listed above. The the function returns the product of all 
+these elements as an instance of class |MMGroupWord|. Instances of class  
+|MMGroupWord| model elements of the Monster group :math:`\mathbb{M}`.
+
+An argument passed to an instance ``MM`` of class  |MMGroup| may be a pair 
 ``(tag, value)``, where ``tag`` is a single small letter describing the 
 type of the generator of :math:`\mathbb{M}`, and ``value`` is an 
 integer describing the value of that generator. Alternatively, ``value``
 may be an instance of the appropriate algebraic structure used for
 indexing a generator of a given type as indicated in the table below.
-
-There is a predefined instance ``mmgroup.MM`` of class  |MMGroup| of 
-the monster group. This is used as a default in some situations. E.g. 
-an instance of a representation space of the monster group, which is
-of type |MMSpace|, refers to the object ``mmgroup.MM`` as the group
-acting on that space it by default.
 
 
 Implementation of the generators of the monster group
@@ -95,9 +92,9 @@ Implementation of the generators of the monster group
 
 Math papers may use (at least) Latin or Greek letters for labelling
 objects, but most programming languages are restricted to ASCII characters.
-Assuming that ``M`` is an instance of class  |MMGroup| representing
+Assuming that ``MM`` is an instance of class  |MMGroup| representing
 a monster group, the following table shows how to create generating
-elements of ``M``: 
+elements of ``MM``: 
 
 
 .. table:: Construction of generating elements of the monster
@@ -105,34 +102,34 @@ elements of ``M``:
 
 
   ===================  ==========================================================
-  Element              Construction as an element of ``M``, 
-                       with ``M`` of type |MMGroup|
+  Element              Construction as an element of ``MM``, 
+                       with ``MM`` of type |MMGroup|
   ===================  ==========================================================
-  :math:`x_\delta`     ``M(('d', delta))``, ``delta`` an instance of class
+  :math:`x_\delta`     ``MM(('d', delta))``, ``delta`` an instance of class
                        |Cocode|; 
 
-                       ``M(('d', delta))`` returns 
-                       ``M('d', Cocode(delta))`` for ``0 <= delta < 0x1000``. 
+                       ``MM(('d', delta))`` returns 
+                       ``MM('d', Cocode(delta))`` for ``0 <= delta < 0x1000``. 
 
-  :math:`x_\pi`        ``M(pi)``, ``pi`` an instance of class |AutPL|;
+  :math:`x_\pi`        ``MM(pi)``, ``pi`` an instance of class |AutPL|;
 
-                       ``M(('d', delta), ('p', n))`` returns 
-                       ``M(AutPL(('d', delta), ('p', n)))`` 
+                       ``MM(('d', delta), ('p', n))`` returns 
+                       ``MM(AutPL(('d', delta), ('p', n)))`` 
                        for ``0 <= delta < 0x1000``, ``0 <= n < 244823040`` .
 
-  :math:`x_e`          ``M(('x', e))``, ``x`` an  instance of class |PLoop|;
+  :math:`x_e`          ``MM(('x', e))``, ``x`` an  instance of class |PLoop|;
 
-                       ``M(('x', e))`` returns ``M(('x', PLoop(e)))`` for
+                       ``MM(('x', e))`` returns ``MM(('x', PLoop(e)))`` for
                        ``0 <= e < 0x2000``.
 
-  :math:`y_e`          ``M(('y', e))``,  ``e`` as in case :math:`x_e`. 
+  :math:`y_e`          ``MM(('y', e))``,  ``e`` as in case :math:`x_e`. 
 
-  :math:`z_e`          ``M(('z', e))``,  ``e`` as in case :math:`x_e`. 
+  :math:`z_e`          ``MM(('z', e))``,  ``e`` as in case :math:`x_e`. 
 
-  :math:`\tau^e`       ``M(('t', e))``, exponent  ``e`` is an integer 
+  :math:`\tau^e`       ``MM(('t', e))``, exponent  ``e`` is an integer 
                        which is taken modulo ``3``.
 
-  :math:`\xi^e`        ``M(('l', e))``,  exponent  ``e`` is an integer 
+  :math:`\xi^e`        ``MM(('l', e))``,  exponent  ``e`` is an integer 
                        which is taken modulo ``3``.
   ===================  ==========================================================
 
@@ -251,6 +248,8 @@ from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj, AutPL
 
 from mmgroup.generators import mm_group_mul_words
 
+
+
 # Functions to be imported from modules mmgroup.structures.xsp2_co1
 # and mmgroup.structures.involutions
 Xsp2_Co1 = None
@@ -308,8 +307,8 @@ def import_Xsp2_Co1():
 class MMGroupWord(AbstractGroupWord):
     r"""Models an element of the monster group :math:`\mathbb{M}`
 
-    Let ``M`` be an instance of class ``MMGroup``, and let ``g1``, 
-    ``g2`` be elements of ``M``.  Then
+    Let ``MM`` be an instance of class ``MMGroup``, and let ``g1``, 
+    ``g2`` be elements of ``MM``.  Then
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
@@ -317,8 +316,8 @@ class MMGroupWord(AbstractGroupWord):
 
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.   
 
-    Let ``V`` be a vector space that is a representation of ``M``,
-    see class |MMSpace| for details. An element ``g1`` of ``M`` 
+    Let ``V`` be a vector space that is a representation of ``MM``,
+    see class |MMSpace| for details. An element ``g1`` of ``MM`` 
     operates on the vector space  ``V`` by right multiplication.  
 
     :var group:
@@ -327,8 +326,8 @@ class MMGroupWord(AbstractGroupWord):
 
     .. warning::
        The constructor of this class is not for public use! You
-       may call an instance ``M`` of class  |MMGroup| for
-       constructing elements of the instance ``M`` of the monster 
+       may call an instance ``MM`` of class  |MMGroup| for
+       constructing elements of the instance ``MM`` of the monster 
        group.
   
     """
@@ -725,18 +724,18 @@ def ploop_to_mmgroup(g, pl):
 
 
 class MMGroup(AbstractGroup):
-    r"""An instance ``M`` of this class models an instance of the monster
+    r"""An instance ``MM`` of this class models an instance of the monster
 
     :param: None
 
     :return: An instance of the monster group 
     :rtype:  an instance of class |MMGroup|
 
-    This means that ``M = MMGroup()`` creates an instance ``M`` of the 
+    This means that ``MM = MMGroup()`` creates an instance ``MM`` of the 
     monster group  :math:`\mathbb{M}`. For generating an element ``g`` 
-    of ``M`` one must call ``M`` as a function with a variable number 
+    of ``MM`` one must call ``MM`` as a function with a variable number 
     of arguments. Depending on its type, each argument is evaluated to
-    an element of ``M`` as indicated in the table below, and the
+    an element of ``MM`` as indicated in the table below, and the
     product of these elements is returned. 
 
     Elements of the monster group are implemented as instances of class
@@ -749,8 +748,8 @@ class MMGroup(AbstractGroup):
       +---------------------+-------------------------------------------+
       | Object of type      | Evaluates to                              |
       +=====================+===========================================+
-      | tuple (``tag, i``)  | ``M((tag, i))`` is equivalent to          |
-      |                     | ``M.atom(tag, i)``                        |
+      | tuple (``tag, i``)  | ``MM((tag, i))`` is equivalent to         |
+      |                     | ``MM.atom(tag, i)``                       |
       +---------------------+-------------------------------------------+
       | class |PLoop|       | The Parker loop element :math:`d`         | 
       |                     | given by that object is mapped to         |
@@ -767,15 +766,15 @@ class MMGroup(AbstractGroup):
       | class |MMGroupWord| | A deep copy of the given element of       | 
       |                     | :math:`\mathbb{M}` is made                |
       +---------------------+-------------------------------------------+
-      | ``str``             | For an element ``g`` of ``M`` we have     |
-      |                     | ``M(str(g)) == g``.                       |
+      | ``str``             | For an element ``g`` of ``MM`` we have    |
+      |                     | ``MM(str(g)) == g``.                      |
       |                     |                                           |
       |                     | So we can reread                          |
-      |                     | printed elements of ``M``.                |
+      |                     | printed elements of ``MM``.               |
       +---------------------+-------------------------------------------+
 
     See class |MMGroupWord| for the group operation on an instance
-    ``M`` of  class |MMGroup|.
+    ``MM`` of  class |MMGroup|.
 
     Two elements ``g1, g2`` of the monster group can be tested for 
     equality with the ``==`` operator as usual. Here we use the 
