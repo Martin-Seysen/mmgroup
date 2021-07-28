@@ -152,26 +152,6 @@ is beyond or current capabilities of computing in the monster group,
 see  :cite:`Wilson13` for background.
 
 
-Large versus small groups involved in the monster group
-.......................................................
-
-The user is encouraged to create his own instances of 
-class |MMGroup|  for calculating in the monster group  
-:math:`\mathbb{M}`. This also applies to some large groups 
-innvolved in :math:`\mathbb{M}` to be defined later.
-Calling an instance of class  |MMGroup| returns an element
-of that group.
-
-On the other hand, small objects involved in the monster,
-such as the Golay code and its cocode, or the Parker loop and
-its standard automorphism group, are considered as index sets
-for labelling the generators of  :math:`\mathbb{M}`,  or the
-basis vectors of a representation of :math:`\mathbb{M}`.
-Here for any such small group or loop the is just a single 
-object representing the abstract group or loop. Examples of 
-such small objects are |GCode|, |PLoop|, |Cocode|, or |AutPL|.
-Calling such an object also  returns an element of the
-corresponding group or loop.
 
 Future development
 ..................
@@ -179,20 +159,12 @@ Future development
 Future versions of this package may implement the following reduction
 strategies for words of generators of :math:`\mathbb{M}` :
 
- * Substrings of generators of the subgroup 
-   :math:`G_{x0} = 2_+^{1+24}.\mbox{Co}_1` may be reduced to a
-   standard form. Yet this
-   is considerably more difficult than reducing elements of
-   the subgroup :math:`N_0`. Here the geometric information 
-   about the Leech lattice in :cite:`Iva99` will be helpful
 
-   Here we will use a fast algorithm for computing in the real
-   Clifford group :math:`\mathcal{C}_{12}`,
-   see :cite:`NRS01`  and  :cite:`AG04`.
-
-
- * Sufficiently long words of generators of :math:`\mathbb{M}` may
-   be shortened with high probability, see :cite:`Wilson13`.
+ * Long words of generators of :math:`\mathbb{M}` can be shortened 
+   with high probability by method ``mmgroup.MMGroupWord.simplify``. 
+   This method uses the algorihm in :cite:`Wilson13`. This may take 
+   a long time; on the autor's computer it may take several minutes.  
+   Here improvements in future versions are desirable.
 
 """
 # References in the __docstr__ see file docs/source/references.bib
@@ -255,6 +227,7 @@ from mmgroup.generators import mm_group_mul_words
 Xsp2_Co1 = None
 xsp2co1_to_mm = None
 mm_conjugate_2B = None
+reduce_via_power = None
 
 # Functions to be imported from module mmgroup.mm_order
 check_mm_order = None
@@ -286,14 +259,15 @@ def import_mm_order_functions():
 
 
 def import_Xsp2_Co1():
-    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_2B
+    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_2B, reduce_via_power
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     Xsp2_Co1 = f
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     xsp2co1_to_mm = f
     from mmgroup.structures.involutions import mm_conjugate_2B as f
     mm_conjugate_2B = f    
-
+    from mmgroup.structures.involutions import reduce_via_power as f
+    reduce_via_power = f
 
 
 ###########################################################################
@@ -359,6 +333,14 @@ class MMGroupWord(AbstractGroupWord):
         
     def __len__(self):
         return self.length
+
+    def _setdata(self, data):
+        len_ = len(data)
+        self._extend(len_)
+        self._data[:len_] = data
+        self.length = len_
+        self.reduced = False
+
         
     def __getitem__(self,i):
         if 0 <= i < self.length:
@@ -417,6 +399,9 @@ class MMGroupWord(AbstractGroupWord):
         The function returns True if this is the case. If this is
         the case then the element is converted to a word in the
         generators of :math:`G_{x0}`.
+
+        This method uses geometric information about the Leech 
+        lattice taken from :cite:`Iva99`.
         """
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
@@ -555,7 +540,9 @@ class MMGroupWord(AbstractGroupWord):
 
         This function may take a long time. Parameter  ``ntrials``
         gives the number of trials to find a suitable element
-        :math:`h`. Default is  ``ntrials = 3``.
+        :math:`h`. Default is  ``ntrials = 10``. The function may
+        fail after that number of trials even if the element is a
+        2B involution.
 
         If parameter ``check`` is True (default) then the function 
         first checks if ``g`` is an involution.
@@ -566,6 +553,47 @@ class MMGroupWord(AbstractGroupWord):
             import_Xsp2_Co1()
         return mm_conjugate_2B(self, check, ntrials, verbose)
 
+
+    def simplify(self, ntrials=None, verbose=0):
+        """Try to simplify an element of the monster group
+
+        This function tries to simplify an element of the monster group.
+        It may take a long time, but this is the only way to prevent the
+        explosion of the word lengths of elements of the monster group. 
+
+        The current version uses the word shortening algorithm
+        in  :cite:`Wil03`. Parameter ``ntrials`` specifies the number
+        of trials. Here the default value for ``ntrials`` should be
+        used, since the parameter may be dropped in future versions.
+
+        The word shortening algorithm and the implementation of this 
+        method is experimental and may change in future versions!
+        """
+        if check_mm_in_g_x0 is None:
+            import_mm_order_functions()
+        check_mm_in_g_x0(self)
+        self.reduce()
+        weight = sum([((x >> 28) & 7) == 5 for x in self.data])
+        #print(weight)
+        if weight <= 9:
+             return self
+        if ntrials is None:
+            ntrials = 40
+        else:
+            w = ("The default value of parameter 'ntrials' should be used"
+                 " in method mmgroup.MM.simplify")
+            warnings.warn(w)
+        if reduce_via_power is None:
+            import_Xsp2_Co1()
+        try: 
+            g = reduce_via_power(self, ntrials, verbose = verbose)
+            assert g == self
+            self._setdata(g.data)
+            self.reduce()
+        except:
+            w = "Simplification of monster group element failed"
+            warnings.warn(w)
+        return self
 
 ###########################################################################
 # Atoms for the group M
