@@ -141,30 +141,46 @@ of an instance of the monster group is modelled as in instance of class
 group is an instance of class |MMGroup|. Multiplication and 
 exponentiation of group elements works a usual.  
 
+
+Multiplication of elements of the monster group
+...............................................
+
 Internally, an element of  :math:`\mathbb{M}` is represented as a word
-in the generators given above. 
+in the generators given above. The user should be aware of the fact
+that multiplication with the ``*`` operator is a concatenation of such
+words, followed by (rather incomplete) reduction step. This means that 
+multplying words may still lead to an exponential growth of the word 
+length. 
+
+On can apply the method ``simplify`` to an element of the monster group.
+This method shortens a word representing an element of :math:`\mathbb{M}`
+to a reasonable length with a very high probability. However, applying 
+this method usually takes a long time. On the author's computer it may 
+take several minutes to shorten the product of two (previously shortened) 
+random words. This is yet considerably faster than the run time reported 
+in :cite:`Wilson13`.
+
 In such a word we always reduce substrings of generators of the 
 subgroup :math:`N_0` of :math:`\mathbb{M}` to a standard form, 
 which is easy. We apply no relations to the remaining generator
-:math:`\xi`, except for :math:`\xi^3=1`.
-Reducing an arbitrary word in :math:`\mathbb{M}` to a standard form
-is beyond or current capabilities of computing in the monster group,
-see  :cite:`Wilson13` for background.
+:math:`\xi`, except for :math:`\xi^3=1`. Method ``simplify`` uses
+the techique described in :cite:`Wil03` for shortening a word
+in the monster group.
+
 
 
 
 Future development
 ..................
 
-Future versions of this package may implement the following reduction
+Future versions of this package may implement improved reduction
 strategies for words of generators of :math:`\mathbb{M}` :
 
 
  * Long words of generators of :math:`\mathbb{M}` can be shortened 
    with high probability by method ``mmgroup.MMGroupWord.simplify``. 
-   This method uses the algorihm in :cite:`Wilson13`. This may take 
-   a long time; on the autor's computer it may take several minutes.  
-   Here improvements in future versions are desirable.
+   This method uses the algorithm in :cite:`Wil03`. This may take 
+   a long time. Here improvements in future versions are desirable.
 
 """
 # References in the __docstr__ see file docs/source/references.bib
