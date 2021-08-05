@@ -1389,7 +1389,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
   of a vector to a vector ``v`` in the Leech lattice mod 2. This 
   conversion  is successful if ``i`` denotes a legal index for one of 
   the tags tags ``B, C, T, X``. The function returns a short Leech 
-  lattice vector modulo 2, encoded in **Leech lattice coding**, as
+  lattice vector modulo 2, encoded in **Leech lattice encoding**, as
   descrbed in 
   section **Description of the mmgroup.generators extension**. 
 
@@ -1443,6 +1443,59 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
             return 0;
     }
 }
+
+
+
+
+/**********************************************************************
+*** Index conversion between internal and sparse rep of vectors in R_p
+**********************************************************************/
+
+/**
+  @brief Convert an index from internal to sparse representation
+
+  The function converts an index ``i`` for the internal representation 
+  of a vector to an index for the sparse representation of a vector
+  and returns the converted index. The function returns 0 in case
+  of a bad index. 
+
+  Indices for the sparse representation are defined as 
+  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
+*/
+// %%EXPORT px
+uint32_t mm_aux_index_intern_to_sparse(uint32_t i)
+// Convert internal index i to sparse index.
+// Return 0 if index i is bad
+{
+    uint32_t t, i0, i1, tmp;
+    if (i <  MM_AUX_OFS_X) {
+        if (i <  MM_AUX_OFS_T) {
+            // put t =  (i / 0x300); assuming 0 <= i < 0x900 
+            t = (0x2A540 >> ((i >> 8) << 1)) & 3;
+            i0 = i - t * 0x300;
+            i1 = i0 & 31;
+            i0 >>= 5;
+            if (i0 < i1) {
+                tmp = i0; i0 = i1; i1 = tmp;
+            }
+            if (i0 >= 24) return 0;
+            if (t && i0 == i1) return 0;
+            return ((t + 1) << 25) + (i0 << 14) + (i1 << 8);
+        } else {
+            // Tag T
+            i += 0x80000 - MM_AUX_OFS_T;
+            return i << 8;
+        } 
+    } else if (i < MM_AUX_OFS_E) {
+        // Tags X, Z, Y
+        i -=  MM_AUX_OFS_X;
+        i0 = i >> 5;
+        i1 = i & 31;
+        if (i1 >= 24) return 0;
+        return  MM_SPACE_TAG_X + (i0 << 14) + (i1 << 8);
+    } else return 0;
+}
+
 
 
 //  %%GEN h
