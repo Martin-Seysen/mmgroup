@@ -176,6 +176,16 @@ The Representation of the Monster Group
 The subgroup :math:`2^{1+24}.Co_1` of the monster and the Clifford group
 ========================================================================
 
+The section describes the fast computation in a certain subgroup 
+:math:`G_{x0}` of the monster :math:`\mathbb{M}` in detail. A person
+who simply wants do do calculations in the monster group need not 
+read this section. 
+
+
+Introduction
+------------
+
+
 In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
 has a subgroup :math:`G_{x0}` of structure 
 :math:`2^{1+24}_+.\mbox{Co}_1`.

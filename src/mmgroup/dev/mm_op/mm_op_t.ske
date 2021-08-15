@@ -131,3 +131,38 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 }
 
 
+
+
+// %%EXPORT px
+void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
+{
+    uint_mmv_t i, j, exp1;
+ 
+  // %%IF* GENERATE_CODE
+    exp %= 3;
+    if (exp == 0) {
+        for (i = 0; i < %{int:24*V24_INTS}; ++i) v_out[i] = v_in[i];
+        return;
+    }
+    exp1 = %{hex:1} - (uint_mmv_t)exp;
+    for (i = 0; i < %{int:24*V24_INTS}; ++i) {
+        // %%MUL_MATRIX_T3A v_in, exp1, v_out
+        ++v_in; ++v_out;
+    }
+
+    v_in -= %{int:24*V24_INTS};
+    v_out -= %{int:24*V24_INTS};
+    // Do diagonal part of tag A
+    for (i = 0; i < 24; ++i) {
+        // Copy diagonal of A, zero diagonals of B and C
+        uint_mmv_t mask = %{hex:P} << ((i << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1});
+        j = (i << %{LOG_V24_INTS}) + (i >> %{LOG_INT_FIELDS});
+        v_out[j] = (v_out[j] & ~mask) | (v_in[j] & mask);
+        // %%IF* 24 % INT_FIELDS 
+        // Zero slack
+        j = ((i + 1) << %{LOG_V24_INTS}) - 1;
+        v_out[j] &= %{smask:P, range(24 % INT_FIELDS)};
+        // %%END IF    
+    } 
+  // %%END IF  # GENERATE_CODE
+}

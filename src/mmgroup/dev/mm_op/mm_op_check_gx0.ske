@@ -28,6 +28,14 @@ enum tag_offsets {
 };
 
 
+/**
+  @brief Compute norm of the 'A' part of a vector in the rep of the monster
+
+  Assume that ``v`` is a vector in the representation of the monster
+  modulo %{P}. Then the part of  ``v`` with tag 'A' is considered as
+  a symmetric 24 times 24 matrix. The function returns the norm (i.e.
+  the sum of the squares of the entries) of that matrix.
+*/
 // %%EXPORT px
 uint32_t mm_op%{P}_norm_A(uint64_t *v)
 {
@@ -51,7 +59,6 @@ uint32_t mm_op%{P}_norm_A(uint64_t *v)
     // %%END FOR
     return norm % 15;
 }
-
 
 
 
@@ -84,7 +91,7 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
     int32_t res, v_y;
     uint_fast32_t w_type4, i, len, perm_num, y;
 
-    if (mm_op%{P}_norm_A(v) != tags[OFS_NORM_A]) return 0x101;
+    if (leech_matrix_norm_A(%{P}, v) != tags[OFS_NORM_A]) return 0x101;
 
     w3 = leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
     if (w3 == 0) return 0x102;

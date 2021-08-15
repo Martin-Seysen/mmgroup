@@ -33,6 +33,8 @@ static void find_short(
 {
     uint_fast32_t i, j; 
     uint_mmv_t w, w1;
+    
+    if (pf->pstart >= pf->pend) return;
     if (pf->mask1) for (i = 0; i < n; ++i) {
         // Compute absolute values of entries of v[i] in w
         w = v[i];
@@ -50,7 +52,8 @@ static void find_short(
         //   and then increment the pointer pf->pstart.
         //   No action if not pf->pstart < pf->pend.
         if (w1 != 0x8888888888888888ULL) for (j = 0; j < 64; j += 4) {
-            if (((w1 >> j) & 8) == 0 && pf->pend > pf->pstart) 
+            if (pf->pstart >= pf->pend) return;
+            if (((w1 >> j) & 8) == 0) 
                *pf->pstart++ = offset + (i << 4) + (j >> 2);
         }
 
@@ -64,7 +67,8 @@ static void find_short(
         //   and then decrement the pointer pf->pend.
         //   No action if not pf->pstart < pf->pend.
         if (w1 != 0x8888888888888888ULL) for (j = 0; j < 64; j += 4) {
-            if (((w1 >> j) & 8) == 0 && pf->pend > pf->pstart) 
+            if (pf->pstart >= pf->pend) return;
+            if (((w1 >> j) & 8) == 0) 
                *--pf->pend = 0x1000000UL + offset + (i << 4) + (j >> 2);
         }
     } else for (i = 0; i < n; ++i) {
@@ -78,7 +82,8 @@ static void find_short(
         w1 += 0x7777777777777777ULL;
         w1 &= 0x8888888888888888ULL;
         if (w1 != 0x8888888888888888ULL) for (j = 0; j < 64; j += 4) {
-            if (((w1 >> j) & 8) == 0 && pf->pend > pf->pstart) 
+            if (pf->pstart >= pf->pend) return;
+            if (((w1 >> j) & 8) == 0) 
                *pf->pstart++ = offset + (i << 4) + (j >> 2);
         }
     }

@@ -24,16 +24,11 @@ from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_power_word
+from mmgroup.clifford12 import leech_matrix_norm_A
+
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
-
-#from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
-#from mmgroup.mm15 import op_omega as mm_op15_omega 
-from mmgroup.mm15 import op_norm_A as mm_op15_norm_A 
-#from mmgroup.mm15 import op_find_in_Gx0 as mm_op15_find_in_Gx0
-#from mmgroup.mm15 import op_find_in_Qx0 as mm_op15_find_in_Qx0
-
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
@@ -176,7 +171,7 @@ def compute_order_vector(recompute = False, verbose = 0):
     
     # Concatenate computed lists to the global numpy array 'ORDER_TAGS'
     ORDER_TAGS = np.array(sum(map(list, [
-        [mm_op15_norm_A(OV), order_vector_data.DIAG_VA], 
+        [leech_matrix_norm_A(15, OV), order_vector_data.DIAG_VA], 
         WATERMARK_PERM, TAGS_Y, SOLVE_Y, TAGS_X, SOLVE_X, [TAG_SIGN] 
     ]), []), dtype = np.uint32)
     assert len(ORDER_TAGS) == 97, len(ORDER_TAGS)

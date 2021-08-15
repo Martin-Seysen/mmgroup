@@ -295,6 +295,7 @@ else:
         mm_op_xy.Perm64_xy, 
         hadamard_t.HadamardOpT64,
         hadamard_t.HadamardOpT3,
+        hadamard_t.HadamardOpT3A,
         hadamard_xi.HadamardOpXi64,
         hadamard_xi.HadamardOpXi16,
     ]  

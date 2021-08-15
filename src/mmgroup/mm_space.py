@@ -325,6 +325,42 @@ class MMSpaceVector(AbstractMmRepVector):
         """
         return self.space.vector_mul_exp(self, g, e, break_g)
  
+    def eval_A(self, v2, e = 0):
+        """Internal method, not for public use
+
+        The part of this vector with tag 'A' corresponds to 
+        symmetric 24 times 24 matrix :math:`A`. 
+
+        Let :math:`v_2` be a short Leech lattice vector given by 
+        parameter ``v2``, encoded as a vector in  the Leech 
+        lattice modulo 2; see section 
+        **Leech lattice encoding of the elements Q_x0** in
+        the description of the C interface. Then :math:`v_2` is 
+        determined up to sign and :math:`v_2 A v_2^\top`
+        is determined uniquely.
+
+        In case ``e = 0`` (default) the function returns 
+        :math:`v_2 A v_2^\top`. Otherwise the function returns
+        :math:`v_2 (A \tau^e) v_2^\top`, where :math:`\tau` is
+        the triality element in the monster group.
+ 
+        The current version supports vectors modulo ``p = 15`` only.
+
+        The short Leech lattice vector :math:`v_2` (of norm 4) is 
+        scaled to norm 32 as usual, when :math:`v_2` is given in 
+        integer coordinates.
+
+        The function raises ValueError if :math:`v_2`  is not
+        a short Leech lattice vector or if ``p != 15``.
+        """
+        from mmgroup.clifford12 import leech2matrix_eval_A
+        v1 = np.zeros(24*4, dtype = np.uint64)
+        self.space.op_t_A(self.data, e % 3, v1)
+        res = leech2matrix_eval_A(self.space.p, v1, v2)
+        if res < 0:
+            err = "Method eval_A failed on vector in rep of monster"
+            raise ValueError(err)
+        return res
         
 
 ######################################################################
@@ -472,6 +508,7 @@ class MMSpace(AbstractMmRepSpace):
         self.op_scalar_mul = mm_op[self.p].op_scalar_mul
         self.op_word = mm_op[self.p].op_word
         self.op_compare = mm_op[self.p].op_compare
+        self.op_t_A = mm_op[self.p].op_t_A
         del mm
 
     @property
@@ -546,7 +583,7 @@ class MMSpace(AbstractMmRepSpace):
         return v
 
     def setitems_sparse(self, v, a_indices):
-        """Setro selected components of a vector 
+        """Set selected components of a vector 
 
         Arguments 'v' and 'a_indices' are as in method getitems_sparse().
         Here the coordinates of vector 'v' described by 'a_indices' are 
@@ -558,6 +595,8 @@ class MMSpace(AbstractMmRepSpace):
             mm_aux_mmv_set_sparse(self.p, v.data, a_indices, 
                 len(a_indices))
         return v
+
+
 
 
     #######################################################################

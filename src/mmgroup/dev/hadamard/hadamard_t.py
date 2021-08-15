@@ -430,6 +430,170 @@ for each tag.
           "MUL_MATRIX_T3" : UserDirective(self.make_code, "sss"),
         }
         
+########################################################################################
+
+
+class HadamardOpT3A(HadamardMatrixCode):
+    """Apply triality element to tags A, B, C
+
+    This is a simplified version of class HadamardOpT3. It
+    computes the A part of the vector (multipled by a triality
+    element) only.
+
+    Yet to be documented!!!!
+    """
+        
+    def __init__(self, p, verbose = 0):
+        """Create an instance of the class.
+
+        Parameters are as in the base class HadamardMatrixCode,
+        with the restriction that log_vlength must be even.
+        """
+        super(HadamardOpT3A, self).__init__(p, 0, verbose)
+        self.set_vars()
+        self.directives.update(self.make_directives())
+
+    def set_vars(self):
+        self.vlen = 2 << self.NO_CARRY
+        self.vars.resize(self.vlen)
+        
+
+    def reset_vars(self):
+        super(HadamardOpT3A, self).reset_vars()
+        self.set_vars()
+
+
+    def external_add(self, v1, v2):
+        """Compute  v1 += v2.
+   
+        Perform addition of the two C variables v1 and v2.  For all 
+        components v1[i], v2[i] of of v1, v2
+        (stored in v1 and v2) we put
+
+            v1[i] = v1[i] + v2[i], 
+
+        Each result is reduced modulo p. This is a simplified version
+        of method external_butterfly().
+        """
+        self.matrix_code +=  v1.assign(v1 + v2)
+        self.n_code_lines += 1 
+        self.n_operations += 1
+        self.reduce_butterfly(v1)
+
+    def main_op(self):
+        """yet to be documented!!!"""
+        if self.NO_CARRY:
+            for i in range(2):
+                self.expand_hadamard_extern(self.vars[i], self.vars[i+2])
+            self.external_add(self.vars[2], self.vars[3])
+        self.external_add(self.vars[0], self.vars[1])
+        if self.NO_CARRY:
+            self.compress_hadamard_extern(self.vars[0], self.vars[2])
+        self.mul_var_pwr2(self.vars[0], -1)
+
+
+
+
+    def load_vector_mul_diagonal(self, array_name, mask):
+        """Load vector v from tags A, B, C of rep 196884x.
+
+        Here 'mask' is an integer of type uint_mmv_t wich must be
+        0 or (uint_mmv_t)(-1). If mask == -1 then the vector v is 
+        multiplied with the dagonal matrix D described in method
+        make_diagonal_mask().
+
+        'array_name' must a variable of type uint_mmv_t 
+        referring to array A as in method load_vector_direct(). 
+        More specifically, A contains a set of componets of
+        a vector for the rep 196884x with tag A.
+        The function also loads the corresponding sets of 
+        components of the vector with tags B and C.
+        """
+        self.comment(
+"""Loading vector from rep 196884x with tags A,B,C
+to v[0...2]. Here %s refers to the tag A part. 
+Negate v[2] if %s == -1."""
+            % (array_name, mask)
+        )
+        s = "%s = (%s)[%d];\n" % (self.vars[0], array_name,
+              24 * self.V24_INTS )
+        s += "%s = (%s)[%d] ^ ((%s) & %s);\n" % (self.vars[1], 
+                array_name, 48 * self.V24_INTS, mask, 
+                self.hex(self.smask(self.P)) ) 
+        self.n_code_lines += 2
+        self.n_operations += 2
+        self.matrix_code += s
+        self.comment_vector()  
+
+    def store_vector(self, array_name):
+        """Store vector v to tag A, B, C of  of rep 196884x.
+
+        'array_name' must a variable of type uint_mmv_t 
+        referring to array A as in method load_vector_direct(). 
+        More specifically, A contains a set of componets of
+        a vector for the rep 196884x with tag A.
+        The function also loads the corresponding sets of 
+        components of the vector with tags B and C.
+        """
+        self.comment(
+"""Store vector v[0] to rep 196884x with 
+tags A. Here %s refers to the tag A part. """
+            % (array_name)
+        )
+        s = "(%s)[0] = %s;\n" % (array_name, self.vars[0])
+        self.n_code_lines += 1
+        self.matrix_code += s
+
+
+    def make_code(self, source, mask, dest):
+        """Apply triality operation on vector.
+
+        Right multiply the vector of integers mod self.P stored in 
+        'src' by t**e, where t is the 64 times 64 triality matrix 
+        operating on blocks of the rep 196884x with tag. 
+
+        For e = 1, parameter 'mask' must be 0; for e = 2, parameter
+        'mask' must bei (uint_mmv_t)(-1). The part with tag 'A' of
+        the result result is stored in 'dest'.
+
+        'source' and 'dest' must be pointers of type uint_mmv_t*,
+        'mask' must be a variable of type uint_mmv_t.
+        """
+        self.reset_vars()
+        self.comment(
+"""Put dest_A =  (src_B + mask * src_C) / 2   (mod {p})
+
+Here src_B and src_C are the part of a vector of integers 
+mod {p} stored in ({src}) with tag B and C, and dest_A is 
+the part of a vector of integers mod {p} stored in ({dest}),  
+with tag A. Here {mask} must be 0 or -1.
+
+This means that the function computes the part with tag A of
+the vector ({dest}) = ({src}) * t**e, where e = 1 - mask.
+
+{src} and {dest} are pointers of type *uint_mmv_t.
+Components with tags B, C referred by ({src}) 
+are processed, one integer of type uint_mmv_t
+for each tag.
+
+""".format(p = self.P, src = source, mask = mask, dest = dest)
+        )
+        self.load_vector_mul_diagonal(source, mask)
+        self.main_op()
+        self.store_vector(dest)
+        self.comment_statistics()
+        return self.generate()
+
+    def make_directives(self):
+        return {
+          "MUL_MATRIX_T3A" : UserDirective(self.make_code, "sss"),
+        }
+        
+
+
+
+
+
 
 
 if __name__ == "__main__":

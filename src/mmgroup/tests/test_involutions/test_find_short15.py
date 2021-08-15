@@ -11,13 +11,15 @@ import pytest
 from mmgroup import MM, MMSpace
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
+from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm15 import op_find_short as mm_op15_find_short
 
 LEECH_SHORT = np.zeros(98280, dtype = np.int32)
 for i in range(98280):
     sparse = mm_aux_index_extern_to_sparse(300 + i)
-    LEECH_SHORT[i] = mm_aux_index_sparse_to_leech2(sparse)
-
+    l1 = LEECH_SHORT[i] = mm_aux_index_sparse_to_leech2(sparse)
+    sparse1 = mm_aux_index_leech2_to_sparse(l1)
+    assert sparse == sparse1, [hex(x) for x in (i, sparse, l1, sparse1)]
 
 V = MMSpace(15)
 

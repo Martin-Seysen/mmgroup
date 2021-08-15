@@ -303,6 +303,12 @@ Module ``xsp2co1_elem.c``
    .. doxygenfile:: xsp2co1_elem.c
 
 
+Module ``leech3matrix.c``
+--------------------------
+
+   .. doxygenfile:: leech3matrix.c
+
+
 Module ``involutions.c``
 --------------------------
 

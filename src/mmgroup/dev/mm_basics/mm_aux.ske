@@ -1447,6 +1447,112 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
 
 
 
+
+/**
+  @brief Convert short vector in the Leech lattice mod 2 to sparse rep
+
+  The function converts an value ``v2`` representing a vector in
+  the Leech lattice mod 2 to a sparse index and returns that sparse
+  index. It returns 0 if ``v2`` is not a short Leech lattice vector.
+*/
+// %%EXPORT px
+uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
+{
+    uint_fast32_t  x1, theta, tab, scalar, b1, b0, vect, lsb, syn, w;
+    x1 = (uint_fast32_t)v2;
+
+    // in the sequel we cut and paste the code for the detection of 
+    // a short vector v2 in the Leech lattice mod 2 from 
+    // function ``gen_leech2_is_type2`` in file ``gen_leech.c``.
+    // After detecting such a short vector we convert that
+    // vector to a sparse index.
+
+    // Deal with odd cocode words
+    if (x1 & 0x800) {   // Deal with odd cocode words
+         // Let tab be the syndrome table entry for the cocode part
+         theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+         tab = MAT24_SYNDROME_TABLE[(theta ^ x1) & 0x7ff];
+         // Return 0 if tab does not encode a cocode word of length 1
+         if ((tab & 0x3ff) < (24 << 5)) return 0;
+         // Return  0 if scalar product <code, cocode> == 1  (mod 2)
+         scalar = (x1 >> 12) &  x1 & 0xfff;
+         scalar ^= scalar >> 6;
+         scalar ^= scalar >> 3;
+         scalar = (0x96 >> (scalar & 7)) & 1;
+         if (scalar) return 0;
+         // Here v2 is a short vector of shape (3^1,^1^23)
+         // Return sparse vector with tag X
+         return 0xA000000 + ((x1 & 0x7ff000) << 2) + ((tab & 0x1f) << 8);
+    }
+    // Deal with Golay code word 0
+    if ((x1 & 0x7ff000L) == 0) {
+         // Let tab be the syndrome table entry for the cocode part 
+         // XORed with basis vector 0. 
+         tab = MAT24_SYNDROME_TABLE[(x1 ^ MAT24_RECIP_BASIS[0]) & 0x7ff];
+         // Set b1 True iff tab encodes a cocode word of length 3
+         b1 =  (tab & 0x3ff) < (24 << 5);
+         // Set b0  True iff tab encodes a cocode word with bit 0 not set
+         b0 =  (tab & 0x1f) !=  0;
+         //  b0 ^ b1 is True iff (the even) cocode word has length 2
+         if (b0 == b1) return 0;
+         // Here v2 is a short vector of shape (4^2, 2^22)
+         if (b1) {
+             b1 = (tab >> 10) & 0x1f; b0 = (tab >> 5) & 0x1f;
+         } else {
+             b1 = tab & 0x1f; b0 = 0;
+         }
+         // Now precisely the bits b0 and b1 are set in ``tab``.
+         // Return sparse vector with tag B is bit 23 of x1 is 0
+         // and with tag C otherwise.
+         return  (b1 << 14) + (b0 << 8) + 0x4000000 
+                 + ((0x800000 & x1) << 2);
+    }
+    // If v2 is of type 2 here, it must be a suboctad
+
+    // Return 0 if v2 is not a (possibly complemented) octad
+    if (mat24_def_not_nonstrict_octad(x1 >> 12)) return 0;
+
+    // let vect = Golay code in vector representation
+    vect = mat24_gcode_to_vect(x1 >> 12);
+    // Put  w =  weight(code word) / 8     (mod 2);
+    // so w is True iff the Golay code word is an octad.
+    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
+    w = ((x1 >> 23) ^ (theta >> 13)) & 1;  
+    // Complement vect if it is not an octad
+    vect ^= w - 1;
+    // let lsb be the least significant bit of vect
+    lsb = mat24_def_lsbit24(vect);
+    // Let tab be the table entry for the cocode part XORed
+    // with basis vector ``lsb``. 
+    tab = MAT24_SYNDROME_TABLE[
+        (x1 ^ theta ^ MAT24_RECIP_BASIS[lsb]) & 0x7ff];
+    // Compute cocode syndrome from tab
+    syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
+                               ^ (1 << ((tab >> 10) & 31));
+    // Return 0 if syndrome is not a subword of ``vect``
+    if ((vect & syn) != syn) return 0;
+    // Set b1 True iff tab encodes a cocode word of length 3
+    b1 =  (tab & 0x3ff) < (24 << 5);
+    // Set b0 True iff tab encodes a cocode word with bit ``lsb`` not set
+    b0 =  (tab & 0x1f) !=  lsb;
+    // Put b0 = 0 if cocode word has length 0 or 4 
+    // Put b0 = 1 if cocode word has length 2 
+    b0 ^= b1;
+    // Return 0 if b0 == w
+    if (b0 == w) return 0;         
+    // Here v2 is a short vector of shape (2^8, 0^16)
+    syn ^= (1 << lsb);                 // This is the correct syndrome
+    w = mat24_extract_b24(syn, vect);  // This is the suboctad
+    if (w & 0x80) w ^= 0xff;           // Clear MSBit of suboctad
+    w = (w >> 1) & 63;                 // Number of suboctad
+    x1 >>= 12;                         // Number of Golay code word
+    x1 = mat24_def_gcode_to_octad(x1); // Number of octad
+    // Return sparse vector with tag 'T'
+    return 0x8000000 + (x1 << 14) + (w << 8);
+}
+
+
+
 /**********************************************************************
 *** Index conversion between internal and sparse rep of vectors in R_p
 **********************************************************************/
