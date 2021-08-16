@@ -363,6 +363,48 @@ class MMSpaceVector(AbstractMmRepVector):
         return res
         
 
+    def axis_type(self, e = 0):
+        """Return axis type if this vector is a 2A axis 
+
+        If this vector is a 2A axis then the function computes the 
+        type of the 2A axis. Each 2A axis corresponds uniquely to 
+        a 2A involution :math:`x` in the monster. Let :math:`z` be 
+        the central involution in the subgroup :math:`G_{x0}` of 
+        the monster. Then the type of the 2A axis ``v`` is the class 
+        of the product :math:`xz` in the monster. Such a class must 
+        be 2A, 2B, 4A, 4B, 4C, 6A, 6C, 6F, 8B, 10A, 10B, or 12C.
+   
+        In case ``e = 0`` (default) the function returns the type 
+        of the axis as a string if this vector is a 2A axis. It 
+        may return ``None`` if this vector is not a 2A  axis.
+
+        In case ``e != 0`` the function replaces this vector
+        :math:`v` by :math:`v \cdot \tau^e`, where :math:`\tau`
+        is the triality element in the monster group.
+
+        The function works for a vector space modulo ``p = 15`` 
+        only. It raises ValueError in case ``p != 15`` 
+
+        Caution:
+
+        This is a quick disambiguation of the type of a 2A axis. The 
+        function may return any axis type if this is not  a 2A axis.
+        """
+        if self.space.p != 15:
+            err = "Method supported for characteristic p = 15 only"
+            raise ValueError(err)
+        e, v = e % 3, self.data
+        if e:
+            v = np.zeros(24*4, dtype = np.uint64)
+            self.space.op_t_A(self.data, e, v)             
+        from mmgroup.clifford12 import leech_matrix_2A_axis_type
+        t = leech_matrix_2A_axis_type(self.space.p, v)
+        if t == 0:
+            return None
+        s = str((t >> 28) & 15) + "?ABCDEFGHIJKLMNO"[(t >> 24) & 15]
+        return s
+            
+
 ######################################################################
 # class MMSpace
 ######################################################################
