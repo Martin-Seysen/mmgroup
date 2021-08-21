@@ -656,7 +656,7 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     res = restore_cap_h(m1a, m1, rows_used1, rows_equ, i1);
     // Abort in case of failure
     if (res < 0) return res;
-    // Restore the rows of ``m2`` fromthe used rows of ``m2a``; put
+    // Restore the rows of ``m2`` from the used rows of ``m2a``; put
     // the rows equal to corresponing rows of ``m1a`` at the bottom.
     return restore_cap_h(m2a, m2, rows_used2, rows_equ, i2);
 }

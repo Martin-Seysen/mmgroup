@@ -10,7 +10,6 @@ sys.path.append(r"C:\Data\projects\MonsterGit\src")
 from mmgroup import MM, AutPL, PLoop, Cocode, Xsp2_Co1
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_involution_invariants
-from mmgroup.clifford12 import xsp2co1_orthogonal_complement
 
 
 G = MM
