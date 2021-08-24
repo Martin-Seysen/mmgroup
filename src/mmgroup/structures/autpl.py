@@ -236,22 +236,13 @@ def autpl_from_obj(t):
         t = dict(t)
     if isinstance(t, dict):
         h1, h2 = [list(t) for t in zip(*t.items())]
-        if not 0 <= min(*h1, *h2) <= max(*h1, *h2) < 24:
-            raise ValueError("Permutation is not in Mathieu group M_24")
-        if len(h1) < 7:
+        res, perm = mat24.perm_from_map(h1, h2)
+        if res == 1:
+            return 0, mat24.perm_to_m24num(perm) 
+        if res < 1:
+            err = "Permutation is not in Mathieu group M_24"
+        else:
             err = "Permutation in Mathieu group M_24 is not unique"
-            raise ValueError(err)
-        ok = False
-        for i in range(6, min(len(h1), len(h2), 9)):
-            h1[6], h2[6] = h1[i], h2[i]
-            try:
-                perm = mat24.perm_from_heptads(h1, h2)
-                assert  all([perm[x] == t[x] for x in t])
-                return 0, mat24.perm_to_m24num(perm) 
-            except:
-                continue
-        print("Bad Permutation:", t)
-        err = "This is not a unique permutation in the Mathieu group M_24"
         raise ValueError(err)
     if isinstance(t, AutPL):
         return t._cocode, t._perm_num
@@ -297,7 +288,7 @@ def autpl_from_tag(tag = None, data = None):
 
 
 class AutPL(AbstractGroupWord):
-    """This class models a standard automorphism of the Parker loop.
+    r"""This class models a standard automorphism of the Parker loop.
 
     :param \*data:
 

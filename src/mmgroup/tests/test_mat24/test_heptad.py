@@ -76,7 +76,7 @@ def get_testdata(gc):
     for i in range(100):
         p = random_umbral_heptad(gc)
         yield p, True
-        hc.compute(p) 
+        hc.complete_heptad(p) 
         prod =  gc.mul_perm(prod, p)
         #print( prod )
         yield p, True
@@ -84,7 +84,7 @@ def get_testdata(gc):
     # test some error cases
     for i in range(100):
         p = random_umbral_heptad(gc)
-        hc.compute(p)
+        hc.complete_heptad(p)
         p6 = p[6]
         j = random.randint(0,5)
         p[j], p[8] = p[8], p[j]
@@ -107,7 +107,7 @@ def get_testdata(gc):
     for i in range(6):
         for j in range(i):
             p = random_umbral_heptad(gc)
-            hc.compute(p)
+            hc.complete_heptad(p)
             p[i] = p[j]
             yield p, False     
               
@@ -182,7 +182,7 @@ def get_test_dodecads():
 
 
 @pytest.mark.mat24
-def test_heptad_completer():
+def test_perm_from_dodecad():
     for ntest, (d1, d2) in enumerate(get_test_dodecads()):
         #print(d1, d2)
         perm = mat24.perm_from_dodecads(d1[:9], d2[:9])
@@ -193,4 +193,125 @@ def test_heptad_completer():
 
     
 
+#########################################################################
+# Test function  mat24_perm_from_map()
+#########################################################################
 
+
+
+def rand_perm():
+    """Return random permutation in ``Mat24`` as a list"""
+    num = random.randint(0, mat24.MAT24_ORDER-1)
+    return mat24.m24num_to_perm(num)
+
+
+def map_vect(v):
+    """Apply radom permutaiton in in ``Mat24`` of vector
+
+    Here ``v`` is a vector of integers ``0 <= v[i] < 24``.
+    The function generates a random permutation ``p`` in
+    the group ``Mat24`` and returns the list
+    
+    [p[0], p[1],...,p[22], p[23]].
+    """
+    pi = rand_perm()
+    return [pi[x] for x in v]
+
+
+def perm_from_map_testdata():
+    """Yield test data for testing function perm_from_map()
+
+    The function yields quadruples (h1, h2, ref_res, ref_p).
+
+    The function perm_from_map() is expected to find a
+    permutation p that maps the entries in the list h1 to
+    the entries in the list h2, provided that ``ref_res``
+    is greater than zero.
+
+    Also, function perm_from_map() should return the value
+    ``ref_res``. If ``ref_p`` is not None then the permutation
+    returnd by function perm_from_map() should be equal
+    to ``ref_p``.    
+    """
+    Id = list(range(24))
+    yield list(range(5)), list(range(5)), 3, Id
+    yield [], [], 3, Id
+    yield list(range(9)), list(range(9)), 1, Id
+    yield [0,1,2,3,4,5,6], [0,1,2,3,4,5,8], 0, None
+
+    PERMS = [
+         ([0,1,2,3,4,9], 2),
+         ([0,1,2,3,4,5,9], 1),
+         ([0,1,2,3,4,5,6,9], 1),
+    ]
+    for i in range(1, 9):
+        PERMS.append( (range(i), 3) )
+    for perm, res in PERMS:
+        v = map_vect(perm)
+        yield v, v, res, Id
+        for i in range(3):
+            v1, v2 = map_vect(perm), map_vect(perm)
+            yield v1, v2, res, None
+            
+    for n in range(9, 25):
+        L = random.sample(range(24),n)
+        yield L, L, 1, Id
+        for j in range(3):
+            p = rand_perm()
+            ind = random.sample(range(24), n)
+            perm = [p[i] for i in ind]
+            yield ind, perm, 1, p
+    
+
+def one_test_perm_from_map(h1, h2, ref_res, ref_p,verbose = 1):
+    if verbose:
+        print("h1 =", h1)
+        print("h2 =", h2)
+        print("Expected return value:", ref_res)
+    res, perm = mat24.perm_from_map(h1, h2)
+    ok, ok_perm = res == ref_res, True
+    if ref_p:
+        ok_perm = perm == ref_p
+    elif ref_res > 0:
+        for i, x in enumerate(h1):
+            ok_perm = ok_perm and perm[x] == h2[i]
+    ok = ok and ok_perm
+    if not verbose and not ok:
+        print("h1 =", h1)
+        print("h2 =", h2)
+        print("Expected return value:", ref_res)
+    if verbose or not ok:
+        print("Obtained return value:", res)
+        if res > 0:
+            print("p =", perm)
+            if ref_p and ref_p != perm:
+                print("Expected:\n   ", ref_p)
+        if not ok_perm:
+            print("Permutation p is bad")
+        if res != ref_res:
+            print("Return value is bad")
+    if not ok:
+        err = "Test of function mat24.perm_from_map failed"
+        raise ValueError(err)
+
+    if ref_p or len(h1) <= 1:
+        return
+
+    # If no expected permutation is given, shuffle h1 and h2
+    # in the same way and test once more with shuffled h1, h2.
+    lh = len(h1)
+    ind = list(range(lh)) if lh > 2 else [1,0]
+    if (lh > 2):random.shuffle(ind)
+    h1a = [h1[i] for i in ind]
+    h2a = [h2[i] for i in ind]
+    res1, perm1 = mat24.perm_from_map(h1a, h2a)
+    assert res1 == res, (res1, res)
+    assert perm1 == perm, (perm1, perm)
+
+
+@pytest.mark.mat24
+def test_perm_from_map(verbose = 0):
+    for n, (h1, h2, ref_res, ref_p) in enumerate(perm_from_map_testdata()):
+        if verbose: print("\nTest", n+1)
+        one_test_perm_from_map(h1, h2, ref_res, ref_p, verbose)   
+    

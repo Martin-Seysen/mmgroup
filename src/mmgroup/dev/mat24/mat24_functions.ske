@@ -1442,8 +1442,8 @@ uint32_t mat24_perm_complete_octad(uint8_t *p_io)
   A permutation in the  Mathieu group ``Mat24`` is a mapping  from the
   set ``(0,...,23)`` to itself.  The function completes the  mapping 
   ``h1[i] -> h2[i]``, ``0 <= i < 7``, ``0 <= h1[i], h2[i] < 24`` to
-  a permutation ``i -> p_out[i]``, ``0 <= i < 24``. The result is 
-  returned in the array ``p_out[i]``.
+  a permutation ``i -> p_out[i]``, ``0 <= i < 24`` in the 
+  group ``Mat24``. The result is returned in the array ``p_out[i]``.
 
   The sets ``h1[i], 0 <= i < 7`` and ``h2[i], 0 <= i < 7`` must be
   umbral heptads, and the mapping from ``h1`` to ``h2`` must be
@@ -1509,6 +1509,179 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
     for (i = 0; i < 24; ++i)  p_out[p1[i]] = p2[i];
     return 0;
 }        
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void insertsort_i8(uint8_t *a1, uint8_t *a2, int32_t n)
+// Sort the array ``a1`` of length ``n``.
+// Perform the same permutation on the array ``a2`` as on ``a1``
+{
+    int_fast32_t i, j;
+    for (i = 1; i < n; i += 1) {
+        uint_fast8_t temp1 = a1[i], temp2 = a2[i];
+        for (j = i; j >= 1 && a1[j - 1] > temp1; --j) {
+            a1[j] = a1[j - 1]; a2[j] = a2[j - 1];
+        }
+        a1[j] = temp1;  a2[j] = temp2;
+    }
+}
+/// @endcond
+
+
+
+/** 
+  @brief Complete a mapping to a permutation in the Mathieu group ``Mat24``
+
+  A permutation in the  Mathieu group ``Mat24`` is a mapping  from the
+  set ``(0,...,23)`` to itself.  The function tries to complete the
+  mapping ``h1[i] -> h2[i]``, ``0 <= i < n``, ``0 <= h1[i], h2[i] < 24``
+  to a permutation ``i -> p_out[i]``, ``0 <= i < 24`` in the Mathieu
+  group ``Mat24``. In case of success, such a permutation is stored in
+  the array ``p_out``.
+
+  The function returns
+
+  -1 if the mapping ``h1[i] -> h2[i]`` does not extend to a legal
+  permutation of the numbers 0,...,23. Note that duplicate entries
+  in ``h1`` or ``h2`` are illegal.
+
+  0  if no such permutation exists in the Mathieu group ``Mat24``.
+
+  1  if the mapping ``h1[i] -> h2[i]`` extends to a unique permutation
+  in ``Mat24``.
+
+  2 if if the mapping ``h1[i] -> h2[i]`` can be completed to several
+  permutations in ``Mat24``, and not all entries ``h1[i]`` can be
+  covered by an octad. This may happen in case ``n = 6`` only.
+
+  3 if if the mapping ``h1[i] -> h2[i]`` can be completed to several
+  permutations in ``Mat24``, and all entries ``h1[i]`` can be
+  covered by an octad.
+
+  If the return value is greater then zero then a suitable permutation
+  in ``Mat24`` is returned in the array referred by ``p_out``.
+  The returned permutation depends on the mapping ``h1 -> h2`` only,
+  regardless of the order of the entries in ``h1``.
+*/
+// %%EXPORT p
+uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_out)
+{
+    uint_fast32_t err, bm1, bm2, i, o1, o2, i8, i16;
+    uint8_t p1[32], p2[32], t;
+    int32_t res;
+
+    // Check for errors. We reject duplicate entries in any of the 
+    // arrays ``h1`` or ``h2``, and also enries >= 24.
+    // Compute the bitmap of the entries in ``h1`` in ``bm1``,
+    // and the bitmap of the entries in ``h2`` in ``bm2``.
+    err = 0 - (n > 24);
+    bm1 = bm2 = 0;
+    if (err == 0) for (i = 0; i < n; ++i) {
+        err |= (h1[i] + 8) | (h2[i] + 8);
+        bm1 |= 1 << h1[i]; 
+        bm2 |= 1 << h2[i];
+    }
+    if (err & (0-32) || mat24_bw24(bm1) != n || mat24_bw24(bm2) != n) {
+        for (i = 0; i < 24; ++i) p_out[i] = 24;
+        return (uint32_t)(-1); 
+    }
+    
+    // Copy ``h1`` to ``p1`` and ``h2`` to ``p2``. In case ``n < 9``
+    // we sort the copy ``p1`` of ``h1`` and permute ``p2``
+    // correspondingly, so that the permutation depends on the 
+    // mapping ``h1 -> h2`` only. In case ``n >= 9`` there is at
+    // most one feasible permutation in ``Mat24``.
+    // In case ``n < 5`` we append entries (with lowest possible 
+    // values in natural order) to  ``p1`` and ``p2`` so that both 
+    // lists will have length at least 5.  
+    if (n < 5) {
+        mat24_vect_to_bit_list(bm1, p1);
+        mat24_vect_to_bit_list(bm2, p2);
+    }
+    for (i = 0; i < n; ++i) {
+        p1[i] = h1[i];
+        p2[i] = h2[i];
+    }
+    if (n < 9) insertsort_i8(p1, p2, n);
+
+    // Store the bit vectors containing the first five entries
+    // of ``p1`` in ``bm1``.
+    bm1 = bm2 = 0;
+    for (i = 0; i < 5; ++i)  bm1 |= 1 << p1[i]; 
+    for (i = 0; i < 5; ++i)  bm2 |= 1 << p2[i]; 
+
+    // Store the (unique) octads containing the first five entries 
+    // of ``p1`` and ``p2`` in ``bm1`` and ``bm2``, respectively.
+    o1 = bm1 | mat24_syndrome(bm1, 0);
+    o2 = bm2 | mat24_syndrome(bm2, 0);
+
+    // Try to find an index ``i8 >= 5`` such that ``p1[i8]`` is in
+    // the octad ``o1``. Try to find an index ``i16 >= 5`` such 
+    // that ``p1[i16]`` is not in the octad ``o1``.
+    i8 = 24;  // This is a rather bad index
+    i16 = 25;  // This is a rather bad index
+    for (i = 5; i < n; ++i) {
+        if ((1 << p1[i]) & o1) i8 = (i8 == 24) ? i : i8;
+        else i16 = (i16 == 25) ? i : i16;
+    }
+
+    // Compute return value (in case of success) from i8 and i16
+    if (i16 == 25) res = 3; // everything is in the octad ``o1``.
+    else res = 1 + (i8 == 24 && n < 7);
+       
+    // If no index ``i8`` found then:
+    //    if n < 7 then take entries from the syndromes of 
+    //    the first five entries of ``p1`` and ``p2``;
+    //    otherwise just put ``i8 = 5, i16 = 6``.
+    if (i8 == 24) {
+        if (n < 7)  {
+            bm1 ^= o1;  bm2 ^= o2;  // compute symdromes
+            p1[24] = mat24_def_lsbit24(bm1);
+            p2[24] = mat24_def_lsbit24(bm2);
+        } else {
+            i8 = 5; i16 = 6;
+        }
+    }
+
+    // If no index ``i16`` found then take entries from the 
+    // complements of the octads  ``o1`` and o2.
+    if (i16 == 25) {
+        o1 = ~o1;  o2 = ~o2; // complement octads o1 and o2
+        p1[25] =  mat24_def_lsbit24(o1);
+        p2[25] =  mat24_def_lsbit24(o2);
+    }
+    // Copy entries at positions ``i8`` and ``i16`` 
+    // of ``h1`` and ``h2`` to positions 5 and 6.
+    t = p1[i16]; p1[5] = p1[i8]; p1[6] = t;
+    t = p2[i16]; p2[5] = p2[i8]; p2[6] = t;
+
+    // Compute ``p_out`` from ``p1[0,...,6]`` and ``p2[0,...,6]``
+    // Return 0 if this fails
+    if (mat24_perm_from_heptads(p1, p2, p_out)) {
+        // For debugging
+        for (i = 0; i < 8; ++i) {
+            p_out[i] = p1[i]; p_out[i+8] = p2[i];
+        }
+        p_out[16] = (uint8_t)i8;  p_out[16] = (uint8_t)i16;         
+        p_out[18] = p1[24]; p_out[19] = p1[25];
+        p_out[20] = p2[24]; p_out[21] = p2[25];
+        p_out[22] = 0xca; p_out[23] = 0xfe;
+        return 0;
+    }    
+ 
+    // Check that permutation ``p_out`` really maps ``h1`` to ``h2``.
+    // Return 0 if this check fails.
+    err = 0;
+    for (i = 0; i < n; ++i) err |= p_out[h1[i]] ^ h2[i];
+    if (err)  return 0;
+
+    // Otherwise we are successful and return ``res``.
+    return res;    
+}
+
 
 
 /// @cond DO_NOT_DOCUMENT

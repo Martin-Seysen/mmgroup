@@ -1049,7 +1049,7 @@ int32_t leech2matrix_eval_A(uint32_t p, uint64_t *v, uint32_t v2)
 
    Output ``v`` is either 0 or a vector in the Leech lattice 
    mod 2 found during the computation. Here a vector of type 2
-   is returned for classes 1A, 6A; and a vector of type 4 is
+   is returned for classes 2A, 6A; and a vector of type 4 is
    returned for class 4A.
 
    The function returns 0 if  ``p != 15`` or if the vector is 

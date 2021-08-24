@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
-from libc.stdint cimport uint32_t, uint16_t, uint8_t
+from libc.stdint cimport uint32_t, uint16_t, uint8_t;
 
 
 
@@ -370,6 +370,30 @@ def perm_from_heptads(h1, h2):
         raise ValueError(err)
     return [p1[i] for i in range(24)] 
 
+
+def perm_from_map(h1, h2):
+    cdef uint8_t h1a[24]
+    cdef uint8_t *p_h1a = h1a
+    cdef uint8_t h2a[24]
+    cdef uint8_t *p_h2a = h2a 
+    cdef uint8_t p1[24]
+    cdef uint8_t *p_p1 = p1
+    cdef uint32_t length = len(h1)
+    if len(h2) != length:
+        err = "Arrays in function perm_from_map() have different lengths"
+        raise ValueError(err)
+    if length > 24:
+        err = "Array in function perm_from_map() is too long"
+        raise ValueError(err)
+    for i in range(length):
+        h1a[i] = int(h1[i]) 
+        h2a[i] = int(h2[i]) 
+    cdef uint32_t res = mat24_perm_from_map(p_h1a, p_h2a, length, p_p1)
+    if res < 0:
+        err = "Illegal entry in array in function perm_from_map()"
+        raise ValueError(err)
+    return res, [p1[i] for i in range(24)] 
+        
 
 
 def m24num_to_perm(uint32_t u_m24):

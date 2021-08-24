@@ -294,7 +294,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         otherwise. In case of success, p_io is completed to an element of
         the Mathieu group Mat24. 
         """
-        if cls.heptad_completer.compute(p_io) != 0:
+        if cls.heptad_completer.complete_heptad(p_io) != 0:
             raise ValueError("Could not complete permutation in Mat24")
 
 

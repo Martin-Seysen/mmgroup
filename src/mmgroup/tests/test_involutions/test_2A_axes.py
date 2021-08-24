@@ -39,7 +39,7 @@ AXES = {
 }
 
 
-@pytest.mark.involutions
+@pytest.mark.involution
 def test_axes():
     for key in AXES:
         v = V(START_AXIS) * MM(AXES[key])
