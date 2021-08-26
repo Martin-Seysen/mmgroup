@@ -11,6 +11,14 @@ system that type may be changed to ``uint32_t`` by adjusting the
 variable ``INT_BITS`` in file ``config.py`` of the root directory).
 
 
+    .. warning::
+       The 32-bit version of the project (i.e. setting ``INT_BITS = 32``) 
+       is deprecated and probably no longer functional!
+
+       If the C compiler used on a 32-bit platform supports
+       integers of type ``uint64_t`` then the project may be
+       compiled with setting ``INT_BITS = 64``.
+
     .. table:: Constants used for generating representations of the monster
       :widths: 25 75
 
