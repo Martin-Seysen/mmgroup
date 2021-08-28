@@ -1,0 +1,243 @@
+// %%COMMENT
+// TODO: comment this!!!!
+
+#include <malloc.h>
+
+#include "mat24_functions.h"
+#include "clifford12.h"
+#include "mm_basics.h"   
+#include "mm_op%{P}.h"   
+   
+
+// %%IF P != 15
+#error File mm_op_check_gx0.c works for modulus P = 15 only!
+// %%END IF 
+
+// %%IF INT_BITS != 64
+#error File mm_op_check_gx0.c works in the 64-bit version only!
+// %%END IF 
+
+
+
+#define MAX_SHORT_ARRAY 1024
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+typedef struct {
+    uint_mmv_t v[%{MMV_INTS}];
+    uint_mmv_t vtmp[%{MMV_INTS}];
+    uint_mmv_t vA[(24*32) >> %{LOG_INT_FIELDS}];
+    uint32_t v_short[MAX_SHORT_ARRAY];
+    uint32_t n_short;
+    uint64_t basis[24];
+} axes_work_t;
+
+
+/**
+  @brief Return certain array of short vectors in Leech lattice mod 2
+
+  Let ``v`` be a vector in the rep of the moster mod 15.
+
+  In case ``value1 == 0`` the function computsns the list of all 
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute 
+  value of the entry of ``v`` corresponding a unit vector labelled 
+  by ``v2`` is equal to ``value0``. That list is stored 
+  in ``pwork.v_short[j], 0 <= j < ``n_short``.
+
+  In case ``value1 != 0`` wil will store the list of all 
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute 
+  value of the entry of ``v`` corresponding a unit vector labelled 
+  by ``v2`` is equal to ``value0`` or ``value1` . That list is 
+  stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
+  as in function ``mm_op%{P}_find_short``.
+*/
+ 
+static inline void get_short(
+    uint_mmv_t *v, 
+    uint32_t value0, 
+    uint32_t value1, 
+    axes_work_t *p_work
+)
+{
+    p_work->n_short = mm_op%{P}_find_short(v, p_work->v_short,
+                MAX_SHORT_ARRAY,  value0, value1);
+}
+
+
+
+/**
+  Return certain subspace of short vectors in Leech lattice mod 2
+
+  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  ``L`` be the set of vectors in the Leech lattice mod 2
+  returned by function ``short(v, value)``. The function computes
+  the linear subspace of the Leech lattice mod 2 spanned by ``L``
+  as a list of vectors. 
+
+  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+*/
+static inline void get_span(
+    uint_mmv_t *v, 
+    uint32_t value, 
+    axes_work_t *p_work
+)
+{
+    uint32_t dim;
+    get_short(v, value, 0, p_work);
+    dim = leech2_matrix_basis(p_work->v_short, p_work->n_short, 
+                p_work->basis, 24);
+    if (dim > 10) dim = 10;
+    p_work->n_short = leech2_matrix_expand(p_work->basis, dim, 
+          p_work->v_short);
+}
+
+
+/**
+  Return certain subspace of short vectors in Leech lattice mod 2
+
+  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  ``L`` be the set of vectors in the Leech lattice mod 2
+  returned by function ``short(v, value)``. let ``V`` be the
+  linear space spanend by ``L``. 
+
+  The function returns the radical of ``V`` (i.e. the intersection
+  of ``V`` with its orthogonal complement) as a list of vectors. 
+
+  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+*/
+static inline void get_radical(
+    uint_mmv_t *v, 
+    uint32_t value, 
+    axes_work_t *p_work
+)
+{
+    uint32_t dim;
+    get_short(v, value, 0, p_work);
+    dim = leech2_matrix_radical(p_work->v_short, p_work->n_short, 
+                p_work->basis, 24);
+    if (dim > 10) dim = 10;
+    p_work->n_short = leech2_matrix_expand(p_work->basis, dim, 
+          p_work->v_short);
+}
+
+
+
+static inline uint32_t find_type4(
+    axes_work_t *p_work
+)
+{
+    uint32_t *pv;
+    for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
+        if ((gen_leech2_type(*pv) >> 4) == 4) return *pv;
+    }
+    return 0;
+}
+
+
+/// @endcond  
+
+
+
+// %%EXPORT px
+void  mm_op%{P}_store_axis(uint_mmv_t *v, uint32_t sign)
+{
+    mm_aux_zero_mmv(%{P}, v);
+    static uint32_t sp[4] = {
+        (1 << 25) + (2 << 14) + (2 << 8) + 1,
+        (1 << 25) + (2 << 14) + (3 << 8) + %{P} - 1,
+        (1 << 25) + (3 << 14) + (3 << 8) + 1,
+        (2 << 25) + (2 << 14) + (3 << 8) 
+    };
+    sp[3] &= 0xffffff00;
+    sp[3] += sign ? 2 : %{P} - 2;
+    mm_aux_mmv_set_sparse(%{P}, v, sp, 4);
+}
+
+
+
+
+static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
+{
+    int32_t status = -1000;
+    uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
+    uint32_t ax_types[3];
+
+    for (i = 0; i < 5; ++i) {
+        vt = leech_matrix_2A_axis_type(15, v);
+        if (vt == 0)  return -2;
+        ax_types[1] = ax_types[2] = 0;
+        ax_type = vt >> 24;
+        vt &= 0xffffff;
+        switch(ax_type) {
+            case 0x22:  // case 2B
+                get_span(v, 4, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x21;
+                break;
+            case 0x21:
+                len_r1 = gen_leech2_reduce_type2(vt, 0, r+len_r);
+                if (len_r1 < 0) return -21;
+                mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+                len_r += len_r1;
+                vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
+                if (vt != %{P}-2) {
+                   r[len_r] = 0xB0000200;
+                   mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                   len_r += 1;
+                }
+                mm_op%{P}_store_axis(p_work->vtmp, 0);
+                if (mm_op15_compare(v, p_work->vtmp)) return -22;
+                return len_r;
+        }
+
+        len_r1 = gen_leech2_reduce_type4(v4, r + len_r);
+        if (len_r1 < 0) return -10;
+        mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+        len_r += len_r1;
+        status = -4;
+        for (e = 1; e < 3 && status; ++e) {
+            mm_op15_t_A(v, e, p_work->vA);                    
+            ax_type = leech_matrix_2A_axis_type(15, p_work->vA) >> 24;
+            for (j = 0; j < 3 && ax_types[j]; ++j) {
+                if (ax_type == ax_types[j]) {
+                    r[len_r] = 0xD0000003 - e;
+                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                    len_r += 1;
+                    status = 0;
+                    break;
+                }
+            }
+        }
+        if (status)  return status;
+    }
+    return -3;
+}
+
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_reduce_v_axis(uint_mmv_t *v, uint32_t * r)
+{
+    int32_t res;
+    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
+    if (p_work == 0) return -1;
+    res =  reduce_v_axis(v,  r, p_work);
+    free(p_work);
+    return res;
+}
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
+{
+    int32_t res;
+    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
+    if (p_work == 0) return -1;
+    mm_op%{P}_store_axis(p_work->v, 0);
+    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res >= 0)  res = reduce_v_axis(p_work->v, r, p_work);
+    free(p_work);
+    return res;
+}
