@@ -238,18 +238,15 @@ def make_testcases():
     V = V_START.space
     yield V_START.copy()
     yield V(  ("I", 11, 9) )
-    for i in range(20):
-        yield V_START * MM.rand_N_0(in_N_x0 = True)
-    for i in range(100):
+    for i in range(10):
         yield V_START * MM.rand_G_x0()
     for ax in AXES:
-        if not ax in ["2A", "2B"]: break   ## preliminary!!!!!!!
+        #if ax in ["10B", "12C"]: continue   ## preliminary!!!!!!!
         v0 = V_START * MM(AXES[ax])
-        for i in range(200):
+        for i in range(20):
             yield v0 * MM.rand_G_x0()
-    return ## preliminary!!!!!!!!!!!!!!!!!!!!!        
     for quality in range(2,11):
-        for i in range(500):
+        for i in range(3):
               yield  V_START *  MM.rand_mm(quality)      
 
 

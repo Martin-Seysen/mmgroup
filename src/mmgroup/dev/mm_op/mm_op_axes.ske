@@ -130,11 +130,25 @@ static inline uint32_t find_type4(
 {
     uint32_t *pv;
     for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
-        if ((gen_leech2_type(*pv) >> 4) == 4) return *pv;
+        if ((gen_leech2_type(*pv & 0xffffff) >> 4) == 4) return *pv;
     }
     return 0;
 }
 
+
+
+
+static inline uint32_t xor_entries(
+    axes_work_t *p_work,
+    int32_t value
+)
+{
+    uint32_t *pv;
+    for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
+        *pv ^= value;
+    }
+    return 0;
+}
 
 /// @endcond  
 
@@ -162,7 +176,7 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
 {
     int32_t status = -1000;
     uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
-    uint32_t ax_types[3];
+    uint32_t ax_types[3], *pv;
 
     for (i = 0; i < 5; ++i) {
         vt = leech_matrix_2A_axis_type(15, v);
@@ -171,12 +185,64 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
         ax_type = vt >> 24;
         vt &= 0xffffff;
         switch(ax_type) {
+            case 0xC3:
+                get_radical(v, 7, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x42;
+                ax_types[1] = 0x61;
+                break;
+            case 0xA2:
+                get_radical(v, 4, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x42;
+                ax_types[1] = 0x43;
+                break;
+            case 0xA1:
+                get_short(v, 3, 1, p_work);
+                xor_entries(p_work, p_work->v_short[0]);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x43;
+                ax_types[1] = 0x61;
+                break;
+            case 0x82:
+                get_short(v, 1, 0, p_work);
+                xor_entries(p_work, p_work->v_short[0]);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x41;
+                break;
+            case 0x66:
+                get_radical(v, 7, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x43;
+                break;
+            case 0x63:
+                get_span(v, 3, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x41;
+                break;
+            case 0x61:
+                get_short(v, 5, 0, p_work);
+                xor_entries(p_work, vt);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x41;
+                ax_types[1] = 0x43;
+                break;
+            case 0x43:  // case 4C
+            case 0x42:  // case 4B
+                get_radical(v, 1, p_work);
+                v4 = find_type4(p_work);
+                ax_types[0] = 0x22;
+                break;
+            case 0x41:  // case 4A
+                v4 = vt;
+                ax_types[0] = 0x21;
+                break;
             case 0x22:  // case 2B
                 get_span(v, 4, p_work);
                 v4 = find_type4(p_work);
                 ax_types[0] = 0x21;
                 break;
-            case 0x21:
+            case 0x21:   // case 2B
                 len_r1 = gen_leech2_reduce_type2(vt, 0, r+len_r);
                 if (len_r1 < 0) return -21;
                 mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
