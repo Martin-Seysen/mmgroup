@@ -135,7 +135,7 @@ def reduce_axis(vector, verbose = 0):
             v4all = [w ^ v0 for w in v2all if leech_type(w ^ v0) == 4]
             assert len(v4all)
             v4 = v4all[0]
-            t_types = [0x43,0x61]
+            t_types = [0x61]
         elif type == 0x82:  # case 8B
             v2all = short(v, 1)
             v2_0 = v2all[0]
@@ -160,7 +160,7 @@ def reduce_axis(vector, verbose = 0):
             v4all = [w ^ vt for w in v2all if leech_type(w ^vt) == 4]
             assert len(v4all)
             v4 = v4all[0]
-            t_types = [0x41, 0x43]
+            t_types = [0x41]
         elif type == 0x43:  # case 4C
             v2all = radical(v, 1, verbose)
             v4all = [w for w in v2all if leech_type(w) == 4]

@@ -201,8 +201,7 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 get_short(v, 3, 1, p_work);
                 xor_entries(p_work, p_work->v_short[0]);
                 v4 = find_type4(p_work);
-                ax_types[0] = 0x43;
-                ax_types[1] = 0x61;
+                ax_types[0] = 0x61;
                 break;
             case 0x82:
                 get_short(v, 1, 0, p_work);
@@ -225,7 +224,6 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 xor_entries(p_work, vt);
                 v4 = find_type4(p_work);
                 ax_types[0] = 0x41;
-                ax_types[1] = 0x43;
                 break;
             case 0x43:  // case 4C
             case 0x42:  // case 4B
