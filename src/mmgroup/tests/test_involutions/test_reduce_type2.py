@@ -15,6 +15,7 @@ from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import gen_leech2_reduce_type2
+from mmgroup.generators import gen_leech2_reduce_type2_ortho
 from mmgroup.generators import gen_leech2_op_word
 
 from mmgroup.clifford12 import leech_matrix_2A_axis_type
@@ -138,7 +139,7 @@ def map_to_standard12_xi_exp(v):
 ###########################################################################
 
 
-def reduce_type2(v, sign = 1):
+def reduce_type2(v2, sign = 1):
     """Map short vector in Leech lattice to standard frame
 
     This is a python implementation of the C function
@@ -147,9 +148,10 @@ def reduce_type2(v, sign = 1):
     Let ``v_2 \in \Lambda / 2 \Lambda`` of type 2 be given by 
     parameter ``v2`` in Leech lattice encoding. Then the function 
     constructs a ``g \in G_{x0}`` that maps ``v_2`` to the 
-    standard vector  ``v_0`` which corresponds to the Golay cocode
-    word  ``e_2 + e_3``, where ``e_i`` is the ``i``-th basis
-    vector of ``\{0,1\}^{24}``.
+    standard vector  ``v_0``. Here  ``v_0`` is the short 
+    vector the Leech lattice propotional  to  ``e_2 - e_3``, 
+    where ``e_i`` is the ``i``-th basis vector 
+    of ``\{0,1\}^{24}``.
   
     The element ``g`` is returned as a word in the generators
     of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 
@@ -163,17 +165,17 @@ def reduce_type2(v, sign = 1):
   
     If ``sign`` is not zero then ``v_2`` is interpreted as an
     element of the extraspecial group ``2^{1+24}`` an the 
-    operation f$g`` maps ``v_2`` to the positive vector ``v_2``. 
+    operation ``$g`` maps ``v_2`` to the positive vector ``v_2``. 
     """
     result = []
     for _i in range(5):
-        gc = mat24.gcode_to_vect(v >> 12)
-        coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff
-        vtype = gen_leech2_type(v)
+        gc = mat24.gcode_to_vect(v2 >> 12)
+        coc = (v2 ^  mat24.ploop_theta(v2 >> 12)) & 0xfff
+        vtype = gen_leech2_type(v2)
         if vtype == 0x21:
-            exp = 2 - ((v >> 22) & 1)
+            exp = 2 - ((v2 >> 22) & 1)
         elif vtype == 0x22:
-            exp = map_to_standard12_xi_exp(v)
+            exp = map_to_standard12_xi_exp(v2)
             if exp < 0:
                 w, src = mat24.vect_to_bit_list(gc)
                 if (w == 16):
@@ -182,41 +184,43 @@ def reduce_type2(v, sign = 1):
                     src[6] = src[8]
                 else:
                     raise ValueError("WTF1")
-                v = apply_perm_heptad(v, src, RED_STD_HEPTAD, result)
-                exp = map_to_standard12_xi_exp(v)
+                v2 = apply_perm_heptad(v2, src, RED_STD_HEPTAD, result)
+                exp = map_to_standard12_xi_exp(v2)
                 assert exp >= 0
         elif vtype == 0x20:
             exp =  0
-            # map v to stadard cocode word [2,3]
-            syn = (mat24.cocode_syndrome(v,0))
+            # map v2 to stadard cocode word [2,3]
+            syn = (mat24.cocode_syndrome(v2, 0))
             src = [i for i in range(24) if syn & (1 << i)]
-            #print("cc", hex(v), syn, src)
+            #print("cc", hex(v2), syn, src)
             if src != [2,3]:
-                v = apply_perm_map(v, src, [2,3], result)
-            # correct v if v is the cocode word [2,3] + Omega
-            if v & 0x800000:
+                v2 = apply_perm_map(v2, src, [2,3], result)
+            # correct v2 if v2 is the cocode word [2,3] + Omega
+            if v2 & 0x800000:
                 atom = 0xC0000200  
                    # operation y_d such that d has odd scalar
                    # product with cocode word [2,3]
-                v = gen_leech2_op_atom(v, atom)
+                v2 = gen_leech2_op_atom(v2, atom)
                 result.append(atom)
-            assert v & 0xffffff == 0x200
-            if sign and v & 0x1000000:
+            assert v2 & 0xffffff == 0x200
+            if sign and v2 & 0x1000000:
                 atom = 0xB0000200  
                    # operation y_d such that d has odd scalar
                    # product with cocode word [2,3]
-                v = gen_leech2_op_atom(v, atom)
+                v2 = gen_leech2_op_atom(v2, atom)
                 result.append(atom)
-                assert v  == 0x200
+                assert v2  == 0x200
             return result
         else:
             raise ValueError("WTF")
         if exp: 
             exp = 0xE0000003 - exp
-            v = gen_leech2_op_atom(v, exp)
+            v2 = gen_leech2_op_atom(v2, exp)
             result.append(exp)
     raise ValueError("WTF1")
   
+
+
 
 
 #########################################################################
@@ -230,6 +234,103 @@ def reduce_type2_fast(v2, sign = 1):
     length = gen_leech2_reduce_type2(v2, sign, res)
     assert length >= 0, (hex(v2), hex(length))
     return list(res[:length])
+
+
+
+
+###########################################################################
+## Reduce (orthogonal) type-2 vector in the Leech lattice mod 2 
+###########################################################################
+
+
+def reduce_type2_ortho(v2):
+    """Map (orthgonal) short vector in Leech lattice to standard vector
+
+    This is a python implementation of the C function
+    ``gen_leech2_reduce_type2_ortho`` in file ``gen_leech.c``.
+   
+    Let ``v_2 \in \Lambda / 2 \Lambda`` of type 2 be given by 
+    parameter ``v2`` in Leech lattice encoding. 
+
+    In the real Leech lattice, (the origin of) the vector ``v_2`` must
+    be orthogonal to the standard short vector ``v_0``. Here ``v_0``
+    is the short vector in the Leech  lattice  propotional
+    to  ``e_2 - e_3``, where ``e_i`` is  the ``i``-th basis vector
+    of ``\{0,1\}^{24}``.
+   
+    Let ``v_1`` be the short vector in the Leech lattice propotional
+    to  ``e_2 + e_3``.  Then the function constructs 
+    a ``g \in G_{x0}`` that maps ``v_2`` to ``v_1``.
+ 
+    The element ``g`` is returned as a word in the generators
+    of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 
+    word ``g`` is encoded as  defined in the header 
+    file ``mmgroup_generators.h``. 
+
+    The function stores ``g`` as a word of generators in the
+    array ``pg_out`` and returns the length  ``n``  of that
+    word. It returns a negative number in case of failure, 
+    e.g. if ``v_2`` is not of type 2,  or not orthogonal 
+    to ``v_1`` in the real Leech lattice.
+    """
+    result = []
+    for _i in range(5):
+        gc = mat24.gcode_to_vect(v2 >> 12)
+        coc = (v2 ^  mat24.ploop_theta(v2 >> 12)) & 0xfff
+        vtype = gen_leech2_type(v2)
+        if vtype == 0x21:
+            exp = 2 - ((v2 >> 22) & 1)
+        elif vtype == 0x22:
+            exp = map_to_standard12_xi_exp(v2)
+            if exp < 0:
+                w, src = mat24.vect_to_bit_list(gc)
+                if (w == 16):
+                    src = src[16:22] + src[0:1]
+                elif w == 8:
+                    src[6] = src[8]
+                else:
+                    raise ValueError("WTF1")
+                v2 = apply_perm_heptad(v2, src, RED_STD_HEPTAD, result)
+                exp = map_to_standard12_xi_exp(v2)
+                assert exp >= 0
+        elif vtype == 0x20:
+            exp =  0
+            # map v2 to stadard cocode word [2,3]
+            syn = (mat24.cocode_syndrome(v2, 0))
+            src = [i for i in range(24) if syn & (1 << i)]
+            #print("cc", hex(v2), syn, src)
+            if src != [2,3]:
+                v2 = apply_perm_map(v2, src, [2,3], result)
+            # correct v2 if v2 is the cocode word [2,3] + Omega
+            if v2 & 0x800000:
+                atom = 0xC0000200  
+                   # operation y_d such that d has odd scalar
+                   # product with cocode word [2,3]
+                v2 = gen_leech2_op_atom(v2, atom)
+                result.append(atom)
+            assert v2 & 0xffffff == 0x200
+            return result
+        else:
+            raise ValueError("WTF")
+        if exp: 
+            exp = 0xE0000003 - exp
+            v2 = gen_leech2_op_atom(v2, exp)
+            result.append(exp)
+    raise ValueError("WTF1")
+  
+#########################################################################
+## Wrapper for the C function ``gen_leech2_reduce_type2_ortho``
+#########################################################################
+      
+
+def reduce_type2_ortho_fast(v2):
+    r"""Wrapper for the C function ``gen_leech2_reduce_type2_ortho``"""
+    res = np.zeros(10, dtype = np.uint32)
+    length = gen_leech2_reduce_type2_ortho(v2, res)
+    assert length >= 0, (hex(v2), hex(length))
+    return list(res[:length])
+
+
 
 
 #########################################################################
@@ -279,5 +380,9 @@ def test_reduce_type2(verbose = 0):
     
     
 
+#########################################################################
+## Testing the C function ``gen_leech2_reduce_type2_ortho``
+#########################################################################
 
  
+# TODO: Yet to be done!!!
