@@ -246,6 +246,8 @@ mat24_shared = SharedExtension(
         os.path.join(C_DIR, "gen_xi_functions.c"),
         os.path.join(C_DIR, "mm_group_n.c"),
         os.path.join(C_DIR, "gen_leech.c"),
+        os.path.join(C_DIR, "gen_leech3.c"),
+        os.path.join(C_DIR, "gen_leech_reduce.c"),
         os.path.join(C_DIR, "gen_random.c"),
     ],
     libraries = [], 

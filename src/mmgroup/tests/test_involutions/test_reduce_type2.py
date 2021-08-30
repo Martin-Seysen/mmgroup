@@ -19,22 +19,32 @@ from mmgroup.generators import gen_leech2_op_word
 
 from mmgroup.clifford12 import leech_matrix_2A_axis_type
 
-#########################################################################
-## Use: C:\Data\projects\scripts\Leech_lattice\reduce.py!!!!!!!!!!!
-#########################################################################
 
-#a, v = get_case("2A")
 
 V = MMSpace(15)
 
+#########################################################################
+## Auxiliary functions
+########################################################################
 
-
-def syndrome(v, point):
-    cc = mat24.theta(v >> 12) ^ v
-    return mat24.cocode_to_vector(cc, 0)
 
 
 def apply_perm(v, p, log_list):
+    """Apply permutation to vector in Leech lattice mod 2.
+  
+    Let ``pi`` be the permutation given by the array ``p`` 
+    as a permutation on the set  ``\{0,\ldots,23\}``. Let 
+    ``v_2`` be the vector in the Leech lattice mod  2 given 
+    by parameter ``v2``. The function returns ``v_2 * pi``
+    Parameter ``v2`` and the return value are given in Leech
+    lattice encoding.
+  
+    The function computes  the permutation ``x_pi`` to the list
+    ``log_list``. Here ``x_pi`` is encoded as a generator of the
+    monster group as as described  in file ``mmgroup_generators.h``.
+    That generator is stored with tag  ``MMGROUP_ATOM_TAG_IP`` so
+    that we can compute the inverse of ``pi`` very efficiently. 
+    """
     p_inv =  mat24.inv_perm(p)
     p_inv_num =  mat24.perm_to_m24num(p_inv)
     log_list.append(0xA0000000 + p_inv_num)
@@ -45,33 +55,70 @@ def apply_perm(v, p, log_list):
     xdelta = mat24.op_cocode_perm(xdelta, p)
     return (xd << 12) ^ xdelta ^ mat24.ploop_theta(xd)
 
+
 def apply_perm_heptad(v, src, dest, log_list):
+    """A variant of function ``apply_perm``.
+    
+    Here permutation ``pi``  must be given as a mapping from
+    an umbral heptad referred by ``p_src`` to an umbral heptad 
+    referred by ``p_dest``. Here ``p_src`` and ``p_dest`` define
+    the  permutation ``pi`` as in function 
+    ``mat24_perm_from_heptads`` in file ``mat24_functions.c c``.
+    """
     p =  mat24.perm_from_heptads(src, dest)
     return apply_perm(v, p, log_list)
 
+
 def apply_perm_map(v, src, dest, log_list):
+    r"""Another variant of function ``apply_perm``.
+  
+    Here permutation ``pi``  must be given as a mapping from any
+    subset of ``\{0,1\}^{24}`` of length ``n`` referred by ``p_src`` 
+    to another subset referred by ``p_dest``. Here ``p_src``,
+    ``p_dest``,  and ``n``  specify  a  permutation ``pi`` as in 
+    function   ``mat24_perm_from_heptads`` in 
+    file ``mat24_functions.c c``.
+
+    Caution: Permutation ``pi`` might not be specified uniquely 
+    by  the given mapping!
+    """
     res, p =  mat24.perm_from_map(src, dest)
     assert res > 0
     return apply_perm(v, p, log_list)
 
 
 
-def apply_xi(v, e, log_list):
-    e1 =  e % 3 + 0x60000000
-    res = gen_leech2_op_atom(v, e1)
-    assert res & 0xfe000000 == 0
-    #print(hex(v), "->",  "li_%d" % e,  "->", hex(res))
-    log_list.append(e1)
-    return res
 
 RED_STD_HEPTAD = [0,1,2,3,4,5,8]
 
 
 def map_to_standard12_xi_exp(v):
-    """Find exponent of ``xi`` mapping Leech vector ``v`` a subspace 
+    r"""Find exponent of ``xi`` mapping Leech vector ``v`` a subspace 
 
+    Let ``v_2`` be the vector in the Leech lattice mod 2 given 
+    by parameter ``v2`` in Leech lattice encoding. Let  
+    ``\Omega, \omega, \gamma(.)`` be as in [Sey20].
+  
+    The function  tries to find an exponent ``e`` such that 
+    ``v_2 \xi^e`` is  equal to an element 
+    ``\lambda_\delta \pmod{\lambda_\Omega}`` of
+    ``\Lambda / 2 \Lambda``, 
+    ``\delta \in \mathcal{C}^*``, ``\delta`` even. The 
+    function returns ``e`` if such an  ``e`` exists and -1
+    otherwise.
+  
+    Assume ``v_2 = \lambda_d + \lambda_\delta + \lambda_\epsilon, 
+    d \in \mathcal{C}, \delta, \epsilon \in \mathcal{C}^*``, 
+    ``d, \delta`` grey, even,  ``\epsilon`` coloured. 
+    The function returns
+  
+    ``e=0`` if ``d=0 \pmod{\Omega}``,
      
+    ``e=1`` if ``\delta=\gamma(d) \pmod{\omega} ``,
 
+    ``e=2`` if ``\delta=0  \pmod{\omega} ``. 
+  
+    In all other cases there is no suitable exponent ``e``.
     """
     #print("Std12", hex(v))
     if v & 0x7ff800 == 0:
@@ -85,7 +132,39 @@ def map_to_standard12_xi_exp(v):
     return -1 # no exponent found
 
 
+
+###########################################################################
+## Reduce a type-2 vector in the Leech lattice mod 2 
+###########################################################################
+
+
 def reduce_type2(v, sign = 1):
+    """Map short vector in Leech lattice to standard frame
+
+    This is a python implementation of the C function
+    ``gen_leech2_reduce_type2`` in file ``gen_leech.c``.
+   
+    Let ``v_2 \in \Lambda / 2 \Lambda`` of type 2 be given by 
+    parameter ``v2`` in Leech lattice encoding. Then the function 
+    constructs a ``g \in G_{x0}`` that maps ``v_2`` to the 
+    standard vector  ``v_0`` which corresponds to the Golay cocode
+    word  ``e_2 + e_3``, where ``e_i`` is the ``i``-th basis
+    vector of ``\{0,1\}^{24}``.
+  
+    The element ``g`` is returned as a word in the generators
+    of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 
+    word ``g`` is encoded as  defined in the header 
+    file ``mmgroup_generators.h``. 
+
+    The function stores ``g`` as a word of generators in the
+    array ``pg_out`` and returns the length  ``n``  of that
+    word. It returns a negative number in case of failure, 
+    e.g. if ``v_2`` is not of type 2.
+  
+    If ``sign`` is not zero then ``v_2`` is interpreted as an
+    element of the extraspecial group ``2^{1+24}`` an the 
+    operation f$g`` maps ``v_2`` to the positive vector ``v_2``. 
+    """
     result = []
     for _i in range(5):
         gc = mat24.gcode_to_vect(v >> 12)
@@ -141,15 +220,21 @@ def reduce_type2(v, sign = 1):
 
 
 #########################################################################
-## Use: C:\Data\projects\scripts\Leech_lattice\reduce.py!!!!!!!!!!!
+## Wrapper for the C function ``gen_leech2_reduce_type2``
 #########################################################################
       
 
 def reduce_type2_fast(v2, sign = 1):
+    r"""Wrapper for the C function ``gen_leech2_reduce_type2``"""
     res = np.zeros(10, dtype = np.uint32)
     length = gen_leech2_reduce_type2(v2, sign, res)
     assert length >= 0, (hex(v2), hex(length))
     return list(res[:length])
+
+
+#########################################################################
+## Testing the C function ``gen_leech2_reduce_type2``
+#########################################################################
 
 
 
