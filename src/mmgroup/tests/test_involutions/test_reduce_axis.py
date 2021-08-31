@@ -251,7 +251,6 @@ def make_testcases():
 
 
 @pytest.mark.involution
-@pytest.mark.mmm   # Prelimminary!!!!!
 def test_reduce_axis(verbose = 0):
     for i, v in enumerate(make_testcases()):
         if verbose:

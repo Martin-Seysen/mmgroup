@@ -464,7 +464,7 @@ int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t sign, uint32_t *pg_out)
                     v2 = apply_perm_heptad(v2, poct, RED_STD_HEPTAD, 
                         pg_end++);
                     // Now we may calculate a suitable exponent of xi
-                    // so that xi**exp transforms v2 to type 40.
+                    // so that xi**exp transforms v2 to type 0x20.
                     exp = map_to_standard12_xi_exp(v2);
                     // Abort with fatal error if this fails
                     if (exp < 0) return -0x10000 + 0x100 * vtype + 1;
@@ -520,6 +520,15 @@ int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t sign, uint32_t *pg_out)
 *** Reduce (orthogonal) type-2 vector  mod 2
 *************************************************************************/
 
+
+/// @cond DO_NOT_DOCUMENT 
+
+static uint8_t RED_23_ORTHO[6] =  {2, 3, 4, 5, 6, 7};
+static uint8_t RED_23_23014[5] = {2, 3, 0, 1, 4};
+
+/// @endcond
+
+
 /** @brief Map (orthogonal) short vector in Leech lattice to standard vector
    
   Let \f$v_2 \in \Lambda / 2 \Lambda\f$ of type 2 be given by
@@ -544,9 +553,7 @@ int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t sign, uint32_t *pg_out)
   array ``pg_out`` and returns the length  \f$n\f$  of that
   word. It returns a negative number in case of failure, 
   e.g. if \f$v_2\f$ is not of type 2, or not orthogonal 
-  to \f$v_1\f$ in the real Leech lattice.
-  
-  Not yet implemented!!!!!!!
+  to \f$v_0\f$ in the real Leech lattice.
  */
 // %%EXPORT px
 int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
@@ -554,19 +561,18 @@ int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
     uint32_t *pg_end = pg_out; // pointer to end of word g
     uint32_t  vtype;           // subtype of current vector v2
     uint32_t  gc;              // Golay code part of v2 in vector rep
-    uint32_t  coc;             // Cocode part of v2 in cocode rep
     uint32_t  i;
     int32_t exp;               // exponent of \f$xi\f$
     
-    if ((gen_leech2_type(v2 ^ 0x200) >> 4) != 4) return -1L;
+    if ((gen_leech2_type(v2) >> 4) != 2) return -2L;
+    if ((gen_leech2_type(v2 ^ 0x200) >> 4) != 4) return -4L;
 
     // In the main loop we change vector v2 to a vector of a simpler
     // subtype. Therefore we first apply a permutation pi and
     // then a power of xi to v2.
     for (i = 4; i; --i ) {
-        // Compute Golay code part and cocode part of v2
+        // Compute Golay code part of v2
         gc = mat24_gcode_to_vect(v2 >> 12);
-        coc = (v2 ^  mat24_ploop_theta(v2 >> 12)) & 0xfff;
         // Compute subtype of v2
         vtype = gen_leech2_type(v2);
         // Depending on the subype of v2, we apply a permutation
@@ -578,50 +584,64 @@ int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
                 exp = 2 - ((v2 >> 22) & 1);
                 break;
             case 0x22:
-                // TODO: change this case!!!!!!
                 // Map v2 to a vector of subtype 0x20
                 // Perform a permutation on v2 if necessary
                 if ((exp = map_to_standard12_xi_exp(v2)) < 0) {
-                    uint8_t oct[24], *poct = oct;
-                    uint32_t w;
-                    // Complement gc if it has weight 16, so that gc is an
-                    // octad. Let poct[0...7] be the elements of that octad.
-                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
-                    poct = oct + (w & 16);
-                    // Map octad gc to the standard octad (0,...,7)
-                    poct[6] = oct[(w & 16) ? 0 : 8];
-                    v2 = apply_perm_heptad(v2, poct, RED_STD_HEPTAD, 
-                        pg_end++);
+                    uint8_t oct[26];
+                    // Complement gc if it has weight 16, so that gc is
+                    // an octad. 
+                    if (mat24_gcode_weight(v2 >> 12) & 4) gc ^= 0xffffff;
+                    oct[0] = 2; oct[1] = 3;
+                    if (gc & 0xc) {
+                        // Map [2, 3, o1, o2, o3] to [2, 3, 0, 1, 4] via a
+                        // permutation, with o1, o2, o2 in octad gc
+                        gc &= ~0xc;
+                        mat24_vect_to_bit_list(gc, oct+2);
+                        v2 = apply_perm_map(v2, oct, RED_23_23014, 5, pg_end++);
+                    } else {
+                        uint32_t a = 0, j;
+                        // Let ``a`` be the umbaral heptad [2, 3, o0, ..., o4]
+                        // with ``o0, ..., o4`` selected from octad ``gc``.
+                        // Then we delete one (uniquely defined) element from
+                        // ``a``, so that ``a`` will be a standard hexad.
+                        mat24_vect_to_bit_list(gc, oct+2);
+                        for (j = 2; j < 7; ++j) a += 1UL << oct[j];
+                        a &=  ~mat24_syndrome(a ^ 0xc, 0);
+                        mat24_vect_to_bit_list(a, oct+2);
+                        // Now the hexad is in oct[0,...5], with oct[0] = 2,
+                        // oct[1] = 3. Map that hexad to [2, 3, 4, 5, 6, 7] 
+                        // via a permutation, fixing bits 2 and 3.
+                        v2 = apply_perm_map(v2, oct, RED_23_ORTHO, 6, pg_end++);
+                    }
                     // Now we may calculate a suitable exponent of xi
-                    // so that xi**exp transforms v2 to type 40.
+                    // so that xi**exp transforms v2 to type 0x20.
                     exp = map_to_standard12_xi_exp(v2);
                     // Abort with fatal error if this fails
                     if (exp < 0) return -0x10000 + 0x100 * vtype + 1;
                 }
                 break;
             case 0x20:
-                // TODO: change this case!!!!!!
+                if ((v2 & 0xffffff) == 0x800200) 
+                     return (int32_t)(pg_end - pg_out);
                 {
-                    uint8_t c[2];
+                    uint8_t c[4];
                     uint32_t syn;
-                    exp =  0;
-                    // map v to stadard cocode word [2,3]
-                    syn = mat24_cocode_syndrome(coc, 0);
-                    c[0] = mat24_def_lsbit24(syn);
-                    syn ^= 1UL << c[0];
-                    c[1] = mat24_def_lsbit24(syn);
-                    v2 = apply_perm_map(v2, c, RED_STD_23, 2, pg_end); 
-                    if (pg_end[0] & 0xfffffff) ++pg_end;                   
-                    if (v2 & 0x800000) {
-                        pg_end[0] = 0xC0000200;  
-                           // operation y_d such that d has odd scalar
-                           // product with cocode word [2,3]
-                        v2 = gen_leech2_op_atom(v2, *pg_end++);
+                    // map v to the cocode word [0,1]
+                    syn = mat24_cocode_syndrome(v2, 0);
+                    if (syn && syn != 3) {
+                        c[2] = mat24_def_lsbit24(syn);
+                        syn ^= 1UL << c[2];
+                        c[3] = mat24_def_lsbit24(syn);
+                        c[0] = 2; c[1] = 3;
+                        // Map c[0], c[1] to 0, 1 via permutation,
+                        // leaving positions 2 and 3 invariant.
+                        v2 = apply_perm_map(v2, c,  RED_23_23014, 4, pg_end); 
+                        if (pg_end[0] & 0xfffffff) ++pg_end;
+                        // Final application of a power of \xi
                     }
-                    if ((v2 & 0xffffff) != 0x200) 
-                        return -0x10000 + 0x100 * vtype + 2;
-                    return (int32_t)(pg_end - pg_out);
+                    exp = 2 - ((v2 >> 23) & 1);
                 }
+                break;
             default:
                 // Abort if v is not of type 2
                 return -1L;
@@ -629,7 +649,7 @@ int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
         // Apply xi**exp to the permuted vector v2
         if (exp) {
             v2 = gen_xi_op_xi(v2, exp);       // Apply xi**exp to v2
-            if (v2 & 0xfe000000) return -2L;  // Abort if this fails
+            if (v2 & 0xfe000000) return -9L;  // Abort if this fails
             *pg_end++ = 0xe0000003 - exp;     // Store atom for xi**exp 
         }
     } 
