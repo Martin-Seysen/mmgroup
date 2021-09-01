@@ -27,8 +27,10 @@ V_START_TUPLE = ("I", 3, 2)
 V_START = V(V_START_TUPLE)
 V_OPP = V_START * MM(('x', 0x200))
 
-  
-  
+#########################################################################
+# Auxiliary functions 
+ #########################################################################
+ 
 def leech_type(v2):
     """Return type of vector ``v2`` in the Leech lattice mod 2"""
     return gen_leech2_type(v2) >> 4
@@ -101,6 +103,17 @@ def radical(v, value, verbose = 1):
     return v2new[:l1]
        
 
+
+def find_type4(v_list):
+    for w in v_list:
+        if leech_type(w) == 4:
+            return w
+    err = "No type-4 vector found"
+    raise ValueError(err)
+    
+
+##########################################################################
+# Reducing a 2A axis to V_START
 ##########################################################################
 
 
@@ -119,68 +132,51 @@ def reduce_axis(vector, verbose = 0):
         if verbose: print("type",hex(type))
         if type == 0xC3:  # case 12C
             v2all = radical(v, 7, verbose)  
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x42, 0x61]
         elif type == 0xA2:  # case 10B
             v2all = radical(v, 4, verbose)
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x42, 0x43]
         elif type == 0xA1:  # case 10A
             v0 = short(v, 3)[0]
             v2all = short(v, 1)
-            v4all = [w ^ v0 for w in v2all if leech_type(w ^ v0) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v2all = [w ^ v0 for w in v2all]
+            v4 = find_type4(v2all)
             t_types = [0x61]
         elif type == 0x82:  # case 8B
             v2all = short(v, 1)
             v2_0 = v2all[0]
-            v4all = [w ^ v2_0 for w in v2all if leech_type(w ^ v2_0) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v2all = [w ^ v2_0 for w in v2all] 
+            v4 = find_type4(v2all)
             t_types = [0x41]
         elif type == 0x66:  # case 6F
             v2all = radical(v, 7, verbose)
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x43]
         elif type == 0x63:  # case 6C
             v2all = span(v, 3, verbose)
-            v4all = [w  for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x41]
         elif type == 0x61:  # case 6A
             v2all = short(v, 5)
-            v4all = [w ^ vt for w in v2all if leech_type(w ^vt) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v2all = [w ^ vt for w in v2all]
+            v4 = find_type4(v2all)
             t_types = [0x41]
         elif type == 0x43:  # case 4C
             v2all = radical(v, 1, verbose)
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x22]
         elif type == 0x42:  # case 4B
             v2all = radical(v, 1, verbose)
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x22]
         elif type == 0x41:  # case 4A
             v4 = vt
             t_types = [0x21]
         elif type == 0x22:  # case 2B
             v2all = span(v, 4, verbose)  
-            v4all = [w for w in v2all if leech_type(w) == 4]
-            assert len(v4all)
-            v4 = v4all[0]
+            v4 = find_type4(v2all)
             t_types = [0x21]
         elif type == 0x21:  # case 2A
             r1 = gen_leech2_reduce_type2(vt, 0, r[len_r:])
@@ -226,10 +222,12 @@ def reduce_axis(vector, verbose = 0):
 
 
 
-##############################################################################
+##########################################################################
+# Tesing function reduce_axis and C function mm_op15_reduce_v_axis
+##########################################################################
 
 
-from mmgroup.tests.test_involutions.test_2A_axes import AXES
+from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
 
 
 
