@@ -21,6 +21,7 @@
 
 #define MAX_SHORT_ARRAY 1024
 
+#define V_START 0x200
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -33,6 +34,13 @@ typedef struct {
     uint32_t n_short;
     uint64_t basis[24];
 } axes_work_t;
+
+
+/////////////////////////////////////////////////////////////////////////
+// Auxiliary functions 
+/////////////////////////////////////////////////////////////////////////
+ 
+
 
 
 /**
@@ -136,6 +144,19 @@ static inline uint32_t find_type4(
 }
 
 
+static inline uint32_t find_ortho_short(
+    axes_work_t *p_work
+)
+{
+    uint32_t *pv;
+    for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
+        uint32_t v = *pv & 0xffffff;
+        if ((gen_leech2_type(v) >> 4) == 4 &&
+           (gen_leech2_type(v ^ V_START) >> 4) == 2) return v ^ V_START;
+    }
+    return 0;
+}
+
 
 
 static inline uint32_t xor_entries(
@@ -150,8 +171,19 @@ static inline uint32_t xor_entries(
     return 0;
 }
 
+ 
+
+static inline uint32_t eval_A_vstart(uint_mmv_t *v)
+{
+    return leech2matrix_eval_A(15, v, 0x200);
+}
+
+
 /// @endcond  
 
+/////////////////////////////////////////////////////////////////////////
+// Stor standard 2A axes in a vector
+/////////////////////////////////////////////////////////////////////////
 
 
 // %%EXPORT px
@@ -169,6 +201,9 @@ void  mm_op%{P}_store_axis(uint_mmv_t *v, uint32_t sign)
     mm_aux_mmv_set_sparse(%{P}, v, sp, 4);
 }
 
+/////////////////////////////////////////////////////////////////////////
+// Reducing a 2A axis to the standard axis V_START
+/////////////////////////////////////////////////////////////////////////
 
 
 
@@ -176,7 +211,7 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
 {
     int32_t status = -1000;
     uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
-    uint32_t ax_types[3], *pv;
+    uint32_t ax_types[3];
 
     for (i = 0; i < 5; ++i) {
         vt = leech_matrix_2A_axis_type(15, v);
@@ -254,6 +289,8 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 mm_op%{P}_store_axis(p_work->vtmp, 0);
                 if (mm_op15_compare(v, p_work->vtmp)) return -22;
                 return len_r;
+            default:
+                return -1;
         }
 
         len_r1 = gen_leech2_reduce_type4(v4, r + len_r);
@@ -305,3 +342,116 @@ int32_t mm_op%{P}_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
     free(p_work);
     return res;
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing a 2A axis to orthogonal to V_START, preserving V_START
+/////////////////////////////////////////////////////////////////////////
+
+
+static int32_t reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
+{
+    int32_t status = -1000;
+    uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e, ind;
+    uint32_t ax_types[3];
+
+    for (i = 0; i < 5; ++i) {
+        vt = leech_matrix_2A_axis_type(15, v);
+        if (vt == 0)  return -2;
+        ax_types[1] = ax_types[2] = 0;
+        ax_type = vt >> 24;
+        vt &= 0xffffff;
+        switch(ax_type) {
+            case 0xA1:
+                get_short(v, 3, 1, p_work);
+                xor_entries(p_work, p_work->v_short[0]);
+                v4 = find_ortho_short(p_work);
+                ax_types[0] = 0x61;
+                break;
+            case 0x63:
+                get_span(v, 3, p_work);
+                v4 = find_ortho_short(p_work);
+                ax_types[0] = 0x41;
+                break;
+            case 0x61:
+                get_short(v, 5, 0, p_work);
+                xor_entries(p_work, vt);
+                v4 = find_ortho_short(p_work);
+                ax_types[0] = 0x41;
+                break;
+            case 0x43:  // case 4C
+            case 0x42:  // case 4B
+                get_radical(v, 1, p_work);
+                v4 = find_ortho_short(p_work);
+                ax_types[0] = 0x22;
+                break;
+            case 0x41:  // case 4A
+                v4 = vt ^ V_START;
+                ax_types[0] = 0x21;
+                break;
+            case 0x22:  // case 2B
+                if ((eval_A_vstart(v) & ~8) == 0) {
+                    get_span(v, 4, p_work);
+                    v4 = find_ortho_short(p_work);
+                    ax_types[0] = 0x21;
+                } else return -4;
+                break;
+            case 0x21:   // case 2B
+                if (eval_A_vstart(v) == 0)  {
+                    len_r1 = gen_leech2_reduce_type2_ortho(vt, r+len_r);
+                    if (len_r1 < 0) return -21;
+                    mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+                    len_r += len_r1;
+                    vt = leech_matrix_2A_axis_type(15, v) & 0xffffff;
+                    if (vt != 0x800200) return -22;
+                    ind = mm_aux_get_mmv1(15, v, (2*24+3)*32 + 2);
+                    e = 2 - (ind == 15-2);
+                    r[len_r] = 0xD0000003 - e;
+                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                    len_r += 1;
+                }
+                mm_op%{P}_store_axis(p_work->vtmp, 1);
+                if (mm_op15_compare(v, p_work->vtmp)) return -23;
+                return len_r;
+            default:
+                return -1;
+       }
+
+        len_r1 = gen_leech2_reduce_type2_ortho(v4, r + len_r);
+        if (len_r1 < 0) return -10;
+        mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+        len_r += len_r1;
+        status = -4;
+        for (e = 1; e < 3 && status; ++e) {
+            mm_op15_t_A(v, e, p_work->vA);                    
+            ax_type = leech_matrix_2A_axis_type(15, p_work->vA) >> 24;
+            for (j = 0; j < 3 && ax_types[j]; ++j) {
+                if (ax_type == ax_types[j]) {
+                    r[len_r] = 0xD0000003 - e;
+                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                    len_r += 1;
+                    status = 0;
+                    break;
+                }
+            }
+        }
+        if (status)  return status;
+    }
+    return -3;
+}
+
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
+{
+    int32_t res;
+    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
+    if (p_work == 0) return -1;
+    res =  reduce_v_baby_axis(v,  r, p_work);
+    free(p_work);
+    return res;
+}
+
+

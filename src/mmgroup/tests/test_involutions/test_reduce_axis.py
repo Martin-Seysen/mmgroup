@@ -7,11 +7,13 @@ import pytest
 from mmgroup import MM, MMSpace
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type2
+from mmgroup.generators import gen_leech2_reduce_type2_ortho
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
 from mmgroup.clifford12 import leech_matrix_2A_axis_type
+from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.mm import mm_aux_get_mmv1
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_find_short as mm_op15_find_short
@@ -19,6 +21,10 @@ from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
 from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
+from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_baby_axis
+
+from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
+from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
 
 V = MMSpace(15)
 
@@ -27,9 +33,12 @@ V_START_TUPLE = ("I", 3, 2)
 V_START = V(V_START_TUPLE)
 V_OPP = V_START * MM(('x', 0x200))
 
+v_start = 0x200
+
+
 #########################################################################
 # Auxiliary functions 
- #########################################################################
+#########################################################################
  
 def leech_type(v2):
     """Return type of vector ``v2`` in the Leech lattice mod 2"""
@@ -110,7 +119,17 @@ def find_type4(v_list):
             return w
     err = "No type-4 vector found"
     raise ValueError(err)
-    
+  
+
+def find_ortho_short(vlist):
+    for w in vlist:
+        if leech_type(w) == 4 and leech_type(w ^ v_start) == 2:
+            return w ^ v_start
+    err = "No short vector orthogonal to 'v_start' found"
+    raise ValueError(err)
+  
+def eval_A_vstart(v):
+    return leech2matrix_eval_A(15, v, 0x200)
 
 ##########################################################################
 # Reducing a 2A axis to V_START
@@ -124,6 +143,7 @@ def reduce_axis(vector, verbose = 0):
     vA = np.zeros(24*4, dtype = np.uint64)
     r = np.zeros(120, dtype= np.uint32);
     len_r = 0
+    if verbose: print("Function reduce_axis")
     for i in range(5):
         vt = leech_matrix_2A_axis_type(15, v)
         assert vt
@@ -189,6 +209,8 @@ def reduce_axis(vector, verbose = 0):
                 mm_op15_word(v, r[len_r:], 1, 1, work.data)
                 len_r += 1
             assert mm_op15_compare(v, V_START.data) == 0
+            if verbose: 
+                print("Function reduce_axis terminated successfullly")
             return r[:len_r]
         else:
             raise ValueError("WTF1")
@@ -216,18 +238,119 @@ def reduce_axis(vector, verbose = 0):
         
     
 
+##########################################################################
+# Reducing a 2A axis to orthogonal to V_START, preserving V_START
+##########################################################################
 
 
+
+def reduce_baby_axis(vector, verbose = 1):
+    v = vector.data
+    V = vector.space
+    work = V()
+    vA = np.zeros(24*4, dtype = np.uint64)
+    r = np.zeros(120, dtype= np.uint32);
+    len_r = 0
+    if verbose: print("Function reduce_baby_axis")
+    for i in range(5):
+        vt = leech_matrix_2A_axis_type(15, v)
+        assert vt
+        type = (vt >> 24) & 0xff
+        vt &= 0xffffff
+        if verbose:
+            print("type =", hex(type), ", vt =", hex(vt), 
+                 ", A(v0) =",  eval_A_vstart(v))
+        if type == 0xA1:  # case 10A
+            v0 = short(v, 3)[0]
+            v2all = short(v, 1)
+            v2all = [w ^ v0 for w in v2all]
+            v4 = find_ortho_short(v2all)
+            t_types = [0x61]
+        elif type == 0x63:  # case 6C
+            v2all = span(v, 3, verbose)
+            v4 = find_ortho_short(v2all)
+            t_types = [0x41]
+        elif type == 0x61:  # case 6A
+            v2all = short(v, 5)
+            v2all = [w ^ vt for w in v2all] # if leech_type(w ^vt) == 4]
+            v4 = find_ortho_short(v2all)
+            t_types = [0x41, 0x43]
+        elif type == 0x43:  # case 4C
+            v2all = radical(v, 1, verbose)
+            v4 = find_ortho_short(v2all)
+            t_types = [0x22]
+        elif type == 0x42:  # case 4B
+            v2all = radical(v, 1, verbose)
+            v4 = find_ortho_short(v2all)
+            t_types = [0x22]
+        elif type == 0x41:  # case 4A
+            v4 = vt ^ v_start
+            assert leech_type(v4) == 2
+            t_types = [0x21]
+        elif type == 0x22:  # case 2B
+            if eval_A_vstart(v) in [0, 8]:
+                v2all = span(v, 4, verbose)  
+                v4 = find_ortho_short(v2all)
+                t_types = [0x21]
+            else:
+                raise ValueError("WTF 2B")
+        elif type == 0x21:  # case 2A
+            if eval_A_vstart(v) == 0:
+                r1 = gen_leech2_reduce_type2_ortho(vt, r[len_r:])
+                assert r1 >= 0
+                mm_op15_word(v, r[len_r:], r1, 1, work.data)
+                len_r += r1
+                vt = leech_matrix_2A_axis_type(15, v) & 0xffffff
+                assert vt == 0x800200 
+                ind = mm_aux_get_mmv1(15, v, (2*24+3)*32 + 2)
+                e = 2 - (ind == 15-2)
+                if verbose: print("ind", ind, e)
+                r[len_r] = 0xD0000003 - e
+                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                len_r += 1
+            assert  eval_A_vstart(v) == 4, eval_A_vstart(v)
+            if verbose: 
+                print("Function reduce_baby_axis terminated successfullly")
+            return r[:len_r]
+        else:
+            raise ValueError("WTF1")
+
+        r1 = gen_leech2_reduce_type2_ortho(v4, r[len_r:])
+        assert r1 >= 0
+        mm_op15_word(v, r[len_r:], r1, 1, work.data)
+        len_r += r1
+        ok = False
+        for e in (1,2):
+            mm_op15_t_A(v, e, vA)                    
+            t = leech_matrix_2A_axis_type(15, vA) >> 24
+            if verbose: print("e", e, hex(t))
+            if t in t_types:
+                r[len_r] = 0xD0000003 - e
+                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                len_r += 1
+                ok = True
+                break
+        if not ok:
+            raise ValueError("WTF2")
+
+    raise ValueError("WTF3")    
+        
+        
+    
 
 
 
 
 ##########################################################################
-# Tesing function reduce_axis and C function mm_op15_reduce_v_axis
+# Testing function reduce_axis and C function mm_op15_reduce_v_axis
 ##########################################################################
 
 
-from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
+
+
+
+
+
 
 
 
@@ -239,7 +362,6 @@ def make_testcases():
     for i in range(10):
         yield V_START * MM.rand_G_x0()
     for ax in AXES:
-        #if ax in ["10B", "12C"]: continue   ## preliminary!!!!!!!
         v0 = V_START * MM(AXES[ax])
         for i in range(20):
             yield v0 * MM.rand_G_x0()
@@ -252,8 +374,8 @@ def make_testcases():
 def test_reduce_axis(verbose = 0):
     for i, v in enumerate(make_testcases()):
         if verbose:
-            print("Test case", i)
-        r = reduce_axis(v.copy())
+            print("\nTest case", i)
+        r = reduce_axis(v.copy(), verbose)
         g = MM.from_data(r)
         assert v * g == V_START
 
@@ -264,6 +386,63 @@ def test_reduce_axis(verbose = 0):
         assert g1 == g
 
 
+
+
+##########################################################################
+# Testing function reduce_baby_axis and mm_op15_reduce_v_baby_axis
+##########################################################################
+
+def rand_BM(quality = 8):
+    r"""Generate certain 'random' element in the Baby Monster`
+
+    Let ``v_0`` be the element of the subgroup  ``Q_x0`` of ``G_x0``
+    corresponding to the Golay cocode element ``[2,3]``.
+
+    The function generates a random element of the centralizer
+    of ``v_0`` in the monster.
+    """
+    a = MM()
+    for i in range(quality):
+         e = randint(0, 2)
+         a *= MM(rand_Co2(), ('t', e)) 
+    return a 
+
+
+
+
+def make_baby_testcases():
+    V = V_START.space
+    yield V_OPP.copy()
+    for i in range(10):
+        yield V_OPP.copy() * rand_Co2()
+    for ax in BABY_AXES:
+        v0 = V_OPP * MM(BABY_AXES[ax])
+        for i in range(5):
+            yield v0 * rand_BM()
+    for quality in range(2,11):
+        for i in range(5):
+              yield  V_OPP.copy() * rand_BM(quality)      
+
+
+@pytest.mark.mmm
+@pytest.mark.involution
+def test_reduce_baby_axis(verbose = 1):
+    for i, v in enumerate(make_baby_testcases()):
+        if verbose:
+            print("\nTest case", i)
+        r = reduce_baby_axis(v.copy(), verbose)
+        g = MM.from_data(r)
+        assert v * g == V_OPP
+        assert V_START * g == V_START
+
+        vr1 = np.zeros(200, dtype = np.uint32)
+        # Preliminary!!!!!!!!!!!!!
+        """
+        len_r1 = mm_op15_reduce_v_baby_axis(v.copy().data, vr1)
+        assert len_r1 >= 0
+        g1 = MM.from_data(vr1[:len_r1])
+        assert g1 == g
+        """
 
 
 
