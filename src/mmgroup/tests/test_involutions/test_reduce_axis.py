@@ -21,7 +21,7 @@ from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
 from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
-from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_baby_axis
+from mmgroup.mm15 import op_reduce_v_baby_axis as  mm_op15_reduce_v_baby_axis
 
 from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
@@ -424,9 +424,9 @@ def make_baby_testcases():
               yield  V_OPP.copy() * rand_BM(quality)      
 
 
-@pytest.mark.mmm
+
 @pytest.mark.involution
-def test_reduce_baby_axis(verbose = 1):
+def test_reduce_baby_axis(verbose = 0):
     for i, v in enumerate(make_baby_testcases()):
         if verbose:
             print("\nTest case", i)
@@ -436,13 +436,21 @@ def test_reduce_baby_axis(verbose = 1):
         assert V_START * g == V_START
 
         vr1 = np.zeros(200, dtype = np.uint32)
-        # Preliminary!!!!!!!!!!!!!
-        """
+
         len_r1 = mm_op15_reduce_v_baby_axis(v.copy().data, vr1)
         assert len_r1 >= 0
         g1 = MM.from_data(vr1[:len_r1])
-        assert g1 == g
-        """
 
+        ok =  g1 == g 
+        #print(type(g1), type(g))
+        if verbose or not ok:
+             vt = leech_matrix_2A_axis_type(15, v.data) >> 24
+             vA = eval_A_vstart(v.data)
+             print("Type(v) = 0x%x, value(A) = %d" % (vt, vA))
+             print("Op:  ", [hex(x) for x in g] )
+             print("Fast:", [hex(x) for x in g1] ) 
+             if not ok:
+                 err = "Function mm_op15_reduce_v_baby_axis failed"
+                 raise ValueError(err)
 
 

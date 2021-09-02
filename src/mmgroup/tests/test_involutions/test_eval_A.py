@@ -11,6 +11,7 @@ import pytest
 
 from mmgroup import MM, MMSpace, Cocode
 from mmgroup.clifford12 import leech2matrix_eval_A_odd_mod15_aux
+from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
@@ -114,4 +115,8 @@ def test_eval_a(verbose = 0):
         m = v.eval_A(v2, e)
         m_ref =  eval_a_ref(v, v2, e)  
         assert m == m_ref, (hex(v2), e, m, m_ref)
+        if e == 0:
+            m_orig = leech2matrix_eval_A(15, v.data, v2)
+            assert m == m_orig
+
 

@@ -499,10 +499,11 @@ def test_reduce_type2_ortho(verbose = 0):
         
         w_op_fast = reduce_type2_ortho_fast(w)
         ok = w_op == w_op_fast
-        if verbose or not ok: print("Op:  ", [hex(x) for x in w_op])
+        if verbose or not ok: 
+            print("Op:  ", [hex(x) for x in w_op])
+            print("Fast:", [hex(x) for x in w_op_fast] )
         if not ok:
-            print("Fast:  ", [hex(x) for x in w_op_fast] )
-            print("Op obtained from:", hex(w1))
+            print("Op obtained from:", hex(w))
             raise ValueError("Fast function reduce_type2 failed")
         
         assert len(w_op) <= 6, len(w_op)
