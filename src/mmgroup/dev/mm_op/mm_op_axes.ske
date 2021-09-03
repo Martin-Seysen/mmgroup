@@ -455,3 +455,29 @@ int32_t mm_op%{P}_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
 }
 
 
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_reduce_g(uint32_t *a,  uint32_t n, uint32_t *r)
+{
+    int32_t len1, res;
+    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
+    if (p_work == 0) return -1;
+    mm_op%{P}_store_axis(p_work->v, 0);
+    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    len1 = res = reduce_v_axis(p_work->v, r, p_work);
+    if (res <  0) goto done;
+    mm_op%{P}_store_axis(p_work->v, 1);
+    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    res = mm_op15_word(p_work->v, r, len1, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    res = reduce_v_baby_axis(p_work->v, r + len1, p_work);
+    if (res <  0) goto done;
+    res = len1 + res;
+
+done:
+    free(p_work);
+    return res;
+}

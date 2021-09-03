@@ -2,6 +2,8 @@
 from random import randint
 import numpy as np
 
+import datetime
+import time
 import pytest
 
 from mmgroup import MM, MMSpace
@@ -21,7 +23,8 @@ from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
 from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
-from mmgroup.mm15 import op_reduce_v_baby_axis as  mm_op15_reduce_v_baby_axis
+from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
+from mmgroup.mm15 import op_reduce_g as mm_op15_reduce_g
 
 from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
@@ -351,11 +354,7 @@ def reduce_baby_axis(vector, verbose = 1):
 
 
 
-
-
-
-
-def make_testcases():
+def make_axis_testcases():
     V = V_START.space
     yield V_START.copy()
     yield V(  ("I", 11, 9) )
@@ -372,7 +371,7 @@ def make_testcases():
 
 @pytest.mark.involution
 def test_reduce_axis(verbose = 0):
-    for i, v in enumerate(make_testcases()):
+    for i, v in enumerate(make_axis_testcases()):
         if verbose:
             print("\nTest case", i)
         r = reduce_axis(v.copy(), verbose)
@@ -452,5 +451,57 @@ def test_reduce_baby_axis(verbose = 0):
              if not ok:
                  err = "Function mm_op15_reduce_v_baby_axis failed"
                  raise ValueError(err)
+
+
+##########################################################################
+# Testing C function mm_op15_reduce_g
+##########################################################################
+
+
+reduce_time = None
+
+def reduce_g(g):
+    global reduce_time
+    assert g.group == MM
+    r = np.zeros(256, dtype = np.uint32)
+    t_start = time.perf_counter() 
+    res = mm_op15_reduce_g(g.data, len(g.data), r)
+    reduce_time = time.perf_counter() - t_start
+    if res < 0:
+       err = "Error %d in reducing element of monster group"
+       raise ValueError(err % res)
+    return MM.from_data(r[:res])
+
+
+def g_complexity(g):
+    s = [x for x in g.data if x & 0x70000000 == 0x50000000]
+    return len(s)
+
+
+def make_reduce_testcases():
+    for quality in range(1,17):
+        for i in range(2):
+              yield  MM.rand_mm(quality)      
+
+
+@pytest.mark.involution
+def test_reduce_g(verbose = 0):
+    for i, g in enumerate(make_reduce_testcases()):
+        if verbose:
+            print("\nTest case", i)
+        g1 = reduce_g(g)
+        g2 = g * g1
+        ok = g2.in_G_x0()
+
+        if verbose or not ok:
+            print("g =", g)
+            print("g1 =", g1 ) 
+            print("g2 =", g2 ) 
+            print("Run time: %.2f ms, Complexity: %d" % 
+                (1000 * reduce_time, g_complexity(g))) 
+            if not ok:
+                err = "Function mm_op15_reduce_g failed"
+                raise ValueError(err)
+
 
 
