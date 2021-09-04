@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 from mmgroup import structures
@@ -32,6 +33,7 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
+from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
 
 
 
@@ -363,6 +365,40 @@ def check_mm_in_g_x0(g):
     return g
 
 
+###########################################################################
+# Fast reduction of an element of the monster 
+###########################################################################
+
+
+reduce_mm_time = None
+
+def reduce_mm(g, check = True):
+    """The fastest reduction procedure for a monster element ``g``"""
+    global reduce_mm_time
+    v = get_order_vector().data
+    g1 = np.zeros(256, dtype = np.uint32)
+    t_start = time.perf_counter() 
+    res = mm_op15_reduce_M(g.data, len(g), ORDER_TAGS, v, g1)
+    reduce_mm_time = time.perf_counter() - t_start
+    if (res < 0):
+        err = "Reduction of element of monster failed"
+        raise ValueError(err)
+    length = res
+    if check:
+        w = mm_vector(15)
+        work = mm_vector(15)
+        mm_op15_copy(v, w)
+        mm_op15_word(w, g._data, len(g), 1, work)
+        mm_op15_word(w, g1, length, -1, work)
+        assert not mm_op15_compare(v, w)
+         
+    g._extend(length)
+    g._data[:length] = g1[:length]
+    g.length = length
+    g.reduced = 0
+    g.reduce()
+    return g
+
 
 ###########################################################################
 # Main program (for testing)
@@ -372,9 +408,6 @@ def check_mm_in_g_x0(g):
 if __name__ == "__main__":
     get_order_vector(recompute = 0, verbose = 1)
     assert isinstance(g, MMGroupWord)
-
-
-
-
+        
 
 

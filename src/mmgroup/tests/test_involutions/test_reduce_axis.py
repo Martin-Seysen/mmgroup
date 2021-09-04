@@ -24,7 +24,7 @@ from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
 from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
 from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
-from mmgroup.mm15 import op_reduce_g as mm_op15_reduce_g
+from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
 
 from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
@@ -454,18 +454,18 @@ def test_reduce_baby_axis(verbose = 0):
 
 
 ##########################################################################
-# Testing C function mm_op15_reduce_g
+# Testing C function mm_op15_reduce_G_x0
 ##########################################################################
 
 
 reduce_time = None
 
-def reduce_g(g):
+def reduce_G_x0(g):
     global reduce_time
     assert g.group == MM
     r = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_g(g.data, len(g.data), r)
+    res = mm_op15_reduce_G_x0(g.data, len(g.data), r)
     reduce_time = time.perf_counter() - t_start
     if res < 0:
        err = "Error %d in reducing element of monster group"
@@ -485,11 +485,11 @@ def make_reduce_testcases():
 
 
 @pytest.mark.involution
-def test_reduce_g(verbose = 0):
+def test_reduce_G_x0(verbose = 0):
     for i, g in enumerate(make_reduce_testcases()):
         if verbose:
             print("\nTest case", i)
-        g1 = reduce_g(g)
+        g1 = reduce_G_x0(g)
         g2 = g * g1
         ok = g2.in_G_x0()
 
@@ -500,7 +500,7 @@ def test_reduce_g(verbose = 0):
             print("Run time: %.2f ms, Complexity: %d" % 
                 (1000 * reduce_time, g_complexity(g))) 
             if not ok:
-                err = "Function mm_op15_reduce_g failed"
+                err = "Function mm_op15_reduce_G_x0 failed"
                 raise ValueError(err)
 
 

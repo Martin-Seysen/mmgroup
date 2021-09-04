@@ -458,7 +458,7 @@ int32_t mm_op%{P}_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
 
 
 // %%EXPORT px
-int32_t mm_op%{P}_reduce_g(uint32_t *a,  uint32_t n, uint32_t *r)
+int32_t mm_op%{P}_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t *r)
 {
     int32_t len1, res;
     axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
@@ -477,6 +477,66 @@ int32_t mm_op%{P}_reduce_g(uint32_t *a,  uint32_t n, uint32_t *r)
     if (res <  0) goto done;
     res = len1 + res;
 
+done:
+    free(p_work);
+    return res;
+}
+
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_reduce_M(uint32_t *a,  uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t *r)
+{
+    int32_t len1, len2, res;
+
+    // This function combines functions  mm_op%{P}_reduce_to_G_x0 and
+    // mm_op%{P}_check_in_Gx0. Here we cut and paste the code of both 
+    // functions, for reducing  the overhead of memory allocation.
+    // First allocate memory for bot subfunctions.
+    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
+    if (p_work == 0) return -1;
+
+    // Cut an paste the operation of function mm_op%{P}_reduce_to_G_x0
+    mm_op%{P}_store_axis(p_work->v, 0);
+    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    len1 = res = reduce_v_axis(p_work->v, r, p_work);
+    if (res <  0) goto done;
+    mm_op%{P}_store_axis(p_work->v, 1);
+    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    res = mm_op15_word(p_work->v, r, len1, 1, p_work->vtmp);
+    if (res <  0) goto done;
+    res = reduce_v_baby_axis(p_work->v, r + len1, p_work);
+    if (res <  0) goto done;
+    len1 = res = len1 + res;
+
+    // Let ``g1`` be the element of the monster stored in
+    // ``r[0,...,len1-1]``. Then ``h := g * g1`` is now in the
+    // Subgroup ``G_x0`` of the monster.
+
+    // Put p_work->v = v0 * h
+    mm_op15_copy(v0, p_work->v); 
+    res = mm_op%{P}_word(p_work->v, a, n, 1, p_work->vtmp);
+    if (res < 0) goto done;
+    res = mm_op%{P}_word(p_work->v, r, len1, 1, p_work->vtmp);
+    if (res < 0) goto done;
+
+    // Now we essentially apply function t mm_op%{P}_check_in_Gx0
+    // to find a representation of ``h`` in generators of ``G_x0``.
+    res = mm_op%{P}_find_in_Gx0(p_work->v, tags, v0, r + len1);
+    if (res > 0x100) res = -0x200;
+    if (res < 0) goto done; 
+    len2 = res = mm_op%{P}_find_in_Qx0(p_work->v, tags, v0, r + len1, 
+          p_work->vtmp);
+    if (res < 0) goto done;
+
+    // Now ``r[len1,...,len1+len2-1]``  contains ``h``. We will compute
+    // the result ``h * g1**(-1)`` in ``r[0,...,len1+len2-1]`` and
+    // return res = len1 + len2.
+    mm_group_invert_word(r + len1, len2);
+    mm_group_invert_word(r, res = len1 + len2);
+  
 done:
     free(p_work);
     return res;

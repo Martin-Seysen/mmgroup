@@ -714,10 +714,10 @@ class MMSpace(AbstractMmRepSpace):
             g._extend(length + 1)
             g._data[length] = 0x70000000
             length += 1
-        t_start = time.process_time()
+        t_start = time.perf_counter()
         #t_start = default_timer()
         self.op_word(v1.data, g._data, length, e, work)
-        v1.last_timing = time.process_time() - t_start
+        v1.last_timing = time.perf_counter() - t_start
         #v1.last_timing = default_timer() - t_start
         return v1  
 

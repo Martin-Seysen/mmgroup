@@ -153,7 +153,7 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
   it is in the subgroup \f$G_{x0}\f$ of the monster.
 
   In case of success the function writes the element \f$g_1\f$ into the
-  array ``g`` is the same way as function ``mm_op%{P}_check_in_Gx0``
+  array ``g`` in the same way as function ``mm_op%{P}_check_in_Gx0``
   writes its result int that array. 
   
   The function does not change the inputs ``tags``, and ``v0``. 
