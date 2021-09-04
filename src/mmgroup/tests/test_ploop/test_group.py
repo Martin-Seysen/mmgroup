@@ -54,7 +54,7 @@ def test_xyz(n_cases):
             g = group((tag, v)) 
             assert g ==  group((tag, PLoop(v))) 
             assert g ==  group.atom(tag, PLoop(v)) 
-    assert group(('x', v)) * group(('y', v)) * group(('z', v)) == g1
+    group(('x', v))._mul(group(('y', v)), group(('z', v))) == g1
  
 
 #####################################################################
@@ -69,7 +69,7 @@ def test_group_op(n_cases):
         a1 = AutPL(('d', 'r'), ('p', 'r'))
         c, p = randint(0, 0xfff), randint(0, MAT24_ORDER - 1)
         a2 = AutPL(('d', c), ('p', p))
-        assert group(a1) * group(a2) == group(a1 * a2)
+        assert group(a1)._mul(group(a2)) == group(a1 * a2)
         assert group(a1**-1) == group(a1)**-1
 
 

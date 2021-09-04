@@ -170,7 +170,6 @@ class GroupN(AbstractGroup):
     def __init__(self):
         super(GroupN, self).__init__()
         self.atom_parser = AtomDict(self.atom)
-        from mmgroup import MM
         
 
 

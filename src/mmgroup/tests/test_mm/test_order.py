@@ -98,7 +98,7 @@ def test_order(verbose = 0):
         if order & 1:
             assert g2 == None
         else:
-            assert g2 == g ** (order // 2)
+            assert g2 == g._pow(order // 2)
     print("Test passed")
    
    

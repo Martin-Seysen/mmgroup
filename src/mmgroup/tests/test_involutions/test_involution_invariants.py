@@ -99,7 +99,7 @@ def conj_G_x0_to_Q_x0(g):
     lv = chk_qstate12(xsp2co1_elem_conj_G_x0_to_Q_x0(gg._data, a))
     length, q = lv >> 25, lv & 0x1ffffff
     h = MM.from_data(a[:length])
-    gh = MM(g)**h
+    gh = MM(g)._conj(h)
     assert gh.in_Q_x0()
     assert gh == MM(('q', q))
     return h
@@ -157,7 +157,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
         if not ok: 
             err = "xsp2co1_elem_find_type4() not successful"
         mv = MM(("c", v))**-1
-        h = g**mv
+        h = g._mul(mv)
         if ok and istate > 1: 
             ok = ok and  h.in_N_x0(), (g, h, ref_invariants)
             if not ok:
@@ -166,12 +166,12 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
             #print("%-28s" % h, ref_invariants)
             if ok:
                 h1 = conj_G_x0_to_Q_x0(g)
-                ok = ok and  (g**h1).in_Q_x0()
+                ok = ok and  (g._conj(h1)).in_Q_x0()
                 if not ok:
                     err = "Could not conjugate element to Q_x0"
     if ok and istate == 3:
         a = gg.conjugate_2B_involution()
-        ok = ok and  g**a == Z
+        ok = ok and  g._conj(a) == Z
         if not ok:
            err = "Could not conjugate element to centre of Q_x0" 
     if not ok:

@@ -1,4 +1,3 @@
-from mmgroup.mm_group import MMGroup
 
 import numpy as np
 

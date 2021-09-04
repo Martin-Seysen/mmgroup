@@ -32,7 +32,7 @@ def make_samples(n_samples = 5):
 
 def do_test_involution(g, verbose = 0):
     h = g.conjugate_2B_involution(verbose = verbose)
-    assert g**h == z
+    assert g._conj(h) == z
 
 
 
@@ -42,7 +42,7 @@ def do_test_2B_involution(n_tests = 3, verbose = 0):
         if verbose:
              print("Test", i+1)
         h = g.conjugate_2B_involution(verbose = verbose)
-        assert g**h == z
+        assert g._conj(h) == z
 
 
 @pytest.mark.involution

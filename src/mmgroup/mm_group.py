@@ -374,6 +374,72 @@ class MMGroupWord(AbstractGroupWord):
         """
         return self.length == self.reduced
 
+    def _mul(self, *gg):
+        """Return product of this group element with other elements
+
+        ``g_0._mul(g_1,...,g_n)`` returns a new group element with 
+        value ``g_0 * g_1 * ,..., * g_n``.
+
+        In contrast to the standard multiplication operation we do 
+        not reduce the result. To be used for tests only!
+        """
+        g = self.copy()
+        for g_i in gg:
+            g.group._imul_nonreduced(g, g_i)
+        g.reduce()
+        return g
+
+    def _div(self, g1):
+        """Return quotient of this group element by another element
+
+
+        ``g0._div(g1)`` returns a new group element with 
+        value ``g0 * g1**(-1)``.
+
+        In contrast to the standard division operation we do 
+        not reduce the result. To be used for tests only!
+        """
+        return self._mul(g1**(-1))
+
+    def _conj(self, g1):
+        """Conjugate this group element by another element
+
+
+        ``g0._comj(g1)`` returns a new group element with 
+        value ``g1**(-1) * g0 * g1``.
+
+        In contrast to the standard division operation we do 
+        not reduce the result. To be used for tests only!
+        """
+        g = g1**(-1)
+        return g._mul(self, g1)
+
+    def _pow(self, exp):
+        """Raise this group element to a power
+
+        ``g0._pow(exp)`` returns a new group element with 
+        value ``g0**exp``.
+
+        In contrast to the standard division operation we do 
+        not reduce the result. To be used for tests only!
+        """
+        g = self.group
+        if exp > 0:
+            res, start = g.copy_word(self), self
+        elif exp == 0:
+            return g.group.neutral()
+        else:
+            start, exp = g._invert(self), -exp
+            res = g.copy_word(start) 
+        for i in range(int(exp).bit_length() - 2, -1, -1):
+            res = res._mul(res)
+            if exp & (1 << i):
+                res = res._mul(start) 
+        return res      
+
+
+
+
     def order(self, max_order = 119):
         """Return the order of the element of the monster group
 

@@ -16,7 +16,7 @@ import scipy.special
 from scipy.stats import chisquare
 import pytest
 
-from mmgroup import MMGroup
+from mmgroup import MM
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.mat24 import bw24 as mat24_bw24
 from mmgroup.generators import gen_leech3to2_type3
@@ -30,7 +30,6 @@ from mmgroup.generators import gen_leech2_type_selftest
 OMEGA0_V3  = 0x1
 
 
-MM = MMGroup()
 
 
 

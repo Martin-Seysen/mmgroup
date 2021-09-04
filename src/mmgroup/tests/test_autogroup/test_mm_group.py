@@ -93,7 +93,7 @@ def ll_mul_test_case(g1, g2, verbose = 1):
     g1ref = to_ref_group(g1) 
     g2ref = to_ref_group(g2) 
     g12ref = g1ref * g2ref
-    g12 = g1 * g2
+    g12 = g1._mul(g2)
     assert to_MM(g12ref) == g12, (g12ref, g12)
     assert to_ref_group(g12) == g12ref, (g1, g2) 
     # next test mixed operation
@@ -121,7 +121,7 @@ def ll_div_test_case(g1, g2, verbose = 1):
     g1ref = to_ref_group(g1) 
     g2ref = to_ref_group(g2) 
     g12ref = g1ref / g2ref
-    g12 = g1 / g2
+    g12 = g1._div(g2)
     assert to_MM(g12ref) == g12, (g12ref, g12)
     assert to_ref_group(g12) == g12ref
     # next test mixed operation

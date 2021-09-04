@@ -490,7 +490,7 @@ def test_reduce_G_x0(verbose = 0):
         if verbose:
             print("\nTest case", i)
         g1 = reduce_G_x0(g)
-        g2 = g * g1
+        g2 = g._mul(g1)
         ok = g2.in_G_x0()
 
         if verbose or not ok:
