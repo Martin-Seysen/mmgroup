@@ -245,7 +245,22 @@ def characteristics():
         all_characteristics_found = sorted(mm_op.keys())
     return all_characteristics_found
 
+
 ######################################################################
+# Imports on demand
+######################################################################
+
+import_pending = True
+leech2matrix_eval_A = None
+leech_matrix_2A_axis_type = None
+
+def complete_import():
+    global leech2matrix_eval_A, leech_matrix_2A_axis_type
+    from mmgroup.clifford12 import leech2matrix_eval_A
+    from mmgroup.clifford12 import leech_matrix_2A_axis_type 
+    import_pending = False    
+
+#####################################################################
 # Modelling a vector of the 196884-dimensional rep of the monster
 ######################################################################
 
@@ -353,7 +368,8 @@ class MMSpaceVector(AbstractMmRepVector):
         The function raises ValueError if :math:`v_2`  is not
         a short Leech lattice vector or if ``p != 15``.
         """
-        from mmgroup.clifford12 import leech2matrix_eval_A
+        if import_pending:
+            complete_import()
         v1 = np.zeros(24*4, dtype = np.uint64)
         self.space.op_t_A(self.data, e % 3, v1)
         res = leech2matrix_eval_A(self.space.p, v1, v2)
@@ -364,7 +380,7 @@ class MMSpaceVector(AbstractMmRepVector):
         
 
     def axis_type(self, e = 0):
-        """Return axis type if this vector is a 2A axis 
+        r"""Return axis type if this vector is a 2A axis 
 
         If this vector is a 2A axis then the function computes the 
         type of the 2A axis. Each 2A axis corresponds uniquely to 
@@ -396,8 +412,9 @@ class MMSpaceVector(AbstractMmRepVector):
         e, v = e % 3, self.data
         if e:
             v = np.zeros(24*4, dtype = np.uint64)
-            self.space.op_t_A(self.data, e, v)             
-        from mmgroup.clifford12 import leech_matrix_2A_axis_type
+            self.space.op_t_A(self.data, e, v)     
+        if import_pending:
+            complete_import()
         t = leech_matrix_2A_axis_type(self.space.p, v)
         if t == 0:
             return None
