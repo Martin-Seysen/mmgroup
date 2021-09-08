@@ -24,7 +24,7 @@ group = MMGroup()
 @pytest.mark.parametrize("n_cases", [100])
 def test_autploop(n_cases):
     for i in range(n_cases):
-        autp = AutPL(('d', 'r'), ('p', 'r'))
+        autp = AutPL('r', 'r')
         g = group(autp)
         assert g ==  group(('d', autp.cocode), ('p',  autp.perm))
         assert g ==  group(('p',  autp))
@@ -66,9 +66,9 @@ def test_xyz(n_cases):
 @pytest.mark.parametrize("n_cases", [100])
 def test_group_op(n_cases):
     for i in range(n_cases):
-        a1 = AutPL(('d', 'r'), ('p', 'r'))
+        a1 = AutPL('r', 'r')
         c, p = randint(0, 0xfff), randint(0, MAT24_ORDER - 1)
-        a2 = AutPL(('d', c), ('p', p))
+        a2 = AutPL(c, p)
         assert group(a1)._mul(group(a2)) == group(a1 * a2)
         assert group(a1**-1) == group(a1)**-1
 

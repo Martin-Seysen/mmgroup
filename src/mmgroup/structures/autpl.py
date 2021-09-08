@@ -116,7 +116,7 @@ of a random element of :math:`M_{24}` as follows:
   # Create a mapping from [0,1,2,3,4,5,8] to that heptad 
   hmap = zip([0,1,2,3,4,5,8], heptad)
   # Create a permutation in the Mathieu group from that mapping
-  aut = AutPL(hmap) 
+  aut = AutPL(0, hmap) 
   # 'aut' is the standard representative of the permutation
   # Show 'aut' as a permutation in form of a list 
   print(aut.perm)     
@@ -142,9 +142,13 @@ from operator import __or__
 from numbers import Integral, Number
 from random import randint
 
+from mmgroup.mat24 import MAT24_ORDER
 from mmgroup.structures.auto_group import AbstractGroupWord
 from mmgroup.structures.auto_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
+from mmgroup.structures.parse_atoms import eval_atom_expression        
+
+
 
 try:
     # Try importing the fast C function
@@ -186,101 +190,107 @@ def complete_import():
 
 
 
-####################################################################
+
+#######################################################################
+# Function implementing the constructor for class AutPL
+#######################################################################
 
 
-def diagonal_from_obj(t):
-    """Convert object 't' to a diagnal Parker loop automorphism.
 
-    Ojects of the following types are recognized:
-    - None and 0 encode the identity automorphism
-    - An instance of class Cocode encodes a diagonal automorphism.
-    - An element of the group AutPLoop encodes itself. 
+ERR_AUTPL_P1 = "AutPL expects at most 1 parameter of type %s" 
+ERR_AUTPL_TYPE = "Cannot construct AutPL instance from type %s" 
 
-    The function returns the cocode value
+
+autpl_conversions = {
+}
+
+def autpl_from_obj(d = 0, p = 0, unique = 1):
+    """Try to convert tuple (d, p) to a Parker loop automorphism.
+
+    Parameter ``d`` decribes a element of the Golay cocode as in the
+    constructor of class ``Cocode``. It may be of type ``int``, ``str``
+    or an instance of class ``Cocode``. Pt defaults to ``0``.
+
+    Alternatively, ``d`` may ba an instance of class ``AutPL``. In this 
+    case, ``p`` must be set to its default value.
+
+
+    Parameter ``p`` describes a element of the Mathieu group ``Mat24``.
+    It defaults to the neutral element of ``Mat24``. It may be
+    
+     * An integer encoding the number of a permutatin in ``Mat24``.
+
+     * A list encoding a permutation in the Mathieu group ``Mat24``.
+
+     * A zip object or a dictionary encodes such a permutation as
+       a mapping. That mapping must contain sufficiently many 
+       entries to be unique.  
+
+     * The string 'r' encodes a random permutation in ``Mat24``.
+
+    If parameter ``unique`` is ``True`` (default), the parameters ``d``
+    and ``p`` must describe a unique (or a random) Parker loop 
+    automorphism. Otherwise an arbitrary automorphism satisfying
+    the conditions given by ``d`` and ``p`` is returned.
+
+    The function returns a pair ``(cocode, permutation_number)``.
     """
-    if isinstance(t, AutPL) and t.perm_num == 0:
-        return t.cocode
     if import_pending:
         complete_import()
-    if isinstance(t, Cocode):
-        return t.value
-    else:
-        return Cocode(t).cocode
-        
-
-
-
-def autpl_from_obj(t):
-    """Try to convert the object 't' to a Parker loop automorphism.
-
-    Ojects of the following types are recognized:
-    - None and 0 encode the identity automorphism
-    - A list encodes a permutation in the Mathieu group M_24.
-    - A zip object or a dictionary encodes such a permutation as
-      a mapping. That mapping must contain sufficiently many 
-      entries to be unique.  
-    - An instance of class Cocode encodes a diagonal automorphism.
-    - An element of the group AutPLoop encodes itself. 
-
-    The function returns a pair (cocode, pemrutation_number).
-    """
-    global Cocode
-    if t is None or t == 0 or t == 1:
-        return 0, 0
-    if isinstance(t, list):
-        if mat24.perm_check(t):
-            raise ValueError("Permutation is not in Mathieu group M_24")
-        return 0, mat24.perm_to_m24num(t)
-    if isinstance(t, zip):
-        t = dict(t)
-    if isinstance(t, dict):
-        h1, h2 = [list(t) for t in zip(*t.items())]
+    if isinstance(d, Integral):
+        d_out = int(d)
+    elif isinstance(d, Cocode):
+        d_out = d.value
+    elif isinstance(d, AutPL):
+        d_out, p_out =  d._cocode, d._perm_num
+        if p:
+            raise TypeError(ERR_AUTPL_P1 % type(d))
+        return d_out, p_out
+    elif isinstance(d, str):
+        d_out = Cocode(d).value
+    else: 
+        try:
+            f = autpl_conversions[type(d)]
+        except KeyError:
+            raise TypeError(ERR_AUTPL_TYPE % type(d))
+        if p:
+            raise TypeError(ERR_AUTPL_P1 % type(d))
+        d_out, p_out =  f(d)
+        return d_out, p_out
+            
+    if p == 'r':
+        return d_out, randint(0, MAT24_ORDER - 1)
+    if isinstance(p, Integral):
+        if 0 <= p <  MAT24_ORDER:
+            return d_out, int(p)
+        err = "Bad number for permutation in Mathieu group  Mat24"
+        raise ValueError(err) 
+    if isinstance(p, list):
+        if mat24.perm_check(p):
+            err = "Permutation is not in Mathieu group M_24"
+            raise ValueError(err)
+        return d_out, mat24.perm_to_m24num(p)
+    if isinstance(p, zip):
+        p = dict(p)
+    if isinstance(p, dict):
+        h1, h2 = [list(t) for t in zip(*p.items())]
         res, perm = mat24.perm_from_map(h1, h2)
-        if res == 1:
-            return 0, mat24.perm_to_m24num(perm) 
+        if res == 1 or (res > 1 and not unique):
+            return d_out, mat24.perm_to_m24num(perm) 
         if res < 1:
             err = "Permutation is not in Mathieu group M_24"
-        else:
+        else:                 
             err = "Permutation in Mathieu group M_24 is not unique"
         raise ValueError(err)
-    if isinstance(t, AutPL):
-        return t._cocode, t._perm_num
-    if isinstance(t, tuple) and len(t) and isinstance(t[0], str):
-        return autpl_from_tag(*t)
-    if import_pending:
-        complete_import()
-    if isinstance(t, Cocode):
-        return t.value, 0
-    if isinstance(t, str):
-        if len(t) == 1 and t.islower():
-            return Cocode(t).cocode, randint(0, mat24.MAT24_ORDER-1)
-        else:
-            a = AutPlGroup.parse(AutPL.group, t)
-            if isinstance(a, AutPL):
-                return a.cocode, a.perm_num
-            elif a == 1:
-                return 0, 0
-    err = "Cannot convert type %s object to Parker loop automorphism"
-    raise TypeError(err % type(t))
-        
 
 
-def autpl_from_tag(tag = None, data = None):
-    if tag == "p":
-        if isinstance(data, Integral):
-            if not 0 <= data < mat24.MAT24_ORDER:
-                raise ValueError(self.ERR_PERM_NUM)
-            return 0, data
-        elif isinstance(data, str) or data is None:
-            return  0, randint(0, mat24.MAT24_ORDER - 1)
-        else:
-            return  autpl_from_obj(data)
-    elif tag == "d":
-        return diagonal_from_obj(data), 0
-    else:
-        ERR_TAG = "Bad tag '%s' for Parker loop automorphism"
-        raise ValueError(ERR_TAG % tag)
+
+
+
+
+#######################################################################
+# Class AutPL
+#######################################################################
 
 
             
@@ -290,76 +300,88 @@ def autpl_from_tag(tag = None, data = None):
 class AutPL(AbstractGroupWord):
     r"""This class models a standard automorphism of the Parker loop.
 
-    :param \*data:
+    :param d:
 
-      A variable number of arguments; each argument describes a
-      Parker loop automorphism. These automorphisms are
-      multiplied.  
+      This parameter describes an element of the Golay cocode. If ``d``
+      is an instance of class |AutPL| then this describes an
+      automporphism of the Parker loop; in that case parameter ``p``
+      must be set to its default value. Legal types of parameter ``d`` 
+      see  below. The parameter defaults to zero word of the cocode.
+       
+    :param p:
 
-    :type \*data: see table below for legal types
+      This parameter describes a permutation in the Mathieu group 
+      ``M_24`` or, more precisely, the standard representative of 
+      that permutation in the automporphism group of the Parker 
+      loop. Legal types of that parameter see below.
+      The parameter defaults to neutral element of ``Mat24``.
 
-    :param \*\*kwds: for internal use only.
+    :param unique:
 
-
+       If this is ``True`` (default) then the automorphism must be
+       determined uniquely by parameters ``d`` and ``p``.
+ 
     :return: A standard Parker loop automorphism
     :rtype:  an instance of class |AutPL|
 
     :raise:
         * TypeError if ``type(value)`` is not in the table given below.
-        * ValueError if an argument cannot be converted to an
+        * ValueError if the set of arguments cannot be converted to an
           instance of class  |AutPL|.
 
-    Depending on its type each parameter in **\*data** is  
-    interpreted as follows:
 
-    .. table:: Legal types for constructor of class ``AutPL``
+    .. table:: Legal types for parameter ``d`` in constructor of class ``AutPL``
       :widths: 25 75
 
       ===================== ==================================================
       type                  Evaluates to
       ===================== ==================================================
-      tuple (``'p', n``)    Here ``n`` is the number of a permutation in 
-                            the Mathieu group ``M_24``. Then the
-                            standard representative of the corresponding
-                            permutation in ``M_24`` is returned. 
-                            
-                            If ``n`` is a list, or a zip object or a
-                            dictionary, this is also interpreted as a 
-                            permutation. If ``n`` is the string 
-                            ``'r'`` then a random permutation in ``M_24`` 
-                            is generated.
+      ``int``               The number of an element of the Golay cocode.
 
-      ``list`` of ``int``   A list ``l_p`` of disjoint integers
-                            ``0 <= i < 24`` is interpreted as a permutation
-                            in ``M_24`` that maps ``i`` to ``l_p[i]``.
-
-      ``dict``              A dictionary specifies a mapping from a subset
-                            of the integers ``0 <= i < 24`` to integers
-                            ``0 <= dict[i] < 24``. This mapping must
-                            extend to a unique permutation in ``M_24``. 
-                            The standard representative of that 
-                            permutation is returned.
-
-      ``zip`` object        ``zip(x,y)`` is equivalent to 
-                            ``dict(zip(x,y))``.
-
-      class |Cocode|        This represents the *diagonal* automorphism of 
-                            the Parker loop given by the |Cocode| element.
-
-      tuple (``'d', n``)    Equivalent to ``Cocode(n)``. 
-
-      class |AutPL|         A deep copy of the given
-                            automorphism in |AutPL| is returned.
+      class |Cocode|        This represents an element of the Golay cocode.
 
       ``str``               Create random automorphism depending on ``str``
                               | ``'r'``: Create an arbitrary automorphism
                               | ``'e'``: Create an even automorphism
                               | ``'o'``: Create an odd automorphism
 
-                            For an instance ``g`` of |AutPL| we have
-                            ``AutPL(str(g)) == g``. This is helpful for
-                            rereading printed instances of |AutPL|.
+      class |AutPL|         A deep copy of the given automorphism 
+                            in |AutPL| is returned. Then parmeter ``p``
+                            mus be set to its default value.
+
       ===================== ==================================================
+
+
+    .. table:: Legal types for parameter ``p`` in constructor of class ``AutPL``
+      :widths: 25 75
+
+      ===================== ==================================================
+      type                  Evaluates to
+      ===================== ==================================================
+      ``int``               Here the integer is the number of a permutation  
+                            in the Mathieu group ``M_24``. 
+
+      ``list`` of ``int``   A list ``l_p`` of ``24`` of disjoint integers
+                            ``0 <= i < 24`` is interpreted as a permutation
+                            in ``M_24`` that maps ``i`` to ``l_p[i]``.
+
+      ``dict``              A dictionary specifies a mapping from a subset
+                            of the integers ``0 <= i < 24`` to integers
+                            ``0 <= dict[i] < 24``. This mapping must
+                            extend to a permutation in ``M_24``. 
+                            If parameter  ``unique`` is ``True`` (default)
+                            then that permutation must be unique.
+
+      ``zip`` object        ``zip(x,y)`` is equivalent to 
+                            ``dict(zip(x,y))``.
+
+      ``str``               Create random automorphism depending on ``str``
+                              | ``'r'``: Create an arbitrary automorphism
+                            
+                            Any other string is illegal.
+      ===================== ==================================================
+
+
 
     Let ``a`` be an instance of class |GcVector|, |GCode|, |Cocode|,
     or |PLoop|, and let ``g1`` , ``g2`` be instances of class |AutPL|. 
@@ -369,7 +391,6 @@ class AutPL(AbstractGroupWord):
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
-    We have ``1 * g1 == g1 * 1 == g1`` and ``1 / g1 == g1 ** (-1)``.
 
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.    
     """
@@ -379,22 +400,9 @@ class AutPL(AbstractGroupWord):
     _rep_ = mat24.perm_to_autpl(0, _perm_)
     group = None       # will be set to StdAutPlGroup later
     
-    def __init__(self, *data, **kwds):
-        if len(data) == 0:
-            self._cocode = 0
-            self._perm_num = 0
-            self._perm = self._perm_
-            self.rep = self._rep_
-        else:
-            self._cocode, self._perm_num = autpl_from_obj(data[0])
-            self._compute_from_numbers()
-            for d in data[1:]:
-                cocode, perm_num = autpl_from_obj(d) 
-                perm = mat24.m24num_to_perm(perm_num)  
-                rep = mat24.perm_to_autpl(cocode, perm)
-                self.rep = mat24.mul_autpl(self.rep, rep)
-            if len(data) > 1:
-                self._compute_from_rep()
+    def __init__(self, d = 0, p = 0, unique = 1):
+        self._cocode, self._perm_num = autpl_from_obj(d, p, unique)
+        self._compute_from_numbers()
 
     def _compute_from_numbers(self):
         self._perm = mat24.m24num_to_perm(self._perm_num)
@@ -457,6 +465,12 @@ class AutPL(AbstractGroupWord):
         return self._perm
 
 
+
+#######################################################################
+# Class AutPlGroup
+#######################################################################
+
+
 def autpl_element_from_obj(g, t):
     res =  AutPL()
     res._cocode, res._perm_num = autpl_from_obj(t)
@@ -466,31 +480,29 @@ def autpl_element_from_obj(g, t):
 
 class AutPlGroup(AbstractGroup):
     word_type = AutPL              # type of an element (=word) in the group
-    atom_parser = {}               # see method parse()
-    rand_masks  = {"r":(0xfff,0), "e":(0x7ff,0), "o":(0x7ff,0x800)} 
+    #atom_parser = {}               # see method parse()
+    #rand_masks  = {"r":(0xfff,0), "e":(0x7ff,0), "o":(0x7ff,0x800)} 
     conversions = {
-        list: autpl_element_from_obj,
-        zip: autpl_element_from_obj,
-        dict: autpl_element_from_obj,
-        AutPL: autpl_element_from_obj,
+      #  list: autpl_element_from_obj,
+      #  zip: autpl_element_from_obj,
+      #  dict: autpl_element_from_obj,
+      #  AutPL: autpl_element_from_obj,
     }
-    FRAME =  re.compile(r"^(?:AutPL)?<(.*)>$") # see method parse()
+    #FRAME =  AUTPL_FRAME
     ERR_PERM_NUM = "Illegal permutation number for Mathieu group M_24"
 
     def __init__(self):
         super(AutPlGroup, self).__init__()
         self.atom_parser = AtomDict(self.atom)
 
+
+    def __call__(*args, **kwds):
+        err = "Class AutPlGroup object is not callable"
+        raise TypeError(err)
+
     def atom(self, tag = None, data = None):
-        if isinstance(tag, str):
-            cocode, perm_num = autpl_from_tag(tag , data)
-        else:
-            cocode, perm_num = autpl_from_obj(tag)
-        res = AutPL()
-        res._cocode = cocode
-        res._perm_num = perm_num 
-        res._compute_from_numbers()
-        return res        
+        err = "Class AutPlGroup has no attribute 'atom'"
+        raise AttributeError(err)
 
     def _imul(self, g1, g2):
         g1.rep = mat24.mul_autpl(g1.rep, g2.rep)
@@ -525,7 +537,7 @@ class AutPlGroup(AbstractGroup):
             s.append("d_" + ihex(g._cocode))
         if g._perm_num:
             s.append("p_%d" % g._perm_num)
-        s = "*".join(s) if len(s) else "1"
+        s = "*".join(s) if len(s) else "d_0"
         return "AutPL<%s>" % s
 
 

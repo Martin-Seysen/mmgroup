@@ -46,7 +46,7 @@ def test_parity():
     gc = GCode(pl)
     assert even * pl == even * gc == GCode(0)
     assert odd * pl == odd * gc == gc
-    aut =  AutPL(('p', 'r'))
+    aut =  AutPL('e', 'r')
     assert odd * aut == odd
     assert even * aut == even
 

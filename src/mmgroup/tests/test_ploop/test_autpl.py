@@ -28,7 +28,7 @@ def rand_u7():
 
 def rand_autpl_u7():
     """Generate random Permutation in Mat24 from umbral heptads"""
-    return AutPL(zip(rand_u7(), rand_u7()), Cocode("r"))
+    return AutPL(0, zip(rand_u7(), rand_u7()), Cocode("r"))
 
 
 
@@ -75,13 +75,13 @@ def create_perm_testvectors():
 @pytest.mark.ploop
 def test_create_group_permutation():
     for i, (src, dest, num) in enumerate(create_perm_testvectors()):
-        p1 = AutPL(zip(src, dest))
+        p1 = AutPL(0, zip(src, dest))
         p1.check()
         p1c = p1.copy().check()
         assert p1c == p1
         assert p1.perm_num == num
-        assert p1 == AutPL(dict(zip(src, dest))).check()
-        assert p1 == AutPL(("p", num)).check()
+        assert p1 == AutPL(0, dict(zip(src, dest))).check()
+        assert p1 == AutPL(0, num).check()
         assert p1 == AutPL(p1).check()
         assert p1.cocode == 0
         perm = p1.perm
@@ -89,19 +89,19 @@ def test_create_group_permutation():
         assert min(perm) == 0 and max(perm) == 23
         for x, y in zip(src, dest):
             assert perm[x] == y
-        assert p1 == AutPL(perm)
+        assert p1 == AutPL(0, perm)
         coc = Cocode(randint(1,0xfff))
-        p2 = AutPL(coc) * AutPL(perm)
+        p2 = AutPL(coc, 0) * AutPL(0, perm)
         p2.check()
-        assert p2 == (AutPL(coc) * AutPL(perm)).check()
+        assert p2 == (AutPL(coc) * AutPL(0, perm)).check()
         assert p2 == AutPL(coc, perm).check()
         assert p2 != p1
         assert p2.perm_num == p1.perm_num
         assert p2.cocode == coc.cocode
-        p2c = AutPL(perm, coc).check()
+        p2c = AutPL(0, perm) * AutPL(coc, 0).check()
         assert p2.perm_num == p1.perm_num
         assert Cocode(p2c.cocode) * p2 == coc
-        assert p2 == AutPL(Cocode(p2.cocode)) * AutPL(p2.perm)
+        assert p2 == AutPL(Cocode(p2.cocode), 0) * AutPL(0, p2.perm)
 
 
 #####################################################################
@@ -112,14 +112,14 @@ def test_create_group_permutation():
 def test_group_op(n_cases = 100):
     print("")
     for i in range(n_cases):
-        p1 = AutPL(("p","r"), ("d","r"))
+        p1 = AutPL('r', 'r')
         p2 = rand_autpl_u7() 
         p2 *= AutPL(Cocode(randint(0, 0xfff)))
         p12 = (p1 * p2).check()
         assert p12.rep == mat24.mul_autpl(p1.rep, p2.rep)
         if i < 1:
             print(p1, "*", p2, "=", p12)
-        p3 =  AutPL(("p","r"), ("d","r"))
+        p3 =  AutPL('r', 'r')
         assert (p1 * p2) * p3 == p1 * (p2 * p3)
         p1i = (p1 ** -1).check()
         assert p1 * p1i == p1i * p1 == AutPL()
@@ -135,7 +135,7 @@ def autpl_testwords(n_cases = 50):
         if i % 4 == 0:
             yield rand_autpl_u7()
         else:
-            yield AutPL( ("p", "r"),  ("d", "r")) 
+            yield AutPL('r', 'r') 
 
 
 def ploop_testvectors(n_cases = 50):
@@ -208,16 +208,16 @@ def test_group_from_perm(n_cases):
     for i in range(n_cases):
         h1 = rand_u7()
         h2 = rand_u7()
-        autp = AutPL(zip(h1, h2))
-        assert autp == AutPL(dict(zip(h1, h2)))
+        autp = AutPL(0, zip(h1, h2))
+        assert autp == AutPL(0, dict(zip(h1, h2)))
         assert autp.perm == mat24.perm_from_heptads(h1, h2)
         assert autp.cocode == 0
         perm_num = autp.perm_num
         assert perm_num == mat24.perm_to_m24num(autp.perm)
-        assert autp == AutPL(mat24.perm_from_heptads(h1, h2))
+        assert autp == AutPL(0, mat24.perm_from_heptads(h1, h2))
         assert autp == AutPL(autp)
-        assert autp == AutPL(('p', autp.perm_num))
-        assert autp == AutPL(('p', zip(h1, h2)))
+        assert autp == AutPL(0, autp.perm_num)
+        assert autp == AutPL(0, zip(h1, h2))
         coc_num = randint(1, 0xfff)
         coc = Cocode(coc_num)
         assert coc != Cocode(0)
@@ -226,7 +226,7 @@ def test_group_from_perm(n_cases):
         assert type(im_coc) == type(coc)
         assert AutPL(im_coc) ==  AutPL(coc)**autp
         aut_cp = AutPL(coc) * autp
-        assert aut_cp == AutPL(('d', coc_num), ('p', perm_num)) 
+        assert aut_cp == AutPL(coc_num, perm_num) 
         if coc_num and perm_num:
             assert aut_cp.as_tuples() == [('d', coc_num), ('p', perm_num)]        
         assert autp * AutPL(im_coc) ==  aut_cp
@@ -235,7 +235,7 @@ def test_group_from_perm(n_cases):
         assert aut_cp.cocode == coc_num 
         assert Parity(aut_cp) == Parity(coc) 
         assert aut_cp.parity == coc.parity  == Parity(coc).ord
-        assert autp == 1 * autp == autp * 1
+        assert autp == AutPL() * autp == autp *  AutPL()
         with pytest.raises(TypeError):
             autp * coc
         with pytest.raises(TypeError):
@@ -258,15 +258,15 @@ def test_group_from_perm(n_cases):
 @pytest.mark.parametrize("n_cases", [50])
 def test_rand_group_word(n_cases):
     for i in range(n_cases):
-        aut_cp = AutPL(('d', 'r'), ('p', 'r')) 
+        aut_cp = AutPL('r', 'r') 
         perm_num = aut_cp.perm_num
         coc_num = aut_cp.cocode 
-        assert aut_cp == AutPL(('d', coc_num ), ('p', perm_num)) 
+        assert aut_cp == AutPL(coc_num, perm_num) 
         assert 0 <= perm_num < mat24.MAT24_ORDER
         assert 0 <= coc_num < 0x1000
-        aut_cpe = AutPL(('d', 'e'), ('p', 'r')) 
+        aut_cpe = AutPL('e', 'r') 
         assert aut_cpe.parity == 0
-        aut_cpe = AutPL(('d', 'o'), ('p', 'r')) 
+        aut_cpe = AutPL('o', 'r')
         assert aut_cpe.parity == 1
 
 

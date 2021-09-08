@@ -114,7 +114,7 @@ elements of ``MM``:
   :math:`x_\pi`        ``MM(pi)``, ``pi`` an instance of class |AutPL|;
 
                        ``MM(('d', delta), ('p', n))`` returns 
-                       ``MM(AutPL(('d', delta), ('p', n)))`` 
+                       ``MM(AutPL(delta, n))`` 
                        for ``0 <= delta < 0x1000``, ``0 <= n < 244823040`` .
 
   :math:`x_e`          ``MM(('x', e))``, ``x`` an  instance of class |PLoop|;
@@ -718,8 +718,10 @@ def gen_p(tag, perm = "r"):
     elif isinstance(perm, str):
         perm = randint(0, MAT24_ORDER-1)
         return [0x20000000 + perm]
+    elif isinstance(perm, AutPL):
+        return [0x10000000 + perm._cocode, 0x20000000 + perm._perm_num]
     else:
-        cocode, perm_num = autpl_from_obj(perm)
+        cocode, perm_num = autpl_from_obj(0, perm)
         return  [0x10000000 + (cocode & 0xfff), 0x20000000 + perm_num]
 
 

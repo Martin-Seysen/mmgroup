@@ -404,13 +404,12 @@ def rand_pi_mat22():
     in the Mathieu ``M24`` group corresponding to ``e`` preserves the 
     set  ``\{2, 3\}``.
     """
-    pi = AutPL( ('p', 'r') )
+    pi = AutPL('r', 'r')
     perm = pi.perm
     l_src = perm[2:4]
     shuffle(l_src)
     _, a = mat24.perm_from_map(l_src, [2, 3])
-    res = AutPL(pi, ('p', a),  ('d', randint(0, 0xfff)))
-    return res
+    return  pi  *  AutPL('r', a)  
 
 def rand_Co2(quality = 5):
     r"""Generate certain 'random' element in a subgroup of ``G_x0``
