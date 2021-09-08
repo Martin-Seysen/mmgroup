@@ -38,13 +38,13 @@ except (ImportError, ModuleNotFoundError):
 
 
 try:
-    from mmgroup.structures.autpl import  AutPL
     from mmgroup.structures.parity import Parity
     from mmgroup.structures.gcode import GCode, GcVector
     from mmgroup.structures.cocode import Cocode
     from mmgroup.structures.ploop import PLoopOne, PLoopOmega
     from mmgroup.structures.ploop import  PLoop, PLoopZ
     from mmgroup.structures.suboctad import Octad, SubOctad
+    from mmgroup.structures.autpl import  AutPL
 except:
     w = "Extension mmgroup.mat24 not found, package not functional!"
     warnings.warn(w, UserWarning)
