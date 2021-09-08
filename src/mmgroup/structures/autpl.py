@@ -340,10 +340,12 @@ class AutPL(AbstractGroupWord):
 
       class |Cocode|        This represents an element of the Golay cocode.
 
-      ``str``               Create random automorphism depending on ``str``
-                              | ``'r'``: Create an arbitrary automorphism
-                              | ``'e'``: Create an even automorphism
-                              | ``'o'``: Create an odd automorphism
+      ``str``               Create random element depending on ``str``
+                              | ``'r'``: Create an arbitrary cocode element
+                              | ``'e'``: Create an even cocode element
+                              | ``'o'``: Create an odd cocode element
+
+                            Any other string is illegal.
 
       class |AutPL|         A deep copy of the given automorphism 
                             in |AutPL| is returned. Then parmeter ``p``
@@ -375,8 +377,8 @@ class AutPL(AbstractGroupWord):
       ``zip`` object        ``zip(x,y)`` is equivalent to 
                             ``dict(zip(x,y))``.
 
-      ``str``               Create random automorphism depending on ``str``
-                              | ``'r'``: Create an arbitrary automorphism
+      ``str``               Create random element depending on ``str``
+                              | ``'r'``: Create an random element of ``M_24``
                             
                             Any other string is illegal.
       ===================== ==================================================

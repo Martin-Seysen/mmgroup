@@ -20,6 +20,23 @@ The most important classes in this module are
 
 import warnings 
 
+
+try:
+    # Try importing the fast C function
+    from mmgroup.mat24 import MAT24_ORDER 
+except (ImportError, ModuleNotFoundError):
+    # Import a pure python substitute for the mmgroup.mat24 extension
+    # if the original extension has not been found. For background, 
+    # see section 'Mock up C extension modules' in file
+    # docs/source/conf.py.
+    from mmgroup.dev.mat24.mat24_ref import  Mat24
+    mat24 = Mat24    
+    MAT24_ORDER = Mat24.MAT24_ORDER
+    del Mat24
+    w = "Extension mmgroup.mat24 not found, package not functional!"
+    warnings.warn(w, UserWarning)
+
+
 try:
     from mmgroup.structures.autpl import  AutPL
     from mmgroup.structures.parity import Parity
@@ -28,17 +45,6 @@ try:
     from mmgroup.structures.ploop import PLoopOne, PLoopOmega
     from mmgroup.structures.ploop import  PLoop, PLoopZ
     from mmgroup.structures.suboctad import Octad, SubOctad
-    try:
-        from mmgroup.mat24 import MAT24_ORDER
-    except (ImportError, ModuleNotFoundError):
-        # Import a pure python substitute for the mmgroup.mat24 extension
-        # if the original extension has not been found. For background, 
-        # see section 'Mock up C extension modules' in file
-        # docs/source/conf.py.
-        from mmgroup.dev.mat24.mat24_ref import Mat24
-        MAT24_ORDER = Mat24.MAT24_ORDER
-        del Mat24
-
 except:
     w = "Extension mmgroup.mat24 not found, package not functional!"
     warnings.warn(w, UserWarning)
