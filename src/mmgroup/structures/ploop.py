@@ -85,7 +85,6 @@ from mmgroup.structures.auto_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
 
-from mmgroup.structures.autpl import AutPL, AutPlGroup
 
 from mmgroup.structures.gcode import GCode, GcVector
 from mmgroup.structures.cocode import Cocode
@@ -102,7 +101,6 @@ ERR_DIV2 = "%s object may be divided by 2 only"
 #######################################################################
 
 import_pending = True
-SubOctad = None
 
 def complete_import():
     """Internal function of this module
@@ -113,7 +111,9 @@ def complete_import():
         complete_import()
     """
     global import_pending, SubOctad
+    global AutPL, AutPlGroup
     from mmgroup.structures.suboctad import SubOctad
+    from mmgroup.structures.autpl import AutPL, AutPlGroup
     import_pending = False
 
 

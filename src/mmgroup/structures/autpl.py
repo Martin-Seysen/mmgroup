@@ -184,7 +184,7 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global Cocode
+    global import_pending, Cocode
     from mmgroup.structures.cocode import Cocode
     import_pending = False
 

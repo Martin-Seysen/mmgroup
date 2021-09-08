@@ -24,7 +24,6 @@ from mmgroup.structures.parse_atoms import ihex
 from mmgroup.structures.gcode import as_vector24, str_vector24
 from mmgroup.structures.gcode import GCode, GcVector
 
-from mmgroup.structures.autpl import AutPL, AutPlGroup
 
 
 ERR_RAND = "Illegal string for constructing type %s element" 
@@ -38,8 +37,6 @@ ERR_DIV2 = "%s object may be divided by 2 only"
 #######################################################################
 
 import_pending = True
-PLoop = None
-SubOctad = None
 
 def complete_import():
     """Internal function of this module
@@ -50,8 +47,10 @@ def complete_import():
         complete_import()
     """
     global import_pending, PLoop, SubOctad
+    global AutPL, AutPlGroup
     from mmgroup.structures.ploop import PLoop
     from mmgroup.structures.suboctad import SubOctad
+    from mmgroup.structures.autpl import AutPL, AutPlGroup
     import_pending = False
 
 
@@ -341,10 +340,6 @@ class Cocode():
 
 
 
-
-AutPlGroup.conversions[Cocode] = (
-    lambda g, cocode: g.atom('d', cocode.value & 0xfff)
-)
 
 
 

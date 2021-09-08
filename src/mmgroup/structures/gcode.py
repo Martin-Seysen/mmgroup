@@ -100,7 +100,6 @@ from mmgroup.structures.auto_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
 
-from mmgroup.structures.autpl import AutPL, AutPlGroup
 
 
 ERR_RAND = "Illegal string for constructing type %s element" 
@@ -113,12 +112,8 @@ ERR_DIV2 = "%s object may be divided by 2 only"
 # Import derived classed
 #######################################################################
 
-import_pending = True
-Cocode = None
-PLoopIntersection = None
-PLoop = None
-SubOctad = None
 
+import_pending = True
 
 def complete_import():
     """Internal function of this module
@@ -129,10 +124,12 @@ def complete_import():
         complete_import()
     """
     global import_pending, Cocode, PLoop, PLoopIntersection, SubOctad
+    global AutPL, AutPlGroup
     from mmgroup.structures.cocode import Cocode
     from mmgroup.structures.cocode import PLoopIntersection
     from mmgroup.structures.ploop import PLoop
     from mmgroup.structures.suboctad import SubOctad
+    from mmgroup.structures.autpl import AutPL, AutPlGroup
     import_pending = False
 
 #######################################################################

@@ -238,22 +238,19 @@ from mmgroup.generators import mm_group_mul_words
 
 
 
-# Functions to be imported from modules mmgroup.structures.xsp2_co1
-# and mmgroup.structures.involutions
-Xsp2_Co1 = None
-xsp2co1_to_mm = None
-mm_conjugate_2B = None
-reduce_via_power = None
+
+
+
+###########################################################################
+# Import functions from module ``mmgroup.mm_order`` on demand
+###########################################################################
+
 
 # Functions to be imported from module mmgroup.mm_order
 check_mm_order = None
 check_mm_equal = None
 check_mm_half_order = None
 check_mm_in_g_x0 = None
-
-###########################################################################
-# Importing functions from module ``mmgroup.mm_order``
-###########################################################################
 
 def import_mm_order_functions():
     """Import functions from module ``mmgroup.mm_order``.
@@ -272,6 +269,18 @@ def import_mm_order_functions():
     from mmgroup.mm_order import check_mm_in_g_x0 as f
     check_mm_in_g_x0 = f
 
+
+###########################################################################
+# Import functions from module ``mmgroup.structures.xsp2_co1`` on demand
+###########################################################################
+
+
+# Functions to be imported from modules mmgroup.structures.xsp2_co1
+# and mmgroup.structures.involutions
+Xsp2_Co1 = None
+xsp2co1_to_mm = None
+mm_conjugate_2B = None
+reduce_via_power = None
 
 
 def import_Xsp2_Co1():
