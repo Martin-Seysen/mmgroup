@@ -142,7 +142,6 @@ from operator import __or__
 from numbers import Integral, Number
 from random import randint
 
-from mmgroup.mat24 import MAT24_ORDER
 from mmgroup.structures.auto_group import AbstractGroupWord
 from mmgroup.structures.auto_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
@@ -153,11 +152,13 @@ from mmgroup.structures.parse_atoms import eval_atom_expression
 try:
     # Try importing the fast C function
     from mmgroup import mat24 
+    from mmgroup.mat24 import MAT24_ORDER
 except: # (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24
-
+    MAT24_ORDER = Mat24.MAT24_ORDER
+    
 
 
 
