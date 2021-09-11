@@ -8,8 +8,8 @@ import numpy as np
 import warnings
 from functools import partial
 
-from mmgroup.structures.auto_group import AbstractGroupWord
-from mmgroup.structures.auto_group import AbstractGroup
+from mmgroup.structures.abstract_group import AbstractGroupWord
+from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
 
 from mmgroup.structures.ploop import Cocode, PLoop

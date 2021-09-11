@@ -81,7 +81,7 @@ except (ImportError, ModuleNotFoundError):
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24
 
-from mmgroup.structures.auto_group import AbstractGroupWord
+from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
 

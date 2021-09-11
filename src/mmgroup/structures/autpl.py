@@ -142,8 +142,8 @@ from operator import __or__
 from numbers import Integral, Number
 from random import randint
 
-from mmgroup.structures.auto_group import AbstractGroupWord
-from mmgroup.structures.auto_group import AbstractGroup
+from mmgroup.structures.abstract_group import AbstractGroupWord
+from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
 from mmgroup.structures.parse_atoms import eval_atom_expression        
 

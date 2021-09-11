@@ -18,9 +18,9 @@ from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.structures.parse_atoms import TaggedAtom
 from mmgroup.structures.parse_atoms import ihex
 
-from mmgroup.structures.auto_group import AutoGroupWord
-from mmgroup.structures.auto_group import AutoGroup
-from mmgroup.structures.auto_group import AutoGroupMulError
+from mmgroup.tests.groups.auto_group import AutoGroupWord
+from mmgroup.tests.groups.auto_group import AutoGroup
+from mmgroup.tests.groups.auto_group import AutoGroupMulError
 
 
 from mmgroup import mat24

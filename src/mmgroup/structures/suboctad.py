@@ -74,7 +74,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 
-from mmgroup.structures.auto_group import AbstractGroupWord
+from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
 

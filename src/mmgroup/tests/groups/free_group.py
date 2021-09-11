@@ -10,9 +10,9 @@ import sys
 import re
 from random import randint
 
-from mmgroup.structures.auto_group import AutoGroup
-from mmgroup.structures.auto_group import TaggedAtom
-from mmgroup.structures.auto_group import AutoGroupMulError
+from mmgroup.tests.groups.auto_group import AutoGroup
+from mmgroup.tests.groups.auto_group import TaggedAtom
+from mmgroup.tests.groups.auto_group import AutoGroupMulError
 
 ####################################################################
 ####################################################################
