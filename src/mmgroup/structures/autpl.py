@@ -212,7 +212,7 @@ def autpl_from_obj(d = 0, p = 0, unique = 1):
     constructor of class ``Cocode``. It may be of type ``int``, ``str``
     or an instance of class ``Cocode``. Pt defaults to ``0``.
 
-    Alternatively, ``d`` may ba an instance of class ``AutPL``. In this 
+    Alternatively, ``d`` may be an instance of class ``AutPL``. In this 
     case, ``p`` must be set to its default value.
 
 
@@ -350,7 +350,7 @@ class AutPL(AbstractGroupWord):
 
       class |AutPL|         A deep copy of the given automorphism 
                             in |AutPL| is returned. Then parmeter ``p``
-                            mus be set to its default value.
+                            must be set to its default value.
 
       ===================== ==================================================
 
