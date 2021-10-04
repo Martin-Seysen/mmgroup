@@ -3,7 +3,7 @@ import sys
 import os
 import numpy as np
 from numbers import Integral
-from random import randint
+from random import randint, choice
 
 
 
@@ -12,11 +12,9 @@ import pytest
 from mmgroup.tests.groups.mgroup_n import MGroupN
 from mmgroup.tests.groups.group_n import GroupN
 
-ref_group = MGroupN(None)
+ref_group = MGroupN()
 group = GroupN()
 
-group.set_preimage(ref_group, tuple)
-ref_group.set_preimage(group, tuple)
 
 
 def str_group(g):
@@ -27,14 +25,17 @@ def str_group(g):
 ####################################################################
 
 
+def make_rand_word(tags, length):   
+    return [(choice(tags), 'r') for i in range(length)]
+
 def make_testcases():
     for i in range(5):
         for g1 in "dpxyt":
             for g2 in "dpxyt":
-                yield (g1,), (g2,)
+                yield [(g1,'r')], [(g2,'r')]
     for i in range(150):
-        g1 = ref_group.rand_word("dpxyt", 10)
-        g2 = ref_group.rand_word("dpxyt", 10)
+        g1 = make_rand_word("dpxyt", 10)
+        g2 = make_rand_word("dpxyt", 10)
         yield g1, g2
 
 
@@ -56,8 +57,8 @@ def ll_mul_test_case(g1, g2, verbose = 0):
     g12mul_atoms = g1.copy().mul_atoms(g2)
     assert g12 == g12mul_atoms
     # next test mixed operation
-    assert g12 == g1 * g2ref
-    assert g12ref == g1ref * g2
+    #assert g12 == g1 * g2ref
+    #assert g12ref == g1ref * g2
 
 
 @pytest.mark.auto_group
@@ -87,8 +88,8 @@ def ll_div_test_case(g1, g2, verbose = 0):
     g12div_atoms = g1.copy().div_atoms(g2)
     assert g12 == g12div_atoms
     # next test mixed operation
-    assert g12 == g1 / g2ref
-    assert g12ref == g1ref / g2
+    #assert g12 == g1 / g2ref
+    #assert g12ref == g1ref / g2
 
 
 @pytest.mark.auto_group

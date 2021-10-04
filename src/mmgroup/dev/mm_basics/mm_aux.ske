@@ -1223,6 +1223,74 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
 }
 
 
+
+/**********************************************************************
+*** Operation on a sparse rep of a vector in R_p
+**********************************************************************/
+
+/**
+  @brief Scalar multiplication and modular reduction in sparse representation
+
+  The function multiplies a vector ``sp`` in sparse representation 
+  with a factor ``f`` and reduced the result module a number ``p1``.
+  
+  The vector ``sp`` has length ``length`` and is stored in sparse
+  representation as a vector modulo an odd number ``2 < p < 256``.
+  The result is reduced modulo the number ``p1`` and stored in 
+  sparse representation in the array ``sp1``.
+  
+  The number ``p1`` must be odd and satisfy ``2 < p < 256``. In case 
+  ``f != 0`` the number ``p1`` must divide  ``p * abs(f)``.
+  
+  The function returns the length of the array ``sp1`` in case of 
+  success and ``-1`` in case of failure. 
+  
+  The two arrays ``sp`` and ``sp1`` may be non overlapping or equal.
+  
+*/
+// %%EXPORT px
+int32_t mm_aux_mul_sparse(uint32_t p, uint32_t *sp, uint32_t length, int64_t f, uint32_t p1, uint32_t *sp1)
+{
+    uint8_t a[256], bad[256];
+    uint_fast32_t mask = 4, i, is_bad = 0, difficult;
+    
+    if (p < 3 ||  p > 255 || (p & 1) == 0 ||
+       p1 < 3 || p1 > 255 || (p1 & 1) == 0) return -1;
+        
+    f = f % (int64_t)p1;
+    while (f < 0) f += p1;
+    difficult = (f * p) % p1 != 0;
+
+    if (f == 0) {
+        mask = 0xffffff00;
+        for (i = 0; i < length; ++i) sp1[i] = sp[i] & mask;
+        return 0;
+    }
+    while (mask < p) mask += mask;
+    if (mask > 256) return -1;
+    --mask;
+    if (p == p1 && f == 1) {
+        mask |= 0xffffff00;
+        for (i = 0; i < length; ++i) sp1[i] = sp[i] & mask;
+        return length;
+    }
+    for (i = 0; i <= mask; ++i) a[i] = (uint8_t)((i * f) % p1);
+    if (!difficult) {
+        for (i = 0; i < length; ++i) {
+            sp1[i] = (sp[i] & 0xffffff00) | a[sp[i] & mask]; 
+        }
+    } else {
+        for (i = 0; i <= mask; ++i) {
+            bad[i] = (uint8_t)((i * f * p) % p1);
+        }
+        for (i = 0; i < length; ++i) {
+            sp1[i] = (sp[i] & 0xffffff00) | a[sp[i] & mask]; 
+            is_bad |= bad[sp[i] & mask]; 
+        }
+    } 
+    return is_bad ? -1 : length;
+}
+
 /**********************************************************************
 *** Index conversion between external and sparse rep of vectors in R_p
 **********************************************************************/

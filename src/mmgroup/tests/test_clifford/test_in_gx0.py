@@ -16,7 +16,7 @@ from mmgroup.clifford12 import leech_matrix_norm_A
 
 
 from mmgroup.mm_order import get_order_vector
-from mmgroup.mm_group import MMGroup, MMGroupWord
+from mmgroup import MM0Group, MM0, MM
 from mmgroup.mm import mm_vector
 
 from mmgroup.mm15 import op_copy as mm_op15_copy
@@ -145,7 +145,7 @@ def low_level_check_mm_in_g_x0(g):
     """
     global err_in_g_x0
     err_in_g_x0 = 0
-    assert isinstance(g, MMGroupWord)
+    assert isinstance(g, (MM0, MM))
     v = get_order_vector().data
     w = mm_vector(15)
     work = mm_vector(15)
@@ -224,24 +224,24 @@ def in_gx0_testdata():
       ([('l', 1)], True),
       ([(tag, 'n') for tag in "xydpl"*3], True),
       ([('t', 1)], False),
-      (["M<y_4d1h*x_0b7fh>"], True),
+      ("M0<y_4d1h*x_0b7fh>", True),
     ]
     for g, in_g_x0 in testdata:
-       yield MM(*g), in_g_x0
+       yield MM0(g), in_g_x0
     # Yield elements ``g0 * t * g1``, where ``t`` is the triality 
     # element or its inverse, and ``g0 , g1`` are in ``G_x0``.
     for i in range(8):
         e = [1 + ((i >> j) & 1) for j in range(3)]
         g = [('p', 'r'), ('y', 'r'), ('l', e[0]), ('t', e[1]), ('l', e[2]),
              ('p', 'r'), ('y', 'r'), ('x', 'r'), ('d', 'r'), ]
-        yield  MM(*g), False
+        yield  MM0(g), False
     # Yield some less obvious examples. Let ``d`` be a random 2A 
     # involution and ``z`` be the 2B involution in the center of
     # ``G_x0``. Then ``g = z * d`` has even order ``o``, and we 
     # yield ``g ** (o/2)``, which is in ``G_x0``.
-    z, d0 = MM(('x', 0x1000)), MM(('d', [2,3]))
+    z, d0 = MM0('x', 0x1000), MM0('d', [2,3])
     for n in range(5):
-        g0 = MM(*[(tag, 'n') for tag in "xydplt"*2])
+        g0 = MM0([(tag, 'n') for tag in "xydplt"*2])
         d =  d0 ** g0
         g = z * d
         o = g.order()
@@ -250,7 +250,7 @@ def in_gx0_testdata():
     # Yield some elements of ``G_x0``.
     for n in range(10):
         for i in range(2,5):
-            yield MM(*[(tag, 'n') for tag in "xydpl"*i]), True
+            yield MM0([(tag, 'n') for tag in "xydpl"*i]), True
     
 
 ###########################################################################
@@ -262,7 +262,7 @@ def in_gx0_testdata():
 def test_in_gx0(verbose = 0):
     print("Testing function check_mm_in_g_x0()")
     for n, (g, in_g_x0) in enumerate(in_gx0_testdata()):
-        g = MM(g)
+        g = MM0(g)
         if verbose:
             print("Test", n+1)
             print("g =", g)
@@ -270,7 +270,7 @@ def test_in_gx0(verbose = 0):
         if verbose:
             print("reduced", g1)
             if g1 is None:
-                r = mmgroup.mm_order.err_in_g_x0
+                r = err_in_g_x0
                 print("Reason for non-membership:", r)
         if in_g_x0:
             assert g1 is not None

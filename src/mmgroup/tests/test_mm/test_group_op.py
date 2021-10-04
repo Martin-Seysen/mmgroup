@@ -18,6 +18,8 @@ from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_mmv_extract_sparse
 
 from mmgroup.tests.spaces.spaces import MMTestSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
 
 
 #from mm_vector import FastMmRepSpace, PRIMES
@@ -158,7 +160,7 @@ def group_blocks(basis_vectors, g):
     representatiom of Mm. It may be
 
      - a vector in a representation R_p of Mm, where R_p is an
-       instance of (a subclass of) class AbstracrMmRepSpace. 
+       instance of (a subclass of) class AbstractMmRepSpace. 
        Then all basis vectors corresponding to nonzero components 
        of that vector are taken
      - A string of tags. Then for each tag a random basis
@@ -223,11 +225,11 @@ def group_blocks(basis_vectors, g):
 def one_test_op(v, g, f_mul = None, verbose = 0):
     """ Test operation of group element g on unit vector v
 
-    Here v is a vector in a space, such that this space v.space is an 
-    instance of class MMTestSpace. g is an element of the 
+    Here v is a vector in a space, such that v is an 
+    instance of class SparseMmVector. g is an element of the 
     group v.space.group operating on the space v.space. 
 
-    The group operation v -> v * g is tested agasinst the operation
+    The group operation v -> v * g is tested against the operation
     sparse_space(v) * g, where sparse_space(v) is an instance of
     class SparseMmRepVector, which represents the same space as
     v.space, but with vectors given in sparse form.
@@ -237,19 +239,20 @@ def one_test_op(v, g, f_mul = None, verbose = 0):
     may be tested. This is useful for some low-level module tests. 
     """
     #print("test_op_case")
-    space = v.space
-    sparse_space = space.ref_space
+    space = MMTestSpace(v.p)
+    ref_space = space.ref_space
+    v_sp =  ref_space(v)
     if verbose:
-        print("p= %d, v=%s, g=%s" % (v.space.p, v, g))
-    v_sp =  sparse_space(v)
+        print("p= %d, v=%s, g=%s" % (v.p, v, g))
+        print("v_sparse=", v_sp)
     vg = f_mul(v, g) if f_mul else v * g 
     vg.check()
-    vg_sp = sparse_space(vg) 
+    vg_sp = ref_space(vg) 
     v_sp_g = v_sp * g
     ok = v_sp_g == vg_sp
     if verbose or not ok:
         if not ok:   
-            print("p= %d, v=%s, g=%s" % (v.space.p, v, g))
+            print("p= %d, v=%s, g=%s" % (v.p, v, g))
         if 1:
             print("v * g  expected in sparse format:")
             print(v_sp_g)
@@ -271,19 +274,19 @@ def op_testcases(p):
         for g_tag in "d": 
             for i0 in (1 <<  i for i in range(11)):  
                 for i in range(10):
-                    v = space.unit(v_tag, i0, randint(0,23))
-                    g = group.rand_atom(g_tag)
+                    g = group(g_tag, 'r')
+                    v = space(v_tag, i0, randint(0,23))
                     yield v, g
     for v_tag in "ABCXYZT":  
         for g_tag in "dpxy":   
             for i in range(10):
-                v = space.unit(v_tag)
-                g = group.rand_atom(g_tag)
+                v = space(v_tag, 'r')
+                g = group(g_tag, 'r')
                 yield v, g
         for g_tag in "tl":   
             for e in [1,2,1,2]:
-                v = space.unit(v_tag)
-                g = group.rand_atom(g_tag, e)
+                v = space(v_tag, 'r')
+                g = group(g_tag, e)
                 yield v, g
  
    
@@ -293,6 +296,7 @@ def test_op(f_mul = None, verbose = 0):
     i = 0
     for p in PRIMES:
         for args in op_testcases(p):
+            if verbose: print("Test", i+1)
             one_test_op(*args, f_mul = f_mul, verbose = verbose)
             i += 1
             #print("<%d>" % i, end = "", flush=True)
@@ -337,15 +341,15 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     holds, an alternative implemetation of the group multiplication
     may be tested in te same way as in function test_op_case(). 
     """
-    if isinstance(v, AbstractMmRepSpace):
-        v = v.rand_vector()
-    space = v.space
+    #if isinstance(v, AbstractMmRepSpace):
+    #    v = v.rand_vector()
+    space = MMTestSpace(v.p)
     ref_space = space.ref_space
     v_g = f_mul(v, g) if f_mul else v * g
     if verbose:
-        print("p = %d, g = %s" % (v.space.p, g))
+        print("p = %d, g = %s" % (v.p, g))
     basis_block = group_blocks(basis_vectors, g)
-    v_sparse = ref_space.from_sparse(v.get_sparse(basis_block))
+    v_sparse = ref_space('S', v.get_sparse(basis_block))
     if verbose:
         print("\nTest operation v * g")
         print("len(v_sparse) =", len(v_sparse))
@@ -356,7 +360,7 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     ok  = v_sparse_g == v_g_sparse
     if verbose or not ok:
         if not ok:
-            print("p = %d, g = %s" % (v.space.p, g))
+            print("p = %d, g = %s" % (v.p, g))
             print("basis block = ", v.get_sparse(basis_block))
             print("len(sparse v) =", len(v_sparse),
                             ", type =", type(v_sparse))
@@ -373,23 +377,23 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     
 
 @pytest.mark.mm
-def test_rand_op(n_tests = 5, f_mul = None, verbose = 0):
+def test_rand_op(n_tests = 3, f_mul = None, verbose = 0):
     print("Testing group operation on random vectors")
     for i in range(n_tests):
         for p in PRIMES:
             space = MMTestSpace(p)
             group = space.group
             for atom in "dpxytl":
-                g = group.atom(atom, "n")
-                #print("ggg", type(g), g, "\n")
+                g = group(atom, "n")
                 if atom == "l":
                     basis = "D" + "BCTX" * 20 + "A" * 4 + "YZ" * 2
                 elif atom == "t":
                     basis = "D" * 3 + "ABC" * 7 +  "T" * 2 + "XYZ" * 20
                 else:
                     basis = "D" * 3 + "ABC" * 10 + "TXYZ" * 20 
-                for i in range(n_tests):                
-                    one_test_rand_op(space, g, basis, f_mul = f_mul,
+                for i in range(n_tests): 
+                    v = space("R")               
+                    one_test_rand_op(v, g, basis, f_mul = f_mul,
                                   verbose = verbose)
     print("Test passed")
 
@@ -406,26 +410,26 @@ def tag_A_testwords():
 
 
 @pytest.mark.mm
-def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 0):
+def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 1):
     print("Testing group operation on random vectors")
     for i in range(n_tests):
         for p in PRIMES:
             space = MMTestSpace(p)
             group = space.group
             for w in tag_A_testwords():
-                g = group.word(*w)
+                g = group(w)
                 #print(g)
-                v = space.rand_vector()
+                v = space('R')
                 a_g = v.copy()
                 v_g = v * g
                 len_g = len(g.data)
-                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, 1)
+                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, 1)
                 assert res == 0
                 #print(v_g['A'] - a_g['A'] + 3)
                 assert (v_g['A'] ==  a_g['A']).all()
-                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, 2)
+                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, 2)
                 assert res == 0
-                res = space.mm.op_word_tag_A(a_g.data, g.data, len_g, -3)
+                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, -3)
                 assert res == 0
                 assert (v['A'] ==  a_g['A']).all()
     print("Test passed")

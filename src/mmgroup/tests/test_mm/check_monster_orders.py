@@ -12,6 +12,7 @@ from multiprocessing import Pool, TimeoutError
 from collections import defaultdict
 from scipy.stats import chisquare
 
+from mmgroup import MM0, MMV
 from mmgroup.mm_space import MMSpace
 from mmgroup.mm import INT_BITS
 
@@ -79,8 +80,8 @@ assert len(ClassNames) == len(CharacterValues) == len(SizesCentralizers)
 ################################################################
 
 p = 3
-space = MMSpace(p)
-group = space.group
+space = MMV(3)
+group = MM0
 
 
 
@@ -91,6 +92,7 @@ max_mmm_order = max(good_mm_orders)
 
 
 def one_test_mm_order(v,  m, verbose = 0):
+    v = v.copy()
     v1, n = v.copy(), 0
     while n <= max_mmm_order:
         v1, n = v1 * m, n+1
@@ -100,22 +102,12 @@ def one_test_mm_order(v,  m, verbose = 0):
 
 
 def rand_v():
-    return  space.rand_vector()
+    return  space('R')
 
     
-def rand_m_monomial():
-    m = group.neutral()
-    for s in "pxy":
-        m *=  group.rand_word(s)
-    m *= group.rand_word('t', randint(1,2))
-    m *= group.atom('l', randint(1,2))   
-    return m
 
 def rand_m(n_entries = 4):
-    m = group.neutral()
-    for i in range(n_entries):
-        m *=  rand_m_monomial()   
-    return m
+    return group('r', n_entries)
 
 def random_test_order(n_entries = 4, display = True):
     v, m = rand_v(), rand_m()
@@ -276,6 +268,7 @@ def statistics_chisqu_orders(results, start_time = None):
     
 
 def check_chisqu_orders(ntests, nprocesses = 1, verbose = False):
+    verbose = 1
     start_time = datetime.datetime.now()
     header = "\nChisquare test of distribution of orders in the monster M,"
     print(header)

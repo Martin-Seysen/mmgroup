@@ -7,8 +7,9 @@ from mmgroup.mat24 import ploop_theta
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_vector
 from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
+from mmgroup.structures.mm0_group import MM0Group, MM0
 from mmgroup.mm_group import MMGroup, MMGroupWord
-from mmgroup.mm_space import MMSpace
+from mmgroup.mm_space import MMSpace, MMV
 from mmgroup.generators import mm_group_check_word_n
 from mmgroup.generators import mm_group_words_equ
 from mmgroup.generators import mm_group_n_mul_element
@@ -37,11 +38,9 @@ from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
 
 
 
-MMV3 = MMSpace(3)
-MMV15 = MMSpace(15)
-MM = MMV3.group
-assert  MMV15.group == MM
-
+MMV3 = MMV(3)
+MMV15 = MMV(15)
+MM = MM0  #  TODO: Fixme
 
 ORDER_VECTOR = None
 ORDER_TAGS = None
@@ -89,7 +88,8 @@ def stabilizer_vector(v, g, n):
 
 
 def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
-    v71 = 10 * MMV15(s_v71)
+    v71 = MMV15(10, s_v71)
+    #print("v71 =", v71)
     g71 = MM(s_g71)
     w71 = stabilizer_vector(v71, g71, 71)
     assert w71 is not None
@@ -208,8 +208,8 @@ def check_mm_equal(g1, g2, mode = 0):
     We just check the data in ``g1`` and ``g2``, ingnoring
     ``g1.group`` and ``g2.group``.
     """
-    assert isinstance(g1, MMGroupWord)
-    assert isinstance(g2, MMGroupWord)
+    assert isinstance(g1, (MMGroupWord, MM0))
+    assert isinstance(g2, (MMGroupWord, MM0))
     g3 = np.zeros(2 * (g1.length + g2.length) + 1, dtype = np.uint32)
     status = mm_group_words_equ(g1._data, g1.length,
         g2._data, g2.length, g3)
@@ -242,7 +242,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
     Othewise we compute the minimum ``i`` such that
     ``v * g**i == v`` for the *order vector* ``v`. 
     """
-    assert isinstance(g, MMGroupWord)
+    assert isinstance(g, (MM0, MMGroupWord))
     g.reduce()
     if mode == 0:
         n0 = np.zeros(5, dtype = np.uint32)
@@ -282,7 +282,7 @@ def check_mm_order(g, max_order = 119):
     If ``max_order``is given then the function may return 0 if the
     order of ``g`` is greater than ``max_order``.
     """
-    assert isinstance(g, MMGroupWord)
+    assert isinstance(g, (MM0, MMGroupWord))
     g.reduce()
     v = get_order_vector().data
     o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
@@ -301,7 +301,7 @@ def check_mm_half_order(g, max_order = 119):
     If ``h`` is in the subgroup :math:`G_{x0}`` then ``h`` is 
     returned as a word in the generators of that subgroup.
     """
-    assert isinstance(g, MMGroupWord)
+    assert isinstance(g, (MM0, MMGroupWord))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
     v = get_order_vector().data
@@ -317,14 +317,14 @@ def check_mm_half_order(g, max_order = 119):
     o2 >>= 8
     o = o1 * o2
     if (o2 & 1) == 0:
-        return o, g.group.from_data(h2).reduce()
+        return o, g.group('a', h2).reduce()
     if (o & 1):
         return o, None
     if o2 == 1:
         return o, g ** (o1 >> 1)
     # compute q, r, such that the result is  (g**o1)**q  * g**r
     q, r = divmod(o >> 1, o1) 
-    w = g.group.from_data(h)
+    w = g.group('a', h)
     return o, (w**q * g**r).reduce()
 
 ###########################################################################
@@ -407,7 +407,7 @@ def reduce_mm(g, check = True):
 
 if __name__ == "__main__":
     get_order_vector(recompute = 0, verbose = 1)
-    assert isinstance(g, MMGroupWord)
+    assert isinstance(g, (MM0,MMGroupWord))
         
 
 

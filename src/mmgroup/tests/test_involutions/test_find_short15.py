@@ -8,7 +8,7 @@ from random import randint #, shuffle, sample
 import numpy as np
 import pytest
 
-from mmgroup import MM, MMSpace
+from mmgroup import MM0, MMSpace, MMV
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
@@ -21,9 +21,9 @@ for i in range(98280):
     sparse1 = mm_aux_index_leech2_to_sparse(l1)
     assert sparse == sparse1, [hex(x) for x in (i, sparse, l1, sparse1)]
 
-V = MMSpace(15)
+V = MMV(15)
 
-v = V.rand_uniform()
+v = V('R')
 
 
 
@@ -54,11 +54,11 @@ def do_test_find_short15(v, value, value1= 0, verbose = 0):
 
 
 testdata = [
-    [V((1, "B", 21, 17), (3, "B", 2, 1)), 1, 3],
-    [V((4, "C", 3, 0), (11, "T", 753, 53), (4, "X", 1753, 23)), 4, 0],
-    [V.rand_uniform(), 1, 0], 
-    [V.rand_uniform(), 7, 2], 
-#   [V.rand_uniform(), 5, 6], 
+    [V([(1, "B", 21, 17), (3, "B", 2, 1)]), 1, 3],
+    [V([(4, "C", 3, 0), (11, "T", 753, 53), (4, "X", 1753, 23)]), 4, 0],
+    [V(), 1, 0], 
+    [V('R'), 7, 2], 
+#   [V('R'), 5, 6], 
 ]
 
 

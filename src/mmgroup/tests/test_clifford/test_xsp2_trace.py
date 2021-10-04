@@ -13,7 +13,7 @@ import time
 import numpy as np
 import pytest
 
-from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM
+from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_is_type2
 from mmgroup.generators import gen_leech2_count_type2
@@ -34,12 +34,12 @@ from mmgroup.tests.test_mm.check_monster_orders import CharacterValues
 
 
 def rand_xsp2co1_elem():
-    return Xsp2_Co1(*[(x,) for x in "dxpylpylpylpy"])
+    return Xsp2_Co1([(x,'r') for x in "dxpylpylpylpy"])
 
 def xsp2xco1_xsp2(v):
     pl = PLoop(v >> 12)
     coc = Cocode(v)
-    return Xsp2_Co1(("x", v >> 12), pl.theta(), coc)
+    return Xsp2_Co1([("x", v >> 12), pl.theta(), coc])
 
 
 v2_types = {0:0}
@@ -106,8 +106,8 @@ def character(g, verbose = 0):
     assert chi24 >= 0
     if chi24 == 0: assert chi4096 >= 0
     chi_M = chi299 + chi98260 + chi24 * chi4096
-    #print("MMMM", MM(g))
-    chi_g = MM(g).chi_G_x0()
+    #print("MMMM", MM0(g))
+    chi_g = MM0(g).chi_G_x0()
     assert chi_g == (chi_M, chi299, chi24, chi4096)
     return chi_M
 
@@ -118,7 +118,7 @@ def character_testcases():
         [("x", 0x1f4c), ("d", 0x375)],
     ]
     for d in data:
-        yield Xsp2_Co1(*d)
+        yield Xsp2_Co1(d)
     for i in range(200):
         yield  rand_xsp2co1_elem()
 

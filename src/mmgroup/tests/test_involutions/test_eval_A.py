@@ -9,14 +9,14 @@ from random import randint #, shuffle, sample
 import numpy as np
 import pytest
 
-from mmgroup import MM, MMSpace, Cocode
+from mmgroup import MM0, MMV, MMSpace, Cocode
 from mmgroup.clifford12 import leech2matrix_eval_A_odd_mod15_aux
 from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_sparse_to_leech
-V = MMSpace(15)
+V = MMV(15)
 
 
 
@@ -41,12 +41,12 @@ def eval_a_odd_ref(v, signs):
 
 def eval_a_odd_testdata():
     data = [
-        (V(("A",2,2)), 0x3),
+        (V("A",2,2), 0x3),
     ]    
     for d in data:
         yield d
     for i in range(5):
-        v = V.rand_uniform()
+        v = V('R')
         for j in range(10):
             yield v, randint(0, 0xffffff)
 
@@ -71,7 +71,7 @@ def test_eval_a_odd(verbose = 0):
 
 def eval_a_ref(v, v2, e = 0):
     if (e % 3):
-        v = v * MM(('t', e))
+        v = v * MM0('t', e)
     A = np.array(v["A"], dtype = np.int32)
     v2_sp = mm_aux_index_leech2_to_sparse(v2) 
     v_2 = np.zeros(24, dtype = np.int32)
@@ -88,18 +88,18 @@ def rand_leech2():
 
 def eval_a_testdata():
     data = [
-        (V(("A",2,2)), Cocode([2,3]).ord, 0),
+        (V("A",2,2), Cocode([2,3]).ord, 0),
     ]
     for d in data:
         yield d
     for i0 in range(24):
         for i1 in range(i0):
-            yield V.rand_uniform(),  Cocode([i0,i1]).ord, 0
+            yield V('R'),  Cocode([i0,i1]).ord, 0
     for k in range(100):
-        yield V.rand_uniform(), rand_leech2(), 0 
+        yield V('R'), rand_leech2(), 0 
     for e in (1,2):
         for k in range(100):
-            yield V.rand_uniform(), rand_leech2(), e 
+            yield V('R'), rand_leech2(), e 
 
 
 

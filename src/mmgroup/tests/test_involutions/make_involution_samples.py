@@ -7,12 +7,12 @@ import numpy as np
 
 sys.path.append(r"C:\Data\projects\MonsterGit\src")
 
-from mmgroup import MM, AutPL, PLoop, Cocode, Xsp2_Co1
+from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_involution_invariants
 
 
-G = MM
+G = MM0
 
 def transversal_space(g):
     a = Xsp2_Co1(g)._involution_invariants()[0]
@@ -29,35 +29,35 @@ def transversal_space(g):
 
 def iter_Q_x0():
     yield G()
-    yield G(("x", 0x1000))
-    yield G(("x", PLoop(range(8))))
-    yield G(("x", PLoop([0,4,8,12,16,20,2,7,10,])))
-    yield G(("x", 0x800))
+    yield G("x", 0x1000)
+    yield G("x", PLoop(range(8)))
+    yield G("x", PLoop([0,4,8,12,16,20,2,7,10,]))
+    yield G("x", 0x800)
 
 def iter_transversal(g):
     if g == G():
         yield from iter_Q_x0()
         return
     b = transversal_space(g)
-    yield g * G(("q", 0x1000000))
+    yield g * G("q", 0x1000000)
     c = [0]
     for v in b:
         c += [v ^ x for x in c]
     for x in c:
-        yield g * G(("q", x))     
+        yield g * G("q", x)    
 
 
 
 
-y8 = G(("y", PLoop(range(8))))
+y8 = G("y", PLoop(range(8)))
 
-y12 =  G(("y", PLoop([0,4,8,12,16,20,2,7,10,])))
+y12 =  G("y", PLoop([0,4,8,12,16,20,2,7,10,]))
 
 
 #from fourv import find_fourvolution
 #g4 = find_fourvolution()
 #Possible value for g4:
-g4 = G("M<y_3afh*d_480h*p_41443>")
+g4 = G("M0<y_3afh*d_480h*p_41443>")
 assert g4.chi_G_x0()[0] == -13 and g4.order() == 4
 
 
@@ -102,7 +102,7 @@ def display_involution_invariants(g):
 
 
 
-#display_involution_invariants(MM("M<y_0fh*x_1003h*d_5h>"))
+#display_involution_invariants(MM("M0<y_0fh*x_1003h*d_5h>"))
 #1/0 
 
 
@@ -244,35 +244,35 @@ def print_invariants(file = None):
 Possible orders, characters, and involution invariants of x*Q_x0
 
 Characters for Q_x0, x has Co_1 class 1A
-[1, (196883, 299, 24,  4096), (0, 0, 0,   0)], 98280, M<1> 
-[2, (   275, 299, 24, -4096), (0, 0, 0,   0)], 98280, M<x_1000h> 
-[2, (  4371, 299, 24,     0), (4, 0, 0,   1)], 4072, M<x_80fh> 
-[4, (   275, 299, 24,     0), (5, 0, 0,   0)], -24, M<x_0ae0h> 
-[2, (   275, 299, 24,     0), (4, 0, 0,   0)], -24, M<x_800h> 
+[1, (196883, 299, 24,  4096), (0, 0, 0,   0)], 98280, M0<1> 
+[2, (   275, 299, 24, -4096), (0, 0, 0,   0)], 98280, M0<x_1000h> 
+[2, (  4371, 299, 24,     0), (4, 0, 0,   1)], 4072, M0<x_80fh> 
+[4, (   275, 299, 24,     0), (5, 0, 0,   0)], -24, M0<x_0ae0h> 
+[2, (   275, 299, 24,     0), (4, 0, 0,   0)], -24, M0<x_800h> 
 
 Characters for y_octad, x has  Co_1 class 2A
 Transversal dimension =  16
-[2, (4371,  43, 8,  256), (0, 0, 0,  0)], 2280,  M<y_80fh> 
-[4, ( 275,  43, 8,    0), (4, 1, 4, 16)],  232,  M<y_80fh*d_1h> 
-[2, ( 275,  43, 8,    0), (4, 0, 0, 16)],  232,  M<y_80fh*d_3h> 
-[4, (  51,  43, 8,    0), (4, 1, 2,  2)],    8,  M<y_80fh*d_801h> 
-[4, (  19,  43, 8,    0), (4, 1, 4,  0)],  -24,  M<y_80fh*d_803h> 
-[4, (  19,  43, 8,    0), (5, 0, 0,  0)],  -24,  M<y_0fh*x_1003h*d_5h> 
-[2, ( 275,  43, 8, -256), (0, 0, 0,  0)], 2280,  M<y_100fh> 
+[2, (4371,  43, 8,  256), (0, 0, 0,  0)], 2280,  M0<y_80fh> 
+[4, ( 275,  43, 8,    0), (4, 1, 4, 16)],  232,  M0<y_80fh*d_1h> 
+[2, ( 275,  43, 8,    0), (4, 0, 0, 16)],  232,  M0<y_80fh*d_3h> 
+[4, (  51,  43, 8,    0), (4, 1, 2,  2)],    8,  M0<y_80fh*d_801h> 
+[4, (  19,  43, 8,    0), (4, 1, 4,  0)],  -24,  M0<y_80fh*d_803h> 
+[4, (  19,  43, 8,    0), (5, 0, 0,  0)],  -24,  M0<y_0fh*x_1003h*d_5h> 
+[2, ( 275,  43, 8, -256), (0, 0, 0,  0)], 2280,  M0<y_100fh> 
 
 Characters for y_dodecad, Co_1 class 2B
 Transversal dimension =  13
-[4, ( 275,  11, 0,   64), (2, 0, 0, 0)], 264, M<y_0ae0h> 
-[4, (  51,  11, 0,    0), (2, 1, 2, 0)],  40, M<y_2e0h*x_1400h> 
-[4, (  19,  11, 0,    0), (2, 1, 4, 0)],   8, M<y_2e0h*x_1600h*d_501h> 
-[4, ( -13,  11, 0,    0), (2, 1, 4, 0)], -24, M<y_2e0h*x_1700h*d_701h> 
-[8, (  11,  11, 0,    0), (2, 1, 3, 0)],   0, M<y_0ae0h*d_800h> 
-[2, ( 275,  11, 0,    0), (3, 0, 4, 0)], 264, M<y_0ae0h*d_200h> 
+[4, ( 275,  11, 0,   64), (2, 0, 0, 0)], 264, M0<y_0ae0h> 
+[4, (  51,  11, 0,    0), (2, 1, 2, 0)],  40, M0<y_2e0h*x_1400h> 
+[4, (  19,  11, 0,    0), (2, 1, 4, 0)],   8, M0<y_2e0h*x_1600h*d_501h> 
+[4, ( -13,  11, 0,    0), (2, 1, 4, 0)], -24, M0<y_2e0h*x_1700h*d_701h> 
+[8, (  11,  11, 0,    0), (2, 1, 3, 0)],   0, M0<y_0ae0h*d_800h> 
+[2, ( 275,  11, 0,    0), (3, 0, 4, 0)], 264, M0<y_0ae0h*d_200h> 
  
 Characters for Co_1 class 2C
 Transversal dimension =  12
-[4, ( -13, -13, 0,   64), (0, 0, 0, 0)], 0, M<y_3afh*d_480h*p_41443>]
-[4, ( -13, -13, 0,    0), (1, 0, 4, 0)], 0, M<y_3afh*x_0ch*d_2dh*p_41443>
+[4, ( -13, -13, 0,   64), (0, 0, 0, 0)], 0, M0<y_3afh*d_480h*p_41443>]
+[4, ( -13, -13, 0,    0), (1, 0, 4, 0)], 0, M0<y_3afh*x_0ch*d_2dh*p_41443>
 
 """
 

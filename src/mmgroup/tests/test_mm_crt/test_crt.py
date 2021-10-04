@@ -2,14 +2,14 @@ from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
 
-from numbers import Integral
+from numbers import Integral, Number
 import numpy as np
 from random import randint
 import math
 
 import pytest
 
-from mmgroup.mm_crt_space import MMSpaceCRT
+from mmgroup.mm_crt_space import MMSpaceCRT, MMV_CRT, MMVectorCRT
 from mmgroup.mm_space  import MMSpace, standard_mm_group
 
 
@@ -38,7 +38,7 @@ def units(tag, max_norm):
     else:
          yield [(sc1, tag, randint(0,23))]
          yield [(sc2, tag, "r")]
-    yield([(tag,)])
+    yield([(tag, "r")])
 
 def vector(tags, max_norm):
     res = []
@@ -49,9 +49,11 @@ def vector(tags, max_norm):
     
 
 def crt_test_tuples(k):
-    max_norm = 1.234 * 10**13 * 4.0 ** (-k)
+    max_norm = MMVectorCRT.MAX_CRT_NORM * 4.0 ** (-k)
+    #print (max_norm,  MMVectorCRT.MAX_CRT_NORM* 4.0 ** (-k))
+    
     for tag in "BCTZXYDE":
-        yield from units(tag, math.sqrt(max_norm))
+        yield from units(tag, math.sqrt(max_norm/4))
     yield from units("A", math.sqrt(max_norm/2))
     yield from units("I", math.sqrt(max_norm/8))
     for tag1 in "ABCTXZY":
@@ -61,13 +63,26 @@ def crt_test_tuples(k):
              
 def crt_testdata(k):
     group = standard_mm_group
-    yield [("A",0,0)],  group(("d", 0x801))
-    yield [("A",1,0)],  group(("t", 1))
-    for g_tags in ["tlxypd" * 2, "tlxypd" * 4 ]:
+    yield [("A",0,0)],  group("d", 0x801)
+    yield [("A",1,0)],  group("t", 1)
+    for n in (2,3):
          for v in crt_test_tuples(k): 
-             g = group.sample(g_tags, None, "n") 
+             g = group('r', n) 
              yield v, g  
 
+
+SH = 1 << 25
+def equ_modp(a1, a2, p):
+    if isinstance(a1, Number) and  isinstance(a2, Number):
+         diff = (a1 * SH - a2 * SH) % p
+         return diff == 0
+    if a1.shape == a2.shape:
+        b1, b2 = a1.astype(np.float), a2.astype(np.float)
+        diff = (b1 * SH - b2 * SH) % p
+        #print(p);print(a1); print(a2)
+        return (diff == 0).all()
+    raise TypeError("Arrays cannot be compared")
+       
 
 
 def g_shift(g):
@@ -81,29 +96,30 @@ def g_shift(g):
 def test_random_io(verbose = 0):
     n = 1
     for k in [17, 20]:
-        space =  MMSpaceCRT(k)
+        space =  MMV_CRT(k)
         for v, g in crt_testdata(k):
              if verbose:
-                 print("\nTest", n)
+                 print("\nTest", n, ", k=", k)
                  print("v =", v)
                  print("g =", g)
-             v = space(*v)
-             n1 = v.inorm() 
-             v2_1 = v.v2()
+             v = space(v)
+             n1 = v.inorm 
+             v2_1 = v.v2
              v *= g     
-             n2 = v.inorm() 
+             n2 = v.inorm 
              assert n1 == n2, (hex(n1), hex(n2))
-             for p in (7,31, 127, 255):
+             for p in (15, 7, 31, 127, 255):
                  vp =  (v % p) 
+                 K = 1 << k
                  for tag in "A": # "ABCTXZY":
-                     assert np.all(v[tag] % p == vp[tag])
+                     assert equ_modp(v[tag], vp[tag], p)
                  for j in range(5):
                      i = randint(0, 851)
-                     assert vp["E", i] == v["E", i] % p, (p,i) 
+                     assert equ_modp(vp["E", i], v["E", i], p), (p,i) 
                  for j in range(10):
                      i = randint(852, 196883)
-                     assert vp["E", i] == v["E", i] % p, (p,i) 
-             v2_2 = v.v2()
+                     assert equ_modp(vp["E", i], v["E", i], p), (p,i) 
+             v2_2 = v.v2
              assert v2_2 >= v2_1 - g_shift(g)
              i = randint(0, 23)
              assert v["E",i] == v["A", i, i]

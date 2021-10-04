@@ -19,8 +19,9 @@ import os
 import numpy as np
 from numbers import Integral
 import warnings
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import math 
+from functools import partial
 
 
 
@@ -29,8 +30,9 @@ from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 from mmgroup.structures.mm_space_indices import tuple_to_sparse
 from mmgroup.structures.mm_space_indices import numeric_index_to_sparse
-from mmgroup.mm_group  import MMGroup, MMGroupWord
-from mmgroup.mm_space  import MMSpace, MMSpaceVector, mm_wrapper
+from mmgroup.structures.mm_space_indices import sparse_from_indices
+from mmgroup.structures.abstract_group import AbstractGroupWord
+from mmgroup.mm_space  import MMSpace, MMVector, mm_ops
 from mmgroup.mm_space  import standard_mm_group
 
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
@@ -38,32 +40,30 @@ from mmgroup.mm import mm_aux_zero_mmv, mm_aux_reduce_mmv
 from mmgroup.mm import mm_aux_mmv_to_sparse
 from mmgroup.mm import mm_aux_mmv_set_sparse
 from mmgroup.mm import mm_crt_combine, mm_crt_check_v2
+from mmgroup.mm import mm_crt_combine_bytes
 from mmgroup.mm import mm_crt_check_g
 from mmgroup.mm import mm_crt_norm_int32
+from mmgroup.generators import mm_group_n_clear
+from mmgroup.generators import mm_group_n_mul_word_scan
+from mmgroup.generators import mm_group_n_to_word
+
+
 
 
 _mm_op, _mm_compare = {},  {}
 for p in (7, 31, 127, 255):
-    _mm_op[p] = mm_wrapper(p).op_word
-    _mm_compare[p] = mm_wrapper(p).op_compare
+    _mm_op[p] = mm_ops[p].op_word
+    _mm_compare[p] = mm_ops[p].op_compare
 
 PRECISION = math.log(7 * 31 * 127 * 255) / math.log(2.0) - 4
 
-_index_dict = {
-    "A": (      0,   24,  32,  24 ),
-    "B": (    768,   24,  32,  24 ),
-    "C": (   1536,   24,  32,  24 ),
-    "T": (   2304,  759,  64,  64 ),
-    "X": (  50880, 2048,  32,  24 ),
-    "Z": ( 116416, 2048,  32,  24 ),
-    "Y": ( 181952, 2048,  32,  24 ),
-}
+
 
 ######################################################################
 # Auxiliary functions
 ######################################################################
 
-def _tuples_to_sparse_dict(*tuples):
+def tuples_to_sparse_dict(tuples):
     d = defaultdict(int)
     for data in tuples:
         scalar = 1
@@ -128,12 +128,26 @@ def compress_data(data):
     return out
     
 
+######################################################################
+# If check_MMVectorCRT is True then we check a vector of type
+# MMVectorCRT for overflow or underflow after each operation
+######################################################################
+
+check_MMVectorCRT = True 
 
 ######################################################################
 # Modelling a vector of the 196884-dimensional rep of the monster
 ######################################################################
 
-class MMSpaceVectorCRT(AbstractMmRepVector):
+MODULUS = 7*31*125*255
+MAX_CRT_NORM = MODULUS**2 // 4
+ERR_OVERFLOW = "Overflow in class MMVectorCRT"
+ERR_UNDERFLOW = "Underflow in class MMVectorCRT"
+ERR_UNDERFLOW_G = "Underflow at group operation in class MMVectorCRT"
+
+
+
+class MMVectorCRT(AbstractMmRepVector):
     """Models a vector in a space of type ``MMSpaceCRT``.
 
     Such a vector should be constructed by calling an instance ``V``
@@ -144,7 +158,7 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
     ValueError is raised in case of overflow or underflow.
     
     The functionality of this class is a subset of the functionality 
-    of class ``MMSpaceVector``. See class ``MMSpaceCRT`` for details.
+    of class ``MMVector``. See class ``MMSpaceCRT`` for details.
 
     A vector may also be reduced modulo ``p = 7, 31, 127, 255`` with
     the modulo operator ``%%``. Then the result is a vector in the 
@@ -160,24 +174,43 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
        constructing vectors in the real representation space
        ``V`` of the monster group.
     """ % PRECISION
+    p = MODULUS
+    MAX_CRT_NORM = MAX_CRT_NORM
 
-    def __init__(self, space):
-        self.space = space
-        self.data = {}
-        for p in (7, 31, 127, 255):
-            self.data[p] = mm_vector(p)
+    def __init__(self, shift, tag = 0, i0 = None, i1 = None):
+        self.shift = shift
+        self.factor = 1.0 / (1 << shift)
+        if not 3 <= self.shift <= 21:
+            raise ValueError("Bad shift factor for class MMVectorCRT") 
+        self.data = OrderedDict()
         self.data_int = np.zeros(247488, dtype = np.int32)
-        self.data_compressed = None
-        self.shift = space.shift
         self.expanded = False
-
-    def check(self):
-        """Check if the vector is correct
-
-        Raise ValueError if the vector is errorneous.
-        """
-        return True
-
+        if isinstance(tag, MMVectorCRT): 
+            for p in (7, 31, 127, 255):
+                self.data[p] = tag.data[p].copy()
+            self.shl(self.shift - tag.shift)
+            return
+        elif isinstance(tag, Integral) and not tag:
+            for p in (7, 31, 127, 255):
+                self.data[p] = MMVector(p)
+            return
+        elif isinstance(tag, str):
+            l = [(tag, i0, i1)]
+        elif isinstance(tag, list):
+            l = tag
+        else:
+            err = "Connot construct MMVectorCRT object from type '%s'"
+            raise ValueError(err % type(tag))
+        d = tuples_to_sparse_dict(l)
+        for p in (7, 31, 127, 255):
+            self.data[p] = v = MMVector(p)
+            ind = np.array([index + (val << shift) % p 
+                for index, val in d.items()], dtype = np.uint32)
+            mm_aux_mmv_set_sparse(p, v.data, ind, len(ind)) 
+        if check_MMVectorCRT:
+            self.expand()
+            if self._inorm > MAX_CRT_NORM:
+                raise ValueError(ERR_OVERFLOW)
 
     def expand(self):
         """Expand data of vector ``v`` with CRT
@@ -187,12 +220,61 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         and 255. 
         """
         if not self.expanded:
-            self.data_int.flags.writeable = True
-            mm_crt_combine(self.data[7], self.data[31], 
-                self.data[127], self.data[255], self.data_int)           
-            self.data_int.flags.writeable = False
-            self.data_compressed = None
+            v2 = mm_crt_combine(self.data[7].data, 
+                self.data[31].data, self.data[127].data, 
+                self.data[255].data, self.data_int)  
+            self._v2 = v2 - self.shift if v2 < 24 else 24        
+            self._inorm = mm_crt_norm_int32(self.data_int)
             self.expanded = True
+
+
+    def shl(self, sh):
+        assert isintance(sh, Integral)
+        if sh == 0:
+            return self
+        if sh > 0:
+            if check_MMVectorCRT:
+                self.expand()
+                if sh > 24 or self._inorm * 4**sh > MAX_CRT_NORM:
+                    raise ValueError(ERR_OVERFLOW)
+                self.data_int <<= sh  
+                self._inorm *= 4**sh            
+            for d in self.data.values:
+                d <<= sh
+            self._v2 += sh            
+        elif sh < 0:
+            nsh = -sh
+            if check_MMVectorCRT:
+                self.expand()
+                if nsh > self.v2:
+                    raise ValueError(ERR_UNDERFLOW)
+                self.data_int >>= nsh           
+                self._inorm *= 4**sh            
+            for d in self.data.values:
+                d >>= nsh
+            self._v2 += sh            
+        return self     
+
+    def check(self):
+        """Check if the vector is correct
+
+        Raise ValueError if the vector is errorneous.
+        """
+        return True
+
+
+    def __ilshift__(self, other):
+        return self.shl(other)
+
+    def __lshift__(self, other):
+        return self.copy().shl(other)
+
+    def __irshift__(self, other):
+        return self.shl(-other)
+
+    def __lrhift__(self, other):
+        return self.copy().shil(-other)
+
 
     def __mod__(self, p):
         """Return the vector modulo ``p``. 
@@ -201,13 +283,21 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         the vector by the *scaling factor* befor reducing it 
         modulo ``p``.
 
-        This methos is mainly for tesing.
+        This method is mainly for testing.
         """ 
-        assert p in (7, 31, 127, 255)
-        v = MMSpace(p)()
-        np.copyto(v.data, self.data[p]) 
-        return v
+        if  p in (7, 31, 127, 255):
+            return MMVector(p, self.data[p]) >> self.shift
+        elif p in (3, 15):
+            v0 = self % 255
+            return MMVector(p, v0)
+        elif isintance(p, Integral):
+            err = "Cannot reduce MMVectorCRT object modulo %d"
+            raise ValueError(err % p)
+        else:
+            err = "Modulus for reducing MMVectorCRT object must be int"
+            raise TypeError(err)
 
+    @property
     def v2(self): 
         """Return the ``2``-adic value of the vector.
  
@@ -219,13 +309,13 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
 
         The function raises ZeroDivisionError if ``v ==  0``
         """
-        v2 = mm_crt_check_v2(self.data[7], self.data[31], 
-                self.data[127], self.data[255])
-        if v2 >= 24:
+        v2 = self._v2
+        if self._v2 >= 24:
             err = "The zero vector has infinite 2-adic value"
             raise ZeroDivisionError(err)
-        return v2 - self.space.shift
+        return self._v2
  
+    @property
     def inorm(self):
         """Return a scaled norm of the vector as an integer
 
@@ -236,12 +326,11 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
         Where ``v.fnorm()`` is the real norm of ``v``.
         """
         self.expand()
-        self.data_int.flags.writeable = True
-        n = mm_crt_norm_int32(self.data_int)
-        self.data_int.flags.writeable = False
-        return n
+        return self._inorm
 
-    def fnorm(self):
+
+
+    def norm(self):
         """Return norm of vector as a floating point number.
 
         The norm of a vector in the representation of the monster
@@ -251,25 +340,15 @@ class MMSpaceVectorCRT(AbstractMmRepVector):
  
         The returned norm is exact.
         """
-        return self.norm() * self.factor**2
-
-    @property
-    def factor(self):
-        """This is the *scaling factor* of the vector
-
-        Since floating-point arithmetic is imprecise, entries of the 
-        vector are returned as (signed 32-bit) integers. Each integer
-        entry of the vector must be multiplied with the 
-        *scaling factor*, which is always a negative power of two.
-        """
-        return 1.0 / (1 << self.shift)
-
+        return self.inorm * self.factor**2
 
 ######################################################################
 # class MMSpace
 ######################################################################
 
 
+
+ 
 
 class MMSpaceCRT(MMSpace):
     """Models a ``196884``-dimensional representation of the monster group 
@@ -346,22 +425,15 @@ class MMSpaceCRT(MMSpace):
       
 
     """ % PRECISION
-    vector_type = MMSpaceVectorCRT
+    vector_type = MMVectorCRT
     _max_norm = (7*31*125*255)**2 // 4
 
-    def __init__(self, shift = 20, group = None):
+    def __init__(self):
         """Create a 196884-dimensional representation of the monster
 
         All calculations are done modulo the odd number p
         """
-        if not 3 <= shift <= 21:
-            raise ValueError("Bad shift factor for class MMSpaceCRT") 
-        self.shift = shift
-        self.factor_ = 1.0 / (1 << shift)
-        if group is None:
-            group = standard_mm_group 
-        assert isinstance(group, MMGroup) 
-        super(MMSpaceCRT, self).__init__(255, group)
+        super(MMSpaceCRT, self).__init__()
 
     #######################################################################
     # Conversion to a list of tuples 
@@ -379,55 +451,32 @@ class MMSpaceCRT(MMSpace):
     # Creating vectors 
     #######################################################################
 
-    def zero(self):
+    def zero(self, shift):
         """Return the zero vector"""
         err = "Cannot create zero vector in space of class MMSpaceCRT"
-        return MMSpaceVectorCRT(self)
+        return MMVectorCRT(shift)
 
     def copy_vector(self, v1):
         assert v1.space == self
-        v = MMSpaceVectorCRT(self)
+        v = MMVectorCRT(v1.shift, 0)
         for p in (7, 31, 127, 255):
             np.copyto(v.data[p], v1.data[p])
         if v1.expanded:
-            v.data_int.flags.writeable = True
             np.copyto(v.data_int, v1.data_int)
-            v.data_int.flags.writeable = False
+            v._v2 = v1._v2        
+            v._inorm = v1._inorm
         v.expanded = v1.expanded
         return v
 
-    def from_tuples(self, *tuples):
-        d = _tuples_to_sparse_dict(*tuples)
-        norm = (4 << self.shift) * _norm_sparse_dict(d)
-        if norm > self._max_norm:
-            err = "Overflow in vector in class MMSpaceCRT"
-        v =  MMSpaceVectorCRT(self)
-        sh = self.shift
-        for p in (7, 31, 127, 255):
-            ind = [index + (val << sh) % p for index, val in d.items()]
-            ind = np.array(ind, dtype = np.uint32)
-            mm_aux_mmv_set_sparse(p, v.data[p], ind, len(ind)) 
-        v.expanded = False
-        v.shift = self.shift 
-        return v        
       
-    def __call__(self, *tuples):
-       return self.from_tuples(*tuples)      
-
-    def unit(self,  *args):
-        """Return a unit vector of the vector space
-
-        Constructing a unit vector without any arguments should
-        return the zero vector.
-        """
-        return self.from_tuples(args)      
+    def __call__(self, *args):
+       return self.from_tuples(*args)      
 
 
-    def rand_uniform(self, *args, **kwds):
+    def set_rand_uniform(self, *args, **kwds):
         err = "Cannot create random vector in space of class MMSpaceCRT"
         raise NotImplementedError(err)
 
-    rand_vector = rand_uniform
 
     parse = _not_supported
 
@@ -435,20 +484,22 @@ class MMSpaceCRT(MMSpace):
     # Obtaining and setting components via sparse vectors
     #######################################################################
 
-    def getitems_sparse(self, *args, **kwds):
+
+    def getitems_sparse(self, v, a_sparse):
+        raise NotImplementedError(err)
+
+    def additems_sparse(self, *args, **kwds):
         err = "Sparse representation not supported in class MMSpaceCRT"
         raise NotImplementedError(err)
 
-    additems_sparse = getitems_sparse
-
-    setitems_sparse = getitems_sparse
+    setitems_sparse = additems_sparse
 
 
     #######################################################################
     # Conversion from and to to sparse representation 
     #######################################################################
 
-    as_sparse = getitems_sparse
+    as_sparse = additems_sparse
 
 
     #######################################################################
@@ -468,29 +519,44 @@ class MMSpaceCRT(MMSpace):
     # Group operation 
     #######################################################################
 
+    def _imul_word(self, v1, g_word, buf):
+        if len(g_word):
+            vectors = list(v1.data.values())
+            if check_MMVectorCRT:
+                if mm_crt_check_g(g_word[0], *[v.data for v in vectors]):
+                    raise ValueError(ERR_UNDERFLOW_G)
+            for v in vectors:
+                v.ops.op_word(v.data, g_word, len(g_word), 1, buf)
+        
+
     def imul_group_word(self, v1, g):
         """Return product v1 * g of vector v1 and group word g.
 
-        v1 may be destroyed.
+        v1 is replaced by v1 * g.
 
         This method is called for elements v1 of the space
         'self' and for elements g of the group 'self.group' only.
         """
-        work =  mm_vector(255)
-        assert v1.space == self
-        g = self.group(g)
-        assert isinstance(g, MMGroupWord)
-        g.reduce() 
-        for g_data, check in _iter_group(g):
-            if (check and mm_crt_check_g(g_data, v1.data[7], 
-                    v1.data[31], v1.data[127], v1.data[255])):
-                err = "Underflow at group operation in class MMSpaceCRT"
-                raise ValueError(err)
-            for p in (7, 31, 127, 255):
-                _mm_op[p](v1.data[p], g_data, len(g_data), 1, work)
+        assert isinstance(g, AbstractGroupWord) and g.group.is_mmgroup 
+        a = np.fromiter(g.iter_atoms(), np.uint32)
+        nn = np.zeros(5, dtype = np.uint32)
+        nnw = np.zeros(5, dtype = np.uint32)
+        buf = np.zeros(v1.data[255].ops.MMV_INTS, dtype = np.uint64)
+        while len(a):
+            mm_group_n_clear(nn)
+            i = mm_group_n_mul_word_scan(nn, a, len(a))
+            length =  mm_group_n_to_word(nn, nnw)
+            self._imul_word(v1, nn[:length], buf)
+            a = a[i:]
+            if len(a):
+                self._imul_word(v1, a[:1], buf)    
+                a = a[1:]
+        del buf 
         v1.expanded = False
-        return v1  
-
+        return v1       
+        
+            
+ 
 
 
     vector_mul_exp = _not_supported
@@ -505,10 +571,19 @@ class MMSpaceCRT(MMSpace):
         This method is called for elements v1 and v2 of the space
         'self' only.
         """
-        diff = 0
-        for p in (7, 31, 127, 255):
-            diff |= _mm_compare[p](v1.data[p], v2.data[p])
-        return not diff
+        v1.expand()
+        v2.expand()
+        v1_2, v2_2 = v1._v2, v2._v2
+        if v1_2 == v2_2 == 24:
+             return True   # then v1 = v1 = zero
+        if v1_2 != v2_2:
+             return False
+        data1, data2 = v1.int_data, v2.int_data
+        if v1.shift > v2.shift:
+             data1 = data1 >> (v1.shift - v2.shift)
+        if v2.shift > v1.shift:
+             data2 = data2 >> (v2.shift - v1.shift)
+        return (data1 == data2).all()
 
     #######################################################################
     # Conversion from and to byte format
@@ -533,26 +608,23 @@ class MMSpaceCRT(MMSpace):
     #######################################################################
 
     
-    def vector_get_item(self, v, index):
-        v.expand()
-        if not isinstance(index, tuple):
-            index = (index,)
-        try:
-            start, max0, stride0, max1 = _index_dict[index[0]]
-            a = v.data_int[start : start + max0 * stride0]
-            a = np.reshape(a, (max0, stride0), order='C')[:,:max1]
-            return a.__getitem__(index[1:])
-        except KeyError:
-            if index[0] == "D":
-                a =  v.data_int[0:768:33]
-                return a.__getitem__(index[1:])
-            if index[0] == "E":
-                if v.data_compressed is None:
-                    v.data_compressed = compress_data(v.data_int)
-                    v.data_compressed.flags.writeable = False
-                return v.data_compressed.__getitem__(index[1:])
-            err = "Bad index for vector in space of type MMSpacCRT"
-            raise TypeError(err)
+    def vector_get_item(self, v, item):
+        assert v.space == self
+        if not isinstance(item, tuple):
+            item = (item,) 
+        shape, a_sparse = sparse_from_indices(255, *item)
+        d = {}
+        for p in (7, 31, 127, 255):
+            vdata = v.data[p]
+            asp = a_sparse.copy()
+            vdata.space.getitems_sparse(vdata, asp)        
+            d[p] = (asp & p).astype(np.uint8)
+        l = len(d[7])
+        a = np.zeros(l, dtype = np.int32)
+        mm_crt_combine_bytes(d[7], d[31], d[127], d[255], l, a)
+        af = np.array(a * v.factor,  dtype = np.float)
+        return af.reshape(shape) if len(shape) else float(af)
+        
 
 
     def vector_set_item(*args, **kwd):
@@ -598,3 +670,11 @@ class MMSpaceCRT(MMSpace):
         return (self._max_norm * self._factor)**2        
 
 
+
+
+StdMMSpaceCRT = MMSpaceCRT()
+MMVectorCRT.space = StdMMSpaceCRT
+
+
+def MMV_CRT(shift):
+    return partial(MMVectorCRT, shift)

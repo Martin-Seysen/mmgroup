@@ -6,7 +6,7 @@ from multiprocessing import Pool, TimeoutError, Lock
 import numpy as np
 
 import mmgroup
-from mmgroup import structures
+from mmgroup import structures, MM0, MMV
 from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mm_space import MMSpace
 from mmgroup.generators import gen_leech3to2_type4
@@ -30,7 +30,7 @@ PY_FILENAME = os.path.join(_DIR, "order_vector_data.py")
 
 
 def _repeat_f(repetitions, f, args):
-    """Auxilieary function for function par_search()
+    """Auxiliary function for function par_search()
     
     This function executes ``f(*args)`` repeatedly (at most
     ``repetitions`` times) until the return value is a result 
@@ -125,10 +125,9 @@ def par_search(trials, f, *args, **kwds):
 # Find an element of the monster of a given order
 #######################################################################
 
-MMV3 = MMSpace(3)
-MMV15 = MMSpace(15)
-MM = MMV3.group
-assert  MMV15.group == MM
+MMV3 = MMV(3)
+MMV15 = MMV(15)
+
 
 def get_factors(n):
     """Return sorted list of prime factors of n, for n <= 120"""
@@ -143,20 +142,18 @@ def rand_mm_element(size = 1):
     of ``g``. 
 
     ``g`` is returend as an element of the standard instance of
-    class  ``mmroup.MMGroup``.
+    class  ``MM0Group``.
     """    
-    group = MM
-    m = group.neutral()
+    data = []
     for i in range(size):
-        m *= group.rand_word('t', randint(1,2))
-        m *= group.atom('l', randint(1,2))   
-        for s in "yxdp":
-            m *=  group.rand_word(s)
-    return m
+        data += [('t','n'), ('l','n')]
+        data += [(s,'r') for s in "yxdp"]
+    return MM0(data)
+
     
 def rand_elem_of_order(factors, elem_size):   
     g = rand_mm_element(elem_size)
-    v = MMV3.rand_vector()
+    v = MMV3('R')
     w = v.copy()
     for i in range(1, len(factors)-1):
         w.mul_exp(g, factors[i] - factors[i-1])
@@ -242,7 +239,7 @@ def gA_from_type4(v_type4):
     """
     g_data = np.zeros(10, dtype = np.uint32)
     len_g = gen_leech2_reduce_type4(v_type4, g_data)
-    gA = MM.from_data(g_data[:len_g])
+    gA = MM0('a', g_data[:len_g])
     return str(gA)
 
 def make_v71_sample(g71):
@@ -276,7 +273,8 @@ def make_v71_sample(g71):
     is returned as an integer.        
     """
     r1 = [("s", x, "r") for x in "XTXTX"]
-    v71 = MMV3(*r1)
+    g71 = MM0(g71)
+    v71 = MMV3(r1)
     w71 = stabilizer_vector(v71, g71, 71)
     if not w71:
         return None
@@ -316,7 +314,8 @@ def find_vector_71_mod3(verbose = 0):
     are returned as strings.
     """    
     s_g71 = find_element_of_order(71, verbose = 1)
-    g71 = MM(s_g71)
+    assert isinstance(s_g71, str)
+    g71 = MM0(s_g71)
     if verbose:
         print("Find vector stabilized by g71") 
     s_v71, s_gA, diag = par_search(2.0e5, make_v71_sample, s_g71, 
@@ -349,9 +348,9 @@ def make_v94_sample(s_g94):
     The function returns the vector ``v94`` in case of  success
     and ``None in case of failure``.    
     """
-    g94 = MM(s_g94)
+    g94 = MM0(s_g94)
     r1 = [("n", x, "r") for x in "XTYTZ"]
-    v94 = 3 *  MMV15(*r1)
+    v94 = 3 *  MMV15(r1)
     w = stabilizer_vector(v94 - v94 * g94, g94**2, 47)
     return None if w is None else str(v94)
 
@@ -396,10 +395,11 @@ BASIS = [0] + [1 << i for i in range(11)]
 X_INDICES += [("X", i, j) for j in range(0, 24)  for i in  BASIS]
 del BASIS
 
+
     
 def eqn_system(vector, tag_indices, map_f, n):
     entries = [vector[index] for index in tag_indices]
-    indices = [MMV15.index_to_sparse(*x) for x in tag_indices]
+    indices = [MMSpace.index_to_sparse(*x) for x in tag_indices]
     matrix= np.zeros(24, dtype = np.uint64)
     rows, cols = 0, n
     out_indices = []
@@ -422,7 +422,7 @@ def eqn_system(vector, tag_indices, map_f, n):
 def eqn_sign(vector):
     for j in range(24):
         if 1 <= vector["Z", 0, j] < 15:
-            return [ MMV15.index_to_sparse("Z", 0, j) ]
+            return [ MMSpace.index_to_sparse("Z", 0, j) ]
     return None
 
 
@@ -486,10 +486,15 @@ def str_data(text, data):
 
 
 def find_order_vector(verbose = 1):
+    verbose = 1
+    if verbose:
+        print("Trying to find a vector of order 71")
     if USE_PRECOMPUTED:
         s_g71, s_v71, s_gA, diag =  S_g71, S_v71, S_gA, S_diag
     else:
         s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose)
+    if verbose:
+        print("Trying to find a vector of order 94")
     for trials in range(200,-1,-1):
         s_g94 = find_element_of_order(94, verbose = verbose)
         s_v94 = find_vector_v94_mod5(s_g94, verbose = verbose)

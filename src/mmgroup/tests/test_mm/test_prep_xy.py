@@ -10,7 +10,9 @@ import pytest
 from mmgroup.mm import mm_sub_test_prep_xy
 from mmgroup import mat24 as m24
 
-from mmgroup.tests.spaces.spaces import MMTestSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmVector
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
 from mmgroup.mm_space import characteristics
 
 
@@ -26,6 +28,8 @@ def _as_suboctad(v1, o):
 
 
 class prep_xy:
+    group = MGroupNWord
+    space = SparseMmVector
     def __init__(self, eps, e, f):
         self.f = f & 0x1fff
         self.e = e & 0x1fff
@@ -75,20 +79,19 @@ class prep_xy:
         return sign & 1, tag1, d1, j1
 
     def inv_op(self, v):
-        w = v.space.zero()
-        p = v.space.p
+        w = self.space(v.p)
         for value, tag, d, j in v.as_tuples():
             sign, tag, d, j = self.inv_op_unit(tag, d, j) 
             if sign & 1: 
                 value = -value % p
-            w += value * w.space.unit(tag, d, j)
+            w += value * space(v.p, tag, d, j)
         return w
 
     def check_v(self, v, verbose = 0):
-        grp = v.space.group
-        delta_atom = grp.atom('d', self.eps)
-        x_atom = grp.atom('x', self.e)**(-1)
-        y_atom = grp.atom('y', self.f)**(-1)
+        grp = self.group
+        delta_atom = grp('d', self.eps)
+        x_atom = grp('x', self.e)**(-1)
+        y_atom = grp('y', self.f)**(-1)
         w_ref = v * delta_atom * x_atom  * y_atom 
         w = self.inv_op(v)
         error = w != w_ref
@@ -104,26 +107,25 @@ class prep_xy:
                 print("Error: x-y operation failed!!!")
 
 
-def as_vector(x, space):
-    v = space.zero()
+
+
+p = PRIMES[0]
+space = SparseMmVector
+
+
+def as_vector(x):
     if isinstance(x, str):
-       for tag in x:
-            v += space.unit(tag, 'r')
-       return v
+       data = [(tag, 'r') for tag in x]
+       return space(p, data)
     if isinstance(x, tuple):
-       x = [x]
+       return space(p, *x)
     if isinstance(x, list):
-       for y in x:
-           value = 1 if len(y) <= 3 else y[3] 
-           #v.add_monomial(value, tuple(y[:3]))  
-           tag, d, j = tuple(y[:3])
-           v += value * v.space.unit(tag, d, j)
-       return v
+       return space(p, x)
     raise TypeError("Bad type for vector of rep")
 
 
 p = PRIMES[0]
-space = MMTestSpace(p).ref_space
+space = SparseMmVector
 
 
 def prep_xy_testcases():
@@ -139,13 +141,13 @@ def prep_xy_testcases():
        [ [("Z", 0, 0)],  0x812, 0, 0],
        [ [("Z", 0, 0)],  0x800, 34, 0],
        [ [("Z", 0, 0)],  0x800, 0, 34],
-   ] 
+    ] 
     for v, eps, e, f in testcases:
-        yield as_vector(v, space), prep_xy(eps, e, f) 
+        yield as_vector(v), prep_xy(eps, e, f) 
     v_tags = "TXZY"
     for v in v_tags:
         for i in range(1000):
-            v1 =  as_vector(v, space)
+            v1 =  as_vector(v)
             eps = randint(0, 0xfff) 
             e = randint(0, 0x1fff)
             f = randint(0, 0x1fff)

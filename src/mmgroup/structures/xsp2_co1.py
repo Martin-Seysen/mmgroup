@@ -8,12 +8,15 @@ import numpy as np
 import warnings
 from functools import partial
 
-from mmgroup.structures.abstract_group import AbstractGroupWord
-from mmgroup.structures.abstract_group import AbstractGroup
+from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
+from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
+from mmgroup.structures.construct_mm import iter_mm       
 
 from mmgroup.structures.ploop import Cocode, PLoop
 from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
+from mmgroup.structures.construct_mm import iter_mm       
+from mmgroup.structures.construct_mm import load_group_name     
 
 from mmgroup.mat24 import ploop_theta
 from mmgroup.generators import gen_leech2_type
@@ -54,7 +57,7 @@ FORMAT_REDUCED = True
 
 
 
-class Xsp2_Co1_Word(AbstractGroupWord):
+class Xsp2_Co1(AbstractMMGroupWord):
     """Model an element the subgroup :math:`G_{x0}` of the Monster
 
     See class ``Xsp2_Co1`` for the definition of that group.   
@@ -74,11 +77,11 @@ class Xsp2_Co1_Word(AbstractGroupWord):
   
     """
     MIN_LEN = 16
-    __slots__ =  "_data", "group" 
-    def __init__(self, atoms = [], **kwds):
-        self.group = kwds['group']
+    __slots__ =  "_data"
+    def __init__(self,  tag = None, atom = None, *args, **kwds):
+        atoms = iter_mm(self.group, tag, atom, in_G_x0 = True)
+        a_atoms = np.fromiter(atoms, dtype = np.uint32) 
         self._data = np.zeros(26, dtype = np.uint64)
-        a_atoms = np.array(atoms, dtype = np.uint32)
         xsp2co1_set_elem_word(self._data, a_atoms, len(a_atoms))
          
     @property
@@ -165,7 +168,13 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         return self
 
     def as_mm(self, mmgroup = MM):
+        raise NotImplementedError
         return xsp2co1_to_mm(mmgroup, self)
+
+    def iter_atoms(self):
+        a = np.zeros(10, dtype = np.uint32)
+        length = chk_qstate12(xsp2co1_elem_to_word(self._data, a))
+        yield from a[:length]
 
     def _involution_invariants(self):
         """Wrapper for C function  xsp2co1_involution_invariants"""
@@ -182,6 +191,7 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         In case of success the result is returned as an element 
         of ``self.group``.
         """
+        raise NotImplementedError
         if isinstance(g, Xsp2_Co1_Word):
             g = gg.as_mm(mmgroup)
         res = self.group(self)
@@ -212,7 +222,7 @@ class Xsp2_Co1_Word(AbstractGroupWord):
         a = np.zeros(14, dtype = np.uint32)
         len_a = xsp2co1_elem_conjugate_2B_involution(self._data, a)
         chk_qstate12(len_a)
-        return mmgroup.from_data(a[:len_a])
+        return mmgroup('a', a[:len_a])
 
 
 
@@ -258,7 +268,7 @@ def xsp2co1_to_mm(mmgroup, xsp):
 
 
 
-class Xsp2_Co1_Group(AbstractGroup):
+class Xsp2_Co1_Group(AbstractMMGroup):
     r"""Model the subgroup :math:`G_{x0}` of the Monster
     
     The group :math:`G_{x0}` is the subgroup of the Monster group
@@ -320,7 +330,10 @@ class Xsp2_Co1_Group(AbstractGroup):
     __instance = None
     __slots__ = "data"
     STD_V3  = 0x8000004
-    word_type = Xsp2_Co1_Word
+    word_type = Xsp2_Co1
+    is_mmgroup = True
+
+    """
     tags, formats = " dpxyl", [None, ihex, str, ihex, ihex, str]
     atom_parser = {}               # see method parse()
     conversions = {
@@ -333,10 +346,11 @@ class Xsp2_Co1_Group(AbstractGroup):
     }
     FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
     STR_FORMAT = r"M<%s>"
+    """
 
     def __new__(cls):
         if Xsp2_Co1_Group.__instance is None:
-             Xsp2_Co1_Group.__instance = AbstractGroup.__new__(cls)
+             Xsp2_Co1_Group.__instance = AbstractMMGroup.__new__(cls)
         return Xsp2_Co1_Group.__instance
 
 
@@ -350,19 +364,19 @@ class Xsp2_Co1_Group(AbstractGroup):
 
 
     def atom(self, tag = None, i = "r"):
-        return self.word_type(gen_atom(tag, i), group = self)
+        return self.word_type(tag, i)
 
     def _imul(self, g1, g2):
         chk_qstate12(xsp2co1_mul_elem(g1._data, g2._data, g1._data))
         return g1
 
     def _invert(self, g1):
-        w = self.word_type([], group=self)
+        w = self.word_type()
         chk_qstate12(xsp2co1_inv_elem(g1._data, w._data))
         return w
 
     def copy_word(self, g1):
-        w = self.word_type([], group=self)
+        w = self.word_type()
         xsp2co1_copy_elem(g1._data, w._data)
         return w
 
@@ -378,7 +392,7 @@ class Xsp2_Co1_Group(AbstractGroup):
         return (g1._data == g2._data).all()
 
     def _embed_number(self, n):
-        w = self.word_type([], group=self)
+        w = self.word_type()
         if (n == -1):
             xsp2co1_neg_elem(w._data)
             n = 1
@@ -387,7 +401,7 @@ class Xsp2_Co1_Group(AbstractGroup):
         raise TypeError("Cannot convert a number to a group element")
         
     def from_qs(self, qs, x):  
-        w = self.word_type([], group=self)
+        w = self.word_type()
         w0 =  xsp2co1_qs_to_elem_i (qs, x)
         for i in range(26):
              w._data[i] =  w0[i]
@@ -397,7 +411,7 @@ class Xsp2_Co1_Group(AbstractGroup):
         return "Xsp2_Co1 " + str_xsp2_co1(v1._data)
  
     def from_xsp(self, x):
-        w = self.word_type([], group=self)
+        w = self.word_type()
         chk_qstate12(xsp2co1_elem_xspecial(w._data, x))
         return w
 
@@ -420,12 +434,9 @@ class Xsp2_Co1_Group(AbstractGroup):
                  mmgroup.structures.xsp2_co1.Xsp2_Co1_Word
 
         """
-        return self.word_type(data, group = self)
+        return self.word_type('a', data)
 
 
-Xsp2_Co1 = Xsp2_Co1_Group()
-
-MMGroup.implicit_conversions[Xsp2_Co1_Word] = xsp2co1_to_mm
 
 
 _dict_pm3 = {0: '0', 1:'+', 0x1000000:'-', 0x1000001:'0'}
@@ -455,6 +466,9 @@ except:
 
 
 
+StdXsp2_Co1_Group = Xsp2_Co1_Group()
+Xsp2_Co1.group = StdXsp2_Co1_Group
+load_group_name(StdXsp2_Co1_Group, "MX")
 
 
 

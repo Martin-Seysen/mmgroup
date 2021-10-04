@@ -23,12 +23,15 @@ from mmgroup.tests.test_hadamard.matrices import mat_l_16
 from mmgroup.tests.test_hadamard.cythonize import SIZES 
 from mmgroup.tests.test_hadamard.cythonize import PRIMES 
 from mmgroup.tests.test_hadamard.cythonize import build, kill
-from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
 
 
 NP_DTYPE = np.uint32 if INT_BITS == 32 else np.uint64
 
 
+V = SparseMmV
+G = MGroupNWord
 
 
 ################################################################
@@ -253,11 +256,11 @@ def op_t64_function(p, vector, exp, verbose = 0):
     
 
 def ref_op_t64(p, vector, exp):
-    space = SparseMmSpace(p)
-    v = space.zero()
+    space = V(p)
+    v = space()
     for i in range(64):
-        v += int(vector[i]) * space.unit('T',0, i)
-    v *= space.group.atom('t', exp)
+        v += int(vector[i]) * space('T',0, i)
+    v *= G('t', exp)
     res = np.zeros(64, dtype = np.int32)
     for i in range(64):
         res[i] = v['T', 0, i]
@@ -349,13 +352,13 @@ def ref_op_t3(p, vector, exp):
     fields = int_fields(p)
     assert len(vector) == 3 * fields
     exp = exp % 3
-    space = SparseMmSpace(p)
+    space = V(p)
     result = [None] * (3 * fields)
     for i in range(fields):
-        v = space.zero()
+        v = space()
         for tag, j in [("A", 0), ("B", fields), ("C", 2 * fields)]:
-            v += int(vector[i + j]) * space.unit(tag, 1, 0)
-        v *= space.group.atom('t', exp)
+            v += int(vector[i + j]) * space(tag, 1, 0)
+        v *= G('t', exp)
         for tag, j in [("A", 0), ("B", fields), ("C", 2 * fields)]:
             result[i + j] = v[tag, 1, 0]
     return result
@@ -515,12 +518,12 @@ def op_xi64_function(p, vector, exp, verbose = 0):
 def ref_op_xi64(p, vector, exp):
     exp = exp % 3
     if exp == 0: return vector
-    space = SparseMmSpace(p)
-    v = space.zero()
+    space = V(p)
+    v = space(0)
     for i in range(16):
         for j in range(24):
-            v += int(vector[i,j]) * space.unit('Y',i + 0x400, j)
-    v *= space.group.atom('l', exp)
+            v += int(vector[i,j]) * space('Y',i + 0x400, j)
+    v *= G('l', exp)
     #print(v)
     v1 = np.zeros( (16, 24), dtype = np.int32)
     for i in range(16):
@@ -610,14 +613,14 @@ def ref_op_xi16(p, vector, exp):
     # Function symmetrize_test_matrix(vector) forces that symmetry.
     exp = exp % 3
     if exp == 0: return vector
-    space = SparseMmSpace(p)
-    v = space.zero()
+    space = V(p)
+    v = space()
     for i in range(4):
         for j in range(24):
             i0, j0 = max(i,j), min(i,j)
             if j >= 4 or i >= j:
-                v += int(vector[i,j]) * space.unit('A', i, j)
-    v *= space.group.atom('l', exp)
+                v += int(vector[i,j]) * space('A', i, j)
+    v *= G('l', exp)
     #print(v)
     v1 = np.zeros( (4, 24), dtype = np.int32)
     for i in range(4):

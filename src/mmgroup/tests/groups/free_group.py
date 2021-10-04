@@ -10,8 +10,8 @@ import sys
 import re
 from random import randint
 
+from mmgroup.structures.parse_atoms import TaggedAtom
 from mmgroup.tests.groups.auto_group import AutoGroup
-from mmgroup.tests.groups.auto_group import TaggedAtom
 from mmgroup.tests.groups.auto_group import AutoGroupMulError
 
 ####################################################################
@@ -84,14 +84,14 @@ class FreeGroup(AutoGroup):
         yield TaggedAtom(t.lower() if t.isupper() else t.upper())
 
              
-    def parse(self, w):
+    def __call__(self, w=""):
         """Return the word of the free group given by the string w"""
         assert isinstance(w, str)
         res = self.word_type(*[TaggedAtom(c) for c in w], group = self)
         return res.reduce()
 
     def str_word(self, word):
-        x = "".join((str(atom.tag) for atom in word.iter_atoms()))
+        x = "".join((str(atom.tag) for atom in word.iter_generators()))
         return x if x else "<1>"
 		
 

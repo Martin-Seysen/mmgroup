@@ -11,6 +11,7 @@ from numbers import Integral
 import numpy as np
 import pytest
 
+from mmgroup import MM0
 from mmgroup.structures.qs_matrix import qs_pauli_matrix
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_leech3
 from mmgroup.structures.xsp2_co1 import get_error_pool
@@ -24,7 +25,7 @@ from mmgroup.clifford12 import xsp2co1_chain_short_3
 
 
 MMSpace3 = Space_ZY.mmspace
-MMGroup3 = MMSpace3.group
+MMGroup3 = MM0 # MMSpace3.group
 
 
 
@@ -102,7 +103,7 @@ def create_test_vectors():
             sign = -1**j
             d = randint(0, 0xfff)
             t = rand_tuple(x)
-            yield d, ((sign,) + t),  rand_element(group_elements)    
+            yield d, (sign,) + t,  rand_element(group_elements)    
 
 
 #####################################################################
@@ -184,9 +185,9 @@ def test_vector(verbose = 0):
         v3 = vm.as_mmspace_vector() 
         if verbose:
             print("g =", g)
-        g3 = MMGroup3(*g)
+        g3 = MMGroup3(g)
         try:
-            gm = Xsp2_Co1(*g)
+            gm = Xsp2_Co1(g)
         except ValueError:
             print("\nError in constructing group element g")
             print("Debug data pool:\n", 
@@ -244,7 +245,7 @@ def test_vector(verbose = 0):
 
    
 def ref_conjugate(x, elem):
-    elem_l = Xsp2_Co1(*elem)
+    elem_l = Xsp2_Co1(elem)
     mat_l = elem_l.qs.gate_h(0x800800)
     mat_x = qs_pauli_matrix(12, x)
     mat_res = mat_l.inv() @ mat_x @ mat_l
@@ -323,9 +324,9 @@ def create_test_elements():
 def test_group(verbose = 0):
     unit = Xsp2_Co1()
     for ntest, (g1, g2) in enumerate(create_test_elements()):
-        gm1 = Xsp2_Co1(*g1)    
-        gm2 = Xsp2_Co1(*g2)    
-        gm3_ref = Xsp2_Co1(*(g1 + g2))    
+        gm1 = Xsp2_Co1(g1)    
+        gm2 = Xsp2_Co1(g2)    
+        gm3_ref = Xsp2_Co1(g1 + g2)    
         gm3 = gm1 * gm2
         ok = gm3 == gm3_ref 
         if verbose or not ok:

@@ -8,7 +8,7 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
-from mmgroup import MM, MMSpace
+from mmgroup import MM0, MMSpace, MMV
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.clifford12 import leech3matrix_echelon
 from mmgroup.clifford12 import leech3matrix_sub_diag
@@ -141,7 +141,7 @@ def test_leech3matrix_echelon(verbose = 0):
 INT_BITS = 64
 
 def kernel_testmatrix(p, tags = "dxypt"*3, diag = 0):
-    space = MMSpace(p)
+    space = MMV(p)
     a = space()
     diag %= 3
     for i in range(24):
@@ -150,8 +150,8 @@ def kernel_testmatrix(p, tags = "dxypt"*3, diag = 0):
     # Now ``a`` encodes the tag A part of the rep of the monster mod p
     # It encodes a symmetric matrix with kernel :math:`\Omega`.
     v3 = 1  # \Omega in Leech lattice mod 3 encoding
-    g = MM.rand_word(tags, len(tags))
-    space.mm.op_word_tag_A(a.data, g.data, len(g.data), 1)
+    g = MM0([(t,'r') for t in tags])
+    a.ops.op_word_tag_A(a.data, g.data, len(g.data), 1)
     v3_kernel = gen_leech3_op_vector_word(v3, g.data, len(g.data))
     return a, v3_kernel
 
@@ -163,6 +163,7 @@ def str_v3(v3):
     d = {0:0, 1:1, 0x1000000:2, 0x1000001:0}
     l = [str(d[(v3 >> i) & 0x1000001]) for i in range(24)]
     return "".join(l)
+
 
 @pytest.mark.qstate
 def test_leech3matrix_kernel_vector(verbose = 0):
@@ -250,11 +251,11 @@ def test_leech2matrix_eqn():
 #######################################################################
   
 
-MMV15 = MMSpace(15)
-MM = MMV15.group    
+MMV15 = MMV(15)
+MM = MM0    
          
 def one_test_watermark(verbose = 0):
-    v0 = MMV15.rand_uniform()
+    v0 = MMV15('R')
     v = v0.data[:48]
     w0 = np.zeros(24, dtype = np.uint32)
     result = leech3matrix_watermark(15, v, w0)

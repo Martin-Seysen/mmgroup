@@ -118,10 +118,11 @@ class AbstractRepVector(object):
         if  isinstance(other, Integral):
             return self.space.imul_scalar(self, other) 
         else:
-            other = self.space.group(other)
             return self.space.imul_group_word(self, other)
 
     def __mul__(self, other):
+        if self.space.group:
+           other = self.space.group(other)
         return self.copy().__imul__(other)
 
     def __rmul__(self, other):
@@ -129,7 +130,7 @@ class AbstractRepVector(object):
 
     def __itruediv__(self, other):
         if  isinstance(other, Integral):
-            p = self.space.p
+            p = self.p
             return self.space.imul_scalar(self, mod_inv(other, p)) 
         else:
             other = self.space.group(other)
@@ -140,23 +141,23 @@ class AbstractRepVector(object):
 
 
     def __ilshift__(self, other):
-        factor = mod_pwr2(other, self.space.p)
+        factor = mod_pwr2(other, self.p)
         return self.space.imul_scalar(self, factor) 
 
     def __lshift__(self, other):
-        factor = mod_pwr2(other, self.space.p)
+        factor = mod_pwr2(other, self.p)
         return self.space.imul_scalar(self.copy(), factor) 
 
     def __irshift__(self, other):
-        factor = mod_pwr2(-other, self.space.p)
+        factor = mod_pwr2(-other, self.p)
         return self.space.imul_scalar(self, other) 
 
     def __rshift__(self, other):
-        factor = mod_pwr2(-other, self.space.p)
+        factor = mod_pwr2(-other, self.p)
         return self.space.imul_scalar(self.copy(), factor) 
 
     def __neg__(self):
-        return self.space.imul_scalar(self.copy(), self.space.p - 1) 
+        return self.space.imul_scalar(self.copy(), self.p - 1) 
 
     def __pos__(self):
         return self  
@@ -198,19 +199,17 @@ class AbstractRepVector(object):
 
 
 class AbstractRepSpace(object):
-    p = 3                           # characteristic, must be > 1
+    group = None                    # group operating on the space
     vector_type = AbstractRepVector # type of an vector in the space 
     atom_parser = {}                # see method parse()
     FRAME = re.compile(r"^(\w*)$")  # see method parse()
 
-    def __init__(self, p, group, *args, **kwds):
+    def __init__(self, p, *args, **kwds):
         """Creating instances is only possible for concrete spaces
 
          
         """
         self.p = p
-        self.group = group
-        self.preimages = {}  # dictionary of  preimages
 
 
     ### The following methods must be overwritten ####################
@@ -273,7 +272,8 @@ class AbstractRepSpace(object):
 
     def vector_set_item(self, v1, index, value) :
         """Put v1[index] = value for a vector v1 in the vector space"""
-        raise NotImplementedError("Cannot assign component in abstract space")
+        err = "Item assignment not supported in space of type '%s'"
+        raise NotImplementedError(err % type(self))
 
     def equal_vectors(self, v1, v2):
         """Return True iff vectors v1 and v2 are equal 
@@ -298,6 +298,7 @@ class AbstractRepSpace(object):
 
         In a concrete space, this may be optimized considerably.
         """
+        raise NotImplementedError("Not supported")
         return self.iadd(v1, self.unit(*t))
 
 
@@ -373,6 +374,7 @@ class AbstractRepSpace(object):
         So we may call class 'self', which represents a vector
         space, to map elements of other spaces to the space 'self'. 
         """
+        raise NotImplementedError("Not supported")
         self.preimages[space] = morphism
 
 
@@ -409,6 +411,7 @@ class AbstractRepSpace(object):
 
         If none of these condition is met, we raise TypeError.
         """
+        raise NotImplementedError
         result = self.zero()
         for v in args:
             if isinstance(v, str):

@@ -6,7 +6,7 @@ import datetime
 import time
 import pytest
 
-from mmgroup import MM, MMSpace
+from mmgroup import MM0, MMSpace, MMV
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
@@ -29,12 +29,12 @@ from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
 from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
 
-V = MMSpace(15)
+V = MMV(15)
 
 
 V_START_TUPLE = ("I", 3, 2)
-V_START = V(V_START_TUPLE)
-V_OPP = V_START * MM(('x', 0x200))
+V_START = V(*V_START_TUPLE)
+V_OPP = V_START * MM0('x', 0x200)
 
 v_start = 0x200
 
@@ -141,7 +141,7 @@ def eval_A_vstart(v):
 
 def reduce_axis(vector, verbose = 0):
     v = vector.data
-    V = vector.space
+    #V = vector.space
     work = V()
     vA = np.zeros(24*4, dtype = np.uint64)
     r = np.zeros(120, dtype= np.uint32);
@@ -249,7 +249,7 @@ def reduce_axis(vector, verbose = 0):
 
 def reduce_baby_axis(vector, verbose = 1):
     v = vector.data
-    V = vector.space
+    #V = vector.space
     work = V()
     vA = np.zeros(24*4, dtype = np.uint64)
     r = np.zeros(120, dtype= np.uint32);
@@ -355,18 +355,19 @@ def reduce_baby_axis(vector, verbose = 1):
 
 
 def make_axis_testcases():
-    V = V_START.space
+    #V = V_START.space
     yield V_START.copy()
-    yield V(  ("I", 11, 9) )
+    yield V("I", 11, 9)
     for i in range(10):
-        yield V_START * MM.rand_G_x0()
+        yield V_START * MM0("r", "G_x0")
     for ax in AXES:
-        v0 = V_START * MM(AXES[ax])
+        v0 = V_START * MM0(AXES[ax])
         for i in range(20):
-            yield v0 * MM.rand_G_x0()
+            yield v0 * MM0("r", "G_x0")
     for quality in range(2,11):
         for i in range(3):
-              yield  V_START *  MM.rand_mm(quality)      
+              yield  V_START *  MM0("r", quality)      
+
 
 
 @pytest.mark.involution
@@ -375,13 +376,13 @@ def test_reduce_axis(verbose = 0):
         if verbose:
             print("\nTest case", i)
         r = reduce_axis(v.copy(), verbose)
-        g = MM.from_data(r)
+        g = MM0('a', r)
         assert v * g == V_START
 
         vr1 = np.zeros(200, dtype = np.uint32)
         len_r1 = mm_op15_reduce_v_axis(v.copy().data, vr1)
         assert len_r1 >= 0
-        g1 = MM.from_data(vr1[:len_r1])
+        g1 = MM0('a', vr1[:len_r1])
         assert g1 == g
 
 
@@ -400,22 +401,22 @@ def rand_BM(quality = 8):
     The function generates a random element of the centralizer
     of ``v_0`` in the monster.
     """
-    a = MM()
+    a = MM0()
     for i in range(quality):
          e = randint(0, 2)
-         a *= MM(rand_Co2(), ('t', e)) 
+         a *= MM0([rand_Co2(), ('t', e)]) 
     return a 
 
 
 
 
 def make_baby_testcases():
-    V = V_START.space
+    #V = V_START.space
     yield V_OPP.copy()
     for i in range(10):
         yield V_OPP.copy() * rand_Co2()
     for ax in BABY_AXES:
-        v0 = V_OPP * MM(BABY_AXES[ax])
+        v0 = V_OPP * MM0(BABY_AXES[ax])
         for i in range(5):
             yield v0 * rand_BM()
     for quality in range(2,11):
@@ -430,7 +431,7 @@ def test_reduce_baby_axis(verbose = 0):
         if verbose:
             print("\nTest case", i)
         r = reduce_baby_axis(v.copy(), verbose)
-        g = MM.from_data(r)
+        g = MM0('a', r)
         assert v * g == V_OPP
         assert V_START * g == V_START
 
@@ -438,7 +439,7 @@ def test_reduce_baby_axis(verbose = 0):
 
         len_r1 = mm_op15_reduce_v_baby_axis(v.copy().data, vr1)
         assert len_r1 >= 0
-        g1 = MM.from_data(vr1[:len_r1])
+        g1 = MM0('a', vr1[:len_r1])
 
         ok =  g1 == g 
         #print(type(g1), type(g))
@@ -462,7 +463,7 @@ reduce_time = None
 
 def reduce_G_x0(g):
     global reduce_time
-    assert g.group == MM
+    #assert g.group == MM
     r = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
     res = mm_op15_reduce_G_x0(g.data, len(g.data), r)
@@ -470,7 +471,7 @@ def reduce_G_x0(g):
     if res < 0:
        err = "Error %d in reducing element of monster group"
        raise ValueError(err % res)
-    return MM.from_data(r[:res])
+    return MM0('a', r[:res])
 
 
 def g_complexity(g):
@@ -481,7 +482,7 @@ def g_complexity(g):
 def make_reduce_testcases():
     for quality in range(1,17):
         for i in range(2):
-              yield  MM.rand_mm(quality)      
+              yield  MM0('r', quality)      
 
 
 @pytest.mark.involution
@@ -490,7 +491,7 @@ def test_reduce_G_x0(verbose = 0):
         if verbose:
             print("\nTest case", i)
         g1 = reduce_G_x0(g)
-        g2 = g._mul(g1)
+        g2 = g * g1
         ok = g2.in_G_x0()
 
         if verbose or not ok:

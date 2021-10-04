@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
 from random import randint
+from collections import defaultdict
 
 import pytest
 
@@ -10,6 +11,7 @@ from mmgroup.tests.test_mm.test_group_op import test_op, test_rand_op
 from mmgroup.tests.test_mm.test_group_op import one_test_rand_op
 from mmgroup.mm_space import characteristics
 from mmgroup.tests.spaces.spaces import MMTestSpace
+from mmgroup.structures.mm0_group import MM0
 
 
 PRIMES = characteristics()
@@ -32,26 +34,26 @@ lower level than the test in module test_group_op.
 def mul_atom(v1, tag, i, v2):
     data1 = v1.data
     data2 = v2.data
-    space = v1.space
+    mm = v1.ops
     if tag == 'd':
-        space.mm.op_delta(data1, i, data2) 
+        mm.op_delta(data1, i, data2) 
     elif tag == 'p':
-        space.mm.op_pi(data1, 0, i, data2)
+        mm.op_pi(data1, 0, i, data2)
     elif tag == 't':
-        space.mm.op_t(data1,  i, data2)
+        mm.op_t(data1,  i, data2)
     elif tag == 'l':
-        space.mm.op_xi(data1,  i, data2)
+        mm.op_xi(data1,  i, data2)
     elif tag == 'x':
-        space.mm.op_xy(data1, 0, i, 0, data2)
+        mm.op_xy(data1, 0, i, 0, data2)
     elif tag == 'y':
-        space.mm.op_xy(data1, i, 0, 0, data2)
+        mm.op_xy(data1, i, 0, 0, data2)
     else:
         raise TypeError("Bad tag %s in monster operation" % str(t))
  
 
 def mul_group(v, g):
     v = v.copy()
-    v1, v2 = v, v.space.zero()
+    v1, v2 = v, v * 0
     for tag, i in g.as_tuples():
         mul_atom(v1, tag, i, v2)
         v1, v2 = v2, v1
@@ -77,9 +79,10 @@ def test_low_group_op():
 
 def f_mul_delta_pi(v, g):
     t = g.as_tuples()
-    assert t[0][0] == "d" and t[1][0] == "p" 
-    v1 = v.space.zero()
-    v.space.mm.op_pi(v.data, t[0][1], t[1][1], v1.data)
+    d = defaultdict(int)
+    d.update(t)
+    v1  = v.copy()  # empty vector of same shape as v
+    v.ops.op_pi(v.data, d['d'], d['p'], v1.data)
     return v1
 
 
@@ -93,9 +96,10 @@ def test_op_delta_pi(verbose = 0):
         space = MMTestSpace(p)
         group = space.group
         for i in range(50):
-            g = group.word( ("d",), ("p",) )
+            g = MM0( [("d",'r'), ("p",'r')] )
             basis = "D" * 3 + "ABC" * 10 + "TXYZ" * 20 
-            one_test_rand_op(space, g, basis, f_mul_delta_pi, verbose)
+            v = space('R')
+            one_test_rand_op(v, g, basis, f_mul_delta_pi, verbose)
     print("passed")
             
 
@@ -107,10 +111,11 @@ def test_op_delta_pi(verbose = 0):
 
 def f_mul_yx(v, g):
     t = g.as_tuples()
-    assert t[0][0] == "y" and t[1][0] == "x" and t[2][0] == "d" 
-    y, x, d = t[0][1], t[1][1], t[2][1]  
-    v1 = v.space.zero()
-    v.space.mm.op_xy(v.data, y, x, d, v1.data)
+    #print("ttt", dict(t))
+    d = defaultdict(int)
+    d.update(t)
+    v1  = v.copy()  # empty vector of same shape as v
+    v.ops.op_xy(v.data, d['y'], d['x'], d['d'], v1.data)
     return v1
 
 
@@ -120,19 +125,24 @@ def test_op_yx(verbose = 0):
     for p in PRIMES:
         space = MMTestSpace(p)
         group = space.group
-        for i in range(200):
-            g = group.word( ("y",), ("x",), ("d",) )
+        for i in range(50):
+            g = group( [("y","r"), ("x","r"), ("d","r")] )
             basis = "D" * 3 + "ABC" * 10 + "TXYZ" * 20 
-            one_test_rand_op(space, g, basis, f_mul_yx, verbose)
+            v = space('R')
+            one_test_rand_op(v, g, basis, f_mul_yx, verbose)
     print("passed")
 
 
 
 def f_mul_omega(v, g):
     t = g.as_tuples()
-    assert t[0][0] == "x" and t[0][1] & ~0x1800 == 0
+    if len(t):
+        assert t[0][0] == "x" and t[0][1] & ~0x1800 == 0
+        x = t[0][1]
+    else:
+        x = 0
     v1 = v.copy()
-    v.space.mm.op_omega(v1.data, t[0][1])
+    v.ops.op_omega(v1.data, x)
     return v1
 
 @pytest.mark.mm
@@ -143,7 +153,8 @@ def test_op_omega(verbose = 0):
         group = space.group
         for i in range(5):
             for d in (0, 0x800, 0x1000, 0x1800):
-                g = group.word( ("x", d) )
+                g = group([("x", d)])
                 basis = "D" * 3 + "ABC" * 10 + "TXYZ" * 20 
-                one_test_rand_op(space, g, basis, f_mul_omega, verbose)
+                v = space('R')
+                one_test_rand_op(v, g, basis, f_mul_omega, verbose)
     print("passed")

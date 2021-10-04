@@ -203,6 +203,34 @@ uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_
 
 
 // %%EXPORT px
+uint32_t mm_crt_combine_bytes(uint8_t *p7, uint8_t *p31, uint8_t *p127, uint8_t *p255, uint32_t n, int32_t *p_out)
+// Combine a vector from the vectors  p7, p31, p127, p255  of the
+// 198884 dimensional representation modulo 7, 31, 127, and 255
+// of the monster via Chinese remaindering. Input vectors  p7, p31,
+// p127, p255  must be given as arrays of ``n`` bytes.
+// The function computes the array p_out of type int32_t[n].
+// Each entry of the vector p_out is of type int32_t; and it set to 
+// the smallest possible absolute value modulo 7*31*127*255. Thus 
+// an entry of p_out may be negative.
+// The function returns min(24, v2(p_out)). Here v2(p_out) is the
+// minmum positions of the least significant bits of all entries 
+// of the vector p_out.   
+{
+    uint_fast32_t i, a, res = 0x1000000;
+    for (i = 0; i < n; ++i) {
+        a = TAB_127[p127[i] & 0x7f] + TAB_255[p255[i] & 0xff]
+           + TAB_7_31[((p7[i] << 5) & 0xe0) + (p31[i] & 0x1f)];
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        a += (0 - ((a & 0x80000000) >> 31)) & %{CRT_NPROD}L;
+        res |= a + %{int:0x10000000-CRT_NPROD//2}L;
+        *p_out++ = a - %{int:CRT_NPROD//2}L;
+    }
+    return mat24_lsbit24(res);       
+}
+
+
+
+// %%EXPORT px
 uint32_t mm_crt_check_v2(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
 // For a given tuple of input vectors  p7, p31, p127, p255,  the 
 // function mm_crt_check_v2() returns the same value as function

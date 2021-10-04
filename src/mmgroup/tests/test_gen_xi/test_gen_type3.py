@@ -16,7 +16,7 @@ import scipy.special
 from scipy.stats import chisquare
 import pytest
 
-from mmgroup import MM
+from mmgroup import MM0
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.mat24 import bw24 as mat24_bw24
 from mmgroup.generators import gen_leech3to2_type3
@@ -44,7 +44,7 @@ STD_TYPE3_MOD2 = 0x800800
 
 
 def rand_xsp2co1_elem(n):
-    s1, l = [('p',),('y',)],  [('l','n')]
+    s1, l = [('p','r'),('y','r')],  [('l','n')]
     return s1 + (l + s1) * n
 
 
@@ -81,13 +81,11 @@ def create_test_elements():
 
 
 def mul_v3(v3, g):
-    assert g in MM
     result = gen_leech3_op_vector_word(v3, g._data, g.length)
     assert result & 0xffff000000000000 == 0, hex(result)
     return result
         
 def mul_v2(v2, g):
-    assert g in MM
     result = gen_leech2_op_word(v2, g._data, g.length)
     assert result & 0xfe000000 == 0, hex(result)
     return result
@@ -113,7 +111,7 @@ def weight_v3(v3):
 def test_type3(verbose = 0):
     weights = defaultdict(int)
     for ntest, data in enumerate(create_test_elements()):
-        g = MM(*data) 
+        g = MM0(data) 
         v3_st = STD_TYPE3_MOD3 
         v2_st = STD_TYPE3_MOD2       
         if verbose:

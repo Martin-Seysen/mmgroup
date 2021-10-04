@@ -4,15 +4,15 @@ from __future__ import  unicode_literals
 
 import numpy as np
 from numbers import Integral
-from random import randint
+from random import randint, sample
 
 
 import pytest
 
-from mmgroup import MMGroup, MMSpace, MM
+from mmgroup import  MMV, MM0
 
-ref_space = MMSpace(3)
-ref_group = ref_space.group
+ref_space = MMV(3)
+ref_group = MM0
 
 from mmgroup import mm_order
 from mmgroup.mm_order import reduce_mm
@@ -22,8 +22,8 @@ from mmgroup.mm_order import reduce_mm
 ########################################################################
 
 def ref_order_random_v(g):
-    g1 = ref_group.copy_word(g)
-    v = ref_space.rand_uniform()
+    g1 = ref_group(g)
+    v = ref_space("R")
     w = v.copy()
     for i in range(1, 120):
         w = w * g1
@@ -64,7 +64,7 @@ def ref_order(g):
 def order_testcases(group):
     yield group(), 1
     for x,y in zip(range(0, 0x2000, 0x800), [0, 0x1800, 0x800, 0x1000]):
-        yield  group(('x', x), ('y', y)), 1
+        yield  group([('x', x), ('y', y)]), 1
     tags_list = [ 
        ("txpyd", 10), ("txpyld"*5, 1), 
        ("txpyld"*3, 3),  ("lxypdt", 5), 
@@ -73,14 +73,14 @@ def order_testcases(group):
     for i in range(2):
         for tags, ntests in tags_list:
             for j in range(ntests):
-                g = group(*[(t,"n") for t in tags])
+                g = group([(t,"n") for t in tags])
                 order =  ref_order(g)
                 yield g, order
 
    
 @pytest.mark.mm
 def test_order(verbose = 0):
-    group = MMGroup()
+    group = MM0
     for n, (g, ref_order) in enumerate(order_testcases(group)):
         order = g.order()
         ok = order == ref_order
@@ -98,7 +98,7 @@ def test_order(verbose = 0):
         if order & 1:
             assert g2 == None
         else:
-            assert g2 == g._pow(order // 2)
+            assert g2 == g**(order // 2)
     print("Test passed")
    
    
@@ -119,18 +119,21 @@ def ref_equal_random(g1, g2):
     """
     if g1.group != g2.group:
         return False
-    g1 = ref_group.copy_word(g1).reduce()
-    g2 = ref_group.copy_word(g2).reduce()
+    g1 = ref_group(g1).reduce()
+    g2 = ref_group(g2).reduce()
     g = g1 * g2**(-1)
     g.reduce()
     for i in range(3):
-        v = ref_space.rand_uniform()
+        v = ref_space('R')
         w = v.copy()
         w = w * g
         if w != v:
             return False
     return True
  
+
+
+
 
 
 def equality_testcases(group):
@@ -143,11 +146,11 @@ def equality_testcases(group):
     for i in range(5):
         for tags, ntests in tags_list:
             for j in range(ntests):
-                g = group(*[(t,"n") for t in tags])
+                g = group([(t,"n") for t in tags])
                 order =  g.order()
                 assert g**order == group()
-                prefix = group.rand_word("xypdty"*5, 10, 20)
-                suffix = group.rand_word("xypdty"*5, 10, 20)
+                prefix = group('r', randint(5,10))
+                suffix = group('r', randint(5,10))
                 prefix = group(1)
                 suffix =  group(1)
                 half = order//2
@@ -157,14 +160,14 @@ def equality_testcases(group):
     for i in range(1):
         for tags, ntests in tags_list:
             for j in range(ntests):
-                g1 = group(*[(t,"n") for t in tags])
-                g2 = group(*[(t,"n") for t in tags])
+                g1 = group([(t,"n") for t in tags])
+                g2 = group([(t,"n") for t in tags])
                 yield g1, g2, ref_equal_random(g1, g2)
 
 
 @pytest.mark.mm
 def test_equality(verbose = 0):
-    group = MMGroup()
+    group = MM0
     for n, (g1, g2, ref_equal) in enumerate(equality_testcases(group)):
         equal = g1 == g2
         ok = equal == ref_equal
@@ -190,9 +193,9 @@ def test_equality(verbose = 0):
 def make_reduce_testcases():
     for quality in range(1,16):
         for i in range(2):
-              yield  MM.rand_mm(quality)   
+              yield  MM0('r', quality)   
     for i in range(4):
-        yield  MM.rand_mm(16)  
+        yield  MM0('r', 16)  
 
 def g_complexity(g):
     s = [x for x in g.data if x & 0x70000000 == 0x50000000]

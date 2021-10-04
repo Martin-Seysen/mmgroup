@@ -14,8 +14,12 @@ from copy import deepcopy
 from random import sample, randint
 from numbers import Integral, Number
 
-from mmgroup.structures.parse_atoms import  eval_atom_expression        
-from mmgroup.structures.parity import Parity
+
+from mmgroup.structures.abstract_group import AbstractGroup
+from mmgroup.structures.abstract_group import AbstractGroupWord
+from mmgroup.structures.construct_mm import iter_mm
+from mmgroup.structures.construct_mm import iter_strings_from_atoms
+from mmgroup.structures.construct_mm import iter_tuples_from_atoms
 
 
 
@@ -30,7 +34,7 @@ from mmgroup.structures.parity import Parity
 ####################################################################
 
 
-class AbstractGroupWord(object):
+class AbstractMMGroupWord(AbstractGroupWord):
     """Model an element of an abstract group.
 
     Users should not refer to this class directly. They should create 
@@ -51,114 +55,12 @@ class AbstractGroupWord(object):
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
     """
-    __slots__ = "group"
-    def __init__(self, *args, **kwds):
-        try:
-            self.group = kwds['group']
-        except:
-            assert isinstance(self.group, AbstractGroup)
-
-    # There is no need to modify an methods below this line.
-    # You should overwrite the corresonding methods in the
-    # subclasses of class AbstractGroup insead.
+    group_name = "AbstractMMGroup"
+    def __init__(self, tag = None, atom = None, reduce = True):
+        self.from_data(self.group, tag, atom)
+        if reduce:
+            self.reduce()
  
-    def __eq__(self, other):    
-        return( isinstance(other, AbstractGroupWord) 
-            and  self.group == other.group
-            and  self.group._equal_words(self, other)
-        )
-
-    def __ne__(self, other): 
-        return not self.__eq__(other)
-
-    def copy(self):
-        """Return a deep copy of the group element"""
-        return self.group.copy_word(self)
-
-    def __imul__(self, other):
-        """Implementation of the group multiplication"""
-        g = self.group
-        return g._imul(self, g._to_group(other))
-
-    def __mul__(self, other):
-        """Implementation of the group multiplication"""
-        g = self.group
-        try:
-            return g._imul(g.copy_word(self), g._to_group(other))
-        except (TypeError, NotImplementedError) as exc:
-            try:
-                myself = other.group._to_group(self)
-                return myself.__imul__(other)
-            except:
-                raise exc
-    def __rmul__(self, other):
-        """Implementation of the reverse group multiplication"""
-        g = self.group
-        if isinstance(other, Parity):
-            return other
-        try:
-            return g._imul(g._to_group(other), self)
-        except (TypeError, NotImplementedError) as exc:
-            try:
-                myself = other.group._to_group(self)
-                return other.__imul__(myself)
-            except:
-                raise exc
-
-    def __itruediv__(self, other):
-        """Implementation of the group division
-
-        Here self / other    means    self * other**(-1) .
-        """
-        g = self.group
-        return g._imul(self, g._invert(g._to_group(other)))
-
-    def __truediv__(self, other):
-        """Implementation of the group division
-
-        Here self / other    means    self * other**(-1) .
-        """
-        g = self.group
-        return g._imul(g.copy_word(self), g._invert(g._to_group(other)))
-
-    def __rtruediv__(self, other):
-        """Implementation of the reverse group division
-
-        Here self / other    means    self * other**(-1) .
-        """
-        g = self.group
-        return g._imul(g.copy_word(g._to_group(other)), g._invert(self))
-      
-    def __pow__(self, exp):
-        """Implementation of the power operation
-
-        This is exponentiation for integer eponents and conjugation
-        if the exponent is a group element.
-        """
-        g = self.group
-        if isinstance(exp, Integral):
-            if exp > 0:
-                res, start = g.copy_word(self), self
-            elif exp == 0:
-                return g.neutral()
-            else:
-                start, exp = g._invert(self), -exp
-                res = g.copy_word(start) 
-            for i in range(int(exp).bit_length() - 2, -1, -1):
-                res = g._imul(res, res)
-                if exp & (1 << i):
-                    res = g._imul(res, start) 
-            return res      
-        elif isinstance(exp, AbstractGroupWord):
-            e = self.group._to_group(exp) 
-            return g._imul(g._imul(g._invert(e), self), e)
-        elif isinstance(exp, Parity):
-            one = self.group.neutral()
-            if self * self == one:
-                return self if other.value & 1 else one
-            raise ValueError("Group element has not order 1 or 2")
-        else:
-            return NotImplemented
 
 
     def reduce(self, copy = False):
@@ -178,6 +80,11 @@ class AbstractGroupWord(object):
         reduced.
         """
         return self.group.reduce(self, copy)
+
+
+    def iter_atoms(self):
+        return self.group.iter_atoms(self)
+
 
     def str(self):
         """Represent group element as a string"""
@@ -204,33 +111,35 @@ class AbstractGroupWord(object):
         return self.group.as_tuples(self)
 
 
-
+def is_mmgroup_word(g):
+    return isinstance(g,AbstractMMGroupWord) and g.group.is_mmgroup 
 
 ####################################################################
 ### Class AbstractGroup
 ####################################################################
 
 
-class AbstractGroup(object):
+class AbstractMMGroup(AbstractGroup):
     """Model an abstract group"""
-    word_type = AbstractGroupWord  # type of an element (=word) in the group
+    word_type = AbstractMMGroupWord  # type of an element (=word) in the group
+    group_name = "AbstactMMGroup"
+    is_mmgroup = True
 
     def __init__(self, *data, **kwds):
         """Creating instances is only possible for concrete groups
 
          
         """
-        pass
 
     ### The following methods must be overwritten ####################
 
-    def __call__(self, *args):
-        """Convert args to group elements and return their product
+    def atom(self, *args):
+        """Return an atomic element of this group. 
+
+        Calling this function without any arguments should return
+        the neutral element of this group.
         """
-        raise NotImplementedError
-
-
-
+        raise NotImplementedError("No atoms defined in abtract group")  
 
     def _imul(self, g1, g2):
         """Return product g1 * g2 of group elements g1 and g2.
@@ -241,6 +150,28 @@ class AbstractGroup(object):
         'self' only. It should return the reduced product.
         """
         raise NotImplementedError("No multiplication in abstract group")
+
+    def _imul_nonreduced(self, g1, g2):
+        """ Non-reduced multiplication g1 * g2
+
+        The result of this mathod the product g1 * g2. If group 
+        elements are represented by words then the function returns  
+        the concatenation of the words g1 and g2 without reducing it.
+
+        Here g1 and g2 must be elements of the same group.
+
+        The default implementation does not distinguish between
+        non-reduced and reduced multipLication. 
+
+        g1 may be destroyed but not g2.
+
+        This method is called for elements g1 and g2 of the group
+        'self' only.
+
+        This method is used in method word() of this class for
+        constructing a word of the group without reducing it.
+        """
+        return self._imul(g1, g2) 
 
 
     def _invert(self, g1):
@@ -306,7 +237,10 @@ class AbstractGroup(object):
         return g
 
 
+    def iter_atoms(self, g):
+        raise NotImplemetedError
 
+    ### The following methods need not be overwritten #################
 
     def as_tuples(self, g):
         """Convert group element ``g`` to a list of tuples.
@@ -320,7 +254,8 @@ class AbstractGroup(object):
 
         should compute a group element ``g1`` with ``g1 == g``.
         """
-        raise NotImplementedError("Abstract method")
+        atoms = self.iter_atoms(g)
+        return list(iter_tuples_from_atoms(atoms))
 
 
     def str_word(self, g):
@@ -329,34 +264,41 @@ class AbstractGroup(object):
         For an element ``g`` of this group ``g.group.str_word(g)``
         should be equivalent   to ``g.str()``.
         """
-        raise NotImplementedError
+        """Represent group element as a string"""
+        atoms = self.iter_atoms(g)
+        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
+        s = "*".join(strings) 
+        if s == "": s = "1"
+        return "%s<%s>" % (self.group_name, s)
 
                  
-    ### The following methods need not be overwritten #################
 
     def neutral(self):
         """Return neutral element of the group"""
-        return self.__call__()
+        assert self.word_type.group == self
+        return self.word_type()
 
 
-  
-    def _to_group(self, g):
-        """Convert the object ``g`` to an element of this group
+    def _embed_number(self, n):
+        """Try to embed the number n into the group.
 
-        This function tries the conversions on ``g``. This function
-        is applied in a group operation.
+        The function returns the number n as a group element or
+        it raises TypeError if this is not possible.
+        For a matrix group it may e.g. return n times the unit matrix.
+
+        By default, we only map the number 1 to the neutral element.
         """
-        if isinstance(g, AbstractGroupWord) and g.group == self:
-            return g
-        if g == 1:
+        raise ValueError("Nixda!!!") # TODO!!!
+        if n == 1:
             return self.neutral()
-        err = "Cannot convert type '%s' object to group element"
-        raise TypeError(err % type(g))
-           
+        raise TypeError("Cannot convert a number to a group element")
+
+   
+
+
 
 
     ### The following methods should not be overwritten ###############
-
 
 
 
@@ -371,4 +313,16 @@ class AbstractGroup(object):
         except:
             return False
 
+
+    def __call__(self, *args):
+        """Convert args to group element
+
+        """
+        assert self.word_type.group == self
+        return self.word_type(*args)
+    
+
+
+
+AbstractMMGroupWord.group = AbstractMMGroup
 

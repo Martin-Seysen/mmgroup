@@ -207,6 +207,8 @@ from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import  AtomDict
+from mmgroup.structures.construct_mm import iter_mm       
+from mmgroup.structures.construct_mm import load_group_name     
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import mm_group_invert_word
@@ -296,14 +298,14 @@ def import_Xsp2_Co1():
 
 
 ###########################################################################
-# Word class for the group MM
+# Word class for the group MM0
 ###########################################################################
 
 
 
 
 
-class MMGroupWord(AbstractMMGroupWord):
+class MM0(AbstractMMGroupWord):
     r"""Models an element of the monster group :math:`\mathbb{M}`
 
     Let ``MM`` be an instance of class ``MMGroup``, and let ``g1``, 
@@ -331,13 +333,14 @@ class MMGroupWord(AbstractMMGroupWord):
   
     """
     MIN_LEN = 16
-    __slots__ = "_group", "length", "_data", "reduced"
-    def __init__(self, data, **kwds):
-        self.group = kwds['group']
-        self.length = len(data)
-        self._data = np.array(data, dtype = np.uint32) 
-        self.reduced = 0 
+    __slots__ =  "length", "_data", "reduced"
+    def __init__(self,  tag = None, atom = None, *args, **kwds):
+        self.reduced = 0
+        atoms = iter_mm(self.group, tag, atom)
+        self._data = np.fromiter(atoms, dtype = np.uint32) 
+        self.length = len(self._data)
         self._extend(self.MIN_LEN)
+        
                   
     def _extend(self, length):
         len_ = len(self._data)
@@ -382,69 +385,6 @@ class MMGroupWord(AbstractMMGroupWord):
         ``g.reduce()``.
         """
         return self.length == self.reduced
-
-    def _mul(self, *gg):
-        """Return product of this group element with other elements
-
-        ``g_0._mul(g_1,...,g_n)`` returns a new group element with 
-        value ``g_0 * g_1 * ,..., * g_n``.
-
-        In contrast to the standard multiplication operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = self.copy()
-        for g_i in gg:
-            g.group._imul_nonreduced(g, g_i)
-        g.reduce()
-        return g
-
-    def _div(self, g1):
-        """Return quotient of this group element by another element
-
-
-        ``g0._div(g1)`` returns a new group element with 
-        value ``g0 * g1**(-1)``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        return self._mul(g1**(-1))
-
-    def _conj(self, g1):
-        """Conjugate this group element by another element
-
-
-        ``g0._comj(g1)`` returns a new group element with 
-        value ``g1**(-1) * g0 * g1``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = g1**(-1)
-        return g._mul(self, g1)
-
-    def _pow(self, exp):
-        """Raise this group element to a power
-
-        ``g0._pow(exp)`` returns a new group element with 
-        value ``g0**exp``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = self.group
-        if exp > 0:
-            res, start = g.copy_word(self), self
-        elif exp == 0:
-            return g.group.neutral()
-        else:
-            start, exp = g._invert(self), -exp
-            res = g.copy_word(start) 
-        for i in range(int(exp).bit_length() - 2, -1, -1):
-            res = res._mul(res)
-            if exp & (1 << i):
-                res = res._mul(start) 
-        return res      
 
 
 
@@ -532,7 +472,7 @@ class MMGroupWord(AbstractMMGroupWord):
 
         if Xsp2_Co1 is None: 
             import_Xsp2_Co1()
-        elem = Xsp2_Co1(*self.group.as_tuples(self))
+        elem = Xsp2_Co1(self)
 
         a = np.zeros(4, dtype = np.int32)
         res = chk_qstate12(xsp2co1_traces_all(elem._data, a))
@@ -686,165 +626,16 @@ class MMGroupWord(AbstractMMGroupWord):
             warnings.warn(w)
         return self
 
-###########################################################################
-# Atoms for the group M
-###########################################################################
-
-
-tag_dict = {
-        "d": 0x10000000, 
-        "p": 0x20000000, 
-        "x": 0x30000000, 
-        "y": 0x40000000, 
-        "t": 0x50000000, 
-        "l": 0x60000000, 
-}
-
-
-
-
-tags = " dpxytl"
-
-def gen_d(tag, d = "r"):
-    if isinstance(d, Integral ):
-        return [0x10000000 + (d & 0xfff)]
-    elif isinstance(d, str):
-        cocode = randint(int('n' in d), 0xfff) 
-        if "o" in d and not "e" in d:
-            cocode |= 1 
-        if "e" in d and not "o" in d:
-            ccocode &= ~1
-        return [0x10000000 + (cocode & 0xfff)]
-    else:
-        cocode = Cocode(d).cocode
-        return [0x10000000 + (cocode & 0xfff)]
-
-def gen_p(tag, perm = "r"):
-    if isinstance(perm, Integral):
-        if not 0 <= perm < MAT24_ORDER:
-            raise ValueError("Bad permutation number for Mathieu group")
-        return [0x20000000 + perm]
-    elif isinstance(perm, str):
-        perm = randint(0, MAT24_ORDER-1)
-        return [0x20000000 + perm]
-    elif isinstance(perm, AutPL):
-        return [0x10000000 + perm._cocode, 0x20000000 + perm._perm_num]
-    else:
-        cocode, perm_num = autpl_from_obj(0, perm)
-        return  [0x10000000 + (cocode & 0xfff), 0x20000000 + perm_num]
-
-
-def gen_ploop_element(r):
-    if isinstance(r, Integral):
-        return  r & 0x1fff
-    elif isinstance(r, str):
-        return randint(0, 0x1fff) 
-    else:
-        return PLoop(r).ord
-
-def gen_xy(tag, r = "r"):
-    return [ tag_dict[tag] + gen_ploop_element(r)]
-
-def gen_z(tag, r = "r"):
-    pl = pow_ploop(gen_ploop_element(r), 3)
-    return [tag_dict['x'] + pl, tag_dict['y'] + pl]
-
-def gen_tl(tag, r = "r"):
-    e = r
-    if isinstance(r, str):
-        e = randint(int('n' in r), 2) 
-    return  [ tag_dict[tag] + e % 3] 
-
-
-ERR_Q_x0 = "Object must represent an element of the subgroup Q_x0 of the monster"
-
-
-def gen_q(tag, r = "r"):
-    e = r
-    if isinstance(r, str):
-        e = randint(0, 0x1ffffff) 
-    elif not isinstance(r, Integral):
-        try:
-            e = r.as_Q_x0_atom()
-            assert isinstance(e, Integral)
-        except:
-            raise TypeError(ERR_Q_x0)
-    d = (e >> 12) & 0x1fff
-    delta = (e ^ ploop_theta(d)) & 0xfff
-    return [tag_dict['x'] + d, tag_dict['d'] + delta]
-
-
-
-
-ERR_LEECH2 = "Object must represent a type-4 vector in Leech lattice mod 2"
-
-def gen_c(tag, r = "r"):
-    if isinstance(r, str):
-        c = 0
-        while gen_leech2_type(c) >> 4 != 4:
-           c = randint(0, 0xffffff) 
-    elif isinstance(r, Integral):
-        c = r
-    else:
-        try:
-            c = r.as_Q_x0_atom()
-            assert isinstance(c, Integral)
-        except:
-            raise TypeError(ERR_LEECH2)
-    if gen_leech2_type(c) >> 4 != 4:
-        raise ValueError(ERR_LEECH2)
-    a = np.zeros(6, dtype = np.uint32)
-    len_a = gen_leech2_reduce_type4(c, a)
-    mm_group_invert_word(a, len_a)
-    return list(a[:len_a])
-            
-
-gen_tag_dict = {
-        "d": gen_d, 
-        "p": gen_p, 
-        "x": gen_xy, 
-        "y" :gen_xy, 
-        "z" :gen_z, 
-        "t": gen_tl, 
-        "l": gen_tl, 
-        "q": gen_q, 
-        "c": gen_c, 
-}
-
-
-def gen_atom(tag = None, number = "r"):
-    """Return list of integers representing element of monster group
-
-    This is the workhorse form method MMGroup.atom().
-    See that method for documentation.
-    """
-    if not tag:
-         return []
-    try: 
-        gen_function = gen_tag_dict[tag]
-    except KeyError:
-        err = "Illegal tag %s for MM group atom"
-        raise ValueError(err % tag)
-    return gen_function(tag, number)
-
 
 ###########################################################################
 # The class representing the group MM
 ###########################################################################
 
 
-def cocode_to_mmgroup(g, c):
-    return g.word_type([0x10000000 + (c.cocode & 0xfff)], group = g)
-
-def autpl_to_mmgroup(g, aut):
-    return g.word_type([0x10000000 + (aut.cocode & 0xfff), 
-                  0x20000000 + aut.perm_num], group = g)
-
-def ploop_to_mmgroup(g, pl):
-    return g.word_type([0x30000000 + (pl.value & 0x1fff)],  group = g)
 
 
-class MMGroup(AbstractMMGroup):
+
+class MM0Group(AbstractMMGroup):
     r"""An instance ``MM`` of this class models an instance of the monster
 
     :param: None
@@ -905,30 +696,22 @@ class MMGroup(AbstractMMGroup):
     class |MMGroup| are considered unequal.
     """
     __instance = None
-    word_type = MMGroupWord
-    tags, formats = " dpxytl", [None, ihex, str, ihex, ihex, str, str]
-    atom_parser = {}               # see method parse()
-    conversions = {
-        Cocode: cocode_to_mmgroup,
-        PLoop: ploop_to_mmgroup,
-    }
-    implicit_conversions = {
-        AutPL: autpl_to_mmgroup,
-    }
-    group_name = "M"
+    word_type = MM0
+    STR_FORMAT = r"M<%s>"
+    group_name = "M0"
 
     def __new__(cls):
-        if MMGroup.__instance is None:
-             MMGroup.__instance = AbstractMMGroup.__new__(cls)
-        return MMGroup.__instance
+        if MM0Group.__instance is None:
+             MM0Group.__instance = AbstractMMGroup.__new__(cls)
+        return MM0Group.__instance
 
     def __init__(self):
         """ TODO: Yet to be documented     
 
 
         """
-        super(MMGroup, self).__init__()
-        self.atom_parser = AtomDict(self.atom)
+        super(MM0Group, self).__init__()
+        #self.atom_parser = AtomDict(self.atom)
         #self.set_preimage(StdAutPlGroup,  tuple)
 
 
@@ -1028,36 +811,12 @@ class MMGroup(AbstractMMGroup):
         as in the description for tag  ``'q'``. That vector must
         be of type 4. The sign bit of that vector is ignored.
         """
-        return self.word_type(gen_atom(tag, i), group = self)
+        raise NotImplementedError
 
 
-    def as_tuples(self, g):
-        assert g.group == self
-        # g = g.reduce(copy = True)
-        data = g.data
-        if len(data) and max(data) >= 0x70000000:
-            raise ValueError("Illegal group element")
-        return [(tags[a >> 28], a & 0xfffffff)  
-                   for a in data if (a >> 28)]
+    def iter_atoms(self, g):
+        yield from g.data
 
-    @classmethod
-    def str_atom(cls, a):
-        itag = (a >> 28) & 0xF
-        if itag in [0, 8]: 
-            return "1"
-        if itag >= 8:
-            return "(1/%s)" % cls.str_atom(a ^ 0x80000000)
-        try:
-            tag = cls.tags[itag]  
-        except:
-            return "(unknown)"
-        fmt = cls.formats[itag]
-        return tag + "_" + fmt(a & 0xfffffff)
-        
-   
-    def str_word(self, g, fmt = None):
-        s = "*".join(map(self.str_atom, g.data)) if len(g) else "1"
-        return (fmt if fmt else self.STR_FORMAT) % s
 
     def reduce(self, g1, copy = False):
         l1 = g1.length
@@ -1072,12 +831,6 @@ class MMGroup(AbstractMMGroup):
             g1.reduced = g1.length = l1
         return g1
 
-    def _imul_nonreduced(self, g1, g2):
-        l1, l2 = g1.length, g2.length
-        g1._extend(l1 + l2 + 1)
-        g1._data[l1 : l1 + l2] = g2._data[:l2]
-        g1.length = l1 + l2
-        return g1
         
     def _imul(self, g1, g2):
         l1, l2 = g1.length, g2.length
@@ -1092,128 +845,37 @@ class MMGroup(AbstractMMGroup):
         return g1
 
     def _invert(self, g1):
-        w = self.word_type(np.flip(g1.data) ^ 0x80000000, group=self)
+        w = self.word_type()
+        w._setdata(np.flip(g1.data) ^ 0x80000000)
         return self.reduce(w)
 
     def copy_word(self, g1):
-        result = self.word_type(g1.data, group = self)
+        result = self.word_type()
+        result._setdata(g1.data)
         result.reduced = g1.reduced
         return result
 
     def _equal_words(self, g1, g2):
-        if check_mm_equal is None:
+        if not check_mm_equal is None:
+            return g1.group == g2.group and check_mm_equal(g1, g2)
+        try:
             import_mm_order_functions()
-        return g1.group == g2.group and check_mm_equal(g1, g2)
-
-    def from_data(self, data):
-        """Create a group element from an array of generators
-
-        Internally, an element of the monster group is represented
-        as an array of unsigned 32-bit integers, where each entry
-        of the array describes a generator. See section
-        :ref:`header-mmgroup-generators-label` for details.
- 
-        This function creates an element of the monster group from
-        such an array of integers.
-
-        :param data: An array-like object representing a 
-                     word of generators of the monster group
-
-        :return: An element of this instance of the monster group 
-        :rtype:  an instance of class mmgroup.MMGroupWord
-
-        """
-        return self.word_type(data, group = self)
-
-    def rand_G_x0(self, seed = None):
-        r"""Return random element of subgroup :math:`G_{x0}`
-
-        The function returns a uniform distributed random element
-        of the subgroup :math:`G_{x0}`. The function uses the
-        internal random generator of the ``mmgroup`` package.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        buf = np.zeros(10, dtype = np.uint32)
-        seed = rand_get_seed(seed)
-        length = xsp2co1_rand_word_G_x0(buf, seed) 
-        if not 0 <= length <= 10:
-            err = "Error in generating random element of G_x0"
-            raise ValueError(err)
-        return self.from_data(buf[:length])
-
-    def rand_N_0(self, in_N_x0 = False, even = False, seed = None):
-        r"""Return random element of subgroup :math:`N_{0}`
-
-        The function returns a uniform distributed random element
-        of the subgroup :math:`N_{x}` of the monster of structure
-        :math:`2^{2+11+22}.(M_{24} \times \mbox{Sym}_3)`. The group 
-        :math:`N_0` is generated by the generators with tags
-        ``x, y, d, p, t``. The function uses the internal random 
-        generator of the ``mmgroup`` package.
-
-        If parameter ``in_N_x0`` is nonzero then we compute a random
-        element of the subgroup :math:`N_{x0}` of index 3 in :math:`N_0` 
-        generated by the generators with tags ``x, y, d, p``.
-
-        If parameter ``even`` is nonzero then we compute a random
-        element of the  subgroup :math:`N_{\mbox{even}}` of index 2
-        in :math:`N_{x}`  generated by the generators with
-        tags ``x, y, d, p, t``, where all generators with tag ``d``
-        correspond to even Golay cocode words.
-
-        If both, ``in_N_x0`` and ``even``, are nonzero then we compute
-        a random element
-        of :math:`N_{xyz0} = N_{\mbox{even}} \cap N_{x0}`.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        buf = np.zeros(10, dtype = np.uint32)
-        seed = rand_get_seed(seed)
-        length = xsp2co1_rand_word_N_0(buf, in_N_x0, even, seed) 
-        if not 0 <= length <= 10:
-            err = "Error in generating random element of G_x0"
-            raise ValueError(err)
-        return self.from_data(buf[:length])
+            return g1.group == g2.group and check_mm_equal(g1, g2)
+        except:
+            if g1.group != g2.group:
+                return False
+            g1.reduce()
+            g2.reduce()
+            if (g1.data == g2.data).all():
+                 return True
+            raise ValueError("Don't know if monster group elements are equal")
 
 
-    def rand_mm(self, quality = None, seed = None):
-        r"""Return a random element of the monster group
 
-        The function returns a random element of the monster group.
-        Here ``quality`` means a measure for the quality of the
-        randimization process, where a higher value menas that
-        the distribution of the elements is closer to uniform.
-
-        If ``quality`` is an integer ``k`` then a product containing
-        ``k`` powers of the triality element it generated. Here the
-        default value creates an almost uniform distribution.
-
-        In future versions the default value of parameter ``quality``
-        may correspond to the generation of a truly uniform
-        distribution.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        if quality is None: quality = 12
-        seed = rand_get_seed(seed)
-        g = self.rand_G_x0(seed)
-        for k in range(quality):
-            t = 1 + gen_rng_modp(2, seed)
-            g *= self.atom('t', t)
-            c = 0
-            while gen_leech2_type(c) >> 4 != 4:
-                c = gen_rng_modp(0x1000000, seed) 
-            g *= self.atom('c', c)
-        return g
+StdMM0Group = MM0Group()
+MM0.group = StdMM0Group
+load_group_name(StdMM0Group, "M0")
 
 
-# Predefine a standard instance of class MMGroup
-MM =  MMGroup()
+
 

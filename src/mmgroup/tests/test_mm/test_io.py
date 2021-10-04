@@ -11,13 +11,16 @@ from scipy import stats
 
 import pytest
 
-#from mmgroup.mm_space import MMSpace
+from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.mm_space import characteristics
 from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_mmv_extract_sparse
 
 from mmgroup.tests.spaces.spaces import MMTestSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmVector
 
 
 
@@ -27,10 +30,10 @@ from mmgroup.tests.spaces.spaces import MMTestSpace
 ### Chi square test
 #########################################################################
 
-def chisquare_crosscor(p, b1, b2 = 0, d = 1, m = 0):
+def chisquare_crosscor(p, b1, b2 = None, d = 1, m = 0):
     """chi-square test over cross correlation
     
-    Let b1 and b2 be arrays of intgers (mod p) of th same length.
+    Let b1 and b2 be arrays of intgers (mod p) of the same length.
     the we put a[i] = b1[i] + b2[i + d] (mod p), with idex i + d 
     wrapping around. b2 may be 0, indicating an array of zeros.
 
@@ -40,11 +43,11 @@ def chisquare_crosscor(p, b1, b2 = 0, d = 1, m = 0):
     In case m > 0 the entries a[i] are reduced modulo m. 
     """
     d %= len(b1)
-    if b2 is 0:
-       a =  np.zeros(len(b1), dtype = np.uint32)
+    if b2 is None:
+        a =  np.zeros(len(b1), dtype = np.uint32)
     else:
-       assert len(b1) == len(b2)
-       a =  np.array(np.concatenate((b2[d:], b2[:d])), dtype = np.uint32)
+        assert len(b1) == len(b2)
+        a =  np.array(np.concatenate((b2[d:], b2[:d])), dtype = np.uint32)
     a = (a + b1) % p
     f_exp = None
     if 0 < m < p:
@@ -69,18 +72,19 @@ def chisquare_crosscor_ok(p, b1, b2 = 0, d = 1, m = 0):
 #########################################################################
 
 def do_test_sparse_rep(v):
-    p = v.space.p
-    space = v.space
-    sparse_space = space.ref_space
-    vsp = sparse_space(v)
-    assert (v == space(vsp))
-    assert (v == space.from_sparse(v.as_sparse()))
-    assert (v == space.from_bytes(v.as_bytes()))
+    p = v.p
+    space = MMVector
+    sparse_space = SparseMmVector
+    vsp = sparse_space(p, v)
+    assert (v == space(p, vsp))
+    assert (v == space(p, "S", v.as_sparse()))
+    v2 = space(p, 'V', v.as_bytes())
+    assert (v == v2)
 
 def do_test_rep_conversion(v):
-    space = v.space
-    p = v.space.p
-    sparse_space = space.ref_space
+    p = v.p
+    space = MMVector
+    sparse_space = SparseMmVector
     ranges = [
         (0, 5, 1),
         (0, 50, 10),
@@ -134,10 +138,10 @@ def do_test_random_io(p, verbose = False, to_sparse = 1):
         chisqu_ok[name] = not do_chisqu_test
     for i in range(4):
         space = MMTestSpace(p)
-        v = space.zero()
-        assert np.count_nonzero(v.data[:v.space.mm.MMV_INTS]) == 0
+        v = space(0)
+        assert np.count_nonzero(v.data[:v.ops.MMV_INTS]) == 0
         v.check()
-        v = space.rand_vector()
+        v = space('R')
         v.check()
         check_direct_symmetric(v)
         if to_sparse and i == 0:
@@ -199,7 +203,7 @@ def do_test_sym_io(p, tag, verbose = 1):
         print("p = %d, tag = %s" % (p,tag))
     space = MMTestSpace(p)
     b = np.zeros((24,24), dtype=np.int32)
-    v = space.zero()
+    v = space(0)
     for slices, shape, data in a_data:
         b1 = array_data(shape, data)
         v[tag, slices[0], slices[1]] = b1
@@ -219,7 +223,7 @@ def do_test_sym_io(p, tag, verbose = 1):
         assert eq
 
     abc = v[:852]
-    v1 = space.zero()
+    v1 = space(0)
     v1[:852] = abc
     assert v == v1, (v, v1)
 
@@ -294,7 +298,7 @@ def do_test_large_io(p, tag, verbose = 0):
         (1313,15), 
     ]
     lengths, a_data = ((759,64), t_d) if tag =='T' else ((2048,24), x_d)
-    v = MMTestSpace(p).rand_vector()
+    v = MMTestSpace(p)('R')
     for slices in a_data:
         prod, shape = 1, ()
         for l, s in zip(lengths, slices):

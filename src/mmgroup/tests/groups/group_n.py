@@ -100,10 +100,12 @@ import time
 
 
 
-from mmgroup.structures.abstract_group import AbstractGroupWord
-from mmgroup.structures.abstract_group import AbstractGroup
+from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
+from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import  AtomDict      
 from mmgroup.structures.parse_atoms import ihex       
+from mmgroup.structures.construct_mm import iter_mm       
+from mmgroup.structures.construct_mm import load_group_name     
 
 
 from mmgroup.generators import mm_group_n_mul_atom
@@ -113,9 +115,8 @@ from mmgroup.generators import mm_group_n_mul_inv_element
 from mmgroup.generators import mm_group_n_mul_delta_pi, mm_group_n_mul_x
 from mmgroup.generators import mm_group_n_mul_inv_delta_pi
 from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
+from mmgroup.generators import mm_group_n_reduce_element
 
-
-from mmgroup.mm_group import gen_atom, tags, MMGroupWord
 
 from mmgroup.mat24 import pow_ploop
 
@@ -126,10 +127,13 @@ from mmgroup.mat24 import pow_ploop
 ######################################################################
 
 
-class GroupN_Word(AbstractGroupWord):
-    def __init__(self, **kwds):
-        self.group = kwds['group']
+class GroupN_Word(AbstractMMGroupWord):
+    def __init__(self,  tag = None, atom = None, *args, **kwds):
         self.data = np.zeros(5, dtype = np.uint32)
+        atoms = iter_mm(self.group, tag, atom)
+        for a in atoms:
+            mm_group_n_mul_atom(self.data, a)
+        mm_group_n_reduce_element(self.data)
 
     ####################################################################
     # Alternative multipication and division methods for tests
@@ -149,39 +153,20 @@ class GroupN_Word(AbstractGroupWord):
 # Modelling the group
 ######################################################################
 
-class GroupN(AbstractGroup):
+class GroupN(AbstractMMGroup):
     __instance = None
-    FRAME = re.compile(r"M?N?\<([0-9a-zA-Z _*+/-]*)\>")
-    STR_FORMAT = r"N<%s>"
+    group_name = "GroupN"
     word_type = GroupN_Word  # type of an element (=word) in the group 
-    tag_order = "tyxdp"
-    formats = {'t':str, 'y':ihex, 'x':ihex, 'd':ihex, 'p':str}
-    conversions = {
-        MMGroupWord: tuple,
-    }
-
+    __instance = None
 
     def __new__(cls):
         if GroupN.__instance is None:
-             GroupN.__instance = AbstractGroup.__new__(cls)
+             GroupN.__instance = AbstractMMGroup.__new__(cls)
         return GroupN.__instance
-
 
     def __init__(self):
         super(GroupN, self).__init__()
-        self.atom_parser = AtomDict(self.atom)
         
-
-
-    def atom(self, *data):
-        g =  GroupN_Word(group=self)
-        if len(data):
-            atom_list = gen_atom(*data)
-            for a in atom_list:
-                itag, data = a >> 28, a & 0xfffffff
-                assert 1 <= itag < 7
-                self.mul_atom(g, tags[itag], data)
-        return g
 
     def copy_word(self, g1):
         """Return deep copy of group element g1"""
@@ -198,17 +183,22 @@ class GroupN(AbstractGroup):
         In concrete group this method should be overwritten with
         a comparison of the relevant attributes of g1 and g2.
         """
+        mm_group_n_reduce_element(g1.data)
+        mm_group_n_reduce_element(g2.data)        
         return (g1.data == g2.data).all()
 
-    def as_tuples(self, g):
-        tag_data = zip(self.tag_order, g.data)
-        return [ (tag, d) for (tag, d) in tag_data  if d]
+    def iter_atoms(self, g):
+        element = g.data
+        mm_group_n_reduce_element(element)
+        if element[0]: yield 0x50000000 + element[0]
+        if element[1]: yield 0x40000000 + element[1]
+        if element[2]: yield 0x30000000 + element[2]
+        if element[3]: yield 0x10000000 + element[3]
+        if element[4]: yield 0x20000000 + element[4]
+
    
-    def str_word(self, g):
-        tuples = [ "%s_%s" % (tag, self.formats[tag](data))
-                      for tag, data in self.as_tuples(g) ]
-        s = "*".join(tuples) if len(tuples) else "1"
-        return self.STR_FORMAT % s
+    def __call__(self, tag = None, atom = None):
+       return self.word_type(tag, atom) 
 
     ####################################################################
     # group operation
@@ -225,7 +215,7 @@ class GroupN(AbstractGroup):
         return g2
 
     ####################################################################
-    # alternative multipication and division methods for tests
+    # alternative multiplication and division methods for tests
     ####################################################################
 
     def mul(self, g1, g2):
@@ -286,4 +276,9 @@ class GroupN(AbstractGroup):
             mm_group_n_mul_t(v, -int(data) % 3)
         else:
             raise TypeError("Illegal tag %s in group word" % t)
+
+
+StdGroupN = GroupN()
+GroupN_Word.group = StdGroupN
+load_group_name(StdGroupN)
 

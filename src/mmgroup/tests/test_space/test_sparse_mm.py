@@ -16,33 +16,33 @@ from __future__ import  unicode_literals
 import sys
 import os
 from numbers import Integral
-from random import randint
+from random import randint, sample
 import numpy as np
 import pytest
 
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.groups.mgroup_n import MGroupNWord 
 
-
-
+V = SparseMmV
+G = MGroupNWord
 
 #################################################################################
 # Test functions
 #################################################################################
 
 
-def direct_testdata(space = None):
+def direct_testdata():
     """Yield test triples (v, g, v*g)
 
     with v a vector, g a group element and v*g the expected product of v and g. 
     """
-    if space is None:
-        space = SparseMmSpace(7)
-    N = space.group
-    g = N.atom("d", 1) * N.atom("y", 1)
-    v = -space.unit("Y", 0, 0)
+    space = V(7)
+    g = G("d", 1) * G("y", 1)
+    v = -space("Y", 0, 0)
     yield v*g, g**(-1), v
-    g = N.atom("t", 2) 
-    v = 2*space.unit('C', 0, 1)
+    g = G("t", 2) 
+    v = 2*space('C', 0, 1)
     yield v*g, g**2, v
 
 @pytest.mark.space
@@ -66,22 +66,27 @@ def test_sparse_direct():
 
 
 
-def mmv_data(n_tests, mmv_space, v_tags, g_tags, n_comp = 1):
-    n_group =  mmv_space.group
-    p = mmv_space.p
+def mmv_data(n_tests, p, v_tags, g_tags, n_comp = 1):
+    Vp = V(p)
+    def rand_group_word(g_tags):
+        tags = sample(g_tags, randint(3,5)) 
+        return G([('x','r') for x in tags]) 
+    def rand_vector(v_tags, n_comp):
+        tags = [sample(v_tags, 1)[0] for i in range(n_comp)]
+        return Vp([(x,'r') for x in tags])       
+    
     for i in range(n_tests):
-         v = mmv_space.rand_vector(v_tags, n_comp)
-         g1 = n_group.rand_word(g_tags, 3, 5)
-         g2 = n_group.rand_word(g_tags, 3, 5)
-         yield v, g1, g2
+        g1 = rand_group_word(g_tags)
+        g2 = rand_group_word(g_tags)
+        yield rand_vector(v_tags, n_comp), g1, g2
 
-def mmv_testdata(mmv_space):
+def mmv_testdata(p):
+    Vp = V(p)
     def mu(tag, *data):
-        return mmv_space.unit(tag, *data)
+        return Vp(tag, *data)
     def na(tag, *data):
-        return n_group.atom(tag, *data) 
-    n_group =  mmv_space.group
-    p = mmv_space.p
+        return G(tag, *data) 
+    #n_group =  mmv_space.group
     testdata = [
         
         (mu('T',0,1) , na('t', 1) , na('t', 1) ),
@@ -101,11 +106,11 @@ def mmv_testdata(mmv_space):
     for d in testdata:
          yield d
     v_tags, g_tags = "ABCTXYZ", "dpxytl"
-    for d in mmv_data(100, mmv_space,  v_tags, g_tags, 3):
+    for d in mmv_data(100, p,  v_tags, g_tags, 3):
          yield d
     print(".")
     v_tags, g_tags = "ABCTXYZ", "dpxytl"
-    for d in mmv_data(3, mmv_space,  v_tags, g_tags, 1000):
+    for d in mmv_data(3, p,  v_tags, g_tags, 1000):
          yield d
     print(".")
 
@@ -131,14 +136,14 @@ TEST_PAR = [
 @pytest.mark.space
 @pytest.mark.parametrize("p, mmv_testdata", TEST_PAR )
 def test_sparse_space(p, mmv_testdata):
-    mmv = SparseMmSpace(p)
+    mmv = V(p)
 
-    v = mmv.unit('X', 0x6d3, 23)
-    w =  mmv.unit('Y', 0x126, 20)
-    v += mmv.unit('X', 0x126, 20) / 4
+    v = mmv('X', 0x6d3, 23)
+    w =  mmv('Y', 0x126, 20)
+    v += mmv('X', 0x126, 20) / 4
     maxlen = 0
     print( -17 * v / 8 + (w >> 16))
-    for i, (v, g1, g2) in enumerate(mmv_testdata(mmv)):
+    for i, (v, g1, g2) in enumerate(mmv_testdata(p)):
         al = (v * g1) * g2
         ar = v * (g1 * g2)
         maxlen = max(maxlen, len(al))

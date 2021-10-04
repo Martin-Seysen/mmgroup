@@ -7,12 +7,12 @@ import mmgroup
 import pytest
 
 
-from mmgroup import MMSpace, characteristics, INT_BITS
+from mmgroup import MMSpace, characteristics, INT_BITS, MMV, MM0
 
-space = dict()
-for p in characteristics():
-    space[p] = MMSpace(p)
-group = space[3].group
+#space = dict()
+#for p in characteristics():
+#    space[p] = MMSpace(p)
+group = MM0
 
 ITERATIONS = 10000
 ITERATIONS_NOBREAK = 1000000
@@ -20,9 +20,9 @@ ITERATIONS_NOBREAK = 1000000
 
 
 def bench(p, operation = [], iterations = ITERATIONS, break_g = True):
-    v = space[p].rand_vector()
+    v = MMV(p)('R')
     #print(operation)
-    g = group.word(*operation)
+    g = MM0(operation)
     v.mul_exp(g, iterations, break_g = break_g)
     return v.last_timing, iterations
 

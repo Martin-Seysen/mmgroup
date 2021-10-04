@@ -56,6 +56,13 @@ except (ImportError, ModuleNotFoundError):
     warnings.warn(ERR_MM_LIN, UserWarning)   
 
 
+ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
+
+try:
+    from mmgroup.mm import mm_aux_mul_sparse
+except (ImportError, ModuleNotFoundError):
+    warnings.warn(ERR_MM_SPARSE, UserWarning)   
+
 
 
 ########################################################################
@@ -459,6 +466,8 @@ def gen_unit_A(p, scalar, tag, i0 = 'r', i1 = 'r'):
       -  if i0 < i1:  
              map (tag, i0, i1) to (tag, i1, i0)
     """
+    if i0 == 'r' and i1 == None:
+        i1 ='r'
     index_type0, i0, _ = index_I(tag, i0, pos = 1)
     index_type1, i1, _ = index_I(tag, i1, pos = 2)
     if (index_type0 | index_type1) & INDEX_IS_SLICE:
@@ -483,6 +492,8 @@ def gen_unit_BC(p, scalar, tag, i0 = 'r', i1 = 'r'):
       -  if i0 or i1 encodes a random index:
              ensure i1 != i0
     """
+    if i0 == 'r' and i1 == None:
+        i1 ='r'
     index_type0, j0, _ = index_I(tag, i0, pos = 1)
     index_type1, j1, _ = index_I(tag, i1, pos = 2)
     if (index_type0 | index_type1) & INDEX_IS_SLICE:
@@ -500,7 +511,7 @@ def gen_unit_BC(p, scalar, tag, i0 = 'r', i1 = 'r'):
     return np.array(a, dtype = U32)
 
 
-def gen_unit_D(p, scalar, tag, i0 = 'r'):
+def gen_unit_D(p, scalar, tag, i0 = 'r', i1 = None):
     """Auxiliary function for function tuple_to_sparse()
 
     This function deals with tag 'D'. ('D', i) is equivalent
@@ -520,6 +531,8 @@ def gen_unit_T(p, scalar, tag, i0 = 'r', i1 = 'r'):
     the same fashion as function gen_unit_A(). Note that 
     the interpretation of parameter 'i1' depends on 'i0'.
     """
+    if i0 == 'r' and i1 == None:
+        i1 ='r'
     index_type0, i0, sign = index_T(tag, i0)
     index_type1, i1, _ = index_suboctad(tag, i1, index_type0, i0)
     if (index_type0 | index_type1) & INDEX_IS_SLICE:
@@ -536,6 +549,8 @@ def gen_unit_XYZ(p, scalar, tag, i0 = 'r', i1 = 'r'):
     implemented in the same fashion as function gen_unit_A(). 
     Here parameter 'i0' and 'i1' are idependent.
     """
+    if i0 == 'r' and i1 == None:
+        i1 ='r'
     index_type0, i0, sign = index_ploop(tag, i0)
     index_type1, i1, _ = index_I(tag, i1)
     if (index_type0 | index_type1) & INDEX_IS_SLICE:
@@ -545,7 +560,7 @@ def gen_unit_XYZ(p, scalar, tag, i0 = 'r', i1 = 'r'):
     return np.array(a, dtype = U32)
 
 
-def gen_unit_numeric(p, scalar, tag, i0 = 'r'):
+def gen_unit_numeric(p, scalar, tag, i0 = 'r', i1 = None):
     """Auxiliary function for function tuple_to_sparse()
 
     It deals with tag 'E'. So 'tag' should aways be 'E'. Tag 'E'
@@ -591,6 +606,31 @@ def gen_unit_I(p, scalar, tag, i0 = 'r', i1 = 'r'):
     return np.array(a, dtype = U32)
 
 
+
+def gen_vector_sparse(p, scalar, tag, data, p1=None):
+    """Auxiliary function for function sparse_from_indices()
+
+    It deals with tag 'S' where an array 'data' in sparse 
+    representation (modulo 'p1') is multiplied with 'scalar'
+    converted to a sparse array modulo 'p'.
+
+    Therefore we use function ``mm_aux_mul_sparse``.
+    """
+    assert tag == 'S'
+    if not p1:
+        p1 = p
+    a = np.array(data, dtype = np.uint32)
+    if p1 == p and scalar == 1:
+        return a
+    a1 = np.zeros(len(a), dtype = np.uint32)
+    res =  mm_aux_mul_sparse(p1, a, len(a), scalar, p, a1)
+    if res < 0:
+        err = "Cannot reduce sparse MM vector module %d"
+        raise ValueError(err, p)
+    return a1[:res]
+
+
+
 tuple_to_sparse_functions = {
     'A': gen_unit_A,
     'B': gen_unit_BC,
@@ -602,6 +642,7 @@ tuple_to_sparse_functions = {
     'D': gen_unit_D,
     'E': gen_unit_numeric,
     'I': gen_unit_I,
+    'S': gen_vector_sparse,
 }
 
 
@@ -645,8 +686,10 @@ def tuple_to_sparse(p, *data):
     return f(p, scalar, tag, *indices)
 
 
-
-
+                     
+    
+        
+    
 
 
 
@@ -807,6 +850,7 @@ def numeric_index_to_sparse(p, tag, i0 = SLICE):
     except NameError:
         raise NotImplementedError(ERR_MM_LIN)   
     return shape, a_out
+
 
 
 

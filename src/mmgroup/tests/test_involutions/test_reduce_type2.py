@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 
-from mmgroup import MM, MMSpace, Cocode, GCode, AutPL
+from mmgroup import MM0, MMSpace, Cocode, GCode, AutPL, MMV
 #from general import get_case, leech_type, span
 
 from mmgroup import mat24
@@ -22,7 +22,7 @@ from mmgroup.clifford12 import leech_matrix_2A_axis_type
 
 
 
-V = MMSpace(15)
+V = MMV(15)
 
 #########################################################################
 ## Auxiliary functions
@@ -347,18 +347,18 @@ def reduce_type2_ortho_fast(v2):
 
 
 v_start_tuple = ("I", 3, 2)
-v_start = V(v_start_tuple)
-v_opp = v_start * MM(('x', 0x200))
+v_start = V(*v_start_tuple)
+v_opp = v_start * MM0('x', 0x200)
 
 
 def make_testcases():
-    V = v_start.space
+    #V = v_start.space
     yield v_start.copy()
-    yield V(  ("I", 11, 9) )
+    yield V("I", 11, 9)
     for i in range(30):
-        yield v_start * MM.rand_N_0(in_N_x0 = True)
+        yield v_start * MM0("r", "N_x0")
     for i in range(200):
-        yield v_start * MM.rand_G_x0()
+        yield v_start * MM0("r", "G_x0")
 
 
 @pytest.mark.involution
@@ -376,7 +376,7 @@ def test_reduce_type2(verbose = 0):
             print("Op obtained from:", hex(w1))
             raise ValueError("Fast function reduce_type2 failed")
         assert len(w_op) <= 6, len(w_op)
-        mm_op = MM.from_data(w_op)
+        mm_op = MM0('a', w_op)
         w_op = np.array(w_op, dtype = np.uint32)
         v1 = gen_leech2_op_word(w1, w_op, len(w_op)) & 0xffffff
         if verbose: print("Reduced v", hex(v1))
@@ -420,13 +420,13 @@ def rand_Co2(quality = 5):
     The function generates a random element of the centralizer
     of ``v_0`` in ``G_x0``.
     """
-    a = MM()
+    a = MM0()
     for i in range(quality):
          pi = rand_pi_mat22()
          x1 = randint(0, 0xfff) & ~0x200
          y1 = randint(0, 0xfff) & ~0x200
          e = randint(0, 2)
-         a *= MM(('p', pi), ('x', x1), ('y', y1), ('l', e)) 
+         a *= MM0([('p', pi), ('x', x1), ('y', y1), ('l', e)]) 
     return a 
 
 
@@ -480,7 +480,7 @@ def make_testcases_ortho():
         [('p', rand_pi_mat22())],
     ]
     for d in data:
-        yield v_ortho_g(MM(*d))
+        yield v_ortho_g(MM0(d))
     for q in range(1,5):
         for i in range(200):
             yield rand_v_ortho(q)
@@ -506,7 +506,7 @@ def test_reduce_type2_ortho(verbose = 0):
             raise ValueError("Fast function reduce_type2 failed")
         
         assert len(w_op) <= 6, len(w_op)
-        mm_op = MM.from_data(w_op)
+        mm_op = MM0('a', w_op)
 
         v1 = mul_v2_mm(w, mm_op)
         if verbose: print("Reduced v", hex(v1))

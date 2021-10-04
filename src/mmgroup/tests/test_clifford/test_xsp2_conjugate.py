@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pytest
 
-from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM
+from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_is_type2
 from mmgroup.generators import gen_leech2_count_type2
@@ -26,7 +26,7 @@ from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 
 
 def rand_xsp2co1_elem():
-    return MM(*[(x,) for x in "dxpylpylpylpy"])
+    return MM0([(x,'r') for x in "dxpylpylpylpy"])
 
 def rand_xsp2_vectors(length):
     return [randint(0, 0x1ffffff) for i in range(length)]
@@ -38,7 +38,7 @@ def create_conjugate_data():
     # these generator up to sign. The sign can be verified by
     # checking that the generator has order 3
     for exp in (1, 2): 
-        g_mm = MM(('l', exp))
+        g_mm = MM0('l', exp)
         xs = [1 << i for i in range(24)]
         yield g_mm, xs         
     # test with some more random data
@@ -80,12 +80,12 @@ def conj_x_by_word(x, g_mm):
 @pytest.mark.xsp2co1
 def test_xsp2_conjugate(verbose = 0):
     """Test the conjugation of Pauli matrix with unitary matrix"""
-    l0, l1, l2 = Xsp2_Co1(), Xsp2_Co1(('l', 1)),  Xsp2_Co1(('l', 2))
+    l0, l1, l2 = Xsp2_Co1(), Xsp2_Co1('l', 1),  Xsp2_Co1('l', 2)
     assert l1**2 == l2
     assert l1**3 == l0    
     for ntest, (g_mm, xs) in enumerate(create_conjugate_data()):
         g = Xsp2_Co1(g_mm)
-        xs_g_all = [Xsp2_Co1.from_xsp(x) for x in xs]
+        xs_g_all = [Xsp2_Co1.group.from_xsp(x) for x in xs]
         xs_all = [x.as_xsp() for x in xs_g_all]
         ok = xs == xs_all
         o = g.order()
@@ -142,11 +142,11 @@ OCTAD = PLoop([0,1,2,3,4,5,6,7])
 HEXADECAD = ~OCTAD
 
 def rand_n_elem():
-    return Xsp2_Co1(*[(x,) for x in "dxpy"])
+    return Xsp2_Co1([(x,'r') for x in "dxpy"])
 
 
 def xs_vector(pl, cocode):
-    return Xsp2_Co1(("x", pl), ("d", Cocode(cocode))).as_xsp() 
+    return Xsp2_Co1([("x", pl), ("d", Cocode(cocode))]).as_xsp() 
 
 type_data = [
     (ZERO, [], 0),

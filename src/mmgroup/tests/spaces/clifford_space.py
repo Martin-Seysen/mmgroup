@@ -11,8 +11,9 @@ import numpy as np
 from numbers import Integral
 
 
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm_space import MMSpace
+#from mmgroup.mm import mm_aux_index_sparse_to_leech2
+from mmgroup import MM0
+from mmgroup.mm_space import MMSpace, MMV
 from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
 
 from mmgroup.generators import gen_leech2to3_short
@@ -25,12 +26,13 @@ from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_xsp2_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.abstract_rep_space import AbstractRepVector
 from mmgroup.structures.abstract_rep_space import AbstractRepSpace
-from mmgroup.structures.mm_space_indices import sparse_to_tuples
+#from mmgroup.structures.mm_space_indices import sparse_to_tuples
 
 
 
 
-MMSpace3 =  MMSpace(3)
+MMSpace3 =  MMV(3)
+MMGroup3 = MM0
 
 ######################################################################
 # Creating a leech lattice vector mod 3 from a tuple

@@ -145,8 +145,8 @@ Check if two vectors are equal.
 
 optional methods:
 
-rand_uniform:
-Create a uniform random vector
+set_rand_uniform:
+randomize a vector a uniform distributed
 
 
 """
@@ -160,6 +160,7 @@ import warnings
 import copy
 import numbers
 import re
+from numbers import Integral
 from random import randint, randrange, sample
 from functools import partial
 from collections import defaultdict
@@ -186,15 +187,31 @@ from mmgroup.structures.mm_space_indices import purge_sparse_entry
 
 
 
+ERR_MM_CONV = "Sparse representation of MM vectors not fully supported"
 
 
-
+try:
+    from mmgroup.mm import mm_aux_mul_sparse
+except (ImportError, ModuleNotFoundError):
+    warnings.warn(ERR_MM_CONV, UserWarning)   
 
 
 class AbstractMmRepVector(AbstractRepVector):
-    def __init__(self, space):
-        self.space = space
-        """This method should construct a zero vector"""
+    space = None # Vector space associated with vector type
+
+    def __init__(self, p, tag = 0, i0 = None, i1 = None):
+        self.set_zero(self, p)
+        add_vector(self, tag, i0, i1)
+
+    def set_zero(self, p = 0):
+        """set a vector to zero
+
+        The vector is to be interpreted as a vevtor of integers
+        modulo ``p``. In case ``p == 0`` it is to be inerpreted
+        as a vector of rational numers
+        """
+        raise NotImplementedError("Abstract method")
+
 
     def as_bytes(self):
         """Return vector as an array of bytes.
@@ -211,7 +228,7 @@ class AbstractMmRepVector(AbstractRepVector):
         """Return vector in sparse representation
 
         The sparse representation of a vector is returned as a 
-        one-dimensional numpy array of ``32`` integers. Here each 
+        one-dimensional numpy array of 32-bit integers. Here each 
         entry of that array represents a nonzero component of
         the vector. Such an entry it interpreted as described
         in method ``from_sparse`` of class |MMSpace|.
@@ -280,7 +297,7 @@ class AbstractMmRepVector(AbstractRepVector):
         """
         a = sparse_subspace(*args)
         self.space.getitems_sparse(self, a)
-        v = self.space.zero()
+        v = self.space.zero(self.p)
         self.space.setitems_sparse(v, a)
         return v
         
@@ -369,8 +386,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
     - v may be the integer 0. This means the zero vector.
     """
 
-    FRAME = re.compile(r"v?\<([0-9a-zA-Z _*+-]*)\>")
-    STR_FORMAT = r"v<%s>"
+    space_name = "AbstractMmRepSpace"
 
     vector_type = AbstractRepVector
 
@@ -380,7 +396,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
     #######################################################################
 
 
-    def __init__(self, p, group):
+    def __init__(self):
         """Create a 196884-dimensional representation of the monster
 
         All calculations are done modulo the odd number 3 <= p < 256.
@@ -388,9 +404,9 @@ class AbstractMmRepSpace(AbstractRepSpace):
         multiplication. This should be an instance of class 
         mgroup_n.MGroupN.
         """
-        assert p & 1 and 3 <= p < 256
-        super(AbstractMmRepSpace, self).__init__(p, group)
-        self.atom_parser = AtomDict(self.unit)
+        pass
+        #assert p & 1 and 3 <= p#super(AbstractMmRepSpace, self).__init__(p, group)
+        #self.atom_parser = AtomDict(self.unit)
 
     #######################################################################
     # Obtaining and setting components via sparse vectors
@@ -512,6 +528,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
 
     def via_sparse(self, v1):
         """Conversion from another vector space via sparse rep"""
+        raise NotImplementedError
         assert v1.space.p % self.p == 0
         sp = v1.space.as_sparse(v1)
         sp = (sp & 0xffffff00) + (sp & 0xff) % self.p
@@ -548,6 +565,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
     
         The 'scalar' is optional and defaults to 1.
         """        
+        raise NotImplementedError
         return  self.from_sparse(tuple_to_sparse(self.p, *data))   
 
 
@@ -562,6 +580,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
         If no argument is given, we return a uniform random vector, 
         if the class supports this.
         """
+        raise NotImplementedError
         if tags is None:
             return self.rand_uniform()
         n = randint(min_weight, max(min_weight,max_weight))
@@ -575,10 +594,15 @@ class AbstractMmRepSpace(AbstractRepSpace):
         """Create a random vector with uniform distribution"""
         raise NotImplementedError("Cannot generate a uniform random vector") 
 
+    def set_rand_uniform(self, vector):
+        """Create a random vector with uniform distribution"""
+        raise NotImplementedError("Cannot generate a uniform random vector") 
+
 
     def iadd_tuple(self, v1, t):
         """Compute v += self.unit(*t), return v"""
-        v2 = tuple_to_sparse(self.p, *t)
+        raise NotImplementedError
+        v2 = tuple_to_sparse(v1.p, *t)
         return self.additems_sparse(v1, v2)
 
     #######################################################################
@@ -590,19 +614,19 @@ class AbstractMmRepSpace(AbstractRepSpace):
         assert v1.space == self
         if not isinstance(item, tuple):
             item = (item,) 
-        shape, a_sparse = sparse_from_indices(self.p, *item)
+        shape, a_sparse = sparse_from_indices(v1.p, *item)
         self.getitems_sparse(v1, a_sparse)
-        return sparse_to_ndarray(self.p, shape, a_sparse)
+        return sparse_to_ndarray(v1.p, shape, a_sparse)
 
     def vector_set_item(self, v1, item, value):
         assert v1.space == self
         if not isinstance(item, tuple):
             item = (item,) 
-        shape, a_sparse = sparse_from_indices(self.p, *item)
+        shape, a_sparse = sparse_from_indices(v1.p, *item)
         if isinstance(value, AbstractRepVector):
             self.getitems_sparse(value, a_sparse)
         else:
-            sparse_add_data(self.p, shape, a_sparse, value)
+            sparse_add_data(v1.p, shape, a_sparse, value)
         self.setitems_sparse(v1, a_sparse) 
 
          
@@ -616,8 +640,8 @@ class AbstractMmRepSpace(AbstractRepSpace):
 
     def str_vector(self, v1):
         a_sparse = self.as_sparse(v1)
-        s = sparse_to_str(self.p, a_sparse)
-        return self.STR_FORMAT % s
+        s = sparse_to_str(v1.p, a_sparse)
+        return "%s<%d;%s>" % (self.space_name, v1.p, s)
            
 
 
@@ -678,3 +702,111 @@ def sparse_subspace(*args):
     if len(a_out) and a_out[0] == 0:
         a_out = a_out[1:]
     return a_out
+
+
+######################################################################
+# Constructing a vector
+######################################################################
+
+
+FRAME = re.compile(r"^([A-Za-z_])+\<([0-9]+;)?(.+)\>$") 
+
+MMV = None
+
+def parse_mm_space_string(space, s):
+    global MMV
+    m = FRAME.match(s)
+    if m:
+        space_name, p_str, string = (m[1], m[2], m[3])
+        p = int(p_str[:-1]) if p_str else 0
+    else:
+        err = "Cannot parse string as an MM space vector" 
+        raise ValueError(err)
+    if space_name:
+        try:
+            space = SPACES_BY_NAME[space_name]
+            f = AtomDict(partial(space, p))
+        except KeyError:
+            if MMV is None:
+                from mmgroup import MMV
+            f = AtomDict(MMV(p))
+    return eval_atom_expression(string, f)
+    
+
+
+
+ERR_MMV_TYPE = "Cannot convert type '%s' object to MM vector"
+
+
+def add_conv_vector(vector, tag, factor = 1):
+    p = vector.p
+    space = vector.space
+    if isinstance(tag, str):
+        a = parse_mm_space_string(space, tag)
+    else:
+        a = tag
+    if (a.space == space and a.p == p):
+        factor %= p
+        if factor <= 1:
+            if factor: space.iadd(vector, a)
+        else:
+            imul_scalar(a, factor)
+            space.iadd(vector, a)
+    elif (a.space, space) in MM_VECTOR_CONVERSIONS:
+        f = MM_VECTOR_CONVERSIONS[(a.space, space)]
+        return f(p, factor, a)
+    else:
+        v = a.as_sparse()
+        v1 = np.zeros(len(v), dtype = np.uint32)
+        res = mm_aux_mul_sparse(a.p, v, len(v), factor, p, v1)
+        if res < 0:
+            err = "Cannot reduce sparse MM vector modulo %d"
+            raise ValueError(err, p)
+        space.additems_sparse(vector, v1[:res])
+
+def add_vector(vector, tag = 0, i0 = None, i1 = None):
+    if not tag:
+        return
+    p = vector.p
+    space = vector.space
+    if isinstance(tag, str) and len(tag) == 1:
+        if tag in "ABCTXZYDEIS":
+            space.additems_sparse(vector,
+                tuple_to_sparse(p, tag, i0, i1))
+        elif tag == "R":
+            space.set_rand_uniform(vector)
+        elif tag == "V":
+            v1 = space.from_bytes(p, i0)
+            space.iadd(vector, v1)
+        else:
+            err = "Illegal tag '%s' for MM vector"
+            raise ValueError(err % tag)
+    elif isinstance(tag, (AbstractMmRepVector, str)):
+         add_conv_vector(vector, tag, factor = 1)
+    elif isinstance(tag, list):
+        for x in tag:
+            if isinstance(x, tuple):
+                space.additems_sparse(vector,
+                    tuple_to_sparse(p, *x))
+            elif isinstance(x, (str, AbstractMmRepVector)):
+                add_vector(vector, x)  
+            elif x:
+                raise TypeError(ERR_MMV_TYPE % type(x))                                                     
+    elif isinstance(tag, Integral):
+        add_conv_vector(vector, i0, factor = tag)
+    else:
+        raise TypeError(ERR_MMV_TYPE % type(tag))       
+
+  
+MM_VECTOR_CONVERSIONS = {
+}
+
+
+SPACES_BY_NAME = {
+}
+
+
+
+
+
+

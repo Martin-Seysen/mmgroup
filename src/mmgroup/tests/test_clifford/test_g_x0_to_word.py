@@ -8,11 +8,11 @@ import time
 import numpy as np
 import pytest
 
-from mmgroup import MM
+from mmgroup import MM0
 from mmgroup import mat24
 from mmgroup.mat24 import MAT24_ORDER 
 from mmgroup.generators import gen_leech2_reduce_type4
-from mmgroup.structures.xsp2_co1 import Xsp2_Co1_Word, Xsp2_Co1
+from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_mul_elem_word
 from mmgroup.clifford12 import xsp2co1_elem_monomial_to_xsp
@@ -40,7 +40,7 @@ def print_monomial_4096(monomial, explain = False):
         print("  " + "".join(map(str, bits)))
 
 def monomial_to_word(elem, verbose = 0):
-    assert isinstance(elem, Xsp2_Co1_Word)
+    assert isinstance(elem, Xsp2_Co1)
     assert isinstance(verbose, int) , verbose   
     if verbose:
         print("Convert monomial element g of G_x0 to word. g is:")
@@ -80,7 +80,7 @@ def monomial_to_word_C(elem):
 
 
 def elem_to_word(elem, verbose = 1):
-    assert isinstance(elem, Xsp2_Co1_Word)
+    assert isinstance(elem, Xsp2_Co1)
     assert isinstance(verbose, int) , verbose   
     group = elem.group
     len_a = 0
@@ -193,9 +193,9 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
     for i, w in enumerate(make_testwords()):
         if verbose:
             print("\nTest %d:" % (i+1))
-            m = MM.word(*w)
+            m = MM0(w)
             print("Testing word\n%s" % m)
-        elem = Xsp2_Co1(*w)
+        elem = Xsp2_Co1(w)
         if verbose:
             print("This is element\n%s" % elem)
         data_i = monomial_to_word(elem, verbose > 1)
@@ -207,7 +207,7 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
             raise
             ok = False
         if verbose or not ok:
-            m_i = MM.from_data(data_i)
+            m_i = MM0("a", data_i)
             print("Reduced inverse word\n%s" % str(m_i))
             if not ok:
                 print("Product with inverse\n%s" % elem_0)
@@ -228,19 +228,19 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
 def test_elem_to_word(ntests = 50, verbose = 0):
     print("Test function test_elem_to_word()")
     for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
-        m = MM.word(*w)
+        m = MM0(w)
         if verbose:
             print("\nTest %d:" % (i+1))
             print("Testing word\n%s" % m)
-        elem = Xsp2_Co1(*w)
+        elem = Xsp2_Co1(w)
         if i < 100:
-            assert m == MM(elem)
+            assert m == MM0(elem)
         if verbose:
             print("This is element\n%s" % elem)
         word = elem_to_word(elem, verbose > 1)
         if verbose:
-            print("Reduced word\n%s" % MM.from_data(word))
-        elem_1 = Xsp2_Co1.from_data(word)
+            print("Reduced word\n%s" % MM0('a', word))
+        elem_1 = Xsp2_Co1('a', word)
         if verbose:
             print("Recomputed element\n%s" % elem_1)
         ok = (elem == elem_1).all()
@@ -263,7 +263,7 @@ def test_elem_to_word(ntests = 50, verbose = 0):
 
 def xsp2co1_ref_power(wx, e):
     """Foolproof exponentiation in G_x0"""
-    assert isinstance(wx, Xsp2_Co1_Word)
+    assert isinstance(wx, Xsp2_Co1)
     if e > 1:
         h = xsp2co1_ref_power(wx, e >> 1)  
         return h * h * wx if e & 1 else h * h
@@ -276,7 +276,7 @@ def xsp2co1_ref_power(wx, e):
 
 def xsp2co1_fast_power(wx, e):
     """The safe exponentiation in G_x0 to be tested"""
-    assert isinstance(wx, Xsp2_Co1_Word)
+    assert isinstance(wx, Xsp2_Co1)
     power = Xsp2_Co1()
     chk_qstate12(xsp2co1_power_elem(wx._data, e, power._data))
     return power
@@ -287,7 +287,7 @@ def test_elem_power(ntests = 50, verbose = 0):
     for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
         e = randint(-2**35, 2**35)
         #print("Test ", i, "e", e)
-        wx = Xsp2_Co1(*w)
+        wx = Xsp2_Co1(w)
         power =  xsp2co1_fast_power(wx, e)
         ref_power = xsp2co1_ref_power(wx, e) # wx ** e
         assert power == ref_power, e
@@ -303,7 +303,7 @@ def test_elem_power(ntests = 50, verbose = 0):
 
 
 def xsp2co1_ref_order(wx):
-    assert isinstance(wx, Xsp2_Co1_Word)
+    assert isinstance(wx, Xsp2_Co1)
     o = wx.qs.order(120)
     if o & 1 == 0:
         o = o >> 1
@@ -318,16 +318,16 @@ def xsp2co1_ref_order(wx):
     raise ValueError(err)
 
 def xsp2co1_fast_order(wx, via_word = True):
-    assert isinstance(wx, Xsp2_Co1_Word)
+    assert isinstance(wx, Xsp2_Co1)
     if not via_word:
         return chk_qstate12(xsp2co1_order_elem(wx._data))
-    m = wx.as_mm()
+    m = MM0(wx)
     return xsp2co1_order_word(m._data, m.length)
 
 def xsp2co1_fast_half_order(wx):
-    assert isinstance(wx, Xsp2_Co1_Word)
+    assert isinstance(wx, Xsp2_Co1)
     buf = np.zeros(10, dtype = np.uint32)
-    m = wx.as_mm()
+    m = MM0(wx)
     res = chk_qstate12(xsp2co1_half_order_word(m._data, m.length, buf))
     o, l = divmod(res, 256)
     assert 0 <= l <= 10
@@ -341,7 +341,7 @@ def test_elem_order(ntests = 50, verbose = 0):
     neutral = Xsp2_Co1()
     print("Test function computation of order in G_x0")
     for i, w in enumerate(make_testwords(monomial=False, ntests=ntests)):
-        wx = Xsp2_Co1(*w)
+        wx = Xsp2_Co1(w)
         o_ref = xsp2co1_ref_order(wx)
         o = xsp2co1_fast_order(wx, via_word = i & 1)
         ok = o == o_ref

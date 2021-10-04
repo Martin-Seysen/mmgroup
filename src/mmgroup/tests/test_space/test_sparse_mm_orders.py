@@ -14,7 +14,10 @@ import threading
 import datetime
 import pytest
 
-from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
+
+
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
 
 
 NJOBS = 5
@@ -28,8 +31,8 @@ max_mmm_order = max(good_mm_orders)
 
 
 p = 241
-rep_mm = SparseMmSpace(p)
-grp = rep_mm.group
+rep_mm = SparseMmV(p)
+grp = MGroupNWord
 
 
 def do_test_mm_order(v,  m, verbose = 0):
@@ -45,23 +48,23 @@ def do_test_mm_order(v,  m, verbose = 0):
 v_tags = "ABCTTXXXYYYZZZ"
 
 def rand_v():
-    v = rep_mm.zero()
+    v = rep_mm()
     for s in v_tags:
-        v +=  rep_mm.unit(s)
+        v +=  rep_mm(s, 'r')
     return v
     
     
 def rand_m_monomial():
-    m = grp.neutral()
+    m = grp()
     for s in "pxy":
-        m *=  grp.rand_word(s)
+        m *=  grp(s, 'r')
     if not GROUP_N_ONLY :
-        m *= grp.rand_word('t', randint(1,2))
-    m *= grp.atom('l', randint(1,2))   
+        m *= grp('t', randint(1,2))
+    m *= grp('l', randint(1,2))   
     return m
 
 def rand_m():
-    m = grp.neutral()
+    m = grp()
     for i in range(4):
         m *=  rand_m_monomial()   
     return m

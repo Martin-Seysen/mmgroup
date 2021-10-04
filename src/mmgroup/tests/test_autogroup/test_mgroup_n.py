@@ -10,6 +10,7 @@ import re
 import warnings
 from numbers import Integral
 import numpy as np
+from random import choice
 
 import pytest
 
@@ -33,25 +34,30 @@ TEST_PAR = [
    (N_TESTS, RAND_TAGS)
 ]
 
+def g_sample(g, tags):
+    atoms = [(choice(tags), 'r') for i in range(7)]
+    return g(atoms)
+
+
 @pytest.mark.auto_group
 @pytest.mark.parametrize("n_tests, rand_tags", TEST_PAR )
 def test_mgroupn(n_tests, rand_tags, verbose = 0):
     global n_rules, n_inv
     n_rules =  n_inv = 0
-    g = MGroupN(0)
-    x1 = g.atom('x', 0x1234)
-    x2 = g.atom('x', 0x1fe7)
-    y1 = g.atom('y', 0x1fe1)
-    y2 = g.atom('y', 0x1e31)
-    p = g(('d', 0x3b5), ('p', 123423458))
+    g = MGroupN()
+    x1 = g('x', 0x1234)
+    x2 = g('x', 0x1fe7)
+    y1 = g('y', 0x1fe1)
+    y2 = g('y', 0x1e31)
+    p = g([('d', 0x3b5), ('p', 123423458)])
     print("x1*x2",  x1, x2,  (x1 * x2)**(-3) )
-    print( g.sample(rand_tags).reduce() )
+    print( g_sample(g, rand_tags).reduce() )
     for i in range(n_tests):
         #w1, w2, w3 = g(rand_tags), g(rand_tags), g(rand_tags)
-        w1, w2 = g.sample(rand_tags), g.sample(rand_tags)
-        w3 = g.sample(rand_tags) 
+        w1, w2 = g_sample(g, rand_tags), g_sample(g, rand_tags)
+        w3 = g_sample(g, rand_tags) 
         assert g(str(w1)) == w1, (g(str(w1)), w1)
-        assert g(*w1.as_tuples()) == w1
+        assert g(w1.as_tuples()) == w1
         l_assoc = ((w1 * w2) * w3).reduce()
         r_assoc = w1 * (w2 * w3)
         ok = l_assoc == r_assoc

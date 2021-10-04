@@ -11,10 +11,12 @@ import pytest
 
 
 from mmgroup.mm import mm_sub_get_table_xi
-from mmgroup.tests.spaces.spaces import MMTestSpace
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
 
-space = MMTestSpace(3)
-group = space.group
+
+space = SparseMmV(3)
+group = MGroupNWord
 
  
 
@@ -108,11 +110,11 @@ def op_xi_table(v, exp, verbose):
     w_tuple = xi_tuple_to_tuple(w_xi)
     if verbose:
        print("result tuple =", sign, w_tuple, ", xi_tuple =", w_xi)
-    return (-1)**sign * space.unit(*w_tuple)
+    return (-1)**sign * space(*w_tuple)
 
 
 def op_xi_ref(v, exp):
-    g = group.word(("l", exp))
+    g = group("l", exp)
     return v * g 
 
 
@@ -137,14 +139,14 @@ def xi_testcases(n_cases = 50):
         (("X", 0x444, 10), 2),
     ]
     for v0, exp in test_cases:
-        yield space.unit(*v0), exp
+        yield space(*v0), exp
     for i in range(n_cases // 2):
         i, j, e = randint(0,14), randint(0, 63), randint(1,2)
-        yield space.unit("T", i, j), e
+        yield space("T", i, j), e
     tags = "BCTX" 
     for v_tag in tags:  
         for i in range(n_cases):
-            v = space.unit(v_tag, "r")
+            v = space(v_tag, "r")
             for exp in (1,2):
                 yield v, exp
  

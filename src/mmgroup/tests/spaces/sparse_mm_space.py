@@ -12,12 +12,13 @@ from random import randint, randrange, sample
 from functools import partial
 from collections import defaultdict
 
-from mmgroup.tests.groups.mgroup_n import MGroupN
+from mmgroup.tests.groups.mgroup_n import MGroupNWord, StdMGroupN
 from mmgroup.structures.abstract_rep_space import mod_rand_invertible
 from mmgroup.structures.abstract_rep_space import mod_rand_unit
 from mmgroup.structures.abstract_rep_space import mod_pwr2
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
+from mmgroup.structures.abstract_mm_rep_space import add_vector
 from mmgroup.structures.mm_space_indices import purge_sparse_entry
 from mmgroup.structures.parse_atoms import AtomDict
 from mmgroup.structures.parse_atoms import eval_atom_expression  
@@ -36,10 +37,21 @@ from mmgroup.generators import gen_xi_w2_gray as w2_gray
 ######################################################################
 
 class SparseMmVector(AbstractMmRepVector):
-    def __init__(self, space):
-        __slots__ = 'space', 'p', 'data'
-        self.space = space
-        p = self.space.p
+    group = StdMGroupN
+    __slots__ =  'p', 'data'
+    ERR_P = "Illegal modulus %d for MM vector space"
+
+    def __init__(self, p, tag = 0, i0 = None, i1 = None):
+        if (p & 1) == 0 or not 2 < p < 256:
+            raise ValueError(self.ERR_P % p)
+        self.p = p
+        self.data = defaultdict(int)
+        add_vector(self, tag, i0, i1)
+
+    def set_zero(self, p):
+        if (p & 1) == 0 or not 2 < p < 256:
+            raise ValueError(self.ERR_P % p)
+        self.p = p
         self.data = defaultdict(int)
 
     def __len__(self):
@@ -587,7 +599,7 @@ non_monomial_dict = {
 # The default instance of the monster group
 ######################################################################
 
-default_monster_group = MGroupN(0)
+default_monster_group = StdMGroupN
 
 try:
     from mmgroup.mm_space import standard_mm_group
@@ -597,7 +609,7 @@ except ImportError:
     warnings.warn(err, UserWarning)
 else:
     default_monster_group.target_group = standard_mm_group 
-    default_monster_group.set_preimage(standard_mm_group, tuple)
+    #default_monster_group.set_preimage(standard_mm_group, tuple)
 
 ######################################################################
 # class SparseMmSpace
@@ -612,35 +624,35 @@ class SparseMmSpace(AbstractMmRepSpace):
     YET TO BE DOCUMENTED !!!
 
     """
-
+    group = StdMGroupN
     vector_type = SparseMmVector
+    space_name = "MVSp"
 
-    def __init__(self, p, group = None):
+    def __init__(self):
         """Create a 196884-dimensional representation of the monster
 
         All calculations are done modulo the odd number p
         """
-        if group is None:
-            group = default_monster_group
-            self.target_group = group.target_group 
-        super(SparseMmSpace, self).__init__(p, group)
+        pass
 
     #######################################################################
     # Creating vectors 
     #######################################################################
 
 
-    def zero(self):
-        return self.vector_type(self)
+    def zero(self, p):
+        return self.vector_type(p, 0)
         
 
     def copy_vector(self, v1):
         """Return deep copy of group element v1"""
-        assert v1.space == self
-        v2 = self.zero()
+        v2 = self.vector_type(v1.p, 0)
         v2.data.update(v1.data)
         return v2
 
+
+    def __call__(self, p, tag = 0, i0 = None, i1 = None):
+        return self.vector_type(p, tag, i0, i1)
 
     #######################################################################
     # getitem and setitem
@@ -720,7 +732,7 @@ class SparseMmSpace(AbstractMmRepSpace):
         to_delete = []
         data = v1.data
         for sp, value in data.items():
-            value %= self.p
+            value %= v1.p
             data[sp] = value
             if value == 0:
                 to_delete.append(sp)
@@ -734,7 +746,7 @@ class SparseMmSpace(AbstractMmRepSpace):
         return self.reduce(v1)
  
     def imul_scalar(self, v1, a):
-        a = int(a % self.p)
+        a = int(a % v1.p)
         for sp, value in v1.data.items():
             v1.data[sp] = value * a
         return self.reduce(v1)
@@ -746,7 +758,7 @@ class SparseMmSpace(AbstractMmRepSpace):
 
     def iter_as_sparse(self, v1):
         for key_, value in v1.data.items():
-            value %= self.p
+            value %= v1.p
             if value:
                 yield key_ + value
 
@@ -758,7 +770,7 @@ class SparseMmSpace(AbstractMmRepSpace):
     #######################################################################
 
     def imul_group_monomial(self, v, g_list, w):
-        p = self.p
+        p = v.p
         g_tag_list = [(g, gtag_dict[g.tag]) for g in g_list]
         wd = w.data
         wd.clear()
@@ -775,7 +787,7 @@ class SparseMmSpace(AbstractMmRepSpace):
             
 
     def imul_group_atom(self, v, g, w):
-        p = self.p
+        p = v.p
         w.data.clear()
         gtag = gtag_dict[g.tag]
         if g.tag in "tl":
@@ -810,12 +822,12 @@ class SparseMmSpace(AbstractMmRepSpace):
         'self' and for elements g of the group 'self.group' only.
         """
         g_mon = []
-        v, w = v1, self.zero()
-        p = self.p
+        v, w = v1, self.zero(v1.p)
+        p = v1.p
         data = v.data
         for i, coord in data.items():
             data[i] = coord % p
-        for atom in g.iter_atoms():
+        for atom in g.iter_generators():
             if not atom.tag in "tl":
                 g_mon.append(atom)
             else:
@@ -843,7 +855,12 @@ class SparseMmSpace(AbstractMmRepSpace):
         """
         v1 = v1.reduce()
         v2 = v2.reduce()
-        return v1.data == v2.data
+        return v1.p == v2.p and v1.data == v2.data
         
         
-        
+StdSparseMmSpace = SparseMmSpace()
+SparseMmVector.space = StdSparseMmSpace
+
+def SparseMmV(p):
+    return partial(SparseMmVector, p)
+

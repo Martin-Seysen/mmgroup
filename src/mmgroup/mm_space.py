@@ -26,7 +26,7 @@ If ``V`` is an instance of class  |MMSpace| then the user may call
 ``V`` with a variable number of arguments to create a vector in
 ``V``. Here each argument evaluates to a vector in ``V`` and
 the sum of these vectors is returned. Such a vector is an instance
-of class |MMSpaceVector|. An argument passed to ``V`` may be a 
+of class |MMVector|. An argument passed to ``V`` may be a 
 tuple ``(factor, tag, i0, i1)``. Here ``tag`` is a single 
 capital letter and indices ``i0``, ``i1`` are unsigned integers; 
 these three quantities describe a basis vector of the space ``V``.
@@ -181,7 +181,7 @@ import warnings
 import time
 from timeit import default_timer
 from importlib import import_module
-
+from functools import partial
 
 
 
@@ -189,7 +189,9 @@ from importlib import import_module
 
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
-from mmgroup.mm_group  import MMGroup, MMGroupWord, MM
+from mmgroup.structures.mm0_group  import MM0Group, MM0
+from mmgroup.structures.abstract_mm_group import is_mmgroup_word
+from mmgroup.structures.abstract_mm_rep_space import add_vector
 
 from mmgroup.generators import rand_get_seed
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
@@ -210,7 +212,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 #standard_seed = mm_rng_make_seed()
-standard_mm_group = MM
+standard_mm_group = MM0
 
 
 TAGS = " ABCTXZY"
@@ -220,30 +222,64 @@ TAGS = " ABCTXZY"
 # Importing a C wrapper for a specific characteristic 'p'
 ######################################################################
 
-mm_op = {}
+class MMVectorOps:
+    def __init__(self, p):
+        self.p = p
+        mm = mm_op_modules[p]  # fetch mm_op_modules[p]
+        #self.mm = mm_op_modules[p]
+                            # if we do this, we cannot pickle vectors
+        self.MMV_INTS = mm.MMV_INTS 
+        self.op_vector_add = mm.op_vector_add
+        self.op_scalar_mul = mm.op_scalar_mul
+        self.op_word = mm.op_word
+        self.op_compare = mm.op_compare
+        self.op_t_A = mm.op_t_A
+        self.op_delta = mm.op_delta
+        self.op_pi = mm.op_pi
+        self.op_t = mm.op_t
+        self.op_xi = mm.op_xi
+        self.op_xy = mm.op_xy
+        self.op_omega = mm.op_omega
+        self.op_word_tag_A = mm.op_word_tag_A
+        self.mm_vector = partial(mm_vector, p)
+        del mm
+
+
+
+mm_op_modules = {}
+mm_ops = {}
 all_characteristics_found = None
 
-def mm_wrapper(p):
-    """Return the module dealing with 'characteristic' p"""
-    try:
-        return mm_op[p]
-    except KeyError:
-        mm_op[p] = import_module('mmgroup.mm%d' % p)
-        return mm_op[p] 
 
 def characteristics():
     """Return list of all *characteristics* ``p`` supported"""
-    global all_characteristics_found
+    global all_characteristics_found, mm_op_modules, mm_ops
     if all_characteristics_found is None:
         for k in range(2,9):
             p = (1 << k) - 1
-            if not p in mm_op:
+            if not p in mm_op_modules:
                 try:
-                    mm_op[p] = import_module('mmgroup.mm%d' % p)
+                    mm_op_modules[p] = import_module('mmgroup.mm%d' % p)
                 except ModuleNotFoundError:
                     pass
-        all_characteristics_found = sorted(mm_op.keys())
+            if p in mm_op_modules:
+                mm_ops[p] = MMVectorOps(p)
+        all_characteristics_found = sorted(mm_op_modules.keys())
     return all_characteristics_found
+
+def get_mm_ops(p):
+    try:
+        return mm_ops[p]
+    except KeyError:
+        characteristics()
+        if p in mm_ops:
+            return mm_ops[p]
+        if isinstance(p, Integral):
+            err = "Operation mod %s supported in class MMVector"
+            raise ValueError(err % p)
+        else:
+            err = "Modulus for class MMVector must be an integer"
+            raise TypeError(err)
 
 
 ######################################################################
@@ -264,7 +300,10 @@ def complete_import():
 # Modelling a vector of the 196884-dimensional rep of the monster
 ######################################################################
 
-class MMSpaceVector(AbstractMmRepVector):
+
+    
+
+class MMVector(AbstractMmRepVector):
     """Models a vector in a space of type |MMSpace|.
 
     Such a vector should be constructed by calling an instance ``V``
@@ -298,7 +337,7 @@ class MMSpaceVector(AbstractMmRepVector):
     convert ``v`` to an one-dimensional array of ``8``-bit 
     integers.
     Method ``from_bytes`` of class |MMSpace| constructs a
-    vector ``v`` as an instance of class |MMSpaceVector| from
+    vector ``v`` as an instance of class |MMVector| from
     a one-dimensional array of integers of length ``196884``.
 
     :var space:
@@ -311,10 +350,13 @@ class MMSpaceVector(AbstractMmRepVector):
        constructing vectors in the modular representation space
        ``V`` of the monster group.
     """
-    __slots__ = "space", "data"
-    def __init__(self, space):
-        self.space = space
-        self.data = mm_vector(self.space.p)
+    __slots__ = "p", "data", "ops"
+    group = MM0
+    def __init__(self, p, tag = 0, i0 = None, i1 = None):
+        self.ops = get_mm_ops(p)
+        self.p = p
+        self.data = mm_vector(p)
+        add_vector(self, tag, i0, i1)
 
     def check(self):
         """Check if the vector is correct
@@ -371,8 +413,8 @@ class MMSpaceVector(AbstractMmRepVector):
         if import_pending:
             complete_import()
         v1 = np.zeros(24*4, dtype = np.uint64)
-        self.space.op_t_A(self.data, e % 3, v1)
-        res = leech2matrix_eval_A(self.space.p, v1, v2)
+        self.ops.op_t_A(self.data, e % 3, v1)
+        res = leech2matrix_eval_A(self.p, v1, v2)
         if res < 0:
             err = "Method eval_A failed on vector in rep of monster"
             raise ValueError(err)
@@ -406,16 +448,16 @@ class MMSpaceVector(AbstractMmRepVector):
         This is a quick disambiguation of the type of a 2A axis. The 
         function may return any axis type if this is not  a 2A axis.
         """
-        if self.space.p != 15:
+        if self.p != 15:
             err = "Method supported for characteristic p = 15 only"
             raise ValueError(err)
         e, v = e % 3, self.data
         if e:
             v = np.zeros(24*4, dtype = np.uint64)
-            self.space.op_t_A(self.data, e, v)     
+            self.ops.op_t_A(self.data, e, v)     
         if import_pending:
             complete_import()
-        t = leech_matrix_2A_axis_type(self.space.p, v)
+        t = leech_matrix_2A_axis_type(self.p, v)
         if t == 0:
             return None
         s = str((t >> 28) & 15) + "?ABCDEFGHIJKLMNO"[(t >> 24) & 15]
@@ -498,7 +540,7 @@ class MMSpace(AbstractMmRepSpace):
                              ``tuple_to_index`` for converting a tuple to         
                              a linear index.              
       ---------------------- --------------------------------------------- 
-       class |MMSpaceVector| A deep copy of the given vector is returned.            
+       class |MMVector| A deep copy of the given vector is returned.            
       ---------------------- --------------------------------------------- 
        ``str``               For an vector ``v`` in ``V`` we have      
                              ``V(str(v)) == v``. 
@@ -520,7 +562,8 @@ class MMSpace(AbstractMmRepSpace):
     the Golay Code, it is probably easiest to compute in the 
     centralizer of ``('I', 3, 2)``.
     """
-    vector_type = MMSpaceVector
+    vector_type = MMVector
+    space_name = "MV"
 
     check_errors = {
         -1: "Bad input value p",
@@ -530,77 +573,46 @@ class MMSpace(AbstractMmRepSpace):
         -5: "Symmetric part of vector is not symmetric",
     }
 
-    extend_modulus = {
-        3:3, 7:7, 15:15, 31:31, 63:63, 127:127, 255:255,
-        5:15, 9:63, 17:255,
-    }
 
-    tag_indices = { # tag: (start, nrows, ncolumns, stride)
-       "A": (     0,   24, 24, 32),
-       "B": (   768,   24, 24, 32),
-       "C": (  1536,   24, 24, 32),
-       "T": (  2304,  759, 64, 32),
-       "X": ( 50880, 2048, 24, 32),
-       "Z": (116416, 2048, 24, 32),
-       "Y": (181952, 2048, 24, 32),
-    }
 
-    def __init__(self, p, group = None):
+    def __init__(self):
         """Create a 196884-dimensional representation of the monster
 
         All calculations are done modulo the odd number p
         """
-        try: 
-            self.p = self.extend_modulus[p]
-            self.p_original = p
-        except KeyError:
-            raise KeyError("Modulus %s not supported for monster group" % p)
-        if group is None:
-            group = standard_mm_group 
-        assert isinstance(group, MMGroup) 
-        super(MMSpace, self).__init__(self.p, group)
-        mm = mm_wrapper(p)  # fetch mm_op[p]
-        #self.mm = mm_wrapper(self.p)
-                            # if we do this, we cannot pickle vectors
-        self.MMV_INTS = mm_op[self.p].MMV_INTS 
-        self.op_vector_add = mm_op[self.p].op_vector_add
-        self.op_scalar_mul = mm_op[self.p].op_scalar_mul
-        self.op_word = mm_op[self.p].op_word
-        self.op_compare = mm_op[self.p].op_compare
-        self.op_t_A = mm_op[self.p].op_t_A
-        del mm
+        pass
 
     @property
-    def mm(self):
+    def mm(self, p):
         """Return module object mmgroup.mm<p> for characteristic p"""
-        return mm_op[self.p]
+        characteristics()
+        return mm_op[p]
 
 
     #######################################################################
     # Creating vectors 
     #######################################################################
 
-    def zero(self):
+    def zero(self, p):
         """Return the zero vector"""
-        return MMSpaceVector(self)
+        return MMVector(p, 0)
 
     def copy_vector(self, v1):
         assert v1.space == self
-        v = MMSpaceVector(self)
+        v = MMVector(v1.p, 0)
         np.copyto(v.data, v1.data)
         return v
 
-    def rand_uniform(self, seed = None):
+    def set_rand_uniform(self, v1, seed = None):
         """Return a uniform distributed random vector.
 
         ``seed`` is a seed for the random generator. The current version 
         supporst the default seed only. Here some random data taken from 
         the operating system and from the clock are entered into the seed.
         """
-        v = MMSpaceVector(self)
         seed = rand_get_seed(seed)
-        mm_aux_random_mmv(self.p, v.data, seed) 
-        return v
+        mm_aux_random_mmv(v1.p, v1.data, seed) 
+        return v1
 
     #######################################################################
     # Obtaining and setting components via sparse vectors
@@ -619,9 +631,8 @@ class MMSpace(AbstractMmRepSpace):
 
         A zero entry in the array 'a_indices' is ignored.
         """
-        assert v1.space == self
         if len(a_indices):
-            mm_aux_mmv_extract_sparse(self.p, v1.data, a_indices,
+            mm_aux_mmv_extract_sparse(v1.p, v1.data, a_indices,
                 len(a_indices))
         return a_indices 
 
@@ -637,7 +648,7 @@ class MMSpace(AbstractMmRepSpace):
         Here vector v is a standard vector in this space.
         """
         if len(a_indices):
-            mm_aux_mmv_add_sparse(self.p, a_indices, len(a_indices),
+            mm_aux_mmv_add_sparse(v.p, a_indices, len(a_indices),
                 v.data)
         return v
 
@@ -649,9 +660,8 @@ class MMSpace(AbstractMmRepSpace):
         set to the values given in 'a_indices'. 
         The array 'a_indices' is not changed.
         """
-        assert v.space == self
         if len(a_indices):
-            mm_aux_mmv_set_sparse(self.p, v.data, a_indices, 
+            mm_aux_mmv_set_sparse(v.p, v.data, a_indices, 
                 len(a_indices))
         return v
 
@@ -667,7 +677,7 @@ class MMSpace(AbstractMmRepSpace):
 
         """
         sp = np.zeros(196884, dtype = np.uint32)
-        length = mm_aux_mmv_to_sparse(self.p, v1.data, sp)
+        length = mm_aux_mmv_to_sparse(v1.p, v1.data, sp)
         return sp[:length]
 
 
@@ -677,11 +687,15 @@ class MMSpace(AbstractMmRepSpace):
 
 
     def iadd(self, v1, v2):
-        self.op_vector_add(v1.data, v2.data)
-        return v1
+        if v1.p == v2.p:
+            v1.ops.op_vector_add(v1.data, v2.data)
+            return v1
+        else:
+            err = "Cannot add vectors modulo differnt numbers"
+            raise ValueError(err)
  
     def imul_scalar(self, v1, a):
-        self.op_scalar_mul(a % self.p, v1.data)
+        v1.ops.op_scalar_mul(a % v1.p, v1.data)
         return v1
            
     #######################################################################
@@ -696,13 +710,17 @@ class MMSpace(AbstractMmRepSpace):
         This method is called for elements v1 of the space
         'self' and for elements g of the group 'self.group' only.
         """
-        work =  mm_vector(self.p)
-        assert v1.space == self
-        g = self.group(g)
-        assert isinstance(g, MMGroupWord) 
-        self.op_word(v1.data, g._data, g.length, 1, work)
-        return v1  
-
+        work =  mm_vector(v1.p)
+        if isinstance(g, MM0):
+            v1.ops.op_word(v1.data, g._data, g.length, 1, work)
+            return v1
+        elif is_mmgroup_word(g):
+            a = np.fromiter(g.iter_atoms, dtype = np.uint32)
+            v1.ops.op_word(v1.data, a, len(a), 1, work)
+            return v1
+        err = "Multiplicator for MM vector must be int or in MM group"   
+        raise TypeError(err) 
+ 
 
     def vector_mul_exp(self, v1, g, e, break_g = False):
         """Compute product v1 * g**e of vector v1 and group word g.
@@ -721,11 +739,10 @@ class MMSpace(AbstractMmRepSpace):
         v1 has an attribute v1.last_timing containing the run
         time of the C part of this operation in seconds.
         """
-        work = mm_vector(self.p)
+        work = mm_vector(v1.p)
         assert v1.space == self
         assert -1 << 31 < e < 1 << 31
-        g = self.group(g)
-        assert isinstance(g, MMGroupWord) 
+        assert isinstance(g, MM0) 
         length = g.length
         if break_g:
             g._extend(length + 1)
@@ -733,7 +750,7 @@ class MMSpace(AbstractMmRepSpace):
             length += 1
         t_start = time.perf_counter()
         #t_start = default_timer()
-        self.op_word(v1.data, g._data, length, e, work)
+        v1.ops.op_word(v1.data, g._data, length, e, work)
         v1.last_timing = time.perf_counter() - t_start
         #v1.last_timing = default_timer() - t_start
         return v1  
@@ -749,9 +766,9 @@ class MMSpace(AbstractMmRepSpace):
         This method is called for elements v1 and v2 of the space
         'self' only.
         """
-        if self.p == self.p_original:
-            return not self.op_compare(v1.data, v2.data) 
-        return self.as_bytes(v1) == self.as_bytes(v2)
+        if v1.p == v2.p:
+            return not v1.ops.op_compare(v1.data, v2.data) 
+        return False
 
     #######################################################################
     # Conversion from and to byte format
@@ -764,12 +781,10 @@ class MMSpace(AbstractMmRepSpace):
         shape = (196884,).
         """
         b = np.zeros(196884, dtype = np.uint8)
-        mm_aux_mmv_to_bytes(self.p, v1.data, b)
-        if self.p != self.p_original:
-            b %= self.p_original
+        mm_aux_mmv_to_bytes(v1.p, v1.data, b)
         return b
 
-    def from_bytes(self, b):
+    def from_bytes(self, p, b):
         """Construct a vector from a byte array
 
         Here ``b`` is an array-like object representing a 
@@ -781,16 +796,16 @@ class MMSpace(AbstractMmRepSpace):
         as described method ``tuple_to_index``. 
 
         The function returns the vector given by the array ``b`` in
-        this vector space as an instance of class |MMSpaceVector|.
+        this vector space as an instance of class |MMVector|.
         """
         b = np.array(b, dtype = np.int32)
         if len(b.shape) != 1:
             raise TypeError("Bad shape of byte data vector")
         if len(b) != 196884:
             raise TypeError("Bad length of byte data vector")
-        b = np.array(b % self.p, dtype = np.uint8)
-        v =self.zero()
-        mm_aux_bytes_to_mmv(self.p, b, v.data)
+        b = np.array(b % p, dtype = np.uint8)
+        v =self.zero(p)
+        mm_aux_bytes_to_mmv(p, b, v.data)
         return v
 
  
@@ -804,13 +819,13 @@ class MMSpace(AbstractMmRepSpace):
 
         Raise ValueError if an error is found in vector 'self'.
         """
-        if len(v1.data) != self.MMV_INTS + 1:
+        if len(v1.data) != v1.ops.MMV_INTS + 1:
             err = "MM vector has wrong length"
             raise MemoryError(err)   
         if v1.data[-1] != PROTECT_OVERFLOW:
             err = "Buffer overflow in MM vector detected"
             raise MemoryError(err)
-        result = mm_aux_check_mmv(self.p, v1.data)
+        result = mm_aux_check_mmv(v1.p, v1.data)
         #print("check result is", result)
         if not result:
             return
@@ -823,13 +838,7 @@ class MMSpace(AbstractMmRepSpace):
  
     def reduce(self, v1):
         """Convert vector v1 to a unique reduced form"""
-        if self.p == self.p_original:
-            mm_aux_reduce_mmv(self.p, v1.data)
-        else:
-            b = np.zeros(196884, dtype = np.uint8)
-            mm_aux_mmv_to_bytes(self.p, v1.data, b)
-            b %= self.p_original
-            mm_aux_bytes_to_mmv(self.p, b, v1.data)
+        mm_aux_reduce_mmv(v1.p, v1.data)
         return v1
 
     #######################################################################
@@ -921,7 +930,7 @@ class MMSpace(AbstractMmRepSpace):
         this method returns ``i0`` on input ``('E', i0)``, for
         ``0 <= i0 < 196884``.
 
-        If ``tag`` is an instance of class |MMSpaceVector|, which is
+        If ``tag`` is an instance of class |MMVector|, which is
         a nonzero multiple of a basis vector, then the linear index 
         corresponding to that basis vector is returned.        
         """
@@ -934,7 +943,7 @@ class MMSpace(AbstractMmRepSpace):
                 return i0
             elif tag == "D" and 0 <= i0 < 24:
                 i = (1 << 25) + (i0 << 14) + (i0 << 8) 
-        elif isinstance(tag, MMSpaceVector):
+        elif isinstance(tag, MMVector):
             sp = tag.as_sparse()
             if len(sp) == 1:
                 i = sp[0] 
@@ -962,7 +971,7 @@ class MMSpace(AbstractMmRepSpace):
 
         See method ``tuple_to_index`` for details.
 
-        If ``index`` is an instance of class |MMSpaceVector|, which is
+        If ``index`` is an instance of class |MMVector|, which is
         a nonzero multiple of a basis vector, then the index of that 
         basis vector is taken.        
         """
@@ -972,7 +981,7 @@ class MMSpace(AbstractMmRepSpace):
                 return TAGS[i >> 25], (i >> 14) & 0x7ff, (i >> 8) & 0x3f
             else:
                 raise ValueError("MM vector index out of range")
-        elif isinstance(index, MMSpaceVector):
+        elif isinstance(index, MMVector):
             sp = index.as_sparse()
             if len(sp) == 1:
                 i = sp[0]
@@ -1008,7 +1017,7 @@ class MMSpace(AbstractMmRepSpace):
                 i = mm_aux_index_extern_to_sparse(i0)
             elif tag == "D" and 0 <= i0 < 24:
                 i = (1 << 25) + (i0 << 14) + (i0 << 8) 
-        elif isinstance(tag, MMSpaceVector):
+        elif isinstance(tag, MMVector):
             sp = tag.as_sparse()
             if len(sp) == 1:
                 i = sp[0]
@@ -1025,7 +1034,7 @@ class MMSpace(AbstractMmRepSpace):
         for a basis vector in the representation :math:`\rho_p` as in 
         method ``tuple_to_index``. Otherwise the tuple ``(tag, i0, i1)`` 
         is interpreted a standard index for such a basis vector.
-        If ``tag`` is an instance of class |MMSpaceVector|, which is
+        If ``tag`` is an instance of class |MMVector|, which is
         a nonzero multiple of a basis vector, then that basis vector 
         is taken.
  
@@ -1072,10 +1081,12 @@ class MMSpace(AbstractMmRepSpace):
         raise ValueError(err)
 
 
-_dict_MMS = {}
+StdMMSpace = MMSpace()
+MMVector.space = StdMMSpace
 
 
-def MMS(p):
+
+def MMV(p):
    """Return a standard space ``MMSpace(p)`` 
 
    The function returns an instance of class |MMSpace| of
@@ -1086,12 +1097,7 @@ def MMS(p):
    Different calls to this function with the same parameter
    ``p`` return exactly the same object.
    """
-   global _dict_MMS
-   try:
-       return _dict_MMS[p]
-   except KeyError:
-       _dict_MMS[p] = MMSpace(p)
-       return _dict_MMS[p]
+   return partial(MMVector, p)
 
 
 

@@ -8,16 +8,16 @@ import os
 import collections
 import re
 import warnings
-from random import randint
+from random import randint, shuffle
 import pytest
 import numpy as np
 
-from mmgroup import MMSpace, MMGroup
+from mmgroup import MMSpace, MMGroup, MM0, MMV
 from mmgroup.tests.spaces.leech_space import mul24_mmgroup
 
 
-M = MMGroup()
-V = MMSpace(3, M)
+M = MM0
+V = MMV(3)
 
 
 def check_abs_equal(v, v_ref):
@@ -33,23 +33,23 @@ def check_abs_equal(v, v_ref):
         
 
 def do_test_leech_variants(v, v_leech):
-    index = V.tuple_to_index(v)
-    v1 = V.index_to_short(index)
+    index = MMSpace.tuple_to_index(v)
+    v1 = MMSpace.index_to_short(index)
     check_abs_equal(v1, v_leech)
-    tuple_= V.index_to_tuple(v)
-    v2 = V.index_to_short(*tuple_)
+    tuple_= MMSpace.index_to_tuple(v)
+    v2 = MMSpace.index_to_short(*tuple_)
     check_abs_equal(v2, v_leech)
 
 
 
 def one_test_leech_op(v, g, verbose = 0):
     """``v`` a vector in ``V``, ``g`` an element of ``M``""" 
-    assert v in V
-    assert g in M
-    v_leech =  V.index_to_short(v)
+    #assert v in V
+    #assert g in M
+    v_leech =  MMSpace.index_to_short(v)
     do_test_leech_variants(v, v_leech)
     vg = v * g
-    vg_leech_ref = V.index_to_short(vg)
+    vg_leech_ref = MMSpace.index_to_short(vg)
     if verbose:
         print("\ntest ", g)
         print(v_leech)
@@ -63,8 +63,10 @@ def one_test_leech_op(v, g, verbose = 0):
 def leech_op_testdata(n_tests = 100):
     for i in range(n_tests):
         for vtag in "BCTTTXXX":
-            v = V((vtag,))
-            g = M.sample("dpyxl")
+            v = V(vtag,'r')
+            l = [x for x in  "dpyxl"]
+            shuffle(l)
+            g = M([(x, 'r') for x in l])
             yield v, g
     
 

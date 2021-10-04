@@ -15,7 +15,7 @@ from collections import defaultdict
 import numpy as np
 import pytest
 
-from mmgroup import MM, AutPL, PLoop, Cocode, Xsp2_Co1
+from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, MMV
 from mmgroup.generators import gen_leech2_type
 from mmgroup.tests.test_involutions.make_involution_samples import invariant_count_type2
 from mmgroup.clifford12 import xsp2co1_elem_find_type4
@@ -42,11 +42,11 @@ INVOLUTION_SAMPLES = involution_samples.INVOLUTION_SAMPLES
 
 def make_involution_samples():
     for invar, _, g in INVOLUTION_SAMPLES:
-        g = MM(g)
+        g = MM0(g)
         yield g, invar
         n_samples = 40 if invariant_status(invar) == 3 else 20
         for i in range(n_samples): 
-            t = MM.rand_G_x0()
+            t = MM0('r', 'G_x0')
             h = g**t
             h.in_G_x0()
             yield  h, invar
@@ -98,13 +98,13 @@ def conj_G_x0_to_Q_x0(g):
     a = np.zeros(7, dtype = np.uint32)
     lv = chk_qstate12(xsp2co1_elem_conj_G_x0_to_Q_x0(gg._data, a))
     length, q = lv >> 25, lv & 0x1ffffff
-    h = MM.from_data(a[:length])
-    gh = MM(g)._conj(h)
+    h = MM0('a', a[:length])
+    gh = MM0(g) ** h
     assert gh.in_Q_x0()
-    assert gh == MM(('q', q))
+    assert gh == MM0('q', q)
     return h
 
-Z = MM(('x', 0x1000))
+Z = MM0('x', 0x1000)
 
 def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     gg = Xsp2_Co1(g)
@@ -156,8 +156,8 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
         ok = v > 0
         if not ok: 
             err = "xsp2co1_elem_find_type4() not successful"
-        mv = MM(("c", v))**-1
-        h = g._mul(mv)
+        mv = MM0("c", v)**-1
+        h = g * mv
         if ok and istate > 1: 
             ok = ok and  h.in_N_x0(), (g, h, ref_invariants)
             if not ok:
@@ -166,12 +166,12 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
             #print("%-28s" % h, ref_invariants)
             if ok:
                 h1 = conj_G_x0_to_Q_x0(g)
-                ok = ok and  (g._conj(h1)).in_Q_x0()
+                ok = ok and  (g ** h1).in_Q_x0()
                 if not ok:
                     err = "Could not conjugate element to Q_x0"
     if ok and istate == 3:
-        a = gg.conjugate_2B_involution()
-        ok = ok and  g._conj(a) == Z
+        a = gg.conjugate_2B_involution(MM0)
+        ok = ok and  g ** a == Z
         if not ok:
            err = "Could not conjugate element to centre of Q_x0" 
     if not ok:

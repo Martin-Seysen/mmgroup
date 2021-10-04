@@ -50,16 +50,17 @@ except:
     warnings.warn(w, UserWarning)
 
 
-
 try:
     import mmgroup.mm
     import mmgroup.mm_group
-    import mmgroup.mm_space
     from mmgroup.mm_group import MMGroup,  MMGroupWord, MM
+    from mmgroup.structures.mm0_group import MM0Group,  MM0
     from mmgroup.mm import INT_BITS
+    import mmgroup.mm_space
 except:
     w = "Extension mmgroup.mm not found, package not functional!"
     warnings.warn(w, UserWarning)
+    
 
 
 import mmgroup.generate_c
@@ -68,11 +69,10 @@ import mmgroup.generate_c
 try:
     from mmgroup.mm_space import characteristics
     assert 3 in characteristics()
-    from mmgroup.mm_space import MMSpace, MMSpaceVector, MMS
+    from mmgroup.mm_space import MMSpace, MMVector, MMV
 except:
     w = "Extension mmgroup.mm3 not found, package not functional!"
     warnings.warn(w, UserWarning)
-
 
 try:
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1

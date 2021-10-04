@@ -13,15 +13,18 @@ import pytest
 
 
 from mmgroup import mat24 as m24
-from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
+from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
+from mmgroup.tests.groups.mgroup_n import MGroupNWord
+
+
 
 
 
 
 
 p = 241
-rep_mm = SparseMmSpace(p)
-grp = rep_mm.group
+rep_mm = SparseMmV(p)
+grp = MGroupNWord
 
 
 def vector_data(v):
@@ -121,16 +124,16 @@ def op_xy(v, eps, e, f):
 
 
 def one_test_op_xy(v, eps, e, f, verbose = 0):
-    pi_atom = grp.atom('d', eps)
-    x_atom = grp.atom('x', e)**(-1)
-    y_atom = grp.atom('y', f)**(-1)
+    pi_atom = grp('d', eps)
+    x_atom = grp('x', e)**(-1)
+    y_atom = grp('y', f)**(-1)
     w = v * pi_atom * x_atom  * y_atom 
     if verbose:
         print("%s * %s * %s * %s = %s" % (v, pi_atom, x_atom, y_atom, w))
     v_tuple = vector_data(v)   
     w_tuple = vector_data(w) 
     w1_tuple = op_xy(v_tuple, eps, e, f)  
-    w1 = v.space(w1_tuple)
+    w1 = v.space(v.p, [w1_tuple])
     if w != w1:
         print("%s * %s * %s * %s = %s" % (v, pi_atom, x_atom, y_atom, w))
         print("with xy formula:", w1)
@@ -143,7 +146,7 @@ def one_test_op_xy(v, eps, e, f, verbose = 0):
 
 
 def rand_v(tag):
-    return rep_mm.unit(tag, "r")
+    return rep_mm(tag, "r")
    
 
 def op_xy_testdata():
@@ -166,7 +169,7 @@ def op_xy_testdata():
         if isinstance(v, str): 
             v1 = rand_v(v)
         else :
-            v1=  rep_mm.unit(*v)
+            v1=  rep_mm(*v)
         yield v1,  f, e, eps
     for v in "ZY":
         for i in range(500):
@@ -183,8 +186,8 @@ def op_xy_testdata():
             e = randint(0, 0x1fff)
             f = randint(0, 0x1fff)
             yield v1,  eps, e, f
-             
-
+      
+       
 @pytest.mark.space
 def test_op_xy(verbose = 0):
     print("Testing group operations x, y ...")

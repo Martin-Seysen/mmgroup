@@ -15,9 +15,6 @@ from collections.abc import Sequence
 
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
-from mmgroup.structures.parse_atoms import  AtomDict      
-from mmgroup.structures.parse_atoms import eval_atom_expression        
-from mmgroup.structures.parse_atoms import TaggedAtom
 
 
 
@@ -124,11 +121,11 @@ class TaggedRewriteSystem(object):
         """
 
         Pragmatic version: starts with rule of length 2, then it tries 
-        rules of length 3, 4, 5,... , and finally, it tries rule 1,
-        if present.
+        rules of length 3, 4, 5,... , and finally, it tries rule of
+        length 1 if present.
 
-        Dealing too much with rules of length 1 is a bit like w...ing
-        and causes too much overhead.
+        Dealing too much with rules of length 1 is a bit like self
+        satifsction and causes too much overhead.
         """
         node = self.rules
         for i, w in enumerate(reversed(word)):
@@ -169,23 +166,24 @@ class TaggedRewriteSystem(object):
 
 
 
+
 class AutoGroupWord(AbstractGroupWord):
     """TODO: Yet to be documented     
 
     """
 
-    def __init__(self,  *atoms, **kwds):
-        """Create word a in group from the atoms given as arguments.
+    def __init__(self,  *generators, **kwds):
+        """Create word a in group from the generators given as arguments.
 
         Users should not refer to this class directly.
         """
-        super(AutoGroupWord, self).__init__(*atoms, **kwds)
+        super(AutoGroupWord, self).__init__(*generators, **kwds)
         self.seq =  []
         self.reduced = 0
-        for atom in atoms:
-            a = self.group.reduce_atom(atom)
-            if a:
-                self.seq.append(a)
+        for generator in generators:
+            g = self.group.reduce_generator(generator)
+            if g:
+                self.seq.append(g)
 
     def __getitem__(self, i):
         return AutoGroupWord(self.group, self.seq[i])
@@ -193,17 +191,17 @@ class AutoGroupWord(AbstractGroupWord):
     def __len__(self):
         return len(self.seq)
 
-    def iter_atoms(self):
-        for atom in self.seq:
-            yield atom
+    def iter_generators(self):
+        for generator in self.seq:
+            yield generator
 
     def append_word(self, word):
         self.seq.extend(word.seq)
         
 
     def iter_inv(self):
-        for atom in reversed(self.seq):
-            yield from self.group.iter_inv(atom) 
+        for generator in reversed(self.seq):
+            yield from self.group.iter_inv(generator) 
 
     def str(self):
         return self.group.str_word(self)
@@ -239,16 +237,15 @@ class AutoGroup(AbstractGroup):
  
     word_type = AutoGroupWord  # type of an element (=word) in the group 
 
-    def __init__(self, atom_creator, rules, atom_inverter):
+    def __init__(self, creator, rules, inverter):
         """ TODO: Yet to be documented     
 
 
         """
         self.rewrite_system = TaggedRewriteSystem(rules)
         self.substituter = self.rewrite_system.subst_word
-        self.atom_creator = atom_creator
-        self.atom_parser = AtomDict(self.atom)
-        self.atom_inverter = atom_inverter
+        self.creator = creator
+        self.inverter = inverter
         super(AutoGroup, self).__init__()
 
 
@@ -257,17 +254,17 @@ class AutoGroup(AbstractGroup):
     ################################################################
 
 
-    def atom(self, *data):
+    def generator(self, *data):
         """Convert tuple *data to a group word"""
         if len(data):
-            atom_generator = self.atom_creator[data[0]](*data)
-            return self.word_type(*atom_generator, group=self)
+            creator = self.creator[data[0]](*data)
+            return self.word_type(*creator, group=self)
         return self.word_type(group=self)
 
         
 
-    def reduce_atom(self, atom):
-        return atom.reduce(self) if atom else None
+    def reduce_generator(self, generator):
+        return generator.reduce(self) if generator else None
 
 
 
@@ -299,7 +296,7 @@ class AutoGroup(AbstractGroup):
                     w[pos:pos] = [None] * insert
                     gap += insert
                     min_gap *= 2
-                subst = [self.reduce_atom(x) for x in subst]
+                subst = [self.reduce_generator(x) for x in subst]
                 w[pos + gap : pos + gap + len(subst)] = subst 
             while pos + gap < len(w) and not w[pos + gap]:
                 gap += 1
@@ -334,15 +331,17 @@ class AutoGroup(AbstractGroup):
         This method is called for elements g1 and g2 of the group
         'self' only.
         """
-        tup1 = self.iter_to_tuples(self.reduce(g1, True))
-        tup2 = self.iter_to_tuples(self.reduce(g2, True))
+        g1 = self.reduce(g1, True)
+        g2 = self.reduce(g2, True)
+        tup1 = self.iter_to_tuples(g1)
+        tup2 = self.iter_to_tuples(g2)
         equ = (x == y for x, y in zip(tup1, tup2))
         return len(g1) == len(g2) and all(equ)
 
-        tup1 = (x.to_tuple() for x in self.reduce(g1).iter_atoms())
-        tup2 = (x.to_tuple() for x in self.reduce(g2).iter_atoms())
-        equ = (x == y for x, y in zip(tup1, tup2))
-        return len(g1) == len(g2) and all(equ)
+        #tup1 = (x.to_tuple() for x in self.reduce(g1).iter_generators())
+        #tup2 = (x.to_tuple() for x in self.reduce(g2).iter_generators())
+        #equ = (x == y for x, y in zip(tup1, tup2))
+        #return len(g1) == len(g2) and all(equ)
 
 
     def _imul(self, g1, g2):
@@ -358,14 +357,14 @@ class AutoGroup(AbstractGroup):
         return self.reduce(g1)
 
 
-    def iter_inv(self, atom):
-        """yield inverse of the atom
+    def iter_inv(self, generator):
+        """yield inverse of the generator
 
-        The function must yield one or more atoms of type
-        TaggedAtom, so that the product of these atoms is the 
-        inverse of the input 'atom'.
+        The function must yield one or more generators of type
+        TaggedAtom, so that the product of these generators is the 
+        inverse of the input 'generator'.
         """
-        yield from self.atom_inverter[atom.tag](self, atom)
+        yield from self.inverter[generator.tag](self, generator)
 		
     def _invert(self, g1):
         """Return product g1**-1 for group elements g1.
@@ -378,15 +377,15 @@ class AutoGroup(AbstractGroup):
         result = self.neutral()
         assert g1.group == self
         result.seq = [
-           inv  for g1_atom in reversed(g1.seq)
-               for inv in self.iter_inv(g1_atom)
+           inv  for g1_generator in reversed(g1.seq)
+               for inv in self.iter_inv(g1_generator)
         ]
         return result.reduce()
 
 
     def iter_to_tuples(self, g1):
         assert g1.group == self
-        return (t for atom in g1.seq for t in atom.as_tuples())
+        return (t for generator in g1.seq for t in generator.as_tuples())
 
 
     def as_tuples(self, g1):

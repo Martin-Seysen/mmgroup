@@ -17,6 +17,8 @@ from mmgroup.structures.parse_atoms import  AtomDict
 #from mmgroup.structures.parse_atoms import eval_atom_expression        
 from mmgroup.structures.parse_atoms import TaggedAtom
 from mmgroup.structures.parse_atoms import ihex
+from mmgroup.structures.construct_mm import iter_mm       
+from mmgroup.structures.construct_mm import load_group_name     
 
 from mmgroup.tests.groups.auto_group import AutoGroupWord
 from mmgroup.tests.groups.auto_group import AutoGroup
@@ -68,6 +70,10 @@ class AutPLoopAtom(TaggedAtom):
         return None if self.cocode == self.m24num == 0 else self
 
 
+    def as_atoms(self):
+        yield 0x10000000 + self.cocode
+        yield 0x20000000 + self.m24num
+
     def as_tuples(self):
         yield "d", self.cocode
         yield "p", self.m24num
@@ -83,6 +89,13 @@ class AutPLoopAtom(TaggedAtom):
         return s if s else "1"
     __repr__ = str
 
+tag_dict = {
+        "x": 0x30000000, 
+        "y": 0x40000000, 
+        "t": 0x50000000, 
+        "l": 0x60000000, 
+}
+
 class xy_Atom(TaggedAtom):
     __slots__ = 'tag', 'pl'
     format_tuple = (str, ihex)
@@ -94,6 +107,9 @@ class xy_Atom(TaggedAtom):
     def reduce(self, *args):
         self.pl  &= 0x1fff
         return None if self.pl == 0 else self
+
+    def as_atoms(self):
+        yield tag_dict[self.tag] + self.pl
 
     def as_tuples(self):
         yield self.tag, self.pl
@@ -111,6 +127,9 @@ class tl_Atom(TaggedAtom):
         self.exp  %= 3
         return None if self.exp == 0 else self
 
+    def as_atoms(self):
+        yield tag_dict[self.tag] + self.exp
+
     def as_tuples(self):
         yield self.tag, self.exp
 
@@ -121,8 +140,7 @@ class tl_Atom(TaggedAtom):
 # Generating atoms of the group N from tuples
 ###########################################################################
 
-
-
+# deprecated
 
 def gen_d(tag, c = "r"):
     cocode = c
@@ -205,17 +223,18 @@ def rule_xp(group, word):
 # Extra relations given by Kernels K0 and K1: 
 # K0:  y_(-1) = x_(-Omega), y_Omega = x_(-1), y_(-Omega) = x_Omega
 # K1:  y_(-1) = x_(-Omega)
+# Anything apart from kernel K0 isno longer supported!!!
 dict_kernel0_yx = {0:0, 0x1000:0x1800, 0x800:0x1000, 0x1800:0x800, }
-dict_kernel1_yx = {0:0, 0x1000:0x1800}
+#dict_kernel1_yx = {0:0, 0x1000:0x1800}
 
 dict_kernel0_xy = {0:0, 0x1000:0x800, 0x800:0x1800, 0x1800:0x1000, }
-dict_kernel1_xy = {0:0, 0x1000:0x800}
+#dict_kernel1_xy = {0:0, 0x1000:0x800}
 
 
-kernel_data = [
-   (0x1800, dict_kernel0_yx, dict_kernel0_xy),  # for kernel K_0
-   (0x1000, dict_kernel1_yx, dict_kernel1_xy),  # for kernel K_1
-]
+#kernel_data = [
+#   (0x1800, dict_kernel0_yx, dict_kernel0_xy),  # for kernel K_0
+#   (0x1000, dict_kernel1_yx, dict_kernel1_xy),  # for kernel K_1
+#]
 
 
 
@@ -223,7 +242,7 @@ def kernel_rule_yx(group, word):
     global n_rules
     n_rules += 1
     y, x = word[0].pl & 0x1fff,  word[1].pl & 0x1fff
-    mask, table_yx, table_xy = kernel_data[group.kernel]
+    mask, table_yx, table_xy = 0x1800, dict_kernel0_yx, dict_kernel0_xy
     if y & ~mask and not x & ~mask:
         y ^= table_xy[x]
         return  [xy_Atom('y', y)]
@@ -242,7 +261,7 @@ def kernel_rule_y(group, word):
     global n_rules
     n_rules += 1
     y = word[0].pl & 0x1fff
-    mask, table, _  = kernel_data[group.kernel]
+    mask, table  =  0x1800, dict_kernel0_yx
     if y & mask == y:
         return [ xy_Atom('x', table[y]) ]
     else:
@@ -360,6 +379,54 @@ def iter_inv_tl(group, atom):
 ###########################################################################
 
 
+ERR_ATOM = "Illegal atom %s in constuctor of class MGroupNWord"
+
+def iter_generators_from_atom(atom):
+    if atom & -0x80000000 == 0:
+        tag = atom >> 28
+        data = atom & 0xfffffff
+        if tag == 0:    return
+        elif tag == 1:  yield AutPLoopAtom('p', data, 0)
+        elif tag == 2:  yield AutPLoopAtom('p', 0, data)
+        elif tag == 3:  yield xy_Atom('x', data)
+        elif tag == 4:  yield xy_Atom('y', data)
+        elif tag == 5:  yield tl_Atom('t', data)
+        elif tag == 6:  yield tl_Atom('l', data)
+        elif data == 0: return
+        else:
+            raise ValueError(ERR_ATOM % hex(atom))
+    else:
+        raise ValueError(ERR_ATOM % hex(atom))
+            
+         
+    
+
+
+parse_functions = {  # deprecated!!!!
+            'd' : gen_d,
+            'p' : gen_p,
+            'x' : gen_xy,         
+            'y' : gen_xy,
+            'z' : gen_z,
+            't' : gen_tl,
+            'l' : gen_tl,
+}
+ 
+  
+
+class MGroupNWord(AutoGroupWord):
+    def __init__(self,  tag = None, atom = None, *args, **kwds):
+        self.seq =  []
+        self.reduced = 0
+        atoms = iter_mm(self.group, tag, atom)
+        for a in atoms:
+            for generator in iter_generators_from_atom(a):
+                self.seq.append(generator)
+            
+    def iter_atoms(self):
+        return self.group.iter_atoms(self)
+
+
 class MGroupN(AutoGroup):
     """Models the subgroup N_0 of the Monster MM or one of its covers.
 
@@ -371,20 +438,16 @@ class MGroupN(AutoGroup):
     the generator l. The raison d'etre of generator l is to support 
     operations of MM on its 196884-dimensional represention.
     """
+    word_type = MGroupNWord
+    is_mmgroup = True
     tags = "pxytl"   
+    __instance = None
 
-
-    parse_functions = {  
-            'd' : gen_d,
-            'p' : gen_p,
-            'x' : gen_xy,         
-            'y' : gen_xy,
-            'z' : gen_z,
-            't' : gen_tl,
-            'l' : gen_tl,
-    }
-
-    
+    def __new__(cls):
+        if MGroupN.__instance is None:
+             MGroupN.__instance = MGroupNWord.__new__(cls)
+        return MGroupN.__instance
+ 
     rules = {
         r"pp": rule_pp,
         r"xx": rule_xx,
@@ -403,9 +466,9 @@ class MGroupN(AutoGroup):
         r"yx": kernel_rule_yx,
         r"y": kernel_rule_y,
     }
-    kernel_rules.update(rules)
+    rules.update(kernel_rules)
 
-    atom_inverter = {
+    inverter = {
             'p' : iter_inv_p,
             'x' : iter_inv_xy,         
             'y' : iter_inv_xy,
@@ -413,31 +476,41 @@ class MGroupN(AutoGroup):
             'l' : iter_inv_tl,
     }
 
-    FRAME = re.compile(r"M?N?\<([0-9a-zA-Z _*+/-]*)\>")
-    STR_FORMAT = r"MN<%s>"
+    group_name = "MN"
+    #kernel = 0  # for compatiblity with older version
+    
 
 
 
-    def __init__(self, kernel = 0):
-        """Create an instance of subgroup N of the Monster
+    def __init__(self):
+        """Create an instance of subgroup N_0 of the Monster
 		
-        Here N is the supgroup N_x of the monster defined in 
+        Here N_0 is the supgroup the monster defined in 
         [Conw85] We follow the conventions in [Seys19] for
-        calculating in N. We also define an atom (t,e) in N
+        calculating in N_0. We also define an atom (t,e) in N_0
         which maps to the generator xi**e in [Seys19]; but we
         implement no relations for xi apart from xi**3 = 1.		
-		
-        'kernel' may be None, 1 or 0 indicating the trivial kernel,
-        the kernel K1 and the kernel K0, respectively, of N as 
-        defined in [Conw85] [Seys19]. 
-		
-        For computations in the monster group one should choose 
-        the default setting kernel = K0.
-        """
-        rules = self.rules if kernel is None else self.kernel_rules
-        super(MGroupN, self).__init__(self.parse_functions, 
-            rules, self.atom_inverter)
-        assert kernel in (0, 1, None)
-        self.kernel = kernel
+		        """
+        rules = self.rules 
+        super(MGroupN, self).__init__(parse_functions, 
+            rules, self.inverter)
+
+    def __call__(self, *args, **kwds):
+         return MGroupNWord(*args, **kwds)
+
+    def neutral(self):
+         return MGroupNWord()
+  
+    def iter_atoms(self, g):
+        for gen in g.seq:
+            yield from gen.as_atoms()
+
+
+
+StdMGroupN = MGroupN()
+MGroupNWord.group = StdMGroupN
+load_group_name(StdMGroupN)
+
+
 
 

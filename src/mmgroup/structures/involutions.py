@@ -2,7 +2,7 @@ import numpy as np
 import datetime
 import time
 
-from mmgroup import MMGroup, MMGroupWord
+from mmgroup import MMGroup, MM0
 from mmgroup.mm_order import check_mm_order
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 
@@ -16,11 +16,11 @@ def mm_conjugate_2B(g, check=True, ntrials=20, verbose = 0):
     where :math:`z` is te central involution in the subgroup
     :math:`G_{x0}` of the monster.
     """
-    if not isinstance(g, MMGroupWord):
-        err = "Object must be element of the monster of type MMGroupWord"
+    if not isinstance(g, MM0):
+        err = "Object must be element of the monster of type MM"
         raise TypeError(err)
     m = g.group
-    m_1, z = m(), m(('x', 0x1000))
+    m_1, z = m(), m('x', 0x1000)
     in_G_x = g.in_G_x0()
     if (verbose or check) and g*g != m_1:
         err = "Element is not an involution in the monster group"
@@ -33,7 +33,7 @@ def mm_conjugate_2B(g, check=True, ntrials=20, verbose = 0):
     for i in range(ntrials):
         if verbose:
              print("\nmm_conjugate_2B trial", i)
-        s = m.rand_mm(1 + max(3, (i >> 2))) if i else m_1
+        s = m('r', 1 + max(3, (i >> 2))) if i else m_1
         x = g**s
         o, y = (x * z).half_order(60)
         if verbose:
@@ -91,8 +91,8 @@ def reduce_via_power(g, ntrials=20, verbose = 0):
         print("\nTrying to shorten the element g of the monster:")
         print("g =", g)
     for i in range(ntrials):
-        x0 = g.group.rand_mm(max(1, (i >> 2)))
-        #x0 = g.group.rand_G_x0()
+        x0 = g.group("r", max(1, (i >> 2)))
+        #x0 = g.group("r", "G_x0")
         g1 = g * x0
         o, g2 = g1.half_order()
         if o & 1 or g2 is None:

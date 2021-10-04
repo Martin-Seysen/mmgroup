@@ -16,15 +16,15 @@ from collections import defaultdict
 import numpy as np
 import pytest
 
-from mmgroup import MM, AutPL, PLoop, Cocode, Xsp2_Co1
+from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1
 from mmgroup.structures.involutions import reduce_via_power
 
 
-z = MM(('x', 0x1000))
+z = MM0('x', 0x1000)
 
 def make_samples(n_samples = 5):
     for i in range(n_samples):
-        g = MM.rand_mm(5)
+        g = MM0('r', 5)
         yield z**g
 
 
@@ -32,7 +32,7 @@ def make_samples(n_samples = 5):
 
 def do_test_involution(g, verbose = 0):
     h = g.conjugate_2B_involution(verbose = verbose)
-    assert g._conj(h) == z
+    assert g ** h == z
 
 
 
@@ -42,7 +42,7 @@ def do_test_2B_involution(n_tests = 3, verbose = 0):
         if verbose:
              print("Test", i+1)
         h = g.conjugate_2B_involution(verbose = verbose)
-        assert g._conj(h) == z
+        assert g ** h == z
 
 
 @pytest.mark.involution
@@ -70,7 +70,7 @@ def test_reduce_via_power(verbose = 1, ntests = 10):
     for i in range(ntests):
         if verbose:
             print("\nTest", i+1)
-        g = MM.rand_mm(18)
+        g = MM0('r', 18)
         g1 = reduce_via_power(g, ntrials=40, verbose = verbose)
         assert g1 == g
     end_time = datetime.datetime.now()

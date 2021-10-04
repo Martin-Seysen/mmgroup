@@ -467,7 +467,9 @@ class AutPL(AbstractGroupWord):
         """
         return self._perm
 
-
+    def iter_atoms(self):
+        yield  0x10000000 + (self._cocode & 0xfff)
+        yield  0x20000000 + self._perm_num
 
 #######################################################################
 # Class AutPlGroup
@@ -483,6 +485,7 @@ def autpl_element_from_obj(g, t):
 
 class AutPlGroup(AbstractGroup):
     word_type = AutPL              # type of an element (=word) in the group
+    is_mmgroup = True
     #atom_parser = {}               # see method parse()
     #rand_masks  = {"r":(0xfff,0), "e":(0x7ff,0), "o":(0x7ff,0x800)} 
     conversions = {
@@ -529,6 +532,7 @@ class AutPlGroup(AbstractGroup):
 
     def as_tuples(self, g):
         return [('d', g._cocode), ('p', g._perm_num)]
+       
         
 
     def str_word(self, g):
