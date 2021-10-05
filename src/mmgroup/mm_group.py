@@ -186,7 +186,7 @@ from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.generators import gen_rng_modp
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.mm0_group import MM0
-from mmgroup.structures.mm0_group import MM0Group
+from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.structures.construct_mm import load_group_name     
 from mmgroup.structures.construct_mm import iter_mm       
@@ -540,7 +540,7 @@ class MM(MM0):
 
 
 
-class MMGroup(MM0Group):
+class MMGroup(AbstractMMGroup):
     r"""An instance of this class models the monster group as an object
 
     :param: None
@@ -560,7 +560,7 @@ class MMGroup(MM0Group):
 
     def __new__(cls):
         if MMGroup.__instance is None:
-             MMGroup.__instance = MM0Group.__new__(cls)
+             MMGroup.__instance = AbstractMMGroup.__new__(cls)
         return MMGroup.__instance
 
     def __init__(self):
@@ -569,6 +569,64 @@ class MMGroup(MM0Group):
 
         """
         super(MMGroup, self).__init__()
+
+
+    def iter_atoms(self, g):
+        yield from g.data
+
+
+    def reduce(self, g1, copy = False):
+        l1 = g1.length
+        if g1.reduced < l1:
+            if copy:
+                g1 = self.copy_word(g1)
+            l_tail = l1 - g1.reduced
+            g1._extend(l1 + l_tail + 1)
+            g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
+            tail =  g1._data[l1:]
+            l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
+            g1.reduced = g1.length = l1
+        return g1
+
+        
+    def _imul(self, g1, g2):
+        l1, l2 = g1.length, g2.length
+        g1._extend(2*(l1 + l2) + 1)
+        g1._data[l1 : l1 + l2] = g2._data[:l2]
+        l1 += l2
+        l_tail = l1 - g1.reduced
+        g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
+        tail = g1._data[l1:]
+        l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
+        g1.reduced = g1.length = l1
+        return g1
+
+    def _invert(self, g1):
+        w = self.word_type()
+        w._setdata(np.flip(g1.data) ^ 0x80000000)
+        return self.reduce(w)
+
+    def copy_word(self, g1):
+        result = self.word_type()
+        result._setdata(g1.data)
+        result.reduced = g1.reduced
+        return result
+
+    def _equal_words(self, g1, g2):
+        if not check_mm_equal is None:
+            return g1.group == g2.group and check_mm_equal(g1, g2)
+        try:
+            import_mm_order_functions()
+            return g1.group == g2.group and check_mm_equal(g1, g2)
+        except:
+            if g1.group != g2.group:
+                return False
+            g1.reduce()
+            g2.reduce()
+            if (g1.data == g2.data).all():
+                 return True
+            raise ValueError("Don't know if monster group elements are equal")
+
 
 
 
