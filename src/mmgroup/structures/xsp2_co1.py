@@ -43,7 +43,6 @@ from mmgroup.clifford12 import xsp2co1_elem_conjugate_2B_involution
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
-from mmgroup.mm_group import gen_atom, MM, MMGroupWord, MMGroup
 
 FORMAT_REDUCED = True
 
@@ -54,7 +53,14 @@ FORMAT_REDUCED = True
 ###########################################################################
 
 
+MM = None
 
+def import_MM():
+    global MM
+    if MM is not None:
+        return MM
+    from mmgroup.mm_group import MM
+    return MM
 
 
 class Xsp2_Co1(AbstractMMGroupWord):
@@ -167,9 +173,6 @@ class Xsp2_Co1(AbstractMMGroupWord):
         xsp2co1_mul_elem_word(self._data, a_atoms, len(a_atoms))
         return self
 
-    def as_mm(self, mmgroup = MM):
-        raise NotImplementedError
-        return xsp2co1_to_mm(mmgroup, self)
 
     def iter_atoms(self):
         a = np.zeros(10, dtype = np.uint32)
@@ -184,22 +187,8 @@ class Xsp2_Co1(AbstractMMGroupWord):
         v0 = xsp2co1_involution_orthogonal(invar, 0)
         return invar, v1, v0
 
-    def conjugate_mm(self, g, mmgroup = MM):
-        """Try to compute g**(-1) * self * g, for g in the monster
 
-        This is a wrapper for the C function ``xsp2co1_conjugate_elem``.
-        In case of success the result is returned as an element 
-        of ``self.group``.
-        """
-        raise NotImplementedError
-        if isinstance(g, Xsp2_Co1_Word):
-            g = gg.as_mm(mmgroup)
-        res = self.group(self)
-        status = xsp2co1_conjugate_elem(res._data, g._data, g.length)
-        chk_qstate12(status)
-        return res 
-
-    def conjugate_2B_involution(self, mmgroup = MM):
+    def conjugate_2B_involution(self, mmgroup = None):
         """Find an element conjugating an involution into the centre
 
         If the element :math:`g` given by ``self`` is a 2B involution 
@@ -219,6 +208,8 @@ class Xsp2_Co1(AbstractMMGroupWord):
         then the function returns :math:`h` as an element of the 
         group given by ``mmgroup``.
         """
+        if mmgroup is None:
+             mmgroup = MM if MM is not None else import_MM()            
         a = np.zeros(14, dtype = np.uint32)
         len_a = xsp2co1_elem_conjugate_2B_involution(self._data, a)
         chk_qstate12(len_a)
@@ -333,20 +324,6 @@ class Xsp2_Co1_Group(AbstractMMGroup):
     word_type = Xsp2_Co1
     is_mmgroup = True
 
-    """
-    tags, formats = " dpxyl", [None, ihex, str, ihex, ihex, str]
-    atom_parser = {}               # see method parse()
-    conversions = {
-        Cocode: cocode_to_xsp2co1,
-        MMGroupWord: mmgroup_to_xsp2co1,
-        PLoop: ploop_to_xsp2co1,
-    }
-    implicit_conversions = {
-        AutPL: autpl_to_xsp2co1,
-    }
-    FRAME = re.compile(r"^M?\<(.+)\>$") # see method parse()
-    STR_FORMAT = r"M<%s>"
-    """
 
     def __new__(cls):
         if Xsp2_Co1_Group.__instance is None:

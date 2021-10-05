@@ -7,7 +7,7 @@
 .. |Parity| replace:: :py:class:`~mmgroup.Parity`
 .. |AutPL| replace:: :py:class:`~mmgroup.AutPL`
 .. |MMGroup| replace:: :py:class:`~mmgroup.MMGroup`
-.. |MMGroupWord| replace:: :py:class:`~mmgroup.MMGroupWord`
+.. |MM| replace:: :py:class:`~mmgroup.MM`
 .. |MMSpace| replace:: :py:class:`~mmgroup.MMSpace`
-.. |MMSpaceVector| replace:: :py:class:`~mmgroup.MMSpaceVector`
+.. |MMVector| replace:: :py:class:`~mmgroup.MMVector`
 

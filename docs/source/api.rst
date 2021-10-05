@@ -137,12 +137,8 @@ The Monster Group
 Python classes implementing the monster group
 --------------------------------------------- 
 
-.. autoclass:: mmgroup.MMGroup
-   :members: atom, neutral, rand_word, rand_atom,
-             sample, word, from_data, rand_G_x0, rand_N_0
 
-
-.. autoclass:: mmgroup.MMGroupWord
+.. autoclass:: mmgroup.MM
    :members:  as_tuples, copy,  is_reduced, reduce, order, data,
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
               as_Q_x0_atom, type_Q_x0, simplify
@@ -161,14 +157,14 @@ The Representation of the Monster Group
    :members:  zero, rand_uniform, from_sparse, from_bytes,
               tuple_to_index, index_to_tuple, index_to_short
 
-.. autoclass:: mmgroup.MMSpaceVector
+.. autoclass:: mmgroup.MMVector
    :members:  as_bytes, as_sparse, as_tuples, projection,
               mul_exp
 
 
 .. autofunction:: mmgroup.characteristics
 
-.. autofunction:: mmgroup.MMS
+.. autofunction:: mmgroup.MMV
 
 
 .. _clifford-group-label:

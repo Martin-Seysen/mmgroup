@@ -540,7 +540,7 @@ class MMSpace(AbstractMmRepSpace):
                              ``tuple_to_index`` for converting a tuple to         
                              a linear index.              
       ---------------------- --------------------------------------------- 
-       class |MMVector| A deep copy of the given vector is returned.            
+       class |MMVector|      A deep copy of the given vector is returned.            
       ---------------------- --------------------------------------------- 
        ``str``               For an vector ``v`` in ``V`` we have      
                              ``V(str(v)) == v``. 

@@ -8,7 +8,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_vector
 from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
 from mmgroup.structures.mm0_group import MM0Group, MM0
-from mmgroup.mm_group import MMGroup, MMGroupWord
+from mmgroup.mm_group import MMGroup, MM
 from mmgroup.mm_space import MMSpace, MMV
 from mmgroup.generators import mm_group_check_word_n
 from mmgroup.generators import mm_group_words_equ
@@ -208,8 +208,8 @@ def check_mm_equal(g1, g2, mode = 0):
     We just check the data in ``g1`` and ``g2``, ingnoring
     ``g1.group`` and ``g2.group``.
     """
-    assert isinstance(g1, (MMGroupWord, MM0))
-    assert isinstance(g2, (MMGroupWord, MM0))
+    assert isinstance(g1, (MM, MM0))
+    assert isinstance(g2, (MM, MM0))
     g3 = np.zeros(2 * (g1.length + g2.length) + 1, dtype = np.uint32)
     status = mm_group_words_equ(g1._data, g1.length,
         g2._data, g2.length, g3)
@@ -242,7 +242,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
     Othewise we compute the minimum ``i`` such that
     ``v * g**i == v`` for the *order vector* ``v`. 
     """
-    assert isinstance(g, (MM0, MMGroupWord))
+    assert isinstance(g, (MM0, MM))
     g.reduce()
     if mode == 0:
         n0 = np.zeros(5, dtype = np.uint32)
@@ -273,7 +273,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
 def check_mm_order(g, max_order = 119):
     """Return order of monster group element ``g``.
 
-    ``g`` must be an instance of class ``MMGroupWord``.  The function
+    ``g`` must be an instance of class ``MM``.  The function
     returns the order of ``g`` if ``max_order`` is set to its default
     value. 
 
@@ -282,7 +282,7 @@ def check_mm_order(g, max_order = 119):
     If ``max_order``is given then the function may return 0 if the
     order of ``g`` is greater than ``max_order``.
     """
-    assert isinstance(g, (MM0, MMGroupWord))
+    assert isinstance(g, (MM0, MM))
     g.reduce()
     v = get_order_vector().data
     o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
@@ -291,7 +291,7 @@ def check_mm_order(g, max_order = 119):
 def check_mm_half_order(g, max_order = 119):
     """Return (halved) order of monster group element ``g``.
 
-    ``g`` must be an instance of class ``MMGroupWord``.  The function
+    ``g`` must be an instance of class ``MM``.  The function
     returns a pair ``(o, h)`` where ``o`` is the order of ``g``, and
     ``h = g**(o/2)`` for an even ``o``. We put ``h = None`` if
     ``o`` is odd.
@@ -301,7 +301,7 @@ def check_mm_half_order(g, max_order = 119):
     If ``h`` is in the subgroup :math:`G_{x0}`` then ``h`` is 
     returned as a word in the generators of that subgroup.
     """
-    assert isinstance(g, (MM0, MMGroupWord))
+    assert isinstance(g, (MM0, MM))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
     v = get_order_vector().data
@@ -346,7 +346,7 @@ def check_mm_in_g_x0(g):
     Otherwise the function does not change ``g`` and returns ``None``.
     
     ``g`` must be an instance of class 
-    ``mmgroup.mm_group.MMGroupWord``.
+    ``mmgroup.mm_group.MM``.
     """
     g1 = np.zeros(10, dtype = np.uint32)
     v = get_order_vector().data
@@ -407,7 +407,7 @@ def reduce_mm(g, check = True):
 
 if __name__ == "__main__":
     get_order_vector(recompute = 0, verbose = 1)
-    assert isinstance(g, (MM0,MMGroupWord))
+    assert isinstance(g, (MM0,MM))
         
 
 

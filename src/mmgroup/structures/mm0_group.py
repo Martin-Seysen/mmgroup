@@ -697,7 +697,7 @@ class MM0Group(AbstractMMGroup):
     """
     __instance = None
     word_type = MM0
-    STR_FORMAT = r"M<%s>"
+    #STR_FORMAT = r"M<%s>"
     group_name = "M0"
 
     def __new__(cls):
@@ -711,107 +711,10 @@ class MM0Group(AbstractMMGroup):
 
         """
         super(MM0Group, self).__init__()
-        #self.atom_parser = AtomDict(self.atom)
-        #self.set_preimage(StdAutPlGroup,  tuple)
 
 
 
-    def atom(self, tag = None, i = "r"):
-        r"""Return an atomic element of this group
-        
-        Here ``tag`` determines the type of the atomic group element,
-        and the ``i`` is number of the atomic element of that type.
-        Depending on the tag, ``i`` is the number of an element of one of 
-        the structures |PLoop|, |Cocode|, or the number of an element of 
-        the Mathieu  group ``M_24``, as explained in class |AutPL|.
-        An element :math:`\pi` of the group |AutPL| is mapped to the
-        element :math:`x_\pi` of the Monster group.
-        
-        The number ``i`` may also be an instance of the appropriate class
-        |PLoop|, |Cocode|, or |AutPL|, as indicated in the table below.
 
-        .. table:: Atomic elements of the Monster group
-          :widths: 8 20 72
-
-
-          +-------+-----------------+----------------------------------------+
-          | Tag   | Number  ``i``   | Type of element                        |
-          +=======+=================+========================================+
-          |``'p'``| ``0-244823039`` | The automorphism ``AutPL(('p',i))`` of |
-          |       |                 | the Parker loop, see below.            |
-          +-------+-----------------+----------------------------------------+
-          |``'d'``| ``0-0xfff``     | The diagonal automorphism ``Cocode(i)``| 
-          |       |                 | in |AutPL|.                            |
-          +-------+-----------------+----------------------------------------+
-          |``'x'``| ``0-0x1fff``    | The element :math:`x_e`,  with         |
-          |       |                 | ``e = PLoop(i)``.                      |
-          +-------+-----------------+----------------------------------------+
-          |``'y'``| ``0-0x1fff``    | The element :math:`y_e`,               |
-          |       |                 | ``e = PLoop(i)``;                      |
-          |       |                 | similar to tag ``'x'``.                |
-          +-------+-----------------+----------------------------------------+
-          |``'z'``| ``0-0x1fff``    | The element :math:`z_e`,               |
-          |       |                 | ``e = PLoop(i)``;                      |
-          |       |                 | similar to tag ``'x'``.  We have       |
-          |       |                 | :math:`x_e y_e z_e = y_e x_e z_e = 1`. |
-          +-------+-----------------+----------------------------------------+
-          |``'t'``| ``0-2``         | The element :math:`\tau^i`,            |
-          +-------+-----------------+----------------------------------------+
-          |``'l'``| ``0-2``         | The element :math:`\xi^i`,             |
-          +-------+-----------------+----------------------------------------+
-          |``'q'``| ``0-0x1ffffff`` | See remark below.                      |
-          +-------+-----------------+----------------------------------------+
-          |``'c'``| ``0-0xffffff``  | See remark below.                      |
-          +-------+-----------------+----------------------------------------+
-
-         
-        If ``i`` is the string ``'r'`` then a random element with the   
-        given tag is generated.  If ``i`` is the string ``'n'`` then
-        a random element with the given tag is generated, which is 
-        different from the neutral element with a very high 
-        probability.
-
-        If ``tag == 'd'`` then  ``i = 'o'`` generates a random odd 
-        and ``i = 'e'`` generates a  random even diagonal automorphism.
-        In this case `i`` may also be an instance of class |Cocode|, 
-        representing the diagonal automorphism correspnding to the
-        given element of the Golay cocode.   
-        
-        If ``tag == 'p'`` then ``i`` may also be an instance of class 
-        |AutPL|. Then the returned atom is the Parker loop automorphism
-        given by that instance. If ``i`` is an integer then the Parker 
-        loop  automorphism ``AutPL(('p',i))`` is returned. This 
-        automorphism is the standard rpresentative of the i-th element 
-        of the  Mathieu group ``M_24`` in the automorphism group of the 
-        Parker loop.
-
-        If ``tag`` is ``'x'``,   ``'y'`` or ``'z'`` then ``i`` 
-        may also be an instance of class |PLoop|, representing an 
-        element of the Parker loop. 
-
-        The exponent ``i`` for a tag ``'t'`` or ``'l'`` is reduced
-        modulo ``3``. 
-
-        The tag ``'q'`` is useful for encoding an element of the 
-        subgroup :math:`Q_{x0}` of the monster. An atom with 
-        tag ``'q'`` and index ``i``  encodes the element 
-        :math:`x_d \cdot x_{\delta} \cdot x_{\theta(d)}`, 
-        with :math:`d` = ``PLoop(i >> 12)`` :math:`\in \mathcal{P}``,   
-        :math:`\delta` = ``Cocode(i & 0xfff)`` 
-        :math:`\in \mathcal{C}^*`,  
-        and   :math:`\theta: \mathcal{P} \rightarrow \mathcal{C}^*`
-        the cocycle of the Parker loop.
-
-        The tag ``'c'`` with index ``i`` encodes a representative
-        of the right coset :math:`N_{x0} g, g \in G_{x0}` of  
-        :math:`N_{x0}` in :math:`G_{x0}` that maps the standard
-        frame  :math:`\Omega` in the Leech lattice modulo 2 to 
-        a type-4 vector given by the index ``i``.
-        Here ``i`` ecodes a vector in the Leech lattice modulo 2
-        as in the description for tag  ``'q'``. That vector must
-        be of type 4. The sign bit of that vector is ignored.
-        """
-        raise NotImplementedError
 
 
     def iter_atoms(self, g):

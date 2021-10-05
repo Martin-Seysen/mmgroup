@@ -53,37 +53,23 @@ This leads to simpler relations in  :math:`N_{0}`.
 The generators :math:`x_e`, :math:`y_e`, and :math:`z_e` in  
 :cite:`Seysen20` correspond to the generators
 :math:`x_e \cdot z_{-1}^{|e/4|}`, :math:`y_e \cdot x_{-1}^{|e/4|}`,
-and  :math:`z_e \cdot y_{-1}^{|e/4|}`` in :cite:`Con85`.
+and  :math:`z_e \cdot y_{-1}^{|e/4|}` in :cite:`Con85`.
  
 
-Creating an instance of the monster group
-.........................................
+Representing elements of the monster group
+..........................................
 
+An element of the monster group :math:`\mathbb{M}` is represented 
+as an instance of class ``MM`` in module ``mmgroup``.
 
-For dealing with the monster group :math:`\mathbb{M}` the user must 
-first create an instance ``MM`` of class |MMGroup|, which 
-represents the monster group :math:`\mathbb{M}`::
-
-      MM = MMGroup()
-
-
-Class |MMGroup| is implemented as a singleton. Calling the constructor
-of that class always returns the same instance of that class. There is
-the predefined instance ``mmgroup.MM`` of class |MMGroup|.
-
-Elements of the monster group are created by calling that instance ``MM`` 
-as a function with a variable number of arguments. Here each argument 
-describes an element of :math:`\mathbb{M}` which is (usually) one of the 
-generators listed above. The the function returns the product of all 
-these elements as an instance of class |MMGroupWord|. Instances of class  
-|MMGroupWord| model elements of the Monster group :math:`\mathbb{M}`.
-
-An argument passed to an instance ``MM`` of class  |MMGroup| may be a pair 
-``(tag, value)``, where ``tag`` is a single small letter describing the 
-type of the generator of :math:`\mathbb{M}`, and ``value`` is an 
-integer describing the value of that generator. Alternatively, ``value``
-may be an instance of the appropriate algebraic structure used for
-indexing a generator of a given type as indicated in the table below.
+Elements of the monster group are created by the constructor
+of class |MM|. Usually, the constructor of class |MM| takes two
+arguments ``tag`` and ``i``, where ``tag`` is a single small 
+letter describing the type of the generator of :math:`\mathbb{M}`, 
+and ``i`` is an integer describing the value of that generator. 
+Alternatively, ``i`` may be an instance of the appropriate algebraic 
+structure used for indexing a generator of a given type as 
+indicated in the table below.
 
 
 Implementation of the generators of the monster group
@@ -92,9 +78,8 @@ Implementation of the generators of the monster group
 
 Math papers may use (at least) Latin or Greek letters for labelling
 objects, but most programming languages are restricted to ASCII characters.
-Assuming that ``MM`` is an instance of class  |MMGroup| representing
-a monster group, the following table shows how to create generating
-elements of ``MM``: 
+The following table shows how to create generating of the monster group
+using the constructor of class |MM|:
 
 
 .. table:: Construction of generating elements of the monster
@@ -102,43 +87,39 @@ elements of ``MM``:
 
 
   ===================  ==========================================================
-  Element              Construction as an element of ``MM``, 
-                       with ``MM`` of type |MMGroup|
+  Element              Construction as an instance of class ``MM``, 
   ===================  ==========================================================
-  :math:`x_\delta`     ``MM(('d', delta))``, ``delta`` an instance of class
+  :math:`x_\delta`     ``MM('d', delta)``, ``delta`` an instance of class
                        |Cocode|; 
 
-                       ``MM(('d', delta))`` returns 
+                       ``MM('d', delta)`` returns 
                        ``MM('d', Cocode(delta))`` for ``0 <= delta < 0x1000``. 
 
   :math:`x_\pi`        ``MM(pi)``, ``pi`` an instance of class |AutPL|;
 
-                       ``MM(('d', delta), ('p', n))`` returns 
+                       ``MM('d', delta) * MM('p', n)`` is equivalent to 
                        ``MM(AutPL(delta, n))`` 
                        for ``0 <= delta < 0x1000``, ``0 <= n < 244823040`` .
 
-  :math:`x_e`          ``MM(('x', e))``, ``x`` an  instance of class |PLoop|;
+  :math:`x_e`          ``MM('x', e)``, ``x`` an  instance of class |PLoop|;
 
-                       ``MM(('x', e))`` returns ``MM(('x', PLoop(e)))`` for
+                       ``MM(('x', e))`` returns ``MM('x', PLoop(e))`` for
                        ``0 <= e < 0x2000``.
 
-  :math:`y_e`          ``MM(('y', e))``,  ``e`` as in case :math:`x_e`. 
+  :math:`y_e`          ``MM('y', e)``,  ``e`` as in case :math:`x_e`. 
 
-  :math:`z_e`          ``MM(('z', e))``,  ``e`` as in case :math:`x_e`. 
+  :math:`z_e`          ``MM('z', e)``,  ``e`` as in case :math:`x_e`. 
 
-  :math:`\tau^e`       ``MM(('t', e))``, exponent  ``e`` is an integer 
+  :math:`\tau^e`       ``MM('t', e)``, exponent  ``e`` is an integer 
                        which is taken modulo ``3``.
 
-  :math:`\xi^e`        ``MM(('l', e))``,  exponent  ``e`` is an integer 
+  :math:`\xi^e`        ``MM('l', e)``,  exponent  ``e`` is an integer 
                        which is taken modulo ``3``.
   ===================  ==========================================================
 
 
 More possibilities for constructing elements of an instance of class 
-|MMGroup| are given in the description of that class. An element ``g``
-of an instance of the monster group is modelled as in instance of class 
-|MMGroupWord|. ``g.group`` is the group where ``g`` belongs to; that 
-group is an instance of class |MMGroup|. Multiplication and 
+|MM| are given in the description of that class. Multiplication and 
 exponentiation of group elements works a usual.  
 
 
@@ -178,7 +159,7 @@ strategies for words of generators of :math:`\mathbb{M}` :
 
 
  * Long words of generators of :math:`\mathbb{M}` can be shortened 
-   with high probability by method ``mmgroup.MMGroupWord.simplify``. 
+   with high probability by method ``mmgroup.MM.simplify``. 
    This method uses the algorithm in :cite:`Wil03`. This may take 
    a long time. Here improvements in future versions are desirable.
 
@@ -204,9 +185,11 @@ from random import randint, sample
 from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.generators import gen_rng_modp
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
-from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
-from mmgroup.structures.abstract_mm_group import AbstractMMGroup
+from mmgroup.structures.mm0_group import MM0
+from mmgroup.structures.mm0_group import MM0Group
 from mmgroup.structures.parse_atoms import  AtomDict
+from mmgroup.structures.construct_mm import load_group_name     
+from mmgroup.structures.construct_mm import iter_mm       
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import mm_group_invert_word
@@ -303,11 +286,11 @@ def import_Xsp2_Co1():
 
 
 
-class MMGroupWord(AbstractMMGroupWord):
+class MM(MM0):
     r"""Models an element of the monster group :math:`\mathbb{M}`
 
-    Let ``MM`` be an instance of class ``MMGroup``, and let ``g1``, 
-    ``g2`` be elements of ``MM``.  Then
+    Let ``g1`` and ``g2`` be instances of class  |MM| representing 
+    elements of the monster group.  Then
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
@@ -316,630 +299,22 @@ class MMGroupWord(AbstractMMGroupWord):
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.   
 
     Let ``V`` be a vector space that is a representation of ``MM``,
-    see class |MMSpace| for details. An element ``g1`` of ``MM`` 
-    operates on the vector space  ``V`` by right multiplication.  
-
-    :var group:
-        This attribute contains the group to which the element belongs.
-        That group is an instance of class |MMGroup|.
-
-    .. warning::
-       The constructor of this class is not for public use! You
-       may call an instance ``MM`` of class  |MMGroup| for
-       constructing elements of the instance ``MM`` of the monster 
-       group.
-  
-    """
-    MIN_LEN = 16
-    __slots__ = "_group", "length", "_data", "reduced"
-    def __init__(self, data, **kwds):
-        self.group = kwds['group']
-        self.length = len(data)
-        self._data = np.array(data, dtype = np.uint32) 
-        self.reduced = 0 
-        self._extend(self.MIN_LEN)
-                  
-    def _extend(self, length):
-        len_ = len(self._data)
-        if length > len_:
-            ap = np.zeros(max(length - len_, len_), dtype = np.uint32)
-            self._data = np.append(self._data, ap)
-             
-    @property
-    def data(self):
-        """Return the internal representation of the group element
-
-        Internally, an element of the monster group is represented
-        as an array of unsigned 32-bit integers, where each entry
-        of the array describes a generator. See section
-        :ref:`header-mmgroup-generators-label` for details.
-        """
-        return np.copy(self._data[:self.length])
-        
-    def __len__(self):
-        return self.length
-
-    def _setdata(self, data):
-        len_ = len(data)
-        self._extend(len_)
-        self._data[:len_] = data
-        self.length = len_
-        self.reduced = False
-
-        
-    def __getitem__(self,i):
-        if 0 <= i < self.length:
-            return self._data[i] 
-        if -self.length <= i < 0:
-            return self._data[i + self.length]
-        raise IndexError
-        
-    def is_reduced(self):
-        """Return ``True`` if the element of the monster group is reduced
-
-        An element ``g`` of the monster group represented by an instance
-        of this class may be reduced by calling
-        ``g.reduce()``.
-        """
-        return self.length == self.reduced
-
-    def _mul(self, *gg):
-        """Return product of this group element with other elements
-
-        ``g_0._mul(g_1,...,g_n)`` returns a new group element with 
-        value ``g_0 * g_1 * ,..., * g_n``.
-
-        In contrast to the standard multiplication operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = self.copy()
-        for g_i in gg:
-            g.group._imul_nonreduced(g, g_i)
-        g.reduce()
-        return g
-
-    def _div(self, g1):
-        """Return quotient of this group element by another element
-
-
-        ``g0._div(g1)`` returns a new group element with 
-        value ``g0 * g1**(-1)``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        return self._mul(g1**(-1))
-
-    def _conj(self, g1):
-        """Conjugate this group element by another element
-
-
-        ``g0._comj(g1)`` returns a new group element with 
-        value ``g1**(-1) * g0 * g1``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = g1**(-1)
-        return g._mul(self, g1)
-
-    def _pow(self, exp):
-        """Raise this group element to a power
-
-        ``g0._pow(exp)`` returns a new group element with 
-        value ``g0**exp``.
-
-        In contrast to the standard division operation we do 
-        not reduce the result. To be used for tests only!
-        """
-        g = self.group
-        if exp > 0:
-            res, start = g.copy_word(self), self
-        elif exp == 0:
-            return g.group.neutral()
-        else:
-            start, exp = g._invert(self), -exp
-            res = g.copy_word(start) 
-        for i in range(int(exp).bit_length() - 2, -1, -1):
-            res = res._mul(res)
-            if exp & (1 << i):
-                res = res._mul(start) 
-        return res      
-
-
-
-
-    def order(self, max_order = 119):
-        """Return the order of the element of the monster group
-
-        We use the method in :cite:`LPWW98`, section 7, for computing
-        the order of an element of the monster.
-
-        If the argument ``max_order`` is present then the order of the 
-        element is checked up to (and including) ``max_order`` only.  
-        Then the function returns ``0`` if the order is greater than 
-        ``max_order``. By default, the function returns the exact 
-        order of the element.
-        """
-        if check_mm_order is None:
-            import_mm_order_functions()
-        return check_mm_order(self, max_order)
-
-    def half_order(self, max_order = 119):
-        """Return the (halved) order of the element of the monster group
-
-        The function  returns a pair ``(o, h)``, where ``o`` is the 
-        order of the element.
-
-        If ``o`` is even then the function returns the pair ``(o, h)``,
-        where ``h`` is the element raised to to the ``(o/2)``-th power. 
-        Otherwise the function returns the pair ``(o, None)``.
-   
-        Parameter ``max_order`` is as in function ``check_mm_order``. 
-
-        If ``h`` is in the subgroup :math:`G_{x0}`` then ``h`` is 
-        returned as a word in the generators of that subgroup.
-        """
-        if check_mm_half_order is None:
-            import_mm_order_functions()
-        return check_mm_half_order(self, max_order)
-
-    def in_G_x0(self):
-        """Check if the element is in the subgroup :math:`G_{x0}`
-
-        The function returns True if this is the case. If this is
-        the case then the element is converted to a word in the
-        generators of :math:`G_{x0}`.
-
-        This method uses geometric information about the Leech 
-        lattice taken from :cite:`Iva99`.
-        """
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        return check_mm_in_g_x0(self) is not None
-                          
-    def chi_G_x0(self):
-        r"""Compute characters of element of subgroup :math:`G_{x0}`
-
-        If the element is in the subgroup :math:`G_{x0}` then the 
-        function returns a tuple 
-        :math:`(\chi_M, \chi_{299}, \chi_{24}, \chi_{4096})`
-        of integers. Otherwise it raises ``ValueError``.
-
-        Here :math:`\chi_M` is the character of the element in the
-        196833-dimensional rep :math:`198883_x` of the monster.
-
-        By Conway's construction of the monster we have:
-
-        :math:`198883_x =  299_x \oplus 24_x \otimes  4096_x
-        \oplus 98280_x`,
-
-        for suitable irreducible representations 
-        :math:`299_x, 24_x, 4096_x, 98280_x` of the group 
-        :math:`G_{x0}`. The corresponding characters of the
-        element of  :math:`G_{x0}` are returned in the tuple
-        given above.  
-
-        While the product :math:`\chi_{24} \cdot \chi_{4096}`
-        is well defined, the factors  :math:`\chi_{24}` and 
-        :math:`\chi_{4096}` are defined up to sign only. We
-        normalize these factors such that the first nonzero value 
-        of the pair :math:`(\chi_{24}, \chi_{4096})` is positive.           
-        """
-        if self.in_G_x0() is None:
-            err = "Element is not in the subgroup G_x0 of the monster"
-            raise ValueError(err)
-
-        if Xsp2_Co1 is None: 
-            import_Xsp2_Co1()
-        elem = Xsp2_Co1(*self.group.as_tuples(self))
-
-        a = np.zeros(4, dtype = np.int32)
-        res = chk_qstate12(xsp2co1_traces_all(elem._data, a))
-        chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
-        chi299 = (chi24**2 + chisq24) // 2 - 1
-        chi_M = chi299 + chi98260 + chi24 * chi4096
-        return chi_M, chi299, chi24, chi4096
-       
-    def in_N_x0(self):
-        """Check if the element is in the subgroup :math:`N_{x0}`
-
-        The function returns True if this is the case. If this is
-        the case then the element is converted to a word in the
-        generators of :math:`N_{x0}`.
-        """
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        if check_mm_in_g_x0(self) is None:
-            return False
-        self.reduce()
-        for atom in self.data:
-            if ((atom >> 28) & 7) > 4:
-                return False
-        return True
- 
-    def in_Q_x0(self):
-        """Check if the element is in the subgroup :math:`Q_{x0}`
-
-        The function returns True if this is the case. If this is
-        the case then the element is converted to a word in the
-        generators of :math:`Q_{x0}`.
-        """
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        if check_mm_in_g_x0(self) is None:
-            return False
-        self.reduce()
-        for atom in self.data:
-            if (atom & 0x70000000) not in [0x10000000,  0x30000000]:
-                return False
-        return True
-             
-    def as_Q_x0_atom(self):
-        """Return element as an atom of the subgroup :math:`Q_{x0}`
-
-        If this element is in the subgroup :math:`Q_{x0}` of the monster
-        then the function returns a number ``x`` such that this element
-        ``self`` is equal to ``self.group(('q', x))``.
-
-        Otherwise the function raises ValueError.
-        """
-        err = "Element of monster group is not in subgroup Q_x0"
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        if check_mm_in_g_x0(self) is None:
-            raise ValueError(err)
-        self.reduce()
-        res = 0;
-        for atom in self.data:
-            tag = (atom >> 28) & 0x0f
-            if res == 0 and tag == 3:
-                res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
-            elif tag == 1:
-                res ^= atom & 0xfff
-            elif tag:
-                 raise ValueError(err)
-        return res
-    
-
-    def type_Q_x0(self):
-        """Return type of element if it is in the subgroup :math:`Q_{x0}`
-
-        If the element is in the subgroup :math:`Q_{x0}` of the monster
-        then the function returns the type of the vector in the Leech 
-        lattice modulo 2 corresponding to this element. That type is
-        0, 2, 3, or 4.
-
-        The function raises ValueError if the element is not
-        in the subgroup :math:`Q_{x0}`. 
-        """
-        v = self.as_Q_x0_atom()
-        return gen_leech2_type(v) >> 4
-
-    def conjugate_2B_involution(self, check=True, ntrials=10, verbose=0):
-        """Find an element conjugating an involution into the centre
-
-        If the element :math:`g` given by ``self`` is a 2B involution 
-        in  the monster then the method computes an element :math:`h` 
-        of the monster   with  :math:`h^{-1} g h = z`, where  
-        :math:`z` is the central involution in the 
-        subgroup :math:`G_{x0}` of the  monster.
-
-        The function returns the element :math:`h` of the monster. It
-        raises ``ValueError`` if :math:`g` is not a 2B involution in
-        the monster, or no suitable element  :math:`h` can be foound. 
-
-        This function may take a long time. Parameter  ``ntrials``
-        gives the number of trials to find a suitable element
-        :math:`h`. Default is  ``ntrials = 10``. The function may
-        fail after that number of trials even if the element is a
-        2B involution.
-
-        If parameter ``check`` is True (default) then the function 
-        first checks if ``g`` is an involution.
-
-        In future versions support for multiprocessing may be added.
-        """
-        if mm_conjugate_2B is None: 
-            import_Xsp2_Co1()
-        return mm_conjugate_2B(self, check, ntrials, verbose)
-
-
-    def simplify(self, ntrials=None, verbose=0):
-        """Try to simplify an element of the monster group
-
-        This function tries to simplify an element of the monster group.
-        It may take a long time, but this is the only way to prevent the
-        explosion of the word lengths of elements of the monster group. 
-
-        The current version uses the word shortening algorithm
-        in  :cite:`Wil03`. Parameter ``ntrials`` specifies the number
-        of trials. Here the default value for ``ntrials`` should be
-        used, since the parameter may be dropped in future versions.
-
-        The word shortening algorithm and the implementation of this 
-        method is experimental and may change in future versions!
-        """
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        check_mm_in_g_x0(self)
-        self.reduce()
-        weight = sum([((x >> 28) & 7) == 5 for x in self.data])
-        #print(weight)
-        if weight <= 9:
-             return self
-        if ntrials is None:
-            ntrials = 40
-        else:
-            w = ("The default value of parameter 'ntrials' should be used"
-                 " in method mmgroup.MM.simplify")
-            warnings.warn(w)
-        if reduce_via_power is None:
-            import_Xsp2_Co1()
-        try: 
-            g = reduce_via_power(self, ntrials, verbose = verbose)
-            assert g == self
-            self._setdata(g.data)
-            self.reduce()
-        except:
-            w = "Simplification of monster group element failed"
-            warnings.warn(w)
-        return self
-
-###########################################################################
-# Atoms for the group M
-###########################################################################
-
-
-tag_dict = {
-        "d": 0x10000000, 
-        "p": 0x20000000, 
-        "x": 0x30000000, 
-        "y": 0x40000000, 
-        "t": 0x50000000, 
-        "l": 0x60000000, 
-}
-
-
-
-
-tags = " dpxytl"
-
-def gen_d(tag, d = "r"):
-    if isinstance(d, Integral ):
-        return [0x10000000 + (d & 0xfff)]
-    elif isinstance(d, str):
-        cocode = randint(int('n' in d), 0xfff) 
-        if "o" in d and not "e" in d:
-            cocode |= 1 
-        if "e" in d and not "o" in d:
-            ccocode &= ~1
-        return [0x10000000 + (cocode & 0xfff)]
-    else:
-        cocode = Cocode(d).cocode
-        return [0x10000000 + (cocode & 0xfff)]
-
-def gen_p(tag, perm = "r"):
-    if isinstance(perm, Integral):
-        if not 0 <= perm < MAT24_ORDER:
-            raise ValueError("Bad permutation number for Mathieu group")
-        return [0x20000000 + perm]
-    elif isinstance(perm, str):
-        perm = randint(0, MAT24_ORDER-1)
-        return [0x20000000 + perm]
-    elif isinstance(perm, AutPL):
-        return [0x10000000 + perm._cocode, 0x20000000 + perm._perm_num]
-    else:
-        cocode, perm_num = autpl_from_obj(0, perm)
-        return  [0x10000000 + (cocode & 0xfff), 0x20000000 + perm_num]
-
-
-def gen_ploop_element(r):
-    if isinstance(r, Integral):
-        return  r & 0x1fff
-    elif isinstance(r, str):
-        return randint(0, 0x1fff) 
-    else:
-        return PLoop(r).ord
-
-def gen_xy(tag, r = "r"):
-    return [ tag_dict[tag] + gen_ploop_element(r)]
-
-def gen_z(tag, r = "r"):
-    pl = pow_ploop(gen_ploop_element(r), 3)
-    return [tag_dict['x'] + pl, tag_dict['y'] + pl]
-
-def gen_tl(tag, r = "r"):
-    e = r
-    if isinstance(r, str):
-        e = randint(int('n' in r), 2) 
-    return  [ tag_dict[tag] + e % 3] 
-
-
-ERR_Q_x0 = "Object must represent an element of the subgroup Q_x0 of the monster"
-
-
-def gen_q(tag, r = "r"):
-    e = r
-    if isinstance(r, str):
-        e = randint(0, 0x1ffffff) 
-    elif not isinstance(r, Integral):
-        try:
-            e = r.as_Q_x0_atom()
-            assert isinstance(e, Integral)
-        except:
-            raise TypeError(ERR_Q_x0)
-    d = (e >> 12) & 0x1fff
-    delta = (e ^ ploop_theta(d)) & 0xfff
-    return [tag_dict['x'] + d, tag_dict['d'] + delta]
-
-
-
-
-ERR_LEECH2 = "Object must represent a type-4 vector in Leech lattice mod 2"
-
-def gen_c(tag, r = "r"):
-    if isinstance(r, str):
-        c = 0
-        while gen_leech2_type(c) >> 4 != 4:
-           c = randint(0, 0xffffff) 
-    elif isinstance(r, Integral):
-        c = r
-    else:
-        try:
-            c = r.as_Q_x0_atom()
-            assert isinstance(c, Integral)
-        except:
-            raise TypeError(ERR_LEECH2)
-    if gen_leech2_type(c) >> 4 != 4:
-        raise ValueError(ERR_LEECH2)
-    a = np.zeros(6, dtype = np.uint32)
-    len_a = gen_leech2_reduce_type4(c, a)
-    mm_group_invert_word(a, len_a)
-    return list(a[:len_a])
-            
-
-gen_tag_dict = {
-        "d": gen_d, 
-        "p": gen_p, 
-        "x": gen_xy, 
-        "y" :gen_xy, 
-        "z" :gen_z, 
-        "t": gen_tl, 
-        "l": gen_tl, 
-        "q": gen_q, 
-        "c": gen_c, 
-}
-
-
-def gen_atom(tag = None, number = "r"):
-    """Return list of integers representing element of monster group
-
-    This is the workhorse form method MMGroup.atom().
-    See that method for documentation.
-    """
-    if not tag:
-         return []
-    try: 
-        gen_function = gen_tag_dict[tag]
-    except KeyError:
-        err = "Illegal tag %s for MM group atom"
-        raise ValueError(err % tag)
-    return gen_function(tag, number)
-
-
-###########################################################################
-# The class representing the group MM
-###########################################################################
-
-
-def cocode_to_mmgroup(g, c):
-    return g.word_type([0x10000000 + (c.cocode & 0xfff)], group = g)
-
-def autpl_to_mmgroup(g, aut):
-    return g.word_type([0x10000000 + (aut.cocode & 0xfff), 
-                  0x20000000 + aut.perm_num], group = g)
-
-def ploop_to_mmgroup(g, pl):
-    return g.word_type([0x30000000 + (pl.value & 0x1fff)],  group = g)
-
-
-class MMGroup(AbstractMMGroup):
-    r"""An instance ``MM`` of this class models an instance of the monster
-
-    :param: None
-
-    :return: An instance of the monster group 
-    :rtype:  an instance of class |MMGroup|
-
-    This means that ``MM = MMGroup()`` creates an instance ``MM`` of the 
-    monster group  :math:`\mathbb{M}`. For generating an element ``g`` 
-    of ``MM`` one must call ``MM`` as a function with a variable number 
-    of arguments. Depending on its type, each argument is evaluated to
-    an element of ``MM`` as indicated in the table below, and the
-    product of these elements is returned. 
-
-    Elements of the monster group are implemented as instances of class
-    ``MMGroupWord``. The preferred way to construct an element of the 
-    monster group is to call an instance of class |MMGroup|.  
-
-    .. table:: Legal types for constructing an element of the monster
-      :widths: 25 75
-
-      +---------------------+-------------------------------------------+
-      | Object of type      | Evaluates to                              |
-      +=====================+===========================================+
-      | tuple (``tag, i``)  | ``MM((tag, i))`` is equivalent to         |
-      |                     | ``MM.atom(tag, i)``                       |
-      +---------------------+-------------------------------------------+
-      | class |PLoop|       | The Parker loop element :math:`d`         | 
-      |                     | given by that object is mapped to         |
-      |                     | :math:`x_d \in \mathbb{M}`                |
-      +---------------------+-------------------------------------------+
-      | class |AutPL|       | The Parker loop automorphism :math:`\pi`  | 
-      |                     | given by that object is mapped to         |
-      |                     | :math:`x_\pi \in \mathbb{M}`              |
-      +---------------------+-------------------------------------------+
-      | class |Cocode|      | The Golay cocode element :math:`\delta`   | 
-      |                     | given by that object is mapped to         |
-      |                     | :math:`x_\delta \in \mathbb{M}`           |
-      +---------------------+-------------------------------------------+
-      | class |MMGroupWord| | A deep copy of the given element of       | 
-      |                     | :math:`\mathbb{M}` is made                |
-      +---------------------+-------------------------------------------+
-      | ``str``             | For an element ``g`` of ``MM`` we have    |
-      |                     | ``MM(str(g)) == g``.                      |
-      |                     |                                           |
-      |                     | So we can reread                          |
-      |                     | printed elements of ``MM``.               |
-      +---------------------+-------------------------------------------+
-
-    See class |MMGroupWord| for the group operation on an instance
-    ``MM`` of  class |MMGroup|.
-
-    Two elements ``g1, g2`` of the monster group can be tested for 
-    equality with the ``==`` operator as usual. Here we use the 
-    method given in :cite:`Wil03` for checking ``g1 * g2**(-1) == 1``.
-
-    Elements ``g1``, ``g2`` that belong to different instances of
-    class |MMGroup| are considered unequal.
-    """
-    __instance = None
-    word_type = MMGroupWord
-    tags, formats = " dpxytl", [None, ihex, str, ihex, ihex, str, str]
-    atom_parser = {}               # see method parse()
-    conversions = {
-        Cocode: cocode_to_mmgroup,
-        PLoop: ploop_to_mmgroup,
-    }
-    implicit_conversions = {
-        AutPL: autpl_to_mmgroup,
-    }
-    group_name = "M"
-
-    def __new__(cls):
-        if MMGroup.__instance is None:
-             MMGroup.__instance = AbstractMMGroup.__new__(cls)
-        return MMGroup.__instance
-
-    def __init__(self):
-        """ TODO: Yet to be documented     
-
-
-        """
-        super(MMGroup, self).__init__()
-        self.atom_parser = AtomDict(self.atom)
-        #self.set_preimage(StdAutPlGroup,  tuple)
-
-
-
-    def atom(self, tag = None, i = "r"):
-        r"""Return an atomic element of this group
-        
-        Here ``tag`` determines the type of the atomic group element,
-        and the ``i`` is number of the atomic element of that type.
-        Depending on the tag, ``i`` is the number of an element of one of 
-        the structures |PLoop|, |Cocode|, or the number of an element of 
+    see class |MMVector| for details. An instance ``g1`` of 
+    class ``MM`` operates on the vector space  ``V`` by right 
+    multiplication.  
+
+    :var tag:
+        In the simplest case, parameter ``tag`` is a string of length 
+        ``1`` that determines the type of the atomic group element. 
+        There are also some special cases for parameter ``tag `` as
+        indicated below. If ``tag`` is not given or equal to ``1`` 
+        then  the neutral element of the monster group is constructed.
+
+     
+    :var i:
+        Parameter ``i`` is number of the atomic element of a given ``tag``.
+        Depending on the tag, ``i`` may be the number of an element of one 
+        of the structures |PLoop|, |Cocode|, or the number of an element of 
         the Mathieu  group ``M_24``, as explained in class |AutPL|.
         An element :math:`\pi` of the group |AutPL| is mapped to the
         element :math:`x_\pi` of the Monster group.
@@ -947,17 +322,22 @@ class MMGroup(AbstractMMGroup):
         The number ``i`` may also be an instance of the appropriate class
         |PLoop|, |Cocode|, or |AutPL|, as indicated in the table below.
 
-        .. table:: Atomic elements of the Monster group
+    :return: An element of the monster group 
+    :rtype:  an instance of class |MM|
+
+
+
+    .. table:: Atomic elements of the Monster group
           :widths: 8 20 72
 
 
           +-------+-----------------+----------------------------------------+
           | Tag   | Number  ``i``   | Type of element                        |
           +=======+=================+========================================+
-          |``'p'``| ``0-244823039`` | The automorphism ``AutPL(('p',i))`` of |
+          |``'p'``| ``0-244823039`` | The automorphism ``AutPL('p',i)`` of   |
           |       |                 | the Parker loop, see below.            |
           +-------+-----------------+----------------------------------------+
-          |``'d'``| ``0-0xfff``     | The diagonal automorphism ``Cocode(i)``| 
+          |``'d'``| ``0-0xfff``     | The diagonal automorphism ``Cocode(i)``|
           |       |                 | in |AutPL|.                            |
           +-------+-----------------+----------------------------------------+
           |``'x'``| ``0-0x1fff``    | The element :math:`x_e`,  with         |
@@ -976,244 +356,226 @@ class MMGroup(AbstractMMGroup):
           +-------+-----------------+----------------------------------------+
           |``'l'``| ``0-2``         | The element :math:`\xi^i`,             |
           +-------+-----------------+----------------------------------------+
-          |``'q'``| ``0-0x1ffffff`` | See remark below.                      |
+          |``'q'``| ``0-0x1ffffff`` | Describes an element of the subgroup   |
+          |       |                 | :math:`Q_{x0}`. See remark below.      |
           +-------+-----------------+----------------------------------------+
-          |``'c'``| ``0-0xffffff``  | See remark below.                      |
+          |``'c'``| ``0-0xffffff``  | A representative of a right coset of   |
+          |       |                 | :math:`N_{x0}` in :math:`G_{x0}`.      |
+          |       |                 | See remark below.                      |
+          +-------+-----------------+----------------------------------------+
+          |``'r'``| ``String``      | Here the string describes a subgroup   |
+          |       |                 | from which a random element is taken   |
+          +-------+-----------------+----------------------------------------+
+          |``'a'``| array-like      | An array of 32-bit integers describing |
+          |       |                 | the internal representation of an      |
+          |       |                 | element.                               |
           +-------+-----------------+----------------------------------------+
 
-         
-        If ``i`` is the string ``'r'`` then a random element with the   
-        given tag is generated.  If ``i`` is the string ``'n'`` then
-        a random element with the given tag is generated, which is 
-        different from the neutral element with a very high 
-        probability.
 
-        If ``tag == 'd'`` then  ``i = 'o'`` generates a random odd 
-        and ``i = 'e'`` generates a  random even diagonal automorphism.
-        In this case `i`` may also be an instance of class |Cocode|, 
-        representing the diagonal automorphism correspnding to the
-        given element of the Golay cocode.   
+    **Remarks on standard tags 'p', 'd', 'y', 'z', 't', 'l', 'q', 'c'**
+          
+    If ``i`` is the string ``'r'`` then a random element with the   
+    given tag is generated.  If ``i`` is the string ``'n'`` then
+    a random element with the given tag is generated, which is 
+    different from the neutral element with a very high 
+    probability.
+
+    If ``tag == 'd'`` then  ``i = 'o'`` generates a random odd 
+    and ``i = 'e'`` generates a  random even diagonal automorphism.
+    In this case `i`` may also be an instance of class |Cocode|, 
+    representing the diagonal automorphism correspnding to the
+    given element of the Golay cocode.   
         
-        If ``tag == 'p'`` then ``i`` may also be an instance of class 
-        |AutPL|. Then the returned atom is the Parker loop automorphism
-        given by that instance. If ``i`` is an integer then the Parker 
-        loop  automorphism ``AutPL(('p',i))`` is returned. This 
-        automorphism is the standard rpresentative of the i-th element 
-        of the  Mathieu group ``M_24`` in the automorphism group of the 
-        Parker loop.
+    If ``tag == 'p'`` then ``i`` may also be an instance of class 
+    |AutPL|. Then the returned atom is the Parker loop automorphism
+    given by that instance. If ``i`` is an integer then the Parker 
+    loop  automorphism ``AutPL('p',i)`` is returned. This 
+    automorphism is the standard rpresentative of the i-th element 
+    of the  Mathieu group ``M_24`` in the automorphism group of the 
+    Parker loop.
 
-        If ``tag`` is ``'x'``,   ``'y'`` or ``'z'`` then ``i`` 
-        may also be an instance of class |PLoop|, representing an 
-        element of the Parker loop. 
+    If ``tag`` is ``'x'``,   ``'y'`` or ``'z'`` then ``i`` 
+    may also be an instance of class |PLoop|, representing an 
+    element of the Parker loop. 
 
-        The exponent ``i`` for a tag ``'t'`` or ``'l'`` is reduced
-        modulo ``3``. 
+    The exponent ``i`` for a tag ``'t'`` or ``'l'`` is reduced
+    modulo ``3``. 
 
-        The tag ``'q'`` is useful for encoding an element of the 
-        subgroup :math:`Q_{x0}` of the monster. An atom with 
-        tag ``'q'`` and index ``i``  encodes the element 
-        :math:`x_d \cdot x_{\delta} \cdot x_{\theta(d)}`, 
-        with :math:`d` = ``PLoop(i >> 12)`` :math:`\in \mathcal{P}``,   
-        :math:`\delta` = ``Cocode(i & 0xfff)`` 
-        :math:`\in \mathcal{C}^*`,  
-        and   :math:`\theta: \mathcal{P} \rightarrow \mathcal{C}^*`
-        the cocycle of the Parker loop.
+    The tag ``'q'`` is useful for encoding an element of the 
+    subgroup :math:`Q_{x0}` of the monster. An atom with 
+    tag ``'q'`` and index ``i``  encodes the element 
+    :math:`x_d \cdot x_{\delta} \cdot x_{\theta(d)}`, 
+    with :math:`d` = ``PLoop(i >> 12)`` :math:`\in \mathcal{P}``,   
+    :math:`\delta` = ``Cocode(i & 0xfff)`` 
+    :math:`\in \mathcal{C}^*`,  
+    and   :math:`\theta: \mathcal{P} \rightarrow \mathcal{C}^*`
+    the cocycle of the Parker loop.
 
-        The tag ``'c'`` with index ``i`` encodes a representative
-        of the right coset :math:`N_{x0} g, g \in G_{x0}` of  
-        :math:`N_{x0}` in :math:`G_{x0}` that maps the standard
-        frame  :math:`\Omega` in the Leech lattice modulo 2 to 
-        a type-4 vector given by the index ``i``.
-        Here ``i`` ecodes a vector in the Leech lattice modulo 2
-        as in the description for tag  ``'q'``. That vector must
-        be of type 4. The sign bit of that vector is ignored.
-        """
-        return self.word_type(gen_atom(tag, i), group = self)
+    The tag ``'c'`` with index ``i`` encodes a representative
+    of the right coset :math:`N_{x0} g, g \in G_{x0}` of  
+    :math:`N_{x0}` in :math:`G_{x0}` that maps the standard
+    frame  :math:`\Omega` in the Leech lattice modulo 2 to 
+    a type-4 vector given by the index ``i``.
+    Here ``i`` encodes a vector in the Leech lattice modulo 2
+    as in the description for tag  ``'q'``. That vector must
+    be of type 4. The sign bit of that vector is ignored.
 
 
-    def as_tuples(self, g):
-        assert g.group == self
-        # g = g.reduce(copy = True)
-        data = g.data
-        if len(data) and max(data) >= 0x70000000:
-            raise ValueError("Illegal group element")
-        return [(tags[a >> 28], a & 0xfffffff)  
-                   for a in data if (a >> 28)]
-
-    @classmethod
-    def str_atom(cls, a):
-        itag = (a >> 28) & 0xF
-        if itag in [0, 8]: 
-            return "1"
-        if itag >= 8:
-            return "(1/%s)" % cls.str_atom(a ^ 0x80000000)
-        try:
-            tag = cls.tags[itag]  
-        except:
-            return "(unknown)"
-        fmt = cls.formats[itag]
-        return tag + "_" + fmt(a & 0xfffffff)
-        
-   
-    def str_word(self, g, fmt = None):
-        s = "*".join(map(self.str_atom, g.data)) if len(g) else "1"
-        return (fmt if fmt else self.STR_FORMAT) % s
-
-    def reduce(self, g1, copy = False):
-        l1 = g1.length
-        if g1.reduced < l1:
-            if copy:
-                g1 = self.copy_word(g1)
-            l_tail = l1 - g1.reduced
-            g1._extend(l1 + l_tail + 1)
-            g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
-            tail =  g1._data[l1:]
-            l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-            g1.reduced = g1.length = l1
-        return g1
-
-    def _imul_nonreduced(self, g1, g2):
-        l1, l2 = g1.length, g2.length
-        g1._extend(l1 + l2 + 1)
-        g1._data[l1 : l1 + l2] = g2._data[:l2]
-        g1.length = l1 + l2
-        return g1
-        
-    def _imul(self, g1, g2):
-        l1, l2 = g1.length, g2.length
-        g1._extend(2*(l1 + l2) + 1)
-        g1._data[l1 : l1 + l2] = g2._data[:l2]
-        l1 += l2
-        l_tail = l1 - g1.reduced
-        g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
-        tail = g1._data[l1:]
-        l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-        g1.reduced = g1.length = l1
-        return g1
-
-    def _invert(self, g1):
-        w = self.word_type(np.flip(g1.data) ^ 0x80000000, group=self)
-        return self.reduce(w)
-
-    def copy_word(self, g1):
-        result = self.word_type(g1.data, group = self)
-        result.reduced = g1.reduced
-        return result
-
-    def _equal_words(self, g1, g2):
-        if check_mm_equal is None:
-            import_mm_order_functions()
-        return g1.group == g2.group and check_mm_equal(g1, g2)
-
-    def from_data(self, data):
-        """Create a group element from an array of generators
-
-        Internally, an element of the monster group is represented
-        as an array of unsigned 32-bit integers, where each entry
-        of the array describes a generator. See section
-        :ref:`header-mmgroup-generators-label` for details.
+    **Generating a random element of the subgroup of the monster**
  
-        This function creates an element of the monster group from
-        such an array of integers.
+    If parameter ``tag`` is equal to ``'r'`` then parameter 
+    ``'i'`` should be a string describing a subgroup of the 
+    monster group. Then a uniform distributed element from that
+    subgroup is generated. The follwing subgroups are recognized:
 
-        :param data: An array-like object representing a 
-                     word of generators of the monster group
+    .. table:: Subgroups of the Monster group recognized
+          :widths: 15 85
 
-        :return: An element of this instance of the monster group 
-        :rtype:  an instance of class mmgroup.MMGroupWord
+       +---------------+-----------------------------------------------+
+       | Param. ``i``  | Subgroup                                      |     
+       +---------------+-----------------------------------------------+
+       | ``'M'``       | The monster group itself                      +
+       +---------------+-----------------------------------------------+
+       | ``'G_x0'``    | Subroup  ``'G_x0'`` generated by              +
+       |               | :math:`x_d, x_\delta, y_d, x_\pi, \xi`        +
+       +---------------+-----------------------------------------------+
+       | ``'N_0'``     | Subroup  ``'N_0'`` generated by               +
+       |               | :math:`x_d, x_\delta, y_d, x_\pi, \tau`       +
+       +---------------+-----------------------------------------------+
+       | ``'N_x0'``    | Subroup  ``'N_x0'`` generated by              +
+       |               | :math:`x_d, x_\delta, y_d, x_\pi`             +
+       +---------------+-----------------------------------------------+
+       | ``'N_0_e'``   | Subroup of ``'N_0'`` of index 2 generated by  +
+       |               | :math:`x_d, x_\delta, y_d, x_\pi, \tau` ,     +
+       |               | :math:`\delta` even                           +
+       +---------------+-----------------------------------------------+
+       | ``'N_x0_e'``  | Subroup of ``'N_x0'`` of index 2 generated by +
+       |               | :math:`x_d, x_\delta, y_d, x_\pi` ,           +
+       |               | :math:`\delta` even                           +
+       +---------------+-----------------------------------------------+
+
+    Subgroup ``'G_x0'`` has structure :math:`2^{1+24}.\mbox{Co}_1`, and
+    subgroup ``'N_0'`` has structure :math:`2^{2+11+22}.\mbox{M}_{24}`.
+    ``'N_x0'`` is a subgroup of ``'N_0'`` of index 3.
+
+    If Parameter ``i`` is an positive integer then an element of the
+    monster of shape :math:`g_0 t_1 g_1 t_2 g_2 ... t_i g_i` is created,
+    where :math:`g_j` is a random element of  ``'G_x0'``, and :math:`t_j` 
+    is  :math:`\tau^{\pm 1}`.
+
+
+    **Generating an element of monster from its internal representation**
+
+    If parameter ``tag`` is equal to ``'a'`` then parameter 
+    ``'i'`` should be an array-like object containing the
+    internal representation of an element of the monster group.
+ 
+    Internally, an element of the monster group is represented
+    as an array of unsigned 32-bit integers, where each entry
+    of the array describes a generator. See section
+    :ref:`header-mmgroup-generators-label` for details.
+
+
+    **Special types accepted as tags**
+  
+    In the simplest case the argument ``tag`` in the constructor is
+    a string of length ``1``. There are a few other types which are
+    also accepted as tags. For such a special tag, the following
+    parameter ``i`` in the constructor is ignored. 
+
+    Especially, we may encode a word of standard generators as a 
+    list of tuples as indicated in the table below.
+
+    .. table:: Legal types as tags in the constructor of class ``MM``
+      :widths: 25 75
+
+      +---------------------+-------------------------------------------+
+      | Object of type      | Evaluates to                              |
+      +=====================+===========================================+
+      | type ``list``       | A list represents the product of its      |
+      |                     | entries in the given order. An entry      |
+      |                     | ``MM(tag, i)`` can be abbreviated  to     |
+      |                     | the tuple ``(tag, i)``.                   |
+      +---------------------+-------------------------------------------+
+      | class |PLoop|       | The Parker loop element :math:`d`         | 
+      |                     | given by that object is mapped to         |
+      |                     | :math:`x_d \in \mathbb{M}`.               |
+      +---------------------+-------------------------------------------+
+      | class |AutPL|       | The Parker loop automorphism :math:`\pi`  | 
+      |                     | given by that object is mapped to         |
+      |                     | :math:`x_\pi \in \mathbb{M}`.             |
+      +---------------------+-------------------------------------------+
+      | class |Cocode|      | The Golay cocode element :math:`\delta`   | 
+      |                     | given by that object is mapped to         |
+      |                     | :math:`x_\delta \in \mathbb{M}`.          |
+      +---------------------+-------------------------------------------+
+      | class |MM|          | A deep copy of the given element of       | 
+      |                     | :math:`\mathbb{M}` is made.               |
+      +---------------------+-------------------------------------------+
+      | ``str`` of length   | For an instance ``g`` of class ``MM``     |
+      | greater than ``1``  | we have ``MM(str(g)) == g``.              |
+      |                     |                                           |
+      |                     | So we can reread                          |
+      |                     | printed elements of ``MM``.               |
+      +---------------------+-------------------------------------------+
+
+
+    """
+    MIN_LEN = 64
+    __slots__ =  "length", "_data", "reduced"
+    def __init__(self,  tag = None, i = None, *args, **kwds):
+        self.reduced = 0
+        atoms = iter_mm(self.group, tag, i)
+        self._data = np.fromiter(atoms, dtype = np.uint32) 
+        self.length = len(self._data)
+        self._extend(self.MIN_LEN)
+
+
+
+
+
+###########################################################################
+# The class representing the group MM
+###########################################################################
+
+
+
+class MMGroup(MM0Group):
+    r"""An instance of this class models the monster group as an object
+
+    :param: None
+
+    :return: An instance of the monster group 
+    :rtype:  an instance of class |MMGroup|
+
+    Class |MMGroup| is implemented as a singleton. Calling the constructor
+    of that class always returns the same instance of that class. 
+
+    Elements of the monster group are implemented as instances of class
+    ``MM``. 
+    """
+    __instance = None
+    word_type = MM
+    group_name = "M"
+
+    def __new__(cls):
+        if MMGroup.__instance is None:
+             MMGroup.__instance = MM0Group.__new__(cls)
+        return MMGroup.__instance
+
+    def __init__(self):
+        """ TODO: Yet to be documented     
+
 
         """
-        return self.word_type(data, group = self)
-
-    def rand_G_x0(self, seed = None):
-        r"""Return random element of subgroup :math:`G_{x0}`
-
-        The function returns a uniform distributed random element
-        of the subgroup :math:`G_{x0}`. The function uses the
-        internal random generator of the ``mmgroup`` package.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        buf = np.zeros(10, dtype = np.uint32)
-        seed = rand_get_seed(seed)
-        length = xsp2co1_rand_word_G_x0(buf, seed) 
-        if not 0 <= length <= 10:
-            err = "Error in generating random element of G_x0"
-            raise ValueError(err)
-        return self.from_data(buf[:length])
-
-    def rand_N_0(self, in_N_x0 = False, even = False, seed = None):
-        r"""Return random element of subgroup :math:`N_{0}`
-
-        The function returns a uniform distributed random element
-        of the subgroup :math:`N_{x}` of the monster of structure
-        :math:`2^{2+11+22}.(M_{24} \times \mbox{Sym}_3)`. The group 
-        :math:`N_0` is generated by the generators with tags
-        ``x, y, d, p, t``. The function uses the internal random 
-        generator of the ``mmgroup`` package.
-
-        If parameter ``in_N_x0`` is nonzero then we compute a random
-        element of the subgroup :math:`N_{x0}` of index 3 in :math:`N_0` 
-        generated by the generators with tags ``x, y, d, p``.
-
-        If parameter ``even`` is nonzero then we compute a random
-        element of the  subgroup :math:`N_{\mbox{even}}` of index 2
-        in :math:`N_{x}`  generated by the generators with
-        tags ``x, y, d, p, t``, where all generators with tag ``d``
-        correspond to even Golay cocode words.
-
-        If both, ``in_N_x0`` and ``even``, are nonzero then we compute
-        a random element
-        of :math:`N_{xyz0} = N_{\mbox{even}} \cap N_{x0}`.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        buf = np.zeros(10, dtype = np.uint32)
-        seed = rand_get_seed(seed)
-        length = xsp2co1_rand_word_N_0(buf, in_N_x0, even, seed) 
-        if not 0 <= length <= 10:
-            err = "Error in generating random element of G_x0"
-            raise ValueError(err)
-        return self.from_data(buf[:length])
+        super(MMGroup, self).__init__()
 
 
-    def rand_mm(self, quality = None, seed = None):
-        r"""Return a random element of the monster group
-
-        The function returns a random element of the monster group.
-        Here ``quality`` means a measure for the quality of the
-        randimization process, where a higher value menas that
-        the distribution of the elements is closer to uniform.
-
-        If ``quality`` is an integer ``k`` then a product containing
-        ``k`` powers of the triality element it generated. Here the
-        default value creates an almost uniform distribution.
-
-        In future versions the default value of parameter ``quality``
-        may correspond to the generation of a truly uniform
-        distribution.
-
-        ``seed`` is a seed for the random generator. The current version 
-        supports the default seed only. Here some random data taken from 
-        the operating system and from the clock are entered into the seed.     
-        """
-        if quality is None: quality = 12
-        seed = rand_get_seed(seed)
-        g = self.rand_G_x0(seed)
-        for k in range(quality):
-            t = 1 + gen_rng_modp(2, seed)
-            g *= self.atom('t', t)
-            c = 0
-            while gen_leech2_type(c) >> 4 != 4:
-                c = gen_rng_modp(0x1000000, seed) 
-            g *= self.atom('c', c)
-        return g
 
 
-# Predefine a standard instance of class MMGroup
-MM =  MMGroup()
+StdMMGroup = MMGroup()
+MM.group = StdMMGroup
+load_group_name(StdMMGroup, "M")
+
+
 
