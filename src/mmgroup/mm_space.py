@@ -1,6 +1,6 @@
 r"""We deal with the 196884-dimensional representation of the monster.
 
-The purpose of the ``mmgroup`` package is to give the user the 
+One purpose of the ``mmgroup`` package is to give the user the 
 capability to compute in the ``196884``-dimensional representation 
 :math:`\rho_p` of the monster group :math:`\mathbb{M}`. Here
 :math:`\rho` is the rational representation  ``196884_x`` of the 
@@ -13,57 +13,65 @@ We are a bit sloppy, calling :math:`\rho_p` a vector space also
 in cases ``p = 15, 255``. The user may select these values for
 obtaining representations modulo ``5`` and ``17``, respectively.
 
-For calculating in :math:`\rho_p` the user must first create and 
-instance of class |MMGroup| that models the group  :math:`\mathbb{M}`
-as described in section :ref:`mmgroup-label`. Then the user must 
-create an instance of class |MMSpace| that models a representation 
-space for that group modulo ``p``, with  ``p`` as above. By 
-construction of :math:`\rho_p` is is natural to label a basis vector 
-by a tuple ``(tag, i0, i1)`` with integers ``i0, i1``, as described 
-in the table below.
+For calculating in :math:`\rho_p` the user may create an instance 
+of class |MM| that models an element ``g`` of the group  
+:math:`\mathbb{M}` as described in section :ref:`mmgroup-label`. 
+Then the user may create an instance ``v`` of class |MMVector| 
+that models a vector in :math:`\rho_p`,  with ``p`` as above. 
+Vector ``v`` acts on the element ``g`` of :math:`\mathbb{M}` by
+right multiplication.
 
-If ``V`` is an instance of class  |MMSpace| then the user may call
-``V`` with a variable number of arguments to create a vector in
-``V``. Here each argument evaluates to a vector in ``V`` and
-the sum of these vectors is returned. Such a vector is an instance
-of class |MMVector|. An argument passed to ``V`` may be a 
-tuple ``(factor, tag, i0, i1)``. Here ``tag`` is a single 
+By construction of :math:`\rho_p` is is natural to label a basis 
+vector by a tuple ``(tag, i0, i1)`` with integers ``i0, i1``, as 
+described in the table below.  Here ``tag`` is a single 
 capital letter and indices ``i0``, ``i1`` are unsigned integers; 
 these three quantities describe a basis vector of the space ``V``.
-``factor`` is an optional integer (default is ``1``) describing
-a factor to be multiplied by the basis vector. Valid tags and
-indices for a basis vector are described in the table below.
+
+To create a basis vector of  :math:`\rho_p` corresponding to the
+tuple ``(tag, i0, i1)`` the user may call the constructor
+``MMVector(p, tag, i0, i1)``. For creating an arbitrary 
+(but yet sparse) vector in :math:`\rho_p` the user may call
+``MMVector(p, data_list)``, where ``data_list`` is a list of
+tuples ``(factor, tag, i0, i1)``. Here ``(tag, i0, i1)``
+describes a unit vector and the (optional) integer ``factor`` is 
+a scalar factor for that unit vector. Then the constructor returns 
+the linear combination of the unit vector given in the list.
+
+For a fixed characteristic ``p`` function ``MMV(p)`` returns 
+an object correponding to the vector space  :math:`\rho_p`.
+Thus the sequence
+
+ .. code-block:: python
+
+  >>> V = MMV(p)  
+  >>> v = V(tag, i0, i1)
+
+returns the same vector as the statement ``MMVector(p, tag, i0, i1)``. 
 
 Vector addition, subtraction and scalar multiplication can be done with
 operators ``+``, ``-`` and ``*`` as usual. Elements of the monster group
-operate on vectors by right multiplication. Only vectors in the same 
-space can be added. An instance ``MM`` of the monster group (of class
-|MMGroup|) must be given in the constructor of a vector space ``V``. 
-Then only elements of that instance ``MM`` of the monster group can 
-act on vectors in ``V`` by right multiplication.
+operate on vectors by right multiplication. Only vectors modulo
+the same characteristic ``p``  can be added. 
 
-The following code example generates an instance ``MM`` of the
-monster group operating on a vector space  ``V`` of integers
-modulo ``3``. It creates an element ``g`` of ``MM`` and a vector
-``v`` in ``V`` and displays the result ``g * v`` of the 
-operation of ``g`` on ``v``. Note that a basis vector
-``(tag, i0, i1)`` is displayed in the form ``tag_i0_i1``.
-For a displayed index ``i0`` or ``i1`` the suffix ``h`` means 
-hexadecimal notation.
+The following code example generates an element ``g`` of the
+monster group and a vector ``v`` in the vector space  :math:`\rho_3` 
+and displays the result ``g * v`` of the operation of ``g`` on ``v``. 
+Note that a basis vector ``(tag, i0, i1)`` is displayed in the 
+form ``tag_i0_i1``. For a displayed index ``i0`` or ``i1`` the 
+suffix ``h`` means hexadecimal notation.
 
 
 .. code-block:: python
 
-  >>> from mmgroup import MMGroup
-  >>> from mmgroup import MMSpace
-  >>> # Create an instance MM of the monster group
-  >>> MM = MMGroup()
-  >>> # Create representation space V for MM (modulo 3)
-  >>> V = MMSpace(3, MM)
+  >>> from mmgroup import MM
+  >>> # An instance of class MM represents an element of the monster
+  >>> from mmgroup import MMV
+  >>> # Create representation space V for the monster (modulo 3)
+  >>> V = MMV(3, MM)
   >>> # Create an element g of MM 
-  >>> g = MM(('d', 0x123), ('p', 217821225))
+  >>> g = MM([('d', 0x123), ('p', 217821225)])
   >>> # Create a vector v in V 
-  >>> v = V(('T', 712, 13), (2, 'X', 0x345, 13))
+  >>> v = V([('T', 712, 13), (2, 'X', 0x345, 13)])
   >>> # Let g operate on v by right multiplication
   >>> print(v * g)
   v<-T_444_0fh+X_244h_11>
@@ -155,9 +163,9 @@ basis vector as a tuple ``(tag, i0, i1)``.
     be ``'r'`` or omitted if the first index is ``'r'``, since in these
     cases the two indices are not sufficiently independent.
 
-  * In order to generate a random multiple of a basis vector, the
-    component ``factor`` of a tuple can be set to one of the 
-    following values:
+  * In order to generate a random multiple of a basis vector,
+    inside a list of tuples, the (optional) component ``factor`` 
+    of a tuple can be set to one of the following values:
 
       * ``'u'``: equivalent to ``1`` 
       * ``'s'``: a factor ``1`` or ``-1`` selected at random
@@ -305,6 +313,8 @@ def complete_import():
 
 class MMVector(AbstractMmRepVector):
     """Models a vector in a space of type |MMSpace|.
+
+    TODO: This documentation has to be updated!!!
 
     Such a vector should be constructed by calling an instance ``V``
     of class |MMSpace| which models a specific representation of
@@ -472,6 +482,8 @@ class MMVector(AbstractMmRepVector):
 
 class MMSpace(AbstractMmRepSpace):
     r"""Models a ``196884``-dimensional representation of the monster group 
+
+    TODO: This documentation has to be updated!!!
 
     Any such representation is a vector space which has a small odd
     characteristic ``p``. This means that all coordinates of a vector 
@@ -1087,15 +1099,21 @@ MMVector.space = StdMMSpace
 
 
 def MMV(p):
-   """Return a standard space ``MMSpace(p)`` 
+   r"""Return an object correponding to the space :math:`\rho_p`
 
-   The function returns an instance of class |MMSpace| of
-   characteristic ``p``. The group operating on this space is
-   the group ``mmgroup.MM``, which is an instance of class
-   |MMGroup|.
+   Here characteristic ``p`` is as in the constructor of
+   class |MM|. Thus the sequence
 
-   Different calls to this function with the same parameter
-   ``p`` return exactly the same object.
+   .. code-block:: python
+
+     >>> V = MMV(p)  
+     >>> v = V(tag, i0, i1)
+
+   returns the same vector in :math:`\rho_p` as the 
+   statement ``MMVector(p, tag, i0, i1)``. 
+
+   Technically, ``MMV(p)`` is the partial application of
+   the constructor of class ``MM`` to the number ``p``. 
    """
    return partial(MMVector, p)
 
