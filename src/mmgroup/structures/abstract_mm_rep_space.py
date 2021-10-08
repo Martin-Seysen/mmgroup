@@ -220,7 +220,7 @@ class AbstractMmRepVector(AbstractRepVector):
         unsigned integers of bit length ``8``.
 
         For a vector ``v`` the expression ``v.as_bytes()`` is equivalent 
-        to ``v[:]``, but faster.
+        to ``v['E':]``.
         """
         return self.space.as_bytes(self)
 

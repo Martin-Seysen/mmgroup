@@ -156,9 +156,9 @@ describes a unit vector and the (optional) integer ``factor`` is
 a scalar factor for that unit vector. Then the constructor returns 
 the linear combination of the unit vectors given in the list.
 
-  * In order to generate a random multiple of a basis vector,
-    inside a list of tuples, the (optional) component ``factor`` 
-    of a tuple can be set to one of the following values:
+In order to generate a random multiple of a basis vector, inside a 
+list of tuples, the (optional) component ``factor`` of a tuple can 
+be set to one of the following values:
 
       * ``'u'``: equivalent to ``1`` 
       * ``'s'``: a factor ``1`` or ``-1`` selected at random
@@ -225,7 +225,7 @@ Details are given in the following list:
 
                              See the following subsection for details.              
    ------------------------- --------------------------------------------- 
-   ``('S', data)``           Here ``data`` is an array like object (as
+   ``('S', data)``           Here ``data`` is an array-like object (as
                              defined in the numpy package) that encodes
                              a vector in sparse representation as an 
                              array of unsigned 32-bit integers. 
@@ -237,18 +237,18 @@ Details are given in the following list:
                              in :math:`\rho_p`.            
    ------------------------- --------------------------------------------- 
    ``('V', data)``           Here ``data`` is an array like object (as
-                             defined in the numpy package that encodes  
+                             defined in the numpy package) that encodes  
                              a one-dimensional array of integers of
                              length 196884. The order of the entries
                              is as in the next section.              
    ------------------------- --------------------------------------------- 
-   ``('R')``                 Tag 'R' (without any further parameters)
+   ``('R')``                 Tag ``'R'`` (without any further parameters)
                              stands for the generation of a uniform
                              distributed random vector.
    ------------------------- --------------------------------------------- 
    ``(i, v)``, ``i`` integer Here ``i`` is an integer and ``v`` is a
                              vector, i.e.an instance of class
-                             |MMVector|, then the vector ``i * v``
+                             |MMVector|. Then the vector ``i * v``
                              is generated. This is useful for  
                              extending the modulus ``p`` of a 
                              vector, see  remark below.
@@ -266,7 +266,7 @@ centralizer of ``('I', 3, 2)``.
 The modulus of a vector can be extended as follows. Assume that 
 ``v`` is a vector in :math:`\rho_3`, given as an instance of class
 |MMVector|. Then ``w = 5 * v`` is a well-defined vector in 
-:math:`\rho_15`. Vector ``w`` can be constructed as follows:
+:math:`\rho_{15}`. Vector ``w`` can be constructed as follows:
 ``V15 = MMV(15); w = V15(5, v)``. Note that the construction
 ``w = V15(5*v)`` leads to an error, since ``5*v`` is defined
 modulo ``3``, but not modulo ``15``. 
@@ -386,12 +386,12 @@ Tags are mapped to integers as follows:
 Other data types accepted as tags for vectors in :math:`\rho_p` 
 ................................................................
 
-Some data types are accepted as tags an interprted as described in the
-following table. In this parameters `i0`, `i1` after a tag must not
+Some data types are accepted as tags and interprted as described in the
+following table. In this case parameters `i0`, `i1` after a tag must not
 be set.
     
     .. table:: Legal types for constructing a vector
-      :widths: 25 75
+      :widths: 20 80
 
       ====================== ============================================= 
       type                   Evaluates to                               
@@ -558,12 +558,28 @@ class MMVector(AbstractMmRepVector):
     The construction of vectors in the representations :math:`\rho_p`
     of the monster group (using e.g. the constructor of this class)
     is documented at the  beginning of section :ref:`mmrep-label`.
+    There a basis vector of that representation is dscribed as a
+    tuple ``(tag, i0, i1)``, where ``tag`` is a single capital letter
+    and ``i0``, ``i1`` are integers. So we may invoke the constructor
+    of this class as follows:
 
-    TODO: This documentation has yet to be updated!!!
+    :param p:   Modulus ``p`` of the representation  :math:`\rho_p`. 
 
-    Such a vector should be constructed by calling an instance ``V``
-    of class |MMSpace| which models a specific representation of
-    the monster group. See class |MMSpace| for details.
+    :param tag: Tag of the unit vector to be constructed. In the
+                standard case this is a single capital letter
+                describing the type of the basis vector.
+
+    :param i0:  First index in the tuple describing the basis vector.
+    
+    :param i2:  Second index in the tuple describing the basis vector.
+    
+
+
+    Linear operations can be used for for creating linear combination 
+    of unit vectors. This is just the simplest cast of the  
+    construction of a vector in  :math:`\rho_p`. Section
+    :ref:`mmrep-label` contains a large number of further 
+    possibilities for creating such vectors.
 
     Addition and subtraction of vectors in the same space work as 
     usual. This is also the case for scalar multiplication with 
@@ -573,8 +589,8 @@ class MMVector(AbstractMmRepVector):
     An entry of a vector ``v`` in the space ``V`` may be adressed
     as ``v[tag, i0, i1]``, where ``tag`` is a single letter in
     the string ``ABCTXYZD`` and ``i0`` and ``i1`` are integers,
-    see table :ref:`table-vector-tags` and class |MMSpace| for
-    details. Getting and setting entries of a vector is as in
+    such that the tuple ``(tag, i0, i1)`` describes a basis 
+    vector. Getting and setting entries of a vector is as in
     the ``numpy`` package. Here ``i0`` and ``i1`` may also be 
     slices of integers in the same way as in ``numpy`` arrays. 
     Depending on the ``tag``, the value ``i0`` or ``i1`` may also 
@@ -582,18 +598,15 @@ class MMVector(AbstractMmRepVector):
     in the remarks after table :ref:`table-vector-tags` .
 
     The entries of vector ``v``  also have a linear order as 
-    described in method ``tuple_to_index`` of class |MMSpace|.
-    Here ``v[i]`` is the ``i``-th entry in that order.  Here
+    described in section  :ref:`mmrep-label`.
+    Here ``v['E', i]`` is the ``i``-th entry in that order.  Here
     ``i`` may also be a slice of integers in the same way as
     in a one-dimensional ``numpy`` array.
 
     The internal representation of a vector ``v`` in this class
-    is not part of the public interface. Use ``v.as_bytes()`` to 
+    is not part of the public interface. Use ``v['E']`` to 
     convert ``v`` to an one-dimensional array of ``8``-bit 
-    integers.
-    Method ``from_bytes`` of class |MMSpace| constructs a
-    vector ``v`` as an instance of class |MMVector| from
-    a one-dimensional array of integers of length ``196884``.
+    integers of length 196884.
     """
     __slots__ = "p", "data", "ops"
     #group = MM
