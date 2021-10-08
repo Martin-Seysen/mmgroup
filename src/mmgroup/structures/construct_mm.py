@@ -6,8 +6,14 @@ import numpy as np
 from random import randint
 from functools import partial
 
-from mmgroup import mat24
-from mmgroup.mat24 import ploop_theta, pow_ploop, MAT24_ORDER
+try:
+    from mmgroup import mat24
+    from mmgroup.mat24 import ploop_theta, pow_ploop, MAT24_ORDER
+except:
+    w = "Extension mmgroup.mat24 not found, package not functional!"
+    warnings.warn(w, UserWarning)
+
+
 from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.generators import gen_rng_modp
 from mmgroup.generators import gen_leech2_reduce_type4
