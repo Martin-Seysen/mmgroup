@@ -153,7 +153,7 @@ try:
     # Try importing the fast C function
     from mmgroup import mat24 
     from mmgroup.mat24 import MAT24_ORDER
-except: # (ImportError, ModuleNotFoundError):
+except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24
