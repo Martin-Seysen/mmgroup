@@ -21,21 +21,21 @@ that models a vector in :math:`\rho_p`,  with ``p`` as above.
 Vector ``v`` acts on the element ``g`` of :math:`\mathbb{M}` by
 right multiplication.
 
-By construction of :math:`\rho_p` is is natural to label a basis 
-vector by a tuple ``(tag, i0, i1)`` with integers ``i0, i1``, as 
-described in the table below.  Here ``tag`` is a single 
-capital letter and indices ``i0``, ``i1`` are unsigned integers; 
+
+
+
+Creating basis vectors of the representation space :math:`\rho_p`
+.................................................................
+
+By construction of :math:`\rho_p` it is natural to label a basis 
+vector of :math:`\rho_p` by a tuple ``(tag, i0, i1)`` with integers 
+``i0, i1``, as  described in the next section.  Here ``tag`` is a 
+single capital letter and indices ``i0``, ``i1`` are unsigned integers; 
 these three quantities describe a basis vector of the space ``V``.
 
 To create a basis vector of  :math:`\rho_p` corresponding to the
 tuple ``(tag, i0, i1)`` the user may call the constructor
-``MMVector(p, tag, i0, i1)``. For creating an arbitrary 
-(but yet sparse) vector in :math:`\rho_p` the user may call
-``MMVector(p, data_list)``, where ``data_list`` is a list of
-tuples ``(factor, tag, i0, i1)``. Here ``(tag, i0, i1)``
-describes a unit vector and the (optional) integer ``factor`` is 
-a scalar factor for that unit vector. Then the constructor returns 
-the linear combination of the unit vector given in the list.
+``MMVector(p, tag, i0, i1)``.
 
 For a fixed characteristic ``p`` function ``MMV(p)`` returns 
 an object correponding to the vector space  :math:`\rho_p`.
@@ -43,39 +43,19 @@ Thus the sequence
 
  .. code-block:: python
 
+  >>> from mmgroup import MMV  
   >>> V = MMV(p)  
   >>> v = V(tag, i0, i1)
 
-returns the same vector as the statement ``MMVector(p, tag, i0, i1)``. 
-
-Vector addition, subtraction and scalar multiplication can be done with
-operators ``+``, ``-`` and ``*`` as usual. Elements of the monster group
-operate on vectors by right multiplication. Only vectors modulo
-the same characteristic ``p``  can be added. 
-
-The following code example generates an element ``g`` of the
-monster group and a vector ``v`` in the vector space  :math:`\rho_3` 
-and displays the result ``g * v`` of the operation of ``g`` on ``v``. 
-Note that a basis vector ``(tag, i0, i1)`` is displayed in the 
-form ``tag_i0_i1``. For a displayed index ``i0`` or ``i1`` the 
-suffix ``h`` means hexadecimal notation.
+creates the same basis vector ``v`` as the 
+statement ``v = MMVector(p, tag, i0, i1)``. 
 
 
-.. code-block:: python
 
-  >>> from mmgroup import MM
-  >>> # An instance of class MM represents an element of the monster
-  >>> from mmgroup import MMV
-  >>> # Create representation space V for the monster (modulo 3)
-  >>> V = MMV(3, MM)
-  >>> # Create an element g of MM 
-  >>> g = MM([('d', 0x123), ('p', 217821225)])
-  >>> # Create a vector v in V 
-  >>> v = V([('T', 712, 13), (2, 'X', 0x345, 13)])
-  >>> # Let g operate on v by right multiplication
-  >>> print(v * g)
-  v<-T_444_0fh+X_244h_11>
-  
+
+Description of the basis vectors of the representation space
+.............................................................
+
 
 The following table shows the tags available for describing basis
 vectors. The column ``Vector`` in that table shows the basis vector  
@@ -158,10 +138,23 @@ basis vector as a tuple ``(tag, i0, i1)``.
     element :math:`\xi` of  :math:`\mathbb{M}` on :math:`\rho_p`.
 
   * A first or second index following a tag may be ``'r'``, indicating 
-    a random integral index. Any omitted index is interpreted as
-    ``'r'``.  For tags ``'A', 'B', 'C', 'T'`` the second index should 
-    be ``'r'`` or omitted if the first index is ``'r'``, since in these
-    cases the two indices are not sufficiently independent.
+    a random integral index. Any omitted index after a given index 
+    ``'r'`` is interpreted as ``'r'``.  For tags ``'A', 'B', 'C', 'T'`` 
+    the second index should  be ``'r'`` or omitted if the first index 
+    is ``'r'``, since in these cases the two indices are not 
+    sufficiently independent.
+
+
+Representing a vector as a list of tuples
+.........................................
+
+For creating an arbitrary 
+(but yet sparse) vector in :math:`\rho_p` the user may call
+``MMVector(p, data_list)``, where ``data_list`` is a list of
+tuples ``(factor, tag, i0, i1)``. Here ``(tag, i0, i1)``
+describes a unit vector and the (optional) integer ``factor`` is 
+a scalar factor for that unit vector. Then the constructor returns 
+the linear combination of the unit vectors given in the list.
 
   * In order to generate a random multiple of a basis vector,
     inside a list of tuples, the (optional) component ``factor`` 
@@ -171,6 +164,254 @@ basis vector as a tuple ``(tag, i0, i1)``.
       * ``'s'``: a factor ``1`` or ``-1`` selected at random
       * ``'n'``: a random nonzerodivisor modulo ``p`` 
       * ``'r'``: a random integer modulo ``p`` 
+
+
+Operations on vector in the representation :math:`\rho_p` 
+.........................................................
+
+Vector addition, subtraction and scalar multiplication can be done with
+operators ``+``, ``-`` and ``*`` as usual. Elements of the monster group
+operate on vectors by right multiplication. Only vectors modulo
+the same characteristic ``p``  can be added. 
+
+The following code example generates an element ``g`` of the
+monster group and a vector ``v`` in the vector space  :math:`\rho_3` 
+and displays the result ``g * v`` of the operation of ``g`` on ``v``. 
+Note that a basis vector ``(tag, i0, i1)`` is displayed in the 
+form ``tag_i0_i1``. For a displayed index ``i0`` or ``i1`` the 
+suffix ``h`` means hexadecimal notation.
+
+
+.. code-block:: python
+
+  >>> # An instance of class MM represents an element of the monster
+  >>> from mmgroup import MM
+  >>> # Function MMV is used to create a representation space
+  >>> from mmgroup import MMV
+  >>> # Create representation space V for the monster (modulo 3)
+  >>> V = MMV(3)
+  >>> # Create an element g of the monster group
+  >>> g = MM([('d', 0x123), ('p', 217821225)])
+  >>> # Create a vector v in the representation space V 
+  >>> v = V([('T', 712, 13), (2, 'X', 0x345, 13)])
+  >>> # Let g operate on v by right multiplication
+  >>> print(v * g)
+  MV<3;-T_444_0fh+X_244h_11>
+  
+
+Special tags for creating vectors in the representation :math:`\rho_p` 
+.......................................................................
+
+The constructor of class |MMVector| acceps a variety of special tags.
+Details are given in the following list:
+
+.. table:: Special tags for constructing a vector
+   :widths: 25 75
+
+   ========================= ============================================= 
+   tag, i0, i1               Evaluates to                               
+   ========================= ============================================= 
+   ``('D', i0)``             Shorthand for ``('A', i0, i0)``   
+   ------------------------- --------------------------------------------- 
+   ``('I', i0, i1)``         Shorthand for the sum of the basis vectors 
+
+                             ``('A', i0, i0)`` + ``('A', i1, i1)`` - 
+                             ``('A', i0, i1)`` - ``2 ('B', i0, i1)``,
+
+                             see remark below. 
+   ------------------------- --------------------------------------------- 
+   ``('E', i)``              This is the basis vector with
+                             *linear* index ``i``. 
+
+                             See the following subsection for details.              
+   ------------------------- --------------------------------------------- 
+   ``('S', data)``           Here ``data`` is an array like object (as
+                             defined in the numpy package) that encodes
+                             a vector in sparse representation as an 
+                             array of unsigned 32-bit integers. 
+
+                             This is for internal use. For details see
+                             the following subsection: 
+
+                             Sparse representation of vectors 
+                             in :math:`\rho_p`.            
+   ------------------------- --------------------------------------------- 
+   ``('V', data)``           Here ``data`` is an array like object (as
+                             defined in the numpy package that encodes  
+                             a one-dimensional array of integers of
+                             length 196884. The order of the entries
+                             is as in the next section.              
+   ------------------------- --------------------------------------------- 
+   ``('R')``                 Tag 'R' (without any further parameters)
+                             stands for the generation of a uniform
+                             distributed random vector.
+   ------------------------- --------------------------------------------- 
+   ``(i, v)``, ``i`` integer Here ``i`` is an integer and ``v`` is a
+                             vector, i.e.an instance of class
+                             |MMVector|, then the vector ``i * v``
+                             is generated. This is useful for  
+                             extending the modulus ``p`` of a 
+                             vector, see  remark below.
+   ========================= ============================================= 
+
+Remarks
+
+The centralizer of a vector labelled by ``('I', i0, i1)`` in
+the monster has structure :math:`2 \cdot B`, where :math:`B` is
+the Baby Monster, see :cite:`Asc86`, :cite:`Con85`, :cite:`Iva09`
+for background. According to our selected basis and cocycle of
+the Golay Code, it is probably easiest to compute in the 
+centralizer of ``('I', 3, 2)``.
+
+The modulus of a vector can be extended as follows. Assume that 
+``v`` is a vector in :math:`\rho_3`, given as an instance of class
+|MMVector|. Then ``w = 5 * v`` is a well-defined vector in 
+:math:`\rho_15`. Vector ``w`` can be constructed as follows:
+``V15 = MMV(15); w = V15(5, v)``. Note that the construction
+``w = V15(5*v)`` leads to an error, since ``5*v`` is defined
+modulo ``3``, but not modulo ``15``. 
+
+
+Linear order of the basis vectors
+..................................
+
+By construction of the representation :math:`\rho_p`, it is most natural 
+to use a tuple ``(tag, i0, i1)`` for indexing a basis vector of 
+:math:`\rho_p`. There is also a linear order of these entries. Such a 
+linear order is required e.g. for expressing a vector in :math:`\rho_p` 
+as an array of integers  modulo :math:`p`. Therefore an index given by a 
+tuple ``(tag, i0, i1)`` is mapped to linear index ``0 <= i < 196884``. 
+Legal standard tuples are listed in the  following table:
+
+.. table:: Conditions for indices ``i0``, ``i1``
+          :widths: 25 35 45 
+
+          ================= ==================== ==================== 
+          Tag               Condition for ``i0`` Condition for ``i1``
+          ================= ==================== ====================
+          ``'A'``           ``0 <= i0 < 24``     ``0 <= i1 < 24``
+          ``'B', 'C'``      ``0 <= i0 < 24``     ``0 <= i1 < 24``, 
+                                                 ``i1 != i0``
+          ``'T'``           ``0 <= i0 < 759``    ``0 <= i1 < 64``
+          ``'X', 'Y', 'Z'`` ``0 <= i0 < 2048``   ``0 <= i1 < 24``
+          ================= ==================== ==================== 
+
+For ``tag = 'A', 'B', 'C'``, we also have 
+``(tag, i0, i1) == (tag, i1, i0)``.
+
+The linear order of the tuples ``(tag, i0, i1)`` is as follows:
+
+        offset ``0``:
+
+          | ``(A,0,0), (A,1,1),  ..., (A,23,23)``
+
+        offset ``24``:
+ 
+          | ``(A,1,0),`` 
+          | ``(A,2,0),  (A,2,1)``
+          | . . .
+          | ``(A,23,0),  (A,23,1), ...,  (A,23,22)``
+
+        offset ``300``:
+ 
+          Tuples ``(B,i0,i1)``, same order as 
+          tuples ``(A,i0,i1)`` for ``i0 > i1``
+
+        offset ``576``:
+
+          Tuples ``(C,i0,i1)``, same order as  
+          tuples ``(A,i0,i1)`` for ``i0 > i1``
+           
+        offset ``852``:
+ 
+          | ``(T,  0,0),  (T,  0,1), ...,  (T,  0,63)`` 
+          | ``(T,  1,0),  (T,  1,1), ...,  (T,  1,63)`` 
+          | . . .
+          | ``(T,758,0),  (T,758,1), ...,  (T,758,63)`` 
+
+        offset ``49428``:
+
+          | ``(X,   0,0),  (X,   0,1), ...,  (X,   0,23)`` 
+          | ``(X,   1,0),  (X,   1,1), ...,  (X,   1,23)`` 
+          | . . .
+          | ``(X,2047,0),  (X,2047,1), ...,  (X,2047,23)`` 
+
+        offset ``98580``:
+
+          Tuples ``(Z,i0,i1)``, same order as corresponding  
+          tuples ``(X,i0,i1)``
+       
+        offset ``147732``:
+
+          Tuples ``(Y,i0,i1)``, same order as corresponding  
+          tuples ``(X,i0,i1)``
+
+
+
+
+
+Sparse representation of vectors in :math:`\rho_p` 
+....................................................
+
+Internally, a vector :math:`\rho_p` is sometimes given in *sparse*
+representation. This is useful for sparse vector containing many
+zero entries. In *sparse* representation the vector is given as
+an array of unsigned 32-bit integers. Here each entry of the 
+array encodes a multiple of the basis vector. Such an entry it 
+interpreted as follows:
+
+.. table:: Bit fields in an entry of a sparse representation
+          :widths: 28 24 24 24 24 
+ 
+          ========= =========== =========== ========== ========== 
+          Component ``tag``     ``i0``      ``i1``     ``factor``
+          Bits      ``27 - 25`` ``24 - 14`` ``13 - 8`` ``7 - 0``
+          ========= =========== =========== ========== ==========
+
+This corresponds to the tuple ``(factor, tag, i0, i1)``
+which denotes a multiple of a basis vector as described in
+subsection *Representing a vector as a list of tuples*. 
+
+Tags are mapped to integers as follows:
+
+.. table:: Mapping of integers to tags
+          :widths: 14 14 14 14 14 15 15
+
+          ======= ======= ======= ======= ======= ======= ======= 
+          ``'A'`` ``'B'`` ``'C'`` ``'T'`` ``'X'`` ``'Z'`` ``'Y'``
+           ``1``   ``2``   ``3``   ``4``   ``5``   ``6``   ``7``
+          ======= ======= ======= ======= ======= ======= ======= 
+
+
+Other data types accepted as tags for vectors in :math:`\rho_p` 
+................................................................
+
+Some data types are accepted as tags an interprted as described in the
+following table. In this parameters `i0`, `i1` after a tag must not
+be set.
+    
+    .. table:: Legal types for constructing a vector
+      :widths: 25 75
+
+      ====================== ============================================= 
+      type                   Evaluates to                               
+      ====================== ============================================= 
+      List of tuples         This evaluates to a vector as described in
+                             subsection 
+                             *Representing a vector as a list of tuples*.
+
+                             An entry of such a list may also be an 
+                             instance of class |MMVector| or a string. 
+      ---------------------- --------------------------------------------- 
+       class |MMVector|      A deep copy of the given vector is returned.            
+      ---------------------- --------------------------------------------- 
+       ``str``               For an vector ``v`` in ``V`` we have      
+                             ``V(str(v)) == v``. 
+
+                             This is helpful for rereading printed 
+                             vectors.       
+      ====================== ============================================= 
+
 
 """
 # References in the __docstr__ see file docs/source/references.bib
@@ -312,9 +553,13 @@ def complete_import():
     
 
 class MMVector(AbstractMmRepVector):
-    """Models a vector in a space of type |MMSpace|.
+    r"""Models a vector in a representation of the monster group.
 
-    TODO: This documentation has to be updated!!!
+    The construction of vectors in the representations :math:`\rho_p`
+    of the monster group (using e.g. the constructor of this class)
+    is documented at the  beginning of section :ref:`mmrep-label`.
+
+    TODO: This documentation has yet to be updated!!!
 
     Such a vector should be constructed by calling an instance ``V``
     of class |MMSpace| which models a specific representation of
@@ -349,19 +594,9 @@ class MMVector(AbstractMmRepVector):
     Method ``from_bytes`` of class |MMSpace| constructs a
     vector ``v`` as an instance of class |MMVector| from
     a one-dimensional array of integers of length ``196884``.
-
-    :var space:
-        This attribute contains the space to which the vector
-        belongs. That space is an instance of class |MMSpace|.
-
-    .. warning::
-       The constructor of this class is not for public use! You
-       may call an instance ``V`` of class  |MMSpace| for
-       constructing vectors in the modular representation space
-       ``V`` of the monster group.
     """
     __slots__ = "p", "data", "ops"
-    group = MM0
+    #group = MM
     def __init__(self, p, tag = 0, i0 = None, i1 = None):
         self.ops = get_mm_ops(p)
         self.p = p
@@ -483,96 +718,14 @@ class MMVector(AbstractMmRepVector):
 class MMSpace(AbstractMmRepSpace):
     r"""Models a ``196884``-dimensional representation of the monster group 
 
-    TODO: This documentation has to be updated!!!
+    This class contains a collection of functions for manipulating
+    vectors in the rpresentation :math:`\rho_p` of the monster group.
+    Such vectors are instances of class |MMVector|.
+    Most of these function are used implicitly in the operators
+    applied to these vectors.
 
-    Any such representation is a vector space which has a small odd
-    characteristic ``p``. This means that all coordinates of a vector 
-    in this  space are taken modulo ``p``.  We are a bit sloppy here, 
-    allowing also some  composite  odd integers ``p``. 
-
-    The package contains highly optimized individual programs for
-    each characteristic ``p``. Function ``characteristics()`` in
-    this package returns the list of legal values for ``p``. 
-
-    :var p:
-        Contains the characteristic of the vector 
-        space, which is a small odd integer. Function 
-        ``mmgroup.characteristics()`` returns the list
-        of legal values ``p``.
-
-    :var group:
-        Contains the group operating on the vector
-        space by right multiplication. 
-        That group is an instance of class |MMGroup|. This 
-        defaults to the predefined instance ``mmgroup.MM``
-        of class |MMGroup|. 
-
-
-    Thus the instruction ``V = MMSpace(3, MM)``, with ``MM`` an instance of
-    class |MMGroup| creates a representation space ``V`` of characteristic
-    ``3`` on which the monster group ``MM`` operates.
-
-    See function ``MMS`` for creating a standard representation space.
-
-    The preferred way to construct a vector in the vector space ``V``
-    is to call ``V`` with a  variable number of arguments. The each 
-    argument is evaluated to a vector in ``V`` according to the 
-    following table, and the sum of all these vectors is returned.
-
-    
-    .. table:: Legal types for constructing a vector
-      :widths: 25 75
-
-      ====================== ============================================= 
-      type                   Evaluates to                               
-      ====================== ============================================= 
-      ``(f,tag, i0, i1)``    ``tag`` must be one of the letters           
-                             ``ABCTXYZ``; ``i0, i1`` must be integers. 
-
-                             The tuple ``(tag, i0, i1)`` denotes a basis 
-                             vector as in the table above. 
-
-                             ``f`` is an optional integer factor 
-                             for the basis vector, default is ``1``.                       
-      ---------------------- --------------------------------------------- 
-      ``(f,'D', i0)``        Shorthand for ``(f,'A', i0, i0)``   
-      ---------------------- --------------------------------------------- 
-      ``(f,'I', i0, i1)``    Shorthand for ``f`` times the sum of the
-                             basis vectors 
-
-                             ``('A', i0, i0)`` + ``('A', i1, i1)`` - 
-                             ``('A', i0, i1)`` - ``2 ('B', i0, i1)``,
-
-                             see remark below. 
-      ---------------------- --------------------------------------------- 
-      ``(f,'E', i)``         This is ``f`` times the basis vector with
-                             *linear* index ``i``. 
-
-                             See method
-                             ``tuple_to_index`` for converting a tuple to         
-                             a linear index.              
-      ---------------------- --------------------------------------------- 
-       class |MMVector|      A deep copy of the given vector is returned.            
-      ---------------------- --------------------------------------------- 
-       ``str``               For an vector ``v`` in ``V`` we have      
-                             ``V(str(v)) == v``. 
-
-                             This is helpful for rereading printed 
-                             vectors.       
-      ====================== ============================================= 
-
-    Remarks
-
-    The meaning of tuples with tags ``ABCTXYZ`` is explained in
-    table :ref:`table-vector-tags`. That table also describes
-    the legal values for the indices ``i0``, ``i1``.
-
-    The centralizer of a vector labelled by ``('I', i0, i1)`` in
-    the monster has structure :math:`2 \cdot B`, where :math:`B` is
-    the Baby Monster, see :cite:`Asc86`, :cite:`Con85`, :cite:`Iva09`
-    for background. According to our selected basis and cocycle of
-    the Golay Code, it is probably easiest to compute in the 
-    centralizer of ``('I', 3, 2)``.
+    Some of these function may be helpful for the user; so we document 
+    them in the *mmgroup API reference*.    
     """
     vector_type = MMVector
     space_name = "MV"
@@ -861,77 +1014,6 @@ class MMSpace(AbstractMmRepSpace):
     def tuple_to_index(cls, tag, i0 = -1, i1 = -1):
         r"""Convert tuple ``(tag, i0, i1)`` to a linear index
 
-        By construction, it is most natural to use a tuple 
-        ``(tag, i0, i1)`` for indexing an entry of a vector in
-        :math:`\rho_p`. There is also a linear order of these
-        entries. For an index given by a tuple ``(tag, i0, i1)``
-        this method returns the linear index ``0 <= i < 196884``
-        corresponding to this tuple. Legal tuples are listed
-        in the following table:
-
-        .. table:: Conditions for indices ``i0``, ``i1``
-          :widths: 25 35 45 
-
-          ================= ==================== ==================== 
-          Tag               Condition for ``i0`` Condition for ``i1``
-          ================= ==================== ====================
-          ``'A'``           ``0 <= i0 < 24``     ``0 <= i1 < 24``
-          ``'B', 'C'``      ``0 <= i0 < 24``     ``0 <= i1 < 24``, 
-                                                 ``i1 != i0``
-          ``'T'``           ``0 <= i0 < 759``    ``0 <= i1 < 64``
-          ``'X', 'Y', 'Z'`` ``0 <= i0 < 2048``   ``0 <= i1 < 24``
-          ================= ==================== ==================== 
-
-        For ``tag = 'A', 'B', 'C'``, we also have 
-        ``(tag, i0, i1) == (tag, i1, i0)``.
-
-        The linear order of the tuples ``(tag, i0, i1)`` is as follows:
-
-        offset ``0``:
-
-          | ``(A,0,0), (A,1,1),  ..., (A,23,23)``
-
-        offset ``24``:
- 
-          | ``(A,1,0),`` 
-          | ``(A,2,0),  (A,2,1)``
-          | . . .
-          | ``(A,23,0),  (A,23,1), ...,  (A,23,22)``
-
-        offset ``300``:
- 
-          Tuples ``(B,i0,i1)``, same order as 
-          tuples ``(A,i0,i1)`` for ``i0 > i1``
-
-        offset ``576``:
-
-          Tuples ``(C,i0,i1)``, same order as  
-          tuples ``(A,i0,i1)`` for ``i0 > i1``
-           
-        offset ``852``:
- 
-          | ``(T,  0,0),  (T,  0,1), ...,  (T,  0,63)`` 
-          | ``(T,  1,0),  (T,  1,1), ...,  (T,  1,63)`` 
-          | . . .
-          | ``(T,758,0),  (T,758,1), ...,  (T,758,63)`` 
-
-        offset ``49428``:
-
-          | ``(X,   0,0),  (X,   0,1), ...,  (X,   0,23)`` 
-          | ``(X,   1,0),  (X,   1,1), ...,  (X,   1,23)`` 
-          | . . .
-          | ``(X,2047,0),  (X,2047,1), ...,  (X,2047,23)`` 
-
-        offset ``98580``:
-
-          Tuples ``(Z,i0,i1)``, same order as corresponding  
-          tuples ``(X,i0,i1)``
-       
-        offset ``147732``:
-
-          Tuples ``(Y,i0,i1)``, same order as corresponding  
-          tuples ``(X,i0,i1)``
-
 
         Remarks:
 
@@ -1112,8 +1194,11 @@ def MMV(p):
    returns the same vector in :math:`\rho_p` as the 
    statement ``MMVector(p, tag, i0, i1)``. 
 
+   Function ``characteristics`` in module ``mmgroup`` returns
+   the list of legal values for the characteristic ``p``.
+
    Technically, ``MMV(p)`` is the partial application of
-   the constructor of class ``MM`` to the number ``p``. 
+   the constructor of class |MMVector| to the number ``p``. 
    """
    return partial(MMVector, p)
 

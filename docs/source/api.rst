@@ -153,13 +153,12 @@ The Representation of the Monster Group
 .. automodule:: mmgroup.mm_space
 
 
-.. autoclass:: mmgroup.MMSpace
-   :members:  zero, rand_uniform, from_sparse, from_bytes,
-              tuple_to_index, index_to_tuple, index_to_short
-
 .. autoclass:: mmgroup.MMVector
    :members:  as_bytes, as_sparse, as_tuples, projection,
               mul_exp
+
+.. autoclass:: mmgroup.MMSpace
+   :members:  tuple_to_index, index_to_tuple, index_to_short
 
 
 .. autofunction:: mmgroup.characteristics
