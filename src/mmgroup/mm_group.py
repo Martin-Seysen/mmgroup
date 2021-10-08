@@ -205,9 +205,11 @@ from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 
 
 try:
+    from mmgroup import mat24
     from mmgroup.mat24 import MAT24_ORDER, pow_ploop, ploop_theta
 except (ImportError, ModuleNotFoundError):
-    from mmgroup.dev.mat24.mat24_ref import Mat24    
+    from mmgroup.dev.mat24.mat24_ref import Mat24  
+    mat24 = Mat24  
     MAT24_ORDER = Mat24.MAT24_ORDER
     pow_ploop = Mat24.pow_ploop
     ploop_theta = Mat24.ploop_theta
