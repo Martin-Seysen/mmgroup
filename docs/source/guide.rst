@@ -80,8 +80,7 @@ Classes and functions provided by the code generator
   
 .. autofunction::   mmgroup.generate_c.pxd_to_pyx
 
-        
-
+    
 
 How the code generator is used
 ------------------------------
@@ -89,4 +88,9 @@ How the code generator is used
 .. include:: guide_use_code_generation.inc
 
 
+
+Description of some typical bugs
+================================
+
+.. include:: bugs.inc
 

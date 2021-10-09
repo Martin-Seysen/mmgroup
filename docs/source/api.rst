@@ -127,7 +127,7 @@ The basis of the Golay code and of its cocode
 
 .. _mmgroup-label:
 
-The Monster Group
+The monster group
 =================
 
 
@@ -146,20 +146,29 @@ Python classes implementing the monster group
 
 .. _mmrep-label:
 
-The Representation of the Monster Group
+The representation of the monster group
 =======================================
 
 
 .. automodule:: mmgroup.mm_space
 
 
+Python classes implementing the representation of the monster group
+------------------------------------------------------------------- 
+
+
 .. autoclass:: mmgroup.MMVector
-   :members:  as_bytes, as_sparse, as_tuples, projection,
+   :members:  as_sparse, as_tuples, projection,
               mul_exp
 
 .. autoclass:: mmgroup.MMSpace
    :members:  tuple_to_index, index_to_tuple, index_to_short
 
+
+
+
+Auxiliary functions for the representation of the monster group
+--------------------------------------------------------------- 
 
 .. autofunction:: mmgroup.characteristics
 
