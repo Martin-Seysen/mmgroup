@@ -583,14 +583,15 @@ class MMVector(AbstractMmRepVector):
 
     Addition and subtraction of vectors in the same space work as 
     usual. This is also the case for scalar multiplication with 
-    integers. Elements of the moster group operating on ``V`` act 
-    on a vector in ``V`` by right multiplication.
+    integers. An element ``g`` of the monster group (given as
+    an instance of class |MM|)  operates on a vector ``v`` (given
+    as an instance of this class) by right multiplication.
 
-    An entry of a vector ``v`` in the space ``V`` may be adressed
-    as ``v[tag, i0, i1]``, where ``tag`` is a single letter in
-    the string ``ABCTXYZD`` and ``i0`` and ``i1`` are integers,
-    such that the tuple ``(tag, i0, i1)`` describes a basis 
-    vector. Getting and setting entries of a vector is as in
+    An entry of a vector ``v`` (given as an instance of this class)
+    may be adressed as ``v[tag, i0, i1]``, where ``tag`` is a single 
+    letter in the string ``ABCTXYZD`` and ``i0`` and ``i1`` are 
+    integers, such that the tuple ``(tag, i0, i1)`` describes a 
+    basis vector. Getting and setting entries of a vector is as in
     the ``numpy`` package. Here ``i0`` and ``i1`` may also be 
     slices of integers in the same way as in ``numpy`` arrays. 
     Depending on the ``tag``, the value ``i0`` or ``i1`` may also 
@@ -598,8 +599,8 @@ class MMVector(AbstractMmRepVector):
     in the remarks after table :ref:`table-vector-tags` .
 
     The entries of vector ``v``  also have a linear order as 
-    described in section  :ref:`mmrep-label`.
-    Here ``v['E', i]`` is the ``i``-th entry in that order.  Here
+    described at the beginnning of section  :ref:`mmrep-label`.
+    Here ``v['E', i]`` is the ``i``-th entry in that order.  Index
     ``i`` may also be a slice of integers in the same way as
     in a one-dimensional ``numpy`` array.
 
@@ -624,10 +625,12 @@ class MMVector(AbstractMmRepVector):
         self.space.check(self)
 
        
-    def mul_exp(self, g, e, break_g = False):
+    def mul_exp(self, g, e = 1, break_g = False):
         """Multiply the vector with ``g ** e`` inplace
 
-        The vector is changed and the changed vector is returned.
+        Here ``g`` is an element of the moster group represented
+        as an instance of class |MM| and ``e`` is an integer.
+        The vector is updated and the updated vector is returned.
         
         Afterwards, the vector contains an attribute ``last_timing``
         containing the run time of this operation in seconds.
