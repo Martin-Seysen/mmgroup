@@ -390,6 +390,11 @@ TYPES_PARSED_FROM_LIST = EMBEDDED_CLASSES + (
 ATOM_PARSERS = {
 }
 
+def add_to_embedded_classes(cls):
+    global EMBEDDED_CLASSES
+    if not cls in EMBEDDED_CLASSES:
+        EMBEDDED_CLASSES = EMBEDDED_CLASSES + (cls,) 
+
 
 def element_from_atom(group, tag, *data):
      if tag.isalpha():
@@ -413,7 +418,7 @@ def iter_parse_mm_string(group, s):
             atom_dict = ATOM_PARSERS["M"] 
     element = eval_atom_expression(string, atom_dict)
     if element != 1:
-        yield from element.iter_atoms()
+        yield from element.mmdata
 
 
 
@@ -431,7 +436,9 @@ import_groups_pending = True
 
 def import_groups():
     global import_groups_pending
+    global  MM, MMGroup, AbstractMMGroupWord
     from mmgroup import MM, MMGroup
+    from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
     #load_group_name(MM().group, "M")  # TODO: Fixme!!!!
     import_groups_pending = False
 
@@ -446,14 +453,10 @@ def iter_mm(group, tag = None, atom = None, in_G_x0 = False):
         return
     if import_groups_pending:
         import_groups()
-    if isinstance(tag, AbstractGroupWord):
-        if getattr(tag.group, "is_mmgroup", False):
-            yield from tag.iter_atoms()
-            return
-        err = "Cannot embed group element into monster group"
-        raise TypeError(err) 
+    if isinstance(tag, AbstractMMGroupWord):
+        yield from tag.mmdata
     elif isinstance(tag, EMBEDDED_CLASSES):
-        yield from tag.iter_atoms()
+        yield from tag.mmdata
     elif isinstance(tag, str):
         if group is None:
             group = MMGroup

@@ -87,7 +87,7 @@ def equ_modp(a1, a2, p):
 
 def g_shift(g):
     shift = 0
-    for g0 in g.data:
+    for g0 in g.mmdata:
         if g0 & 0x70000000 >= 0x50000000:
             shift += 3
     return shift

@@ -438,6 +438,7 @@ from functools import partial
 
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
+from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.structures.mm0_group  import MM0Group, MM0
 from mmgroup.structures.abstract_mm_group import is_mmgroup_word
 from mmgroup.structures.abstract_mm_rep_space import add_vector
@@ -892,11 +893,8 @@ class MMSpace(AbstractMmRepSpace):
         'self' and for elements g of the group 'self.group' only.
         """
         work =  mm_vector(v1.p)
-        if isinstance(g, MM0):
-            v1.ops.op_word(v1.data, g._data, g.length, 1, work)
-            return v1
-        elif is_mmgroup_word(g):
-            a = np.fromiter(g.iter_atoms, dtype = np.uint32)
+        if isinstance(g, AbstractMMGroupWord):
+            a = g.mmdata
             v1.ops.op_word(v1.data, a, len(a), 1, work)
             return v1
         err = "Multiplicator for MM vector must be int or in MM group"   

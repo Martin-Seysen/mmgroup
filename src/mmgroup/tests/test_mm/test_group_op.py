@@ -422,14 +422,14 @@ def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 1):
                 v = space('R')
                 a_g = v.copy()
                 v_g = v * g
-                len_g = len(g.data)
-                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, 1)
+                len_g = len(g.mmdata)
+                res = v.ops.op_word_tag_A(a_g.data, g.mmdata, len_g, 1)
                 assert res == 0
                 #print(v_g['A'] - a_g['A'] + 3)
                 assert (v_g['A'] ==  a_g['A']).all()
-                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, 2)
+                res = v.ops.op_word_tag_A(a_g.data, g.mmdata, len_g, 2)
                 assert res == 0
-                res = v.ops.op_word_tag_A(a_g.data, g.data, len_g, -3)
+                res = v.ops.op_word_tag_A(a_g.data, g.mmdata, len_g, -3)
                 assert res == 0
                 assert (v['A'] ==  a_g['A']).all()
     print("Test passed")

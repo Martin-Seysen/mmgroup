@@ -37,7 +37,7 @@ extern "C" {
 
 
 /*************************************************************************
-*** Multiplication in the group Q_{x0}
+*** Multiplication and exponentiation in the group Q_{x0}
 *************************************************************************/
 
 
@@ -58,6 +58,48 @@ uint32_t gen_xi_mul_leech(uint32_t x1, uint32_t x2)
     scalar = (0x96 >> (scalar & 7)) & 1;
     x1 ^= x2 ^ (scalar << 24);
     return x1;
+}
+
+
+/**
+  @brief Return power of element the group \f$Q_{x0}\f$.
+
+  Here all elements of the group \f$Q_{x0}\f$ are encoded in
+  ``Leech lattice encoding``. The function returns the
+  power ``x1**e`` of the element ``x1`` of \f$Q_{x0}\f$.
+*/
+// %%EXPORT px
+uint32_t gen_xi_pow_leech(uint32_t x1, uint32_t e)
+{
+    uint_fast32_t scalar = 0; 
+    x1 &= 0x1ffffff;
+    if (e & 2) {
+        scalar = (x1 >> 12) &  x1 & 0xfff;
+        scalar ^= scalar >> 6;
+        scalar ^= scalar >> 3;
+        scalar = ((0x96 >> (scalar & 7)) & 1) << 24;
+    }
+    return (e & 1) ? x1 ^ scalar : scalar;
+}
+
+
+
+/**
+  @brief Return scalar product in the Leech lattice modulo 2.
+
+  Here all elements of Leech lattice modulo 2 are encoded in
+  ``Leech lattice encoding``. The function returns the
+  scalar product of the vectors ``x1`` and ``x2`` in the
+  Leech lattice modulo 2, which may be 0 or 1.
+*/
+// %%EXPORT px
+uint32_t gen_xi_scalprod_leech(uint32_t x1, uint32_t x2)
+{
+    uint_fast32_t scalar; 
+    scalar = (((x1 >> 12) & x2) ^ ((x2 >> 12) & x1)) & 0xfff;    
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    return (0x96 >> (scalar & 7)) & 1;
 }
 
 

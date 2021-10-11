@@ -174,10 +174,11 @@ class Xsp2_Co1(AbstractMMGroupWord):
         return self
 
 
-    def iter_atoms(self):
+    @property
+    def mmdata(self):
         a = np.zeros(10, dtype = np.uint32)
         length = chk_qstate12(xsp2co1_elem_to_word(self._data, a))
-        yield from a[:length]
+        return a[:length]
 
     def _involution_invariants(self):
         """Wrapper for C function  xsp2co1_involution_invariants"""

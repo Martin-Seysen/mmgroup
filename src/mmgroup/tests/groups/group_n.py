@@ -148,6 +148,18 @@ class GroupN_Word(AbstractMMGroupWord):
     def div_atoms(self, g):
         return self.group.div_atoms(self, g)
 
+    @property
+    def mmdata(self):
+        element = self.data
+        mm_group_n_reduce_element(element)
+        a = []
+        if element[0]: a.append(0x50000000 + element[0])
+        if element[1]: a.append(0x40000000 + element[1])
+        if element[2]: a.append(0x30000000 + element[2])
+        if element[3]: a.append(0x10000000 + element[3])
+        if element[4]: a.append(0x20000000 + element[4])
+        return np.array(a, dtype = np.uint32)
+
 
 ######################################################################
 # Modelling the group
@@ -187,14 +199,6 @@ class GroupN(AbstractMMGroup):
         mm_group_n_reduce_element(g2.data)        
         return (g1.data == g2.data).all()
 
-    def iter_atoms(self, g):
-        element = g.data
-        mm_group_n_reduce_element(element)
-        if element[0]: yield 0x50000000 + element[0]
-        if element[1]: yield 0x40000000 + element[1]
-        if element[2]: yield 0x30000000 + element[2]
-        if element[3]: yield 0x10000000 + element[3]
-        if element[4]: yield 0x20000000 + element[4]
 
    
     def __call__(self, tag = None, atom = None):

@@ -466,7 +466,7 @@ def reduce_G_x0(g):
     #assert g.group == MM
     r = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_G_x0(g.data, len(g.data), r)
+    res = mm_op15_reduce_G_x0(g.mmdata, len(g.mmdata), r)
     reduce_time = time.perf_counter() - t_start
     if res < 0:
        err = "Error %d in reducing element of monster group"
@@ -475,7 +475,7 @@ def reduce_G_x0(g):
 
 
 def g_complexity(g):
-    s = [x for x in g.data if x & 0x70000000 == 0x50000000]
+    s = [x for x in g.mmdata if x & 0x70000000 == 0x50000000]
     return len(s)
 
 

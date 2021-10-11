@@ -349,7 +349,7 @@ class MM0(AbstractMMGroupWord):
             self._data = np.append(self._data, ap)
              
     @property
-    def data(self):
+    def mmdata(self):
         """Return the internal representation of the group element
 
         Internally, an element of the monster group is represented
@@ -358,6 +358,8 @@ class MM0(AbstractMMGroupWord):
         :ref:`header-mmgroup-generators-label` for details.
         """
         return np.copy(self._data[:self.length])
+
+
         
     def __len__(self):
         return self.length
@@ -493,7 +495,7 @@ class MM0(AbstractMMGroupWord):
         if check_mm_in_g_x0(self) is None:
             return False
         self.reduce()
-        for atom in self.data:
+        for atom in self.mmdata:
             if ((atom >> 28) & 7) > 4:
                 return False
         return True
@@ -510,7 +512,7 @@ class MM0(AbstractMMGroupWord):
         if check_mm_in_g_x0(self) is None:
             return False
         self.reduce()
-        for atom in self.data:
+        for atom in self.mmdata:
             if (atom & 0x70000000) not in [0x10000000,  0x30000000]:
                 return False
         return True
@@ -531,7 +533,7 @@ class MM0(AbstractMMGroupWord):
             raise ValueError(err)
         self.reduce()
         res = 0;
-        for atom in self.data:
+        for atom in self.mmdata:
             tag = (atom >> 28) & 0x0f
             if res == 0 and tag == 3:
                 res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
@@ -604,7 +606,7 @@ class MM0(AbstractMMGroupWord):
             import_mm_order_functions()
         check_mm_in_g_x0(self)
         self.reduce()
-        weight = sum([((x >> 28) & 7) == 5 for x in self.data])
+        weight = sum([((x >> 28) & 7) == 5 for x in self.mmdata])
         #print(weight)
         if weight <= 9:
              return self
@@ -619,7 +621,7 @@ class MM0(AbstractMMGroupWord):
         try: 
             g = reduce_via_power(self, ntrials, verbose = verbose)
             assert g == self
-            self._setdata(g.data)
+            self._setdata(g.mmdata)
             self.reduce()
         except:
             w = "Simplification of monster group element failed"
@@ -717,10 +719,6 @@ class MM0Group(AbstractMMGroup):
 
 
 
-    def iter_atoms(self, g):
-        yield from g.data
-
-
     def reduce(self, g1, copy = False):
         l1 = g1.length
         if g1.reduced < l1:
@@ -749,12 +747,12 @@ class MM0Group(AbstractMMGroup):
 
     def _invert(self, g1):
         w = self.word_type()
-        w._setdata(np.flip(g1.data) ^ 0x80000000)
+        w._setdata(np.flip(g1.mmdata) ^ 0x80000000)
         return self.reduce(w)
 
     def copy_word(self, g1):
         result = self.word_type()
-        result._setdata(g1.data)
+        result._setdata(g1.mmdata)
         result.reduced = g1.reduced
         return result
 
@@ -769,7 +767,7 @@ class MM0Group(AbstractMMGroup):
                 return False
             g1.reduce()
             g2.reduce()
-            if (g1.data == g2.data).all():
+            if (g1.mmdata == g2.mmdata).all():
                  return True
             raise ValueError("Don't know if monster group elements are equal")
 

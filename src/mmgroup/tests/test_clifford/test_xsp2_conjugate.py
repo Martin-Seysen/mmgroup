@@ -73,7 +73,7 @@ def conj_x_by_word(x, g_mm):
     The function returns :math:`g_{mm}^{-1} x g_{mm}` as an
     integer in **Leech lattice represention**.
     """
-    w_g = g_mm.data
+    w_g = g_mm.mmdata
     return gen_leech2_op_word(x, w_g, len(w_g))
 
     

@@ -252,7 +252,7 @@ def test_elem_to_word(ntests = 50, verbose = 0):
                 raise ValueError(err)
         word_C = elem_to_word_C(elem)
         assert (word_C == word).all(), (word_C, word)
-        word1_C = reduce_word_C(m.data)
+        word1_C = reduce_word_C(m.mmdata)
         assert (word1_C == word).all(), (word1_C, word)
             
 

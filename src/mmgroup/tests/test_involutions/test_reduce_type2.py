@@ -442,7 +442,7 @@ def mul_v2_mm(v, g):
     extraspecial 2-group ``Q_x0``, and the function conjugates
     ``v`` with ``g``.
     """
-    data = g.data
+    data = g.mmdata
     return gen_leech2_op_word(v, data, len(data))
 
 def v_ortho_g(g):

@@ -142,6 +142,8 @@ from operator import __or__
 from numbers import Integral, Number
 from random import randint
 
+import numpy as np
+
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
@@ -467,9 +469,18 @@ class AutPL(AbstractGroupWord):
         """
         return self._perm
 
-    def iter_atoms(self):
-        yield  0x10000000 + (self._cocode & 0xfff)
-        yield  0x20000000 + self._perm_num
+    @property    
+    def mmdata(self):
+        return np.array([
+            0x10000000 + (self._cocode & 0xfff),
+            0x20000000 + self._perm_num
+        ], dtype = np.uint32)
+
+    def as_tuples(self):
+        return [('d', self._cocode), ('p', self._perm_num)]
+       
+
+
 
 #######################################################################
 # Class AutPlGroup
@@ -530,9 +541,6 @@ class AutPlGroup(AbstractGroup):
     def _equal_words(self, g1, g2):
         return g1._cocode == g2._cocode and g1._perm_num == g2._perm_num
 
-    def as_tuples(self, g):
-        return [('d', g._cocode), ('p', g._perm_num)]
-       
         
 
     def str_word(self, g):

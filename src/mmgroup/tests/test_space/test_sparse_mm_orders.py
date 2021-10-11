@@ -88,6 +88,7 @@ def do_test_order(display = True):
 @pytest.mark.space
 @pytest.mark.slow
 @pytest.mark.very_slow
+@pytest.mark.extremely_slow
 def test_orders(ntests = NJOBS):
     nerrors = 0
     for i in range(ntests):

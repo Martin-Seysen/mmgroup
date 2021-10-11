@@ -575,9 +575,6 @@ class MMGroup(AbstractMMGroup):
         super(MMGroup, self).__init__()
 
 
-    def iter_atoms(self, g):
-        yield from g.data
-
 
     def reduce(self, g1, copy = False):
         l1 = g1.length
@@ -607,12 +604,12 @@ class MMGroup(AbstractMMGroup):
 
     def _invert(self, g1):
         w = self.word_type()
-        w._setdata(np.flip(g1.data) ^ 0x80000000)
+        w._setdata(np.flip(g1.mmdata) ^ 0x80000000)
         return self.reduce(w)
 
     def copy_word(self, g1):
         result = self.word_type()
-        result._setdata(g1.data)
+        result._setdata(g1.mmdata)
         result.reduced = g1.reduced
         return result
 
@@ -627,7 +624,7 @@ class MMGroup(AbstractMMGroup):
                 return False
             g1.reduce()
             g2.reduce()
-            if (g1.data == g2.data).all():
+            if (g1.mmdata == g2.mmdata).all():
                  return True
             raise ValueError("Don't know if monster group elements are equal")
 

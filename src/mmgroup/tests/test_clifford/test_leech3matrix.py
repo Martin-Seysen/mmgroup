@@ -151,8 +151,8 @@ def kernel_testmatrix(p, tags = "dxypt"*3, diag = 0):
     # It encodes a symmetric matrix with kernel :math:`\Omega`.
     v3 = 1  # \Omega in Leech lattice mod 3 encoding
     g = MM0([(t,'r') for t in tags])
-    a.ops.op_word_tag_A(a.data, g.data, len(g.data), 1)
-    v3_kernel = gen_leech3_op_vector_word(v3, g.data, len(g.data))
+    a.ops.op_word_tag_A(a.data, g.mmdata, len(g.mmdata), 1)
+    v3_kernel = gen_leech3_op_vector_word(v3, g.mmdata, len(g.mmdata))
     return a, v3_kernel
 
 def neg_leech_mod3(x):

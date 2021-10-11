@@ -37,9 +37,11 @@ from mmgroup.structures.construct_mm import iter_tuples_from_atoms
 class AbstractMMGroupWord(AbstractGroupWord):
     """Model an element of an abstract group.
 
-    Users should not refer to this class directly. They should create 
-    a group as an instance of subclass of class AbstractGroup and use 
-    the methods of that group for creating elements.
+    This is an abstract base class. Subclasses of this class
+    correspond to (preimages of) susbgroups of the monster generated
+    by some or all of the standard generators of the monster group.
+    Instances of such subclasses are elements of the corresponding 
+    groups.
 
     The standard group operations '*' '/' (=right multiplication with
     the inverse) and '**' are implemented here.
@@ -81,9 +83,18 @@ class AbstractMMGroupWord(AbstractGroupWord):
         """
         return self.group.reduce(self, copy)
 
+    @property
+    def mmdata(self):
+        """Return the internal rpresentation of the element
 
-    def iter_atoms(self):
-        return self.group.iter_atoms(self)
+        This method returns the internal representation of an element
+        of the monster group as a numpy array of unsigend 32-bit
+        integers.
+
+        The internal representation is described in section 
+        *The monster group* in the *API reference*.
+        """
+        raise NotImplementedError("Abstract class")
 
 
     def str(self):
@@ -99,16 +110,13 @@ class AbstractMMGroupWord(AbstractGroupWord):
 
         For a group element ``g`` the following should hold:
 
-        ``g.group.word(*g.as_tuples()) == g`` .
-
-        So passing the tuples in the list returned by this method
-        as arguments to ``g.group`` or to ``g.group.word`` 
-        reconstructs the element ``g``.
+        ``self.__class__(self.as_tuples()) == self`` .
 
         This shows how to convert a group element to a list of tuples
         and vice versa.
         """
-        return self.group.as_tuples(self)
+        return list(iter_tuples_from_atoms(self.mmdata))
+
 
 
 def is_mmgroup_word(g):
@@ -237,25 +245,8 @@ class AbstractMMGroup(AbstractGroup):
         return g
 
 
-    def iter_atoms(self, g):
-        raise NotImplemetedError
-
     ### The following methods need not be overwritten #################
 
-    def as_tuples(self, g):
-        """Convert group element ``g`` to a list of tuples.
-
-        The returned tuple should represent a reduced word.
-
-        The sequence:: 
-
-            l = g.group.as_tuples(g) 
-            g1 = g.group(*l)
-
-        should compute a group element ``g1`` with ``g1 == g``.
-        """
-        atoms = self.iter_atoms(g)
-        return list(iter_tuples_from_atoms(atoms))
 
 
     def str_word(self, g):
@@ -265,7 +256,7 @@ class AbstractMMGroup(AbstractGroup):
         should be equivalent   to ``g.str()``.
         """
         """Represent group element as a string"""
-        atoms = self.iter_atoms(g)
+        atoms = g.mmdata
         strings = iter_strings_from_atoms(atoms, abort_if_error=0)
         s = "*".join(strings) 
         if s == "": s = "1"

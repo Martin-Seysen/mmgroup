@@ -350,7 +350,7 @@ def check_mm_in_g_x0(g):
     """
     g1 = np.zeros(10, dtype = np.uint32)
     v = get_order_vector().data
-    res = chk_qstate12(mm_op15_order_Gx0(g.data, len(g), 
+    res = chk_qstate12(mm_op15_order_Gx0(g._data,  g.length, 
         ORDER_TAGS, v, g1, 1))
     #print("RES", hex(res))
     if ((res >> 8) != 1):
@@ -378,7 +378,7 @@ def reduce_mm(g, check = True):
     v = get_order_vector().data
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_M(g.data, len(g), ORDER_TAGS, v, g1)
+    res = mm_op15_reduce_M(g._data, g.length, ORDER_TAGS, v, g1)
     reduce_mm_time = time.perf_counter() - t_start
     if (res < 0):
         err = "Reduction of element of monster failed"

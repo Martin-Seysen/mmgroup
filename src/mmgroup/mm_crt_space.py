@@ -97,7 +97,7 @@ def _err_tag(*args, **kwds):
 
 
 def _iter_group(g):
-    start, data, len_ = 0, g.data, len(g.data)
+    start, data, len_ = 0, g.mmdata, len(g.mmdata)
     while start < len_:
         tag = data[start] & 0x70000000
         if  tag >= 0x50000000:
@@ -538,7 +538,7 @@ class MMSpaceCRT(MMSpace):
         'self' and for elements g of the group 'self.group' only.
         """
         assert isinstance(g, AbstractGroupWord) and g.group.is_mmgroup 
-        a = np.fromiter(g.iter_atoms(), np.uint32)
+        a = g.mmdata
         nn = np.zeros(5, dtype = np.uint32)
         nnw = np.zeros(5, dtype = np.uint32)
         buf = np.zeros(v1.data[255].ops.MMV_INTS, dtype = np.uint64)

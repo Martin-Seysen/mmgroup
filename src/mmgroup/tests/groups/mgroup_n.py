@@ -19,6 +19,9 @@ from mmgroup.structures.parse_atoms import TaggedAtom
 from mmgroup.structures.parse_atoms import ihex
 from mmgroup.structures.construct_mm import iter_mm       
 from mmgroup.structures.construct_mm import load_group_name     
+from mmgroup.structures.construct_mm import add_to_embedded_classes     
+from mmgroup.structures.abstract_mm_group import AbstractMMGroup
+
 
 from mmgroup.tests.groups.auto_group import AutoGroupWord
 from mmgroup.tests.groups.auto_group import AutoGroup
@@ -414,7 +417,7 @@ parse_functions = {  # deprecated!!!!
  
   
 
-class MGroupNWord(AutoGroupWord):
+class MGroupNWord(AutoGroupWord, AbstractMMGroup):
     def __init__(self,  tag = None, atom = None, *args, **kwds):
         self.seq =  []
         self.reduced = 0
@@ -423,8 +426,13 @@ class MGroupNWord(AutoGroupWord):
             for generator in iter_generators_from_atom(a):
                 self.seq.append(generator)
             
-    def iter_atoms(self):
-        return self.group.iter_atoms(self)
+    def _iter_atoms(self):
+        for gen in self.seq:
+            yield from gen.as_atoms()
+
+    @property
+    def mmdata(self):
+        return np.fromiter(self._iter_atoms(), dtype = np.uint32)
 
 
 class MGroupN(AutoGroup):
@@ -501,15 +509,13 @@ class MGroupN(AutoGroup):
     def neutral(self):
          return MGroupNWord()
   
-    def iter_atoms(self, g):
-        for gen in g.seq:
-            yield from gen.as_atoms()
 
 
 
 StdMGroupN = MGroupN()
 MGroupNWord.group = StdMGroupN
 load_group_name(StdMGroupN)
+add_to_embedded_classes(MGroupNWord)
 
 
 
