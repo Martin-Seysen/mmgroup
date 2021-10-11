@@ -43,20 +43,28 @@ except (ImportError, ModuleNotFoundError):
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24
 
+
+from mmgroup.mm import mm_aux_index_sparse_to_leech2
+from mmgroup.mm import mm_aux_index_extern_to_sparse
+
+
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
+from mmgroup.structures.mm_space_indices import tuple_to_sparse
 
 
 from mmgroup.structures.gcode import GCode, GcVector
+from mmgroup.structures.ploop import PLoop
 from mmgroup.structures.cocode import Cocode
 from mmgroup.structures.autpl import AutPL, AutPlGroup
 
 from mmgroup.generators import gen_xi_mul_leech
 from mmgroup.generators import gen_xi_pow_leech
 from mmgroup.generators import gen_xi_scalprod_leech
+from mmgroup.generators import rand_get_seed, gen_leech2_type
 
 ERR_RAND = "Illegal string for constricting type %s element" 
 
@@ -84,18 +92,119 @@ def complete_import():
 
 
 
+###########################################################################
+# Import functions from module ``mmgroup.mm_order`` on demand
+###########################################################################
+
+
+# Functions to be imported from module mmgroup.mm_order
+check_mm_in_g_x0 = None
+
+def import_mm_order_functions():
+    """Import functions from module ``mmgroup.mm_order``.
+
+    We import these functions from module ``mmgroup.mm_order``
+    on demand. This avoids an infinite recursion of imports.
+    """
+    global check_mm_in_g_x0
+    from mmgroup.mm_order import check_mm_in_g_x0 as f
+    check_mm_in_g_x0 = f
+
+
+
 #######################################################################
 # Auxiliary functions
 #######################################################################
 
 
+ERR_XL_TUPLE = "Cannot convert tuple to XLeech2 object"
 
-def value_from_ploop(ploop):
-    raise NotImplementedError
+ERR_XL_IN_Q = "Monster group element is not in subgroup Q_x0"
+
+ERR_XL_TYPE = "Cannot convert '%s' object to XLeech2 object"
+
+ERR_XL_RAND = "No random object in class XLeech2 found"
 
 
+def MM_to_Q_x0(g):
+    if check_mm_in_g_x0 is None:
+        import_mm_order_functions()
+    g = MM0('a', g.mmdata)
+    if check_mm_in_g_x0(g) is None:
+        raise ValueError(ERR_XL_IN_Q)
+    g.reduce()
+    res = 0;
+    for atom in g.mmdata:
+        tag = (atom >> 28) & 0x0f
+        if res == 0 and tag == 3:
+            res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
+        elif tag == 1:
+            res ^= atom & 0xfff
+        elif tag:
+            raise ValueError(ERR_XL_IN_Q)
+    return res
 
 
+def rand_xleech2_type(vtype):
+    if vtype in [3,4]:
+        for i in range(1000):
+            v = randint(0, 0x1ffffff)
+            if gen_leech2_type(v) >> 4 == vtype:
+                 return v
+        raise ValueError(ERR_XL_RAND)
+    if vtype == 0:
+        return 0
+    if vtype == 2:
+        ve = randint(300, 98579)
+        vs = mm_aux_index_extern_to_sparse(ve)
+        sign = randint(0,1)
+        return mm_aux_index_sparse_to_leech2(vs) ^ (sign << 24) 
+    raise ValueError(ERR_XL_RAND)
+
+
+def value_from_ploop(ploop=0, cocode = None, *args):
+    c = Cocode(cocode) if cocode else 0
+    if isinstance(ploop, Integral):
+        d = ploop 
+    elif isinstance(ploop, PLoop):
+        d = ploop.value & 0x1fff
+        d = (d << 12) ^ mat24.ploop_theta(d) 
+    elif isinstance(ploop, XLeech2):
+        d = ploop.value
+    elif isinstance(ploop, SubOctad):
+        g = ploop.gcode
+        d = (g << 12) ^ mat24.ploop_theta(g) 
+        d ^= ploop.sign_ << 24
+        d ^= ploop.cocode
+    elif isinstance(ploop, Cocode):
+        d = ploop.value
+    elif isinstance(ploop, AbstractMMGroupWord):
+        d = MM_to_Q_x0(g)
+    elif isinstance(ploop, str):
+        if len(ploop) == 1 and ploop in "BCTXES":
+            d = 0
+            a = tuple_to_sparse(0xff,  ploop, cocode, *args)
+            if len(a) == 1:
+                a0 = a[0]
+                d = mm_aux_index_sparse_to_leech2(a0)
+                a0 &= 0xff
+                if a0 == 0xfe:
+                    d ^= 0x1000000
+                elif a0 != 1:
+                    d = 0
+            if d:
+                return d
+        if ploop == "r":
+             if cocode is None:
+                 return randint(0, 0x1ffffff)
+             elif cocode in [0,2,3,4]:
+                 return  rand_xleech2_type(cocode)
+        raise ValueError(ERR_XL_TUPLE)            
+    else:
+        return TypeError(ERR_XL_TYPE % type(ploop))
+    return d ^ c
+
+        
 
 #######################################################################
 # Class XLeech2
@@ -153,23 +262,18 @@ class XLeech2(AbstractGroupWord):
       ===================== ================================================
       ``int``               Here the code word with number ``value`` is
                             returned.  ``0 <= value < 0x2000000`` must hold.
-                            
-  
-      ``list`` of ``int``   Such a list is converted to a Golay code word,
-                            see class |GCode|, and the corresponding 
-                            (positive) Parker loop element is returned.
+                              
+      class |XLeech2|       A deep copy of the Leech lattice vector
+                            is created. 
 
-      class |GCode|         The corresponding 
-                            (positive) Parker loop element is returned. 
+      class |GCode|         The corresponding Golay code element is
+                            converted to a (positive) Leech lattice vector. 
 
-      class |PLoop|         A deep copy of parameter ``value`` is returned.
+      class |PLoop|         The corresponding Parker loop element is
+                            converted to a Leech lattice vector.
 
-      class |GcVector|      This is converted to a Golay code word,
-                            see class |GCode|, and the corresponding 
-                            (positive) Parker loop element is returned.
-
-      class |SubOctad|      The *octad* part of the |SubOctad| ``value``  
-                            is  returned. 
+      class |SubOctad|      The |SubOctad| is
+                            converted to a Leech lattice vector.
 
       ``str``               Create random element depending on the string
                              | ``'r'``: Create arbitrary Parker loop element
@@ -202,18 +306,15 @@ class XLeech2(AbstractGroupWord):
     """
     __slots__ = "value",
  
-    def __init__(self, ploop = 0, cocode = 0):
+    def __init__(self, ploop = 0, cocode = 0, *args):
         if import_pending:
             complete_import()
-        self.value = value_from_ploop(ploop) ^ Cocode(cocode).ord
+        self.value = value_from_ploop(ploop, cocode, *args)
 
 
     def __mul__(self, other):
         if isinstance(other, XLeech2):
             return XLeech2(gen_xi_mul_leech(self.value, other.value))
-        elif isinstance(other, (PLoop, Cocode)):
-            v =  value_from_ploop(other)
-            return XLeech2(gen_xi_mul_leech(self.value, v))
         elif isinstance(other, AbstractMMGroupWord):
             data = other.data
             v = gen_leech2_op_word(self.value, data, len(data))
@@ -234,9 +335,6 @@ class XLeech2(AbstractGroupWord):
     def __rmul__(self, other):
         if isinstance(other, XLeech2):
             return XLeech2(gen_xi_mul_leech(other.value, self.value))
-        elif isinstance(other, (PLoop, Cocode)):
-            v =  value_from_ploop(other)
-            return XLeech2(gen_xi_mul_leech(v, self.value))
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 return XLeech2(self.value ^ ((other & 2) << 23))
@@ -265,8 +363,6 @@ class XLeech2(AbstractGroupWord):
         if isinstance(other, XLeech2):
             v = gen_xi_pow_leech(other.value, 3)
             return XLeech2(gen_xi_mul_leech(self.value, other.value))
-        elif isinstance(other, (PLoop, Cocode)):
-            v = gen_xi_pow_leech(value_from_ploop(other), 3)
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 v = (other & 2) << 23
@@ -287,9 +383,6 @@ class XLeech2(AbstractGroupWord):
         v = gen_xi_pow_leech(other.value, 3)
         if isinstance(other, XLeech2):
             return XLeech2(gen_xi_mul_leech(other.value, v))
-        elif isinstance(other, (PLoop, Cocode)):
-            v1 =  value_from_ploop(other)
-            return XLeech2(gen_xi_mul_leech(v1, v))
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 return XLeech2(v ^ ((other & 2) << 23))
@@ -303,11 +396,15 @@ class XLeech2(AbstractGroupWord):
     def __and__(self, other):
         if isinstance(other, XLeech2):
             ov = other
-        elif isinstance(other, XLeech2):
-            ov = value_from_ploop(other) 
+        elif isinstance(other, (GCode, PLoop)):
+            d = other.value & 0xfff
+            ov = (d << 12) ^ mat24.ploop_theta(d) 
+        elif isinstance(ploop, Cocode):
+            ov = ploop.value & 0xfff
         else:
             return NotImplemented
         return gen_xi_scalprod_leech(self.value, ov)
+
 
     __rand__ = __and__
 
@@ -361,7 +458,18 @@ class XLeech2(AbstractGroupWord):
     __repr__  = str
 
 
+    
+    @property
+    def type(self):
+        return gen_leech2_type(self.value) >> 4
 
+    @property
+    def xtype(self):
+        return gen_leech2_type(self.value)
 
+    @property
+    def subtype(self):
+        t =  gen_leech2_type(self.value)
+        return t >> 4, t & 15
 
 

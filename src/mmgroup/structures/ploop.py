@@ -111,9 +111,10 @@ def complete_import():
         complete_import()
     """
     global import_pending, SubOctad
-    global AutPL, AutPlGroup
+    global AutPL, AutPlGroup, XLeech2
     from mmgroup.structures.suboctad import SubOctad
     from mmgroup.structures.autpl import AutPL, AutPlGroup
+    from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
 
 
@@ -274,11 +275,12 @@ class PLoop(GCode):
     parity_class = GCode
 
     def __init__(self, value):
-        if import_pending:
-            complete_import()
         if isinstance(value, Integral):
             self.value = value & 0x1fff
-        elif isinstance(value, PLoop):
+            return
+        if import_pending:
+            complete_import()
+        if isinstance(value, PLoop):
             self.value = value.value & 0x1fff
         elif isinstance(value, GCode):
             self.value = value.value & 0xfff
@@ -290,6 +292,8 @@ class PLoop(GCode):
             vector = value.value
             vector ^= mat24.syndrome(vector) 
             self.value = mat24.vect_to_gcode(vector)
+        elif isinstance(value, XLeech2):
+            self.value = (value.value >> 12) & 0x1fff
         else:
             vector = as_vector24(value)
             vector ^= mat24.syndrome(vector) 

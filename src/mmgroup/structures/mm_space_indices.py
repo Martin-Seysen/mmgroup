@@ -620,6 +620,8 @@ def gen_vector_sparse(p, scalar, tag, data, p1=None):
     if not p1:
         p1 = p
     a = np.array(data, dtype = np.uint32)
+    if a.shape == (): 
+        a = a.ravel()
     if p1 == p and scalar == 1:
         return a
     a1 = np.zeros(len(a), dtype = np.uint32)

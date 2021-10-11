@@ -124,12 +124,13 @@ def complete_import():
         complete_import()
     """
     global import_pending, Cocode, PLoop, PLoopIntersection, SubOctad
-    global AutPL, AutPlGroup
+    global AutPL, AutPlGroup, XLeech2
     from mmgroup.structures.cocode import Cocode
     from mmgroup.structures.cocode import PLoopIntersection
     from mmgroup.structures.ploop import PLoop
     from mmgroup.structures.suboctad import SubOctad
     from mmgroup.structures.autpl import AutPL, AutPlGroup
+    from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
 
 #######################################################################
@@ -313,6 +314,8 @@ class GCode():
             vector = value.value
             vector ^= mat24.syndrome(vector) 
             self.value = mat24.vect_to_gcode(vector)
+        elif isinstance(value, XLeech2):
+            self.value = (value.value >> 12) & 0x1fff
         elif isinstance(value, str):
            self.value = randint(0, 0xfff)
         else:
