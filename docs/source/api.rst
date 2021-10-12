@@ -115,6 +115,18 @@ Automorphisms of the Parker loop
    :members: 
 
 
+.. _xleech2-label:
+
+
+The Leech lattice modulo 2 and its preimage :math:`Q_{x0}`
+-----------------------------------------------------------
+
+.. automodule:: mmgroup.structures.xleech2
+
+.. autoclass:: mmgroup.XLeech2
+   :members: 
+
+
 .. _basis-golay-label:
 
 The basis of the Golay code and of its cocode
@@ -139,7 +151,7 @@ Python classes implementing the monster group
 
 
 .. autoclass:: mmgroup.MM
-   :members:  as_tuples, copy,  is_reduced, reduce, order, data,
+   :members:  as_tuples, copy,  is_reduced, reduce, order, mmdata,
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
               as_Q_x0_atom, type_Q_x0, simplify
 

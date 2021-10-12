@@ -558,7 +558,7 @@ class MM0(AbstractMMGroupWord):
         v = self.as_Q_x0_atom()
         return gen_leech2_type(v) >> 4
 
-    def conjugate_2B_involution(self, check=True, ntrials=10, verbose=0):
+    def conjugate_2B_involution(self, check=True, ntrials=40, verbose=0):
         """Find an element conjugating an involution into the centre
 
         If the element :math:`g` given by ``self`` is a 2B involution 
@@ -573,7 +573,7 @@ class MM0(AbstractMMGroupWord):
 
         This function may take a long time. Parameter  ``ntrials``
         gives the number of trials to find a suitable element
-        :math:`h`. Default is  ``ntrials = 10``. The function may
+        :math:`h`. Default is  ``ntrials = 40``. The function may
         fail after that number of trials even if the element is a
         2B involution.
 

@@ -45,6 +45,7 @@ try:
     from mmgroup.structures.ploop import  PLoop, PLoopZ
     from mmgroup.structures.suboctad import Octad, SubOctad
     from mmgroup.structures.autpl import  AutPL
+    from mmgroup.structures.xleech2 import XLeech2
 except:
     w = "Extension mmgroup.mat24 not found, package not functional!"
     warnings.warn(w, UserWarning)
