@@ -164,7 +164,7 @@ class Cocode():
                  value.suboctad_, value.octad_.value)
         elif isinstance(value, XLeech2):
             v = value.value
-            self.value = (mat24.ploop_theta(v >> 24) ^ v) & 0xfff
+            self.value = (mat24.ploop_theta(v >> 12) ^ v) & 0xfff
         elif isinstance(value, str):
             if len(value) == 1 and value in "reo":
                 self.value = randint(0, 0xfff)

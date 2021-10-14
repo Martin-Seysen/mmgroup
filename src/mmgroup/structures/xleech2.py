@@ -66,6 +66,8 @@ from operator import __xor__
 from numbers import Integral, Number
 from random import randint
 
+import numpy as np
+
 try:
     # Try importing the fast C function
     from mmgroup import mat24 
@@ -91,6 +93,7 @@ from mmgroup.structures.gcode import GCode, GcVector
 from mmgroup.structures.ploop import PLoop
 from mmgroup.structures.cocode import Cocode
 from mmgroup.structures.autpl import AutPL, AutPlGroup
+from mmgroup.structures.construct_mm import add_to_embedded_classes
 
 from mmgroup.generators import gen_xi_mul_leech
 from mmgroup.generators import gen_xi_pow_leech
@@ -591,5 +594,11 @@ class XLeech2(AbstractGroupWord):
         """
         t =  gen_leech2_type(self.value)
         return t >> 4, t & 15
+
+
+
+
+add_to_embedded_classes(XLeech2)
+
 
 

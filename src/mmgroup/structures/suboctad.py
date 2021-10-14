@@ -93,6 +93,26 @@ ERR_DIV2 = "%s object may be divided by 2 only"
 
 
 #######################################################################
+# Import derived classed
+#######################################################################
+
+import_pending = True
+
+def complete_import():
+    """Internal function of this module
+
+    If you need any of the objects declared above, do the following:
+
+    if import_pending:
+        complete_import()
+    """
+    global import_pending,  XLeech2
+    from mmgroup.structures.xleech2 import XLeech2
+    import_pending = False
+
+
+
+#######################################################################
 # Auxiliary functions
 #######################################################################
 
@@ -183,6 +203,9 @@ def Octad(octad):
       class |SubOctad|      The *octad* part of the |SubOctad| ``octad``  
                             is  returned. 
 
+      class |XLeech2|       The *octad* part of the vector ``octad``  
+                            is  returned. 
+
       ``str``               Create random element depending on the string
                              | ``'r'``: Create arbitrary octad
 
@@ -220,6 +243,17 @@ def Octad(octad):
 # Class SubOctad
 #######################################################################
 
+
+def _suboctad_from_param_octad(octad):
+    if import_pending:
+        complete_import()
+    if isinstance(octad, SubOctad):
+        return octad.suboctad_   
+    if isinstance(octad, XLeech2):
+        gcode = (octad.value >> 12) & 0xfff
+        cocode = (mat24.ploop_theta(gcode) ^ octad.value) & 0xfff
+        return mat24.cocode_to_suboctad(cocode, gcode)
+    return 0  
 
 class SubOctad():
     """Models a pair (octad, suboctad)
@@ -305,12 +339,15 @@ class SubOctad():
     octad as a Parker loop element and ``Cocode(so)`` obtain its suboctad 
     as a cocode element. You may obtain more information from the properties
     of the object  ``so``.
+
+    If parameter ``octad`` is of type |SubOctad| or |XLeech2| the 
+    this parameter already describes a pair ``(octad, suboctad)``.
     """
     __slots__ = "octad_", "o_value", "sign_", "suboctad_"
     parity = 0
     ERR_MUL = "SubOctad can be multiplied with 1 or -1 only"
 
-    def __init__(self, octad, suboctad):
+    def __init__(self, octad, suboctad = 0):
         self.octad_ = Octad(octad)
         self.o_value = self.octad_.octad
         self.sign_ = (-1)**(self.octad_.value >> 12)
@@ -325,6 +362,7 @@ class SubOctad():
         else:
             value = Cocode(suboctad).cocode 
             self.suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+        self.suboctad_ ^= _suboctad_from_param_octad(octad)
         if mat24.suboctad_weight(self.suboctad_) & 1:
             self.octad_ = ~self.octad_
 
