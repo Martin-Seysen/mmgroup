@@ -486,7 +486,7 @@ class XLeech2(AbstractGroupWord):
             ov = ploop.value & 0xfff
         else:
             return NotImplemented
-        return gen_xi_scalprod_leech(self.value, ov)
+        return Parity(gen_xi_scalprod_leech(self.value, ov))
 
 
     __rand__ = __and__
@@ -502,7 +502,7 @@ class XLeech2(AbstractGroupWord):
         return self
         
     def __neg__(self):
-        return  PLoop(self.value ^ 0x1000000)
+        return  XLeech2(self.value ^ 0x1000000)
 
 
     @property

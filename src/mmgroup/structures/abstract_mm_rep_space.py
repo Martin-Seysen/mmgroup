@@ -187,6 +187,9 @@ from mmgroup.structures.mm_space_indices import purge_sparse_entry
 
 
 
+
+
+
 ERR_MM_CONV = "Sparse representation of MM vectors not fully supported"
 
 
@@ -194,6 +197,45 @@ try:
     from mmgroup.mm import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
     warnings.warn(ERR_MM_CONV, UserWarning)   
+
+
+#######################################################################
+# Import derived classed
+#######################################################################
+
+import_pending = True
+
+def complete_import():
+    """Internal function of this module
+
+    If you need any of the objects declared above, do the following:
+
+    if import_pending:
+        complete_import()
+    """
+    global import_pending, XLeech2, mm_aux_index_leech2_to_sparse
+    from mmgroup.mm import mm_aux_index_leech2_to_sparse 
+    from mmgroup.structures.xleech2 import XLeech2
+    import_pending = False
+
+
+#######################################################################
+# class AbstractMmRepVector
+#######################################################################
+
+
+
+def xleech2_to_sparse(p, v):
+    if import_pending:
+        complete_import()
+    assert isinstance(v, XLeech2)
+    v2 = v.value
+    sp = mm_aux_index_leech2_to_sparse(v2)
+    if sp == 0:
+        err = "Instance of class XLeech2 is not of type 2"
+        raise ValueError(err)
+    sign = p-1 if v2 & 0x1000000 else 1
+    return np.array([sp + sign], dtype = np.uint32)
 
 
 class AbstractMmRepVector(AbstractRepVector):
@@ -405,8 +447,6 @@ class AbstractMmRepSpace(AbstractRepSpace):
         mgroup_n.MGroupN.
         """
         pass
-        #assert p & 1 and 3 <= p#super(AbstractMmRepSpace, self).__init__(p, group)
-        #self.atom_parser = AtomDict(self.unit)
 
     #######################################################################
     # Obtaining and setting components via sparse vectors
@@ -795,7 +835,12 @@ def add_vector(vector, tag = 0, i0 = None, i1 = None):
     elif isinstance(tag, Integral):
         add_conv_vector(vector, i0, factor = tag)
     else:
-        raise TypeError(ERR_MMV_TYPE % type(tag))       
+        if import_pending:
+            complete_import()
+        if isinstance(tag, XLeech2):
+            space.additems_sparse(vector, (xleech2_to_sparse(p, tag)))
+        else:
+            raise TypeError(ERR_MMV_TYPE % type(tag))       
 
   
 MM_VECTOR_CONVERSIONS = {

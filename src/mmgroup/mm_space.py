@@ -208,23 +208,23 @@ Details are given in the following list:
 .. table:: Special tags for constructing a vector
    :widths: 25 75
 
-   ========================= ============================================= 
+   ========================= ============================================== 
    tag, i0, i1               Evaluates to                               
-   ========================= ============================================= 
+   ========================= ============================================== 
    ``('D', i0)``             Shorthand for ``('A', i0, i0)``   
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``('I', i0, i1)``         Shorthand for the sum of the basis vectors 
 
                              ``('A', i0, i0)`` + ``('A', i1, i1)`` - 
                              ``('A', i0, i1)`` - ``2 ('B', i0, i1)``,
 
                              see remark below. 
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``('E', i)``              This is the basis vector with
                              *linear* index ``i``. 
 
                              See the following subsection for details.              
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``('S', data)``           Here ``data`` is an array-like object (as
                              defined in the numpy package) that encodes
                              a vector in sparse representation as an 
@@ -235,24 +235,31 @@ Details are given in the following list:
 
                              Sparse representation of vectors 
                              in :math:`\rho_p`.            
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``('V', data)``           Here ``data`` is an array like object (as
                              defined in the numpy package) that encodes  
                              a one-dimensional array of integers of
                              length 196884. The order of the entries
                              is as in the next section.              
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``('R')``                 Tag ``'R'`` (without any further parameters)
                              stands for the generation of a uniform
                              distributed random vector.
-   ------------------------- --------------------------------------------- 
+   ------------------------- ---------------------------------------------- 
    ``(i, v)``, ``i`` integer Here ``i`` is an integer and ``v`` is a
                              vector, i.e.an instance of class
                              |MMVector|. Then the vector ``i * v``
                              is generated. This is useful for  
                              extending the modulus ``p`` of a 
                              vector, see  remark below.
-   ========================= ============================================= 
+   ------------------------- ---------------------------------------------- 
+   type |MMVector|           If ``tag`` is of type |MMVector| then
+                             a deep copy of ``tag`` is created.
+   ------------------------- ---------------------------------------------- 
+   type |XLeech2|            If ``tag`` is of type |XLeech2| then the
+                             (possibly negative) basis vector corresponding
+                             to that ``tag`` in :math:`Q_{x0}` is created.
+   ========================= ============================================== 
 
 Remarks
 
