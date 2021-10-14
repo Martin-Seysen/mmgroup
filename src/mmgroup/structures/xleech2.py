@@ -120,8 +120,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, SubOctad
+    global import_pending, SubOctad, MM0
     from mmgroup.structures.suboctad import SubOctad
+    from mmgroup.structures.mm0_group import MM0
     import_pending = False
 
 
@@ -171,7 +172,7 @@ def MM_to_Q_x0(g):
     for atom in g.mmdata:
         tag = (atom >> 28) & 0x0f
         if res == 0 and tag == 3:
-            res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
+            res = ((atom & 0x1fff) << 12) ^ mat24.ploop_theta(atom)
         elif tag == 1:
             res ^= atom & 0xfff
         elif tag:
@@ -213,7 +214,7 @@ def value_from_ploop(ploop=0, cocode = None, *args):
     elif isinstance(ploop, Cocode):
         d = ploop.value & 0xfff
     elif isinstance(ploop, AbstractMMGroupWord):
-        d = MM_to_Q_x0(g)
+        d = MM_to_Q_x0(ploop)
     elif isinstance(ploop, str):
         if len(ploop) == 1 and ploop in "BCTXES":
             d = 0

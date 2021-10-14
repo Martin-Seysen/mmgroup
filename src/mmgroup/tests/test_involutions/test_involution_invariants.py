@@ -15,7 +15,7 @@ from collections import defaultdict
 import numpy as np
 import pytest
 
-from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, MMV
+from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, MMV, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.tests.test_involutions.make_involution_samples import invariant_count_type2
 from mmgroup.clifford12 import xsp2co1_elem_find_type4
@@ -112,7 +112,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     invar, v1, v0  = gg._involution_invariants()
     assert ref_ord[0] == g.order()
     #print("square", (g**2).reduce())
-    assert ref_ord[1] == (g**2).type_Q_x0()
+    assert ref_ord[1] == XLeech2(g**2).type
     assert ref_chi == g.chi_G_x0()
     
     if int(invar[0]) & 0x8000000:
@@ -197,6 +197,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
 
 
 
+@pytest.mark.mmm
 @pytest.mark.involution
 def test_xx(verbose = 0):
     for i, (g, n) in enumerate(make_involution_samples()):

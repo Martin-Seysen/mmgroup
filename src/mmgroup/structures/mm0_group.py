@@ -517,46 +517,6 @@ class MM0(AbstractMMGroupWord):
                 return False
         return True
              
-    def as_Q_x0_atom(self):
-        """Return element as an atom of the subgroup :math:`Q_{x0}`
-
-        If this element is in the subgroup :math:`Q_{x0}` of the monster
-        then the function returns a number ``x`` such that this element
-        ``self`` is equal to ``self.group(('q', x))``.
-
-        Otherwise the function raises ValueError.
-        """
-        err = "Element of monster group is not in subgroup Q_x0"
-        if check_mm_in_g_x0 is None:
-            import_mm_order_functions()
-        if check_mm_in_g_x0(self) is None:
-            raise ValueError(err)
-        self.reduce()
-        res = 0;
-        for atom in self.mmdata:
-            tag = (atom >> 28) & 0x0f
-            if res == 0 and tag == 3:
-                res = ((atom & 0x1fff) << 12) ^ ploop_theta(atom)
-            elif tag == 1:
-                res ^= atom & 0xfff
-            elif tag:
-                 raise ValueError(err)
-        return res
-    
-
-    def type_Q_x0(self):
-        """Return type of element if it is in the subgroup :math:`Q_{x0}`
-
-        If the element is in the subgroup :math:`Q_{x0}` of the monster
-        then the function returns the type of the vector in the Leech 
-        lattice modulo 2 corresponding to this element. That type is
-        0, 2, 3, or 4.
-
-        The function raises ValueError if the element is not
-        in the subgroup :math:`Q_{x0}`. 
-        """
-        v = self.as_Q_x0_atom()
-        return gen_leech2_type(v) >> 4
 
     def conjugate_2B_involution(self, check=True, ntrials=40, verbose=0):
         """Find an element conjugating an involution into the centre
