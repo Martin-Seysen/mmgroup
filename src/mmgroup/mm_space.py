@@ -202,8 +202,9 @@ suffix ``h`` means hexadecimal notation.
 Special tags for creating vectors in the representation :math:`\rho_p` 
 .......................................................................
 
-The constructor of class |MMVector| acceps a variety of special tags.
-Details are given in the following list:
+Apart from the standard tags ``A``, ``B``, ``C``, ``T``, ``X``, ``Y``,
+and ``Z``, the constructor of class |MMVector| acceps a variety of 
+special tags. Details are given in the following list:
 
 .. table:: Special tags for constructing a vector
    :widths: 25 75

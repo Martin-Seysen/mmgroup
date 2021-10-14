@@ -509,9 +509,12 @@ class MM(MM0):
       |                     | given by that object is mapped to         |
       |                     | :math:`x_\pi \in \mathbb{M}`.             |
       +---------------------+-------------------------------------------+
-      | class |Cocode|      | The Golay cocode element :math:`\delta`   | 
+      | class |Cocode|      | The Golay cocode element :math:`\delta`   |
       |                     | given by that object is mapped to         |
       |                     | :math:`x_\delta \in \mathbb{M}`.          |
+      +---------------------+-------------------------------------------+
+      | class |XLeech2|     | The element corresponding to that element |
+      |                     | of  :math:`Q_{x0}` is created.            |
       +---------------------+-------------------------------------------+
       | class |MM|          | A deep copy of the given element of       | 
       |                     | :math:`\mathbb{M}` is made.               |
