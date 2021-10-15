@@ -253,13 +253,6 @@ special tags. Details are given in the following list:
                              is generated. This is useful for  
                              extending the modulus ``p`` of a 
                              vector, see  remark below.
-   ------------------------- ---------------------------------------------- 
-   type |MMVector|           If ``tag`` is of type |MMVector| then
-                             a deep copy of ``tag`` is created.
-   ------------------------- ---------------------------------------------- 
-   type |XLeech2|            If ``tag`` is of type |XLeech2| then the
-                             (possibly negative) basis vector corresponding
-                             to that ``tag`` in :math:`Q_{x0}` is created.
    ========================= ============================================== 
 
 Remarks
@@ -413,12 +406,18 @@ be set.
       ---------------------- --------------------------------------------- 
        class |MMVector|      A deep copy of the given vector is returned.            
       ---------------------- --------------------------------------------- 
+       class |XLeech2|       If ``tag`` is of type |XLeech2| then the
+                             (possibly negative) basis vector 
+                             corresponding to that ``tag`` 
+                             in :math:`Q_{x0}` is created.
+      ---------------------- --------------------------------------------- 
        ``str``               For an vector ``v`` in ``V`` we have      
                              ``V(str(v)) == v``. 
 
                              This is helpful for rereading printed 
                              vectors.       
       ====================== ============================================= 
+
 
 
 """
@@ -545,13 +544,14 @@ def get_mm_ops(p):
 ######################################################################
 
 import_pending = True
-leech2matrix_eval_A = None
-leech_matrix_2A_axis_type = None
 
 def complete_import():
     global leech2matrix_eval_A, leech_matrix_2A_axis_type
+    global op_count_short, XLeech2
     from mmgroup.clifford12 import leech2matrix_eval_A
     from mmgroup.clifford12 import leech_matrix_2A_axis_type 
+    from mmgroup.mm15 import op_count_short
+    from mmgroup import XLeech2
     import_pending = False    
 
 #####################################################################
@@ -655,15 +655,16 @@ class MMVector(AbstractMmRepVector):
     def eval_A(self, v2, e = 0):
         """Internal method, not for public use
 
-        The part of this vector with tag 'A' corresponds to 
+        The part of this vector with tag 'A' corresponds to  a
         symmetric 24 times 24 matrix :math:`A`. 
 
-        Let :math:`v_2` be a short Leech lattice vector given by 
-        parameter ``v2``, encoded as a vector in  the Leech 
-        lattice modulo 2; see section 
-        **Leech lattice encoding of the elements Q_x0** in
-        the description of the C interface. Then :math:`v_2` is 
-        determined up to sign and :math:`v_2 A v_2^\top`
+        Let :math:`v_2` be a short vector in the Leech lattice 
+        modulo 2 given by  parameter ``v2``, where ``v2`` is an 
+        instance of class |XLeech2|. If ``v2`` is an integer then 
+        this is converted ``XLeech2(v2)``.
+
+        Then in the Leech lattice shortest preimage :math:`v` of
+        :math:`v_2` is determined up to sign and :math:`v A v^\top`
         is determined uniquely.
 
         In case ``e = 0`` (default) the function returns 
@@ -682,6 +683,8 @@ class MMVector(AbstractMmRepVector):
         """
         if import_pending:
             complete_import()
+        if isinstance(v2, XLeech2):
+            v2 = v2.value
         v1 = np.zeros(24*4, dtype = np.uint64)
         self.ops.op_t_A(self.data, e % 3, v1)
         res = leech2matrix_eval_A(self.p, v1, v2)
@@ -690,6 +693,36 @@ class MMVector(AbstractMmRepVector):
             raise ValueError(err)
         return res
         
+
+    def count_short(self):
+        r"""Count certain entries of the vector
+
+        The function counts the absolute values of all entries 
+        of the monomial part of the vector.
+   
+        Here the monomial part consists of the entries with
+        tags 'B', 'C', 'T', 'X'. These entries correspond to 
+        the short vectors of the Leech lattice.
+
+        The function returns a tuple of length ``p//2 + 1``, where
+        ``p`` is the characteristic of the vector. Entry ``i`` of
+        that tuple contains the number of entries of the monomial 
+        part of the vector with absolute value ``i``. 
+
+        The returned tuple is invariant under operation of the 
+        subgroup :math:`G_{x0}` of the monster group.
+
+        Caution: The function is implemented for characteristic
+        ``p = 15`` only!
+        """
+        if import_pending:
+            complete_import()
+        if self.p != 15:
+            err = "Method supported for characteristic p = 15 only"
+            raise ValueError(err)
+        a = np.zeros(8, dtype = np.uint32)
+        op_count_short(self.data, a)
+        return tuple(a)
 
     def axis_type(self, e = 0):
         r"""Return axis type if this vector is a 2A axis 

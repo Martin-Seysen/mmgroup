@@ -16,6 +16,11 @@
 #error File mm_op_check_gx0.c works in the 64-bit version only!
 // %%END IF 
 
+
+/*********************************************************************
+** Auxiliary functions for function mm_op%{P}_find_short
+*********************************************************************/
+
 typedef struct {
     uint64_t mask0;
     uint64_t mask1;
@@ -179,4 +184,78 @@ uint32_t mm_op%{P}_find_short(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint3
 {
      return find_short_all(v, p_out, n, y0, y1);
 }
+
+
+/*********************************************************************
+** Auxiliary functions for function mm_op%{P}_count_short
+*********************************************************************/
+
+
+static inline void count_short24(
+    uint_mmv_t *v, 
+    uint32_t n, 
+    uint_fast32_t *p_out
+)
+{
+   uint32_t i;
+   for (i = 0; i < n; ++i) {
+       uint_mmv_t w = v[0];
+       // %%FOR j in range(0, 64, 4)
+       ++p_out[(w >> %{j}) & 15];
+       // %%END FOR j 
+       w = v[1];
+       // %%FOR j in range(0, 32, 4)
+       ++p_out[(w >> %{j}) & 15];
+       // %%END FOR 
+       v += 2;
+   }
+}
+
+
+static inline void count_short64(
+    uint_mmv_t *v, 
+    uint32_t n, 
+    uint_fast32_t *p_out
+)
+{
+   uint32_t i;
+   for (i = 0; i < (n << 2); ++i) {
+       uint_mmv_t w = v[i];
+       // %%FOR j in range(0, 64, 4)
+       ++p_out[(w >> %{j}) & 15];
+       // %%END FOR 
+   }
+}
+
+
+/**
+  @brief Count certain entries of a vector of the monster rep modulo %{P}
+
+  Let ``v`` be a vector of the monster group representation modulo %{P}.
+  The function counts the absolute values of all entries of the monomial 
+  part of ``v``.
+   
+  Here the monomial part of ``v`` consists of the entries with
+  tags 'B', 'C', 'T', 'X'. The coordinates of these entries
+  correspond to the short vectors of the Leech lattice.
+
+  Output is written into the array ``p_out`` of length  %{int:P//2+1}.
+  Entry ``p_out[i]`` contains the number if entries of the monomial 
+  part of ``v`` with absolute value ``i`` for ``0 <= i <= %{int:P//2}. 
+*/
+// %%EXPORT px
+void mm_op%{P}_count_short(uint_mmv_t *v, uint32_t *p_out)
+{
+     uint_fast32_t a[16], i;
+
+     for (i = 0; i < 16; ++i) a[i] = 0;
+     count_short24(v + MM_OP%{P}_OFS_B, 48, a);
+     a[0] = (a[0] + a[15] - 48) >> 1;
+     for (i = 1; i < 15; ++i) a[i] >>= 1;
+     a[15] = 0;
+     count_short64(v + MM_OP%{P}_OFS_T, 759, a);
+     count_short24(v + MM_OP%{P}_OFS_X, 2048, a);
+     for (i = 0; i < 8; ++i) p_out[i] = a[i] + a[15-i];
+}
+
 
