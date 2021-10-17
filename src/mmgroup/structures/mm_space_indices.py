@@ -632,6 +632,8 @@ def gen_vector_sparse(p, scalar, tag, data, p1=None):
     return a1[:res]
 
 
+def gen_zero(*args):
+    return np.zeros(0, dtype = np.uint32)
 
 tuple_to_sparse_functions = {
     'A': gen_unit_A,
@@ -645,6 +647,7 @@ tuple_to_sparse_functions = {
     'E': gen_unit_numeric,
     'I': gen_unit_I,
     'S': gen_vector_sparse,
+    '0': gen_zero,
 }
 
 
@@ -1016,13 +1019,13 @@ def sparse_to_str(p, a_indices):
     entries of the vector are reduced modulo p.   
     """
     names = []
+    half = p >> 1
     for a in a_indices:
         tag, fmt0, fmt1 = str_tag[(a >> 25) & 7]
         i0, i1, v = (a >> 14) & 0x7ff, (a >> 8) & 0x3f, (a & 0xff) % p
         if tag and v:
-            s = "-" if v == p - 1 else "+"
-            if  1 < v < p - 1:  
-                s += str(v) + "*"
+            s, vabs = ("-", p - v) if v > half else ("+", v)
+            s += (str(vabs) + '*') if vabs > 1 else ""
             names.append("%s%s_%s_%s" % (s, tag, fmt0(i0), fmt1(i1)))            
     if len(names): 
         if names[0][:1] == "+": 

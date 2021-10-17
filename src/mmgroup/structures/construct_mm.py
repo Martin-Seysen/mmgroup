@@ -336,6 +336,10 @@ def iter_rand_subgroup(tag, s):
 ###########################################################################
 
 
+def iter_neutral(*args):
+    return
+    yield 0
+
 gen_tag_dict = {
         "d": iter_d, 
         "p": iter_p, 
@@ -348,6 +352,7 @@ gen_tag_dict = {
         "c": iter_c, 
         "a": iter_a, 
         "r": iter_rand_subgroup,
+        "1": iter_neutral
 }
 
 

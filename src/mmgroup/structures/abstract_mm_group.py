@@ -105,6 +105,16 @@ class AbstractMMGroupWord(AbstractGroupWord):
             return super(AbstractGroupWord, str)()
     __repr__ = str
 
+    def raw_str(self):
+        """Represent group element as a string
+
+        In contrast to the standard method ``str``, this method
+        returns a string containing the raw data of the group
+        element only.
+        """
+        return self.group.raw_str_word(self)
+
+
     def as_tuples(self):
         """Convert group element to a list of tuples
 
@@ -262,6 +272,17 @@ class AbstractMMGroup(AbstractGroup):
         if s == "": s = "1"
         return "%s<%s>" % (self.group_name, s)
 
+    def raw_str_word(self, g):
+        """Convert group atom ``g`` to a string
+
+        For an element ``g`` of this group ``g.group.raw_str_word(g)``
+        should be equivalent   to ``g.raw_str()``.
+        """
+        """Represent group element as a string"""
+        atoms = g.mmdata
+        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
+        s = "*".join(strings) 
+        return "1" if  s == "" else s
                  
 
     def neutral(self):

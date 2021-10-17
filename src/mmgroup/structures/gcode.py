@@ -337,6 +337,8 @@ class GCode():
     __neg__ = __pos__
 
     def __and__(self, other):
+        if import_pending:
+            complete_import()
         if isinstance(other, GCode):
             return PLoopIntersection(self, other)
         elif  isinstance(other, Cocode):
@@ -684,6 +686,8 @@ class GcVector:
         elif other == 0:
             return self
         else:
+            if import_pending:
+                complete_import()
             return Cocode(self).__add__(other)
 
     __radd__ = __add__
@@ -696,6 +700,8 @@ class GcVector:
         elif isinstance(other, GCode):
             return GCode(self.value & mat24.gcode_to_vect(other.value))
         else:
+            if import_pending:
+                complete_import()
             return Cocode(self).__and__(other)
 
     __rand__ = __and__

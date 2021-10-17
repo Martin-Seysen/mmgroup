@@ -343,6 +343,8 @@ class AbstractMmRepVector(AbstractRepVector):
         self.space.setitems_sparse(v, a)
         return v
         
+    def raw_str(self):
+        return self.space.raw_str_vector(self)
         
 
 
@@ -679,11 +681,12 @@ class AbstractMmRepSpace(AbstractRepSpace):
 
 
     def str_vector(self, v1):
-        a_sparse = self.as_sparse(v1)
-        s = sparse_to_str(v1.p, a_sparse)
+        s = sparse_to_str(v1.p, self.as_sparse(v1))
         return "%s<%d;%s>" % (self.space_name, v1.p, s)
            
 
+    def raw_str_vector(self, v1):
+        return sparse_to_str(v1.p, self.as_sparse(v1))
 
 
 ######################################################################
@@ -751,25 +754,27 @@ def sparse_subspace(*args):
 
 FRAME = re.compile(r"^([A-Za-z_])+\<([0-9]+;)?(.+)\>$") 
 
-MMV = None
+MMVector = None
 
-def parse_mm_space_string(space, s):
-    global MMV
+def parse_mm_space_string(space, p, s):
+    global MMVector
     m = FRAME.match(s)
+    p_intern, space_intern = None, None
     if m:
         space_name, p_str, string = (m[1], m[2], m[3])
-        p = int(p_str[:-1]) if p_str else 0
+        if p_str: p_intern = int(p_str[:-1])
+        space_intern = SPACES_BY_NAME.get(space_name)
     else:
-        err = "Cannot parse string as an MM space vector" 
-        raise ValueError(err)
-    if space_name:
-        try:
-            space = SPACES_BY_NAME[space_name]
-            f = AtomDict(partial(space, p))
-        except KeyError:
-            if MMV is None:
-                from mmgroup import MMV
-            f = AtomDict(MMV(p))
+        space_intern = space.vector_type
+        string = s
+        p_intern = p
+    if p_intern is None:
+        p_intern = p
+    if space_intern is None:
+        if MMVector is None:
+            from mmgroup import MMVector
+        space_intern = MMVector
+    f = AtomDict(partial(space_intern, p_intern))
     return eval_atom_expression(string, f)
     
 
@@ -782,7 +787,7 @@ def add_conv_vector(vector, tag, factor = 1):
     p = vector.p
     space = vector.space
     if isinstance(tag, str):
-        a = parse_mm_space_string(space, tag)
+        a = parse_mm_space_string(space, p, tag)
     else:
         a = tag
     if (a.space == space and a.p == p):
@@ -810,7 +815,7 @@ def add_vector(vector, tag = 0, i0 = None, i1 = None):
     p = vector.p
     space = vector.space
     if isinstance(tag, str) and len(tag) == 1:
-        if tag in "ABCTXZYDEIS":
+        if tag in "ABCTXZYDEIS0":
             space.additems_sparse(vector,
                 tuple_to_sparse(p, tag, i0, i1))
         elif tag == "R":
