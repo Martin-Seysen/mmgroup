@@ -286,7 +286,7 @@ static uint32_t crt_check_l(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, u
 // %%EXPORT px
 uint32_t mm_crt_check_g(uint32_t g, uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_mmv_t *p255)
 {
-     switch ((g >> 25) & 7) {
+     switch ((g >> 28) & 7) {
          case 7:
              return 1;
          case 5:

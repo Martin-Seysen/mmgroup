@@ -92,6 +92,7 @@ def g_shift(g):
             shift += 3
     return shift
 
+@pytest.mark.slow
 @pytest.mark.mm
 def test_random_io(verbose = 0):
     n = 1
@@ -105,24 +106,30 @@ def test_random_io(verbose = 0):
              v = space(v)
              n1 = v.inorm 
              v2_1 = v.v2
-             v *= g     
+             v1 = v * g     
              n2 = v.inorm 
              assert n1 == n2, (hex(n1), hex(n2))
              for p in (15, 7, 31, 127, 255):
-                 vp =  (v % p) 
-                 K = 1 << k
-                 for tag in "A": # "ABCTXZY":
-                     assert equ_modp(v[tag], vp[tag], p)
-                 for j in range(5):
+                 vp =  (v % p) * g
+                 for tag in "BC":
+                     i0 = i1 = randint(0,23)
+                     while i1 == i0: i1 = randint(0, 23)
+                     assert equ_modp(v1[tag,i0,i1], vp[tag,i0,i1], p)
+                 for tag in "A":
+                     assert equ_modp(v1[tag], vp[tag], p)
+                 for tag in "TXZY":
+                     i0, i1 = randint(0,758), randint(0,23)
+                     assert equ_modp(v1[tag,i0,i1], vp[tag,i0,i1], p)
+                 for j in range(2):
                      i = randint(0, 851)
-                     assert equ_modp(vp["E", i], v["E", i], p), (p,i) 
-                 for j in range(10):
+                     assert equ_modp(v1["E", i], vp["E", i], p), (p,i) 
+                 for j in range(5):
                      i = randint(852, 196883)
-                     assert equ_modp(vp["E", i], v["E", i], p), (p,i) 
-             v2_2 = v.v2
+                     assert equ_modp(v1["E", i], vp["E", i], p), (p,i) 
+             v2_2 = v1.v2
              assert v2_2 >= v2_1 - g_shift(g)
              i = randint(0, 23)
-             assert v["E",i] == v["A", i, i]
+             assert v1["E",i] == v1["A", i, i]
              n += 1
 
 

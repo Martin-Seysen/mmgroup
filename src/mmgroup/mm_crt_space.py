@@ -71,7 +71,7 @@ def tuples_to_sparse_dict(tuples):
             scalar, data = data[0],  data[1:]
         if not data[0] in "ABCTXZYIDE":
             err = "Illegal tag %s in tuple for class MMSpaceCRT"
-            raise err % tag            
+            raise ValueError(err %  data[0])            
         for t in tuple_to_sparse(255, *data):
             scalar1, t =  t & 0xff, t & 0xffffff00
             scalar1 = scalar1 if scalar1 < 128 else scalar1 - 255
@@ -229,7 +229,7 @@ class MMVectorCRT(AbstractMmRepVector):
 
 
     def shl(self, sh):
-        assert isintance(sh, Integral)
+        assert isinstance(sh, Integral)
         if sh == 0:
             return self
         if sh > 0:
@@ -290,7 +290,7 @@ class MMVectorCRT(AbstractMmRepVector):
         elif p in (3, 15):
             v0 = self % 255
             return MMVector(p, v0)
-        elif isintance(p, Integral):
+        elif isinstance(p, Integral):
             err = "Cannot reduce MMVectorCRT object modulo %d"
             raise ValueError(err % p)
         else:
@@ -460,7 +460,7 @@ class MMSpaceCRT(MMSpace):
         assert v1.space == self
         v = MMVectorCRT(v1.shift, 0)
         for p in (7, 31, 127, 255):
-            np.copyto(v.data[p], v1.data[p])
+            np.copyto(v.data[p].data, v1.data[p].data)
         if v1.expanded:
             np.copyto(v.data_int, v1.data_int)
             v._v2 = v1._v2        
@@ -524,6 +524,8 @@ class MMSpaceCRT(MMSpace):
             vectors = list(v1.data.values())
             if check_MMVectorCRT:
                 if mm_crt_check_g(g_word[0], *[v.data for v in vectors]):
+                    print("MMVectorCRT: shift = %d, v2 = %d, tag = %s" %
+                        (v1.shift, v1.v2, ((g_word[0] >> 28) & 7)))
                     raise ValueError(ERR_UNDERFLOW_G)
             for v in vectors:
                 v.ops.op_word(v.data, g_word, len(g_word), 1, buf)
@@ -546,7 +548,7 @@ class MMSpaceCRT(MMSpace):
             mm_group_n_clear(nn)
             i = mm_group_n_mul_word_scan(nn, a, len(a))
             length =  mm_group_n_to_word(nn, nnw)
-            self._imul_word(v1, nn[:length], buf)
+            self._imul_word(v1, nnw[:length], buf)
             a = a[i:]
             if len(a):
                 self._imul_word(v1, a[:1], buf)    

@@ -197,7 +197,6 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
 
 
 
-@pytest.mark.mmm
 @pytest.mark.involution
 def test_xx(verbose = 0):
     for i, (g, n) in enumerate(make_involution_samples()):
