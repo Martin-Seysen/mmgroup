@@ -675,7 +675,7 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
   It returns 0 in case of success and ``ERR_QSTATE12_MATRIX_INV``
   if ``m`` is not invertible.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t bitmatrix64_inv(uint64_t *m, uint32_t i)
 {
     int_fast32_t res;
@@ -690,6 +690,42 @@ int32_t bitmatrix64_inv(uint64_t *m, uint32_t i)
     if (res < 0) return res;
     bitmatrix64_mask_rows(m, i, (ONE << i) - 1);
     return 0;
+}
+
+
+/*************************************************************************
+*** Solve a linar bit equation 
+*************************************************************************/
+
+/**
+  @brief Solve a linear bit equation
+
+  Let ``M`` be the bit matrix with ``i`` rows and ``j`` columns stored
+  in the array ``m`` in the usual way. Let ``v`` be the column bit 
+  vector stored in column ``j`` of the array ``m``.
+
+  Then the function tries to solve the equation ``transpose(v) * m = x``
+  If such a solution ``x`` exists then the function returns the transposed
+  vector of the column vector ``x`` as a nonnegative integer.
+  
+  The function returns ``ERR_QSTATE12_MATRIX_INV`` if no solution ``x``
+  exists. As a side effect, it echelonizes the lowest ``j + 1`` columns
+  of matrix ``m`` with function ``bitmatrix64_echelon_h``.
+*/
+// %%EXPORT px
+int64_t bitmatrix64_solve_equation(uint64_t *m, uint32_t i, uint32_t j)
+{
+    int_fast32_t n, k;
+    uint64_t res = 0, mask;
+    if (j > 63) return ERR_QSTATE12_TOOLARGE;
+    mask = ((ONE << j) << 1) - 1;
+    n = bitmatrix64_echelon_l(m, i, 0, j+1);
+    if (n == 0) return 0;
+    if ((m[n-1] & mask) == (ONE << j)) return ERR_QSTATE12_MATRIX_INV;
+    for (k = 0; k < n; ++k) {
+        if ((m[k] >> j) & 1) res |= m[k] & -m[k];
+    }
+    return (int64_t)res;
 }
 
 /*************************************************************************
