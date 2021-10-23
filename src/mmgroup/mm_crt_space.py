@@ -16,6 +16,7 @@ from __future__ import  unicode_literals
 
 import sys
 import os
+import re
 import numpy as np
 from numbers import Integral
 import warnings
@@ -34,6 +35,8 @@ from mmgroup.structures.mm_space_indices import sparse_from_indices
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.mm_space  import MMSpace, MMVector, mm_ops
 from mmgroup.mm_space  import standard_mm_group
+from mmgroup.structures.parse_atoms import AtomDict 
+from mmgroup.structures.parse_atoms import eval_atom_expression, ihex 
 
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
 from mmgroup.mm import mm_aux_zero_mmv, mm_aux_reduce_mmv
@@ -60,35 +63,130 @@ PRECISION = math.log(7 * 31 * 127 * 255) / math.log(2.0) - 4
 
 
 ######################################################################
-# Auxiliary functions
+# Auxiliary class vsparse representing a sparse vector
 ######################################################################
 
-def tuples_to_sparse_dict(tuples):
-    d = defaultdict(int)
-    for data in tuples:
+
+ERR_CRT_TYPE = "Connot construct MMVectorCRT object from type '%s'"
+
+
+class vsparse:
+    def __init__(self, *data):
+        self.d = defaultdict(int)
+        if len(data) == 0 or not data[0]:
+            return
         scalar = 1
+        if isinstance(data[0], vsparse):
+            self.d.update(data[0].d)
+            return
         if isinstance(data[0], Integral):
             scalar, data = data[0],  data[1:]
-        if not data[0] in "ABCTXZYIDE":
-            err = "Illegal tag %s in tuple for class MMSpaceCRT"
-            raise ValueError(err %  data[0])            
+        if scalar == 0 or len(data) == 0:
+            return
+        if isinstance(data[0], str):
+            if len(data[0]) != 1 or not data[0] in "ABCTXZYIDE0":
+                err = "Illegal tag '%s' in tuple for class MMSpaceCRT"
+                raise ValueError(err %  data[0]) 
+        else:
+            raise TypeError(ERR_CRT_TYPE % type(data[0]))          
         for t in tuple_to_sparse(255, *data):
             scalar1, t =  t & 0xff, t & 0xffffff00
             scalar1 = scalar1 if scalar1 < 128 else scalar1 - 255
-            d[t] += scalar * scalar1
-    return d
+            self.d[t] += scalar * scalar1
+
+    def __imul__(self, other):
+        assert isinstance(other, Integral)
+        if other == 0:
+            self.d.clear()
+        else:
+            for tag in self.d.keys():
+                 self.d[tag] *= other
+        return self
+
+    def __mul__(self, other):
+        return vsparse(self).__imul__(other)
+
+    __rmul__ = __mul__
+
+    def __neg__(self):
+        return self.__mul__(-1) 
+
+    def __pos__(self):
+        return self  
+ 
+    def __iadd__(self, other):
+        if other == 0:
+            return
+        assert isinstance(other, vsparse)
+        for tag, value in other.d.items():
+            self.d[tag] += value
+        return self
+
+    def __add__(self, other):
+        return vsparse(self).__iadd__(other)
+
+    def __isub__(self, other):
+        if other == 0:
+            return
+        assert isinstance(other, vsparse)
+        for tag, value in other.d.items():
+            self.d[tag] -= value
+        return self
+
+    def __sub__(self, other):
+        return vsparse(self).__isub__(other)
+
+    def reduce(self):
+        for tag, value in self.d.items():
+            if value == 0:
+                del self.d[tag]
+        return self
+        
+    def norm(self):
+        norm = 0
+        self.reduce()
+        for tag, value in self.d.items():
+            factor = 1
+            if tag & 0xE000000 == 0x2000000:
+                i0, i1 = (tag >> 14) & 0x7ff, (tag >> 8) & 0x3f
+                factor += i0 != i1
+            norm += factor * value * value
+        return norm    
+
+    def sparse_array(self, p, shift = 0):
+        assert p & 1 and p < 256
+        self.reduce()
+        a = np.zeros(len(self.d), dtype = np.uint32)
+        for i, (tag, value) in enumerate(self.d.items()):
+            a[i] = tag + (value << shift) % p 
+        return a    
+  
+
+######################################################################
+# Convert string to instance of class vsparse
+######################################################################
+ 
+FRAME = re.compile(r"^([A-Za-z_])+\<([0-9]+;)?(.+)\>$") 
 
 
-def _norm_sparse_dict(d):
-    norm = 0
-    for i, scalar in d.items():
-        factor = 1
-        if i & 0xE000000 == 0x2000000:
-            i0, i1 = (i >> 14) & 0x7ff, (i >> 8) & 0x3f
-            factor += i0 != i1
-        norm += factor * scalar * scalar
-    return norm
+def vsparse_from_str(s):
+    string = s
+    m = FRAME.match(s)
+    if m:
+        _, p_str, string = m[1], m[2], m[3]
+        if p_str:
+            err = "Vector is defined module an integer only"
+            raise ValueError(err)
+    f = AtomDict(vsparse)
+    return eval_atom_expression(string, f)
     
+ 
+
+######################################################################
+# Auxiliary functions
+######################################################################
+
+
 
 def _err_tag(*args, **kwds):
     err = "Bad entry in monster group element"
@@ -185,6 +283,7 @@ class MMVectorCRT(AbstractMmRepVector):
         self.data = OrderedDict()
         self.data_int = np.zeros(247488, dtype = np.int32)
         self.expanded = False
+        d = vsparse()
         if isinstance(tag, MMVectorCRT): 
             for p in (7, 31, 127, 255):
                 self.data[p] = tag.data[p].copy()
@@ -194,18 +293,22 @@ class MMVectorCRT(AbstractMmRepVector):
             for p in (7, 31, 127, 255):
                 self.data[p] = MMVector(p)
             return
+        elif isinstance(tag, str) and len(tag) == 1:
+            d += vsparse(tag, i0, i1)
         elif isinstance(tag, str):
-            l = [(tag, i0, i1)]
+            d += vsparse_from_str(tag)
         elif isinstance(tag, list):
-            l = tag
+            for x in tag:
+                if isinstance(x,tuple):
+                    d += vsparse(*x)
+                elif isinstance(x, str):
+                    d += vsparse_from_str(x)
         else:
             err = "Connot construct MMVectorCRT object from type '%s'"
             raise ValueError(err % type(tag))
-        d = tuples_to_sparse_dict(l)
         for p in (7, 31, 127, 255):
             self.data[p] = v = MMVector(p)
-            ind = np.array([index + (val << shift) % p 
-                for index, val in d.items()], dtype = np.uint32)
+            ind = d.sparse_array(p, shift)
             mm_aux_mmv_set_sparse(p, v.data, ind, len(ind)) 
         if check_MMVectorCRT:
             self.expand()
@@ -347,8 +450,6 @@ class MMVectorCRT(AbstractMmRepVector):
 ######################################################################
 
 
-
- 
 
 class MMSpaceCRT(MMSpace):
     """Models a ``196884``-dimensional representation of the monster group 

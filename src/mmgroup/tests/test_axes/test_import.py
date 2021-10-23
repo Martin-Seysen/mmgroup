@@ -39,16 +39,16 @@ def display_A(A):
 @pytest.mark.axes 
 @pytest.mark.slow 
 def test_import(verbose = 0):
-    baby_sample_axes = import_baby_sample_axes(verbose = True)
+    baby_sample_axes = import_baby_sample_axes(verbose = verbose)
     do_test_baby_sample_axes(baby_sample_axes)
-    sample_axes = import_sample_axes(verbose = True)
+    sample_axes = import_sample_axes(verbose = verbose)
     do_test_sample_axes(sample_axes)
     beautfiers = compute_beautifiers(sample_axes.g_strings)
     if verbose:
         print("A matrices of axes")
     for i in range(12):
         g = MM0(sample_axes.g_strings[i])
-        v =  MMVectorCRT(20, "I", 3, 2)
+        v =  MMVectorCRT(20, sample_axes.v_start)
         v *= g
         g1 = MM0(beautfiers[i])
         v *= g1

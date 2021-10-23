@@ -121,8 +121,6 @@ class AbstractRepVector(object):
             return self.space.imul_group_word(self, other)
 
     def __mul__(self, other):
-        if self.space.group:
-           other = self.space.group(other)
         return self.copy().__imul__(other)
 
     def __rmul__(self, other):
@@ -131,7 +129,20 @@ class AbstractRepVector(object):
     def __itruediv__(self, other):
         if  isinstance(other, Integral):
             p = self.p
-            return self.space.imul_scalar(self, mod_inv(other, p)) 
+            try:
+                return self.__imul__(mod_inv(other, p)) 
+            except ZeroDivisionError:
+                if p != 0:
+                    raise
+                res = self
+                if other < 0:
+                    res = self.__imul__(-1) 
+                    other = -other
+                bl = p.bit_length()
+                if p != (1 << bl) >> 1:
+                    raise
+                return res.__ilshift__(other)
+                    
         else:
             other = self.space.group(other)
             return self.space.imul_group_word(self, other**(-1))
@@ -141,23 +152,24 @@ class AbstractRepVector(object):
 
 
     def __ilshift__(self, other):
-        factor = mod_pwr2(other, self.p)
-        return self.space.imul_scalar(self, factor) 
+        try: 
+            factor = mod_pwr2(other, self.p)
+            return self.space.imul_scalar(self, factor) 
+        except ZeroDivisionError:
+            if p != 0:
+                 raise
 
     def __lshift__(self, other):
-        factor = mod_pwr2(other, self.p)
-        return self.space.imul_scalar(self.copy(), factor) 
+        return self.copy().__ilshift__(other)
 
     def __irshift__(self, other):
-        factor = mod_pwr2(-other, self.p)
-        return self.space.imul_scalar(self, other) 
+        return self.__ilshift__(-other)
 
     def __rshift__(self, other):
-        factor = mod_pwr2(-other, self.p)
-        return self.space.imul_scalar(self.copy(), factor) 
+        return self.copy().__ilshift__(-other)
 
     def __neg__(self):
-        return self.space.imul_scalar(self.copy(), self.p - 1) 
+        return self.space.imul_scalar(self.copy(), -1) 
 
     def __pos__(self):
         return self  
@@ -266,6 +278,8 @@ class AbstractRepSpace(object):
         raise NotImplementedError("No group multiplication in abstract space")
 
 
+
+
     def vector_get_item(self, v1, index):
         """Return v1[index] for a vector v1 in the vector space"""
         raise NotImplementedError("Cannot get component in abstract space")
@@ -320,6 +334,20 @@ class AbstractRepSpace(object):
 
         """
         raise NotImplementedError
+
+
+    def ishift_right(self, v1, shift):
+        """Return product v1 / 2**shift .
+
+        v1 may be destroyed.
+
+        This method is called for elements v1 of the space
+        'self' in case ``v1.p == 0`` only.
+
+        The function should return ``V1 * 2**(-shift)`` is this is 
+        defined.
+        """
+        raise NotImplementedError("Division by two not supported")
 
 
     ### The following methods need not be overwritten #################

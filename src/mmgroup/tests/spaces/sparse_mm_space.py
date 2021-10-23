@@ -827,7 +827,7 @@ class SparseMmSpace(AbstractMmRepSpace):
         data = v.data
         for i, coord in data.items():
             data[i] = coord % p
-        for atom in g.iter_generators():
+        for atom in v1.group(g).iter_generators():
             if not atom.tag in "tl":
                 g_mon.append(atom)
             else:
