@@ -32,6 +32,17 @@ from mmgroup.clifford12 import bitmatrix64_solve_equation
 #################################################################
 
 def transitive_closure(m):
+    """Return transitive closure of symmetric square matrix ``m``
+
+    The function returns a 0-1 matrix ``c`` of the same size as
+    matrix ``m`` if ``c[i,j] = 1`` iff there is a path of nonzero
+    entries 
+
+    ``m[k[0],k[1]], m[k[1],k[2]], ... , m[k[l-1],k[k]],``
+
+    with ``k[0] = i, k[l] = j``. Diagoanl entrie of ``c`` are set
+    to 1.
+    """
     m = np.array(m != 0, dtype = np.uint32)
     assert len(m.shape) == 2 and m.shape[0] ==  m.shape[1]
     m_old = np.eye(m.shape[0], dtype = np.uint32)
@@ -48,6 +59,16 @@ def block_sort_key(x):
     return -bit_count(x), x & -x, x 
 
 def blocks(m):
+    """Return the list of blocks of a symmetric square matrix ``m``.
+
+    Here a block a set of indices of matrix ``m`` which are in the
+    same equivalence class in the transitive closure of ``m``.
+
+    Each block in the returned list is encoded as an integer with 
+    bit ``i`` of the integer set iff index ``i`` is in that block.
+
+    Blocks are ordered by size with larger block occuring first.
+    """
     m = np.array(m != 0, dtype = np.uint32)
     m = np.array(m | m.T, dtype = np.uint32)
     m = transitive_closure(m)
@@ -59,6 +80,90 @@ def blocks(m):
     return sorted(data, key = block_sort_key)
 
 
+
+def adjacent_blocks(a):
+    """Return adjacent blocks of a symmetric square matrix ``m``.
+
+    If matrix ``m`` may be split into ``n`` adjacent blocks then  
+    the function returns a list ``i`` of lenggth ``n+1`` such that
+    all nonzero entries of ``m`` occur in one of the submatrices
+
+    ``m[i[0]:i[1], i[0]:i[1]], ...  m[i[n]:i[n+1], i[n]:i[n+1]]``
+
+    Then ``i[0] = 0`` and `i[n+1]`` is equal to the size of the
+    square matrix ``m``.  
+    """
+    bl = blocks(a)
+    adjacent_blocks = []
+    while len(bl):
+        x = max(bl)
+        adjacent_blocks.append(x.bit_length())
+        xmin = x & -x
+        for i, y in enumerate(bl):
+            if y >= xmin:
+                 del bl[i]
+    adjacent_blocks.append(0)
+    return list(reversed(adjacent_blocks))
+    
+
+#################################################################
+# Eigenvalues of matrix A
+#################################################################
+
+
+def purge_diag(diag, power = 1):
+    EPS = 1.0e-8
+    data = {}
+    non_ints = []
+    for x0 in diag:
+        x = x0**power 
+        if abs(x - round(x)) < EPS:
+            i = int(round(x))
+            if i in data:
+                data[i] += 1
+            else:
+                data[i] = 1
+        else: 
+            done = False           
+            for d in non_ints:
+                if abs(d - x) < EPS:
+                    data[d] += 1
+                    done = True
+            if not done:
+                data[x] = 1
+                non_ints.append(x)
+    return data
+
+
+def format_eigen_values(a):
+   eigen =  purge_diag(np.linalg.eigvals(a))
+   eigenv = sorted(eigen.items(), key = lambda x: x[0])
+   data = [("%d^%d" if isinstance(k, int) else "%.2f^%d") % 
+       (k,v) for k, v in eigenv ]
+   return "(" + ", ".join(data) + ")"
+ 
+
+
+
+def block_eigenvalues(a):
+    ad = adjacent_blocks(a)
+    if len(ad) > 24:
+        return format_eigen_values(a)
+    eigen = []
+    exp = []
+    for i in range(len(ad) - 1):
+        m = a[ad[i]:ad[i+1], ad[i]:ad[i+1]] 
+        str_eigen = format_eigen_values(m)
+        if len(eigen) and eigen[-1] == str_eigen:
+            exp[-1] += 1
+        else:
+            eigen.append(str_eigen)
+            exp.append(1)
+    for i, s in enumerate(eigen):
+        if exp[i] > 1:
+            eigen[i] += "^" + str(exp[i])
+    return  ", ".join(eigen)
+        
 
 #################################################################
 # Dealing with one large block (of size >= 5)
@@ -345,7 +450,7 @@ def beautify_diagonal_matrix(A):
 
 
 #################################################################
-# Beatify signs in the secial case 10N
+# Beautify signs in the secial case 10N
 #################################################################
 
 def find_five_cycle(A):
@@ -493,6 +598,7 @@ def compute_beautifiers(g_strings, class_names = None, verbose = 0):
         g_data.append(g1.raw_str())
         if verbose:
             print("g =", g1)
+            print("adjacent blocks:", adjacent_blocks(A))
             print(A)
     return g_data
 
