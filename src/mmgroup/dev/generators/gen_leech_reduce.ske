@@ -541,18 +541,19 @@ static uint8_t RED_23_23014[5] = {2, 3, 0, 1, 4};
   of \f$\{0,1\}^{24}\f$.
    
   Let \f$v_1\f$ be the short vector in the Leech lattice propotional
-  to  \f$e_2 + e_3\f$.  Then the function constructs 
-  a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to \f$v_1\f$.
+  to  \f$e_2 + e_3\f$.  Then the function constructs
+  a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to \f$v_1\f$ and
+  fixes \f$v_0\f$.
   
   The element \f$g\f$ is returned as a word in the generators
-  of \f$G_{x0}\f$ of length \f$n \leq 6\f$. Each atom of the 
-  word \f$g\f$ is encoded as  defined in the header 
-  file ``mmgroup_generators.h``. 
+  of \f$G_{x0}\f$ of length \f$n \leq 6\f$. Each atom of the
+  word \f$g\f$ is encoded as  defined in the header
+  file ``mmgroup_generators.h``.
 
   The function stores \f$g\f$ as a word of generators in the
   array ``pg_out`` and returns the length  \f$n\f$  of that
-  word. It returns a negative number in case of failure, 
-  e.g. if \f$v_2\f$ is not of type 2, or not orthogonal 
+  word. It returns a negative number in case of failure,
+  e.g. if \f$v_2\f$ is not of type 2, or not orthogonal
   to \f$v_0\f$ in the real Leech lattice.
  */
 // %%EXPORT px

@@ -25,7 +25,8 @@ from mmgroup.clifford12 import leech_matrix_norm_A, leech3matrix_kernel
 from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
 
-NTESTS = 100
+
+
 
 
 def display_A(A):
@@ -104,19 +105,6 @@ def display_norm_A(i):
 
 
 
-def sorted_axes(sample_axes):
-    """Return sorted list of axes"""
-    NUM_AXES = len(sample_axes.g_strings)
-    def axes_order(i):
-        cl = (sample_axes.g_classes)[i]
-        st = (sample_axes.g_stages)[i]
-        return st, int(cl[:-1]), cl, i 
-    axes_data = [axes_order(i) for i in range(NUM_AXES)] 
-    axes_data.sort()
-    sorted_axes_list = [x[-1] for x in axes_data]
-    assert set(sorted_axes_list) == set(range(NUM_AXES))
-    return sorted_axes_list 
-
 
 
 HEADER = r"""Classes of 2A axes
@@ -153,7 +141,7 @@ between classes.
 
 @pytest.mark.axes 
 @pytest.mark.slow 
-def test_2A_axes_classes(verbose = 1):
+def test_2A_axes_classes(verbose = 0):
     """Test computation of samples classes of 2A axes.
 
     If this function is called with parameter ``verbose == 1``
@@ -168,7 +156,8 @@ def test_2A_axes_classes(verbose = 1):
     if verbose:
         print(HEADER)
 
-    for i in sorted_axes(sample_axes):
+    NUM_AXES = len(sample_axes.g_strings)
+    for i in range(NUM_AXES): # sorted_axes(sample_axes):
         g = MM0(sample_axes.g_strings[i])
         v =  MMVectorCRT(20, sample_axes.v_start)
         v *= g
@@ -178,8 +167,13 @@ def test_2A_axes_classes(verbose = 1):
         A = np.array(Afloat, dtype = np.int32)
         assert (A == Afloat).all()
         if verbose:
-            print("\nClass " + sample_axes.g_classes[i], end = ", ")
-            print("stage = " + str(sample_axes.g_stages[i]))
+            class_ = sample_axes.g_classes[i]
+            print("\nClass " + class_, end = ", ")
+            print("stage = " + str(sample_axes.g_stages[i]), end = "")
+            powers = sample_axes.powers[i]
+            s_powers = ", powers: " + powers if len(powers) else ""
+            print(s_powers)
+            print("Automorphism group:", sample_axes.groups[i])
             print(display_norm_A(i), end = "")
             print("Eigenvalues", block_eigenvalues(A))
             display_A(A)

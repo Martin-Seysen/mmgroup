@@ -263,8 +263,8 @@ def reduce_type2_ortho(v2):
     of ``\{0,1\}^{24}``.
    
     Let ``v_1`` be the short vector in the Leech lattice propotional
-    to  ``e_2 + e_3``.  Then the function constructs 
-    a ``g \in G_{x0}`` that maps ``v_2`` to ``v_1``.
+    to  ``e_2 + e_3``.  Then the function constructs a ``g \in G_{x0}`` 
+    that maps ``v_2`` to ``v_1`` and fixes ``v_0``.
  
     The element ``g`` is returned as a word in the generators
     of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 

@@ -235,9 +235,9 @@ def solve_gcode_diag(l):
 
 
 
-def make_blocks_positive(A, first_row_only = False):
-    bl = blocks(A)   
-    bl_list = [x for x in range(24) if (1 << x) & bl[0]] 
+def try_make_blocks_positive(A, all_blocks = True, first_row_only = False):
+    bl = 0xffffff if all_blocks else blocks(A)[0]         
+    bl_list = [x for x in range(24) if (1 << x) & bl] 
     equations = []
     for i in range(24):
         for j in range(24):
@@ -247,24 +247,41 @@ def make_blocks_positive(A, first_row_only = False):
                 s = A[i,j] < 0
                 if not first_row_only or i == bl_list[0]:
                     equations.append((i, j,  s))
-            else:
-                equations.append((i, j,  0))
+                #else:
+                #    equations.append((i, j,  0))
+    y = solve_gcode_diag(equations)             
+    return MM0('y', y)
+
+def make_blocks_positive(A):
     try:
-        y = solve_gcode_diag(equations)             
-        return MM0('y', y)
+        return try_make_blocks_positive(A, True, False)
     except:
-        if not first_row_only:
+        try:
+            return try_make_blocks_positive(A, False, False)              
+        except:
             try:
-                return make_blocks_positive(A, True)
+                return try_make_blocks_positive(A, False, True)              
             except:
-                pass
-        return MM0()
+                return MM0(0)
+
+
 
 
 
 #################################################################
 # Dealing with one largest block of size 3
 #################################################################
+
+
+
+def sort_single_size3_block(A):
+    bl = blocks(A)
+    if mat24.bw24(bl[0]) != 3 or mat24.bw24(bl[1]) != 1:
+        return MM0()
+    blist = [x for x in range(24) if bl[0] & (1 << x)]
+    dlist = sorted([ (-A[x,x], x) for x in blist])
+    src = [x[1] for x in dlist]
+    return MM0('p', AutPL(0, zip(src, [0,1,2]), 0)) 
 
 
 
@@ -436,8 +453,8 @@ def beautify_diagonal_matrix(A):
             DOD = 0xeee111
             dest = [i for i in range(24) if (1 << i) & DOD]
             src = singleton + lst
-            print(dest)
-            print(src)
+            #print(dest)
+            #print(src)
             #return MM0()
             pi = mat24.perm_from_dodecads(src, dest)
             return MM0('p', pi)
@@ -535,14 +552,14 @@ def beautify(v, verbose = 0):
     if verbose:
          print("Blocksizes", [bit_count(x) for x in bl])
     bl_size = bit_count(bl[0])
-    if bl_size > 3:
+    if max(bit_count(b) for b in bl) > 3:
         if bl_size > 5 and verbose: 
             print("vector type:", mat24.vect_type(bl[0]))
-        g1 = beautify_large_block(bl[0])
+        g1 = make_blocks_positive(A)
         v *= g1
         g *= g1
         A = get_A(v)
-        g2 = make_blocks_positive(A)
+        g2 = beautify_large_block(bl[0])
         v *= g2
         g *= g2
         A = get_A(v)
@@ -552,6 +569,10 @@ def beautify(v, verbose = 0):
         return g.reduce(), get_A(v)
     elif bl_size == 3:
         g0 = beautify_large_block(bl[0])
+        v *= g0
+        g *= g0
+        A = get_A(v)
+        g0 = sort_single_size3_block(A)
         v *= g0
         g *= g0
         A = get_A(v)

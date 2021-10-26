@@ -23,6 +23,7 @@ from functools import reduce
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 
 from mmgroup.clifford12 import leech3matrix_watermark
+from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers
 
 
 ########################################################################
@@ -623,6 +624,38 @@ FILE = "sample_axes"
 PATH = os.path.join(DIR, FILE)
 
 
+AXIS_GROUPS = {
+   "2A": "2^(1+23).Co_2",
+   "2B": "2^(2+8+16).O_8^+(2)",
+   "4A": "2^(1+22).M_23",
+   "4B": "(2^7 x 2^(1+8)).S_6(2)",
+   "4C": "2^(1+14+5).A_8",
+   "6A": "2^2.U_6(2).2",
+   "6C": "2^(3+8).(3 x U_4(2)).2",
+   "6F": "2^(1+8).A_9",
+   "8B": "2.2^10.M_11",
+  "10A": "2.HS.2",
+  "10B": "2^(1+8).(A_5 x A_5).2",
+  "12C": "2 x S_6(2)",
+}
+
+AXIS_POWERS = {
+   "2A": "",
+   "2B": "",
+   "4A": "2B",
+   "4B": "2A",
+   "4C": "2B",
+   "6A": "2A",
+   "6C": "2B",
+   "6F": "2B",
+   "8B": "4A,2B",
+  "10A": "2A",
+  "10B": "2B",
+  "12C": "6A,4B,2A",
+}
+
+
+
 f_text = """# This file has been generated automatically. Do not change!
 # It contains samples of the 12 cosets of 2A axes wrt 2^{1+24}.Co_1.
 #
@@ -647,18 +680,50 @@ g_marks = [
 %s
 ]
 
+g_beautifiers = [
+%s
+]
+
 """
+
+
+axes_text = """
+
+powers= [
+%s
+]
+
+groups = [
+%s
+]
+
+"""
+
+
+def sample_list_sort_key(sample_entry):
+     stage, sample, _ = sample_entry 
+     s_class = axis_type(sample.g) 
+     return stage, int(s_class[:-1]), s_class[-1:]
+
 
 def write_axes(verbose = False):
     sample_list = explore_axes(5, 200, 50, verbose = verbose)
+    sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", "" 
     s_classes = ""
-    for stage, sample, mark in sample_list:
+    s_beautifiers = ""
+    s_powers = ""
+    s_groups = ""
+    beautifiers = compute_beautifiers([x[1].g for x in sample_list])
+    for i, (stage, sample, mark) in enumerate(sample_list):
         s_samples += "\"" + sample.g.raw_str() + "\",\n"
         s_stages += str(stage) + ", "
         s_marks += str(mark)  + ",\n"
-        s_classes += '"' + axis_type(sample.g) + '", '
-
+        class_ = axis_type(sample.g)
+        s_classes += '"' + class_ + '", '
+        s_beautifiers += '"' + beautifiers[i] + '",\n'
+        s_powers += '"' + AXIS_POWERS[class_] + '",\n'
+        s_groups += '"' + AXIS_GROUPS[class_] + '",\n'
 
     
     s_g_central = g_central.raw_str()
@@ -666,9 +731,10 @@ def write_axes(verbose = False):
        
     with open(PATH + ".py", "wt") as f:
         f.write(f_text % (s_g_central, s_g_axis, s_v_start, 
-          s_samples, s_stages, s_classes, s_marks))
+          s_samples, s_stages, s_classes, s_marks, s_beautifiers))
 
-
+        f.write(axes_text % (s_powers, s_groups)) 
+        
 
 ########################################################################
 ########################################################################
