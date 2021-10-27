@@ -26,7 +26,11 @@ from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
 
 
+baby_sample_axes = import_baby_sample_axes()
+sample_axes = import_sample_axes()
 
+AXES = dict(zip(sample_axes.g_classes, sample_axes.g_strings))
+BABY_AXES = dict(zip(baby_sample_axes.g_classes, baby_sample_axes.g_strings))
 
 
 def display_A(A):
@@ -148,9 +152,7 @@ def test_2A_axes_classes(verbose = 0):
     then function displays the information relevant for 
     distinguishing between classe of 2A axes.
     """
-    baby_sample_axes = import_baby_sample_axes(verbose = verbose)
     do_test_baby_sample_axes(baby_sample_axes)
-    sample_axes = import_sample_axes(verbose = verbose)
     do_test_sample_axes(sample_axes)
     beautfiers = compute_beautifiers(sample_axes.g_strings)
     if verbose:

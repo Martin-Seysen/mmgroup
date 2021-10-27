@@ -361,7 +361,7 @@ def make_testcases():
         yield v_start * MM0("r", "G_x0")
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_reduce_type2(verbose = 0):
     for i, w in enumerate(make_testcases()):
         if verbose: print("\nTest", i+1)
@@ -486,7 +486,7 @@ def make_testcases_ortho():
             yield rand_v_ortho(q)
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_reduce_type2_ortho(verbose = 0):
     """Test the C function ``reduce_type2_ortho_fast``"""
     for i, w in enumerate(make_testcases_ortho()):

@@ -64,7 +64,7 @@ testdata = [
 
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_find_short15(verbose = 0):  
     for v, y0, y1 in testdata:
         v_mon = v['E', 300:300+98280] 

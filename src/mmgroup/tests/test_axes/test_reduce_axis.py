@@ -26,8 +26,8 @@ from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
 from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
 from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
 
-from mmgroup.tests.test_involutions.test_reduce_type2 import rand_Co2
-from mmgroup.tests.test_involutions.test_2A_axes import AXES, BABY_AXES
+from mmgroup.tests.test_axes.test_reduce_type2 import rand_Co2
+from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 
 V = MMV(15)
 
@@ -370,7 +370,7 @@ def make_axis_testcases():
 
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_reduce_axis(verbose = 0):
     for i, v in enumerate(make_axis_testcases()):
         if verbose:
@@ -425,7 +425,7 @@ def make_baby_testcases():
 
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_reduce_baby_axis(verbose = 0):
     for i, v in enumerate(make_baby_testcases()):
         if verbose:
@@ -485,7 +485,7 @@ def make_reduce_testcases():
               yield  MM0('r', quality)      
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_reduce_G_x0(verbose = 0):
     for i, g in enumerate(make_reduce_testcases()):
         if verbose:

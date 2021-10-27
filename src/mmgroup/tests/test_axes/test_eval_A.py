@@ -53,7 +53,7 @@ def eval_a_odd_testdata():
 
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_eval_a_odd(verbose = 0):   
     for n, (v, b) in enumerate(eval_a_odd_testdata()):
         if verbose:
@@ -104,7 +104,7 @@ def eval_a_testdata():
 
 
 
-@pytest.mark.involution
+@pytest.mark.axes
 def test_eval_a(verbose = 0):   
     for n, (v, v2, e) in enumerate(eval_a_testdata()):
         if verbose:
