@@ -80,6 +80,10 @@ def blocks(m):
     return sorted(data, key = block_sort_key)
 
 
+def block_to_list(bl):
+    """Convert block returned by function blocks() to list of integers"""
+    return [x for x in range(24) if bl & (1 << x)]
+
 
 def adjacent_blocks(a):
     """Return adjacent blocks of a symmetric square matrix ``m``.
@@ -170,6 +174,20 @@ def block_eigenvalues(a):
 #################################################################
 
 
+def beautify_single_block(A):
+    d = defaultdict(list)
+    for i in range(24):
+        d[A[i,i]].append(i)
+    lists = sorted(d.values(), key = lambda x: len(x))
+    l = lists[0]
+    if 1 <= len(l) <= 5:
+        pi = AutPL(0, zip(l, range(len(l))), 0) 
+        return MM0('p', pi)
+    return MM0()
+      
+
+
+
 def beautify_large_block(bl):
     v = GcVector(bl)
     if len(v) < 3:
@@ -235,32 +253,30 @@ def solve_gcode_diag(l):
 
 
 
-def try_make_blocks_positive(A, all_blocks = True, first_row_only = False):
-    bl = 0xffffff if all_blocks else blocks(A)[0]         
+def try_make_blocks_positive(A, block = 0, first_row_only = False):
+    bl = block if block else blocks(A)[0]         
     bl_list = [x for x in range(24) if (1 << x) & bl] 
     equations = []
     for i in range(24):
-        for j in range(24):
-            if i == j or A[i,j] == 0:
+        for j in range(i + 1, 24):
+            if A[i,j] == 0:
                 continue
             if i in bl_list and j in bl_list:
                 s = A[i,j] < 0
                 if not first_row_only or i == bl_list[0]:
                     equations.append((i, j,  s))
-                #else:
-                #    equations.append((i, j,  0))
     y = solve_gcode_diag(equations)             
     return MM0('y', y)
 
 def make_blocks_positive(A):
     try:
-        return try_make_blocks_positive(A, True, False)
+        return try_make_blocks_positive(A, 0xffffff, False)
     except:
         try:
-            return try_make_blocks_positive(A, False, False)              
+            return try_make_blocks_positive(A, 0, False)              
         except:
             try:
-                return try_make_blocks_positive(A, False, True)              
+                return try_make_blocks_positive(A, 0, True)              
             except:
                 return MM0(0)
 
@@ -467,7 +483,7 @@ def beautify_diagonal_matrix(A):
 
 
 #################################################################
-# Beautify signs in the secial case 10N
+# Beautify signs in the special case 10N
 #################################################################
 
 def find_five_cycle(A):
@@ -531,6 +547,29 @@ def beautify_case_10B(A):
     return MM0()     
 
 
+def beautify_signs_10B(A):
+    sign_list = []
+    def make_sign_entry(i0, i1, factor = 1):
+        if A[i0, i1]:
+            sign_list.append((i0, i1, factor * A[i0, i1] < 0))
+    bl = blocks(A)
+    if len(bl) < 2:
+        return MM0()
+    bl0, bl1 = block_to_list(bl[0]), block_to_list(bl[1])
+    if len(bl0) < 6 or len(bl1) != 2:
+        return MM0()
+    for j in range(1,6):
+        make_sign_entry(bl0[0], bl0[j])
+    make_sign_entry(bl1[0], bl1[1], 1)
+    try:
+        y = solve_gcode_diag(sign_list)
+        print("found")
+        return MM0('y', y)
+    except:
+        return MM0()     
+
+
+
 #################################################################
 # Enumarating the 2A axes
 #################################################################
@@ -538,9 +577,9 @@ def beautify_case_10B(A):
 
 
 def get_A(w):
-    Afloat = 128 * w["A"]
+    Afloat = 256 * w["A"]
     A = np.array(Afloat, dtype = np.int32)
-    assert (A == Afloat).all()
+    assert (A == Afloat).all(), Afloat
     return A
 
 
@@ -559,13 +598,19 @@ def beautify(v, verbose = 0):
         v *= g1
         g *= g1
         A = get_A(v)
-        g2 = beautify_large_block(bl[0])
+        if len(bl) > 1:
+            g2 = beautify_large_block(bl[0])
+        else:
+            g2 = beautify_single_block(A)
         v *= g2
         g *= g2
         A = get_A(v)
-        g3 = beautify_case_10B(A)
+        g3 = beautify_signs_10B(A)
         v *= g3
         g *= g3
+        g4 = beautify_case_10B(A)
+        v *= g4
+        g *= g4
         return g.reduce(), get_A(v)
     elif bl_size == 3:
         g0 = beautify_large_block(bl[0])

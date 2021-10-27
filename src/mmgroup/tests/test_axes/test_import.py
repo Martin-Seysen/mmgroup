@@ -18,7 +18,7 @@ from mmgroup.tests.test_axes.get_sample_axes import import_sample_axes
 from mmgroup.tests.test_axes.get_sample_axes import do_test_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import import_baby_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import do_test_baby_sample_axes
-from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers
+from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
 from mmgroup.tests.test_axes.beautify_axes import adjacent_blocks
 from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
 from mmgroup.clifford12 import leech_matrix_norm_A, leech3matrix_kernel
@@ -163,7 +163,7 @@ def test_2A_axes_classes(verbose = 0):
         v *= g
         g1 = MM0(beautfiers[i])
         v *= g1
-        Afloat = 128 * v["A"]
+        Afloat = 256 * v["A"]
         A = np.array(Afloat, dtype = np.int32)
         assert (A == Afloat).all()
         if verbose:

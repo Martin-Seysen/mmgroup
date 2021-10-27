@@ -221,8 +221,25 @@ class GVector:
         return 576 - np.count_nonzero(self.v['A'])
 
 
-
-
+    def score_A(self):
+        A = self.v['A']
+        score = num_zeros = 576 - np.count_nonzero(self.v['A'])
+        DIAG = np.diagonal(A)
+        max_equal_diag = max(np.bincount(DIAG))
+        if max_equal_diag >= 22:
+            d = defaultdict(list)
+            for i, x in enumerate(DIAG):
+                d[x].append(i) 
+            for x in d.values():
+                if len(x) >= 22:
+                    I = x
+            B0 = A[I,:][:,I]
+            B = np.where(B0 > 7, 15 - B0 , B0)
+            max_occur = max(np.bincount(B.ravel()))
+            if max_occur >= 462:
+                return 1000 + max_occur
+        return score
+        
 
 ########################################################################
 ########################################################################
@@ -415,7 +432,8 @@ def next_generation_pool(
         results = pool.starmap(_spread, arg_list, chunksize = 1)
     pool.join()
     for result in results:
-        new_marks.update(result)
+        for m, value in result.items():
+            new_marks[m] += value
     if verbose:
         len_t = sum([len(x) for x in new_marks.values()]) 
         print("No of candidates tested: ", len_t)
@@ -551,6 +569,7 @@ def mark(gv):
 
 
 def score(gv):
+    return gv.score_A()
     return gv.count_zeros_in_A()
 
 
@@ -707,7 +726,7 @@ def sample_list_sort_key(sample_entry):
 
 
 def write_axes(verbose = False):
-    sample_list = explore_axes(5, 200, 50, verbose = verbose)
+    sample_list = explore_axes(5, 100, 50, verbose = verbose)
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", "" 
     s_classes = ""
