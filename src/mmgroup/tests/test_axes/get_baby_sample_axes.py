@@ -200,13 +200,14 @@ PATH = os.path.join(DIR, FILE)
 
 def baby_axis_type(gv):
     at = axis_type(gv.g, gv.g0)
-    asub = "+" if gv.baby_value_A() else "0"
-    return at + "_" + asub 
+    asub = int(gv.baby_value_A() != 0)
+    return at + str(asub) 
 
 
 
 f_text = """# This file has been generated automatically. Do not change!
-# It contains samples of the 12 cosets of 2A axes wrt 2^{1+24}.Co_1.
+# It contains samples of the 10 cosets of 2A axes othogonal to the
+# standard 2A axis wrt 2^{1+23}.Co_2.
 #
 
 g_central = "%s"
@@ -231,8 +232,17 @@ g_marks = [
 
 """
 
+
+
+def sample_list_sort_key(sample_entry):
+     stage, sample, _ = sample_entry 
+     s_class = baby_axis_type(sample) 
+     return stage, int(s_class[:-2]), s_class[-2:-1], -int(s_class[-1])
+
+
 def write_axes(verbose = False):
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
+    sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", "" 
     s_classes = ""
     for stage, sample, mark in sample_list:
