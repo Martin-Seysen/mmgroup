@@ -818,25 +818,38 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
 
 
 /** 
-   Map a 2B involution in \f$G_{x0}\f$ to the centre of  \f$G_{x0}\f$
+   Map an involution in \f$G_{x0}\f$ to a standard form.
 
-   Let \f$g\f$ be the element of the group \f$G_{x0}\f$ stored in
-   the array given by parameter ``elem``. In this function we require
-   that \f$g\f$ is an invluotion of class \f$\mbox{2B}\f$ in the
-   monster group; otherwise the function fails.
+   Let \f$g\f$ be an involution of the group \f$G_{x0}\f$ stored in
+   the array given by parameter ``elem``. 
 
-   The function computes an element \f$a\f$ in the monster such that
-   \f$a^{-1} g a\f$ is in the centre of  \f$G_{x0}\f$. The element
-   \f$a\f$ is stored in the array ``a`` as a word of generators of
-   the monster group. The function returns the length of the
-   array ``a`` in case of success, and a negative value in case of
-   failure. It returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if  \f$g\f$
-   is not a \f$\mbox{2B}\f$ involution in the monster group
+   The function computes an element \f$a\f$ in the monster such
+   that \f$h = a^{-1} g a\f$ is one of the following elements of 
+   the subgroup \f$Q_{x0}\f$ of \f$G_{x0}\f$:
 
-   The array ``a`` must have legth at least \f$14\f$.
+   If \f$g = 1\f$ then \f$h = a = 1\f$.
+
+   If \f$g\f$ is a 2A involution then \f$h\f$ is the 
+   involution in \f$Q_{x0}\f$ corresponding to the Golay cocode
+   word with entries \f$2,3\f$ being set.
+
+   If \f$g\f$ is a 2B involution then  \f$h\f$ is the central
+   involution \f$z\f$ in \f$Q_{x0}\f$.
+
+   The element \f$a\f$ is stored in the array ``a`` as a word of 
+   generators of  the monster group. In case of success the 
+   function returns  ``0x100 * I + len(a)``, where ``len(a)`` 
+   is the length of the array ``a``. We put ``I = 0`` 
+   if \f$g = 1\f$. We put ``I = 1, 2`` if \f$g\f$ is a 2A or
+   2B involution, respectively.
+
+   The function returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if \f$g\f$
+   is not an involution.
+
+   The array ``a`` must have length at least \f$14\f$.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_conjugate_2B_involution(uint64_t *elem, uint32_t *a)
+int32_t xsp2co1_elem_conjugate_involution(uint64_t *elem, uint32_t *a)
 {
    int32_t v, len, l1;
 
@@ -848,16 +861,42 @@ int32_t xsp2co1_elem_conjugate_2B_involution(uint64_t *elem, uint32_t *a)
    if (v < 0) return v;
    len = v >> 25; v &= 0x1ffffffUL; 
 
-   // Error if v = 0
-   if (v == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+   // If v = 0 then we are done, returning class 1A
+   if (v == 0) return 0;
 
-   // Otherwise: Done if v is in the centre of Q_x0 
-   if (v == 0x1000000UL) return len;
+   // If v is the central involution we are done, returning class 2B 
+   if (v == 0x1000000UL) return 0x200 + len;
 
    // Now \f$g_1 \in Q_{x0}\f$ is stored in ``v`` in Leech lattice
    // encoding. We will be successful if the vector in \f$\Lambda_2\f$
-   // corresponding to \f$g_2\f$ is of type 4.
-   
+   // corresponding to \f$g_2\f$ is of type 2 or 4.
+
+   switch(gen_leech2_type(v) >> 4) {
+       case 2:
+           // Deal with a type-2 vector
+           l1 = gen_leech2_reduce_type2(v, a + len);
+           if (l1 < 0) return ERR_QSTATE12_LEECH_OP;
+           v = gen_leech2_op_word(v, a + len, l1);
+           len += l1;
+           if (v & 0x1000000) {
+               a[len] = 0xb0000200;  
+                   // operation x_d such that d has odd scalar
+                   // product with cocode word [2,3]
+               v = gen_leech2_op_atom(v, a[len++]);
+           }
+           if (v != 0x200) return -0x4000000 + (v & 0x1ffffff);
+                // internal error
+           return 0x100 + len;
+       case 4:
+           // Deal with a type-4  vector later below
+           break;
+       default:
+           // Any other vector type leads to failure
+           return ERR_QSTATE12_GX0_BAD_ELEM;
+   }
+
+   // Here we deal with a type-4 vector, i.e. a 2B invulution
+
    // Compute \f$a_2 \in \G_{x0}\f$ from \f$g_1\f$ such that 
    // \f$a_2^{-1} g1 a_2 = \pm \Omega\f$, with 
    // \f$\Omega \in Q_{x0}\f$ the (positive) element corresponding
@@ -878,10 +917,10 @@ int32_t xsp2co1_elem_conjugate_2B_involution(uint64_t *elem, uint32_t *a)
    // element  \f$x_{-1}\f$. We have to conjugate \f$x_{\Omega}\f$ 
    // with \f$\tau\f$ and \f$x_{-\Omega}\f$ with \f$\tau^2\f$.
    // So we append the approprate power of  \f$\tau\f$ to ``a``.
-   a[len++] = 0xed0000002 - ((v >> 24) & 1);
+   a[len++] = 0xd0000002 - ((v >> 24) & 1);
 
    // Return the length of the word in the array ``a``.
-   return len;
+   return 0x200 + len;
 }
 
 

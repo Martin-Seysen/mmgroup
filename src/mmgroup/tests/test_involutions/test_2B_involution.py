@@ -22,7 +22,7 @@ from mmgroup.structures.involutions import reduce_via_power
 
 z = MM0('x', 0x1000)
 
-def make_samples(n_samples = 5):
+def make_2B_samples(n_samples = 5):
     for i in range(n_samples):
         g = MM0('r', 5)
         yield z**g
@@ -31,17 +31,19 @@ def make_samples(n_samples = 5):
 
 
 def do_test_involution(g, verbose = 0):
-    h = g.conjugate_2B_involution(verbose = verbose)
+    itype, h = g.conjugate_involution(verbose = verbose)
+    assert itype == 2
     assert g ** h == z
 
 
 
 
 def do_test_2B_involution(n_tests = 3, verbose = 0):
-    for i, g in enumerate(make_samples(n_tests)):
+    for i, g in enumerate(make_2B_samples(n_tests)):
         if verbose:
              print("Test", i+1)
-        h = g.conjugate_2B_involution(verbose = verbose)
+        itype, h = g.conjugate_involution(verbose = verbose)
+        assert itype == 2
         assert g ** h == z
 
 
@@ -79,4 +81,37 @@ def test_reduce_via_power(verbose = 1, ntests = 10):
     print("started: ", start_time)
     print("finished:", end_time)
     print("time = %.3f s, per test: %.3f s" % (t, t/ntests))
+
+
+
+Z_2A = MM0('d', Cocode([3, 2]))
+
+
+def make_2A_samples(n_samples = 5):
+    for i in range(n_samples):
+        g = MM0('r', 3)
+        yield Z_2A**g
+
+
+def do_test_2A_involution(n_tests = 30, verbose = 1):
+    for i, g in enumerate(make_2A_samples(n_tests)):
+        if verbose:
+            print("Test", i+1)
+            print("g=", g)
+        itype, h = g.conjugate_involution(ntrials = 40, verbose = verbose)
+        assert itype == 1
+        res = (g ** h)
+        res.in_G_x0()
+        if verbose:
+            print("h=", h)
+            print("g**h=", res)
+        assert res in (Z_2A, MM0('x', 0x200) * Z_2A)
+
+
+@pytest.mark.involution
+def test_2A_involution():  
+    itype, h = MM0().conjugate_involution()
+    assert (itype, h) == (0, MM0())  
+    do_test_2A_involution(n_tests = 3, verbose = 0)
+
 

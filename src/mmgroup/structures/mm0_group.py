@@ -281,18 +281,19 @@ def import_mm_order_functions():
 # and mmgroup.structures.involutions
 Xsp2_Co1 = None
 xsp2co1_to_mm = None
-mm_conjugate_2B = None
+mm_conjugate_involution = None
 reduce_via_power = None
 
 
 def import_Xsp2_Co1():
-    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_2B, reduce_via_power
+    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_involution
+    global reduce_via_power
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     Xsp2_Co1 = f
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     xsp2co1_to_mm = f
-    from mmgroup.structures.involutions import mm_conjugate_2B as f
-    mm_conjugate_2B = f    
+    from mmgroup.structures.involutions import mm_conjugate_involution as f
+    mm_conjugate_involution = f    
     from mmgroup.structures.involutions import reduce_via_power as f
     reduce_via_power = f
 
@@ -518,10 +519,10 @@ class MM0(AbstractMMGroupWord):
         return True
              
 
-    def conjugate_2B_involution(self, check=True, ntrials=40, verbose=0):
+    def conjugate_involution(self, check=True, ntrials=40, verbose=0):
         """Find an element conjugating an involution into the centre
 
-        If the element :math:`g` given by ``self`` is a 2B involution 
+        If the element :math:`g` given by ``self`` is an involution 
         in  the monster then the method computes an element :math:`h` 
         of the monster   with  :math:`h^{-1} g h = z`, where  
         :math:`z` is the central involution in the 
@@ -542,9 +543,9 @@ class MM0(AbstractMMGroupWord):
 
         In future versions support for multiprocessing may be added.
         """
-        if mm_conjugate_2B is None: 
+        if mm_conjugate_involution is None: 
             import_Xsp2_Co1()
-        return mm_conjugate_2B(self, check, ntrials, verbose)
+        return mm_conjugate_involution(self, check, ntrials, verbose)
 
 
     def simplify(self, ntrials=None, verbose=0):

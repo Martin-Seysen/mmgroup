@@ -416,14 +416,9 @@ static uint8_t RED_STD_23[2] =  {2,3};
   array ``pg_out`` and returns the length  \f$n\f$  of that
   word. It returns a negative number in case of failure, 
   e.g. if \f$v_2\f$ is not of type 2.
-  
-  If ``sign`` is not zero then \f$v_2\f$ is interpreted as an
-  element of the extraspecial group \f$2^{1+24}\f$ an the 
-  operation \f$g\f$ maps \f$v_2\f$ to the positive 
-  vector \f$v_2\f$. 
 */
 // %%EXPORT px
-int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t sign, uint32_t *pg_out)
+int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t *pg_out)
 {
     uint32_t *pg_end = pg_out; // pointer to end of word g
     uint32_t  vtype;           // subtype of current vector v2
@@ -490,14 +485,6 @@ int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t sign, uint32_t *pg_out)
                     }
                     if ((v2 & 0xffffff) != 0x200) 
                         return -0x10000 + 0x100 * vtype + 2;
-                    if (sign && v2 & 0x1000000) {
-                        pg_end[0] = 0xB0000200;  
-                           // operation x_d such that d has odd scalar
-                           // product with cocode word [2,3]
-                        v2 = gen_leech2_op_atom(v2, *pg_end++);
-                        if (v2 != 0x200) 
-                             return -0x10000 + 0x100 * vtype + 3;
-                    }
                     return (int32_t)(pg_end - pg_out);
                 }
             default:

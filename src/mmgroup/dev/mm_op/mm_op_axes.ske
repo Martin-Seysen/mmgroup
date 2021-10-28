@@ -48,7 +48,7 @@ typedef struct {
 
   Let ``v`` be a vector in the rep of the moster mod 15.
 
-  In case ``value1 == 0`` the function computsns the list of all 
+  In case ``value1 == 0`` the function computes the list of all 
   vectors ``v2`` in the Leech lattice mod 2 such that the absolute 
   value of the entry of ``v`` corresponding a unit vector labelled 
   by ``v2`` is equal to ``value0``. That list is stored 
@@ -276,7 +276,7 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 ax_types[0] = 0x21;
                 break;
             case 0x21:   // case 2B
-                len_r1 = gen_leech2_reduce_type2(vt, 0, r+len_r);
+                len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
                 if (len_r1 < 0) return -21;
                 mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
                 len_r += len_r1;

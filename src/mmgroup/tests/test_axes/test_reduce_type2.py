@@ -139,7 +139,7 @@ def map_to_standard12_xi_exp(v):
 ###########################################################################
 
 
-def reduce_type2(v2, sign = 1):
+def reduce_type2(v2):
     r"""Map short vector in Leech lattice to standard frame
 
     This is a python implementation of the C function
@@ -163,9 +163,6 @@ def reduce_type2(v2, sign = 1):
     word. It returns a negative number in case of failure, 
     e.g. if ``v_2`` is not of type 2.
   
-    If ``sign`` is not zero then ``v_2`` is interpreted as an
-    element of the extraspecial group ``2^{1+24}`` an the 
-    operation ``$g`` maps ``v_2`` to the positive vector ``v_2``. 
     """
     result = []
     for _i in range(5):
@@ -203,13 +200,6 @@ def reduce_type2(v2, sign = 1):
                 v2 = gen_leech2_op_atom(v2, atom)
                 result.append(atom)
             assert v2 & 0xffffff == 0x200
-            if sign and v2 & 0x1000000:
-                atom = 0xB0000200  
-                   # operation y_d such that d has odd scalar
-                   # product with cocode word [2,3]
-                v2 = gen_leech2_op_atom(v2, atom)
-                result.append(atom)
-                assert v2  == 0x200
             return result
         else:
             raise ValueError("WTF")
@@ -228,10 +218,10 @@ def reduce_type2(v2, sign = 1):
 #########################################################################
       
 
-def reduce_type2_fast(v2, sign = 1):
+def reduce_type2_fast(v2):
     r"""Wrapper for the C function ``gen_leech2_reduce_type2``"""
     res = np.zeros(10, dtype = np.uint32)
-    length = gen_leech2_reduce_type2(v2, sign, res)
+    length = gen_leech2_reduce_type2(v2, res)
     assert length >= 0, (hex(v2), hex(length))
     return list(res[:length])
 

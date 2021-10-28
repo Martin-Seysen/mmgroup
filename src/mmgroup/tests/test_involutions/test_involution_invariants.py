@@ -170,7 +170,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
                 if not ok:
                     err = "Could not conjugate element to Q_x0"
     if ok and istate == 3:
-        a = gg.conjugate_2B_involution(MM0)
+        _, a = gg.conjugate_involution(MM0)
         ok = ok and  g ** a == Z
         if not ok:
            err = "Could not conjugate element to centre of Q_x0" 

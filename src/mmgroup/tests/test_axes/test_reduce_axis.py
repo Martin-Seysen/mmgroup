@@ -202,7 +202,7 @@ def reduce_axis(vector, verbose = 0):
             v4 = find_type4(v2all)
             t_types = [0x21]
         elif type == 0x21:  # case 2A
-            r1 = gen_leech2_reduce_type2(vt, 0, r[len_r:])
+            r1 = gen_leech2_reduce_type2(vt, r[len_r:])
             assert r1 >= 0
             mm_op15_word(v, r[len_r:], r1, 1, work.data)
             len_r += r1

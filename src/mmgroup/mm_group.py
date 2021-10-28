@@ -264,18 +264,15 @@ def import_mm_order_functions():
 # and mmgroup.structures.involutions
 Xsp2_Co1 = None
 xsp2co1_to_mm = None
-mm_conjugate_2B = None
 reduce_via_power = None
 
 
 def import_Xsp2_Co1():
-    global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_2B, reduce_via_power
+    global Xsp2_Co1, xsp2co1_to_mm, reduce_via_power
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     Xsp2_Co1 = f
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     xsp2co1_to_mm = f
-    from mmgroup.structures.involutions import mm_conjugate_2B as f
-    mm_conjugate_2B = f    
     from mmgroup.structures.involutions import reduce_via_power as f
     reduce_via_power = f
 

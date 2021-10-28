@@ -39,7 +39,7 @@ from mmgroup.clifford12 import xsp2co1_elem_to_word
 from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_involution_orthogonal
 from mmgroup.clifford12 import xsp2co1_conjugate_elem
-from mmgroup.clifford12 import xsp2co1_elem_conjugate_2B_involution
+from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -189,21 +189,33 @@ class Xsp2_Co1(AbstractMMGroupWord):
         return invar, v1, v0
 
 
-    def conjugate_2B_involution(self, mmgroup = None):
-        """Find an element conjugating an involution into the centre
+    def conjugate_involution(self, mmgroup = None):
+        """Find an element conjugating an involution standard element
 
-        If the element :math:`g` given by ``self`` is a 2B involution 
+        If the element :math:`g` given by ``self`` is an involution 
         in  the monster then the method computes an element :math:`h` 
         of the monster   with  :math:`h^{-1} g h = z`, where  
-        :math:`z` is the central involution in the 
-        subgroup :math:`G_{x0}` of the  monster.
+        :math:`z` is define as follows:
 
-        The function returns  :math:`h` as an element of the instance
-        ``MM`` of class ``MMGroup``. It raises ``ValueError``
-        if :math:`g` is not a 2B involution in the monster. 
+        If :math:`g = 1`, we put :math:`h = z = 1`
+
+        if :math:`g` is a 2A involution then we let :math:`z` be the
+        involution in  :math:`Q_{x0}` corresponding to the Golay
+        cocode word with entries  :math:`2,3` being set.
+
+        if :math:`g` is a 2B involution then we let :math:`z` be the
+        central involution in :math:`G_{x0}`
+
+        The function returns a pair ``(I, h)``, where :math:`h` as an 
+        element of the instance  ``MM`` of class ``MMGroup``. We put
+        ``I = 0`` if :math:`g = 1`. We put ``I = 1, 2`` if 
+        :math:`g` is a 2A or 2B involution, respectively.
+
+        The function raises ``ValueError`` if :math:`g` is not an 
+        involution. 
 
         This is a wrapper for the C 
-        function ``xsp2co1_elem_conjugate_2B_involution``.
+        function ``xsp2co1_elem_conjugate_involution``.
 
         If parameter ``mmgroup`` is an instance of class ``MMGroup``
         then the function returns :math:`h` as an element of the 
@@ -211,10 +223,10 @@ class Xsp2_Co1(AbstractMMGroupWord):
         """
         if mmgroup is None:
              mmgroup = MM if MM is not None else import_MM()            
-        a = np.zeros(14, dtype = np.uint32)
-        len_a = xsp2co1_elem_conjugate_2B_involution(self._data, a)
+        a = np.zeros(15, dtype = np.uint32)
+        len_a = xsp2co1_elem_conjugate_involution(self._data, a)
         chk_qstate12(len_a)
-        return mmgroup('a', a[:len_a])
+        return (len_a >> 8), mmgroup('a', a[:len_a & 0xff])
 
 
 

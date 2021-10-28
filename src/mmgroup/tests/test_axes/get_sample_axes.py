@@ -489,7 +489,8 @@ def axis_char(g0, axis = None):
     if h.chi_G_x0()[0] != 275:
         return o, None  # The prod is a 2A involution
     # Here prod is a 2B involution
-    m = h.conjugate_2B_involution(check=True)
+    itype, m = h.conjugate_involution()
+    assert itype == 2
     chi = (g**m).chi_G_x0()[0]
     return o, chi
     
