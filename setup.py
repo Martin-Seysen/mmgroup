@@ -402,7 +402,7 @@ C_SOURCES_P = [
 # Additions for the list C_SOURCES_P for spcific values p
 C_SOURCES_SPECIFIC_P = defaultdict(list)
 C_SOURCES_SPECIFIC_P.update( {
-    15: ["mm{P}_op_check_gx0", "mm{P}_op_find_short", "mm{P}_op_axes"],
+    15: ["mm15_op_order", "mm15_op_axes_find", "mm15_op_axes"],
 } )
 
 
