@@ -31,7 +31,6 @@ from mmgroup.clifford12 import leech_matrix_norm_A
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
 from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M

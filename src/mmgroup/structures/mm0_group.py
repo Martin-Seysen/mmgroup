@@ -219,7 +219,6 @@ from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_rand_word_G_x0
 from mmgroup.clifford12 import xsp2co1_rand_word_N_0
 from mmgroup.mm import mm_vector
-from mmgroup.mm15 import op_check_in_Gx0 as mm_op15_check_in_Gx0
 
 
 

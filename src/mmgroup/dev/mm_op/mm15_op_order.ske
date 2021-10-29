@@ -32,10 +32,10 @@ enum tag_offsets {
 
 
 /**
-  @brief Auxiliary function for function ``mm_op%{P}_check_in_Gx0``
+  @brief Auxiliary function for function ``mm_op%{P}_order_check_in_Gx0``
 
   Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
-  function ``mm_op%{P}_check_in_Gx0``. 
+  function ``mm_op%{P}_order_check_in_Gx0``. 
 
   Assume that ``v`` is an image of ``v0`` under an unknown element
   \f$g\f$ of the monster. We want to find that element \f$g\f$ if
@@ -47,13 +47,13 @@ enum tag_offsets {
   fact with high probability.
 
   In case of success the function writes the element \f$g_1\f$ into the
-  array ``g`` is the same way as function ``mm_op%{P}_check_in_Gx0``
+  array ``g`` is the same way as function ``mm_op%{P}_order_check_in_Gx0``
   writes its result int that array.
   
   The function does not change the inputs ``v``, ``tags``, and ``v0``.  
 */
 // %%EXPORT px
-int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
     uint64_t a[48], w3;
     int32_t res, v_y;
@@ -108,11 +108,11 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
 
 
 /**
-  @brief Auxiliary function for function ``mm_op%{P}_check_in_Gx0``
+  @brief Auxiliary function for function ``mm_op%{P}_order_check_in_Gx0``
 
   Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
-  function ``mm_op%{P}_check_in_Gx0``.  Parameter ``g`` must contain 
-  the corrsponding output of function ``mm_op%{P}_check_in_Gx0``, when
+  function ``mm_op%{P}_order_check_in_Gx0``.  Parameter ``g`` must contain 
+  the corrsponding output of function ``mm_op%{P}_order_check_in_Gx0``, when
   called successfully with the same input parameters. The function also 
   requires an array `` work`` of length %{MMV_INTS} as a work buffer.
 
@@ -121,7 +121,7 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
   it is in the subgroup \f$G_{x0}\f$ of the monster.
 
   In case of success the function writes the element \f$g_1\f$ into the
-  array ``g`` in the same way as function ``mm_op%{P}_check_in_Gx0``
+  array ``g`` in the same way as function ``mm_op%{P}_order_check_in_Gx0``
   writes its result int that array. 
   
   The function does not change the inputs ``tags``, and ``v0``. 
@@ -131,7 +131,7 @@ int32_t mm_op%{P}_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_
   This function destroys the input ``v``!  
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g, uint64_t *work)
+uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g, uint64_t *work)
 {
     int32_t v_x, sign, len = 10, res, len1, i;
     uint_fast32_t x, v_sign, tmp;
@@ -214,19 +214,19 @@ uint32_t mm_op%{P}_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
   The function does not change the inputs ``v``, ``tags``, and ``v0``.  
 */
 // %%EXPORT px
-int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+int32_t mm_op%{P}_order_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
 {
     int32_t res;
     uint64_t *w, *work;
 
-    res = mm_op%{P}_find_in_Gx0(v, tags, v0, g);
+    res = mm_op%{P}_order_find_in_Gx0(v, tags, v0, g);
     if (res >= 0x100 || res < 0) return res;
 
     w = calloc(2 * %{MMV_INTS}, sizeof(uint64_t));
     if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
     work = w + %{MMV_INTS};
     mm_op15_copy(v, w);    
-    res = mm_op%{P}_find_in_Qx0(w, tags, v0, g, work);
+    res = mm_op%{P}_order_find_in_Qx0(w, tags, v0, g, work);
     free(w);
     return res;    
 }
@@ -256,7 +256,7 @@ int32_t mm_op%{P}_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32
   buffer ``h`` are invalid.
 
   Input parameters ``v0`` and ``tags`` are as in 
-  function ``mm_op%{P}_check_in_Gx0``; they are not changed.
+  function ``mm_op%{P}_order_check_in_Gx0``; they are not changed.
 
   A negative return value indicates an error. 
 */
@@ -293,11 +293,11 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
     for (i = 1; i <= o; ++i) {   
         res = mm_op%{P}_word(w, g, n, 1, work);
         if (res < 0) goto done;
-        res = mm_op%{P}_find_in_Gx0(w, tags, v0, h);
+        res = mm_op%{P}_order_find_in_Gx0(w, tags, v0, h);
         if (res >= 0x100) continue;
         if (res < 0) goto done;
         mm_op15_copy(w, w1);    
-        res = mm_op%{P}_find_in_Qx0(w1, tags, v0, h, work);
+        res = mm_op%{P}_order_find_in_Qx0(w1, tags, v0, h, work);
         if (res < 0) goto done;
         if (res < 0x100) {
             res += i << 8;
@@ -329,7 +329,7 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
   may return 0 if the order is greater than ``o``.
 
   Input parameters ``v0`` and ``tags`` are as in 
-  function ``mm_op%{P}_check_in_Gx0``; they are not changed.
+  function ``mm_op%{P}_order_check_in_Gx0``; they are not changed.
 
   A negative return value indicates an error. 
 */
