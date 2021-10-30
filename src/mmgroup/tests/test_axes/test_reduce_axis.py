@@ -14,17 +14,17 @@ from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
-from mmgroup.clifford12 import leech_matrix_2A_axis_type
 from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.mm import mm_aux_get_mmv1
 from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_find_short as mm_op15_find_short
+from mmgroup.mm15 import op_axes_find_short as mm_op15_axes_find_short
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
 from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
 from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
 from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
+from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
 
 from mmgroup.tests.test_axes.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
@@ -61,7 +61,7 @@ def short(v, value):
     ``value``. That list is returned as a numpy array.
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
     return short[:l]
 
 
@@ -75,7 +75,7 @@ def span(v, value, verbose = 1):
     as a list of vectors in a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     if verbose:
@@ -101,7 +101,7 @@ def radical(v, value, verbose = 1):
     a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     if verbose:
@@ -148,7 +148,7 @@ def reduce_axis(vector, verbose = 0):
     len_r = 0
     if verbose: print("Function reduce_axis")
     for i in range(5):
-        vt = leech_matrix_2A_axis_type(15, v)
+        vt = mm_op15_2A_axis_type(v)
         assert vt
         type = (vt >> 24) & 0xff
         vt &= 0xffffff
@@ -225,7 +225,7 @@ def reduce_axis(vector, verbose = 0):
         ok = False
         for e in (1,2):
             mm_op15_t_A(v, e, vA)                    
-            t = leech_matrix_2A_axis_type(15, vA) >> 24
+            t = mm_op15_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
@@ -256,7 +256,7 @@ def reduce_baby_axis(vector, verbose = 1):
     len_r = 0
     if verbose: print("Function reduce_baby_axis")
     for i in range(5):
-        vt = leech_matrix_2A_axis_type(15, v)
+        vt = mm_op15_2A_axis_type(v)
         assert vt
         type = (vt >> 24) & 0xff
         vt &= 0xffffff
@@ -303,7 +303,7 @@ def reduce_baby_axis(vector, verbose = 1):
                 assert r1 >= 0
                 mm_op15_word(v, r[len_r:], r1, 1, work.data)
                 len_r += r1
-                vt = leech_matrix_2A_axis_type(15, v) & 0xffffff
+                vt = mm_op15_2A_axis_type(v) & 0xffffff
                 assert vt == 0x800200 
                 ind = mm_aux_get_mmv1(15, v, (2*24+3)*32 + 2)
                 e = 2 - (ind == 15-2)
@@ -325,7 +325,7 @@ def reduce_baby_axis(vector, verbose = 1):
         ok = False
         for e in (1,2):
             mm_op15_t_A(v, e, vA)                    
-            t = leech_matrix_2A_axis_type(15, vA) >> 24
+            t = mm_op15_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
@@ -444,7 +444,7 @@ def test_reduce_baby_axis(verbose = 0):
         ok =  g1 == g 
         #print(type(g1), type(g))
         if verbose or not ok:
-             vt = leech_matrix_2A_axis_type(15, v.data) >> 24
+             vt = mm_op15_2A_axis_type(v.data) >> 24
              vA = eval_A_vstart(v.data)
              print("Type(v) = 0x%x, value(A) = %d" % (vt, vA))
              print("Op:  ", [hex(x) for x in g] )

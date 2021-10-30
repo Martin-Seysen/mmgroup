@@ -20,7 +20,7 @@
 
 
 /*********************************************************************
-** Auxiliary functions for function mm_op%{P}_find_short
+** Auxiliary functions for function mm_op%{P}_axes_find_short
 *********************************************************************/
 
 typedef struct {
@@ -182,7 +182,7 @@ static int32_t find_short_all(
   some entries will be dropped.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_find_short(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
+uint32_t mm_op%{P}_axes_find_short(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
 {
      return find_short_all(v, p_out, n, y0, y1);
 }
@@ -258,6 +258,91 @@ void mm_op%{P}_count_short(uint_mmv_t *v, uint32_t *p_out)
      count_short64(v + MM_OP%{P}_OFS_T, 759, a);
      count_short24(v + MM_OP%{P}_OFS_X, 2048, a);
      for (i = 0; i < 8; ++i) p_out[i] = a[i] + a[15-i];
+}
+
+
+
+/*************************************************************************
+*** Analyze type of a 2A axis
+*************************************************************************/
+
+/** @brief Check 2A axis in rep of monster at a short Leech vector
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo ``15``, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions* in the
+   description of the *C interface*. 
+
+   If ``v`` is a 2A axis then the function computes the type
+   of the 2A axis. Each 2A axis corresponds uniquely to a 2A
+   involution \f$x\f$ in the monster. Let \f$z\f$ be the central 
+   involution in the subgroup \f$G_{x0}\f$ of the monster. Then
+   the type of the 2A axis ``v`` is the class of the 
+   product \f$xz\f$ in the monster, which has one of the
+   values 2A, 2B, 4A, 4B, 4C, 6A, 6C, 6F, 8B, 10A, 10B, 12C
+   
+   The function returns a value ``n * 2**28 + k * 2**24 + v``.
+   Here ``n`` is the number of the class, e.g. ``n == 6`` for
+   class 6C, ``k`` encodes the letter in the name of the 
+   class ('A' = 1, 'B' = 2, ...) e.g. ``k = 3`` for class 6C.
+
+   Output ``v`` is either 0 or a vector in the Leech lattice 
+   mod 2 found during the computation. Here a vector of type 2
+   is returned for classes 2A, 6A; and a vector of type 4 is
+   returned for class 4A.
+
+   Caution:
+
+   This is a quick disambiguation of the type of a 2A axis. The 
+   function may return any axis type if ``v`` is not  a 2A axis.
+*/
+// %%EXPORT px
+uint32_t mm_op%{P}_2A_axis_type(uint64_t *v)
+{
+    static uint8_t axes_types[16] = {
+           0,  0, 0x82, 0x43,     0xF2, 0x63,  0,   0,
+        0xF0,  0, 0xC3,    0,        0, 0x42, 0xF0, 0
+    };
+    uint32_t norm, res, rank, v2, val_A;
+    uint64_t r, v3;
+    norm = leech_matrix_norm_A(15,v);
+    res = axes_types[norm & 15];
+    if (res < 0x0F0) return res << 24;
+    r = leech3matrix_kernel(15, v, res & 0xf);    
+    rank = (uint32_t)(r >> 48);
+    v3 = r & 0xffffffffffffULL;
+    
+    switch (norm) {
+        case 4:
+            if (rank == 2) return 0xA1000000;
+            if (rank == 23) {
+                v2 = gen_leech3to2_short(v3) & 0xffffff;
+                val_A = leech2matrix_eval_A(15, v, v2);
+                switch (val_A) {
+                    case 4:
+                        return 0x21000000 + v2;
+                    case 7:
+                        return 0x61000000 + v2;
+                    default:
+                        break;
+                }
+            }
+            break;
+        case 8:
+            if (rank == 8) return 0x22000000;
+            if (rank == 24) return 0xA2000000;
+            break;
+        case 14:
+            if (rank == 8) return 0x66000000;
+            if (rank == 23) {
+                v2 = gen_leech3to2_type4(v3) & 0xffffff;
+                return 0x41000000 + v2;
+            } 
+            break;
+        default:
+            break;
+    }    
+    return 0;
 }
 
 

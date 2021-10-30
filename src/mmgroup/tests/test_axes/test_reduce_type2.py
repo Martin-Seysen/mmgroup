@@ -18,7 +18,7 @@ from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
 from mmgroup.generators import gen_leech2_op_word
 
-from mmgroup.clifford12 import leech_matrix_2A_axis_type
+from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
 
 
 
@@ -356,7 +356,7 @@ def test_reduce_type2(verbose = 0):
     for i, w in enumerate(make_testcases()):
         if verbose: print("\nTest", i+1)
         if verbose: print("Reducing", w)
-        w1 = leech_matrix_2A_axis_type(15, w.data) & 0xffffff
+        w1 = mm_op15_2A_axis_type(w.data) & 0xffffff
         w_op = reduce_type2(w1)
         w_op_fast = reduce_type2_fast(w1)
         ok = w_op == w_op_fast
