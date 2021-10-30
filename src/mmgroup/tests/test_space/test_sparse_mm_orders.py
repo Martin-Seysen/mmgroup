@@ -27,7 +27,7 @@ good_mm_orders = set(range(1,37)) | set(range(38,43)) | set(range(44,49))
 good_mm_orders.update([50, 51, 52, 54, 55, 56, 57, 59, 60, 62, 66, 
     68, 69, 70, 71, 78, 84, 87, 88, 92, 93, 94, 95, 104, 105, 110, 119])
 
-max_mmm_order = max(good_mm_orders) 
+max_mm_order = max(good_mm_orders) 
 
 
 p = 241
@@ -37,7 +37,7 @@ grp = MGroupNWord
 
 def do_test_mm_order(v,  m, verbose = 0):
     v1, n = v.copy(), 0
-    while n <= max_mmm_order:
+    while n <= max_mm_order:
         v1, n = v1 * m, n+1
         if verbose: print("\r", n, end = "")
         if v1 == v:

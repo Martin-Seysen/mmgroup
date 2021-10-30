@@ -87,14 +87,14 @@ group = MM0
 
 good_mm_orders = set(ClassOrders)
 
-max_mmm_order = max(good_mm_orders) 
+max_mm_order = max(good_mm_orders) 
 
 
 
 def one_test_mm_order(v,  m, verbose = 0):
     v = v.copy()
     v1, n = v.copy(), 0
-    while n <= max_mmm_order:
+    while n <= max_mm_order:
         v1, n = v1 * m, n+1
         if v1 == v:
              return n

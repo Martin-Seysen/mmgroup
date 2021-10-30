@@ -35,6 +35,8 @@ from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_store_order_vector as mm_op15_store_order_vector
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
 from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
+from mmgroup.mm15 import op_load_order_vector as mm_op15_load_order_vector
+from mmgroup.mm15 import op_load_order_tag_vector as mm_op15_load_order_tag_vector
 
 
 
@@ -120,14 +122,15 @@ def map_x(x_index):
     v2 = mm_aux_index_sparse_to_leech2(x_index) 
     return ((v2 & 0xfff) << 12) | ((v2 >> 12) & 0xfff)    
 
-
+ORDER_VECTOR_PRESENT = False
 
 def compute_order_vector(recompute = False, verbose = 0):
-    global  ORDER_VECTOR, ORDER_TAGS
-
+    global  ORDER_VECTOR_PRESENT
+    if ORDER_VECTOR_PRESENT and not recompute:
+        return  
     try:
-        assert not recompute
         from mmgroup.structures import order_vector_data
+        assert not recompute
     except (ImportError, AssertionError):
         from mmgroup.structures import find_order_vector
         result = find_order_vector.find_order_vector(verbose)
@@ -181,14 +184,20 @@ def compute_order_vector(recompute = False, verbose = 0):
         15, OV, ORDER_TAGS[OFS_TAGS_X:], 24)
     assert t0 == 0
     mm_op15_store_order_vector(ORDER_TAGS, ORDER_VECTOR.data)
-
+    del ORDER_VECTOR
+    ORDER_VECTOR_PRESENT = True
 
 def get_order_vector(recompute = False, verbose = 0):
-    if not recompute and ORDER_VECTOR is not None:
-        return ORDER_VECTOR
     compute_order_vector(recompute, verbose)
-    return ORDER_VECTOR
+    v = mm_vector(15)
+    mm_op15_load_order_vector(v.data)
+    return v
 
+def get_order_tag_vector(recompute = False, verbose = 0):
+    compute_order_vector(recompute, verbose)
+    tags = np.zeros(97, dtype = np.uint32)
+    mm_op15_load_order_tag_vector(tags)
+    return tags
 
 
 ###########################################################################
@@ -216,13 +225,14 @@ def check_mm_equal(g1, g2, mode = 0):
         g2._data, g2.length, g3)
     if status < 2:
         return not status
-
-    v = get_order_vector().data # deprecated
-    w = mm_vector(15)
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
+    v = mm_vector(15)
+    mm_op15_load_order_vector(v.data)
     work = mm_vector(15)
-    mm_op15_copy(v, w)
-    mm_op15_word(w, g3, status - 2, 1, work)
-    return not mm_op15_compare(v, w)
+    mm_op15_word(v, g3, status - 2, 1, work)
+    mm_op15_load_order_vector(work.data)
+    return not mm_op15_compare(v, work)
 
 
 
@@ -258,10 +268,13 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
                     return i
             return 0
 
-    v = get_order_vector().data # deprecated!
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
+    v = mm_vector(15)
     w = mm_vector(15)
     work = mm_vector(15)
-    mm_op15_copy(v, w)
+    mm_op15_load_order_vector(v.data)
+    mm_op15_load_order_vector(w.data)
     for i in range(1, max_order+1):
         mm_op15_word(w, g._data, g.length, 1, work)
         if not mm_op15_compare(v, w):
@@ -285,7 +298,8 @@ def check_mm_order(g, max_order = 119):
     """
     assert isinstance(g, (MM0, MM))
     g.reduce()
-    v = get_order_vector().data  # deprecated!!!
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
     o = mm_op15_order(g._data, g.length, max_order)
     return  chk_qstate12(o)
 
@@ -305,7 +319,8 @@ def check_mm_half_order(g, max_order = 119):
     assert isinstance(g, (MM0, MM))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
-    v = get_order_vector().data  # deprecated!!!
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
     o1 = mm_op15_order_Gx0(g._data, g.length, h, max_order)
     chk_qstate12(o1)
     if o1 == 0:
@@ -350,7 +365,8 @@ def check_mm_in_g_x0(g):
     ``mmgroup.mm_group.MM``.
     """
     g1 = np.zeros(10, dtype = np.uint32)
-    v = get_order_vector().data  # deprecated!!!
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
     res = chk_qstate12(mm_op15_order_Gx0(g._data,  g.length, g1, 1))
     #print("RES", hex(res))
     if ((res >> 8) != 1):
@@ -375,7 +391,8 @@ reduce_mm_time = None
 def reduce_mm(g, check = True):
     """The fastest reduction procedure for a monster element ``g``"""
     global reduce_mm_time
-    v = get_order_vector().data # deprecated!!
+    if not ORDER_VECTOR_PRESENT:
+        compute_order_vector()
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
     res = mm_op15_reduce_M(g._data, g.length, g1)
@@ -387,10 +404,11 @@ def reduce_mm(g, check = True):
     if check:
         w = mm_vector(15)
         work = mm_vector(15)
-        mm_op15_copy(v, w)
+        mm_op15_load_order_vector(w.data)
         mm_op15_word(w, g._data, len(g), 1, work)
         mm_op15_word(w, g1, length, -1, work)
-        assert not mm_op15_compare(v, w)
+        mm_op15_load_order_vector(work.data)
+        assert not mm_op15_compare(w, work)
          
     g._extend(length)
     g._data[:length] = g1[:length]
@@ -406,8 +424,7 @@ def reduce_mm(g, check = True):
 
 
 if __name__ == "__main__":
-    get_order_vector(recompute = 0, verbose = 1)
-    assert isinstance(g, (MM0,MM))
+    compute_order_vector(recompute = 0, verbose = 1)
         
 
 

@@ -857,7 +857,7 @@ def make_doc(source_file, output_file, tables = None):
             in_comment, copy = False, True
         elif m_begin_comment.match(l):
             if comment_pending:
-                copy, commment_pending = True, False
+                copy, comment_pending = True, False
                 closing = m_begin_comment.match(l).groups()[0]
                 in_comment = not closing
                 comment_pending = False

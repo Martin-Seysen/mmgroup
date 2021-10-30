@@ -85,7 +85,14 @@ int32_t mm_op%{P}_load_order_vector(uint64_t *v0)
     return 0;   
 }
 
-
+// %%EXPORT px
+int32_t mm_op%{P}_load_order_tag_vector(uint32_t *tag_vector)
+{
+    uint_fast32_t i;
+    if (ORDER_VECTOR_PRESENT != MAGIC) return -1;   
+    for (i = 0; i < LEN_TAG_VECTOR; ++i)  tag_vector[i] = TAG_VECTOR[i];
+    return 0;   
+}
 
 /************************************************************************
 ** Check if element of monster group is in subgroup G_x0

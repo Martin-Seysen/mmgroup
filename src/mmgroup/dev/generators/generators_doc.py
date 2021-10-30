@@ -43,7 +43,7 @@ the Leech lattice (mod 2) corresponding to :math:`\pm e_i`. Then
 :math:`e_1^2 = (-1)^s` for 
 :math:`s = \langle\tilde{e}_1, \tilde{e}_1 \rangle /2`,
 where :math:`\langle.,.\rangle` is the scalar product in the
-Leech lattice. For the commmutator :math:`[e_1, e_2]` we have 
+Leech lattice. For the commutator :math:`[e_1, e_2]` we have 
 :math:`[e_1, e_2] = (-1)^t`, 
 :math:`t = \langle \tilde{e}_1, \tilde{e}_2 \rangle`.
 

@@ -39,7 +39,7 @@ from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
 # that has been used in the development phase.
 
 get_order_vector()
-from mmgroup.mm_order import ORDER_TAGS, check_mm_in_g_x0
+from mmgroup.mm_order import get_order_tag_vector, check_mm_in_g_x0
 from mmgroup.mm_order import OFS_NORM_A, OFS_DIAG_VA, OFS_WATERMARK_PERM
 from mmgroup.mm_order import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
 from mmgroup.mm_order import OFS_SOLVE_X, OFS_TAG_SIGN 
@@ -48,10 +48,15 @@ FAST =  False
 
 err_in_g_x0 = 0 
 
+
+ORDER_VECTOR = get_order_vector()
+ORDER_TAGS = get_order_tag_vector()
+
+
 def find_in_Q_x0(w):
     global err_in_g_x0
     if FAST:
-        v = get_order_vector().data
+        v = ORDER_VECTOR.data
         res = mm_op15_order_find_in_Qx0(w, ORDER_TAGS, v)
     w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
         ORDER_TAGS[OFS_TAGS_X:], 24)
@@ -78,7 +83,7 @@ def find_in_G_x0(w):
     global err_in_g_x0
     g1i = np.zeros(11, dtype = np.uint32)
     if FAST:
-        v = get_order_vector().data
+        v = ORDER_VECTOR.data
         res =  mm_op15_order_find_in_Gx0(w, ORDER_TAGS, v, g1i)
         assert res >= 0
         if res >= 0x100:
@@ -123,7 +128,7 @@ def find_in_G_x0(w):
         res = mm_op15_word_tag_A(wA, g1i[len_g1:], 1, 1)
         assert res  == 0
         len_g1 += 1
-    if (wA != get_order_vector().data[:2*24]).all():
+    if (wA != ORDER_VECTOR.data[:2*24]).all():
         err_in_g_x0 = 6
         return None
     #print("g1i", g1i[:len_g1])
@@ -146,7 +151,7 @@ def low_level_check_mm_in_g_x0(g):
     global err_in_g_x0
     err_in_g_x0 = 0
     assert isinstance(g, (MM0, MM))
-    v = get_order_vector().data
+    v = ORDER_VECTOR.data
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op15_copy(v, w)
@@ -154,7 +159,7 @@ def low_level_check_mm_in_g_x0(g):
     assert res == 0
     if FAST:
         g1 = np.zeros(11, dtype = np.uint32)
-        res = chk_qstate12(mm_op15_order_check_in_Gx0(w, ORDER_TAGS, v, g1))
+        res = chk_qstate12(mm_op15_order_check_in_Gx0(w, g1))
         if res >= 0x100:
             err_in_g_x0 = res - 0x100
             return None

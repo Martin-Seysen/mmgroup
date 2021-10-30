@@ -43,8 +43,9 @@ INVOLUTION_SAMPLES = involution_samples.INVOLUTION_SAMPLES
 def make_involution_samples():
     for invar, _, g in INVOLUTION_SAMPLES:
         g = MM0(g)
+        g.in_G_x0()
         yield g, invar
-        n_samples = 40 if invariant_status(invar) == 3 else 20
+        n_samples = 20 if invariant_status(invar) == 3 else 10
         for i in range(n_samples): 
             t = MM0('r', 'G_x0')
             h = g**t
@@ -107,14 +108,14 @@ def conj_G_x0_to_Q_x0(g):
 Z = MM0('x', 0x1000)
 
 def do_test_involution_invariants(g, ref_invariants, verbose = 0):
+    g.reduce()
     gg = Xsp2_Co1(g)
     ref_ord, ref_chi, ref_involution_invariants = ref_invariants
     invar, v1, v0  = gg._involution_invariants()
-    assert ref_ord[0] == g.order()
+    assert ref_ord[0] == gg.order()
     #print("square", (g**2).reduce())
-    assert ref_ord[1] == XLeech2(g**2).type
+    assert ref_ord[1] == XLeech2(gg**2).type
     assert ref_chi == g.chi_G_x0()
-    
     if int(invar[0]) & 0x8000000:
         if (gg**2).in_Q_x0():
             err = "Invariant error in involution"
@@ -201,5 +202,5 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
 def test_xx(verbose = 0):
     for i, (g, n) in enumerate(make_involution_samples()):
          if verbose:
-             print(i)
+             print("Test", i)
          do_test_involution_invariants(g, n, verbose=verbose)
