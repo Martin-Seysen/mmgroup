@@ -32,6 +32,7 @@ from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_order as mm_op15_order
+from mmgroup.mm15 import op_store_order_vector as mm_op15_store_order_vector
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
 from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
 
@@ -179,6 +180,7 @@ def compute_order_vector(recompute = False, verbose = 0):
     t0 = mm_aux_mmv_extract_sparse_signs(
         15, OV, ORDER_TAGS[OFS_TAGS_X:], 24)
     assert t0 == 0
+    mm_op15_store_order_vector(ORDER_TAGS, ORDER_VECTOR.data)
 
 
 def get_order_vector(recompute = False, verbose = 0):
@@ -215,7 +217,7 @@ def check_mm_equal(g1, g2, mode = 0):
     if status < 2:
         return not status
 
-    v = get_order_vector().data
+    v = get_order_vector().data # deprecated
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op15_copy(v, w)
@@ -256,7 +258,7 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
                     return i
             return 0
 
-    v = get_order_vector().data
+    v = get_order_vector().data # deprecated!
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op15_copy(v, w)
@@ -283,8 +285,8 @@ def check_mm_order(g, max_order = 119):
     """
     assert isinstance(g, (MM0, MM))
     g.reduce()
-    v = get_order_vector().data
-    o = mm_op15_order(g._data, g.length, ORDER_TAGS, v, max_order)
+    v = get_order_vector().data  # deprecated!!!
+    o = mm_op15_order(g._data, g.length, max_order)
     return  chk_qstate12(o)
 
 def check_mm_half_order(g, max_order = 119):
@@ -303,8 +305,8 @@ def check_mm_half_order(g, max_order = 119):
     assert isinstance(g, (MM0, MM))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
-    v = get_order_vector().data
-    o1 = mm_op15_order_Gx0(g._data, g.length, ORDER_TAGS, v, h, max_order)
+    v = get_order_vector().data  # deprecated!!!
+    o1 = mm_op15_order_Gx0(g._data, g.length, h, max_order)
     chk_qstate12(o1)
     if o1 == 0:
         return 0, None
@@ -348,9 +350,8 @@ def check_mm_in_g_x0(g):
     ``mmgroup.mm_group.MM``.
     """
     g1 = np.zeros(10, dtype = np.uint32)
-    v = get_order_vector().data
-    res = chk_qstate12(mm_op15_order_Gx0(g._data,  g.length, 
-        ORDER_TAGS, v, g1, 1))
+    v = get_order_vector().data  # deprecated!!!
+    res = chk_qstate12(mm_op15_order_Gx0(g._data,  g.length, g1, 1))
     #print("RES", hex(res))
     if ((res >> 8) != 1):
         return None 
@@ -374,10 +375,10 @@ reduce_mm_time = None
 def reduce_mm(g, check = True):
     """The fastest reduction procedure for a monster element ``g``"""
     global reduce_mm_time
-    v = get_order_vector().data
+    v = get_order_vector().data # deprecated!!
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_M(g._data, g.length, ORDER_TAGS, v, g1)
+    res = mm_op15_reduce_M(g._data, g.length, g1)
     reduce_mm_time = time.perf_counter() - t_start
     if (res < 0):
         err = "Reduction of element of monster failed"

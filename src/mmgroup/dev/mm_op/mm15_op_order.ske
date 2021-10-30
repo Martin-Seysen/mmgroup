@@ -28,14 +28,79 @@ enum tag_offsets {
 };
 
 
+/************************************************************************
+** Load ORDER_VECTOR and ORDER_TAG_VECTOR
+************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+#define LEN_TAG_VECTOR 97
+
+static uint_mmv_t ORDER_VECTOR[%{MMV_INTS}];
+
+static uint32_t TAG_VECTOR[LEN_TAG_VECTOR];
+
+static uint32_t  ORDER_VECTOR_PRESENT;
+
+#define MAGIC 0xd5cf2469UL
+
+/// @endcond  
+
+
+/**
+  @brief Check if a vector is an image under an element of \f$G_{x0}\f$
+
+  Let ``v0`` be an order vector in the representation \f$\rho_{15}\f$
+  of the monster group. This is a vector whose stabilizer in the monster
+  is the neutral element, satisfying some additional conditions as
+  described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
+  order vector is the object ORDER_VECTOR in 
+  module ``mmgroup.mm_order.py``. This function store such an order
+  vector ``v0`` in an internal buffer.
+
+  The function also requires a parameter ``tags`` describing some
+  properties of vector ``v0``, corresponding to the array ``ORDER_TAGS``
+  computed in module ``mmgroup.mm_order.py``. The function also stores
+  the vector ``tags`` in an internal buffer.
+
+*/
+// %%EXPORT px
+void mm_op%{P}_store_order_vector(uint32_t *tags, uint64_t *v0)
+{
+    uint_fast32_t i;
+    ORDER_VECTOR_PRESENT = 0;
+    for (i = 0; i < %{MMV_INTS}; ++i) ORDER_VECTOR[i] = v0[i];
+    for (i = 0; i < LEN_TAG_VECTOR; ++i) TAG_VECTOR[i] = tags[i];
+    ORDER_VECTOR_PRESENT = MAGIC;   
+}
+
+
+
+// %%EXPORT px
+int32_t mm_op%{P}_load_order_vector(uint64_t *v0)
+{
+    uint_fast32_t i;
+    if (ORDER_VECTOR_PRESENT != MAGIC) return -1;   
+    for (i = 0; i < %{MMV_INTS}; ++i)  v0[i] = ORDER_VECTOR[i];
+    return 0;   
+}
+
+
+
+/************************************************************************
+** Check if element of monster group is in subgroup G_x0
+************************************************************************/
 
 
 /**
   @brief Auxiliary function for function ``mm_op%{P}_order_check_in_Gx0``
 
-  Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
-  function ``mm_op%{P}_order_check_in_Gx0``. 
+  Inputs ``v``, and the return value are as in
+  function ``mm_op%{P}_order_check_in_Gx0``. A oder vector ``v0`` must
+  have been loaded with function ``mm_op%{P}_store_order_vector``.
+
+  This function requires that an order ``v0`` has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
 
   Assume that ``v`` is an image of ``v0`` under an unknown element
   \f$g\f$ of the monster. We want to find that element \f$g\f$ if
@@ -50,18 +115,20 @@ enum tag_offsets {
   array ``g`` is the same way as function ``mm_op%{P}_order_check_in_Gx0``
   writes its result int that array.
   
-  The function does not change the inputs ``v``, ``tags``, and ``v0``.  
+  The function does not change the input ``v``.  
 */
 // %%EXPORT px
-int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *g)
 {
     uint64_t a[48], w3;
     int32_t res, v_y;
     uint_fast32_t w_type4, i, len, perm_num, y;
 
-    if (leech_matrix_norm_A(%{P}, v) != tags[OFS_NORM_A]) return 0x101;
+    if (ORDER_VECTOR_PRESENT != MAGIC) return -0x1000001;
 
-    w3 = leech3matrix_kernel_vector(%{P}, v, tags[OFS_DIAG_VA]);
+    if (leech_matrix_norm_A(%{P}, v) != TAG_VECTOR[OFS_NORM_A]) return 0x101;
+
+    w3 = leech3matrix_kernel_vector(%{P}, v, TAG_VECTOR[OFS_DIAG_VA]);
     if (w3 == 0) return 0x102;
     w_type4 = (uint_fast32_t)(gen_leech3to2_type4(w3));
     if (w_type4 == 0) return 0x103;
@@ -75,7 +142,7 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, u
     if (res < 0) return res;
      
     res = leech3matrix_watermark_perm_num(%{P}, 
-        tags + OFS_WATERMARK_PERM, a);
+        TAG_VECTOR + OFS_WATERMARK_PERM, a);
     if (res < 0) return 0x104;
     perm_num = res;
     if (perm_num) {
@@ -86,9 +153,9 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, u
     }
 
     v_y = mm_aux_mmv_extract_sparse_signs(%{P}, a, 
-        tags + OFS_TAGS_Y, 11);
+        TAG_VECTOR + OFS_TAGS_Y, 11);
     if (v_y < 0) return 0x105;
-    y = leech2matrix_solve_eqn(tags + OFS_SOLVE_Y, 11, v_y);
+    y = leech2matrix_solve_eqn(TAG_VECTOR + OFS_SOLVE_Y, 11, v_y);
     if (y > 0) {
         g[len] = 0xC0000000 + y;
         res = mm_op%{P}_word_tag_A(a, g + len, 1, 1);
@@ -96,7 +163,7 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, u
         len += 1;
     }
 
-    if (mm_op%{P}_compare_len(v0, a, 48)) return 0x106;
+    if (mm_op%{P}_compare_len(ORDER_VECTOR, a, 48)) return 0x106;
     for (i = len; i <10; ++i) g[i] = 0;
 
     return len;
@@ -110,11 +177,14 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, u
 /**
   @brief Auxiliary function for function ``mm_op%{P}_order_check_in_Gx0``
 
-  Inputs ``v``, ``tags``, and ``v0``, and the return value are as in
+  Inputs ``v``, and the return value are as in
   function ``mm_op%{P}_order_check_in_Gx0``.  Parameter ``g`` must contain 
   the corrsponding output of function ``mm_op%{P}_order_check_in_Gx0``, when
   called successfully with the same input parameters. The function also 
   requires an array `` work`` of length %{MMV_INTS} as a work buffer.
+
+  This function requires that an order ``v0`` has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
 
   Assume that ``v`` is an image of ``v0`` under an unknown element
   \f$g\f$ of the monster. We want to find that element \f$g\f$ if
@@ -123,32 +193,32 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, u
   In case of success the function writes the element \f$g_1\f$ into the
   array ``g`` in the same way as function ``mm_op%{P}_order_check_in_Gx0``
   writes its result int that array. 
-  
-  The function does not change the inputs ``tags``, and ``v0``. 
 
   Caution:
 
   This function destroys the input ``v``!  
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g, uint64_t *work)
+uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *g, uint64_t *work)
 {
     int32_t v_x, sign, len = 10, res, len1, i;
     uint_fast32_t x, v_sign, tmp;
     uint32_t aa;
     
+    if (ORDER_VECTOR_PRESENT != MAGIC) return -0x1000001;
+
     while (len && g[len-1] == 0) --len;
     if (g[0]) {
         res = mm_op15_word(v, g, len, 1, work);
         if (res < 0) return res;
     }
 
-    v_x = mm_aux_mmv_extract_sparse_signs(15, v, tags + OFS_TAGS_X, 24);
+    v_x = mm_aux_mmv_extract_sparse_signs(15, v, TAG_VECTOR + OFS_TAGS_X, 24);
     if (v_x < 0) return 0x107;
 
-    x = leech2matrix_solve_eqn(tags + OFS_SOLVE_X, 24, v_x) &  0xffffff;
+    x = leech2matrix_solve_eqn(TAG_VECTOR + OFS_SOLVE_X, 24, v_x) &  0xffffff;
     v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
-    aa = tags[OFS_TAG_SIGN] ^ (v_sign << 14);
+    aa = TAG_VECTOR[OFS_TAG_SIGN] ^ (v_sign << 14);
     sign = mm_aux_mmv_extract_sparse_signs(15, v, &aa, 1);
     if (v_x < 0) return 0x108;
 
@@ -165,7 +235,7 @@ uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, 
         res = mm_op15_word(v, g + len, len1 - len, 1, work);  
         if (res < 0) return res;
     }    
-    res = mm_op15_compare(v, v0);
+    res = mm_op15_compare(v, ORDER_VECTOR);
     if (res)  return  0x209;
     for (i = 0; i < len1 >> 1; ++i) {
         tmp = g[i]; g[i] = g[len1-1-i]; g[len1-1-i] = tmp; 
@@ -178,7 +248,10 @@ uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, 
 /**
   @brief Check if a vector is an image under an element of \f$G_{x0}\f$
 
-  Let ``v0`` be an order vector in the representation \f$\rho_{15}\f$
+  This function requires that an order ``v0`` has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
+
+  Let ``v0`` be that order vector in the representation \f$\rho_{15}\f$
   of the monster group. This is a vector whose stabilizer in the monster
   is the neutral element, satisfying some additional conditions as
   described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
@@ -189,10 +262,6 @@ uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, 
   \f$g\f$ of the monster. The function comutpes the element\f$g\f$ if
   it is in the subgroup \f$G_{x0}\f$ of the monster; otherwise we have
   hardly any chance to find it.
-
-  The function also requires a parameter ``tags`` describing some
-  properties of vector ``v0``, corresponding to the array ``ORDER_TAGS``
-  computed in module ``mmgroup.mm_order.py``.
 
   In case of success the function writes the element \f$g\f$ into the
   array ``g`` as a word generators of the monster group of length at
@@ -211,22 +280,22 @@ uint32_t mm_op%{P}_order_find_in_Qx0(uint64_t *v, uint32_t *tags, uint64_t *v0, 
 
   A negative return value indicates an error. 
 
-  The function does not change the inputs ``v``, ``tags``, and ``v0``.  
+  The function does not change the inputs ``v``.  
 */
 // %%EXPORT px
-int32_t mm_op%{P}_order_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, uint32_t *g)
+int32_t mm_op%{P}_order_check_in_Gx0(uint64_t *v, uint32_t *g)
 {
     int32_t res;
     uint64_t *w, *work;
 
-    res = mm_op%{P}_order_find_in_Gx0(v, tags, v0, g);
+    res = mm_op%{P}_order_find_in_Gx0(v, g);
     if (res >= 0x100 || res < 0) return res;
 
     w = calloc(2 * %{MMV_INTS}, sizeof(uint64_t));
     if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
     work = w + %{MMV_INTS};
     mm_op15_copy(v, w);    
-    res = mm_op%{P}_order_find_in_Qx0(w, tags, v0, g, work);
+    res = mm_op%{P}_order_find_in_Qx0(w, g, work);
     free(w);
     return res;    
 }
@@ -255,18 +324,20 @@ int32_t mm_op%{P}_order_check_in_Gx0(uint64_t *v, uint32_t *tags, uint64_t *v0, 
   The function returns 0 in case ``e > o``; then the data in
   buffer ``h`` are invalid.
 
-  Input parameters ``v0`` and ``tags`` are as in 
-  function ``mm_op%{P}_order_check_in_Gx0``; they are not changed.
+  This function requires that an order vector has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
 
   A negative return value indicates an error. 
 */
 // %%EXPORT px
-int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t *h, uint32_t o)
+int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *h, uint32_t o)
 {
     int32_t res;
     uint_fast32_t i;
     uint64_t *w = NULL, *w1, *work;
     uint64_t elem[26];
+
+    if (ORDER_VECTOR_PRESENT != MAGIC) return -0x1000001;
 
     if (o < 1) o = 1;
     if (o > 119) o = 119;
@@ -289,15 +360,15 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
     w1 = w + %{MMV_INTS};
     work = w1 + %{MMV_INTS};
 
-    mm_op15_copy(v0, w); 
+    mm_op15_copy(ORDER_VECTOR, w); 
     for (i = 1; i <= o; ++i) {   
         res = mm_op%{P}_word(w, g, n, 1, work);
         if (res < 0) goto done;
-        res = mm_op%{P}_order_find_in_Gx0(w, tags, v0, h);
+        res = mm_op%{P}_order_find_in_Gx0(w, h);
         if (res >= 0x100) continue;
         if (res < 0) goto done;
         mm_op15_copy(w, w1);    
-        res = mm_op%{P}_order_find_in_Qx0(w1, tags, v0, h, work);
+        res = mm_op%{P}_order_find_in_Qx0(w1, h, work);
         if (res < 0) goto done;
         if (res < 0x100) {
             res += i << 8;
@@ -328,18 +399,18 @@ int32_t mm_op%{P}_order_Gx0(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v
   Parameter ``o`` is an upper bound for the order. The function 
   may return 0 if the order is greater than ``o``.
 
-  Input parameters ``v0`` and ``tags`` are as in 
-  function ``mm_op%{P}_order_check_in_Gx0``; they are not changed.
+  This function requires that an order vector has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
 
   A negative return value indicates an error. 
 */
 // %%EXPORT px
-int32_t mm_op%{P}_order(uint32_t *g, uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t o)
+int32_t mm_op%{P}_order(uint32_t *g, uint32_t n, uint32_t o)
 {
     int32_t res, e;
     uint32_t h[10];
 
-    res = mm_op%{P}_order_Gx0(g, n, tags, v0, h, o);
+    res = mm_op%{P}_order_Gx0(g, n, h, o);
     if (res <= 0) return res;
     e =  res >> 8;
     if ((res & 0xff) > 10) return ERR_QSTATE12_BUFFER_OVFL;

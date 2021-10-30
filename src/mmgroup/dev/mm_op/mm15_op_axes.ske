@@ -483,16 +483,28 @@ done:
 }
 
 
+/**
+  @brief Reduce an element in the mosnter group
 
+  To be documented later!
+
+  Caution:
+
+  This function requires that an order ``v0`` has been stored by
+  a previous call to function ``mm_op%{P}_store_order_vector``.
+  This is the same precondtion as for 
+  function ``mm_op%{P}_order_check_in_Gx0``.
+   
+*/
 // %%EXPORT px
-int32_t mm_op%{P}_reduce_M(uint32_t *a,  uint32_t n, uint32_t *tags, uint64_t *v0, uint32_t *r)
+int32_t mm_op%{P}_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
 {
     int32_t len1, len2, res;
 
     // This function combines functions  mm_op%{P}_reduce_to_G_x0 and
     // mm_op%{P}_order_check_in_Gx0. Here we cut and paste the code of both 
     // functions, for reducing  the overhead of memory allocation.
-    // First allocate memory for bot subfunctions.
+    // First allocate memory for both subfunctions.
     axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
     if (p_work == 0) return -1;
 
@@ -516,7 +528,7 @@ int32_t mm_op%{P}_reduce_M(uint32_t *a,  uint32_t n, uint32_t *tags, uint64_t *v
     // Subgroup ``G_x0`` of the monster.
 
     // Put p_work->v = v0 * h
-    mm_op15_copy(v0, p_work->v); 
+    if (mm_op%{P}_load_order_vector(p_work->v) < 0) return -1; 
     res = mm_op%{P}_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res < 0) goto done;
     res = mm_op%{P}_word(p_work->v, r, len1, 1, p_work->vtmp);
@@ -524,10 +536,10 @@ int32_t mm_op%{P}_reduce_M(uint32_t *a,  uint32_t n, uint32_t *tags, uint64_t *v
 
     // Now we essentially apply function t mm_op%{P}_order_check_in_Gx0
     // to find a representation of ``h`` in generators of ``G_x0``.
-    res = mm_op%{P}_order_find_in_Gx0(p_work->v, tags, v0, r + len1);
+    res = mm_op%{P}_order_find_in_Gx0(p_work->v, r + len1);
     if (res > 0x100) res = -0x200;
     if (res < 0) goto done; 
-    len2 = res = mm_op%{P}_order_find_in_Qx0(p_work->v, tags, v0, r + len1, 
+    len2 = res = mm_op%{P}_order_find_in_Qx0(p_work->v, r + len1, 
           p_work->vtmp);
     if (res < 0) goto done;
 
