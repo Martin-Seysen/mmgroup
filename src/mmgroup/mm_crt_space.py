@@ -27,6 +27,7 @@ from functools import partial
 
 
 
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 from mmgroup.structures.mm_space_indices import tuple_to_sparse
@@ -450,8 +451,8 @@ class MMVectorCRT(AbstractMmRepVector):
 ######################################################################
 
 
-
-class MMSpaceCRT(MMSpace):
+@singleton
+class MMSpaceCRT(AbstractMmRepSpace):
     """Models a ``196884``-dimensional representation of the monster group 
 
     This class models a real representation of the monster group 

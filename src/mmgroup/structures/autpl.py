@@ -144,6 +144,7 @@ from random import randint
 
 import numpy as np
 
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
@@ -493,7 +494,7 @@ def autpl_element_from_obj(g, t):
     res._compute_from_numbers()
     return res
 
-
+@singleton
 class AutPlGroup(AbstractGroup):
     word_type = AutPL              # type of an element (=word) in the group
     is_mmgroup = True

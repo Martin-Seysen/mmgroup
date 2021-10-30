@@ -204,6 +204,7 @@ from random import randint, sample
 from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.generators import gen_rng_modp
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import  AtomDict
@@ -596,7 +597,7 @@ class MM0(AbstractMMGroupWord):
 
 
 
-
+@singleton
 class MM0Group(AbstractMMGroup):
     r"""An instance ``MM`` of this class models an instance of the monster
 
@@ -657,15 +658,10 @@ class MM0Group(AbstractMMGroup):
     Elements ``g1``, ``g2`` that belong to different instances of
     class |MMGroup| are considered unequal.
     """
-    __instance = None
     word_type = MM0
     #STR_FORMAT = r"M<%s>"
     group_name = "M0"
 
-    def __new__(cls):
-        if MM0Group.__instance is None:
-             MM0Group.__instance = AbstractMMGroup.__new__(cls)
-        return MM0Group.__instance
 
     def __init__(self):
         """ TODO: Yet to be documented     
@@ -673,11 +669,6 @@ class MM0Group(AbstractMMGroup):
 
         """
         super(MM0Group, self).__init__()
-
-
-
-
-
 
     def reduce(self, g1, copy = False):
         l1 = g1.length

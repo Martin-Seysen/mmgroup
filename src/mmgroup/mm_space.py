@@ -443,6 +443,7 @@ from functools import partial
 
 
 
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
@@ -772,7 +773,7 @@ class MMVector(AbstractMmRepVector):
 ######################################################################
 
 
-
+@singleton
 class MMSpace(AbstractMmRepSpace):
     r"""Models a ``196884``-dimensional representation of the monster group 
 

@@ -8,6 +8,7 @@ import numpy as np
 import warnings
 from functools import partial
 
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import AtomDict, ihex     
@@ -272,6 +273,7 @@ def xsp2co1_to_mm(mmgroup, xsp):
 
 
 
+@singleton
 class Xsp2_Co1_Group(AbstractMMGroup):
     r"""Model the subgroup :math:`G_{x0}` of the Monster
     
@@ -336,12 +338,6 @@ class Xsp2_Co1_Group(AbstractMMGroup):
     STD_V3  = 0x8000004
     word_type = Xsp2_Co1
     is_mmgroup = True
-
-
-    def __new__(cls):
-        if Xsp2_Co1_Group.__instance is None:
-             Xsp2_Co1_Group.__instance = AbstractMMGroup.__new__(cls)
-        return Xsp2_Co1_Group.__instance
 
 
     def __init__(self):

@@ -186,6 +186,7 @@ from mmgroup.generators import rand_get_seed, gen_leech2_type
 from mmgroup.generators import gen_rng_modp
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.mm0_group import MM0
+from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.structures.construct_mm import load_group_name     
@@ -542,7 +543,7 @@ class MM(MM0):
 ###########################################################################
 
 
-
+@singleton
 class MMGroup(AbstractMMGroup):
     r"""An instance of this class models the monster group as an object
 

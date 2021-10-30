@@ -45,20 +45,19 @@ class AbstractGroupWord(object):
     Here a group is an instance of (a subclass of) class AbstractGroup. 
 
     For each word a group 'g' should be passed as a keyword argument 
-    'group = g'. If a class of type 'AbstractGroup' contains one 
-    instance only, the corresponding subclass of this class may 
+    'group = g'. If a subclass of class 'AbstractGroup' models one 
+    group only, the corresponding subclass of this class may 
     contain a class attribute 'group' referring to that group. Then 
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
     """
-    __slots__ = "group"
     def __init__(self, *args, **kwds):
         try:
             self.group = kwds['group']
         except:
             assert isinstance(self.group, AbstractGroup)
 
-    # There is no need to modify an methods below this line.
+    # There is no need to modify any methods below this line.
     # You should overwrite the corresonding methods in the
     # subclasses of class AbstractGroup insead.
  
@@ -160,22 +159,21 @@ class AbstractGroupWord(object):
         else:
             return NotImplemented
 
-
     def reduce(self, copy = False):
         """Reduce a group element
 
-        If group elements are implemented as words, some functions
-        may produce unreduced words. This function  reduces the
-        group element in place.
+        We assume that the representation of a group element
+        is not always given in a unique form.
 
-        Note that all operators return reduced words. Functions return
-        reduced words unless stated otherwise. However, reducing all
-        words representing the same group element to the same word may 
-        be beyond the capabilties of a program. 
+        Assueme that ``g`` can be converted to a unique form (or  
+        at least to a sufficiently simple form) that we will call 
+        a **reduced** form. This method tries to achieve this goal. 
 
-        If ``copy`` is set then a reduced copy of the element is 
-        returned, in case that the input element is not already 
-        reduced.
+        This method may be applied to a group element without
+        notice.
+
+        If argument ``copy`` is True, a reduced copy of ``g``
+        should be returned if ``g`` is not reduced.
         """
         return self.group.reduce(self, copy)
 
@@ -225,7 +223,7 @@ class AbstractGroup(object):
     ### The following methods must be overwritten ####################
 
     def __call__(self, *args):
-        """Convert args to group elements and return their product
+        """Convert argumentss given by ``args``  to a group element
         """
         raise NotImplementedError
 
@@ -284,21 +282,14 @@ class AbstractGroup(object):
         """Reduce the word ``g`` which is an element of the group
 
         We assume that the representation of a group element
-        is not always given in a unique form that we call
-        the reduced form. 
+        is not always given in a unique form.
 
-        This method tries to achieve this goal. Group elements
-        are reduced by any operator, except for the
-        ``==`` and  ``!=`` operators. 
+        Assueme that ``g`` can be converted to a unique form (or  
+        at least to a sufficiently simple form) that we will call 
+        a **reduced** form.  This method tries to achieve this goal. 
 
-        For test purposes, is is useful to obtain a group 
-        element in non-reduced form. Applications should
-        create reduced group elements only.
-
-        One way to obtain avoid reduction is to call method 
-        ``word()`` of this class with elements separated by 
-        commas. Then no reduction takes place across the factors
-        separated by commas. 
+        This method may be applied to a group element without
+        notice.
 
         If argument ``copy`` is True, a reduced copy of ``g``
         should be returned if ``g`` is not reduced.
@@ -343,8 +334,9 @@ class AbstractGroup(object):
     def _to_group(self, g):
         """Convert the object ``g`` to an element of this group
 
-        This function tries the conversions on ``g``. This function
-        is applied in a group operation.
+        This function performs an implicit conversion of the object 
+        ``g`` to a group element. This function is applied in a 
+        group operation.
         """
         if isinstance(g, AbstractGroupWord) and g.group == self:
             return g
@@ -372,3 +364,39 @@ class AbstractGroup(object):
             return False
 
 
+
+
+
+def singleton(cls):
+    """Decorator to convert a class into a singleton
+
+    This function should be used as a decorator for a class.
+
+    This decorator turns a class is a singleton, so that all instances
+    of that class are identical. Also, we do not allow any arguments 
+    in the constructor of such a class.
+
+    A typical use case is the decoration of a class derived from
+    class ``AbstractGroup``. There are many different permutation
+    groups, but (up to isomorphism) there in only one monster group.
+
+    So if a class models the monster group, it makes sense to
+    implement this class as a singleton.
+    """
+    cls.__instance = None # This will be the only instance of the class
+    # Always return the same object
+    def new_(cls, *args, **kwds):
+        # Disable arguments in constructor
+        if len(args) + len(kwds):
+            ERR = "Arguments in constructor of a singleton are not allowed"
+            raise TypeError(ERR)
+        # Always return the same object
+        if cls.__instance is None:
+            cls.__instance =  object.__new__(cls) 
+        return cls.__instance 
+    cls.__new__ = staticmethod(new_)
+    return cls
+
+
+
+ 
