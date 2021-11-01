@@ -548,7 +548,7 @@ import_pending = True
 
 def complete_import():
     global leech2matrix_eval_A, mm_op15_2A_axis_type
-    global op_count_short, XLeech2
+    global op_count_short, XLeech2, mm_op15_count_short 
     from mmgroup.clifford12 import leech2matrix_eval_A
     from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type 
     from mmgroup.mm15 import op_count_short as mm_op15_count_short
