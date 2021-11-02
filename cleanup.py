@@ -23,7 +23,7 @@ EXTENSION_STR = ", ".join(EXTENSIONS) if len(EXTENSIONS) else "?"
 
 def del_pyc(verbose = False):
     if verbose:
-        print("\nDeleteing python intermedate files (.pyc)") 
+        print("\nDeleting python intermedate files (.pyc)") 
     for root, dirs, files in os.walk(ROOT_DIR, topdown=False):
         for name in files:
             if os.path.splitext(name)[1] == ".pyc":
@@ -134,7 +134,7 @@ def main():
     usage = "usage: %prog [options]"
     parser = OptionParser(usage)
     parser.add_option("-p",  dest="del_pyc", action="store_true",
-        help="Delete intermedeate python files (.pyc)")
+        help="Delete intermediate python files (.pyc)")
     parser.add_option("-c",  dest="del_c", action="store_true",
         help="Delete automatically generated program files (%s)" %
         ", ".join(PROGRAM_FILES))

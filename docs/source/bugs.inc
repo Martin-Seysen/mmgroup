@@ -5,7 +5,36 @@ develpment process and that may be extremely hard to find.
 
 
 
-1. Documentation is created correctly on the local host but not on readthedocs
+1. Cleaning up a corrupted local git repository
+-----------------------------------------------
+
+After a long development session the local git repository might be corrupted
+for what reason ever. Here the best cure is to delete everything in the 
+repository (exept for subdirectory .git) and to checkout everythinh with git.
+If you do not want to do so, you may cleanaup intermediate files as follows.
+
+First open a command shell, switch to the root directory of your local
+repository, and make sure that your C compiler works in that shell. Then 
+enter the following statements:
+
+ .. code-block:: none
+
+     python cleanup.py -a
+     git checkout .
+     python setup.py  build_ext --inplace     
+     python -m pytest ./src/mmgroup/ -v -s -m "not slow"
+
+Then for creating the documentation you should enter something
+like the following (details depending on the operating system):
+
+ .. code-block:: none
+
+     cd docs
+     sphinx-build -M html source build  -E -a
+     sphinx-build -M latexpdf source build  -E -a
+     cd ..
+
+2. Documentation is created correctly on the local host but not on readthedocs
 ------------------------------------------------------------------------------
 
 Whenever we update the *master* branch in *git* on the *gitbub* server, this 

@@ -69,7 +69,7 @@ From there run the following command::
 
 For testing the installation, run the following command::
 
-    pytest src/mmgroup/ -v -m "not slow"
+    python -m pytest ./src/mmgroup/ -v -s -m "not slow"
 
 
 For building a wheel you may run:: 
@@ -95,7 +95,7 @@ The bad news for Windows developers is that there is no pre-installed
 package requires a ``C`` compiler. Here in principle, the user has the 
 choice between the following two compilers:
 
-   *  ``MSVC``
+   *  ``MSVC``   
 
    *  ``MinGW-w64``
 
@@ -103,15 +103,15 @@ The user has to install a ``C`` compiler so that it cooperates with
 ``cython``. 
 That installation process is out of the scope of this document.
 
-For installing ``MinGW``, one might start looking at
-https://cython.readthedocs.io/en/latest/src/tutorial/appendix.html.
-
 For installing ``MSVC``, one might start looking at 
 https://wiki.python.org/moin/WindowsCompilers
 
-The current ``setup.py`` supports ``MinGW`` and ``MSVC`` for 64-bit 
+For installing ``MinGW``, one might start looking at
+https://cython.readthedocs.io/en/latest/src/tutorial/appendix.html.
+
+The current ``setup.py`` supports ``MSVC`` and ``MinGW`` for 64-bit 
 Windows. According to the last URL the ``MinGW`` compiler works with 
-all Python versions up to 3.4. 
+Python versions up to 3.4 only, so it can no longer be recommended. 
 
 The author has installed the ``MSVC`` compiler with the Microsoft
 *Build Tools for Visual Studio* from:
@@ -158,6 +158,19 @@ A more comfortable installation process should be compliant with the
 *manylinux* standard, see e.g.:
 
 https://github.com/pypa/python-manylinux-demo  .
+
+In a Linux distribution, it may be necessary to install **pip**,
+**sphinx**, **texlive**, and **doxygen** as follows:
+
+ .. code-block:: none
+
+    sudo apt-get install python-pip
+    sudo apt-get install python-sphinx
+    sudo apt-get install texlive
+    sudo apt-get install doxygen
+
+Note that some distributions require the string 'python' to be 
+replaced by 'python3'.
 
 
 Remark
