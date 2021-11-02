@@ -93,7 +93,7 @@ def slow_complex(m):
     # Put ``phases[i] = sqrt(-1)**i * f,  0 <= i < 4.``
     phases = [f * 1j**i for i in range(4)]
     # Create comples zero array ``a`` od appropriate length.
-    a = np.zeros(1 << m.ncols, dtype = np.complex)
+    a = np.zeros(1 << m.ncols, dtype = complex)
     # For all vectors of length ``m.nrows`` with bit 0
     # of ``v`` equal to 1 put ``index =  v * A``, and  let ``q``
     # be the sum of the matrix ``R`` derivend from ``v`` and

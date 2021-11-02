@@ -177,7 +177,7 @@ def compute_order_vector(recompute = False, verbose = 0):
     # Concatenate computed lists to the global numpy array 'ORDER_TAGS'
     ORDER_TAGS = np.array(sum(map(list, [
         [leech_matrix_norm_A(15, OV), order_vector_data.DIAG_VA], 
-        WATERMARK_PERM, TAGS_Y, SOLVE_Y, TAGS_X, SOLVE_X, [TAG_SIGN] 
+        WATERMARK_PERM, TAGS_Y, SOLVE_Y, TAGS_X, SOLVE_X, TAG_SIGN
     ]), []), dtype = np.uint32)
     assert len(ORDER_TAGS) == 97, len(ORDER_TAGS)
     t0 = mm_aux_mmv_extract_sparse_signs(

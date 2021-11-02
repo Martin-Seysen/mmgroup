@@ -151,7 +151,7 @@ def extend_testdata():
 
 
 def extend_complex(c, j, nqb, zero = False):
-    c1 = np.zeros(len(c) << nqb, dtype = np.complex)
+    c1 = np.zeros(len(c) << nqb, dtype = complex)
     mask = (1 << j) - 1
     for i, x in enumerate(c):
         c1[(i & mask) + ((i & ~mask) << nqb)] = x
@@ -218,7 +218,7 @@ def restrict_testdata():
 def restrict_complex(c, j, nqb, zero = False):
     if not zero:
         mask = (1 << j) - 1
-        c1 = np.zeros(len(c) >> nqb, dtype = np.complex) 
+        c1 = np.zeros(len(c) >> nqb, dtype = complex) 
         for i in range(len(c1)):
             c1[i] = c[(i & mask) + ((i & ~mask) << nqb)]
     else:
