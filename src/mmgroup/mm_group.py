@@ -236,6 +236,7 @@ check_mm_order = None
 check_mm_equal = None
 check_mm_half_order = None
 check_mm_in_g_x0 = None
+mm_op15_reduce_M = None
 
 def import_mm_order_functions():
     """Import functions from module ``mmgroup.mm_order``.
@@ -245,6 +246,7 @@ def import_mm_order_functions():
     """
     global check_mm_order, check_mm_equal
     global check_mm_half_order, check_mm_in_g_x0
+    global mm_op15_reduce_M
     from mmgroup.mm_order import check_mm_order as f
     check_mm_order = f
     from mmgroup.mm_order import check_mm_equal as f
@@ -253,28 +255,13 @@ def import_mm_order_functions():
     check_mm_half_order = f
     from mmgroup.mm_order import check_mm_in_g_x0 as f
     check_mm_in_g_x0 = f
+    from mmgroup.mm_order import compute_order_vector
+    compute_order_vector()
+    from mmgroup.mm15 import op_reduce_M as f
+    mm_op15_reduce_M = f
 
 
-###########################################################################
-# Import functions from module ``mmgroup.structures.xsp2_co1`` on demand
-###########################################################################
 
-
-# Functions to be imported from modules mmgroup.structures.xsp2_co1
-# and mmgroup.structures.involutions
-Xsp2_Co1 = None
-xsp2co1_to_mm = None
-reduce_via_power = None
-
-
-def import_Xsp2_Co1():
-    global Xsp2_Co1, xsp2co1_to_mm, reduce_via_power
-    from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
-    Xsp2_Co1 = f
-    from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
-    xsp2co1_to_mm = f
-    from mmgroup.structures.involutions import reduce_via_power as f
-    reduce_via_power = f
 
 
 ###########################################################################
@@ -525,7 +512,7 @@ class MM(MM0):
 
 
     """
-    MIN_LEN = 64
+    MIN_LEN = 128
     __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, i = None, *args, **kwds):
         self.reduced = 0
@@ -533,6 +520,7 @@ class MM(MM0):
         self._data = np.fromiter(atoms, dtype = np.uint32) 
         self.length = len(self._data)
         self._extend(self.MIN_LEN)
+        self.reduce()
 
 
 
@@ -558,14 +546,11 @@ class MMGroup(AbstractMMGroup):
     Elements of the monster group are implemented as instances of class
     ``MM``. 
     """
+    ERR_REDUCE = "Reduction in monster group failed"
     __instance = None
     word_type = MM
     group_name = "M"
 
-    def __new__(cls):
-        if MMGroup.__instance is None:
-             MMGroup.__instance = AbstractMMGroup.__new__(cls)
-        return MMGroup.__instance
 
     def __init__(self):
         """ TODO: Yet to be documented     
@@ -578,16 +563,26 @@ class MMGroup(AbstractMMGroup):
 
     def reduce(self, g1, copy = False):
         l1 = g1.length
-        if g1.reduced < l1:
+        if not g1.reduced:
+            if not mm_op15_reduce_M:
+                import_mm_order_functions() 
             if copy:
-                g1 = self.copy_word(g1)
-            l_tail = l1 - g1.reduced
-            g1._extend(l1 + l_tail + 1)
-            g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
-            tail =  g1._data[l1:]
-            l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-            g1.reduced = g1.length = l1
-        return g1
+                g2 = self.word_type()
+                length = mm_op15_reduce_M(g1._data, g1.length, g2._data)
+                if not 0 <= length <= 128:
+                    raise ValueError(self.ERR_REDUCE)
+                g2.length = length
+                g2.reduced = True
+                return g2
+            else:
+                a = np.zeros(128, dtype = np.uint32)
+                length = mm_op15_reduce_M(g1._data, g1.length, a)
+                if not 0 <= length <= 128:
+                    raise ValueError(self.ERR_REDUCE)
+                g1._setdata(a[:length])
+                g1.reduced = True
+                return g1
+        return self.copy(g1) if copy else g1
 
         
     def _imul(self, g1, g2):
@@ -599,13 +594,16 @@ class MMGroup(AbstractMMGroup):
         g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
         tail = g1._data[l1:]
         l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-        g1.reduced = g1.length = l1
+        g1.reduced = l1 == 0
+        g1.length = l1
+        g1.reduce()
         return g1
 
     def _invert(self, g1):
         w = self.word_type()
         w._setdata(np.flip(g1.mmdata) ^ 0x80000000)
-        return self.reduce(w)
+        w.reduced = False
+        return w
 
     def copy_word(self, g1):
         result = self.word_type()
@@ -628,7 +626,12 @@ class MMGroup(AbstractMMGroup):
                  return True
             raise ValueError("Don't know if monster group elements are equal")
 
-
+    def str_word(self, g):
+        try:
+            g.reduce()
+        except:
+            pass
+        return super(MMGroup, self).str_word(g)
 
 
 
