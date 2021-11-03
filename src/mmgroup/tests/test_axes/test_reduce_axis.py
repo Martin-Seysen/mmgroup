@@ -65,7 +65,7 @@ def short(v, value):
     return short[:l]
 
 
-def span(v, value, verbose = 1):
+def span(v, value, verbose = 0):
     """Return certain subspace of short vectors in Leech lattice mod 2
 
     Let ``v`` be a vector in the rep of the moster mod 15, and let
@@ -88,7 +88,7 @@ def span(v, value, verbose = 1):
     l1 = leech2_matrix_expand(basis, dim, v2new)
     return v2new[:l1]
 
-def radical(v, value, verbose = 1):
+def radical(v, value, verbose = 0):
     """Return certain subspace of short vectors in Leech lattice mod 2
 
     Let ``v`` be a vector in the rep of the moster mod 15, and let

@@ -77,7 +77,7 @@ def equ_modp(a1, a2, p):
          diff = (a1 * SH - a2 * SH) % p
          return diff == 0
     if a1.shape == a2.shape:
-        b1, b2 = a1.astype(float), a2.astype(np.float)
+        b1, b2 = a1.astype(float), a2.astype(float)
         diff = (b1 * SH - b2 * SH) % p
         #print(p);print(a1); print(a2)
         return (diff == 0).all()
