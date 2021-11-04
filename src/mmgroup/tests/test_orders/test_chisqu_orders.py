@@ -6,7 +6,7 @@ import sys
 import os
 from multiprocessing import cpu_count
 
-from mmgroup.tests.test_mm.check_monster_orders import check_chisqu_orders
+from mmgroup.tests.test_orders.check_monster_orders import check_chisqu_orders
 
 import pytest
 
@@ -17,7 +17,7 @@ NPROCESSES =  max(1, cpu_count() - 1)
 
 #@pytest.mark.very_slow
 @pytest.mark.slow
-@pytest.mark.mm
+@pytest.mark.orders
 @pytest.mark.user
 def test_chisqu_orders(ntests = NTESTS, nprocesses = NPROCESSES):
     ok = check_chisqu_orders(ntests, nprocesses)

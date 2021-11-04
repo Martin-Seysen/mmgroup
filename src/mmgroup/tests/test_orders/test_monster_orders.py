@@ -19,7 +19,7 @@ if __name__ == "__main__":
     print("SRC_DIR ==", SRC_DIR)
     sys.path.append(SRC_DIR)
 
-from mmgroup.tests.test_mm.check_monster_orders import check_mm_orders
+from mmgroup.tests.test_orders.check_monster_orders import check_mm_orders
 
 NTESTS = 100
 

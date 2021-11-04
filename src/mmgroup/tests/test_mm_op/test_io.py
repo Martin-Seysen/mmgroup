@@ -167,7 +167,7 @@ def do_test_random_io(p, verbose = False, to_sparse = 1):
         print("\nChisqu test failed for p=%d and %s !!\n" % (p,errors))
         raise ValueError("Chisquare test failed for p=%d " % p)
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_all_random_io(verbose = 0):
     print("Chisquare test for randomization of an mm vector")
     for i in range(2):
@@ -263,7 +263,7 @@ def do_test_sym_io_bad(p, tag, verbose = 1):
 
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_sym_all(verbose = 0):
     print("Test io operations for tags ABC")
     for tag in "ABC":
@@ -317,7 +317,7 @@ def do_test_large_io(p, tag, verbose = 0):
         assert eq, (tag, v[tag, slices[0], slices[1]], data)
     v.check()
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_large_all(verbose = 0):
     print("Test io operations for tags TXYZ")
     for tag in "TXYZ":

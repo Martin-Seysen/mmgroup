@@ -154,7 +154,7 @@ def prep_xy_testcases():
             yield v1,  prep_xy(eps, e, f)
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_prep_xy(verbose = 0):
     print("Testing preparation of operation x-y...")
     for v, op in prep_xy_testcases():

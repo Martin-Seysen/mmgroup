@@ -151,7 +151,7 @@ def even_testcases():
         yield randint(0, 0xfff) & 0x7ff, randint(0, mat24.MAT24_ORDER - 1)
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 @pytest.mark.parametrize("testcases", [pi_testcases])
 def test_prep_pi(testcases, verbose = 0):
     e = "\n" if verbose else ""

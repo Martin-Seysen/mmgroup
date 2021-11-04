@@ -24,8 +24,8 @@ from mmgroup.clifford12 import xsp2co1_trace_4096
 from mmgroup.clifford12 import xsp2co1_traces_small
 from mmgroup.clifford12 import xsp2co1_traces_all
 
-from mmgroup.tests.test_mm.check_monster_orders import ClassOrders
-from mmgroup.tests.test_mm.check_monster_orders import CharacterValues
+from mmgroup.tests.test_orders.check_monster_orders import ClassOrders
+from mmgroup.tests.test_orders.check_monster_orders import CharacterValues
 
 #####################################################################
 # Create test matrices

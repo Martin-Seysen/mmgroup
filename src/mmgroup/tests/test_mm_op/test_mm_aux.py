@@ -6,7 +6,7 @@ import pytest
 from mmgroup.dev.mm_basics.mm_basics import MM_Basics
 from mmgroup import mm
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_mm_aux_mmv_size():
     for i in range(2,9):
         p = 2**i - 1

@@ -169,7 +169,7 @@ def one_test_op_xi(v, exp, verbose = 1):
   
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_op_xi(n_cases = 150, verbose = 0):
     print("Testing monomial operation of xi")
     i = 0

@@ -290,7 +290,7 @@ def op_testcases(p):
                 yield v, g
  
    
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_op(f_mul = None, verbose = 0):
     print("Testing group operation on sparse vectors")
     i = 0
@@ -376,7 +376,7 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     
     
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_rand_op(n_tests = 3, f_mul = None, verbose = 0):
     print("Testing group operation on random vectors")
     for i in range(n_tests):
@@ -409,7 +409,7 @@ def tag_A_testwords():
     yield [(c, "n") for c in "dpxyl" * 3]
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 1):
     print("Testing group operation on random vectors")
     for i in range(n_tests):

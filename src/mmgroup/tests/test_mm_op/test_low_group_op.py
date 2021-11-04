@@ -7,8 +7,8 @@ from collections import defaultdict
 import pytest
 
 
-from mmgroup.tests.test_mm.test_group_op import test_op, test_rand_op
-from mmgroup.tests.test_mm.test_group_op import one_test_rand_op
+from mmgroup.tests.test_mm_op.test_group_op import test_op, test_rand_op
+from mmgroup.tests.test_mm_op.test_group_op import one_test_rand_op
 from mmgroup.mm_space import characteristics
 from mmgroup.tests.spaces.spaces import MMTestSpace
 from mmgroup.structures.mm0_group import MM0
@@ -63,7 +63,7 @@ def mul_group(v, g):
     return v
    
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_low_group_op():
     print("")
     test_op(f_mul = mul_group, verbose = 0)
@@ -89,7 +89,7 @@ def f_mul_delta_pi(v, g):
 
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_op_delta_pi(verbose = 0):
     print("Testing group operation delta * pi")
     for p in PRIMES:
@@ -119,7 +119,7 @@ def f_mul_yx(v, g):
     return v1
 
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_op_yx(verbose = 0):
     print("Testing group operation yx")
     for p in PRIMES:
@@ -145,7 +145,7 @@ def f_mul_omega(v, g):
     v.ops.op_omega(v1.data, x)
     return v1
 
-@pytest.mark.mm
+@pytest.mark.mm_op
 def test_op_omega(verbose = 0):
     print("Testing group operation x_Omega")
     for p in PRIMES:
