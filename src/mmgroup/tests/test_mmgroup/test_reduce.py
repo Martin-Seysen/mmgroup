@@ -41,24 +41,27 @@ def one_test_reduce(g, verbose = 0):
 
 # Support for multiprocessing         
 POOL_MAGIC = 0x23f124ee
-NPROCESSES =  max(0, cpu_count() - 2)
+NPROCESSES =  max(1, cpu_count() - 1)
+#NPROCESSES = 1
 
-def pool_test_reduce(ncases):
-   for g in reduce_testcases(ncases):
-       one_test_reduce(g, verbose = 0)
-   return POOL_MAGIC 
+def single_test_reduce(ncases, verbose = 0):
+     for i, g in enumerate(reduce_testcases(ncases)):
+         if verbose:
+              print("Test", i+1)
+         one_test_reduce(g, verbose = verbose)
+     return POOL_MAGIC 
 
 
 # The final test programm
 @pytest.mark.mmgroup 
-def test_reduce(ncases = 1, verbose = 0):
+def test_reduce(ncases = 10, verbose = 0):
+    if verbose or NPROCESSES <= 1:
+        single_test_reduce(ncases, verbose = verbose)
+        return    
     with Pool(processes = NPROCESSES) as pool:
-         testvalues = [ncases] * NPROCESSES
-         results = pool.map(pool_test_reduce, testvalues)
-         for i, g in enumerate(reduce_testcases(ncases)):
-             if verbose:
-                  print("Test", i+1)
-             one_test_reduce(g, verbose=verbose)
+        num_cases = (ncases - 1) // (NPROCESSES)  + 1
+        testvalues = [num_cases] * NPROCESSES
+        results = pool.map(single_test_reduce, testvalues)
     pool.join()
     assert results ==  [POOL_MAGIC] * NPROCESSES
 
