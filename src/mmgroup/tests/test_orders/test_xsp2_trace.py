@@ -59,7 +59,7 @@ def xsp2xco1_v2type(vtype):
         raise ValueError("No Leech lattice vector of type", vtype)
 
 
-@pytest.mark.xsp2co1
+@pytest.mark.orders
 def test_xsp2_count_table():
     use_table = 1
     table = [0] * 5
@@ -122,7 +122,7 @@ def character_testcases():
     for i in range(200):
         yield  rand_xsp2co1_elem()
 
-@pytest.mark.xsp2co1
+@pytest.mark.orders
 def test_xsp2_characters(verbose = 0):
     if verbose:
         print("Test character calculation in G_x0")

@@ -23,7 +23,7 @@ from mmgroup.tests.test_orders.check_monster_orders import check_mm_orders
 
 NTESTS = 100
 
-@pytest.mark.mm 
+@pytest.mark.orders 
 @pytest.mark.build
 def test_mm_orders():
     check_mm_orders(ntests = NTESTS, display = False)

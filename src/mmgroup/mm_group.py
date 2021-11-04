@@ -522,6 +522,14 @@ class MM(MM0):
         self._extend(self.MIN_LEN)
         self.reduce()
 
+    def _t_shape(self):
+        l = []
+        self.reduce()
+        for d in self.mmdata:
+            tag = (d >> 28) & 7
+            if tag == 5: l.append('T')
+            if tag == 6: l.append('x')
+        return "<" + "".join(l) + ">"
 
 
 

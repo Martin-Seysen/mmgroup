@@ -263,7 +263,7 @@ def in_gx0_testdata():
 ###########################################################################
 
 
-@pytest.mark.mm
+@pytest.mark.orders
 def test_in_gx0(verbose = 0):
     print("Testing function check_mm_in_g_x0()")
     for n, (g, in_g_x0) in enumerate(in_gx0_testdata()):

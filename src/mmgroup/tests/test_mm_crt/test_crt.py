@@ -93,7 +93,7 @@ def g_shift(g):
     return shift
 
 @pytest.mark.slow
-@pytest.mark.mm
+@pytest.mark.mm_op_crt
 def test_random_io(verbose = 0):
     n = 1
     for k in [17, 20]:

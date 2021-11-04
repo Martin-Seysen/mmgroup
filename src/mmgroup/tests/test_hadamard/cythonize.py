@@ -307,7 +307,7 @@ def cythonize():
                      "build_ext", "--inplace",
                 ]
                 if compiler: 
-                    command.append("-c " + compiler)
+                    command.append("-c" + compiler)
                 if subprocess.call(command) == 0:
                     return
             except FileNotFoundError:

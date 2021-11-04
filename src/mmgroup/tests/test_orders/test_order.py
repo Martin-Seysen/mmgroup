@@ -78,7 +78,7 @@ def order_testcases(group):
                 yield g, order
 
    
-@pytest.mark.mm
+@pytest.mark.orders
 def test_order(verbose = 0):
     group = MM0
     for n, (g, ref_order) in enumerate(order_testcases(group)):
@@ -165,7 +165,7 @@ def equality_testcases(group):
                 yield g1, g2, ref_equal_random(g1, g2)
 
 
-@pytest.mark.mm
+@pytest.mark.orders
 def test_equality(verbose = 0):
     group = MM0
     for n, (g1, g2, ref_equal) in enumerate(equality_testcases(group)):
@@ -203,7 +203,7 @@ def g_complexity(g):
 
 
 
-@pytest.mark.mm
+@pytest.mark.orders
 def test_reduce_G_x0(verbose = 0):
     for n, g in enumerate(make_reduce_testcases()):
         g1 = reduce_mm(g.copy(), check = False)
