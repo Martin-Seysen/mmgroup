@@ -95,9 +95,9 @@ from mmgroup.structures.cocode import Cocode
 from mmgroup.structures.autpl import AutPL, AutPlGroup
 from mmgroup.structures.construct_mm import add_to_embedded_classes
 
-from mmgroup.generators import gen_xi_mul_leech
-from mmgroup.generators import gen_xi_pow_leech
-from mmgroup.generators import gen_xi_scalprod_leech
+from mmgroup.generators import gen_leech2_mul
+from mmgroup.generators import gen_leech2_pow
+from mmgroup.generators import gen_leech2_scalprod
 from mmgroup.generators import rand_get_seed, gen_leech2_type
 
 ERR_RAND = "Illegal string for constricting type %s element" 
@@ -392,7 +392,7 @@ class XLeech2(AbstractGroupWord):
 
     def __mul__(self, other):
         if isinstance(other, XLeech2):
-            return XLeech2(gen_xi_mul_leech(self.value, other.value))
+            return XLeech2(gen_leech2_mul(self.value, other.value))
         elif isinstance(other, AbstractMMGroupWord):
             data = other.data
             v = gen_leech2_op_word(self.value, data, len(data))
@@ -412,7 +412,7 @@ class XLeech2(AbstractGroupWord):
 
     def __rmul__(self, other):
         if isinstance(other, XLeech2):
-            return XLeech2(gen_xi_mul_leech(other.value, self.value))
+            return XLeech2(gen_leech2_mul(other.value, self.value))
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 return XLeech2(self.value ^ ((other & 2) << 23))
@@ -433,20 +433,20 @@ class XLeech2(AbstractGroupWord):
 
     def __pow__(self, other):
         if isinstance(other, Integral):            
-            return XLeech2(gen_xi_pow_leech(self.value, other & 3))
+            return XLeech2(gen_leech2_pow(self.value, other & 3))
         elif isinstance(other, XLeech2):
             ov = other.value
             v = self.value
-            w = gen_xi_mul_leech(gen_xi_pow_leech(ov, 3), v)
-            w = gen_xi_mul_leech(w, ov)
+            w = gen_leech2_mul(gen_leech2_pow(ov, 3), v)
+            w = gen_leech2_mul(w, ov)
             return XLeech2(w)
         else:
             return NotImplemented
         
     def __truediv__(self, other):
         if isinstance(other, XLeech2):
-            v = gen_xi_pow_leech(other.value, 3)
-            return XLeech2(gen_xi_mul_leech(self.value, other.value))
+            v = gen_leech2_pow(other.value, 3)
+            return XLeech2(gen_leech2_mul(self.value, other.value))
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 v = (other & 2) << 23
@@ -454,7 +454,7 @@ class XLeech2(AbstractGroupWord):
                 NotImplemented  
         else:           
             return NotImplemented
-        return XLeech2(gen_xi_mul_leech(self.value, v))
+        return XLeech2(gen_leech2_mul(self.value, v))
 
     def __itruediv__(self, other):
         self.value = self.__itruediv__(other).value
@@ -463,9 +463,9 @@ class XLeech2(AbstractGroupWord):
 
                              
     def __rtruediv__(self, other):
-        v = gen_xi_pow_leech(other.value, 3)
+        v = gen_leech2_pow(other.value, 3)
         if isinstance(other, XLeech2):
-            return XLeech2(gen_xi_mul_leech(other.value, v))
+            return XLeech2(gen_leech2_mul(other.value, v))
         elif isinstance(other, Integral):
             if abs(other) == 1:
                 return XLeech2(v ^ ((other & 2) << 23))
@@ -486,7 +486,7 @@ class XLeech2(AbstractGroupWord):
             ov = ploop.value & 0xfff
         else:
             return NotImplemented
-        return Parity(gen_xi_scalprod_leech(self.value, ov))
+        return Parity(gen_leech2_scalprod(self.value, ov))
 
 
     __rand__ = __and__

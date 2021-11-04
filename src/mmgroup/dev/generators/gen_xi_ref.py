@@ -362,16 +362,6 @@ class GenXi(object):
         x ^= gc << 12   # xor g(cocode) to code
         return x
 
-    @staticmethod
-    def gen_xi_mul_leech(x1, x2):
-        """Return product of two elements the group  Q_x0.
-
-        The two factors X1, X1 are coded as integers x1, x2 as in 
-        method xi_op_xi. The product is returned in the same form. 
-        """
-        x1 ^= Mat24.scalar_prod(x2 >> 12, x1) << 24;
-        x1 ^= x2 
-        return x1
 
 
 

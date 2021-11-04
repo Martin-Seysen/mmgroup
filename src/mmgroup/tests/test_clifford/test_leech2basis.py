@@ -12,7 +12,7 @@ from functools import reduce
 
 from mmgroup import MM0, MMSpace, MMV
 from mmgroup.generators import gen_leech3_op_vector_word
-from mmgroup.generators import gen_xi_scalprod_leech
+from mmgroup.generators import gen_leech2_scalprod
 from mmgroup.clifford12 import bitmatrix64_echelon_h
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_orthogonal
@@ -70,7 +70,7 @@ def test_leech2_matrix_orthogonal():
         assert ka1 ==  ko1
         for v in a1:
             for w in o1:
-                assert gen_xi_scalprod_leech(v, w) == 0
+                assert gen_leech2_scalprod(v, w) == 0
                  
 
 

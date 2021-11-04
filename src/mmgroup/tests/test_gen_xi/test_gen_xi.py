@@ -14,6 +14,7 @@ import pytest
 from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup import generators as gen  
+from mmgroup.generators import gen_leech2_mul
 
         
 
@@ -44,7 +45,7 @@ TEST_PAR = [(GenXi, 200), (gen, 2000)]
 @pytest.mark.parametrize("gen_xi_class, ntests", TEST_PAR )
 def test_gen_xi_leech(gen_xi_class, ntests):
     xi = gen_xi_class.gen_xi_op_xi 
-    mul =  gen_xi_class.gen_xi_mul_leech 
+    mul =  gen_leech2_mul
 
     xl_old =  [0,0,0]
     for x in xi_samples(ntests):
@@ -146,14 +147,12 @@ def test_gen_xi_short(gen_xi_class, ntests):
 @pytest.mark.parametrize("gen_xi_class, ref", [(gen, GenXi)])
 def test_gen_xi_ref(gen_xi_class, ref, ntests=200):       
     xi, xi_ref = gen_xi_class.gen_xi_op_xi, ref.gen_xi_op_xi 
-    mul, mul_ref = gen_xi_class.gen_xi_mul_leech, ref.gen_xi_mul_leech 
 
     x_old = 0
     for x in xi_samples(ntests):
         for i in range(0,3):
            res, ref_ = xi(x, i), xi_ref(x, i)
            assert res == ref_ , lmap(hex,[i, x,res, ref_ ])
-        assert mul(x, x_old) == mul_ref(x, x_old)
         assert gen_xi_class.gen_xi_g_gray(x) == ref.gen_xi_g_gray(x)
         assert gen_xi_class.gen_xi_w2_gray(x) == ref.gen_xi_w2_gray(x)
         assert gen_xi_class.gen_xi_g_cocode(x) == ref.gen_xi_g_cocode(x)
