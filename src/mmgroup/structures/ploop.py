@@ -274,7 +274,7 @@ class PLoop(GCode):
     __slots__ = "value", "bit_list_"
     parity_class = GCode
 
-    def __init__(self, value):
+    def __init__(self, value = 0):
         if isinstance(value, Integral):
             self.value = value & 0x1fff
             return

@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pytest
 
-from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
+from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_is_type2
 from mmgroup.generators import gen_leech2_count_type2
@@ -249,4 +249,32 @@ def test_leech2_self(fast = 1, verbose = 0):
     assert result == 98280, result
     if verbose:
         print("passed, %.3f ms" % (1000*t))
+
+#####################################################################
+# Test method subtype of class Xsp2Co1
+#####################################################################
+
+
+def subtype_testdata():
+    yield XLeech2(~PLoop())
+    yield XLeech2(Cocode([0,1,2,3]))
+    yield XLeech2(~PLoop(list(range(8))))
+    yield XLeech2(~PLoop(list(range(8))), Cocode([8,9]))
+    for i in range(50):
+        yield XLeech2('r', 4)
+
+
+@pytest.mark.xsp2co1
+def test_subtype():
+    OMEGA = XLeech2(~PLoop())
+    types = set()
+    for v in subtype_testdata():
+         g = MM('c', v)
+         v2 =  Xsp2_Co1(g).subtype
+         v2ref = (OMEGA * g).subtype
+         assert v2 == v2ref, (v2, v2ref)
+         types.add(v2)
+    assert len(types) == 6
+
+
 

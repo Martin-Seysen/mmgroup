@@ -1565,6 +1565,13 @@ static inline void insertsort_i8(uint8_t *a1, uint8_t *a2, int32_t n)
   in ``Mat24`` is returned in the array referred by ``p_out``.
   The returned permutation depends on the mapping ``h1 -> h2`` only,
   regardless of the order of the entries in ``h1``.
+
+  Caution:
+
+  Some input mappings allow several output permutations. Changing the
+  implementation of this function such that the same input leads to
+  a different output permutation destroys the interoperability between
+  different versions of the project!!
 */
 // %%EXPORT p
 uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_out)
@@ -1621,6 +1628,10 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
     // Try to find an index ``i8 >= 5`` such that ``p1[i8]`` is in
     // the octad ``o1``. Try to find an index ``i16 >= 5`` such 
     // that ``p1[i16]`` is not in the octad ``o1``.
+    // Index ``i8 == 24`` means 'no entry found'.
+    // Index ``i16 == 25 means`` 'no entry found'.
+    // If no entry has ben found the we will later put some entry
+    // into  ``p1[i8]`` or ``p1[i16]``.
     i8 = 24;  // This is a rather bad index
     i16 = 25;  // This is a rather bad index
     for (i = 5; i < n; ++i) {

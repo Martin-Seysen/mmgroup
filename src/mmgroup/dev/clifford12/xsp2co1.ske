@@ -1626,7 +1626,7 @@ encodes a generator of \f$G_{x0}\f$ as described in file
 ``mmgroup_generators.h``. The function returns the length of that
 word.
 
-The **redcued** word stored in the array ``a`` may have up to 10
+The **reduced** word stored in the array ``a`` may have up to 10
 entries. The tags of the entries in that word are ``xdyplplplp``
 in that order. See documentation of class ``mmgroup.MMGroup`` for
 the meaning of these tags. Each entry of a word may encode the
@@ -1664,6 +1664,38 @@ int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
     res = xsp2co1_set_elem_word(elem, a, n);
     if (res < 0) return res;
     return elem_to_word(elem, a1, 0);
+}
+
+
+
+/**
+@brief Return the subtype of an element of \f$G_{x0}\f$
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
+returns the subtype of \f$g\f$. If \f$g\f$ maps the standard 
+frame \f$\Omega\f$ of the Leech lattice modulo 2 to a frame of
+subtype \f$t\f$ then \f$g\f$ has subtype \f$t\f$.
+
+The subtype is returned as an integer as in 
+function ``gen_leech2_type`` in module ``gen_leech.c``.
+
+Since the subtype is determined by the size of the denominators
+of the representation \f$4096_x\f$, it can be computed very fast.
+
+The function returns -1 in case of an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_subtype(uint64_t *elem)
+{
+    // Entry i in the following table is the subtype of a
+    // matrix in the rep 4096_x with denominators 2 ** (-i).
+    static int8_t SUBTYPES[8] = {
+        0x48, -1, 0x40, 0x42, 0x44, 0x43, 0x46, -1
+    };
+    uint_fast32_t i = 26;
+    while (i && elem[i-1] == 0) --i;
+    i -= 14;
+    return  (i & 0xfffffff1L) ? -1 : SUBTYPES[i >> 1];
 }
 
 

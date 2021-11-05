@@ -41,6 +41,7 @@ from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_involution_orthogonal
 from mmgroup.clifford12 import xsp2co1_conjugate_elem
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
+from mmgroup.clifford12 import xsp2co1_elem_subtype
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 
@@ -229,6 +230,36 @@ class Xsp2_Co1(AbstractMMGroupWord):
         chk_qstate12(len_a)
         return (len_a >> 8), mmgroup('a', a[:len_a & 0xff])
 
+
+
+    def _qs_v2(self):
+        i = 26
+        while i and int(self._data[i-1] == 0):
+            i -= 1
+        i -= 14
+        assert i & 1 == 0 and 0 <= i <= 12
+        return i >> 1
+        
+    @property
+    def subtype(self):
+        """Return subtype of an element
+
+        Let :math:`g \in G_{x0}` be stored in ``self``. The function
+        returns the subtype of a :math:`g`. If :math:`g` maps the 
+        standard frame :math:`\Omega` of the Leech lattice modulo 2 
+        to a frame of subtype :math:`t` then :math:`g` has 
+        subtype :math:`t`.
+
+        The subtype is returned as a pair of integers as in the 
+        corresponding method in class |XLeech2|.
+
+        Since the subtype is determined by the size of the denominators
+        of the representation :math:`4096_x`, it can be computed very 
+        fast.
+        """
+        res = xsp2co1_elem_subtype(self._data)
+        assert res & 0x40 == 0x40
+        return res >> 4, res & 0xf
 
 
 ###########################################################################

@@ -99,6 +99,7 @@ from mmgroup.generators import gen_leech2_mul
 from mmgroup.generators import gen_leech2_pow
 from mmgroup.generators import gen_leech2_scalprod
 from mmgroup.generators import rand_get_seed, gen_leech2_type
+from mmgroup.generators import gen_leech2_op_word
 
 ERR_RAND = "Illegal string for constricting type %s element" 
 
@@ -198,7 +199,7 @@ def rand_xleech2_type(vtype):
 
 
 def value_from_ploop(ploop=0, cocode = None, *args):
-    c = Cocode(cocode) if cocode else 0
+    c = Cocode(cocode).ord if cocode else 0
     if isinstance(ploop, Integral):
         d = ploop 
     elif isinstance(ploop, PLoop):
@@ -394,7 +395,7 @@ class XLeech2(AbstractGroupWord):
         if isinstance(other, XLeech2):
             return XLeech2(gen_leech2_mul(self.value, other.value))
         elif isinstance(other, AbstractMMGroupWord):
-            data = other.data
+            data = other.mmdata
             v = gen_leech2_op_word(self.value, data, len(data))
             return XLeech2(v)
         elif isinstance(other, Integral):
@@ -597,7 +598,8 @@ class XLeech2(AbstractGroupWord):
         return t >> 4, t & 15
 
 
-
+    def as_Q_x0_atom(self):
+        return self.value & 0x1ffffff
 
 add_to_embedded_classes(XLeech2)
 

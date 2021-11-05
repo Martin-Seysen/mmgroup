@@ -95,7 +95,7 @@ static inline
 uint32_t apply_perm_heptad(uint32_t v2, uint8_t *p_src, uint8_t *p_dest, uint32_t *p_res)
 {
     uint8_t p[24];
-    mat24_perm_from_heptads(p_src, p_dest, p);
+    if (mat24_perm_from_heptads(p_src, p_dest, p) != 0) return 0;
     return apply_perm(v2, p, p_res);
 }
 
@@ -114,7 +114,9 @@ uint32_t apply_perm_map(uint32_t v2,
      uint8_t *p_src, uint8_t *p_dest, uint32_t n, uint32_t *p_res)
 {
     uint8_t p[24];
-    mat24_perm_from_map(p_src, p_dest, n, p);
+    uint32_t res;
+    res = mat24_perm_from_map(p_src, p_dest, n, p);
+    if (res < 1 || res > 3) return 0;
     return apply_perm(v2, p, p_res);
 }
 
@@ -165,226 +167,6 @@ int32_t map_to_standard12_xi_exp(uint32_t v2)
 
 
 
-/*************************************************************************
-*** Reduce type-4 vector  mod 2
-*************************************************************************/
-
-
-/**
-  @brief Map a frame in the Leech lattice to the standard frame
-  
-  A frame in the Leech lattice \f$\Lambda\f$ is a maximal set
-  of type-4 vectors which are equal modulo \f$2 \Lambda\f$. 
-  A frame is equivalent to a type-4 vector in 
-  \f$\Lambda / 2 \Lambda\f$. 
-  
-  Let \f$v_2 \in \Lambda / 2 \Lambda\f$ of type 4 be given by 
-  parameter ``v2`` in Leech lattice encoding. Then the function 
-  constructs a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to the 
-  standard frame \f$\Omega\f$. The standard frame \f$\Omega\f$ 
-  consists of the type-4 vectors parallel to the coordinate axes.
-  
-  The element \f$g\f$ is returned as a word in the generators
-  of \f$G_{x0}\f$ of length \f$n \leq 6\f$. Each atom of the 
-  word \f$g\f$ is encoded as  defined in the header file 
-  ``mmgroup_generators.h``. Let \f$H\f$ be the stabilizer of
-  \f$\Omega\f$.  We choose a representative  \f$g\f$ in
-  the coset \f$gH\f$ such that the inverse  \f$g^{-1}\f$ 
-  is a short as possible.
-
-  The function stores \f$g\f$ as a word of generators in the
-  array ``pg_out`` and returns the length  \f$n\f$  of that
-  word. It returns a negative number in case of failure, 
-  e.g. if \f$v_2\f$ is not of type 4.
-  
-  The function uses the method described in the
-  ``The mmgroup guide for developers``, section  
-  ``Computations in the Leech lattice modulo 2``.  
-*/
-// %%EXPORT px
-int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
-{
-    uint32_t *pg_end = pg_out; // pointer to end of word g
-    uint32_t  vtype;           // subtype of current vector v2
-    uint32_t  gc;              // Golay code part of v2 in vector rep
-    uint32_t  coc;             // Cocode part of v2 in cocode rep
-    uint32_t  i;
-    int32_t exp;               // exponent of \f$xi\f$
-
-    // In the main loop we change vector v2 to a vector of a simpler
-    // subtype. Therefore we first apply a permutation pi and
-    // then a power of xi to v2.
-    for (i = 4; i; --i ) {
-        // Compute Golay code part and cocode part of v2
-        gc = mat24_gcode_to_vect(v2 >> 12);
-        coc = (v2 ^  mat24_ploop_theta(v2 >> 12)) & 0xfff;
-        // Compute subtype of v2
-        vtype = gen_leech2_type(v2);
-        // Depending on the subype of v2, we apply a permutation
-        // pi and we calculate a exponent  exp such that
-        // v2 * pi * ex has a simpler sybtype.
-        switch (vtype) {
-            case 0x48:
-                // All done: return length of word g
-                return (int32_t)(pg_end - pg_out);
-            case 0x40:
-                // Map v2 to a vector of subtype 48
-                {
-                    uint8_t sextet[24];
-                    if (v2 & 0x7ffbff) {
-                        // If coc is not grey:
-                        // Compute sextet corresponding to coc, and map
-                        // the first tetrad of that sextet to (0,1,2,3)
-                        if (mat24_cocode_to_sextet(coc, sextet) < 0) 
-                             return -0x10000 + 0x100 * vtype + 1;
-                        sextet[6] = sextet[8];
-                        v2 = apply_perm_heptad(v2,
-                            sextet, RED_STD_HEPTAD, pg_end++);
-                    }
-                    // exp = 2 - <gcode, omega>, where omega is the
-                    // standard sextet represented by (0,1,2,3).
-                    exp = 2 - ((v2 >> 23) & 1);
-                }
-                break;
-            case 0x42:
-                // Map v2 to a vector of subtype 40
-                // Perform a permutation on v2 if necessary
-                if ((exp = map_to_standard12_xi_exp(v2)) < 0) {
-                    uint8_t oct[24], *poct = oct;
-                    uint32_t w;
-                    // Complement gc if it has weight 16, so that gc is an
-                    // octad. Let poct[0...7] be the elements of that octad.
-                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
-                    poct = oct + (w & 16);
-                    // Map octad gc to the standard octad (0,...,7)
-                    poct[6] = oct[(w & 16) ? 0 : 8];
-                    v2 = apply_perm_heptad(v2, poct, RED_STD_HEPTAD, 
-                        pg_end++);
-                    // Now we may calculate a suitable exponent of xi
-                    // so that xi**exp transforms v2 to type 40.
-                    exp = map_to_standard12_xi_exp(v2);
-                    // Abort with fatal error if this fails
-                    if (exp < 0) return -0x10000 + 0x100 * vtype + 1;
-                }
-                break;
-            case 0x44:
-                // Map v2 to a vector of subtype 40
-                // Perform a permutation on v2 if necessary
-                if ((exp = map_to_standard12_xi_exp(v2)) < 0) {
-                    uint8_t oct[24], syn_list[24], a2_list[24], *poct = oct;
-                    uint32_t w, syn, a = 0, a1, a2, j, special;
-                    // Complement gc if it has weight 16, so that gc is an
-                    // octad. Let poct[0...7] be the elements of that octad.
-                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
-                    poct = oct + (w & 16);
-                    gc ^= (w & 16) ? 0xffffff : 0;
-                    // If |coc| == 2 then let syn_list[0,1] be the syndrome 
-                    // list of coc. If |coc| == 4 the let T be a tetrad 
-                    // intersecting with gc, and let syn_list[0,1] be
-                    // the set of elements of T that are not in gc. Abort
-                    // with fatal error if syn_list has length != 2.      
-                    syn =  mat24_cocode_syndrome(coc, poct[0]) & ~gc;
-                    w = mat24_vect_to_bit_list(syn, syn_list);
-                    if (w != 2) return -0x10000 + 0x100 * vtype + 1;
-                    // Put a = sum(1<<i) for i in (poct[0],...,poct[4])
-                    for (j = 0; j < 5; ++j) a += 1L << poct[j];
-                    a1 = a ^ (1 << syn_list[0]) ^ (1 << syn_list[1]);
-                    // Let special be the syndrome of 
-                    // [poct[0], ..., poct[4],  syn_list[0],  syn_list[1]].
-                    // This must be a singlton; which we call c 
-                    special = mat24_syndrome(a1, 24);
-                    // Let a2_list be the list [poct[0], ..., poct[4]],
-                    // and then remove c from that list. Abort with fatal
-                    // error if that list has not length 4.
-                    a2 = a & ~special;
-                    w = mat24_vect_to_bit_list(a2, a2_list);
-                    // Append [syn_list[0], syn_list[0], c] to the list
-                    // a2_list, so that is has length 7.
-                    if (w != 4) return -0x10000 + 0x100 * vtype + 2;
-                    a2_list[4] = syn_list[0]; a2_list[5] = syn_list[1];
-                    a2_list[6] = (uint8_t)(mat24_lsbit24(a & special));
-                    // Map the heptad a2_list[0...6] to the heptad
-                    // (0,1,2,3,4,5,8). This maps octad gc to the 
-                    // standard octad (0,...,7).
-                    v2 = apply_perm_heptad(v2, 
-                        a2_list, RED_IMG_CASE_44, pg_end++);
-                    // Now we may calculate a suitable exponent of xi
-                    // so that xi**exp transforms v2 to type 40.
-                    exp = map_to_standard12_xi_exp(v2);
-                    // Abort with fatal error if this fails
-                    if (exp < 0) return -0x10000 + 0x100 * vtype + 3;
-                }
-                break;
-            case 0x46:
-                // Map v2 to a vector of subtype 42
-                {
-                    uint8_t dodecad[24], perm[24];
-                    uint32_t scalar;
-                    // Perform a permutation on v2 that maps gc to the
-                    // dodecad (0,1,2,3,8,9,14,15,18,19,22,23)
-                    mat24_vect_to_bit_list(gc, dodecad); 
-                    mat24_perm_from_dodecads(dodecad, RED_STD_DODECAD, 
-                        perm); 
-                    v2 = apply_perm(v2, perm, pg_end++); 
-                    // Put exp = 2 - scalar, where scalar is the scalar
-                    // product of the cocode part 'coc' of the permuted 
-                    // v2 with the standard octad (0,...,7).
-                    coc = mat24_ploop_theta(v2 >> 12) ^ v2;
-                    scalar = mat24_scalar_prod(RED_STD_OCTAD, coc);
-                    exp = 2 - scalar;
-                }
-                break;
-            case 0x43:
-                // Map v2 to a vector of subtype 44
-                {
-                    uint8_t cv_list[24], octad_list[24], rem_list[24];
-                    uint32_t cv, w, j, oct, syn;
-                    // let cv_list[0..2] be the syndrome list of coc. Abort
-                    // with fatal error if that list has not length 3.
-                    cv = mat24_cocode_syndrome(coc, 24);
-                    w = mat24_vect_to_bit_list(cv, cv_list);
-                    if (w != 3) return -0x10000 + 0x100 * vtype + 1;
-                    // Let octad_list[0,...,7] be an octad o containing
-                    // coc, and let octad_list[8] not be in that octad.
-                    oct = 0;
-                    for (j = 0; j < 5; ++j) oct += 1 << cv_list[j];
-                    syn =  mat24_syndrome(oct, 24);
-                    oct ^= syn;
-                    w =  mat24_vect_to_bit_list(oct, octad_list);
-                    if (w != 8) return -0x10000 + 0x100 * vtype + 2;
-                    // Put cv_list = [c0, c1, c2, o0, o1, o2, r] with
-                    // coc = (c0, c1, c2); o0, o1, o2 in o, but not in
-                    // c, an r not in o. 
-                    w = mat24_vect_to_bit_list(oct & ~cv, rem_list);
-                    if (w != 5) return -0x10000 + 0x100 * vtype + 3;
-                    cv_list[3] = rem_list[0]; cv_list[4] = rem_list[1];
-                    cv_list[5] = rem_list[2]; cv_list[6] = octad_list[8];
-                    // Map the heptad cv_list to the standars octad
-                    // (0,...,7)
-                    v2 = apply_perm_heptad(v2, 
-                        cv_list, RED_STD_HEPTAD, pg_end++);
-                    // Put exp = 2 - k, where k is the scalar product of 
-                    // the permuted gcode part of v2 with the standard 
-                    // tetrad represented by (0,1,2,3).
-                    exp = 2 - ((v2 >> 22) & 1);
-                }
-                break;
-            default:
-                // Abort if v is not of type 4
-                return -1L;
-        }
-        // Apply xi**exp to the permuted vector v2
-        if (exp) {
-            v2 = gen_xi_op_xi(v2, exp);       // Apply xi**exp to v2
-            if (v2 & 0xfe000000) return -1L;  // Abort if this fails
-            *pg_end++ = 0xe0000003 - exp;     // Store atom for xi**exp 
-        }
-    } 
-    // Abort if not done after three rounds
-    return -1L;
-}
-
-
 
 /*************************************************************************
 *** Reduce type-2 vector  mod 2
@@ -416,6 +198,13 @@ static uint8_t RED_STD_23[2] =  {2,3};
   array ``pg_out`` and returns the length  \f$n\f$  of that
   word. It returns a negative number in case of failure, 
   e.g. if \f$v_2\f$ is not of type 2.
+
+  Caution:
+
+  An input vector allow several outputs. Changing the
+  implementation of this function such that the same input 
+  leads to a different output destroys the interoperability 
+  between different versions of the project!!
 */
 // %%EXPORT px
 int32_t gen_leech2_reduce_type2(uint32_t v2, uint32_t *pg_out)
@@ -527,7 +316,7 @@ static uint8_t RED_23_23014[5] = {2, 3, 0, 1, 4};
   to  \f$e_2 - e_3\f$, where \f$e_i\f$ is  the \f$i\f$-th basis vector
   of \f$\{0,1\}^{24}\f$.
    
-  Let \f$v_1\f$ be the short vector in the Leech lattice propotional
+  Let \f$v_1\f$ be the short vector in the Leech lattice proportional
   to  \f$e_2 + e_3\f$.  Then the function constructs
   a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to \f$v_1\f$ and
   fixes \f$v_0\f$.
@@ -542,6 +331,13 @@ static uint8_t RED_23_23014[5] = {2, 3, 0, 1, 4};
   word. It returns a negative number in case of failure,
   e.g. if \f$v_2\f$ is not of type 2, or not orthogonal
   to \f$v_0\f$ in the real Leech lattice.
+
+  Caution:
+
+  An input vector allow several outputs. Changing the
+  implementation of this function such that the same input 
+  leads to a different output destroys the interoperability 
+  between different versions of the project!!
  */
 // %%EXPORT px
 int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
@@ -644,6 +440,260 @@ int32_t gen_leech2_reduce_type2_ortho(uint32_t v2, uint32_t *pg_out)
     // Abort if not done after three rounds
     return -1L;
 }
+
+
+
+
+/*************************************************************************
+*** Reduce type-4 vector  mod 2
+*************************************************************************/
+
+
+/**
+  @brief Map a frame in the Leech lattice to the standard frame
+  
+  A frame in the Leech lattice \f$\Lambda\f$ is a maximal set
+  of type-4 vectors which are equal modulo \f$2 \Lambda\f$. 
+  A frame is equivalent to a type-4 vector in 
+  \f$\Lambda / 2 \Lambda\f$. 
+  
+  Let \f$v_2 \in \Lambda / 2 \Lambda\f$ of type 4 be given by 
+  parameter ``v2`` in Leech lattice encoding. Then the function 
+  constructs a \f$g \in G_{x0}\f$ that maps \f$v_2\f$ to the 
+  standard frame \f$\Omega\f$. The standard frame \f$\Omega\f$ 
+  consists of the type-4 vectors parallel to the coordinate axes.
+  
+  The element \f$g\f$ is returned as a word in the generators
+  of \f$G_{x0}\f$ of length \f$n \leq 6\f$. Each atom of the 
+  word \f$g\f$ is encoded as  defined in the header file 
+  ``mmgroup_generators.h``. Let \f$H\f$ be the stabilizer of
+  \f$\Omega\f$.  We choose a representative  \f$g\f$ in
+  the coset \f$gH\f$ such that the inverse  \f$g^{-1}\f$ 
+  is a short as possible.
+
+  The function stores \f$g\f$ as a word of generators in the
+  array ``pg_out`` and returns the length  \f$n\f$  of that
+  word. It returns a negative number in case of failure, 
+  e.g. if \f$v_2\f$ is not of type 4.
+  
+  The function uses the method described in the
+  ``The mmgroup guide for developers``, section  
+  ``Computations in the Leech lattice modulo 2``.  
+
+  We make one additional assertion.
+
+  Let \f$v_0\f$ be the standard short vector in the Leech lattice
+  proportional to \f$e_2 - e_3\f$, where \f$e_i\f$ is the \f$i\f$-th
+  basis vector of \f$\{0,1\}^{24}\f$. If \f$v_0 + v_2\f$ is of
+  type 2 then this function computes the same result as
+  function ``gen_leech2_reduce_type2_ortho`` applied to the
+  vector \f$v_0 + v_2\f$. In this case the result of this function
+  centralizes \f$v_0\f$. This convention greatly simplifies 
+  computations in the baby monster group.
+
+  Caution:
+
+  An input vector allow several outputs. Changing the
+  implementation of this function such that the same input 
+  leads to a different output destroys the interoperability 
+  between different versions of the project!!
+
+*/
+// %%EXPORT px
+int32_t gen_leech2_reduce_type4(uint32_t v2, uint32_t *pg_out)
+{
+    uint32_t *pg_end = pg_out; // pointer to end of word g
+    uint32_t  vtype;           // subtype of current vector v2
+    uint32_t  gc;              // Golay code part of v2 in vector rep
+    uint32_t  coc;             // Cocode part of v2 in cocode rep
+    uint32_t  i;
+    int32_t exp;               // exponent of \f$xi\f$
+
+    // Compute subtype of ``v2``
+    vtype = gen_leech2_type(v2);
+    // Abort if the type of ``v2`` is not equal to 4
+    if ((vtype >> 4) != 4) return -4L;
+    // Use function ``gen_leech2_reduce_type2_ortho`` if the
+    // type of ``v2 ^ 0x200`` is equal to 2
+    if ((gen_leech2_type(v2 ^ 0x200) >> 4) == 2) {
+        return gen_leech2_reduce_type2_ortho(v2 ^ 0x200, pg_out);
+    }
+
+    // In the main loop we change vector v2 to a vector of a simpler
+    // subtype. Therefore we first apply a permutation pi and
+    // then a power of xi to v2.
+    for (i = 4; i; --i ) {
+        // Subtype of v2 has already been computed in ``vtype``
+        // Compute Golay code part and cocode part of v2
+        gc = mat24_gcode_to_vect(v2 >> 12);
+        coc = (v2 ^  mat24_ploop_theta(v2 >> 12)) & 0xfff;
+        // Depending on the subype of v2, we apply a permutation
+        // pi and we calculate a exponent  exp such that
+        // v2 * pi * ex has a simpler sybtype.
+        switch (vtype) {
+            case 0x48:
+                // All done: return length of word g
+                return (int32_t)(pg_end - pg_out);
+            case 0x40:
+                // Map v2 to a vector of subtype 48
+                {
+                    uint8_t sextet[24];
+                    if (v2 & 0x7ffbff) {
+                        // If coc is not grey:
+                        // Compute sextet corresponding to coc, and map
+                        // the first tetrad of that sextet to (0,1,2,3)
+                        if (mat24_cocode_to_sextet(coc, sextet) < 0) 
+                             return -0x10000 + 0x100 * vtype + 1;
+                        sextet[6] = sextet[8];
+                        v2 = apply_perm_heptad(v2,
+                            sextet, RED_STD_HEPTAD, pg_end++);
+                    }
+                    // exp = 2 - <gcode, omega>, where omega is the
+                    // standard sextet represented by (0,1,2,3).
+                    exp = 2 - ((v2 >> 23) & 1);
+                }
+                break;
+            case 0x42:
+                // Map v2 to a vector of subtype 40
+                // Perform a permutation on v2 if necessary
+                if ((exp = map_to_standard12_xi_exp(v2)) < 0) {
+                    uint8_t oct[24], *poct = oct;
+                    uint32_t w;
+                    // Complement gc if it has weight 16, so that gc is an
+                    // octad. Let poct[0...7] be the elements of that octad.
+                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
+                    poct = oct + (w & 16);
+                    // Map octad gc to the standard octad (0,...,7)
+                    poct[6] = oct[(w & 16) ? 0 : 8];
+                    v2 = apply_perm_heptad(v2, poct, RED_STD_HEPTAD, 
+                        pg_end++);
+                    // Now we may calculate a suitable exponent of xi
+                    // so that xi**exp transforms v2 to type 40.
+                    exp = map_to_standard12_xi_exp(v2);
+                    // Abort with fatal error if this fails
+                    if (exp < 0) return -0x10000 + 0x100 * vtype + 1;
+                }
+                break;
+            case 0x44:
+                // Map v2 to a vector of subtype 40
+                // Perform a permutation on v2 if necessary
+                if ((exp = map_to_standard12_xi_exp(v2)) < 0) {
+                    uint8_t oct[24], syn_list[24], a2_list[24], *poct = oct;
+                    uint32_t w, syn, a = 0, a1, a2, j, special;
+                    // Complement gc if it has weight 16, so that gc is an
+                    // octad. Let poct[0...7] be the elements of that octad.
+                    w = mat24_vect_to_bit_list(gc, oct); // w is 8 or 16
+                    poct = oct + (w & 16);
+                    gc ^= (w & 16) ? 0xffffff : 0;
+                    // If |coc| == 2 then let syn_list[0,1] be the syndrome 
+                    // list of coc. If |coc| == 4 the let T be a tetrad 
+                    // intersecting with gc, and let syn_list[0,1] be
+                    // the set of elements of T that are not in gc. Abort
+                    // with fatal error if syn_list has length != 2.      
+                    syn =  mat24_cocode_syndrome(coc, poct[0]) & ~gc;
+                    w = mat24_vect_to_bit_list(syn, syn_list);
+                    if (w != 2) return -0x10000 + 0x100 * vtype + 1;
+                    // Put a = sum(1<<i) for i in (poct[0],...,poct[4])
+                    for (j = 0; j < 5; ++j) a += 1L << poct[j];
+                    a1 = a ^ (1 << syn_list[0]) ^ (1 << syn_list[1]);
+                    // Let special be the syndrome of 
+                    // [poct[0], ..., poct[4],  syn_list[0],  syn_list[1]].
+                    // This must be a singlton; which we call c 
+                    special = mat24_syndrome(a1, 24);
+                    // Let a2_list be the list [poct[0], ..., poct[4]],
+                    // and then remove c from that list. Abort with fatal
+                    // error if that list has not length 4.
+                    a2 = a & ~special;
+                    w = mat24_vect_to_bit_list(a2, a2_list);
+                    // Append [syn_list[0], syn_list[1], c] to the list
+                    // a2_list, so that is has length 7.
+                    if (w != 4) return -0x10000 + 0x100 * vtype + 2;
+                    a2_list[4] = syn_list[0]; a2_list[5] = syn_list[1];
+                    a2_list[6] = (uint8_t)(mat24_lsbit24(a & special));
+                    // Map the heptad a2_list[0...6] to the heptad
+                    // (0,1,2,3,4,5,8). This maps octad gc to the 
+                    // standard octad (0,...,7).
+                    v2 = apply_perm_heptad(v2, 
+                        a2_list, RED_IMG_CASE_44, pg_end++);
+                    // Now we may calculate a suitable exponent of xi
+                    // so that xi**exp transforms v2 to type 40.
+                    exp = map_to_standard12_xi_exp(v2);
+                    // Abort with fatal error if this fails
+                    if (exp < 0) return -0x10000 + 0x100 * vtype + 3;
+                }
+                break;
+            case 0x46:
+                // Map v2 to a vector of subtype 42
+                {
+                    uint8_t dodecad[24], perm[24];
+                    uint32_t scalar;
+                    // Perform a permutation on v2 that maps gc to the
+                    // dodecad (0,1,2,3,8,9,14,15,18,19,22,23)
+                    mat24_vect_to_bit_list(gc, dodecad); 
+                    mat24_perm_from_dodecads(dodecad, RED_STD_DODECAD, 
+                        perm); 
+                    v2 = apply_perm(v2, perm, pg_end++); 
+                    // Put exp = 2 - scalar, where scalar is the scalar
+                    // product of the cocode part 'coc' of the permuted 
+                    // v2 with the standard octad (0,...,7).
+                    coc = mat24_ploop_theta(v2 >> 12) ^ v2;
+                    scalar = mat24_scalar_prod(RED_STD_OCTAD, coc);
+                    exp = 2 - scalar;
+                }
+                break;
+            case 0x43:
+                // Map v2 to a vector of subtype 44
+                {
+                    uint8_t cv_list[24], octad_list[24], rem_list[24];
+                    uint32_t cv, w, j, oct, syn;
+                    // let cv_list[0..2] be the syndrome list of coc. Abort
+                    // with fatal error if that list has not length 3.
+                    cv = mat24_cocode_syndrome(coc, 24);
+                    w = mat24_vect_to_bit_list(cv, cv_list);
+                    if (w != 3) return -0x10000 + 0x100 * vtype + 1;
+                    // Let octad_list[0,...,7] be an octad o containing
+                    // coc, and let octad_list[8] not be in that octad.
+                    oct = 0;
+                    for (j = 0; j < 5; ++j) oct += 1 << cv_list[j];
+                    syn =  mat24_syndrome(oct, 24);
+                    oct ^= syn;
+                    w =  mat24_vect_to_bit_list(oct, octad_list);
+                    if (w != 8) return -0x10000 + 0x100 * vtype + 2;
+                    // Put cv_list = [c0, c1, c2, o0, o1, o2, r] with
+                    // coc = (c0, c1, c2); o0, o1, o2 in o, but not in
+                    // c, an r not in o. 
+                    w = mat24_vect_to_bit_list(oct & ~cv, rem_list);
+                    if (w != 5) return -0x10000 + 0x100 * vtype + 3;
+                    cv_list[3] = rem_list[0]; cv_list[4] = rem_list[1];
+                    cv_list[5] = rem_list[2]; cv_list[6] = octad_list[8];
+                    // Map the heptad cv_list to the standars octad
+                    // (0,...,7)
+                    v2 = apply_perm_heptad(v2, 
+                        cv_list, RED_STD_HEPTAD, pg_end++);
+                    // Put exp = 2 - k, where k is the scalar product of 
+                    // the permuted gcode part of v2 with the standard 
+                    // tetrad represented by (0,1,2,3).
+                    exp = 2 - ((v2 >> 22) & 1);
+                }
+                break;
+            default:
+                // Abort if v is not of type 4
+                return -1L;
+        }
+        // Apply xi**exp to the permuted vector v2
+        if (exp) {
+            v2 = gen_xi_op_xi(v2, exp);       // Apply xi**exp to v2
+            if (v2 & 0xfe000000) return -1L;  // Abort if this fails
+            *pg_end++ = 0xe0000003 - exp;     // Store atom for xi**exp 
+        }
+        // Compute subtype of new vector v2
+        vtype = gen_leech2_type(v2);
+    } 
+    // Abort if not done after three rounds
+    return -1L;
+}
+
+
 
 
  
