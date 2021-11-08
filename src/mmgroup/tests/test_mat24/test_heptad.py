@@ -206,7 +206,7 @@ def rand_perm():
 
 
 def map_vect(v):
-    """Apply radom permutaiton in in ``Mat24`` of vector
+    """Apply random permutaiton in in ``Mat24`` of vector
 
     Here ``v`` is a vector of integers ``0 <= v[i] < 24``.
     The function generates a random permutation ``p`` in
@@ -218,7 +218,7 @@ def map_vect(v):
     return [pi[x] for x in v]
 
 
-def perm_from_map_testdata():
+def perm_from_map_testdata(ntests=10):
     """Yield test data for testing function perm_from_map()
 
     The function yields quadruples (h1, h2, ref_res, ref_p).
@@ -240,6 +240,7 @@ def perm_from_map_testdata():
     yield [0,1,2,3,4,5,6], [0,1,2,3,4,5,8], 0, None
 
     PERMS = [
+         ([0,1,2,3,4,5], 3),
          ([0,1,2,3,4,9], 2),
          ([0,1,2,3,4,5,9], 1),
          ([0,1,2,3,4,5,6,9], 1),
@@ -247,23 +248,25 @@ def perm_from_map_testdata():
     for i in range(1, 9):
         PERMS.append( (range(i), 3) )
     for perm, res in PERMS:
+        yield perm, perm, res, Id 
+        continue       
         v = map_vect(perm)
         yield v, v, res, Id
-        for i in range(3):
+        for i in range(ntests):
             v1, v2 = map_vect(perm), map_vect(perm)
             yield v1, v2, res, None
             
     for n in range(9, 25):
         L = random.sample(range(24),n)
         yield L, L, 1, Id
-        for j in range(3):
+        for j in range(ntests):
             p = rand_perm()
             ind = random.sample(range(24), n)
             perm = [p[i] for i in ind]
             yield ind, perm, 1, p
     
 
-def one_test_perm_from_map(h1, h2, ref_res, ref_p,verbose = 1):
+def one_test_perm_from_map(h1, h2, ref_res, ref_p,verbose = 0):
     if verbose:
         print("h1 =", h1)
         print("h2 =", h2)
@@ -282,8 +285,8 @@ def one_test_perm_from_map(h1, h2, ref_res, ref_p,verbose = 1):
         print("Expected return value:", ref_res)
     if verbose or not ok:
         print("Obtained return value:", res)
-        if res > 0:
-            print("p =", perm)
+        print("p =", perm)
+        if res <= 0:
             if ref_p and ref_p != perm:
                 print("Expected:\n   ", ref_p)
         if not ok_perm:
@@ -313,5 +316,77 @@ def one_test_perm_from_map(h1, h2, ref_res, ref_p,verbose = 1):
 def test_perm_from_map(verbose = 0):
     for n, (h1, h2, ref_res, ref_p) in enumerate(perm_from_map_testdata()):
         if verbose: print("\nTest", n+1)
-        one_test_perm_from_map(h1, h2, ref_res, ref_p, verbose)   
+        one_test_perm_from_map(h1, h2, ref_res, ref_p, verbose) 
+
+
+
+#########################################################################
+# Test lexical peroperty of function  mat24_perm_from_map()
+#########################################################################
+
+ 
+
+def rand_perm_vect(v, v_more):
+    """
+
+    Let ``v`` be a list representing a vector in ``GF(2)^24``
+    and ``v_more`` be a list such that ``v + v_more`` is or 
+    contains an umbral heptad.
+
+    The function returns to random images ``h1, h2`` of ``v`` 
+    under ``Mat24``, and also a (somehow) random permutation
+    ``pi_ref`` that maps ``h1`` to ``h2``.
+    """
+    
+    pi1 = rand_perm()
+    pi2 = rand_perm()
+    h1 = [pi1[x] for x in v]
+    h2 = [pi2[x] for x in v]
+    vm = v + v_more
+    h1m = [pi1[x] for x in vm]
+    h2m = [pi2[x] for x in vm]
+    return h1, h2, mat24.perm_from_map(h1m, h2m)[1]
+    
+
+def perm_map_lex_testdata(ntests = 100):
+    yield [], [], list(range(24)), 3
+    STD_V = [0,1,2,3,4,5,6,7,8]
+    for i in range(ntests):
+        for j in range(6, 9):
+            h1, h2, pi_ref = rand_perm_vect(STD_V[:j], STD_V[j:])
+            yield h1, h2, pi_ref, 3
+        UMBRAL_HEXAD = [0,1,2,3,4,8] 
+        MORE = [9]
+        h1, h2, pi_ref = rand_perm_vect(UMBRAL_HEXAD, MORE)
+        yield h1, h2, pi_ref, 2
+   
+def one_test_perm_map_lex(h1, h2, pi_ref, ref_res = None, verbose = 1):
+    errors = 0
+    if verbose:
+        print("h1 =", h1)
+        print("h2 =", h2)
+        print("pi_ref:", pi_ref)
+        print("Expected return value:", ref_res)
+    assert [pi_ref[x] for x in h1] == h2
+    res, pi = mat24.perm_from_map(h1, h2)
+    if verbose:
+        print("pi:", pi)
+        if pi > pi_ref:
+            print("pi is greater than pi_ref")
+            errors += 1
+        if res != ref_res:
+            print("Obtained return value:", res)
+        #assert pi <= pi_ref
+    assert [pi[x] for x in h1] == h2
+    if errors > 0:
+        print(errors, "lexical errors")
+    assert res == ref_res
+    assert errors == 0
+     
+@pytest.mark.mat24
+def test_perm_map_lex(verbose = 0):
+    for n, (h1, h2, pi_ref, ref_res) in enumerate(perm_map_lex_testdata()):
+        if verbose: print("\nTest", n+1)
+        one_test_perm_map_lex(h1, h2, pi_ref, ref_res, verbose) 
+
     

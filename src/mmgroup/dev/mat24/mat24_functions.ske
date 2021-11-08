@@ -1528,6 +1528,43 @@ static inline void insertsort_i8(uint8_t *a1, uint8_t *a2, int32_t n)
         a1[j] = temp1;  a2[j] = temp2;
     }
 }
+
+/* Extend mapping from an umbral hexad ``h1`` to ``h2``
+
+The function appends one entry to ``h1`` and one entry to ``h2`` so
+that ``h1`` and ``h2`` will be umbral heptads, with ``h2`` an image
+of ``h1`` under ``Mat24``. It computes the pair ``h1, h2`` that leads
+to the least possible permutation in ``Mat24`` in lexical order.
+
+Inputs ``bm1`` and ``bm2`` are the bitmaps of ``h1`` and ``h2``;
+they have already been computed by the calling procedure.
+*/
+static inline void extend_umbral_hexad(
+    uint8_t *h1,  uint8_t *h2, uint32_t bm1, uint32_t bm2
+)
+{
+    uint_fast8_t src, img = 24, j;
+    // Let src be the smallest entry not in h1; put h1[6] = src
+    h1[6] = src = mat24_def_lsbit24(~bm1);
+    // Complete ``bm1`` to a heptad; this heptad must be umbral
+    bm1 |= (1UL << src); 
+
+    // Obtain the special element of that umbral heptad
+    // Store the singleton containing that element in ``bm1``
+    bm1 &= mat24_syndrome(bm1, 0);
+    // Obtain the image of that special element in ``img``
+    for (j = 0; j < 6; ++j) if ((1 << h1[j]) == bm1) img = h2[j];
+  
+    // Delete image of that special element from bm2
+    bm2 &= ~(1UL << img);
+    // Compute syndrome of modified ``bm2`` in ``bm2``.
+    bm2 = mat24_syndrome(bm2, 0);
+    // The image of ``src`` must lie in that syndrome
+    // Store first element of that syndrome in h2[6]
+    h2[6] = mat24_def_lsbit24(bm2);  
+}
+
+
 /// @endcond
 
 
@@ -1562,14 +1599,14 @@ static inline void insertsort_i8(uint8_t *a1, uint8_t *a2, int32_t n)
   covered by an octad.
 
   If the return value is greater then zero then a suitable permutation
-  in ``Mat24`` is returned in the array referred by ``p_out``.
-  The returned permutation depends on the mapping ``h1 -> h2`` only,
-  regardless of the order of the entries in ``h1``.
+  in ``Mat24`` is returned in the array referred by ``p_out``. The
+  function computes the lowest permutation (in lexical order) that 
+  maps ``h1`` to ``h2`.
 
   Caution:
 
   Some input mappings allow several output permutations. Changing the
-  implementation of this function such that the same input leads to
+  specification of this function such that the same input leads to
   a different output permutation destroys the interoperability between
   different versions of the project!!
 */
@@ -1588,8 +1625,8 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
     bm1 = bm2 = 0;
     if (err == 0) for (i = 0; i < n; ++i) {
         err |= (h1[i] + 8) | (h2[i] + 8);
-        bm1 |= 1 << h1[i]; 
-        bm2 |= 1 << h2[i];
+        bm1 |= 1UL << h1[i]; 
+        bm2 |= 1UL << h2[i];
     }
     if (err & (0-32) || mat24_bw24(bm1) != n || mat24_bw24(bm2) != n) {
         for (i = 0; i < 24; ++i) p_out[i] = 24;
@@ -1617,8 +1654,8 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
     // Store the bit vectors containing the first five entries
     // of ``p1`` in ``bm1``.
     bm1 = bm2 = 0;
-    for (i = 0; i < 5; ++i)  bm1 |= 1 << p1[i]; 
-    for (i = 0; i < 5; ++i)  bm2 |= 1 << p2[i]; 
+    for (i = 0; i < 5; ++i)  bm1 |= 1UL << p1[i]; 
+    for (i = 0; i < 5; ++i)  bm2 |= 1UL << p2[i]; 
 
     // Store the (unique) octads containing the first five entries 
     // of ``p1`` and ``p2`` in ``bm1`` and ``bm2``, respectively.
@@ -1635,20 +1672,37 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
     i8 = 24;  // This is a rather bad index
     i16 = 25;  // This is a rather bad index
     for (i = 5; i < n; ++i) {
-        if ((1 << p1[i]) & o1) i8 = (i8 == 24) ? i : i8;
+        if ((1UL << p1[i]) & o1) i8 = (i8 == 24) ? i : i8;
         else i16 = (i16 == 25) ? i : i16;
     }
 
     // Compute return value (in case of success) from i8 and i16
     if (i16 == 25) res = 3; // everything is in the octad ``o1``.
     else res = 1 + (i8 == 24 && n < 7);
+
+    // In the next step we compute a set of size 7
+    // in ``p1[0], p1[1], p1[2], p1[3], p1[4], p1[i8], p1[i16].
+    // We have ``i16 == 25`` iff that set has size 6. The images of 
+    // the entries of that set are in the corresponding entries 
+    // of ``p2``. If several images are possible the we store an 
+    // image that extends to the lexically lowest possible image of
+    // the complete set ``h1``, provided that such an image exists. 
+    // The computed set is eiterh a hexad that completes to an octad
+    // or an umbral heptad. A permutation in ``Mat24`` is uniquely
+    // determined by the image of an umbral heptad.
        
     // If no index ``i8`` found then:
     //    if n < 7 then take entries from the syndromes of 
     //    the first five entries of ``p1`` and ``p2``;
     //    otherwise just put ``i8 = 5, i16 = 6``.
     if (i8 == 24) {
-        if (n < 7)  {
+        if (n == 6) {
+            // This case is so tricky that we need an extra function.
+            // First compute bitmaps of ``h1, h2`` in ``bm1, bm2``.
+            bm1 |= 1UL << p1[5]; bm2 |= 1UL << p2[5]; 
+            extend_umbral_hexad(p1, p2, bm1, bm2);
+            i8 = 5; i16 = 6;
+        } else if (n < 6)  {
             bm1 ^= o1;  bm2 ^= o2;  // compute symdromes
             p1[24] = mat24_def_lsbit24(bm1);
             p2[24] = mat24_def_lsbit24(bm2);
