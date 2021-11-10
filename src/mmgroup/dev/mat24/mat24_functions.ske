@@ -1749,7 +1749,9 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
 
 
 /// @cond DO_NOT_DOCUMENT
-#define  STD_OCTAD %{MAT24_STD_OCTAD}
+#define SH 58ULL
+#define FACTOR24 (24ULL * ((1ULL << SH) / MAT24_ORDER + 1ULL))
+#define AFIELD1 0x555555555555ULL
 /// @endcond
 
 /**
@@ -1785,56 +1787,72 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
 // %%EXPORT p
 uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
 {
-    uint_fast32_t oct, j, k = u_m24, k1, o;
-    uint8_t p1[32], j8;
-  
-    // Let k be the input u_m24
-    // Integer 0 <= k < 244823040 is evaluated in mixed-radix with bases
-    // 759, 8, 7, 6, 5, 4, 3, 16, with valence decreasing from left to right. 
-    // In the sequel these digits of k are named:
-    //
-    //   oct  k_0  k_1  k_2  k_3  k_4  k_5   k'
-    //   759   8    7    6    5    4    3    16 
+    uint64_t n1 = FACTOR24 * u_m24, agio, mask;
+    uint_fast32_t k, bitmap, last, cocode, syn, j, res;
+    uint8_t p[32], p1[32]; 
 
-    oct =  k/322560;            // number of image of standard octad 0..7   
-    if (oct >= 759) return (uint32_t)(-1); // check if input k is correct 
-    k -= 322560 * oct;  // remove digit 'oct' from input k
-    oct -= 759 - STD_OCTAD;   // Manipulate oct so that input oct=0
-    oct += (oct >> 12) & 759;   //   corresponds to the standard octad 
-    oct = mat24_octad_to_vect(oct); // get bit vector for octad
+    res = 0 - (u_m24 >= MAT24_ORDER);
+    u_m24 &= ~res; 
+      
+    k = (uint_fast32_t)(n1 >> SH);
+    p[0] = (uint8_t)k;
+    n1 -= (uint64_t)k << SH;
+    bitmap = 1UL << k;
+    agio = AFIELD1 << (2*k);
 
-    // p1[0..7]  will be the sorted entries of the octad oct.
-    // p1[8..23] will be the sorted remaining entries. 
-    // This trick is documented in function mat24_vect_to_bit_list.
-    oct <<= 3; j = 0x8;
+    // %%FOR i in [23, 22, 21]
+        n1 = %{i} * n1;
+        k = (uint_fast32_t)(n1 >> SH);
+        n1 -= (uint64_t)k << SH;
+        j = k + ((agio >> (2*k)) & 3);
+        p[24-%{i}] = (uint8_t)j;
+        mask = (1ULL << (2*k)) - 1;
+        bitmap |= 1UL << j; 
+        // %%IF*  i > 21
+        agio = (((agio + AFIELD1) >> 2) & ~mask) + (agio & mask); 
+        // %%ELSE
+        agio = ((agio >> 2) & ~mask) + (agio & mask); 
+        last = k;
+        // %%END IF
+    //%%END FOR
+
+    n1 = 20 * n1;
+    k = (uint_fast32_t)(n1 >> SH);
+    n1 -= (uint64_t)k << SH;
+    j = k + ((agio >> (2*k)) & 3) + (k >= last);
+    p[4] = (uint8_t)j;
+    bitmap |= 1UL << p[4]; 
+
+    // Store cocode of bitmap in variable 'cocode'
+    cocode = MAT24_ENC_TABLE0[bitmap & 0xff]
+           ^ MAT24_ENC_TABLE1[(bitmap >> 8) & 0xff]
+           ^ MAT24_ENC_TABLE2[(bitmap >> 16) & 0xff];
+    // Store syndrome of bitmap in 'syn'
+    syn = MAT24_SYNDROME_TABLE[cocode & 0x7ff];
+
+    k = (uint_fast32_t)((3 * n1) >> SH);
+    j = (syn >>  (5 * k)) & 31; 
+    p[5] = (uint8_t)j;
+
+    bitmap |= (1 << (syn & 31)) | (1 << ((syn >> 5) & 31)) 
+               | (1 << ((syn >> 10) & 31));
+    bitmap ^= 0xffffff;  
+
+    // Compute list of entries j with bitmap[j] = 1 in the array p1
+    j = 0;
     // %%FOR i in range(24)
-        o = (oct >> %{i}) & 8;
-        p1[(j >> o) & 0x1f] =  %{i};
-        j += 1 << o;
-    // %%END FOR
+        p1[j] = %{i};              // write index %{i} to output pos.
+        j += (bitmap >> %{i}) & 1; // increment output pos. if bitmap[%{i}]=1
+    // %%END FOR 
 
-    // Let p1[8] be the k'-th smallest entry outside octad  oct,
-    // where 0 < k' < 16 is the lowest digit of k.
-    p1[8] = p1[8 + (k & 15)]; 
+    j = p1[u_m24 & 15];  
+    p[8] = (uint8_t)j;
 
-    // Format k such that original k/8 is at bit positions 28..30 
-    k >>= 4;
-    k *= (1 << 28) / 2520 + 1;
-
-    // For i = 0,...,5: exchange element at pos. i with element 
-    //                 at pos i + k_i, where 0 <= k_i < 8 - i. 
-
-    // %%FOR i in range(6)
-    k1 = %{i} + (k >> 28);  // this is k[%{i}]
-        j8 = p1[%{i}];  p1[%{i}] = p1[k1]; p1[k1] = j8; 
-        k = (k & 0xfffffff) * %{int:7-i};  // remove digit k_%{i} from k
-    // %%END FOR
-
-    // Now entries at pos. 0,1,2,3,4,5,8 are valid. use
+    // Now entries at pos. 0,1,2,3,4,5,8 are valid. Use
     // mat24_perm_complete_heptad() to compute the remaining entries
-    mat24_perm_complete_heptad(p1);
-    memcpy(p_out, p1, 24 * sizeof(uint8_t));
-    return 0;
+    mat24_perm_complete_heptad(p);
+    memcpy(p_out, p, 24 * sizeof(uint8_t));
+    return res;
 }
 
 
@@ -1862,48 +1880,53 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
 */
 // %%EXPORT p
 uint32_t mat24_perm_to_m24num(uint8_t  *p1)
-// (without any indication of failure) if p1 is not in Mat24.
 {
-    uint_fast32_t oct, j, res, o;
-    uint_fast8_t p2[32], q[8], q_inv[8], j8;
+    uint64_t d;
+    uint_fast32_t n, k, bitmap, last, cocode, syn, syn1;
 
-    // let oct be the octad formed by p1[0],...,p1[7]
-    oct = (1 << p1[0]) | (1 << p1[1]) | (1 << p1[2]) | (1 << p1[3]) 
-        | (1 << p1[4]) | (1 << p1[5]) | (1 << p1[6]) | (1 << p1[7]);
-
-    // put res = mat24_vect_to_octad(oct)
-    res = MAT24_ENC_TABLE0[oct & 0xff]
-          ^ MAT24_ENC_TABLE1[(oct >> 8) & 0xff]
-          ^ MAT24_ENC_TABLE2[(oct >> 16) & 0xff];
-    res =  mat24_gcode_to_octad(res >> 12, 1) & 0xfff;
-    // put res = (res - STD_OCTAD) mod 759
-    res -=  STD_OCTAD;
-    res += (res >> 12) & 759;
-
-    oct <<= 3; j = 0;
-    // %%FOR i in range(24)
-        o = (oct >> %{i}) & 8;
-        p2[%{i}] = (j >> o) & 0x1f;
-        j += 1 << o;
+    n = k = p1[0];
+    bitmap = 1 << k;
+    d = AFIELD1  << (2*k);
+    // %%FOR i in [23, 22, 21]
+        k = p1[24-%{i}];
+        n = %{i} * n + k - (uint_fast32_t)((d >> (2*k)) & 3);
+        bitmap |= 1 << k;
+        // %%IF*  i > 21
+            d += AFIELD1 << (2*k);
+        // %%ELSE
+            last = k;
+        // %%END IF
     // %%END FOR
 
-    // %%FOR i in range(8)
-        j8 = p2[p1[%{i}] & 0x1f] & 7;
-        q[j8] = %{i};
-        q_inv[%{i}] = j8;
-    // %%END FOR
+    k = p1[4];
+    bitmap |= 1 << k;
+    n = 20 * n + k - (uint_fast32_t)((d >> (2*k)) & 3) - (k >= last);
 
-    // %%FOR i in range(6)
-        j8 = q_inv[%{i}];
-        q_inv[q[%{i}]] = q_inv[q[j8]];
-        q[j8] = q[%{i}];
-        res = res * %{int:8-i} + j8 - %{i};
-    // %%END FOR
+    // Store cocode of bitmap in variable 'cocode'
+    cocode = MAT24_ENC_TABLE0[bitmap & 0xff]
+           ^ MAT24_ENC_TABLE1[(bitmap >> 8) & 0xff]
+           ^ MAT24_ENC_TABLE2[(bitmap >> 16) & 0xff];
+    // Store syndrome of bitmap in 'syn'
+    syn = MAT24_SYNDROME_TABLE[cocode & 0x7ff];
 
-    return  16 * res + p2[p1[8] & 0x1f];
+    syn1 = (syn >> 5) & 31;
+    k = (p1[5] > syn1) + (p1[5] >= syn1);
+    n = 3 * n + k;
+
+    bitmap |= (1 << (syn & 31)) | (1 << syn1)
+           |  (1 << ((syn >> 10) & 31));
+    k = mat24_bw24(((1 << p1[8]) - 1) & bitmap);
+    n = 16 * n + p1[8] - k;
+    return n & ((n >= MAT24_ORDER) - 1); 
 }
-
             
+/// @cond DO_NOT_DOCUMENT
+#undef SH 
+#undef FACTOR24
+#undef AFIELD1
+/// @endcond
+
+
 
 
 /**

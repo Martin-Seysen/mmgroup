@@ -41,7 +41,9 @@ sys.path.append(r"C:\Data\projects\MonsterGit\src")
 from mmgroup.dev.mat24.mat24tables import Mat24Tables as gc
 
 #######################################################################
+#######################################################################
 # Finding octads suitable for function complete_heptad()
+#######################################################################
 #######################################################################
 
 def lrange(*args):
@@ -182,6 +184,11 @@ step and also the singletons found after each step.
     print("")
 
 
+#######################################################################
+#######################################################################
+# Function complete_heptad()
+#######################################################################
+#######################################################################
 
 
 #######################################################################
@@ -306,14 +313,125 @@ def mat24_complete_heptad(p_io):
     return err;
 
 #######################################################################
+#######################################################################
 # Function based on function complete_heptad()
 #######################################################################
+#######################################################################
 
+
+#######################################################################
+# Compute the n-th element of the Mathieu group Mat24
+#######################################################################
 
 
 STD_OCTAD = gc.vect_to_octad(0xff)
 
-def mat24_int_to_perm(k):
+
+
+
+def split_n_mat24(n):
+    n_list = []
+    for d in [16, 3, 20, 21, 22, 23, 24]:
+        n, r = divmod(n, d)
+        n_list.append(r)
+    n_list.reverse()
+    return n_list
+
+def py_mat24_int_to_perm(n):
+    """Return the k-th permutation in the Mathieu group Mat24   
+
+    Here the elements of the Mathieu group Mat24 are numbererd
+    in lexicographic order.
+
+    Any integer 0 <= n < 244823040 is evaluated in mixed-radix with 
+    bases  24, 23, 22, 21, 20, 3, 16, with valence decreasing from 
+    left to right. The first five digits determines the images of
+    the first five elements of the permutation. The next digit
+    determines the image of entry 5. That entry has 3 possible 
+    images, depending on the previous digits. The final digit 
+    determines the image of element 8, i.e.  the first element not 
+    in the standard octad. 
+
+    The images of the remaining elements 6, 7 and 9,...,23  are 
+    determined by calling function complete_heptad()
+    """
+    assert 0 <= n < MAT24_ORDER
+    p = [None] * 24
+    p_list = list(range(24))
+    n_list = split_n_mat24(n)
+    for i in range(5):
+        index = n_list[i] 
+        p[i] = p_list[index]
+        del p_list[index]
+    bitmap = sum(1 << i for i in p[:5])
+    cocode = gc.vect_to_cocode(bitmap)
+    syn_tab = gc.syndrome_table[cocode & 0x7ff]
+    syn = [(syn_tab >> i) & 31 for i in [0, 5, 10]]    
+    p[5] = syn[n_list[5]]
+    bitmap |= sum(1 << i for i in syn)
+    p_list = [i for i in range(24) if ((1 << i) & bitmap) == 0]
+    p[8] = p_list[n_list[6]]
+    gc.perm_complete_heptad(p)
+    assert gc.perm_check(p) == 0
+    return p
+
+
+MAT24_ORDER =  244823040 
+SH = 58
+FACTOR = (1 << SH) // MAT24_ORDER + 1
+FACTOR24 = 24 * FACTOR
+AFIELD1 = 0x555555555555
+
+def mat24_int_to_perm(n):
+    assert 0 <= n < MAT24_ORDER
+    p = [None] * 24
+    n1 = FACTOR24 * n
+    p[0] = k = n1 >> SH
+    n1 -= k << SH
+    bitmap = 1 << k
+    agio = AFIELD1 << (2*k)
+    for i in [23, 22, 21]:
+        n1 = i * n1
+        k = n1 >> SH
+        n1 -= k << SH
+        p[24-i] = j = k + ((agio >> (2*k)) & 3)
+        mask = (1 << (2*k)) - 1
+        bitmap |= 1 << j 
+        if i > 21:
+            agio = (((agio + AFIELD1) >> 2) & ~mask) + (agio & mask) 
+        else:
+            agio = ((agio >> 2) & ~mask) + (agio & mask) 
+            last = k
+
+    n1 = 20 * n1
+    k = n1 >> SH
+    n1 -= k << SH
+    p[4] = k + ((agio >> (2*k)) & 3) + (k >= last)
+    bitmap |= 1 << p[4] 
+
+    cocode = gc.vect_to_cocode(bitmap)
+    syn = gc.syndrome_table[cocode & 0x7ff]
+    k = (3 * n1) >> SH
+    p[5] = (syn >>  (5 * k)) & 31 
+   
+    bitmap |= (1 << (syn & 31)) | (1 << ((syn >> 5) & 31))
+    bitmap |= (1 << ((syn >> 10) & 31))
+    bitmap ^= 0xffffff
+
+    j = 0
+    p1 = [None] * 24
+    for i in range(24):
+        p1[j] = i;              # write index i to output pos.
+        j += (bitmap >> i) & 1; # increment output pos. if bitmap[i]=1
+
+    p[8] = p1[(n & 15) + 0]
+    mat24_complete_heptad(p)
+    return p
+
+
+
+
+def old_mat24_int_to_perm(k):
     """Return the k-th permutation in the Mathieu group Mat24   
 
     Any integer 0 <= k < 244823040 is evaluated in mixed-radix with 
@@ -354,7 +472,53 @@ def mat24_int_to_perm(k):
     mat24_complete_heptad(p)
     return p
 
-def mat24_perm_to_int(p):
+
+
+#######################################################################
+# Compute the n-th index of an element of the Mathieu group Mat24
+#######################################################################
+
+
+
+
+def mat24_perm_to_int(p1):
+    """Convert permutation p1 in the Mathieu group Mat24 to an integer.
+
+    This reverses member function mat24_int_to_perm(). The input 
+    permutation is not checked.
+    """
+    n = k = p1[0]
+    bitmap = 1 << k
+    d = AFIELD1  << (2*k)
+    for i in [23, 22, 21]:
+        k = p1[24-i]
+        n = i * n + k - ((d >> (2*k)) & 3)
+        bitmap |= 1 << k 
+        if i > 21:
+            d += AFIELD1 << (2*k) 
+        else:
+            last = k
+
+    k = p1[4]
+    bitmap |= 1 << k 
+    n = 20 * n + k - ((d >> (2*k)) & 3) - (k >= last)
+
+    cocode = gc.vect_to_cocode(bitmap)
+    syn = gc.syndrome_table[cocode & 0x7ff]
+    syn1 = (syn >> 5) & 31
+    k = int(p1[5] > syn1) + int(p1[5] >= syn1)
+    n = 3 * n + k
+
+    bitmap |= (1 << (syn & 31)) | (1 << syn1)
+    bitmap |= (1 << ((syn >> 10) & 31))
+    d = gc.bw24(((1 << p1[8]) - 1) & bitmap)
+    n = 16 * n + p1[8] - d
+    return n
+
+
+
+
+def mat24_perm_to_int_old(p):
     """Convert permutation p in the Mathieu group Mat24 to an integer.
 
     This reverses member function int_to_perm(). The input permutation
@@ -390,7 +554,15 @@ def mat24_perm_to_int(p):
         res = res * (8 - i) + j - i
     #print("p2ifinal", p1[p[8] & 0x1f])  
     return 16 * res + p1[p[8] & 0x1f]
-            
+ 
+
+
+
+#######################################################################
+# Compute permitatio in the Mathieu group Mat24 from heptads
+#######################################################################
+
+           
             
 def mat24_perm_from_heptads(h1, h2):
     """Try to find a permutation p that maps heptad h1 to h2
@@ -435,7 +607,9 @@ def mat24_perm_from_heptads(h1, h2):
 
 
 #######################################################################
+#######################################################################
 # Support for the code generator
+#######################################################################
 #######################################################################
 
 
@@ -475,7 +649,9 @@ class HeptadCompleter(object):
 
 
 #######################################################################
+#######################################################################
 # Testing this module
+#######################################################################
 #######################################################################
 
 
