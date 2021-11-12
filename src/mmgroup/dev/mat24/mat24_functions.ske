@@ -1751,17 +1751,16 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
 /// @cond DO_NOT_DOCUMENT
 #define SH 58ULL
 #define FACTOR24 (24ULL * ((1ULL << SH) / MAT24_ORDER + 1ULL))
-#define AFIELD1 0x555555555555ULL
+#define DFIELD1 0x555555555555ULL
 /// @endcond
 
 /**
   @brief Compute permutation in the Mathieu group ``Mat24`` from its number
 
   The Mathieu group has order ``244823040``. We assign numbers
-  ``0 <= n < 244823040`` to the elements of ``Mat24``, with
-  ``0`` the number of the neutral element. This is just a 
-  convenient way to refer to an element of ``Mat24``.  The actual 
-  numbering is not part of the public interface.
+  ``0 <= n < 244823040`` to the elements of ``Mat24``, in
+  lexicographic order, with ``0`` the number of the neutral element. 
+  This is just a convenient way to refer to an element of ``Mat24``. 
 
   The function calculates the permutation with the number ``u_m24``
   and stores it in the array ``p_out`` as a mapping
@@ -1770,58 +1769,50 @@ uint32_t mat24_perm_from_map(uint8_t *h1, uint8_t *h2, uint32_t n, uint8_t *p_ou
 
   The function returns 0 in case of success and ``(uint32_t)(-1)``
   in case of failure. 
-
-  Implementation idea:
-
-  Internally we represent the permutation number in mixed radix
-  base, where one digit refers to the octad  which is the image of
-  the standard octad. All octads are stored in an internal table.
-  Once having estblished a mapping from the standard octad to another
-  octad, is suffices to work in the stabilizer of that octad. That
-  stabilizer is a semidirect product of the alternating group of 8
-  elements, and an elementary Abelian group of order 16 that acts 
-  regularly on the 16 elements not in the octad. So working in that 
-  stabilizer is easy; here we use function 
-  mat24_perm_complete_heptad().  
 */
 // %%EXPORT p
 uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
 {
-    uint64_t n1 = FACTOR24 * u_m24, agio, mask;
-    uint_fast32_t k, bitmap, last, cocode, syn, j, res;
-    uint8_t p[32], p1[32]; 
+    // This implementation is equivalent to the python function
+    // mmgroup.dev.mat24.mat24heptad.mat24_int_to_perm 
+    // Documentation is given in that python function.
 
-    res = 0 - (u_m24 >= MAT24_ORDER);
-    u_m24 &= ~res; 
+    uint64_t n1, d, mask;
+    uint_fast32_t k, bitmap, last, cocode, syn, j, res;
+    uint8_t p1[32]; 
+
+    res = 0 - (u_m24 >= MAT24_ORDER); // This is the return value
+    u_m24 &= ~res;                    // Change an illegal input to 0
       
+    n1 = FACTOR24 * u_m24;
     k = (uint_fast32_t)(n1 >> SH);
-    p[0] = (uint8_t)k;
+    p_out[0] = (uint8_t)k;
     n1 -= (uint64_t)k << SH;
     bitmap = 1UL << k;
-    agio = AFIELD1 << (2*k);
+    d = DFIELD1 << (2*k);
 
     // %%FOR i in [23, 22, 21]
         n1 = %{i} * n1;
         k = (uint_fast32_t)(n1 >> SH);
-        n1 -= (uint64_t)k << SH;
-        j = k + ((agio >> (2*k)) & 3);
-        p[24-%{i}] = (uint8_t)j;
+        n1 &= (1ULL << SH) - 1;
+        j = k + ((d >> (2*k)) & 3);
+        p_out[24-%{i}] = (uint8_t)j;
         mask = (1ULL << (2*k)) - 1;
-        bitmap |= 1UL << j; 
         // %%IF*  i > 21
-        agio = (((agio + AFIELD1) >> 2) & ~mask) + (agio & mask); 
+        d = (((d + DFIELD1) >> 2) & ~mask) + (d & mask); 
         // %%ELSE
-        agio = ((agio >> 2) & ~mask) + (agio & mask); 
+        d = ((d >> 2) & ~mask) + (d & mask); 
         last = k;
         // %%END IF
+        bitmap |= 1UL << j; 
     //%%END FOR
 
     n1 = 20 * n1;
     k = (uint_fast32_t)(n1 >> SH);
-    n1 -= (uint64_t)k << SH;
-    j = k + ((agio >> (2*k)) & 3) + (k >= last);
-    p[4] = (uint8_t)j;
-    bitmap |= 1UL << p[4]; 
+    n1 &= (1ULL << SH) - 1;
+    j = k + ((d >> (2*k)) & 3) + (k >= last);
+    p_out[4] = (uint8_t)j;
+    bitmap |= 1UL << p_out[4]; 
 
     // Store cocode of bitmap in variable 'cocode'
     cocode = MAT24_ENC_TABLE0[bitmap & 0xff]
@@ -1832,7 +1823,7 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
 
     k = (uint_fast32_t)((3 * n1) >> SH);
     j = (syn >>  (5 * k)) & 31; 
-    p[5] = (uint8_t)j;
+    p_out[5] = (uint8_t)j;
 
     bitmap |= (1 << (syn & 31)) | (1 << ((syn >> 5) & 31)) 
                | (1 << ((syn >> 10) & 31));
@@ -1846,12 +1837,11 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
     // %%END FOR 
 
     j = p1[u_m24 & 15];  
-    p[8] = (uint8_t)j;
+    p_out[8] = (uint8_t)j;
 
     // Now entries at pos. 0,1,2,3,4,5,8 are valid. Use
     // mat24_perm_complete_heptad() to compute the remaining entries
-    mat24_perm_complete_heptad(p);
-    memcpy(p_out, p, 24 * sizeof(uint8_t));
+    mat24_perm_complete_heptad(p_out);
     return res;
 }
 
@@ -1874,25 +1864,26 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
   The function returns garbage if ``p1`` is not a valid permutation
   in ``Mat24``. One may use function mat24_perm_check() to check
   if permutation ``p1`` is in ``Mat24``.
-
-  Essentially, the implementation just reverses the operations
-  in function mat24_int_to_perm().
 */
 // %%EXPORT p
 uint32_t mat24_perm_to_m24num(uint8_t  *p1)
 {
+    // This implementation is equivalent to the python function
+    // mmgroup.dev.mat24.mat24heptad.mat24_perm_to_int 
+    // Documentation is given in that python function.
+
     uint64_t d;
     uint_fast32_t n, k, bitmap, last, cocode, syn, syn1;
 
     n = k = p1[0];
     bitmap = 1 << k;
-    d = AFIELD1  << (2*k);
+    d = DFIELD1  << (2*k);
     // %%FOR i in [23, 22, 21]
         k = p1[24-%{i}];
         n = %{i} * n + k - (uint_fast32_t)((d >> (2*k)) & 3);
         bitmap |= 1 << k;
         // %%IF*  i > 21
-            d += AFIELD1 << (2*k);
+            d += DFIELD1 << (2*k);
         // %%ELSE
             last = k;
         // %%END IF
@@ -1915,7 +1906,14 @@ uint32_t mat24_perm_to_m24num(uint8_t  *p1)
 
     bitmap |= (1 << (syn & 31)) | (1 << syn1)
            |  (1 << ((syn >> 10) & 31));
-    k = mat24_bw24(((1 << p1[8]) - 1) & bitmap);
+
+    k = ((1 << p1[8]) - 1) & bitmap;
+    // Compute the bit weight of the k in k. This is at most 8    
+    k = (k & 0x555555) + ((k & 0xaaaaaa) >> 1); 
+    k = (k & 0x333333) + ((k & 0xcccccc) >> 2);
+    k = k + (k >> 4);
+    k = (k + (k >> 8) + (k >> 16)) & 0x0f; 
+
     n = 16 * n + p1[8] - k;
     return n & ((n >= MAT24_ORDER) - 1); 
 }
@@ -1923,7 +1921,7 @@ uint32_t mat24_perm_to_m24num(uint8_t  *p1)
 /// @cond DO_NOT_DOCUMENT
 #undef SH 
 #undef FACTOR24
-#undef AFIELD1
+#undef DFIELD1
 /// @endcond
 
 

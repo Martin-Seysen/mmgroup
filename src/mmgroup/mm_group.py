@@ -326,7 +326,7 @@ class MM(MM0):
           +-------+-----------------+----------------------------------------+
           | Tag   | Number  ``i``   | Type of element                        |
           +=======+=================+========================================+
-          |``'p'``| ``0-244823039`` | The automorphism ``AutPL('p',i)`` of   |
+          |``'p'``| ``0-244823039`` | The automorphism ``AutPL(0, i)`` of    |
           |       |                 | the Parker loop, see below.            |
           +-------+-----------------+----------------------------------------+
           |``'d'``| ``0-0xfff``     | The diagonal automorphism ``Cocode(i)``|
@@ -377,7 +377,7 @@ class MM(MM0):
     If ``tag == 'p'`` then ``i`` may also be an instance of class 
     |AutPL|. Then the returned atom is the Parker loop automorphism
     given by that instance. If ``i`` is an integer then the Parker 
-    loop  automorphism ``AutPL('p',i)`` is returned. This 
+    loop  automorphism ``AutPL(0, i)`` is returned. This 
     automorphism is the standard rpresentative of the i-th element 
     of the  Mathieu group ``M_24`` in the automorphism group of the 
     Parker loop.

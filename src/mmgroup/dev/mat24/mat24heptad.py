@@ -330,6 +330,13 @@ STD_OCTAD = gc.vect_to_octad(0xff)
 
 
 def split_n_mat24(n):
+    """Auxiliary function for function ``py_mat24_int_to_perm``
+
+    This function converts the integer 0 <= n < 244823040 to
+    mixed-radix notation with bases [16, 3, 20, 21, 22, 23, 24].
+    It returns the list of the 8 corresponding digits, with the
+    highest digit first.
+    """
     n_list = []
     for d in [16, 3, 20, 21, 22, 23, 24]:
         n, r = divmod(n, d)
@@ -338,38 +345,57 @@ def split_n_mat24(n):
     return n_list
 
 def py_mat24_int_to_perm(n):
-    """Return the k-th permutation in the Mathieu group Mat24   
+    """Return the k-th permutation p in the Mathieu group Mat24   
 
     Here the elements of the Mathieu group Mat24 are numbererd
     in lexicographic order.
 
     Any integer 0 <= n < 244823040 is evaluated in mixed-radix with 
     bases  24, 23, 22, 21, 20, 3, 16, with valence decreasing from 
-    left to right. The first five digits determines the images of
+    left to right. The first five digits determine the images of
     the first five elements of the permutation. The next digit
     determines the image of entry 5. That entry has 3 possible 
-    images, depending on the previous digits. The final digit 
-    determines the image of element 8, i.e.  the first element not 
-    in the standard octad. 
+    images, depending on the syndrome of the images of the first
+    five elements. The final digit determines the image of element 8, 
+    i.e.  the first element not in the standard octad. 
 
     The images of the remaining elements 6, 7 and 9,...,23  are 
     determined by calling function complete_heptad()
+
+    This implementation of the function is easy to understand but
+    not fast. Function ``mat24_int_to_perm`` is a faster version of
+    this function.
     """
     assert 0 <= n < MAT24_ORDER
+    # Compute the output permutation in ``p``
     p = [None] * 24
+    # List of elements to be permuted by Mat24
     p_list = list(range(24))
+    # Convert n to mixed-radix digit list ``n_list`` as described above.
     n_list = split_n_mat24(n)
+    # Compute the images of the first five numbers 0,...,4 under p
+    # from the the first five digits of the digit list.
+    # After assigning an image, delete that image from ``n_list``,
+    # in order to avoid repetitions.
     for i in range(5):
         index = n_list[i] 
         p[i] = p_list[index]
         del p_list[index]
+    # Compute the syndrome these five images in the list ``syn``.
+    # That syndrome has length 3.  
     bitmap = sum(1 << i for i in p[:5])
     cocode = gc.vect_to_cocode(bitmap)
     syn_tab = gc.syndrome_table[cocode & 0x7ff]
-    syn = [(syn_tab >> i) & 31 for i in [0, 5, 10]]    
+    syn = [(syn_tab >> i) & 31 for i in [0, 5, 10]] 
+    # Select image of the number 5 from that syndrome,
+    # using entry 5 f the digit list ``n_list``
     p[5] = syn[n_list[5]]
+    # Let p_list be the list of number 0 <= i < 24 that are not images
+    # any of the numbers of [0,1,2,3,4] and not in the syndrome.
     bitmap |= sum(1 << i for i in syn)
     p_list = [i for i in range(24) if ((1 << i) & bitmap) == 0]
+    # Select image of the number 8 from that list,
+    # using entry 6 f the digit list ``n_list``
     p[8] = p_list[n_list[6]]
     gc.perm_complete_heptad(p)
     assert gc.perm_check(p) == 0
@@ -380,102 +406,121 @@ MAT24_ORDER =  244823040
 SH = 58
 FACTOR = (1 << SH) // MAT24_ORDER + 1
 FACTOR24 = 24 * FACTOR
-AFIELD1 = 0x555555555555
+DFIELD1 = 0x555555555555
 
 def mat24_int_to_perm(n):
+    """Return the k-th permutation in the Mathieu group Mat24   
+
+    Here the elements of the Mathieu group Mat24 are numbererd
+    in lexicographic order, starting with 0. 
+
+    This is a fast version of function ``py_mat24_int_to_perm``.
+    There is also a C version of this function. 
+    """
+    # See function ``py_mat24_int_to_perm`` for a simpler implementation
+    # We document the tricks used to accelerate that implementation.
     assert 0 <= n < MAT24_ORDER
+    # Compute the output permutation in ``p``
     p = [None] * 24
+
+    # Compute ``n1`` such that ``k = n1 >> SH`` is the current digit in 
+    # the mixed-radix representation of n as described in function    
+    # ``py_mat24_int_to_perm``. For obtaining the next digit we subtract
+    # k << SH from ``n1`` and then we  multiply ``n1`` by ``i``, 
+    # for i = 23, 22, 21, 20, 3, 16 in that order. 
     n1 = FACTOR24 * n
-    p[0] = k = n1 >> SH
-    n1 -= k << SH
+    # Let k be the first digit of n. Store this in p[0] 
+    p[0] = k = n1 >> SH  
+    n1 -= k << SH      # process n1 for next digit
+    # We also accumulate the images p[0],...,p[4] in a bitmap
     bitmap = 1 << k
-    agio = AFIELD1 << (2*k)
+
+    # For assigning the next images p[m], m = 1,2,3, we take the
+    # m-th digit n_m from n and we put p[m] = n_m + d[m]. Here d[m]
+    # is a difference that must be added to  n_m in order to avoid
+    # repetitions in the images of p[m], 0 <= m < 5.  
+    # Computation of d[m] is a bit tricky. We keep the array 
+    # d[m], 0 <= m < 24 in the 64-bit integer d as a bit field, 
+    # reserving two bits at positions 2*m, 2*m+1 for d[m]. After
+    # selecting the image k = n_m, we put p[m] = k + d[k]. Then we
+    # have to replace d[u] by d[u + 1] + 1 for u >= k. We don't 
+    # change d[u] for u < j. We start with d[u] = 0 for all u. 
+    # After putting p[0] = k, we put d[u] = 1 for u >= k.  
+    d = DFIELD1 << (2*k)
     for i in [23, 22, 21]:
+        # Obtain next digit k of n and adjust n1
         n1 = i * n1
         k = n1 >> SH
         n1 -= k << SH
-        p[24-i] = j = k + ((agio >> (2*k)) & 3)
+        # put p[24-i] = j = k  - d[k]
+        p[24-i] = j = k + ((d >> (2*k)) & 3)
+        # Adjust bit field d: replace d[u] by d[u + 1] + 1 for u >= k.
+        # Unfortunately, we would get an overflow in the last round. So
+        # in the last round we replace replace d[u] by d[u + 1] instead,
+        # and we remember the last value k in the variable ``last``. 
         mask = (1 << (2*k)) - 1
-        bitmap |= 1 << j 
         if i > 21:
-            agio = (((agio + AFIELD1) >> 2) & ~mask) + (agio & mask) 
+            d = (((d + DFIELD1) >> 2) & ~mask) + (d & mask) 
         else:
-            agio = ((agio >> 2) & ~mask) + (agio & mask) 
+            d = ((d >> 2) & ~mask) + (d & mask) 
             last = k
+        # Enter the image j into the bitmap
+        bitmap |= 1 << j 
 
+    # Assign the image p[4]. This works in the same way as assigning
+    # the previous imgaes; but here we have to increment d[k] by one
+    # in case  k >= last.
     n1 = 20 * n1
     k = n1 >> SH
     n1 -= k << SH
-    p[4] = k + ((agio >> (2*k)) & 3) + (k >= last)
+    p[4] = k + ((d >> (2*k)) & 3) + (k >= last)
     bitmap |= 1 << p[4] 
 
+    # Now we have assigned the images p[m], 0 <= m < 5. An we have 
+    # computed the bitmap of these images in ``bitmap``.  Next we 
+    # compute the syndrome of these five images in ``syn``. Here
+    # integer ``syn`` is to be interpreted as a list of three bit
+    # fields of length 5. Each field contains an entry of the
+    # syndrome. These entries are ordered. 
     cocode = gc.vect_to_cocode(bitmap)
     syn = gc.syndrome_table[cocode & 0x7ff]
+
+    # Get next digit k from n. Assign the k-th entry of the
+    # syndrome to p[5]
     k = (3 * n1) >> SH
     p[5] = (syn >>  (5 * k)) & 31 
    
+    # Enter all entries of the syndrome into the bitmap
     bitmap |= (1 << (syn & 31)) | (1 << ((syn >> 5) & 31))
     bitmap |= (1 << ((syn >> 10) & 31))
+    # Complement the bitmap. So the bitmap has 16 bits set.
     bitmap ^= 0xffffff
 
+    # Compute ordered list of positions of the bits set in the bitmap    
     j = 0
     p1 = [None] * 24
     for i in range(24):
         p1[j] = i;              # write index i to output pos.
         j += (bitmap >> i) & 1; # increment output pos. if bitmap[i]=1
 
-    p[8] = p1[(n & 15) + 0]
+    # Let k (where k = n % 16) be the last digit of n. Assign the k-th
+    # entry of that list to p[8].
+    p[8] = p1[n & 15]
+
+    # Now we have assigned p[m], m = 0,1,2,3,4,5,8; and we procceed
+    # as in in function ``py_mat24_int_to_perm``.
     mat24_complete_heptad(p)
     return p
 
 
 
 
-def old_mat24_int_to_perm(k):
-    """Return the k-th permutation in the Mathieu group Mat24   
 
-    Any integer 0 <= k < 244823040 is evaluated in mixed-radix with 
-    bases  759, 8, 7, 6, 5, 4, 3, 16, with valence decreasing from 
-    left to right. The first digit determines the number of the octad 
-    which is the image  of the standard octad (0,...,7). The following 
-    six digits determine an even permutation of that octad, up to a 
-    permutation of the last two entries. The final digit determines 
-    the image of element 8, i.e.  the first element not in the 
-    standard octad. 
-
-    The images of the remaining elements 6, 7 and 9,...,23  are 
-    determined by calling function complete_heptad()
-    """
-    oct, k = divmod(k, 322560)
-    if oct >= 759: return None
-    oct -= 759 - STD_OCTAD
-    oct += (oct >> 12) & 759 # give number 0 to standard octad
-    #print("i2p", oct)
-    oct = gc.octad_to_vect(oct);
-    #print("i2p oct", hex(oct))
-    p = [None]*24
-    oct, j = 8 * oct, 0x8        
-    for i in range(24):
-        o = oct & 8
-        p[(j >> o) & 0x1f] = i
-        j += 1 << o
-        oct >>= 1
-    p[8] = p[8 + (k & 15)]
-    #print("i2pfinal", k & 15)
-    k >>= 4
-    k *= (1 << 28) // 2520 + 1
-    for i in range(6):
-        k1 = i + (k >> 28)
-        #print("i2p%d" % i, k >> 28)
-        p[i], p[k1] = p[k1], p[i]  
-        k = (k & 0xfffffff) * (7-i)
-    mat24_complete_heptad(p)
-    return p
 
 
 
 #######################################################################
-# Compute the n-th index of an element of the Mathieu group Mat24
+# Compute the index of an element of the Mathieu group Mat24
 #######################################################################
 
 
@@ -486,75 +531,86 @@ def mat24_perm_to_int(p1):
 
     This reverses member function mat24_int_to_perm(). The input 
     permutation is not checked.
+
+    The function returns an undefined integer if permutation
+    p1 is not in the Mathieu group.
     """
+    # We reverse to operation of function ``mat24_int_to_perm``.
+    # We compute the digits of the result n in mixed-radix
+    # representation as described in function ``mat24_int_to_perm``.
+    # Digits are taken from the images p1[m], m = 0,1,2,3,4,5,8 in 
+    # that order.
+    # Get first digit k from p1[0]
     n = k = p1[0]
+    # We also accumulate the images p1[0],...,p1[4] in a bitmap
     bitmap = 1 << k
-    d = AFIELD1  << (2*k)
+
+    # For obtaining the next digits n_m from  p1[m], m = 1,2,3, we
+    # put  n_m = p1[m] - d[m]. Here d[m] is a difference that must 
+    # be subtracted n_m in order to ensure 0 <= n_m < 24-m.
+    # Computation of d[m] is a bit tricky. We keep the array 
+    # d[m], 0 <= m < 24 in the 64-bit integer d as a bit field, 
+    # reserving two bits at positions 2*m, 2*m+1 for d[m]. After
+    # selecting the image k = p1[m], we put n_m = k - d[k]. Then we
+    # have to replace d[u] by d[u + 1] + 1 for u > k. We don't 
+    # change d[u] for u < k. Since a permutation has no repetitions, 
+    # we may ignore d[k]. We start with d[u] = 0 for all u. 
+    # After putting n_0 = p1[0], we put d[u] = 1 for u >= n_0.  
+    d = DFIELD1 << (2*k)
     for i in [23, 22, 21]:
+        # Store current entry of p1 in k and adjust bitmap
         k = p1[24-i]
-        n = i * n + k - ((d >> (2*k)) & 3)
         bitmap |= 1 << k 
+        # Set digit n_k = k - d[k] and compute next step for n
+        n = i * n + k - ((d >> (2*k)) & 3)
+        # Adjust bit field d: replace d[u] by d[u + 1] + 1 for u >= k.
+        # Unfortunately, we would get an overflow in the last round. So
+        # in the last round we replace replace d[u] by d[u + 1] instead,
+        # and we remember the last value k in the variable ``last``.         
         if i > 21:
-            d += AFIELD1 << (2*k) 
+            d += DFIELD1 << (2*k) 
         else:
             last = k
 
+    # Obtain digit n_4 from p[4]. This works in the same way as
+    # assigning the previous imgaes; but here we have to increment
+    # d[k] by one in case  k >= last.
     k = p1[4]
     bitmap |= 1 << k 
     n = 20 * n + k - ((d >> (2*k)) & 3) - (k >= last)
 
+    # Now we have obtained the the digis n_m, 0 <= m < 5, from the
+    # images p[m], 0 <= m < 5. An we have computed the bitmap of these 
+    # images in ``bitmap``.  Next we compute the syndrome of these five
+    # images in ``syn``. Here integer ``syn`` is to be interpreted as a 
+    # list of three bit fields of length 5. Each field contains an 
+    # entry of the syndrome. These entries are ordered. 
+    # Also let syn1 = syn[1] be the middle entry of that list.
     cocode = gc.vect_to_cocode(bitmap)
     syn = gc.syndrome_table[cocode & 0x7ff]
     syn1 = (syn >> 5) & 31
+
+    # Compute next digit n_5 = k from p[5]. Put k = 2 if p1[5] > syn1,
+    # k = 1 if p1[5] == syn1, and  k = 0 if p1[5] < syn1.
     k = int(p1[5] > syn1) + int(p1[5] >= syn1)
+    # Enter that digit into the accumulated value n
     n = 3 * n + k
 
+    # Enter all entries of the syndrome into the bitmap
     bitmap |= (1 << (syn & 31)) | (1 << syn1)
     bitmap |= (1 << ((syn >> 10) & 31))
+
+    # Delete all bits at positions >= p1[8] from the bitmap. The the
+    # last digit of n ist the bit weight of that bit map.
     d = gc.bw24(((1 << p1[8]) - 1) & bitmap)
+    # Enter the last digit into n
     n = 16 * n + p1[8] - d
+    # Change n to zero if it is too large
+    n & ((n >= MAT24_ORDER) - 1); 
     return n
 
 
 
-
-def mat24_perm_to_int_old(p):
-    """Convert permutation p in the Mathieu group Mat24 to an integer.
-
-    This reverses member function int_to_perm(). The input permutation
-    is not checked.
-    """
-    oct = sum(1 << x for x in p[:8])
-    res = gc.vect_to_octad(oct) 
-    #print("p2i oct", hex(oct))
-    res -=  STD_OCTAD
-    res += (res >> 12) & 759 
-    #print("p2i", res)
-    p1 = [24]*32
-    oct, j = 8 * oct, 0x00        
-    for i in range(24):
-        o = oct & 8
-        p1[i] = (j >> o) & 0x1f
-        j += 1 << o
-        oct >>= 1
-    q, q_inv = [None]*8, [None]*8
-    for i in range(8):
-        j = p1[p[i] & 0x1f] & 7
-        q[j] = i
-        q_inv[i] = j
-    for i in range(6):
-        # exchange place i with place q_inv[i]
-        j = q_inv[i]
-        #q_inv[q[i]], q_inv[q[j]] = q_inv[q[j]], q_inv[q[i]]
-        #q[i], q[j] = q[j], q[i]
-        #assert q[:i] == q_inv[:i] == lrange(i)
-        q_inv[q[i]] = q_inv[q[j]]
-        q[j] = q[i]
-        #print("p2i%d" % i, j-i)           
-        res = res * (8 - i) + j - i
-    #print("p2ifinal", p1[p[8] & 0x1f])  
-    return 16 * res + p1[p[8] & 0x1f]
- 
 
 
 

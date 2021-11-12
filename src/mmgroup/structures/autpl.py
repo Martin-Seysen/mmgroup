@@ -78,14 +78,21 @@ so the kernel of that operation is the subgroup
 :math:`\mathcal{C}^*` of 
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`.
 
-The ``244823040`` elements of :math:`M_{24}` are numbered 
-from ``0`` to ``244823039``, with the number ``0`` assigned to 
-the identity. These numbers are used for addressing
-the corresponding standard representatives in the subgroup 
+We order the elements  :math:`p` of :math:`M_{24}` in lexicographic
+order based on the lists ``l_p = [p(0),...,p(23)]``. We number the
+``244823040`` elements of :math:`M_{24}` in that order from ``0`` 
+to ``244823039``.  Thus the number ``0`` is assigned to the neutral
+element of  :math:`M_{24}`, and the number ``244823039`` is 
+assigned to the permutation ``p`` with ``l_p`` =
+
+
+    :math:`\small [ 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 
+    11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7 ]`
+
+These numbers are used for addressing the corresponding standard 
+representatives in the subgroup 
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the
-monster :math:`\mathbb{M}`. This numbering system is
-not part of the public interface, but the methods of
-class |AutPL| provide access to this numbering.
+monster :math:`\mathbb{M}`. 
 
 The easiest way to create an element of :math:`M_{24}` is to
 map an *umbral heptad* to another umbral heptad. Here an
@@ -222,7 +229,7 @@ def autpl_from_obj(d = 0, p = 0, unique = 1):
     Parameter ``p`` describes a element of the Mathieu group ``Mat24``.
     It defaults to the neutral element of ``Mat24``. It may be
     
-     * An integer encoding the number of a permutatin in ``Mat24``.
+     * An integer encoding the number of a permutation in ``Mat24``.
 
      * A list encoding a permutation in the Mathieu group ``Mat24``.
 
@@ -232,10 +239,10 @@ def autpl_from_obj(d = 0, p = 0, unique = 1):
 
      * The string 'r' encodes a random permutation in ``Mat24``.
 
-    If parameter ``unique`` is ``True`` (default), the parameters ``d``
-    and ``p`` must describe a unique (or a random) Parker loop 
-    automorphism. Otherwise an arbitrary automorphism satisfying
-    the conditions given by ``d`` and ``p`` is returned.
+    If parameter ``unique`` is ``True`` (default), then the parameter
+    ``p`` must either be ``r`` or describe a unique permutation in
+    ``Mat24``. Otherwise lowest possible permutation (in 
+    lexicographic order) is taken.
 
     The function returns a pair ``(cocode, permutation_number)``.
     """
@@ -269,7 +276,7 @@ def autpl_from_obj(d = 0, p = 0, unique = 1):
             return d_out, int(p)
         err = "Bad number for permutation in Mathieu group  Mat24"
         raise ValueError(err) 
-    if isinstance(p, list):
+    if isinstance(p, (list, range)):
         if mat24.perm_check(p):
             err = "Permutation is not in Mathieu group M_24"
             raise ValueError(err)
@@ -322,8 +329,11 @@ class AutPL(AbstractGroupWord):
 
     :param unique:
 
-       If this is ``True`` (default) then the automorphism must be
-       determined uniquely by parameters ``d`` and ``p``.
+       If this is ``True`` (default) and parameter ``p`` is not ``r``
+       then parameter ``p`` must describe a unique permutation in
+       the Mathieu group ``M_24``. Otherwise we take the least 
+       possible permutation (in lexicographic order) that agrees
+       with  parameter ``p``.
  
     :return: A standard Parker loop automorphism
     :rtype:  an instance of class |AutPL|
