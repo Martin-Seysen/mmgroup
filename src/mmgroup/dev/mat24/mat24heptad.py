@@ -397,8 +397,7 @@ def py_mat24_int_to_perm(n):
     # Select image of the number 8 from that list,
     # using entry 6 f the digit list ``n_list``
     p[8] = p_list[n_list[6]]
-    gc.perm_complete_heptad(p)
-    assert gc.perm_check(p) == 0
+    mat24_complete_heptad(p)
     return p
 
 
