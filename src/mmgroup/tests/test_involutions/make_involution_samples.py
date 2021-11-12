@@ -269,6 +269,7 @@ Tuple 3:
 
 
 def print_invariants(file = None):
+    print("Searching for samples of involutions in subgroup G_x0")
     is_py = not file is None
     if file is None:
         file = sys.stdout
@@ -290,13 +291,12 @@ def print_invariants(file = None):
     show_characters(y12, file = file)
     print("\n#Characters for Co_1 class 2C", file = file)
     g4 = find_fourvolution()
-    print("g4 = ", g4)
     show_characters(g4, file = file)
-    print("iiii", is_py)
     if is_py:
         print(']', file = file)
     if do_open:
         file.close()
+    print("Samples of involutions found")
 
 
 

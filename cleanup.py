@@ -70,6 +70,9 @@ DATA_FILE_DICT = {
     ("src", "mmgroup", "tests", "test_axes"): [
         "sample_axes", "baby_sample_axes",
     ],
+    ("src", "mmgroup", "tests", "test_involutions"): [
+        "involution_samples",
+    ]
 }
 
 
