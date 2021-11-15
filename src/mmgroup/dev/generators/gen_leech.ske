@@ -163,11 +163,12 @@ uint32_t gen_leech2_type(uint64_t v2)
     static uint8_t tab_even_scalar1[7] = {
         0xff, 0xff, 0x34, 0x36, 0x34, 0xff, 0xff
     };
-    uint_fast32_t  x1, gcodev, cocodev, theta, w, cw,scalar, lsb;
+    uint_fast32_t x1, gcodev, coc, cocodev, theta, w, cw, scalar, lsb, syn;
     x1 = (uint_fast32_t)v2;
     theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]; 
-    // put cw = min weight of cocode word
-    cw = mat24_cocode_weight(x1 ^ theta);
+    // put syn = syndrome table[cocode word]
+    coc = (x1 ^ theta) & 0xfff;
+    syn =  MAT24_SYNDROME_TABLE[coc & 0x7ff];
     // Put scalar = scalar product (code, cocode)
     scalar = (x1 >> 12) &  x1 & 0xfff;
     scalar ^= scalar >> 6;
@@ -175,19 +176,29 @@ uint32_t gen_leech2_type(uint64_t v2)
     scalar = (0x96 >> (scalar & 7)) & 1;
     
     // Deal with odd cocode first
-    if (x1 & 0x800) return tab_odd[cw-1+scalar]; 
-    
+    if (x1 & 0x800) {
+        // Let cw be the weight of the cocode word
+        cw =  3 - ((((syn & 0x7fff) + 0x2000) >> 15) << 1);
+        return tab_odd[cw-1+scalar]; 
+    }
+
     // Put w = weight(code word gcodev) / 4
     w = 0 - ((x1 >> 23) & 1);
     w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+
+    // Let cw be the weight of the cocode word (modulo 4)
+    cw = (syn >> 15) << 1; 
+
 
     // Deal with even cocode and scalar == 1
     if (scalar) return tab_even_scalar1[w];
    
     switch (w) {
         case 6:
-            if (cw == 0) return 0x48;
+            if (coc == 0) return 0x48;
         case 0: 
+            // Compute the exact cocode weight in cw
+            cw = (4 - cw) & ((0UL - coc) >> 16);
             return cw << 4;
         case 3:
             return 0x46;
@@ -196,11 +207,13 @@ uint32_t gen_leech2_type(uint64_t v2)
             x1 ^= 0x800000; 
         default:   // This must be case 2:
             // Put gcodev = codeword (in vector rep)
-            gcodev = mat24_gcode_to_vect(x1 >> 12); 
+            gcodev = mat24_def_gcode_to_vect(x1 >> 12); 
             // Put coccodev = cocode word (in vector rep), such that
             // the cocode word is a suboctad of gcodev if possible
             lsb = mat24_def_lsbit24(gcodev);
-            cocodev = mat24_cocode_syndrome(x1 ^ theta, lsb); 
+            coc ^= MAT24_RECIP_BASIS[lsb];
+            syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+            cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
             // Put cw = 0x22 if (w ^ cw) & 2 is 2, else put cw = 0x42
             cw = 0x42 - (((w ^ cw) & 2) << 4);
             // Return cw if cocodev is a suboctad of gcodev

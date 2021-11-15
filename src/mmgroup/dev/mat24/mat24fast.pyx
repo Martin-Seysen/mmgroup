@@ -14,7 +14,7 @@ include "../pxd_files/mat24_functions.pxd"
 cdef extern from "mat24_functions.h":
     const uint32_t MAT24_BASIS[24]
     const uint32_t MAT24_RECIP_BASIS[32]
-
+    const uint16_t MAT24_SYNDROME_TABLE[0x800]
 
 
 
@@ -55,6 +55,14 @@ def vect_to_bit_list(uint32_t v1):
     cdef uint32_t w
     w = mat24_vect_to_bit_list(v1, &a[0])
     return w, list(a[:24])
+
+
+
+def vect_to_list(uint32_t v1, uint32_t u_len):
+    cdef uint8_t a[24]
+    cdef uint32_t w
+    w = mat24_vect_to_list(v1, u_len, &a[0])
+    return list(a[:w])
 
 
 
@@ -147,6 +155,9 @@ def octad_to_vect(uint32_t u_octad):
 # Golay code syndromes and weights
 ###########################################################################
 
+
+def syndrome_table(c1):
+    return MAT24_SYNDROME_TABLE[c1 & 0x7ff]
 
 def cocode_syndrome(uint32_t c1,  uint32_t u_tetrad = 24):
     cdef uint32_t res

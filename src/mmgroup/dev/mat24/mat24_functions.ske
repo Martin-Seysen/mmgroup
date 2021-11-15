@@ -170,6 +170,31 @@ const uint8_t MAT24_LSBIT_TABLE[32] = {
 #define mat24_def_not_nonstrict_octad(v) \
     (((MAT24_OCT_ENC_TABLE[(v) & 0x7ff] + 2) & 0x100) >> 8)
 
+
+/** 
+  @def  mat24_def_gcode_to_vect(v)
+  @brief Convert Golay code element number ``v`` to a vector in ``GF(2)^24``
+
+  Macro version of function ``mat24_gcode_to_vect``.
+*/
+#define mat24_def_gcode_to_vect(v) \
+    (MAT24_DEC_TABLE1[((v) << 4) & 0xf0]   \
+          ^ MAT24_DEC_TABLE2[((v) >> 4) & 0xff])
+
+
+
+/** 
+  @def  mat24_def_syndrome_from_table(t)
+  @brief Convert entry ``t`` of table ``MAT24_SYNDROME_TABLE`` to syndrome
+
+  An entry ``t`` of the table ``MAT24_SYNDROME_TABLE`` encodes an odd
+  cocode syndrome. The macro returns that syndrome as a bit vector.
+*/
+#define mat24_def_syndrome_from_table(t) \
+    ((1UL << ((t) & 31)) ^ (1UL << (((t) >> 5) & 31)) \
+        ^ (1UL << (((t) >> 10) & 31)))
+
+
 /// @cond DO_NOT_DOCUMENT 
 //  Do not document C functions in the header file!
 
@@ -229,7 +254,7 @@ uint32_t mat24_bw24(uint32_t v1)
  
  Let ``w`` be the bit weight of the bit vector ``v1 & 0xffffff``, 
  i.e. number of bits of ``v1``  at positions ``< 24`` equal  to one. 
- Then the ordered bit positions where the corrsponding bit of ``v1`` 
+ Then the ordered bit positions where the corresponding bit of ``v1`` 
  is 1 are stored in ``a_out[0],...,a_out[w-1]``. 
 
  Then ``(v1 & 0xffffff)`` has ``24 - w`` zero bits. The 
@@ -265,6 +290,35 @@ uint32_t mat24_vect_to_bit_list(uint32_t v1, uint8_t *a_out)
         j += 1 << o;                 // update both output positions
     // %%END FOR 
     return w;
+}
+
+
+
+/**
+ @brief Stores the positions of 1-bits of a bit vector to an array.
+ 
+ Let ``w`` be the minimum of the input ``u_len`` and the bit weight 
+ of the bit vector ``v1 & 0xffffff``, i.e. number of bits of ``v1``
+ at positions ``< 24`` equal  to one. 
+ Then the first ``w`` bit positions where the corresponding bit 
+ of ``v1`` is 1 are stored in ``a_out[0],...,a_out[w-1]`` in natural 
+ order. The function returns ``w``.
+ 
+ For small values ``w`` this function is faster than 
+ function ``mat24_vect_to_bit_list``.
+*/
+// %%EXPORT p
+uint32_t mat24_vect_to_list(uint32_t v1, uint32_t u_len, uint8_t *a_out)
+{
+    uint_fast32_t i, j;
+   
+    for (i = 0; i < u_len; ++i) {
+        j = mat24_def_lsbit24(v1);
+        if (j >= 24) return i;
+        a_out[i] = (uint8_t)j;
+        v1 ^= 1UL << j;
+    }
+    return u_len;
 }
 
 
@@ -329,18 +383,18 @@ static const uint32_t MAT24_ENC_TABLE2[256] = {
 // %%TABLE Mat24_enc_table2, uint32
 };
 
-// %%USE_TABLE
-static const uint32_t MAT24_DEC_TABLE0[256] = {
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE0[256] = {
 // %%TABLE Mat24_dec_table0, uint32
 };
 
-// %%USE_TABLE
-static const uint32_t MAT24_DEC_TABLE1[256] = {
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE1[256] = {
 // %%TABLE Mat24_dec_table1, uint32
 };
 
-// %%USE_TABLE
-static const uint32_t MAT24_DEC_TABLE2[256] = {
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE2[256] = {
 // %%TABLE Mat24_dec_table2, uint32
 };
 
@@ -722,19 +776,11 @@ uint32_t mat24_gcode_to_bit_list(uint32_t v1, uint8_t *a_out)
 uint32_t mat24_cocode_weight(uint32_t c1)
 
 {
-        uint_fast32_t  y, syn, w; 
-        y = 0 - (((c1 >> 11) + 1) & 1);    // y = 0 if c1 is odd else -1
-        c1 ^= MAT24_RECIP_BASIS[0] & y;
-            // if even: flip bit 0 in cocode repr. 'c1'
-        syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
-        w = 3 - (((syn + 0x2000) >> 15) << 1);
-           // weight of odd syndrome (syn >= 0x6000 iff weight == 1)
-        w -= y;                         // weight of complete syndrome
-        y &= (((syn & 31) - 1) >> 5) & 1;
-           // y = 1 if bit 0 has been counted twice in syndrome
-           // (syn & 31 == 0 iff bit 0 is set in syndrome)
-        w -= y << 1;                    // correct if counted twice 
-        return w;
+    uint_fast32_t syn = MAT24_SYNDROME_TABLE[c1 & 0x7ff], mask;
+    if (c1 & 0x800) 
+        return 3 - ((((syn & 0x7fff) + 0x2000) >> 15) << 1);
+    mask = (0UL - (c1 & 0xfffUL)) >> 16;
+    return (4 - ((syn >> 15) << 1)) & mask;
 }
 
 
@@ -962,8 +1008,7 @@ uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
     // compute syndrome of (odd) vector w ^ 2**l, w = gcode_to_vect(v1)
     c1 ^= MAT24_RECIP_BASIS[l];
     syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
-    syn = (1 << (syn & 31)) ^ (1 << ((syn>>5) & 31))   
-                               ^ (1 << ((syn>>10) & 31));
+    syn = mat24_def_syndrome_from_table(syn);
     // Abort if syndrome is not a subset of the octad oct
     if ((syn & oct) != syn) return (uint32_t)(-1);
     // Compress syndrome to suboctad number
@@ -1241,8 +1286,7 @@ static inline uint_fast32_t odd_syn(uint_fast32_t x) {
       ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  
       ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
     x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; 
-    return  (1 << ((x) & 31)) ^ (1 << (((x) >> 5) & 31))  
-              ^ (1 << (((x) >> 10) & 31));
+    return  mat24_def_syndrome_from_table(x);
 }
 
 #define lsb24(x) ((uint8_t)(mat24_def_lsbit24_pwr2(x)))
@@ -1482,8 +1526,7 @@ uint32_t mat24_perm_from_heptads(uint8_t *h1, uint8_t *h2, uint8_t *p_out)
            ^ MAT24_ENC_TABLE1[(v >> 8) & 0xff]
            ^ MAT24_ENC_TABLE2[(v >> 16) & 0xff];
     y = MAT24_SYNDROME_TABLE[y & 0x7ff];
-    y = (1 << (y & 31)) ^ (1 << ((y >> 5) & 31)) 
-                              ^ (1 << ((y >> 10) & 31));  
+    y =  mat24_def_syndrome_from_table(y);  
     
     // Put v = lsbit(v & y). Then v is the special element of h1
     v &= y; 
@@ -1825,8 +1868,7 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
     j = (syn >>  (5 * k)) & 31; 
     p_out[5] = (uint8_t)j;
 
-    bitmap |= (1 << (syn & 31)) | (1 << ((syn >> 5) & 31)) 
-               | (1 << ((syn >> 10) & 31));
+    bitmap |= mat24_def_syndrome_from_table(syn);
     bitmap ^= 0xffffff;  
 
     // Compute list of entries j with bitmap[j] = 1 in the array p1

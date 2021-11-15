@@ -287,16 +287,20 @@ def encoding_tables(basis):
 def make_syndrome_table(recip_basis):
      """Generates a table for fast calulation of syndrome of a bit vector
 
-     Table input is a 11-bit number representing an odd cocode word 
-     Since basis vector 0 is the only vector with odd parity, exactly
-     the cocode words with an odd number have odd parity. In table  
-     entry n we list the unique cocode word of weight 1 or 3 equivalent 
-     to the cocode word with number 2*n+1 in the following format:
+     Table input is a 11-bit number representing an odd cocode word
+     ``c``. Since basis vector 11 is the only vector with odd parity, 
+     exactly  the cocode words with number ``c  >= 0x800`` have odd 
+     parity. In table entry ``c & 0x7ff``  we list the unique cocode 
+     word of weight 1 or 3 equivalent to the cocode word with number
+     ``c``in the following format:
 
               i   +  (j << 5)  +  (k << 10) ,
 
      representing the word with ones at position i, j and k. If that
      cocode word has weight 1, we put j = k = 24.
+
+     We set bit 15 of entry ``e`` in the table to one iff the (even)
+     cocode word with number ``e`` has bit weight 2.
 
      Input recip_basis is the reciprocal basis of the choosen basis
      for the Golay code. (Lower 12 basis vectors must span a 
@@ -306,14 +310,18 @@ def make_syndrome_table(recip_basis):
      syndrome_table = zeros(0x800, dtype=uint16)
      C1 = (24 << 5) | (24 << 10) 
      for i in range(24):
-         b_i = recip_basis[i] & 0x7ff
-         syndrome_table[b_i] =  i | C1 
+         assert recip_basis[i] & 0x800
+     rb = recip_basis & 0x7ff
+     for i in range(24):
+         b_i = rb[i]
+         syndrome_table[b_i] ^=  i | C1 
          for j in range(i+1,24):
-             b_j = b_i ^ recip_basis[j]
+             b_j = b_i ^ rb[j]
+             syndrome_table[b_j] ^= 0x8000
              for k in range(j+1,24):
-                 b_k = (b_j ^ recip_basis[k]) & 0x7ff 
-                 syndrome_table[b_k] = i | (j<<5) | (k<<10)  
-     assert min(syndrome_table) > 0
+                 b_k = b_j ^ rb[k]
+                 syndrome_table[b_k] ^= i | (j<<5) | (k<<10)  
+     assert min(syndrome_table & 0x7fff) > 0
      return syndrome_table
                  
 
