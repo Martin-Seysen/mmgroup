@@ -236,66 +236,58 @@ uint32_t gen_leech2_type(uint64_t v2)
 // %%EXPORT px
 uint32_t gen_leech2_is_type2(uint64_t v2)
 {
-    uint_fast32_t  x1, theta, tab, scalar, b1, b0, vect, lsb, syn, w;
-    x1 = (uint_fast32_t)v2;
+    uint_fast32_t theta, syn, scalar, w, coc, cw, vect, lsb, cocodev;
     // Deal with odd cocode words
-    if (x1 & 0x800) {   // Deal with odd cocode words
-         // Let tab be the syndrome table entry for the cocode part
-         theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
-         tab = MAT24_SYNDROME_TABLE[(theta ^ x1) & 0x7ff];
-         // Return 0 if tab does not encode a cocode word of length 1
-         if ((tab & 0x3ff) < (24 << 5)) return 0;
+    if (v2 & 0x800) {   // Deal with odd cocode words
+         // Let syn be the syndrome table entry for the cocode part
+         theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
+         syn = MAT24_SYNDROME_TABLE[(theta ^ v2) & 0x7ff];
+         // Return 0 if syn does not encode a cocode word of length 1
+         if ((syn & 0x3ff) < (24 << 5)) return 0;
          // Return  scalar product <code, cocode> + 1   (mod 2)
-         scalar = (x1 >> 12) &  x1 & 0xfff;
+         scalar = (v2 >> 12) &  v2 & 0xfff;
          scalar ^= scalar >> 6;
          scalar ^= scalar >> 3;
          scalar = (0x69 >> (scalar & 7)) & 1;
          return scalar;
     }
     // Deal with Golay code word 0
-    if ((x1 & 0x7ff000L) == 0) {
-         // Let tab be the syndrome table entry for the cocode part 
-         // XORed with basis vector 0. 
-         tab = MAT24_SYNDROME_TABLE[(x1 ^ MAT24_RECIP_BASIS[0]) & 0x7ff];
-         // Set b1 True iff tab encodes a cocode word of length 3
-         b1 =  (tab & 0x3ff) < (24 << 5);
-         // Set b0  True iff tab encodes a cocode word with bit 0 not set
-         b0 =  (tab & 0x1f) !=  0;
-         //  b0 ^ b1 is True iff (the even) cocode word has length 2
-         return b0 ^ b1;
+    if ((v2 & 0x7ff000L) == 0) {
+         // Let syn be the syndrome table entry for the cocode part 
+         syn = MAT24_SYNDROME_TABLE[v2 & 0x7ff];
+         // Return 1 iff tab encodes a cocode word of length 2
+         return (syn >> 15) & 1;
     }
-    // If v2 is of type 2 here, it must be a suboctad
 
-    // Return 0 if v2 is not a (possibly complemented) octad
-    if (mat24_def_not_nonstrict_octad(x1 >> 12)) return 0;
+    theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
 
-    // let vect = Golay code in vector representation
-    vect = mat24_gcode_to_vect(x1 >> 12);
-    // Put  w =  weight(code word) / 8     (mod 2);
-    // so w is True iff the Golay code word is an octad.
-    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff];
-    w = ((x1 >> 23) ^ (theta >> 13)) & 1;  
-    // Complement vect if it is not an octad
-    vect ^= w - 1;
-    // let lsb be the least significant bit of vect
+    // Here (theta >> 12) & 7 is the bit weight of 
+    // v2 + Omega * b23, where b23 is bit 23 of v2.
+    // If bit 12 of theta is odd then v2 is a dodecad
+    // and hence never short.
+    if (theta & 0x1000) return 0;
+    // Now v2 is a (possibly complemented) octad.
+    // Put w = 1 if v2 is an octad and w = 0 otherwise.
+    w = ((theta >> 13) ^ (v2 >> 23)) & 1;
+    // XOR v2 with Omega if it has weight 16
+    v2 ^= (1 - w) << 23;
+    
+    // Let coc be the cocode part of v2 (this is even)
+    coc = (v2 ^ theta) & 0x7ff;
+    // Let cw be the halved bit weight of coc
+    cw = MAT24_SYNDROME_TABLE[coc] >> 15;
+
+    // Let vect be the Golay code part of v2; this is an octad
+    vect = mat24_def_gcode_to_vect(v2 >> 12); 
+    // Put cocodev = cocode word (in vector rep), such that
+    // the cocode word is a suboctad of vect if possible
     lsb = mat24_def_lsbit24(vect);
-    // Let tab be the table entry for the cocode part XORed
-    // with basis vector ``lsb``. 
-    tab = MAT24_SYNDROME_TABLE[
-        (x1 ^ theta ^ MAT24_RECIP_BASIS[lsb]) & 0x7ff];
-    // Compute cocode syndrome from tab
-    syn = (1 << (tab & 31)) ^ (1 << ((tab >> 5) & 31))   
-                               ^ (1 << ((tab >> 10) & 31));
-    // Return 0 if syndrome is not a subword of ``vect``
-    if ((vect & syn) != syn) return 0;
-    // Set b1 True iff tab encodes a cocode word of length 3
-    b1 =  (tab & 0x3ff) < (24 << 5);
-    // Set b0 True iff tab encodes a cocode word with bit ``lsb`` not set
-    b0 =  (tab & 0x1f) !=  lsb;
-    // Put b0 = 0 if cocode word has length 0 or 4 
-    // Put b0 = 1 if cocode word has length 2 
-    b0 ^= b1;
-    return b0 ^ w;
+    coc ^= MAT24_RECIP_BASIS[lsb];
+    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+    cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
+    // Input v2 is short if cocodev is contained in vect
+    // and w + cw = 1 (mod 2),
+    return (w ^ cw) & ((vect & cocodev) == cocodev) & 1;          
 }
 
 
