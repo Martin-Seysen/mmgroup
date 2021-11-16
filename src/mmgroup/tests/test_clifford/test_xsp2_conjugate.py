@@ -217,7 +217,7 @@ def test_xsp2_type(verbose = 0):
     for ntest, (pl, cocode, vtype) in enumerate(type_data):
         x = xs_vector(pl, cocode)
         if verbose:
-            print("\nTest %d", ntest+1)
+            print("\nTest %d" %(ntest+1))
             print("Expected type", hex(vtype))
             display_leech_vector(x)
         check_leech_type(x, vtype)

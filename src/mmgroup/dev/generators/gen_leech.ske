@@ -105,6 +105,55 @@ uint32_t gen_leech2_scalprod(uint32_t x1, uint32_t x2)
 
 
 
+/*************************************************************************
+*** Auxiliary functions for computing subtype of vector
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+  @brief Return suboctad type.
+
+  Let ``octad`` be an octad, i.e. a bit vector of length 8. Let
+  w = 1 (mod 2) if ``octad`` denotes an octad and ``w = 0`` 
+  if ``octad`` denotes a complemented octad. Let ``coc`` be
+  an even cocode vector in cocode representation.
+
+  The function returns 0 in bit 1 of the return value if the 
+  cocode word ``coc`` can be written as a subset of the octad,
+  and 1 in bit 1 otherwise.
+
+  the function returns ``1 + w + bit_weight(coc)/2`` in bit 0
+  of the return value.
+
+  Then Leech lattice vector ``x_octad + x_coc`` is of subtype 
+  0x22 if the return value is zero. Otherwise it is of
+  subtype 0x44 (or 0x46) if bit 1 of the return value is 0
+  (or 1).
+*/
+static inline int suboctad_type(
+    uint_fast32_t octad, // An octad as a bit vector of length 8
+    uint_fast32_t w,     // 1 for an octad, 0 for acomplemented octad
+    uint_fast32_t coc    // even cocode vector in cocode representation       
+)
+{
+    uint_fast32_t cw, lsb, syn, cocodev, sub;
+
+    // Let cw be the halved bit weight of coc
+    cw = MAT24_SYNDROME_TABLE[coc & 0x7ff] >> 15;
+    // Put cocodev = cocode word of v (in vector rep), such 
+    // that the cocode word is a suboctad of octad if possible.
+    lsb = mat24_def_lsbit24(octad);
+    coc ^= MAT24_RECIP_BASIS[lsb];
+    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+    cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
+    // Set sub = 0 iff cocodev is a subset of octad.
+    sub = (octad & cocodev) != cocodev;
+    return ((~w ^ cw) & 1) + 2 * sub;
+}
+
+/// @endcond  
+
 
 /*************************************************************************
 *** Subtype of a vector in the Leech lattice mod 2
@@ -163,27 +212,29 @@ uint32_t gen_leech2_type(uint64_t v2)
     static uint8_t tab_even_scalar1[7] = {
         0xff, 0xff, 0x34, 0x36, 0x34, 0xff, 0xff
     };
-    uint_fast32_t x1, gcodev, coc, cocodev, theta, w, cw, scalar, lsb, syn;
-    x1 = (uint_fast32_t)v2;
-    theta = MAT24_THETA_TABLE[(x1 >> 12) & 0x7ff]; 
+    uint_fast32_t theta, coc, scalar, syn, cw, w, octad;
+
+    theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff]; 
     // put syn = syndrome table[cocode word]
-    coc = (x1 ^ theta) & 0xfff;
-    syn =  MAT24_SYNDROME_TABLE[coc & 0x7ff];
+    coc = (v2 ^ theta) & 0xfff;
     // Put scalar = scalar product (code, cocode)
-    scalar = (x1 >> 12) &  x1 & 0xfff;
+    scalar = (v2 >> 12) &  v2 & 0xfff;
     scalar ^= scalar >> 6;
     scalar ^= scalar >> 3;
     scalar = (0x96 >> (scalar & 7)) & 1;
+
+    syn =  MAT24_SYNDROME_TABLE[coc & 0x7ff];
+
     
     // Deal with odd cocode first
-    if (x1 & 0x800) {
+    if (v2 & 0x800) {
         // Let cw be the weight of the cocode word
         cw =  3 - ((((syn & 0x7fff) + 0x2000) >> 15) << 1);
         return tab_odd[cw-1+scalar]; 
     }
 
-    // Put w = weight(code word gcodev) / 4
-    w = 0 - ((x1 >> 23) & 1);
+    // Put w = weight(Golay code word of v2) / 4
+    w = 0 - ((v2 >> 23) & 1);
     w = (((theta >> 12) & 7) ^ w) + (w & 7);  
 
     // Let cw be the weight of the cocode word (modulo 4)
@@ -204,22 +255,12 @@ uint32_t gen_leech2_type(uint64_t v2)
             return 0x46;
         case 4:
             // Add 1....1 to bit vector x (in vector rep)
-            x1 ^= 0x800000; 
+            v2 ^= 0x800000; 
         default:   // This must be case 2:
-            // Put gcodev = codeword (in vector rep)
-            gcodev = mat24_def_gcode_to_vect(x1 >> 12); 
-            // Put coccodev = cocode word (in vector rep), such that
-            // the cocode word is a suboctad of gcodev if possible
-            lsb = mat24_def_lsbit24(gcodev);
-            coc ^= MAT24_RECIP_BASIS[lsb];
-            syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
-            cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
-            // Put cw = 0x22 if (w ^ cw) & 2 is 2, else put cw = 0x42
-            cw = 0x42 - (((w ^ cw) & 2) << 4);
-            // Return cw if cocodev is a suboctad of gcodev
-            if ((gcodev & cocodev) == cocodev) return cw;
-            // Otherwise vector is of type 44
-            return 0x44;          
+            // Compute subtype with function suboctad_type()
+            octad = mat24_def_gcode_to_vect(v2 >> 12); 
+            w = suboctad_type(octad, w >> 1, coc);
+            return (0x44444222 >> (8*w)) & 0xff;
     }
 }
 
@@ -236,7 +277,7 @@ uint32_t gen_leech2_type(uint64_t v2)
 // %%EXPORT px
 uint32_t gen_leech2_is_type2(uint64_t v2)
 {
-    uint_fast32_t theta, syn, scalar, w, coc, cw, vect, lsb, cocodev;
+    uint_fast32_t theta, syn, scalar, w, coc, octad;
     // Deal with odd cocode words
     if (v2 & 0x800) {   // Deal with odd cocode words
          // Let syn be the syndrome table entry for the cocode part
@@ -271,23 +312,11 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
     w = ((theta >> 13) ^ (v2 >> 23)) & 1;
     // XOR v2 with Omega if it has weight 16
     v2 ^= (1 - w) << 23;
-    
     // Let coc be the cocode part of v2 (this is even)
     coc = (v2 ^ theta) & 0x7ff;
-    // Let cw be the halved bit weight of coc
-    cw = MAT24_SYNDROME_TABLE[coc] >> 15;
-
-    // Let vect be the Golay code part of v2; this is an octad
-    vect = mat24_def_gcode_to_vect(v2 >> 12); 
-    // Put cocodev = cocode word (in vector rep), such that
-    // the cocode word is a suboctad of vect if possible
-    lsb = mat24_def_lsbit24(vect);
-    coc ^= MAT24_RECIP_BASIS[lsb];
-    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
-    cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
-    // Input v2 is short if cocodev is contained in vect
-    // and w + cw = 1 (mod 2),
-    return (w ^ cw) & ((vect & cocodev) == cocodev) & 1;          
+    // Compute subtype with function suboctad_type() 
+    octad = mat24_def_gcode_to_vect(v2 >> 12); 
+    return suboctad_type(octad, w, coc) == 0;
 }
 
 
@@ -340,6 +369,97 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
 
 
 #undef LSTEPS
+
+
+
+/*************************************************************************
+*** Auxiliary functions for Reducing a type-4 vector  mod 2
+*************************************************************************/
+
+/**
+  @brief Auxiliary functions for function gen_leech2_reduce_type4
+  
+
+  The function returns the subtype of a vector ``v`` of type 4 in
+  the Leech lattice modulo 2. Parameter ``v2`` must be in Leech 
+  lattice encoding. The function returns the subtype of ``v`` that
+  will be used for reduction in function ``gen_leech2_reduce_type4``.
+
+  In that function we take care of the special case that ``v + v0``
+  is of type 2 for a specific short vector ``v0``. 
+    
+  A simpler (but slower) implementation of thhis function is:
+
+  If ``v ^ v0`` is of type 2 the return the subtype of ``v ^ v0``.
+  Otherwise return the subtype of ``v``.
+
+  The function returns 0 if ``v`` is equal to  ``Omega`` and
+  a negative value if ``v`` has not type 4.
+*/
+// %%EXPORT px
+int32_t gen_leech2_start_type4(uint32_t v)
+{
+    uint_fast32_t syn, scalar, theta, w, octad, coc, sub;
+
+    v &= 0xffffff;
+    if ((v & 0x7ff800) == 0) {
+        // Then v or v + Omega is an even cocode element.
+        // Return 0 if v == Omega and -1 if v ==  0.
+        if ((v & 0x7fffff) == 0) {
+            return v & 0x800000 ? 0 : -1;
+        }
+        // Let w be the cocode weight. Return -2 if w == 2.
+        syn = MAT24_SYNDROME_TABLE[coc = v & 0x7ff];
+        if (syn & 0x8000)  return -2;
+        // Here v has type 4. Let v23 be the standard type-2 vector.
+        // Return 0x20 if v ^ v23 has type 2 and 0x40 otherwise.
+        syn = MAT24_SYNDROME_TABLE[coc ^ 0x200];
+        return (syn & 0x8000)  ? 0x20 : 0x40;
+    }
+    // Compute type of v (mod 2) in scalar; return -3 if this is odd
+    scalar = (v >> 12) &  v & 0xfff;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    scalar = (0x96 >> (scalar & 7)) & 1;
+    if (scalar) return -3;
+
+    // Let syn be the syndrome table entry for the cocode part
+    theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+    syn = MAT24_SYNDROME_TABLE[coc = (theta ^ v) & 0x7ff];
+ 
+    if (v & 0x800) {
+        // The v has an odd cocode element, encode in 'syn'.
+        // Return -2 if syn encodes a cocode word of length 1,
+        // since then v is of type 2.
+        if ((syn & 0x3ff) >= (24 << 5)) return -2;
+        // Here v is of type 4. 
+        // Get syndrome table entry of v ^ v23
+        syn = MAT24_SYNDROME_TABLE[coc ^ 0x200];
+        // Return 0x21 if v ^ v23 is of type 2 and 0x43 otherwise.
+        if (((syn & 0x3ff) >= (24 << 5)) && (v & 0x200000) == 0)
+            return 0x21;
+        return 0x43;
+    }
+
+    // Here (theta >> 12) & 7 is the bit weight of  v + Omega * b23, 
+    // where b23 is bit 23 of v. If bit 12 of theta is odd then the
+    // Golay code part of v is a dodecad, and v has subtype 0x46.
+    if (theta & 0x1000) return 0x46;
+
+    // Put w = 1 if v is an octad and w = 0 otherwise.
+    w = ((theta >> 13) ^ (v >> 23)) & 1;
+    // XOR v with Omega if it has weight 16
+    v ^= (1 - w) << 23;
+    // Let octad be the Golay code part of v; this is an octad.
+    octad = mat24_def_gcode_to_vect(v >> 12); 
+    // Let coc be the cocode part of v; this is even.
+    coc = (v ^ theta) & 0x7ff;
+
+    sub = suboctad_type(octad, w, coc);
+    if (sub == 0) return -2;
+    if (suboctad_type(octad, w, coc ^ 0x200) == 0) return 0x22;
+    return (0x44444222 >> (8 * sub)) & 0xff;    
+}
 
 
 /************************************************************************

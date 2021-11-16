@@ -61,7 +61,6 @@ def mat24lex_testcases(ntests = 1000):
         yield i
 
 
-@pytest.mark.mmm
 @pytest.mark.mat24
 def test_mat24lex(ntests = 5000, verbose = 0):
     lindex = []; ldata = []
