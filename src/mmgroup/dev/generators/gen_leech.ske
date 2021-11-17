@@ -266,10 +266,10 @@ uint32_t gen_leech2_type(uint64_t v2)
 
 
 /**
-  @brief Check vector in Leech lattice mod 2 is of type 2
+  @brief Check if vector in Leech lattice mod 2 is of type 2
 
-  This function returns 1 if the vector \f$v_2\f$ in the Leech 
-  lattice modulo 2 is of type 2 and 0 otherwise.
+  This function returns the subtype ofthe vector \f$v_2\f$ in the 
+  Leech lattice modulo 2 if \f$v_2\f$ is of type 2 and 0 otherwise.
 
   It is much faster than function ``gen_leech2_type()``.
   
@@ -290,14 +290,14 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
          scalar ^= scalar >> 6;
          scalar ^= scalar >> 3;
          scalar = (0x69 >> (scalar & 7)) & 1;
-         return scalar;
+         return 0x21 & (0 - scalar);
     }
     // Deal with Golay code word 0
     if ((v2 & 0x7ff000L) == 0) {
          // Let syn be the syndrome table entry for the cocode part 
          syn = MAT24_SYNDROME_TABLE[v2 & 0x7ff];
          // Return 1 iff tab encodes a cocode word of length 2
-         return (syn >> 15) & 1;
+         return 0x20 & (0 - ((syn >> 15) & 1));
     }
 
     theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
@@ -316,7 +316,7 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
     coc = (v2 ^ theta) & 0x7ff;
     // Compute subtype with function suboctad_type() 
     octad = mat24_def_gcode_to_vect(v2 >> 12); 
-    return suboctad_type(octad, w, coc) == 0;
+    return suboctad_type(octad, w, coc) ? 0 : 0x22;
 }
 
 
@@ -359,7 +359,7 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
     count = v = 0;
     for (i = 1; ; ++i) {
          for (j = 0; j < l; ++j) {
-             count += gen_leech2_is_type2(v ^ b[j]);
+             count += gen_leech2_is_type2(v ^ b[j]) > 0;
          }
          if (i == bigsteps) break;
          v ^= a[mat24_def_lsbit24(i)];
@@ -380,21 +380,24 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
   @brief Auxiliary functions for function gen_leech2_reduce_type4
   
 
-  The function returns the subtype of a vector ``v`` of type 4 in
-  the Leech lattice modulo 2. Parameter ``v2`` must be in Leech 
-  lattice encoding. The function returns the subtype of ``v`` that
-  will be used for reduction in function ``gen_leech2_reduce_type4``.
+  The function returns the subtype of a vector \f$v\f$ of type 4 in
+  the Leech lattice modulo 2. Parameter \f$v\f$ must a vector of
+  type 4 in Leech lattice encoding. The function returns the subtype
+  of \f$v\f$ that will be used for reduction in
+  function ``gen_leech2_reduce_type4``.
 
-  In that function we take care of the special case that ``v + v0``
-  is of type 2 for a specific short vector ``v0``. 
-    
-  A simpler (but slower) implementation of thhis function is:
+  This function takes care of the special vectors \f$\Omega\f$
+  and \f$\beta\f$ the Leech lattice modulo 2.
 
-  If ``v ^ v0`` is of type 2 the return the subtype of ``v ^ v0``.
-  Otherwise return the subtype of ``v``.
+  It is used for rotating a type-4 vector \f$v\f$ into 
+  \f$\Omega\f$. If this is possible, that rotation will fix the
+  special short vector \f$\beta\f$.
 
-  The function returns 0 if ``v`` is equal to  ``Omega`` and
-  a negative value if ``v`` has not type 4.
+  Therefore the function returns 0 in case \f$v = \Omega\f$. It returns 
+  the subtype of  \f$v + \beta\f$ if \f$\beta\f$ and \f$v + \beta\f$
+  are of type 2 and orthogonal in the real Leech lattice.
+
+  The function returns a negative value if \f$v\f$ is not of type 4.
 */
 // %%EXPORT px
 int32_t gen_leech2_start_type4(uint32_t v)
@@ -411,8 +414,8 @@ int32_t gen_leech2_start_type4(uint32_t v)
         // Let w be the cocode weight. Return -2 if w == 2.
         syn = MAT24_SYNDROME_TABLE[coc = v & 0x7ff];
         if (syn & 0x8000)  return -2;
-        // Here v has type 4. Let v23 be the standard type-2 vector.
-        // Return 0x20 if v ^ v23 has type 2 and 0x40 otherwise.
+        // Here v has type 4. Let beta be the standard type-2 vector.
+        // Return 0x20 if v ^ beta has type 2 and 0x40 otherwise.
         syn = MAT24_SYNDROME_TABLE[coc ^ 0x200];
         return (syn & 0x8000)  ? 0x20 : 0x40;
     }
@@ -428,14 +431,14 @@ int32_t gen_leech2_start_type4(uint32_t v)
     syn = MAT24_SYNDROME_TABLE[coc = (theta ^ v) & 0x7ff];
  
     if (v & 0x800) {
-        // The v has an odd cocode element, encode in 'syn'.
+        // The v has an odd cocode element, encoded in 'syn'.
         // Return -2 if syn encodes a cocode word of length 1,
         // since then v is of type 2.
         if ((syn & 0x3ff) >= (24 << 5)) return -2;
         // Here v is of type 4. 
-        // Get syndrome table entry of v ^ v23
+        // Get syndrome table entry of v ^ beta
         syn = MAT24_SYNDROME_TABLE[coc ^ 0x200];
-        // Return 0x21 if v ^ v23 is of type 2 and 0x43 otherwise.
+        // Return 0x21 if v ^ beta is of type 2 and 0x43 otherwise.
         if (((syn & 0x3ff) >= (24 << 5)) && (v & 0x200000) == 0)
             return 0x21;
         return 0x43;
@@ -456,8 +459,11 @@ int32_t gen_leech2_start_type4(uint32_t v)
     coc = (v ^ theta) & 0x7ff;
 
     sub = suboctad_type(octad, w, coc);
+    // Return -2 if v is of type 2
     if (sub == 0) return -2;
+    // Otherwise return 0x22 if v + beta is of type 2
     if (suboctad_type(octad, w, coc ^ 0x200) == 0) return 0x22;
+    // Otherwise return the subtype of v
     return (0x44444222 >> (8 * sub)) & 0xff;    
 }
 

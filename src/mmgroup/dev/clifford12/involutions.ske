@@ -526,7 +526,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
             // to be analysed. v must be of type 0, 2, or 4.
             v = (a[i0] ^ a[n0 + i1]) & 0xffffffUL;
             // Continue if v is not of the type that we are looking for.
-            is_type2 = gen_leech2_is_type2(v);
+            is_type2 = gen_leech2_is_type2(v) > 0;
             if (find_type2 != is_type2) continue;
             
             // Here we look for vectors of type 2 ...

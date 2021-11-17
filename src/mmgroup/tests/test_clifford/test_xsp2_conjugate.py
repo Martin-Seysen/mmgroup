@@ -196,7 +196,7 @@ def check_leech_type(x, t_expected):
         err = "Error in computing Leech type"
         raise ValueError(err)
     is_type2 = (t_expected >> 4) == 2
-    found_type2 = gen_leech2_is_type2(x) 
+    found_type2 = gen_leech2_is_type2(x) > 0
     ok = is_type2 == found_type2
     if not ok:
         print("Error:  x = %s, Leech type: %s" % (

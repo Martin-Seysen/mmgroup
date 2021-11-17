@@ -3,10 +3,10 @@ r"""
 Module ``generators`` contains the definition of the generators of the 
 monster, so that they may be used in C files. It also contains support 
 for the subgroups :math:`N_{0}` of structure 
-:math:`2^{2+11+2\cdot11}.(\mbox{Sym}_3 \times \mbox{M}_{24})` and 
+:math:`2^{2+11+2\cdot11}.(\mbox{Sym}_3 \times M_{24})` and 
 :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1` of the 
 monster, as described in :cite:`Con85` and :cite:`Seysen20`. Here
-:math:`M_{24}` is the Mathieu group acting on 24 elements, and 
+:math:`M{24}` is the Mathieu group acting on 24 elements, and 
 :math:`\mbox{Co}_1` is the automorphism group of the 24-dimensional
 Leech lattice modulo 2.
 
@@ -24,19 +24,21 @@ Our set of generators of the monster group is defined in section
 is defined in section *Header file mmgroup_generators.h*.
 
 
-Subgroups of :math:`N_{0}` and :math:`G_{x0}` 
----------------------------------------------
-
 The intersection :math:`N_{0} \cap G_{x0}` is a group :math:`N_{x0}` 
 of structure :math:`2^{1+24}.2^{11}.M_{24}`. The group :math:`M_{24}` 
-(and also, to some extent, the group :math:`N_{x0}`) is supported by 
-the C functions in file ``mat24_functions.c``. 
+(and, to some extent, also the group :math:`N_{x0}`) is 
+supported by the C functions in file ``mat24_functions.c``. 
 
-Let :math:`Q_{x0}` the normal subgroup of :math:`N_{x0}` of structure
+The Leech lattice and the extraspecial group :math:`Q_{x0}`
+-----------------------------------------------------------
+
+Let :math:`Q_{x0}` the normal subgroup of :math:`G_{x0}` of structure
 :math:`2^{1+24}`. Then :math:`Q_{x0}` is an extraspecial 2 group and
-also a normal subgroup of :math:`G_{x0}`. The quotient of  
-:math:`Q_{x0}` by its center :math:`\{\pm1\}` is isomorphic to the
-Leech lattice modulo 2.
+also a normal subgroup of :math:`G_{x0}`. Let :math:`\Lambda` be the
+Leech lattice. The quotient of :math:`Q_{x0}` by its center 
+:math:`\{\pm1\}` is isomorphic to  :math:`\Lambda/2 \Lambda`, which
+is the Leech lattice modulo 2.
+
 
 For :math:`e_i \in Q_{x0}` let :math:`\tilde{e}_i` be the vector in 
 the Leech lattice (mod 2) corresponding to :math:`\pm e_i`. Then
@@ -48,8 +50,8 @@ Leech lattice. For the commutator :math:`[e_1, e_2]` we have
 :math:`t = \langle \tilde{e}_1, \tilde{e}_2 \rangle`.
 
 
-Leech lattice encoding of the elements :math:`Q_{x0}`
--------------------------------------------------------
+Leech lattice encoding of the elements of :math:`Q_{x0}`
+--------------------------------------------------------
 
 An element of  of :math:`Q_{x0}` can be written uniquely as 
 a product :math:`x_d \cdot x_\delta`, 
@@ -80,6 +82,55 @@ A vector addition in the Leech lattice modulo 2 can be done by
 applying the XOR operator ``^`` to the integers representing 
 the vectors, ignoring the sign bit.
  
+Special elements of the group :math:`Q_{x0}`
+--------------------------------------------
+
+We write :math:`\Omega` for the positive element of the Parker 
+loop such that :math:`\tilde{\Omega}` is the Golay code word
+:math:`(1,\ldots,1)` as in :cite:`Con85` and :cite:`Seysen20`.
+In this specifiction we also write :math:`\Omega` for the 
+element :math:`x_{\Omega}` of :math:`Q_{x0}` and for the element 
+:math:`\tilde{x}_{\Omega}` of the Leech lattice modulo 2 if the 
+domain of :math:`\Omega` is clear from the context. Then
+:math:`\Omega` has Leech lattice encoding ``0x800000`` in
+our chosen basis of the Golay code; and the element :math:`\Omega` 
+of  :math:`\Lambda/2 \Lambda` corresponds to the standard
+coordinate frame of the real Leech lattice.
+
+For fast computations in the monster group it is vital to compute
+in the centralizer of a certain short element :math:`x_{\beta}`
+of :math:`Q_{x0}`, where :math:`\beta` is an even coloured element 
+of the Golay cocode, as described in :cite:`Seysen20`. Here we 
+choose the cocode element :math:`\beta` corresponding to the
+element :math:`(0,0,1,1,0,\ldots,0)` of  :math:`\mbox{GF}_2^{24}`.
+Then the centralizer of :math:`x_{\beta}` is isomorphic to the
+a double cover baby monster group and contains the generators 
+:math:`\tau` and  :math:`\xi` of the monster. We also write  
+:math:`\beta` for the element :math:`x_{\beta}` of :math:`Q_{x0}` 
+and for the element :math:`\tilde{x}_{\beta}` of 
+:math:`\Lambda/2 \Lambda` in the same way as for the element 
+:math:`\Omega`.  Then :math:`\beta` has Leech lattice 
+encoding ``0x200``  in our chosen basis.
+
+Module ``gen_leech_reduce.c`` contains functions for rotating 
+arbitrary type-4 vectors in :math:`\Lambda/2 \Lambda` to 
+:math:`\Omega` and for  rotating arbitrary type-2 vectors in 
+:math:`\Lambda/2 \Lambda` to :math:`\beta`. 
+
+Computations in the Leech lattice modulo 3
+------------------------------------------
+
+For the construction of the subgroup :math:`G_{x0}` of the monster
+we also require the automorphism group :math:`\mbox{Co}_0` of the
+**real** Leech lattice, as decribed in :cite:`Con85`. That group has 
+a faithful representation as an automophism group of 
+:math:`\Lambda/3 \Lambda`, but not of :math:`\Lambda/2 \Lambda`. 
+Module ``gen_leech3.c`` provides functions for computing in the 
+Leech Lattice modulo 3.
+
+Note that in :cite:`Seysen20` the operation of the generators 
+:math:`x_d, y_d, x_\delta, x_\pi, \xi` of :math:`G_{x0}` is
+also defined on the real Leech lattice.
 """
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals

@@ -15,9 +15,6 @@ import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
 from mmgroup.generators import gen_leech2_type
-from mmgroup.generators import gen_leech2_is_type2
-from mmgroup.generators import gen_leech2_count_type2
-from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 from mmgroup.clifford12 import xsp2co1_trace_98280
 from mmgroup.clifford12 import xsp2co1_trace_4096
