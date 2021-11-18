@@ -285,18 +285,20 @@ uint32_t gen_leech2_is_type2(uint64_t v2)
          syn = MAT24_SYNDROME_TABLE[(theta ^ v2) & 0x7ff];
          // Return 0 if syn does not encode a cocode word of length 1
          if ((syn & 0x3ff) < (24 << 5)) return 0;
-         // Return  scalar product <code, cocode> + 1   (mod 2)
+         // Put scalar = scalar product <code, cocode> + 1   (mod 2)
          scalar = (v2 >> 12) &  v2 & 0xfff;
          scalar ^= scalar >> 6;
          scalar ^= scalar >> 3;
          scalar = (0x69 >> (scalar & 7)) & 1;
+         // Return type 0x21 if scalar product is 0, and 0 otherwise
          return 0x21 & (0 - scalar);
     }
     // Deal with Golay code word 0
     if ((v2 & 0x7ff000L) == 0) {
          // Let syn be the syndrome table entry for the cocode part 
          syn = MAT24_SYNDROME_TABLE[v2 & 0x7ff];
-         // Return 1 iff tab encodes a cocode word of length 2
+         // Return 0x20 if syn encodes a cocode word of length 2
+         // and 0 otherwise
          return 0x20 & (0 - ((syn >> 15) & 1));
     }
 

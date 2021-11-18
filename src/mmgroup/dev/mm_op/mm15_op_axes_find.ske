@@ -317,7 +317,7 @@ uint32_t mm_op%{P}_2A_axis_type(uint64_t *v)
             if (rank == 2) return 0xA1000000;
             if (rank == 23) {
                 v2 = gen_leech3to2_short(v3) & 0xffffff;
-                val_A = leech2matrix_eval_A(15, v, v2);
+                val_A = mm_op%{P}_eval_A(v, v2);
                 switch (val_A) {
                     case 4:
                         return 0x21000000 + v2;

@@ -1,0 +1,231 @@
+// %%COMMENT
+// TODO: comment this!!!!
+
+
+#include "mat24_functions.h"
+#include "clifford12.h"
+#include "mm_basics.h"   
+#include "mm_op%{P}.h"   
+   
+
+// %%IF P != 15
+#error File mm_op_check_gx0.c works for modulus P = 15 only!
+// %%END IF 
+
+// %%IF INT_BITS != 64
+#error File mm_op_check_gx0.c works in the 64-bit version only!
+// %%END IF 
+
+
+
+/*************************************************************************
+*** Evaluating the the part with tag 'A' of a  vector
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+// Obtain ``v[i]`` for a vector ``v`` in the monster rep mod 15 
+#define entry_mod15(v,i) \
+   ((uint_fast32_t)((v)[(i) >> 4] >> (((i) & 15) << 2)) & 15)
+
+
+// Spread bits 0,...,15 of tmp to the (4-bit long) fields
+// of tmp. A field of tmp is set to 0xf if its 
+// corresponding bit in input tmp is one and to 0 otherwise.
+static inline uint64_t spread_4(uint64_t tmp)
+{
+    tmp = (tmp & 0xffULL) + ((tmp & 0xff00ULL) << 24);
+    tmp = (tmp & 0xf0000000fULL) 
+        +  ((tmp & 0xf0000000f0ULL) << 12);
+    tmp = (tmp & 0x3000300030003ULL) 
+        +  ((tmp & 0xc000c000c000cULL) << 6);
+    tmp = (tmp & 0x101010101010101ULL) 
+        +  ((tmp & 0x202020202020202ULL) << 3);
+    return tmp * 15;  
+}
+
+/** Matrix multiplication of A part of rep with vector
+
+   Let matrix ``A`` be the part with tag 'A' of a  vector ``v``
+   of the representation of the monster modulo 15. Let ``w`` be
+   the vector of length 24 with ``w[i] = -1`` if the  bit ``i``
+   of the integer ``b`` is set and ``w[i] = 1`` otherwise.
+
+   The function computes the vector ``z = w * A`` (modulo 15)
+   and stores ``z[i]`` in bits ``i % 16 + 3,..., i % 16`` of
+   the integer ``res[i / 16]``. The function returns the 
+    result ``w * A * transposed(w)`` (modulo 15).
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_eval_A_odd_mod15_aux(uint64_t *v, uint64_t b, uint64_t *res)
+{
+    uint64_t ac00 = 0, ac01 = 0, ac1 = 0, b1 = b, v1, mask;
+    uint32_t i0;
+
+    for (i0 = 0; i0 < 24; i0 += 12) {
+        // %%FOR i1 in range(12)
+            mask = (0 - ((b1 >> %{i1}) & 1ULL));
+            v1 = v[%{int:2*i1}] ^ mask;
+            ac00 += (v1 & 0x0f0f0f0f0f0f0f0fULL);
+            ac01 += ((v1 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+            v1 = v[%{int:2*i1+1}] ^ mask;
+            v1 = ((v1 & 0xf0f0f0f0ULL) << 28) + (v1 & 0x0f0f0f0fULL);
+            ac1 += v1;
+        // %%END FOR
+        v += 24;
+        b1 >>= 12;
+        ac00 = (ac00 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac00 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+        ac01 = (ac01 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac01 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+        ac1 = (ac1 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac1 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+    }
+
+    ac00 = (ac00 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac00 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+    ac01 = (ac01 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac01 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+    ac1 = (ac1 & 0x0f0f0f0f0f0f0f0fULL)
+             + ((ac1 >> 4) & 0x0f0f0f0f0f0f0f0fULL);
+    res[0] = ac00 + (ac01 << 4);
+    res[1] = (ac1 + (ac1 >> 28)) & 0xffffffffULL;
+
+    mask = spread_4(b);
+    ac00 ^= mask & 0x0f0f0f0f0f0f0f0fULL;
+    ac01 ^= (mask >> 4) & 0x0f0f0f0f0f0f0f0fULL;
+    mask = spread_4(b >> 16) & 0xffffffffULL;
+    ac1 ^= ((mask & 0xf0f0f0f0ULL) << 28) + (mask & 0x0f0f0f0fULL);
+
+    ac1 += ac00 + ac01;
+    ac1 += ac1 >> 32;
+    ac1 += ac1 >> 16;
+    ac1 = (ac1 & 0x0f0fULL) + ((ac1 >> 4) & 0x0f0fULL);
+    ac1 += ac1 >> 8;
+    return (uint32_t)((ac1 & 0xff) % 15);
+}
+
+
+static int32_t eval_A_odd_mod15(uint64_t *v, uint32_t vect, uint32_t pos)
+{
+    uint64_t res[2], a;
+    
+    // Convert Golay code vector to bit vector
+    vect = mat24_def_gcode_to_vect(vect);
+    // Complement vector if bit at position 'pos' is set
+    vect ^= 0 - ((vect >> pos) & 1UL);
+    vect &= 0xffffff;
+    a = mm_op%{P}_eval_A_odd_mod15_aux(v, vect, res);
+    a += 7 * entry_mod15(res, pos);
+    pos *= 33;  // index of v[pos, pos]
+    a += entry_mod15(v, pos);
+    return (int32_t)(a % 15);
+} 
+
+
+
+static inline int32_t eval_A_octad_mod15(uint64_t *v, uint32_t octad, uint32_t suboctad)
+{
+    uint8_t oct[24];
+    uint_fast32_t gc, v2, index, s = 0, m0 = 0, m1, m2, m3, m4, m5, m6;
+
+    // Covert octad number 'octad' to octad vector 'v'
+    gc = mat24_def_octad_to_gcode(octad);
+    v2 = mat24_def_gcode_to_vect(gc);
+    // Let oct[i], i < 8, be the index of the i-th entry of the octad
+    if (mat24_vect_to_bit_list(v2, oct) != 8) return -1;
+ 
+    // Let m<i> be the sign mask for bit i of the octad.
+    // Store 15 * (bit i-1 of suboctad) in m<i> for 1 <= i < = 7;
+    // let m0 be the XOR sum of these values, and put m7 = 0.
+    // %%FOR* i in range(1,7) 
+       // m%{i} = sign mask for bit %{i} of the octad
+       m%{i} = 15 * ((suboctad >> %{int:i-1}) & 1);
+       m0 ^= m%{i};
+    // %%END FOR
+    #define m7 0
+    // Sum up (lower trinagular) off-diagonal entries of matrix A
+    // %%FOR* i in range(8) 
+    // %%FOR* j in range(i) 
+       // Process octad entry (%{i}, %{j})
+       index = (oct[%{i}] << 5) + oct[%{j}];
+       s += entry_mod15(v, index) ^ m%{i} ^ m%{j};
+    // %%END FOR
+    // %%END FOR
+    #undef m7
+    // Double the sum of the (lower triangurlar) off-diagonal entries
+    s += s;
+    // Add the diagonal entries of matrix A
+    // %%FOR* i in range(8) 
+       index = 33 * oct[%{i}];       
+       s += entry_mod15(v, index);
+    // %%END FOR
+    // Double the final result
+    return (4 * s) % 15;
+}
+
+
+
+static inline int32_t eval_A_cocode_mod15(uint64_t *v, uint32_t b0, uint32_t b1, uint32_t sign)
+{
+    uint_fast32_t index, s = 0;
+    index = (b0 << 5) ^ b1; 
+    s = (entry_mod15(v, index) ^ (15 * ((sign + 1) & 1))) << 1; 
+    index = 33 * b0; 
+    s += entry_mod15(v, index);
+    index = 33 * b1; 
+    s += entry_mod15(v, index);
+    return s % 15;
+}
+
+
+/// @endcond
+
+
+
+/** @brief Evaluate A part in rep of monster at a short Leech vector
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo ``p``, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions* in the
+   description of the *C interface*. The entries corresponding to
+   tag 'A' of ``v`` form a symmetric 24 times 24 matrix \f$A\f$. 
+
+   Let \f$v_2\f$ be a short Leech lattice vector given by parameter
+   ``v2``, encoded as a vector in  the Leech lattice modulo 2. 
+   Then \f$v_2\f$ is determined up to sign and \f$v_2 A v_2^\top\f$
+   is determined uniquely.
+
+   The function returns \f$v_2 A v_2^\top\f$ modulo ``p``.
+   The current version supports ``p = 15`` only.
+
+   The short Leech lattice vector \f$v_2\f$ (of norm 4) is scaled to
+   norm 32 as usual, when \f$v_2\f$ is given in integer coordinates.
+
+   The function returns a negative value if \f$v_2\f$ is not
+   short or if ``p != 15``.
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_eval_A(uint64_t *v, uint32_t v2)
+{
+    uint_fast32_t sparse, i, j, tag;
+
+    sparse = mm_aux_index_leech2_to_sparse(v2);
+    i = (sparse >> 14) & 0x7ff; 
+    j = (sparse >> 8) & 0x3f;
+
+    switch (tag = sparse >> 25) {
+        case 2:  // tag B
+        case 3:  // tag C
+            return eval_A_cocode_mod15(v, i, j, tag & 1);
+        case 4:  // tag T
+            return eval_A_octad_mod15(v, i, j);
+        case 5:  // tag X
+            return eval_A_odd_mod15(v, i, j);  
+        default:
+            return -1;
+    }
+}
+
+
+

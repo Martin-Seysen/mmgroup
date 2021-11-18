@@ -202,7 +202,9 @@ C_FILE_SKELETONS = [
 # Additions for the list C_FILE_SKELETONS for spcific values p
 C_FILE_SPECIFIC_SKEKETONS = defaultdict(list)
 C_FILE_SPECIFIC_SKEKETONS.update( {
-    15: ["mm15_op_order", "mm15_op_axes_find", "mm15_op_axes"],
+    15: ["mm15_op_order", "mm15_op_axes_find", 
+         "mm15_op_axes", "mm15_op_eval_A",
+        ],
 } )
 
 

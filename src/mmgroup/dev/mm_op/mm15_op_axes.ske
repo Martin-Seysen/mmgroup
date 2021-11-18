@@ -175,7 +175,7 @@ static inline uint32_t xor_entries(
 
 static inline uint32_t eval_A_vstart(uint_mmv_t *v)
 {
-    return leech2matrix_eval_A(15, v, 0x200);
+    return mm_op%{P}_eval_A(v, 0x200);
 }
 
 

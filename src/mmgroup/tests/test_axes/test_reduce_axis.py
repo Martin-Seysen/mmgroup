@@ -14,7 +14,6 @@ from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
-from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.mm import mm_aux_get_mmv1
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_axes_find_short as mm_op15_axes_find_short
@@ -25,6 +24,7 @@ from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
 from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
 from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
 from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
+from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 
 from mmgroup.tests.test_axes.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
@@ -132,7 +132,7 @@ def find_ortho_short(vlist):
     raise ValueError(err)
   
 def eval_A_vstart(v):
-    return leech2matrix_eval_A(15, v, 0x200)
+    return mm_op15_eval_A(v, 0x200)
 
 ##########################################################################
 # Reducing a 2A axis to V_START

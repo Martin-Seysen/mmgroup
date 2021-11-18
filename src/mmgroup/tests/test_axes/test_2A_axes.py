@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 
 from mmgroup import MM0, MMSpace, Cocode, MMV
-from mmgroup.clifford12 import leech2matrix_eval_A_odd_mod15_aux
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2

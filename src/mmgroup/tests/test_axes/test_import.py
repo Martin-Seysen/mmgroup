@@ -22,8 +22,8 @@ from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
 from mmgroup.tests.test_axes.beautify_axes import adjacent_blocks
 from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
 from mmgroup.clifford12 import leech_matrix_norm_A, leech3matrix_kernel
-from mmgroup.clifford12 import leech2matrix_eval_A
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
+from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 
 
 baby_sample_axes = import_baby_sample_axes()
@@ -99,7 +99,7 @@ def display_norm_A(i):
     v2 = gen_leech3to2_short(v3)
     if v2:
          f = "Kernel of U is spanned by a short vector v with A(v) ="
-         a2 = leech2matrix_eval_A(15, v.data, v2)
+         a2 = mm_op15_eval_A(v.data, v2)
          s += "\n%s %d (mod 15)" % (f, a2)
     if gen_leech3to2_type4(v3):
          f = "Kernel of U is spanned by a vector of type 4"

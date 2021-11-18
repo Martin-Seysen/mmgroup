@@ -547,13 +547,16 @@ def get_mm_ops(p):
 import_pending = True
 
 def complete_import():
-    global leech2matrix_eval_A, mm_op15_2A_axis_type
+    global mm_op15_eval_A, mm_op15_2A_axis_type
     global op_count_short, XLeech2, mm_op15_count_short 
-    from mmgroup.clifford12 import leech2matrix_eval_A
+    from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
     from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type 
     from mmgroup.mm15 import op_count_short as mm_op15_count_short
     from mmgroup import XLeech2
     import_pending = False    
+
+
+
 
 #####################################################################
 # Modelling a vector of the 196884-dimensional rep of the monster
@@ -688,7 +691,10 @@ class MMVector(AbstractMmRepVector):
             v2 = v2.value
         v1 = np.zeros(24*4, dtype = np.uint64)
         self.ops.op_t_A(self.data, e % 3, v1)
-        res = leech2matrix_eval_A(self.p, v1, v2)
+        if self.p != 15:
+            err = "Method eval_A is implemented for vectors mod 15 only"
+            raise ValueError(err)
+        res = mm_op15_eval_A(v1, v2)
         if res < 0:
             err = "Method eval_A failed on vector in rep of monster"
             raise ValueError(err)
