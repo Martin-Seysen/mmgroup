@@ -1530,7 +1530,7 @@ uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
 
     // in the sequel we cut and paste the code for the detection of 
     // a short vector v2 in the Leech lattice mod 2 from 
-    // function ``gen_leech2_is_type2`` in file ``gen_leech.c``.
+    // function ``gen_leech2_type2`` in file ``gen_leech.c``.
     // After detecting such a short vector we convert that
     // vector to a sparse index.
 

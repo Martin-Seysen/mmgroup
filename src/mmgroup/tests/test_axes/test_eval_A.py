@@ -55,7 +55,7 @@ def eval_a_odd_testdata():
 
 
 @pytest.mark.axes
-def test_eval_a_odd(verbose = 1):   
+def test_eval_a_odd(verbose = 0):   
     for n, (v, b) in enumerate(eval_a_odd_testdata()):
         if verbose:
             print("Test %d" % (n+1))
