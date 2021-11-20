@@ -265,13 +265,19 @@ uint32_t gen_leech2_type(uint64_t v2)
 }
 
 
+
+/*************************************************************************
+*** Subtype of a type-2 vector in the Leech lattice mod 2
+*************************************************************************/
+
+
 /**
-  @brief Check if vector in Leech lattice mod 2 is of type 2
+  @brief Compute subtype if vector in Leech lattice mod 2 is of type 2
 
   This function returns the subtype ofthe vector \f$v_2\f$ in the 
   Leech lattice modulo 2 if \f$v_2\f$ is of type 2 and 0 otherwise.
 
-  It is much faster than function ``gen_leech2_type()``.
+  It is faster than function ``gen_leech2_type()``.
   
 */
 // %%EXPORT px
@@ -372,14 +378,72 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
 
 #undef LSTEPS
 
-
-
 /*************************************************************************
-*** Auxiliary functions for Reducing a type-4 vector  mod 2
+*** Auxiliary functions for reducing a certain type-2 vector  mod 2
 *************************************************************************/
 
 /**
-  @brief Auxiliary functions for function gen_leech2_reduce_type4
+  @brief Auxiliary function for function gen_leech2_reduce_type4
+  
+  The function returns the subtype of a vector \f$v\f$ of type 2 in
+  the Leech lattice modulo, provided that \f$v + \beta\f$ is of
+  type 4. It returns 0 in the special case \f$v = \beta + \Omega\f$
+  and a negative value if  \f$v\f$ is not of type 2 or \f$v + \beta\f$
+  is not of type 4.
+
+  It is used for rotating a type-4 vector \f$v\f$ which is orthogonal
+  to \f$\beta\f$ (in the real Leech lattice) into the \f$v + \Omega\f$.
+  That rotation will fix the special short vector \f$\beta\f$.
+*/
+// %%EXPORT px
+int32_t gen_leech2_start_type24(uint32_t v)
+{
+    uint_fast32_t vtype, theta, syn, w, coc, octad;
+
+    // Return -1 if the scalar product of v and \beta is -1
+    if (v & 0x200000) return -1;
+    switch (vtype = gen_leech2_type2(v)) {
+        case 0x21:
+            // Put cocode vector index into variable 'syn'
+            theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+            syn = MAT24_SYNDROME_TABLE[(theta ^ v) & 0x7ff];
+            // Return 0 if that index is 2 or 3, and 0x21 otherwise
+            return (syn & 0x1e) == 2 ? -1 : 0x21;
+        case 0x20:
+            // Return -1 (or 0) if v is \beta (or \beta + \Omega)
+            if ((v & 0x7fffff) == 0x200)
+                return v & 0x800000 ? 0 : -1;
+            // Put weight of cocode vector of v + \beta into 
+            // variable 'syn'
+            theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+            syn = MAT24_SYNDROME_TABLE[(theta ^ v ^ 0x200) & 0x7ff];
+            // Return -1 if weight is 2 and vtype otherwise
+            return syn & 0x8000 ? -1 : vtype;
+        case 0x22:
+            // Now v is a (possibly complemented) octad.
+            // Put w = 1 if v is an octad and w = 0 otherwise.
+            theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+            w = ((theta >> 13) ^ (v >> 23)) & 1;
+            // XOR v with Omega if it has weight 16
+            v ^= (1 - w) << 23;
+            // Let coc be the cocode part of v ^ \beta (this is even)
+            coc = (v ^ theta ^ 0x200) & 0x7ff;
+            // Compute subtype with function suboctad_type() 
+            octad = mat24_def_gcode_to_vect(v >> 12); 
+            return suboctad_type(octad, w, coc) ? 0x22 : -1;
+        default:
+            // Return -1 if v s not of type 2.
+            return -1;
+    }
+}
+
+
+/*************************************************************************
+*** Auxiliary functions for reducing a type-4 vector  mod 2
+*************************************************************************/
+
+/**
+  @brief Auxiliary function for function gen_leech2_reduce_type4
   
 
   The function returns the subtype of a vector \f$v\f$ of type 4 in

@@ -202,7 +202,7 @@ def xi_dodecad_to_octad(v):
 
 
 STD_OCTAD = GCode([0,1,2,3,4,5,6,7]).ord
-print("STD_OCTAD =", hex(STD_OCTAD))
+#print("STD_OCTAD =", hex(STD_OCTAD))
 
 RED_STD_HEPTAD = [0,1,2,3,4,5,8]
 RED_IMG_CASE_44 = [0,1,2,3,8,9,4]
