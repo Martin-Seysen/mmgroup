@@ -40,7 +40,7 @@ extern "C" {
   @brief Reduce coordinates of vector in Leech lattice mod 3
 
   The function reduces all coordinates of the vector \f$v_3\f$
-  modulo 3, so that echa coordinate has value 0, 1 or 2. Vector
+  modulo 3, so that each coordinate has value 0, 1 or 2. Vector
   \f$v_3\f$ must be given Leech lattice mod 3 encoding.
 */
 static inline uint64_t short_3_reduce(uint64_t v3)

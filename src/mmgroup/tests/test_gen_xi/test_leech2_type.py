@@ -22,8 +22,11 @@ from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 
 
 #####################################################################
-# Test computation of type Leech lattice vector
+# Test computation of subtype Leech lattice vector
 #####################################################################
+
+# We test the computation of the subtype of a vetor in the 
+# Leech lattice with function gen_leech2_type().
 
 ZERO = PLoop([])
 OMEGA = ~ZERO
@@ -72,7 +75,7 @@ def display_leech_vector(x):
     print ("Cocode:", cocode.syndrome_list(pos))
 
 
-def alternative_is_type2(v):
+def alternative_type2(v):
     a = np.array([0, v], dtype = np.uint64)
     return xsp2co1_leech2_count_type2(a, 2)
 
@@ -93,7 +96,7 @@ def check_leech_type(x, t_expected):
             hex(x),  hex(t_expected)), is_type2, hex(found_type2))
         err = "Function gen_leech2_type2 failed"
         raise ValueError(err)
-    alt_found_type2 = alternative_is_type2(x)
+    alt_found_type2 = alternative_type2(x)
     ok = is_type2 == alt_found_type2
     if not ok:
         print("Error:  x = %s, Leech type: %s" % (

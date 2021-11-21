@@ -1,3 +1,19 @@
+"""Test C function dealing with Leech lattice vectors mod 3 of type 4
+
+In this script we test functions dealing with vectors of type 4 in the 
+Leech lattice modulo 3. This functions are implemented in file 
+gen_leech3.c and available in the extension mmgroup.generators.
+
+We use the terminology defined in
+the document *The C interface of the mmgroup project*, 
+section *Description of the mmgroup.generators extension*.
+
+We also count the subtypes of all 0x1000000 vector in the Leech
+lattice modulo 2 and comapare the result against the results in 
+:cite:`Iva99`.
+"""
+
+
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
@@ -42,23 +58,42 @@ from mmgroup.mat24 import vect_to_gcode as mat24_vect_to_gcode
 from mmgroup.mat24 import ploop_theta as MAT24_THETA_TABLE
 
 def short_3_reduce(x):
+    """Reduce coordinates of vector in Leech lattice mod 3
+
+    The function reduces all coordinates of the vector x
+    modulo 3, so that each coordinate has value 0, 1 or 2. Vector
+    x must be given Leech lattice mod 3 encoding.
+    """
     a = (x & (x >> 24)) & 0xffffff;
     x ^=  a | (a << 24);
     return x  & 0xffffffffffff;
 
 def parity12(x):
+    """Return parity of a 12-bit vector encoded as an integer"""
     x ^= x >> 6; x ^= x >> 3;
     return (0x96 >> (x & 7)) & 1;
 
 def parity24(x):
+    """Return parity of a 24-bit vector encoded as an integer"""
     x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
     return (0x96 >> (x & 7)) & 1;
 
-def cond(c, a, b):
-    """Substitute for the C conditional   'c ? a : b' """
-    return a if c else b
 
 def py_gen_leech3to2_type4(x):
+    """Map type-4 vector from Leech lattice mod 3 to Leech lattice mod 2
+
+    Here parameter ``x`` is a type-4 vector in the Leech lattice mod 3 
+    in Leech lattice mod 3 encoding. 
+
+    The function returns a type-4 vector in the Leech lattice mod 2
+    corresponding to ``x`` in Leech lattice encoding.
+
+    The result is unique. The function returns 0 if ``x`` is not of
+    type 4 in the Leech lattice mod 4.
+
+    This is a reference implementation for the C function
+    **gen_leech3to2_type4** in file **gen_llech3.c**.
+    """
     # uint_fast32_t gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
     x = short_3_reduce(x);
     # Let h be the support of x, i.e. the bit vector of nonzero
@@ -85,7 +120,8 @@ def py_gen_leech3to2_type4(x):
     elif w == 19:
             # type (3**5, 1**19)
             w1 = mat24_bw24(x & 0xffffff);
-            x1 = cond((w1 & 1) , x , (x >> 24)) & 0xffffff;
+            x1 = x if (w1 & 1) else (x >> 24)
+            x1 &= 0xffffff;
             syn = mat24_syndrome(x1, 0);
             cocodev = ~h & 0xffffff;
             if (syn & h): syn = cocodev;            
@@ -147,10 +183,18 @@ def py_gen_leech3to2_type4(x):
 
 #####################################################################
 # Creating test vectors
-#####################################################################
 
 
 def rand_xsp2co1_elem(n):
+    r"""Return random element of group ``G_x0`` as list of tuples
+
+    The function return a kind of random element of the subgroup
+    ``G_x0`` of the monster as a list of tuples. That list may be
+    passed to the constructor of class |MM| or |XSp2Co1|.
+
+    Parameter ``n`` determines the number of generators 
+    :math:`\xi^e, e = \pm1` in that list.
+    """
     s1, l = [('p','r'),('y','r')],  [('l','n')]
     return s1 + (l + s1) * n
 
@@ -160,6 +204,12 @@ def rand_xsp2co1_elem(n):
 
 
 def create_test_elements():
+    """Yield elements of the group ``G_x0`` as test data
+
+    This generator yields element of the group ``G_x0`` as test
+    data. Each element is returned as a list o tuples as in
+    function ``rand_xsp2co1_elem``. 
+    """
     group_data = [
       [('x', 0x1f24), ('d', 0xf75)],
       [('x', 0x124), ('d', 0x555)],
@@ -187,16 +237,40 @@ def create_test_elements():
 
 
 def mul_v3(v3, g):
+    """Multiply vector in Leech lattice mod 3 by element of ``G_x0``
+
+    Here parameter ``v3`` is an element of the Leech lattice mod 3 in
+    Leech lattice mod 3 encoding. Parameter ``g`` is an element of 
+    the group ``G_x0`` endodes as an instance of class |MM| or |MM0|.
+
+    The function returns the product ``v3 * g`` in  Leech lattice 
+    mod 3 encoding.
+    """
     result = gen_leech3_op_vector_word(v3, g._data, g.length)
     assert result & 0xffff000000000000 == 0, hex(result)
     return result
         
 def mul_v2(v2, g):
+    """Multiply vector in Leech lattice mod 2 by element of ``G_x0``
+
+    Here parameter ``v2`` is an element of the Leech lattice mod 2 in
+    Leech lattice encoding. Parameter ``g`` is an element of 
+    the group ``G_x0`` endodes as an instance of class |MM| or |MM0|.
+
+    The function returns the product ``v * g`` in  Leech lattice 
+    encoding.
+    """
     result = gen_leech2_op_word(v2, g._data, g.length)
     assert result & 0xfe000000 == 0, hex(result)
     return result
 
 def v3_to_v2(v3):
+    """Map type-4 vector from Leech lattice mod 3 to Leech lattice mod 2
+
+    The operation of this function is equivalent to function
+    ``py_gen_leech3to2_type4``. But this function is a wrapper for
+    the C function ``gen_leech3to2_type4`` in file ``gen_leech3.c``. 
+    """
     result = gen_leech3to2_type4(v3)
     assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
     return result
@@ -204,22 +278,48 @@ def v3_to_v2(v3):
 
 d_v3 = {0:0, 1:1, 0x1000000:2, 0x1000001:0}
 def str_v3(v3):
+    """Convert vector ``v3`` in Leech lattice mod 3 to a string.
+
+    Here parameter ``v3`` is an element of the Leech lattice mod 3 in
+    Leech lattice mod 3 encoding.    
+    """
     l = [str(d_v3[(v3 >> i) & 0x1000001]) for i in range(24)]
     return "v3<%s>" % "".join(l)
     
 w_v3 = {0:0, 1:1, 0x1000000:1, 0x1000001:0}
 def weight_v3(v3):
+    """Return weight of vector ``v3`` in Leech lattice mod 3.
+
+    Here parameter ``v3`` is an element of the Leech lattice mod 3 in
+    Leech lattice mod 3 encoding.    
+    """
     return sum([w_v3[(v3 >> i) & 0x1000001] for i in range(24)])
     
     
 
 @pytest.mark.gen_xi
 def test_type4(verbose = 0):
+    """Test conversion of type-4 vectors 
+
+    Let \Omega be the type-4 vector in the Leech lattice corresponding
+    to the standard frame. Let O_2 and O_3 be the images \Omega in the
+    Leech lattice mod 2 and mod 3, respectively.
+
+    We convert O_3 * g to a vector v2 in the Leech lattice mod 2 
+    with function ``v3_to_v2`` and we check that the result is equal
+    to  O_2 * g.
+
+    For the first few test data we also check this conversion against
+    the refernece implementation ``py_gen_leech3to2_type4``.
+    """
     weights = defaultdict(int)
     for ntest, data in enumerate(create_test_elements()):
         g = MM0(data) 
+        # Let \Omega be the standard type-4 vector in the Leech lattice
+        # Let v3_st = \Omega in the Leech lattice mod 3
         v3_st = 1 << randint(0,23) 
-        v2_st = 0x800000        
+        # Let v2_st = \Omega in the Leech lattice mod 3
+        v2_st = 0x800000  # The standard type-4 vector \Omega      
         if verbose:
              print("\nTEST %s" % (ntest+1))
              print("v3_start = " , str_v3(v3_st))
@@ -256,9 +356,12 @@ def test_type4(verbose = 0):
 
 
 def binom(n, k):
+    """Return binommial coeffient n choose k"""
     return int(scipy.special.binom(n, k) + 0.1)
 
-# From :cite:`Iva99`, Lemma 4.4.1
+# The dictionary contains the number DATA_GEOMETRY[w] of type-4 
+# vectors in the Leech lattice modulo 3 of weight w. 
+# This table is obtained from :cite:`Iva99`, Lemma 4.4.1
 DATA_GEOMETRY = {
    1: 48, 
    7: 759 * 8 * 2**7,
@@ -270,10 +373,23 @@ DATA_GEOMETRY = {
   16: 759 * 16 * 2**11,
 }  
  
-NUM_LEECH_TYPE2 = 398034000 
-assert sum(DATA_GEOMETRY.values()) ==  NUM_LEECH_TYPE2
+# Number of type-4 vectors in the Leech lattice
+NUM_LEECH_TYPE4 = 398034000 
+# .. must be equal to the sum of the values in DATA_GEOMETRY
+assert sum(DATA_GEOMETRY.values()) ==  NUM_LEECH_TYPE4
+# Inverse of numbers of vectors in Leech lattice mod 3
 I_NUMV3 = 3.0**(-24)
 
+
+# Assemple a dictionary DICT_P for a chisquare test.
+# That dictionary maps a bit weight w to itself, if that bit weight
+# occurs as a weight of a type-4 vector in the Leech lattice mod 3 
+# with sufficiently high probability. It maps w to 1 if w occurs as
+# such a weight with low probability.
+# Let P be a dictionary that maps y the probability that a random 
+# vector v in the Leech lattice mod 3 has type 4 and that 
+# DICT_P[weight(v)] is equal to y. Let P[0] be the probablity that
+# such a random vector y is not of type 4.
 DICT_P = defaultdict(int)
 P = defaultdict(float)
 for w, num in DATA_GEOMETRY.items():
@@ -281,17 +397,32 @@ for w, num in DATA_GEOMETRY.items():
     assert 0 <= p < 1
     DICT_P[w] = 1 if p < 1.0/4000 else w
     P[DICT_P[w]] += p
-P[0] = 1.0 - NUM_LEECH_TYPE2 * I_NUMV3
+P[0] = 1.0 - NUM_LEECH_TYPE4 * I_NUMV3
 DICT_P[0] = 0
 
 P_MIN = min([x for x in P.values() if x > 0])
 
 RANDMOD3 = [0, 1, 0x1000000]
 def rand_v3():
+    """Return a random vector in the space GF(3)^{24}.
+
+    This random vector is encoded in **Leech larrice mod 3 encoding**.
+    """
     randomlist = choices(RANDMOD3, k=24)
     return sum((x << i for i, x in enumerate(randomlist)))
     
 def rand_v3_dict(n):
+    """Create n random vectors and group the according to their weight
+
+    We create n random vectors in GF(3)^{24}. We return a dictionary
+    ``d`` with the following entries:
+
+    d[0] counts the vectors not of type 4 in the Leech ltiice mod 3.
+    d[w] counts the vectors v of type 4 such that  DICT_P[weight(v)]
+    is equal to v.
+
+    Then the value d[i] should be about P[i] / n.    
+    """
     d = defaultdict(int)
     for i in range(n):
         v3 = rand_v3()
@@ -306,6 +437,16 @@ def rand_v3_dict(n):
 
 
 def chisquare_v3(obtained_dict, expected_dict):
+    """Perform chis square test based on dictionaries
+
+    Dictionary ``obtained_dict`` should have the same keys as
+    dictionary ``expected_dict``. The function tests the hypothesis
+    that the distribution of ``obtained_dict`` is propritional to
+    that of ``expected_dict`` with a chisquare test.
+
+    The function return a pair ``(chisq, p)`` with ``chisq`` the
+    chi-squared test statistic, and ``p`` the p-value of the test.
+    """
     f_obt, f_exp = [],[]
     for w in obtained_dict:
         assert w in expected_dict and expected_dict[w] > 0
@@ -323,6 +464,17 @@ def chisquare_v3(obtained_dict, expected_dict):
 
 @pytest.mark.gen_xi
 def test_chisq_type4(n = 50000, verbose = 1):
+    """Test distribution of weights of type-t vectors
+
+    The function creates a list of n random vectors in GF(3)^{24}
+    and groups them with respect to the property of having type 4
+    in the Leech lattice and with respect to the weigth as 
+    decribed in function ``rand_v3_dict``.
+
+    A chisquare test fails if the p-value is less than 0.01.
+    We perform at most 4 chisquare test and raise ValueError
+    if all of them fail.
+    """
     p_min = 0.01
     print("Check distribution of type-4 vectors mod 3") 
     for i in range(4):
@@ -338,22 +490,11 @@ def test_chisq_type4(n = 50000, verbose = 1):
 #************************************************************************/
 
 
-def one_selftest_leech2(data):
-    start, n = data
-    a = np.zeros(0x50, dtype = np.uint32)
-    result =  gen_leech2_type_selftest(start, n, a)
-    return result, a
 
 
-def gen_selftest_inputs(n):
-    assert 0x1000000 % n == 0
-    q = 0x1000000 // n
-    for  i in range(n):
-        yield i*q, q
-
-
-
-# From :cite:`Iva99`, Lemmas 4.4.1 and 4.6.1
+# The dictionary contains the number TYPE_LENGTHS[t] of vectors
+# of subtype t in the Leech lattice modulo 2. This table is 
+# obtained from :cite:`Iva99`, Lemmas 4.4.1 and 4.6.1.
 TYPE_LENGTHS = {               # Name in :cite:`Iva99`
  0x00: 1,
  0x20: binom(24,2) * 2,        # \Lambda_2^4
@@ -370,10 +511,47 @@ TYPE_LENGTHS = {               # Name in :cite:`Iva99`
  0x46: 1288 * 2**11,           # \bar{\Lambda}_4^{4c}
  0x48: 1                       # \bar{\Lambda}_4^{8}
 }  
+assert sum(TYPE_LENGTHS.values()) ==  0x1000000
+
+
+def one_selftest_leech2(data):
+    """Auxiliary function for function ``test_leech2_self``
+
+    This is a wrapper for the C function ``gen_leech2_type_selftest``
+    that counts subtypes in an interval of vectors of the Leech
+    lattice modulo 2.
+    """
+    start, n = data
+    a = np.zeros(0x50, dtype = np.uint32)
+    result =  gen_leech2_type_selftest(start, n, a)
+    return result, a
+
+
+def gen_selftest_inputs(n):
+    """Auxiliary function for function ``test_leech2_self``
+
+    Generates inputs for function ``one_selftest_leech2`` 
+    for multiprocessing.
+    """
+    assert 0x1000000 % n == 0
+    q = 0x1000000 // n
+    for  i in range(n):
+        yield i*q, q
+
 
 @pytest.mark.gen_xi
 @pytest.mark.slow
 def test_leech2_self(verbose = 0):
+    """Test number of enries of all subtypes
+
+    We count the subtypes of all 0x1000000 vector in the Leech
+    lattice modulo 2, an we compile a dictionary that contains 
+    the number of such vectors for each subtype. The we compare
+    that dictionary against the dictionary TYPE_LENGTHS.
+
+    We use the C function ``gen_leech2_type_selftest`` for 
+    accelrating that computation, and we also use multiprocessing.    
+    """
     NPROCESSES = 4
     with Pool(processes = NPROCESSES) as pool:
         results = pool.map(one_selftest_leech2, 

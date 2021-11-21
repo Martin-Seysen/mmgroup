@@ -221,9 +221,9 @@ def chisquare_v3(obtained_dict, expected_dict):
 @pytest.mark.gen_xi
 def test_chisq_type3(verbose = 0):
     p_min = 0.01
-    d = rand_v3_dict()  
-    print("Check distribution of type-4 vectors mod 3") 
+    print("Check distribution of type-3 vectors mod 3") 
     for i in range(4):
+        d = rand_v3_dict()  
         chisq, p =  chisquare_v3(d, P)
         if verbose or i or p < p_min:
             print("Chisq = %.3f, p = %.4f" % (chisq, p))
