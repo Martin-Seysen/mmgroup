@@ -1,3 +1,14 @@
+"""Test C function dealing with Leech lattice vectors mod 3 of type 3
+
+In this script we test functions dealing with vectors of type 3 in the 
+Leech lattice modulo 3. These functions are implemented in file 
+gen_leech3.c and available in the extension mmgroup.generators.
+
+We use the terminology defined in
+the document *The C interface of the mmgroup project*, 
+section *Description of the mmgroup.generators extension*.
+"""
+
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
@@ -26,11 +37,13 @@ from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_type_selftest
 
-
-OMEGA0_V3  = 0x1
-
-
-
+from mmgroup.tests.test_gen_xi.test_gen_type4 import rand_xsp2co1_elem
+from mmgroup.tests.test_gen_xi.test_gen_type4 import create_test_elements
+from mmgroup.tests.test_gen_xi.test_gen_type4 import mul_v3
+from mmgroup.tests.test_gen_xi.test_gen_type4 import mul_v2
+from mmgroup.tests.test_gen_xi.test_gen_type4 import str_v3
+from mmgroup.tests.test_gen_xi.test_gen_type4 import weight_v3
+from mmgroup.tests.test_gen_xi.test_gen_type4 import chisquare_v3
 
 
 
@@ -38,41 +51,18 @@ OMEGA0_V3  = 0x1
 # Creating test vectors
 #####################################################################
 
+# Define STD_TYPE3 = -(5,1,1,...,1) to be the standard type-3 
+# vector in theLeech lattice.
+
+# Here is STD_TYPE3 (mod 3) in Leech lattice mod 3 encoding
 STD_TYPE3_MOD3 = 0xfffffe000001
+# Here is STD_TYPE3 (mod 2) in Leech lattice encoding
 STD_TYPE3_MOD2 = 0x800800
 
 
 
-def rand_xsp2co1_elem(n):
-    s1, l = [('p','r'),('y','r')],  [('l','n')]
-    return s1 + (l + s1) * n
 
 
-
-
-
-
-def create_test_elements():
-    group_data = [
-      [],
-      [('x', 0x1f24), ('d', 0xf75)],
-      [('x', 0x124), ('d', 0x555)],
-      [('d', 0x124)],
-      [('d', 0x800)],
-      [('p', 187654344)],
-      [('d', 0xd79), ('p', 205334671)],
-      [('p', 205334671), ('d', 0xd79)],
-      [('d', 0xd79), ('x', 0x1123)],
-      [('y', 0x1d79)],
-      [('y', 0x586)],
-      [('l', 1)],
-      [('l', 2)],
-    ]
-    for g in group_data:
-        yield  g
-    for n, imax  in [(1,50),(2,1000), (3,1000)]:
-        for i in range(1 * imax):
-            yield rand_xsp2co1_elem(n)
 
 
 #####################################################################
@@ -80,35 +70,42 @@ def create_test_elements():
 #####################################################################
 
 
-def mul_v3(v3, g):
-    result = gen_leech3_op_vector_word(v3, g._data, g.length)
-    assert result & 0xffff000000000000 == 0, hex(result)
-    return result
-        
-def mul_v2(v2, g):
-    result = gen_leech2_op_word(v2, g._data, g.length)
-    assert result & 0xfe000000 == 0, hex(result)
-    return result
-
 def v3_to_v2(v3):
+    """Map type-3 vector from Leech lattice mod 3 to Leech lattice mod 2
+
+    Here parameter ``v3`` is a type-3 vector in the Leech lattice mod 3 
+    in Leech lattice mod 3 encoding. 
+
+    The function returns a type-3 vector in the Leech lattice mod 2
+    corresponding to ``v3`` in Leech lattice encoding.
+
+    The result is unique. The function returns 0 if ``v3`` is not of
+    type 3 in the Leech lattice mod 3
+    
+    Tis function is a wrapper for the C function ``gen_leech3to2_type3`` 
+    in file ``gen_leech3.c``. 
+    """
     result = gen_leech3to2_type3(v3)
     assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
     return result
 
 
-d_v3 = {0:0, 1:1, 0x1000000:2, 0x1000001:0}
-def str_v3(v3):
-    l = [str(d_v3[(v3 >> i) & 0x1000001]) for i in range(24)]
-    return "v3<%s>" % "".join(l)
-    
-w_v3 = {0:0, 1:1, 0x1000000:1, 0x1000001:0}
-def weight_v3(v3):
-    return sum([w_v3[(v3 >> i) & 0x1000001] for i in range(24)])
-    
-    
+
 
 @pytest.mark.gen_xi
 def test_type3(verbose = 0):
+    r"""Test conversion of type-3 vectors 
+
+    Let STD_TYPE3 be the type-3 vector in the Leech lattice defined
+    above. Let STD_TYPE3_MOD2 and STD_TYPE3_MOD3 be the images of
+    STD_TYPE3 in the Leech lattice mod 2 and mod 3, respectively.
+
+    For a set of elements g of the group ``G_x_0`` we convert 
+    STD_TYPE3_MOD3  * g to  a vector v2 in the Leech lattice mod 2  
+    with function ``v3_to_v2`` and we check that the result is equal 
+    to  STD_TYPE3_MOD2 * g. We use function ``create_test_elements`` 
+    for generating the elements g. 
+    """
     weights = defaultdict(int)
     for ntest, data in enumerate(create_test_elements()):
         g = MM0(data) 
@@ -149,10 +146,13 @@ def test_type3(verbose = 0):
 
 
 
+"""Return binommial coeffient n choose k"""
 def binom(n, k):
     return int(scipy.special.binom(n, k) + 0.1)
 
-# From :cite:`Iva99`, Lemma 4.4.1
+# The dictionary contains the number DATA_GEOMETRY[w] of type-3 
+# vectors in the Leech lattice modulo 3 of weight w. 
+# This table is obtained from :cite:`Iva99`, Lemma 4.4.1
 DATA_GEOMETRY = {
   24: 24 * 2**12, 
    9: 759 * 16 * 2**8,
@@ -160,11 +160,23 @@ DATA_GEOMETRY = {
   12: 2576 * 2**11,
 }  
  
+# Number of type-3 vectors in the Leech lattice
 NUM_LEECH_TYPE3 = 2**24 - 2**12
+# .. must be equal to the sum of the values in DATA_GEOMETRY
 assert sum(DATA_GEOMETRY.values()) ==  NUM_LEECH_TYPE3
+# Inverse of the number of vectors in Leech lattice mod 3
 I_NUMV3 = 3.0**(-24)
 
-BLOCKSIZE = 1000000
+# Assemble a dictionary DICT_P for a chisquare test.
+# That dictionary maps a bit weight w to itself, if that bit weight
+# occurs as a weight of a type-3 vector in the Leech lattice mod 3 
+# with sufficiently high probability. It maps w to 1 if w occurs as
+# such a weight with low probability.
+# Let P be a dictionary that maps y the probability that a random 
+# vector v in the Leech lattice mod 3 has type 3 and that 
+# DICT_P[weight(v)] is equal to y. Let P[0] be the probablity that
+# such a random vector y is not of type 3.
+BLOCKSIZE = 1000000  # Minimum of type-3 vectors needed for test 
 DICT_P = defaultdict(int)
 MIN_P = 1.0 / 40000
 P = defaultdict(float)
@@ -180,10 +192,25 @@ P_MIN = min([x for x in P.values() if x > 0])
 
 RANDMOD3 = [0, 1, 0x1000000]
 def rand_v3():
+    """Return a random vector in the space GF(3)^{24}.
+
+    This random vector is encoded in **Leech lattice mod 3 encoding**.
+    """
     randomlist = choices(RANDMOD3, k=24)
     return sum((x << i for i, x in enumerate(randomlist)))
     
 def rand_v3_dict(n = BLOCKSIZE):
+    """Create n random vectors and group the according to their weight
+
+    We create n random vectors in GF(3)^{24}. We return a dictionary
+    ``d`` with the following entries:
+
+    d[0] counts the vectors not of type 3 in the Leech lattice mod 3.
+    d[w] counts the vectors v of type 3 such that  DICT_P[weight(v)]
+    is equal to w.
+
+    Then the value d[i] should be about P[i] / n.    
+    """
     d = defaultdict(int)
     for i in range(n):
         v3 = rand_v3()
@@ -197,22 +224,6 @@ def rand_v3_dict(n = BLOCKSIZE):
 
 
 
-def chisquare_v3(obtained_dict, expected_dict):
-    f_obt, f_exp = [],[]
-    for w in obtained_dict:
-        assert w in expected_dict and expected_dict[w] > 0
-    factor = sum(obtained_dict.values())/sum(expected_dict.values())
-    for w in expected_dict:
-        if expected_dict[w] > 0:
-            f_exp.append(expected_dict[w] * factor)
-            f_obt.append(obtained_dict[w])
-    print(expected_dict.keys())
-    print(f_exp)
-    print(f_obt)
-    assert min(f_exp) > 9,  f_exp 
-    chisq, p = chisquare(f_obt, f_exp = f_exp)
-    return chisq, p
-
 
 
 
@@ -220,6 +231,17 @@ def chisquare_v3(obtained_dict, expected_dict):
 @pytest.mark.very_slow
 @pytest.mark.gen_xi
 def test_chisq_type3(verbose = 0):
+    """Test distribution of weights of type-t vectors
+
+    The function creates a list of n random vectors in GF(3)^{24}
+    and groups them with respect to the property of having type 3
+    in the Leech lattice and with respect to the weight as 
+    described in function ``rand_v3_dict``.
+
+    A chisquare test fails if the p-value is less than 0.01.
+    We perform at most 4 chisquare test and raise ValueError
+    if all of them fail.
+    """
     p_min = 0.01
     print("Check distribution of type-3 vectors mod 3") 
     for i in range(4):

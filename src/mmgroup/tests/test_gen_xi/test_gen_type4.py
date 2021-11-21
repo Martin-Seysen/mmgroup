@@ -1,7 +1,7 @@
 """Test C function dealing with Leech lattice vectors mod 3 of type 4
 
 In this script we test functions dealing with vectors of type 4 in the 
-Leech lattice modulo 3. This functions are implemented in file 
+Leech lattice modulo 3. These functions are implemented in file 
 gen_leech3.c and available in the extension mmgroup.generators.
 
 We use the terminology defined in
@@ -42,7 +42,6 @@ from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_type_selftest
 
 
-OMEGA0_V3  = 0x1
 
 
 
@@ -89,7 +88,7 @@ def py_gen_leech3to2_type4(x):
     corresponding to ``x`` in Leech lattice encoding.
 
     The result is unique. The function returns 0 if ``x`` is not of
-    type 4 in the Leech lattice mod 4.
+    type 4 in the Leech lattice mod 3.
 
     This is a reference implementation for the C function
     **gen_leech3to2_type4** in file **gen_llech3.c**.
@@ -188,7 +187,7 @@ def py_gen_leech3to2_type4(x):
 def rand_xsp2co1_elem(n):
     r"""Return random element of group ``G_x0`` as list of tuples
 
-    The function return a kind of random element of the subgroup
+    The function returns a kind of random element of the subgroup
     ``G_x0`` of the monster as a list of tuples. That list may be
     passed to the constructor of class |MM| or |XSp2Co1|.
 
@@ -206,7 +205,7 @@ def rand_xsp2co1_elem(n):
 def create_test_elements():
     """Yield elements of the group ``G_x0`` as test data
 
-    This generator yields element of the group ``G_x0`` as test
+    This generator yields elements of the group ``G_x0`` as test
     data. Each element is returned as a list o tuples as in
     function ``rand_xsp2co1_elem``. 
     """
@@ -241,7 +240,7 @@ def mul_v3(v3, g):
 
     Here parameter ``v3`` is an element of the Leech lattice mod 3 in
     Leech lattice mod 3 encoding. Parameter ``g`` is an element of 
-    the group ``G_x0`` endodes as an instance of class |MM| or |MM0|.
+    the group ``G_x0`` encodes as an instance of class |MM| or |MM0|.
 
     The function returns the product ``v3 * g`` in  Leech lattice 
     mod 3 encoding.
@@ -299,18 +298,19 @@ def weight_v3(v3):
 
 @pytest.mark.gen_xi
 def test_type4(verbose = 0):
-    """Test conversion of type-4 vectors 
+    r"""Test conversion of type-4 vectors 
 
     Let \Omega be the type-4 vector in the Leech lattice corresponding
     to the standard frame. Let O_2 and O_3 be the images \Omega in the
     Leech lattice mod 2 and mod 3, respectively.
 
-    We convert O_3 * g to a vector v2 in the Leech lattice mod 2 
-    with function ``v3_to_v2`` and we check that the result is equal
-    to  O_2 * g.
+    For a set of elements g of the group ``G_x_0`` we convert O_3 * g to 
+    a vector v2 in the Leech lattice mod 2  with function ``v3_to_v2`` 
+    and we check that the result is equal to  O_2 * g. We use function
+    ``create_test_elements`` for generating the elements g. 
 
     For the first few test data we also check this conversion against
-    the refernece implementation ``py_gen_leech3to2_type4``.
+    the reference implementation ``py_gen_leech3to2_type4``.
     """
     weights = defaultdict(int)
     for ntest, data in enumerate(create_test_elements()):
@@ -377,11 +377,11 @@ DATA_GEOMETRY = {
 NUM_LEECH_TYPE4 = 398034000 
 # .. must be equal to the sum of the values in DATA_GEOMETRY
 assert sum(DATA_GEOMETRY.values()) ==  NUM_LEECH_TYPE4
-# Inverse of numbers of vectors in Leech lattice mod 3
+# Inverse of the number of vectors in Leech lattice mod 3
 I_NUMV3 = 3.0**(-24)
 
 
-# Assemple a dictionary DICT_P for a chisquare test.
+# Assemble a dictionary DICT_P for a chisquare test.
 # That dictionary maps a bit weight w to itself, if that bit weight
 # occurs as a weight of a type-4 vector in the Leech lattice mod 3 
 # with sufficiently high probability. It maps w to 1 if w occurs as
@@ -406,7 +406,7 @@ RANDMOD3 = [0, 1, 0x1000000]
 def rand_v3():
     """Return a random vector in the space GF(3)^{24}.
 
-    This random vector is encoded in **Leech larrice mod 3 encoding**.
+    This random vector is encoded in **Leech lattice mod 3 encoding**.
     """
     randomlist = choices(RANDMOD3, k=24)
     return sum((x << i for i, x in enumerate(randomlist)))
@@ -417,9 +417,9 @@ def rand_v3_dict(n):
     We create n random vectors in GF(3)^{24}. We return a dictionary
     ``d`` with the following entries:
 
-    d[0] counts the vectors not of type 4 in the Leech ltiice mod 3.
+    d[0] counts the vectors not of type 4 in the Leech lattice mod 3.
     d[w] counts the vectors v of type 4 such that  DICT_P[weight(v)]
-    is equal to v.
+    is equal to w.
 
     Then the value d[i] should be about P[i] / n.    
     """
@@ -437,7 +437,7 @@ def rand_v3_dict(n):
 
 
 def chisquare_v3(obtained_dict, expected_dict):
-    """Perform chis square test based on dictionaries
+    """Perform chi square test based on dictionaries
 
     Dictionary ``obtained_dict`` should have the same keys as
     dictionary ``expected_dict``. The function tests the hypothesis
@@ -468,8 +468,8 @@ def test_chisq_type4(n = 50000, verbose = 1):
 
     The function creates a list of n random vectors in GF(3)^{24}
     and groups them with respect to the property of having type 4
-    in the Leech lattice and with respect to the weigth as 
-    decribed in function ``rand_v3_dict``.
+    in the Leech lattice and with respect to the weight as 
+    described in function ``rand_v3_dict``.
 
     A chisquare test fails if the p-value is less than 0.01.
     We perform at most 4 chisquare test and raise ValueError
@@ -542,7 +542,7 @@ def gen_selftest_inputs(n):
 @pytest.mark.gen_xi
 @pytest.mark.slow
 def test_leech2_self(verbose = 0):
-    """Test number of enries of all subtypes
+    """Test number of entries of all subtypes
 
     We count the subtypes of all 0x1000000 vector in the Leech
     lattice modulo 2, an we compile a dictionary that contains 
@@ -550,7 +550,8 @@ def test_leech2_self(verbose = 0):
     that dictionary against the dictionary TYPE_LENGTHS.
 
     We use the C function ``gen_leech2_type_selftest`` for 
-    accelrating that computation, and we also use multiprocessing.    
+    accelerating that computation, and we also use 
+    multiprocessing.    
     """
     NPROCESSES = 4
     with Pool(processes = NPROCESSES) as pool:
