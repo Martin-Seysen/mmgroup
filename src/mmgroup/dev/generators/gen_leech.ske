@@ -386,7 +386,7 @@ uint32_t gen_leech2_count_type2(uint32_t *a, uint32_t n)
   @brief Auxiliary function for function gen_leech2_reduce_type4
   
   The function returns the subtype of a vector \f$v\f$ of type 2 in
-  the Leech lattice modulo, provided that \f$v + \beta\f$ is of
+  the Leech lattice modulo 2, provided that \f$v + \beta\f$ is of
   type 4. It returns 0 in the special case \f$v = \beta + \Omega\f$
   and a negative value if  \f$v\f$ is not of type 2 or \f$v + \beta\f$
   is not of type 4.
