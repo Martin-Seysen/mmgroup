@@ -7,10 +7,6 @@ gen_leech3.c and available in the extension mmgroup.generators.
 We use the terminology defined in
 the document *The C interface of the mmgroup project*, 
 section *Description of the mmgroup.generators extension*.
-
-We also count the subtypes of all 0x1000000 vector in the Leech
-lattice modulo 2 and comapare the result against the results in 
-:cite:`Iva99`.
 """
 
 
@@ -39,7 +35,6 @@ from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_op_vector_atom
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_op_atom
-from mmgroup.generators import gen_leech2_type_selftest
 
 
 
@@ -484,100 +479,6 @@ def test_chisq_type4(n = 50000, verbose = 1):
             print("Chisq = %.3f, p = %.4f" % (chisq, p))
         if p >= p_min: return
     raise ValueError("Chisquare test failed") 
-
-#*************************************************************************
-#** Self test from C file
-#************************************************************************/
-
-
-
-
-# The dictionary contains the number TYPE_LENGTHS[t] of vectors
-# of subtype t in the Leech lattice modulo 2. This table is 
-# obtained from :cite:`Iva99`, Lemmas 4.4.1 and 4.6.1.
-TYPE_LENGTHS = {               # Name in :cite:`Iva99`
- 0x00: 1,
- 0x20: binom(24,2) * 2,        # \Lambda_2^4
- 0x21: 24 * 2**11,             # \Lambda_2^3
- 0x22: 759 * 2**6,             # \Lambda_2^2
- 0x31: 24 * 2**11,             # \Lambda_3^5
- 0x33: binom(24,3) * 2**11,    # \Lambda_3^3
- 0x34: 759 * 16 * 2**7,        # \Lambda_3^4
- 0x36: 2576 * 2**10,           # \Lambda_3^2
- 0x40: 2 * 1771,               # \bar{\Lambda}_4^{4a}
- 0x42: 759 * 2**6,             # \bar{\Lambda}_4^{6} 
- 0x43: binom(24,3) * 2**11,    # \bar{\Lambda}_4^{5}
- 0x44: 15 * 759 * 2**7,        # \bar{\Lambda}_4^{4b}
- 0x46: 1288 * 2**11,           # \bar{\Lambda}_4^{4c}
- 0x48: 1                       # \bar{\Lambda}_4^{8}
-}  
-assert sum(TYPE_LENGTHS.values()) ==  0x1000000
-
-
-def one_selftest_leech2(data):
-    """Auxiliary function for function ``test_leech2_self``
-
-    This is a wrapper for the C function ``gen_leech2_type_selftest``
-    that counts subtypes in an interval of vectors of the Leech
-    lattice modulo 2.
-    """
-    start, n = data
-    a = np.zeros(0x50, dtype = np.uint32)
-    result =  gen_leech2_type_selftest(start, n, a)
-    return result, a
-
-
-def gen_selftest_inputs(n):
-    """Auxiliary function for function ``test_leech2_self``
-
-    Generates inputs for function ``one_selftest_leech2`` 
-    for multiprocessing.
-    """
-    assert 0x1000000 % n == 0
-    q = 0x1000000 // n
-    for  i in range(n):
-        yield i*q, q
-
-
-@pytest.mark.gen_xi
-@pytest.mark.slow
-def test_leech2_self(verbose = 0):
-    """Test number of entries of all subtypes
-
-    We count the subtypes of all 0x1000000 vector in the Leech
-    lattice modulo 2, an we compile a dictionary that contains 
-    the number of such vectors for each subtype. The we compare
-    that dictionary against the dictionary TYPE_LENGTHS.
-
-    We use the C function ``gen_leech2_type_selftest`` for 
-    accelerating that computation, and we also use 
-    multiprocessing.    
-    """
-    NPROCESSES = 4
-    with Pool(processes = NPROCESSES) as pool:
-        results = pool.map(one_selftest_leech2, 
-                   gen_selftest_inputs(NPROCESSES))
-    pool.join()
-    result = sum(x[0] for x in results)
-    a = np.zeros(0x50, dtype = np.uint32)
-    for x in results:
-         a += x[1]
-    d = {}
-    for i, n in enumerate(a):
-        if n:
-            d[i] = n
-    if verbose:
-        print("Type-4 vectors: %d\nVector types:" % result)
-        for t, n in d.items():
-            print(" %2x: %7d" % (t, n))
-    assert sum( TYPE_LENGTHS.values() ) == 2**24
-    for t, n in d.items():
-        assert n == TYPE_LENGTHS[t]
-    N4 = sum(n for i, n in d.items() if i & 0xf0 == 0x40)
-    assert result == N4
-
-
-
 
 
 
