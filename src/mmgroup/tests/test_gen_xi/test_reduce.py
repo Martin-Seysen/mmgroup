@@ -41,6 +41,18 @@ assert Cocode(BETA).syndrome() == GcVector(0xC)
 #####################################################################
 
 def xi_reduce_odd_type4(v, verbose = 0):
+    r"""Compute power of :math:`\xi` that reduces a vector ``v``
+
+    Let ``v`` be a vector in the Leech lattice mod 2 in Leech
+    lattice encoding. We assume that ``v`` is of subtype 0x43.
+
+    We compute an exponent ``e`` such that :math:`\xi^e` maps 
+    ``v`` to a vector of subtype 0x42 or 0x44.
+
+    The function returns ``e`` if ``v`` is mapped to type 0x42
+    and ``0x100 + e`` if ``v`` is mapped to type 0x44.  A negative
+    return value indicates that no such exponent ``e`` exists.
+    """
     assert v & 0x800         # Error if cocode part ov v is even
     coc = (v ^ mat24.ploop_theta(v >> 12)) & 0xfff
     # Obtain cocode as table of bit fields of 5 bits
@@ -78,6 +90,17 @@ def xi_reduce_odd_type4(v, verbose = 0):
     return ((tab != 0) << 8) + exp
 
 def xi_reduce_odd_type2(v, verbose = 0):
+    r"""Compute power of :math:`\xi` that reduces a vector ``v``
+
+    Let ``v`` be a vector in the Leech lattice mod 2 in Leech
+    lattice encoding. We assume that ``v`` is of subtype 0x21.
+
+    We compute an exponent ``e`` such that :math:`\xi^e` maps ``v`` 
+    to a vector of subtype 0x22.
+
+    The function returns ``e`` if such an eponent exists.  A negative
+    return value indicates that no such exponent ``e`` exists.
+    """
     assert v & 0x800         # Error if cocode part ov v is even
     # Let scalar be the scalar product of the Golay part of v
     # with the standard tetrad \omega
@@ -88,10 +111,17 @@ def xi_reduce_odd_type2(v, verbose = 0):
 
 
 def xi_reduce_octad(v, verbose = 0):
-    """Find exponent of ``xi`` mapping Leech vector ``v`` a subspace 
+    r"""Compute power of :math:`\xi` that reduces a vector ``v``
 
-     
+    Let ``v`` be a vector in the Leech lattice mod 2 in Leech
+    lattice encoding. We assume that ``v`` is of subtype 
+    0x22, 0x42, or 0x44.
 
+    We compute an exponent ``e`` such that :math:`\xi^e` maps 
+    ``v`` to a vector of subtype 0x40 or 0x20.
+
+    The function returns ``e`` if such an eponent exists.  A negative
+    return value indicates that no such exponent ``e`` exists.
     """
     #print("Std12", hex(v))
     if v & 0x7ff800 == 0:
@@ -106,6 +136,17 @@ def xi_reduce_octad(v, verbose = 0):
 
 
 def xi_reduce_dodecad(v, verbose = 0):
+    r"""Compute power of :math:`\xi` that reduces a vector ``v``
+
+    Let ``v`` be a vector in the Leech lattice mod 2 in Leech
+    lattice encoding. We assume that ``v`` is of subtype 0x46.
+
+    We compute an exponent ``e`` such that :math:`\xi^e` maps 
+    ``v`` to a vector of subtype 0x44.
+
+    The function returns ``e`` if such an eponent exists.  A negative
+    return value indicates that no such exponent ``e`` exists.
+    """
     # Let ``vect`` be the Golay code part of v as a bit vector.
     vect = mat24.gcode_to_vect(v >> 12)
     # Set bit 4*i of s if all bits 4*i, 4*i+1, 4*i+2, 4*i+3 of 
@@ -133,20 +174,39 @@ def xi_reduce_dodecad(v, verbose = 0):
     return exp
 
 def apply_perm(v, src, dest, length, log_list, verbose = 0):
-    res, p =  mat24.perm_from_map(src[:length], dest[:length])
-    assert res > 0, (res, src[:length], dest[:length])
+    r"""Apply permutation to vector in Leech lattice mod 2.
+  
+    Let :math:`\pi` be the permutation given by the array ``p`` 
+    as a permutation on the set  :math:`\{0,\ldots,23\}`. Let 
+    :math:`v_2` be the vector in the Leech lattice mod  2 given 
+    by parameter ``v2``. The function returns :math:`v_2 x_\pi`.
+    Parameter ``v2`` and the return value are given in Leech
+    lattice encoding.
+  
+    Parameter ``p_res`` points to an integer where the function 
+    stores the element :math:`x_\pi` as a generator of the
+    monster group as as described  in file ``mmgroup_generators.h``.
+    That generator is stored with tag  ``MMGROUP_ATOM_TAG_IP`` so
+    that we can compute the inverse of :math:`\pi` very 
+    efficiently. 
+
+    We compute the inverse of the lowest permutation (in lexical
+    order) that maps ``src[:length]`` to ``dest[:length]``.
+    """
+    res, p =  mat24.perm_from_map(dest[:length], src[:length])
+    assert res > 0, (res, dest[:length], src[:length])
     p_inv =  mat24.inv_perm(p)
-    p_inv_num =  mat24.perm_to_m24num(p_inv)
-    log_list.append(0xA0000000 + p_inv_num)
+    p_num =  mat24.perm_to_m24num(p)
+    log_list.append(0xA0000000 + p_num)
     xd = (v >> 12) & 0xfff
     xdelta = (v ^ mat24.ploop_theta(xd)) & 0xfff
-    m =  mat24.perm_to_matrix(p)
+    m =  mat24.perm_to_matrix(p_inv)
     xd = mat24.op_gcode_matrix(xd, m)
-    xdelta = mat24.op_cocode_perm(xdelta, p)
+    xdelta = mat24.op_cocode_perm(xdelta, p_inv)
     v_out = (xd << 12) ^ xdelta ^ mat24.ploop_theta(xd)
     if verbose:
         print("Apply permutation (mapping v to gcode %s):\n%s" %
-          (hex(mat24.gcode_to_vect(v_out >> 12)), p)
+          (hex(mat24.gcode_to_vect(v_out >> 12)), p_inv)
         )
     return v_out
 
@@ -275,6 +335,7 @@ def type2_testdata(ntests):
 
 @pytest.mark.gen_xi
 def test_reduce_type_2(ntests = 500, verbose = 0):
+    """Test function ``reduce_type2`` """
     for n, v in enumerate(type2_ortho_testdata(ntests)):
         if verbose:
             print(" \nTest %d, v = %s, type  =%s" % 
@@ -401,6 +462,7 @@ def type2_ortho_testdata(ntests):
 
 @pytest.mark.gen_xi
 def test_reduce_type_2_ortho(ntests = 500, verbose = 0):
+    """Test function ``reduce_type2_ortho`` """
     for n, v in enumerate(type2_ortho_testdata(ntests)):
         if verbose:
             print(" \nTest %d, v = %s, type  =%s" % 
@@ -421,6 +483,35 @@ def test_reduce_type_2_ortho(ntests = 500, verbose = 0):
 LSTD = [0,1,2,3,4,5]
 
 def reduce_type4_std(v, verbose = 0):
+    r"""Map type-4 vector in Leech lattice to standard vector
+
+    This is (almost) a python implementation of the C function
+    ``gen_leech2_reduce_type4`` in file ``gen_leech.c``.
+   
+    Let ``v \in \Lambda / 2 \Lambda`` of type 4 be given by 
+    parameter ``v`` in Leech lattice encoding. 
+
+    Let ``Omega`` be the type- vector in the Leech  lattice 
+    corresponding to the standard coordinate frame in the Leech
+    lattice.
+   
+    Then the function constructs a ``g \in G_{x0}`` 
+    that maps ``v`` to ``Omega``.
+ 
+    The element ``g`` is returned as a word in the generators
+    of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 
+    word ``g`` is encoded as  defined in the header 
+    file ``mmgroup_generators.h``. 
+
+    The function stores ``g`` as a word of generators in the
+    array ``pg_out`` and returns the length  ``n``  of that
+    word. It returns a negative number in case of failure, 
+    e.g. if ``v`` is not of type 4.
+
+    We remark that the C function ``gen_leech2_reduce_type4`` 
+    treats certain type-4  vectors ``v`` in a special way
+    as indicated in function ``reduce_type4``.
+    """
     if verbose:
         print("Transforming  type-4 vector %s to Omega" %
             hex(v & 0x1ffffff) )
@@ -536,12 +627,15 @@ def type4_testdata(ntests):
     for i in range(ntests):
         yield XLeech2('r', 4).ord
 
+    for v in type2_ortho_testdata(ntests):
+        yield v ^ BETA
+
 #####################################################################
 # Testing function  data for function reduce_type_4_std()
 
-
 @pytest.mark.gen_xi
 def test_reduce_type_4_std(ntests = 500, verbose = 0):
+    """Test function ``reduce_type4_std`` """
     for n, v in enumerate(type4_testdata(ntests)):
         if verbose:
             print(" \nTest %d, v = %s, type  =%s" % 
@@ -551,4 +645,71 @@ def test_reduce_type_4_std(ntests = 500, verbose = 0):
         w = gen_leech2_op_word(v, op, len(op)) 
         assert w & 0xffffff == 0x800000, hex(w)
 
+
+#####################################################################
+# Test function reduce_type_4
+#####################################################################
+
+
+
+
+def reduce_type4(v, verbose = 0):
+    r"""Map type-4 vector in Leech lattice to standard vector
+
+    This is  a python implementation of the C function
+    ``gen_leech2_reduce_type4`` in file ``gen_leech.c``.
+   
+    Let ``v \in \Lambda / 2 \Lambda`` of type 4 be given by 
+    parameter ``v`` in Leech lattice encoding. 
+
+    Let ``Omega`` be the type- vector in the Leech  lattice 
+    corresponding to the standard coordinate frame in the Leech
+    lattice. Let ``beta`` be the short vector in the Leech  
+    lattice propotional  to  ``e_2 - e_3``, where ``e_i`` is  
+    the ``i``-th basis vector  of ``\{0,1\}^{24}``.
+   
+    Then the function constructs a ``g \in G_{x0}`` 
+    that maps ``v`` to ``Omega``. If ``v + beta`` is of type 2
+    and orthogonal to ``beta`` in the real Leech lattice then the 
+    returned element ``g`` also fixes ``beta``.
+ 
+    The element ``g`` is returned as a word in the generators
+    of ``G_{x0}`` of length ``n \leq 6``. Each atom of the 
+    word ``g`` is encoded as  defined in the header 
+    file ``mmgroup_generators.h``. 
+
+    The function stores ``g`` as a word of generators in the
+    array ``pg_out`` and returns the length  ``n``  of that
+    word. It returns a negative number in case of failure, 
+    e.g. if ``v`` is not of type 4.
+    """
+    vtype = gen_leech2_type(v)
+    if (vtype >> 4) != 4:
+        err = "Leech lattice vector must be of type 4"
+        raise ValueError(err)
+    vtype_beta = gen_leech2_type(v ^ BETA)
+    if (vtype_beta >> 4) == 2:
+        return reduce_type2_ortho(v ^ BETA, verbose)
+    return reduce_type4_std(v, verbose)
+     
+
+#####################################################################
+# Testing function  data for function reduce_type_4_std()
+
+
+@pytest.mark.gen_xi
+def test_reduce_type_4(ntests = 500, verbose = 0):
+    """Test function ``reduce_type4`` """
+    for n, v in enumerate(type4_testdata(ntests)):
+        if verbose:
+            print(" \nTest %d, v = %s, type  =%s" % 
+                (n+1, hex(v), hex(gen_leech2_type(v)))
+            )
+        op = reduce_type4(v, verbose)
+        w = gen_leech2_op_word(v, op, len(op)) 
+        assert w & 0xffffff == 0x800000, hex(w)
+        if gen_leech2_type(v ^ BETA) & 0xf0 == 0x20:
+            b = gen_leech2_op_word(BETA, op, len(op)) 
+            assert b & 0xffffff == BETA, hex(b)
+            
 
