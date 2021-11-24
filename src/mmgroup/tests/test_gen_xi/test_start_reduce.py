@@ -1,4 +1,17 @@
+"""Test some C functions in file ``gen_leech.c``
 
+In this script we test the C functions ``gen_leech2_start_type4``
+and ``gen_leech2_start_type4`` in file  ``gen_leech.c``.
+
+We use the terminology defined in
+the document *The C interface of the mmgroup project*, 
+section *Description of the mmgroup.generators extension*.
+
+The tests in ths script are valid under the assumption that all
+tests in the scripts ``test_leech2.py``, ``test_gen_type2``, and
+``test_gen_type4`` marked with ``@pytest.mark.gen_xi`` have been 
+passed. 
+"""
 
 
 from __future__ import absolute_import, division, print_function
@@ -191,8 +204,7 @@ def type4_testdata(ntests = 1000):
 # Test function gen_leech2_start_type4()
 
 
-@pytest.mark.mmm
-@pytest.mark.xsp2co1
+@pytest.mark.gen_xi
 def test_start_type4(ntests = 1000, verbose = False):
     """Test function gen_leech2_start_type4()
 
@@ -279,8 +291,7 @@ def type24_testdata(ntests):
 
 
 
-@pytest.mark.mmm
-@pytest.mark.xsp2co1
+@pytest.mark.gen_xi
 def test_start_type24(ntests = 1000, verbose = 0):          
     """Test function gen_leech2_start_type24()
 
