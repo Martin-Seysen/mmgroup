@@ -18,11 +18,12 @@ from mmgroup import XLeech2, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
 from mmgroup import mat24
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_op_atom
-from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_start_type4
 from mmgroup.generators import gen_leech2_start_type24
-
+from mmgroup.generators import gen_leech2_reduce_type2
+from mmgroup.generators import gen_leech2_reduce_type2_ortho
+from mmgroup.generators import gen_leech2_reduce_type4
 
 from mmgroup.tests.test_gen_xi.test_leech2_type import TYPE_DATA
 from mmgroup.tests.test_gen_xi.test_leech2_type import rand_n_elem
@@ -95,8 +96,8 @@ def xi_reduce_odd_type2(v, verbose = 0):
     Let ``v`` be a vector in the Leech lattice mod 2 in Leech
     lattice encoding. We assume that ``v`` is of subtype 0x21.
 
-    We compute an exponent ``e`` such that :math:`\xi^e` maps ``v`` 
-    to a vector of subtype 0x22.
+    We type to compute an exponent ``e`` such that :math:`\xi^e` 
+    maps ``v`` to a vector of subtype 0x22.
 
     The function returns ``e`` if such an eponent exists.  A negative
     return value indicates that no such exponent ``e`` exists.
@@ -117,11 +118,24 @@ def xi_reduce_octad(v, verbose = 0):
     lattice encoding. We assume that ``v`` is of subtype 
     0x22, 0x42, or 0x44.
 
-    We compute an exponent ``e`` such that :math:`\xi^e` maps 
-    ``v`` to a vector of subtype 0x40 or 0x20.
+    We try to compute an exponent ``e`` such that :math:`\xi^e`  
+    maps ``v`` to a vector of subtype 0x40 or 0x20.
 
     The function returns ``e`` if such an eponent exists.  A negative
     return value indicates that no such exponent ``e`` exists.
+
+    Assume :math:`v_2 = \lambda_d + \lambda_\delta + \lambda_\epsilon`, 
+    where :math:`d \in \mathcal{C}, \delta, \epsilon \in \mathcal{C}^*`, 
+    with :math:`d, \delta` grey, even,  :math:`\epsilon` coloured. 
+    The function returns
+  
+    :math:`e=0` if :math:`d=0 \pmod{\Omega}`,
+     
+    :math:`e=1` if :math:`\delta=\gamma(d) \pmod{\omega} `,
+
+    :math:`e=2` if :math:`\delta=0  \pmod{\omega} `. 
+  
+    In all other cases there is no suitable exponent :math:`e`.
     """
     #print("Std12", hex(v))
     if v & 0x7ff800 == 0:
@@ -173,12 +187,15 @@ def xi_reduce_dodecad(v, verbose = 0):
     exp = 2 - scalar
     return exp
 
-def apply_perm(v, src, dest, length, log_list, verbose = 0):
+def apply_perm(v, src, dest, n, log_list, verbose = 0):
     r"""Apply permutation to vector in Leech lattice mod 2.
   
-    Let :math:`\pi` be the permutation given by the array ``p`` 
-    as a permutation on the set  :math:`\{0,\ldots,23\}`. Let 
-    :math:`v_2` be the vector in the Leech lattice mod  2 given 
+    The function computes a permutation :math:`\pi` that maps
+    the entries of the array ``src`` of length ``n`` to
+    the entries of the array ``dest`` (of the same length) in
+    the given order. 
+
+    Let :math:`v_2` be the vector in the Leech lattice mod  2 given 
     by parameter ``v2``. The function returns :math:`v_2 x_\pi`.
     Parameter ``v2`` and the return value are given in Leech
     lattice encoding.
@@ -191,10 +208,10 @@ def apply_perm(v, src, dest, length, log_list, verbose = 0):
     efficiently. 
 
     We compute the inverse of the lowest permutation (in lexical
-    order) that maps ``src[:length]`` to ``dest[:length]``.
+    order) that maps ``dest[:n]`` to ``src[:n]``.
     """
-    res, p =  mat24.perm_from_map(dest[:length], src[:length])
-    assert res > 0, (res, dest[:length], src[:length])
+    res, p =  mat24.perm_from_map(dest[:n], src[:n])
+    assert res > 0, (res, dest[:n], src[:n])
     p_inv =  mat24.inv_perm(p)
     p_num =  mat24.perm_to_m24num(p)
     log_list.append(0xA0000000 + p_num)
@@ -342,9 +359,15 @@ def test_reduce_type_2(ntests = 500, verbose = 0):
                 (n+1, hex(v), hex(gen_leech2_type(v)))
             )
         op = reduce_type2(v, verbose)
-        w = gen_leech2_op_word(v, op, len(op)) 
+        w = gen_leech2_op_word(v, op, len(op))
         assert w & 0xffffff == BETA, hex(w)
-    
+        a = np.zeros(6, dtype = np.uint32)
+        l = gen_leech2_reduce_type2(v, a)
+        if l < 0:
+            err = "Error %s in function gen_leech2_reduce_type2"
+            raise ValueError(err % hex(l & 0xffffffff))
+        a = a[:l]
+        assert list(a) == list(op), ((a), (op))  
 
 #####################################################################
 # Function reduce_type_2_ortho
@@ -473,6 +496,13 @@ def test_reduce_type_2_ortho(ntests = 500, verbose = 0):
         assert w & 0xffffff == 0x800200, hex(w)
         b = gen_leech2_op_word(BETA, op, len(op)) 
         assert b == BETA
+        a = np.zeros(6, dtype = np.uint32)
+        l = gen_leech2_reduce_type2_ortho(v, a)
+        if l < 0:
+            err = "Error %s in function gen_leech2_reduce_type2_ortho"
+            raise ValueError(err % hex(l & 0xffffffff))
+        a = a[:l]
+        assert list(a) == list(op), ((a), (op))  
     
     
 
@@ -711,5 +741,12 @@ def test_reduce_type_4(ntests = 500, verbose = 0):
         if gen_leech2_type(v ^ BETA) & 0xf0 == 0x20:
             b = gen_leech2_op_word(BETA, op, len(op)) 
             assert b & 0xffffff == BETA, hex(b)
+        a = np.zeros(6, dtype = np.uint32)
+        l = gen_leech2_reduce_type4(v, a)
+        if l < 0:
+            err = "Error %s in function gen_leech2_reduce_type4"
+            raise ValueError(err % hex(l & 0xffffffff))
+        a = a[:l]
+        assert list(a) == list(op), ((a), (op))  
             
 

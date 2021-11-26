@@ -832,7 +832,8 @@ int32_t xsp2co1_rand_word_G_x0(uint32_t *w, uint64_t *seed)
     };
     
     uint32_t *pw = w;
-    uint32_t length, v, i, ag1[6];
+    uint32_t v, i, ag1[6];
+    int_fast32_t length;
 
     // Generate random product g_0 of atoms with tags y, x, d, p.
     // Then g_0 is a random element of the centralizer of the

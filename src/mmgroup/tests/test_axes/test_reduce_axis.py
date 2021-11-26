@@ -1,12 +1,13 @@
 
-from random import randint
+from random import randint, shuffle
 import numpy as np
 
 import datetime
 import time
 import pytest
 
-from mmgroup import MM0, MMSpace, MMV
+from mmgroup import mat24
+from mmgroup import MM0, MMSpace, MMV, Cocode, AutPL
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
@@ -26,7 +27,6 @@ from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
 from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 
-from mmgroup.tests.test_axes.test_reduce_type2 import rand_Co2
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 
 V = MMV(15)
@@ -341,6 +341,47 @@ def reduce_baby_axis(vector, verbose = 1):
         
     
 
+#########################################################################
+## Generating a random vector in the subgroup ``Co_2`` of ``G_x0``
+#########################################################################
+
+v_start_0 =  0x200 
+assert Cocode(v_start_0).syndrome_list() == [2,3]
+v_ortho_start = 0x800200
+
+
+def rand_pi_mat22():
+    r"""Generate certain 'random' element of AutPL
+
+    The function generates a random element ``e`` of the automorphism
+    group ``AutPL`` of the Parker loop, such that the permutation
+    in the Mathieu ``M24`` group corresponding to ``e`` preserves the 
+    set  ``\{2, 3\}``.
+    """
+    pi = AutPL('r', 'r')
+    perm = pi.perm
+    l_src = perm[2:4]
+    shuffle(l_src)
+    _, a = mat24.perm_from_map(l_src, [2, 3])
+    return  pi  *  AutPL('r', a)  
+
+def rand_Co2(quality = 5):
+    r"""Generate certain 'random' element in a subgroup of ``G_x0``
+
+    Let ``v_0`` be the element of the subgroup  ``Q_x0`` of ``G_x0``
+    corresponding to the Golay cocode element ``[2,3]``.
+
+    The function generates a random element of the centralizer
+    of ``v_0`` in ``G_x0``.
+    """
+    a = MM0()
+    for i in range(quality):
+         pi = rand_pi_mat22()
+         x1 = randint(0, 0xfff) & ~0x200
+         y1 = randint(0, 0xfff) & ~0x200
+         e = randint(0, 2)
+         a *= MM0([('p', pi), ('x', x1), ('y', y1), ('l', e)]) 
+    return a 
 
 
 
