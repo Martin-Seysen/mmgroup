@@ -464,10 +464,8 @@ class AutPL(AbstractGroupWord):
         """Return the number of the permutation of the automorphism
 
         The Mathieu group ``M_24`` has ``244823040`` elements 
-        numbered from ``0`` to ``244823039``. The identity has
-        number ``0``. The numbering system is not part of the 
-        public interface; but with this property the numbers of
-        individual permutations may be obtained.
+        numbered from ``0`` to ``244823039`` in lexicographic
+        order. Thus the neutral element has number ``0``. 
         """
         return self._perm_num
 

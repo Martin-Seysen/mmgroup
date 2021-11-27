@@ -514,11 +514,10 @@ Let :math:`v \in \sqrt{8} \Lambda`, and let
 Let :math:`w` be a column of :math:`v`, and let :math:`w^{(k)}`
 be the corresponding column of :math:`v^{(k)}`. Then
 :math:`|w^{(k)}| = |w|`. If :math:`w` has shape
-:math:`(m^4 \bmod{2m})` then there is a :math:`k \in \{1,2\}`
+:math:`(m^4 \bmod{2m})` then there is a unique :math:`k \in \{1,2\}`
 such that :math:`w^{(k)}` has shape :math:`(0^4 \bmod{2m})`.
-If :math:`w` has shape :math:`(0^4 \bmod{2m})` or 
-:math:`(m^2 0^2 \bmod{2m})` then :math:`w^{(k)}` has 
-the same shape (modulo :math:`2m`) for all
+If :math:`w` has shape :math:`(m^2 0^2 \bmod{2m})` then 
+:math:`w^{(k)}` has shape :math:`(m^2 0^2 \bmod{2m})` for all
 :math:`k \in \mathbb{Z}`.
 
 Sketch proof
@@ -542,18 +541,14 @@ From subtype 46 to subtype 44
 .............................
 
 Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
-subtype 46. Then :math:`d` is a dodecad. There is a permutation
-:math:`x_\pi` that maps :math:`d` to the dodecad
-:math:`e = \{0,1,2,3,8,9,14,15,18,19,22,23\}`.
-Function ``mat24_perm_from_dodecads`` in file ``mat24_functions.c`` 
-can be used for constructing a suitable permutation. 
-:math:`x_\pi` maps :math:`\delta` to an even cocode element
-:math:`\epsilon` with :math:`\langle e, \epsilon \rangle = 1``.
-
-There is a vector :math:`v \in \sqrt{8}\Lambda` with 
-:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+subtype 46. Then :math:`d` is a dodecad. Assume that :math:`d`
+contains one column of the MOG. Then up to signs and permutation
+of the columns of the MOG, and up to permutation of the entries of
+a column, there is a vector :math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_r \pmod{2\Lambda}` 
 that has MOG coordinates
-  
+
+   
 .. math::
     \begin{array}{|c|c|c|c|c|c|}
     \hline 
@@ -565,9 +560,9 @@ that has MOG coordinates
     \hline 
     2 & 0 & 0 & 2 & 2 & 2  \\ 
     \hline 
-    \end{array}
+    \end{array} \quad .
     
-up to sign. By the Lemma given above  there is a 
+By the Lemma given above  there is a 
 :math:`k \in \{1,2\}` such that column 0 of the the vector 
 :math:`w = v \cdot {\xi^k}` has shape :math:`(4 \, 0^3)`. The other
 columns of :math:`w` have the same shape as the corresponding 
@@ -575,28 +570,52 @@ columns of :math:`v`. Thus  :math:`w` has shape
 :math:`(4 \, 2^8 0^{15})`. So using the table given above we see
 that  :math:`w` has type 44. 
 
+Note that both, the dodecad :math:`d` and its complement, 
+contain exactly one column of the MOG. The union of these two
+columns is a grey even octad :math:`o`.
+
 With a little extra effort we can show 
-:math:`k = 2 - \langle f, \epsilon \rangle` for
-:math:`f = \{0,1,2,3,4,5,6,7\}`, and 
+:math:`k = 2 - \langle o, \delta \rangle`, where
 :math:`\langle ., . \rangle: \mathcal{C} \times \mathcal{C}^*
-\rightarrow \{0,1\}` the scalar product.
+\rightarrow \{0,1\}` is the scalar product.
+
+If dodecad  :math:`d` does not contain a column of the MOG
+then we select a permutation that maps the first four entries
+of  dodecad  :math:`d` to the entries  :math:`0,1,2,3`, i.e.
+to the first column of the MOG. Then we proceed as above.
+
+
+If we select a permutation in the Mathieu group :math:`M_{24}` then
+we actually have to select an element of the group
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of standard automorphisms
+of the Parker loop described in :ref:`aut_ploop_label`. Whenever we have 
+to select a permutation mapping a certain set to another set, we want
+to keep the inverse of the selected element of 
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` as simple as possible.
+More specifically, for that inverse we select the standard 
+representative in :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the 
+least feasible permutation in lexicograpic order. We use the
+function ``mat24_perm_from_map`` in file ``mat24_functions.c``
+for finding a suitable permutation in :math:`M_{24}`.
 
 
 
-From subtype 43 to subtype 42
-.............................
+
+From subtype 43 to subtype 42 or 44
+.....................................
 
 
-Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
-subtype 43. Then :math:`|\delta| = 3`.There is a permutation
-:math:`x_\pi` that maps :math:`\delta` to 
-:math:`\epsilon = \{0,1,2\}`, and  :math:`d` to a Golay code 
-word :math:`e`.
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 43.
+Then :math:`|\delta| = 3`. The three entries of :math:`\delta` can 
+lie in one, two, or three different columns of the MOG.
 
-There is a vector :math:`v \in \sqrt{8}\Lambda` with 
-:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+If all entries of  :math:`\delta` lie in the same column of the MOG
+then up to signs and permutation of the columns of the MOG, and up 
+to permutation of the entries of a column, there is a vector 
+:math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_r \pmod{2\Lambda}` 
 that has MOG coordinates
-  
+
 .. math::
     \begin{array}{|c|c|c|c|c|c|}
     \hline 
@@ -608,26 +627,58 @@ that has MOG coordinates
     \hline 
     1 & 1 & 1 & 1 & 1 & 1  \\ 
     \hline 
-    \end{array}
+    \end{array}  \quad .
 
-up to sign. By the Lemma given above  there is a 
-:math:`k \in \{1,2\}` such that one column of
-:math:`w = v \cdot {\xi^k}` (and hence all columns) have even 
-entries. Column 0 of :math:`w` has squared norm 
-:math:`44 = 6^2 + 2^2 + 2^2 + 0^2`. That decompostion of
+By the Lemma given above  there is a :math:`k \in \{1,2\}` such that 
+one column of :math:`w = v \cdot {\xi^k}` (and hence all columns) 
+have even entries. Column 0 of :math:`w` has squared norm 
+:math:`44 = 6^2 + 2^2 + 2^2 + 0^2`. That decomposition of
 :math:`44` into a sum of four even squares is unique, so 
 column 0 has shape :math:`(6 \, 2^2 0)`. The other columns
 have shape  :math:`(2 \, 0^3)`. So :math:`w` is of
 shape  :math:`(6 \, 2^7 0^{15})` and hence of subtype 42.
  
 With a little extra effort we can show 
-:math:`k = 2 - \langle e, \omega \rangle`, where :math:`\omega`
+:math:`k = 2 - \langle d, \omega \rangle`, where :math:`\omega`
 is the standard tetrad represented by :math:`\{0,1,2,3\}`, and 
 :math:`\langle ., . \rangle` as above. 
+
+If the entries of  :math:`\delta` lie in two different columns of 
+the MOG then up to signs and permutations as above,  the 
+corresponding vector in :math:`v \in \sqrt{8}\Lambda` has MOG 
+coordinates
+
+
+.. math::
+    \begin{array}{|c|c|c|c|c|c|}
+    \hline 
+    3 & 5 & 1 & 1 & 1 & 1 \\
+    \hline 
+    3 & 1 & 1 & 1 & 1 & 1  \\ 
+    \hline 
+    1 & 1 & 1 & 1 & 1 & 1 \\ 
+    \hline 
+    1 & 1 & 1 & 1 & 1 & 1  \\ 
+    \hline 
+    \end{array}  \quad .
+
+
+By a similar argument as in the first case there is a 
+:math:`k \in \{1,2\}` such that the first two columns of 
+:math:`w = v \cdot {\xi^k}` have shape  :math:`(4 \, 2\, 0^2)`
+and  :math:`(4 \, 2^3)`, and that the other columns of :math:`w`
+have shape :math:`(2 \, 0^3)`. Thus :math:`w` is of subtype 44.
+
+If the entries of  :math:`\delta` lie in three different columns 
+of  the MOG then we apply a permutation in :math:`M_{24}` that maps
+:math:`\delta` to  :math:`\{1,2,3\}`, and proceed as in the first
+case.
 
 
 From subtype 44 to subtype 40
 .............................
+
+TODO: Yet to be adjusted to th last change!!!
 
 Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
 subtype 44. Then :math:`d` is an octad or a complement of
