@@ -581,7 +581,7 @@ With a little extra effort we can show
 
 If dodecad  :math:`d` does not contain a column of the MOG
 then we select a permutation that maps the first four entries
-of  dodecad  :math:`d` to the entries  :math:`0,1,2,3`, i.e.
+of  dodecad  :math:`d` to the points  :math:`0,1,2,3`, i.e.
 to the first column of the MOG. Then we proceed as above.
 
 
@@ -606,7 +606,7 @@ From subtype 43 to subtype 42 or 44
 
 
 Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 43.
-Then :math:`|\delta| = 3`. The three entries of :math:`\delta` can 
+Then :math:`|\delta| = 3`. The three points of :math:`\delta` can 
 lie in one, two, or three different columns of the MOG.
 
 If all entries of  :math:`\delta` lie in the same column of the MOG
@@ -678,46 +678,27 @@ case.
 From subtype 44 to subtype 40
 .............................
 
-TODO: Yet to be adjusted to th last change!!!
 
-Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of 
-subtype 44. Then :math:`d` is an octad or a complement of
-an octad. We call that octad :math:`d'`. There is a permutation 
-:math:`x_\pi` that maps :math:`d'` to the standard octad
-:math:`e = \{0,1,2,3,4,5,6,7\}`. But a suitable :math:`x_\pi`
-also has to deal with :math:`\delta`.
-
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 44. 
+Then :math:`d` is an octad or a complement of
+an octad. We call that octad :math:`o`.
 If the cocode word :math:`\delta` is a duad, let :math:`c_0, c_1` 
 be the two points in that duad. Otherwise, let :math:`c` by any 
-tetrad intersecting the octad :math:`d'` in two points, so that
+tetrad intersecting the octad :math:`o` in two points, so that
 :math:`c` is equal to the sextet :math:`\delta` modulo the cocode
 :math:`\mathcal{C}^*`. Let :math:`c_0, c_1` be the two points in  
-:math:`c` which are not in the octad  :math:`d'`. 
+:math:`c` which are not in the octad  :math:`o`. 
 
-Select 5 points from octad :math:`d'`, and let :math:`h` be the 
-heptad formed by these 5 points and :math:`c_0, c_1`. Then 
-:math:`h` is an umbral heptad (i.e. an heptad not contained in an 
-octad); and :math:`h` has a unique point :math:`o_0` such that 
-the difference set :math:`h \setminus \{o_0\}`  is a standard 
-hexad, i.e. a hexad contained in an octad. Furthermore, 
-:math:`o_0` is in the octad  :math:`d'`.
+Assume first that :math:`o` is a grey even octad, i.e. a union of
+two columns of the MOG, and that the points  :math:`c_0, c_1`
+are in the same column of the MOG.
 
-Select 4 points :math:`o_1, o_2, o_3, o_4` (differerent from 
-:math:`o_0`) from the octad  :math:`d'` and map the umbral 
-heptad :math:`(o_1, o_2, o_3, o_4, c_0, c_1, o_0)` to the umbral 
-heptad :math:`(0,1,2,3,8,9,4)` via a permutation :math:`x_\pi`. 
-Then :math:`x_\pi` maps :math:`d'` to :math:`e` and 
-:math:`\delta` to :math:`\epsilon \in \mathcal{C}^*` such that 
-a representative of :math:`\epsilon` is a subset of
-:math:`\{i \in \mathbb{Z} \mid 0 \leq i < 10\}`.
-Function ``mat24_perm_from_heptads``
-in file ``math24_functions.c`` constructs mappings from
-umbral heptads to umbral heptads.
-
-There is a vector :math:`v \in \sqrt{8}\Lambda` with 
-:math:`v/\sqrt{8} = \lambda_e +\lambda_\epsilon \pmod{2\Lambda}` 
+Then up to signs and permutation of the columns of the MOG, and up 
+to permutation of the entries of a column, there is a vector 
+:math:`v \in \sqrt{8}\Lambda` with 
+:math:`v/\sqrt{8} = \lambda_r \pmod{2\Lambda}` 
 that has MOG coordinates
-  
+
 .. math::
     \begin{array}{|c|c|c|c|c|c|}
     \hline 
@@ -725,39 +706,61 @@ that has MOG coordinates
     \hline 
     2 & 2 & 4 & 0 & 0 & 0  \\ 
     \hline 
-    2 & 2 & 0 & 2 & 2 & 2 \\ 
+    2 & 2 & 0 & 0 & 0 & 0 \\ 
     \hline 
-    2 & 2 & 0 & 2 & 2 & 2  \\ 
+    2 & 2 & 0 & 0 & 0 & 0  \\ 
     \hline 
     \end{array}
 
-up to sign. Similar to the previous cases, we can show
-there is a :math:`k \in \{1,2\}` such that 
-:math:`w = v \cdot {\xi^k}` has shape 
-:math:`(4^4 0^{20})`. So :math:`w` is of subtype 40.
+Similar to the previous cases, we can show that there is a unique
+:math:`k \in \{1,2\}` such that :math:`w = v \cdot {\xi^k}` has 
+shape :math:`(4^4 0^{20})`. So :math:`w` is of subtype 40.
 
 One can show :math:`k = 2 - \sigma`, where
-:math:`\sigma = |c \cap \{0,1,2,3\}| \pmod{2}`, 
-:math:`\sigma \in \{0,1\}`. 
+:math:`\sigma = |c \cap w | \pmod{2}`, :math:`\sigma \in \{0,1\}` ,
+and :math:`w` is any of the two columns of the MOG contained in
+the octad  :math:`o`. 
+
+
+If the octad :math:`o` and the two points  :math:`c_0, c_1` do not 
+satisfy the condition given above then we first construct a 
+permutation that maps  :math:`c_0, c_1` to  :math:`2, 3`, and four 
+points of  :math:`o` to :math:`4, 5, 6, 7` as follows.
+
+We compute the syndrome of the set  :math:`c_0, c_1, o_0, o_1, o_2`.
+That syndrome intersects with  :math:`o` in exactly one point
+:math:`o_j`. The we contruct a permutation in :math:`M_{24}` that 
+maps the hexad :math:`(c_0, c_1, o_0, o_1, o_2, o_j)` to the hexad
+:math:`(2, 3, 4, 5, 6, 7)`. Such a permutation exists, since both
+hexads are subsets of an octad.
 
 
 From subtype 42 to subtype 40
 .............................
 
-Here a simplified version of the construction for the 
-reduction of subtype 44 can be used. More specifically, we 
-may ignore the contibution of the cocode part 
-:math:`\lambda_\delta` to the permutation :math:`x_\pi` .
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 44. 
+Then :math:`d` is an octad or a complement of an octad. We call that
+octad :math:`o` as in the case of type 44. If that octad is grey,
+we map vector :math:`\lambda_r` to a vector of type 40 in the same 
+way as in that case.
+
+Otherwise we first map the lowest four points of octad  :math:`o` to 
+the set :math:`0, 1, 2, 3`, using a permutation in  :math:`M_{24}`.
+
 
 From subtype 40 to subtype 48
 .............................
 
+
 Let :math:`\lambda_r` be of subtype 40. Then
-:math:`\lambda_r = \lambda_\delta` for some 
+:math:`\lambda_r = \alpha \lambda_\Omega + \lambda_\delta`,
+:math:`\alpha = 0, 1`, for some 
 :math:`\delta \in \mathcal{C}^*`, :math:`|\delta|=4`.
-A suitable permutation :math:`x_\pi` maps :math:`\delta` 
-to the standard tetrad  :math:`\omega` represented by
-:math:`\{0,1,2,3\}`. 
-Then :math:`\lambda_r \cdot x_\pi = \alpha \lambda_\Omega + 
-\lambda_\omega`. A suitable power of  :math:`\xi` maps that
-vector to the unique vector :math:`\lambda_\Omega` of type 48.
+If :math:`\delta` is equal to the standard tetrad  :math:`\omega` 
+represented by :math:`\{0,1,2,3\}` then there is a unique power of
+:math:`\xi` that maps :math:`\lambda_r` to :math:`\lambda_\Omega`, 
+which is of type 48.
+
+Otherwise let :math:`c` be the tetrad containing the point :math:`0`
+that correponds to :math:`\delta`. The we first apply a permutation
+in  :math:`M_{24}` that maps  :math:`c` to  :math:`\{0,1,2,3\}`.
