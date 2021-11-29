@@ -485,11 +485,7 @@ as follows:
     \end{figure}
 
 
-In the next few subsections we show how to map a vector of subtype
-4x to a vector of subtype 48 by a sequence of generators
-:math:`x_\pi, \xi^k` of length at most 6. The proofs are a bit 
-involved, but the C function ``gen_leech2_reduce_type4_vector``
-in file ``gen_leech.c`` constructs that sequence very fast.
+
 
 We will provide some more information about the operation of 
 :math:`\xi^k` on :math:`\Lambda`. 
@@ -534,6 +530,77 @@ easy to show the Lemma.
 
 q.e.d.
 
+Computing a transversal of :math:`G_{x0} \setminus N_{x0}`
+..........................................................
+
+The cosets in  :math:`G_{x0} \setminus N_{x0}` correspond to the
+type-4 vectors in the Leech lattice modulo 2. Thus for computing 
+a transversal of :math:`G_{x0} \setminus N_{x0}` we have to compute
+an element of  :math:`G_{x0}` that maps the standard frame
+:math:`\Omega` in :math:`\Lambda/ 2 \Lambda` to a vector  :math:`v`
+for a given vector :math:`v` of type 4 in :math:`\Lambda/ 2 \Lambda`.
+
+In the next few subsections we show how to map a vector of subtype
+4x to a vector of subtype 48 by a sequence of generators
+:math:`x_\pi, \xi^k` of length at most 6. The proofs are a bit 
+involved, but the C function ``gen_leech2_reduce_type4_vector`` in 
+file ``gen_leech.c`` constructs that sequence very fast. Then the
+inverse of the element computed by function 
+``gen_leech2_reduce_type4_vector`` is the requested element of
+the transversal.
+
+
+
+If we select a permutation in the Mathieu group :math:`M_{24}` then
+we actually have to select an element of the group
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of standard automorphisms
+of the Parker loop described in :ref:`aut_ploop_label`. Whenever we have 
+to select a permutation mapping a certain set to another set, we want
+to keep the inverse of the selected element of 
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` as simple as possible.
+More specifically, for that inverse we select the standard 
+representative in :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the 
+least feasible permutation in lexicograpic order. We use the
+function ``mat24_perm_from_map`` in file ``mat24_functions.c``
+for finding a suitable permutation in :math:`M_{24}`.
+
+
+
+
+Incorporating the baby monster into the computation of a tranversal
+...................................................................
+
+The capability of computing in a subgroup of structure :math:`2.B`
+of the monster :math:`\mathbb{M}` (where :math:`B` is the baby 
+monster) is crucial for the success of our project. Although not 
+strictly necessary, we want to select elements of that subgroup in 
+our transversal of :math:`G_{x0} \setminus N_{x0}` whenever possible. 
+In this subsection we explain how to do so. This is a bit technical 
+and may be skipped at first reading.
+
+Let :math:`\beta = {\small \frac{1}{\sqrt{8}}}(e_2 - e_3) \in \Lambda`,
+where  :math:`e_i` is the  :math:`i`-th unit vector in 
+:math:`\mathbb{R}^{24}`. Then :math:`\beta` is of type 2 in the
+Leech lattice :math:`\Lambda`, and the centralizer of :math:`x_\beta` 
+in :math:`\mathbb{M}` has structure  :math:`2.B`, and the centralizer
+:math:`C_G(B)` of :math:`x_\beta` in :math:`G_{x0}` has structure
+:math:`2^{1+22}.\mbox{Co}_2`. Our goal is find a representative
+of a coset in  :math:`N_{x0} \setminus G_{x0}`  fixing :math:`\beta`
+whenever possible.
+
+One can show that the coset in :math:`N_{x0} \setminus G_{x0}` 
+corresponding to :math:`v \in \Lambda / 2 \Lambda` of type 4 
+has a nonempty intersection with :math:`C_G(B)` if 
+:math:`v + \beta` is of type 2 and orthogonal to :math:`\beta` 
+in the real Leech lattice :math:`\Lambda`.
+
+If this is the case then we compute an element of :math:`G_{x0}` 
+that maps :math:`v + \beta` to the type-2 vector 
+:math:`\Omega + \beta` and fixes :math:`\beta`. 
+
+Note that the generator :math:`\xi` fixes :math:`\beta`. A permutation
+:math:`\pi \in M_{24}` fixes  :math:`\beta` if and only if it fixes
+the set :math:`\{2,3\}` of points.
 
 
 
@@ -585,18 +652,6 @@ of  dodecad  :math:`d` to the points  :math:`0,1,2,3`, i.e.
 to the first column of the MOG. Then we proceed as above.
 
 
-If we select a permutation in the Mathieu group :math:`M_{24}` then
-we actually have to select an element of the group
-:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of standard automorphisms
-of the Parker loop described in :ref:`aut_ploop_label`. Whenever we have 
-to select a permutation mapping a certain set to another set, we want
-to keep the inverse of the selected element of 
-:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` as simple as possible.
-More specifically, for that inverse we select the standard 
-representative in :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the 
-least feasible permutation in lexicograpic order. We use the
-function ``mat24_perm_from_map`` in file ``mat24_functions.c``
-for finding a suitable permutation in :math:`M_{24}`.
 
 
 
@@ -738,9 +793,9 @@ hexads are subsets of an octad.
 From subtype 42 to subtype 40
 .............................
 
-Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 44. 
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 42. 
 Then :math:`d` is an octad or a complement of an octad. We call that
-octad :math:`o` as in the case of type 44. If that octad is grey,
+octad :math:`o` as in the case of type 42. If that octad is grey,
 we map vector :math:`\lambda_r` to a vector of type 40 in the same 
 way as in that case.
 
@@ -764,3 +819,64 @@ which is of type 48.
 Otherwise let :math:`c` be the tetrad containing the point :math:`0`
 that correponds to :math:`\delta`. The we first apply a permutation
 in  :math:`M_{24}` that maps  :math:`c` to  :math:`\{0,1,2,3\}`.
+
+
+From subtype 21 to subtype 22, fixing :math:`\beta`
+...................................................
+
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 21,
+and orthogonal to :math:`\beta` in the real Leech lattice. 
+Then :math:`|\delta| = 1`.
+
+We  proceed as in the case of subtype 43. Then there is a
+:math:`k \in \{1,2\}` such that one column of 
+:math:`w = v \cdot {\xi^k}` (and hence all columns) have even 
+entries. It is easy to see that :math:`w` is of subtype 22.
+
+
+From subtype 22 to subtype 20, fixing :math:`\beta`
+...................................................
+
+Let :math:`\lambda_r = \lambda_d + \lambda_\delta` be of subtype 22,
+and orthogonal to :math:`\beta` in the real Leech lattice.  
+Then :math:`d` is an octad or a complement of an octad. We call that 
+octad :math:`o` as in the cases of subtype 42 or 44. For subtype 22
+the cocode word :math:`\delta` can be considered as a subset of
+octad :math:`o`.
+
+The set :math:`\{2,3\}` either contained in or disjoint to octad
+:math:`o`. 
+
+If octad :math:`o` is grey and even we may directly apply a power
+of :math:`\xi` that transforms :math:`\lambda_r` to a vector of
+subtype 22, similar to the operation in the case of sybtype 42.
+Otherwise we proceed as follows.
+
+If the set :math:`\{2,3\}` is disjoint from :math:`o` we proceed
+exactly as in the case of subtype 44, replacing :math:`c_0` and 
+:math:`c_1` by  :math:`2` and :math:`3`. This operation fixes 
+points :math:`2` and :math:`3`.
+
+Otherwise we first fix the points :math:`2` and :math:`3` and map 
+the lowest two points of :math:`o \setminus \{2,3\}` to :math:`0` 
+and :math:`1`, using a permutation in  :math:`M_{24}`.
+
+
+From subtype 20 to the vector :math:`\beta + \Omega`, fixing :math:`\beta`
+..........................................................................
+
+Let :math:`\lambda_r` be of subtype 20, and orthogonal to 
+:math:`\beta` in the real Leech lattice.  Then
+:math:`\lambda_r = \alpha \lambda_\Omega + \lambda_\delta`,
+:math:`\alpha = 0, 1`, for some 
+:math:`\delta \in \mathcal{C}^*`, :math:`|\delta|=2`. In case
+:math:`\delta =  \{2,3\}` we must have :math:`\alpha = 1`, i.e.
+:math:`\lambda_r = \beta`, and we are done. Otherwise both points
+in :math:`\delta` are different from :math:`2` and :math:`3`. 
+
+In case :math:`\delta = \{0, 1\}` the transformation :math:`\xi^k`
+with :math:`k = 2- \alpha` maps :math:`\lambda_r` to :math:`\beta`.
+
+Otherwise we first apply a permutation in :math:`M_{24}` that maps
+:math:`\delta` to :math:`\{0, 1\}`, and fixes :math:`2` and :math:`3`.
+
