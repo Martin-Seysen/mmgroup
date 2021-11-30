@@ -1,25 +1,34 @@
 r"""We deal with the 196884-dimensional representation of the monster.
 
-One purpose of the ``mmgroup`` package is to give the user the 
-capability to compute in the ``196884``-dimensional representation 
-:math:`\rho_p` of the monster group :math:`\mathbb{M}`. Here
-:math:`\rho` is the rational representation  ``196884_x`` of the 
-monster constructed in in :cite:`Con85`, and :math:`\rho_p`
-is obtained from  :math:`\rho` by taking all matrix coefficients
-modulo a small odd number ``p``.  This package supports the 
-cases ``p = 3, 7, 15, 31, 127, 255``.
-
-We are a bit sloppy, calling :math:`\rho_p` a vector space also
+The monster :math:`\mathbb{M}` has a 196884-dimensional 
+representation :math:`\rho` with coefficients in 
+:math:`\mathbb{Z}[\frac{1}{2}]`, see :cite:`Con85`. 
+Representation  :math:`\rho` is called 
+:math:`196884_x` in  :cite:`Con85`. We obtain a modular 
+representation :math:`\rho_p` of :math:`\mathbb{M}` by 
+reducing the matrix coefficients of the representation 
+:math:`\rho` modulo an odd number :math:`p`. 
+The representation  :math:`\rho_p` can be implemented very
+efficiently if :math:`p + 1` is a small power of two.
+The current version of the *mmgroup* package supports the 
+representations :math:`\rho_p` of :math:`\mathbb{M}` for 
+``p = 3, 7, 15, 31, 127, 255``. In the sequel 
+we are a bit sloppy, calling :math:`\rho_p` a vector space also
 in cases ``p = 15, 255``. The user may select these values for
 obtaining representations modulo ``5`` and ``17``, respectively.
 
+
+One purpose of the ``mmgroup`` package is to give the user the 
+capability to compute in the ``196884``-dimensional representation 
+:math:`\rho_p` of the monster group :math:`\mathbb{M}`.
+
 For calculating in :math:`\rho_p` the user may create an instance 
-of class |MM| that models an element ``g`` of the group  
+of class |MM| that models an element ``g`` of the monster group  
 :math:`\mathbb{M}` as described in section :ref:`mmgroup-label`. 
 Then the user may create an instance ``v`` of class |MMVector| 
 that models a vector in :math:`\rho_p`,  with ``p`` as above. 
-Vector ``v`` acts on the element ``g`` of :math:`\mathbb{M}` by
-right multiplication.
+The element ``g`` of :math:`\mathbb{M}` acts on the 
+vector ``v`` by right multiplication.
 
 
 
@@ -37,7 +46,7 @@ To create a basis vector of  :math:`\rho_p` corresponding to the
 tuple ``(tag, i0, i1)`` the user may call the constructor
 ``MMVector(p, tag, i0, i1)``.
 
-For a fixed characteristic ``p`` function ``MMV(p)`` returns 
+For a fixed characteristic ``p`` the function ``MMV(p)`` returns 
 an object correponding to the vector space  :math:`\rho_p`.
 Thus the sequence
 
@@ -355,7 +364,7 @@ Sparse representation of vectors in :math:`\rho_p`
 ....................................................
 
 Internally, a vector :math:`\rho_p` is sometimes given in *sparse*
-representation. This is useful for sparse vector containing many
+representation. This is useful for sparse vectors containing many
 zero entries. In *sparse* representation the vector is given as
 an array of unsigned 32-bit integers. Here each entry of the 
 array encodes a multiple of the basis vector. Such an entry it 

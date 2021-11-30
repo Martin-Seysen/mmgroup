@@ -598,12 +598,8 @@ class MMGroup(AbstractMMGroup):
         g1._extend(2*(l1 + l2) + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
         l1 += l2
-        l_tail = l1 - g1.reduced
-        g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
-        tail = g1._data[l1:]
-        l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-        g1.reduced = l1 == 0
         g1.length = l1
+        g1.reduced = False
         g1.reduce()
         return g1
 

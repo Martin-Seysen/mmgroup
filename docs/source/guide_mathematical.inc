@@ -203,9 +203,9 @@ The stabilizer of :math:`\Omega` is a subgroup :math:`N_{x0}` of
 :math:`G_{x0}` of structure :math:`2^{1+24}.2^{11}.M_{24}`. Thus 
 the set of type-4 vectors in  :math:`\Lambda / 2 \Lambda`
 corresponds the set of right cosets
-:math:`2^{11}.M_{24} \setminus \mbox{Co}_1`. We have 
-:math:`N_{x0} \setminus G_{x0} \cong 2^{11}.M_{24} 
-\setminus \mbox{Co}_1`.
+:math:`2^{11}.M_{24} \backslash \mbox{Co}_1`. We have 
+:math:`N_{x0} \backslash G_{x0} \cong 2^{11}.M_{24} 
+\backslash \mbox{Co}_1`.
 So identifying the right coset :math:`N_{x0} h` for a
 :math:`h \in G_{x0}` reduces to the computation of the frame
 :math:`\Omega h`.
@@ -530,12 +530,12 @@ easy to show the Lemma.
 
 q.e.d.
 
-Computing a transversal of :math:`G_{x0} \setminus N_{x0}`
-..........................................................
+Computing a transversal of :math:`G_{x0} \backslash N_{x0}`
+............................................................
 
-The cosets in  :math:`G_{x0} \setminus N_{x0}` correspond to the
+The cosets in  :math:`G_{x0} \backslash N_{x0}` correspond to the
 type-4 vectors in the Leech lattice modulo 2. Thus for computing 
-a transversal of :math:`G_{x0} \setminus N_{x0}` we have to compute
+a transversal of :math:`G_{x0} \backslash N_{x0}` we have to compute
 an element of  :math:`G_{x0}` that maps the standard frame
 :math:`\Omega` in :math:`\Lambda/ 2 \Lambda` to a vector  :math:`v`
 for a given vector :math:`v` of type 4 in :math:`\Lambda/ 2 \Lambda`.
@@ -574,7 +574,7 @@ The capability of computing in a subgroup of structure :math:`2.B`
 of the monster :math:`\mathbb{M}` (where :math:`B` is the baby 
 monster) is crucial for the success of our project. Although not 
 strictly necessary, we want to select elements of that subgroup in 
-our transversal of :math:`G_{x0} \setminus N_{x0}` whenever possible. 
+our transversal of :math:`G_{x0} \backslash N_{x0}` whenever possible. 
 In this subsection we explain how to do so. This is a bit technical 
 and may be skipped at first reading.
 
@@ -585,12 +585,12 @@ Leech lattice :math:`\Lambda`, and the centralizer of :math:`x_\beta`
 in :math:`\mathbb{M}` has structure  :math:`2.B`, and the centralizer
 :math:`C_G(B)` of :math:`x_\beta` in :math:`G_{x0}` has structure
 :math:`2^{1+22}.\mbox{Co}_2`. Our goal is find a representative
-of a coset in  :math:`N_{x0} \setminus G_{x0}`  fixing :math:`\beta`
+of a coset in  :math:`N_{x0} \backslash G_{x0}`  fixing :math:`\beta`
 whenever possible.
 
-One can show that the coset in :math:`N_{x0} \setminus G_{x0}` 
+One can show that the coset in :math:`N_{x0} \backslash G_{x0}` 
 corresponding to :math:`v \in \Lambda / 2 \Lambda` of type 4 
-has a nonempty intersection with :math:`C_G(B)` if 
+has a nonempty intersection with :math:`C_G(B)` if and only if
 :math:`v + \beta` is of type 2 and orthogonal to :math:`\beta` 
 in the real Leech lattice :math:`\Lambda`.
 
@@ -847,14 +847,14 @@ octad :math:`o`.
 The set :math:`\{2,3\}` either contained in or disjoint to octad
 :math:`o`. 
 
-If octad :math:`o` is grey and even we may directly apply a power
+If octad :math:`o` is grey and even then we may directly apply a power
 of :math:`\xi` that transforms :math:`\lambda_r` to a vector of
-subtype 22, similar to the operation in the case of sybtype 42.
+subtype 22, similar to the operation in the case of subtype 42.
 Otherwise we proceed as follows.
 
 If the set :math:`\{2,3\}` is disjoint from :math:`o` we proceed
 exactly as in the case of subtype 44, replacing :math:`c_0` and 
-:math:`c_1` by  :math:`2` and :math:`3`. This operation fixes 
+:math:`c_1` by  :math:`2` and :math:`3`. This operation fixes the
 points :math:`2` and :math:`3`.
 
 Otherwise we first fix the points :math:`2` and :math:`3` and map 
@@ -871,8 +871,8 @@ Let :math:`\lambda_r` be of subtype 20, and orthogonal to
 :math:`\alpha = 0, 1`, for some 
 :math:`\delta \in \mathcal{C}^*`, :math:`|\delta|=2`. In case
 :math:`\delta =  \{2,3\}` we must have :math:`\alpha = 1`, i.e.
-:math:`\lambda_r = \beta`, and we are done. Otherwise both points
-in :math:`\delta` are different from :math:`2` and :math:`3`. 
+:math:`\lambda_r = \beta + \Omega`, and we are done. Otherwise both 
+points in :math:`\delta` are different from :math:`2` and :math:`3`. 
 
 In case :math:`\delta = \{0, 1\}` the transformation :math:`\xi^k`
 with :math:`k = 2- \alpha` maps :math:`\lambda_r` to :math:`\beta`.
