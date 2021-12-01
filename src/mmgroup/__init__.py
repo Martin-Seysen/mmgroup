@@ -3,19 +3,18 @@
 In mathematics the *monster group* is the largest sporadic 
 finite simple group.  
 
+The most important classes in module ``mmgroup`` are
+
+  ===================  ===========================================
+  ``class MM``         Models an element of the monster group.
+  ``class MMVector``   Models a vector in a 196884-dimensional
+                       representation of the monster group
+                       (modulo a small odd number).
+  ===================  ===========================================
+
 For documentation see:
 
 https://mmgroup.readthedocs.io/en/latest/
-
-The most important classes in this module are
-
-  =================  =============================================
-  ``class MMGroup``  Models an instance of the monster group.
-  ``class MMSpace``  Models an instance of the 196884-dimensional
-                     representation of the monster group
-                     (modulo some small odd numbers).
-  =================  =============================================
-
 """
 
 import warnings 

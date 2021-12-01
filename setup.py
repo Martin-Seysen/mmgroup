@@ -5,7 +5,8 @@ from __future__ import absolute_import, division, print_function
 # History
 ####################################################################
 
-VERSION = '0.0.6' # 2021-12-01. Group operation accelerated
+VERSION = '0.0.7' # 2021-12-01. Bugfix in version generation
+# VERSION = '0.0.6' # 2021-12-01. Group operation accelerated
 # VERSION = '0.0.5' # 2021-08-02. Word shortening in monster implemented
 # VERSION = '0.0.4' # 2020-06-15. MSVC compiler is now supported
 # VERSION = '0.0.3' # 2020-06-10. bugfixes in code generator

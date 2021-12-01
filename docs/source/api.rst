@@ -65,11 +65,48 @@ Version history
 | Version 0.0.4, 2020-06-15. MSVC compiler is now supported
 | Version 0.0.5, 2021-08-02. Word shortening in monster implemented
 | Version 0.0.6, 2021-12-01. Group operation accelerated
+| Version 0.0.7, 2021-12-01. Bugfix in version generation
 
 .. _basic_label:
 
 Basic structures
 ================
+
+Conway's construction of the monster group starts with the extended 
+binary Golay code :math:`\mathcal{C}`, which is a 12-dimensional 
+linear subspace of the 24-dimensional vector space 
+:math:`\mathbb{F}_2^{24}`. The Golay code has Hamming distance 8. 
+Its automorphism group is the Mathieu group :math:`M_{24}`, which is
+a simple group operating as a permutation group on 24 points. 
+These points are identified with the basis vectors of 
+:math:`\mathbb{F}_2^{24}`.
+
+Module ``mmgroup`` contains fast C routines for computing with the
+Golay code  :math:`\mathcal{C}`, its cocode :math:`\mathcal{C^*}`,
+and the Mathieu group :math:`M_{24}`. There are Python classes 
+for a more convient handling of these objects that wrap these
+C functions; these classes are described in this section.
+
+In this section we also describe Python classes modelling more
+complicated mathematical structures. One of these structures is
+the Parker loop :math:`\mathcal{P}`, which is a non-associative 
+loop that can be constructed as a double cover of the Golay code
+:math:`\mathcal{C}`. We also consider a group 
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of automorphisms of
+:math:`\mathcal{P}`, which has structure 
+:math:`2^{12}.M_{24}`. Here the normal subgroup of 
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` or order :math:`2^{12}`
+is isomorphic to the Golay cocode  :math:`\mathcal{C^*}`.
+
+Another important ingredient of the construction of the monster
+is the Leech lattice :math:`\Lambda`, which is the densest lattice
+in dimension 24. We also consider the Leech lattice modulo 2,
+which we denote by :math:`\Lambda / 2 \Lambda`, and the automorphism
+group  :math:`\mbox{Co}_1` of :math:`\Lambda / 2 \Lambda`, which is
+simple.
+
+
+
 
 .. _golay-label:
 
