@@ -56,6 +56,16 @@ Installation
 
 
 
+Version history
+---------------
+
+| Version 0.0.1, 2020-05-20. First release
+| Version 0.0.2, 2020-06-04. Order oracle added; bugfixes
+| Version 0.0.3, 2020-06-10. Bugfixes in code generator
+| Version 0.0.4, 2020-06-15. MSVC compiler is now supported
+| Version 0.0.5, 2021-08-02. Word shortening in monster implemented
+| Version 0.0.6, 2021-12-01. Group operation accelerated
+
 .. _basic_label:
 
 Basic structures

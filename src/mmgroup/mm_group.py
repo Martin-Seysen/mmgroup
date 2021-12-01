@@ -151,17 +151,6 @@ in the monster group.
 
 
 
-Future development
-..................
-
-Future versions of this package may implement improved reduction
-strategies for words of generators of :math:`\mathbb{M}` :
-
-
- * Long words of generators of :math:`\mathbb{M}` can be shortened 
-   with high probability by method ``mmgroup.MM.simplify``. 
-   This method uses the algorithm in :cite:`Wil03`. This may take 
-   a long time. Here improvements in future versions are desirable.
 
 """
 # References in the __docstr__ see file docs/source/references.bib
