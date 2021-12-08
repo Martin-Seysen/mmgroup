@@ -1,6 +1,8 @@
-r"""
+
+
 Computation in the Clifford group 
 ---------------------------------
+
 
 In this section we present effective algorithms for computing
 in the complex Clifford group of structure 
@@ -1656,18 +1658,8 @@ Computing the trace of a quadratic state matrix
  matrix to row 0, and sum up all entries of that row. This leads
  to a scalar that has the value of the trace of  :math:`S`.
 
-"""
 
 
-
-import sys
-
-class QSstate_tables:
-    directives = {}
-    def __init__(self):
-        self.tables = {
-            "QSTATE_DOC":  sys.modules[__name__],
-        }
 
 
 

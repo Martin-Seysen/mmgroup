@@ -56,7 +56,6 @@ import mmgroup
 from mmgroup.generate_c import TableGenerator, make_doc
 from mmgroup.generate_c import pxd_to_pyx
 
-from  mmgroup.dev.clifford12.qstate12 import QSstate_tables
 
 
 VERBOSE = 0
@@ -203,7 +202,6 @@ cdef extern from "clifford12.h":
 
 
 TABLE_CLASSES = [
-    QSstate_tables,
 ]
 
 

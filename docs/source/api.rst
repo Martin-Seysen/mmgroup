@@ -243,13 +243,13 @@ Auxiliary functions for the representation of the monster group
 
 .. _clifford-group-label:
 
-The subgroup :math:`2^{1+24}.Co_1` of the monster and the Clifford group
+The subgroup :math:`G_{x0}` of the monster and the Clifford group
 ========================================================================
 
 The section describes the fast computation in a certain subgroup 
-:math:`G_{x0}` of the monster :math:`\mathbb{M}` in detail. A person
-who simply wants do do calculations in the monster group need not 
-read this section. 
+:math:`G_{x0}` of structrue :math:`2^{1+24}.Co_1` of the monster 
+:math:`\mathbb{M}` in detail. A person who simply wants do do 
+calculations in the monster group need not read this section. 
 
 
 Introduction
@@ -297,9 +297,8 @@ computing in :math:`\mathcal{X}_{n}` and in its :math:`2^{n}`
 dimensional complex representation.
 
 
+.. include:: qstate12.inc
 
-
-.. automodule:: mmgroup.dev.clifford12.qstate12
 
 
 Class ``QStateMatrix`` modelling a quadratic state matrix
@@ -315,6 +314,19 @@ Class ``QStateMatrix`` modelling a quadratic state matrix
              pauli_vector, pauli_conjugate, show, trace
 
 .. autofunction:: mmgroup.structures.qs_matrix.qs_unit_matrix
+
+
+.. _group_g_x0_label:
+
+.. include:: G_x0.inc
+
+
+Class ``XSp2_Co1`` modelling an element of the group :math:`G_{x0}`
+-------------------------------------------------------------------
+
+.. autoclass:: mmgroup.structures.xsp2_co1.Xsp2_Co1
+   :members: order, type_Q_x0, conjugate_involution, subtype
+
 
 
 
