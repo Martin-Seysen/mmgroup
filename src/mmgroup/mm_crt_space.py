@@ -682,7 +682,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
              return True   # then v1 = v1 = zero
         if v1_2 != v2_2:
              return False
-        data1, data2 = v1.int_data, v2.int_data
+        data1, data2 = v1.data_int, v2.data_int
         if v1.shift > v2.shift:
              data1 = data1 >> (v1.shift - v2.shift)
         if v2.shift > v1.shift:

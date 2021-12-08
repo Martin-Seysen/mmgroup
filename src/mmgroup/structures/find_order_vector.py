@@ -213,11 +213,7 @@ USE_PRECOMPUTED = False
 
 
 if USE_PRECOMPUTED:
-    S_g71 = "M<t_1*l_2*y_75h*x_8e1h*d_27eh*p_93090391>"
-    S_v71 = "v<-T_695_3bh+T_705_0ch-X_283h_18-X_31ch_6+X_548h_21>" # (mod 3)
-    S_gA = "M<(1/p_205578880)*(1/l_1)*(1/p_139991040)*(1/l_2)*(1/p_1392)*(1/l_2)>"
-    S_diag = 2
-
+    pass # No precomuted data available
 
 
 #######################################################################
