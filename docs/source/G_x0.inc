@@ -20,13 +20,54 @@ implementing the representation :math:`4096_x`. In principle,
 the representation :math:`24_x` is straightforward. The part
 :math:`4096_x` of a representation of an element :math:`g` of
 :math:`G_{x0}` determines :math:`g` up to sign. So :math:`g` is
-quniquely determined if we store the image under :math:`g` of a 
+uniquely determined if we store the image under :math:`g` of a 
 single vector in the representation :math:`24_x`. The space
 :math:`24_x` is equivalent to the Leech lattice :math:`\Lambda`, 
-and we store we store the image of a fixed shortest vector
+and we store the image of a fixed shortest vector
 :math:`\beta` in :math:`\Lambda/ 3 \Lambda`, which is the Leech 
-lattice modulo 3.
+lattice modulo 3, as follows.
 
+Let :math:`\phi` be the natural homomorphism from the subgroup 
+:math:`Q_{x0}` of :math:`G_{x0}` of structure :math:`2^{1+24}` onto  
+:math:`\Lambda/ 2 \Lambda`, which is the Leech lattice modulo 2.
+
+Let :math:`g \in G_{x0}` be represented as a pair
+:math:`(g_1, g_2) \in G(4096_x) \times \mbox{Co}_1`.
+Then :math:`g_2` can be reconstructed from the image
+:math:`\beta \cdot g_2` of a single shortest vector :math:`\beta`
+in the Leech lattice (modulo 3).
+
+The operation of :math:`g_2` on a shortest vector 
+:math:`\beta' \in \Lambda` is given by
+
+
+.. math::
+    \beta' \mapsto 
+    \phi(g^{-1} \cdot \phi^{-1}(\beta' + 2 \Lambda) \cdot g)
+    \in \Lambda / 2 \Lambda,
+    
+
+up to sign. Here a short vector in :math:`\Lambda / 2 \Lambda` 
+has precisely two opposite shortest preimages in :math:`\Lambda`,
+and we may take an arbitrary preimage in :math:`Q_{x0}` when
+applying the inverse :math:`\phi^{-1}` of  :math:`\phi`. 
+
+We compute the image :math:`\beta' \cdot g_2` of an arbitrary 
+shortest vector :math:`\beta' \in \Lambda` as follows. Assume first
+that :math:`\beta, \beta'` are shortest vectors in :math:`\Lambda` 
+which are not perpendicular to each other, and assume that the
+shortest Leech lattice vector :math:`\beta \cdot g_2` is known for
+some  :math:`g_2 \in \mbox{Co}_1`. If  :math:`\beta' \cdot g_2` 
+is known up to sign only, we can compute the sign of :math:`\beta'`
+from the scalar products :math:`(\beta, \beta')`, and 
+:math:`(\beta \cdot g_2, \beta' \cdot g_2)`, which must be equal.
+Since  :math:`|(\beta, \beta')| \in \{1,2,4\}`, it suffices to 
+compute the scalar products modulo 3. For perpendicular shortest
+vectors  :math:`\beta, \beta'` we can easily find a shortest vector
+:math:`\beta'' \in \Lambda` with :math:`(\beta, \beta'') \neq 0`
+and :math:`(\beta'', \beta') \neq 0`. So we may compute first
+:math:`\beta'' \cdot g_2` and then :math:`\beta' \cdot g_2` 
+from these scalar products.
 
 These ideas lead to a very fast implementation of the subgroup
 :math:`G_{x0}` of the monster  :math:`\mathbb{M}`. Details of
