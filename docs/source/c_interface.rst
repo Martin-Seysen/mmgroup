@@ -297,6 +297,7 @@ Module ``qmatrix12.c``
    .. doxygenfile:: qmatrix12.c
 
 
+.. _c-functions-G-x0-label:
 
 C functions dealing with the subgroup :math:`G_{x0}` of the monster
 -------------------------------------------------------------------

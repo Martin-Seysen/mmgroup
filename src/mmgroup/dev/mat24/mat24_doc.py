@@ -130,9 +130,9 @@ An element of ``Mat24`` can be represented in one of the following ways::
   perm:    Representation as an array of length 24 encoding a 
            permutation of the integers 0,...,23 as a mapping.
 
-  m24num:  Representation as an integer 0 <= i < 244823040. The
-           identity permutation is coded as 0. For more details,
-           see the API reference.
+  m24num:  Representation as an integer 0 <= i < 244823040. Here i
+           is the number of the permutation in lexicographic order.
+           So the identity permutation is coded as 0. 
 
   matrix:  Representation as a 12 x 12 bit matrix acting on the Golay
            code by right multiplication. This matrix acts on a Golay 

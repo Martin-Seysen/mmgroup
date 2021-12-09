@@ -299,6 +299,7 @@ dimensional complex representation.
 
 .. include:: qstate12.inc
 
+.. _qstate_matrix_label:
 
 
 Class ``QStateMatrix`` modelling a quadratic state matrix

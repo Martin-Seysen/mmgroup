@@ -19,7 +19,12 @@ from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
 from mmgroup.structures.construct_mm import iter_mm       
 from mmgroup.structures.construct_mm import load_group_name     
 
-from mmgroup.mat24 import ploop_theta
+try:
+    from mmgroup import mat24
+except (ImportError, ModuleNotFoundError):
+    from mmgroup.dev.mat24.mat24_ref import Mat24
+    mat24 = Mat24
+
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
 from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
@@ -44,6 +49,7 @@ from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
 from mmgroup.clifford12 import xsp2co1_elem_subtype
 
 from mmgroup.structures.qs_matrix import QStateMatrix
+from mmgroup.structures.construct_mm import iter_strings_from_atoms
 
 
 FORMAT_REDUCED = True
@@ -260,7 +266,8 @@ class Xsp2_Co1(AbstractMMGroupWord):
         subtype :math:`t`.
 
         The subtype is returned as a pair of integers as in the 
-        corresponding method in class |XLeech2|.
+        corresponding method in class |XLeech2|, see section 
+        :ref:`computation-leech2` in the **guide** for background.
 
         Since the subtype is determined by the size of the denominators
         of the representation :math:`4096_x`, it can be computed very 
@@ -269,6 +276,15 @@ class Xsp2_Co1(AbstractMMGroupWord):
         res = xsp2co1_elem_subtype(self._data)
         assert res & 0x40 == 0x40
         return res >> 4, res & 0xf
+
+    def str(self):
+        """Convert group element to a string
+        """
+        atoms = self.mmdata
+        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
+        s = "*".join(strings) 
+        return "Xsp2_Co1<%s>" % (s if len(s) else "1")
+
 
 
 ###########################################################################
@@ -285,7 +301,7 @@ def cocode_to_xsp2co1(g, c):
 def ploop_to_xsp2co1(g, pl):
     res =  g.word_type(group = g)
     value = (c.value & 0x1fff)
-    value = (value << 12) ^ ploop_theta(value)
+    value = (value << 12) ^ mat24.ploop_theta(value)
     chk_qstate12(xsp2co1_elem_xspecial(res._data, value))
     return res
 
@@ -434,7 +450,11 @@ class Xsp2_Co1_Group(AbstractMMGroup):
         return w             
 
     def str_word(self, v1):
-        return "Xsp2_Co1 " + str_xsp2_co1(v1._data)
+        #return "Xsp2_Co1 " + str_xsp2_co1(v1._data)
+        atoms = v1.mmdata
+        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
+        s = "*".join(strings) 
+        return "Xsp2_Co1<%s>" % (s if len(s) else "1")
  
     def from_xsp(self, x):
         w = self.word_type()
