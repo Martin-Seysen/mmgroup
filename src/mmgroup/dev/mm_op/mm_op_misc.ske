@@ -1,6 +1,10 @@
 
 #include "mm_op%{P}.h"
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
 
 // %%EXPORT px
 uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
@@ -161,3 +165,9 @@ uint32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
     return 0;
     // %%END IF
 }
+
+
+
+//  %%GEN h
+/// @endcond
+//  %%GEN c

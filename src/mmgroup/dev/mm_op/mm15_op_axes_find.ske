@@ -17,6 +17,9 @@
 // %%END IF 
 
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 /*********************************************************************
@@ -345,4 +348,7 @@ uint32_t mm_op%{P}_2A_axis_type(uint64_t *v)
     return 0;
 }
 
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
 

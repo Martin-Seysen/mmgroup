@@ -157,89 +157,6 @@ C interface for file gen_random.c
 
 
 
-Description of the ``mmgroup.mm`` extension
-===========================================
-
-
-Module ``mmgroup.mm`` provides basic functions for the representations
-of the monster modulo small numbers ``p``.  For each supported
-modulus ``p`` there is also a specific module ``mmgroup.mm<p>`` 
-containing highly optimized C programs dealing with the
-representation modulo ``p``.
-
-Module ``mmgroup.mm`` is implemented as an extension with ``Cython``.
-The main source file for that extension is ``mm_basics.pyx`` in
-directory ``src.mmgroup.dev.mm_basics``. Most functions exported by
-this extension are in one-to-one correspondence with certain C
-functions exported from several automatically generated .c files. 
-
-Representation of a vector in :math:`\rho_p`
---------------------------------------------
-
-.. automodule:: mmgroup.dev.mm_basics.mm_doc
-
-Basic table-providing classes for module ``mmgroup.mm``
--------------------------------------------------------
-
-.. automodule:: mmgroup.dev.mm_basics.mm_basics
-
-.. autoclass:: mmgroup.dev.mm_basics.mm_basics.MM_Const
-   :members: snippet
-
-
-
-Header file mm_basics.h
---------------------------------
-
-.. doxygenfile::  mm_basics.h
- 
-
-C interface for file mm_aux.c
----------------------------------------
-
-.. doxygenfile:: mm_aux.c
-
-
-C interface for file mm_tables.c
----------------------------------------
-
-.. doxygenfile:: mm_tables.c
-
-C interface for file mm_random.c
----------------------------------------
-
-Module ``mm_random.c`` is deprecated an no longer in use.
-
-
-Description of the ``mmgroup.mm<p>`` extensions
-===============================================
-
-
-Module ``mmgroup.mm<p>`` implements the representation :math:`\rho_p`
-for a fixed modulus :math:`p = 2^k-1`. E.g  module ``mmgroup.mm3`` 
-implements :math:`\rho_3`. 
-
-Module ``mmgroup.mm<p>`` is implemented as an extension with 
-``Cython``. The main source file for the ``mmgroup.mm<p>`` extension
-is the automatically generated file ``mm_op<p>.pyx`` in directory 
-``src.mmgroup.dev.pxd_files``. Each function exported by such an 
-extension corresponds to a certain C function  exported from an 
-automatically generated .c file.
-
-For reasons of efficiency a dedicated set of C files is generated for 
-each modulus ``p``. Corresponding C files for different moduli are 
-generated from the same source file with extension ``.ske``. 
-
-
-The basic table-providing class for ``mmgroup.mm<p>``
------------------------------------------------------
-
-.. automodule:: mmgroup.dev.mm_op.mm_op
-
-.. autoclass:: mmgroup.dev.mm_op.mm_op.MM_Op
-
-
-More details will be documented in a future version of this project.
 
 
 Description of the ``qstate12`` and ``clifford12`` extensions
@@ -330,3 +247,207 @@ Module ``involutions.c``
    .. doxygenfile:: involutions.c
 
 
+Description of the ``mmgroup.mm`` extension
+===========================================
+
+
+Module ``mmgroup.mm`` provides basic functions for the representations
+of the monster modulo small numbers ``p``.  For each supported
+modulus ``p`` there is also a specific module ``mmgroup.mm<p>`` 
+containing highly optimized C programs dealing with the
+representation modulo ``p``.
+
+Module ``mmgroup.mm`` is implemented as an extension with ``Cython``.
+The main source file for that extension is ``mm_basics.pyx`` in
+directory ``src.mmgroup.dev.mm_basics``. Most functions exported by
+this extension are in one-to-one correspondence with certain C
+functions exported from several automatically generated .c files. 
+
+Representation of a vector in :math:`\rho_p`
+--------------------------------------------
+
+.. automodule:: mmgroup.dev.mm_basics.mm_doc
+
+Basic table-providing classes for module ``mmgroup.mm``
+-------------------------------------------------------
+
+.. automodule:: mmgroup.dev.mm_basics.mm_basics
+
+.. autoclass:: mmgroup.dev.mm_basics.mm_basics.MM_Const
+   :members: snippet
+
+
+
+Header file mm_basics.h
+--------------------------------
+
+.. doxygenfile::  mm_basics.h
+ 
+
+C interface for file mm_aux.c
+---------------------------------------
+
+.. doxygenfile:: mm_aux.c
+
+
+C interface for file mm_tables.c
+---------------------------------------
+
+.. doxygenfile:: mm_tables.c
+
+C interface for file mm_random.c
+---------------------------------------
+
+Module ``mm_random.c`` is deprecated an no longer in use.
+
+
+Description of the ``mmgroup.mm<p>`` extensions
+===============================================
+
+
+Module ``mmgroup.mm<p>`` implements the 196884-dimensional rational
+representation :math:`\rho_p` of the monster group modulo a fixed 
+odd modulus :math:`p = 2^k-1`. E.g  module ``mmgroup.mm3`` 
+implements :math:`\rho_3`. 
+
+Module ``mmgroup.mm<p>`` is implemented as an extension with 
+``Cython``. The main source file for the ``mmgroup.mm<p>`` extension
+is the automatically generated file ``mm_op<p>.pyx`` in directory 
+``src.mmgroup.dev.pxd_files``. Each function exported by such an 
+extension corresponds to a certain C function  exported from an 
+automatically generated .c file.
+
+For reasons of efficiency a dedicated set of C files is generated for 
+each modulus ``p``. Corresponding C files for different moduli are 
+generated from the same source file with extension ``.ske``. 
+
+
+Naming conventions
+------------------
+
+For each supported characteristic ``p`` there is a cython extersion
+``mm<p>`` in module ``mmgroup``. So e.g. for ``p = 15`` there is the
+extension ``mm15``.
+
+For any such extension the code generator generates several C files 
+from each of the source files with extension ``.ske`` stored in 
+subdirectory ``mmgroup.dec.mm_op``. So e.g. from the source file
+``mm_op_pi.ske`` we generate the file ``mm3_op_pi.c`` for ``p=3``,
+``mm7_op_pi.c`` for ``p=7``, etc. The code generator provides
+different instances of class ``mmgroup.dev.mm_op.MM_Op`` for different 
+characteritics ``p``. Any of these classes provides certain macro
+variables and functions for the corresponding characteristic ``p``.
+Here the most important variable is ``P``, which is set to the
+characteristic ``p``. So e.g. for ``p = 31`` the code generator
+changes every occurence of the string ``%{P}`` in a ``.ske`` file
+to the string ``31`` in the generated C file. Of course, there are 
+also macros for more sophisticated replacements.
+
+Every exported C function in one of the modules ``mm<p>`` has a name
+starting with ``mm_op%{P}_`` in the ``.ske`` file containing its
+implementation. The code generation process also generates a 
+``.pyx`` file with name ``mm_op<p>.pyx`` for each supported 
+charactereistic ``p``. In the ``.pyx`` file a C function with
+prefix ``mm_op%{P}_`` is wrapped into a Cython function with
+prefix ``op_``.
+
+So e.g. in case ``p = 15``, for the C function with name 
+``mm_op%{P}_pi`` in file ``mm_op_pi.ske`` we generate a C function
+with name ``mm_op15_pi`` in file ``mm15_op_pi.c``. We also
+generate the file ``mm_op15.pyx`` containg a function with name
+``op_pi`` that wraps the C function ``mm15_op_pi.c``. It is an
+(arguable) advantage that cython functions doing the same job
+for different characteristics ``p`` have the same name.
+
+A C function and its cython wrapper have the same parameters.
+Here all parameters are integers or  pointers to integers.
+A python function usually passes a ``numpy`` array (of
+appropriate type) as an argument to a cython function, where 
+the corresponding C function expects a pointer to an integer. 
+The return type of such a C function is either ``void`` or
+some integer type.
+
+In the following subsections of this section we will document 
+the C functions for characteristic ``p = 15`` only.
+
+Special functions in characteristic ``p = 15``
+...............................................
+
+In principle, the Cython extensions ``mmgroup.mm<p>`` support
+the same set of functions for all characteristics ``p``.
+
+In a later phase of the project it has turned out that support 
+for dealing with certain special vectors in the representation 
+:math:`\rho_p` may speed up the operation in the monster group 
+by a factor of about 1000! These special vectors are called 2A  
+axes in :cite:`Con85`.
+
+The implementation of the additional functions for supporting 2A 
+axes is a bit involved; and it turns out that it suffices to 
+deal with the case ``p = 15``. So we add some extra functions 
+to the Cython extension ``mmgroup.mm15``.
+
+The names of the ``.ske`` files in subdirectory ``mmgroup/dev/mm_op``
+implementing these extra functions are prefixed with ``mm15_op_``.
+
+
+Dependencies between Cython extensions
+---------------------------------------
+
+The Cython extension ``mm_<p>`` depends on other Cython extensions
+as shown in the following paragraph:
+
+
+.. code-block:: none
+
+    mm<p>
+       + mm
+          + generators
+              + mat24
+ 
+For the extra functions in the ``mm15`` extension dealing with 2A axes
+we have the following additional dependencies:
+
+.. code-block:: none
+
+    mm<p>
+       + clifford12
+          + generators
+              + mat24
+
+Note that for each Cython extension upon which other Cython extensions
+depend, the relevant C functions are implemented in a shared library
+(or a DLL in Windows). Details are given in the following table:
+
+
+.. table:: Shared libraries implementing Cython extensions
+    :widths: 35 65
+
+    ====================== =======================================
+    Cython extension       Implemented in shared library
+    ====================== =======================================
+    ``mm<p>``              Implemented as a Cython extension
+    ``mm``                 ``mmgroup_mm_basics``
+    ``clifford12``         ``mmgroup_clifford12``
+    ``generators, mat24``  ``mmgroup_mat24``
+    ====================== =======================================
+
+
+The basic table-providing class for ``mmgroup.mm<p>``
+-----------------------------------------------------
+
+.. automodule:: mmgroup.dev.mm_op.mm_op
+
+.. autoclass:: mmgroup.dev.mm_op.mm_op.MM_Op
+
+
+
+Header file mm_op15.h
+--------------------------------
+
+.. doxygenfile::  mm_op15.h
+
+
+
+
+More details will be documented in a future version of this project.

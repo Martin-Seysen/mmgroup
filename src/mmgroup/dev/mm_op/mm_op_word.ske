@@ -5,6 +5,9 @@
    
 
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 
@@ -69,3 +72,6 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
 }
 
 
+//  %%GEN h
+/// @endcond
+//  %%GEN c

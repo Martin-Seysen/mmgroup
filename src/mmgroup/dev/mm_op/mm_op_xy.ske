@@ -3,6 +3,9 @@
 #include <string.h>
 #include "mm_op%{P}.h"   
    
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 
 // %%IF* GENERATE_CODE
@@ -193,7 +196,7 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
 
     // If eps is odd: 
     //    negate entries X_d,i with scalar product <d,i> = 1
-    if (p_op->eps & 0x800) mm%{P}_neg_scalprod_d_i(v_out + MM_OP%{P}_OFS_X); 
+    if (p_op->eps & 0x800) mm_op%{P}_neg_scalprod_d_i(v_out + MM_OP%{P}_OFS_X); 
   // %%END IF # GENERATE_CODE
 } 
 
@@ -273,3 +276,8 @@ void mm_op%{P}_y_tag_A(uint_mmv_t *v, uint32_t f)
         }
   // %%END IF   # GENERATE_CODE
 }
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+

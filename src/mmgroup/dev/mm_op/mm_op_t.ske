@@ -6,6 +6,9 @@
 #include "mat24_functions.h"
 #include "mm_op%{P}.h"   
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
 
 // %%IF* GENERATE_CODE
 
@@ -118,11 +121,11 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 
          // Map X to Y for t and Y to X for t**2
          for (i = 0; i < %{int:V24_INTS << 11}; ++i) pXYout[i] = pXYin[i];
-         mm%{P}_neg_scalprod_d_i(pXYout);
+         mm_op%{P}_neg_scalprod_d_i(pXYout);
          
          // Map Y to Z for t and Z to Y for t**2
          invert%{P}_xyz(pYZin, pYZout);
-         mm%{P}_neg_scalprod_d_i(pYZout);
+         mm_op%{P}_neg_scalprod_d_i(pYZout);
 
          // Map Z to X for t and X to Z for t**2
          invert%{P}_xyz(pZXin, pZXout);
@@ -166,3 +169,11 @@ void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     } 
   // %%END IF  # GENERATE_CODE
 }
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+

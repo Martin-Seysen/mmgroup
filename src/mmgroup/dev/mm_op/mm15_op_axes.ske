@@ -18,6 +18,11 @@
 // %%END IF 
 
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
 
 #define MAX_SHORT_ARRAY 1024
 
@@ -553,3 +558,9 @@ done:
     free(p_work);
     return res;
 }
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c

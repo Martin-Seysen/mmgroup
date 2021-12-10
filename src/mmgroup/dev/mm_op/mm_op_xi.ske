@@ -6,6 +6,12 @@
 #include "mat24_functions.h"
 #include "mm_op%{P}.h"   
 
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
 // %%IF* GENERATE_CODE
 
 static void mm_op%{P}_xi_mon(
@@ -149,3 +155,8 @@ void mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
     mm_op%{P}_xi_a(v, exp - 1, v_tmp);
     for (i = 0; i < 24 * %{V24_INTS}; ++i) v[i] = v_tmp[i];
 }
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c

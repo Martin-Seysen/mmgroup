@@ -32,6 +32,12 @@ enum tag_offsets {
 ** Load ORDER_VECTOR and ORDER_TAG_VECTOR
 ************************************************************************/
 
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
 /// @cond DO_NOT_DOCUMENT 
 
 #define LEN_TAG_VECTOR 97
@@ -427,3 +433,6 @@ int32_t mm_op%{P}_order(uint32_t *g, uint32_t n, uint32_t o)
     return e * res;
 }
 
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
