@@ -262,13 +262,13 @@ static void pi24_2048(
 /**
   @brief Workhorse for function ``mm_op%{P}_pi``
 
-  ``mm_op%{P}_pi(*v_in, delta, pi, v_out)`` is equivalent to
+  ``mm_op%{P}_pi(v_in, delta, pi, v_out)`` is equivalent to
 
         mm_sub_op_pi_type s_op; // defined in mm_basics.h
         mm_sub_prep_pi(delta, pi, &s_op);
         mm_op%{P}_do_pi(v_in, &s_op, v_out);
 
-   So the functions called by function ``mm_op%{P}_do_pi``
+   So the functions called by function ``mm_op%{P}_pi``
    can be tested individually.
 */
 // %%EXPORT
@@ -507,8 +507,9 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
   in the **API reference** for tags of entries of a vector in
   the representation of the monster.
 
-  The function overwrites the vector ``v`` with the result. The
-  restiction of the automorphism to tag ``A`` does not depend
+  The function overwrites the vector ``v`` with the result. 
+  Here only entries of ``v`` with tag ``A`` are changed. The
+  restriction of the automorphism to tag ``A`` does not depend
   depend on parameter ``d``; so that parameter is dropped. This
   function is much faster than function ``mm_op%{P}_pi``.
 */

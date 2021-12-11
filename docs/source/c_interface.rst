@@ -453,4 +453,11 @@ C interface for file mm15_op_pi.c
 
 .. doxygenfile:: mm15_op_pi.c
 
+
+C interface for file mm15_op_xy.c
+---------------------------------------
+
+.. doxygenfile:: mm15_op_xy.c
+
+
 More details will be documented in a future version of this project.

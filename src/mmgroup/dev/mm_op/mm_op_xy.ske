@@ -1,3 +1,36 @@
+/** @file mm%{P}_op_xy.c
+
+ File ``mm%{P}_op_xy.c`` implements the operation of the element
+ \f$y_f \cdot x_e \cdot x_\epsilon\f$ of the monster group
+ on a vector in the representation \f$\rho_{%{P}}\f$ of the
+ monster.
+
+ Here the generators \f$y_f, x_e\f$ and \f$x_\epsilon\f$ of the
+ monster group are defined as in section **The monster group**
+ of the **API reference**. The values  \f$f, e\f$  are integers
+ encoding elements of the Parker loop, and the value \f$\epsilon\f$
+ (or ``eps`` in a C program) is an integer encoding an element of 
+ the Golay cocode, as described in ibid.
+
+ The representation \f$\rho_{%{P}}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo %{P}, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_{%{P}}\f$ is implemented as a array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension** 
+ in this document.
+
+ A formula for the operation of \f$y_f \cdot x_e \cdot x_\epsilon\f$
+ on \f$\rho\f$ is given in
+ section **Implementing generators of the monster group**
+ in the **mmgroup guide for developers**.
+
+ Internally, we use the C function ``mm_sub_prep_xy`` in 
+ file ``mm_tables.c`` for computing the opetation stated above.
+*/
 
 
 #include <string.h>
@@ -9,6 +42,8 @@
 
 
 // %%IF* GENERATE_CODE
+
+/// @cond DO_NOT_DOCUMENT 
 
 // Tables TABLE_PERM64_LOW, TABLE_PERM64_HIGH contain the following data.
 //
@@ -60,9 +95,22 @@ static const uint32_t TABLE24_START[4] = {
 };
 
 
+/// @endcond
+
 // %%END IF #  GENERATE_CODE
 
+/**
+  @brief Workhorse for function ``mm_op%{P}_xy``
 
+  ``mm_op%{P}_xy(v_in, f, e, eps, v_out)`` is equivalent to
+
+        mm_sub_op_xy_type s_op;  // defined in mm_basics.h
+        mm_sub_prep_xy(f, e, eps, &s_op);
+        mm_op%{P}_do_xy(v_in, &s_op, v_out);
+
+   So the functions called by function ``mm_op%{P}_xy``
+   can be tested individually.
+*/
 // %%EXPORT
 void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out)
 {
@@ -200,7 +248,29 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
   // %%END IF # GENERATE_CODE
 } 
 
+/**
+  @brief Compute an operation of the monster group on a vector
 
+  Let ``v_in`` be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group.
+
+
+  The function implements the operation of the element
+  \f$y_f \cdot x_e \cdot x_\epsilon\f$ of the monster group
+  on a vector ``v_in`` in the representation \f$\rho_{%{P}}\f$ of
+  the monster.
+
+  The integers ``f`` and ``e`` occuring in the generators \f$y_f\f$
+  and  \f$x_e\f$ encode elements of the Parker loop. The integer
+  ``eps`` encodes the element \f$\epsilon\f$ of the Golay cocode
+  occuring in the generator  \f$x_\epsilon\f$,  as indicated in the
+  header of this file. The function computes this operation of
+  the element of the monster (given by parameters ``f, e, eps``)
+  on the input  vector ``v_in`` and  stores the result in the output 
+  vector ``v_out.`` 
+
+  Input vector  ``v_in`` is not changed.
+*/
 // %%EXPORT px
 void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
@@ -213,6 +283,24 @@ void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_m
 
 
 
+/**
+  @brief Compute an operation of the monster group on a vector
+
+  Let ``v`` be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group. 
+
+  The function implements the operation of the element
+  \f$x_d\f$ of the monster group  on a vector ``v`` in the 
+  representation \f$\rho_{%{P}}\f$ of the monster. Here ``d`` must be 
+  one of the integers ``0, 0x800, 0x1000``, or ``0x1800``, encoding
+  the generators \f$x_1, x_\Omega, x_{-1}\f$, or \f$x_{-\Omega}\f$,
+  respectively.
+   
+  The function computes the operation \f$x_d\f$ on the
+  vector ``v`` and overwrites the vector ``v`` with the result.
+  The function can  be considered as a simplified (and much faster)
+  version of function ``mm_op%{P}_xy``.
+*/
 // %%EXPORT px
 void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
 // Multiply vector ``v`` with ``x_d`` inplace. Here ``d`` must be
@@ -245,7 +333,27 @@ void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
 }
 
 
+/**
+  @brief Restriction of function ``mm_op%{P}_xy`` to tag ``A``
 
+  Function ``mm_op%{P}_xy`` computes a certain operation of the
+  monster group on a vector ``v_in``. That operation depends
+  on parameters ``f, e,`` and ``eps``.
+  
+  Function ``mm_op%{P}_xy_tag_A`` computes the same
+  operation on the entries of the vector ``v = v_in`` with
+  tag ``A`` only, and ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``A`` are changed. The
+  restriction of the operation to tag ``A`` does not depend
+  depend on parameters ``e`` and ``eps``; so these parameters
+  are dropped. This function is much faster than
+  function ``mm_op%{P}_xy``.
+*/
 // %%EXPORT px
 void mm_op%{P}_y_tag_A(uint_mmv_t *v, uint32_t f)
 {
