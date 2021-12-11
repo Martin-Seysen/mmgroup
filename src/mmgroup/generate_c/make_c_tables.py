@@ -390,7 +390,7 @@ class TableGenerator(object):
                     h_out.append(h_1)
         self.block_stack.pop()
         save_names.restore()   # restore self.names
-        return "".join(c_out + end_comment) , ""
+        return "".join(c_out + end_comment) , "".join(h_out)
 
     def block_with(self, args, quiet, source):
         """built-in function WITH"""
@@ -486,7 +486,7 @@ class TableGenerator(object):
             c_out.append(c_1)
             h_out.append(h_1)
         self.block_stack.pop()
-        return "".join(c_out + end_comment) , ""
+        return "".join(c_out + end_comment) , "".join(h_out)
 
 
     def process_use_table(self, line):

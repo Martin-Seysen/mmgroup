@@ -3,14 +3,24 @@
 
 /** @file mm_op%{P}.h
 
- The header file ``mm_op%{P}.h`` contains basic definitions for the 
- C files dealing with  vectors of the 198884-dimensional representation 
+ The header file ``mm_op%{P}.h`` contains basic definitions for the
+ C files dealing with  vectors of the 198884-dimensional representation
  of the monster group modulo %{P},
- as described in  *The C interface of the mmgroup project*, 
+ as described in  *The C interface of the mmgroup project*,
  section *Description of the mmgroup.mm extension*.
 
 
- It also contains prototypes for the C files in the ``mm%{P}`` extension.
+ The header file also contains prototypes for the C files in
+ the ``mm%{P}`` extension.  This  extension comprises the
+ files ``mm%{P}_op_misc.c``, ``mm%{P}_op_pi.c``, ``mm%{P}_op_t.c``,
+ ``mm%{P}_op_word.c``, ``mm%{P}_op_xi.c``, ``mm%{P}_op_xy.c``.
+
+// %%IF* %{P} == 15
+ For characteristic p = 15 this includes also the files
+ ``mm15_op_axes.c``, ``mm15_op_axes_find.c``,  
+ ``mm15_op_eval_A.c``, ``mm15_op_order.c``.
+// %%END IF
+
 */
 
 

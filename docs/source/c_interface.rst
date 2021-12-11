@@ -448,6 +448,9 @@ Header file mm_op15.h
 .. doxygenfile::  mm_op15.h
 
 
+C interface for file mm15_op_pi.c
+---------------------------------------
 
+.. doxygenfile:: mm15_op_pi.c
 
 More details will be documented in a future version of this project.
