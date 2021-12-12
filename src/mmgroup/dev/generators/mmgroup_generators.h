@@ -4,6 +4,10 @@
  The header file ``mmgroup_generators.h`` contains definitions for 
  the C files in the ``generator`` extension. This extension comprises 
  files ``mm_group_n.c``, ``gen_xi_functions.c``, and ``gen_leech.c``.
+
+ In this header we also define an ``enum MMGROUP_ATOM_TAG_`` that
+ specifies the format of an atom that acts as a generator of the
+ monster group. 
 */
 
 
@@ -59,17 +63,39 @@
 /** 
  In this header file we also define the tags for the atoms generating 
  the Monster group. An element of the monster group is represented
- as an array of integers of type uint32_t, where each integer 
- represents an atom, i.e. an atomic element of the monster.
- Bits 31,...,28 of a atom are the tag of that atom, as defined below;
- bits 27,...,0 make up the data part of that atom.
- 
- Each tag is represented as a single lower-case letter as described
- in section *The Monster group* in the *API reference*. Valid letters
- for tags used in this header are ``'pdxytl'``. If bit 31 of an atom
- is set, this means that the atom has to be inversed.
+ as an array of integers of type ``uint32_t``, where each integer 
+ represents an atom, i.e. an atomic element of the monster. An atom
+ represents a triple ``(sign, tag, value)``, and is encoded in the 
+ following bit fields of an unsigned 32-bit integer:
 
+       Bit 31  | Bit 30,...,28  | Bit  27,...,0
+       --------|----------------|----------------
+        Sign   | Tag            | Value
+
+ Standard tags and values are defined as in the constructor of the 
+ Python class ``mmgroup.mm``, see section **The monster group**
+ in the **API reference**. If the ``sign`` bit is set, this means
+ that the atom bit given by the pair ``(tag, value)`` has to be 
+ inverted. In ibid., a tag is given by a small letter. These small
+ letters are converted to 3-bit numbers as follows:
+
+       Tag  | Tag number | Range of possible values i
+       -----|------------|----------------------------
+        'd' |     1      |  0 <= i < 0x1000
+        'p' |     2      |  0 <= i < 244823040
+        'x' |     3      |  0 <= i < 0x2000
+        'y' |     4      |  0 <= i < 0x2000
+        't' |     5      |  0 <= i < 3
+        'l' |     6      |  0 <= i < 3
+
+ A tag with tag number 0 is interpreted as the neutral element.
+ A tag with tag number 7 is illegal (and reserved for future use).
+ 
+ Tags with other letters occuring in the constructor of class ``MM`` 
+ are converted to a word of atoms with tags taken from the table 
+ above.
 */
+
 enum MMGROUP_ATOM_TAG_ {
   /** Tag indicating the neutral element of the group */
   MMGROUP_ATOM_TAG_1  = 0x00000000UL,

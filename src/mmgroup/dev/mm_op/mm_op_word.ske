@@ -1,5 +1,30 @@
-// %%COMMENT
-// TODO: comment this!!!!
+/** @file mm%{P}_op_word.c
+
+ File ``mm%{P}_op_word.c`` implements the operation of the monster
+ group on a vector in the representation  \f$\rho_{%{P}}\f$ of the
+ monster.
+
+ Here an element of the monster group is implemented as a word of
+ atoms as described in the documentation of the header file
+ ``mmgroup_generators.h``.
+
+ The representation \f$\rho_{%{P}}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo %{P}, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_{%{P}}\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension** 
+ in this document.
+
+ The functions in this module use functions from modules
+ ``mm%{P}_op_pi.c``, ``mm%{P}_op_xy.c``, ``mm%{P}_op_t.c``, and
+ ``mm%{P}_op_xi.c`` for implementing the operations of the 
+ different kinds of atoms generating the monster group.
+*/
+
 
 #include "mm_op%{P}.h"   
    
@@ -10,8 +35,17 @@
 //  %%GEN c
 
 
+/// @cond DO_NOT_DOCUMENT 
+#define h (s_it.data)
+/// @endcond
 
 
+
+/** 
+  @brief Compute automophism of the Parker loop on a vector
+
+  Yet to be documented!
+*/ 
 // %%EXPORT px
 uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
 {
@@ -19,7 +53,8 @@ uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, ui
      uint_mmv_t *p0 = v, *p1 = work, *pt;
      mm_group_iter_t s_it;
 
-     #define h (s_it.data)
+
+
      mm_group_iter_start(&s_it, g, len_g, e);
      do {
          status = mm_group_iter_next(&s_it);
@@ -44,20 +79,23 @@ uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, ui
              pt = p0; p0 = p1; p1 = pt;
          }
      } while (status == 0);
-     #undef h
      
      if (p0 != v) mm_op%{P}_copy(work, v);
      return status - 1;
 }
 
 
+/** 
+  @brief Restriction of function ``mm_op%{P}_word`` to tag ``A``
+
+  Yet to be documented!
+*/ 
 // %%EXPORT px
 int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e)
 {
      uint32_t status;
      mm_group_iter_t s_it;
 
-     #define h (s_it.data)
      mm_group_iter_start(&s_it, g, len_g, e);
      do {
          status = mm_group_iter_next(&s_it);
@@ -66,10 +104,15 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
          if (h[2])  mm_op%{P}_y_tag_A(v, h[2]);
          if (h[5])  mm_op%{P}_pi_tag_A(v, h[5]);
      } while (status == 0);
-     #undef h
      if (mm_aux_reduce_mmv_fields(%{P}, v, MM_AUX_OFS_B) < 0) return -1;
      return status - 1;
 }
+
+/// @cond DO_NOT_DOCUMENT 
+#undef  h 
+/// @endcond
+
+
 
 
 //  %%GEN h

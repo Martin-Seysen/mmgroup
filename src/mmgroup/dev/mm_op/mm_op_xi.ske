@@ -1,6 +1,42 @@
-// %%COMMENT
-// TODO: Yet to be documented!!!
+/** @file mm%{P}_op_xi.c
 
+ File ``mm%{P}_op_xi.c`` implements the operation of the element
+ \f$\xi^e\f$ of the monster group on a vector in the
+ representation \f$\rho_{%{P}}\f$ of the monster.
+
+ Here the generator \f$\xi\f$ of the monster group is defined as 
+ in section **The monster group** of the **API reference**.
+
+ The representation \f$\rho_{%{P}}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo %{P}, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_{%{P}}\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+
+ We have \f$\xi^3 = 1\f$, and the opration of \f$\xi^e, e = 1,2\f$
+ on \f$\rho\f$ is given in [Seysen19], section 9.4 - 9.6. The
+ non-monomial part of the operation of \f$\xi^e\f$ can be decomposed
+ into a product of monomial matrices and matrices containing
+ blocks of \f$2 \times 2\f$ Hadamard matrices. We use the Python
+ functions and classes in files ``hadamard_codegen.py`` and
+ ``hadamard_xi.py`` in subdirectory ``mmgroup/dev/hadamard`` for
+ generating C code that implements the products of Hadamard
+ matrices corresponding to the generator \f$\xi^e\f$.
+
+ Although the monomial part of the operation of \f$\xi^e\f$ is
+ described in [Seysen19], we have not found an easy way to 
+ convert that description to a C function. So we use (rather
+ large) tables for implementing these operations. The C file
+ ``mm_tables_xi.c`` contains these tables as static arrays and
+ also an array ``mm_sub_table_xi`` that provides public 
+ access to these tables. The same tables are used for the
+ operations on \f$\rho_p\f$ for all characteritics \f$p\f$. 
+*/
 
 #include <string.h>
 #include "mat24_functions.h"
@@ -13,6 +49,8 @@
 
 
 // %%IF* GENERATE_CODE
+
+/// @cond DO_NOT_DOCUMENT 
 
 static void mm_op%{P}_xi_mon(
     uint_mmv_t * v_in,  
@@ -110,10 +148,27 @@ static void mm_op%{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
     }
 }  
 
+/// @endcond 
 
 // %%END IF   # GENERATE_CODE
 
+/**
+  @brief Compute an operation of the monster group on a vector
 
+  Let ``v_in`` be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group.
+
+  The function implements the operation of the element \f$\xi^e\f$ 
+  of the monster group  on a vector ``v_in`` in the 
+  representation \f$\rho_{%{P}}\f$ of the monster.
+
+  Parameter ``exp`` is the exponent \f$e\f$ of the generator 
+  \f$\xi^e\f$. The function computes the operation of \f$\xi^e\f$  
+  on the input  vector ``v_in`` and  stores the result in the output 
+  vector ``v_out.`` 
+
+  Input vector  ``v_in`` is not changed.
+*/
 // %%EXPORT px
 void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
@@ -143,7 +198,24 @@ void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
   // %%END IF # GENERATE_CODE    
 }
 
+/**
+  @brief Restriction of function ``mm_op%{P}_xi`` to tag ``A``
 
+  Function ``mm_op%{P}_xi`` computes a certain operation of the
+  monster group on a vector ``v_in``. That operation depends
+  on a parameter ``exp``.
+  
+  Function ``mm_op%{P}_xi_tag_A`` computes the same
+  operation on the entries of the vector ``v = v_in`` with
+  tag ``A`` only, and ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``A`` are changed. This 
+  function is much faster than function ``mm_op%{P}_xy``.
+*/
 // %%EXPORT px
 void mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
 {

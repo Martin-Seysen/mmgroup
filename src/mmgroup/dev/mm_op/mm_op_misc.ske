@@ -1,3 +1,20 @@
+/** @file mm%{P}_op_misc.c
+
+ File ``mm%{P}_op_misc.c`` implements the operations on
+ vectors in the representation \f$\rho_{%{P}}\f$ of the
+ monster.
+
+ The representation \f$\rho_{%{P}}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo %{P}, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_{%{P}}\f$ is implemented as an array
+ of integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+*/
 
 #include "mm_op%{P}.h"
 
@@ -5,7 +22,9 @@
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
 
-
+/** 
+  @brief Copy vector ``mv1`` in \f$\rho_{%{P}}\f$ to ``mv2``
+*/
 // %%EXPORT px
 uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 // Copy mv1 to mv2. Here mv1 and mv2 are vectors of the
@@ -19,13 +38,21 @@ uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 }
 
 
+/** 
+  @brief Compare arrays ``mv1`` and ``mv2`` of integers
 
+  The function compares parts of the two vectors ``mv1``
+  and ``mv2``of the representation \f$\rho_{%{P}}\f$.
+
+  Here the function compares ``len`` integers of type
+  ``uint_mmv_t`` starting at the pointers ``mv1`` and ``mv2``.
+  These integers are interpreted as arrays of bit fields
+  containing integers modulo %{P}.
+
+  The function returns 0 in case of equality and 1 otherwise.
+*/
 // %%EXPORT px
 uint32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
-//  Compare parts of two vectors of the monster group representation 
-//  modulo %{P}. Two vectors of ``len`` integers of type
-//  ``uint_mmv_t`` are compared modulo %{P}. 
-//  The function returns 0 in case of equality and 1 otherwise.
 {
     uint_mmv_t a, b, t, c;
     while (len--) {
@@ -48,7 +75,14 @@ uint32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
     return 0; 
 }
 
+/** 
+  @brief Compare vectors ``mv1`` and ``mv2`` of \f$\rho_{%{P}}\f$
 
+  The function compares two vectors ``mv1`` and ``mv2`` of 
+  the representation \f$\rho_{%{P}}\f$.
+
+  It returns 0 in case of equality and 1 otherwise.
+*/
 // %%EXPORT px
 uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Compare two vectors of the monster group representation modulo %{P}..
@@ -60,6 +94,13 @@ uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
    
     
 
+/** 
+  @brief Add vectors ``mv1`` and ``mv2`` of \f$\rho_{%{P}}\f$
+
+  The function adds the two vectors ``mv1`` and ``mv2`` of 
+  the representation \f$\rho_{%{P}}\f$ and stores the
+  result in the vector ``mv1``.
+*/
 // %%EXPORT px
 void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Vector addition in the monster group representation modulo %{P}.
@@ -94,7 +135,13 @@ void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 }
 
 
+/** 
+  @brief Multiply vector ``mv1`` of \f$\rho_{%{P}}\f$ with scalar
 
+  The function multiplies the vector ``mv1`` of the 
+  representation \f$\rho_{%{P}}\f$ and with the (signed)
+  integer ``factor`` and stores the result in the vector ``mv1``.
+*/
 // %%EXPORT px
 void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 //  Scalar multiplication in the monster group representation modulo %{P}.
@@ -125,7 +172,16 @@ void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 
 
 
+/** 
+  @brief Compare two vectors of \f$\rho_{%{P}}\f$ modulo \f$q\f$
 
+  The function compares two vectors ``mv1`` and ``mv2`` of 
+  the representation \f$\rho_{%{P}}\f$ modulo a number \f$q\f$.
+  Here \f$q\f$ should divide \f$p\f$.
+
+  It returns 0 in case of equality, 1 in case of inequality,
+  and 2 if  \f$q\f$ does not divide \f$p\f$.
+*/
 // %%EXPORT px
 uint32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
 //  Compare two vectors of the monster group representation modulo %{P}.

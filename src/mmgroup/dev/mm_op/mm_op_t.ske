@@ -1,5 +1,34 @@
-// %%COMMENT
-// TODO: Yet to be documented!!!
+/** @file mm%{P}_op_t.c
+
+ File ``mm%{P}_op_t.c`` implements the operation of the element
+ \f$\tau^e\f$ of the monster group on a vector in the
+ representation \f$\rho_{%{P}}\f$ of the monster.
+
+ Here the generator \f$\tau\f$, which is the triality element in
+ the monster group, is defined as in section **The monster group**
+ of the **API reference**.
+
+ The representation \f$\rho_{%{P}}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo %{P}, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_{%{P}}\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+
+ We have \f$\tau^3 = 1\f$, and the opration of \f$\tau^e, e = 1,2\f$
+ on \f$\rho\f$ is given in [Seysen19], section 8.1. The
+ non-monomial part of the operation of \f$\tau^e\f$ can be decomposed
+ into a product of monomial matrices and matrices containing
+ blocks of \f$2 \times 2\f$-Hadamard matrices. We use the Python
+ functions and classes in files ``hadamard_codegen.py`` and
+ ``hadamard_t.py`` in subdirectory ``mmgroup/dev/hadamard`` for
+ generating C code that implements the products of Hadamard
+ matrices corresponding to the generator \f$\tau^e\f$.
+*/
 
 
 #include <string.h>
@@ -11,6 +40,9 @@
 //  %%GEN c
 
 // %%IF* GENERATE_CODE
+
+/// @cond DO_NOT_DOCUMENT 
+
 
 static void invert%{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
 {
@@ -35,9 +67,28 @@ static void invert%{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
     }
 }
 
+/// @endcond  
+
+
 // %%END IF  # GENERATE_CODE
 
+/**
+  @brief Compute an operation of the monster group on a vector
 
+  Let ``v_in`` be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group.
+
+  The function implements the operation of the element \f$\tau^e\f$
+  of the monster group  on a vector ``v_in`` in the
+  representation \f$\rho_{%{P}}\f$ of the monster.
+
+  Parameter ``exp`` is the exponent \f$e\f$ of the generator
+  \f$\tau^e\f$. The function computes the operation of \f$\tau^e\f$
+  on the input  vector ``v_in`` and  stores the result in the output
+  vector ``v_out``.
+
+  Input vector ``v_in`` is not changed.
+*/
 // %%EXPORT px
 void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
@@ -135,7 +186,27 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 
 
 
+/**
+  @brief A restricted version of function ``mm_op%{P}_t``
 
+  Function ``mm_op%{P}_t`` computes a certain operation of the
+  monster group on a vector ``v_in`` and stores the result in a
+  vector ``v_out``. That operation depends on a parameter ``exp``.
+  
+  Function ``mm_op%{P}_t_A`` performs the same operation, but it
+  computes the part of the vector  ``v_out``  that consists of
+  the entries of vector ``v_out``  with tag ``A`` only; the
+  other entries of vector ``v_out`` are not changed.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster. Note that the entries
+  of vector ``v_out`` with tag ``A`` also depend on entries
+  of vector ``v_in`` with tags different from ``A``.
+
+  Parameters of this function are the same as in the case of
+  function ``mm_op%{P}_t``. This function is much faster than
+  function ``mm_op%{P}_t``.
+*/
 // %%EXPORT px
 void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {

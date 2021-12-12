@@ -18,7 +18,7 @@
  section **The representation of the monster group**
  in the **API reference**.
 
- An element of \f$\rho_{%{P}}\f$ is implemented as a array of
+ An element of \f$\rho_{%{P}}\f$ is implemented as an array of
  integers of type ``uint_mmv_t`` as described in
  section **Description of the mmgroup.mm extension** 
  in this document.
