@@ -484,4 +484,3 @@ C interface for file mm15_op_word.c
 .. doxygenfile:: mm15_op_word.c
 
 
-More details will be documented in a future version of this project.

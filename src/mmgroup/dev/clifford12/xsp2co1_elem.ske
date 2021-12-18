@@ -623,6 +623,25 @@ static int32_t TAB_TRACE_98280[5] = {98280, 0, 4072, -24, -24};
 /// @endcond 
 
 
+
+/**
+  @brief Compute character of \f$\rho_{98280}\f$ of element of \f$G_{x0}\f$
+
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  character of the representation  \f$\rho_{98280}\f$ and stores
+  the result in the integer referred by the pointer ``ptrace``.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+
+  If parameter ``use_table`` is nonzero then the character is read from
+  an internal table in cases where the computation takes a long time.
+  The current version uses a table for all \f$g \in Q_{x0}\f$ . In
+  future versions more characters may be read from a table
+  if ``use_table`` is nonzero. Changing parameter ``use_table``
+  allows us to check these internal tables.
+*/
 // %%EXPORT px
 int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
 {
@@ -669,6 +688,23 @@ int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
 }
 
 
+/**
+  @brief Compute character of \f$\rho_{4096}\f$ of element of \f$G_{x0}\f$
+
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  character of the representation  \f$\rho_{4096}\f$ and stores
+  the result in the integer referred by the pointer ``ptrace``.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+
+  Note that \f$\rho_{4096}\f$ is defined up to sign only, but
+  the tensor product \f$\rho_{24} \otimes \rho_{4096}\f$ is well
+  defined. The product of the two corresponding characters (as
+  computed by the functions ``xsp2co1_traces_small``
+  and ``xsp2co1_trace_4096``) has the correct value.
+*/
 // %%EXPORT px
 int32_t xsp2co1_trace_4096(uint64_t *elem, int32_t *ptrace)
 {
@@ -683,7 +719,25 @@ int32_t xsp2co1_trace_4096(uint64_t *elem, int32_t *ptrace)
     return qstate12_mat_itrace(&qs1, ptrace);
 }
 
+/**
+  @brief Compute characters of \f$\rho_{24}, \rho_{576}\f$ of element of \f$G_{x0}\f$
 
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  characters of the representations  \f$\rho_{24}, \rho_{576}\f$
+  and stores the results in ``ptrace[0], ptrace[1]`` in that
+  order. Here  \f$\rho_{576}\f$ is the tensor square of
+  \f$\rho_{24}\f$.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+
+  Note that \f$\rho_{24}\f$ is defined up to sign only, but
+  the tensor product \f$\rho_{24} \otimes \rho_{4096}\f$ is well
+  defined. The product of the two corresponding characters (as
+  computed by the functions ``xsp2co1_traces_small``
+  and ``xsp2co1_trace_4096``) has the correct value.
+*/
 // %%EXPORT px
 int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
 {
@@ -704,10 +758,34 @@ int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
     }
     if (acc & 63) return ERR_QSTATE12_SCALAR_OVFL;
     ptrace[1] = acc >> 6; 
-
-    return ((ptrace[0] + ptrace[1]) & 1) ? ERR_QSTATE12_SCALAR_OVFL : 0;    
+    
+    if ((ptrace[0] + ptrace[1]) & 1) return ERR_QSTATE12_SCALAR_OVFL;  
+    return 0;
 }
 
+
+
+/**
+  @brief Compute relevant characters of element of \f$G_{x0}\f$
+
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  characters of the representations
+  \f$\rho_{24}, \rho_{576}, \rho_{4096}, \rho_{98280}\f$
+  and stores the result in ``ptrace[0],..., ptrace[3]`` in
+  that order. Here  \f$\rho_{576}\f$ is the tensor square of
+  \f$\rho_{24}\f$.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+
+  Note that the tensor product \f$\rho_{24} \otimes \rho_{4096}\f$
+  is well defined, but the factors of that product are defined
+  up to sign only.
+  We normalize the characters corresponding to \f$\rho_{24}\f$
+  and \f$\rho_{4096}\f$ so that the first nonzero value of these
+  two charaacters (in the order given above) is positive.
+*/
 // %%EXPORT px
 int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
 {

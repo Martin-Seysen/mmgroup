@@ -17,6 +17,14 @@ from mmgroup.structures.qs_matrix import qs_unit_matrix
 from mmgroup.structures.qs_matrix import pauli_vector_mul
 from mmgroup.structures.qs_matrix import pauli_vector_exp
 
+
+
+from mmgroup.clifford12 import bitmatrix64_t, bitmatrix64_mul
+from mmgroup.clifford12 import bitmatrix64_rot_bits
+from mmgroup.clifford12 import bitmatrix64_xch_bits
+from mmgroup.clifford12 import bitmatrix64_echelon_l
+from mmgroup.clifford12 import bitmatrix64_reverse_bits
+
 #####################################################################
 # Create test matrices
 #####################################################################
@@ -66,7 +74,7 @@ def create_conjugate_data():
 
 
 #####################################################################
-# Test method pauli_conugate()
+# Test method pauli_conjugate()
 #####################################################################
 
 
@@ -116,7 +124,97 @@ def test_pauli_conjugate(verbose = 0):
         mask = (1 << (2 * n)) - 1
         assert w_noarg == [x & mask for x in w]
 
-        
+
+
+#####################################################################
+# Test method to_symplectic()
+#####################################################################
+
+ 
+
+def bit_rev(x, k):
+    x = int(x)
+    y = sum( ((x >> (k-i-1)) & 1) << i  for  i in range(k) )
+    x &= -(1 << k)
+    return x + y
+ 
+
+
+
+def py_to_symplectic(m):
+    ERR_INV = "Qstate matrix is not imvertible"
+    m.reduce()
+    shape = m.shape 
+    if shape[0] != shape[1]:
+        raise ValueError(ERR_INV)
+    n = shape[0]
+    data = np.array(m.data, dtype = np.uint64)
+    if len(data) <= n:
+         raise ValueError(ERR_INV)
+    if n == 0:
+         return np.zeros((0,0),  dtype = np.uint64)
+    data = data[1:]
+    d_rows = len(data)
+    AT = bitmatrix64_t(data, n)
+    mask = 1 << (2*n - 1)
+    sum_ = reduce(__or__, [int(data[i]) ^ (mask >> i) for i in range(n)], 0)
+    if (sum_ >> n) & ((1 << n) - 1):
+        raise ValueError(ERR_INV)
+    bitmatrix64_xch_bits(data, 2 * n + 1, (1 << n) - 1)
+    # Column order of ``data``
+    #   Q_ker   |  A_cols   | |  A_rows  |  Q_rows  
+    #  d_rows-n |     n     |1|    n     |     n
+    r = bitmatrix64_echelon_l(data, d_rows, 2*n+1, d_rows)
+    if r  != d_rows:
+        raise ValueError(ERR_INV)
+    S = AT >> n
+    S = bitmatrix64_mul(S, data[n:])
+    mask = (1 << (2*n)) - 1
+    result = np.concatenate((S, data[:n])) & mask
+    mask =  (1 << n) - 1
+    for i in range(n):
+        result[i] = int(result[i]) ^ (int(AT[i]) & mask)
+    bitmatrix64_reverse_bits(result, n, 0)
+    return result
+
+ 
+
+@pytest.mark.qstate
+def test_to_symplectic(verbose = 0):
+    """Test mapping of unitary matrix to symplectic bit matrix"""
+    for ntest, (m, v_) in enumerate(create_conjugate_data()):
+        if verbose:
+            print("\nTest", ntest+1, ", m =", str(m))
+        n = m.shape[0]
+        v = [1 << i for i in range(2*n)]
+        p = [qs_pauli_matrix(n, x) for x in v]
+ 
+        mi = m.inv()
+
+        w = [int(x) for x in py_to_symplectic(m)]
+
+        ok = True
+        mask = (1 << 2*n) - 1
+        w_ref = [ (m @ x @ mi).pauli_vector() & mask  for x in p]
+        if verbose or w != w_ref:
+            for i, w_i in enumerate(w):
+                w_i_ref = w_ref[i]
+                if w_i_ref != w_i:
+                   s = "Pauli vector: %s, conjugated: %s, obtained: %s"
+                   print (s % (hex(v[i]), hex(w_i_ref), hex(w_i)))
+                   ok = False
+                elif verbose:
+                   s = "Pauli vector: %s, conjugated: %s"
+                   print (s % (hex(v[i]), hex(int(w_i))))
+        if not ok:
+            print("Qstate matrix", str(m))
+            err = "Pauli vector conjugation error"
+            raise ValueError(err)
+
+        w_c = m.to_symplectic()
+        #if len(w_c): w_c[0] += 1
+        assert list(w_c) == w_ref, (w_c, w_ref)
+      
 
 #####################################################################
 # Create test matrices for Pauli group operation

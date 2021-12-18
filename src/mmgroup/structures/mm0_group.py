@@ -164,7 +164,7 @@ In such a word we always reduce substrings of generators of the
 subgroup :math:`N_0` of :math:`\mathbb{M}` to a standard form, 
 which is easy. We apply no relations to the remaining generator
 :math:`\xi`, except for :math:`\xi^3=1`. Method ``simplify`` uses
-the techique described in :cite:`Wil03` for shortening a word
+the technique described in :cite:`Wil03` for shortening a word
 in the monster group.
 
 

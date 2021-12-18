@@ -688,6 +688,19 @@ cdef class QState12(object):
             return [int(x) for x in v]
         else:
             return int(v[0])
+
+    def to_symplectic(self):
+        """Convert a quadratic state matrix to a symplectic bit matrix
+
+        Documentation see corresponding method in subclass
+        ``mmgroup.structures.qs_matrix.QStateMatrix``.
+        """
+        a = np.zeros(32, dtype = np.uint64)
+        cdef uint64_t[:] a_view = a
+        cdef int32_t res = chk_qstate12(
+            cl.qstate12_to_symplectic(&self.qs, &a_view[0]))
+        return a[:res]
+
  
 ####################################################################
 # Auxiliary functions  
@@ -998,6 +1011,15 @@ def bitmatrix64_xch_bits(m, uint32_t sh, uint64_t mask):
     cdef uint32_t i = len(m)
     cdef uint32_t res = cl.bitmatrix64_xch_bits(&m_view[0], i, sh, mask)
     chk_qstate12(res)
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_reverse_bits(m, uint32_t n, uint32_t n0):
+    cdef uint64_t[:] m_view = m
+    cdef uint32_t i = len(m)
+    cdef uint32_t res = cl.bitmatrix64_reverse_bits(&m_view[0], i, n, n0)
+    chk_qstate12(res)
+
 
     
 @cython.wraparound(False)

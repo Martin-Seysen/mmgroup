@@ -634,6 +634,39 @@ class QStateMatrix(QState12):
         returned Pauli group elements are not computed.
         """
         return super(QStateMatrix,self).pauli_conjugate(v, arg)    
+
+
+    def to_symplectic(self):
+        r"""Convert a quadratic state matrix to a symplectic bit matrix
+
+        Here the quadratic state matrix :math:`Q` given by ``self``
+        must be an invertible :math:`2^k\times 2^k` quadratic state
+        matrix,  i.e. :math:`Q` must be of shape ``(k,k)``. So :
+        math:`Q` is in the Clifford group  :math:`\mathcal{C}_k`  
+        of ``k`` qubits, up to a scalar factor.
+
+        The function computes a :math:`2k \times 2k` bit matrix
+        :math:`A` with the following property. 
+
+        If :math:`v` is a bit vector representing an 
+        element :math:`g_v` of the Pauli group of ``k`` qubits 
+        then :math:`v \cdot A` is the vector representing the
+        element :math:`Q \cdot g_v \cdot Q^{-1}` of that
+        Pauli group, up to a scalar factor. Here elements of the
+        Pauli group are given as integers representing bit vectors
+        in the same way as in method ``pauli_vector``, ignoring
+        the bits ``2k, 2k+1`` corresponding to the scalar factor.
+
+        So this method computes the natural homomorphism from the 
+        Clifford group :math:`\mathcal{C}_k` to the symplectic 
+        group :math:`\mbox{S}_{2k}(2)`.
+
+        The function returns :math:`A` as a ``numpy`` array of shape
+        ``(2*n)``, with the entries of that array corresponding to 
+        the rows of :math:`A`.        
+        """
+        return super(QStateMatrix,self).to_symplectic()    
+
         
     #########################################################################
     # Obtaining (complex) entries and submatrices

@@ -42,9 +42,30 @@
 
 
 /** 
-  @brief Compute automophism of the Parker loop on a vector
+  @brief Compute operation of the monster group on a vector
 
-  Yet to be documented!
+  Let \f$v\f$ be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group stored in the array referred by ``v``.
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array of length ``len_g`` referred by the pointer ``g``.
+
+  Then the function computes the vector \f$v \cdot g^e\f$  and 
+  overwrites the vector in the array ``v`` with that vector.
+  Here \f$e\f$ is the exponent given by the integer ``e``.
+
+  The function requires a work buffer (referrd by ``work``), which
+  is an array of ``MM_OP{P}_OFS_E`` entries of type ``uint_mmv_t``.
+  So the work buffer has the same size as the vector ``v``.
+
+  The function returns 0 in case of success and a nonzero
+  value in case of failure.
+
+  Internally, the function simplifies all substrings of the string 
+  representing the word \f$g^e\f$, except for atoms corresponding
+  to nonzero powers of the generator \f$\xi\f$. So the user need 
+  not 'optimize' the input \f$g\f$. Of course, this simplification
+  does not change the input array ``g``.
 */ 
 // %%EXPORT px
 uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
@@ -88,7 +109,32 @@ uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, ui
 /** 
   @brief Restriction of function ``mm_op%{P}_word`` to tag ``A``
 
-  Yet to be documented!
+  Function ``mm_op%{P}_pi`` computes the operation of an element
+  \f$h = g^e\f$ of the monster  group a vector ``v`` and
+  overwrites ``v`` with the result of that operation. \f$h\f$
+  depends on parameters ``g, len_g,``  and ``e`` of this function.
+
+  Function ``mm_op%{P}_word_tag_A`` computes the same automorphism 
+  on the entries of the vector ``v`` with tag ``A`` only, and 
+  ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result. 
+  Here only entries of ``v`` with tag ``A`` are changed. 
+
+  Parameters and return value are the same as in function
+  ``mm_op%{P}_word``, except that a work buffer is not required
+  here. Also, the function fails and returns a nonzero value,
+  if the word that makes up the group element \f$h\f$ contains
+  any nonzero powers of the generator \f$\tau\f$ of the 
+  monster group. Note that such a power of \f$\tau\f$ does 
+  not fix the the part of the vector ``v`` with tag ``A``.
+  Powers of the generator \f$\tau\f$ correspond to atoms with
+  tag ``t``.
+
+  This function is much faster than function ``mm_op%{P}_word``.
 */ 
 // %%EXPORT px
 int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e)

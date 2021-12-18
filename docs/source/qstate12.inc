@@ -1461,8 +1461,34 @@ follows:
     Pauli group.
 
 Function ``qstate12_pauli_conjugate`` in module 
-``qs_matrix.c`` performs this conjugation.
+``qs_matrix.c`` performs this conjugation. 
 
+This operation can be simplified considerably if we require the 
+product :math:`S \cdot p \cdot S^{-1}` up to a scalar factor
+only. Then the mapping :math:`p \mapsto S \cdot p \cdot S^{-1}`
+is a symplectic linear transformation on the vector space
+:math:`\mathcal{P}_{n} / Z(\mathcal{P}_{n})` of dimension 
+:math:`2n` over :math:`\mathbb{F}_2`. Here 
+:math:`Z(\mathcal{P}_{n})` is the centre of 
+:math:`\mathcal{P}_{n}`.
+Function ``qstate12_to_symplectic`` in module ``qs_matrix.c`` 
+computes this transformation as a :math:`2n \times 2n` bit 
+matrix acting on :math:`\mathbb{F}_2^{2n}` by right 
+multiplication. 
+
+This means that the homomorphism of the Clifford group
+:math:`\mathcal{C}_{n}` group of structure 
+:math:`\frac{1}{2} ( 2^{1+2n}_+ \times Z_8 ). \mbox{Sp}_{2n}(2)`
+onto the symplectic group :math:`\mbox{Sp}_{2n}(2)` can be
+computed very fast.
+
+Using these ideas and a suitable representation of the subgroup
+:math:`G_{x0}` of the monster, we can also compute the  
+homomorphism from the group :math:`G_{x0}` of structure 
+:math:`2^{1+2n}_+ . \mbox{Co}_1` onto its factor group  
+:math:`\mbox{Co}_1` very fast. Here the image in
+:math:`\mbox{Co}_1` will be given as a linear operation
+on the Leech lattice modulo 2.
 
 
 
