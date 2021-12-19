@@ -346,19 +346,21 @@ int32_t bitmatrix64_xch_bits(uint64_t *m, uint32_t i, uint32_t sh, uint64_t mask
 // %%EXPORT p
 int32_t bitmatrix64_reverse_bits(uint64_t *m, uint32_t i, uint32_t n, uint32_t n0)
 {
-    uint64_t mask0, mask, v, w;
-    uint_fast32_t k, j;
+    uint64_t mask, v, w;
+    uint_fast32_t k;
+    int_fast32_t sh;
     if (n + n0 > 64)  return ERR_QSTATE12_QUBIT_INDEX;
     if (n < 2) return 0;
 
-    mask0 = ONE << n0;
-    mask = ~(((mask0 << 1) << (n - 1)) - mask0); 
-
     for (k = 0; k < i; ++k) {
+        mask = ONE << n0;
         v = m[k];
-        w = 0;
-        for (j = 0; j < n; ++j) w += ((v >> (n-j-1)) & mask0) << j;
-        m[k] = (v & mask) | w;   
+        for (sh = n - 1; sh > 0; sh -= 2) {
+            w = (v ^ (v >> sh)) & mask;
+            v ^= w ^ (w << sh);
+            mask <<= 1;
+        }
+        m[k] = v; 
     }
     return 0;
 }

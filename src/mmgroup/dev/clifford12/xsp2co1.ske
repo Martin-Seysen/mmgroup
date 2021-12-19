@@ -144,7 +144,7 @@ int32_t xsp2co1_conv_conjugate_basis(qstate12_type *pqs)
 /**
 @brief Conversion to basis \f$(d)'\f$ of  \f$4096_x\f$
 
-The function performs the basis conversion deescribed in
+The function performs the basis conversion described in
 function ``xsp2co1_conv_conjugate_basis``  on an element
 ``x`` of \f$Q_{x0}\f$ (in Leech lattice encoding). It
 returns the converted element in in Leech lattice encoding.
@@ -184,6 +184,8 @@ static inline uint32_t conv_pauli_vector_xspecial_nosign(uint32_t x)
 
 
 /// @endcond 
+
+
 
 
 /*************************************************************************
@@ -295,31 +297,28 @@ not short.
 // %%EXPORT p
 int32_t xsp2co1_chain_short_3(qstate12_type *pqs, uint32_t n, uint64_t *psrc, uint64_t *pdest)
 {
-    uint64_t prod, src_prod;
-    int_fast32_t res, ok;
-    uint_fast32_t i;
+    uint64_t prod, src_prod, v, w, bm[24];
+    int_fast32_t res, ok = 1;
+    uint_fast32_t i, j;
 
     if bad_state(pqs) return ERR_QSTATE12_INCONSISTENT;
     if (pqs->ncols != 24 || pqs->shape1 != 12) 
          return ERR_QSTATE12_SHAPE_OP;
-    
     if (n <= 1) return 0;
-    for (i = 1; i < n; ++i) {
-        pdest[i] = gen_leech3to2_short(psrc[i]);
-        pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
-    }
-    res = qstate12_pauli_conjugate(pqs, n - 1, pdest + 1, 0);
+    res = qstate12_to_symplectic(pqs, bm);
     if (res < 0) return res;
+    
     for (i = 1; i < n; ++i) {
-        pdest[i] = conv_pauli_vector_xspecial_nosign((uint32_t)pdest[i]);
-        pdest[i] = gen_leech2to3_short(pdest[i]);
-    }    
-    ok = 1;
-    for (i = 1; i < n;  ++i) {
+        v = gen_leech3to2_short(psrc[i]);
+        v = conv_pauli_vector_xspecial_nosign((uint32_t)v);
+        w = 0;
+        for (j = 0; j < 24; ++j) w ^= bm[j] & (0ULL - ((v >> j) & ONE));
+        w = conv_pauli_vector_xspecial_nosign((uint32_t)w);
+        w = gen_leech2to3_short(w);
         src_prod = short_3_scalprod(psrc[i-1], psrc[i]);
-        prod =  short_3_scalprod(pdest[i-1], pdest[i]);
-        if (prod != src_prod) pdest[i] = 
-            short_3_reduce(~pdest[i]);
+        prod =  short_3_scalprod(pdest[i-1], w);
+        if (prod != src_prod) w = short_3_reduce(~w);
+        pdest[i] = w;
         ok = ok && src_prod  &&  prod;
     }
     return ok ? 0 : ERR_QSTATE12_LEECH_OP;
@@ -541,7 +540,44 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 }
 
 
+/*************************************************************************
+*** Map element of G_{x0} to transformation of the Leech latice mod 2
+*************************************************************************/
 
+
+
+
+/**
+@brief  Map element of \f$G_x0\f$ to a bit matrix
+
+
+The function maps the element of \f$G_{x0}\f$  stored in  
+the array ``elem`` (in **G_x0 representation**) to a
+\f$24 \times 24\f$ bit matrix \f$A\f$, which will be stored in
+the array referred by ``pA``.  Bit matrix \f$A\f$ operates on a
+vector on the Leech lattice modulo 2 (in Leech lattice encoding)
+by right multiplication.
+
+So this function computes the homomorphism from the
+group \f$G_{x0}\f$ onto the group \f${Co}_1\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_to_bitmatrix(uint64_t *elem, uint64_t *pA)
+{
+    int_fast32_t res, i;
+    uint64_t w;
+    qstate12_type qs;
+
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
+    if (res < 0) return res;
+    if ((res = qstate12_to_symplectic(&qs, pA)) < 0) return res;
+    for (i = 0; i < 24; ++i) {
+        w =  (pA[i] ^ (pA[i] >> 12)) & 0x800UL;
+        pA[i] ^= (w << 12) ^ w; 
+    }      
+    w = pA[11]; pA[11] = pA[23]; pA[23] = w;
+    return 0;
+}
 
 
 
@@ -746,25 +782,26 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uin
     int_fast32_t res;
     uint_fast32_t i;
 
+    if (sign == 0) {
+        res = xsp2co1_elem_to_bitmatrix(elem, data);
+        if (res < 0) return res;
+        bitmatrix64_mul(ax, data, n, 24, ax);
+        return 0;
+    }
+
     res = xsp2co1_elem_to_qs_i(elem, &qs);
     if (res < 0) return res;
     res = qstate12_copy_alloc(&qs, &qs1, data, MAXROWS_ELEM);
     if (res < 0) return res;
 
-    if (sign) for (i = 0; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
-    }
-    else for (i = 0; i < n; ++i) {
-        ax[i] = conv_pauli_vector_xspecial_nosign((uint32_t)ax[i]);
     }
     res = qstate12_pauli_conjugate(&qs1, n, ax, sign);
     if (res < 0) return res;
-    if (sign) for (i = 0; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
         ax[i] = conv_pauli_vector_xspecial((uint32_t)ax[i]);
     }    
-    else for (i = 0; i < n; ++i) {
-        ax[i] = conv_pauli_vector_xspecial_nosign((uint32_t)ax[i]);
-    }
     return 0;
 }
 

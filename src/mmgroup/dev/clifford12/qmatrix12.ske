@@ -1164,6 +1164,90 @@ int32_t qstate12_mat_inv(qstate12_type *pqs)
 
 
 /*************************************************************************
+*** Convert an invertible quadratic state matrix to a symplectic bit matrix 
+*************************************************************************/
+
+/** 
+  @brief Convert quadratic state matrix to a symplectic bit matrix 
+  
+  Here the quadratic state matrix ``qs`` referred by ``pqs``
+  must be of shape ``(k, k)`` and invertible.  The function
+  computes a ``2k`` times ``2k`` bit matrix ``A``.
+
+  If ``v``is a bit vector representing an element of the Pauli
+  group then ``v * A`` represents the element ``qs * v * qs^{-1}``
+  of the Pauli group, up to a scalar factor.  Elements of the
+  Pauli group of ``k`` qubits are encoded as in
+  function ``qstate12_pauli_vector()``, ignoring the bits at
+  positions ``2k`` and ``2k + 1``. So ``pA[i]`` will contain
+  the image of the ``i``-th basis vector of the Pauli group,
+  with bits  ``2k`` and ``2k + 1`` set to zero.
+
+  The function returns ``2*k`` in case of success and a nonnegative
+  value in case of an error. In any case it suffices if the array
+  referred by ``pA`` has 32 entries.
+
+  This function can be considered as a simplified version of
+  function ``qstate12_pauli_conjugate``. It computes the natural
+  homomorphism from the group of invertible quadratic state
+  matrices shape ``(k, k)`` to the symplectic
+  group \f$\mbox{S}_{2k}(2)\f$.
+*/
+// %%EXPORT p
+int32_t qstate12_to_symplectic(qstate12_type *pqs, uint64_t *pA)
+{
+    uint32_t d_rows;
+    int_fast32_t res, j, k;
+    uint64_t m[2*MAXCOLS/3+1], at[MAXCOLS/3+1], mask, v;
+ 
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+ 
+    k = pqs->shape1;
+    if (2*k != (int)pqs->ncols || (int)pqs->nrows <= k) 
+        return ERR_QSTATE12_MATRIX_INV;
+    d_rows = pqs->nrows - 1;
+    if (k > MAXCOLS/3 || d_rows > 2*MAXCOLS/3) 
+        return ERR_QSTATE12_TOOLARGE;
+    if (k == 0) return 0;
+    v = 0;
+    mask = ONE << (2*k - 1); 
+    for (j = 0; j < (int)d_rows; ++j) {
+        m[j] = pqs->data[j + 1];
+        v |= m[j] ^ (mask >> j);
+    }
+    mask =  ((ONE << k) - 1);
+    if ((v >> k) & mask) return ERR_QSTATE12_MATRIX_INV;
+
+    bitmatrix64_t(m, d_rows, k, at);
+    for (j = 0; j < k; ++j) {
+        pA[j] = at[j] & mask;
+        at[j] >>= k;
+    }
+
+    bitmatrix64_xch_bits(m, d_rows, 2 * k + 1, (1 << k) - 1);
+    // Column order of bit matrix ``m``
+    //   Q_ker   |  A_cols   | |  A_rows  |  Q_rows  
+    //  d_rows-k |     k     |1|    k     |     k
+    res = bitmatrix64_echelon_l(m, d_rows, 2*k+1, d_rows);
+    if (res != (int32_t)d_rows) 
+        return res < 0 ? res : ERR_QSTATE12_MATRIX_INV;
+        
+    bitmatrix64_mul(at, m + k, k, d_rows - k, at);
+
+    mask =  ((ONE << (2*k)) - 1);
+    for (j = 0; j < k; ++j) {
+        pA[j] = (pA[j] ^ at[j]) & mask;
+        pA[k + j] = m[j] & mask;
+    }
+    bitmatrix64_reverse_bits(pA, 2*k, k, 0);
+    return 2 * k;
+}
+
+
+
+
+
+/*************************************************************************
 *** Conjugation of Pauli vector with a  matrix
 *************************************************************************/
 
@@ -1198,6 +1282,13 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
     uint64_t  m0, v, f,  mask;
     uint64_t v_out, a_t[2*MAXCOLS/3+1], m[MAXROWS]; 
     qstate12_type qs;
+
+    if (arg == 0) {
+        res = qstate12_to_symplectic(pqs, m);
+        if (res < 0) return res;
+        bitmatrix64_mul(pv, m, n, res, pv);
+        return 0;
+    }
  
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     res = qstate12_copy_alloc(pqs, &qs, m, MAXROWS);
@@ -1212,13 +1303,8 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
     if (2*nqb != qs.ncols || 
         nqb != (uint32_t)lb_rank_reduced(&qs, row_table)) 
             return ERR_QSTATE12_MATRIX_INV;
-    if (nqb == 0) {
-        if (arg == 0) {
-            mask = (ONE << qs.ncols) - 1;
-            while (n--) *pv++ &= mask;
-        }
-        return 0;
-    }
+    if (nqb == 0) return 0;
+    
     // Reduce state matrix ``qs``
     res = bitmatrix64_t(m, qs.nrows, qs.ncols, a_t);
     if (res < 0) return res;
@@ -1239,7 +1325,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
     if  (m[0] & mask) return -90; // internal error
    
     // Main loop: conjugate ``qs`` with Pauli group vectors
-    if (arg) while (n--) {
+    while (n--) {
         // Let ``v`` be the current Pauli vector to be conjugated
         v = *pv;  
         
@@ -1334,131 +1420,13 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
         v_out ^= f << qs.ncols;
         *pv++ = v_out;
     }
-    else  while (n--) {
-        // Simplified version of the standard case arg != 0
-        // Right multiply ``qs`` with the x part of ``v``. .
-        v = *pv;  
-        mask = (ONE << nqb) - 1;
-        m0 = (v >> nqb) & mask;
-                
-        // Right multiply ``qs`` with the z part of ``v``. 
-        for (j = 0; j < (int32_t)nqb; ++j) {
-            m0 ^= a_t[j] & (0 - ((v >> j) & ONE));
-        }
- 
-        // Zero ``m0[j], 0 <= j < nqb``, without changing ``qs``       
-        for (j = nqb - 1; j >= 0; --j)  {
-            m0 ^= m[row_table[j]] & (0 - ((m0 >> j) & ONE));
-        }
-
-        // Zero ``m0[j], j0 <= j < j1``, without changing ``qs``       
-        j0 = qs.ncols + fst_row; j1 = qs.ncols + qs.nrows;
-        for (j = j1 - 1; j >= (int32_t)j0; --j) if ((m0 >> j) & 1) {
-            m0 ^= m[row_table[j]] & (0 - ((m0 >> j) & ONE));
-        }
-                
-        // Adjust z part of output Pauli matrix v_out.
-        v_out = 0;
-        sh = qs.ncols + nqb;
-        for (j = nqb; j < (int32_t)(qs.ncols); ++j) {
-            v = 0 - ((m0 >> sh) & ONE);
-            v_out ^= (ONE << j) & v;
-            m0 ^=  a_t[j] & v ;
-            --sh;
-        }
-        v_out >>= nqb;
-               
-        // Adjust x part of output Pauli matrix. 
-        v_out ^= m0  & (((ONE << nqb) - 1) << nqb);
-             
-        // Output Pauli matrix. 
-        mask = (ONE << qs.ncols) - 1;
-        *pv++ = v_out & mask;
-    }
     return 0;
 }
 
 
 
-/*************************************************************************
-*** Convert an invertible quadratic state matrix to a symplectic bit matrix 
-*************************************************************************/
 
-/** 
-  @brief Convert quadratic state matrix to a symplectic bit matrix 
-  
-  Here the quadratic state matrix ``qs`` referred by ``pqs``
-  must be of shape ``(k, k)`` and invertible.  The function
-  computes a ``2k`` times ``2k`` bit matrix ``A``.
 
-  If ``v``is a bit vector representing an element of the Pauli
-  group then ``v * A`` represents the element ``qs * v * qs^{-1}``
-  of the Pauli group, up to a scalar factor.  Elements of the
-  Pauli group of ``k`` qubits are encoded as in
-  function ``qstate12_pauli_vector()``, ignoring the bits at
-  positions ``2k`` and ``2k + 1``. So ``pA[i]`` will contain
-  the image of the ``i``-th basis vector of the Pauli group,
-  with bits  ``2k`` and ``2k + 1`` set to zero.
-
-  The function returns ``2*k`` in case of success and a nonnegative
-  value in case of an error. In any case it suffices if the array
-  referred by ``pA`` has 32 entries.
-
-  This function can be considered as a simplified version of
-  function ``qstate12_pauli_conjugate``. It computes the natural
-  homomorphism from the group of invertible quadratic state
-  matrices shape ``(k, k)`` to the symplectic
-  group \f$\mbox{S}_{2k}(2)\f$.
-*/
-// %%EXPORT p
-int32_t qstate12_to_symplectic(qstate12_type *pqs, uint64_t *pA)
-{
-    uint32_t d_rows;
-    int_fast32_t res, j, k;
-    uint64_t m[2*MAXCOLS/3+1], at[MAXCOLS/3+1], mask, v;
- 
-    if ((res = qstate12_reduce(pqs)) < 0) return res;
- 
-    k = pqs->shape1;
-    if (2*k != (int)pqs->ncols || (int)pqs->nrows <= k) 
-        return ERR_QSTATE12_MATRIX_INV;
-    d_rows = pqs->nrows - 1;
-    if (k > MAXCOLS/3 || d_rows > 2*MAXCOLS/3) 
-        return ERR_QSTATE12_TOOLARGE;
-    if (k == 0) return 0;
-    v = 0;
-    mask = ONE << (2*k - 1); 
-    for (j = 0; j < (int)d_rows; ++j) {
-        m[j] = pqs->data[j + 1];
-        v |= m[j] ^ (mask >> j);
-    }
-    mask =  ((ONE << k) - 1);
-    if ((v >> k) & mask) return ERR_QSTATE12_MATRIX_INV;
-
-    bitmatrix64_t(m, d_rows, k, at);
-    for (j = 0; j < k; ++j) {
-        pA[j] = at[j] & mask;
-        at[j] >>= k;
-    }
-
-    bitmatrix64_xch_bits(m, d_rows, 2 * k + 1, (1 << k) - 1);
-    // Column order of bit matrix ``m``
-    //   Q_ker   |  A_cols   | |  A_rows  |  Q_rows  
-    //  d_rows-k |     k     |1|    k     |     k
-    res = bitmatrix64_echelon_l(m, d_rows, 2*k+1, d_rows);
-    if (res != (int32_t)d_rows) 
-        return res < 0 ? res : ERR_QSTATE12_MATRIX_INV;
-        
-    bitmatrix64_mul(at, m + k, k, d_rows - k, at);
-
-    mask =  ((ONE << (2*k)) - 1);
-    for (j = 0; j < k; ++j) {
-        pA[j] = (pA[j] ^ at[j]) & mask;
-        pA[k + j] = m[j] & mask;
-    }
-    bitmatrix64_reverse_bits(pA, 2*k, k, 0);
-    return 2 * k;
-}
 
 
 //  %%GEN h
