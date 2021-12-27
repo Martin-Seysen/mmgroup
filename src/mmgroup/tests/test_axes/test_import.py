@@ -10,6 +10,11 @@ import numpy as np
 
 import pytest
 
+
+if __name__ == "__main__":
+    sys.path.append("../../../")
+
+
 from mmgroup import MM0, MMV
 from mmgroup.mm_crt_space import MMVectorCRT 
 
@@ -73,7 +78,7 @@ def norm_A_mod15(i):
 
 
 def display_norm_A(i):
-    """Display additional infomration of a 2A axis
+    """Display additional information of a 2A axis
 
     
     """
@@ -118,18 +123,18 @@ group. Each class corresponds to an orbit of 2A axes under the group
 G = 2^{1+24}.Co_1. A 2A axis corresponds to a 2A involution in the
 monster group. The class of a 2A involution is named by the name of
 the class of z*g in the monster group. Here z is the central 
-involution of the group G. Class names of the monster group are 
+involution of the group G_x0. Class names of the monster group are 
 given in ATLAS notation.
 
 A 2A axis v is a vector in the 196884-dimensional representation of 
 the monster group. The 'A' part of v is the projection into a subpace
 of that representation that corresponds to the 299-dimensional 
-represententation of G. That 'A' part has a natural interpretation
+represententation of G_x0. That 'A' part has a natural interpretation
 as a symmetric 24 times 24 matrix operating on Leech lattice.
 
 For each class of 2A axes we give a sample matrix A operating on
 the Leech lattice in standard cooordinates. The matrices displayed
-below and also their eigenvalues should be divided by 128.
+below and also their eigenvalues should be divided by 256.
 
 It turns out that for distinguishing between the classes of 2A axes
 it suffices to know the the corresponding matrix A modulo 15. We use 
@@ -150,11 +155,10 @@ def test_2A_axes_classes(verbose = 0):
 
     If this function is called with parameter ``verbose == 1``
     then function displays the information relevant for 
-    distinguishing between classe of 2A axes.
+    distinguishing between classes of 2A axes.
     """
     do_test_baby_sample_axes(baby_sample_axes)
     do_test_sample_axes(sample_axes)
-    beautfiers = compute_beautifiers(sample_axes.g_strings)
     if verbose:
         print(HEADER)
 
@@ -163,7 +167,7 @@ def test_2A_axes_classes(verbose = 0):
         g = MM0(sample_axes.g_strings[i])
         v =  MMVectorCRT(20, sample_axes.v_start)
         v *= g
-        g1 = MM0(beautfiers[i])
+        g1 = MM0(sample_axes.g_beautifiers[i])
         v *= g1
         Afloat = 256 * v["A"]
         A = np.array(Afloat, dtype = np.int32)
@@ -181,6 +185,9 @@ def test_2A_axes_classes(verbose = 0):
             display_A(A)
 
              
+if  __name__ == "__main__":
+    test_2A_axes_classes(verbose = 1)
+
 
 
 

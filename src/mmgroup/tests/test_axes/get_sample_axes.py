@@ -18,7 +18,10 @@ import numpy as np
 from operator import __or__
 from functools import reduce
 
-#sys.path.append(r"C:\Data\projects\MonsterGit\src")
+
+if __name__ == "__main__":
+    sys.path.append("../../../")
+
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 
@@ -77,7 +80,7 @@ def generate_axis(i0, i1, tag = None):
 
 ########################################################################
 ########################################################################
-# The group elements and vectorsand the vector space to be used
+# The group elements and vectors and the vector space to be used
 ########################################################################
 ########################################################################
 
@@ -225,8 +228,10 @@ class GVector:
         A = self.v['A']
         score = num_zeros = 576 - np.count_nonzero(self.v['A'])
         DIAG = np.diagonal(A)
-        max_equal_diag = max(np.bincount(DIAG))
-        if max_equal_diag >= 22:
+        diag_bins = sorted([x for x in np.bincount(DIAG) if x])
+        if max(diag_bins) >= 22:
+            # Special treatement for case 10A: Prefer solution with
+            # large No of off-diagonal elements of same absolute value
             d = defaultdict(list)
             for i, x in enumerate(DIAG):
                 d[x].append(i) 
@@ -238,7 +243,13 @@ class GVector:
             max_occur = max(np.bincount(B.ravel()))
             if max_occur >= 462:
                 return 1000 + max_occur
-        return score
+        bonus = 0
+        if diag_bins == [4,20]:
+            # Special treatement for case 10B: Prefer solution with
+            # block [4, 24]
+            #print("YEEEAHHH", diag_bins)
+            bonus = 1
+        return score + bonus
         
 
 ########################################################################
@@ -571,7 +582,7 @@ def mark(gv):
 
 def score(gv):
     return gv.score_A()
-    return gv.count_zeros_in_A()
+    #return gv.count_zeros_in_A()
 
 
 ########################################################################
@@ -734,7 +745,9 @@ def write_axes(verbose = False):
     s_beautifiers = ""
     s_powers = ""
     s_groups = ""
-    beautifiers = compute_beautifiers([x[1].g for x in sample_list])
+    g_strings = [x[1].g for x in sample_list]
+    g_classes = [axis_type(x[1].g) for x in sample_list]
+    beautifiers = compute_beautifiers(g_strings, g_classes)
     for i, (stage, sample, mark) in enumerate(sample_list):
         s_samples += "\"" + sample.g.raw_str() + "\",\n"
         s_stages += str(stage) + ", "

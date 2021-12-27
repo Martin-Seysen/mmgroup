@@ -17,7 +17,8 @@ import numpy as np
 from operator import __or__
 from functools import reduce
 
-#sys.path.append(r"C:\Data\projects\MonsterGit\src")
+if __name__ == "__main__":
+    sys.path.append("../../../")
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 from mmgroup import GcVector, AutPL
