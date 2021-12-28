@@ -31,6 +31,7 @@ except ImportError:
     PY_FILENAME = os.path.join(_DIR, "involution_samples.py")
     from mmgroup.tests.test_involutions import make_involution_samples
     make_involution_samples.print_invariants(file = PY_FILENAME)
+    time.sleep(0.1)
     from mmgroup.tests.test_involutions import involution_samples
 
 INVOLUTION_SAMPLES = involution_samples.INVOLUTION_SAMPLES

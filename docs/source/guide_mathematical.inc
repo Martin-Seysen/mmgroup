@@ -880,3 +880,141 @@ with :math:`k = 2- \alpha` maps :math:`\lambda_r` to :math:`\beta`.
 Otherwise we first apply a permutation in :math:`M_{24}` that maps
 :math:`\delta` to :math:`\{0, 1\}`, and fixes :math:`2` and :math:`3`.
 
+
+
+Checking equality of monster elements and membership in :math:`2^{1+24}.\mbox{Co}_1`
+-------------------------------------------------------------------------------------
+
+Checking equality of monster elements
+.....................................
+
+For checking equality of two elements :math:`g_1` and :math:`g_2` of 
+the monster we use the method described in :cite:`LPWW98`. That 
+method uses two nonzero vectors :math:`w_{71}` and :math:`w_{94}`
+in the 198883-dimensional representation of the monster that are 
+fixed by elements of orders :math:`h_{71}` and :math:`h_{94}` of
+the monster of order 71 and 94, respectively. Here we also require
+that the involution :math:`h_{94}^{47}` negates :math:`w_{94}`.
+Then in :cite:`LPWW98` it is shown that only the identity of the
+monster group fixes both, :math:`w_{71}` and :math:`w_{94}`.
+
+The python script ``mmgroup.structures.find_order_vectors.py``
+generates suitable vectors :math:`w_{71}` and :math:`w_{94}` at
+random and stores data for the fast recomuptation of these vectors
+in file  ``find_order_vectors.py``. Since we actually work in the
+representation :math:`\rho` of dimension 196884, we have to make 
+sure that the generated vactors are not fixed by the monster.
+
+More precisely, we generate :math:`w_{71}` as a vector in the 
+representation :math:`\rho_3` of the monster in characteristic
+3, and  :math:`w_{94}` as a vector in the representation 
+:math:`\rho_5` of the monster in characteristic 5. We combine
+these two vectors to a vector in the representation 
+:math:`\rho_{15}` (modulo 15) of the monster via Chinese 
+remaindering. Note that a computation in :math:`\rho_{15}` is
+faster than the combination of the corresponding computations 
+in :math:`\rho_{3}`. We write :math:`w` for the vector
+combined from :math:`w_{71}` and :math:`w_{94}`.
+
+   
+Testing membership in :math:`2^{1+24}.\mbox{Co}_1`
+...................................................
+
+For testing membership in :math:`2^{1+24}.\mbox{Co}_1` we impose
+additional conditions on the vector  :math:`w_{71}` in the 
+representation :math:`\rho_3` defined in the last section.
+
+Let :math:`\rho_{A,p}` be the subspace of :math:`\rho_p` spanned by 
+the basis vectors of :math:`\rho_p` with tag ``A``. Then 
+:math:`\rho_{A,p}` is fixed by the subgroup :math:`G_{x0}` of 
+structure :math:`2^{1+24}.\mbox{Co}_1` of the monster. A vector in
+:math:`\rho_A` has a natural interpretation as a symmetric bilinear
+form on the Leech lattice (modulo :math:`p`), see :cite:`Con85`.
+Let :math:`Q_{p}` be the symmetric bilinear form on the Leech 
+lattice (modulo :math:`p`) given by the scalar product.
+
+Let :math:`w` be a vector in :math:`\rho_{15}` as in the last section. 
+For  any :math:`w` in :math:`\rho_{p}`, let :math:`w_{(A,p)}` be the 
+bilinear from on the Leech lattice (modulo :math:`p`) corresponding 
+to the projection of :math:`w` onto :math:`\rho_{A,p}`.
+We shall search for a vector :math:`w` satisfying the 
+condition stated an the last section. In addition we require that 
+for some integer :math:`d` (modulo 3) the bilinear form 
+:math:`w_{(A,3)} - d \cdot Q_3` has a kernel of dimension one, and 
+that this kernel contains a type-4 vector :math:`x_4` of the Leech 
+lattice modulo 3. We will discuss the chance of finding such a 
+vector :math:`w` later.
+
+
+Let :math:`\Omega` be the standard frame of
+the Leech lattice (modulo 3). Then :math:`\Omega` is  of type 4
+and consists of the vectors :math:`(0,\ldots,0,\pm 1,0,\ldots,0)`.
+Once have found a suitable vector :math:`w`, we 
+apply a transformation in :math:`G_{x0}` to :math:`w` that
+maps :math:`x_4` to a vector in :math:`\Omega`. Therefore we work
+in the Leech lattice modulo 2, as described in section 
+:ref:`computation-leech2`. Conversion from a type-4 vector in 
+the Leech lattice mod 3 to a type-4 vector in the Leech lattice 
+mod 2 is easy; the C function ``gen_leech3to2_type4`` in file
+``gen_leech3.c`` does that job. In the sequel we also write 
+:math:`w` for the transformed vector. So we may assume that the
+kernel of :math:`w_{(A,3)} - d \cdot Q_3` is one dimensional and 
+spanned by a vector in the standard frame :math:`\Omega` of the 
+Leech lattice modulo 3. 
+
+For doing linear algebra modulo 3 we store 16 integers modulo 3 
+in a 64-bit integer; and we use arithmetic, Boolean and shift
+operations. 
+ 
+Assume that :math:`g` is in :math:`G_{x0}`. Then the kernel of 
+:math:`w_{A,3} - d \cdot Q_3` contains an image of a vector in
+the standard frame :math:`\Omega`. So we may compute the image
+of the standard frame in the Leech lattice modulo 2. Using
+the methods in  in section :ref:`computation-leech2` we can 
+compute a  :math:`h_1` is in :math:`G_{x0}` that maps 
+:math:`\Omega \cdot g` to :math:`\Omega`. So
+:math:`gh_1` fixes :math:`\Omega`. Hence :math:`gh_1` is in the
+subgroup :math:`N_{x0}` of structure :math:`2^{1+24+11}.M_{24}`
+of :math:`G_{x0}`. 
+
+The factor group  :math:`M_{24}` of  :math:`N_{x0}` acts on
+the :math:`24 \times 24` matrix representing the bilinear form
+:math:`w_{(A,p)}` by permuting the rows and the columns, and
+by sign changes that we will ignore at the moment. So we
+store the multiset of the absolute values of the entries of each
+row of the matrix :math:`w_{(A,p)}`. Then :math:`M_{24}` permutes
+these 24 multisets by its natural action. So we may recover
+the element of :math:`M_{24}` performing that action
+and compute a preimage :math:`h_2` of the inverse of that
+element in :math:`N_{x0}`. Thus :math:`gh_1 h_2` is in the
+subgroup  :math:`2^{1+24+11}` of :math:`N_{x0}`. Note that, 
+orginally, the vector :math:`w` has been defined modulo 15 so that 
+almost certainly we have enough information in the matrix
+:math:`w_{(A,15)}` to compute the permutation in :math:`M_{24}`.In 
+the implementation we compute a hash function on the
+permuted multisets, and we generate a new vector :math:`w` if
+these hash values are not pairwise different.
+
+Now that task of reducing an element of  :math:`2^{1+24+11}` is easy.
+We first eliminate the factor :math:`2^{11}` be checking signs 
+in :math:`w_{(A,15)}`, or signs of suitable entries of vector 
+:math:`w` with tag ``A``, which is the same thing. Then we
+eliminate the factor :math:`2^{24}` be checking signs of suitable 
+entries of :math:`w` with tags ``B, C, T, X``, and, finally, the 
+factor :math:`2^{1}` by checking a sign of an entry with 
+tag ``Y`` or ``Z``.
+
+So we obtain a decomposition :math:`g h_1 h_2 h_3 = 1`, with 
+:math:`h_i` in a tranversal of :math:`G_i / G_{i+1}` for
+:math:`G_1 = G_{x0}`, :math:`G_2 = N_{x0}`,  
+:math:`G_3 = 2^{1+24+11}`, :math:`G_4 = \{1\}`. If  
+:math:`g \notin  G_{x0}` then this procedure will fail in
+in one of the steps mentioned above. We abort as early as possible
+in case of failure, in order to accelerate the search of an 
+element of :math:`G_{x0}` in cases of a low success probability.
+
+
+TODO: Document probablity of finding  :math:`w_{71}` !!!
+
+ 
+
