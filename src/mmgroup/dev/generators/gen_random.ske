@@ -642,7 +642,7 @@ int32_t gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *see
 /**
   @brief Generate one random integer modulo a number ``p``
 
-  Generate an integers ``x`` with ``0 <= x < p``.
+  Generate an integer ``x`` with ``0 <= x < p``.
   Here ``0 <= p < 2**32`` must hold. ``p = 0`` is interpreted
   as ``p = 2**32``.
 
@@ -662,6 +662,68 @@ uint32_t gen_rng_modp(uint32_t p, uint64_t *seed)
     r = (r >> 32) * p + ((r * (p & 0xffffffffUL)) >> 32);
     return (uint32_t)(r >> 32);
 }
+
+
+/**
+  @brief Generate random bit field of integers modulo a number ``p``
+
+  Generate integers ``x_i``, ``0 <= i < 64 / d`` with ``0 <= x < p``.
+  Here parameter ``d`` is the  with of a bit field. The function
+  reuturns an unsigned 64-bit integer ``x`` with the random 
+  value ``x_i`` stored in bits ``i*d + d - 1,..., i *d`` of ``x``.
+  In case ``d = 0`` we generate one random number in ``x``.
+  
+  Here ``1 <= p < 2**d`` must hold. ``p = 0`` is interpreted as
+  ``p = 2**64``. 
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been created by function ``gen_rng_seed_rnd``
+  or by a similar function.
+*/
+// %%EXPORT px
+uint64_t gen_rng_bitfields_modp(uint64_t p, uint32_t d, uint64_t *seed)
+{
+    uint64_t r = xoro_next(seed), rh, res = 0, i, used;
+
+    #define ONE ((uint64_t)1ULL)
+    if (d == 0 || d >= 64)  d = 64;
+    if ((p & (p - 1)) == 0) {
+        if (d >= 64) return r & (p - 1);
+        if (p > (ONE << d)) return 0;
+        res = p - 1;
+        i = d;
+        while (i < 64) {
+            res |= res << i;
+            i <<= 1;
+        }
+        return res & r;
+    }
+    if (d < 64  &&  p > (ONE << d)) return 0;
+    if (p > 0x100000000ULL) {
+        rh = p * (0xffffffffffffffffULL / p);
+        while (r >= rh) r = xoro_next(seed);
+        return r % p;
+    }
+
+    used = d;
+    for (i = 0; i <= 64 - d; i += d) {
+        // multiply r by p and store the result in (rh, r)
+        rh = (r >> 32) * p;
+        r =  (r & 0xffffffffULL) * p;
+        rh += r >> 32;
+        r = ((rh & 0xffffffffULL) << 32) + (r & 0xffffffffULL);
+        rh >>= 32;
+        // store rh in bits (i+d-1,...,i) of the result
+        res |= rh << i;
+        if (used <= 32) used += d;
+        else {
+            r = xoro_next(seed);
+            used = d;
+        }
+    }
+    return res;
+}
+
 
 
 //  %%GEN h

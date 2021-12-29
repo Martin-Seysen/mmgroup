@@ -126,32 +126,25 @@ exponentiation of group elements works a usual.
 Multiplication of elements of the monster group
 ...............................................
 
-Internally, an element of  :math:`\mathbb{M}` is represented as a word
-in the generators given above. The user should be aware of the fact
-that multiplication with the ``*`` operator is a concatenation of such
-words, followed by (rather incomplete) reduction step. This means that 
-multplying words may still lead to an exponential growth of the word 
-length. 
+Internally, an element of :math:`\mathbb{M}` is represented as a word
+of the generators given above. Multiplication with the ``*`` operator 
+is a concatenation of such words, followed by a reduction step.
+Multiplication of two reduced elements of the monster group (including
+the reduction of the result) takes less than 50 milliseconds on the
+author's computer. 
 
-On can apply the method ``simplify`` to an element of the monster group.
-This method shortens a word representing an element of :math:`\mathbb{M}`
-to a reasonable length with a very high probability. However, applying 
-this method usually takes a long time. On the author's computer it may 
-take several minutes to shorten the product of two (previously shortened) 
-random words. This is yet considerably faster than the run time reported 
-in :cite:`Wilson13`.
+The reduction after a group operation is done by a new method that 
+tracks pairs of perpendicular 2A axes, which at the moment is more a 
+(yet undocumented) art than a science. This new method will be 
+documented in a future version of the project. 
 
-In such a word we always reduce substrings of generators of the 
-subgroup :math:`N_0` of :math:`\mathbb{M}` to a standard form, 
-which is easy. We apply no relations to the remaining generator
-:math:`\xi`, except for :math:`\xi^3=1`. Method ``simplify`` uses
-the techique described in :cite:`Wil03` for shortening a word
-in the monster group.
-
-
-
-
-
+The verification of the result of a reduction is along the lines 
+of the method given in :cite:`LPWW98`; for more details see section 
+:ref:`check_equality_monster`. So even if you don't trust in the new
+reduction method, the reduction algorithm is still of Las Vegas type; 
+i.e. it never fails without indication. But in practice the new
+algorithm is deterministic and always successful; and it has been 
+tested on thousends of group operations.
 """
 # References in the __docstr__ see file docs/source/references.bib
 
