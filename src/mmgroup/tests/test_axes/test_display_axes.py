@@ -139,7 +139,7 @@ def purge_diag(diag, power = 1):
     data = {}
     non_ints = []
     for x0 in diag:
-        x = x0**power 
+        x = (x0**power).real
         if abs(x - round(x)) < EPS:
             i = int(round(x))
             if i in data:

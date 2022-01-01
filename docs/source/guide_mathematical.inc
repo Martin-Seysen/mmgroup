@@ -903,7 +903,7 @@ operation on :math:`w_{71}` and on :math:`w_{94}`.
 The python script ``mmgroup.structures.find_order_vectors.py``
 generates suitable vectors :math:`w_{71}` and :math:`w_{94}` at
 random and stores data for the fast recomuptation of these vectors
-in file  ``find_order_vectors.py``. Since we actually work in the
+in file  ``order_vector_data.py``. Since we actually work in the
 representation :math:`\rho` of dimension 1 + 196883, we have to 
 make sure that the generated vactors are not fixed by the monster.
 
@@ -930,10 +930,12 @@ For an odd number :math:`p` let :math:`\rho_{A,p}` be the subspace of
 :math:`\rho_p` spanned by the basis vectors of :math:`\rho_p` with tag
 ``A``. Then :math:`\rho_{A,p}` is fixed by the subgroup :math:`G_{x0}` 
 of structure :math:`2^{1+24}.\mbox{Co}_1` of the monster. A vector in
-:math:`\rho_A` has a natural interpretation as a symmetric bilinear
-form on the Leech lattice (modulo :math:`p`), see :cite:`Con85`.
-Let :math:`Q_{p}` be the symmetric bilinear form on the Leech 
-lattice (modulo :math:`p`) given by the scalar product.
+:math:`\rho_{A,p}` has a natural interpretation as a symmetric bilinear
+form on the Leech lattice (modulo :math:`p`), see :cite:`Con85`. Let 
+:math:`Q_{p}` be the symmetric bilinear form on the Leech lattice 
+(modulo :math:`p`) given by the scalar product; then :math:`Q_{p}` 
+is given by the the :math:`24 \times 24` unit matrix, up to a 
+scalar factor.
 
 Let :math:`w` be a vector in :math:`\rho_{15}` as in the last section. 
 For  any :math:`w` in :math:`\rho_{p}`, let :math:`w_{(A,p)}` be the 
@@ -994,7 +996,7 @@ that almost certainly we have enough information in the matrix
 :math:`w_{(A,15)}` to compute the permutation in :math:`M_{24}`. In 
 the implementation we compute a hash function on the 24 multisets
 obtaiend from the rows of :math:`w_{(A,15)}`, and we generate a new 
-vector :math:`w` if these hash values are not pairwise different.
+vector :math:`w` if these 24 hash values are not mutually different.
 
 Now that task of reducing an element of  :math:`2^{1+24+11}` is easy.
 We first eliminate the factor :math:`2^{11}` be checking signs 
@@ -1015,7 +1017,72 @@ failure, in order to accelerate functions searching for an
 element of :math:`G_{x0}` that have a low probability of success.
 
 
-TODO: Document probablity of finding  :math:`w_{71}` !!!
+The cost of finding a suitable vector for membership testing
+..............................................................
+
+In this section we discuss the run time for finding a suitable test
+vector :math:`w` as defined in the last two sections. First we have 
+to find two elements :math:`h_{71}` and :math:`h_{94}` in the 
+monster of order 71 and 94. From the character tables in 
+:cite:`Atlas` we see that a random element in the monster has 
+order 71 and 94 with probability 1/71 and 1/47, respectively. 
+Checking the orders of such elements costs  71 and 94 operations, 
+respectively,  on a random vector e.g. in the representation 
+:math:`\rho_3`. So in average we have to do about 10000 operations 
+on a random vector. Here we start with checking elements of the 
+monster taken from a set of relatively short words, and we slowly 
+increase the length of the words in case of failure. On the author's 
+computer an operation of a group element on such a vector costs (at 
+most) a few milliseconds. Also, the search can de done by up to 6 
+kernels in parallel, so finding a suitable group element is easy.
+
+Once we have found suitable group elements, we genreate 'random'
+vectors :math:`v_3 \in \rho_3` and  :math:`v_5 \in \rho_5`.
+We select candidates for :math:`v_3` and  :math:`v_5` from a set
+sparse vectors, so that we can easily write them into a file.
+Then we compute the sums :math:`w_{71} = \sum_i v_3 h_{71}^i` and 
+:math:`w_{94} = \sum_i (-1)^i v_5 h_{94}^i`, where the summation
+index runs over all different powers of  :math:`h_{71}` or
+:math:`h_{94}`. Vectors :math:`w_{71}` and :math:`w_{94}` are  
+fixed by the whole monster group with negligible probability,
+so that they can almost certainly be used for testing equality.
+
+For checking membership of the subgroup :math:`G_{x0}` of the
+monster, the vector :math:`w_{71}` also has to satisfy the 
+condition stated in the last section. We briefly state an
+approximation for the probability that a random vector 
+:math:`w_{71} \in \rho_3` satisfies that condition.
+
+
+The distribution of the coranks of a symmetric :math:`n \times n`
+matrix over :math:`\mathbb{F}_3` can be modeled as a Markov process. 
+So it is not difficult to show that a random :math:`24 \times 24` 
+matrix over :math:`\mathbb{F}_3` has corank :math:`1` (i.e. rank 
+:math:`23`) with probability about :math:`0.3195`.
+There are :math:`24\cdot 8292375` vectors of type 4 in the Leech 
+lattice and :math:`3^{24}-1` nonzero vectors in 
+:math:`\mathbb{F}_3^{24}`; so a random one-dimensional subspace 
+of :math:`\mathbb{F}_3^{24}` is spanned by a type-4 vector with
+probability about :math:`1/710`. Thus the kernel of a random
+symmetric  :math:`24 \times 24` matrix over :math:`\mathbb{F}_3` 
+is spanned by a type-4 vector with probability about :math:`1/2221`.
+
+
+Generating a vector :math:`w_{71} \in \rho_3` that is fixed by an 
+element of order :math:`71` costs :math:`71` group operations on 
+:math:`\rho_3`. So in average we need about :math:`158000` 
+group operations on the representation :math:`\rho_3`. to find a 
+vector in :math:`\rho_3` satisfying all required conditions. This 
+is certainly doable, and has been done.
+As indicated in the last section, for each candidate for a 
+vector in  :math:`\rho_3` we may check the kernels of three 
+bilinear forms (corresponding to that vector) that differ by a 
+multiple of the unit matrix. This almost triples the success 
+rate for finding a suitable vector  :math:`w`.
+
+
+
+
 
  
 
