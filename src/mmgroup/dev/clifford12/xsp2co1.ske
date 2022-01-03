@@ -664,7 +664,7 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
 
     v = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
     if (v < 0) return (int32_t) v;
-    res = xsp2co1_qs_to_elem_i(&qs3, v, elem3);
+    res = xsp2co1_qs_to_elem_i_noreduce(&qs3, v, elem3);
     return res;
 }
 
@@ -697,7 +697,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
 
     v = map_short3(&qs2, elem1[0], STD_V3, STD_V3);
     if (v < 0) return (int32_t) v;
-    res = xsp2co1_qs_to_elem_i(&qs2, v, elem2);
+    res = xsp2co1_qs_to_elem_i_noreduce(&qs2, v, elem2);
     return res;
 }
 
