@@ -36,6 +36,7 @@ from mmgroup.clifford12 import xsp2co1_mul_elem, xsp2co1_inv_elem
 from mmgroup.clifford12 import xsp2co1_copy_elem
 from mmgroup.clifford12 import xsp2co1_reduce_elem
 from mmgroup.clifford12 import xsp2co1_elem_to_leech_op
+from mmgroup.clifford12 import xsp2co1_elem_to_bitmatrix
 from mmgroup.clifford12 import xsp2co1_set_elem_word 
 from mmgroup.clifford12 import xsp2co1_mul_elem_word 
 from mmgroup.clifford12 import xsp2co1_xspecial_vector
@@ -128,6 +129,11 @@ class Xsp2_Co1(AbstractMMGroupWord):
         xsp2co1_elem_to_leech_op(self._data, a) 
         return a.reshape((24,24))        
 
+    @property
+    def leech_mod2_op(self):
+        a = np.zeros(24, dtype = np.uint64)
+        xsp2co1_elem_to_bitmatrix(self._data, a) 
+        return a        
         
     def order(self, max_order = 119):
         """Return the order of the element of the monster group

@@ -741,8 +741,7 @@ reduce_type4(uint32_t v, uint32_t vtype, uint32_t *pg_out)
                 // Map v to a vector of subtype 42 or 44
                 if ((exp = xi_reduce_odd_type4(v)) < 0) {
                     uint8_t src[3];
-                    uint32_t vect, tab;
-                    vect = mat24_gcode_to_vect(v >> 12);
+                    uint32_t tab;
                     tab = MAT24_SYNDROME_TABLE[coc & 0x7ff];
                     src[0] = tab & 31; src[1] = (tab >> 5) & 31;
                     src[2] = (tab >> 10) & 31;

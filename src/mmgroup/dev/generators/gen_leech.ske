@@ -274,7 +274,7 @@ uint32_t gen_leech2_type(uint64_t v2)
 /**
   @brief Compute subtype if vector in Leech lattice mod 2 is of type 2
 
-  This function returns the subtype ofthe vector \f$v_2\f$ in the 
+  This function returns the subtype of the vector \f$v_2\f$ in the 
   Leech lattice modulo 2 if \f$v_2\f$ is of type 2 and 0 otherwise.
 
   It is faster than function ``gen_leech2_type()``.
