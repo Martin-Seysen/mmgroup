@@ -1,4 +1,4 @@
-
+import sys
 from random import randint
 import numpy as np
 from collections import defaultdict
@@ -6,6 +6,10 @@ from collections import defaultdict
 import datetime
 import time
 import pytest
+
+if __name__ == "__main__":
+    sys.path.append("../../../")
+
 
 from mmgroup import MM0, MMSpace, MMV
 from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
@@ -27,43 +31,61 @@ v_start = 0x200
 #######################################################################################
 
 
-def reduce_2B(v):
-    return span(v, 4)
 
-def reduce_4A(v):
+S_KER = """  The kernel of  part300x (mod 3) of axis %s is 1-dimensional.
+  It contains a Leech lattice vector of v type %d."""
+
+def reduce_2B(v, verbose):
+    return span(v, 4, verbose)
+
+def reduce_4A(v, verbose):
+    if verbose:
+        print(S_KER % ("", 4))
     return [mm_op15_2A_axis_type(v.data) & 0xffffff]
 
-def reduce_4BC(v):
-    return radical(v, 1)
+def reduce_4BC(v, verbose):
+    return radical(v, 1, verbose)
 
-def reduce_6A(v):
+def reduce_6A(v, verbose):
+    if verbose:
+        print(S_KER % ("- 2", 2))
     vt = mm_op15_2A_axis_type(v.data) & 0xffffff
-    a = short(v, 5)
+    a = short(v, 5, verbose)
+    if verbose:
+        s = "  Check vectors v + x for all x in that set of vectors"
+        print(s)
     return [v ^ vt for v in a]
 
-def reduce_6C(v):
-    return span(v, 3)
+def reduce_6C(v, verbose):
+    return span(v, 3, verbose)
 
-def reduce_6F(v):
-    return radical(v, 7)
+def reduce_6F(v, verbose):
+    return radical(v, 7, verbose)
 
-def reduce_8B(v):
-    v2 = short(v, 1)
+def reduce_8B(v, verbose):
+    v2 = short(v, 1, verbose)
     v2_0 =  v2[0]
+    if verbose:
+        s0 = "  Let v be any vector in that set"
+        s1 = "  We add v to all other vectors iin that set"
+        print(s0, "\n" + s1)
     return [x ^ v2_0 for x in v2]
 
-def reduce_10A(v):
-    v2 = short(v, 1)
+def reduce_10A(v, verbose):
+    v2 = short(v, 1, verbose)
     assert len(v2) == 100, hex(len(v2))
-    v0 = short(v, 3)
+    v0 = short(v, 3, verbose)
     assert len(v0) == 1, hex(len(v0))
+    if verbose:
+        s0 = "  Check the sums x + y, with x in 1st and y in 2nd set."
+        print(s0)
     return [x ^ v0[0] for x in v2]
 
-def reduce_10B(v):
-    return radical(v, 4)
+def reduce_10B(v, verbose):
+    return radical(v, 4, verbose)
 
-def reduce_12C(v):
-    return radical(v, 7)
+def reduce_12C(v, verbose):
+    return radical(v, 7, verbose)
 
 reduce_cases = {
    "2A": None,
@@ -106,7 +128,7 @@ reduce_targets = {
 def test_cases(verbose = 0):
     for axis_type, g_str in AXES.items():
         if verbose:
-            print("Test reduction of axis type %s" % axis_type)
+            print("\nTest reduction of axis type %s" % axis_type)
         # Construct an axis v of the given axi type
         v = V_START * MM0(g_str)
         target_axes = reduce_targets[axis_type]
@@ -116,7 +138,7 @@ def test_cases(verbose = 0):
             continue
         nfound = 0
         dict_found = defaultdict(int)
-        for w in reduce_cases[axis_type](v):
+        for w in reduce_cases[axis_type](v, verbose):
             if leech_type(w) != 4:
                 continue
             nfound += 1
@@ -135,4 +157,6 @@ def test_cases(verbose = 0):
 
  
 
+if __name__ == "__main__":
+    test_cases(verbose = 1)
 

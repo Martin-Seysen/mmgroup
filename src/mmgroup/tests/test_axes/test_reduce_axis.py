@@ -48,9 +48,9 @@ def leech_type(v2):
     return gen_leech2_type(v2) >> 4
 
 
+S_AXIS = "  %d coordinates of the axis in 98280_x have absolute value %d"
 
-
-def short(v, value):
+def short(v, value, verbose = 0):
     """Return certain array of short vectors in Leech lattice mod 2
 
     Let ``v`` be a vector in the rep of the moster mod 15.
@@ -61,7 +61,9 @@ def short(v, value):
     ``value``. That list is returned as a numpy array.
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0) 
+    if verbose:
+        print(S_AXIS % (l, value))
     return short[:l]
 
 
@@ -75,14 +77,14 @@ def span(v, value, verbose = 0):
     as a list of vectors in a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(
+        v.data, short, len(short),  value, verbose)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
+    dim = leech2_matrix_basis(short, l, basis, 24)
     if verbose:
-        print("Function span, No of vectors =", l)
-    dim= leech2_matrix_basis(short, l, basis, 24)
-    if verbose:
-        print("Dimension of spanned space:", dim)    
+        print(S_AXIS % (l, value))
+        print("  Dimension of spanned space:", dim)    
     basis = basis[:dim]
     v2new = np.zeros(1 << dim, dtype = np.uint32)
     l1 = leech2_matrix_expand(basis, dim, v2new)
@@ -101,14 +103,14 @@ def radical(v, value, verbose = 0):
     a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_axes_find_short(
+        v.data, short, len(short),  value, verbose)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
-    if verbose:
-        print("Function radical, No of vectors =", l)
     dim = leech2_matrix_radical(short, l, basis, 24)
     if verbose:
-        print("Dimension of radical:", dim)    
+        print(S_AXIS % (l, value))
+        print("  Dimension of radical:", dim)    
     basis = basis[:dim]
     v2new = np.zeros(1 << dim, dtype = np.uint32)
     l1 = leech2_matrix_expand(basis, dim, v2new)
