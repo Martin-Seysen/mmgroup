@@ -54,6 +54,16 @@ def display_A(A):
 
 norms_A_mod15 = None
 
+def axis_index(axis_type):
+    sample_axes = import_sample_axes()
+    NUM_AXES = len(sample_axes.g_strings)
+    for i, s in enumerate(sample_axes.g_classes):
+        if s == axis_type:
+            return i
+    err = "No axis of type %s found"
+    raise ValueError(err % str(axis_type))
+
+
 def norm_A_mod15(i):
     """Return norm(A) mod 15 for entry i in the list in sample_axes.py
 
@@ -62,6 +72,7 @@ def norm_A_mod15(i):
    
     """
     global norms_A_mod15
+    if isinstance(i, str): i = axis_index(i)
     try:
         return norms_A_mod15[i]
     except:
@@ -84,6 +95,7 @@ def display_norm_A(i):
     """
     sample_axes = import_sample_axes()
     
+    if isinstance(i, str): i = axis_index(i)
     norm_A = norm_A_mod15(i)
     s = "norm(A) = %d (mod 15)" % (norm_A)
     common = [s for j, s in enumerate(sample_axes.g_classes) 

@@ -17,6 +17,7 @@ from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
 from mmgroup.tests.test_axes.test_reduce_axis import leech_type
+from mmgroup.tests.test_axes.test_import import display_norm_A
 
 V = MMV(15)
 
@@ -32,15 +33,14 @@ v_start = 0x200
 
 
 
-S_KER = """  The kernel of  part300x (mod 3) of axis %s is 1-dimensional.
-  It contains a Leech lattice vector of v type %d."""
+S_KER = """  The kernel of U contains a Leech lattice vector of v type %d."""
 
 def reduce_2B(v, verbose):
     return span(v, 4, verbose)
 
 def reduce_4A(v, verbose):
     if verbose:
-        print(S_KER % ("", 4))
+        print(S_KER % ( 4))
     return [mm_op15_2A_axis_type(v.data) & 0xffffff]
 
 def reduce_4BC(v, verbose):
@@ -48,7 +48,7 @@ def reduce_4BC(v, verbose):
 
 def reduce_6A(v, verbose):
     if verbose:
-        print(S_KER % ("- 2", 2))
+        print(S_KER % (2))
     vt = mm_op15_2A_axis_type(v.data) & 0xffffff
     a = short(v, 5, verbose)
     if verbose:
@@ -126,9 +126,14 @@ reduce_targets = {
 
 @pytest.mark.axes
 def test_cases(verbose = 0):
+    s = "For an axis let A be the symmetric matrix corresponding to part 300x"
+    print(s,"\n")
     for axis_type, g_str in AXES.items():
         if verbose:
             print("\nTest reduction of axis type %s" % axis_type)
+            text = display_norm_A(axis_type).split("\n")
+            for s in text:
+                if s: print("  " + s)
         # Construct an axis v of the given axi type
         v = V_START * MM0(g_str)
         target_axes = reduce_targets[axis_type]

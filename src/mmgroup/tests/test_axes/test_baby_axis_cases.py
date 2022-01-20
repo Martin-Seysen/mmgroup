@@ -19,6 +19,7 @@ from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
 from mmgroup.tests.test_axes.test_reduce_axis import leech_type
 from mmgroup.tests.test_axes.test_reduce_axis import eval_A_vstart
+from mmgroup.tests.test_axes.test_import import display_norm_A
 
 V = MMV(15)
 
@@ -35,6 +36,9 @@ FINAL_2A0_AXES = [  V_OPP * MM0('t', e) for e in range(3) ]
 
 #######################################################################################
 
+S_KER = """  The kernel of U contains a Leech lattice vector of v type %d."""
+
+
 
 def reduce_2A0(v, verbose = 0):
     vt = mm_op15_2A_axis_type(v.data) & 0xffffff
@@ -44,14 +48,21 @@ def reduce_2B(v, verbose = 0):
     return span(v, 4, verbose)
 
 def reduce_4A(v, verbose = 0):
+    if verbose:
+        print(S_KER % (4))
     return [mm_op15_2A_axis_type(v.data) & 0xffffff]
 
 def reduce_4BC(v, verbose = 0):
     return radical(v, 1, verbose)
 
 def reduce_6A(v, verbose = 0):
+    if verbose:
+        print(S_KER % (2))
     vt = mm_op15_2A_axis_type(v.data) & 0xffffff
     a = short(v, 5, verbose)
+    if verbose:
+        s = "  Check vectors v + x for all x in that set of vectors"
+        print(s)
     return [v ^ vt for v in a]
 
 def reduce_6C(v, verbose = 0):
@@ -60,10 +71,13 @@ def reduce_6C(v, verbose = 0):
 
 
 def reduce_10A(v, verbose = 0):
-    v2 = short(v, 1)
+    v2 = short(v, 1, verbose)
     assert len(v2) == 100, hex(len(v2))
-    v0 = short(v, 3)
+    v0 = short(v, 3, verbose)
     assert len(v0) == 1, hex(len(v0))
+    if verbose:
+        s0 = "  Check the sums x + y, with x in 1st and y in 2nd set."
+        print(s0)
     return [x ^ v0[0] for x in v2]
 
 
@@ -124,6 +138,9 @@ def test_cases(verbose = 0):
         v = V_OPP * MM0(g_str)
         if verbose:
             print("\nTest reduction of axis type %s" % axis_type)
+            text = display_norm_A(axis_type[:-1]).split("\n")
+            for s in text:
+                if s: print("  " + s)
             print("  A(v_start) = %d mod 15" % eval_A_vstart(v.data))
         target_axes = reduce_targets[axis_type]
         if target_axes is None:
