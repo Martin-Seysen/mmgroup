@@ -77,8 +77,7 @@ def span(v, value, verbose = 0):
     as a list of vectors in a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(
-        v.data, short, len(short),  value, verbose)  
+    l = mm_op15_axes_find_short(v.data, short, len(short), value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_basis(short, l, basis, 24)
@@ -103,8 +102,7 @@ def radical(v, value, verbose = 0):
     a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(
-        v.data, short, len(short),  value, verbose)  
+    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_radical(short, l, basis, 24)
