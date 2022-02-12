@@ -270,8 +270,32 @@ from setuptools.extension import Extension as _Extension
 
 
 from Cython.Distutils import build_ext as _build_ext
-from distutils.file_util import copy_file
-from distutils.errors import *
+
+
+class DistutilsError (Exception):
+    """The root of all Distutils evil.
+
+    Specifically, I do not know how and when exactly 'distutils'
+    will eventually become deprecated.
+
+    Since I'm not willing to dig any deeper into the details of
+    setuptools/distutils, I simply copy the relevant exceptions
+    here. (This is a weird way to deal with a weird concept!)
+    """
+    pass
+
+class DistutilsPlatformError (DistutilsError):
+    """We don't know how to do something on the current platform (but
+    we do know how to do it on some platform) -- eg. trying to compile
+    C files on a platform not supported by a CCompiler subclass."""
+    pass
+
+
+class DistutilsSetupError (DistutilsError):
+    """For errors that can be definitely blamed on the setup script,
+    such as invalid keyword arguments to 'setup()'."""
+    pass
+
 
 
 _compiler = None

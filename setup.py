@@ -32,9 +32,9 @@ import shutil
 import setuptools
 from setuptools import setup, find_packages
 from collections import defaultdict
-from distutils.errors import *
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
 from build_ext_steps import BuildExtCmd
+from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
 
 
 

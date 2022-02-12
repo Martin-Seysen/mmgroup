@@ -293,7 +293,7 @@ as indicated in the following table:
 .. math::
     \begin{array}{|c|c|c|c|c|c|c|}
     \hline 
-    \mbox{Subype} & \mbox{Name} & \mbox{Shape}  & |d| & |\delta| &
+    \mbox{Subtype} & \mbox{Name} & \mbox{Shape}  & |d| & |\delta| &
     \langle d , \delta\rangle & \mbox{Remark} \\
     \hline
     00 & 

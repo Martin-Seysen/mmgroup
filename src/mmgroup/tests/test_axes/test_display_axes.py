@@ -285,7 +285,9 @@ def test_display_axes(verbose = 0):
         if verbose:
             n, c = (g_central * axis.reflection()).half_order()
             print("Half order:", n, ", central involution: ", c)
-            if c: (analyze_xy(c))
+            if c: 
+                print("Character of central involution:",  c.chi_G_x0())
+                (analyze_xy(c))
             print("Axis type of axis v * MM('t',1):", axis.axis_type(1))
             print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
             print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))
