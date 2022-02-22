@@ -22,11 +22,18 @@ if __name__ == "__main__":
 from mmgroup.tests.test_orders.check_monster_orders import check_mm_orders
 
 NTESTS = 100
+BUILD_NTESTS = 20
 
 @pytest.mark.orders 
-@pytest.mark.build
 def test_mm_orders():
     check_mm_orders(ntests = NTESTS, display = False)
+
+
+@pytest.mark.build
+@pytest.mark.slow     # We don't want this is the usual test
+def test_mm_orders():
+    check_mm_orders(ntests = BUILD_NTESTS, display = False)
+
 
 if __name__ == "__main__":
     check_mm_orders(ntests = NTESTS, display = False)

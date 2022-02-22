@@ -203,34 +203,36 @@ general_presteps = CustomBuildStep("Starting code generation",
 ####################################################################
 
 
-if on_readthedocs:
-    shared_libs_before_stage1 = []
-    shared_libs_stage1 = shared_libs_stage2 = []
-elif os.name in ["nt"]:
-    shared_libs_before_stage1 = [
-        "libmmgroup_mat24", 
-    ]
-    shared_libs_stage1 = shared_libs_before_stage1 + [
-        "libmmgroup_clifford12",
-    ]
-    shared_libs_stage2 = shared_libs_stage1 + [
-        "libmmgroup_mm_basics",
-   ]
-elif os.name in ["posix"]:
-    shared_libs_before_stage1 = [
-        "mmgroup_mat24", 
-    ]
-    shared_libs_stage1 = shared_libs_before_stage1 + [
-        "mmgroup_clifford12",
-    ]
-    shared_libs_stage2 = shared_libs_stage1 + [
-        "mmgroup_mm_basics",
-    ]
-else:
+def import_lib_name(lib_name):
+    """Return os-specific name of import library for shared library
+
+    Parameter 'lib_name' is the name of the shared library 
+    (orof the dll in windows).
+    """
+    if os.name in ["nt"]:
+        return "libmmgroup_" + lib_name
+    if os.name in ["posix"]:
+        return "mmgroup_" + lib_name
     raise DistutilsPlatformError(
         "I don't know how to build to the shared libraries "
         "in the '%s' operating system" % os.name
     )
+
+
+if on_readthedocs:
+    shared_libs_before_stage1 = []
+    shared_libs_stage1 = shared_libs_stage2 = []
+else:
+    shared_libs_before_stage1 = [
+        import_lib_name("mat24"), 
+    ]
+    shared_libs_stage1 = shared_libs_before_stage1 + [
+        import_lib_name("clifford12"),
+    ]
+    shared_libs_stage2 = shared_libs_stage1 + [
+        import_lib_name("mm_basics"),
+    ]
+
 
 
 ####################################################################

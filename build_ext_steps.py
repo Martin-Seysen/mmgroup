@@ -197,7 +197,8 @@ concept similar to an import library.
 Caution!!
 
 The current class ``SharedExtension`` supports Windows DLLs containing
-C programs (no C++) compiled with the ``mingw32`` compiler only.
+C programs (no C++) compiled with the ``mingw32`` or the ``msvc``
+compiler only.
 
 
 Using a shared library in an extension
@@ -366,10 +367,25 @@ class  BuildExtCmd(_build_ext):
     Instances of class ``CustomBuildStep`` or ``SharedExtension``
     are treated as in the description of this module.
     """
+    user_options = _build_ext.user_options + [
+        ("nprocesses=", None, 
+        "Number of prcesses used by class ParallelSteps"
+        )
+    ]
+
+    def initialize_options(self):
+        super(BuildExtCmd, self).initialize_options()
+        self.nprocesses = 1
+
+    def finalize_options(self):
+        super(BuildExtCmd, self).finalize_options()
+        self.nprocesses = max(1, int(self.nprocesses))
+   
+
     def run(self):
         """Implementation of the run() function.
 
-        See class ditutils.cmd.Command for background.
+        See class distutils.cmd.Command for background.
         """
         # At this point, 'self.compiler' is None or a string,  but this 
         # will change while running the corresponding distutils command
@@ -430,7 +446,7 @@ class  BuildExtCmd(_build_ext):
                 extensions = self.extensions
                 self.extensions = [ext] # Build one extension only
                 inplace = self.inplace
-                self.inplace = True     # Always bild inplace
+                self.inplace = True     # Always build inplace
                 force = self.force      
                 self.force = True       # Always force building
                 # Run the corresponding mathod of the base class
