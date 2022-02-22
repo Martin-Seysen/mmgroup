@@ -405,22 +405,37 @@ C_SOURCES_SPECIFIC_P.update( {
 } )
 
 
+mm_op_shared = {}
+
 
 def list_source_files(p):
-    sources = [os.path.join(PXD_DIR, PYX_SOURCE_P.format(P = p))]
+    sources = []
     for f in C_SOURCES_P + C_SOURCES_SPECIFIC_P[p]:
          sources.append(os.path.join(C_DIR, f.format(P = p) + ".c"))
     return sources
 
     
 for p in PRIMES:
+    mm_op_shared[p] = shared = SharedExtension(
+        name = "mmgroup.mmgroup_mm_op%d" % p, 
+        sources = list_source_files(p),
+        libraries = shared_libs_stage2, 
+        include_dirs = [PACKAGE_DIR, C_DIR],
+        library_dirs = [PACKAGE_DIR, C_DIR],
+        extra_compile_args = EXTRA_COMPILE_ARGS,
+        implib_dir = C_DIR,
+        define_macros = [ ("MM_OP%s_DLL_EXPORTS" % p, None)],
+    )
+    ext_modules.append(shared)
+
+    sources = [os.path.join(PXD_DIR, PYX_SOURCE_P.format(P = p))]
     ext_modules.append(
         Extension("mmgroup.mm%d" % p,
-            sources = list_source_files(p),
+            sources = sources,
             #libraries=["m"] # Unix-like specific
             include_dirs = [ C_DIR ] , 
             library_dirs = [PACKAGE_DIR, C_DIR ],
-            libraries = shared_libs_stage2, 
+            libraries = shared_libs_stage2 + [shared.lib_name], 
                 # for openmp add "libgomp" 
             #runtime_library_dirs = ["."],
             extra_compile_args = EXTRA_COMPILE_ARGS, 

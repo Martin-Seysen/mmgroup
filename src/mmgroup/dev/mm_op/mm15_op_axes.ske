@@ -8,6 +8,7 @@
 #include "mm_basics.h"   
 #include "mm_op%{P}.h"   
    
+// %%EXPORT_KWD MM_OP%{P}_API
 
 // %%IF P != 15
 #error File mm_op_check_gx0.c works for modulus P = 15 only!

@@ -42,6 +42,9 @@
 #include <string.h>
 #include "mm_op%{P}.h"   
 
+// %%EXPORT_KWD MM_OP%{P}_API
+
+
 //  %%GEN h
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
@@ -274,9 +277,8 @@ static void pi24_2048(
 // %%EXPORT
 void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_out)
 {
-    uint_fast32_t i;
     uint_mmv_t *a_src[3], *a_dest[3];
-    uint16_t *p_perm = p_op->tbl_perm24_big;
+    uint16_t *p_perm1 = p_op->tbl_perm24_big;
 
   // %%IF* GENERATE_CODE
     // %%IF PERM24_USE_BENES_NET
@@ -284,7 +286,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
 
     // Prepare mask array from Benes network
     // %%PERM24_BENES_PREPARE "p_op->benes_net", small_perm
-    pi24_72(v_in, p_perm + 2048, small_perm, v_out);
+    pi24_72(v_in, p_perm1 + 2048, small_perm, v_out);
     // %%ELSE
     // The following array will store a version of the permutation 
     // optimized for fast operation on a vector of 24 small integers: 
@@ -298,7 +300,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
                    = (i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
         }
     }    
-    pi24_n(v_in, p_perm + 2048, small_perm, v_out, 72);
+    pi24_n(v_in, p_perm1 + 2048, small_perm, v_out, 72);
     // %%END IF
     
     // Step 1: do rows with 24 entries 
@@ -315,9 +317,11 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
         a_dest[2] = v_out + MM_OP%{P}_OFS_Y;
     }
 
-    for (i = 0; i < 3; ++i) 
-        pi24_2048(a_src[i], p_perm, small_perm, i + 12, a_dest[i]);
-
+    {
+        uint_fast32_t i;
+        for (i = 0; i < 3; ++i) 
+            pi24_2048(a_src[i], p_perm1, small_perm, i + 12, a_dest[i]);
+    }
 
     // Step 2: do rows with 64 entries // TODO: comment properly!!!!
     {
@@ -478,7 +482,6 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 
     // If d is odd: negate some entries    
     if (delta & 0x800) {
-        uint_fast16_t i;
         uint_mmv_t *v = v_out + MM_OP%{P}_OFS_T;
 
         // Step odd 1:  negate suboctads of weight 4n+2 for tag T
@@ -527,10 +530,10 @@ void mm_op%{P}_pi_tag_A(uint_mmv_t *v, uint32_t pi)
     
     for(i = 0; i < 24; ++i) {
         j = perm[i];
-        row_perm[j] = i;
-        col_perm[j+j] = (i >> %{LOG_INT_FIELDS});
+        row_perm[j] = (uint16_t)i;
+        col_perm[j+j] = ((uint8_t)i >> %{LOG_INT_FIELDS});
         col_perm[j+j+1] 
-                   = (i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
+            = ((uint8_t)i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
     }
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
     for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];    

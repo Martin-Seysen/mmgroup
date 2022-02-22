@@ -28,6 +28,7 @@
 
 #include "mm_op%{P}.h"   
    
+// %%EXPORT_KWD MM_OP%{P}_API
 
 
 //  %%GEN h

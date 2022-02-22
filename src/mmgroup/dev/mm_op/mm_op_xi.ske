@@ -42,6 +42,9 @@
 #include "mat24_functions.h"
 #include "mm_op%{P}.h"   
 
+// %%EXPORT_KWD MM_OP%{P}_API
+
+
 //  %%GEN h
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
@@ -131,9 +134,9 @@ static uint32_t TAB%{P}_XI64_OFFSET[2][4] = {
 
 static void mm_op%{P}_xi_yz(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 {
-    uint_fast32_t i;
+    uint_fast32_t i1;
     uint_mmv_t *p_mask =  TAB%{P}_XI64_MASK + exp1;
-    for (i = 0; i < 64; ++i) {
+    for (i1 = 0; i1 < 64; ++i1) {
         // %%MUL_MATRIX_XI64 v_in, p_mask, v_out
     }
 }  
@@ -141,9 +144,9 @@ static void mm_op%{P}_xi_yz(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 
 static void mm_op%{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
 {
-    uint_fast32_t i;
+    uint_fast32_t i1;
     uint_mmv_t e_mask =  0 - ((uint_mmv_t)exp1 & %{hex:1});
-    for (i = 0; i < 6; ++i) {
+    for (i1 = 0; i1 < 6; ++i1) {
         // %%MUL_MATRIX_XI16 v_in, e_mask, v_out
     }
 }  
