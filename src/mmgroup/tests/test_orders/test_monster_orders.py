@@ -30,7 +30,7 @@ def test_mm_orders():
 
 
 @pytest.mark.build
-@pytest.mark.slow     # We don't want this is the usual test
+@pytest.mark.slow     # We don't want this in the usual test
 def test_mm_orders():
     check_mm_orders(ntests = BUILD_NTESTS, display = False)
 

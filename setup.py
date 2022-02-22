@@ -192,46 +192,12 @@ general_presteps = CustomBuildStep("Starting code generation",
 
 
 ####################################################################
-# List of libraries to be used an a code generation stage.
-#
-# This list contains the shared libraries to be used in a code
-# generation stage. We have to divide the code generation process 
+# We have to divide the code generation process 
 # into stages, since a library built in a certain stage may be 
 # for generating the code used in a subsequent stage.
-#
-# For windows we list the import libraries instead.
 ####################################################################
 
 
-def import_lib_name(lib_name):
-    """Return os-specific name of import library for shared library
-
-    Parameter 'lib_name' is the name of the shared library 
-    (orof the dll in windows).
-    """
-    if os.name in ["nt"]:
-        return "libmmgroup_" + lib_name
-    if os.name in ["posix"]:
-        return "mmgroup_" + lib_name
-    raise DistutilsPlatformError(
-        "I don't know how to build to the shared libraries "
-        "in the '%s' operating system" % os.name
-    )
-
-
-if on_readthedocs:
-    shared_libs_before_stage1 = []
-    shared_libs_stage1 = shared_libs_stage2 = []
-else:
-    shared_libs_before_stage1 = [
-        import_lib_name("mat24"), 
-    ]
-    shared_libs_stage1 = shared_libs_before_stage1 + [
-        import_lib_name("clifford12"),
-    ]
-    shared_libs_stage2 = shared_libs_stage1 + [
-        import_lib_name("mm_basics"),
-    ]
 
 
 
@@ -266,6 +232,15 @@ mat24_shared = SharedExtension(
 )
 
 
+shared_libs_before_stage1 = [
+   mat24_shared.lib_name
+] if not on_readthedocs else []
+# Attribute ``lib_name`` of a instance of clsss ``SharedExtension``
+# contains name of the library (or of the import library in Windows) 
+# that has to be linked to a program using the shared library.
+
+
+
 clifford12_shared = SharedExtension(
     name = "mmgroup.mmgroup_clifford12", 
     sources = [
@@ -284,6 +259,14 @@ clifford12_shared = SharedExtension(
     implib_dir = C_DIR,
     define_macros = [ ("CLIFFORD12_DLL_EXPORTS", None)],
 )
+
+
+shared_libs_stage1 = shared_libs_before_stage1 + [
+       clifford12_shared.lib_name
+] if not on_readthedocs else []
+
+
+
 
 mat24_extension = Extension("mmgroup.mat24",
         sources=[
@@ -352,6 +335,13 @@ mm_shared =  SharedExtension(
     implib_dir = C_DIR,
     define_macros = [ ("MM_BASICS_DLL_EXPORTS", None)],
 )
+
+shared_libs_stage2 = shared_libs_stage1 + [
+       mm_shared.lib_name
+] if not on_readthedocs else []
+
+
+
 
 mm_extension = Extension("mmgroup.mm",
     sources=[

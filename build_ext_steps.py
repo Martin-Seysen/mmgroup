@@ -210,6 +210,11 @@ extensions may use the same shared library.
 The way how a shared library (or a Windows DLL) is linked to a program
 using that library depends on the operating system.
 
+After creation, an object of class  ``SharedExtension`` contains an
+attribute ``lib_name``. Attribute ``lib_name`` contains name of the 
+library (or of the import library in Windows) that has to be linked
+to a program using the shared library.
+
 The user may have to perform some os-specific steps for making the 
 library available for python extension. Therefore he may read
 the variable ``os.name`` (which has value ``'nt'`` for Windows and
@@ -352,6 +357,9 @@ class SharedExtension(_Extension):
         # Treat all other arguments as in the base class 'Extension'.
         super(SharedExtension, self).__init__(*args, **kwds)
         self.is_non_standard = True
+        self.lib_name = self.name.split(".")[-1]
+        if os.name == "nt":
+            self.lib_name = "lib" + self.lib_name
 
 
 
@@ -725,7 +733,7 @@ def make_so_posix_gcc(cmd, ext):
         obj = os.path.realpath(os.path.splitext(source)[0] + ".o")
         args.append(obj)
         objects.append(obj)
-        print("gcc " + " ".join(args))
+        print("cc " + " ".join(args))
         subprocess.check_call(["cc"] + args) 
 
     # Link
@@ -739,6 +747,7 @@ def make_so_posix_gcc(cmd, ext):
     dll_name[-1] =  "lib" + dll_name[-1]  
     dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
     largs +=  ["-o",  dll_path ]
+    print("cc " + " ".join(largs))
     subprocess.check_call(["cc"] + largs) 
 
     print("removing object files...")
