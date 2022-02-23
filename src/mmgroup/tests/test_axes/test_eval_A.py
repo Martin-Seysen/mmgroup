@@ -14,7 +14,7 @@ from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_sparse_to_leech
-from mmgroup.mm15 import op_eval_A_odd_mod15_aux as mm_op15_eval_A_odd_mod15_aux
+from mmgroup.mm15 import op_eval_A_aux as mm_op15_eval_A_aux
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 
 V = MMV(15)
@@ -23,48 +23,59 @@ V = MMV(15)
 
 ##################################################################
 
-def eval_a_odd(v, signs):
+def eval_a_aux(v, masks, signs, row = 24):
+    x = mm_op15_eval_A_aux(v.data, masks, signs, row)
+    res, row = x & 0xffff, x >> 16
+    return res % 15,  row % 15
+    """
     a = np.zeros(2, dtype = np.uint64)
     x = mm_op15_eval_A_odd_mod15_aux(v.data, signs, a)
     v1 = [((int(a[i >> 4]) >> (4 * (i & 15)))) & 15 for i in range(24)]
     w = np.array(v1, dtype = np.int32) % 15
     return x, w
+    """
 
 
-def eval_a_odd_ref(v, signs):
+def eval_a_aux_ref(v, masks, signs, row = 24):
     A = np.array(v["A"], dtype = np.int32)
-    v_list = [(-1)**((signs >> i) & 1) for i in range(24)]
+    v_list = [(-1)**((signs >> i) & 1) * ((masks >> i) & 1)   
+        for i in range(24)] 
     v1 = np.array(v_list, dtype =  np.int32)
     w = (v1 @ A) % 15
-    return (w @ v1) % 15, w
+    row_out = w[row] * v1[row] if 0 <= row < 24 else 0
+    return (w @ v1) % 15, row_out % 15
+    
+ 
+
   
 
 
-def eval_a_odd_testdata():
+def eval_a_aux_testdata():
     data = [
-        (V("A",2,2), 0x3),
+        (V("A",2,2), 0xffffff, 0x3, 24),
     ]    
     for d in data:
         yield d
     for i in range(5):
         v = V('R')
         for j in range(10):
-            yield v, randint(0, 0xffffff)
+            yield v, randint(0x0, 0xffffff), randint(0, 0xffffff), randint(0,24)
 
 
 
 
 @pytest.mark.axes
-def test_eval_a_odd(verbose = 0):   
-    for n, (v, b) in enumerate(eval_a_odd_testdata()):
+def test_eval_a_aux(verbose = 0):   
+    for n, (v, masks, signs, row) in enumerate(eval_a_aux_testdata()):
         if verbose:
             print("Test %d" % (n+1))
-            print("b =", hex(b))
+            print("masks = %s, signs = %s, row = %d" % (
+                hex(masks), hex(signs), row))
             print(v["A"])
-        x, w = eval_a_odd(v, b)
-        x_ref, w_ref =  eval_a_odd_ref(v, b)  
-        assert (w == w_ref).all(), (w, w_ref)
+        x, w = eval_a_aux(v, masks, signs, row)
+        x_ref, w_ref =  eval_a_aux_ref(v, masks, signs, row)  
         assert x == x_ref, (x, x_ref)
+        assert (w == w_ref), (w, w_ref)
 
 
 ##################################################################

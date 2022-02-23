@@ -393,6 +393,7 @@ C_SOURCES_P = [
     "mm{P}_op_t",
     "mm{P}_op_xi",
     "mm{P}_op_word",
+  #  "mm{P}_op_eval_A",
 ]
 
 
@@ -400,7 +401,8 @@ C_SOURCES_P = [
 C_SOURCES_SPECIFIC_P = defaultdict(list)
 C_SOURCES_SPECIFIC_P.update( {
     15: [ "mm15_op_order", "mm15_op_axes_find", 
-          "mm15_op_axes", "mm15_op_eval_A",
+          "mm15_op_axes", 
+          "mm{P}_op_eval_A",
         ],
 } )
 
@@ -553,7 +555,7 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     setup_requires=[
-        'numpy', 'scipy', 'pytest-runner', 'cython',
+        'numpy', 'scipy', 'pytest-runner', 'cython', 'regex',
         # 'sphinx',  'sphinxcontrib-bibtex',
     ],
     tests_require=[

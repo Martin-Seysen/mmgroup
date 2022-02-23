@@ -1,0 +1,203 @@
+/** @file mm%{P}_op_eval_A.c
+
+ File ``mm%{P}_op_eval_A.c`` implements the evaluation of the ``A``
+ part of a vector in the representation \f$\rho_{%{P}}\f$ of the
+ monster.
+
+ That ``A`` part corresponds to a symmetric matrix \f$A\f$ acting on
+ the Leech lattice. Let \f$v_2\f$ be a short Leech lattice vector, 
+ encoded as a vector in  the Leech lattice modulo 2. 
+
+ This module contains a function ``mm_op%{P}_eval_A`` for
+ evaluating the symmetric matrix \f$A\f$ at a \f$v_2\f$.
+*/
+
+
+#include "mm_op%{P}.h"   
+ 
+// %%EXPORT_KWD MM_OP%{P}_API
+  
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+/*************************************************************************
+***  auxilary function
+*************************************************************************/
+
+/** @brief Auxiliary function for ``mm_op%{P}_eval_A``
+
+   Let matrix ``A`` be the part with tag 'A' of a  vector ``v``
+   of the representation of the monster modulo %{P}. 
+
+   Let ``m_and[i]`` and ``m_xor[i]`` be the bit ``i`` of ``m_and`` 
+   and ``m_xor``, respectively. Define a vector ``y = (y[0],...,y[23])``
+   by: ``y[i] = m_and[i]  * (-1)**m_xor[i]``.
+
+   If ``row >= 24`` the function returns ``res = y * A * transpose(y)``
+   (modulo %{P}). We have ``0 < res < 0x8000``, but ``res`` is not
+   reduced modulo %{P}.
+
+   In case ``row < 24`` define the vector ``z`` by ``z[i] = y[i]``
+   if ``i = row`` and ``z[i] = 0`` otherwise. 
+   Put ``zz =  z * A * transpose(y)`` (modulo %{P}).  We 
+   have ``0 < res < 0x8000``, but ``res`` is not reduced modulo %{P}.
+
+   In case ``row < 24`` the function returns ``0x10000 * zz + res``.
+   // %%IF* P != 15
+   
+   Caution: This function has not been tested!
+   // %%END IF
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_eval_A_aux(uint_mmv_t *v, uint32_t m_and, uint32_t m_xor, uint32_t row)
+{
+    // %%FOR* j in range(V24_INTS_USED)
+    uint_mmv_t xor_mask%{j};  // XOR mask for integer %{j} of row of v
+    uint_mmv_t and_mask%{j};  // AND mask for integer %{j} of row of v
+    // %%END FOR
+    uint_fast32_t i;      // counter for rows
+    uint_mmv_t total = 0; // sum of all (modified) entries
+    uint_mmv_t a_row[2];  // a_row[1] = sum of (modified) entries in selected row
+
+    a_row[1] = 0;
+    // %%FOR* j in range(V24_INTS_USED)
+    xor_mask%{j} = m_xor >> %{int:j*INT_FIELDS};
+    // %%MMV_UINT_SPREAD "xor_mask%{j}", "xor_mask%{j}"
+    and_mask%{j} = m_and >> %{int:j*INT_FIELDS};
+    // %%MMV_UINT_SPREAD "and_mask%{j}", "and_mask%{j}"
+    // %%END FOR
+   
+    for (i = 0; i < 24; ++i) {
+        uint_mmv_t xor_mask_row = 0ULL - (1ULL & (m_xor >> i));
+        uint_mmv_t and_mask_row = 0ULL - (1ULL & (m_and >> i));
+        uint_mmv_t rowsum = 0;  // sum of (modified) entries in row
+        uint_mmv_t w;           // current integer from vector v
+        // %%FOR* j in range(V24_INTS_USED)
+        w = v[%{j}] ^ xor_mask%{j} ^ xor_mask_row;
+        w &= and_mask%{j} & and_mask_row;
+        // %%WITH*  bitmask = smask(P, range(12 - j * INT_FIELDS // 2), FIELD_BITS << 1)
+        w = (w & %{hex:bitmask})
+            + ((w >> %{FIELD_BITS}) & %{hex:bitmask});
+        // %%END WITH
+        // %%FOR* k in range(1, LOG_INT_FIELDS)
+        w = w + (w >> %{int:FIELD_BITS << k});
+        // %%IF* k == 1 and P == 3
+        w &= 0x0f0f0f0f0f0f0f0fULL;
+        // %%END IF
+        // %%END FOR
+        w &= %{hex:(1 << (P_BITS + LOG_INT_FIELDS)) - 1};
+        rowsum += w; 
+        // %%END FOR
+        total += rowsum;
+        a_row[i == row] = rowsum;
+        v += %{V24_INTS};
+    }
+    
+    // %%IF* P > 15
+    total = (total >> %{P_BITS}) + (total & %{P});
+    // %%END IF
+    return (uint32_t)((a_row[1] << 16) + total); 
+}
+
+
+// Obtain ``v[i, j]`` for a vector ``v`` in the monster rep mod {P} 
+static inline uint32_t entry_v(uint_mmv_t *v, uint32_t i, uint32_t j)
+{
+     uint_mmv_t w;
+     i = (i << 5) + j;
+     w = v[i >> %{LOG_INT_FIELDS}];
+     w >>= (i &  %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
+     return (uint32_t)(w & %{P});
+}
+     
+
+
+
+/** @brief Evaluate A part in rep of monster at a short Leech vector
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo %{P}, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions* in the
+   description of the *C interface*. The entries corresponding to
+   tag 'A' of ``v`` form a symmetric 24 times 24 matrix \f$A\f$. 
+
+   Let \f$v_2\f$ be a short Leech lattice vector given by parameter
+   ``v2``, encoded as a vector in  the Leech lattice modulo 2. 
+   Then \f$v_2\f$ is determined up to sign and \f$v_2 A v_2^\top\f$
+   is determined uniquely.
+
+   The function returns \f$r = v_2 A v_2^\top\f$ modulo %{P},
+   with \f$0 \leq r <  %{P}\f$ in case of success. It returns -1
+   if  \f$v_2\f$ is not short (i.e. not of type 2).
+
+   The short Leech lattice vector \f$v_2\f$ (of norm 4) is scaled to
+   norm 32 as usual, when \f$v_2\f$ is given in integer coordinates.
+   // %%IF* P != 15
+   
+   Caution: This function has not been tested!
+   // %%END IF
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_eval_A(uint64_t *v, uint32_t v2)
+{
+    uint_fast32_t vect, coc, res, theta, lsb, syn, cocodev, res_row, i, j;
+
+    switch(gen_leech2_type2(v2)) {
+        case 0x20:
+            // Compute cocode entries of v2
+            syn = MAT24_SYNDROME_TABLE[(v2 ^ MAT24_RECIP_BASIS[23]) & 0x7ff];
+            syn &= 0x3ff;
+            // Bits 9..5 and bits 4..0 contain high and low cocode bit index.
+            // Change a high cocode bit index 24 to 23.
+            syn -= ((syn + 0x100) & 0x400) >> 5;
+            i = syn & 0x1f; j = syn >> 5;
+            res = entry_v(v, i, j);
+            res ^= (((v2 >> 23) & 1UL) - 1UL) & %{P};
+            res += res;
+            res += entry_v(v, i, i) + entry_v(v, j, j);
+            res <<= 4;
+            break;
+        case 0x21:
+            v2 &= 0x7fffffUL;
+            theta = MAT24_THETA_TABLE[v2 >> 12];
+            vect = mat24_def_gcode_to_vect(v2 >> 12); 
+            i = MAT24_SYNDROME_TABLE[(v2 ^ theta) & 0x7ff] & 0x1f;
+            vect ^= 0UL - ((vect >> i) & 1UL);
+            res = mm_op%{P}_eval_A_aux(v, 0xffffff, vect, i);
+            res_row = res >> 16; res &= 0xffff;
+            res +=  %{int: (-8) % P} * res_row;
+            res += %{int:16 % P} * (entry_v(v, i, i));
+            break;
+        case 0x22:
+            v2 &= 0x7fffffUL;
+            theta = MAT24_THETA_TABLE[v2 >> 12];
+            vect = mat24_def_gcode_to_vect(v2 >> 12); 
+            vect ^=  ((theta >> 13) & 1UL) - 1UL;
+            coc = (v2 ^ theta) & 0x7ff;
+            lsb = mat24_def_lsbit24(vect);
+            coc ^= MAT24_RECIP_BASIS[lsb];
+            syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+            cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
+            res = 4 * mm_op%{P}_eval_A_aux(v, vect, cocodev, 24);
+            break;
+        default:
+            return -1;
+
+    }
+    return res % %{P};
+}
+
+
+
+
+
+//  %%GEN h
+/// @endcond
+//  %%GEN c
