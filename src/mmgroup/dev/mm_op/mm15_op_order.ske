@@ -141,7 +141,7 @@ int32_t mm_op%{P}_order_find_in_Gx0(uint64_t *v, uint32_t *g)
 
     if (ORDER_VECTOR_PRESENT != MAGIC) return -0x1000001;
 
-    if ((uint32_t)leech_matrix_norm_A(%{P}, v) 
+    if ((uint32_t)mm_op%{P}_norm_A(v) 
          != TAG_VECTOR[OFS_NORM_A]) return 0x101;
 
     w3 = leech3matrix_kernel_vector(%{P}, v, TAG_VECTOR[OFS_DIAG_VA]);

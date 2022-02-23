@@ -19,10 +19,11 @@ from mmgroup import MM0, AutPL, Cocode, GCode, MMSpace, MMV, GcVector
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import bitmatrix64_solve_equation
+from mmgroup.clifford12 import leech3matrix_kernel
 from mmgroup import mat24
-from mmgroup.clifford12 import leech_matrix_norm_A, leech3matrix_kernel
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
+from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 
 
 HEADER = r"""Classes of 2A axes
@@ -191,7 +192,7 @@ def get_axes():
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
         axis.v15 =  v15 * MM0(sample_axes.g_strings[i])
-        axis.norm15 = leech_matrix_norm_A(15, axis.v15.data)
+        axis.norm15 = mm_op15_norm_A(axis.v15.data)
         AXES[g_class] = axis
     return AXES
 
@@ -219,7 +220,7 @@ def norm_A_mod15(i):
         v_start = V15(sample_axes.v_start)
         for g in sample_axes.g_strings:
              v = v_start * MM0(g)
-             norms_A_mod15.append(leech_matrix_norm_A(15, v.data))
+             norms_A_mod15.append(mm_op15_norm_A(v.data))
         return norms_A_mod15[i]
 
 

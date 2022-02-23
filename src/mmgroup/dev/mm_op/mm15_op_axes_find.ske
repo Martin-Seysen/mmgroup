@@ -310,7 +310,7 @@ uint32_t mm_op%{P}_2A_axis_type(uint64_t *v)
     };
     uint32_t norm, res, rank, v2, val_A;
     uint64_t r, v3;
-    norm = leech_matrix_norm_A(15,v);
+    norm = mm_op15_norm_A(v);
     res = axes_types[norm & 15];
     if (res < 0x0F0) return res << 24;
     r = leech3matrix_kernel(15, v, res & 0xf);    

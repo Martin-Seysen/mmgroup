@@ -196,6 +196,63 @@ int32_t mm_op%{P}_eval_A(uint64_t *v, uint32_t v2)
 
 
 
+/**
+  @brief Compute norm of the 'A' part of a vector in the rep of the monster
+
+  Assume that ``v`` is a vector in the representation of the monster
+  modulo %{P}. Then the part of  ``v`` with tag 'A' is considered as
+  a symmetric 24 times 24 matrix. The function returns the norm (i.e.
+  the sum of the squares of the entries) of that matrix.
+  // %%IF* P != 15
+   
+  Caution: This function has not been tested!
+  // %%END IF
+*/
+// %%EXPORT px
+uint32_t mm_op%{P}_norm_A(uint_mmv_t *v)
+{
+    uint_mmv_t w;
+    uint_fast32_t i, norm = 0;
+    // %%IF* P == 7
+    static uint8_t SQ[8] = {  // squares mod 7
+        0, 1, 4, 2,  2, 4, 1, 0
+    };
+    // %%ELSE IF P == 15
+    static uint8_t SQ[16] = {  // squares mod 15
+        0, 1, 4, 9,  1, 10, 6, 4,  4, 6, 10, 1,  9, 4, 1, 0
+    };
+    // %%ELSE IF P >  15
+    uint16_t SQ[%{int:P+1}];
+    {
+        uint16_t q = 0; d = 1;
+        for (i = 0; i <= %{int: P >> 1}; ++i) {
+            SQ[i] = SQ[%{P} - i] = q;
+            q += d; d += 2;
+        }
+    }
+    // %%END IF
+    for (i = 0; i < 24; ++i) {         // Main loop of rows
+        // %%IF* P == 3                
+        // %%FOR* j in range(24)        
+        // %%IF* j % INT_FIELDS == 0
+        w = v[%{int:j // INT_FIELDS}]; // Load next integer of v
+        w = (w ^ (w >> 1));     // square is same as parity (mod 3)
+        // %%END IF
+        norm += (w >> %{int:(j % INT_FIELDS) * 2}) & 1; 
+        // %%END FOR                   
+        // %%ELSE                      
+        // %%FOR* j in range(24)        
+        // %%IF* j % INT_FIELDS == 0
+        w = v[%{int:j // INT_FIELDS}];  // Load next integer of v
+        // %%END IF
+        norm += SQ[(w >> %{int:(j % INT_FIELDS) * FIELD_BITS}) & %{P}];
+        // %%END FOR                   
+        // %%END IF 
+
+        v += %{V24_INTS};
+    }                                  // End main loop of rows
+    return norm % %{P};
+}
 
 
 //  %%GEN h

@@ -26,9 +26,10 @@ from mmgroup.tests.test_axes.get_baby_sample_axes import do_test_baby_sample_axe
 from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
 from mmgroup.tests.test_axes.beautify_axes import adjacent_blocks
 from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
-from mmgroup.clifford12 import leech_matrix_norm_A, leech3matrix_kernel
+from mmgroup.clifford12 import leech3matrix_kernel
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
+from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 
 
 baby_sample_axes = import_baby_sample_axes()
@@ -82,7 +83,7 @@ def norm_A_mod15(i):
         v_start = V15(sample_axes.v_start)
         for g in sample_axes.g_strings:
              v = v_start * MM0(g)
-             norms_A_mod15.append(leech_matrix_norm_A(15, v.data))
+             norms_A_mod15.append(mm_op15_norm_A(v.data))
         return norms_A_mod15[i]
 
 

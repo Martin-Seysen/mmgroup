@@ -205,58 +205,6 @@ int32_t leech3matrix_load(uint32_t p, uint64_t *v, uint64_t *a)
 
 
 
-/*************************************************************************
-*** Compute norm of the 'A' part of a vector in the rep of the monster
-*************************************************************************/
-/// @cond DO_NOT_DOCUMENT 
-
-
-/** @brief Work horse for function ``leech_matrix_norm_A`` for ``p=15``.
-*/
-static inline uint32_t norm_A15(uint64_t *v)
-{
-    uint64_t w;
-    uint_fast32_t i, a[16], norm;
-
-    for (i = 0; i < 16; ++i) a[i] = 0;
-    for (i = 0; i < 48; i += 2) {
-        w = v[i];
-        // %%FOR j in range(0, 64, 4)
-        ++a[(w >> %{j}) & 0xf];
-        // %%END FOR
-        w = v[i+1];
-        // %%FOR j in range(0, 32, 4)
-        ++a[(w >> %{j}) & 0xf];
-        // %%END FOR
-    }
-    norm = a[1] + a[14];
-    // %%FOR j in range(2,8)
-    norm += (a[%{j}] + a[%{int:15-j}]) * %{int:(j*j)%15};
-    // %%END FOR
-    return norm % 15;
-}
-
-/// @endcond 
-
-
-/**
-  @brief Compute norm of the 'A' part of a vector in the rep of the monster
-
-  Assume that ``v`` is a vector in the representation of the monster
-  modulo ``p``. Then the part of  ``v`` with tag 'A' is considered as
-  a symmetric 24 times 24 matrix. The function returns the norm (i.e.
-  the sum of the squares of the entries) of that matrix.
-
-  At present the function supports the case ``p = 15`` only.
-*/
-// %%EXPORT px
-int32_t leech_matrix_norm_A(uint32_t p, uint64_t *v)
-{
-    if (p == 15) return norm_A15(v);
-    return ERR_QSTATE12_PARAM;
-}
-
-
 
 /*************************************************************************
 *** Echelonize a 24 times 24 times matrices mod 3
