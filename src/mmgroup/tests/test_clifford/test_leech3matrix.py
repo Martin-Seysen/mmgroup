@@ -11,17 +11,18 @@ import pytest
 from mmgroup import MM0, MMSpace, MMV
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.clifford12 import leech3matrix_echelon
-from mmgroup.clifford12 import leech3matrix_sub_diag
-from mmgroup.clifford12 import leech3matrix_load
-from mmgroup.clifford12 import leech3matrix_kernel_vector
 from mmgroup.clifford12 import leech3matrix_compress
 from mmgroup.clifford12 import xsp2co1_from_vect_mod3
+from mmgroup.clifford12 import leech3matrix_sub_diag
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
+from mmgroup.clifford12 import leech3matrix_rank
 from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.mat24 import MAT24_ORDER
 from mmgroup.mm15 import op_word_tag_A
+from mmgroup.mm15 import op_load_leech3matrix as mm_op15_load_leech3matrix
+from mmgroup.mm3 import op_load_leech3matrix as mm_op3_load_leech3matrix
 
 def rand_matrix_mod_n(n, dtype = np.int64):
     """Create random 24 x 24 matrix of intgers modulo n"""
@@ -61,7 +62,7 @@ def matrix_to_rep_modp(m, p):
             b[2*i] = r & 0xffffffffffffffff
             b[2*i + 1] = r >> 64
     else:
-        err = "Module Leech3matrix does not support p=%s"
+        err = "C functions do not support modulus p=%s"
         raise ValueError(err, str(p))
     return b
 
@@ -80,14 +81,20 @@ def from_array(m, load_mode = None):
     with the function in file ``leech3matrix.c``.
     """
     a = np.zeros(72, dtype = np.uint64)
-    if load_mode in (3, 15):
+    if load_mode == 15:
         b = matrix_to_rep_modp(m, load_mode)
-        leech3matrix_load(load_mode, b, a)
-    else:
+        mm_op15_load_leech3matrix(b, a)
+    elif load_mode == 3:
+        b = matrix_to_rep_modp(m, load_mode)
+        mm_op3_load_leech3matrix(b, a)
+    elif not load_mode:
         for i in range(24):
             s = int(sum(int(m[i,j]) % 3 << 4*j for j in range(24)))
             a[3*i] = s & 0xffffffffffffffff
             a[3*i+1] = (s >> 64) & 0xffffffff
+    else:
+        err = "Loading from representation modulo % not suppoerted"
+        raise ValueError(err % load_mode)
     return a
 
 
@@ -109,7 +116,7 @@ def as_array(a, high = 0, dtype = np.int64):
 @pytest.mark.qstate
 def test_leech3matrix_echelon(verbose = 0):
     unit = np.eye(24)
-    load_modes = [None, 3, 15]
+    load_modes = [None, 15]
     for i in range(20):
         load_mode = load_modes[i % len(load_modes)]
         m = rand_matrix_mod_n(3, dtype = np.int64)
@@ -165,6 +172,22 @@ def str_v3(v3):
     return "".join(l)
 
 
+def load_leech3matrix(p, v):
+    a = np.zeros(3*24, dtype = np.uint64)
+    if p == 3:
+        mm_op3_load_leech3matrix(v, a)
+    elif p == 15:
+        mm_op15_load_leech3matrix(v, a)
+    else:
+        err = "Computation of kernel vector not supporte for modulus %s"
+        raise ValueError(err % p)
+    return a
+
+
+def kernel_vector(p, v, diag):
+    a = load_leech3matrix(p, v)
+    return leech3matrix_rank(a, diag) & 0xffffffffffff
+
 @pytest.mark.qstate
 def test_leech3matrix_kernel_vector(verbose = 0):
     print("Testing function leech3matrix_kernel_vector()")
@@ -180,11 +203,11 @@ def test_leech3matrix_kernel_vector(verbose = 0):
                 print("Part of tag A matrix")
                 print(v_a["A", :16, :16])
                 print("Kernel vector mod 3 expected:", str_v3(v3_kernel))
-            v3_obt = leech3matrix_kernel_vector(p, a, diag)
+            v3_obt = kernel_vector(p, a, diag)
             if verbose:
                 print("Kernel vector mod 3 obtained:", str_v3(v3_obt))
                 print("")
-            leech3matrix_load(p, a, a1)
+            a1 = load_leech3matrix(p, a)
             leech3matrix_sub_diag(a1, diag, 0);
             leech3matrix_sub_diag(a1, 2, 24);
             leech3matrix_echelon(a1);

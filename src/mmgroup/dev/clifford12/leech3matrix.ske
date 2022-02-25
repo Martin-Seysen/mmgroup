@@ -132,77 +132,8 @@ extern "C" {
 
 /// @endcond 
 
-/*************************************************************************
-*** Load a 24 times 24 times matrices mod 3
-*************************************************************************/
 
 // %%WITH N_COL = 3
-
-/// @cond DO_NOT_DOCUMENT 
-
-
-// Workhorse for function ``leech3matrix_load`` for p = 3.
-static
-int32_t leech3matrix_load_3(uint64_t *v, uint64_t *a)
-{
-    uint_fast32_t i, j = 0;
-    for (i = 0; i < 24; ++i) {
-        a[j] = v[i] & 0xffffffff;
-        a[j+1] = (v[i] >> 32) & 0xffff;
-        EXPAND_3_15(a[j]);
-        EXPAND_3_15(a[j+1]);
-        // %%FOR* k in range(2, N_COL)
-        a[j + %{k}] = 0;
-        // %%END FOR
-        j +=  %{N_COL};
-    } 
-    return 0;
-}
-
-
-// Workhorse for function ``leech3matrix_load`` for p = 15.
-static
-int32_t leech3matrix_load_15(uint64_t *v, uint64_t *a)
-{
-    uint_fast32_t i, j = 0;
-    for (i = 0; i < 48; i += 2) {
-        a[j] = v[i];
-        a[j + 1] = v[i + 1] & 0xffffffffULL;
-        a[j] = (a[j] & 0x3333333333333333ULL)
-             + ((a[j] >> 2) & 0x3333333333333333ULL);
-        a[j+1] = (a[j+1] & 0x3333333333333333ULL)
-             + ((a[j+1] >> 2) & 0x3333333333333333ULL);
-        REDUCE_MOD3(a[j]);
-        REDUCE_MOD3(a[j + 1]);
-        // %%FOR* k in range(2, N_COL)
-        a[j + %{k}] = 0;
-        // %%END FOR
-        j +=  %{N_COL};
-    } 
-    return 0;
-}
-
-
-/// @endcond 
-
-/** @brief Load the 'A' part of a vector of the representation of the monster
-
-   The function loads the part of with tag 'A' of a vector ``v`` of
-   the  representation of the monster modulo ``p`` to the matrix ``a``.
-   Here matrix ``a`` will be given in **matrix mod 3** encoding as
-   documented in the header of this file.
-
-   The function supports modulus ``p = 3, 15`` only. It returns 0
-   in case of success and a negative value otherwise.
-*/
-// %%EXPORT px
-int32_t leech3matrix_load(uint32_t p, uint64_t *v, uint64_t *a)
-{
-    if (p == 3) return leech3matrix_load_3(v, a);
-    if (p == 15) return leech3matrix_load_15(v, a);
-    return ERR_QSTATE12_PARAM;
-}
-
 
 
 
@@ -415,64 +346,6 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
     // matrix Ah converted to *Leech lattice mod 3 encoding*.
     return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[2*23 + 1]);
 }
-
-
-/*************************************************************************
-*** Kernel of a 24 times 24 times matrices mod 3
-*************************************************************************/
-
-/** @brief Kernel of 'A' part of a vector of the representation of the monster
-
-   DEPRECATED!
-
-   Let ``r`` be the rank of the ``24 times 24`` matrix ``B = A - d * 1``.
-   Here the entries of that matrix are taken modulo 3, ``d`` is an 
-   integer, and ``1`` is the unit matrix. 
-   Matrix ``A`` is the part of with tag 'A' of a  vector ``v`` of
-   the representation of the monster modulo ``p``.
-
-   If matrix ``B`` has rank 23 then its kernel is one dimensional. In 
-   that case the kernel contains two nonzero vectors ``+-w``. In any 
-   other case we put w = 0.
-
-   The function supports modulus ``p = 3, 15`` only. It returns the
-   value ``(r << 48) + w``, with ``w`` one of the two nonzero vectors
-   in the kernel of ``B`` given  in *Leech lattice mod 3 encoding* as 
-   described in *The C interface of the mmgroup project*. The function
-   returns 0 in case of any error.
-*/
-// %%EXPORT px
-uint64_t leech3matrix_kernel(uint32_t p, uint64_t *v, uint32_t diag)
-{
-    uint64_t i, a[24 *  %{N_COL}];
-    // Matrix ``a`` essentially stores the A part of vector ``v``
-    // in **matrix mod 3**  encoding.
-    // Load A part of v to matrix a, abort in case of error.
-    if (leech3matrix_load(p, v, a) < 0) return 0;
-    return leech3matrix_rank(a, diag);
-}
-
-/** @brief A variant of function ``leech3matrix_kernel``
-
-   DEPRECATED!
-
-   Let parameters ``p, v, diag`` and the matrix ``A - d * 1`` be 
-   as in function ``leech3matrix_kernel``. If that matrix has
-   rank 23 (modulo 3) then the function returns a nonzero vector
-   ``w`` in the kernel of that matrix, which is unique up to sign.
-   otherwise the function returns zero.
-
-   Vector ``w`` is given  in *Leech lattice mod 3 encoding* as 
-   described in *The C interface of the mmgroup project*. 
-*/
-// %%EXPORT px
-uint64_t leech3matrix_kernel_vector(uint32_t p, uint64_t *v, uint32_t diag)
-{
-    return leech3matrix_kernel(p, v, diag) & 0xffffffffffffULL;
-}
-
-
-
 
 
 

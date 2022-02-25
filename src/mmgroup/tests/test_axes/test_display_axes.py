@@ -19,12 +19,11 @@ from mmgroup import MM0, AutPL, Cocode, GCode, MMSpace, MMV, GcVector
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import bitmatrix64_solve_equation
-from mmgroup.clifford12 import leech3matrix_kernel
 from mmgroup import mat24
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
-
+from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3
 
 HEADER = r"""Classes of 2A axes
 
@@ -243,7 +242,7 @@ def display_norm_A(axis):
     d = 2 if norm_A == 4 else 0
     V15 = MMV(15)
     v = axis.v15
-    r = leech3matrix_kernel(15, v.data, d)    
+    r = mm_op15_eval_A_rank_mod3(v.data, d)    
     rank = r >> 48
     v3 = r & 0xffffffffffff
     s_A = "(A - %d * 1)" % d if d else "A"

@@ -9,7 +9,6 @@ from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import uint64_parity
-from mmgroup.clifford12 import leech3matrix_kernel_vector
 from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 
@@ -27,6 +26,7 @@ from mmgroup.mm15 import op_order_find_in_Gx0 as mm_op15_order_find_in_Gx0
 from mmgroup.mm15 import op_order_find_in_Qx0 as mm_op15_order_find_in_Qx0
 from mmgroup.mm15 import op_order_check_in_Gx0 as mm_op15_order_check_in_Gx0
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
+from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
 
 from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
 
@@ -94,7 +94,8 @@ def find_in_G_x0(w):
     if mm_op15_norm_A(w) != ORDER_TAGS[OFS_NORM_A]:
         err_in_g_x0 = 1
         return None        
-    w3 = leech3matrix_kernel_vector(15, w, ORDER_TAGS[OFS_DIAG_VA])
+    w3 = mm_op15_eval_A_rank_mod3(w, ORDER_TAGS[OFS_DIAG_VA])
+    w3 &= 0xffffffffffff
     if w3 == 0: 
         err_in_g_x0 = 2
         return None

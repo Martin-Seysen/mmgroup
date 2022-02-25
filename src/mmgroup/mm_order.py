@@ -18,7 +18,6 @@ from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import uint64_parity
-from mmgroup.clifford12 import leech3matrix_kernel_vector
 from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_add_eqn
@@ -26,6 +25,7 @@ from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_power_word
+from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
 
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
@@ -101,7 +101,7 @@ def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
     w94 = stabilizer_vector(v94 - v94 * g94, g94**2, 47)
     assert w94 is not None
     w = w71 + w94
-    v3 = leech3matrix_kernel_vector(15, w.data, diag)
+    v3 = mm_op15_eval_A_rank_mod3(w.data, diag) & 0xffffffffffff
     assert v3 != 0
     v_type4 = gen_leech3to2_type4(v3)
     assert v_type4 == 0x800000
