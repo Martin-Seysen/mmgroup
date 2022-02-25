@@ -97,7 +97,7 @@ extern "C" {
   array is stored in a field of 2 bits. 
 
   We expand the lower 16 bit fields from a length of 2 to a
-  length of 4, and store teh result in ``a``.  
+  length of 4, and store the result in ``a``.  
 */
 #define EXPAND_3_15(a) \
     (a) = ((a) & 0xffffULL) \
@@ -358,11 +358,72 @@ void leech3matrix_sub_diag(uint64_t *a, uint64_t diag, uint32_t offset)
 }
 
 
+
+/*************************************************************************
+*** Rank and kernel of a 24 times 24 times matrices mod 3
+*************************************************************************/
+
+/** @brief Rank and kernel of a ``24 times 24`` matrix modulo 3
+
+   Let ``r`` be the rank of the ``24 times 24`` matrix ``b = a - d * 1``.
+   Here the entries of that matrix are taken modulo 3, ``d`` is an 
+   integer, and ``1`` is the unit matrix. 
+   Input ``a`` is a 24 times 24 matrix in  **matrix mod 3** encoding 
+   as documented in the header of this file. 
+
+   Let ``r`` be the rank of matrix ``b`` with entries taken modulo 3.
+   If matrix ``b`` has rank 23 then its kernel is one dimensional. In 
+   that case the kernel contains two nonzero vectors ``+-w``, and we
+   define ``w`` to be one of these vectors. Otherwise we let ``w`` be 
+   the zero vector.
+
+   The function returns the value ``(r << 48) + w``, with ``w`` the
+   vector defined above given in *Leech lattice mod 3 encoding* as 
+   described in *The C interface of the mmgroup project*. 
+
+   Input ``a`` is destroyed.
+*/
+// %%EXPORT px
+uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
+{
+    uint64_t i;
+
+    // We now consider a as a pair of two matrices Ah, Al, with
+    // Al in columns 0,...,23 and Ah in columns 24,...,47.
+    // Store b = b - d * 1 in Al and the unit matrix 1 in Ah.
+    for (i = 0; i < 72; i += 3) {
+        a[i+1] &= 0xffffffffULL;
+        a[i+2] = 0;
+    }
+    leech3matrix_sub_diag(a, d, 0);
+    leech3matrix_sub_diag(a, 2, 24);
+    // Echelonize the pair (Ah, Al) simultaneously, so that 
+    // Al is in (non-reduced) echelon form. Then the ``24-r``
+    // rows with highest indices of Ah contain the kernel of A'.
+    leech3matrix_echelon(a);
+    // Store Ah in the entries of ``a`` with odd indices and
+    // Al in the entries of ``a`` with even indices.
+    leech3matrix_compress(a, a);
+    // Compute the rank of Al in i
+    for (i = 2 * 24; i > 0; i -= 2) if (a[i-2]) goto rank_computed;
+    i = 0;
+  rank_computed:
+    i >>= 1; 
+    // Return i << 48 if i != 23
+    if (i != 23) return i << 48;
+    // Return (24 << 48) + w  if  i == 23. Here w is row 23 of 
+    // matrix Ah converted to *Leech lattice mod 3 encoding*.
+    return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[2*23 + 1]);
+}
+
+
 /*************************************************************************
 *** Kernel of a 24 times 24 times matrices mod 3
 *************************************************************************/
 
 /** @brief Kernel of 'A' part of a vector of the representation of the monster
+
+   DEPRECATED!
 
    Let ``r`` be the rank of the ``24 times 24`` matrix ``B = A - d * 1``.
    Here the entries of that matrix are taken modulo 3, ``d`` is an 
@@ -386,34 +447,14 @@ uint64_t leech3matrix_kernel(uint32_t p, uint64_t *v, uint32_t diag)
     uint64_t i, a[24 *  %{N_COL}];
     // Matrix ``a`` essentially stores the A part of vector ``v``
     // in **matrix mod 3**  encoding.
-
     // Load A part of v to matrix a, abort in case of error.
     if (leech3matrix_load(p, v, a) < 0) return 0;
-    // We now consider a as a pair of two matrices Ah, Al, with
-    // Al in columns 0,...,23 and Ah in columns 24,...,47.
-    // Store A' = A - d * 1 in Al and the unit matrix 1 in Ah.
-    leech3matrix_sub_diag(a, diag, 0);
-    leech3matrix_sub_diag(a, 2, 24);
-    // Echelonize the pair (Ah, Al) simultaneously, so that 
-    // Al is in (non-reduced) echelon form. Then the ``24-r``
-    // rows with highest indices of Ah contain the kernel of A'.
-    leech3matrix_echelon(a);
-    // Store Ah in the entries of ``a`` with odd indices and
-    // Al in the entries of ``a`` with even indices.
-    leech3matrix_compress(a, a);
-    // Compute the rank of Al in i
-    for (i = 2 * 24; i > 0; i -= 2) if (a[i-2]) goto rank_computed;
-    i = 0;
-  rank_computed:
-    i >>= 1; 
-    // Return i << 48 if i != 23
-    if (i != 23) return i << 48;
-    // Return (24 << 48) + w  if  i == 23. Here w is row 23 of 
-    // matrix Ah converted to *Leech lattice mod 3 encoding*.
-    return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[2*23 + 1]);
+    return leech3matrix_rank(a, diag);
 }
 
 /** @brief A variant of function ``leech3matrix_kernel``
+
+   DEPRECATED!
 
    Let parameters ``p, v, diag`` and the matrix ``A - d * 1`` be 
    as in function ``leech3matrix_kernel``. If that matrix has

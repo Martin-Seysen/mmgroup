@@ -99,6 +99,7 @@ def benchmark_mul(ncases = 20):
     indices, glist = make_mul_samples()
     index_pairs = [sample(indices, 2) for i in range(ncases)]
     #print(glist, "\n", index_pairs)
+    glist[0] *= glist[1]
     t_start = time.process_time()
     for i, j in index_pairs:
         glist[i] *= glist[j]

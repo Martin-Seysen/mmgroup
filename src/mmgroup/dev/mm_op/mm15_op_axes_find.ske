@@ -313,7 +313,7 @@ uint32_t mm_op%{P}_2A_axis_type(uint64_t *v)
     norm = mm_op15_norm_A(v);
     res = axes_types[norm & 15];
     if (res < 0x0F0) return res << 24;
-    r = leech3matrix_kernel(15, v, res & 0xf);    
+    r =  mm_op15_eval_A_rank_mod3(v, res & 0xf);    
     rank = (uint32_t)(r >> 48);
     v3 = r & 0xffffffffffffULL;
     

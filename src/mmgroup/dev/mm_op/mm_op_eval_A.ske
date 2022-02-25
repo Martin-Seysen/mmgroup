@@ -14,6 +14,7 @@
 
 
 #include "mm_op%{P}.h"   
+#include "clifford12.h"
  
 // %%EXPORT_KWD MM_OP%{P}_API
   
@@ -28,7 +29,7 @@
 
 
 /*************************************************************************
-***  auxilary function
+***  Auxilary function
 *************************************************************************/
 
 /** @brief Auxiliary function for ``mm_op%{P}_eval_A``
@@ -253,6 +254,152 @@ uint32_t mm_op%{P}_norm_A(uint_mmv_t *v)
     }                                  // End main loop of rows
     return norm % %{P};
 }
+
+
+/*************************************************************************
+***  Operate with a A art of rep as a 24 times 24 matrix modulo 3 
+*************************************************************************/
+
+// %%WITH N_COL = 3
+
+// %%IF* P == 3
+/// @cond DO_NOT_DOCUMENT 
+
+/** @brief Expand a bit field of integers modulo 3
+
+  We assume that an array of integers (mod 3) is stored in an
+  integer ``a`` of type ``uint64_t``. Here each entry of that
+  array is stored in a field of 2 bits. 
+
+  We expand the lower 16 bit fields from a length of 2 to a
+  length of 4, and store the result in ``a``.  
+*/
+#define EXPAND_3_15(a) \
+    (a) = ((a) & 0xffffULL) \
+        +  (((a) & 0xffff0000ULL) << 16); \
+    (a) = ((a) & 0xff000000ffULL) \
+        +  (((a) & 0xff000000ff00ULL) << 8); \
+    (a) = ((a) & 0xf000f000f000fULL) \
+        +  (((a) & 0xf000f000f000f0ULL) << 4); \
+    (a) = ((a) & 0x303030303030303ULL) \
+        +  (((a) & 0xc0c0c0c0c0c0c0cULL) << 2)
+
+/// @endcond
+// %%END IF
+
+
+
+/** @brief Load the 'A' part of a vector of the representation of the monster
+
+   The function loads the part of with tag 'A' of a vector ``v`` of
+   the  representation of the monster modulo ``p`` to the matrix ``a``.
+   Here matrix ``a`` will be given in **matrix mod 3** encoding as
+   documented in the header of file ``leech3matrix.c``.
+
+   // %%IF*  P in [3,15]
+   The function returns 0.
+   // %%ELSE IF P = 255
+   The function is not impelemented for modulus %{P}. So it returns -1.
+   // %%ELSE 
+   The function does not make sense for modulus %{P}. So it returns -1.
+   // %%END IF
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_load_leech3matrix(uint_mmv_t *v, uint64_t *a)
+{
+  // %%IF* P == 3
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) {
+        // %%IF* INT_BITS < 64
+        a[0] = v[0];
+        a[1] = v[1] & 0xffff;
+        // %%ELSE
+        a[0] = v[0] & 0xffffffffULL; 
+        a[1] = (v[0] >> 32) & 0xffff;  
+        // %%END IF
+        v += %{V24_INTS};
+        EXPAND_3_15(a[0]);
+        EXPAND_3_15(a[1]);
+        // %%FOR* k in range(2, N_COL)
+        a[j + %{k}] = 0;
+        // %%END FOR
+        a +=  %{N_COL};
+    } 
+    return 0;
+  // %%ELSE IF P == 15
+    uint_fast32_t i;
+    uint64_t w0, w1, tmp;
+    for (i = 0; i < 24; ++i) {
+        // %%IF* INT_BITS < 64
+        w0 = ((uint64_t)(v[1]) << 32) + v[0];
+        w1 = v[2];
+        // %%ELSE
+        w0 = v[0]; 
+        w1 = v[1] & 0xffffffffULL;  
+        // %%END IF
+        v += %{V24_INTS};
+        // %%FOR* k in range(2)
+        w%{k} = (w%{k} & 0x3333333333333333ULL)
+             + ((w%{k} >> 2) & 0x3333333333333333ULL);
+        tmp = w%{k}  & 0x4444444444444444ULL; 
+        a[%{k}] =  w%{k} - tmp + (tmp >> 2);
+        // %%END FOR
+        // %%FOR* k in range(2, N_COL)
+        a[%{k}] = 0;
+        // %%END FOR
+        a +=  %{N_COL};
+    } 
+    return 0;
+  // %%ELSE
+    return -1;
+  // %%END IF
+}
+
+
+
+/** @brief Kernel of 'A' part of a vector of the representation of the monster
+
+   Let ``a`` be the symmetric 24 times matrix corrsponding to the part 
+   with  tag 'A' of a input vector ``v`` in the representation of 
+   the  monster  modulo `%{P}. Let  ``b = a - d * 1``, for an integer
+   input `d`, where ``1`` is the unit matrix. 
+
+   Let ``r`` be the rank of matrix ``b`` with entries taken modulo 3.
+   If matrix ``b`` has rank 23 then its kernel is one dimensional. In 
+   that case the kernel contains two nonzero vectors ``+-w``, and we
+   define ``w`` to be one of these vectors. Otherwise we let ``w`` be 
+   the zero vector.
+
+   The function returns the value ``(r << 48) + w``, with ``w`` the
+   vector defined above given in *Leech lattice mod 3 encoding* as 
+   described in *The C interface of the mmgroup project*. 
+
+   // %%IF*  P in [3,15]
+   // %%ELSE IF P = 255
+   This function is not impelemented for modulus %{P}. 
+   So it returns 0xffff000000000000ULL.
+   // %%ELSE 
+   This function does not make sense for modulus %{P}.
+   So it returns 0xffff000000000000ULL.
+   // %%END IF
+**/
+// %%EXPORT px
+uint64_t  mm_op%{P}_eval_A_rank_mod3(uint64_t *v, uint32_t d)
+{
+   // %%IF* P in [3, 15]
+     uint64_t a[24 *  %{N_COL}];
+     mm_op%{P}_load_leech3matrix(v, a);
+     // // leech3matrix_load(15, v, a);
+     return leech3matrix_rank(a, d);
+   // %%ELSE
+     return 0xffff000000000000ULL;
+   // %%END IF
+}
+
+
+
+// %%END WITH
+
 
 
 //  %%GEN h
