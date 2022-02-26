@@ -17,7 +17,7 @@ from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
 from mmgroup.mm import mm_aux_get_mmv1
 from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_axes_find_short as mm_op15_axes_find_short
+from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
@@ -61,7 +61,7 @@ def short(v, value, verbose = 0):
     ``value``. That list is returned as a numpy array.
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0) 
+    l = mm_op15_eval_X_find_abs(v.data, short, len(short),  value, 0) 
     if verbose:
         print(S_AXIS % (l, value))
     return short[:l]
@@ -77,7 +77,7 @@ def span(v, value, verbose = 0):
     as a list of vectors in a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short), value, 0)  
+    l = mm_op15_eval_X_find_abs(v.data, short, len(short), value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_basis(short, l, basis, 24)
@@ -102,7 +102,7 @@ def radical(v, value, verbose = 0):
     a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_axes_find_short(v.data, short, len(short),  value, 0)  
+    l = mm_op15_eval_X_find_abs(v.data, short, len(short),  value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_radical(short, l, basis, 24)

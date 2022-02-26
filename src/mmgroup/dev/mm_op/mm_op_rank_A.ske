@@ -157,7 +157,7 @@ int32_t mm_op%{P}_load_leech3matrix(uint_mmv_t *v, uint64_t *a)
    // %%END IF
 **/
 // %%EXPORT px
-uint64_t  mm_op%{P}_eval_A_rank_mod3(uint64_t *v, uint32_t d)
+uint64_t  mm_op%{P}_eval_A_rank_mod3(uint_mmv_t *v, uint32_t d)
 {
    // %%IF* P in [3, 15]
      uint64_t a[24 *  %{N_COL}];

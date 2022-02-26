@@ -557,10 +557,10 @@ import_pending = True
 
 def complete_import():
     global mm_op15_eval_A, mm_op15_2A_axis_type
-    global op_count_short, XLeech2, mm_op15_count_short 
+    global XLeech2, mm_op15_eval_X_count_abs 
     from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
     from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type 
-    from mmgroup.mm15 import op_count_short as mm_op15_count_short
+    from mmgroup.mm15 import op_eval_X_count_abs as mm_op15_eval_X_count_abs
     from mmgroup import XLeech2
     import_pending = False    
 
@@ -737,7 +737,7 @@ class MMVector(AbstractMmRepVector):
             err = "Method supported for characteristic p = 15 only"
             raise ValueError(err)
         a = np.zeros(8, dtype = np.uint32)
-        mm_op15_count_short(self.data, a)
+        mm_op15_eval_X_count_abs(self.data, a)
         return tuple(a)
 
     def axis_type(self, e = 0):

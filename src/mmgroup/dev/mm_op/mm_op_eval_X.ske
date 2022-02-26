@@ -25,7 +25,7 @@
 
 
 /*********************************************************************
-** Auxiliary functions for function mm_op%{P}_axes_find_short
+** Auxiliary functions for function mm_op%{P}_eval_X_find_abs
 *********************************************************************/
 
 typedef struct {
@@ -184,17 +184,17 @@ static int32_t find_short_all(
 
   The function returns the number of valid entries in the
   array ``p_out``. If the length ``n`` of ``p_out`` is too small then
-  some entries will be dropped.
+  some entries will be dropped without notice.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_axes_find_short(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
+uint32_t mm_op%{P}_eval_X_find_abs(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
 {
      return find_short_all(v, p_out, n, y0, y1);
 }
 
 
 /*********************************************************************
-** Auxiliary functions for function mm_op%{P}_count_short
+** Auxiliary functions for function mm_op%{P}_eval_X_count_abs
 *********************************************************************/
 
 
@@ -251,7 +251,7 @@ static inline void count_short64(
   part of ``v`` with absolute value ``i`` for ``0 <= i <= %{int:P//2}. 
 */
 // %%EXPORT px
-void mm_op%{P}_count_short(uint_mmv_t *v, uint32_t *p_out)
+void mm_op%{P}_eval_X_count_abs(uint_mmv_t *v, uint32_t *p_out)
 {
      uint_fast32_t a[16], i;
 

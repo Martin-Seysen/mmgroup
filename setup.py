@@ -388,6 +388,17 @@ PYX_SOURCE_P = "mm_op{P}.pyx"
 
 
 def list_source_files(p):
+    """Return list of fully-qualified names of C sources for modulus p
+
+    This list of C source files is required for building the Cython
+    extension "mmgroup_mm_op{P}", where {P} is to be replaced by the
+    modulus p.
+
+    This function calls function ``mm_op_p_sources(p)`` in module
+    ``codegen_mm_op``. Function ``mm_op_p_sources(p)`` returns a list
+    of strings of shape "mm{P}_op_word". In case p = 7 this string
+    means the C file "mm7_op_word.c".
+    """
     sources = []
     for f in mm_op_p_sources(p):
          sources.append(os.path.join(C_DIR, f.format(P = p) + ".c"))

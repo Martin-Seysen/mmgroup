@@ -65,7 +65,7 @@ typedef struct {
   value of the entry of ``v`` corresponding a unit vector labelled 
   by ``v2`` is equal to ``value0`` or ``value1` . That list is 
   stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
-  as in function ``mm_op%{P}_axes_find_short``.
+  as in function ``mm_op%{P}_eval_X_find_abs``.
 */
  
 static inline void get_short(
@@ -75,7 +75,7 @@ static inline void get_short(
     axes_work_t *p_work
 )
 {
-    p_work->n_short = mm_op%{P}_axes_find_short(v, p_work->v_short,
+    p_work->n_short = mm_op%{P}_eval_X_find_abs(v, p_work->v_short,
                 MAX_SHORT_ARRAY,  value0, value1);
 }
 
