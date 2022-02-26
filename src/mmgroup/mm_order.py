@@ -18,8 +18,6 @@ from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import uint64_parity
-from mmgroup.clifford12 import leech3matrix_watermark
-from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
@@ -37,6 +35,7 @@ from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
 from mmgroup.mm15 import op_load_order_vector as mm_op15_load_order_vector
 from mmgroup.mm15 import op_load_order_tag_vector as mm_op15_load_order_tag_vector
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
+from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
 
 
 
@@ -149,7 +148,7 @@ def compute_order_vector(recompute = False, verbose = 0):
     TAGS_X = np.array(order_vector_data.TAGS_X, dtype = np.uint32)
     TAG_SIGN =  np.array(order_vector_data.TAG_SIGN, dtype = np.uint32) 
     WATERMARK_PERM = np.zeros(24, dtype = np.uint32)
-    ok = leech3matrix_watermark(15, OV, WATERMARK_PERM)
+    ok = mm_op15_watermark_A(OV, WATERMARK_PERM)
     assert ok >= 0
 
     SOLVE_YT = np.zeros(11, dtype = np.uint64)

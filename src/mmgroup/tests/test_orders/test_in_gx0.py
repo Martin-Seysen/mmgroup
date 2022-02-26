@@ -9,7 +9,6 @@ from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import uint64_parity
-from mmgroup.clifford12 import leech3matrix_watermark_perm_num
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 
 
@@ -27,6 +26,7 @@ from mmgroup.mm15 import op_order_find_in_Qx0 as mm_op15_order_find_in_Qx0
 from mmgroup.mm15 import op_order_check_in_Gx0 as mm_op15_order_check_in_Gx0
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
+from mmgroup.mm15 import op_watermark_A_perm_num as mm_op15_watermark_A_perm_num
 
 from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
 
@@ -108,7 +108,7 @@ def find_in_G_x0(w):
     assert 0 <= len_g1 <= 6 
     res = mm_op15_word_tag_A(wA, g1i, len_g1, 1)
     assert res == 0
-    perm_num = leech3matrix_watermark_perm_num(15, 
+    perm_num = mm_op15_watermark_A_perm_num(
         ORDER_TAGS[OFS_WATERMARK_PERM:], wA)
     if perm_num < 0: 
         err_in_g_x0 = 4

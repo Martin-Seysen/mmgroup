@@ -11,11 +11,11 @@ from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mm_space import MMSpace
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
-from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_mmv_extract_sparse
 from mmgroup.mm3 import op_eval_A_rank_mod3 as mm_op3_eval_A_rank_mod3 
+from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
 from mmgroup.mm_order import stabilizer_vector
 from mmgroup.mm_order import make_order_vector
 from mmgroup.mm_order import map_y, map_x
@@ -436,7 +436,7 @@ def check_v(v, verbose = 0):
                 print("Vector may be zero (mod %d)" % p)
             return None
     mark = np.zeros(24, dtype = np.uint32)
-    if leech3matrix_watermark(15, v.data, mark) < 0:
+    if mm_op15_watermark_A(v.data, mark) < 0:
         if verbose:
             print("Permutation watermarking failed")
         return None

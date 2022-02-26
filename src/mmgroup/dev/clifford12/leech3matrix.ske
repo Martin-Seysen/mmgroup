@@ -133,13 +133,14 @@ extern "C" {
 /// @endcond 
 
 
-// %%WITH N_COL = 3
 
 
 
 /*************************************************************************
 *** Echelonize a 24 times 24 times matrices mod 3
 *************************************************************************/
+
+// %%WITH N_COL = 3
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -350,141 +351,7 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
 
 
 
-/*************************************************************************
-*** Watermark a 24 times 24 times matrices mod 15
-*************************************************************************/
-
-
-/// @cond DO_NOT_DOCUMENT 
-
-static inline void insertsort(uint32_t *a, int32_t n)
-// Sort the array ``a`` of length ``n``.
-{
-    int_fast32_t i, j;
-    for (i = 1; i < n; i += 1) {
-        uint32_t temp = a[i];
-        for (j = i; j >= 1 && a[j - 1] > temp; --j) a[j] = a[j - 1];
-        a[j] = temp;
-    }
-}
-
-
-/// @endcond
-
-
-/** @brief Watermark 'A' part of a vector of the representation of the monster
-
-   Let matrix ``A`` be the part with tag 'A' of a  vector ``v`` of
-   the representation of the monster modulo ``p``.
-
-   Then we watermark 24 the rows of matrix ``A``. For each of the
-   rows ``A[i], 0 <= i < 24`` we compute a watermark ``w(i)`` in
-   the array ``w``. Note that the watermark ``w(i)`` contains an
-   information about the marked row ``i`` in its lower bis. We store
-   the sorted array of these watermarks in the array ``w`` of length
-   24. If all these watermarks (ignoring the information about the
-   row) are different, we can easily recognize a permutation of the
-   rows of matrix ``A`` by comparing the watermark of matrix ``A``
-   with the watermark of the permuted matrix ``A``.
-
-   The watermark ``w[i] `` depends on the distribution of the
-   absolute values of the entries ``w[i, j] `` (modulo ``p``) of
-   row ``i``. Thus permutations of the columns and sign changes in
-   the matrix do not affect these watermarks.
-
-   The function supports modulus ``p = 15`` only.  It returns 0
-   in case of success and a negative value in case of error.
-
-   In case ``p = 15`` the watermark of a row \f$i\f$
-   with \f$ i + \sum_{j=1}^7 32 \cdot 13^{j-1} \cdot e_j\f$, where 
-   \f$e_j\f$ is the number of entries with absolute value \f$j\f$
-   in that row.
-*/
-// %%EXPORT px
-int32_t leech3matrix_watermark(uint32_t p, uint64_t *v, uint32_t *w)
-{
-    uint_fast32_t i, j, k, m, d[8];
-    uint64_t x, y;
-
-    if (p == 15) {
-        d[0] = 0; d[1] = 0x20;
-        for (i = 2; i < 8; ++i) d[i] = 13 * d[i-1];
-        for (i = 0; i < 24; ++i) {
-            m = 0;
-            for (j = 0; j < 2; ++j) {
-                x = v[2*i + j];
-                y = x & 0x8888888888888888ULL;
-                y = (y << 1) - (y >> 3);
-                x ^= y;
-                for (k = 0; k < 64 - (j << 5); k += 4) {
-                    m += d[(x >> k) & 7];
-                }                
-            }
-            w[i] = (m & 0xffffffe0ULL) + i;
-        }
-        insertsort(w, 24);
-        for (i = 0; i < 23; ++i) {
-            if (((w[i] ^ w[i+1]) & 0xffffffe0) == 0) 
-               return ERR_QSTATE12_INTERN_PAR;
-        }
-        return 0;
-    }
-    else {
-        for (i = 0; i < 24; ++i) w[i] = 24;
-        return ERR_QSTATE12_INTERN_PAR;
-    }
-}
-
-
-/** @brief Compute permutation from watermarks of matrices
-
-   Let matrix ``A`` be the part with tag 'A' of a  vector ``v``
-   of the representation of the monster modulo ``p``. Let ``w``
-   be the watermark of another matrix ``A'`` which is obtained
-   from ``A`` by permutations of the rows and columns, and by
-   sign changes. Here the watermark ``w`` must have been computed
-   by function ``leech3matrix_watermark``.
-
-   Then the function watermarks matrix ``A`` and computes a
-   permutation that maps ``A'`` to ``A``. If that permutation
-   is in the Mathieu group \f$M_{24}\f$ then the function
-   returns the number of that permutation, as given by
-   function ``mat24_perm_to_m24num`` in file ``mat24_functions.c``.
-
-   The function supports modulus ``p = 15`` only.  It returns a
-   nonegative permutation number in case of success and a negative 
-   value in case of error.
-
-   If all watermarks in the array ``w`` (ignoring the information
-   about the row in the lower 5 bits) are different then there is
-   at most one permutation that maps ``A'`` to ``A``. If that
-   permutation is in \f$M_{24}\f$ then the function returns the
-   number of that permutation. In all other cases the function
-   may either fail or return garbage.
-*/
-// %%EXPORT px
-int32_t leech3matrix_watermark_perm_num(uint32_t p, uint32_t *w, uint64_t *v)
-{
-    uint32_t w1[24];
-    uint8_t perm[32];
-    uint_fast32_t i;
-    
-    if (leech3matrix_watermark(p, v, w1) < 0) 
-        return ERR_QSTATE12_INTERN_PAR;
-    for (i = 0; i < 24; ++i) perm[i] = 24;
-    for (i = 0; i < 24; ++i) {
-        if ((w[i] ^ w1[i]) & 0xffffffe0) 
-            return ERR_QSTATE12_INTERN_PAR;
-        perm[w[i] & 0x1f] = w1[i] & 0x1f;
-    }
-    if (mat24_perm_check(perm)) 
-        return ERR_QSTATE12_INTERN_PAR;
-    return mat24_perm_to_m24num(perm);
-}
-
-
 // %%END WITH   # N_COL = 3
-
 
 
 /*************************************************************************

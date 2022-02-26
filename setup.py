@@ -386,33 +386,6 @@ ext_modules = [
 
 PYX_SOURCE_P = "mm_op{P}.pyx"
 
-"""
-
-C_SOURCES_P = [
-    "mm{P}_op_pi",
-    "mm{P}_op_misc",
-    "mm{P}_op_xy",
-    "mm{P}_op_t",
-    "mm{P}_op_xi",
-    "mm{P}_op_word",
-  #  "mm{P}_op_eval_A",
-]
-
-
-# Additions for the list C_SOURCES_P for spcific values p
-C_SOURCES_SPECIFIC_P = defaultdict(list)
-C_SOURCES_SPECIFIC_P.update( {
-     3: [
-          "mm{P}_op_eval_A",
-        ],
-    15: [ "mm15_op_order", "mm15_op_axes_find", 
-          "mm15_op_axes", 
-          "mm{P}_op_eval_A",
-        ],
-} )
-
-"""
-
 
 def list_source_files(p):
     sources = []
