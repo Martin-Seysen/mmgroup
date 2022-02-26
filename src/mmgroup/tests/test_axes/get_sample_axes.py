@@ -25,7 +25,6 @@ if __name__ == "__main__":
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 
-from mmgroup.clifford12 import leech3matrix_watermark
 from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers
 
 

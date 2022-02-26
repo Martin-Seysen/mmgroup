@@ -23,7 +23,6 @@ if __name__ == "__main__":
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 from mmgroup import GcVector, AutPL
 
-#from mmgroup.clifford12 import leech3matrix_watermark
 
 from mmgroup.tests.test_axes.get_sample_axes import g_central, GVector
 from mmgroup.tests.test_axes.get_sample_axes import generate_axis

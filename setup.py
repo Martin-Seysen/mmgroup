@@ -46,6 +46,7 @@ from config import REAL_SRC_DIR
 from config import C_DIR, PXD_DIR
 from config import PRIMES
 
+from codegen_mm_op import mm_op_p_sources
 
 
 ####################################################################
@@ -383,8 +384,9 @@ ext_modules = [
 # all small primes P in the set PRIMES. 
 ####################################################################
 
-
 PYX_SOURCE_P = "mm_op{P}.pyx"
+
+"""
 
 C_SOURCES_P = [
     "mm{P}_op_pi",
@@ -409,21 +411,23 @@ C_SOURCES_SPECIFIC_P.update( {
         ],
 } )
 
-
-mm_op_shared = {}
+"""
 
 
 def list_source_files(p):
     sources = []
-    for f in C_SOURCES_P + C_SOURCES_SPECIFIC_P[p]:
+    for f in mm_op_p_sources(p):
          sources.append(os.path.join(C_DIR, f.format(P = p) + ".c"))
     return sources
+
+
+mm_op_shared = {}
 
     
 for p in PRIMES:
     mm_op_shared[p] = shared = SharedExtension(
         name = "mmgroup.mmgroup_mm_op%d" % p, 
-        sources = list_source_files(p),
+        sources =  list_source_files(p),
         libraries = shared_libs_stage2, 
         include_dirs = [PACKAGE_DIR, C_DIR],
         library_dirs = [PACKAGE_DIR, C_DIR],

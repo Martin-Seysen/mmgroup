@@ -152,29 +152,20 @@ from collections import defaultdict
 import warnings
 from numbers import Integral
 
-from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
-from config import REAL_SRC_DIR 
-sys.path.append(REAL_SRC_DIR)
 
+
+from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
+from config import REAL_SRC_DIR
 from config import INT_BITS, PRIMES
 SKE_DIR = os.path.join(DEV_DIR, "mm_op")
 
 
 
-from mmgroup.generate_c import TableGenerator, make_doc, format_item
-from mmgroup.generate_c import pxd_to_pyx, pxd_to_function_list
-
-from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
-from mmgroup.dev.mm_basics import mm_tables_xi
-
-from mmgroup.dev.hadamard import hadamard_t 
-from mmgroup.dev.hadamard import hadamard_xi 
-
-from mmgroup.dev.mm_op import mm_op
-
-
-
-
+if  __name__ == "__main__":
+    sys.path.append(REAL_SRC_DIR)
+    from mmgroup.generate_c import TableGenerator, make_doc, format_item
+    from mmgroup.generate_c import pxd_to_pyx, pxd_to_function_list
+    sys.path.pop()
 
 
 VERBOSE = 0
@@ -200,8 +191,8 @@ C_FILE_SKELETONS = [
 ]
 
 # Additions for the list C_FILE_SKELETONS for spcific values p
-C_FILE_SPECIFIC_SKEKETONS = defaultdict(list)
-C_FILE_SPECIFIC_SKEKETONS.update( {
+C_FILE_SPECIFIC_SKELETONS = defaultdict(list)
+C_FILE_SPECIFIC_SKELETONS.update( {
    3:   [
           "mm{P}_op_eval_A",
         ],
@@ -210,6 +201,10 @@ C_FILE_SPECIFIC_SKEKETONS.update( {
          "mm{P}_op_eval_A",
         ],
 } )
+
+
+def mm_op_p_sources(p):
+    return C_FILE_SKELETONS + C_FILE_SPECIFIC_SKELETONS[p]
 
 
 ##########################################################################
@@ -285,32 +280,38 @@ MM_BASICS_CONSTANTS = [
 # Entering tables and automatically generated code
 ##########################################################################
 
+TABLE_CLASSES = None
 
-if "mockup" in sys.argv[1:]:
-    TABLE_CLASSES = [
-        mm_op.Mockup_MM_Op,
-    ]
-else:
-    from mmgroup.dev.mm_op import mm_op_pi, mm_op_xy, mm_op_xi
-    TABLE_CLASSES = [
-        mm_op.MM_Op,
-        mm_op_xi.MonomialOp_xi,
-        mm_op_pi.Perm24_Benes,
-        mm_op_pi.SmallPerm64,
-        mm_op_pi.ScalarProd2048,    
-        mm_op_xy.Perm64_xy, 
-        hadamard_t.HadamardOpT64,
-        hadamard_t.HadamardOpT3,
-        hadamard_t.HadamardOpT3A,
-        hadamard_xi.HadamardOpXi64,
-        hadamard_xi.HadamardOpXi16,
-    ]  
+def table_classes():
+    global TABLE_CLASSES
+    if not TABLE_CLASSES is None:
+        return  TABLE_CLASSES
+    from mmgroup.dev.mm_op import mm_op
 
-
-MORE_TABLE_CLASSES = [
-]
-
-TABLE_CLASSES += MORE_TABLE_CLASSES
+    if "mockup" in sys.argv[1:]:
+        TABLE_CLASSES = [
+            mm_op.Mockup_MM_Op,
+        ]
+    else:
+        from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
+        from mmgroup.dev.mm_basics import mm_tables_xi
+        from mmgroup.dev.hadamard import hadamard_t 
+        from mmgroup.dev.hadamard import hadamard_xi 
+        from mmgroup.dev.mm_op import mm_op_pi, mm_op_xy, mm_op_xi
+        TABLE_CLASSES = [
+            mm_op.MM_Op,
+            mm_op_xi.MonomialOp_xi,
+            mm_op_pi.Perm24_Benes,
+            mm_op_pi.SmallPerm64,
+            mm_op_pi.ScalarProd2048,    
+            mm_op_xy.Perm64_xy, 
+            hadamard_t.HadamardOpT64,
+            hadamard_t.HadamardOpT3,
+            hadamard_t.HadamardOpT3A,
+            hadamard_xi.HadamardOpXi64,
+            hadamard_xi.HadamardOpXi16,
+        ]  
+    return TABLE_CLASSES
 
     
 ##########################################################################
@@ -348,7 +349,7 @@ def make_c_h_pxd(p):
     tables = {}
     directives = {}
     global generated_tables
-    for table_class in TABLE_CLASSES:
+    for table_class in table_classes():
         table_instance = table_class(p)
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
@@ -360,7 +361,7 @@ def make_c_h_pxd(p):
         ske_file = name.format(P = "") + ".ske"
         ske_path = os.path.join(SKE_DIR, ske_file)
         all_ske_files.append(ske_path)
-    for name in C_FILE_SKELETONS + C_FILE_SPECIFIC_SKEKETONS[p]:
+    for name in mm_op_p_sources(p):
         ske_file = name.format(P = "") + ".ske"
         ske_path = os.path.join(SKE_DIR, ske_file)
         c_file = name.format(P = p) + ".c"
@@ -420,6 +421,7 @@ def generate_pyx(p, pxd_files):
     and stores it in the current directory. Cython will use the .pyx file 
     to build a wrapper for all generated C functions. 
     """
+    from mmgroup.dev.mm_op import mm_op
     def pyx_comment(text, f):
         print("\n" + "#"*70 + "\n### %s\n" % text + "#"*70 + "\n\n",file=f)
 
