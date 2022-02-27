@@ -12,8 +12,7 @@ if __name__ == "__main__":
 
 
 from mmgroup import MM0, MMSpace, MMV
-from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
-
+from mmgroup.mm_reduce import mm_reduce_2A_axis_type
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
 from mmgroup.tests.test_axes.test_reduce_axis import leech_type
@@ -41,7 +40,7 @@ def reduce_2B(v, verbose):
 def reduce_4A(v, verbose):
     if verbose:
         print(S_KER % ( 4))
-    return [mm_op15_2A_axis_type(v.data) & 0xffffff]
+    return [mm_reduce_2A_axis_type(v.data) & 0xffffff]
 
 def reduce_4BC(v, verbose):
     return radical(v, 1, verbose)
@@ -49,7 +48,7 @@ def reduce_4BC(v, verbose):
 def reduce_6A(v, verbose):
     if verbose:
         print(S_KER % (2))
-    vt = mm_op15_2A_axis_type(v.data) & 0xffffff
+    vt = mm_reduce_2A_axis_type(v.data) & 0xffffff
     a = short(v, 5, verbose)
     if verbose:
         s = "  Check vectors v + x for all x in that set of vectors"

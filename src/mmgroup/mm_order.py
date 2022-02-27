@@ -31,11 +31,11 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_order as mm_op15_order
 from mmgroup.mm15 import op_store_order_vector as mm_op15_store_order_vector
 from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
-from mmgroup.mm15 import op_reduce_M as mm_op15_reduce_M
 from mmgroup.mm15 import op_load_order_vector as mm_op15_load_order_vector
 from mmgroup.mm15 import op_load_order_tag_vector as mm_op15_load_order_tag_vector
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
+from mmgroup.mm_reduce import mm_reduce_M
 
 
 
@@ -394,7 +394,7 @@ def reduce_mm(g, check = True):
         compute_order_vector()
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_M(g._data, g.length, g1)
+    res = mm_reduce_M(g._data, g.length, g1)
     reduce_mm_time = time.perf_counter() - t_start
     if (res < 0):
         err = "Reduction of element of monster failed"

@@ -11,7 +11,7 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 from mmgroup import MM0, MMSpace, MMV
-from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
+from mmgroup.mm_reduce import mm_reduce_2A_axis_type
 
 from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
@@ -41,7 +41,7 @@ S_KER = """  The kernel of U contains a Leech lattice vector of v type %d."""
 
 
 def reduce_2A0(v, verbose = 0):
-    vt = mm_op15_2A_axis_type(v.data) & 0xffffff
+    vt = mm_reduce_2A_axis_type(v.data) & 0xffffff
     return [vt ^ v_start]
 
 def reduce_2B(v, verbose = 0):
@@ -50,7 +50,7 @@ def reduce_2B(v, verbose = 0):
 def reduce_4A(v, verbose = 0):
     if verbose:
         print(S_KER % (4))
-    return [mm_op15_2A_axis_type(v.data) & 0xffffff]
+    return [mm_reduce_2A_axis_type(v.data) & 0xffffff]
 
 def reduce_4BC(v, verbose = 0):
     return radical(v, 1, verbose)
@@ -58,7 +58,7 @@ def reduce_4BC(v, verbose = 0):
 def reduce_6A(v, verbose = 0):
     if verbose:
         print(S_KER % (2))
-    vt = mm_op15_2A_axis_type(v.data) & 0xffffff
+    vt = mm_reduce_2A_axis_type(v.data) & 0xffffff
     a = short(v, 5, verbose)
     if verbose:
         s = "  Check vectors v + x for all x in that set of vectors"

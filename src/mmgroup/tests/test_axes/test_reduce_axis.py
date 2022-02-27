@@ -20,12 +20,11 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
-from mmgroup.mm15 import op_store_axis as  mm_op15_store_axis
-from mmgroup.mm15 import op_reduce_v_axis as  mm_op15_reduce_v_axis
-from mmgroup.mm15 import op_reduce_v_baby_axis as mm_op15_reduce_v_baby_axis
-from mmgroup.mm15 import op_reduce_G_x0 as mm_op15_reduce_G_x0
-from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type
+from mmgroup.mm_reduce import mm_reduce_v_axis
+from mmgroup.mm_reduce import mm_reduce_v_baby_axis
+from mmgroup.mm_reduce import mm_reduce_G_x0
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
+from mmgroup.mm_reduce import mm_reduce_2A_axis_type
 
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 
@@ -148,7 +147,7 @@ def reduce_axis(vector, verbose = 0):
     len_r = 0
     if verbose: print("Function reduce_axis")
     for i in range(5):
-        vt = mm_op15_2A_axis_type(v)
+        vt = mm_reduce_2A_axis_type(v)
         assert vt
         type = (vt >> 24) & 0xff
         vt &= 0xffffff
@@ -225,7 +224,7 @@ def reduce_axis(vector, verbose = 0):
         ok = False
         for e in (1,2):
             mm_op15_t_A(v, e, vA)                    
-            t = mm_op15_2A_axis_type(vA) >> 24
+            t = mm_reduce_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
@@ -256,7 +255,7 @@ def reduce_baby_axis(vector, verbose = 1):
     len_r = 0
     if verbose: print("Function reduce_baby_axis")
     for i in range(5):
-        vt = mm_op15_2A_axis_type(v)
+        vt = mm_reduce_2A_axis_type(v)
         assert vt
         type = (vt >> 24) & 0xff
         vt &= 0xffffff
@@ -303,7 +302,7 @@ def reduce_baby_axis(vector, verbose = 1):
                 assert r1 >= 0
                 mm_op15_word(v, r[len_r:], r1, 1, work.data)
                 len_r += r1
-                vt = mm_op15_2A_axis_type(v) & 0xffffff
+                vt = mm_reduce_2A_axis_type(v) & 0xffffff
                 assert vt == 0x800200 
                 ind = mm_aux_get_mmv1(15, v, (2*24+3)*32 + 2)
                 e = 2 - (ind == 15-2)
@@ -325,7 +324,7 @@ def reduce_baby_axis(vector, verbose = 1):
         ok = False
         for e in (1,2):
             mm_op15_t_A(v, e, vA)                    
-            t = mm_op15_2A_axis_type(vA) >> 24
+            t = mm_reduce_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
@@ -386,7 +385,7 @@ def rand_Co2(quality = 5):
 
 
 ##########################################################################
-# Testing function reduce_axis and C function mm_op15_reduce_v_axis
+# Testing function reduce_axis and C function mm_reduce_v_axis
 ##########################################################################
 
 
@@ -421,7 +420,7 @@ def test_reduce_axis(verbose = 0):
         assert v * g == V_START
 
         vr1 = np.zeros(200, dtype = np.uint32)
-        len_r1 = mm_op15_reduce_v_axis(v.copy().data, vr1)
+        len_r1 = mm_reduce_v_axis(v.copy().data, vr1)
         assert len_r1 >= 0
         g1 = MM0('a', vr1[:len_r1])
         assert g1 == g
@@ -430,7 +429,7 @@ def test_reduce_axis(verbose = 0):
 
 
 ##########################################################################
-# Testing function reduce_baby_axis and mm_op15_reduce_v_baby_axis
+# Testing function reduce_baby_axis and mm_reduce_v_baby_axis
 ##########################################################################
 
 def rand_BM(quality = 8):
@@ -478,25 +477,25 @@ def test_reduce_baby_axis(verbose = 0):
 
         vr1 = np.zeros(200, dtype = np.uint32)
 
-        len_r1 = mm_op15_reduce_v_baby_axis(v.copy().data, vr1)
+        len_r1 = mm_reduce_v_baby_axis(v.copy().data, vr1)
         assert len_r1 >= 0
         g1 = MM0('a', vr1[:len_r1])
 
         ok =  g1 == g 
         #print(type(g1), type(g))
         if verbose or not ok:
-             vt = mm_op15_2A_axis_type(v.data) >> 24
+             vt = mm_reduce_2A_axis_type(v.data) >> 24
              vA = eval_A_vstart(v.data)
              print("Type(v) = 0x%x, value(A) = %d" % (vt, vA))
              print("Op:  ", [hex(x) for x in g] )
              print("Fast:", [hex(x) for x in g1] ) 
              if not ok:
-                 err = "Function mm_op15_reduce_v_baby_axis failed"
+                 err = "Function mm_reduce_v_baby_axis failed"
                  raise ValueError(err)
 
 
 ##########################################################################
-# Testing C function mm_op15_reduce_G_x0
+# Testing C function mm_reduce_G_x0
 ##########################################################################
 
 
@@ -507,7 +506,7 @@ def reduce_G_x0(g):
     #assert g.group == MM
     r = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_op15_reduce_G_x0(g.mmdata, len(g.mmdata), r)
+    res = mm_reduce_G_x0(g.mmdata, len(g.mmdata), r)
     reduce_time = time.perf_counter() - t_start
     if res < 0:
        err = "Error %d in reducing element of monster group"
@@ -542,7 +541,7 @@ def test_reduce_G_x0(verbose = 0):
             print("Run time: %.2f ms, Complexity: %d" % 
                 (1000 * reduce_time, g_complexity(g))) 
             if not ok:
-                err = "Function mm_op15_reduce_G_x0 failed"
+                err = "Function mm_reduce_G_x0 failed"
                 raise ValueError(err)
 
 

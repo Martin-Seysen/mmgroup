@@ -15,10 +15,12 @@
  files ``mm%{P}_op_misc.c``, ``mm%{P}_op_pi.c``, ``mm%{P}_op_t.c``,
  ``mm%{P}_op_word.c``, ``mm%{P}_op_xi.c``, ``mm%{P}_op_xy.c``.
 
-// %%IF* %{P} == 15
- For characteristic p = 15 this includes also the files
- ``mm15_op_axes.c``, ``mm15_op_axes_find.c``,  
- ``mm15_op_eval_A.c``, ``mm15_op_order.c``.
+// %%IF* P in [3, 15]
+ For characteristic p = %{P} this includes also the files
+ ``mm15_op_rank_A.c``, 
+// %%IF* P in [15]
+ ``mm15_op_eval_A.c``, ``mm15_op_eval_X.c``,
+// %%END IF
 // %%END IF
 
 */

@@ -556,10 +556,10 @@ def get_mm_ops(p):
 import_pending = True
 
 def complete_import():
-    global mm_op15_eval_A, mm_op15_2A_axis_type
+    global mm_op15_eval_A, mm_reduce_2A_axis_type
     global XLeech2, mm_op15_eval_X_count_abs 
     from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
-    from mmgroup.mm15 import op_2A_axis_type as mm_op15_2A_axis_type 
+    from mmgroup.mm_reduce import mm_reduce_2A_axis_type 
     from mmgroup.mm15 import op_eval_X_count_abs as mm_op15_eval_X_count_abs
     from mmgroup import XLeech2
     import_pending = False    
@@ -776,7 +776,7 @@ class MMVector(AbstractMmRepVector):
             self.ops.op_t_A(self.data, e, v)     
         if import_pending:
             complete_import()
-        t = mm_op15_2A_axis_type(v)
+        t = mm_reduce_2A_axis_type(v)
         if t == 0:
             return None
         s = str((t >> 28) & 15) + "?ABCDEFGHIJKLMNO"[(t >> 24) & 15]

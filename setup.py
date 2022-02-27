@@ -174,6 +174,7 @@ pyx_sources = [
     os.path.join(DEV_DIR, "generators", "generators.pyx"),
     os.path.join(DEV_DIR, "mm_basics", "mm_basics.pyx"),
     os.path.join(DEV_DIR, "clifford12", "clifford12.pyx"),
+    os.path.join(DEV_DIR, "mm_reduce", "mm_reduce.pyx"),
 ]
 
 def copy_pyx_sources():
@@ -377,8 +378,11 @@ ext_modules = [
 
 
 
+
+
+
 ####################################################################
-# Adding the extension for the final stage.
+# Adding the extension for operation modulo p.
 #
 # Here we build the representation of the monster modulo
 # all small primes P in the set PRIMES. 
@@ -439,7 +443,64 @@ for p in PRIMES:
     )
 
 
+####################################################################
+# Building the extenstions at stage 3
+####################################################################
 
+reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
+  [sys.executable, "codegen_mm_reduce.py"] + codegen_args,
+)
+
+
+shared_libs_stage2_augmented = shared_libs_stage2 + [
+       mm_op_shared[15].lib_name
+] if not on_readthedocs else []
+
+
+mm_reduce =  SharedExtension(
+    name = "mmgroup.mmgroup_mm_reduce", 
+    sources=[ os.path.join(C_DIR, f) for f in 
+        [ "mm_reduce.c", 
+        ]
+    ],    
+    libraries = shared_libs_stage2_augmented, 
+    include_dirs = [PACKAGE_DIR, C_DIR],
+    library_dirs = [PACKAGE_DIR, C_DIR],
+    extra_compile_args = EXTRA_COMPILE_ARGS,
+    implib_dir = C_DIR,
+    define_macros = [ ("MM_REDUCE_DLL_EXPORTS", None)],
+)
+
+
+shared_libs_stage3 = shared_libs_stage2_augmented + [
+       mm_reduce.lib_name
+] if not on_readthedocs else []
+
+
+mm_reduce_extension = Extension("mmgroup.mm_reduce",
+    sources=[
+            os.path.join(PXD_DIR, "mm_reduce.pyx"),
+    ],
+    #libraries=["m"] # Unix-like specific
+    include_dirs = [ C_DIR ],
+    library_dirs = [ PACKAGE_DIR, C_DIR ],
+    libraries = shared_libs_stage3, 
+            # for openmp add "libgomp" 
+    #runtime_library_dirs = ["."],
+    extra_compile_args = EXTRA_COMPILE_ARGS, 
+            # for openmp add "-fopenmp" 
+    extra_link_args = EXTRA_LINK_ARGS, 
+            # for openmp add "-fopenmp" 
+)
+
+
+
+
+ext_modules += [
+    reduce_presteps,
+    mm_reduce,
+    mm_reduce_extension,
+]
 
 
 ####################################################################

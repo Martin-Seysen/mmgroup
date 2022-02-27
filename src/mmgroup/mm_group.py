@@ -218,7 +218,7 @@ check_mm_order = None
 check_mm_equal = None
 check_mm_half_order = None
 check_mm_in_g_x0 = None
-mm_op15_reduce_M = None
+mm_reduce_M = None
 
 def import_mm_order_functions():
     """Import functions from module ``mmgroup.mm_order``.
@@ -228,7 +228,7 @@ def import_mm_order_functions():
     """
     global check_mm_order, check_mm_equal
     global check_mm_half_order, check_mm_in_g_x0
-    global mm_op15_reduce_M
+    global mm_reduce_M
     from mmgroup.mm_order import check_mm_order as f
     check_mm_order = f
     from mmgroup.mm_order import check_mm_equal as f
@@ -239,8 +239,8 @@ def import_mm_order_functions():
     check_mm_in_g_x0 = f
     from mmgroup.mm_order import compute_order_vector
     compute_order_vector()
-    from mmgroup.mm15 import op_reduce_M as f
-    mm_op15_reduce_M = f
+    from mmgroup.mm_reduce import mm_reduce_M as f
+    mm_reduce_M = f
 
 
 
@@ -554,11 +554,11 @@ class MMGroup(AbstractMMGroup):
     def reduce(self, g1, copy = False):
         l1 = g1.length
         if not g1.reduced:
-            if not mm_op15_reduce_M:
+            if not mm_reduce_M:
                 import_mm_order_functions() 
             if copy:
                 g2 = self.word_type()
-                length = mm_op15_reduce_M(g1._data, g1.length, g2._data)
+                length = mm_reduce_M(g1._data, g1.length, g2._data)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE)
                 g2.length = length
@@ -566,7 +566,7 @@ class MMGroup(AbstractMMGroup):
                 return g2
             else:
                 a = np.zeros(128, dtype = np.uint32)
-                length = mm_op15_reduce_M(g1._data, g1.length, a)
+                length = mm_reduce_M(g1._data, g1.length, a)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE)
                 g1._setdata(a[:length])
