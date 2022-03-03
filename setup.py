@@ -447,6 +447,7 @@ for p in PRIMES:
 # Building the extenstions at stage 3
 ####################################################################
 
+
 reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
   [sys.executable, "codegen_mm_reduce.py"] + codegen_args,
 )
@@ -460,7 +461,7 @@ shared_libs_stage2_augmented = shared_libs_stage2 + [
 mm_reduce =  SharedExtension(
     name = "mmgroup.mmgroup_mm_reduce", 
     sources=[ os.path.join(C_DIR, f) for f in 
-        [ "mm_reduce.c", 
+        [ "mm_order.c",  "mm_reduce.c", 
         ]
     ],    
     libraries = shared_libs_stage2_augmented, 

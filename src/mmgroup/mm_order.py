@@ -28,13 +28,13 @@ from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_order as mm_op15_order
-from mmgroup.mm15 import op_store_order_vector as mm_op15_store_order_vector
-from mmgroup.mm15 import op_order_Gx0 as mm_op15_order_Gx0
-from mmgroup.mm15 import op_load_order_vector as mm_op15_load_order_vector
-from mmgroup.mm15 import op_load_order_tag_vector as mm_op15_load_order_tag_vector
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
+from mmgroup.mm_reduce import mm_order_element_M
+from mmgroup.mm_reduce import mm_order_store_vector
+from mmgroup.mm_reduce import mm_order_element_Gx0
+from mmgroup.mm_reduce import mm_order_load_vector
+from mmgroup.mm_reduce import mm_order_load_tag_vector
 from mmgroup.mm_reduce import mm_reduce_M
 
 
@@ -182,20 +182,20 @@ def compute_order_vector(recompute = False, verbose = 0):
     t0 = mm_aux_mmv_extract_sparse_signs(
         15, OV, ORDER_TAGS[OFS_TAGS_X:], 24)
     assert t0 == 0
-    mm_op15_store_order_vector(ORDER_TAGS, ORDER_VECTOR.data)
+    mm_order_store_vector(ORDER_TAGS, ORDER_VECTOR.data)
     del ORDER_VECTOR
     ORDER_VECTOR_PRESENT = True
 
 def get_order_vector(recompute = False, verbose = 0):
     compute_order_vector(recompute, verbose)
     v = mm_vector(15)
-    mm_op15_load_order_vector(v.data)
+    mm_order_load_vector(v.data)
     return v
 
 def get_order_tag_vector(recompute = False, verbose = 0):
     compute_order_vector(recompute, verbose)
     tags = np.zeros(97, dtype = np.uint32)
-    mm_op15_load_order_tag_vector(tags)
+    mm_order_load_tag_vector(tags)
     return tags
 
 
@@ -227,10 +227,10 @@ def check_mm_equal(g1, g2, mode = 0):
     if not ORDER_VECTOR_PRESENT:
         compute_order_vector()
     v = mm_vector(15)
-    mm_op15_load_order_vector(v.data)
+    mm_order_load_vector(v.data)
     work = mm_vector(15)
     mm_op15_word(v, g3, status - 2, 1, work)
-    mm_op15_load_order_vector(work.data)
+    mm_order_load_vector(work.data)
     return not mm_op15_compare(v, work)
 
 
@@ -272,8 +272,8 @@ def check_mm_order_old(g, max_order = 119, mode = 0):
     v = mm_vector(15)
     w = mm_vector(15)
     work = mm_vector(15)
-    mm_op15_load_order_vector(v.data)
-    mm_op15_load_order_vector(w.data)
+    mm_order_load_vector(v.data)
+    mm_order_load_vector(w.data)
     for i in range(1, max_order+1):
         mm_op15_word(w, g._data, g.length, 1, work)
         if not mm_op15_compare(v, w):
@@ -299,7 +299,7 @@ def check_mm_order(g, max_order = 119):
     g.reduce()
     if not ORDER_VECTOR_PRESENT:
         compute_order_vector()
-    o = mm_op15_order(g._data, g.length, max_order)
+    o = mm_order_element_M(g._data, g.length, max_order)
     return  chk_qstate12(o)
 
 def check_mm_half_order(g, max_order = 119):
@@ -320,7 +320,7 @@ def check_mm_half_order(g, max_order = 119):
     h = np.zeros(10, dtype = np.uint32)
     if not ORDER_VECTOR_PRESENT:
         compute_order_vector()
-    o1 = mm_op15_order_Gx0(g._data, g.length, h, max_order)
+    o1 = mm_order_element_Gx0(g._data, g.length, h, max_order)
     chk_qstate12(o1)
     if o1 == 0:
         return 0, None
@@ -366,7 +366,7 @@ def check_mm_in_g_x0(g):
     g1 = np.zeros(10, dtype = np.uint32)
     if not ORDER_VECTOR_PRESENT:
         compute_order_vector()
-    res = chk_qstate12(mm_op15_order_Gx0(g._data,  g.length, g1, 1))
+    res = chk_qstate12(mm_order_element_Gx0(g._data,  g.length, g1, 1))
     #print("RES", hex(res))
     if ((res >> 8) != 1):
         return None 
@@ -403,10 +403,10 @@ def reduce_mm(g, check = True):
     if check:
         w = mm_vector(15)
         work = mm_vector(15)
-        mm_op15_load_order_vector(w.data)
+        mm_order_load_vector(w.data)
         mm_op15_word(w, g._data, len(g), 1, work)
         mm_op15_word(w, g1, length, -1, work)
-        mm_op15_load_order_vector(work.data)
+        mm_order_load_vector(work.data)
         assert not mm_op15_compare(w, work)
          
     g._extend(length)

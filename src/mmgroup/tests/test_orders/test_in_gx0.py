@@ -16,19 +16,21 @@ from mmgroup.mm_order import get_order_vector
 from mmgroup import MM0Group, MM0, MM
 from mmgroup.mm import mm_vector
 
+from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
+
 from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_word_tag_A as mm_op15_word_tag_A 
 from mmgroup.mm15 import op_omega as mm_op15_omega 
-from mmgroup.mm15 import op_order_find_in_Gx0 as mm_op15_order_find_in_Gx0
-from mmgroup.mm15 import op_order_find_in_Qx0 as mm_op15_order_find_in_Qx0
-from mmgroup.mm15 import op_order_check_in_Gx0 as mm_op15_order_check_in_Gx0
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
 from mmgroup.mm15 import op_watermark_A_perm_num as mm_op15_watermark_A_perm_num
+from mmgroup.mm_reduce import mm_order_find_in_Gx0
+from mmgroup.mm_reduce import mm_order_find_in_Qx0
+from mmgroup.mm_reduce import mm_order_check_in_Gx0
 
-from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
+
 
 
 ###########################################################################
@@ -57,7 +59,7 @@ def find_in_Q_x0(w):
     global err_in_g_x0
     if FAST:
         v = ORDER_VECTOR.data
-        res = mm_op15_order_find_in_Qx0(w, ORDER_TAGS, v)
+        res = mm_order_find_in_Qx0(w, ORDER_TAGS, v)
     w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
         ORDER_TAGS[OFS_TAGS_X:], 24)
     if w_x < 0:
@@ -84,7 +86,7 @@ def find_in_G_x0(w):
     g1i = np.zeros(11, dtype = np.uint32)
     if FAST:
         v = ORDER_VECTOR.data
-        res =  mm_op15_order_find_in_Gx0(w, ORDER_TAGS, v, g1i)
+        res =  mm_order_find_in_Gx0(w, ORDER_TAGS, v, g1i)
         assert res >= 0
         if res >= 0x100:
             err_in_g_x0 = res - 0x100
@@ -160,7 +162,7 @@ def low_level_check_mm_in_g_x0(g):
     assert res == 0
     if FAST:
         g1 = np.zeros(11, dtype = np.uint32)
-        res = chk_qstate12(mm_op15_order_check_in_Gx0(w, g1))
+        res = chk_qstate12(mm_order_check_in_Gx0(w, g1))
         if res >= 0x100:
             err_in_g_x0 = res - 0x100
             return None

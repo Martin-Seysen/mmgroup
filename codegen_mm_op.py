@@ -200,7 +200,6 @@ C_FILE_SPECIFIC_SKELETONS.update( {
          "mm{P}_op_rank_A",
          "mm{P}_op_eval_A",
          "mm{P}_op_eval_X",
-         "mm15_op_order", 
         ],
 } )
 

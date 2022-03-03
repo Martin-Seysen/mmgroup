@@ -117,6 +117,32 @@ from mmgroup.generate_c import pxd_to_pyx
 
 VERBOSE = 0
 
+
+##########################################################################
+# Entering tables and automatically generated code
+##########################################################################
+
+TABLE_CLASSES = None
+
+def table_classes():
+    global TABLE_CLASSES
+    if not TABLE_CLASSES is None:
+        return  TABLE_CLASSES
+    from mmgroup.dev.mm_op import mm_op
+
+    if "mockup" in sys.argv[1:]:
+        TABLE_CLASSES = [
+            mm_op.Mockup_MM_Op,
+        ]
+    else:
+        TABLE_CLASSES = [
+            mm_op.MM_Op,
+        ]  
+    return TABLE_CLASSES
+
+
+
+
 ##########################################################################
 # Generating .c files
 ##########################################################################
@@ -127,6 +153,7 @@ H_REDUCE_SKELETONS = [
 ]
 
 C_REDUCE_SKELETONS = [
+   "mm_order",
    "mm_reduce",
  
 ]
@@ -184,23 +211,7 @@ INT_BITS = {INT_BITS}
 
 
 
-##########################################################################
-# Entering tables and automatically generated code
-##########################################################################
 
-
-if "mockup" in sys.argv[1:]:
-    BASIC_TABLE_CLASSES = [
-    ]  
-else:
-    BASIC_TABLE_CLASSES = [
-    ]  
-
-
-MORE_BASIC_TABLE_CLASSES = [
-]
-
-BASIC_TABLE_CLASSES += MORE_BASIC_TABLE_CLASSES
 
     
 ##########################################################################
@@ -246,8 +257,8 @@ def make_reduce():
     tables = {}
     directives = {}
     global generated_tables
-    for table_class in BASIC_TABLE_CLASSES:
-        table_instance = table_class()
+    for table_class in table_classes():
+        table_instance = table_class(15)
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
     # print("Basic functions:\n",  directives.keys())
