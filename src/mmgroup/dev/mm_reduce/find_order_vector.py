@@ -8,7 +8,7 @@ import numpy as np
 import mmgroup
 from mmgroup import structures, MM0, MMV
 from mmgroup.mat24 import vect_to_cocode
-from mmgroup.mm_space import MMSpace
+from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2matrix_add_eqn
@@ -16,12 +16,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_mmv_extract_sparse
 from mmgroup.mm3 import op_eval_A_rank_mod3 as mm_op3_eval_A_rank_mod3 
 from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
-from mmgroup.mm_order import stabilizer_vector
-from mmgroup.mm_order import make_order_vector
-from mmgroup.mm_order import map_y, map_x
 
-_DIR = os.path.split(structures.__file__)[0]
-PY_FILENAME = os.path.join(_DIR, "order_vector_data.py")
 
 
 #######################################################################
@@ -206,15 +201,28 @@ def find_element_of_order(order, minsize = 1, verbose = 0):
  
 
 #######################################################################
-# Some precomputed stuff
+# Find a vector stabilizing by an element of order n
 #######################################################################
 
-USE_PRECOMPUTED = False
+def stabilizer_vector(v, g, n):
+    """Compute a vector stabilized by an element of the monster
 
-
-if USE_PRECOMPUTED:
-    pass # No precomuted data available
-
+    Le ``g`` be an element of the monster group of order ``n`` and 
+    ``v`` a vector in a represention of the monster. We return the
+    vector ``sum(v * g**i for i  in range(n))`` which is stabilized
+    by ``g``. We always return ``None`` if that sum is 0 or a 
+    multiple of the 1 element in the representation space. The 
+    last condition is checked with a fast crude check only.  
+    """
+    vg = v.copy()
+    w = v.copy()
+    for i in range(1, n):
+        vg *= g 
+        w += vg
+    assert v == vg * g
+    if (w['B'] == 0).all():
+        return None
+    return w
 
 #######################################################################
 # Obtaining a vector mod 3 stable under an element of order 71
@@ -352,7 +360,7 @@ def make_v94_sample(s_g94):
 
 
 
-def find_vector_v94_mod5(s_g94, verbose = 0):
+def do_find_vector_v94_mod5(s_g94, verbose = 0):
     """Compute a vector stabilized by a group element of order 47
  
     The function computes and element ``g94`` of order 94 in the
@@ -380,156 +388,29 @@ def find_vector_v94_mod5(s_g94, verbose = 0):
 
 
 
-#######################################################################
-# Check that the test vector supports reduction
-#######################################################################
 
-Y_INDICES = [("A", i, j) for i in range(2) for j in range(i+1, 24)]
-X_INDICES = [("B", i, j) for i in range(2) for j in range(i+1, 24)]
-X_INDICES += [("C", 0, j)  for j in range(1, 24)]
-BASIS = [0] + [1 << i for i in range(11)]
-X_INDICES += [("X", i, j) for j in range(0, 24)  for i in  BASIS]
-del BASIS
-
-
-    
-def eqn_system(vector, tag_indices, map_f, n):
-    entries = [vector[index] for index in tag_indices]
-    indices = [MMSpace.index_to_sparse(*x) for x in tag_indices]
-    matrix= np.zeros(24, dtype = np.uint64)
-    rows, cols = 0, n
-    out_indices = []
-    for (entry, index) in zip(entries, indices):
-        if 1 <= entry < 15:
-            eqn = map_f(index)
-            new_rows = leech2matrix_add_eqn(matrix, rows, cols, eqn)
-            if new_rows:
-                out_indices.append(index)
-                rows += new_rows
-                if rows == n:
-                    break
-    if rows < n:
-        return None
-    mask = (1 << n) - 1
-    out_matrix = [int(matrix[i]) & mask for i in range(n)] 
-    return  out_indices   
-
-
-def eqn_sign(vector):
-    for j in range(24):
-        if 1 <= vector["Z", 0, j] < 15:
-            return [ MMSpace.index_to_sparse("Z", 0, j) ]
-    return None
-
-
-def augment_v_data(v, data):
-    a = np.array(data, dtype = np.uint32)
-    mm_aux_mmv_extract_sparse(15, v.data, a, len(a))
-    return [x for x in a]
-
-
-def check_v(v, verbose = 0):
-    vB = v['B']
-    for p in (3,5):
-        if (vB % p == 0).all():
-            if verbose:
-                print("Vector may be zero (mod %d)" % p)
-            return None
-    mark = np.zeros(24, dtype = np.uint32)
-    if mm_op15_watermark_A(v.data, mark) < 0:
-        if verbose:
-            print("Permutation watermarking failed")
-        return None
-    result_y = eqn_system(v, Y_INDICES, map_y, 11)
-    if result_y is None:
-        if verbose:
-            print("Check Y failed")
-        return result
-    result_x = eqn_system(v, X_INDICES, map_x, 24)
-    if result_x is None:
-        if verbose:
-            print("Check X failed")
-        return result
-    result_sign = eqn_sign(v)
-    if result_sign is None:
-        if verbose:
-            print("Check for sign failed")
-        return result
-    results = [result_y, result_x, result_sign]
-    return tuple([augment_v_data(v, data) for data in results])
-    
+def find_vector_v94_mod5(verbose = 0):
+    s_g94 = find_element_of_order(94, verbose = verbose)
+    if s_g94 is None:
+        return None, None
+    s_v94 = do_find_vector_v94_mod5(s_g94, verbose = verbose)
+    return s_g94, s_v94
 
 
 
-#######################################################################
-# Seach for the relevant data
-#######################################################################
-
-def str_data(text, data):
-    if isinstance(data, list):
-        s = "%s = [\n   " % text
-        for i, x in enumerate(data):
-            s += hex(x) + ","
-            s += "\n   " if i % 6 == 5 else " "
-        s += "\n]\n"
-    elif isinstance(data, str):
-        s = '%s = \"%s\"\n' % (text, data)
-    elif isinstance(data, int):
-        s = '%s = %d\n' % (text, data)        
-    else:
-        raise TypeError("type " + str(type(data)))
-    return s
 
 
-def find_order_vector(verbose = 1):
-    verbose = 1
-    if verbose:
-        print("Trying to find a vector of order 71")
-    if USE_PRECOMPUTED:
-        s_g71, s_v71, s_gA, diag =  S_g71, S_v71, S_gA, S_diag
-    else:
-        s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose)
-    if verbose:
-        print("Trying to find a vector of order 94")
-    for trials in range(200,-1,-1):
-        s_g94 = find_element_of_order(94, verbose = verbose)
-        s_v94 = find_vector_v94_mod5(s_g94, verbose = verbose)
-        if s_v94 is None:
-            continue
-        v = make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94)
-        tag_data = check_v(v, verbose=verbose)
-        if tag_data is not None:
-            if verbose:
-                print("Tests for v94 passed")
-            break
-    if not trials:
-        err = "No suitable vector in the monster representation found"
-        raise ValueError(err) 
-    v_data =  s_g71, s_v71, s_gA, diag, s_g94, s_v94
-    V_NAMES =  ["S_G71", "S_V71", "S_GA", "DIAG_VA", "S_G94", "S_V94"]
-    TAG_NAMES =  ["TAGS_Y", "TAGS_X", "TAG_SIGN"]   
-    if verbose:        
-        for text, data in zip(TAG_NAMES, tag_data):
-            print(str_data(text, data))
-    result = OrderedDict(zip(V_NAMES + TAG_NAMES, v_data + tag_data))
-    return result
 
 
-HEADER = """# This file has been created automatically, do not change!
-# For documentation see module mmgroup.structures.find_order_vector.py.
 
-"""
 
-def write_order_vector(result):
-    print("Writing file " + PY_FILENAME)
-    f = open(PY_FILENAME, "wt")
-    print(HEADER, file = f)
-    for text, data in result.items():
-        print(str_data(text, data), file = f)
-    f.close()
-    
-    
-if __name__ == "__main__":
-    result = find_order_vector(verbose = 1)
-    write_order_vector(result)
+
+
+
+
+
+
+
+
+
 

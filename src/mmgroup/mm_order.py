@@ -47,144 +47,21 @@ ORDER_VECTOR = None
 ORDER_TAGS = None
 
 
-OFS_NORM_A = 0
-OFS_DIAG_VA = 1
-OFS_WATERMARK_PERM = 2
-OFS_TAGS_Y = 26
-OFS_SOLVE_Y = 37
-OFS_TAGS_X = 48
-OFS_SOLVE_X = 72
-OFS_TAG_SIGN = 96
-
-
-#######################################################################
-# Find a vector stabilizing by an element of order n
-#######################################################################
-
-def stabilizer_vector(v, g, n):
-    """Compute a vector stabilized by an element of the monster
-
-    Le ``g`` be an element of the monster group of order ``n`` and 
-    ``v`` a vector in a represention of the monster. We return the
-    vector ``sum(v * g**i for i  in range(n))`` which is stabilized
-    by ``g``. We always return ``None`` if that sum is 0 or a 
-    multiple of the 1 element in the representation space. The 
-    last condition is checked with a fast crude check only.  
-    """
-    vg = v.copy()
-    w = v.copy()
-    for i in range(1, n):
-        vg *= g 
-        w += vg
-    assert v == vg * g
-    if (w['B'] == 0).all():
-        return None
-    return w
-
-
-#######################################################################
-# Assemble a test vector mod 15 from the input data
-#######################################################################
-
-
-
-def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
-    v71 = MMV15(10, s_v71)
-    #print("v71 =", v71)
-    g71 = MM(s_g71)
-    w71 = stabilizer_vector(v71, g71, 71)
-    assert w71 is not None
-    w71 *= MM(s_gA)
-    v94 = 6 * MMV15(s_v94)
-    g94 = MM(s_g94)
-    w94 = stabilizer_vector(v94 - v94 * g94, g94**2, 47)
-    assert w94 is not None
-    w = w71 + w94
-    v3 = mm_op15_eval_A_rank_mod3(w.data, diag) & 0xffffffffffff
-    assert v3 != 0
-    v_type4 = gen_leech3to2_type4(v3)
-    assert v_type4 == 0x800000
-    w.reduce()
-    return w
-
-
-
-def map_y(y_index):
-    i, j = (y_index >> 14) & 0x1f, (y_index >> 8) & 0x1f
-    vect = (1 << i) + (1 << j)
-    gc = vect_to_cocode(vect)
-    assert 0 <= gc < 0x800
-    return gc 
-    
-    
-def map_x(x_index):
-    v2 = mm_aux_index_sparse_to_leech2(x_index) 
-    return ((v2 & 0xfff) << 12) | ((v2 >> 12) & 0xfff)    
 
 ORDER_VECTOR_PRESENT = False
+
+
 
 def compute_order_vector(recompute = False, verbose = 0):
     global  ORDER_VECTOR_PRESENT
     if ORDER_VECTOR_PRESENT and not recompute:
         return  
-    try:
-        from mmgroup.structures import order_vector_data
-        assert not recompute
-    except (ImportError, AssertionError):
-        from mmgroup.structures import find_order_vector
-        result = find_order_vector.find_order_vector(verbose)
-        find_order_vector.write_order_vector(result)
-        from mmgroup.structures import order_vector_data
-        del find_order_vector
-    from mmgroup.structures.order_vector_data import S_G71, S_V71
-    from mmgroup.structures.order_vector_data import S_GA, DIAG_VA
-    from mmgroup.structures.order_vector_data import S_G94, S_V94
-    ORDER_VECTOR =  make_order_vector(
-        S_G71, S_V71, S_GA, DIAG_VA, S_G94, S_V94
-    )
-    assert ORDER_VECTOR is not None
-    OV = ORDER_VECTOR.data
-    TAGS_Y = np.array(order_vector_data.TAGS_Y, dtype = np.uint32) 
-    TAGS_X = np.array(order_vector_data.TAGS_X, dtype = np.uint32)
-    TAG_SIGN =  np.array(order_vector_data.TAG_SIGN, dtype = np.uint32) 
-    WATERMARK_PERM = np.zeros(24, dtype = np.uint32)
-    ok = mm_op15_watermark_A(OV, WATERMARK_PERM)
-    assert ok >= 0
-
-    SOLVE_YT = np.zeros(11, dtype = np.uint64)
-    assert len(TAGS_Y) == 11
-    nrows = 0
-    for y in TAGS_Y:
-        eqn = map_y(y)
-        nrows += leech2matrix_add_eqn(SOLVE_YT, nrows, 11, eqn)
-        #print(i, hex(y), hex(eqn), nrows)
-    assert nrows == 11, nrows
-    SOLVE_Y = list(bitmatrix64_t(SOLVE_YT, 11))
-    assert len(SOLVE_Y) == 11
-    assert mm_aux_mmv_extract_sparse_signs(15, OV, TAGS_Y, 11) == 0
-    
-    SOLVE_XT = np.zeros(24, dtype = np.uint64)
-    assert len(TAGS_X) == 24
-    nrows = 0
-    for i, x in enumerate(TAGS_X):
-        eqn =  map_x(x)  
-        nrows += leech2matrix_add_eqn(SOLVE_XT, nrows, 24, eqn)
-        #print("SOLVE_XT", i, hex(x), hex(eqn), nrows)
-    assert nrows == 24, nrows
-    SOLVE_X = list(bitmatrix64_t(SOLVE_XT, 24))
-    
-    # Concatenate computed lists to the global numpy array 'ORDER_TAGS'
-    ORDER_TAGS = np.array(sum(map(list, [
-        [mm_op15_norm_A(OV), order_vector_data.DIAG_VA], 
-        WATERMARK_PERM, TAGS_Y, SOLVE_Y, TAGS_X, SOLVE_X, TAG_SIGN
-    ]), []), dtype = np.uint32)
-    assert len(ORDER_TAGS) == 97, len(ORDER_TAGS)
-    t0 = mm_aux_mmv_extract_sparse_signs(
-        15, OV, ORDER_TAGS[OFS_TAGS_X:], 24)
-    assert t0 == 0
-    mm_order_store_vector(ORDER_TAGS, ORDER_VECTOR.data)
-    del ORDER_VECTOR
+    from mmgroup.dev.mm_reduce.order_vector import get_order_vector
+    ov, o_tag, d = get_order_vector(recompute, verbose)
+    mm_order_store_vector(o_tag, ov.data)
+    del ov
     ORDER_VECTOR_PRESENT = True
+
 
 def get_order_vector(recompute = False, verbose = 0):
     compute_order_vector(recompute, verbose)

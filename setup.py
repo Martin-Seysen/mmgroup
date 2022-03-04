@@ -37,7 +37,7 @@ from build_ext_steps import BuildExtCmd
 from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
 
 
-
+    
 
 import config
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
@@ -48,6 +48,31 @@ from config import PRIMES
 
 from codegen_mm_op import mm_op_p_sources
 
+
+####################################################################
+# Global options
+####################################################################
+
+
+STAGE = 1
+PRIMES = PRIMES[:]
+# Parse a global option '--stage=i" and set variable ``STAGE``
+# to the integer value i if such an option is present.
+# Parse a global option "--p=p1,p2,..." to a list PRIMES=[p1,p2,...]
+for i, s in enumerate(sys.argv[1:]):
+    if s.startswith("--stage="):
+        STAGE = int(s[8:])
+        sys.argv[i+1] = None
+    if s.startswith("--p="):
+        PRIMES = list(set(map(int, s[4:].split(","))) | set([3,15]))
+        PRIMES.sort()
+        sys.argv[i+1] = None
+    elif s[:1].isalpha:
+        break
+while None in sys.argv: 
+    sys.argv.remove(None)
+
+#print(STAGE, PRIMES, sys.argv); 
 
 ####################################################################
 # Delete files
@@ -190,8 +215,11 @@ general_presteps = CustomBuildStep("Starting code generation",
   [copy_pyx_sources],
   [extend_path],
 )
-
-
+if STAGE > 1:
+    general_presteps = CustomBuildStep("Starting code generation",
+       [copy_pyx_sources],
+       [extend_path],
+    )
 
 ####################################################################
 # We have to divide the code generation process 
@@ -377,6 +405,8 @@ ext_modules = [
 ]
 
 
+if STAGE >= 2:
+    ext_modules = ext_modules[:1] + ext_modules[-3:]
 
 
 
@@ -446,6 +476,11 @@ for p in PRIMES:
 ####################################################################
 # Building the extenstions at stage 3
 ####################################################################
+
+
+if STAGE >= 3:
+    ext_modules = ext_modules[:1]
+
 
 
 reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",

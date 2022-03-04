@@ -795,7 +795,7 @@ def add_conv_vector(vector, tag, factor = 1):
         if factor <= 1:
             if factor: space.iadd(vector, a)
         else:
-            imul_scalar(a, factor)
+            space.imul_scalar(a, factor)
             space.iadd(vector, a)
     elif (a.space, space) in MM_VECTOR_CONVERSIONS:
         f = MM_VECTOR_CONVERSIONS[(a.space, space)]

@@ -42,9 +42,10 @@ from mmgroup.mm_reduce import mm_order_check_in_Gx0
 
 get_order_vector()
 from mmgroup.mm_order import get_order_tag_vector, check_mm_in_g_x0
-from mmgroup.mm_order import OFS_NORM_A, OFS_DIAG_VA, OFS_WATERMARK_PERM
-from mmgroup.mm_order import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
-from mmgroup.mm_order import OFS_SOLVE_X, OFS_TAG_SIGN 
+from mmgroup.dev.mm_reduce.order_vector import OFS_NORM_A, OFS_DIAG_VA
+from mmgroup.dev.mm_reduce.order_vector import OFS_WATERMARK_PERM
+from mmgroup.dev.mm_reduce.order_vector import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
+from mmgroup.dev.mm_reduce.order_vector import OFS_SOLVE_X, OFS_TAG_SIGN 
 
 FAST =  False
 

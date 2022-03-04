@@ -64,7 +64,7 @@ def del_c(verbose = False):
 
 
 DATA_FILE_DICT = {
-    ("src", "mmgroup", "structures"): [
+    ("src", "mmgroup", "dev", "mm_reduce" ): [
         "order_vector_data",
     ],
     ("src", "mmgroup", "tests", "test_axes"): [
