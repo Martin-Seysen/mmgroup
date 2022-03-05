@@ -47,6 +47,7 @@ from config import C_DIR, PXD_DIR
 from config import PRIMES
 
 from codegen_mm_op import mm_op_p_sources
+from codegen_mm_reduce import mm_reduce_sources
 
 
 ####################################################################
@@ -495,10 +496,7 @@ shared_libs_stage2_augmented = shared_libs_stage2 + [
 
 mm_reduce =  SharedExtension(
     name = "mmgroup.mmgroup_mm_reduce", 
-    sources=[ os.path.join(C_DIR, f) for f in 
-        [ "mm_order.c",  "mm_reduce.c", 
-        ]
-    ],    
+    sources=[os.path.join(C_DIR, f) + ".c" for f in mm_reduce_sources()],    
     libraries = shared_libs_stage2_augmented, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],

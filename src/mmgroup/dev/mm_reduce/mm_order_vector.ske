@@ -1,0 +1,235 @@
+// %%COMMENT
+// TODO: comment this!!!!
+
+#include <malloc.h>
+
+#include "mat24_functions.h"
+#include "clifford12.h"
+#include "mm_op15.h"   
+#include "mm_reduce.h"   
+   
+// %%EXPORT_KWD MM_REDUCE_API
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/************************************************************************
+** order vector tag table
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+// %%EXPORT_TABLE p
+const uint32_t MM_ORDER_VECTOR_TAG_DATA[] = {
+// %%TABLE ORDER_VECTOR_TAG_DATA, uint32
+};
+
+
+// %%USE_TABLE
+static const uint16_t TAG_INDICES[] = {
+// %%TABLE ORDER_VECTOR_TAG_INDICES, uint16
+};
+
+
+/// @endcond 
+
+
+
+
+/** 
+  @brief Load data from tables to a buffer
+  
+  Yet to be documented!!!
+*/
+// %%EXPORT px
+int32_t mm_order_load_tag_data(uint32_t n, uint32_t *buf, uint32_t buf_size)
+{
+     uint_fast32_t data_size, start,i;
+     const uint32_t *ptr;
+     if (n >= %{ORDER_VECTOR_NUM_TAG_DATA}) return 0;
+     start = TAG_INDICES[n];
+     data_size = TAG_INDICES[n+1] - start;
+     if (data_size > buf_size) return -1;
+     ptr = MM_ORDER_VECTOR_TAG_DATA  + start;
+     for (i = 0; i < data_size; ++i) buf[i] = ptr[i];
+     return data_size;
+}
+
+
+
+
+/************************************************************************
+** order vector table
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+// %%IF* INT_BITS != 64
+#error A %{P}-Bit version of this module is not supported
+// %%END IF
+
+// %%USE_TABLE
+static const uint32_t ORDER_VECTOR[] = {
+// %%TABLE ORDER_VECTOR_DATA, uint32
+};
+
+/// @endcond 
+
+
+/************************************************************************
+** load order vector
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+#define pair(h, l)  (((uint_mmv_t)(h) << 32) + (uint_mmv_t)(l))
+
+
+
+static inline void load24(uint32_t offset, uint_mmv_t *p_dest, uint32_t n)
+{
+     uint_fast32_t i;
+     const uint32_t *p_src = ORDER_VECTOR + offset;
+     for (i = 0; i < n; ++i) {
+         // %%IF* INT_BITS == 64
+         p_dest[0] = pair(p_src[1], p_src[0]);
+         p_dest[1] = pair(0, p_src[2]);
+         p_src += 3;
+         p_dest += 2;
+         // %%ELSE
+         // %%END IF
+     }
+}
+
+
+static inline void load64(uint32_t offset, uint_mmv_t *p_dest, uint32_t n)
+{
+     uint_fast32_t i;
+     const uint32_t *p_src = ORDER_VECTOR + offset;
+     for (i = 0; i < 2*n; ++i) {
+         // %%IF* INT_BITS == 64
+         p_dest[0] = pair(p_src[1], p_src[0]);
+         p_dest[1] = pair(p_src[3], p_src[2]);
+         p_src += 4;
+         p_dest += 2;
+         // %%ELSE
+         // %%END IF
+     }
+}
+
+// Offsets in order vector stored in the table
+#define OFS_ABC  0
+#define OFS_T    72*3
+#define OFS_X    (OFS_T + 759*8)
+#define OFS_ZY   (OFS_X + 2048*3)
+
+
+
+
+/// @endcond 
+
+/** 
+  @brief Load order vector from tables to a buffer
+  
+  Yet to be documented!!!
+*/
+// %%EXPORT px
+void mm_order_load_vector1(uint_mmv_t *p_dest)
+{
+    load24(OFS_ABC, p_dest + MM_OP15_OFS_A, 72);
+    load64(OFS_T, p_dest + MM_OP15_OFS_T, 759);
+    load24(OFS_X, p_dest + MM_OP15_OFS_X, 3*2048);
+}
+
+
+/************************************************************************
+** Check if a vector is equal to the order vector
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+// Macro ``reduce_w(w, t)`` reduces the integers stored in the 4-bit 
+// fields of variable ``w`` (of type ``uint_mmv_t``) modulo 15.
+// It uses an auxiliary variable ``t`` of type ``uint_mmv_t``.
+#define reduce_w(w, t) \
+    t = (w) & ((w) >> 2);  \
+    t = (t) & ((t) >> 1) & 0x1111111111111111ULL; \
+    w = (w) + (t) - ((t) << 2)
+
+static inline int32_t check24(uint32_t offset, uint_mmv_t *p_v, uint32_t n)
+{
+     uint_fast32_t i;
+     const uint32_t *p_o = ORDER_VECTOR + offset;
+     uint_mmv_t o0, o1, o2, t;
+     for (i = 0; i < n; i += 2) {
+         // %%IF* INT_BITS == 64
+         o0 = p_v[0];
+         o1 = p_v[2];
+         o2 = (p_v[1] & 0xffffffffULL) + (p_v[3] << 32);
+         reduce_w(o0, t);
+         reduce_w(o1, t);
+         reduce_w(o2, t);
+         o0 ^= pair(p_o[1], p_o[0]);
+         o1 ^= pair(p_o[4], p_o[3]);
+         o2 ^= pair(p_o[5], p_o[2]);
+         if (o0 | o1 | o2) return 1;
+         p_v += 4;
+         p_o += 6;
+         // %%ELSE
+         // %%END IF
+     }
+     return 0;
+}
+
+
+static inline int32_t check64(uint32_t offset, uint_mmv_t *p_v, uint32_t n)
+{
+     uint_fast32_t i;
+     const uint32_t *p_o = ORDER_VECTOR + offset;
+     uint_mmv_t o0, o1, t;
+     for (i = 0; i < 2*n; ++i) {
+         // %%IF* INT_BITS == 64
+         o0 = p_v[0];
+         o1 = p_v[1];
+         reduce_w(o0, t);
+         reduce_w(o1, t);
+         o0 ^= pair(p_o[1], p_o[0]);
+         o1 ^= pair(p_o[3], p_o[2]);
+         if (o0 | o1) return 1;
+         p_v += 2;
+         p_o += 4;
+         // %%ELSE
+         // %%END IF
+     }
+     return 0;
+}
+
+/// @endcond 
+
+
+/** 
+  @brief Compare vector with Load order vector from tables
+  
+  Yet to be documented!!!
+*/
+// %%EXPORT px
+int32_t mm_order_compare_vector(uint_mmv_t *p_v)
+{  
+    if (check24(OFS_ZY, p_v + MM_OP15_OFS_Z, 2*2048)) return 1;
+    if (check24(OFS_ABC, p_v + MM_OP15_OFS_A, 72)) return 1;
+    if (check64(OFS_T, p_v + MM_OP15_OFS_T, 759)) return 1;
+    if (check24(OFS_X, p_v + MM_OP15_OFS_X, 2048)) return 1;
+    return 0;
+}
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c

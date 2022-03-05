@@ -5,7 +5,6 @@ import numpy as np
 import re
 from collections import OrderedDict
 
-from mmgroup import structures
 from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mat24 import ploop_theta
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
@@ -201,7 +200,12 @@ def order_vector_from_dict(d):
     TAG_SIGN = d["TAG_SIGN"]
     data2 = [TAGS_Y, TAGS_X, TAG_SIGN]
     o_tag = make_order_tags(ov, *data2)
-    return ov, o_tag, data1 + data2
+    keys =  [
+      "S_G71", "S_V71", "S_GA", "DIAG_VA", "S_G94", "S_V94",
+      "TAGS_Y", "TAGS_X", "TAG_SIGN"
+    ]
+    d1 = {k: d[k] for k in keys}
+    return ov, o_tag, d1
 
 
 
@@ -349,7 +353,7 @@ def find_order_vector(verbose = 1):
 
 
 HEADER = """# This file has been created automatically, do not change!
-# For documentation see module mmgroup.structures.find_order_vector.py.
+# For documentation see module mmgroup.dev.mm_reduce.order_vector.
 
 """
 
