@@ -611,7 +611,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
     // Subgroup ``G_x0`` of the monster.
 
     // Put p_work->v = v0 * h
-    if (mm_order_load_vector(p_work->v) < 0) return -1; 
+    mm_order_load_vector(p_work->v); 
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res < 0) goto done;
     res = mm_op15_word(p_work->v, r, len1, 1, p_work->vtmp);

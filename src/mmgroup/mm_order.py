@@ -34,7 +34,7 @@ from mmgroup.mm_reduce import mm_order_element_M
 from mmgroup.mm_reduce import mm_order_store_vector
 from mmgroup.mm_reduce import mm_order_element_Gx0
 from mmgroup.mm_reduce import mm_order_load_vector
-from mmgroup.mm_reduce import mm_order_load_tag_vector
+from mmgroup.mm_reduce import mm_order_load_tag_data
 from mmgroup.mm_reduce import mm_reduce_M
 
 
@@ -43,37 +43,21 @@ MMV3 = MMV(3)
 MMV15 = MMV(15)
 MM = MM0  #  TODO: Fixme
 
-ORDER_VECTOR = None
-ORDER_TAGS = None
 
 
+def compute_order_vector(*args, **kwds):
+    pass
 
-ORDER_VECTOR_PRESENT = False
-
-
-
-def compute_order_vector(recompute = False, verbose = 0):
-    global  ORDER_VECTOR_PRESENT
-    if ORDER_VECTOR_PRESENT and not recompute:
-        return  
-    from mmgroup.dev.mm_reduce.order_vector import get_order_vector
-    ov, o_tag, d = get_order_vector(recompute, verbose)
-    mm_order_store_vector(o_tag, ov.data)
-    del ov
-    ORDER_VECTOR_PRESENT = True
-
-
-def get_order_vector(recompute = False, verbose = 0):
-    compute_order_vector(recompute, verbose)
+def get_order_vector(*args, **kwds):
     v = mm_vector(15)
     mm_order_load_vector(v.data)
     return v
 
-def get_order_tag_vector(recompute = False, verbose = 0):
-    compute_order_vector(recompute, verbose)
-    tags = np.zeros(97, dtype = np.uint32)
-    mm_order_load_tag_vector(tags)
-    return tags
+def get_order_tag_vector(*args, **kwds):
+    a = np.zeros(97, dtype = np.uint32)
+    res = mm_order_load_tag_data(0, a, len(a))
+    assert res >= 0
+    return a[:res]
 
 
 ###########################################################################
@@ -101,8 +85,6 @@ def check_mm_equal(g1, g2, mode = 0):
         g2._data, g2.length, g3)
     if status < 2:
         return not status
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
     v = mm_vector(15)
     mm_order_load_vector(v.data)
     work = mm_vector(15)
@@ -117,45 +99,6 @@ def check_mm_equal(g1, g2, mode = 0):
 ###########################################################################
 
 
-def check_mm_order_old(g, max_order = 119, mode = 0):
-    """Return order of monster group element ``g``.
-
-    if ``order(g) < max_order`` return ``order(g)``; else return ``0``.
-
-    If mode is ``0`` (default) we first check if ``g`` is in the 
-    subgroup ``N_0 of`` the monster. If this is the case the we check 
-    the order of ``g``  by calculating in ``N_0``.
-
-    Othewise we compute the minimum ``i`` such that
-    ``v * g**i == v`` for the *order vector* ``v`. 
-    """
-    assert isinstance(g, (MM0, MM))
-    g.reduce()
-    if mode == 0:
-        n0 = np.zeros(5, dtype = np.uint32)
-        status = mm_group_check_word_n(g._data, g.length, n0)
-        if status == 0:
-            return 1
-        if status == 1:
-            n1 = np.copy(n0)
-            for i in range(2, max_order+1):
-                mm_group_n_mul_element(n1, n0, n1)
-                if not mm_group_n_reduce_element(n1):
-                    return i
-            return 0
-
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
-    v = mm_vector(15)
-    w = mm_vector(15)
-    work = mm_vector(15)
-    mm_order_load_vector(v.data)
-    mm_order_load_vector(w.data)
-    for i in range(1, max_order+1):
-        mm_op15_word(w, g._data, g.length, 1, work)
-        if not mm_op15_compare(v, w):
-            return i
-    return 0
 
 
 
@@ -174,8 +117,6 @@ def check_mm_order(g, max_order = 119):
     """
     assert isinstance(g, (MM0, MM))
     g.reduce()
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
     o = mm_order_element_M(g._data, g.length, max_order)
     return  chk_qstate12(o)
 
@@ -195,8 +136,6 @@ def check_mm_half_order(g, max_order = 119):
     assert isinstance(g, (MM0, MM))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
     o1 = mm_order_element_Gx0(g._data, g.length, h, max_order)
     chk_qstate12(o1)
     if o1 == 0:
@@ -241,8 +180,7 @@ def check_mm_in_g_x0(g):
     ``mmgroup.mm_group.MM``.
     """
     g1 = np.zeros(10, dtype = np.uint32)
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
+ 
     res = chk_qstate12(mm_order_element_Gx0(g._data,  g.length, g1, 1))
     #print("RES", hex(res))
     if ((res >> 8) != 1):
@@ -267,8 +205,7 @@ reduce_mm_time = None
 def reduce_mm(g, check = True):
     """The fastest reduction procedure for a monster element ``g``"""
     global reduce_mm_time
-    if not ORDER_VECTOR_PRESENT:
-        compute_order_vector()
+ 
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
     res = mm_reduce_M(g._data, g.length, g1)

@@ -12,7 +12,6 @@ import pytest
 from mmgroup.dev.mm_reduce.order_vector_tables import check_order_vector_data
 
 
-@pytest.mark.mmm
 @pytest.mark.orders
 def test_order_vector(verbose = 0):
     print("Testing order vector in C file")

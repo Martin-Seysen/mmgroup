@@ -65,6 +65,7 @@ def order_testcases(group):
     yield group(), 1
     for x,y in zip(range(0, 0x2000, 0x800), [0, 0x1800, 0x800, 0x1000]):
         yield  group([('x', x), ('y', y)]), 1
+    yield group('t', 1), 3
     tags_list = [ 
        ("txpyd", 10), ("txpyld"*5, 1), 
        ("txpyld"*3, 3),  ("lxypdt", 5), 

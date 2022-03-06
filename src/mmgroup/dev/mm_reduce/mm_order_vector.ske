@@ -140,7 +140,7 @@ static inline void load64(uint32_t offset, uint_mmv_t *p_dest, uint32_t n)
   Yet to be documented!!!
 */
 // %%EXPORT px
-void mm_order_load_vector1(uint_mmv_t *p_dest)
+void mm_order_load_vector(uint_mmv_t *p_dest)
 {
     load24(OFS_ABC, p_dest + MM_OP15_OFS_A, 72);
     load64(OFS_T, p_dest + MM_OP15_OFS_T, 759);
@@ -161,7 +161,7 @@ void mm_order_load_vector1(uint_mmv_t *p_dest)
 #define reduce_w(w, t) \
     t = (w) & ((w) >> 2);  \
     t = (t) & ((t) >> 1) & 0x1111111111111111ULL; \
-    w = (w) + (t) - ((t) << 2)
+    w = (w) + (t) - ((t) << 4)
 
 static inline int32_t check24(uint32_t offset, uint_mmv_t *p_v, uint32_t n)
 {
@@ -215,7 +215,7 @@ static inline int32_t check64(uint32_t offset, uint_mmv_t *p_v, uint32_t n)
 
 
 /** 
-  @brief Compare vector with Load order vector from tables
+  @brief Compare vector with order vector from tables
   
   Yet to be documented!!!
 */
@@ -229,6 +229,17 @@ int32_t mm_order_compare_vector(uint_mmv_t *p_v)
     return 0;
 }
 
+
+/** 
+  @brief Compare A part of vector with order vector from tables
+  
+  Yet to be documented!!!
+*/
+// %%EXPORT px
+int32_t mm_order_compare_vector_part_A(uint_mmv_t *p_v)
+{  
+    return check24(OFS_ABC, p_v + MM_OP15_OFS_A, 24);
+}
 
 //  %%GEN h
 /// @endcond 

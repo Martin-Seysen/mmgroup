@@ -41,14 +41,14 @@ def order_vector_from_C_data():
     data = {}
     LEN = 128
     from mmgroup.mm_reduce import  mm_order_load_tag_data
-    from mmgroup.mm_reduce import  mm_order_load_vector1
+    from mmgroup.mm_reduce import  mm_order_load_vector
     for i, name in enumerate(NAMES):
         a = np.zeros(LEN, dtype = np.uint32)
         length = mm_order_load_tag_data(i, a, LEN)
         data[name] = a[:length]
     o_tag = data["TAG_DATA"]
     ov = MMV15(0)
-    mm_order_load_vector1(ov.data)
+    mm_order_load_vector(ov.data)
     return ov, o_tag, data
 
 
