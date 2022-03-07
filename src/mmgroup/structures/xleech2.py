@@ -143,8 +143,7 @@ def import_mm_order_functions():
     on demand. This avoids an infinite recursion of imports.
     """
     global check_mm_in_g_x0
-    from mmgroup.mm_order import check_mm_in_g_x0 as f
-    check_mm_in_g_x0 = f
+    from mmgroup.structures.mm_order import check_mm_in_g_x0 
 
 
 

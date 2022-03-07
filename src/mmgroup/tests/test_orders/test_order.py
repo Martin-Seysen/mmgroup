@@ -14,8 +14,8 @@ from mmgroup import  MMV, MM0
 ref_space = MMV(3)
 ref_group = MM0
 
-from mmgroup import mm_order
-from mmgroup.mm_order import reduce_mm
+from mmgroup.structures import mm_order
+from mmgroup.structures.mm_order import reduce_mm
 
 ########################################################################
 # Computing the order of a group element using a random vector

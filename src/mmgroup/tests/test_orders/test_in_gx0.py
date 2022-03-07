@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from mmgroup import MM
-import mmgroup.mm_order
+import mmgroup.structures.mm_order
 
 from mmgroup.mat24 import ploop_theta
 from mmgroup.generators import gen_leech3to2_type4
@@ -12,7 +12,7 @@ from mmgroup.clifford12 import uint64_parity
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 
 
-from mmgroup.mm_order import get_order_vector
+from mmgroup.structures.mm_order import get_order_vector
 from mmgroup import MM0Group, MM0, MM
 from mmgroup.mm import mm_vector
 
@@ -41,7 +41,7 @@ from mmgroup.mm_reduce import mm_order_check_in_Gx0
 # that has been used in the development phase.
 
 get_order_vector()
-from mmgroup.mm_order import get_order_tag_vector, check_mm_in_g_x0
+from mmgroup.structures.mm_order import get_order_tag_vector, check_mm_in_g_x0
 from mmgroup.dev.mm_reduce.order_vector import OFS_NORM_A, OFS_DIAG_VA
 from mmgroup.dev.mm_reduce.order_vector import OFS_WATERMARK_PERM
 from mmgroup.dev.mm_reduce.order_vector import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X

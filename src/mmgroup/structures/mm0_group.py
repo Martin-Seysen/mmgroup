@@ -262,14 +262,13 @@ def import_mm_order_functions():
     """
     global check_mm_order, check_mm_equal
     global check_mm_half_order, check_mm_in_g_x0
-    from mmgroup.mm_order import check_mm_order as f
-    check_mm_order = f
-    from mmgroup.mm_order import check_mm_equal as f
-    check_mm_equal = f
-    from mmgroup.mm_order import check_mm_half_order as f
-    check_mm_half_order = f
-    from mmgroup.mm_order import check_mm_in_g_x0 as f
-    check_mm_in_g_x0 = f
+    global mm_reduce_M
+    from mmgroup.structures.mm_order import check_mm_order
+    from mmgroup.structures.mm_order import check_mm_equal 
+    from mmgroup.structures.mm_order import check_mm_half_order
+    from mmgroup.structures.mm_order import check_mm_in_g_x0
+
+
 
 
 ###########################################################################

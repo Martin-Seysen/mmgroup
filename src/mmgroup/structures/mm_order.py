@@ -31,7 +31,6 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
 from mmgroup.mm_reduce import mm_order_element_M
-from mmgroup.mm_reduce import mm_order_store_vector
 from mmgroup.mm_reduce import mm_order_element_Gx0
 from mmgroup.mm_reduce import mm_order_load_vector
 from mmgroup.mm_reduce import mm_order_load_tag_data
@@ -45,8 +44,6 @@ MM = MM0  #  TODO: Fixme
 
 
 
-def compute_order_vector(*args, **kwds):
-    pass
 
 def get_order_vector(*args, **kwds):
     v = mm_vector(15)
@@ -231,13 +228,6 @@ def reduce_mm(g, check = True):
     return g
 
 
-###########################################################################
-# Main program (for testing)
-###########################################################################
-
-
-if __name__ == "__main__":
-    compute_order_vector(recompute = 0, verbose = 1)
         
 
 

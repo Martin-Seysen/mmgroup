@@ -1,5 +1,11 @@
-// %%COMMENT
-// TODO: comment this!!!!
+/** @file mm_order_vector.c
+
+ File ``mm_order_vector`` contains the precomuted ``order_vector``
+ and data related to that ``order_vector``,
+
+ It also contains functions for retrieving these data. 
+
+*/
 
 #include <malloc.h>
 

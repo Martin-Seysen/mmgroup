@@ -1,15 +1,16 @@
-/** @file mm%{P}_op_eval_A.c
+/** @file mm%{P}_op_rank_A.c
 
- File ``mm%{P}_op_eval_A.c`` implements the evaluation of the ``A``
+ Function ``mm_op%{P}_eval_A_rank_mod3`` computes the rank of the ``A``
  part of a vector in the representation \f$\rho_{%{P}}\f$ of the
- monster.
+ monster. That rank is computed modulo 3. 
 
  That ``A`` part corresponds to a symmetric matrix \f$A\f$ acting on
- the Leech lattice. Let \f$v_2\f$ be a short Leech lattice vector, 
- encoded as a vector in  the Leech lattice modulo 2. 
+ the Leech lattice. If matrix \f$A\f$  has corank 1 then we also
+ compute a nonzero vector in the kernel of \f$A\f$ as a vector in 
+ the Leech lattice modulo 3.
 
- This module contains a function ``mm_op%{P}_eval_A`` for
- evaluating the symmetric matrix \f$A\f$ at a \f$v_2\f$.
+ The functions in this module are implemented for the representation 
+ of the monster modulo 3 and 15 only.
 */
 
 
@@ -130,7 +131,7 @@ int32_t mm_op%{P}_load_leech3matrix(uint_mmv_t *v, uint64_t *a)
 
 
 
-/** @brief Kernel of 'A' part of a vector of the representation of the monster
+/** @brief Rank of 'A' part of a vector of the representation of the monster
 
    Let ``a`` be the symmetric 24 times matrix corrsponding to the part 
    with  tag 'A' of a input vector ``v`` in the representation of 

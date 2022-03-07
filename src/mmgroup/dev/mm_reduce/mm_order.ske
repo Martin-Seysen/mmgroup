@@ -1,5 +1,17 @@
-// %%COMMENT
-// TODO: comment this!!!!
+/** @file mm_order.c
+
+ File ``mm_order.c`` contains functions for checking if an element is
+ in the subgroup \f$G_{x0}\f$ (or \f$Q_{x0}\f$) of the moster group.
+ If this is the case, the element is expressed as a word in the
+ generators of the corresponding subgroup.
+
+ File ``mm_order.c`` also computes functions for computing the order
+ of an element of the monster.
+
+ All these function use the precomputed ``order_vector`` in
+ file ``mm_order_vector.c``
+*/
+
 
 #include <malloc.h>
 
@@ -36,29 +48,6 @@ enum tag_offsets {
 
 
 
-/**
-  @brief Check if a vector is an image under an element of \f$G_{x0}\f$
-
-  Let ``v0`` be an order vector in the representation \f$\rho_{15}\f$
-  of the monster group. This is a vector whose stabilizer in the monster
-  is the neutral element, satisfying some additional conditions as
-  described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
-  order vector is the object ORDER_VECTOR in 
-  module ``mmgroup.mm_order.py``. This function store such an order
-  vector ``v0`` in an internal buffer.
-
-  The function also requires a parameter ``tags`` describing some
-  properties of vector ``v0``, corresponding to the array ``ORDER_TAGS``
-  computed in module ``mmgroup.mm_order.py``. The function also stores
-  the vector ``tags`` in an internal buffer.
-
-  The function is deprecated and performs no action!!!!
-
-*/
-// %%EXPORT px
-void mm_order_store_vector(uint32_t *tags, uint64_t *v0)
-{
-}
 
 
 #define TAG_VECTOR ((uint32_t*)MM_ORDER_VECTOR_TAG_DATA)
@@ -72,18 +61,13 @@ void mm_order_store_vector(uint32_t *tags, uint64_t *v0)
 /**
   @brief Auxiliary function for function ``mm_order_check_in_Gx0``
 
-  TODO: update doumentation!!!
  
   Inputs ``v``, and the return value are as in
-  function ``mm_order_check_in_Gx0``. A oder vector ``v0`` must
-  have been loaded with function ``mm_order_store_vector``.
+  function ``mm_order_check_in_Gx0``. 
 
-  This function requires that an order ``v0`` has been stored by
-  a previous call to function ``mm_order_store_vector``.
-
-  Assume that ``v`` is an image of ``v0`` under an unknown element
-  \f$g\f$ of the monster. We want to find that element \f$g\f$ if
-  it is in the subgroup \f$G_{x0}\f$ of the monster.
+  Assume that ``v`` is an image of the precomputed order vector ``v0`` 
+  under an unknown element \f$g\f$ of the monster. We want to find that 
+  element \f$g\f$ if it is in the subgroup \f$G_{x0}\f$ of the monster.
 
   The function computes an element \f$g_1\f$ such
   that \f$g^{-1} g_1\in Q_{x0}\f$ holds in case \f$g \in G_{x0}\f$.
@@ -158,7 +142,6 @@ int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
 /**
   @brief Auxiliary function for function ``mm_order_check_in_Gx0``
 
-  TODO: update doumentation!!!
 
   Inputs ``v``, and the return value are as in
   function ``mm_order_check_in_Gx0``.  Parameter ``g`` must contain 
@@ -166,12 +149,9 @@ int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
   called successfully with the same input parameters. The function also 
   requires an array `` work`` of length %{MMV_INTS} as a work buffer.
 
-  This function requires that an order ``v0`` has been stored by
-  a previous call to function ``mm_order_store_vector``.
-
-  Assume that ``v`` is an image of ``v0`` under an unknown element
-  \f$g\f$ of the monster. We want to find that element \f$g\f$ if
-  it is in the subgroup \f$G_{x0}\f$ of the monster.
+  Assume that ``v`` is an image of the precomputed order vector ``v0`` 
+  under an unknown element \f$g\f$ of the monster. We want to find that 
+  element \f$g\f$ if it is in the subgroup \f$G_{x0}\f$ of the monster.
 
   In case of success the function writes the element \f$g_1\f$ into the
   array ``g`` in the same way as function ``mm_order_check_in_Gx0``
@@ -230,17 +210,12 @@ uint32_t mm_order_find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 /**
   @brief Check if a vector is an image under an element of \f$G_{x0}\f$
 
-  TODO: update doumentation!!!
 
-  This function requires that an order ``v0`` has been stored by
-  a previous call to function ``mm_order_store_vector``.
-
-  Let ``v0`` be that order vector in the representation \f$\rho_{15}\f$
-  of the monster group. This is a vector whose stabilizer in the monster
-  is the neutral element, satisfying some additional conditions as
-  described in module ``mmgroup.structures.find_mm_order.py``. A suitable 
-  order vector is the object ORDER_VECTOR in 
-  module ``mmgroup.mm_order.py``.
+  Let ``v0`` be the precomputed order vector in the 
+  representation \f$\rho_{15}\f$  of the monster group. This is a vector 
+  whose stabilizer in the monster is the neutral element, satisfying some 
+  additional conditions as described in 
+  module ``mmgroup.structures.find_mm_order.py``
 
   Assume that ``v`` is an image of ``v0`` under an unknown element
   \f$g\f$ of the monster. The function comutpes the element\f$g\f$ if
@@ -290,8 +265,6 @@ int32_t mm_order_check_in_Gx0(uint_mmv_t *v, uint32_t *g)
 /**
   @brief Compute exponent \f$e\f$ such that \f$g^e \in G_{x0}\f$
 
-  TODO: update doumentation!!!
-
   Let \f$g\f$ be the element of the monster group stored in the
   array ``g`` as a word of generators of the monster group of
   length ``n``.
@@ -309,9 +282,6 @@ int32_t mm_order_check_in_Gx0(uint_mmv_t *v, uint32_t *g)
   Parameter ``o`` is an upper bound for the exponent ``e``.
   The function returns 0 in case ``e > o``; then the data in
   buffer ``h`` are invalid.
-
-  This function requires that an order vector has been stored by
-  a previous call to function ``mm_order_store_vector``.
 
   A negative return value indicates an error. 
 */
@@ -382,9 +352,6 @@ int32_t mm_order_element_Gx0(uint32_t *g, uint32_t n, uint32_t *h, uint32_t o)
   we are interested in small orders only.
   Parameter ``o`` is an upper bound for the order. The function 
   may return 0 if the order is greater than ``o``.
-
-  This function requires that an order vector has been stored by
-  a previous call to function ``mm_order_store_vector``.
 
   A negative return value indicates an error. 
 */

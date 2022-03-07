@@ -3,7 +3,7 @@ import datetime
 import time
 
 from mmgroup import MMGroup, MM0, MM
-from mmgroup.mm_order import check_mm_order
+from mmgroup.structures.mm_order import check_mm_order
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 
 

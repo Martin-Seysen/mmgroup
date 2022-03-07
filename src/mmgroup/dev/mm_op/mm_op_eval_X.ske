@@ -1,7 +1,17 @@
-// %%COMMENT
-// TODO: comment this!!!!
+/** @file mm%{P}_op_eval_X.c
 
+ File ``mm%{P}_op_eval_X.c`` implements the evaluation of the
+ part of a vector in the representation \f$\rho_{%{P}}\f$ of the
+ monster corresponding to part \f$98280_x\f$ of the representation.
 
+ The modules in this function deal with counting and finding entries
+ (corresponding to part \f$98280_x\f$) of a 
+ vector \f$v \in \rho_{%{P}}\f$ with a certain absolute value.
+ This is useful for identifying a 2A axis \f$v\f$.
+
+ These functions in this module are implemented for the
+ representation of the  monster modulo 15 only.
+*/
 #include "mat24_functions.h"
 #include "clifford12.h"
 #include "mm_basics.h"   

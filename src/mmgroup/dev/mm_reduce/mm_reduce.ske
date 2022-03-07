@@ -1,6 +1,13 @@
 /** @file mm_reduce.c
 
- Yet to be documented
+ Function ``mm_reduce_M`` is the most important C function in this
+ project.  It reduced an arbitary element of the monster group
+ (represented as a word in the generators of the monster) to
+ a word of fixed maxmum length.
+
+ This file also conatins auxiliary functions for 
+ function  ``mm_reduce_M``;  most of them deal with 2A axes in
+ the reprsentation \f$\rho\f$ of the monster modulo 15.
 */
 
 #include <malloc.h>
@@ -571,13 +578,7 @@ done:
 
   To be documented later!
 
-  Caution:
-
-  This function requires that an order ``v0`` has been stored by
-  a previous call to function ``mm_order_store_vector``.
-  This is the same precondtion as for 
-  function ``mm_order_check_in_Gx0``.
-   
+  
 */
 // %%EXPORT px
 int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
