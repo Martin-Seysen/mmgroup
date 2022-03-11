@@ -131,6 +131,7 @@ autodoc_mock_imports = [
     "mmgroup.mm63",
     "mmgroup.mm127",
     "mmgroup.mm255",
+    "mmgroup.mm_reduce",
     "blah",
 ]
 

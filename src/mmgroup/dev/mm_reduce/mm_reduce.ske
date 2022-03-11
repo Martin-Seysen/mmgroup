@@ -23,11 +23,13 @@
 
 
 
+/// @cond DO_NOT_DOCUMENT 
+
+
 #define MAX_SHORT_ARRAY 1024
 
 #define V_START 0x200
 
-/// @cond DO_NOT_DOCUMENT 
 
 
 typedef struct {
@@ -275,7 +277,13 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
 // Store standard 2A axes in a vector
 /////////////////////////////////////////////////////////////////////////
 
+/**
+  @brief Store a 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
 
+  To be documented later!
+
+  
+*/
 // %%EXPORT px
 void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
 {
@@ -295,6 +303,8 @@ void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
 // Reducing a 2A axis to the standard axis V_START
 /////////////////////////////////////////////////////////////////////////
 
+
+/// @cond DO_NOT_DOCUMENT 
 
 
 static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
@@ -406,8 +416,15 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
     return -3;
 }
 
+/// @endcond
 
 
+/**
+  @brief Reduce a 2A axis to the standard axis \f$v^+\f$
+
+  To be documented later!
+  
+*/
 // %%EXPORT px
 int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t * r)
 {
@@ -420,6 +437,12 @@ int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t * r)
 }
 
 
+/**
+  @brief Reduce element of monster to element of subgroup \f$H^+\f$
+
+  To be documented later!
+  
+*/
 // %%EXPORT px
 int32_t mm_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
 {
@@ -438,6 +461,9 @@ int32_t mm_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
 /////////////////////////////////////////////////////////////////////////
 // Reducing a 2A axis to orthogonal to V_START, preserving V_START
 /////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
 
 
 static int32_t reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
@@ -532,7 +558,15 @@ static int32_t reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_wo
 }
 
 
+/// @endcond 
 
+
+/**
+  @brief Reduce feasible 2A axis to the feasible axis \f$v^-\f$
+
+  To be documented later!
+  
+*/
 // %%EXPORT px
 int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
 {
@@ -546,7 +580,12 @@ int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
 
 
 
+/**
+  @brief Reduce element of monster to element of subgroup \f$G_{x0}\f$
 
+  To be documented later!
+  
+*/
 // %%EXPORT px
 int32_t mm_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t *r)
 {

@@ -391,7 +391,7 @@ function are also added to the extension ``mmgroup.mm13``.
 
 
 Dependencies between Cython extensions
----------------------------------------
+--------------------------------------
 
 The Cython extension ``mm_<p>`` depends on other Cython extensions
 as shown in the following paragraph:
@@ -414,6 +414,9 @@ we have the following additional dependencies:
           + generators
               + mat24
 
+This comprises modules ``mm_op_rank_A.c``, ``mm_op_eval_A.c``, 
+and ``mm_op_eval_A.c``.
+
 Note that for each Cython extension upon which other Cython extensions
 depend, the relevant C functions are implemented in a shared library
 (or a DLL in Windows). Details are given in the following table:
@@ -425,7 +428,7 @@ depend, the relevant C functions are implemented in a shared library
     ====================== =======================================
     Cython extension       Implemented in shared library
     ====================== =======================================
-    ``mm<p>``              Implemented as a Cython extension
+    ``mm<p>``              ``mmgroup_mm_op<p>``
     ``mm``                 ``mmgroup_mm_basics``
     ``clifford12``         ``mmgroup_clifford12``
     ``generators, mat24``  ``mmgroup_mat24``
@@ -501,6 +504,33 @@ C interface for file mm15_op_eval_X.c
 ---------------------------------------
 
 .. doxygenfile:: mm15_op_eval_X.c
+
+
+
+Description of the ``mm_reduce`` extension
+==========================================
+
+TODO: General documentation yet to be done!
+
+
+C interface for file mm_order_vector.c
+--------------------------------------
+
+.. doxygenfile:: mm_order_vector.c
+
+
+C interface for file mm_order.c
+-------------------------------
+
+.. doxygenfile:: mm_order.c
+
+
+
+C interface for file mm_reduce.c
+--------------------------------
+
+.. doxygenfile:: mm_reduce.c
+
 
 
 

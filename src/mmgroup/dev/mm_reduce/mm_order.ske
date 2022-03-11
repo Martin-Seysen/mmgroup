@@ -23,6 +23,7 @@
 // %%EXPORT_KWD MM_REDUCE_API
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 enum tag_offsets {
     OFS_NORM_A = 0,
@@ -34,6 +35,8 @@ enum tag_offsets {
     OFS_SOLVE_X = 72,
     OFS_TAG_SIGN = 96,
 };
+
+/// @endcond  
 
 
 /************************************************************************
@@ -49,8 +52,12 @@ enum tag_offsets {
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 #define TAG_VECTOR ((uint32_t*)MM_ORDER_VECTOR_TAG_DATA)
+
+/// @endcond 
+
 
 
 /************************************************************************
