@@ -735,7 +735,7 @@ positive_blocks = {
    "10A": [(0 , range(4,24))],
    "10B": [(range(8,24), range(8,24))],
   "6A": [(0, range(4,24))],
-  "12C": [(0, range(0,7)), (8,range(10,24))],
+#   "12C": [(range(7,8), range(8,16)), (range(0,4), range(4,8))],
   "4C": [(8, range(1,8))]
 }
 
@@ -743,6 +743,7 @@ positive_blocks = {
 negative_blocks = {
   "8B": [(1, range(2,23))],
   "4A": [(0, range(1,23))],
+   "12C": [(range(0,8), range(0,8))],
 }
 
 

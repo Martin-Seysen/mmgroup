@@ -228,7 +228,12 @@ class GVector:
         score = num_zeros = 576 - np.count_nonzero(self.v['A'])
         DIAG = np.diagonal(A)
         diag_bins = sorted([x for x in np.bincount(DIAG) if x])
-        if max(diag_bins) >= 22:
+        axis_type = self.axis_type()
+        # We shall use the axis type for finding the 'nicest' axis
+        # of a given type only!
+        #print(self.axis_type())
+        bonus = 0
+        if axis_type == "10A" and max(diag_bins) >= 22:
             # Special treatement for case 10A: Prefer solution with
             # large No of off-diagonal elements of same absolute value
             d = defaultdict(list)
@@ -242,14 +247,19 @@ class GVector:
             max_occur = max(np.bincount(B.ravel()))
             if max_occur >= 462:
                 return 1000 + max_occur
-        bonus = 0
-        if diag_bins == [4,20]:
+        elif axis_type == "10B":
+            bonus = diag_bins == [4,20]
             # Special treatement for case 10B: Prefer solution with
             # block [4, 24]
             #print("YEEEAHHH", diag_bins)
-            bonus = 1
+        elif axis_type == "12C":
+            #print(diag_bins)
+            bonus =   1000 * (diag_bins == [6, 8, 10])          
         return score + bonus
         
+
+    def axis_type(self):
+        return self.v.axis_type(e = 0)
 
 ########################################################################
 ########################################################################

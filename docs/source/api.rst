@@ -47,6 +47,8 @@ In the description of the *mmgroup* package we use the notation
 in :cite:`Seysen20`, where an explicit description of the 
 representations :math:`\rho(g), g \in G` is given for a 
 generating subset :math:`G` of the monster :math:`\mathbb{M}`.
+For a mathematical description of the implementation we
+refer to :cite:`Seysen22`.
 
 
 Installation
