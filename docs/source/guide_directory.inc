@@ -62,11 +62,17 @@ Directory  ``src/mmgroup/dev`` has the following subdirectories:
      :math:`\mathbb{M}` on :math:`\rho_p`  for specific values
      :math:`p`
 
+   * ``mm_reduce``
+     Scripts for generating C code related to the word shortening
+     algorithm and the computation of the order in  
+     :math:`\mathbb{M}`.
+
    * ``pxd_files``
      Contains files with extension ``.pyx, .pxd, .pxi`` used by 
      ``Cython``, which are automatically generated or copied from
      a different source location 
 
+ 
 
 Directory  ``src/mmgroup/tests`` has the following subdirectories: 
 

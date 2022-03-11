@@ -370,8 +370,8 @@ some integer type.
 In the following subsections of this section we will document 
 the C functions for characteristic ``p = 15`` only.
 
-Special functions in characteristic ``p = 15``
-...............................................
+Special functions in characteristic ``p = 15`` and ``p = 3``
+............................................................
 
 In principle, the Cython extensions ``mmgroup.mm<p>`` support
 the same set of functions for all characteristics ``p``.
@@ -385,10 +385,9 @@ axes in :cite:`Con85`.
 The implementation of the additional functions for supporting 2A 
 axes is a bit involved; and it turns out that it suffices to 
 deal with the case ``p = 15``. So we add some extra functions 
-to the Cython extension ``mmgroup.mm15``.
+to the Cython extension ``mmgroup.mm15``. Some of these
+function are also added to the extension ``mmgroup.mm13``.
 
-The names of the ``.ske`` files in subdirectory ``mmgroup/dev/mm_op``
-implementing these extra functions are prefixed with ``mm15_op_``.
 
 
 Dependencies between Cython extensions
@@ -482,5 +481,27 @@ C interface for file mm15_op_word.c
 ---------------------------------------
 
 .. doxygenfile:: mm15_op_word.c
+
+
+
+C interface for file mm15_op_rank_A.c
+---------------------------------------
+
+.. doxygenfile:: mm15_op_rank_A.c
+
+
+
+C interface for file mm15_op_eval_A.c
+---------------------------------------
+
+.. doxygenfile:: mm15_op_eval_A.c
+
+
+C interface for file mm15_op_eval_X.c
+---------------------------------------
+
+.. doxygenfile:: mm15_op_eval_X.c
+
+
 
 

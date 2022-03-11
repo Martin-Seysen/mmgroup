@@ -38,6 +38,10 @@
 ** Auxiliary functions for function mm_op%{P}_eval_X_find_abs
 *********************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+
+
 typedef struct {
     uint64_t mask0;
     uint64_t mask1;
@@ -166,6 +170,9 @@ static int32_t find_short_all(
     return i;
 }
 
+/// @endcond 
+
+
 
 /**
   @brief Find certain entries of a vector of the monster rep modulo %{P}
@@ -207,6 +214,8 @@ uint32_t mm_op%{P}_eval_X_find_abs(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  
 ** Auxiliary functions for function mm_op%{P}_eval_X_count_abs
 *********************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
 
 static inline void count_short24(
     uint_mmv_t *v, 
@@ -245,6 +254,9 @@ static inline void count_short64(
 }
 
 
+/// @endcond
+
+
 /**
   @brief Count certain entries of a vector of the monster rep modulo %{P}
 
@@ -258,7 +270,7 @@ static inline void count_short64(
 
   Output is written into the array ``p_out`` of length  %{int:P//2+1}.
   Entry ``p_out[i]`` contains the number if entries of the monomial 
-  part of ``v`` with absolute value ``i`` for ``0 <= i <= %{int:P//2}. 
+  part of ``v`` with absolute value ``i`` for ``0 <= i <= %{int:P//2}``. 
 */
 // %%EXPORT px
 void mm_op%{P}_eval_X_count_abs(uint_mmv_t *v, uint32_t *p_out)

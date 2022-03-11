@@ -112,6 +112,15 @@ int32_t mm_op%{P}_eval_A_aux(uint_mmv_t *v, uint32_t m_and, uint32_t m_xor, uint
 }
 
 
+
+     
+
+/*************************************************************************
+*** Function mm_op%{P}_eval_A
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
 // Obtain ``v[i, j]`` for a vector ``v`` in the monster rep mod {P} 
 static inline uint32_t entry_v(uint_mmv_t *v, uint32_t i, uint32_t j)
 {
@@ -121,11 +130,9 @@ static inline uint32_t entry_v(uint_mmv_t *v, uint32_t i, uint32_t j)
      w >>= (i &  %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
      return (uint32_t)(w & %{P});
 }
-     
 
-/*************************************************************************
-*** Function mm_op%{P}_eval_A
-*************************************************************************/
+/// @endcond
+
 
 
 /** @brief Evaluate A part in rep of monster at a short Leech vector
