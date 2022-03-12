@@ -185,7 +185,8 @@ Computations in the Leech lattice modulo 2
 
 In this section we describe the operation of the Conway group
 :math:`\mbox{Co}_1` on :math:`\Lambda / 2 \Lambda`,
-where :math:`\Lambda` is the Leech lattice.
+where :math:`\Lambda` is the Leech lattice. The description of
+these orbits is taken from  :cite:`Seysen22`, Appendix A.
 
 This operation is important for computing in the subgroup
 :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1` of the 
@@ -501,7 +502,8 @@ define
 to be the :math:`i`-th column of :math:`v`. This definition is
 related to the Miracle Octad Generator (MOG) used for the
 description of the Golay code and the Leech lattice, see
-:cite:`CS99`, chapter 11.
+:cite:`CS99`, chapter 11. The following lemma has been shown
+in :cite:`Seysen22`.
 
 Lemma 
 
@@ -516,19 +518,6 @@ If :math:`w` has shape :math:`(m^2 0^2 \bmod{2m})` then
 :math:`w^{(k)}` has shape :math:`(m^2 0^2 \bmod{2m})` for all
 :math:`k \in \mathbb{Z}`.
 
-Sketch proof
-
-In :cite:`Seysen20`, section 9.5 the operation of :math:`\xi` 
-on a column is given as a product of two orthogonal symmetric
-:math:`4 \times 4` matrices :math:`\xi_{4a}` and
-:math:`\xi_{4b}`. Matrix :math:`\xi_{4b}` negates the first
-coordinate of a column, and the operation of matrix 
-:math:`\xi_{4a}` corresponds to the subtraction of the halved
-sum of all coordinates from each coordinate. With this
-description of :math:`\xi_{4a}` and :math:`\xi_{4b}` it is
-easy to show the Lemma.
-
-q.e.d.
 
 Computing a transversal of :math:`G_{x0} \backslash N_{x0}`
 ............................................................
@@ -570,31 +559,34 @@ for finding a suitable permutation in :math:`M_{24}`.
 Incorporating the baby monster into the computation of a tranversal
 ...................................................................
 
-The capability of computing in a subgroup of structure :math:`2.B`
-of the monster :math:`\mathbb{M}` (where :math:`B` is the baby 
-monster) is crucial for the success of our project. Although not 
-strictly necessary, we want to select elements of that subgroup in 
-our transversal of :math:`G_{x0} \backslash N_{x0}` whenever possible. 
+The capability of computing in a subgroup :math:`H^+` of structure 
+:math:`2.B` of the monster :math:`\mathbb{M}` (where :math:`B` is
+the baby monster) is crucial for the success of our project. 
+Although not strictly necessary,
+we want to select elements of :math:`H^+` in our transversal of 
+:math:`G_{x0} \backslash N_{x0}` whenever possible. 
 In this subsection we explain how to do so. This is a bit technical 
-and may be skipped at first reading.
+and may be skipped at first reading. 
 
 Let :math:`\beta = {\small \frac{1}{\sqrt{8}}}(e_2 - e_3) \in \Lambda`,
 where  :math:`e_i` is the  :math:`i`-th unit vector in 
 :math:`\mathbb{R}^{24}`. Then :math:`\beta` is of type 2 in the
-Leech lattice :math:`\Lambda`, and the centralizer of :math:`x_\beta` 
-in :math:`\mathbb{M}` has structure  :math:`2.B`, and the centralizer
-:math:`C_G(B)` of :math:`x_\beta` in :math:`G_{x0}` has structure
-:math:`2^{1+22}.\mbox{Co}_2`. Our goal is find a representative
-of a coset in  :math:`N_{x0} \backslash G_{x0}`  fixing :math:`\beta`
-whenever possible.
+Leech lattice :math:`\Lambda`, and the centralizer  :math:`H^+`
+of :math:`x_\beta` in :math:`\mathbb{M}` has structure  :math:`2.B`, 
+and the centralizer :math:`H` of :math:`x_\beta` in :math:`G_{x0}` 
+has structure :math:`2^{1+22}.\mbox{Co}_2`. Our goal is find a 
+representative of a coset in  :math:`N_{x0} \backslash G_{x0}` 
+in :math:`H` (centralizing the element :math:`x_\beta` of 
+:math:`\mathbb{M}`) whenever possible. 
 
-One can show that the coset in :math:`N_{x0} \backslash G_{x0}` 
-corresponding to :math:`v \in \Lambda / 2 \Lambda` of type 4 
-has a nonempty intersection with :math:`C_G(B)` if and only if
-:math:`v + \beta` is of type 2 and orthogonal to :math:`\beta` 
-in the real Leech lattice :math:`\Lambda`.
+The coset in :math:`N_{x0} \backslash G_{x0}` corresponding to 
+a vector :math:`v \in \Lambda / 2 \Lambda` of type 4 has a nonempty 
+intersection with :math:`H` if and only if :math:`v + \beta` is of 
+type 2 and orthogonal to :math:`\beta` in the real Leech lattice 
+:math:`\Lambda`, see  :cite:`Seysen22` for details. 
 
-If this is the case then we compute an element of :math:`G_{x0}` 
+If this is the case then we compute an element of 
+:math:`H \subset G_{x0}` 
 that maps :math:`v + \beta` to the type-2 vector 
 :math:`\Omega + \beta` and fixes :math:`\beta`. 
 
@@ -946,8 +938,11 @@ condition stated an the last section. In addition we require that
 for some integer :math:`d` (modulo 3) the bilinear form 
 :math:`w_{(A,3)} - d \cdot Q_3` has a kernel of dimension one, and 
 that this kernel contains a type-4 vector :math:`x_4` of the Leech 
-lattice modulo 3. We will discuss the chance of finding such a 
-vector :math:`w` later.
+lattice modulo 3.The chance of finding such a 
+vector :math:`w` is discussed in :cite:`Seysen22`, Appendix B.
+In average, finding a suitable vector :math:`w` take less
+than a minute on the author's compute, when running with 12
+processes in parallel.
 
 
 Let :math:`\Omega` be the standard frame of
@@ -1016,73 +1011,21 @@ steps mentioned above. We abort as early as possible in case of
 failure, in order to accelerate functions searching for an 
 element of :math:`G_{x0}` that have a low probability of success.
 
-
-The cost of finding a suitable vector for membership testing
-..............................................................
-
-In this section we discuss the run time for finding a suitable test
-vector :math:`w` as defined in the last two sections. First we have 
-to find two elements :math:`h_{71}` and :math:`h_{94}` in the 
-monster of order 71 and 94. From the character tables in 
-:cite:`Atlas` we see that a random element in the monster has 
-order 71 and 94 with probability 1/71 and 1/47, respectively. 
-Checking the orders of such elements costs  71 and 94 operations, 
-respectively,  on a random vector e.g. in the representation 
-:math:`\rho_3`. So in average we have to do about 10000 operations 
-on a random vector. Here we start with checking elements of the 
-monster taken from a set of relatively short words, and we slowly 
-increase the length of the words in case of failure. On the author's 
-computer an operation of a group element on such a vector costs (at 
-most) a few milliseconds. Also, the search can de done by up to 6 
-kernels in parallel, so finding a suitable group element is easy.
-
-Once we have found suitable group elements, we genreate 'random'
-vectors :math:`v_3 \in \rho_3` and  :math:`v_5 \in \rho_5`.
-We select candidates for :math:`v_3` and  :math:`v_5` from a set
-sparse vectors, so that we can easily write them into a file.
-Then we compute the sums :math:`w_{71} = \sum_i v_3 h_{71}^i` and 
-:math:`w_{94} = \sum_i (-1)^i v_5 h_{94}^i`, where the summation
-index runs over all different powers of  :math:`h_{71}` or
-:math:`h_{94}`. Vectors :math:`w_{71}` and :math:`w_{94}` are  
-fixed by the whole monster group with negligible probability,
-so that they can almost certainly be used for testing equality.
-
-For checking membership of the subgroup :math:`G_{x0}` of the
-monster, the vector :math:`w_{71}` also has to satisfy the 
-condition stated in the last section. We briefly state an
-approximation for the probability that a random vector 
-:math:`w_{71} \in \rho_3` satisfies that condition.
-
-
-The distribution of the coranks of a symmetric :math:`n \times n`
-matrix over :math:`\mathbb{F}_3` can be modeled as a Markov process. 
-So it is not difficult to show that a random :math:`24 \times 24` 
-matrix over :math:`\mathbb{F}_3` has corank :math:`1` (i.e. rank 
-:math:`23`) with probability about :math:`0.3195`.
-There are :math:`24\cdot 8292375` vectors of type 4 in the Leech 
-lattice and :math:`3^{24}-1` nonzero vectors in 
-:math:`\mathbb{F}_3^{24}`; so a random one-dimensional subspace 
-of :math:`\mathbb{F}_3^{24}` is spanned by a type-4 vector with
-probability about :math:`1/710`. Thus the kernel of a random
-symmetric  :math:`24 \times 24` matrix over :math:`\mathbb{F}_3` 
-is spanned by a type-4 vector with probability about :math:`1/2221`.
-
-
-Generating a vector :math:`w_{71} \in \rho_3` that is fixed by an 
-element of order :math:`71` costs :math:`71` group operations on 
-:math:`\rho_3`. So in average we need about :math:`158000` 
-group operations on the representation :math:`\rho_3`. to find a 
-vector in :math:`\rho_3` satisfying all required conditions. This 
-is certainly doable, and has been done.
-As indicated in the last section, for each candidate for a 
-vector in  :math:`\rho_3` we may check the kernels of three 
-bilinear forms (corresponding to that vector) that differ by a 
-multiple of the unit matrix. This almost triples the success 
-rate for finding a suitable vector  :math:`w`.
+Module ``mmgroup.dev.mm_reduce.find_order_vector.py`` contains
+a function for finding a suitable vector  :math:`w`. Once a 
+vector :math:`w` has been found, it creates a module
+``mmgroup.dev.mm_reduce.order_vector_data.py`` containing
+information for recomputing the same vector :math:`w`
+more quickly. The code generation process creates a C file 
+``mm_order_vector.c`` containing the vector :math:`w`
+in its source code together with some data required for
+using :math:`w` and for checking its correctness.
+We believe that this method simplifies the integration of
+our project into computer algebra systems like GAP or Magma,
+since these systems may now simply call C funtions for 
+computing in the monster group, without bothering how to 
+generate a suitable vector :math:`w`.
 
 
 
-
-
- 
 

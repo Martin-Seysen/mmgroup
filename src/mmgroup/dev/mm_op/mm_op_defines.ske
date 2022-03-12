@@ -25,6 +25,7 @@
 
 */
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 #define MM_OP%{P}_DLL  // We want a DLL!!

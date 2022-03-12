@@ -1,3 +1,23 @@
+r"""This module computes an order vector in a representation of the monster.
+
+In :cite:`Seysen22` we define a vector :math:`v_1` in the 
+representation  :math:`\rho_{15}` of the monster group 
+:math:`\mathbb{M}` that is used for recognizing elements of the 
+subgroup :math:`G_{x0}` of :math:`\mathbb{M}`. Vector :math:`v_1`
+is also used for computing the order of an element of 
+:math:`\mathbb{M}`, so we call  :math:`v_1` an **order vector**
+here.
+
+:math:`v_1` is constructed from two vectors :math:`v_{71} \in \rho_3`
+and :math:`v_{94} \in \rho_5` via Chinese remaindering. This module
+contains functions for computing vectors  :math:`v_{71}` and
+:math:`v_{94}` with the properties required in :cite:`Seysen22`.
+
+These computations are the most time-consuming part of the
+computation of :math:`v_1`; and we use multiprocessing for 
+performing these computations. 
+"""
+
 import os
 from random import randint
 from collections import OrderedDict
@@ -131,10 +151,12 @@ def get_factors(n):
 
 
 def rand_mm_element(size = 1):
-    """Return a random element ``g`` of the moster group
+    """Return a random element ``g`` of the monster group
 
     Here ``size`` is a measure for the requested word length. 
-    of ``g``. 
+    of ``g``. The returned random element is not uniform
+    distrbuted. It is just sufficiently random, so that
+    elements of a high order occur sufficiently often
 
     ``g`` is returend as an element of the standard instance of
     class  ``MM0Group``.
@@ -147,6 +169,19 @@ def rand_mm_element(size = 1):
 
     
 def rand_elem_of_order(factors, elem_size):   
+    """Return random element of the monster group of a given order
+
+    The function creates a random element ``g`` of the monster by 
+    calling ``g = rand_mm_element(elem_size)``. It returns ``g`` as 
+    a string if ``g`` has order ``o``, where ``o`` is  a multiple of 
+    ``factors[-1]`` and ``None`` otherwise. Here ``factors`` must be
+    the list of all factors of the value ``factors[-1]`` in natural
+    order.
+
+    The order is checked by applying a random vector ``v`` in the 
+    representation :math:`\rho_3` and by multplying ``v`` with 
+    powers of ``g``. 
+    """    
     g = rand_mm_element(elem_size)
     v = MMV3('R')
     w = v.copy()
@@ -295,10 +330,12 @@ def find_vector_71_mod3(verbose = 0):
     """Compute a vector stabilized by a group element of order 71
 
     The function computes an element ``g71`` of order 71 of the
-    monster and a vector ``v71``  in the representatoon of the 
+    monster and a vector ``v71``  in the representation of the 
     monster modulo 3, such that the vector
     ``w = sum(v71 * g71**i for i in range(71))`` is not trivial. 
-    Then ``w`` is stabilized by ``g71``. 
+    Then ``w`` is stabilized by ``g71``. More precisely, the 
+    projection of ``w`` onto the 196883-dimensional irreducible
+    representation of tthe monster is not trivial.
     
     The vector ``w`` satisfies the following additional property:
     
@@ -306,7 +343,10 @@ def find_vector_71_mod3(verbose = 0):
     corresponds to a symmetric bilinear form over the Leech lattice
     modulo 3. The bilinear form correponding to the computed vector
     ``w`` has a one-dimesional eigenspace with the eigenvalue 
-    ``diag`` containing a type-4 eigenvector in the Leech lattice. 
+    ``diag`` containing a type-4 eigenvector in the Leech lattice.
+
+    Such a vector ``w`` satisfies the requirements for the
+    vector :math:`v_{71} \in \rho_3` in :cite:`Seysen22`. 
     
     The function also computes an element ``gA`` of the subgroup 
     :math:`G_{x0}` of the monster  group such that the bilinear 
@@ -343,7 +383,7 @@ def make_v94_sample(s_g94):
     """Auxiliary function for function ``find_vector_94_mod5``
  
     Given ab element ``g94`` of order 94 in the monster, the function
-    computea a vector ``v94``  in the representatoon of the  monster 
+    computes a vector ``v94``  in the representatoon of the  monster 
     modulo 15, such that the vector
     ``w = 3 * sum((-1)**i * v94 * g94**i for i in range(94))``
     is not trivial. Then `w`` is stabilized by ``g94**2``, but not 
@@ -390,6 +430,23 @@ def do_find_vector_v94_mod5(s_g94, verbose = 0):
 
 
 def find_vector_v94_mod5(verbose = 0):
+    """Compute a vector stabilized by a group element of order 94
+
+    The function computes an element ``g94`` of order 94 of the
+    monster,  and a (sparse) vector ``v94``  in the representatoon 
+    of the monster modulo 15, such that the vector
+    ``w = 3 * sum((-1)**i * v94 * g94**i for i in range(94))``
+    is not trivial. Then `w`` is stabilized by ``g94**2``, but not 
+    by ``g94``.
+    
+    Such a vector ``w`` satifies the requirements for the
+    vector :math:`v_{94} \in \rho_5` in :cite:`Seysen22`. 
+
+    The function returns the the pair ``(g94, v94)`` in case of 
+    success and a pair ``(None, None)`` in case of failure.  In 
+    of success, both objects, ``g94`` and ``v94``, are returned
+    as strings. The function fails with a very small probability.  
+    """
     s_g94 = find_element_of_order(94, verbose = verbose)
     if s_g94 is None:
         return None, None

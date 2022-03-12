@@ -386,53 +386,12 @@ The implementation of the additional functions for supporting 2A
 axes is a bit involved; and it turns out that it suffices to 
 deal with the case ``p = 15``. So we add some extra functions 
 to the Cython extension ``mmgroup.mm15``. Some of these
-function are also added to the extension ``mmgroup.mm13``.
+function are also added to the extension ``mmgroup.mm3``.
 
+This comprises modules ``mm15_op_rank_A.c``, ``mm15_op_eval_A.c``, 
+and ``mm15_op_eval_X.c``. A module ``mm3_op_rank_A.c`` (for ``p = 3``)
+is also present.
 
-
-Dependencies between Cython extensions
---------------------------------------
-
-The Cython extension ``mm_<p>`` depends on other Cython extensions
-as shown in the following paragraph:
-
-
-.. code-block:: none
-
-    mm<p>
-       + mm
-          + generators
-              + mat24
- 
-For the extra functions in the ``mm15`` extension dealing with 2A axes
-we have the following additional dependencies:
-
-.. code-block:: none
-
-    mm<p>
-       + clifford12
-          + generators
-              + mat24
-
-This comprises modules ``mm_op_rank_A.c``, ``mm_op_eval_A.c``, 
-and ``mm_op_eval_A.c``.
-
-Note that for each Cython extension upon which other Cython extensions
-depend, the relevant C functions are implemented in a shared library
-(or a DLL in Windows). Details are given in the following table:
-
-
-.. table:: Shared libraries implementing Cython extensions
-    :widths: 35 65
-
-    ====================== =======================================
-    Cython extension       Implemented in shared library
-    ====================== =======================================
-    ``mm<p>``              ``mmgroup_mm_op<p>``
-    ``mm``                 ``mmgroup_mm_basics``
-    ``clifford12``         ``mmgroup_clifford12``
-    ``generators, mat24``  ``mmgroup_mat24``
-    ====================== =======================================
 
 
 The basic table-providing class for ``mmgroup.mm<p>``
@@ -513,6 +472,16 @@ Description of the ``mm_reduce`` extension
 TODO: General documentation yet to be done!
 
 
+Generating an **order vector**
+------------------------------
+
+Python module ``mmgroup.dev.mm_reduce.find_order_vector``
+.........................................................
+
+.. automodule:: mmgroup.dev.mm_reduce.find_order_vector
+
+
+
 C interface for file mm_order_vector.c
 --------------------------------------
 
@@ -531,6 +500,55 @@ C interface for file mm_reduce.c
 
 .. doxygenfile:: mm_reduce.c
 
+
+
+Shared libraries and dependencies between Cython extensions
+===========================================================
+
+For each Cython extension the relevant C functions are 
+implemented in a shared library (or a DLL in Windows). Names
+of the corresponding DLLs in windows are given in the following 
+table:
+
+
+.. table:: Shared libraries implementing Cython extensions
+    :widths: 35 65
+
+    ====================== =======================================
+    Cython extension       Implemented in shared library
+    ====================== =======================================
+    ``mm_reduce``          ``mmgroup_reduce``
+    ``mm<p>``              ``mmgroup_mm_op<p>``
+    ``mm``                 ``mmgroup_mm_basics``
+    ``clifford12``         ``mmgroup_clifford12``
+    ``generators, mat24``  ``mmgroup_mat24``
+    ====================== =======================================
+
+Here the string ``<p>`` is to be replaced by one of the integer 
+literals ``3``, ``7``, ``15``, ``31``, or ``255`` to obtain the 
+name of the shared library (or of the Cython extension) dealing 
+with the representation :math:`\rho_p` of the monster group.
+In Linux, the name of each shared library is prefixed by the
+string ``lib``. So the Windows DLL  ``mmgroup_mm_op15.dll``
+corresponds to the Linux shared library ``libmmgroup_mm_op15.so.``
+
+
+
+The Cython extension ``mm_<p>`` depends on other Cython extensions
+as shown in the following paragraph:
+
+
+.. code-block:: none
+    
+    mm_reduce
+       + mm<p>
+          + clifford12
+             + generators
+                 + mat24
+          + mm
+             + generators
+                 + mat24
+ 
 
 
 
