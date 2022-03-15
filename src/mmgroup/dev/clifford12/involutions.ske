@@ -37,6 +37,50 @@ extern "C" {
 //  %%GEN c
 
 
+
+
+
+/*************************************************************************
+*** Support for debugging
+*************************************************************************/
+/// @cond DO_NOT_DOCUMENT 
+
+// If ERROR_POOL is defined then function xsp2co1_involution_error_pool()
+// can read data from an "error pool" that contains debug information
+// for certain functions after calling them.
+#define ERROR_POOL
+
+#ifdef ERROR_POOL
+// Number of entries of type uit64_t in the error pool
+#define LEN_ERROR_POOL 64
+static uint64_t error_pool[LEN_ERROR_POOL];
+#endif
+
+
+/**
+@brief Used for debugging only
+*/
+// %%EXPORT px
+uint32_t xsp2co1_involution_error_pool(uint64_t *dest, uint32_t length)
+{
+  #ifdef ERROR_POOL
+    uint32_t i;
+    if (length > LEN_ERROR_POOL) length = LEN_ERROR_POOL;
+    for (i = 0; i < length; ++i) dest[i] = error_pool[i];   
+    return length;
+  #else
+    return 0;
+  #endif
+}
+
+
+
+/// @endcond 
+
+/*************************************************************************
+*** Auxiliary functions
+*************************************************************************/
+
 /// @cond DO_NOT_DOCUMENT 
 
 
@@ -194,7 +238,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
     int_fast32_t status;
 
     // Initialize output with zeros and an error bit in row 0
-    invar[0] = 0x8000000;
+    invar[0] = 0x8000000ULL;
     for (i = 1; i < 12; ++i) invar[i] = 0;
 
     // Let `pa` be the 24 times 24 unit matrix 1
@@ -227,12 +271,18 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
     // The lower 24 - n rows of PAH contain the kernel \ker A_1.
     // The lower 24 - n rows of PAL are zero.
 
+    #ifdef ERROR_POOL
+    for (i = 0; i < 24; ++i) error_pool[i] = pa[i];
+    error_pool[24] = n;
+    for (i = 25; i < LEN_ERROR_POOL; ++i) error_pool[i] =0;
+    #endif
+
     // Deal with the A_1 == 0, i.e. `elem` is in O_2(G_{x0}) or,
     // equivalently, `elem` is neutral modulo Co_1.
     if (n == 0) {
-        invar[0]  = xsp2co1_xspecial_vector(elem) & 0xffffff;
+        invar[0]  = xsp2co1_xspecial_vector(elem) & 0xffffffULL;
         if (invar[0] == 0)  return 0;
-        invar[0] |= (leech_type_mod2(invar[0]) << 24) | 0x4000000;
+        invar[0] |= (leech_type_mod2(invar[0]) << 24) | 0x4000000ULL;
         return 1;
     }
       
@@ -253,6 +303,10 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
         // and t1 = 1 otherwise.
         t1 = (pa[8] >> 24) & 1;
         for (i = 0; i < 8; ++i) invar[t1 + i] = pa[i];
+
+        #ifdef ERROR_POOL
+        for (i = 0; i < 16; ++i) error_pool[i+25] = pa[i+8];
+        #endif
 
         // Skip the following steps for n == 8 if t1 is 0.
         if (t1 == 0) goto final_echelonize;
@@ -277,10 +331,10 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 
         // Thus v0 is in  (I_1)^+ but not in I_1.
         // Copy the v0 to the output row 0.
-        invar[0] = data[0] & 0xffffff;
+        invar[0] = data[0] & 0xffffffULL;
 
         // Set bit 26 of output row 0 to 1.
-        invar[0] |= 0x4000000;
+        invar[0] |= 0x4000000ULL;
 
         // Set bit 24 of output row 0 to t0, with t0 = type(v0) (mod 2).
         t0 = leech_type_mod2(invar[0]);
@@ -311,7 +365,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
         // Copy type(output vector) modulo 2 to output vector bit 25.
         for (i = 0; i < 12; ++ i) {
              invar[i] = (pa[i] & 0xffffff00ffffffULL)
-                     | (data[i] & 0x1000000)
+                     | (data[i] & 0x1000000ULL)
                      | (leech_type_mod2(pa[i]) << 25);
         }
     } else {
@@ -321,6 +375,10 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
 
 
 final_echelonize:
+    #ifdef ERROR_POOL
+    for (i = 0; i < 12; ++i) error_pool[i+48] = invar[i];
+    error_pool[48+12] = n;
+    #endif
     // Echelonize the final result as documented above.
     bitmatrix64_xch_bits(invar, n, 12, 0x800);
     bitmatrix64_rot_bits(invar, n, 1, 12,0);
@@ -329,7 +387,7 @@ final_echelonize:
     bitmatrix64_xch_bits(invar, n, 12, 0x800);
 
     // Zero preimage in row 0 if bit 26 in row 0 is set.
-    invar[0] &= ((invar[0] & 0x4000000) << 2) - 1;
+    invar[0] &= ((invar[0] & 0x4000000ULL) << 2) - 1;
     return n;
     
 }

@@ -6,6 +6,7 @@
 */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "mat24_functions.h"
 #include "mmgroup_generators.h"
 #include "clifford12.h"   

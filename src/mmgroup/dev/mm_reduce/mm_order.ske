@@ -13,7 +13,6 @@
 */
 
 
-#include <malloc.h>
 
 #include "mat24_functions.h"
 #include "clifford12.h"

@@ -10,7 +10,6 @@
  the reprsentation \f$\rho\f$ of the monster modulo 15.
 */
 
-#include <malloc.h>
 #include "mm_reduce.h"   
    
 // %%EXPORT_KWD MM_REDUCE_API
