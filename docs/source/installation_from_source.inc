@@ -178,3 +178,7 @@ Remark
 
 On some Linux systems the user may have to type ``python3`` instead of
 ``python`` and ``pip3`` instead of ``pip`` when working with python 3.x.
+
+On some Linux-like systems (e.g. on MacOS with a Clang C compiler) it 
+might help to remove the string ``-static-libgc`` from all lists in 
+file ``config.py``.

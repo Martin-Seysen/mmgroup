@@ -469,7 +469,18 @@ C interface for file mm15_op_eval_X.c
 Description of the ``mm_reduce`` extension
 ==========================================
 
-TODO: General documentation yet to be done!
+The functions in this module implement the fast reduction of an
+element of the monster group described in :cite:`Seysen22`. There
+we define a triple of vector :math:`(v_1, v^+, v^-)` in the
+representation :math:`\rho_{15}` such that an element 
+:math:`g` of the monster van be recognized from the triple  
+:math:`(v_1 \cdot g, v^+ \cdot g, v^- \cdot g)`. A precomputed
+vector :math:`v_1` is stored in file ``mm_order_vector.c``.
+Module ``mm_order.c`` contains functions for computing the
+order of an element of the monster. Module ``mm_reduce.c``
+contains the function ``mm_reduce_M`` that implements the
+fast reduction algorithm in the monster group.
+ 
 
 
 Generating an **order vector**

@@ -1,13 +1,13 @@
 /** @file mm_reduce.c
 
  Function ``mm_reduce_M`` is the most important C function in this
- project.  It reduced an arbitary element of the monster group
+ project.  It reduces an arbitary element of the monster group
  (represented as a word in the generators of the monster) to
- a word of fixed maxmum length.
+ a word of fixed maximum length.
 
  This file also conatins auxiliary functions for 
  function  ``mm_reduce_M``;  most of them deal with 2A axes in
- the reprsentation \f$\rho\f$ of the monster modulo 15.
+ the representation \f$\rho_{15}\f$ of the monster modulo 15.
 */
 
 #include "mm_reduce.h"   
