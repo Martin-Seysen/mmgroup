@@ -82,7 +82,7 @@ try:
     import mmgroup.mm_space
     from mmgroup.mm_space import characteristics
     assert 3 in characteristics()
-    from mmgroup.mm_space import MMSpace, MMVector, MMV
+    from mmgroup.mm_space import MMSpace, MMVector, MMV, order_vector
 except:
     w = "Extension mmgroup.mm3 not found, package not functional!"
     warnings.warn(w, UserWarning)

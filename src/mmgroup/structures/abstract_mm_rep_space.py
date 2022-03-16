@@ -815,7 +815,7 @@ def add_vector(vector, tag = 0, i0 = None, i1 = None):
     p = vector.p
     space = vector.space
     if isinstance(tag, str) and len(tag) == 1:
-        if tag in "ABCTXZYDEIS0":
+        if tag in "ABCTXZYDEIJUS0":
             space.additems_sparse(vector,
                 tuple_to_sparse(p, tag, i0, i1))
         elif tag == "R":

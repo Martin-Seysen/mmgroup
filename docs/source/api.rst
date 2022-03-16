@@ -232,6 +232,7 @@ Auxiliary functions for the representation of the monster group
 
 .. autofunction:: mmgroup.MMV
 
+.. autofunction:: mmgroup.order_vector
 
 .. _clifford-group-label:
 

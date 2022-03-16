@@ -230,6 +230,19 @@ special tags. Details are given in the following list:
 
                              see remark below. 
    ------------------------- ---------------------------------------------- 
+   ``('J', i0, i1)``         Shorthand for the sum of the basis vectors 
+
+                             ``('A', i0, i0)`` + ``('A', i1, i1)`` - 
+                             ``('A', i0, i1)`` + ``2 ('B', i0, i1)``,
+
+                             see remark below. 
+   ------------------------- ---------------------------------------------- 
+   ``('U')``                 Tag ``'U'`` (without any further parameters)
+                             stands for the sum 
+                             
+                             ``('A', 0, 0)`` + ``('A', 1, 1)`` + ...
+                             +  ``('A', 23, 23)``.
+   ------------------------- ---------------------------------------------- 
    ``('E', i)``              This is the basis vector with
                              *linear* index ``i``. 
 
@@ -266,12 +279,15 @@ special tags. Details are given in the following list:
 
 Remarks
 
-The centralizer of a vector labelled by ``('I', i0, i1)`` in
-the monster has structure :math:`2 \cdot B`, where :math:`B` is
-the Baby Monster, see :cite:`Asc86`, :cite:`Con85`, :cite:`Iva09`
-for background. According to our selected basis and cocycle of
-the Golay Code, it is probably easiest to compute in the 
-centralizer of ``('I', 3, 2)``.
+The vectors labelled by ``('I', i0, i1)`` and ``('J', i0, i1)`` are 
+axes of the elements :math:`x_\delta` and :math:`x_{-1} x_\delta` of 
+the monster, respecively, see  :cite:`Con85`. The centralizers of 
+these elements and also of their axes in the monster have structure 
+:math:`2 \cdot B`, where :math:`B` is the Baby Monster, see 
+:cite:`Asc86`, :cite:`Con85`, :cite:`Iva09` for background. E.g. 
+the axes  :math:`v^+` and :math:`v^-` in :cite:`Seysen22` may be 
+obtained as ``MMVector(15, 'I', 2, 3)`` and
+``MMVector(15, 'J', 2, 3)``, respectively.
 
 The modulus of a vector can be extended as follows. Assume that 
 ``v`` is a vector in :math:`\rho_3`, given as an instance of class
@@ -1272,6 +1288,23 @@ def MMV(p):
    the constructor of class |MMVector| to the number ``p``. 
    """
    return partial(MMVector, p)
+
+
+
+def order_vector():
+   r"""Return the precomputed order vector
+
+   The function returns the precomputed order vector :math:`v_1`
+   (which is an element of the representation  :math:`\rho_{15}`
+   of the monster) as an instance of class |MMVector|.
+
+   The properties required for such a vector :math:`v_1`
+   are defined in :cite:`Seysen22`.
+   """
+   from mmgroup.mm_reduce import mm_order_load_vector
+   v = MMVector(15)
+   mm_order_load_vector(v.data)
+   return v
 
 
 

@@ -33,6 +33,7 @@ from numbers import Integral, Number
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable
+from functools import partial
 from random import randint
 from importlib import import_module
 
@@ -588,22 +589,36 @@ def gen_unit_numeric(p, scalar, tag, i0 = 'r', i1 = None):
     return a
     
 
-def gen_unit_I(p, scalar, tag, i0 = 'r', i1 = 'r'):
+def gen_unit_IJ(sign, p, scalar, tag, i0 = 'r', i1 = 'r'):
     """Auxiliary function for function tuple_to_sparse()
 
-    This function deals with tag 'I'. ('I', i, j) is equivalent to
+    This function deals with tags 'I' and 'J'. Put f(sign, i, j) =
 
-      ('A', i, i) +  ('A', j, j) - ('A', i, j) - 2 * ('B', i, j)
+      ('A', i, i) + ('A', j, j) - ('A', i, j) - 2 * sign * ('B', i, j).
 
-    for i != j. The case i == j is illegal.
+    Then ('I', i, j) and ('J', i, j) are equivalent to f(1, i, j) and
+    f(-1, i, j), respecvtively, for i != j. The case i == j is illegal.
     """
     def A(i, j, factor = 1):
         sc = scalar * factor % p
         return int(tag_offsets["A"] + (i << 14) + (j << 8) + sc)
-    b =  gen_unit_BC(p, -2 * scalar, 'B', i0, i1)[0] 
+    b =  gen_unit_BC(p, -2 * sign * scalar, 'B', i0, i1)[0] 
     i0, i1 = (b >> 14) & 0x1f, (b >> 8) & 0x1f
     a = [A(i0, i0), A(i1, i1), A(i0, i1, -1), b]
     return np.array(a, dtype = U32)
+
+
+
+def gen_unit_identity(p, scalar, *args):
+    """Auxiliary function for function tuple_to_sparse()
+
+    Generates the identity vector
+
+    scalar * sum([('A', i, i) for i in range(24)])
+    """
+    start = tag_offsets["A"] + scalar % p
+    d = (1 << 14) + (1 << 8)
+    return np.array(range(start, start + 24 * d, d), dtype = U32)
 
 
 
@@ -645,7 +660,9 @@ tuple_to_sparse_functions = {
     'Y': gen_unit_XYZ,
     'D': gen_unit_D,
     'E': gen_unit_numeric,
-    'I': gen_unit_I,
+    'I': partial(gen_unit_IJ, 1), 
+    'J': partial(gen_unit_IJ, -1), 
+    'U': gen_unit_identity,
     'S': gen_vector_sparse,
     '0': gen_zero,
 }

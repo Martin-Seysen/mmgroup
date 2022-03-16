@@ -128,7 +128,8 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
            if not error_text:
                error_text = text
     g.reduce()
-    print("g =", g)
+    if verbose:
+        print("g =", g)
     gg = Xsp2_Co1(g)
     ref_ord, ref_chi, ref_involution_invariants = ref_invariants
     invar, v1, v0  = gg._involution_invariants()
