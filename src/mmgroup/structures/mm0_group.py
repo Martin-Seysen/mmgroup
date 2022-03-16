@@ -392,7 +392,7 @@ class MM0(AbstractMMGroupWord):
 
 
     def order(self, max_order = 119):
-        """Return the order of the element of the monster group
+        r"""Return the order of the element of the monster group
 
         We use the method in :cite:`LPWW98`, section 7, for computing
         the order of an element of the monster.
@@ -408,7 +408,7 @@ class MM0(AbstractMMGroupWord):
         return check_mm_order(self, max_order)
 
     def half_order(self, max_order = 119):
-        """Return the (halved) order of the element of the monster group
+        r"""Return the (halved) order of the element of the monster group
 
         The function  returns a pair ``(o, h)``, where ``o`` is the 
         order of the element.
@@ -427,7 +427,7 @@ class MM0(AbstractMMGroupWord):
         return check_mm_half_order(self, max_order)
 
     def in_G_x0(self):
-        """Check if the element is in the subgroup :math:`G_{x0}`
+        r"""Check if the element is in the subgroup :math:`G_{x0}`
 
         The function returns True if this is the case. If this is
         the case then the element is converted to a word in the
@@ -440,7 +440,7 @@ class MM0(AbstractMMGroupWord):
             import_mm_order_functions()
         return check_mm_in_g_x0(self) is not None
                           
-    def chi_G_x0(self):
+    def chi_G_x0(self, involution = None):
         r"""Compute characters of element of subgroup :math:`G_{x0}`
 
         If the element is in the subgroup :math:`G_{x0}` then the 
@@ -466,15 +466,30 @@ class MM0(AbstractMMGroupWord):
         is well defined, the factors  :math:`\chi_{24}` and 
         :math:`\chi_{4096}` are defined up to sign only. We
         normalize these factors such that the first nonzero value 
-        of the pair :math:`(\chi_{24}, \chi_{4096})` is positive.           
+        of the pair :math:`(\chi_{24}, \chi_{4096})` is positive. 
+
+        If parameter ``involution`` is a 2B involution math:`i` then
+        the element math:`g` given by ``self`` must centralize that
+        involution  math:`i`. In this case we compute the  
+        corresponding  characters of  math:`g^h` for a  
+        math:`h \in \mathbb{M}` such that  math:`i^h`  is the
+        cetral involution of :math:`G_{x0}`.
         """
-        if self.in_G_x0() is None:
-            err = "Element is not in the subgroup G_x0 of the monster"
-            raise ValueError(err)
+        if involution:
+             _, h = involution.conjugate_involution()
+             g = self**h
+             if g.in_G_x0() is None:
+                 err = "Element does not centralize the given 2B involution"
+                 raise ValueError(err)
+        else:
+             g = self
+             if g.in_G_x0() is None:
+                 err = "Element is not in the subgroup G_x0 of the monster"
+                 raise ValueError(err)
 
         if Xsp2_Co1 is None: 
             import_Xsp2_Co1()
-        elem = Xsp2_Co1(self)
+        elem = Xsp2_Co1(g)
 
         a = np.zeros(4, dtype = np.int32)
         res = chk_qstate12(xsp2co1_traces_all(elem._data, a))
@@ -484,7 +499,7 @@ class MM0(AbstractMMGroupWord):
         return chi_M, chi299, chi24, chi4096
        
     def in_N_x0(self):
-        """Check if the element is in the subgroup :math:`N_{x0}`
+        r"""Check if the element is in the subgroup :math:`N_{x0}`
 
         The function returns True if this is the case. If this is
         the case then the element is converted to a word in the
@@ -501,7 +516,7 @@ class MM0(AbstractMMGroupWord):
         return True
  
     def in_Q_x0(self):
-        """Check if the element is in the subgroup :math:`Q_{x0}`
+        r"""Check if the element is in the subgroup :math:`Q_{x0}`
 
         The function returns True if this is the case. If this is
         the case then the element is converted to a word in the
@@ -519,16 +534,24 @@ class MM0(AbstractMMGroupWord):
              
 
     def conjugate_involution(self, check=True, ntrials=40, verbose=0):
-        """Find an element conjugating an involution into the centre
+        r"""Find an element conjugating an involution into the centre
 
         If the element :math:`g` given by ``self`` is an involution 
         in  the monster then the method computes an element :math:`h` 
         of the monster   with  :math:`h^{-1} g h = z`, where  
-        :math:`z` is the central involution in the 
-        subgroup :math:`G_{x0}` of the  monster.
+        :math:`z` is defined as follows:
+
+        If :math:`g = 1`, we put :math:`h = z = 1`
+
+        if :math:`g` is a 2A involution (in the monster) then we let
+        :math:`z` be the involution in  :math:`Q_{x0}` corresponding 
+        to the Golay cocode word with entries  :math:`2,3` being set.
+
+        if :math:`g` is a 2B involution (in the monster) then we let 
+        :math:`z` be the central involution in :math:`G_{x0}`
 
         The function returns the element :math:`h` of the monster. It
-        raises ``ValueError`` if :math:`g` is not a 2B involution in
+        raises ``ValueError`` if :math:`g` is not an involution in
         the monster, or no suitable element  :math:`h` can be foound. 
 
         This function may take a long time. Parameter  ``ntrials``
@@ -545,6 +568,42 @@ class MM0(AbstractMMGroupWord):
         if mm_conjugate_involution is None: 
             import_Xsp2_Co1()
         return mm_conjugate_involution(self, check, ntrials, verbose)
+
+    def half_order_chi(self,  ntrials=40):
+        r"""Return order and some character information of the element
+
+        The function  returns a triple ``(o, chi, h)``, where ``o`` is 
+        the order of the element :math:`g` of the monster given 
+        by ``self``. 
+
+        If the order :math:`o` of  :math:`g` is odd then the triple 
+        ``(o, None, None)`` is returned.
+
+        If  the order of :math:`g` is even then we return the triple
+        ``(o, chi, h)``. Here ``h`` is an element :math:`h` of
+        :math:`\mathbb{M}` such that :math:`z = h^{-1} g^{o/2} h` is 
+        the  standard 2A or 2B involution as in method
+        ``conjugate_involution``.
+
+        If :math:`g` powers up to a 2B involution then ``chi``
+        is equal to the character of  :math:`u = h^{-1} g h`. 
+        Here the character of the element :math:`u` of
+        :math:`G_{x0}` is returned  as a quadruple as in method
+        ``chi_G_x0``. 
+
+        If :math:`g` powers up to a 2A involution then ``chi``
+        is equal to to ``None``.
+        """
+        o, ho = self.half_order()
+        chi, h = None, None
+        if ho:
+            _, h = ho.conjugate_involution(True, ntrials)
+            try:
+               chi = (self**h).chi_G_x0()
+            except ValueError:
+               chi = None
+        return o, chi, h
+
 
 
     def simplify(self, ntrials=None, verbose=0):

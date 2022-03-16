@@ -287,6 +287,13 @@ class SubOctad():
           evaluate to an octad or to a correct suboctad,
           respectively.
 
+    Warning:
+
+    This class will be deprecated in future versions!
+
+    It will be superseded by class |XLeech2|.
+
+
     A *suboctad* is an even cocode element that can be represented
     as a subset of the octad given by the argument *octad*. 
 
