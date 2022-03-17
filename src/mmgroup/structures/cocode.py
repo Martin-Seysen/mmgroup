@@ -46,10 +46,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, PLoop, SubOctad
+    global import_pending, PLoop
     global AutPL, AutPlGroup, XLeech2
     from mmgroup.structures.ploop import PLoop
-    from mmgroup.structures.suboctad import SubOctad
     from mmgroup.structures.autpl import AutPL, AutPlGroup
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
@@ -110,7 +109,7 @@ class Cocode():
       class |Cocode|       A deep copy of parameter ``value`` is 
                            returned. 
 
-      class |SubOctad|     The *cocode* part of the |SubOctad| ``value``  
+      class |XLeech2|      The *cocode* part of the |XLeech2| object  
                            is converted to a cocode element and 
                            returned. 
 
@@ -159,9 +158,6 @@ class Cocode():
             self.value = value.value
         elif isinstance(value, GcVector):
             self.value = mat24.vect_to_cocode(value.value)
-        elif isinstance(value, SubOctad):
-            self.value = mat24.suboctad_to_cocode(
-                 value.suboctad_, value.octad_.value)
         elif isinstance(value, XLeech2):
             v = value.value
             self.value = (mat24.ploop_theta(v >> 12) ^ v) & 0xfff
@@ -230,7 +226,7 @@ class Cocode():
     def __len__(self):
         return mat24.cocode_weight(self.value)
 
-    def half_weight():
+    def half_weight(self):
         err ="Don't know the halved weight of that cocode vector"
         raise ValueError(err)
 

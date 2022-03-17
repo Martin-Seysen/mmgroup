@@ -1,10 +1,10 @@
 """Components of a vector of the representation of the monster 
 
 A vector of the representation of the monster contains 196884
-entries which are integers modulo a small prime p. The index of
-such an entry is addressed as a tuple (tag, i0, i1).
+entries which are integers modulo a small odd prime p. The index 
+of such an entry is addressed as a tuple (tag, i0, i1).
 
-Here 'tag' is a single capital letter speifying a group of 
+Here 'tag' is a single capital letter specifying a group of 
 indices and i0 and i1 are (usually) integers representing
 elements of the Parker loop or the Golay cocode, depending 
 on the tag. Details are specified elsewhere.
@@ -22,9 +22,9 @@ an index may be "r" or "n", denoting an index selected at
 random.
 
 If a tuple contains one or two slices, it is converted to a
-numpy aray of type unit32, which contains all entries of the
-slice. The one-dimensiona array unsigned of 32-bit integers
-is passed to the to the fast C rotines for reading and updating 
+numpy array of type ``uint32``, which contains all entries of the
+slice. The one-dimensional array unsigned of 32-bit integers
+is passed to the to the fast C routines for reading and updating 
 components of a vector.
 
 """
@@ -40,6 +40,15 @@ from importlib import import_module
 import numpy as np
 
     
+try:
+    # Try importing the fast C functions
+    from mmgroup import mat24 
+except (ImportError, ModuleNotFoundError):
+    # Use the slow python functions if the C functions are not available
+    from mmgroup.dev.mat24.mat24_ref import  Mat24
+    mat24 = Mat24
+
+
 from mmgroup.structures.abstract_rep_space import mod_rand_invertible
 from mmgroup.structures.abstract_rep_space import mod_rand_unit
 
@@ -47,7 +56,7 @@ from mmgroup.structures.parse_atoms import ihex
 from mmgroup.structures.gcode import GCode, GcVector 
 from mmgroup.structures.cocode import Cocode 
 from mmgroup.structures.ploop import PLoop
-from mmgroup.structures.suboctad import Octad, SubOctad
+from mmgroup.structures.suboctad import Octad
 
 ERR_MM_LIN = "Linear access to MM vectors not supported"
 
@@ -311,10 +320,15 @@ def index_suboctad(tag, i, index_type_T = 3, a_indices_T = None):
         raise IndexError(INDEX_ERROR_RAND % tag)
     elif isinstance(i, slice):     
         return INDEX_IS_SLICE,  a_slice(i,64), 0
-    elif isinstance(i, (Cocode, GcVector)):
+    elif isinstance(i, (GCode, Cocode, GcVector)):
         if index_type_T == 0:
-            sub = SubOctad(a_indices_T, i)
-            return 0, sub.suboctad, 0
+            gcode = mat24.octad_to_gcode(a_indices_T) & 0xfff
+            if isinstance(i, GCode):
+                cocode = mat24.ploop_cap(gcode, i)
+            else:
+                cocode = Cocode(i).cocode
+            sub = mat24.cocode_to_suboctad(cocode, gcode)
+            return 0, sub, 0
         err = "Second vector index for tag T must be integer here"
         raise TypeError(err)
     elif isinstance(i, Iterable):

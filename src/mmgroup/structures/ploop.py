@@ -110,9 +110,8 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, SubOctad
+    global import_pending
     global AutPL, AutPlGroup, XLeech2
-    from mmgroup.structures.suboctad import SubOctad
     from mmgroup.structures.autpl import AutPL, AutPlGroup
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
@@ -229,7 +228,7 @@ class PLoop(GCode):
                             see class |GCode|, and the corresponding 
                             (positive) Parker loop element is returned.
 
-      class |SubOctad|      The *octad* part of the |SubOctad| ``value``  
+      class |XLeech2|       The Parker loop part of the |XLeech2| object  
                             is  returned. 
 
       ``str``               Create random element depending on the string
@@ -284,8 +283,6 @@ class PLoop(GCode):
             self.value = value.value & 0x1fff
         elif isinstance(value, GCode):
             self.value = value.value & 0xfff
-        elif isinstance(value, SubOctad):
-            self.value = value.octad_.value & 0x1fff
         elif isinstance(value, str):
             self.value = randint(0, 0x1fff)
         elif isinstance(value, GcVector):

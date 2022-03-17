@@ -8,7 +8,7 @@ from random import randint, shuffle, sample
 
 from mmgroup import mat24
 from mmgroup import GCode, Cocode, PLoop, PLoopZ
-from mmgroup import Octad, SubOctad, GcVector 
+from mmgroup import Octad, GcVector 
 from mmgroup import AutPL
 from mmgroup import Parity
 from mmgroup.mat24 import MAT24_ORDER

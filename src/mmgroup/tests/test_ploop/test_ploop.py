@@ -258,12 +258,14 @@ def test_octads():
         sub_weight = mat24.suboctad_weight(nsub)
         assert sub == sub1
         assert o == Octad(sub) * OMEGA ** sub_weight 
-        assert sub.octad == no
-        assert sub.gcode == o.gcode ^ 0x800 * sub_weight  
-        assert sub.suboctad == nsub 
-        assert sub.sign == o.sign 
+        assert sub.octad_number() == no
+        ploop, cocode = sub.isplit()
+        sign, gcode = (-1) ** (ploop >> 12), ploop & 0xfff
+        assert gcode == o.gcode ^ 0x800 * sub_weight  
+        #assert sub.suboctad == nsub 
+        assert sign == o.sign 
         coc = mat24.suboctad_to_cocode(nsub, o.gcode)
-        assert sub.cocode == coc 
+        assert cocode == coc 
         assert Cocode(sub) == Cocode(coc)
         assert sub == SubOctad(o, Cocode(coc))
         assert sub == SubOctad(no, Cocode(coc))
@@ -271,4 +273,6 @@ def test_octads():
         o2 =  Octad(randint(0, 758))
         sub2 = SubOctad(o, o2)
         assert Cocode(sub2) == Cocode(o & o2)
-        assert sub2/2 == (o & o2)/2
+        assert len(Cocode(sub2))//2 & 1 == int((o & o2)/2)
+
+

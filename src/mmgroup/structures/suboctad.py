@@ -33,18 +33,18 @@ A *suboctad* of an octad ``o`` is an element of the Golay cocode
 :math:`\mathcal{C}^*` of even parity which can be represented
 as a subset of ``o``. Each octad has ``64`` suboctads.
 A pair (octad, suboctad) is used for indexing some basis
-vectors in the representation :math:`\rho`. Class |SubOctad|
-models such a pair. The constructor of  class |SubOctad|
-takes two arguments ``octad`` and ``suboctad``. The first argument
-evaluates to a  signed octad as in function ``Octad()``. The
-second argument evaluates to a suboctad, see class |SubOctad|
-for details.
+vectors in the representation :math:`\rho`. function ``SubOctad``
+creates a suboctad as an instance of class |XLeech2| from such a 
+pair. Function ``SubOctad`` takes two arguments ``octad`` and 
+``suboctad``. The first argument evaluates to a signed octad as 
+in function ``Octad()``. The second argument evaluates to a 
+suboctad, see  function ``SubOctad`` for details.
 
 The raison d'etre of a  suboctad is indexing a basis vector in
 the representation  :math:`\rho`. For this purpose we need a pair 
 of integers refering to the octad and the suboctad. For an instance 
-``so`` of class |SubOctad| that pair is given by
-``(so.octad, so.suboctad)``.
+``so`` of class |XLeech2| that pair is given as the pair of the
+last two integers in ``so.vector_tuple()``.
 
 For an octad ``o`` and a suboctad ``s`` precisely one of the
 pairs ``(o,s)`` and ``(~o,s)`` is actually used as an index for 
@@ -62,6 +62,7 @@ from functools import reduce
 from operator import __xor__
 from numbers import Integral, Number
 from random import randint
+import warnings
 
 
 try:
@@ -200,9 +201,6 @@ def Octad(octad):
                             see class |GCode|, and the corresponding 
                             (positive) Parker loop element is returned.
 
-      class |SubOctad|      The *octad* part of the |SubOctad| ``octad``  
-                            is  returned. 
-
       class |XLeech2|       The *octad* part of the vector ``octad``  
                             is  returned. 
 
@@ -228,8 +226,6 @@ def Octad(octad):
     elif isinstance(octad, GCode):
         _ = octad.octad
         return PLoop(octad.ord)
-    elif isinstance(octad, SubOctad):
-        return  octad.octad_
     else:
         v =  PLoop(octad)
         _ = v.octad
@@ -240,8 +236,132 @@ def Octad(octad):
 
 
 #######################################################################
-# Class SubOctad
+# Function  SubOctad
 #######################################################################
+
+
+def SubOctad(octad, suboctad = 0):
+    """Creates a suboctad as instance of class |XLeech2|
+
+    :param octad:
+
+      The first component of the pair *(octad, suboctad)* to be 
+      created.
+
+    :type octad: same as in function
+      :py:class:`~mmgroup.Octad`
+
+    :param suboctad:
+    
+      The second component of the pair 
+      *(octad, suboctad)* to be created.
+
+    :type suboctad: see table below for legal types
+
+
+    :return: 
+
+     The suboctad given by the pair *(octad, suboctad)* 
+
+    :rtype: an instance of class |XLeech2|
+
+    :raise:
+        * TypeError if  argument *octad* or *suboctad* is not 
+          of correct type.
+        * ValueError  argument *octad* or *suboctad* does not
+          evaluate to an octad or to a correct suboctad,
+          respectively.
+    
+
+    A *suboctad* is an even cocode element that can be represented
+    as a subset of the octad given by the argument *octad*. 
+
+    The raison d'etre of function ``SubOctad`` is that pairs
+    *(octad, suboctad)* are used for indexing vectors in the
+    representation of the monster group. Here we want to 
+    number the octads from ``0`` to ``758`` and the suboctads
+    form ``0`` to ``63``, depending on the octad. Note that
+    every octad has ``64``  suboctads.
+
+    Depending on its type parameter **suboctad** is  interpreted as follows:
+
+    .. table:: Legal types for parameter ``suboctad``
+      :widths: 20 80
+
+      ===================== ================================================
+      type                  Evaluates to
+      ===================== ================================================
+      ``int``               Here the suboctad with the number given 
+                            in the argument is 
+                            taken.  That numbering depends on the octad 
+                            given in   the argument ``octad``. 
+                            ``0 <= suboctad < 64`` must hold.                           
+
+      ``list`` of ``int``   Such a list is converted to a bit vector
+                            as in class |GcVector|,
+                            and the cocode element corresponding to that
+                            bit vector is taken.
+
+       class |GCode|        The intersection of the octad given as the 
+                            first argument and the Golay code word given
+                            as the second argument is taken. 
+  
+       class |GcVector|     This is converted to a cocode element,
+                            see class |Cocode|, and that cocode element 
+                            is taken.
+
+       class |Cocode|       That cocode element is taken as the suboctad.
+
+
+      ``str``               Create random element depending on the string
+                             | ``'r'``: Create arbitrary suboctad
+      ===================== ================================================
+
+    The numbering of the suboctads
+
+    Suboctads are numbered for 0 to 63. Let ``[b0, b1,..., b7]`` be the 
+    bits set in the octad of the pair ``(octad, suboctad)`` in natural 
+    order. The following table shows the suboctad numbers for some 
+    suboctads given as cocode elements. More suboctad numbers can be 
+    obtained by combining suboctads and their corresponding numbers 
+    with ``XOR``.
+
+    .. table:: Suboctad numbers of some cocode elements
+      :widths: 16 16 16 16 18 18
+
+      =========== =========== =========== =========== =========== =========== 
+      ``[b0,b1]`` ``[b0,b2]`` ``[b0,b3]`` ``[b0,b4]`` ``[b0,b5]`` ``[b0,b6]``
+      ``s  = 1``  ``s  = 2``  ``s  = 4``  ``s  = 8``  ``s = 16``  ``s = 32``
+      =========== =========== =========== =========== =========== =========== 
+
+    E.g. ``[b0, b5, b6, b7]`` is equivalent to ``[b1, b2, b3, b4]`` 
+    modulo the Golay code and has number ``s = 1 ^ 2 ^ 4 ^ 8 = 15``.
+
+    """
+    ploop = Octad(octad)
+    gcode = ploop.value & 0xfff
+    if isinstance(suboctad, str):
+        suboctad_ = randint(0, 63)
+    elif isinstance(suboctad, Integral):
+        suboctad_ = suboctad & 0x3f
+    elif isinstance(suboctad, GCode):
+        value = mat24.ploop_cap(gcode, suboctad.value)
+        suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+    else:
+        value = Cocode(suboctad).cocode 
+        suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+    cocode = mat24.suboctad_to_cocode(suboctad_, gcode)
+    if import_pending:
+       complete_import()
+    result = XLeech2(ploop, cocode)
+    subtype =  result.xsubtype
+    assert subtype in [0x22, 0x42], (hex(subtype), hex(ploop), hex(cocode), hex(result.value))
+    # complent a complement of an octad
+    if subtype == 0x42:
+        result.value  ^= 0x800000
+    return result
+
+
 
 
 def _suboctad_from_param_octad(octad):
@@ -255,7 +375,7 @@ def _suboctad_from_param_octad(octad):
         return mat24.cocode_to_suboctad(cocode, gcode)
     return 0  
 
-class SubOctad():
+class SubOctadOld():
     """Models a pair (octad, suboctad)
 
     :param octad:
@@ -372,6 +492,10 @@ class SubOctad():
         self.suboctad_ ^= _suboctad_from_param_octad(octad)
         if mat24.suboctad_weight(self.suboctad_) & 1:
             self.octad_ = ~self.octad_
+
+        w = "Class SubOctad is deprecated! Use class mmgroup.XLeech2 instead!" 
+        warnings.warn(w, DeprecationWarning)
+
 
     def __mul__(self, other):
         if isinstance(other, Integral):

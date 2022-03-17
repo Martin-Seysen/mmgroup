@@ -134,17 +134,8 @@ the reduction of the result) takes less than 50 milliseconds on the
 author's computer. 
 
 The reduction after a group operation is done by a new method that 
-tracks pairs of perpendicular 2A axes, which at the moment is more a 
-(yet undocumented) art than a science. This new method will be 
-documented in a future version of the project. 
-
-The verification of the result of a reduction is along the lines 
-of the method given in :cite:`LPWW98`; for more details see section 
-:ref:`check_equality_monster`. So even if you don't trust in the new
-reduction method, the reduction algorithm is still of Las Vegas type; 
-i.e. it never fails without indication. But in practice the new
-algorithm is deterministic and always successful; and it has been 
-tested on thousends of group operations.
+tracks pairs of perpendicular 2A axes, see :cite:`Seysen22`
+for details.
 """
 # References in the __docstr__ see file docs/source/references.bib
 
@@ -375,7 +366,7 @@ class MM(MM0):
     the cocycle of the Parker loop.
 
     The tag ``'c'`` with index ``i`` encodes a representative
-    of the right coset :math:`N_{x0} g, g \in G_{x0}` of  
+    of the right coset :math:`N_{x0} g, \,  g \in G_{x0}` of  
     :math:`N_{x0}` in :math:`G_{x0}` that maps the standard
     frame  :math:`\Omega` in the Leech lattice modulo 2 to 
     a type-4 vector given by the index ``i``.

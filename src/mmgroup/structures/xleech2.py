@@ -79,7 +79,7 @@ except (ImportError, ModuleNotFoundError):
 
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_extern_to_sparse
-
+from mmgroup.mm import mm_aux_index_leech2_to_sparse
 
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -121,8 +121,7 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, SubOctad, MM0
-    from mmgroup.structures.suboctad import SubOctad
+    global import_pending, MM0
     from mmgroup.structures.mm0_group import MM0
     import_pending = False
 
@@ -159,6 +158,8 @@ ERR_XL_IN_Q = "Monster group element is not in subgroup Q_x0"
 ERR_XL_TYPE = "Cannot convert '%s' object to XLeech2 object"
 
 ERR_XL_RAND = "No random object in class XLeech2 found"
+
+ERR_XL_SHORT = "XLeech2 object does not map to short Leech lattice vector"
 
 
 def MM_to_Q_x0(g):
@@ -200,17 +201,12 @@ def rand_xleech2_type(vtype):
 def value_from_ploop(ploop=0, cocode = None, *args):
     c = Cocode(cocode).ord if cocode else 0
     if isinstance(ploop, Integral):
-        d = ploop 
+        d = ploop & 0x1ffffff
     elif isinstance(ploop, PLoop):
         d = ploop.value & 0x1fff
         d = (d << 12) ^ mat24.ploop_theta(d) 
     elif isinstance(ploop, XLeech2):
         d = ploop.value
-    elif isinstance(ploop, SubOctad):
-        g = ploop.gcode
-        d = (g << 12) ^ mat24.ploop_theta(g) 
-        d ^= ploop.sign_ << 24
-        d ^= ploop.cocode
     elif isinstance(ploop, Cocode):
         d = ploop.value & 0xfff
     elif isinstance(ploop, AbstractMMGroupWord):
@@ -308,16 +304,14 @@ class XLeech2(AbstractGroupWord):
       class |PLoop|         The corresponding Parker loop element is
                             converted to an element of :math:`Q_{x0}`. 
 
-      class |SubOctad|      The |SubOctad| is
-                            converted to an element of :math:`Q_{x0}`. 
-
       class |MM|            Then ``value`` in an element of the monster
                             group. If that element is in the subgroup
                             :math:`Q_{x0}` of the monster, then it is
-                            converted to the coresponding instance of               Create random element depending on the string
+                            converted to the coresponding instance of 
                             class |XLeech2|.
 
-      ``str``               see explanation below.
+      ``str``               Create random element depending on the string,
+                            see explanation below.
       ===================== ================================================
 
     If value is of one of the type listed above then the following
@@ -451,7 +445,7 @@ class XLeech2(AbstractGroupWord):
             if abs(other) == 1:
                 v = (other & 2) << 23
             else:
-                NotImplemented  
+                return NotImplemented  
         else:           
             return NotImplemented
         return XLeech2(gen_leech2_mul(self.value, v))
@@ -522,6 +516,20 @@ class XLeech2(AbstractGroupWord):
         """
         return 1 - ((self.value >> 23) & 2)
 
+    def isplit(self):
+        """Split element into a product :math:`x_d \cdot x_\delta`
+
+        The method returns a pair  :math:`(d,  \delta)` such that
+        :math:`x_d \cdot x_\delta` is equal to the given element
+        of  :math:`Q_{x0}`.
+
+        Here :math:`(d,  \delta)` is returned as a pair of integers.
+        """
+        v = self.value
+        x = (v >> 12) & 0x1fff
+        d = (mat24.ploop_theta(v >> 12) ^ v) & 0xfff
+        return x, d
+
 
     def split(self):
         """Split element into a product :math:`x_d \cdot x_\delta`
@@ -534,9 +542,7 @@ class XLeech2(AbstractGroupWord):
         class |PLoop|. The element  :math:`\delta` of the Golay cocode
         is an instance of class |Cocode|.
         """
-        v = self.value
-        x = (v >> 12) & 0x1fff
-        d = (mat24.ploop_theta(v >> 12) ^ v) & 0xfff
+        x, d = self.isplit()
         return PLoop(x), Cocode(d)
  
     @property
@@ -600,7 +606,41 @@ class XLeech2(AbstractGroupWord):
     def as_Q_x0_atom(self):
         return self.value & 0x1ffffff
 
+    def vector_tuple(self):
+        r"""Return unit vector in representation of the monster as tuple
+
+        If the element of :math:`Q_{x0}` corresponds to a vector of
+        type 2 in the Leech lattice then it also corresponds to a
+        unit vector ``v`` in the representation  :math:`\rho` 
+        of :math:`\mathbb{M}`; otherwise the function raises
+        ValueError. 
+        
+        The function returns a  tuple ``(sign, tag, i0, i1)``, with  
+        ``sign = +1 or -1``. Then the triple ``(tag, i0, i1)`` 
+        corresponds to a basis vector ``u`` in  :math:`\rho` as 
+        described in class |MMVector|, such that ; and we 
+        have ``v = sign * u``.         
+        """
+        sign = 1 - ((self.value >> 23) & 2)
+        sp = mm_aux_index_leech2_to_sparse(self.value & 0xffffff)
+        if sp == 0:
+            raise ValueError(ERR_XL_SHORT)
+        tag = "?ABCTXZY"[(sp >> 25) & 7]
+        i0, i1 = (sp >> 14) & 0x7ff, (sp >> 8) & 0x3f
+        return sign, tag, i0, i1
+
+    def octad_number(self):
+        """Return number of octad.
+        
+        We have  ``0 <= o < 759`` for the returned number ``o``.
+        Here Golay code part of the element must correspond to
+        a (possible complementd) octad.
+        """
+        return mat24.gcode_to_octad(self.value >> 12, 0)
+
+
 add_to_embedded_classes(XLeech2)
+
 
 
 

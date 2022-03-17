@@ -123,12 +123,11 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, Cocode, PLoop, PLoopIntersection, SubOctad
+    global import_pending, Cocode, PLoop, PLoopIntersection
     global AutPL, AutPlGroup, XLeech2
     from mmgroup.structures.cocode import Cocode
     from mmgroup.structures.cocode import PLoopIntersection
     from mmgroup.structures.ploop import PLoop
-    from mmgroup.structures.suboctad import SubOctad
     from mmgroup.structures.autpl import AutPL, AutPlGroup
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
@@ -232,7 +231,7 @@ class GCode():
                              Up to ``3``  erroneous bits
                              in that vector are corrected.
 
-      class |SubOctad|       The *octad* part of the |SubOctad| ``value``  
+      class |XLeech2|        The Golay code part of the |XLeech2| object  
                              is converted to a Golay code word and returned. 
 
        ``str``               Create random element depending on the string
@@ -308,8 +307,6 @@ class GCode():
             self.value = value & 0x0fff
         elif isinstance(value, GCode):
             self.value = value.value & 0xfff
-        elif isinstance(value, SubOctad):
-            self.value = value.octad.value & 0xfff
         elif isinstance(value, GcVector):
             vector = value.value
             vector ^= mat24.syndrome(vector) 

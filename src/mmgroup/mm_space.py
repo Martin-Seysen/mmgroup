@@ -88,16 +88,17 @@ basis vector as a tuple ``(tag, i0, i1)``.
   :math:`X^+_{ij}`             ``('C',i,j)`` ``0 <= i,j < 24, i != j``; we 
                                              have :math:`X^+_{ij} = X^+_{ji}`.
 
-  :math:`X^+_{d \cdot \delta}` ``('T',o,s)`` ``o = x.octad``, 
-                                             ``s = x.suboctad``,
-                                             ``x = SubOctad(d, delta)``,
+  :math:`X^+_{d \cdot \delta}` ``('T',o,s)`` ``o`` and ``s`` can be obtained 
+                                             as follows. Let,  
+                                             ``x = SubOctad(d, delta)``. Then
+                                             ``x.vector_tuples()`` returns
+                                             the tuple ``(1, 'T', o, s)``.
 
                                              :math:`d \in \mathcal{P}`,
                                              :math:`\delta \in \mathcal{C^*}`,
                                              :math:`d` an octad, 
                                              :math:`\delta \subset d`,
-                                             :math:`\delta` even. See class
-                                             |SubOctad|.
+                                             :math:`\delta` even. 
 
                                              We have ``0 <= o < 759``,
                                              ``0 <= s < 64``. 
@@ -124,7 +125,7 @@ basis vector as a tuple ``(tag, i0, i1)``.
     :math:`i \neq j`. All other basis vectors have norm ``1``. 
 
   * In the tuple ``('T',o,s)`` the integers ``o`` and ``s`` describe
-    the instance ``SubOctad(o, s)`` of class |SubOctad|. Here 
+    the instance ``SubOctad(o, s)`` of class |XLeech2|. Here 
     ``o`` and ``s`` may be anything that is accepted as input for
     ``SubOctad(o, s)``
 

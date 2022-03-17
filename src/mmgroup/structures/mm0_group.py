@@ -469,11 +469,11 @@ class MM0(AbstractMMGroupWord):
         of the pair :math:`(\chi_{24}, \chi_{4096})` is positive. 
 
         If parameter ``involution`` is a 2B involution math:`i` then
-        the element math:`g` given by ``self`` must centralize that
-        involution  math:`i`. In this case we compute the  
-        corresponding  characters of  math:`g^h` for a  
-        math:`h \in \mathbb{M}` such that  math:`i^h`  is the
-        cetral involution of :math:`G_{x0}`.
+        the element :math:`g` given by ``self`` must centralize that
+        involution  :math:`i`. In this case we compute the  
+        corresponding  characters of  :math:`g^h` for a  
+        :math:`h \in \mathbb{M}` such that  :math:`i^h`  is the
+        central involution of :math:`G_{x0}`.
         """
         if involution:
              _, h = involution.conjugate_involution()

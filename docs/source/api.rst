@@ -147,8 +147,7 @@ Octads and suboctads
 
 .. autofunction:: mmgroup.Octad
 
-.. autoclass:: mmgroup.SubOctad
-   :members:
+.. autofunction:: mmgroup.SubOctad
 
 .. _aut_ploop_label:
 
@@ -200,7 +199,7 @@ Python classes implementing the monster group
 .. autoclass:: mmgroup.MM
    :members:  as_tuples, copy,  is_reduced, reduce, order, mmdata,
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
-              half_order_chi
+              half_order_chi, conjugate_involution
 
 
 .. _mmrep-label:

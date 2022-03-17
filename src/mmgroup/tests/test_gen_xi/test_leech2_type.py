@@ -333,16 +333,31 @@ def subtype_testdata():
 
 
 @pytest.mark.xsp2co1
-def test_subtype():
+def test_subtype(verbose = 0):
     OMEGA = XLeech2(~PLoop())
+    if verbose:
+         print("OMEGA = ", OMEGA)
     types = set()
     for v in subtype_testdata():
          g = MM('c', v)
-         v2 =  Xsp2_Co1(g).subtype
-         v2ref = (OMEGA * g).subtype
-         assert v2 == v2ref, (v2, v2ref)
-         types.add(v2)
+         v2 =  Xsp2_Co1(g)
+         v2_subtype = v2.subtype
+         v2ref = (OMEGA * g)
+         v2ref_subtype = v2ref.subtype
+         if verbose:
+              print("v = ", v)
+              print("g = ", g)
+              print("v2 = ", v2, ", subtype =", v2_subtype)
+              print("v2ref = ", v2ref, ", subtype =", v2ref_subtype)
+         assert v2_subtype== v2ref_subtype, (v2_subtype, v2ref_subtype)
+         types.add(v2_subtype)
     assert len(types) == 6
+
+
+
+
+
+
 
 
 
