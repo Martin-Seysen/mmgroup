@@ -275,14 +275,16 @@ void bitmatrix64_mul(uint64_t *m1,  uint64_t *m2, uint32_t i1, uint32_t i2, uint
 int32_t bitmatrix64_rot_bits(uint64_t *m, uint32_t i, int32_t rot, uint32_t nrot, uint32_t n0)
 {
     uint64_t mask_h, mask_l, mask;
-    uint32_t k, sh;
+    uint32_t k, sh, nmax;
     if (nrot + n0 > 64) return ERR_QSTATE12_QUBIT_INDEX;
     if (nrot < 2) return 0;
     if (rot < 0) rot += nrot * (-rot / nrot) + nrot;
     rot %= nrot;
     if (rot == 0) return 0;
-    mask_l = (ONE << (nrot + n0 - rot));
-    mask_h = (ONE << (nrot + n0)) -  mask_l;
+    nmax = nrot + n0; 
+    mask_l = (ONE << (nmax - rot));
+    mask_h = nmax < 64 ? (ONE << nmax) : 0;
+    mask_h -=  mask_l;
     mask_l -= (ONE << n0);
     mask = ~(mask_l | mask_h);
     sh = nrot - rot;

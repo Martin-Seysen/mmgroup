@@ -154,7 +154,7 @@ Note the remark about this function in the decription above.
 static inline uint32_t conv_pauli_vector_xspecial(uint32_t x)
 {  
     uint32_t t;
-    x &= 0x1ffffff;
+    x &= 0x1ffffffUL;
     // Exchange bit 11 of x with bit 23 of x
     t = (x ^ (x >> 12)) & 0x800UL;
     x ^= (t << 12) ^ t;  
