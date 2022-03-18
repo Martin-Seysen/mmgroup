@@ -245,34 +245,41 @@ def test_octads():
         assert o == PLoop(mat24.octad_to_gcode(no))
         assert o == Octad(sample(o.bit_list, 5))
         assert o.octad == no
-        o_sign, o_cpl = randint(0,1), randint(0,1)
-        signed_o = PLoopZ(o_sign, o_cpl) * o
+        o_signbit, o_cpl = randint(0,1), randint(0,1)
+        signed_o = PLoopZ(o_signbit, o_cpl) * o
         assert signed_o.octad == no
-        assert signed_o.sign == (-1)**o_sign
+        assert signed_o.sign == (-1)**o_signbit
         assert o.gcode == mat24.octad_to_gcode(no)
         assert signed_o.gcode ==  (o * PLoopZ(0, o_cpl)).gcode
-        assert signed_o.split_octad() == (o_sign, o_cpl, o)
+        assert signed_o.split_octad() == (o_signbit, o_cpl, o)
         nsub =  randint(0, 63)
-        sub = SubOctad(no, nsub)
-        sub1 = SubOctad(o, nsub)
+        sub = (-1)**o_signbit * SubOctad(no, nsub)
+        sub1 = (-1)**o_signbit * SubOctad(o, nsub)
         sub_weight = mat24.suboctad_weight(nsub)
         assert sub == sub1
-        assert o == Octad(sub) * OMEGA ** sub_weight 
+        assert o == (-1)**o_signbit * Octad(sub) * OMEGA**sub_weight 
         assert sub.octad_number() == no
         ploop, cocode = sub.isplit()
-        sign, gcode = (-1) ** (ploop >> 12), ploop & 0xfff
+        sign, gcode = (-1)** (ploop >> 12), ploop & 0xfff
         assert gcode == o.gcode ^ 0x800 * sub_weight  
         #assert sub.suboctad == nsub 
-        assert sign == o.sign 
+        assert sign == signed_o.sign == (-1)**o_signbit
         coc = mat24.suboctad_to_cocode(nsub, o.gcode)
         assert cocode == coc 
         assert Cocode(sub) == Cocode(coc)
-        assert sub == SubOctad(o, Cocode(coc))
-        assert sub == SubOctad(no, Cocode(coc))
+        assert sub == SubOctad(sub.sign * o, Cocode(coc))
+        assert sub ==  sub.sign  * SubOctad(no, Cocode(coc))
 
         o2 =  Octad(randint(0, 758))
         sub2 = SubOctad(o, o2)
         assert Cocode(sub2) == Cocode(o & o2)
         assert len(Cocode(sub2))//2 & 1 == int((o & o2)/2)
+
+        t_sign, t_tag, t_i0, t_i1 = sub.vector_tuple()
+        assert t_tag == 'T'
+        assert t_sign == sign, (hex(sub.value), t_sign, o_signbit)
+        assert t_i0 == no
+        assert t_i1 == nsub
+
 
 

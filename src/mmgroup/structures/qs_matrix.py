@@ -641,8 +641,8 @@ class QStateMatrix(QState12):
 
         Here the quadratic state matrix :math:`Q` given by ``self``
         must be an invertible :math:`2^k\times 2^k` quadratic state
-        matrix,  i.e. :math:`Q` must be of shape ``(k,k)``. So :
-        math:`Q` is in the Clifford group  :math:`\mathcal{C}_k`  
+        matrix,  i.e. :math:`Q` must be of shape ``(k,k)``. So 
+        :math:`Q` is in the Clifford group  :math:`\mathcal{C}_k`  
         of ``k`` qubits, up to a scalar factor.
 
         The function computes a :math:`2k \times 2k` bit matrix

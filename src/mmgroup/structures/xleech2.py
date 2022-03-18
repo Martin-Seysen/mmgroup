@@ -282,6 +282,16 @@ class XLeech2(AbstractGroupWord):
           the group :math:`Q_{x0}`.
         * TypeError the ype of an input is illegal.
 
+    .. Caution::
+       Although the group  :math:`Q_{x0}` has a natural embedding
+       into the subgroup :math:`G_{x0}` of the monster group, we do 
+       not consider an instance :math:`q` of class |XLeech2| as an 
+       element of :math:`G_{x0}`. We consider :math:`q` as a (possibly
+       negated) basis vector of a space on which the subgroup
+       :math:`G_{x0}` of the monster acts monomially by right
+       multiplication.
+
+
 
     Depending on its type parameter **value** is  interpreted as follows:
 
@@ -310,12 +320,17 @@ class XLeech2(AbstractGroupWord):
                             converted to the coresponding instance of 
                             class |XLeech2|.
 
-      ``str``               Create random element depending on the string,
+      ``'r'``               Create random element depending on the string,
                             see explanation below.
+
+      A letter ``BCTXE``    If ``value`` is a single capital letter in
+                            ``BCTXE`` then we create an element
+                            corresponding to a unit vector 
+                            in :math:`\rho_p` as described below.
       ===================== ================================================
 
     If value is of one of the type listed above then the following
-    parameter is coneted to an element of the Golay cocode (as in
+    parameter is converted to an element of the Golay cocode (as in
     the constructor of class |Cocode| multiplied to the converted
     parmeter ``value`` from the right.
 
@@ -356,14 +371,6 @@ class XLeech2(AbstractGroupWord):
   
     ``abs(a)`` returns the element in the set ``{a, -a}`` which is
     positive.
-
-    .. Caution::
-       Although the group  :math:`Q_{x0}` has a natural embedding
-       into the subgroup :math:`G_{x0}` of the monster group, we do 
-       not consider an instance :math:`q` of class |XLeech2| as an 
-       element of :math:`G_{x0}`. We consider :math:`q` as a (possibly
-       negated) basis vector of a space on which :math:`G_{x0}` acts
-       monomially by right multiplication.
 
     If an instance :math:`q` of class |XLeech2| maps to a vector of 
     type 2 in the Leech lattice modulo 2 then :math:`q` is also a unit 
@@ -618,8 +625,7 @@ class XLeech2(AbstractGroupWord):
         The function returns a  tuple ``(sign, tag, i0, i1)``, with  
         ``sign = +1 or -1``. Then the triple ``(tag, i0, i1)`` 
         corresponds to a basis vector ``u`` in  :math:`\rho` as 
-        described in class |MMVector|, such that ; and we 
-        have ``v = sign * u``.         
+        described in class |MMVector|, and we have ``v = sign * u``.         
         """
         sign = 1 - ((self.value >> 23) & 2)
         sp = mm_aux_index_leech2_to_sparse(self.value & 0xffffff)
@@ -631,10 +637,14 @@ class XLeech2(AbstractGroupWord):
 
     def octad_number(self):
         """Return number of octad.
-        
-        We have  ``0 <= o < 759`` for the returned number ``o``.
-        Here Golay code part of the element must correspond to
-        a (possible complementd) octad.
+
+        Let :math:`x_d \cdot x_\delta` be equal to the given element
+        of  :math:`Q_{x0}`. If :math:`d` corresponds to a (possibly
+        complemented) octad in the Golay code then the function 
+        returns the number of that octad as a nonnegative integer 
+        less than 759. Otherwise the function raises ``ValueError``.
+
+        Here the octads are numbered as in class |GCode|.
         """
         return mat24.gcode_to_octad(self.value >> 12, 0)
 

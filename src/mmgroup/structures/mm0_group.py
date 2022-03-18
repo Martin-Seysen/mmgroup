@@ -468,7 +468,7 @@ class MM0(AbstractMMGroupWord):
         normalize these factors such that the first nonzero value 
         of the pair :math:`(\chi_{24}, \chi_{4096})` is positive. 
 
-        If parameter ``involution`` is a 2B involution math:`i` then
+        If parameter ``involution`` is a 2B involution :math:`i` then
         the element :math:`g` given by ``self`` must centralize that
         involution  :math:`i`. In this case we compute the  
         corresponding  characters of  :math:`g^h` for a  
