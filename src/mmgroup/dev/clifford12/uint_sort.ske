@@ -1,0 +1,273 @@
+/** @file uint_sort.c
+  File `` uint_sort.c`` contains  functions for sorting arrays
+  of unsigned 32-bit and 64-bit integers.
+
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+// %%GEN h
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+/*************************************************************************
+** Definitions
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// Treshold for quicksort. an array with less than 33 entries
+// is sorted with insertsort.
+#define MIN_QS 32  //  Treshold for quicksort
+
+
+// Exchange entry a[i] with a[j]. This requires an auxiliary
+// variable ``temp`` of the same type as ``a[0]``.
+#define xchg(a, i, j)  temp = a[i]; a[i] = a[j]; a[j] = temp
+
+/// @endcond 
+
+
+
+// %%FOR N in [32, 64]
+
+/*************************************************************************
+** Heap sort for unsigned  %{N}-bit integers
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** @brief adjust a heap
+
+  An array ``a`` of length ``n`` is called a heap (starting at 
+  position ``i``) if ``a[j] >= a[2*i+1]`` and ``a[j] >= a[2*i+2]`` 
+  for all ``j >= i``, assuming ``a[j] = -infinity`` for 
+  all ``j >= n``. For brevity, a heap starting at position ``i`` 
+  is called an ``i``-heap``. A ``0``-heap is called a heap.
+
+  Any ``i``-heap is also an ``i+j``-heap for ``j >= 0``; and any
+  array of length ``n`` is an ``i``-heap for ``i > n >> 1``.
+
+  If the input array ``a`` of length ``n`` is an ``i+1``-heap
+  then function ``adjust_heap`` converts ``a`` to an ``i``-heap. 
+  This conversion has complexity ``O(log n)``. 
+
+  The implementation repeatedly exchanges ``a[j]`` with the
+  greatest of it successors ``a[2*j+1]``, ``a[2*j+2]``,
+  starting at index ``i``, until ``a[j]`` is greater or equal
+  to the maximum of ``a[2*j+1]`` and ``a[2*j+2]``.
+*/
+static inline void adjust_heap%{N}(uint%{N}_t *a, uint32_t n, uint_fast32_t i)
+{
+    uint_fast32_t j;
+    uint%{N}_t temp;
+    for (j = 2 * i + 1; j < n; j = 2 * (i = j) + 1) {
+        if (j + 1 < n && a[j + 1] > a[j]) ++j;
+	  if (a[i] > a[j]) break;
+        xchg(a, i, j);
+    }
+}
+
+/// @endcond 
+
+
+
+/** @brief Sort an array ``a`` of length ``n`` with heap sort
+
+    Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
+    The array is sorted in place. The function is exported for 
+    debuging. You should use function ``bitvector%{N}_sort``.
+*/
+// %%EXPORT px
+void heapsort%{N}(uint%{N}_t *a, uint32_t n)
+{
+    uint_fast32_t i;
+    uint%{N}_t temp;
+
+    // Create heap. Array ``a`` is already an ``i >> 1`` heap. We
+    // convert ``a`` to a ``j`` heap for ``j = (i>>1) - 1, ..., 0``.
+    // So eventually the array ``a`` will be a heap.
+    // See function ``adjust_heap`` for the definition of a heap.
+    for(i = n >> 1; i > 0; --i)  adjust_heap%{N}(a, n, i - 1);
+
+    // Sort heap. We exchange the greatest entry ``a[0]`` of the 
+    // heap ``a`` with ``a[n-1]``, so that ``a[n-1]`` will be at
+    // its correct position. Afterwards the array ``a[0],...,a[n-1]``
+    // is an ``1``-heap of length ``n-1``; and we use 
+    // function ``adjust_heap`` to convert that array to a heap.
+    // We repeat the same procedure with the subarrays of ``a``
+    // of length ``n-1, n-2,...,2``. 
+    while (n > 1) {
+        --n;
+        xchg(a, 0, n); 
+        adjust_heap%{N}(a, n, 0);
+    }		
+}
+
+
+
+/*************************************************************************
+** Insert sort for unsigned  %{N}-bit integers
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** @brief Sort an array ``a`` of length ``n`` with insert sort
+
+    Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
+    The array is sorted in place.
+*/
+static inline void insertsort%{N}(uint%{N}_t *a, uint32_t n)
+{
+    uint_fast32_t i, j;
+    uint%{N}_t temp;
+
+    for (i = 1; i < n; i += 1) {
+        temp = a[i];
+        for (j = i; j >= 1 && a[j - 1] > temp; --j) a[j] = a[j - 1];
+        a[j] = temp;
+    }
+}
+
+
+/// @endcond 
+
+
+/*************************************************************************
+** The final sorting algorithm for unsigned  %{N}-bit integers
+*************************************************************************/
+
+
+/** @brief Sort an array ``a`` of length ``n`` with insert sort
+
+    Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
+    The array is sorted in place. 
+
+    We use quicksort as the main sorting algorithm. If quicksort
+    reaches a certain recursion level then we switch to heap sort.
+    The gurantees a run time of \f$O(n \mathop{log}(n))\f$.
+    For small arrays we use insert sort.
+*/
+// %%EXPORT px
+void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
+{
+    uint_fast32_t *sp, stack[3*64], l, r, i, j;
+    uint%{N}_t temp, piv;
+
+    // Use insertion sort for small arrays
+    if (n < MIN_QS) {
+        insertsort%{N}(a, n);
+        return;
+    }  
+
+    // Create a stack. each entry of the stack is a triple
+    // (l, r, depth). Such an entry desribes the task to 
+    // sort the entries of the array ``a[l],...,a[r]``.
+    // Parameter ``depth`` is the recursion depth, which 
+    // is initialized roughly with ``d0 = 2 * lb(n / MIN_QS).
+    // Initially, we put  ``(0, n-q, d0)`` on the stack.
+    // At each recursion of quicksort we pop a task from the
+    // stack and we partion the interval ``a[l],...,a[r]``
+    // into two parts. The we put the tasks for sorting
+    // these partitions on the stack, with recursion level
+    // depth decreased by one. If that depth reaches 0 then
+    // we switch to heap sort.
+    sp = stack + 3; stack[0] = 0; stack[1] = n - 1;
+    j = n;  stack[2] = 1;
+    while (j >= MIN_QS) {
+        j >>= 1; stack[2] += 2;
+    }
+
+
+    // Perform quicksort
+    do {
+        sp -= 3;              // pop one stack level
+        l = sp[0], r = sp[1]; // get min and max index from stack
+        if (r - l < MIN_QS) {
+            // Use insertion sort for small arrays
+            insertsort%{N}(a + l, r - l + 1);
+        } else if (sp[2]) {
+            // Use quicksort until max recursion depth reached. We
+            // compute the partiton as in the English Wikipedia article.
+
+            // Sort the first, midlle and last element of array a.
+            i = l + ((r - l) >> 1);  // index of the middle element of a
+            // Sort a such that a[l] <= a[i] <= a[r] and use a[i] as pivot
+            if (a[l] > a[i]) {xchg(a, l, i);}
+            if (a[i] > a[r]) {xchg(a, i, r);}
+            if (a[l] > a[i]) {xchg(a, l, i);}
+            piv = a[i];        // pivot with middle element after sorting
+            // Partition array a[l],...,a[r] using the pivot element a[i]
+            // We compute j such that that partitions will be
+            // a[l],...,a[j]  and   a[j],...,a[r].
+            i = l; // 1st element is already done
+            j = r; // last element is already done
+            do {
+                //printf("<lr %d %d %d %d>\n", l, r, i, j);
+                do {++i;} while (a[i] < piv);
+                do {--j;} while (a[j] > piv);
+                if (i >= j) break;
+                xchg(a, i, j);  
+            } while (1); 
+            // push a[j+1,...,r] for next round onto the stack
+            sp[0] = j+1;
+            // push a[l,...,i-1] for next round onto the stack
+            sp[3] = l;
+            sp[4] = j;
+            // decrement recursion depth couter for next round
+            sp[5] = sp[2] = sp[2] - 1;
+            sp += 6;  // increment stack pointer by two levels
+        } else {
+            // Use heapsort if max recursion depth exceeded 
+            heapsort%{N}(a + l, r - l + 1);
+        }
+    } while (sp != stack);
+     
+}
+
+
+
+/*************************************************************************
+*** End of of C code
+*************************************************************************/
+
+// %%END FOR 
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+

@@ -202,6 +202,11 @@ Module ``bitmatrix64.c``
 
    .. doxygenfile:: bitmatrix64.c
 
+Module ``uint_sort.c``
+------------------------
+
+   .. doxygenfile:: uint_sort.c
+
 
 Module ``qstate12.c``
 ---------------------

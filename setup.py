@@ -272,17 +272,14 @@ shared_libs_before_stage1 = [
 
 
 
+clifford12_sources = [
+    "qstate12", "qmatrix12", "bitmatrix64",  "uint_sort", "xsp2co1", 
+    "leech3matrix", "xsp2co1_elem", "involutions",
+]
+
 clifford12_shared = SharedExtension(
     name = "mmgroup.mmgroup_clifford12", 
-    sources = [
-        os.path.join(C_DIR, "bitmatrix64.c"),
-        os.path.join(C_DIR, "qstate12.c"),
-        os.path.join(C_DIR, "qmatrix12.c"),
-        os.path.join(C_DIR, "xsp2co1.c"),
-        os.path.join(C_DIR, "leech3matrix.c"),
-        os.path.join(C_DIR, "xsp2co1_elem.c"),
-        os.path.join(C_DIR, "involutions.c"),
-    ],
+    sources = [os.path.join(C_DIR, f) + ".c" for f in clifford12_sources],
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     libraries = shared_libs_before_stage1, 
