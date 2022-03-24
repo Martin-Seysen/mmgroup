@@ -1,13 +1,43 @@
 /** @file mm_reduce.c
 
  Function ``mm_reduce_M`` is the most important C function in this
- project.  It reduces an arbitary element of the monster group
+ project.  It reduces an arbitrary element of the monster group
  (represented as a word in the generators of the monster) to
- a word of fixed maximum length.
+ a word of fixed maximum length. Function ``mm_reduce_M`` uses the
+ method in [Sey22] for reducing an element of the monster.
 
- This file also conatins auxiliary functions for 
+ Here a word in the monster group is represented as an array
+ of 32-bit integers of type ``uint32_t`` as described in
+ section **The monster group** in the API reference. Such an
+ array represents a word of generators of the monster.
+ Thus group multiplication is concatenation of words. An
+ generator in a word (given by an entry in the array of integers)
+ can be inverted by flipping its most significant bit.
+
+ This file also contains auxiliary functions for
  function  ``mm_reduce_M``;  most of them deal with 2A axes in
  the representation \f$\rho_{15}\f$ of the monster modulo 15.
+
+ Here we use the term **2A axis** as in [Sey22]; there two fixed
+ 2A axes  \f$v^+\f$ and \f$v^-\f$ have been defined. The
+ term **2A axis** has been used earlier in [Con85].
+ 
+ An element of \f$\rho_{15}\f$ is implemented as a array of
+ ``MM_OP15_VLEN`` integers of type ``uint_mmv_t`` as described
+ in **The C interface of the mmgroup project**,
+ section **Description of the mmgroup.mm extension**. The value
+ ``MM_OP15_VLEN`` is defined in file ``mm_op15.h``.
+
+ The preferred way to deal with a 2A axis \f$v\f$ in \f$\rho_{15}\f$
+ is as follows:
+
+ - Create an array of type ``uint64_t[MM_OP15_VLEN]`` for storing \f$v\f$.
+
+ - Use function ``mm_reduce_store_axis`` to set \f$v=v^+\f$ or \f$v=v^-\f$.
+
+ - Use function ``mm_op15_word`` to multiply \f$v\f$ with an element of the monster.
+
+ Here  ``mm_op15_word`` is a function in file ``mm_op15_word.c``.
 */
 
 #include "mm_reduce.h"   
@@ -277,11 +307,14 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
 /////////////////////////////////////////////////////////////////////////
 
 /**
-  @brief Store a 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
+  @brief Store the 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
 
-  To be documented later!
-
-  
+  The function stores the 2A axis \f$v^+\f$ (in case ``sign == 0``)
+  or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
+  by ``v``. That vector will store an element of the 
+  representation \f$\rho_{15}\f$ of the monster group as described in
+  the header of this file. 
+  Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
 */
 // %%EXPORT px
 void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
@@ -419,13 +452,25 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
 
 
 /**
-  @brief Reduce a 2A axis to the standard axis \f$v^+\f$
+  @brief Reduce a 2A axis in \f$\rho_{15}\f$ in to the standard axis \f$v^+\f$
 
-  To be documented later!
+  Input ``v`` in this function must refer to a 2A axis \f$v\f$ 
+  in \f$\rho_{15}\f$ as described in the header of this file.
+
+  The function computes an element \f$g\f$ of the monster group 
+  with   \f$v \cdot g = v^+\f$. We use the method in [Sey22],
+  Section 6 ff. for computing \f$g\f$.
+
+  The function stores \f$g\f$ as a word of generators in the 
+  array ``r`` as described in the header of this file and returns
+  the length of this word.
   
+  The buffer referred by ``r`` should have length at least 64.
+
+  A negative return value indicates a fatal error.
 */
 // %%EXPORT px
-int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t * r)
+int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t *r)
 {
     int32_t res;
     axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
@@ -439,7 +484,20 @@ int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t * r)
 /**
   @brief Reduce element of monster to element of subgroup \f$H^+\f$
 
-  To be documented later!
+  Let \f$g\f$ be the element of the monster given as a word of
+  generators in the buffer ``a`` of length ``n``. The function
+  computes an element \f$h\f$ of the monster with 
+  \f$g \cdot h \in H^+\f$. Here \f$H^+\f$ is a subgroup
+  of the monster of structure \f$2.B\f$ as defined in [Sey22],
+  Section 6. We use the method in loc. cit. for computing \f$h\f$.
+
+  The function stores \f$h\f$ as a word of generators in the 
+  array ``r`` as described in the header of this file and returns
+  the length of this word.
+  
+  The buffer referred by ``r`` should have length at least 64.
+
+  A negative return value indicates a fatal error.
   
 */
 // %%EXPORT px

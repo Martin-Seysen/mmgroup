@@ -169,7 +169,7 @@ static inline void insertsort%{N}(uint%{N}_t *a, uint32_t n)
 
     We use quicksort as the main sorting algorithm. If quicksort
     reaches a certain recursion level then we switch to heap sort.
-    The gurantees a run time of \f$O(n \mathop{log}(n))\f$.
+    This guarantees a run time of \f$O(n \mathop{log}(n))\f$.
     For small arrays we use insert sort.
 */
 // %%EXPORT px

@@ -81,7 +81,7 @@ def span(v, value, verbose = 0):
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_basis(short, l, basis, 24)
     if verbose:
-        print(S_AXIS % (l, value))
+        #print(S_AXIS % (l, value))
         print("  Dimension of spanned space:", dim)    
     basis = basis[:dim]
     v2new = np.zeros(1 << dim, dtype = np.uint32)
