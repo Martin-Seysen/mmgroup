@@ -75,28 +75,38 @@ def compress_order_vector_data(ov):
 
 
 class OrderVectorTable:
-    if import_pending:
-        import_all()
-    ov, tag, data =  order_vector_from_py_data()  
-    a_ov =  compress_order_vector_data(ov)
-    tag_data = []
-    tag_indices = [0]
-    for i, name in enumerate(NAMES):
-         a0 = list(data[name])
-         tag_data += a0
-         tag_indices.append(tag_indices[-1] + len(a0))
-    tag_data = np.array(tag_data, dtype = np.uint32)
-    tag_indices = np.array(tag_indices, dtype = np.uint16)
-    tables = {
-        "ORDER_VECTOR_DATA": a_ov,
-        "ORDER_VECTOR_TAG_DATA": tag_data,
-        "ORDER_VECTOR_TAG_INDICES": tag_indices,
-        "ORDER_VECTOR_NUM_TAG_DATA": len(NAMES),
-    }
     directives = {}
+    tables = None
+
+    def compute_data(self):
+        """Compute data for table classes
+
+        We cannot to this ab initio; because the required inputs 
+        are not available if sys.arg contains tan argument ``mockup``.
+        """
+        if not self.__class__.tables is None:
+            return
+        if import_pending:
+            import_all()
+        ov, tag, data =  order_vector_from_py_data()  
+        a_ov =  compress_order_vector_data(ov)
+        tag_data = []
+        tag_indices = [0]
+        for i, name in enumerate(NAMES):
+            a0 = list(data[name])
+            tag_data += a0
+            tag_indices.append(tag_indices[-1] + len(a0))
+        tag_data = np.array(tag_data, dtype = np.uint32)
+        tag_indices = np.array(tag_indices, dtype = np.uint16)
+        self.__class__.tables = {
+            "ORDER_VECTOR_DATA": a_ov,
+            "ORDER_VECTOR_TAG_DATA": tag_data,
+            "ORDER_VECTOR_TAG_INDICES": tag_indices,
+            "ORDER_VECTOR_NUM_TAG_DATA": len(NAMES),
+            }
     
     def __init__(self, *args):
-        pass
+        self.compute_data()
 
 
 class Mockup_OrderVectorTable:

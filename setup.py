@@ -140,6 +140,7 @@ def extend_path():
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 
+
 codegen_args = ["mockup"] if on_readthedocs else []
 
 ####################################################################
@@ -560,6 +561,7 @@ if on_readthedocs:
         general_presteps,
         mat24_presteps,
         mm_presteps,
+        reduce_presteps,
     ]
 
    
