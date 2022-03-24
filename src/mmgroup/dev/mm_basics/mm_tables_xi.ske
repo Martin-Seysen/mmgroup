@@ -9,13 +9,15 @@
 
 
 // %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+
 // Structure used for referring to tables for operator xi
 // See corresponding comment in file mm_tables_xi.c
 typedef struct {
    uint16_t *p_perm;
    uint32_t *p_sign;
 } mm_sub_table_xi_type;
-
+/// @endcond
 // %%GEN c
 
 

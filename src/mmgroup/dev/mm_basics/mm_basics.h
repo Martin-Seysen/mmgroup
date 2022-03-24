@@ -102,7 +102,7 @@ enum MM_AUX_OFS {
   MM_AUX_OFS_X =  50880UL, /**< Offset for tag X */
   MM_AUX_OFS_Z = 116416UL, /**< Offset for tag Z */
   MM_AUX_OFS_Y = 181952UL, /**< Offset for tag Y */
-  MM_AUX_OFS_E = 247488UL  /**< Total length of the internal representation */
+  MM_AUX_LEN_V = 247488UL  /**< Total length of the internal representation */
 };
 
 
@@ -123,7 +123,7 @@ enum MM_AUX_XOFS {
   MM_AUX_XOFS_X =  49428UL, /**< Offset for tag X */ 
   MM_AUX_XOFS_Z =  98580UL, /**< Offset for tag Z */ 
   MM_AUX_XOFS_Y = 147732UL, /**< Offset for tag Y */ 
-  MM_AUX_XOFS_E = 196884UL  /**< Total length of the external representation */
+  MM_AUX_XLEN_V = 196884UL  /**< Total length of the external representation */
 };
 
 

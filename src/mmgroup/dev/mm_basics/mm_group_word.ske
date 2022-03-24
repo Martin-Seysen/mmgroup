@@ -5,6 +5,8 @@
 
 // %%GEN h
 
+/// @cond DO_NOT_DOCUMENT 
+
 typedef struct {
     // public members:
     uint32_t data[6];
@@ -22,6 +24,7 @@ typedef struct {
     int32_t sign; 
 } mm_group_iter_t;
 
+/// @endcond
 
 // %%GEN c
 

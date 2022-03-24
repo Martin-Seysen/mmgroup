@@ -410,7 +410,7 @@ uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
             i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
         } 
     } else {
-        if (i >=  MM_AUX_XOFS_E) return 0;
+        if (i >=  MM_AUX_XLEN_V) return 0;
         // Tags X, Z, Y
         i -=  MM_AUX_XOFS_X;
         // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
@@ -472,7 +472,7 @@ void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
             i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
         } 
     } else {
-        if (i >=  MM_AUX_XOFS_E) return;
+        if (i >=  MM_AUX_XLEN_V) return;
         // Tags X, Z, Y
         i -=  MM_AUX_XOFS_X;
         // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
@@ -553,7 +553,7 @@ void mm_aux_random_mmv(uint32_t p, uint_mmv_t *mv, uint64_t *seed)
 // %%EXPORT px
 int32_t mm_aux_reduce_mmv(uint32_t p, uint_mmv_t *mv)
 {
-    return mm_aux_reduce_mmv_fields(p, mv, MM_AUX_OFS_E);
+    return mm_aux_reduce_mmv_fields(p, mv, MM_AUX_LEN_V);
 }
 
 /**
@@ -938,7 +938,7 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
         }           
     }
 
-    row_end = (MM_AUX_OFS_E - MM_AUX_OFS_X) >> lg_int_fields;
+    row_end = (MM_AUX_LEN_V - MM_AUX_OFS_X) >> lg_int_fields;
     for (row = 0; row < row_end; ++row) if ((source = *mv++) != 0) {
         ofs = 0x5000000 + (row << (8 + lg_int_fields));
         ofs += ofs & 0xfffe000;
@@ -1327,7 +1327,7 @@ uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
             i += 0x80000 - MM_AUX_XOFS_T;
             return i << 8;
         } 
-    } else if (i <  MM_AUX_XOFS_E) {
+    } else if (i <  MM_AUX_XLEN_V) {
         // Tags X, Z, Y
         i -=  MM_AUX_XOFS_X;
         // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
@@ -1657,7 +1657,7 @@ uint32_t mm_aux_index_intern_to_sparse(uint32_t i)
             i += 0x80000 - MM_AUX_OFS_T;
             return i << 8;
         } 
-    } else if (i < MM_AUX_OFS_E) {
+    } else if (i < MM_AUX_LEN_V) {
         // Tags X, Z, Y
         i -=  MM_AUX_OFS_X;
         i0 = i >> 5;

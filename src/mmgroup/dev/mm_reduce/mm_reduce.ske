@@ -23,15 +23,15 @@
  term **2A axis** has been used earlier in [Con85].
  
  An element of \f$\rho_{15}\f$ is implemented as a array of
- ``MM_OP15_VLEN`` integers of type ``uint_mmv_t`` as described
+ ``MM_OP15_LEN_V`` integers of type ``uint_mmv_t`` as described
  in **The C interface of the mmgroup project**,
  section **Description of the mmgroup.mm extension**. The value
- ``MM_OP15_VLEN`` is defined in file ``mm_op15.h``.
+ ``MM_OP15_LEN_V`` is defined in file ``mm_op15.h``.
 
  The preferred way to deal with a 2A axis \f$v\f$ in \f$\rho_{15}\f$
  is as follows:
 
- - Create an array of type ``uint64_t[MM_OP15_VLEN]`` for storing \f$v\f$.
+ - Create an array of type ``uint64_t[MM_OP15_LEN_V]`` for storing \f$v\f$.
 
  - Use function ``mm_reduce_store_axis`` to set \f$v=v^+\f$ or \f$v=v^-\f$.
 
@@ -62,8 +62,8 @@
 
 
 typedef struct {
-    uint_mmv_t v[MM_OP15_OFS_E];
-    uint_mmv_t vtmp[MM_OP15_OFS_E];
+    uint_mmv_t v[MM_OP15_LEN_V];
+    uint_mmv_t vtmp[MM_OP15_LEN_V];
     uint_mmv_t vA[MM_OP15_OFS_B];
     uint32_t v_short[MAX_SHORT_ARRAY];
     uint32_t n_short;
