@@ -86,12 +86,28 @@ The current version supports building wheels for 64-bit Windows only.
 There is experimental support for building a Linux version from a
 source distribution.
 
+Remarks
+.......
+
+If you have installed any version of the ``mmgroup`` package (e.g. with
+the ``pip`` tool) then you **must** uninstall that package before you can 
+build a new version of the ``mmgroup`` package from the source files.
+
+We recommend to run
+
+.. code-block::
+
+   python cleanup.py -pcx
+
+in the root directory of the distribution for cleaning up intermediate
+files before building the package from the source files.
+
 
 Installing a C compiler for cython in Windows 
 ---------------------------------------------
 
 The bad news for Windows developers is that there is no pre-installed 
-``C`` compiler on a standard Windows system. However, the ``cygwin`` 
+``C`` compiler on a standard Windows system. However, the ``cython`` 
 package requires a ``C`` compiler. Here in principle, the user has the 
 choice between the following two compilers:
 
@@ -111,7 +127,7 @@ https://cython.readthedocs.io/en/latest/src/tutorial/appendix.html.
 
 The current ``setup.py`` supports ``MSVC`` and ``MinGW`` for 64-bit 
 Windows. According to the last URL the ``MinGW`` compiler works with 
-Python versions up to 3.4 only, so it can no longer be recommended. 
+Python versions up to 3.4 only, so that it can no longer be recommended. 
 
 The author has installed the ``MSVC`` compiler with the Microsoft
 *Build Tools for Visual Studio* from:
@@ -173,8 +189,8 @@ Note that some distributions require the string 'python' to be
 replaced by 'python3'.
 
 
-Remark
-......
+Remarks
+.......
 
 On some Linux systems the user may have to type ``python3`` instead of
 ``python`` and ``pip3`` instead of ``pip`` when working with python 3.x.
@@ -182,3 +198,7 @@ On some Linux systems the user may have to type ``python3`` instead of
 On some Linux-like systems (e.g. on MacOS with a Clang C compiler) it 
 might help to remove the string ``-static-libgc`` from all lists in 
 file ``config.py``.
+
+
+
+

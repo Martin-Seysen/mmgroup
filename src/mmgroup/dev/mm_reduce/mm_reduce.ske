@@ -83,16 +83,16 @@ typedef struct {
 
   Let ``v`` be a vector in the rep of the moster mod 15.
 
-  In case ``value1 == 0`` the function computes the list of all 
-  vectors ``v2`` in the Leech lattice mod 2 such that the absolute 
-  value of the entry of ``v`` corresponding a unit vector labelled 
-  by ``v2`` is equal to ``value0``. That list is stored 
+  In case ``value1 == 0`` the function computes the list of all
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
+  value of the entry of ``v`` corresponding a unit vector labelled
+  by ``v2`` is equal to ``value0``. That list is stored
   in ``pwork.v_short[j], 0 <= j < ``n_short``.
 
-  In case ``value1 != 0`` wil will store the list of all 
-  vectors ``v2`` in the Leech lattice mod 2 such that the absolute 
-  value of the entry of ``v`` corresponding a unit vector labelled 
-  by ``v2`` is equal to ``value0`` or ``value1` . That list is 
+  In case ``value1 != 0`` wil will store the list of all
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
+  value of the entry of ``v`` corresponding a unit vector labelled
+  by ``v2`` is equal to ``value0`` or ``value1` . That list is
   stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
   as in function ``mm_op15_eval_X_find_abs``.
 */
@@ -117,7 +117,7 @@ static inline void get_short(
   ``L`` be the set of vectors in the Leech lattice mod 2
   returned by function ``short(v, value)``. The function computes
   the linear subspace of the Leech lattice mod 2 spanned by ``L``
-  as a list of vectors. 
+  as a list of vectors.
 
   That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
 */
@@ -146,7 +146,7 @@ static inline void get_span(
   linear space spanend by ``L``. 
 
   The function returns the radical of ``V`` (i.e. the intersection
-  of ``V`` with its orthogonal complement) as a list of vectors. 
+  of ``V`` with its orthogonal complement) as a list of vectors.
 
   That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
 */
@@ -227,29 +227,29 @@ static inline uint32_t eval_A_vstart(uint_mmv_t *v)
    Let ``v`` be a vector in the 196884-dimensional representation
    of the monster group modulo ``15``, encoded as described in
    section *Description of the mmgroup.mm<p> extensions* in the
-   description of the *C interface*. 
+   description of the *C interface*.
 
    If ``v`` is a 2A axis then the function computes the type
    of the 2A axis. Each 2A axis corresponds uniquely to a 2A
-   involution \f$x\f$ in the monster. Let \f$z\f$ be the central 
+   involution \f$x\f$ in the monster. Let \f$z\f$ be the central
    involution in the subgroup \f$G_{x0}\f$ of the monster. Then
-   the type of the 2A axis ``v`` is the class of the 
+   the type of the 2A axis ``v`` is the class of the
    product \f$xz\f$ in the monster, which has one of the
    values 2A, 2B, 4A, 4B, 4C, 6A, 6C, 6F, 8B, 10A, 10B, 12C
    
    The function returns a value ``n * 2**28 + k * 2**24 + v``.
    Here ``n`` is the number of the class, e.g. ``n == 6`` for
-   class 6C, ``k`` encodes the letter in the name of the 
+   class 6C, ``k`` encodes the letter in the name of the
    class ('A' = 1, 'B' = 2, ...) e.g. ``k = 3`` for class 6C.
 
-   Output ``v`` is either 0 or a vector in the Leech lattice 
+   Output ``v`` is either 0 or a vector in the Leech lattice
    mod 2 found during the computation. Here a vector of type 2
    is returned for classes 2A, 6A; and a vector of type 4 is
    returned for class 4A.
 
    Caution:
 
-   This is a quick disambiguation of the type of a 2A axis. The 
+   This is a quick disambiguation of the type of a 2A axis. The
    function may return any axis type if ``v`` is not  a 2A axis.
 */
 // %%EXPORT px
@@ -311,9 +311,9 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
 
   The function stores the 2A axis \f$v^+\f$ (in case ``sign == 0``)
   or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
-  by ``v``. That vector will store an element of the 
+  by ``v``. That vector will store an element of the
   representation \f$\rho_{15}\f$ of the monster group as described in
-  the header of this file. 
+  the header of this file.
   Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
 */
 // %%EXPORT px
@@ -454,14 +454,14 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
 /**
   @brief Reduce a 2A axis in \f$\rho_{15}\f$ in to the standard axis \f$v^+\f$
 
-  Input ``v`` in this function must refer to a 2A axis \f$v\f$ 
+  Input ``v`` in this function must refer to a 2A axis \f$v\f$
   in \f$\rho_{15}\f$ as described in the header of this file.
 
-  The function computes an element \f$g\f$ of the monster group 
-  with   \f$v \cdot g = v^+\f$. We use the method in [Sey22],
-  Section 6 ff. for computing \f$g\f$.
+  The function computes an element \f$h\f$ of the monster group
+  with   \f$v \cdot h = v^+\f$. We use the method in [Sey22],
+  Section 6 ff. for computing \f$h\f$.
 
-  The function stores \f$g\f$ as a word of generators in the 
+  The function stores \f$h\f$ as a word of generators in the
   array ``r`` as described in the header of this file and returns
   the length of this word.
   
@@ -486,19 +486,18 @@ int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t *r)
 
   Let \f$g\f$ be the element of the monster given as a word of
   generators in the buffer ``a`` of length ``n``. The function
-  computes an element \f$h\f$ of the monster with 
+  computes an element \f$h\f$ of the monster with
   \f$g \cdot h \in H^+\f$. Here \f$H^+\f$ is a subgroup
   of the monster of structure \f$2.B\f$ as defined in [Sey22],
   Section 6. We use the method in loc. cit. for computing \f$h\f$.
 
-  The function stores \f$h\f$ as a word of generators in the 
+  The function stores \f$h\f$ as a word of generators in the
   array ``r`` as described in the header of this file and returns
   the length of this word.
   
   The buffer referred by ``r`` should have length at least 64.
 
   A negative return value indicates a fatal error.
-  
 */
 // %%EXPORT px
 int32_t mm_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
@@ -621,8 +620,25 @@ static int32_t reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_wo
 /**
   @brief Reduce feasible 2A axis to the feasible axis \f$v^-\f$
 
-  To be documented later!
+  Input ``v`` in this function must refer to a 2A axis \f$v\f$
+  in \f$\rho_{15}\f$ as described in the header of this file.
+  Also this axis must be orthogonal to the the standard
+  axis \f$v^+\f$. Such an axis is called feasible
+  in [Sey22], Section 8.
+
+  The function computes an element \f$h\f$ of the monster group
+  with  \f$v \cdot h = v^-\f$ and  \f$v^+ \cdot h = v^+\f$. We
+  use the method in loc. cit. for computing \f$h\f$.
+  If no such element \f$h\f$ exists then the function returns
+  an undefined value \f$h\f$.
+
+  The function stores \f$h\f$ as a word of generators in the
+  array ``r`` as described in the header of this file and returns
+  the length of this word.
   
+  The buffer referred by ``r`` should have length at least 64.
+
+  A negative return value indicates a fatal error.
 */
 // %%EXPORT px
 int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
@@ -640,8 +656,20 @@ int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t * r)
 /**
   @brief Reduce element of monster to element of subgroup \f$G_{x0}\f$
 
-  To be documented later!
+  Let \f$g\f$ be the element of the monster given as a word of
+  generators in the buffer ``a`` of length ``n``. The function
+  computes an element \f$h\f$ of the monster with
+  \f$g \cdot h \in H\f$. Here \f$H\f$ is a subgroup of the monster
+  of structure \f$2^{2+22}.\mbox{Co}_2\f$ as defined in [Sey22],
+  Section 6. We use the method in ibid. for computing \f$h\f$.
+
+  The function stores \f$h\f$ as a word of generators in the
+  array ``r`` as described in the header of this file and returns
+  the length of this word.
   
+  The buffer referred by ``r`` should have length at least 64.
+
+  A negative return value indicates a fatal error.  
 */
 // %%EXPORT px
 int32_t mm_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t *r)
@@ -672,9 +700,24 @@ done:
 /**
   @brief Reduce an element in the monster group
 
-  To be documented later!
+  This is the most important function in the project. It reduces
+  an arbitrary element \f$g\f$ of the monster to an element \f$h\f$.
+  The size of the element \f$h\f$ depends on the value of \f$g\f$ 
+  as an element of the monster group, but not of the representation 
+  of  \f$g\f$.
 
+  Let \f$g\f$ be the element of the monster given as a word of
+  generators in the buffer ``a`` of length ``n``. Then the function
+  computes the reduced element \f$h\f$ of the monster with 
+  \f$g = h\f$. We use the method in [Sey22] for computing \f$h\f$.
+
+  The function stores \f$h\f$ as a word of generators in the 
+  array ``r`` as described in the header of this file and returns
+  the length of this word.
   
+  The buffer referred by ``r`` should have length at least 128.
+
+  A negative return value indicates a fatal error.  
 */
 // %%EXPORT px
 int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
@@ -692,8 +735,10 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
     mm_reduce_store_axis(p_work->v, 0);
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res <  0) goto done;
-    len1 = res = reduce_v_axis(p_work->v, r, p_work);
-    if (res <  0) goto done;
+    len1 = res = reduce_v_axis(p_work->v, r + 1, p_work);
+    if (res < 0) goto done;
+    r[0] = r[len1+1] = 0x80000000UL;
+    len1 += 2;
     mm_reduce_store_axis(p_work->v, 1);
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res <  0) goto done;
