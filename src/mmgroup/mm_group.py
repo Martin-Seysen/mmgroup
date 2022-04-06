@@ -372,7 +372,12 @@ class MM(MM0):
     a type-4 vector given by the index ``i``.
     Here ``i`` encodes a vector in the Leech lattice modulo 2
     as in the description for tag  ``'q'``. That vector must
-    be of type 4. The sign bit of that vector is ignored.
+    be of type 4. The sign bit of that vector is ignored. 
+    Here ``i`` may also be an instance of class |XLeech2|
+    representing a type-4 vector. We warn the user that the
+    index ``i`` may specify any element of the corresponding
+    right coset :math:`N_{x0} g`; and that this element may 
+    depend on the version of the package.
 
 
     **Generating a random element of the subgroup of the monster**

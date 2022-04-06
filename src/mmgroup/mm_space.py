@@ -615,7 +615,7 @@ class MMVector(AbstractMmRepVector):
 
 
     Linear operations can be used for for creating linear combination 
-    of unit vectors. This is just the simplest cast of the  
+    of unit vectors. This is just the simplest case of the  
     construction of a vector in  :math:`\rho_p`. Section
     :ref:`mmrep-label` contains a large number of further 
     possibilities for creating such vectors.
