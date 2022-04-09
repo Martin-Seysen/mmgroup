@@ -159,7 +159,7 @@ def low_level_check_mm_in_g_x0(g):
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op15_copy(v, w)
-    res = mm_op15_word(w.data, g.mmdata, len(g), 1, work)
+    res = mm_op15_word(w.data, g.mmdata, len(g.mmdata), 1, work)
     assert res == 0
     if FAST:
         g1 = np.zeros(11, dtype = np.uint32)

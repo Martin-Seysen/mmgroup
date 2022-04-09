@@ -484,6 +484,7 @@ class MM(MM0):
 
     """
     MIN_LEN = 128
+    _MAGIC = randint(0, 0xffffffffffffffff)
     __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, i = None, *args, **kwds):
         self.reduced = 0
@@ -607,6 +608,7 @@ class MMGroup(AbstractMMGroup):
         except:
             pass
         return super(MMGroup, self).str_word(g)
+
 
 
 

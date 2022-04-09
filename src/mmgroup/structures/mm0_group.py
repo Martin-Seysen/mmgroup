@@ -332,6 +332,7 @@ class MM0(AbstractMMGroupWord):
        group.
   
     """
+    ERR_ITER = "A monster group element g is not iterable. Use g.mmdata instead"
     MIN_LEN = 16
     __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, atom = None, *args, **kwds):
@@ -360,9 +361,11 @@ class MM0(AbstractMMGroupWord):
         return np.copy(self._data[:self.length])
 
 
+    def __bool__(self):
+        return True
         
     def __len__(self):
-        return self.length
+        raise TypeError(self.ERR_ITER)
 
     def _setdata(self, data):
         len_ = len(data)
@@ -373,11 +376,8 @@ class MM0(AbstractMMGroupWord):
 
         
     def __getitem__(self,i):
-        if 0 <= i < self.length:
-            return self._data[i] 
-        if -self.length <= i < 0:
-            return self._data[i + self.length]
-        raise IndexError
+        raise TypeError(self.ERR_ITER)
+ 
         
     def is_reduced(self):
         """Return ``True`` if the element of the monster group is reduced

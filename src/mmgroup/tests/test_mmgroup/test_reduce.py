@@ -25,7 +25,7 @@ def reduce_testcases(ncases = 1000):
         for complexity in range(15):
             yield MM0('r', complexity)
     g = MM0('r', 18)
-    assert len(g) > MIN_LEN_ALWAYS_UNREDUCED
+    assert len(g.mmdata) > MIN_LEN_ALWAYS_UNREDUCED
     yield g
 
 def one_test_reduce(g, verbose = 0):
@@ -34,8 +34,8 @@ def one_test_reduce(g, verbose = 0):
     if verbose:
         print(g1)
         print(g2)
-    if len(g1) > MIN_LEN_ALWAYS_UNREDUCED:
-        assert len(g2) < len(g1)
+    if len(g1.mmdata) > MIN_LEN_ALWAYS_UNREDUCED:
+        assert len(g2.mmdata) < len(g1.mmdata)
     assert MM0(g2) == g1
 
 
