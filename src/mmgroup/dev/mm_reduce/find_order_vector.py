@@ -169,7 +169,7 @@ def rand_mm_element(size = 1):
 
     
 def rand_elem_of_order(factors, elem_size):   
-    """Return random element of the monster group of a given order
+    r"""Return random element of the monster group of a given order
 
     The function creates a random element ``g`` of the monster by 
     calling ``g = rand_mm_element(elem_size)``. It returns ``g`` as 
@@ -268,7 +268,7 @@ def stabilizer_vector(v, g, n):
 
     
 def gA_from_type4(v_type4):
-    """Comupute a group element reducing a type-4 Leech lattice vector 
+    r"""Comupute a group element reducing a type-4 Leech lattice vector 
     
     Let ``v_type_4`` be a vector of type 4 in the Leech lattice mod 2
     in **Leech lattice encoding**.  The function returns an element
@@ -282,7 +282,7 @@ def gA_from_type4(v_type4):
     return str(gA)
 
 def make_v71_sample(g71):
-    """Compute a vector stabilized by a group element of order 71
+    r"""Compute a vector stabilized by a group element of order 71
     
     Let ``g71`` be an element of the monster group of order 71. The
     function generates  a random vector ``v71`` in the representatoon
@@ -327,7 +327,7 @@ def make_v71_sample(g71):
 
 
 def find_vector_71_mod3(verbose = 0):
-    """Compute a vector stabilized by a group element of order 71
+    r"""Compute a vector stabilized by a group element of order 71
 
     The function computes an element ``g71`` of order 71 of the
     monster and a vector ``v71``  in the representation of the 
@@ -430,7 +430,7 @@ def do_find_vector_v94_mod5(s_g94, verbose = 0):
 
 
 def find_vector_v94_mod5(verbose = 0):
-    """Compute a vector stabilized by a group element of order 94
+    r"""Compute a vector stabilized by a group element of order 94
 
     The function computes an element ``g94`` of order 94 of the
     monster,  and a (sparse) vector ``v94``  in the representatoon 

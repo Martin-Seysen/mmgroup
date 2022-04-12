@@ -144,7 +144,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
            4, "invar[0]")
     check((int(invar[1]) >> 24) & 7 == ref_involution_invariants[2],
            5, "invar[1]")
-    check(gen_leech2_type(v0) >> 4 == ref_involution_invariants[3],
+    check(gen_leech2_type(v0) == ref_involution_invariants[3],
            6, "leech2_type")
     check(invariant_count_type2(invar) == ref_involution_invariants[4],
            7, "type-2 vector count")

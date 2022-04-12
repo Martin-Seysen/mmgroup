@@ -165,7 +165,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
     as_Q_x0_atom = as_xsp
 
     def type_Q_x0(self):
-        """Return type of element if it is in the subgroup :math:`Q_{x0}`
+        r"""Return type of element if it is in the subgroup :math:`Q_{x0}`
 
         If the element is in the subgroup :math:`Q_{x0}` of the monster
         then the function returns the type of the vector in the Leech 
@@ -176,7 +176,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
         in the subgroup :math:`Q_{x0}`. 
         """
         v = self.as_Q_x0_atom()
-        return gen_leech2_type(v) >> 4
+        return gen_leech2_type(v)
 
     def xsp_conjugate(self, v, sign = True):
         v = np.array(v, dtype = np.uint64, copy=True)
@@ -212,7 +212,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
 
 
     def conjugate_involution(self, mmgroup = None):
-        """Find an element conjugating an involution standard element
+        r"""Find an element conjugating an involution standard element
 
         If the element :math:`g` given by ``self`` is an involution 
         in  the monster then the method computes an element :math:`h` 
@@ -263,7 +263,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
         
     @property
     def subtype(self):
-        """Return subtype of an element
+        r"""Return subtype of an element
 
         Let :math:`g \in G_{x0}` be stored in ``self``. The function
         returns the subtype of a :math:`g`. If :math:`g` maps the 

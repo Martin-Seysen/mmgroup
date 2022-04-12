@@ -173,7 +173,7 @@ static inline uint32_t find_type4(
 {
     uint32_t *pv;
     for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
-        if ((gen_leech2_type(*pv & 0xffffff) >> 4) == 4) return *pv;
+        if (gen_leech2_type(*pv & 0xffffff) == 4) return *pv;
     }
     return 0;
 }
@@ -186,8 +186,8 @@ static inline uint32_t find_ortho_short(
     uint32_t *pv;
     for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
         uint32_t v = *pv & 0xffffff;
-        if ((gen_leech2_type(v) >> 4) == 4 &&
-           (gen_leech2_type(v ^ V_START) >> 4) == 2) return v ^ V_START;
+        if (gen_leech2_type(v) == 4 &&
+           gen_leech2_type(v ^ V_START) == 2) return v ^ V_START;
     }
     return 0;
 }

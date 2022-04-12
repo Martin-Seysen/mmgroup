@@ -132,7 +132,7 @@ def invariant_count_type2(iv):
         if (int(iv[i]) >> 24) & 1 == 0:
             x = int(iv[i]) & 0xffffff
             data += [x ^ y for y in data]
-    s = sum(((gen_leech2_type(x) & 0xf0) == 0x20 for x in data))
+    s = sum((gen_leech2_type(x) == 2 for x in data))
     return s
     
 
@@ -143,7 +143,7 @@ def invariant_type(g):
         iv_len = iv_len - 1
     v0, v1 =  (int(iv[0]) >> 24) & 7, (int(iv[1]) >> 24) & 7
     ct2 = invariant_count_type2(iv)
-    return iv_len, v0, v1, gen_leech2_type(ortho) >> 4, ct2
+    return iv_len, v0, v1, gen_leech2_type(ortho), ct2
 
 
 def display_involution_invariants(g):
@@ -183,7 +183,7 @@ def show_characters(g0, file):
 
 
 
-DOC = """Classes of square roots of Q_x0 in G_x0.
+DOC = r"""Classes of square roots of Q_x0 in G_x0.
 
 The list INVOLUTION_SAMPLES shows invariants and representatives g of
 all classes in the subgroup G_x0 of the monster that square up to an 
@@ -279,7 +279,7 @@ def print_invariants(file = None):
     if is_py:
         s = "This file has been created automatically, do not change!!!"
         print("# " + s + "\n", file = file)
-        print('"""', end = "", file = file)
+        print('r"""', end = "", file = file)
     print(DOC, file = file)
     if is_py:
         print('"""\n\nINVOLUTION_SAMPLES = [',file = file)

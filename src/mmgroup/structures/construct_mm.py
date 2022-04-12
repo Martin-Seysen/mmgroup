@@ -171,7 +171,7 @@ ERR_LEECH2 = "Atom for tag 'c' must represent a type-4 vector in Leech lattice m
 
 def rand_type4_vector():
     c = 0
-    while gen_leech2_type(c) >> 4 != 4:
+    while gen_leech2_type(c) != 4:
         c = randint(0, 0xffffff) 
     return c
 
@@ -189,7 +189,7 @@ def iter_c(tag, r):
             assert isinstance(c, Integral)
         except:
             raise TypeError(ERR_LEECH2)
-    if gen_leech2_type(c) >> 4 != 4:
+    if gen_leech2_type(c) != 4:
         raise ValueError(ERR_LEECH2)
     a = np.zeros(6, dtype = np.uint32)
     len_a = gen_leech2_reduce_type4(c, a)
@@ -293,7 +293,7 @@ def iter_rand_mm(quality):
     for k in range(quality):
         yield 0x50000001 + gen_rng_modp(2, seed)
         c = 0
-        while gen_leech2_type(c) >> 4 != 4:
+        while gen_leech2_type(c) != 4:
             c = gen_rng_modp(0x1000000, seed) 
         len_a = gen_leech2_reduce_type4(c, a)
         mm_group_invert_word(a, len_a)

@@ -667,7 +667,7 @@ int32_t xsp2co1_trace_98280(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
         // i.e. elem is in extraspecial subgroup
         int32_t v = xsp2co1_xspecial_vector(elem), vt;
         if (v >= 0) {
-            vt = gen_leech2_type(v) >> 4;
+            vt = gen_leech2_type(v);
             if (vt == 0 || (vt >= 2 && vt <= 4)) {
                 *ptrace = TAB_TRACE_98280[vt];
                 return 0;
@@ -925,7 +925,7 @@ int32_t xsp2co1_rand_word_G_x0(uint32_t *w, uint64_t *seed)
     // Let v be a random type 4 vector in the Leech lattice mod 2
     do {
         v =  gen_rng_modp(0x1000000, seed);
-    } while ((gen_leech2_type(v) & 0xf0) != 0x40);
+    } while (gen_leech2_type(v) != 4);
 
     // Generate an element g_1 of G_x0 that maps v to \Omega. Store the 
     // element g_1 (of length 'length') in the array referred by ag1. 

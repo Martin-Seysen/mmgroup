@@ -771,7 +771,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             v = xsp2co1_involution_orthogonal(invar, 0);
             // Let t be the type the vector \f$v\f$ in the
             // Leech lattice modulo 2. Then t is 0, 2 or 4.
-            t = gen_leech2_type(v) >> 4;
+            t = gen_leech2_type(v);
             // In case t == 4 we simply return v.
             if (t == 4) return v;
             // In case t = 0 try to$A, A_1, I find a sum of two type-2
@@ -791,7 +791,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             // (with respect to the Wall parametrization) has
             // type 4, we return f$v\f$; otherwise we fail.
             v = xsp2co1_involution_orthogonal(invar, 1);
-            t = gen_leech2_type(v) >> 4;
+            t = gen_leech2_type(v);
             if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
             return v;
         default:    
@@ -929,7 +929,7 @@ int32_t xsp2co1_elem_conjugate_involution(uint64_t *elem, uint32_t *a)
    // encoding. We will be successful if the vector in \f$\Lambda_2\f$
    // corresponding to \f$g_2\f$ is of type 2 or 4.
 
-   switch(gen_leech2_type(v) >> 4) {
+   switch(gen_leech2_type(v)) {
        case 2:
            // Deal with a type-2 vector
            l1 = gen_leech2_reduce_type2(v, a + len);

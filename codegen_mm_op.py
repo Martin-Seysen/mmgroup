@@ -401,7 +401,7 @@ def make_c_h_pxd(p):
 
 
 
-m_translate_pxd = re.compile("mm_op(\d+)_(\w+)")
+m_translate_pxd = re.compile(r"mm_op(\d+)_(\w+)")
 
 
 

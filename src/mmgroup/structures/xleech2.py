@@ -99,6 +99,7 @@ from mmgroup.generators import gen_leech2_mul
 from mmgroup.generators import gen_leech2_pow
 from mmgroup.generators import gen_leech2_scalprod
 from mmgroup.generators import rand_get_seed, gen_leech2_type
+from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_op_word
 
 ERR_RAND = "Illegal string for constricting type %s element" 
@@ -185,7 +186,7 @@ def rand_xleech2_type(vtype):
     if vtype in [3,4]:
         for i in range(1000):
             v = randint(0, 0x1ffffff)
-            if gen_leech2_type(v) >> 4 == vtype:
+            if gen_leech2_type(v) == vtype:
                  return v
         raise ValueError(ERR_XL_RAND)
     if vtype == 0:
@@ -508,7 +509,7 @@ class XLeech2(AbstractGroupWord):
 
     @property
     def ord(self):
-        """Return the number of the element of :math:`Q_{x0}` .
+        r"""Return the number of the element of :math:`Q_{x0}` .
 
         We have ``0 <= i < 0x2000000`` for the returned number ``i``.
         """
@@ -517,14 +518,14 @@ class XLeech2(AbstractGroupWord):
 
     @property
     def sign(self):
-        """Return the sign of the element :math:`Q_{x0}`.
+        r"""Return the sign of the element :math:`Q_{x0}`.
 
         This is ``1`` for a positive and ``-1`` for a negative element.
         """
         return 1 - ((self.value >> 23) & 2)
 
     def isplit(self):
-        """Split element into a product :math:`x_d \cdot x_\delta`
+        r"""Split element into a product :math:`x_d \cdot x_\delta`
 
         The method returns a pair  :math:`(d,  \delta)` such that
         :math:`x_d \cdot x_\delta` is equal to the given element
@@ -539,7 +540,7 @@ class XLeech2(AbstractGroupWord):
 
 
     def split(self):
-        """Split element into a product :math:`x_d \cdot x_\delta`
+        r"""Split element into a product :math:`x_d \cdot x_\delta`
 
         The method returns a pair  :math:`(d,  \delta)` such that
         :math:`x_d \cdot x_\delta` is equal to the given element
@@ -576,7 +577,7 @@ class XLeech2(AbstractGroupWord):
     
     @property
     def type(self):
-        """Return the type of the element of :math:`Q_{x0}`.
+        r"""Return the type of the element of :math:`Q_{x0}`.
 
         This is equal to the type of the corresponding vector
         :math:`v` in the Leech lattice :math:`\Lambda` modulo 2. 
@@ -584,29 +585,29 @@ class XLeech2(AbstractGroupWord):
         is the halved norm of the shortest  vector in the set 
         :math:`v + 2 \Lambda`. That type is equal to 0, 2, 3 or 4.
         """
-        return gen_leech2_type(self.value) >> 4
+        return gen_leech2_type(self.value)
 
     @property
     def xsubtype(self):
-        """Return subtype of the element of :math:`Q_{x0}`
+        r"""Return subtype of the element of :math:`Q_{x0}`
 
         The function returns the integer ``16 * type + subtype``,
         where the pair ``(type, subtype)`` is as in property
         ``subtype``. See section :ref:`computation-leech2` in
         the **guide** for background.
         """
-        return gen_leech2_type(self.value)
+        return gen_leech2_subtype(self.value)
 
     @property
     def subtype(self):
-        """Return pair ``(type, subtype)`` of the element of :math:`Q_{x0}`
+        r"""Return pair ``(type, subtype)`` of the element of :math:`Q_{x0}`
 
         Here ``type`` is as in property ``type``, and subtype is
         a one-digit decimal integer describing the subtype of
         a vector in the Leech lattice modulo 2, as explained in
         the **guide** in section :ref:`computation-leech2`.
         """
-        t =  gen_leech2_type(self.value)
+        t =  gen_leech2_subtype(self.value)
         return t >> 4, t & 15
 
 
@@ -636,7 +637,7 @@ class XLeech2(AbstractGroupWord):
         return sign, tag, i0, i1
 
     def octad_number(self):
-        """Return number of octad.
+        r"""Return number of octad.
 
         Let :math:`x_d \cdot x_\delta` be equal to the given element
         of  :math:`Q_{x0}`. If :math:`d` corresponds to a (possibly

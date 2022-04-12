@@ -17,6 +17,7 @@ from mmgroup import XLeech2, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
 
 from mmgroup import mat24
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_start_type4
@@ -81,9 +82,9 @@ def xi_reduce_odd_type4(v, verbose = 0):
     if verbose:
         w = gen_leech2_op_atom(v, 0x60000000 + exp) 
         print("Reducing c = %s, subtype %s, t=%s, e=%d, to v = %s, subtype %s"
-            %  (hex(mat24.cocode_syndrome(coc,0)), hex(gen_leech2_type(v)),
+            %  (hex(mat24.cocode_syndrome(coc,0)), hex(gen_leech2_subtype(v)),
             hex(tab), exp,  hex(mat24.gcode_to_vect(w >> 12)),
-            hex(gen_leech2_type(w))
+            hex(gen_leech2_subtype(w))
             ))
     # Return exponent for \xi in the lower 4 bits of the retrun value;
     # Return 0 in bit 8 if all syndrome bits of v are in the same
@@ -257,14 +258,14 @@ def reduce_type2(v, verbose = 1):
     word. It returns a negative number in case of failure, 
     e.g. if ``v`` is not of type 2.
     """
-    vtype = gen_leech2_type(v)
+    vtype = gen_leech2_subtype(v)
     if (vtype >> 4) != 2:
         raise ValueError("Vector is not short")
     result = []
     for _i in range(4):
         if verbose:
             coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff
-            vt = gen_leech2_type(v)
+            vt = gen_leech2_subtype(v)
             coc_anchor = 0
             if vt in [0x22]:
                 w = mat24.gcode_weight(v >> 12) 
@@ -275,7 +276,7 @@ def reduce_type2(v, verbose = 1):
             print("Round %d, v = %s, subtype %s, gcode %s, cocode %s" % 
                 (_i, hex(v & 0xffffff), hex(vt), hex(gcode),  coc_syn)
             )
-        assert vtype == gen_leech2_type(v)
+        assert vtype == gen_leech2_subtype(v)
         if vtype == 0x21:
             exp = xi_reduce_odd_type2(v)
             vtype = 0x22
@@ -355,8 +356,8 @@ def test_reduce_type_2(ntests = 500, verbose = 0):
     """Test function ``reduce_type2`` """
     for n, v in enumerate(type2_ortho_testdata(ntests)):
         if verbose:
-            print(" \nTest %d, v = %s, type  =%s" % 
-                (n+1, hex(v), hex(gen_leech2_type(v)))
+            print(" \nTest %d, v = %s, subtype  =%s" % 
+                (n+1, hex(v), hex(gen_leech2_subtype(v)))
             )
         op = reduce_type2(v, verbose)
         w = gen_leech2_op_word(v, op, len(op))
@@ -403,16 +404,16 @@ def reduce_type2_ortho(v, verbose = 0):
     e.g. if ``v`` is not of type 2,  or not orthogonal 
     to ``beta'`` in the real Leech lattice.
     """
-    vtype = gen_leech2_type(v)
+    vtype = gen_leech2_subtype(v)
     if (vtype >> 4) != 2:
         raise ValueError("Vector is not short")
-    if (gen_leech2_type(v ^ 0x200) >> 4) != 4:
+    if gen_leech2_type(v ^ 0x200) != 4:
         raise ValueError("Vector not orthogonal to standard vector")
     result = []
     for _i in range(4):
         if verbose:
             coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff
-            vt = gen_leech2_type(v)
+            vt = gen_leech2_subtype(v)
             coc_anchor = 0
             if vt in [0x22]:
                 w = mat24.gcode_weight(v >> 12) 
@@ -423,7 +424,7 @@ def reduce_type2_ortho(v, verbose = 0):
             print("Round %d, v = %s, subtype %s, gcode %s, cocode %s" % 
                 (_i, hex(v & 0xffffff), hex(vt), hex(gcode),  coc_syn)
             )
-        assert vtype == gen_leech2_type(v)
+        assert vtype == gen_leech2_subtype(v)
         if vtype == 0x21:
             exp = xi_reduce_odd_type2(v)
             vtype = 0x22
@@ -478,7 +479,7 @@ def type2_ortho_testdata(ntests):
     real Leech lattice and given in **Leech lattice encoding**.
     """
     for v in type2_testdata(2 * ntests):
-        if (gen_leech2_type(v ^ BETA) >> 4) == 4:
+        if gen_leech2_type(v ^ BETA) == 4:
             yield v
 
 
@@ -488,8 +489,8 @@ def test_reduce_type_2_ortho(ntests = 500, verbose = 0):
     """Test function ``reduce_type2_ortho`` """
     for n, v in enumerate(type2_ortho_testdata(ntests)):
         if verbose:
-            print(" \nTest %d, v = %s, type  =%s" % 
-                (n+1, hex(v), hex(gen_leech2_type(v)))
+            print(" \nTest %d, v = %s, subtype  =%s" % 
+                (n+1, hex(v), hex(gen_leech2_subtype(v)))
             )
         op = reduce_type2_ortho(v, verbose)
         w = gen_leech2_op_word(v, op, len(op)) 
@@ -545,12 +546,12 @@ def reduce_type4_std(v, verbose = 0):
     if verbose:
         print("Transforming  type-4 vector %s to Omega" %
             hex(v & 0x1ffffff) )
-    vtype = gen_leech2_type(v)
+    vtype = gen_leech2_subtype(v)
     result = []
     for _i in range(5):
         coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff
         if verbose:
-            vt = gen_leech2_type(v)
+            vt = gen_leech2_subtype(v)
             coc_anchor = 0
             if vt in [0x42, 0x44]:
                 w = mat24.gcode_weight(v >> 12) 
@@ -561,7 +562,7 @@ def reduce_type4_std(v, verbose = 0):
             print("Round %d, v = %s, subtype %s, gcode %s, cocode %s" % 
                 (_i, hex(v & 0xffffff), hex(vt), hex(gcode),  coc_syn)
             )
-        assert vtype == gen_leech2_type(v)
+        assert vtype == gen_leech2_subtype(v)
         if vtype == 0x48:
             if verbose:
                  res = list(map(hex, result))
@@ -668,8 +669,8 @@ def test_reduce_type_4_std(ntests = 500, verbose = 0):
     """Test function ``reduce_type4_std`` """
     for n, v in enumerate(type4_testdata(ntests)):
         if verbose:
-            print(" \nTest %d, v = %s, type  =%s" % 
-                (n+1, hex(v), hex(gen_leech2_type(v)))
+            print(" \nTest %d, v = %s, subtype  =%s" % 
+                (n+1, hex(v), hex(gen_leech2_subtype(v)))
             )
         op = reduce_type4_std(v, verbose)
         w = gen_leech2_op_word(v, op, len(op)) 
@@ -713,11 +714,11 @@ def reduce_type4(v, verbose = 0):
     word. It returns a negative number in case of failure, 
     e.g. if ``v`` is not of type 4.
     """
-    vtype = gen_leech2_type(v)
+    vtype = gen_leech2_subtype(v)
     if (vtype >> 4) != 4:
         err = "Leech lattice vector must be of type 4"
         raise ValueError(err)
-    vtype_beta = gen_leech2_type(v ^ BETA)
+    vtype_beta = gen_leech2_subtype(v ^ BETA)
     if (vtype_beta >> 4) == 2:
         return reduce_type2_ortho(v ^ BETA, verbose)
     return reduce_type4_std(v, verbose)
@@ -732,13 +733,13 @@ def test_reduce_type_4(ntests = 500, verbose = 0):
     """Test function ``reduce_type4`` """
     for n, v in enumerate(type4_testdata(ntests)):
         if verbose:
-            print(" \nTest %d, v = %s, type  =%s" % 
-                (n+1, hex(v), hex(gen_leech2_type(v)))
+            print(" \nTest %d, v = %s, subtype  =%s" % 
+                (n+1, hex(v), hex(gen_leech2_subtype(v)))
             )
         op = reduce_type4(v, verbose)
         w = gen_leech2_op_word(v, op, len(op)) 
         assert w & 0xffffff == 0x800000, hex(w)
-        if gen_leech2_type(v ^ BETA) & 0xf0 == 0x20:
+        if gen_leech2_type(v ^ BETA) == 2:
             b = gen_leech2_op_word(BETA, op, len(op)) 
             assert b & 0xffffff == BETA, hex(b)
         a = np.zeros(6, dtype = np.uint32)

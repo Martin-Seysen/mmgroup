@@ -30,6 +30,7 @@ from mmgroup import XLeech2, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
 
 from mmgroup import mat24
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import gen_leech2_op_word
@@ -58,12 +59,12 @@ def ref_leech2_start_type4(v):
     This is equivalent to function ``leech2_start_type4```.
     """
     v &= 0xffffff
-    t = gen_leech2_type(v)
+    t = gen_leech2_subtype(v)
     if (t & 0xf0) != 0x40:
         return min(-1, -(t >> 4))
     if v == OMEGA:
         return 0
-    t2 = gen_leech2_type(v ^ BETA)
+    t2 = gen_leech2_subtype(v ^ BETA)
     return t2 if (t2 & 0xf0) == 0x20 else t
 
 #####################################################################
@@ -220,8 +221,8 @@ def test_start_type4(ntests = 1000, verbose = False):
     for n, v in enumerate(type4_testdata(ntests)):
         if verbose:
             print("Test %d, v = %s, subtype = %s, subtpe(v2) = %s" % (
-                n, hex(v), hex(gen_leech2_type(v)),
-                hex(gen_leech2_type(v ^ BETA)) 
+                n, hex(v), hex(gen_leech2_subtype(v)),
+                hex(gen_leech2_subtype(v ^ BETA)) 
         ))
         t_py = leech2_start_type4(v)
         t_ref = ref_leech2_start_type4(v) 
@@ -237,7 +238,7 @@ def test_start_type4(ntests = 1000, verbose = False):
 
 
 def ref_leech2_start_type24(v):
-    """Reference implementation for function gen_leech2_start_type24
+    r"""Reference implementation for function gen_leech2_start_type24
 
     The function returns the subtype of a vector v of type 2 in
     the Leech lattice modulo, provided that  v + \beta  is of
@@ -246,12 +247,12 @@ def ref_leech2_start_type24(v):
     is not of type 4.
     """
     v &= 0xffffff
-    t = gen_leech2_type(v)
+    t = gen_leech2_subtype(v)
     if (t & 0xf0) != 0x20:
         return -1
     if (v & 0x7fffff) == 0x200:
         return 0 if v & 0x800000 else -1
-    t2 = gen_leech2_type(v ^ BETA)
+    t2 = gen_leech2_subtype(v ^ BETA)
     return t if (t2 & 0xf0) == 0x40 else -1
 
 
@@ -306,8 +307,8 @@ def test_start_type24(ntests = 1000, verbose = 0):
     for n, v in enumerate(type24_testdata(ntests)):
         if verbose:
             print("Test %d, v = %s, subtype = %s, subtpe(v2) = %s" % (
-                n, hex(v & 0xffffff), hex(gen_leech2_type(v)),
-                hex(gen_leech2_type(v ^ BETA)) 
+                n, hex(v & 0xffffff), hex(gen_leech2_subtype(v)),
+                hex(gen_leech2_subtype(v ^ BETA)) 
         ))
         #t_py = leech2_start_type24(v)
         t_ref = ref_leech2_start_type24(v) 

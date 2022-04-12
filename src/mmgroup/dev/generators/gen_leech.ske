@@ -173,7 +173,7 @@ static inline int suboctad_type(
   section **Computations in the Leech lattice modulo 2**.
 */
 // %%EXPORT px
-uint32_t gen_leech2_type(uint64_t v2)
+uint32_t gen_leech2_subtype(uint64_t v2)
 // Return ``0x10 * type(v2) + subtype(v2)`` for a vector ``x``
 // in the Leech lattice modulo ``2``.
 // The type of a vector is half the length of the shortest 
@@ -265,6 +265,74 @@ uint32_t gen_leech2_type(uint64_t v2)
 }
 
 
+
+/*************************************************************************
+*** Return type of a vector in the Leech lattice mod 2
+*************************************************************************/
+
+/**
+  @brief Return type of a vector in the Leech lattice mod 2
+
+  This function returns the type of the vector \f$v_2\f$ in the Leech 
+  lattice modulo 2. That type may be 0, 2, 3, or 4.
+
+  This function is a bit faster than function ``gen_leech2_subtype()``.
+  
+*/
+// %%EXPORT px
+uint32_t gen_leech2_type(uint64_t v2)
+{
+    uint_fast32_t theta, syn, scalar, w, coc, octad;
+
+    // Return 3 if scalar product <code, cocode> is odd
+    scalar = (v2 >> 12) &  v2;
+    scalar ^= scalar >> 6;
+    scalar ^= scalar >> 3;
+    if ((0x96 >> (scalar & 7)) & 1) return 3;
+
+    // Deal with odd cocode words
+    if (v2 & 0x800) {   // Deal with odd cocode words
+         // Let syn be the syndrome table entry for the cocode part
+         theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
+         syn = MAT24_SYNDROME_TABLE[(theta ^ v2) & 0x7ff];
+         // Put w = 0x400 if syn encodes a cocode word of length 1;
+         // put w = 0 if syn encodes a cocode word of length 3.
+         w = ((syn & 0x3ff) + 0x100) & 0x400;
+         // Return 4 if w == 0 and 2 otherwise
+         return 4 - (w >> 9);
+    }
+
+    // Deal with Golay code word 0 (or Omega)
+    if ((v2 & 0x7ff800L) == 0) {
+         // The zero vector has type 0
+         if ((v2 & 0xffffffUL) == 0) return 0;
+         // Let syn be the syndrome table entry for the cocode part;
+         // then bit 15 of syn is the halved cocode weight (mod 2).
+         syn = MAT24_SYNDROME_TABLE[v2 & 0x7ff];
+         // Return 4 if syn encodes a cocode word of length 0 or 4
+         // and 2 otherwise
+         return 4 - ((syn >> 14) & 2); 
+    }
+
+    theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
+
+    // Here (theta >> 12) & 7 is the bit weight of 
+    // v2 + Omega * b23, where b23 is bit 23 of v2.
+    // If bit 12 of theta is odd then v2 is a dodecad
+    // and then v2 is of type 4.
+    if (theta & 0x1000) return 4;
+    // Now v2 is a (possibly complemented) octad.
+    // Put w = 1 if v2 is an octad and w = 0 otherwise.
+    w = ((theta >> 13) ^ (v2 >> 23)) & 1;
+    // XOR v2 with Omega if it has weight 16
+    v2 ^= (1 - w) << 23;
+    // Let coc be the cocode part of v2 (this is even)
+    coc = (v2 ^ theta) & 0x7ff;
+    // Compute subtype with function suboctad_type() 
+    // return 0 if result of that function 0 and 1 otherwise
+    octad = mat24_def_gcode_to_vect(v2 >> 12); 
+    return suboctad_type(octad, w, coc) ? 4 : 2;
+}
 
 /*************************************************************************
 *** Subtype of a type-2 vector in the Leech lattice mod 2

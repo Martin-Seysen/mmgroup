@@ -50,7 +50,7 @@ def xsp2xco1_v2type(vtype):
         assert vtype in [2,3,4] 
         for i in range(10000):
             v = randint(0, 0xffffff)
-            if gen_leech2_type(v) >> 4 == vtype:
+            if gen_leech2_type(v) == vtype:
                 v2_types[vtype] = xsp2xco1_xsp2(v) 
                 return v2_types[vtype]
         raise ValueError("No Leech lattice vector of type", vtype)

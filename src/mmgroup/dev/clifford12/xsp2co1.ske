@@ -1714,7 +1714,7 @@ frame \f$\Omega\f$ of the Leech lattice modulo 2 to a frame of
 subtype \f$t\f$ then \f$g\f$ has subtype \f$t\f$.
 
 The subtype is returned as an integer as in 
-function ``gen_leech2_type`` in module ``gen_leech.c``.
+function ``gen_leech2_subtype`` in module ``gen_leech.c``.
 
 Since the subtype is determined by the size of the denominators
 of the representation \f$4096_x\f$, it can be computed very fast.

@@ -21,7 +21,7 @@ A vector in the Leech lattice modulo 2 has a type and also a subtype
 as described in **The mmgroup guide for developers**, section
 :ref:`computation-leech2`. Here the subtype is a two-digit decimal
 number, where the first digit is the type. Function 
-``gen_leech2_type`` returns the subtype as a BCD-coded integer.
+``gen_leech2_subtype`` returns the subtype as a BCD-coded integer.
 E.g. the subtype 46 is returned as the hexadecimal integer 0x46. 
 So the type can be obtained from the subtype via a shift operation.
 

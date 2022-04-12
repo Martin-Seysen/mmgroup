@@ -2188,12 +2188,12 @@ PREDEFINED             = IN_DOXYGEN=1 \
                          MAT24_API=  \
                          CLIFFORD12_API= \
                          MM_BASICS_API= \
-                         MM_OP3_API = \
-                         MM_OP7_API = \
-                         MM_OP15_API = \
-                         MM_OP31_API = \
-                         MM_OP127_API = \
-                         MM_OP255_API = \
+                         MM_OP3_API= \
+                         MM_OP7_API= \
+                         MM_OP15_API= \
+                         MM_OP31_API= \
+                         MM_OP127_API= \
+                         MM_OP255_API= \
                          MM_REDUCE_API= 
                          
 

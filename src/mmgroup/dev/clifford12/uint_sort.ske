@@ -23,6 +23,42 @@
 /// @cond DO_NOT_DOCUMENT 
 
 
+/** @brief macro for sorting an array according to a condition
+
+  The macro permutes the entries ``a[k], i <= k < j`` of the
+  array ``a`` such that ``a[k] < a[l]`` holds for ``i <= k, l < j``
+  if ``cond(a[k])`` is false and ``cond(a[l])`` is true. That sorting
+  process is not stable. After executing the macro, variable ``i``
+  is one plus the index of the highest entry ``a[k], i <= k < j``
+  such that  ``cond(a[k])`` is false. If no such ``a[k]`` exists
+  and ``j >= i`` then ``i`` is changed to the input value of ``j``.
+
+  Here ``a`` must be an array and ``i, j`` must integer **variables**.
+  Parameter ``cond`` must be a Boolean condition that will be applied
+  to the entries of the array ``a``. Here ``cond`` should be a
+  function taking a single argument of the same type as an entry of
+  array ``a`` and returning an ``int``. Then the return value is
+  interpreted as a Boolean value. Parameter ``cond`` may also be
+  a ``#define`` expression with a corresponding behaviour. This is
+  much faster for a simple condition ``cond``.
+
+  Variable ``temp`` must be able to store an entry of the
+  array ``a``. E.g if ``a`` is of type ``int[]`` then ``temp``
+  must be of type ``int``.
+
+  The macro expands to a code block in C.
+*/
+#define bitvector_cond_sort(a, i, j, cond, temp)    \
+    {                                               \
+        while (i < j && !(cond(a[i]))) ++i;         \
+        while (i < j && cond(a[--j]));              \
+        while (i < j)  {                            \
+            temp = a[i]; a[i] = a[j]; a[j] = temp;  \
+            do {++i;} while (!(cond(a[i])));        \
+            do {--j;} while (cond(a[j]));           \
+        }                                           \
+    }
+
 // %%GEN ch
 #ifdef __cplusplus
 extern "C" {
@@ -162,7 +198,7 @@ static inline void insertsort%{N}(uint%{N}_t *a, uint32_t n)
 *************************************************************************/
 
 
-/** @brief Sort an array ``a`` of length ``n`` with insert sort
+/** @brief Sort an array ``a`` of type ``uint%{N}_t[]`` of length ``n``
 
     Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
     The array is sorted in place. 

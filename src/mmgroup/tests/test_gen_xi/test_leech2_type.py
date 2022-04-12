@@ -31,6 +31,7 @@ import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_type2
 from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
@@ -44,7 +45,7 @@ from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 #####################################################################
 
 # We test the computation of the subtype of a vetor in the 
-# Leech lattice with function gen_leech2_type().
+# Leech lattice with function gen_leech2_subtype().
 
 # Next we specify certain elements of the Parker loop
 
@@ -142,11 +143,11 @@ def check_leech2_subtype(x, t_expected):
     lattice encoding**, the function checkse if the subtype of ``x``
     is correctly computed as the value ``t_expected``.
 
-    Therefore it computes the subtype with function ``gen_leech2_type``
+    Therefore it computes the subtype with function ``gen_leech2_subtype``
     in file ``gen_leech.c`` and checks it against ``subtype``. This 
     function also checks function ``gen_leech2_type2``.   
     """
-    t = gen_leech2_type(x)
+    t = gen_leech2_subtype(x)
     ok = t == t_expected
     if not ok:
         print("Error: expected Leech type: %s, obtained: %s" % (
@@ -160,7 +161,7 @@ def check_leech2_subtype(x, t_expected):
     if not ok:
         print("Error:  x = %s, Leech type: %s" %  
            (hex(x), hex(t_expected)), expected_type2, hex(found_type2))
-        err = "Function gen_leech2_type2 failed"
+        err = "Function gen_leech2_subtype2 failed"
         raise ValueError(err)
     alt_found_type2 = alternative_type2(x)
     is_type2 = (t_expected >> 4) == 2
@@ -171,7 +172,9 @@ def check_leech2_subtype(x, t_expected):
         err = "Function xsp2co1_leech2_count_type2 failed"
         #raise ValueError(err)
     if not is_type2:
-       assert not  found_type2   
+       assert not  found_type2 
+    assert gen_leech2_type(x) == t >> 4
+  
 
 @pytest.mark.gen_xi
 def test_leech2_type(verbose = 0):

@@ -34,6 +34,7 @@ from mmgroup.generators import gen_leech3to2_short
 from mmgroup.generators import gen_leech2to3_short
 from mmgroup.generators import gen_leech3_neg
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_type2
 
 from mmgroup.mm import mm_aux_index_extern_to_sparse
@@ -128,7 +129,7 @@ def test_type3(verbose = 0):
         if verbose:
             print("\nTEST %s" % (ntest+1))
             print("v2 = " , hex(v2))
-        assert gen_leech2_type(v2) == vtype
+        assert gen_leech2_subtype(v2) == vtype
         assert gen_leech2_type2(v2) == vtype
 
         v3 = v2_to_v3(v2) 

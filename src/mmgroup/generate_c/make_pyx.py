@@ -22,7 +22,7 @@ def pxi_defs(pxifile_name):
     The function returns a dictionary with entries <name> : <literal>
     """
     f = open(pxifile_name, "rt")
-    m_def = re.compile("\s*DEF\s+(\w+)\s*=\s*(.+)")
+    m_def = re.compile(r"\s*DEF\s+(\w+)\s*=\s*(.+)")
     d = {}
     for l in f:
         try:
@@ -37,8 +37,8 @@ def pxi_defs(pxifile_name):
 
 
 
-m_pxd_line = re.compile("\s+(\w+)\s+(\w+)\((.+)\)")
-m_pxd_arglist = re.compile("\s*(\w+)(\s*(\*)?\s*)(\w+)")
+m_pxd_line = re.compile(r"\s+(\w+)\s+(\w+)\((.+)\)")
+m_pxd_arglist = re.compile(r"\s*(\w+)(\s*(\*)?\s*)(\w+)")
 
 def _parse_pxd_line(l):
     m = m_pxd_line.match(l) 
@@ -54,7 +54,7 @@ def _parse_pxd_line(l):
          return (type, function, args) 
 
 
-m_pxd_enable = re.compile("\s*#\s+PYX(.+)")
+m_pxd_enable = re.compile(r"\s*#\s+PYX(.+)")
 
 def _parse_pxd_enable(l):
     m = m_pxd_enable.match(l) 

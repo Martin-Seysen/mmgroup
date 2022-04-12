@@ -44,7 +44,7 @@ v_start = 0x200
  
 def leech_type(v2):
     """Return type of vector ``v2`` in the Leech lattice mod 2"""
-    return gen_leech2_type(v2) >> 4
+    return gen_leech2_type(v2)
 
 
 S_AXIS = "  %d coordinates of the axis in 98280_x have absolute value %d"

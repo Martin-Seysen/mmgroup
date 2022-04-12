@@ -57,7 +57,7 @@ static int32_t inline err(
 {
     return (function << 24) + ((round & 15) << 20) 
       + (((uint32_t)code & 15) << 16) 
-      + ((vtype0 & 0xff) << 8) + (gen_leech2_type(v) & 0xff);
+      + ((vtype0 & 0xff) << 8) + (gen_leech2_subtype(v) & 0xff);
 }
 
 #define ERR_T4(subfunction, code) \
@@ -353,7 +353,7 @@ int32_t gen_leech2_reduce_type2(uint32_t v, uint32_t *pg_out)
     // In the main loop we change vector v to a vector of a simpler
     // subtype. Therefore we first apply a permutation pi and
     // then a power of xi to v.
-    vtype_start = vtype = gen_leech2_type(v);
+    vtype_start = vtype = gen_leech2_subtype(v);
     if ((vtype >> 4) != 2) return (vtype >> 4) ? 0 - (vtype >> 4) :-1;
 
     for (round = 0; round < 4; ++round) {
@@ -361,7 +361,7 @@ int32_t gen_leech2_reduce_type2(uint32_t v, uint32_t *pg_out)
         // pi and we calculate a exponent  exp such that
         // v * pi * xi**exp  has a simpler sybtype.
         #ifdef DEBUG
-            if (vtype != gen_leech2_type(v)) return ERR_T2(0, 8);
+            if (vtype != gen_leech2_subtype(v)) return ERR_T2(0, 8);
         #endif
         switch (vtype) {
             case 0x21:
@@ -478,7 +478,7 @@ reduce_type2_ortho(uint32_t v, uint32_t vtype, uint32_t *pg_out)
         // pi and we calculate a exponent  exp such that
         // v * pi * xi**exp  has a simpler sybtype.
         #ifdef DEBUG
-            if (vtype != gen_leech2_type(v)) return ERR_T2o(0, 8);
+            if (vtype != gen_leech2_subtype(v)) return ERR_T2o(0, 8);
         #endif
         switch (vtype) {
             case 0x21:
@@ -649,7 +649,7 @@ reduce_type4(uint32_t v, uint32_t vtype, uint32_t *pg_out)
     // then a power of xi to v.
     for (round = 0; round < 5; ++round) {
         #ifdef DEBUG
-            if (vtype != gen_leech2_type(v)) return ERR_T4(0, 8);
+            if (vtype != gen_leech2_subtype(v)) return ERR_T4(0, 8);
         #endif
         // Subtype of v has already been computed in ``vtype``
         // Compute Golay code part and cocode part of v
@@ -848,9 +848,9 @@ int32_t gen_leech2_reduce_type4(uint32_t v, uint32_t *pg_out)
 
 
 /** 
-  @brief Test functions ``gen_leech2_type`` and ``gen_leech2_reduce_type4``
+  @brief Test functions ``gen_leech2_subtype`` and ``gen_leech2_reduce_type4``
 
-  Function ``gen_leech2_type`` may tested as follows: 
+  Function ``gen_leech2_subtype`` may tested as follows: 
 
   We compute the subtypes of all \f$2^{24}\f$ vectors 
   \f$v \in \Lambda / 2 \Lambda\f$ and we count the obtained 
@@ -882,7 +882,7 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
     for (i = 0; i < 0x100; ++i) type_count[i] = 0;
     for (v = start; v < start + n; ++v) {
-        v_type = gen_leech2_type(v);
+        v_type = gen_leech2_subtype(v);
         ++type_count[v_type & 0xff];
         if ((v_type & 0xf0) == 0x40) {
             len_word = gen_leech2_reduce_type4(v, word);
