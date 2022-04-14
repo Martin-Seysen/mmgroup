@@ -88,6 +88,26 @@ extern "C" {
 
 // %%FOR N in [32, 64]
 
+
+/*************************************************************************
+** Copy an array of  %{N}-bit integers
+*************************************************************************/
+
+/** @brief Copy an array to type ``uint%{N}_t[]``
+
+    Copy the array ``a_src`` of length ``n`` is called a heap (starting at 
+*/
+// %%EXPORT px
+void bitvector%{N}_copy(uint%{N}_t *a_src, uint32_t n, uint%{N}_t *a_dest)
+{
+    if (a_dest <= a_src) {
+        while (n--) *a_dest++ = *a_src++;
+    } else {
+        a_src += n; a_dest += n;
+        while (n--) *--a_dest = *--a_src;
+    }
+}
+
 /*************************************************************************
 ** Heap sort for unsigned  %{N}-bit integers
 *************************************************************************/
@@ -138,7 +158,7 @@ static inline void adjust_heap%{N}(uint%{N}_t *a, uint32_t n, uint_fast32_t i)
     debuging. You should use function ``bitvector%{N}_sort``.
 */
 // %%EXPORT px
-void heapsort%{N}(uint%{N}_t *a, uint32_t n)
+void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
 {
     uint_fast32_t i;
     uint%{N}_t temp;
@@ -279,7 +299,7 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
             sp += 6;  // increment stack pointer by two levels
         } else {
             // Use heapsort if max recursion depth exceeded 
-            heapsort%{N}(a + l, r - l + 1);
+            bitvector%{N}_heapsort(a + l, r - l + 1);
         }
     } while (sp != stack);
      

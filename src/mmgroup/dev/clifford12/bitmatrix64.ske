@@ -48,7 +48,7 @@ extern "C" {
 // If ERROR_POOL is defined then function xsp2co1_error_pool() can
 // read data from an "error pool" that contains debug information
 // for certain functions after calling them.
-#define ERROR_POOL
+// #define ERROR_POOL
 
 // Number of entries of type uit64_t of the ERROR_POOL
 #define LEN_ERROR_POOL 20

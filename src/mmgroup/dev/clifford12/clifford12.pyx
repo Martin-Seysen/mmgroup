@@ -8,11 +8,12 @@ from __future__ import  unicode_literals
 
 from collections.abc import Iterable
 from numbers import Integral, Complex
-import cmath
+import cmath, time
 
 import numpy as np
 from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t, int8_t
 from libc.math cimport fabs, log, round
+from libc.stdlib cimport malloc, free
 
 
 cimport cython
@@ -1033,4 +1034,27 @@ def bitmatrix64_inv(m):
     cdef uint32_t res = cl.bitmatrix64_inv(&m1_view[0], i)
     chk_qstate12(res)
     return m1
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix32_test_sort(uint32_t alg, a, uint32_t n_rept):
+    cdef uint32_t n = len(a), i, j
+    cdef uint32_t[:] a_view = a
+    cdef uint32_t *b = <uint32_t *> malloc(n * sizeof(uint32_t));
+    if not b:
+        raise MemoryError()
+    cdef double t0, t1
+    t0 = time.perf_counter()
+    for i in range(n_rept):
+        for j in range(n): b[j] = a_view[j]
+        if alg == 1: clifford12.bitvector32_sort(b, n)
+        elif alg == 2: clifford12.bitvector32_heapsort(b, n)
+    t1 = time.perf_counter()
+    return t1 - t0
+            
+    
+    
+
+
 
