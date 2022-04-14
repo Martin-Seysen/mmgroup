@@ -95,7 +95,8 @@ extern "C" {
 
 /** @brief Copy an array to type ``uint%{N}_t[]``
 
-    Copy the array ``a_src`` of length ``n`` is called a heap (starting at 
+    Copy the array ``a_src`` of length ``n`` to ``a_dest``.
+    Any kind of overlap is supported. 
 */
 // %%EXPORT px
 void bitvector%{N}_copy(uint%{N}_t *a_src, uint32_t n, uint%{N}_t *a_dest)
