@@ -73,7 +73,7 @@ def test_sorters(verbose = 0):
 
 
 
-def test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
+def do_test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
     from mmgroup.clifford12 import bitmatrix32_test_sort
     if alg in (1,2):
         print("Runtime %ssort in micoroseconds, %d 32-bit integers, %s samples"
@@ -97,20 +97,18 @@ def test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
 @pytest.mark.bench
 @pytest.mark.qstate
 @pytest.mark.slow
-def test_sorters(verbose = 0):
+def test_benchmark_sort(verbose = 0):
     print("")
-    test_benchmark_sort(100, 100, 100, 1)
-    test_benchmark_sort(100, 100, 100, 2)
-    test_benchmark_sort(1000, 100, 100, 1)
-    test_benchmark_sort(1000, 100, 100, 2)
-    test_benchmark_sort(10000, 100, 10, 1)
-    test_benchmark_sort(10000, 100, 10, 2)
-    test_benchmark_sort(100000, 100, 1, 1)
-    test_benchmark_sort(100000, 100, 1, 2)
-    test_benchmark_sort(1000000, 10, 1, 1)
-    test_benchmark_sort(1000000, 10, 1, 2)
-    #test_benchmark_sort(10000000, 2, 1, 1)
-    #test_benchmark_sort(10000000, 2, 1, 2)
+    do_test_benchmark_sort(100, 100, 100, 1)
+    do_test_benchmark_sort(100, 100, 100, 2)
+    do_test_benchmark_sort(1000, 100, 100, 1)
+    do_test_benchmark_sort(1000, 100, 100, 2)
+    do_test_benchmark_sort(10000, 100, 10, 1)
+    do_test_benchmark_sort(10000, 100, 10, 2)
+    do_test_benchmark_sort(100000, 100, 1, 1)
+    do_test_benchmark_sort(100000, 100, 1, 2)
+    do_test_benchmark_sort(1000000, 10, 1, 1)
+    do_test_benchmark_sort(1000000, 10, 1, 2)
 
 
 
