@@ -20,6 +20,7 @@ from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
+from mmgroup.mm_reduce import mm_reduce_find_type4
 from mmgroup.mm_reduce import mm_reduce_v_axis
 from mmgroup.mm_reduce import mm_reduce_v_baby_axis
 from mmgroup.mm_reduce import mm_reduce_G_x0
@@ -115,7 +116,7 @@ def radical(v, value, verbose = 0):
        
 
 
-def find_type4(v_list):
+def find_type4_old(v_list):
     for w in v_list:
         if leech_type(w) == 4:
             return w
@@ -123,13 +124,29 @@ def find_type4(v_list):
     raise ValueError(err)
   
 
-def find_ortho_short(vlist):
+def find_type4(v_list):
+    a = np.array(v_list, dtype = np.uint32)
+    v = mm_reduce_find_type4(a, len(a), 0)
+    if v == 0:
+        raise ValueError("No type-4 vector found in list")
+    return v
+
+def find_ortho_short_old(vlist):
     for w in vlist:
         if leech_type(w) == 4 and leech_type(w ^ v_start) == 2:
             return w ^ v_start
     err = "No short vector orthogonal to 'v_start' found"
     raise ValueError(err)
   
+def find_ortho_short(v_list):
+    a = np.array(v_list, dtype = np.uint32)
+    v = mm_reduce_find_type4(a, len(a), v_start)
+    if v == 0:
+        raise ValueError("No feasible type-4 vector found in list")
+    return v ^ v_start
+
+
+
 def eval_A_vstart(v):
     return mm_op15_eval_A(v, 0x200)
 

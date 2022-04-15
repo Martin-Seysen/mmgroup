@@ -15,6 +15,18 @@ from mmgroup import MM0, MM, MMV
 from multiprocessing import Pool, TimeoutError, cpu_count
 
 #####################################################################################
+# Auxiliary fuctions
+#####################################################################################
+
+MM_TAGS = dict(enumerate(" dpxyTl?"))
+for i in [0]: MM_TAGS[i] = ""
+
+def mm_pattern(g):
+    """return string of tags in monster group element"""
+    return "".join([MM_TAGS[(a >> 28) & 7] for a in g.mmdata])
+
+
+#####################################################################################
 # Test fast reduction in monster group
 #####################################################################################
 
@@ -103,6 +115,7 @@ def benchmark_mul(ncases = 20):
     t_start = time.process_time()
     for i, j in index_pairs:
         glist[i] *= glist[j]
+        #print(mm_pattern(glist[i]))
     return time.process_time() - t_start
 
 

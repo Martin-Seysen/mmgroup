@@ -70,12 +70,15 @@ typedef struct {
     uint64_t basis[24];
 } axes_work_t;
 
+/// @endcond
+
 
 /////////////////////////////////////////////////////////////////////////
 // Auxiliary functions 
 /////////////////////////////////////////////////////////////////////////
  
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 /**
@@ -165,17 +168,96 @@ static inline void get_radical(
           p_work->v_short);
 }
 
+/// @endcond 
 
+
+
+/**
+  Select a type-4 vector from list of Leech lattice vectors
+
+  Let ``v`` be an array of ``n`` vectors in the Leech lattice 
+  modulo 2 in Leech lattice encoding.
+
+  If parameter ``v2`` is 0 then the function returns the least
+  vector of type 4 in the list ``v`` with repect to a certain
+  ordering. If list ``v`` contains no vector of type 4 then the
+  function returns 0.
+
+  Here subtypes are ordered as follows: ``[48, 40, (42, 44), 46, 43]``.
+  So a vector of subtype ``40`` is selected in favor of a vactor of
+  subtype ``46``. We do not distinguish between substypes ``42``
+  and ``44``. From all vectors of the same subtype (equalizing
+  subtypes ``42`` and ``44``) we return the smallest vector in
+  the list in the natural order.
+  
+  If ``v2`` is nonzero then we accept only vectors ``v1`` in the
+  list ``v`` with ``type(v1) = 4`` and ``type(v1 + v2) = 2``.
+
+  The list ``v`` is destroyed. More precisely, all entries 
+  of ``v`` are masked with ``0xffffff`` and subjected to an
+  (undocumented) permutation.
+*/
+// %%EXPORT px
+uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
+{
+/// @cond DO_NOT_DOCUMENT 
+    uint_fast32_t part[6], i, j, temp, no_sub2;
+    v2 &= 0xffffff;
+    for (i = 0; i < n; ++i) v[i] &= 0xffffff;
+    no_sub2 = v2 == 0; 
+    part[0] = part[1] = 0; part[5] = n; 
+    i = 0; j = n;
+    #define cond(x) (x) & 0x800
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[4] = j = i; i = 0;
+    #define cond(x) MAT24_THETA_TABLE[((x) >> 12) & 0x7ff] & 0x1000
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[3] = j = i; i = 0;
+    #define cond(x) (x) & 0x7ff000UL
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[2] = i;
+    for (i = 0; i < part[2]; ++i) {
+        if (v[i] == 0x800000) {
+            temp = v[0]; v[0] = v[i]; v[i] = temp;
+            part[1] = 1;
+            break;
+        }
+    }
+
+    for (i = 0; i < 5; ++i) {
+        bitvector32_sort(v + part[i], part[i+1] - part[i]);
+        for (j = part[i]; j < part[i+1]; ++j) {
+            if (gen_leech2_type(v[j]) == 4 && 
+                (no_sub2 || gen_leech2_type2(v[j] ^ v2))) return v[j]; 
+        }
+    }
+/// @endcond
+    return 0;
+}
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+#define LEAST_TYPE4_VECTOR
 
 static inline uint32_t find_type4(
     axes_work_t *p_work
 )
 {
+  #ifdef LEAST_TYPE4_VECTOR
+    return mm_reduce_find_type4(p_work->v_short, p_work->n_short, 0);
+  #else
     uint32_t *pv;
     for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
         if (gen_leech2_type(*pv & 0xffffff) == 4) return *pv;
     }
     return 0;
+  #endif
 }
 
 
@@ -183,6 +265,10 @@ static inline uint32_t find_ortho_short(
     axes_work_t *p_work
 )
 {
+  #ifdef LEAST_TYPE4_VECTOR
+    return mm_reduce_find_type4(p_work->v_short, p_work->n_short, V_START)
+         ^ V_START;
+  #else
     uint32_t *pv;
     for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
         uint32_t v = *pv & 0xffffff;
@@ -190,6 +276,7 @@ static inline uint32_t find_ortho_short(
            gen_leech2_type(v ^ V_START) == 2) return v ^ V_START;
     }
     return 0;
+  #endif
 }
 
 
