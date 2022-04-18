@@ -437,7 +437,7 @@ def test_reduce_axis(verbose = 0):
         assert v * g == V_START
 
         vr1 = np.zeros(200, dtype = np.uint32)
-        len_r1 = mm_reduce_v_axis(v.copy().data, vr1)
+        len_r1 = mm_reduce_v_axis(v.copy().data, 1, vr1)
         assert len_r1 >= 0
         g1 = MM0('a', vr1[:len_r1])
         assert g1 == g

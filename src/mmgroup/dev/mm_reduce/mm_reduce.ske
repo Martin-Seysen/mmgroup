@@ -184,8 +184,8 @@ static inline void get_radical(
   function returns 0.
 
   Here subtypes are ordered as follows: ``[48, 40, (42, 44), 46, 43]``.
-  So a vector of subtype ``40`` is selected in favor of a vactor of
-  subtype ``46``. We do not distinguish between substypes ``42``
+  So e.g. a vector of subtype ``40`` is selected in favor of a vactor
+  of subtype ``46``. We do not distinguish between substypes ``42``
   and ``44``. From all vectors of the same subtype (equalizing
   subtypes ``42`` and ``44``) we return the smallest vector in
   the list in the natural order.
@@ -426,7 +426,12 @@ void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
 /// @cond DO_NOT_DOCUMENT 
 
 
-static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
+static int32_t reduce_v_axis(
+    uint_mmv_t *v, 
+    uint32_t * r, 
+    uint32_t std_axis,
+    axes_work_t *p_work
+)
 {
     int32_t status = -1000;
     uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
@@ -494,7 +499,14 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 v4 = find_type4(p_work);
                 ax_types[0] = 0x21;
                 break;
-            case 0x21:   // case 2B
+            case 0x21:   // case 2A
+                if (!std_axis) {
+                    j = mm_aux_index_leech2_to_sparse(vt);
+                    j = mm_aux_get_mmv1(15, v, j);
+                    if (j != 15-2) vt |= 0x1000000;
+                    r[len_r++] = 0x80000000 + vt;
+                    return len_r;
+                }
                 len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
                 if (len_r1 < 0) return -21;
                 mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
@@ -507,6 +519,7 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
                 }
                 mm_reduce_store_axis(p_work->vtmp, 0);
                 if (mm_op15_compare(v, p_work->vtmp)) return -22;
+                r[len_r++] = 0x80000200;
                 return len_r;
             default:
                 return -1;
@@ -554,50 +567,24 @@ static int32_t reduce_v_axis(uint_mmv_t *v, uint32_t * r, axes_work_t *p_work)
   
   The buffer referred by ``r`` should have length at least 64.
 
+  Parameter ``std_axis`` is yet to be documented! In the current 
+  version is should be set to ``1``.
+
   A negative return value indicates a fatal error.
 */
 // %%EXPORT px
-int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t *r)
+int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t std_axis, uint32_t *r)
 {
     int32_t res;
     axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
     if (p_work == 0) return -1;
-    res =  reduce_v_axis(v,  r, p_work);
+    res =  reduce_v_axis(v,  r, std_axis, p_work);
     free(p_work);
     return res;
 }
 
 
-/**
-  @brief Reduce element of monster to element of subgroup \f$H^+\f$
 
-  Let \f$g\f$ be the element of the monster given as a word of
-  generators in the buffer ``a`` of length ``n``. The function
-  computes an element \f$h\f$ of the monster with
-  \f$g \cdot h \in H^+\f$. Here \f$H^+\f$ is a subgroup
-  of the monster of structure \f$2.B\f$ as defined in [Sey22],
-  Section 6. We use the method in loc. cit. for computing \f$h\f$.
-
-  The function stores \f$h\f$ as a word of generators in the
-  array ``r`` as described in the header of this file and returns
-  the length of this word.
-  
-  The buffer referred by ``r`` should have length at least 64.
-
-  A negative return value indicates a fatal error.
-*/
-// %%EXPORT px
-int32_t mm_reduce_axis(uint32_t *a,  uint32_t n, uint32_t *r)
-{
-    int32_t res;
-    axes_work_t *p_work = calloc(1, sizeof(axes_work_t));
-    if (p_work == 0) return -1;
-    mm_reduce_store_axis(p_work->v, 0);
-    res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
-    if (res >= 0)  res = reduce_v_axis(p_work->v, r, p_work);
-    free(p_work);
-    return res;
-}
 
 
 
@@ -767,7 +754,7 @@ int32_t mm_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t *r)
     mm_reduce_store_axis(p_work->v, 0);
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res <  0) goto done;
-    len1 = res = reduce_v_axis(p_work->v, r, p_work);
+    len1 = res = reduce_v_axis(p_work->v, r, 1, p_work);
     if (res <  0) goto done;
     mm_reduce_store_axis(p_work->v, 1);
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
@@ -822,7 +809,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
     mm_reduce_store_axis(p_work->v, 0);
     res = mm_op15_word(p_work->v, a, n, 1, p_work->vtmp);
     if (res <  0) goto done;
-    len1 = res = reduce_v_axis(p_work->v, r + 1, p_work);
+    len1 = res = reduce_v_axis(p_work->v, r + 1, 1, p_work);
     if (res < 0) goto done;
     r[0] = r[len1+1] = 0x80000000UL;
     len1 += 2;
