@@ -16,6 +16,10 @@ contains functions for computing vectors  :math:`v_{71}` and
 These computations are the most time-consuming part of the
 computation of :math:`v_1`; and we use multiprocessing for 
 performing these computations. 
+
+All computations in the monster group are done with instances 
+of class ``MM0``, but not ``MM``. The reason for this is that 
+class ``MM`` requires the existence of an order vector.
 """
 
 import os
@@ -145,7 +149,7 @@ MMV15 = MMV(15)
 
 
 def get_factors(n):
-    """Return sorted list of prime factors of n, for n <= 120"""
+    """Return sorted list of factors of n, for n <= 120"""
     assert 1 <= n < 121, "Number too large"
     return [i for i in range(1, n+1) if n % i == 0]
 
@@ -158,8 +162,7 @@ def rand_mm_element(size = 1):
     distrbuted. It is just sufficiently random, so that
     elements of a high order occur sufficiently often
 
-    ``g`` is returend as an element of the standard instance of
-    class  ``MM0Group``.
+    ``g`` is returend as an instance of class ``MM0``.
     """    
     data = []
     for i in range(size):

@@ -494,7 +494,7 @@ def test_reduce_baby_axis(verbose = 0):
 
         vr1 = np.zeros(200, dtype = np.uint32)
 
-        len_r1 = mm_reduce_v_baby_axis(v.copy().data, vr1)
+        len_r1 = mm_reduce_v_baby_axis(v.copy().data, 0x200, vr1)
         assert len_r1 >= 0
         g1 = MM0('a', vr1[:len_r1])
 
@@ -523,7 +523,7 @@ def reduce_G_x0(g):
     #assert g.group == MM
     r = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_reduce_G_x0(g.mmdata, len(g.mmdata), r)
+    res = mm_reduce_G_x0(g.mmdata, len(g.mmdata), 1, r)
     reduce_time = time.perf_counter() - t_start
     if res < 0:
        err = "Error %d in reducing element of monster group"
