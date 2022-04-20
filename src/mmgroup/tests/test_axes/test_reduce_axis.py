@@ -155,7 +155,7 @@ def eval_A_vstart(v):
 ##########################################################################
 
 
-def reduce_axis(vector, verbose = 0):
+def reduce_axis(vector, std_axis = 1, verbose = 0):
     v = vector.data
     #V = vector.space
     work = V()
