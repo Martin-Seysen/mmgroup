@@ -815,8 +815,9 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
             case MMGROUP_ATOM_TAG_T:
                v = v % 3;
                if (v) {
-                   if (q0 & 0x7fffffUL) return (uint32_t)(0-1UL);
-                   q0 = (uint32_t)(o[v-1][(q0 >> 23) & 3]) << 23UL;
+                   if (q0 & 0x7ff800UL) return (uint32_t)(0-1UL);
+                   q0 = ((uint32_t)(o[v-1][(q0 >> 23) & 3]) << 23UL)
+                         ^  (q0 & 0x7ff);
                }
                break;
             case MMGROUP_ATOM_TAG_IL:

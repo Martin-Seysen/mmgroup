@@ -525,7 +525,7 @@ class MMGroup(AbstractMMGroup):
     Elements of the monster group are implemented as instances of class
     ``MM``. 
     """
-    ERR_REDUCE = "Reduction in monster group failed"
+    ERR_REDUCE = "Reduction in monster group failed, error = %d"
     __instance = None
     word_type = MM
     group_name = "M"
@@ -549,7 +549,7 @@ class MMGroup(AbstractMMGroup):
                 g2 = self.word_type()
                 length = mm_reduce_M(g1._data, g1.length, g2._data)
                 if not 0 <= length <= 128:
-                    raise ValueError(self.ERR_REDUCE)
+                    raise ValueError(self.ERR_REDUCE % length)
                 g2.length = length
                 g2.reduced = True
                 return g2
@@ -557,7 +557,7 @@ class MMGroup(AbstractMMGroup):
                 a = np.zeros(128, dtype = np.uint32)
                 length = mm_reduce_M(g1._data, g1.length, a)
                 if not 0 <= length <= 128:
-                    raise ValueError(self.ERR_REDUCE)
+                    raise ValueError(self.ERR_REDUCE % length)
                 g1._setdata(a[:length])
                 g1.reduced = True
                 return g1
