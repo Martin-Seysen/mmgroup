@@ -12,10 +12,11 @@ from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
 from mmgroup.generators import gen_leech2_reduce_type4
+from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
-from mmgroup.mm import mm_aux_get_mmv1
+from mmgroup.mm import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
@@ -150,6 +151,15 @@ def find_ortho_short(v_list):
 def eval_A_vstart(v):
     return mm_op15_eval_A(v, 0x200)
 
+
+def v_leech2_adjust_sign(v, v2):
+    v2 &= 0xffffff
+    value = mm_aux_get_mmv_leech2(15, v, v2)
+    assert value in (2, 13)
+    if (value == 2): v2 += 0x1000000
+    return v2
+
+
 ##########################################################################
 # Reducing a 2A axis to V_START
 ##########################################################################
@@ -218,6 +228,11 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
             v4 = find_type4(v2all)
             t_types = [0x21]
         elif type == 0x21:  # case 2A
+            if not std_axis:
+                vt = v_leech2_adjust_sign(v, vt)
+                if verbose: 
+                    print("Function reduce_axis terminated successfullly")
+                return r[:len_r], vt
             r1 = gen_leech2_reduce_type2(vt, r[len_r:])
             assert r1 >= 0
             mm_op15_word(v, r[len_r:], r1, 1, work.data)
@@ -230,7 +245,7 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
             assert mm_op15_compare(v, V_START.data) == 0
             if verbose: 
                 print("Function reduce_axis terminated successfullly")
-            return r[:len_r]
+            return r[:len_r], 0x200
         else:
             raise ValueError("WTF1")
 
@@ -413,32 +428,49 @@ def rand_Co2(quality = 5):
 
 def make_axis_testcases():
     #V = V_START.space
-    yield V_START.copy()
-    yield V("I", 11, 9)
+    yield V_START.copy(), 1
+    yield V("I", 11, 9), 1
+    yield V("I", 11, 9), 0
     for i in range(10):
-        yield V_START * MM0("r", "G_x0")
+        yield V_START * MM0("r", "G_x0"), i & 1
     for ax in AXES:
         v0 = V_START * MM0(AXES[ax])
         for i in range(20):
-            yield v0 * MM0("r", "G_x0")
+            yield v0 * MM0("r", "G_x0"), i & 1
     for quality in range(2,11):
         for i in range(3):
-              yield  V_START *  MM0("r", quality)      
+              yield  V_START *  MM0("r", quality), i & 1      
 
 
 
 @pytest.mark.axes
 def test_reduce_axis(verbose = 0):
-    for i, v in enumerate(make_axis_testcases()):
+    for i, (v, std_axis) in enumerate(make_axis_testcases()):
         if verbose:
             print("\nTest case", i)
-        r = reduce_axis(v.copy(), verbose)
+        r, axis = reduce_axis(v.copy(), std_axis, verbose)
         g = MM0('a', r)
-        assert v * g == V_START
+        if std_axis:
+            assert v * g == V_START
+            assert axis == 0x200
+        else:
+            v1 = v * g
+            assert mm_reduce_2A_axis_type(v1.data) >> 24 == 0x21
+            a_g = np.zeros(20, dtype = np.uint32)
+            r1 = gen_leech2_reduce_type2(axis, a_g)
+            g2 = MM0('a', a_g[:r1])
+            v2 = v1 * g2
+            assert v2 in  [V_START, V_OPP]
+            axis2 = gen_leech2_op_word(axis,  a_g, r1)
+            assert axis2 & 0xffffff == 0x200
+            assert v_leech2_adjust_sign(v2.data, axis2) == axis2
 
         vr1 = np.zeros(200, dtype = np.uint32)
-        len_r1 = mm_reduce_v_axis(v.copy().data, 1, vr1)
+        len_r1 = mm_reduce_v_axis(v.copy().data, std_axis, vr1)
         assert len_r1 >= 0
+        axis_found = vr1[len_r1 - 1]
+        assert axis_found & 0xfe000000 == 0x84000000
+        assert axis == axis_found & 0x1ffffff  
         g1 = MM0('a', vr1[:len_r1])
         assert g1 == g
 

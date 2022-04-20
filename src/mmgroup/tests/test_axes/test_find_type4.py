@@ -75,7 +75,6 @@ def find_type4_testcases(ncases = 1):
 #####################################################################################
 
 
-@pytest.mark.mmm
 @pytest.mark.mmgroup
 def test_find_type4(verbose = 0):
     print("Test function mm_reduce_find_type4")
