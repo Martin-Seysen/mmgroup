@@ -50,12 +50,15 @@
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
 
+/////////////////////////////////////////////////////////////////////////
+// Definitions of internally-used structures
+/////////////////////////////////////////////////////////////////////////
 
 
 /// @cond DO_NOT_DOCUMENT 
 
 
-#define MAX_SHORT_ARRAY 1024
+#define MAX_SHORT_ARRAY 892
 
 #define V_START 0x200
 
@@ -65,272 +68,26 @@ typedef struct {
     uint_mmv_t v[MM_OP15_LEN_V];
     uint_mmv_t vtmp[MM_OP15_LEN_V];
     uint_mmv_t vA[MM_OP15_OFS_B];
-    uint32_t v_short[MAX_SHORT_ARRAY];
-    uint32_t n_short;
-    uint64_t basis[24];
 } axes_work_t;
 
+
+typedef struct {
+    uint32_t axis_type;
+    uint32_t target_axes[2];
+    uint32_t n_leech2;
+    uint32_t v_leech2[MAX_SHORT_ARRAY];
+} axes_reduce_t;
+
+
+
+
 /// @endcond
 
-
 /////////////////////////////////////////////////////////////////////////
-// Auxiliary functions 
-/////////////////////////////////////////////////////////////////////////
- 
-
-/// @cond DO_NOT_DOCUMENT 
-
-
-/**
-  @brief Return certain array of short vectors in Leech lattice mod 2
-
-  Let ``v`` be a vector in the rep of the moster mod 15.
-
-  In case ``value1 == 0`` the function computes the list of all
-  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
-  value of the entry of ``v`` corresponding a unit vector labelled
-  by ``v2`` is equal to ``value0``. That list is stored
-  in ``pwork.v_short[j], 0 <= j < ``n_short``.
-
-  In case ``value1 != 0`` wil will store the list of all
-  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
-  value of the entry of ``v`` corresponding a unit vector labelled
-  by ``v2`` is equal to ``value0`` or ``value1` . That list is
-  stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
-  as in function ``mm_op15_eval_X_find_abs``.
-*/
- 
-static inline void get_short(
-    uint_mmv_t *v, 
-    uint32_t value0, 
-    uint32_t value1, 
-    axes_work_t *p_work
-)
-{
-    p_work->n_short = mm_op15_eval_X_find_abs(v, p_work->v_short,
-                MAX_SHORT_ARRAY,  value0, value1);
-}
-
-
-
-/**
-  Return certain subspace of short vectors in Leech lattice mod 2
-
-  Let ``v`` be a vector in the rep of the moster mod 15, and let
-  ``L`` be the set of vectors in the Leech lattice mod 2
-  returned by function ``short(v, value)``. The function computes
-  the linear subspace of the Leech lattice mod 2 spanned by ``L``
-  as a list of vectors.
-
-  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
-*/
-static inline void get_span(
-    uint_mmv_t *v, 
-    uint32_t value, 
-    axes_work_t *p_work
-)
-{
-    uint32_t dim;
-    get_short(v, value, 0, p_work);
-    dim = leech2_matrix_basis(p_work->v_short, p_work->n_short, 
-                p_work->basis, 24);
-    if (dim > 10) dim = 10;
-    p_work->n_short = leech2_matrix_expand(p_work->basis, dim, 
-          p_work->v_short);
-}
-
-
-/**
-  Return certain subspace of short vectors in Leech lattice mod 2
-
-  Let ``v`` be a vector in the rep of the moster mod 15, and let
-  ``L`` be the set of vectors in the Leech lattice mod 2
-  returned by function ``short(v, value)``. let ``V`` be the
-  linear space spanend by ``L``. 
-
-  The function returns the radical of ``V`` (i.e. the intersection
-  of ``V`` with its orthogonal complement) as a list of vectors.
-
-  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
-*/
-static inline void get_radical(
-    uint_mmv_t *v, 
-    uint32_t value, 
-    axes_work_t *p_work
-)
-{
-    uint32_t dim;
-    get_short(v, value, 0, p_work);
-    dim = leech2_matrix_radical(p_work->v_short, p_work->n_short, 
-                p_work->basis, 24);
-    if (dim > 10) dim = 10;
-    p_work->n_short = leech2_matrix_expand(p_work->basis, dim, 
-          p_work->v_short);
-}
-
-/// @endcond 
-
-
-
-/**
-  Select a type-4 vector from list of Leech lattice vectors
-
-  Let ``v`` be an array of ``n`` vectors in the Leech lattice 
-  modulo 2 in Leech lattice encoding.
-
-  If parameter ``v2`` is 0 then the function returns the least
-  vector of type 4 in the list ``v`` with repect to a certain
-  ordering. If list ``v`` contains no vector of type 4 then the
-  function returns 0.
-
-  Here subtypes are ordered as follows: ``[48, 40, (42, 44), 46, 43]``.
-  So e.g. a vector of subtype ``40`` is selected in favor of a vactor
-  of subtype ``46``. We do not distinguish between substypes ``42``
-  and ``44``. From all vectors of the same subtype (equalizing
-  subtypes ``42`` and ``44``) we return the smallest vector in
-  the list in the natural order.
-  
-  If ``v2`` is nonzero then we accept only vectors ``v1`` in the
-  list ``v`` with ``type(v1) = 4`` and ``type(v1 + v2) = 2``.
-
-  The list ``v`` is destroyed. More precisely, all entries 
-  of ``v`` are masked with ``0xffffff`` and subjected to an
-  (undocumented) permutation.
-*/
-// %%EXPORT px
-uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
-{
-/// @cond DO_NOT_DOCUMENT 
-    uint_fast32_t part[6], i, j, temp, no_sub2;
-    v2 &= 0xffffff;
-    for (i = 0; i < n; ++i) v[i] &= 0xffffff;
-    no_sub2 = v2 == 0; 
-    part[0] = part[1] = 0; part[5] = n; 
-    i = 0; j = n;
-    #define cond(x) (x) & 0x800
-    bitvector_cond_sort(v, i, j, cond, temp);
-    #undef cond
-    part[4] = j = i; i = 0;
-    #define cond(x) MAT24_THETA_TABLE[((x) >> 12) & 0x7ff] & 0x1000
-    bitvector_cond_sort(v, i, j, cond, temp);
-    #undef cond
-    part[3] = j = i; i = 0;
-    #define cond(x) (x) & 0x7ff000UL
-    bitvector_cond_sort(v, i, j, cond, temp);
-    #undef cond
-    part[2] = i;
-    for (i = 0; i < part[2]; ++i) {
-        if (v[i] == 0x800000) {
-            temp = v[0]; v[0] = v[i]; v[i] = temp;
-            part[1] = 1;
-            break;
-        }
-    }
-
-    for (i = 0; i < 5; ++i) {
-        bitvector32_sort(v + part[i], part[i+1] - part[i]);
-        for (j = part[i]; j < part[i+1]; ++j) {
-            if (gen_leech2_type(v[j]) == 4 && 
-                (no_sub2 || gen_leech2_type2(v[j] ^ v2))) return v[j]; 
-        }
-    }
-/// @endcond
-    return 0;
-}
-
-
-/// @cond DO_NOT_DOCUMENT 
-
-
-
-
-static inline uint32_t find_type4(
-    axes_work_t *p_work
-)
-{
-    return mm_reduce_find_type4(p_work->v_short, p_work->n_short, 0);
-}
-
-
-static inline uint32_t find_ortho_short(
-    axes_work_t *p_work,
-    uint32_t axis
-)
-{
-    return mm_reduce_find_type4(p_work->v_short, p_work->n_short, axis);
-}
-
-
-
-static inline uint32_t xor_entries(
-    axes_work_t *p_work,
-    int32_t value
-)
-{
-    uint32_t *pv;
-    for (pv = p_work->v_short; pv < p_work->v_short + p_work->n_short; ++pv) {
-        *pv ^= value;
-    }
-    return 0;
-}
-
- 
-
-
-
-
-/**
-  @brief Adjust sign of an axis
-
-  Assume that ``v2`` is an element of the subgroup \f$Q_{x0}\f$ of
-  the monster of structure \f$2^{1+24}\f$ (known up to sign only)
-  given in **Leech lattice encoding**. Assume that ``v`` is the 
-  axis of ``v2`` in the representation \f$\rho_{15}\f$.
-
-  The we return the element ``v2`` with corrected sign. If the
-  assumptions do not hold then the function returns garbage.
-*/
-static inline int32_t v_leech2_adjust_sign(uint_mmv_t *v, uint32_t v2)
-{
-    uint32_t ind = mm_aux_index_leech2_to_sparse(v2 & 0xffffffUL);
-    mm_aux_mmv_extract_sparse(15, v, &ind, 1);
-    return (v2 & 0xffffff) | (((ind & 15) == 2) << 24);
-}
-
-
-/**
-  @brief Transform element of \f$Q_{x0}\f$ with element of monster group
-
-  Let \f$g\f$ be the element of the monster given as a word of 
-  generators in the buffer ``a`` of length ``n``. Let ``p_axis``
-  point to an element \f$q\f$ of the subgroup \f$Q_{x0}\f$ of the 
-  monster of  of structure \f$2^{1+24}\f$  given 
-  in **Leech lattice encoding**.
-
-  The function conjugates the element \f$q\f$ with \f$g\f$ in place.
-  It returns 0 an case of success and a negative value otherwise.
-  
-  Warning: the function does not change  \f$q\f$ if \f$q\f$  is
-  equal to ``V_START``.
-*/
-static inline int32_t op_axis(uint32_t *p_axis, uint32_t *a, uint32_t n)
-{  
-    if (*p_axis == V_START) return 0;
-    *p_axis = gen_leech2_op_word(*p_axis, a, n);
-    return *p_axis < 0 ? *p_axis : 0; 
-}
-
-
-
-/// @endcond  
-
-
-
-/////////////////////////////////////////////////////////////////////////
-// Analyze type of a 2A axis
+// Obtain the type of a 2A axis
 /////////////////////////////////////////////////////////////////////////
 
-/** @brief Check 2A axis in rep of monster at a short Leech vector
+/** @brief Return type of a 2A axis in rep of monster
 
    Let ``v`` be a vector in the 196884-dimensional representation
    of the monster group modulo ``15``, encoded as described in
@@ -410,41 +167,435 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////
-// Store standard 2A axes in a vector
+// Auxiliary functions for analyzing the type of a 2A axis
 /////////////////////////////////////////////////////////////////////////
+ 
+
+/// @cond DO_NOT_DOCUMENT 
+
 
 /**
-  @brief Store the 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
+  @brief Return certain array of short vectors in Leech lattice mod 2
 
-  The function stores the 2A axis \f$v^+\f$ (in case ``sign == 0``)
-  or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
-  by ``v``. That vector will store an element of the
-  representation \f$\rho_{15}\f$ of the monster group as described in
-  the header of this file.
-  Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
+  Let ``v`` be a vector in the rep of the moster mod 15.
+
+  In case ``value1 == 0`` the function computes the list of all
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
+  value of the entry of ``v`` corresponding a unit vector labelled
+  by ``v2`` is equal to ``value0``. That list is stored
+  in ``pwork.v_short[j], 0 <= j < ``n_short``.
+
+  In case ``value1 != 0`` we will store the list of all
+  vectors ``v2`` in the Leech lattice mod 2 such that the absolute
+  value of the entry of ``v`` corresponding a unit vector labelled
+  by ``v2`` is equal to ``value0`` or ``value1` . That list is
+  stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
+  as in function ``mm_op15_eval_X_find_abs``.
 */
-// %%EXPORT px
-void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
+ 
+static inline void get_short(
+    uint_mmv_t *v, 
+    uint32_t value0, 
+    uint32_t value1, 
+    axes_reduce_t *p_ax
+)
 {
-    mm_aux_zero_mmv(15, v);
-    static uint32_t sp[4] = {
-        (1 << 25) + (2 << 14) + (2 << 8) + 1,
-        (1 << 25) + (2 << 14) + (3 << 8) + 15 - 1,
-        (1 << 25) + (3 << 14) + (3 << 8) + 1,
-        (2 << 25) + (2 << 14) + (3 << 8) 
-    };
-    sp[3] &= 0xffffff00;
-    sp[3] += sign ? 2 : 15 - 2;
-    mm_aux_mmv_set_sparse(15, v, sp, 4);
+    p_ax->n_leech2 = mm_op15_eval_X_find_abs(v, p_ax->v_leech2,
+                MAX_SHORT_ARRAY,  value0, value1);
 }
 
+
+
+/**
+  Return certain subspace of short vectors in Leech lattice mod 2
+
+  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  ``L`` be the set of vectors in the Leech lattice mod 2
+  returned by function ``short(v, value)``. The function computes
+  the linear subspace of the Leech lattice mod 2 spanned by ``L``
+  as a list of vectors.
+
+  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+*/
+static inline void get_span(
+    uint_mmv_t *v, 
+    uint32_t value, 
+    axes_reduce_t *p_ax
+)
+{
+    uint32_t dim;
+    uint64_t basis[24];
+    get_short(v, value, 0, p_ax);
+    dim = leech2_matrix_basis(p_ax->v_leech2, p_ax->n_leech2, 
+                basis, 24);
+    if (dim > 10) dim = 10;
+    p_ax->n_leech2 = leech2_matrix_expand(basis, dim, p_ax->v_leech2);
+}
+
+
+/**
+  Return certain subspace of short vectors in Leech lattice mod 2
+
+  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  ``L`` be the set of vectors in the Leech lattice mod 2
+  returned by function ``short(v, value)``. let ``V`` be the
+  linear space spanend by ``L``. 
+
+  The function returns the radical of ``V`` (i.e. the intersection
+  of ``V`` with its orthogonal complement) as a list of vectors.
+
+  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+*/
+static inline void get_radical(
+    uint_mmv_t *v, 
+    uint32_t value, 
+    axes_reduce_t *p_ax
+)
+{
+    uint32_t dim;
+    uint64_t basis[24];
+    get_short(v, value, 0, p_ax);
+    dim = leech2_matrix_radical(p_ax->v_leech2, p_ax->n_leech2, 
+                basis, 24);
+    if (dim > 10) dim = 10;
+    p_ax->n_leech2 = leech2_matrix_expand(basis, dim, p_ax->v_leech2);
+}
+
+
+
+static inline uint32_t xor_entries(
+    axes_reduce_t *p_ax,
+    int32_t value
+)
+{
+    uint32_t *pv;
+    for (pv = p_ax->v_leech2; pv < p_ax->v_leech2 + p_ax->n_leech2; ++pv) {
+        *pv ^= value;
+    }
+    return 0;
+}
+
+ 
+
+
+/// @endcond 
+
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////
-// Reducing a 2A axis to the standard axis V_START
+// Analyze type of a 2A axis with function mm_reduce_analyze_2A_axis
 /////////////////////////////////////////////////////////////////////////
 
 
 /// @cond DO_NOT_DOCUMENT 
+
+
+/** 
+  @brief Workhorse for function ``mm_reduce_analyze_2A_axis``.
+
+  We store the results of function  ``mm_reduce_analyze_2A_axis``
+  in a structure of type ``axes_reduce_t`` instead of in an
+  array. This is more suitable when this function is used
+  inside this module.
+*/
+static inline int32_t analyze_axis(
+    uint_mmv_t *v, 
+    axes_reduce_t *p_ax
+)
+{
+    uint32_t  vt = mm_reduce_2A_axis_type(v);
+
+    if (vt == 0)  return -2;
+    p_ax->axis_type = vt >> 24;
+    p_ax->target_axes[0] = p_ax->target_axes[1] = 0xffffffffUL;
+    p_ax->n_leech2 = 0;
+    vt &= 0xffffffUL;
+    switch(p_ax->axis_type) {
+            case 0xC3:
+                get_radical(v, 7, p_ax);
+                p_ax->target_axes[0] = 0x42;
+                p_ax->target_axes[1] = 0x61;
+                return 0;
+            case 0xA2:
+                get_radical(v, 4, p_ax);
+                p_ax->target_axes[0] = 0x42;
+                p_ax->target_axes[1] = 0x43;
+                return 0;
+            case 0xA1:
+                get_short(v, 3, 1, p_ax);
+                xor_entries(p_ax, p_ax->v_leech2[0]);
+                p_ax->target_axes[0] = 0x61;
+                return 0;
+            case 0x82:
+                get_short(v, 1, 0, p_ax);
+                xor_entries(p_ax, p_ax->v_leech2[0]);
+                p_ax->target_axes[0] = 0x41;
+                return 0;
+            case 0x66:
+                get_radical(v, 7, p_ax);
+                p_ax->target_axes[0] = 0x43;
+                return 0;
+            case 0x63:
+                get_span(v, 3, p_ax);
+                p_ax->target_axes[0] = 0x41;
+                return 0;
+            case 0x61:
+                get_short(v, 5, 0, p_ax);
+                xor_entries(p_ax, vt);
+                p_ax->target_axes[0] = 0x41;
+                return 0;
+            case 0x43:  // case 4C
+            case 0x42:  // case 4B
+                get_radical(v, 1, p_ax);
+                p_ax->target_axes[0] = 0x22;
+                return 0;
+            case 0x41:  // case 4A
+                p_ax->v_leech2[0] = vt;
+                p_ax->n_leech2 = 1;
+                p_ax->target_axes[0] = 0x21;
+                return 0;
+            case 0x22:  // case 2B
+                get_span(v, 4, p_ax);
+                p_ax->target_axes[0] = 0x21;
+                return 0;
+            case 0x21:   // case 2A
+                p_ax->v_leech2[0] = vt;
+                p_ax->n_leech2 = 1;
+                return 0;
+            default:
+                return -3;
+    }
+}
+
+
+/// @endcond 
+
+
+
+/** @brief Analyze a 2A axis in rep of monster
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo ``15``, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions* in the
+   description of the *C interface*.
+
+   If ``v`` is a 2A axis then the function analyzes the type
+   of the 2A axis. Each 2A axis corresponds uniquely to a 2A
+   involution \f$x\f$ in the monster. Let \f$z\f$ be the central
+   involution in the subgroup \f$G_{x0}\f$ of the monster. Then
+   the type of the 2A axis ``v`` is the class of the
+   product \f$xz\f$ in the monster, which has one of the
+   values 2A, 2B, 4A, 4B, 4C, 6A, 6C, 6F, 8B, 10A, 10B, 12C
+   
+   The function returns 0 in case of success and a negative value
+   value if it detects an error.
+
+   Buffer ``r`` should be at least 896 bytes long. It will 
+   contain the result.
+
+   Details are yet to be documented!!!
+
+   Caution:
+
+   This is a quick analyis of a 2A axis. The
+   function return garbage if ``v`` is not  a 2A axis.
+
+*/
+// %%EXPORT px
+int32_t mm_reduce_analyze_2A_axis(uint_mmv_t *v, uint32_t * r)
+{
+    axes_reduce_t ax;
+    uint_fast32_t n, i;
+    int_fast32_t res;
+
+    if ((res = analyze_axis(v, &ax)) < 0) return res;
+    n = ax.n_leech2 > MAX_SHORT_ARRAY ? MAX_SHORT_ARRAY : ax.n_leech2;
+    r[0] = ax.axis_type;
+    r[1] = ax.target_axes[0];
+    r[2] = ax.target_axes[3];
+    r[3] = n;
+    for (i = 0; i < n; ++i) r[i+4] = ax.v_leech2[i] & 0xffffff;
+    return 0; 
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+// Select a type-4 vector from list of vectors in Leech lattice mod 2
+/////////////////////////////////////////////////////////////////////////
+
+
+/**
+  Select a type-4 vector from list of Leech lattice vectors
+
+  Let ``v`` be an array of ``n`` vectors in the Leech lattice 
+  modulo 2 in Leech lattice encoding.
+
+  If parameter ``v2`` is 0 then the function returns the least
+  vector of type 4 in the list ``v`` with repect to a certain
+  ordering. If list ``v`` contains no vector of type 4 then the
+  function returns 0.
+
+  Here subtypes are ordered as follows: ``[48, 40, (42, 44), 46, 43]``.
+  So e.g. a vector of subtype ``40`` is selected in favor of a vactor
+  of subtype ``46``. We do not distinguish between substypes ``42``
+  and ``44``. From all vectors of the same subtype (equalizing
+  subtypes ``42`` and ``44``) we return the smallest vector in
+  the list in the natural order.
+  
+  If ``v2`` is nonzero then we accept only vectors ``v1`` in the
+  list ``v`` with ``type(v1) = 4`` and ``type(v1 + v2) = 2``.
+
+  The list ``v`` is destroyed. More precisely, all entries 
+  of ``v`` are masked with ``0xffffff`` and subjected to an
+  (undocumented) permutation.
+*/
+// %%EXPORT px
+uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
+{
+/// @cond DO_NOT_DOCUMENT 
+    uint_fast32_t part[6], i, j, temp, no_sub2;
+    v2 &= 0xffffff;
+    for (i = 0; i < n; ++i) v[i] &= 0xffffff;
+    no_sub2 = v2 == 0; 
+    part[0] = part[1] = 0; part[5] = n; 
+    i = 0; j = n;
+    #define cond(x) (x) & 0x800
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[4] = j = i; i = 0;
+    #define cond(x) MAT24_THETA_TABLE[((x) >> 12) & 0x7ff] & 0x1000
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[3] = j = i; i = 0;
+    #define cond(x) (x) & 0x7ff000UL
+    bitvector_cond_sort(v, i, j, cond, temp);
+    #undef cond
+    part[2] = i;
+    for (i = 0; i < part[2]; ++i) {
+        if (v[i] == 0x800000) {
+            temp = v[0]; v[0] = v[i]; v[i] = temp;
+            part[1] = 1;
+            break;
+        }
+    }
+
+    for (i = 0; i < 5; ++i) {
+        bitvector32_sort(v + part[i], part[i+1] - part[i]);
+        for (j = part[i]; j < part[i+1]; ++j) {
+            if (gen_leech2_type(v[j]) == 4 && 
+                (no_sub2 || gen_leech2_type2(v[j] ^ v2))) return v[j]; 
+        }
+    }
+/// @endcond
+    return 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// More auxiliary functions for Reducing a 2A axis 
+/////////////////////////////////////////////////////////////////////////
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/**
+  @brief Adjust sign of an axis
+
+  Assume that ``v2`` is an element of the subgroup \f$Q_{x0}\f$ of
+  the monster of structure \f$2^{1+24}\f$ (known up to sign only)
+  given in **Leech lattice encoding**. Assume that ``v`` is the 
+  axis of ``v2`` in the representation \f$\rho_{15}\f$.
+
+  The we return the element ``v2`` with corrected sign. If the
+  assumptions do not hold then the function returns garbage.
+*/
+static inline int32_t v_leech2_adjust_sign(uint_mmv_t *v, uint32_t v2)
+{
+    uint32_t ind = mm_aux_index_leech2_to_sparse(v2 & 0xffffffUL);
+    mm_aux_mmv_extract_sparse(15, v, &ind, 1);
+    return (v2 & 0xffffff) | (((ind & 15) == 2) << 24);
+}
+
+
+/**
+  @brief Transform element of \f$Q_{x0}\f$ with element of monster group
+
+  Let \f$g\f$ be the element of the monster given as a word of 
+  generators in the buffer ``a`` of length ``n``. Let ``p_axis``
+  point to an element \f$q\f$ of the subgroup \f$Q_{x0}\f$ of the 
+  monster of  of structure \f$2^{1+24}\f$  given 
+  in **Leech lattice encoding**.
+
+  The function conjugates the element \f$q\f$ with \f$g\f$ in place.
+  It returns 0 an case of success and a negative value otherwise.
+  
+  Warning: the function does not change  \f$q\f$ if \f$q\f$  is
+  equal to ``V_START``.
+*/
+static inline int32_t op_axis(uint32_t *p_axis, uint32_t *a, uint32_t n)
+{  
+    if (*p_axis == V_START) return 0;
+    *p_axis = gen_leech2_op_word(*p_axis, a, n);
+    return *p_axis < 0 ? *p_axis : 0; 
+}
+
+
+
+static inline int32_t transform_v4(
+    uint_mmv_t *v, 
+    uint32_t v4,
+    uint32_t *target_axes,
+    uint32_t *r,
+    axes_work_t *p_work
+)
+{
+    uint32_t  len_r = gen_leech2_reduce_type4(v4, r), e, ax_type, j;
+        
+    if (len_r < 0) return -1000 + len_r;
+    mm_op15_word(v, r, len_r, 1, p_work->vtmp);
+    r[len_r++] = 0x82000000 + (v4 & 0xffffff);
+    if (target_axes[0] & 0xffffff00) return len_r;
+    
+    for (e = 1; e < 3; ++e) {
+        mm_op15_t_A(v, e, p_work->vA);                    
+        ax_type = mm_reduce_2A_axis_type(p_work->vA) >> 24;
+        for (j = 0; j < 2; ++j) {
+            if (ax_type == target_axes[j]) {
+                r[len_r] = 0xD0000003 - e;
+                mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                return ++len_r;
+            }
+        }
+    }
+    return -10;
+}
+
+
+/// @endcond  
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing a 2A axis 
+/////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+
+
 
 
 static int32_t reduce_v_axis(
@@ -454,119 +605,47 @@ static int32_t reduce_v_axis(
     axes_work_t *p_work
 )
 {
-    int32_t status = -1000;
-    uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
-    uint32_t ax_types[3];
+    uint32_t len_r = 0, i, status, len_r1, vt, v4, ax_type;
+    uint32_t target_axes[2];
 
     for (i = 0; i < 5; ++i) {
-        vt = mm_reduce_2A_axis_type(v);
-        if (vt == 0)  return -2;
-        ax_types[1] = ax_types[2] = 0;
-        ax_type = vt >> 24;
-        vt &= 0xffffff;
-        switch(ax_type) {
-            case 0xC3:
-                get_radical(v, 7, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x42;
-                ax_types[1] = 0x61;
-                break;
-            case 0xA2:
-                get_radical(v, 4, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x42;
-                ax_types[1] = 0x43;
-                break;
-            case 0xA1:
-                get_short(v, 3, 1, p_work);
-                xor_entries(p_work, p_work->v_short[0]);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x61;
-                break;
-            case 0x82:
-                get_short(v, 1, 0, p_work);
-                xor_entries(p_work, p_work->v_short[0]);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x41;
-                break;
-            case 0x66:
-                get_radical(v, 7, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x43;
-                break;
-            case 0x63:
-                get_span(v, 3, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x41;
-                break;
-            case 0x61:
-                get_short(v, 5, 0, p_work);
-                xor_entries(p_work, vt);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x41;
-                break;
-            case 0x43:  // case 4C
-            case 0x42:  // case 4B
-                get_radical(v, 1, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x22;
-                break;
-            case 0x41:  // case 4A
-                v4 = vt;
-                ax_types[0] = 0x21;
-                break;
-            case 0x22:  // case 2B
-                get_span(v, 4, p_work);
-                v4 = find_type4(p_work);
-                ax_types[0] = 0x21;
-                break;
-            case 0x21:   // case 2A
-                if (!std_axis) {
-                    vt = v_leech2_adjust_sign(v, vt);
-                    r[len_r++] = 0x84000000 + vt;
-                    return len_r;
-                }
-                len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
-                if (len_r1 < 0) return -21;
-                mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
-                len_r += len_r1;
-                r[len_r++] = 0x82000000 + vt;
-                vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
-                if (vt != 15-2) {
-                   r[len_r] = 0xB0000200;
-                   mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
-                   len_r += 1;
-                }
-                mm_reduce_store_axis(p_work->vtmp, 0);
-                if (mm_op15_compare(v, p_work->vtmp)) return -22;
-                r[len_r++] = 0x84000200;
+        axes_reduce_t *p_ax = (axes_reduce_t *)(p_work->vtmp);
+        if ((status = analyze_axis(v, p_ax)) < 0) return -11000 + status;
+        target_axes[0] = p_ax->target_axes[0];
+        target_axes[1] = p_ax->target_axes[1];
+        ax_type = p_ax->axis_type;
+
+        if (ax_type == 0x21) {
+            vt = p_ax->v_leech2[0];
+            if (!std_axis) {
+                vt = v_leech2_adjust_sign(v, vt);
+                r[len_r++] = 0x84000000 + vt;
                 return len_r;
-            default:
-                return -1;
+            }
+            len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
+            if (len_r1 < 0) return -10002;
+            mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+            len_r += len_r1;
+            r[len_r++] = 0x82000000 + vt;
+            vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
+            if (vt != 15-2) {
+               r[len_r] = 0xB0000200;
+               mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+               len_r += 1;
+            }
+            mm_reduce_store_axis(p_work->vtmp, 0);
+            if (mm_op15_compare(v, p_work->vtmp)) return -10003;
+            r[len_r++] = 0x84000200;
+            return len_r;
         }
 
-        len_r1 = gen_leech2_reduce_type4(v4, r + len_r);
-        if (len_r1 < 0) return -10;
-        mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+        v4 = mm_reduce_find_type4(p_ax->v_leech2, p_ax->n_leech2, 0);
+        if (v4 < 0) return  -12000 + v4;
+        len_r1 = transform_v4(v, v4, target_axes, r + len_r, p_work);
+        if (len_r1 < 0) return -13000 + len_r1;
         len_r += len_r1;
-        r[len_r++] = 0x82000000 + (v4 & 0xffffff);
-        status = -4;
-        for (e = 1; e < 3 && status; ++e) {
-            mm_op15_t_A(v, e, p_work->vA);                    
-            ax_type = mm_reduce_2A_axis_type(p_work->vA) >> 24;
-            for (j = 0; j < 3 && ax_types[j]; ++j) {
-                if (ax_type == ax_types[j]) {
-                    r[len_r] = 0xD0000003 - e;
-                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
-                    len_r += 1;
-                    status = 0;
-                    break;
-                }
-            }
-        }
-        if (status)  return status;
     }
-    return -3;
+    return -12000-i;
 }
 
 /// @endcond
@@ -610,7 +689,7 @@ int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t std_axis, uint32_t *r)
 
 
 /////////////////////////////////////////////////////////////////////////
-// Reducing a 2A axis to orthogonal to V_START, preserving V_START
+// Reducing a pair of orthogonal 2A axes
 /////////////////////////////////////////////////////////////////////////
 
 
@@ -626,108 +705,56 @@ static int32_t reduce_v_baby_axis(
     axes_work_t *p_work
 )
 {
-    int32_t status = -1000;
-    uint32_t len_r = 0, i, j, len_r1, vt, v4, ax_type, e;
-    uint32_t ax_types[3];
+    uint32_t len_r = 0, i, status, len_r1, val2, vt, v4, ax_type, e;
+    uint32_t target_axes[2];
 
     for (i = 0; i < 5; ++i) {
-        vt = mm_reduce_2A_axis_type(v);
-        if (vt == 0)  return -2;
-        ax_types[1] = ax_types[2] = 0;
-        ax_type = vt >> 24;
-        vt &= 0xffffff;
-        switch(ax_type) {
-            case 0xA1:
-                get_short(v, 3, 1, p_work);
-                xor_entries(p_work, p_work->v_short[0]);
-                v4 = find_ortho_short(p_work, axis);
-                ax_types[0] = 0x61;
-                break;
-            case 0x63:
-                get_span(v, 3, p_work);
-                v4 = find_ortho_short(p_work, axis);
-                ax_types[0] = 0x41;
-                break;
-            case 0x61:
-                get_short(v, 5, 0, p_work);
-                xor_entries(p_work, vt);
-                v4 = find_ortho_short(p_work, axis);
-                ax_types[0] = 0x41;
-                break;
-            case 0x43:  // case 4C
-            case 0x42:  // case 4B
-                get_radical(v, 1, p_work);
-                v4 = find_ortho_short(p_work, axis);
-                ax_types[0] = 0x22;
-                break;
-            case 0x41:  // case 4A
-                v4 = vt;
-                ax_types[0] = 0x21;
-                break;
-            case 0x22:  // case 2B
-                if ((mm_op15_eval_A(v, axis) & ~8) == 0) {
-                    get_span(v, 4, p_work);
-                    v4 = find_ortho_short(p_work, axis);
-                    ax_types[0] = 0x21;
-                } else return -4;
-                break;
-            case 0x21:   // case 2A
-                j = mm_op15_eval_A(v, axis);
-                if (j == 0)  {
-                    len_r1 = gen_leech2_reduce_type4(vt ^ axis, r + len_r); 
-                    if (len_r1 < 0) return -31;
-                    mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
-                    if (op_axis(&axis, r + len_r, len_r1)) return -7;
-                    len_r += len_r1;
-                    r[len_r++] = 0x82000000 + ((vt ^ axis) & 0xffffff);
-                    vt = mm_reduce_2A_axis_type(v) & 0xffffff;
-                    if ((vt ^ axis ^ 0x800000) & 0xffffff) return -32;
-                    vt = v_leech2_adjust_sign(v, vt);
-                    e = 1 + (vt >> 24);
-                    r[len_r] = 0xD0000003 - e;
-                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
-                    if (op_axis(&axis, r + len_r, 1)) return -8;
-                    vt = gen_leech2_op_word(vt, r + len_r, 1);
-                    len_r += 1;
-                } else  {
-                    if (j != 4)  return -33;
-                }
+        axes_reduce_t *p_ax = (axes_reduce_t *)(p_work->vtmp);
+        if ((status = analyze_axis(v, p_ax)) < 0) return -21000 + status;
+        target_axes[0] = p_ax->target_axes[0];
+        target_axes[1] = p_ax->target_axes[1];
+        ax_type = p_ax->axis_type;
+
+        if (ax_type == 0x21) {
+            vt = p_ax->v_leech2[0];
+            val2 = mm_op15_eval_A(v, axis);
+            if (val2 == 0)  {
+                len_r1 = gen_leech2_reduce_type4(vt ^ axis, r + len_r); 
+                if (len_r1 < 0) return -20011;
+                mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
+                if (op_axis(&axis, r + len_r, len_r1)) return -20011;
+                len_r += len_r1;
+                r[len_r++] = 0x82000000 + ((vt ^ axis) & 0xffffff);
+                vt = mm_reduce_2A_axis_type(v) & 0xffffff;
+                if ((vt ^ axis ^ 0x800000) & 0xffffff) return -20012;
                 vt = v_leech2_adjust_sign(v, vt);
-                if ((vt ^ axis ^ 0x1000000) & 0x1ffffff) return -34;
-                //if (axis == V_START) {
-                //    mm_reduce_store_axis(p_work->vtmp, 1);
-                //    if (mm_op15_compare(v, p_work->vtmp)) return -35;
-                //}
-                r[len_r++] = 0x86000000 + (axis & 0x1ffffff);
-                return len_r;
-            default:
-                return -1;
+                e = 1 + (vt >> 24);
+                r[len_r] = 0xD0000003 - e;
+                mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
+                if (op_axis(&axis, r + len_r, 1)) return -20013;
+                vt = gen_leech2_op_word(vt, r + len_r, 1);
+                len_r += 1;
+            } else  {
+                if (val2 != 4)  return -20014;
+            }
+            vt = v_leech2_adjust_sign(v, vt);
+            if (vt < 0) return -22000 + vt;
+            if ((vt ^ axis ^ 0x1000000) & 0x1ffffff) return -20015;
+            //if (axis == V_START) {
+            //    mm_reduce_store_axis(p_work->vtmp, 1);
+            //    if (mm_op15_compare(v, p_work->vtmp)) return -20016;
+            //}
+            r[len_r++] = 0x86000000 + (axis & 0x1ffffff);
+            return len_r;
         }
 
-        len_r1 = gen_leech2_reduce_type4(v4, r + len_r); 
-        if (len_r1 < 0) return -10;
-        mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
-        if (op_axis(&axis, r + len_r, len_r1)) return -7;
+        v4 = mm_reduce_find_type4(p_ax->v_leech2, p_ax->n_leech2, axis);
+        len_r1 = transform_v4(v, v4, target_axes, r + len_r, p_work);
+        if (len_r1 < 0) return -23000 + len_r1;
+        if (op_axis(&axis, r + len_r, len_r1)) return -20008;
         len_r += len_r1;
-        r[len_r++] = 0x82000000 + (v4 & 0xffffff);
-        status = -4;
-        for (e = 1; e < 3 && status; ++e) {
-            mm_op15_t_A(v, e, p_work->vA);                    
-            ax_type = mm_reduce_2A_axis_type(p_work->vA) >> 24;
-            for (j = 0; j < 3 && ax_types[j]; ++j) {
-                if (ax_type == ax_types[j]) {
-                    r[len_r] = 0xD0000003 - e;
-                    mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
-                    if (op_axis(&axis, r + len_r, 1)) return -8;
-                    len_r += 1;
-                    status = 0;
-                    break;
-                }
-            }
-        }
-        if (status)  return status;
     }
-    return -3;
+    return -24000-i;
 }
 
 
@@ -771,6 +798,40 @@ int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t axis, uint32_t * r)
     return res;
 }
 
+/////////////////////////////////////////////////////////////////////////
+// Store the standard 2A axis v ^+ or v^- in a vector
+/////////////////////////////////////////////////////////////////////////
+
+/**
+  @brief Store the 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
+
+  The function stores the 2A axis \f$v^+\f$ (in case ``sign == 0``)
+  or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
+  by ``v``. That vector will store an element of the
+  representation \f$\rho_{15}\f$ of the monster group as described in
+  the header of this file.
+  Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
+*/
+// %%EXPORT px
+void  mm_reduce_store_axis(uint_mmv_t *v, uint32_t sign)
+{
+    mm_aux_zero_mmv(15, v);
+    static uint32_t sp[4] = {
+        (1 << 25) + (2 << 14) + (2 << 8) + 1,
+        (1 << 25) + (2 << 14) + (3 << 8) + 15 - 1,
+        (1 << 25) + (3 << 14) + (3 << 8) + 1,
+        (2 << 25) + (2 << 14) + (3 << 8) 
+    };
+    sp[3] &= 0xffffff00;
+    sp[3] += sign ? 2 : 15 - 2;
+    mm_aux_mmv_set_sparse(15, v, sp, 4);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing an element of the monster group to the group G_x0
+/////////////////////////////////////////////////////////////////////////
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -846,6 +907,10 @@ int32_t mm_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t std_axis, uint32_t *r)
     return res;
 }
 
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing an element of the moster group
+/////////////////////////////////////////////////////////////////////////
 
 /**
   @brief Reduce an element in the monster group

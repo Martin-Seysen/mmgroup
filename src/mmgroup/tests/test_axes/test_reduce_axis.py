@@ -447,7 +447,7 @@ def make_axis_testcases():
 def test_reduce_axis(verbose = 0):
     for i, (v, std_axis) in enumerate(make_axis_testcases()):
         if verbose:
-            print("\nTest case", i)
+            print("\nTest case", i, ", std_axis =", bool(std_axis))
         r, axis = reduce_axis(v.copy(), std_axis, verbose)
         g = MM0('a', r)
         if std_axis:
@@ -515,7 +515,7 @@ def make_baby_testcases():
 
 
 @pytest.mark.axes
-def test_reduce_baby_axis(verbose = 0):
+def test_reduce_baby_axis(verbose = 1):
     for i, v in enumerate(make_baby_testcases()):
         if verbose:
             print("\nTest case", i)
@@ -536,8 +536,8 @@ def test_reduce_baby_axis(verbose = 0):
              vt = mm_reduce_2A_axis_type(v.data) >> 24
              vA = eval_A_vstart(v.data)
              print("Type(v) = 0x%x, value(A) = %d" % (vt, vA))
-             print("Op:  ", [hex(x) for x in g] )
-             print("Fast:", [hex(x) for x in g1] ) 
+             print("Op:  ", [hex(x) for x in g.mmdata] )
+             print("Fast:", [hex(x) for x in g1.mmdata] ) 
              if not ok:
                  err = "Function mm_reduce_v_baby_axis failed"
                  raise ValueError(err)
