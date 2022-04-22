@@ -310,10 +310,10 @@ static inline int32_t analyze_axis(
 {
     uint32_t  vt = mm_reduce_2A_axis_type(v), j, vt1;
 
-    if (vt == 0)  return -2;
     p_ax->axis_type = vt >> 24;
     p_ax->target_axes[0] = p_ax->target_axes[1] = 0xffffffffUL;
     p_ax->n_leech2 = 0;
+    if (vt == 0)  return -2;
     vt &= 0xffffffUL;
     switch(p_ax->axis_type) {
         case 0xC3:
@@ -377,6 +377,7 @@ static inline int32_t analyze_axis(
             p_ax->n_leech2 = 1;
             return 0;
         default:
+            p_ax->axis_type = 0;
             return -3;
     }
 }
@@ -747,24 +748,26 @@ static int32_t reduce_v_baby_axis(
             vt = p_ax->v_leech2[0];
             val2 = mm_op15_eval_A(v, axis);
             if (val2 == 0)  {
-                len_r1 = gen_leech2_reduce_type4(vt ^ axis, r + len_r); 
+                vt ^= axis;
+                len_r1 = gen_leech2_reduce_type4(vt, r + len_r); 
                 if (len_r1 < 0) return -20011;
                 mm_op15_word(v, r + len_r, len_r1, 1, p_work->vtmp);
                 if (op_axis(&axis, r + len_r, len_r1)) return -20011;
                 len_r += len_r1;
-                r[len_r++] = 0x82000000 + ((vt ^ axis) & 0xffffff);
+                r[len_r++] = 0x82000000 + (vt & 0xffffff);
                 vt = mm_reduce_2A_axis_type(v) & 0xffffff;
-                if ((vt ^ axis ^ 0x800000) & 0xffffff) return -20012;
                 vt = v_leech2_adjust_sign(v, vt);
-                e = 1 + (vt >> 24);
+                vt = gen_leech2_mul(vt, axis); 
+                if ((vt & 0xffffff) != 0x800000) return -20012;
+                e = 1 + ((vt >> 24) & 1);
                 r[len_r] = 0xD0000003 - e;
                 mm_op15_word(v, r + len_r, 1, 1, p_work->vtmp);
                 if (op_axis(&axis, r + len_r, 1)) return -20013;
-                vt = gen_leech2_op_word(vt, r + len_r, 1);
                 len_r += 1;
             } else  {
                 if (val2 != 4)  return -20014;
             }
+            vt = mm_reduce_2A_axis_type(v) & 0xffffff;
             vt = v_leech2_adjust_sign(v, vt);
             if (vt < 0) return -22000 + vt;
             if ((vt ^ axis ^ 0x1000000) & 0x1ffffff) return -20015;

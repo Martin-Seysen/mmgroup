@@ -7,7 +7,8 @@ import time
 import pytest
 
 from mmgroup import mat24
-from mmgroup import MM0, MMSpace, MMV, Cocode, AutPL
+from mmgroup import MM0, MMSpace, MMV, Cocode, AutPL, XLeech2
+from mmgroup.generators import gen_leech2_mul
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type2_ortho
@@ -139,17 +140,15 @@ def find_ortho_short_old(vlist):
     err = "No short vector orthogonal to 'v_start' found"
     raise ValueError(err)
   
-def find_ortho_short(v_list):
+def find_ortho_short(v_list, axis = v_start):
     a = np.array(v_list, dtype = np.uint32)
-    v = mm_reduce_find_type4(a, len(a), v_start)
+    v = mm_reduce_find_type4(a, len(a), axis)
     if v == 0:
         raise ValueError("No feasible type-4 vector found in list")
-    return v ^ v_start
+    return v
 
 
 
-def eval_A_vstart(v):
-    return mm_op15_eval_A(v, 0x200)
 
 
 def v_leech2_adjust_sign(v, v2):
@@ -159,6 +158,9 @@ def v_leech2_adjust_sign(v, v2):
     if (value == 2): v2 += 0x1000000
     return v2
 
+
+def eval_A_vstart(v, v_start = 0x200):
+    return mm_op15_eval_A(v, v_start)
 
 ##########################################################################
 # Reducing a 2A axis to V_START
@@ -278,12 +280,19 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
 
 
 
-def reduce_baby_axis(vector, verbose = 1):
+def op_axis(axis, r):
+    transformed_axis = gen_leech2_op_word(axis, r, len(r))
+    if axis == v_start:
+        assert transformed_axis == axis;
+    return transformed_axis; 
+
+
+def reduce_baby_axis(vector, axis = v_start, verbose = 0):
     v = vector.data
     #V = vector.space
     work = V()
     vA = np.zeros(24*4, dtype = np.uint64)
-    r = np.zeros(120, dtype= np.uint32);
+    r = np.zeros(120, dtype= np.uint32)
     len_r = 0
     if verbose: print("Function reduce_baby_axis")
     for i in range(5):
@@ -293,65 +302,78 @@ def reduce_baby_axis(vector, verbose = 1):
         vt &= 0xffffff
         if verbose:
             print("type =", hex(type), ", vt =", hex(vt), 
-                 ", A(v0) =",  eval_A_vstart(v))
+                 ", A(v0) =",  mm_op15_eval_A(v, axis), 
+                 ", axis =", hex(axis))
         if type == 0xA1:  # case 10A
             v0 = short(v, 3)[0]
             v2all = short(v, 1)
             v2all = [w ^ v0 for w in v2all]
-            v4 = find_ortho_short(v2all)
+            v4 = find_ortho_short(v2all, axis)
             t_types = [0x61]
         elif type == 0x63:  # case 6C
             v2all = span(v, 3, verbose)
-            v4 = find_ortho_short(v2all)
+            v4 = find_ortho_short(v2all, axis)
             t_types = [0x41]
         elif type == 0x61:  # case 6A
             v2all = short(v, 5)
             v2all = [w ^ vt for w in v2all] # if leech_type(w ^vt) == 4]
-            v4 = find_ortho_short(v2all)
+            v4 = find_ortho_short(v2all, axis)
             t_types = [0x41, 0x43]
         elif type == 0x43:  # case 4C
             v2all = radical(v, 1, verbose)
-            v4 = find_ortho_short(v2all)
+            v4 = find_ortho_short(v2all, axis)
             t_types = [0x22]
         elif type == 0x42:  # case 4B
             v2all = radical(v, 1, verbose)
-            v4 = find_ortho_short(v2all)
+            v4 = find_ortho_short(v2all, axis)
             t_types = [0x22]
         elif type == 0x41:  # case 4A
-            v4 = vt ^ v_start
-            assert leech_type(v4) == 2
+            v4 = vt
+            assert leech_type(v4) == 4
             t_types = [0x21]
         elif type == 0x22:  # case 2B
-            if eval_A_vstart(v) in [0, 8]:
+            if mm_op15_eval_A(v, axis) in [0, 8]:
                 v2all = span(v, 4, verbose)  
-                v4 = find_ortho_short(v2all)
+                v4 = find_ortho_short(v2all, axis)
                 t_types = [0x21]
             else:
                 raise ValueError("WTF 2B")
         elif type == 0x21:  # case 2A
-            if eval_A_vstart(v) == 0:
-                r1 = gen_leech2_reduce_type2_ortho(vt, r[len_r:])
+            if verbose: 
+                print("v has type 0x21, axis = %s, eval_A = %d" %
+                     (hex(axis),  mm_op15_eval_A(v, axis)) )
+            if mm_op15_eval_A(v, axis) == 0:
+                vt ^= axis
+                r1 = gen_leech2_reduce_type4(vt, r[len_r:])
                 assert r1 >= 0
                 mm_op15_word(v, r[len_r:], r1, 1, work.data)
+                axis = op_axis(axis,  r[len_r: len_r + r1])
                 len_r += r1
                 vt = mm_reduce_2A_axis_type(v) & 0xffffff
-                assert vt == 0x800200 
-                ind = mm_aux_get_mmv1(15, v, (2*24+3)*32 + 2)
-                e = 2 - (ind == 15-2)
-                if verbose: print("ind", ind, e)
+                vt = v_leech2_adjust_sign(v, vt)
+                vt = gen_leech2_mul(vt, axis)
+                assert vt & 0xffffff == 0x800000 
+                e = 1 + (vt >> 24);
+                if verbose: print("e",  e)
                 r[len_r] = 0xD0000003 - e
                 mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                axis = op_axis(axis,  r[len_r: len_r + 1])
                 len_r += 1
-            assert  eval_A_vstart(v) == 4, eval_A_vstart(v)
+            else:
+                assert mm_op15_eval_A(v, axis) == 4
+            vt = mm_reduce_2A_axis_type(v) & 0xffffff
+            vt = v_leech2_adjust_sign(v, vt)
+            assert (vt ^ axis) & 0x1ffffff == 0x1000000, (hex(vt), hex(axis))
             if verbose: 
                 print("Function reduce_baby_axis terminated successfullly")
-            return r[:len_r]
+            return r[:len_r], axis
         else:
             raise ValueError("WTF1")
 
-        r1 = gen_leech2_reduce_type2_ortho(v4, r[len_r:])
-        assert r1 >= 0
+        r1 = gen_leech2_reduce_type4(v4, r[len_r:])
+        assert r1 >= 0, (hex(v4), )
         mm_op15_word(v, r[len_r:], r1, 1, work.data)
+        axis = op_axis(axis,  r[len_r: len_r + r1])
         len_r += r1
         ok = False
         for e in (1,2):
@@ -361,6 +383,7 @@ def reduce_baby_axis(vector, verbose = 1):
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
                 mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                axis = op_axis(axis,  r[len_r: len_r + 1])
                 len_r += 1
                 ok = True
                 break
@@ -492,45 +515,62 @@ def rand_BM(quality = 8):
     """
     a = MM0()
     for i in range(quality):
-         e = randint(0, 2)
-         a *= MM0([rand_Co2(), ('t', e)]) 
+         a *= rand_Co2()
+         a *= MM0('t', 'r')
     return a 
 
 
 
 
 def make_baby_testcases():
-    #V = V_START.space
-    yield V_OPP.copy()
+    def make_pair(v, randomize):
+        v, axis = v.copy(), v_start
+        if not randomize:
+            return v, axis
+        g = MM0('r', 'G_x0')
+        return v * g, (XLeech2(v_start) * g).ord
+               
+
+    yield make_pair(V_OPP, False)
     for i in range(10):
-        yield V_OPP.copy() * rand_Co2()
+        yield make_pair(V_OPP.copy() * rand_Co2(), i & 1)
     for ax in BABY_AXES:
         v0 = V_OPP * MM0(BABY_AXES[ax])
         for i in range(5):
-            yield v0 * rand_BM()
+            yield make_pair(v0 * rand_BM(), i & 1)
     for quality in range(2,11):
         for i in range(5):
-              yield  V_OPP.copy() * rand_BM(quality)      
+              yield  make_pair(V_OPP.copy() * rand_BM(quality), i & 1)      
 
 
 
 @pytest.mark.axes
-def test_reduce_baby_axis(verbose = 1):
-    for i, v in enumerate(make_baby_testcases()):
+def test_reduce_baby_axis(verbose = 0):
+    for i, (v, axis) in enumerate(make_baby_testcases()):
         if verbose:
-            print("\nTest case", i)
-        r = reduce_baby_axis(v.copy(), verbose)
+            print("\nTest case", i, ", axis =",  hex(axis))
+        r, img_axis = reduce_baby_axis(v.copy(), axis, verbose)
         g = MM0('a', r)
-        assert v * g == V_OPP
-        assert V_START * g == V_START
+        if verbose:
+            print("g =",  g)
+        v_g = v * g
+        if axis == v_start:
+            assert V_START * g == V_START
+            assert axis == img_axis
+            assert v_g == V_OPP
+        assert XLeech2(axis) * g == XLeech2(img_axis)
+        vt = mm_reduce_2A_axis_type(v_g.data)
+        vt = v_leech2_adjust_sign(v_g.data, vt)
+        assert  img_axis ^ vt == 0x1000000, (hex(img_axis), hex(vt))
+
 
         vr1 = np.zeros(200, dtype = np.uint32)
-
-        len_r1 = mm_reduce_v_baby_axis(v.copy().data, 0x200, vr1)
-        assert len_r1 >= 0
+        len_r1 = mm_reduce_v_baby_axis(v.copy().data, axis, vr1)
+        assert len_r1 >= 0, len_r1
         g1 = MM0('a', vr1[:len_r1])
 
         ok =  g1 == g 
+
         #print(type(g1), type(g))
         if verbose or not ok:
              vt = mm_reduce_2A_axis_type(v.data) >> 24
