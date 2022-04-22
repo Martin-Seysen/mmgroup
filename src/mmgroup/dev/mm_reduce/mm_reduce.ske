@@ -308,7 +308,7 @@ static inline int32_t analyze_axis(
     axes_reduce_t *p_ax
 )
 {
-    uint32_t  vt = mm_reduce_2A_axis_type(v);
+    uint32_t  vt = mm_reduce_2A_axis_type(v), j, vt1;
 
     if (vt == 0)  return -2;
     p_ax->axis_type = vt >> 24;
@@ -316,59 +316,68 @@ static inline int32_t analyze_axis(
     p_ax->n_leech2 = 0;
     vt &= 0xffffffUL;
     switch(p_ax->axis_type) {
-            case 0xC3:
-                get_radical(v, 7, p_ax);
-                p_ax->target_axes[0] = 0x42;
-                p_ax->target_axes[1] = 0x61;
-                return 0;
-            case 0xA2:
-                get_radical(v, 4, p_ax);
-                p_ax->target_axes[0] = 0x42;
-                p_ax->target_axes[1] = 0x43;
-                return 0;
-            case 0xA1:
-                get_short(v, 3, 1, p_ax);
-                xor_entries(p_ax, p_ax->v_leech2[0]);
-                p_ax->target_axes[0] = 0x61;
-                return 0;
-            case 0x82:
-                get_short(v, 1, 0, p_ax);
-                xor_entries(p_ax, p_ax->v_leech2[0]);
-                p_ax->target_axes[0] = 0x41;
-                return 0;
-            case 0x66:
-                get_radical(v, 7, p_ax);
-                p_ax->target_axes[0] = 0x43;
-                return 0;
-            case 0x63:
-                get_span(v, 3, p_ax);
-                p_ax->target_axes[0] = 0x41;
-                return 0;
-            case 0x61:
-                get_short(v, 5, 0, p_ax);
-                xor_entries(p_ax, vt);
-                p_ax->target_axes[0] = 0x41;
-                return 0;
-            case 0x43:  // case 4C
-            case 0x42:  // case 4B
-                get_radical(v, 1, p_ax);
-                p_ax->target_axes[0] = 0x22;
-                return 0;
-            case 0x41:  // case 4A
-                p_ax->v_leech2[0] = vt;
-                p_ax->n_leech2 = 1;
-                p_ax->target_axes[0] = 0x21;
-                return 0;
-            case 0x22:  // case 2B
-                get_span(v, 4, p_ax);
-                p_ax->target_axes[0] = 0x21;
-                return 0;
-            case 0x21:   // case 2A
-                p_ax->v_leech2[0] = vt;
-                p_ax->n_leech2 = 1;
-                return 0;
-            default:
-                return -3;
+        case 0xC3:
+            get_radical(v, 7, p_ax);
+            p_ax->target_axes[0] = 0x42;
+            p_ax->target_axes[1] = 0x61;
+            return 0;
+        case 0xA2:
+            get_radical(v, 4, p_ax);
+            p_ax->target_axes[0] = 0x42;
+            p_ax->target_axes[1] = 0x43;
+            return 0;
+        case 0xA1:
+            get_short(v, 3, 1, p_ax);
+            xor_entries(p_ax, vt = p_ax->v_leech2[0]);
+            p_ax->v_leech2[0] = vt | 0x2000000;
+            p_ax->target_axes[0] = 0x61;
+            return 0;
+        case 0x82:
+            get_short(v, 1, 0, p_ax);
+            vt = p_ax->v_leech2[0]; vt1 = 0;
+            for (j = 0; j < p_ax->n_leech2; ++j) {
+                uint32_t vt2 = vt ^ p_ax->v_leech2[j];
+                if (gen_leech2_type(vt2) == 4) vt1 = vt2;
+                p_ax->v_leech2[j] |= 0x2000000;
+            }
+            if (vt1) p_ax->v_leech2[p_ax->n_leech2++] = vt1;
+            p_ax->target_axes[0] = 0x41;
+            return 0;
+        case 0x66:
+            get_radical(v, 7, p_ax);
+            p_ax->target_axes[0] = 0x43;
+            return 0;
+        case 0x63:
+            get_span(v, 3, p_ax);
+            p_ax->target_axes[0] = 0x41;
+            return 0;
+        case 0x61:
+            get_short(v, 5, 0, p_ax);
+            xor_entries(p_ax, vt);
+            p_ax->v_leech2[p_ax->n_leech2++] =  p_ax->v_leech2[0];
+            p_ax->v_leech2[0] = vt | 0x2000000;
+            p_ax->target_axes[0] = 0x41;
+            return 0;
+        case 0x43:  // case 4C
+        case 0x42:  // case 4B
+            get_radical(v, 1, p_ax);
+            p_ax->target_axes[0] = 0x22;
+            return 0;
+        case 0x41:  // case 4A
+            p_ax->v_leech2[0] = vt;
+            p_ax->n_leech2 = 1;
+            p_ax->target_axes[0] = 0x21;
+            return 0;
+        case 0x22:  // case 2B
+            get_span(v, 4, p_ax);
+            p_ax->target_axes[0] = 0x21;
+            return 0;
+        case 0x21:   // case 2A
+            p_ax->v_leech2[0] = vt;
+            p_ax->n_leech2 = 1;
+            return 0;
+        default:
+            return -3;
     }
 }
 
@@ -505,6 +514,25 @@ uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**
+  Select a type-4 vector from list of Leech lattice vectors
+
+  This is equivalent 
+  to ``mm_reduce_find_type4(p_ax->v_leech2, p_ax->v_leech2, v2)``.
+  But here the initial segement of entries of ``p_ax->v_leech2``,
+  where bit 26 of the entry is set, is ignored. 
+*/
+static inline uint32_t find_type4(axes_reduce_t *p_ax, uint32_t v2)
+{
+    uint32_t *v = p_ax->v_leech2,  n = p_ax->n_leech2;
+
+    // Delete initial segement of marked entries
+    while (n && (v[0] & 0x2000000)) {
+        --n; ++v;
+    }
+    return  mm_reduce_find_type4(v, n, v2);
+}
+
 
 /**
   @brief Adjust sign of an axis
@@ -639,7 +667,7 @@ static int32_t reduce_v_axis(
             return len_r;
         }
 
-        v4 = mm_reduce_find_type4(p_ax->v_leech2, p_ax->n_leech2, 0);
+        v4 = find_type4(p_ax, 0);
         if (v4 < 0) return  -12000 + v4;
         len_r1 = transform_v4(v, v4, target_axes, r + len_r, p_work);
         if (len_r1 < 0) return -13000 + len_r1;
@@ -748,7 +776,7 @@ static int32_t reduce_v_baby_axis(
             return len_r;
         }
 
-        v4 = mm_reduce_find_type4(p_ax->v_leech2, p_ax->n_leech2, axis);
+        v4 = find_type4(p_ax, axis);
         len_r1 = transform_v4(v, v4, target_axes, r + len_r, p_work);
         if (len_r1 < 0) return -23000 + len_r1;
         if (op_axis(&axis, r + len_r, len_r1)) return -20008;
