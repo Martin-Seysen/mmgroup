@@ -117,9 +117,10 @@ enum tag_offsets {
 
 
 /************************************************************************
-** Check if element of monster group is in subgroup G_x0
+** Auxiliary functions for checking if a monster group element is in G_x0
 ************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 /**
   @brief Auxiliary function for function ``mm_order_check_in_Gx0``
@@ -141,10 +142,9 @@ enum tag_offsets {
   
   The function does not change the input \f$v\f$ referred by ``v``.
 */
-// %%EXPORT px
-int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
+static inline int32_t 
+find_in_Gx0(uint_mmv_t *v, uint32_t *g, uint32_t mode, uint_mmv_t *work)
 {
-    uint_mmv_t a[24 * %{V24_INTS}];
     uint64_t w3;
     int32_t res, v_y;
     uint_fast32_t w_type4, i, len, perm_num, y;
@@ -163,33 +163,35 @@ int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
     if (res < 0) return res;
     len = res;
 
-    for (i = 0; i < 24 * %{V24_INTS}; ++i) a[i] = v[i];
-    res = mm_op15_word_tag_A(a, g, len, 1);
+    for (i = 0; i < 24 * %{V24_INTS}; ++i) work[i] = v[i];
+    res = mm_op15_word_tag_A(work, g, len, 1);
     if (res < 0) return res;
-     
+
+    if (mode & 2) g[len++] = 0x82000000 + (w_type4 & 0xffffff);
+    
     res = mm_op15_watermark_A_perm_num( 
-        TAG_VECTOR + OFS_WATERMARK_PERM, a);
+        TAG_VECTOR + OFS_WATERMARK_PERM, work);
     if (res < 0) return 0x104;
     perm_num = res;
     if (perm_num) {
         g[len] = 0xA0000000 + perm_num;
-        res = mm_op15_word_tag_A(a, g + len, 1, 1);
+        res = mm_op15_word_tag_A(work, g + len, 1, 1);
         if (res < 0) return res;
         len += 1;
     }
 
-    v_y = mm_aux_mmv_extract_sparse_signs(15, a, 
+    v_y = mm_aux_mmv_extract_sparse_signs(15, work, 
         TAG_VECTOR + OFS_TAGS_Y, 11);
     if (v_y < 0) return 0x105;
     y = leech2matrix_solve_eqn(TAG_VECTOR + OFS_SOLVE_Y, 11, v_y);
     if (y > 0) {
         g[len] = 0xC0000000 + y;
-        res = mm_op15_word_tag_A(a, g + len, 1, 1);
+        res = mm_op15_word_tag_A(work, g + len, 1, 1);
         if (res < 0) return res;
         len += 1;
     }
 
-    if (mm_order_compare_vector_part_A(a)) return 0x106;
+    if (mm_order_compare_vector_part_A(work)) return 0x106;
     for (i = len; i <10; ++i) g[i] = 0;
 
     return len;
@@ -206,7 +208,7 @@ int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
 
   Input ``v``, and the return value are as in
   function ``mm_order_check_in_Gx0``.  Parameter ``g`` must contain
-  the corrsponding output of function ``mm_order_check_in_Gx0``, when
+  the corrsponding output of function ``find_in_Gx0``, when
   called successfully with the same input parameters. The function also
   requires an array ``work`` of length %{MMV_INTS} as a work buffer.
 
@@ -214,16 +216,16 @@ int32_t mm_order_find_in_Gx0(uint_mmv_t *v, uint32_t *g)
   under an (unknown) element \f$g\f$ of the monster. We want to find that
   element \f$g\f$ if it is in the subgroup \f$G_{x0}\f$ of the monster.
 
-  In case of success the function writes the element \f$g\f$ into the
-  array ``g`` in the same way as function ``mm_order_check_in_Gx0``
+  In case of success the function writes the element \f$g^{-1}\f$ into 
+  the  array ``g`` in the same way as function ``mm_order_check_in_Gx0``
   writes its result int that array.
 
   Caution:
 
   This function destroys the input \f$v\f$ referred by ``v``. !
 */
-// %%EXPORT px
-uint32_t mm_order_find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
+static uint32_t 
+find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 {
     int32_t v_x, sign, len = 10, res, len1, i;
     uint_fast32_t x, v_sign, tmp;
@@ -260,12 +262,15 @@ uint32_t mm_order_find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
     }    
     res = mm_order_compare_vector(v);
     if (res)  return  0x209;
-    for (i = 0; i < len1 >> 1; ++i) {
-        tmp = g[i]; g[i] = g[len1-1-i]; g[len1-1-i] = tmp; 
-    }
-    for (i = 0; i < len1; ++i) g[i] ^= 0x80000000;        
     return len1;   
 }
+
+
+/// @endcond  
+
+/************************************************************************
+** Check if element of monster group is in subgroup G_x0
+************************************************************************/
 
 
 /**
@@ -276,12 +281,15 @@ uint32_t mm_order_find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
   (unknown) element \f$g\f$ of the monster. We want to find that
   element \f$g\f$ if it is in the subgroup \f$G_{x0}\f$ of the monster.
 
+  We first describe the action of the function in the standard case
+  that parameter ``mode`` is zero.
+
   The function computes the element\f$g\f$ if it is in the
-  subgroup \f$G_{x0}\f$ of the monster; otherwise if fails.
+  subgroup \f$G_{x0}\f$ of the monster; otherwise it fails.
 
   In case of success the function writes the element \f$g\f$ into the
   array ``g`` as a word in the generators of \f$G_{x0}\f$ of length at
-  most 10; and the function returns the length of that word.
+  most 11; and the function returns the length of that word.
 
   If no such element \f$g_1\f$ has been found then the function returns
   a number greater than 256. Then the exact return value gives some
@@ -290,23 +298,48 @@ uint32_t mm_order_find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 
   A negative return value indicates an internal error.
 
-  The function does not change the input \f$v\f$  referred by ``v``.
+  The function also requires an array ``work`` of length %{MMV_INTS}
+  as a work buffer. This is the capacity required for storing a
+  vector in the representation \f$\rho_{15}\f$.
+
+  Parameter ``mode`` is a bit field that modifies the action of
+  the function as follows:
+
+  If bit 0 is set, then the inverse of the result \f$g\f$ is returned
+  in buffer ``g``.
+
+  If bit 1 is set then we insert an atom into the word in ``g`` that
+  indicates the image of the vector \f$\Omega \in \Lambda / 2 \Lambda\f$
+  under conjugation with \f$g_0\f$. Such an atom is considered as a
+  comment, acting as the neutral element of the monster group.
+  This is required for function ``mm_reduce_M`` in file ``mm_reduce.c``.
+  See documentation in that file for details.
+
+  If bit 2 is set then we perform an action to be used for internal
+  tests only. Then the function computes an element \f$g_1\f$ such
+  that \f$g^{-1} g_1\in Q_{x0}\f$ holds in case \f$g \in G_{x0}\f$.
+  If \f$g \notin G_{x0}\f$ then the function detects this fact with
+  high probability. Usually, \f$g_1\f$ is a shorter word in the
+  generators of the monster than \f$g\f$.
+
+  If bit 3 is set then input vector ``v`` is preserved; but the work
+  buffer ``work`` must have the (doubled) length  %{int:2*MMV_INTS}
+  for storing an additional temporary copy of vector ``v``.
 */
 // %%EXPORT px
-int32_t mm_order_check_in_Gx0(uint_mmv_t *v, uint32_t *g)
+int32_t mm_order_check_in_Gx0(uint_mmv_t *v, uint32_t *g, uint32_t mode, uint_mmv_t *work)
 {
     int32_t res;
-    uint64_t *w, *work;
 
-    res = mm_order_find_in_Gx0(v, g);
+    res = find_in_Gx0(v, g, mode, work);
+    if (res >= 0x100 || res < 0 || mode & 4) return res;
+    if (mode & 8) {
+        mm_op15_copy(v, work + %{MMV_INTS});
+        v = work + %{MMV_INTS};
+    }
+    res = find_in_Qx0(v, g, work);
     if (res >= 0x100 || res < 0) return res;
-
-    w = calloc(2 * %{MMV_INTS}, sizeof(uint64_t));
-    if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
-    work = w + %{MMV_INTS};
-    mm_op15_copy(v, w);    
-    res = mm_order_find_in_Qx0(w, g, work);
-    free(w);
+    if ((mode & 1) == 0) mm_group_invert_word(g, res);
     return res;    
 }
 
@@ -341,7 +374,7 @@ int32_t mm_order_element_Gx0(uint32_t *g, uint32_t n, uint32_t *h, uint32_t o)
 {
     int32_t res;
     uint_fast32_t i;
-    uint64_t *w = NULL, *w1, *work;
+    uint64_t *w = NULL,  *work;
     uint64_t elem[26];
 
     if (o < 1) o = 1;
@@ -362,18 +395,12 @@ int32_t mm_order_element_Gx0(uint32_t *g, uint32_t n, uint32_t *h, uint32_t o)
 
     w = calloc(3 * %{MMV_INTS}, sizeof(uint64_t));
     if (w == NULL) return ERR_QSTATE12_BUFFER_OVFL;
-    w1 = w + %{MMV_INTS};
-    work = w1 + %{MMV_INTS};
+    work = w + %{MMV_INTS};
 
     mm_order_load_vector(w); 
     for (i = 1; i <= o; ++i) {   
         res = mm_op15_word(w, g, n, 1, work);
-        if (res < 0) goto done;
-        res = mm_order_find_in_Gx0(w, h);
-        if (res >= 0x100) continue;
-        if (res < 0) goto done;
-        mm_op15_copy(w, w1);    
-        res = mm_order_find_in_Qx0(w1, h, work);
+        res = mm_order_check_in_Gx0(w, h, 8, work);
         if (res < 0) goto done;
         if (res < 0x100) {
             res += i << 8;

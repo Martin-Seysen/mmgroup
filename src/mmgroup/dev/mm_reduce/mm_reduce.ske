@@ -968,7 +968,7 @@ int32_t mm_reduce_G_x0(uint32_t *a,  uint32_t n, uint32_t std_axis, uint32_t *r)
 // %%EXPORT px
 int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
 {
-    int32_t len1, len2, res;
+    int32_t len1,  res;
 
     // This function combines functions  mm_reduce_G_x0 and
     // mm_order_check_in_Gx0. Here we cut and paste the code of both 
@@ -994,18 +994,13 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t *r)
 
     // Now we essentially apply function t mm_order_check_in_Gx0
     // to find a representation of ``h`` in generators of ``G_x0``.
-    res = mm_order_find_in_Gx0(p_work->v, r + len1);
+    res = mm_order_check_in_Gx0(p_work->v, r + len1, 3, p_work->vtmp);
     if (res > 0x100) res = -0x200;
     if (res < 0) goto done; 
-    len2 = res = mm_order_find_in_Qx0(p_work->v, r + len1, 
-          p_work->vtmp);
-    if (res < 0) goto done;
+    res = len1 + res;  // This is the length of the final result
 
-    // Now ``r[len1,...,len1+len2-1]``  contains ``h``. We will compute
-    // the result ``h * g1**(-1)`` in ``r[0,...,len1+len2-1]`` and
-    // return res = len1 + len2.
-    mm_group_invert_word(r + len1, len2);
-    mm_group_invert_word(r, res = len1 + len2);
+    // Finally, invert the result
+    mm_group_invert_word(r, res);
   
 done:
     free(p_work);
