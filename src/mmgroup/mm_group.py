@@ -510,6 +510,8 @@ class MM(MM0):
 ###########################################################################
 
 
+REDUCE_MODE = 1
+
 @singleton
 class MMGroup(AbstractMMGroup):
     r"""An instance of this class models the monster group as an object
@@ -547,7 +549,8 @@ class MMGroup(AbstractMMGroup):
                 import_mm_order_functions() 
             if copy:
                 g2 = self.word_type()
-                length = mm_reduce_M(g1._data, g1.length, 1, g2._data)
+                length = mm_reduce_M(g1._data, g1.length, 
+                    REDUCE_MODE, g2._data)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE % length)
                 g2.length = length

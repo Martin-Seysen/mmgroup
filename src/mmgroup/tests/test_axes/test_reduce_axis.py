@@ -580,7 +580,6 @@ def make_baby_testcases():
 
 
 
-@pytest.mark.mmm
 @pytest.mark.axes
 def test_reduce_baby_axis(verbose = 0):
     for i, (v, axis) in enumerate(make_baby_testcases()):
@@ -631,11 +630,10 @@ reduce_time = None
 
 ERR_GX0 = "Error in function mm_reduce_G_x0, status = %d"
 
-def reduce_G_x0(g):
+def reduce_G_x0(g, mode = 0):
     global reduce_time
     va = mm_vector(15, 2)
     v, work = va[0].data, va[1].data
-    mode = 0
     r = np.zeros(256, dtype = np.uint32)
     g1, n = g.mmdata, len(g.mmdata)
 
@@ -665,15 +663,15 @@ def g_complexity(g):
 def make_reduce_testcases():
     for quality in range(1,17):
         for i in range(3):
-              yield  MM0('r', quality)      
+              yield  MM0('r', quality) , i & 1     
 
 
 @pytest.mark.axes
 def test_reduce_G_x0(verbose = 0):
-    for i, g in enumerate(make_reduce_testcases()):
+    for i, (g, mode) in enumerate(make_reduce_testcases()):
         if verbose:
-            print("\nTest case", i)
-        g1 = reduce_G_x0(g)
+            print("\nTest case", i, "mode =", mode)
+        g1 = reduce_G_x0(g, mode)
         g2 = g * g1
         ok = g2.in_G_x0()
 

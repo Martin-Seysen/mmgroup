@@ -12,10 +12,11 @@ import time
 import pytest
 
 import numpy as np
+from multiprocessing import Pool, TimeoutError, cpu_count
 
 from mmgroup.mm_reduce import mm_reduce_M
 from mmgroup import MM0, MM, MMV
-from multiprocessing import Pool, TimeoutError, cpu_count
+from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
 
 #####################################################################################
 # Auxiliary fuctions
@@ -35,15 +36,14 @@ def mm_pattern(g):
 
 reduce_mm_time = None
 
-REDUCE_MODE = 1
 
-def reduce_mm_C(g, check = True):
+def reduce_mm_C(g, check = True, mode = 0):
     """The fastest reduction procedure for a monster element ``g``"""
     global reduce_mm_time
  
     g1 = np.zeros(256, dtype = np.uint32)
     t_start = time.perf_counter() 
-    res = mm_reduce_M(g._data, g.length, REDUCE_MODE, g1)
+    res = mm_reduce_M(g._data, g.length, mode, g1)
     reduce_mm_time = time.perf_counter() - t_start
     if (res < 0):
         err = "Reduction of element of monster failed"
@@ -68,23 +68,22 @@ def reduce_mm_C(g, check = True):
 def reduce_testcases_C():
     for quality in range(1,16):
         for i in range(2):
-              yield  MM0('r', quality)   
+              yield  MM0('r', quality), i & 1  
     for i in range(4):
-        yield  MM0('r', 16)  
+        yield  MM0('r', 16), i & 1
 
 
-@pytest.mark.mmm
 @pytest.mark.mmgroup
-def test_reduce_mm_C(verbose = 0):
-    for n, g in enumerate(reduce_testcases_C()):
-        g1 = reduce_mm_C(g.copy(), check = False)
+def test_reduce_mm_C(verbose = 1):
+    for n, (g, mode) in enumerate(reduce_testcases_C()):
+        g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
         ok = g == g1
         if verbose:
             print("Test", n + 1)
         if verbose or not ok:
             print("g =", g)
             print("reduced:", g1)
-            print("Time: %.3f ms" % (1000 * mm_order.reduce_mm_time),
+            print("Time: %.3f ms" % (1000 * reduce_mm_time),
                  ", complexity;", g_complexity(g), ",", g_complexity(g1))
         if not ok:
             err = "Reduction of monster group element failed"

@@ -96,15 +96,33 @@
 
 #define MAX_SHORT_ARRAY 892
 
+/* Vector \fv^+\f$ in Leech lattice encoding */
 #define V_START 0x200
 
 
 
+/** 
+   @brief Struct for storing result of function ``analyze_axis``.
 
+   Function ``analyze_axis`` is the workhorse for 
+   function ``mm_reduce_analyze_axis``
+
+   See documentation of function ``mm_reduce_analyze_axis`` for more
+   information.
+*/
 typedef struct {
-    uint32_t axis_type;
-    uint32_t target_axes[2];
-    uint32_t n_leech2;
+    uint32_t axis_type;       /**< Type of the 2A axis */
+    uint32_t target_axes[2];  /**< Types of 2A axes to which this axis can be reducd */
+    uint32_t n_leech2;        /**< Length of array ``v_leech2`` in this struct */
+    /**
+       Component ``v_leech2`` is a array of vectors in the Leech lattice 
+       modulo 2 in Leech lattice encoding.
+
+       We applying the element \f$\tau\f$ to a type-4 vector in this
+       list then we obtain a 2A of a simpler type. The other vectors
+       in this list reveal com information about the 2A axis, which
+       will be documented in future versions.
+    */
     uint32_t v_leech2[MAX_SHORT_ARRAY];
 } axes_reduce_t;
 
@@ -215,14 +233,14 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
   vectors ``v2`` in the Leech lattice mod 2 such that the absolute
   value of the entry of ``v`` corresponding a unit vector labelled
   by ``v2`` is equal to ``value0``. That list is stored
-  in ``pwork.v_short[j], 0 <= j < ``n_short``.
+  in ``p_ax.v_leech2[j], 0 <= j < `p_ax.n_leech2``.
 
   In case ``value1 != 0`` we will store the list of all
   vectors ``v2`` in the Leech lattice mod 2 such that the absolute
   value of the entry of ``v`` corresponding a unit vector labelled
   by ``v2`` is equal to ``value0`` or ``value1` . That list is
-  stored in ``pwork.v_short[j], 0 <= j < ``n_short`` in the same way
-  as in function ``mm_op15_eval_X_find_abs``.
+  stored in ``p_ax.v_leech2[j], 0 <= j < p_ax.n_leech2`` in the 
+  same way as in function ``mm_op15_eval_X_find_abs``.
 */
  
 static inline void get_short(
@@ -247,7 +265,8 @@ static inline void get_short(
   the linear subspace of the Leech lattice mod 2 spanned by ``L``
   as a list of vectors.
 
-  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+  That list is  stored 
+  in ``p_ax.v_leech2[j], 0 <= j < p_ax.n_leech2``.
 */
 static inline void get_span(
     uint_mmv_t *v, 
@@ -276,7 +295,8 @@ static inline void get_span(
   The function returns the radical of ``V`` (i.e. the intersection
   of ``V`` with its orthogonal complement) as a list of vectors.
 
-  That list is  stored in ``pwork.v_short[j], 0 <= j < ``n_short``.
+  That list is  stored 
+  in ``p_ax.v_leech2[j], 0 <= j < p_ax.n_leech2``.
 */
 static inline void get_radical(
     uint_mmv_t *v, 
@@ -294,7 +314,14 @@ static inline void get_radical(
 }
 
 
+/**
+  dd vector to list of vectors in Leech lattice mod 2
 
+  Let ``value`` be a vector in the Leech lattice mod 2. 
+
+  The function adds the vector ``value`` to all vectors in the
+  list ``p_ax.v_leech2[j], 0 <= j < p_ax.n_leech2``.
+*/
 static inline uint32_t xor_entries(
     axes_reduce_t *p_ax,
     int32_t value
@@ -607,7 +634,9 @@ static inline int32_t op_axis(uint32_t *p_axis, uint32_t *a, uint32_t n)
 }
 
 
-
+/**
+  @brief Function is yet to be documented!
+*/
 static inline int32_t transform_v4(
     uint_mmv_t *v, 
     uint32_t v4,
@@ -647,9 +676,9 @@ static inline int32_t transform_v4(
 /////////////////////////////////////////////////////////////////////////
 
 /**
-  @brief Store the 2A axis \f$v^+\f$ or \f$v^-\f$ at a vector in \f$\rho_{15}\f$
+  @brief Load the 2A axis \f$v^+\f$ or \f$v^-\f$ into a vector in \f$\rho_{15}\f$
 
-  The function stores the 2A axis \f$v^+\f$ (in case ``sign == 0``)
+  The function loads the 2A axis \f$v^+\f$ (in case ``sign == 0``)
   or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
   by ``v``. That vector will store an element of the
   representation \f$\rho_{15}\f$ of the monster group as described in
@@ -689,7 +718,12 @@ void  mm_reduce_load_axis(uint_mmv_t *v, uint32_t sign)
 
 #define MM_REDUCE_MARK_ERROR    0x7FFFFF00UL
 
+/**
+   @brief Compute a checksum over a buffer
 
+   The function returns a checksum over the buffer ``r`` of
+   length ``len_r``.
+*/
 static uint32_t checksum(uint32_t *r, uint32_t len_r)
 {
     uint32_t i, sum = 0;
@@ -713,7 +747,11 @@ static uint32_t checksum(uint32_t *r, uint32_t len_r)
 
 
 
+/**
+  @brief Workhirse for function ``mm_reduce_vector_vp``.
 
+  More details are yet to be documented.
+*/
 static int32_t reduce_v_axis(
     uint_mmv_t *v, 
     uint32_t * r, 
@@ -767,19 +805,15 @@ static int32_t reduce_v_axis(
 /// @endcond
 
 
-/*
-  //// Deprecated!!!! ////////////////////////////////////////////////////
-  OLD Comment for function 
-
-int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t std_axis, uint32_t *r)
 
 
-  @brief Reduce a 2A axis in \f$\rho_{15}\f$ in to the standard axis \f$v^+\f$
 
-  Deprecated!!!! This is no longer functional!!!!
+/**
+  @brief Step 1 of the reduction of an element of the monster
 
-  Input ``v`` in this function must refer to a 2A axis \f$v\f$
-  in \f$\rho_{15}\f$ as described in the header of this file.
+  Here input ``v`` of this function must refer to the image of
+  the 2A axis \f$v^+ \in \rho_{15}\f$ under the operation of an 
+  element \f$g\f$ of the monster group.
 
   The function computes an element \f$h\f$ of the monster group
   with   \f$v \cdot h = v^+\f$. We use the method in [Sey22],
@@ -787,28 +821,21 @@ int32_t mm_reduce_v_axis(uint_mmv_t *v, uint32_t std_axis, uint32_t *r)
 
   The function stores \f$h\f$ as a word of generators in the
   array ``r`` as described in the header of this file and returns
-  the length of this word.
+  the length of this word. That word is augmented by some
+  atoms acting as comments 
   
-  The buffer referred by ``r`` should have length at least 64.
+  The buffer referred by ``r`` should have length at least 128.
 
-  Parameter ``std_axis`` is yet to be documented! In the current 
-  version is should be set to ``1``.
+  Parameter ``mode`` is yet to be documented! In the current 
+  version is should be set to ``1``. This means that the function
+  will strictly follow the reduction method in ibid.
 
   A negative return value indicates a fatal error.
-*/
 
+  Parameter ``work`` must refer to a work buffer of size at
+  least ``MM_OP15_LEN_V``.
 
-
-
-/**
-  @brief Step 1 of the reduction of an element of the monster
-
-  Input ``v`` in this function must refer to a 2A axis \f$v\f$
-  in \f$\rho_{15}\f$ as described in the header of this file.
-
-  Yet to be documented!!!!
-
-  Reduce a 2A axis in \f$\rho_{15}\f$ in to the standard axis \f$v^+\f$
+  More details are yet to be documented!!!!
 */
 // %%EXPORT px
 int32_t mm_reduce_vector_vp(uint_mmv_t *v, uint32_t mode, uint32_t *r, uint_mmv_t *work)
@@ -829,9 +856,11 @@ int32_t mm_reduce_vector_vp(uint_mmv_t *v, uint32_t mode, uint32_t *r, uint_mmv_
     }
 }
 
+/// @cond DO_NOT_DOCUMENT 
+
 
 /**
-  @brief Simulate steps of the reduction of an element of the monster
+  @brief Workhorse for function ``mm_reduce_vector_shortcut``.
   
 
   Yet to be documented!!!!
@@ -864,6 +893,10 @@ reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, uint32_t *r
     return len_r;
 }
 
+/// @endcond 
+
+
+
 /**
   @brief Simulate steps of the reduction of an element of the monster
   
@@ -895,9 +928,14 @@ int32_t mm_reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, 
 /// @cond DO_NOT_DOCUMENT 
 
 
-// Make an extra axis check if CHECK_AXIS is #defined
+// In the following function we make an extra axis check if CHECK_AXIS is #defined
 // #define CHECK_AXIS
 
+/**
+  @brief Workhirse for function ``mm_reduce_vector_vm``.
+
+  More details are yet to be documented.
+*/
 static int32_t reduce_v_baby_axis(
     uint_mmv_t *v, 
     uint32_t axis, 
@@ -961,51 +999,38 @@ static int32_t reduce_v_baby_axis(
 /// @endcond 
 
 
-/*
-  //// Deprecated!!!! ////////////////////////////////////////////////////
-  OLD Comment for function 
-
-  Deprecated!!!
-
-int32_t mm_reduce_v_baby_axis(uint_mmv_t *v, uint32_t axis, uint32_t * r)
-
-
-  Input ``v`` in this function must refer to a 2A axis \f$v\f$
-  in \f$\rho_{15}\f$ as described in the header of this file.
-  Also this axis must be orthogonal to the the standard
-  axis \f$v^+\f$. Such an axis is called feasible
-  in [Sey22], Section 8.
-
-  The function computes an element \f$h\f$ of the monster group
-  with  \f$v \cdot h = v^-\f$ and  \f$v^+ \cdot h = v^+\f$. We
-  use the method in loc. cit. for computing \f$h\f$.
-  If no such element \f$h\f$ exists then the function returns
-  an undefined value \f$h\f$.
-
-  The function stores \f$h\f$ as a word of generators in the
-  array ``r`` as described in the header of this file and returns
-  the length of this word.
-
-  Parameter ``axis`` is yet to be documented! In the current 
-  version is should be set to ``0x200``.
-  
-  The buffer referred by ``r`` should have length at least 64.
-
-  A negative return value indicates a fatal error.
-*/
-
 
 
 
 /**
   @brief Step 2 of the reduction of an element of the monster
 
-  Input ``v`` in this function must refer to a 2A axis \f$v\f$
-  in \f$\rho_{15}\f$ as described in the header of this file.
+  This function should be applied immediately after
+  function ``mm_reduce_vector_vp``.
 
-  Yet to be documented!!!!
+  Here input ``v`` of this function must refer to the image of
+  the 2A axis \f$v^- \in \rho_{15}\f$ under the operation of the 
+  same element \f$g\f$ of the monster group as described in the
+  documentation of function ``mm_reduce_vector_vp``.
 
-  Reduce a 2A axis in \f$\rho_{15}\f$ in to the standard axis \f$v^+\f$
+  The function computes an element \f$h\f$ of the monster group
+  with   \f$v \cdot h = v^-\f$. We use the method in [Sey22],
+  Section 8, for computing \f$h\f$. Note that \f$h\f$
+  preserves the 2A axis \f$v^+\f$. 
+
+  The function appends \f$h\f$ as a word of generators to the
+  array ``r`` as described in the header of this file and returns
+  the length of the data in the array ``r``. That information in
+  buffer ``r`` is augmented by some atoms acting as comments.
+  
+  The buffer referred by ``r`` should have length at least 128.
+
+  A negative return value indicates a fatal error.
+
+  Parameter ``work`` must refer to a work buffer of size at
+  least ``MM_OP15_LEN_V``.
+
+  More details are yet to be documented!!!!
 */
 // %%EXPORT px
 int32_t mm_reduce_vector_vm(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
@@ -1051,24 +1076,37 @@ int32_t mm_reduce_vector_vm(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 
 
 /**
-  @brief Step 3 of reducon an element of monster
+  @brief Step 3 of the reduction of an element of the monster
 
-  Yet to be documented!!!!
+  This function should be applied immediately after
+  functions ``mm_reduce_vector_vp`` and ``mm_reduce_vector_vm``.
 
-  Let \f$g\f$ be the element of the monster given as a word of
-  generators in the buffer ``a`` of length ``n``. The function
-  computes an element \f$h\f$ of the monster with
-  \f$g \cdot h \in H\f$. Here \f$H\f$ is a subgroup of the monster
-  of structure \f$2^{2+22}.\mbox{Co}_2\f$ as defined in [Sey22],
-  Section 6. We use the method in ibid. for computing \f$h\f$.
+  Here input ``v`` of this function must refer to the image of
+  the precomputed order vector \f$v_1 \in \rho_{15}\f$ under the 
+  operation of the same element \f$g\f$ of the monster group as 
+  described in the documentation of function ``mm_reduce_vector_vp``.
 
-  The function stores \f$h\f$ as a word of generators in the
+  The function computes an element \f$h\f$ of the monster group
+  with   \f$v \cdot h = v_1\f$. We use the method in [Sey22],
+  Appendix A. for computing \f$h\f$. Note that \f$h\f$
+  preserves the 2A axes \f$v^+\f$ and \f$v^-\f$. 
+
+  The function appends \f$h\f$ as a word of generators to the
   array ``r`` as described in the header of this file and returns
-  the length of this word.
+  the length of the data in the array ``r``. That information in
+  buffer ``r`` is augmented by some atoms acting as comments.
+
+  Finally, the function computes a word in the buffer that
+  is equal to the element \f$g\f$ of the monster group and stores
+  that element in the buffer ``r``. The function returns the 
+  length of data in buffer ``r``. 
   
   The buffer referred by ``r`` should have length at least 128.
 
-  A negative return value indicates a fatal error.  
+  A negative return value indicates a fatal error.
+
+  Parameter ``work`` must refer to a work buffer of size at
+  least ``MM_OP15_LEN_V``.
 */
 // %%EXPORT px
 int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
@@ -1127,7 +1165,7 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
   The buffer referred by ``r`` should have length at least 128.
 
   Parameter ``mode`` should be set to the value 1 for strict
-  compatibility with the reduction process described in [Sey21].
+  compatibility with the reduction process described in [Sey22].
   Other possibilities for parameter ``mode`` will be documented
   in a future version.
 
