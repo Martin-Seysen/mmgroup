@@ -26,7 +26,7 @@ tm = time.strftime("%Y_%m_%d_%H_%M")
 filename = r'Monster_%s.zip' % tm
 
 
-source = r"dist\mmgroup-0.0.1.zip"
+source = r"dist\mmgroup-0.0.7.zip"
 
 zip_path = os.path.join('backup', filename)
 

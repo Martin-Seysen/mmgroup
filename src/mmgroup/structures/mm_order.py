@@ -192,42 +192,6 @@ def check_mm_in_g_x0(g):
     return g
 
 
-###########################################################################
-# Fast reduction of an element of the monster 
-###########################################################################
 
-
-reduce_mm_time = None
-
-def reduce_mm(g, check = True):
-    """The fastest reduction procedure for a monster element ``g``"""
-    global reduce_mm_time
- 
-    g1 = np.zeros(256, dtype = np.uint32)
-    t_start = time.perf_counter() 
-    res = mm_reduce_M(g._data, g.length, g1)
-    reduce_mm_time = time.perf_counter() - t_start
-    if (res < 0):
-        err = "Reduction of element of monster failed"
-        raise ValueError(err)
-    length = res
-    if check:
-        w = mm_vector(15)
-        work = mm_vector(15)
-        mm_order_load_vector(w.data)
-        mm_op15_word(w, g._data, len(g), 1, work)
-        mm_op15_word(w, g1, length, -1, work)
-        mm_order_load_vector(work.data)
-        assert not mm_op15_compare(w, work)
-         
-    g._extend(length)
-    g._data[:length] = g1[:length]
-    g.length = length
-    g.reduced = 0
-    g.reduce()
-    return g
-
-
-        
 
 

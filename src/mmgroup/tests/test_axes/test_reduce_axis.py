@@ -17,17 +17,21 @@ from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
+from mmgroup.mm import mm_vector
 from mmgroup.mm import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
 from mmgroup.mm15 import op_t_A as mm_op15_t_A
 from mmgroup.mm15 import op_compare as mm_op15_compare
+from mmgroup.mm15 import op_copy as mm_op15_copy
 from mmgroup.mm_reduce import mm_reduce_find_type4
-from mmgroup.mm_reduce import mm_reduce_v_axis
-from mmgroup.mm_reduce import mm_reduce_v_baby_axis
-from mmgroup.mm_reduce import mm_reduce_G_x0
 from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+
+from mmgroup.mm_reduce import mm_reduce_load_axis
+from mmgroup.mm_reduce import mm_reduce_vector_vp
+from mmgroup.mm_reduce import mm_reduce_vector_vm
+from mmgroup.mm_reduce import mm_reduce_vector_shortcut
 
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 
@@ -440,7 +444,7 @@ def rand_Co2(quality = 5):
 
 
 ##########################################################################
-# Testing function reduce_axis and C function mm_reduce_v_axis
+# Testing function reduce_axis and C function mm_reduce_vector_vp
 ##########################################################################
 
 
@@ -465,6 +469,23 @@ def make_axis_testcases():
               yield  V_START *  MM0("r", quality), i & 1      
 
 
+ERR_REDUCE_V_AXIS = "Error in function reduce_v_axis_C, status = %d"
+
+
+def reduce_v_axis_C(v, std_axis):
+    va = mm_vector(15, 2)
+    vc, work = va[0].data, va[1].data
+    mm_op15_copy(v.data, vc)    
+    r = np.zeros(200, dtype = np.uint32)
+    res = mm_reduce_vector_vp(vc, std_axis, r, work)
+    if not 0 < res <= 200:
+        raise ValueError(ERR_REDUCE_V_AXIS, res) 
+    g = MM0('a', r[:res])
+    axis_found = r[res - 1]
+    assert axis_found & 0xfe000000 == 0x84000000
+    axis_found &= 0x1ffffff
+    return g, axis_found
+
 
 @pytest.mark.axes
 def test_reduce_axis(verbose = 0):
@@ -488,14 +509,9 @@ def test_reduce_axis(verbose = 0):
             assert axis2 & 0xffffff == 0x200
             assert v_leech2_adjust_sign(v2.data, axis2) == axis2
 
-        vr1 = np.zeros(200, dtype = np.uint32)
-        len_r1 = mm_reduce_v_axis(v.copy().data, std_axis, vr1)
-        assert len_r1 >= 0
-        axis_found = vr1[len_r1 - 1]
-        assert axis_found & 0xfe000000 == 0x84000000
-        assert axis == axis_found & 0x1ffffff  
-        g1 = MM0('a', vr1[:len_r1])
+        g1, axis_found = reduce_v_axis_C(v, std_axis)
         assert g1 == g
+        assert axis == axis_found   
 
 
 
@@ -518,6 +534,26 @@ def rand_BM(quality = 8):
          a *= rand_Co2()
          a *= MM0('t', 'r')
     return a 
+
+ERR_REDUCE_MM_V_BABY_AXIS = ("Error in function mm_reduce_v_baby_axis"
+    ", status = %d")
+
+def mm_reduce_v_baby_axis_C(v, axis = V_START, mode = 0):
+    va = mm_vector(15, 2)
+    vc, work = va[0].data, va[1].data
+    mm_op15_copy(v.data, vc)    
+    r = np.zeros(200, dtype = np.uint32)
+    res = mm_reduce_vector_shortcut(1, mode, axis, r)
+    if res < 0:
+        raise ValueError(ERR_REDUCE_MM_V_BABY_AXIS % res)
+    res = mm_reduce_vector_vm(vc, r, work)
+    if res < 0:
+        raise ValueError(ERR_REDUCE_MM_V_BABY_AXIS % res)
+    g = MM0('a', r[:res])
+    axis_found = r[res - 1]
+    assert axis_found & 0xfe000000 == 0x86000000
+    axis_found &= 0x1ffffff
+    return g, axis_found
 
 
 
@@ -544,6 +580,7 @@ def make_baby_testcases():
 
 
 
+@pytest.mark.mmm
 @pytest.mark.axes
 def test_reduce_baby_axis(verbose = 0):
     for i, (v, axis) in enumerate(make_baby_testcases()):
@@ -564,10 +601,12 @@ def test_reduce_baby_axis(verbose = 0):
         assert  img_axis ^ vt == 0x1000000, (hex(img_axis), hex(vt))
 
 
-        vr1 = np.zeros(200, dtype = np.uint32)
-        len_r1 = mm_reduce_v_baby_axis(v.copy().data, axis, vr1)
-        assert len_r1 >= 0, len_r1
-        g1 = MM0('a', vr1[:len_r1])
+        #vr1 = np.zeros(200, dtype = np.uint32)
+        #len_r1 = mm_reduce_v_baby_axis(v.copy().data, axis, vr1)
+        #assert len_r1 >= 0, len_r1
+        #g1 = MM0('a', vr1[:len_r1])
+        #g1 = mm_reduce_v_baby_axis(v.data, axis)
+        g1, axis_found =  mm_reduce_v_baby_axis_C(v, axis)
 
         ok =  g1 == g 
 
@@ -590,17 +629,32 @@ def test_reduce_baby_axis(verbose = 0):
 
 reduce_time = None
 
+ERR_GX0 = "Error in function mm_reduce_G_x0, status = %d"
+
 def reduce_G_x0(g):
     global reduce_time
-    #assert g.group == MM
+    va = mm_vector(15, 2)
+    v, work = va[0].data, va[1].data
+    mode = 0
     r = np.zeros(256, dtype = np.uint32)
-    t_start = time.perf_counter() 
-    res = mm_reduce_G_x0(g.mmdata, len(g.mmdata), 1, r)
+    g1, n = g.mmdata, len(g.mmdata)
+
+    t_start = time.perf_counter()
+    mm_reduce_load_axis(v, 0);
+    res = mm_op15_word(v, g1, n, 1, work)
+    if res < 0: raise ValueError(ERR_GX0 % res)
+    res = mm_reduce_vector_vp(v, mode, r, work)    
+    if res < 0: raise ValueError(ERR_GX0 % res)
+
+    mm_reduce_load_axis(v, 1);
+    res = mm_op15_word(v, g1, n, 1, work)
+    if res < 0: raise ValueError(ERR_GX0 % res)
+    res = mm_reduce_vector_vm(v, r, work)  
+    if res < 0: raise ValueError(ERR_GX0 % res)
     reduce_time = time.perf_counter() - t_start
-    if res < 0:
-       err = "Error %d in reducing element of monster group"
-       raise ValueError(err % res)
     return MM0('a', r[:res])
+
+
 
 
 def g_complexity(g):
@@ -610,7 +664,7 @@ def g_complexity(g):
 
 def make_reduce_testcases():
     for quality in range(1,17):
-        for i in range(2):
+        for i in range(3):
               yield  MM0('r', quality)      
 
 

@@ -11,6 +11,9 @@ import time
 
 import pytest
 
+import numpy as np
+
+from mmgroup.mm_reduce import mm_reduce_M
 from mmgroup import MM0, MM, MMV
 from multiprocessing import Pool, TimeoutError, cpu_count
 
@@ -24,6 +27,69 @@ for i in [0]: MM_TAGS[i] = ""
 def mm_pattern(g):
     """return string of tags in monster group element"""
     return "".join([MM_TAGS[(a >> 28) & 7] for a in g.mmdata])
+
+
+#####################################################################################
+# Test fast reduction in monster group with C function
+#####################################################################################
+
+reduce_mm_time = None
+
+REDUCE_MODE = 1
+
+def reduce_mm_C(g, check = True):
+    """The fastest reduction procedure for a monster element ``g``"""
+    global reduce_mm_time
+ 
+    g1 = np.zeros(256, dtype = np.uint32)
+    t_start = time.perf_counter() 
+    res = mm_reduce_M(g._data, g.length, REDUCE_MODE, g1)
+    reduce_mm_time = time.perf_counter() - t_start
+    if (res < 0):
+        err = "Reduction of element of monster failed"
+        raise ValueError(err)
+    length = res
+    if check:
+        w = mm_vector(15)
+        work = mm_vector(15)
+        mm_order_load_vector(w.data)
+        mm_op15_word(w, g._data, len(g), 1, work)
+        mm_op15_word(w, g1, length, -1, work)
+        mm_order_load_vector(work.data)
+        assert not mm_op15_compare(w, work)
+         
+    g._extend(length)
+    g._data[:length] = g1[:length]
+    g.length = length
+    g.reduced = 0
+    g.reduce()
+    return g
+
+def reduce_testcases_C():
+    for quality in range(1,16):
+        for i in range(2):
+              yield  MM0('r', quality)   
+    for i in range(4):
+        yield  MM0('r', 16)  
+
+
+@pytest.mark.mmm
+@pytest.mark.mmgroup
+def test_reduce_mm_C(verbose = 0):
+    for n, g in enumerate(reduce_testcases_C()):
+        g1 = reduce_mm_C(g.copy(), check = False)
+        ok = g == g1
+        if verbose:
+            print("Test", n + 1)
+        if verbose or not ok:
+            print("g =", g)
+            print("reduced:", g1)
+            print("Time: %.3f ms" % (1000 * mm_order.reduce_mm_time),
+                 ", complexity;", g_complexity(g), ",", g_complexity(g1))
+        if not ok:
+            err = "Reduction of monster group element failed"
+            raise ValueError(err)
+
 
 
 #####################################################################################

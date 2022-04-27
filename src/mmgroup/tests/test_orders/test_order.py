@@ -15,7 +15,7 @@ ref_space = MMV(3)
 ref_group = MM0
 
 from mmgroup.structures import mm_order
-from mmgroup.structures.mm_order import reduce_mm
+#from mmgroup.structures.mm_order import reduce_mm
 
 ########################################################################
 # Computing the order of a group element using a random vector
@@ -185,40 +185,6 @@ def test_equality(verbose = 0):
    
 
 
-
-###########################################################################
-# Test fast reduction of an element of the monster 
-###########################################################################
-
-
-def make_reduce_testcases():
-    for quality in range(1,16):
-        for i in range(2):
-              yield  MM0('r', quality)   
-    for i in range(4):
-        yield  MM0('r', 16)  
-
-def g_complexity(g):
-    s = [x for x in g.data if x & 0x70000000 == 0x50000000]
-    return len(s)
-
-
-
-@pytest.mark.orders
-def test_reduce_G_x0(verbose = 0):
-    for n, g in enumerate(make_reduce_testcases()):
-        g1 = reduce_mm(g.copy(), check = False)
-        ok = g == g1
-        if verbose:
-            print("Test", n + 1)
-        if verbose or not ok:
-            print("g =", g)
-            print("reduced:", g1)
-            print("Time: %.3f ms" % (1000 * mm_order.reduce_mm_time),
-                 ", complexity;", g_complexity(g), ",", g_complexity(g1))
-        if not ok:
-            err = "Reduction of group element failed"
-            raise ValueError(err)
 
 
 

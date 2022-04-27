@@ -547,7 +547,7 @@ class MMGroup(AbstractMMGroup):
                 import_mm_order_functions() 
             if copy:
                 g2 = self.word_type()
-                length = mm_reduce_M(g1._data, g1.length, g2._data)
+                length = mm_reduce_M(g1._data, g1.length, 1, g2._data)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE % length)
                 g2.length = length
@@ -555,7 +555,7 @@ class MMGroup(AbstractMMGroup):
                 return g2
             else:
                 a = np.zeros(128, dtype = np.uint32)
-                length = mm_reduce_M(g1._data, g1.length, a)
+                length = mm_reduce_M(g1._data, g1.length, 1, a)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE % length)
                 g1._setdata(a[:length])
