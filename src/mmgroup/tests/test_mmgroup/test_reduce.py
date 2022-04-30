@@ -74,7 +74,7 @@ def reduce_testcases_C():
 
 
 @pytest.mark.mmgroup
-def test_reduce_mm_C(verbose = 1):
+def test_reduce_mm_C(verbose = 0):
     for n, (g, mode) in enumerate(reduce_testcases_C()):
         g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
         ok = g == g1

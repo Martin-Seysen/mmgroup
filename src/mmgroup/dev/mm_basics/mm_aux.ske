@@ -1677,7 +1677,7 @@ uint32_t mm_aux_index_intern_to_sparse(uint32_t i)
   vector ``mv`` with modulus ``p``. Here ``i`` must be an index
   referring to a vector of type 2 in the Leech lattice modulo 2
   in **Leech lattice encoding**. The sign bit 24 of ``i`` is
-  ignored. The return value is reduced modulo ``p``.
+  evaluated as expected. The return value is reduced modulo ``p``.
 
   The function returns a negative value if ``i`` is not a vector of
   type 2 in the Leech lattice modulo 2 or ``p`` is not a legal modulus.
@@ -1687,6 +1687,7 @@ int32_t mm_aux_get_mmv_leech2(uint32_t p, uint_mmv_t *mv, uint32_t v2)
 {
     uint32_t ind = mm_aux_index_leech2_to_sparse(v2 & 0xffffffUL);
     if (ind == 0 || mm_aux_bad_p(p)) return -1; 
+    ind += (0 - ((v2 >> 24) & 1)) & p;
     mm_aux_mmv_extract_sparse(p, mv, &ind, 1);    
     return ind & p;
 }
