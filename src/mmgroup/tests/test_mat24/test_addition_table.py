@@ -21,7 +21,7 @@ from mmgroup.bitfunctions import bitlen, bitweight, hibit, v2
 from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.mat24.make_addition_table import make_addition_operations
 from mmgroup.dev.mat24.make_addition_table import check_addition_operations
-from mmgroup.dev.mat24.make_addition_table import display_addition_operation
+from mmgroup.dev.mat24.make_addition_table import display_addition_operations
 from mmgroup.dev.mat24.make_addition_table import BitMatrixMulFix
 
 

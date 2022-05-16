@@ -228,6 +228,32 @@ def apply_perm(v, src, dest, n, log_list, verbose = 0):
         )
     return v_out
 
+
+#####################################################################
+# Find and apply permutations in Mat24
+#####################################################################
+
+OCTAD = [0,1,2,3,4, 8,9]
+
+def find_octad_permutation(v, result, verbose = 0):
+    coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff
+    w = mat24.gcode_weight(v >> 12) 
+    vect = mat24.gcode_to_vect((v ^ ((w & 4) << 21)) >> 12)
+    src = mat24.vect_to_list(vect, 5)
+    syn =  mat24.cocode_syndrome(coc, src[0]) & ~vect
+    if syn:
+        v5 = (1 << src[0]) | (1 << src[1]) | (1 << src[2])
+        v5 |= syn 
+        special = mat24.syndrome(v5, 24);
+        src = src[:3]
+        src.append(mat24.lsbit24(special & vect))
+        src.append(mat24.lsbit24(vect & ~(special | v5)))
+        src.append(mat24.lsbit24(syn))  
+        syn &= ~(1 << src[-1])
+        src.append(mat24.lsbit24(syn))  
+    return apply_perm(v, src, OCTAD, len(src), result, verbose)
+
+
 #####################################################################
 # Function reduce_type_2
 #####################################################################
@@ -314,6 +340,7 @@ def reduce_type2(v, verbose = 1):
             v = gen_leech2_op_atom(v, exp)
             result.append(exp)
     raise ValueError("WTF1")
+
 #####################################################################
 # Test function reduce_type_2
 #####################################################################
@@ -579,19 +606,7 @@ def reduce_type4_std(v, verbose = 0):
         elif vtype in [0x42, 0x44]:
             exp = xi_reduce_octad(v)            
             if exp < 0:
-                w = mat24.gcode_weight(v >> 12) 
-                vect = mat24.gcode_to_vect((v ^ ((w & 4) << 21)) >> 12)
-                src = mat24.vect_to_list(vect, 4)
-                syn =  mat24.cocode_syndrome(coc, src[0]) & ~vect
-                if syn:
-                    v5 = (1 << src[0]) | (1 << src[1]) | (1 << src[2])
-                    v5 |= syn 
-                    special = mat24.syndrome(v5, 24);
-                    src[3] = mat24.lsbit24(special & vect)
-                    src.append(mat24.lsbit24(syn))  
-                    syn &= ~(1 << src[4])
-                    src.append(mat24.lsbit24(syn))  
-                v = apply_perm(v, src, LSTD, len(src), result, verbose)
+                v = find_octad_permutation(v, result, verbose)
                 exp = xi_reduce_octad(v) 
                 assert exp >= 0
             vtype = 0x40

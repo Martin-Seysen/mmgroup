@@ -421,7 +421,7 @@ def check_addition_operations(m, ops, singleton = False):
 #######################################################################
 
 
-def display_addition_operation(ops):
+def display_addition_operations(ops):
     """Display result of function ``make_addition_operations``
 
     Let ``ops`` be a result of a call to function 

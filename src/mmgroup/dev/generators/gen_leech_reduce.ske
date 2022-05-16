@@ -304,7 +304,73 @@ int32_t apply_perm(
 
 /// @endcond  
 
+/*************************************************************************
+*** Auxiliary functions to find and apply permutations in Mat24
+*************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+/** @brief Find a suitable permutation for an octad.
+
+  Let ``v`` be a vector in the Leech lattice mod 2 in Leech 
+  lattice encoding. In this function we require that the
+  Golay code part of ``v`` is a (possibly complemented) 
+  octad ``o``. The cocode part ``c`` of ``v`` must be even.
+
+  We compute a permutation that maps octad ``o`` to the standard
+  octad (0,1,2,3,4,5,6,7). If the cocode part ``c`` of ``v`` is 
+  not a suboctad of octad ``o`` then we map (one shortest 
+  representative of) ``c`` into the set (0,1,2,3,...7,8,9). 
+
+  We use function ``apply_perm`` in this file for finally computing
+  the the requested permutaiton and for storing that permutation
+  in the integer referred by ``p_res``. Return value is as in
+  function ``apply_perm``.
+*/
+static inline uint32_t find_octad_permutation(uint32_t v, uint32_t *p_res)
+{
+    static uint8_t OCTAD[7] = {0,1,2,3,4, 8,9};
+    uint8_t src[8];
+    uint32_t theta, w, vect, coc, syn, n, v5, tab, special;
+    // Here ``v`` is a (possibly complemented) octad.
+    // Put ``w = 0`` if v is an octad and ``w = 1`` otherwise.
+    theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+    w = ((theta >> 13) ^ (v >> 23) ^ 1) & 1;
+    // Store octad as a bit vector in ``vect``.
+    vect = mat24_def_gcode_to_vect((v ^ (w << 23)) >> 12);
+    // Store the first five entries of octad in ``src``.
+    mat24_vect_to_list(vect, 5, src);
+    // Let ``syn`` be the syndrome of the cocode part, as a bit
+    // vector, excluding the entries covered by the octad
+    coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
+    syn = mat24_cocode_syndrome(coc, src[0]) & ~vect;
+    n = 5;  // No of permutation entries for apply_perm
+    if (syn) {
+        // Here ``syn`` contains two bits. 
+        // Let ``v5`` be the vector of the first 3 bits of the octad.
+        v5 = (1 << src[0]) | (1 << src[1]) | (1 << src[2]);
+        // Get syndrome of the union of ``syn`` and ``v5``. Store 
+        // that syndrome (of bit weight 3) in variable ``special``.
+        coc = mat24_vect_to_cocode(v5 | syn);
+        tab = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+        special = mat24_def_syndrome_from_table(tab);
+        // Store intersection of octad and syndrome ``special`` in 
+        // src[3]. This intersection is always a singleton.
+        src[3] = (uint8_t)(mat24_lsbit24(special & vect));
+        // Store another bit of the octad in src[4]. 
+        src[4] = (uint8_t)(mat24_lsbit24(vect & ~(special | v5))); 
+        // Store syndrome ``syn`` in src[5] and src[6].
+        src[5] = (uint8_t)(mat24_lsbit24(syn));  
+        syn &= ~(1 << src[5]);
+        src[6] = (uint8_t)(mat24_lsbit24(syn)); 
+        // Compute the permutation that maps the first 7 entries
+        // of ``src`` to the entries given by ``OCTAD``.
+        n = 7;
+   }
+   return apply_perm(v, src, OCTAD, n, p_res);
+}
+
+/// @endcond  
 
 
 /*************************************************************************
@@ -680,35 +746,7 @@ reduce_type4(uint32_t v, uint32_t vtype, uint32_t *pg_out)
                 // Map v to a vector of subtype 40
                 // Perform a permutation on v if necessary
                 if ((exp = xi_reduce_octad(v)) < 0) {
-                    uint8_t src[8];
-                    uint32_t theta, w, vect, syn, n, v5, tab, special;
-                    // Now v is a (possibly complemented) octad.
-                    // Put w = 0 if v is an octad and w = 1 otherwise.
-                    theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
-                    w = ((theta >> 13) ^ (v >> 23) ^ 1) & 1;
-                    // Store octad as a bit vector in ``vect``
-                    vect = mat24_def_gcode_to_vect((v ^ (w << 23)) >> 12);
-                    // Store the first four entries of octad in src
-                    mat24_vect_to_list(vect, 4, src);
-                    // Let syn be the syndrome of the cocode part, 
-                    // excluding the entries covered by the octad
-                    syn = mat24_cocode_syndrome(coc, src[0]) & ~vect;
-                    n = 4;  // No of permutation entries for apply_perm
-                    if (syn) {
-                        // Get syndrome of these 3 bits and bits 2,3 in 
-                        // table 'tab'.
-                        v5 = (1 << src[0]) | (1 << src[1]) | (1 << src[2]);
-                        coc = mat24_vect_to_cocode(v5 | syn);
-                        tab = MAT24_SYNDROME_TABLE[coc & 0x7ff];
-                        special = mat24_def_syndrome_from_table(tab);
-                        // Store lowest bit of syndrome in src[7]
-                        src[3] = (uint8_t)(mat24_lsbit24(special & vect));
-                        src[4] = (uint8_t)(mat24_lsbit24(syn));  
-                        syn &= ~(1 << src[4]);
-                        src[5] = (uint8_t)(mat24_lsbit24(syn)); 
-                        n = 6;
-                    }
-                    res = apply_perm(v, src, LSTD, n, pg_end++);
+                    res = find_octad_permutation(v, pg_end++);
                     if (res < 0) return ERR_T4(ERR_PERM, res);
                     v = res;
                     // Now we may calculate a suitable exponent of xi
@@ -899,6 +937,117 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
 
 
+
+/*************************************************************************
+*** Start reducing Leech lattice vector modulo N_x0
+*************************************************************************/
+
+/** 
+  @brief Compute permutation for **reducing** Leech lattice vector
+
+  Given a vector ``v`` in the Leech lattice mod 2, in Leech
+  lattice encoding, we want to find a standard representative 
+  of the class \f$v N_{x0}\f$.
+
+  The first step for obtaining such a representative is to compute
+  a permutation  \f$\pi\f$ in the Mathieu group \f$M_{24}\f$ that
+  maps \f$v\f$ to a standard form. This function writes such
+  permutation (as a single generator of the monster group) into the
+  integer referred by ``pg_out``. It returns the type of a
+  vector ``v`` in the same way as in function ``gen_leech2_type``
+  in module ``gen_leech.c``.
+
+  Such a function is not strictly needed in the current version
+  of the project, but implementing it elsewhere would lead to a
+  lot of duplication.
+
+  Here are some more details about the computed permutation \f$\pi\f$.
+
+  Strictly speaking, \f$\pi\f$ is an automorphism of the Parker
+  loop, but here we consider the action of \f$\pi\f$ as a
+  permutation in \f$M_{24}\f$ only.
+
+  Let \f$v = g + c\f$, where \f$g\f$  is the Golay code part
+  of \f$v\f$, and \f$c\f$  is the cocode part  of \f$v\f$.
+  Thus \f$g\f$ corresponds to an generator \f$x_d\f$, and \f$c\f$
+  corresponds to a generator \f$x_\delta\f$ of the extraspecial
+  2 group \f$Q_{x0}\f$.
+
+  If \f$c\f$ is odd then \f$c\f$ is mapped to the cocode element
+  ``(0)``, or ``(1,2,3)``, depending on its bit weight.
+
+  For an even cocode element \f$c\f$ we proceed as follows:
+
+  A dodecad \f$g\f$ is mapped to the standard
+  dodecad ``(0,4,8, 13,14,15, 17,18,19, 21,22,23)``.
+
+  Am octad \f$g\f$ is mapped to the standard
+  octad ``(0,1,2,3,4,5,6,7)``. If ``c`` is not a suboctad of ``g``
+  then we map (one shortest representative of) ``c`` into the
+  set ``(0,1,2,3,4,5,6,7,8,9)``.
+
+  If \f$g \in \{0, \Omega\}\f$ then  \f$c\f$ is  is mapped to the
+  cocode element ``(2,3)``, or to ``(0,1,2,3)``, or to zero,
+  depending on its bit weight.
+*/
+// %%EXPORT px
+int32_t gen_leech2_reduce_perm(uint32_t v, uint32_t *pg_out)
+{
+    int32_t vtype, subtype, res; 
+    static uint8_t DODECAD[12] = {0,4,8, 13,14,15, 17,18,19, 21,22,23};
+
+    vtype = gen_leech2_subtype(v);
+    subtype = vtype & 0xf;
+ 
+    *pg_out = 0xA0000000;    
+    switch (subtype) {
+        case 1:
+        case 3:
+        {
+            uint8_t src[3];
+            uint32_t coc, tab;
+            coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
+            tab = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+            src[0] = tab & 31; src[1] = (tab >> 5) & 31;
+            src[2] = (tab >> 10) & 31;
+            if (src[1] < 24) res = apply_perm(v, src, LSTD+1, 3, pg_out);
+            else res = apply_perm(v, src, LSTD, 1, pg_out);
+            return res < 0 ? -1 : vtype;
+        }
+        case 6:
+        {
+            uint8_t pi[24], src[12];
+            uint32_t vect = mat24_def_gcode_to_vect(v >> 12);
+            mat24_vect_to_list(vect, 12, src);
+            res = mat24_perm_from_dodecads(DODECAD, src, pi);
+            if (res < 0) return -1;
+            *pg_out = 0xA0000000 + mat24_perm_to_m24num(pi);
+            return vtype;
+        }
+        case 2:
+        case 4:
+        {
+            res = find_octad_permutation(v, pg_out);
+            return res < 0 ? -1 : vtype;
+        }
+        case 0:
+        {
+            uint8_t src[4];
+            uint32_t syn;
+            if ((v & 0x7ff) == 0) return vtype;
+            syn = mat24_cocode_syndrome(v & 0x7ff, 0);
+            mat24_vect_to_list(syn, 4, src);
+            if (mat24_bw24(syn) == 2) {
+                res = apply_perm(v, src, LSTD + 2, 2, pg_out);
+            } else {
+                res = apply_perm(v, src, LSTD, 4, pg_out);
+            }
+            return res < 0 ? -1 : vtype;           
+        }
+        default:
+            return vtype;
+    } 
+}
 
 
 

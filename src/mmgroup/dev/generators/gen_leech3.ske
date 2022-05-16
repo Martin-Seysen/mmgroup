@@ -557,7 +557,7 @@ uint64_t gen_leech3to2_type3(uint64_t v3)
 
 
 /**
-  @brief Special case of fucntion ``gen_leech3_op_vector_word``
+  @brief Special case of function ``gen_leech3_op_vector_word``
 
   For internal purposes only. This is equivalent to
   ``gen_leech3_op_vector_word(v3, g)``, where ``g`` encodes
