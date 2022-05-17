@@ -45,7 +45,7 @@ extern "C" {
 /// @cond DO_NOT_DOCUMENT 
 
 
-#define DEBUG
+//  #define DEBUG
 
 static int32_t inline err(
     int32_t  function,  // Number of function and subfunction
@@ -310,12 +310,16 @@ int32_t apply_perm(
 
 /// @cond DO_NOT_DOCUMENT 
 
+static uint8_t OCTAD[7] = {0,1,2,3,4, 8,9};
+
+
 /** @brief Find a suitable permutation for an octad.
 
   Let ``v`` be a vector in the Leech lattice mod 2 in Leech 
   lattice encoding. In this function we require that the
   Golay code part of ``v`` is a (possibly complemented) 
-  octad ``o``. The cocode part ``c`` of ``v`` must be even.
+  octad ``o``. The cocode part ``c`` of ``v`` must be even
+  and the scalar product of ``o`` and ``c`` must be 0.
 
   We compute a permutation that maps octad ``o`` to the standard
   octad (0,1,2,3,4,5,6,7). If the cocode part ``c`` of ``v`` is 
@@ -323,13 +327,12 @@ int32_t apply_perm(
   representative of) ``c`` into the set (0,1,2,3,...7,8,9). 
 
   We use function ``apply_perm`` in this file for finally computing
-  the the requested permutaiton and for storing that permutation
+  the the requested permutation and for storing that permutation
   in the integer referred by ``p_res``. Return value is as in
   function ``apply_perm``.
 */
 static inline uint32_t find_octad_permutation(uint32_t v, uint32_t *p_res)
 {
-    static uint8_t OCTAD[7] = {0,1,2,3,4, 8,9};
     uint8_t src[8];
     uint32_t theta, w, vect, coc, syn, n, v5, tab, special;
     // Here ``v`` is a (possibly complemented) octad.
@@ -369,6 +372,59 @@ static inline uint32_t find_octad_permutation(uint32_t v, uint32_t *p_res)
    }
    return apply_perm(v, src, OCTAD, n, p_res);
 }
+
+
+
+/** @brief Find a suitable permutation for an octad.
+
+  Similar to function ``find_octad_permutation``.
+  Here ``v, o, c`` are as in that function; but the scalar
+  product of ``o`` and ``c`` must be 1. Apart from that
+  operation is as in function ``find_octad_permutation``.
+
+  We compute a permutation that maps octad ``o`` to the standard
+  octad (0,1,2,3,4,5,6,7). If the cocode part ``c`` of ``v`` is 
+  not a suboctad of octad ``o`` then we map (one shortest 
+  representative of) ``c`` into the set (0,1,2,3,...7,8). 
+*/
+static inline uint32_t find_octad_permutation_odd(uint32_t v, uint32_t *p_res)
+{
+    uint8_t src[8], sextet[24];
+    uint32_t theta, w, vect, coc, syn, i, special;
+    // Here ``v`` is a (possibly complemented) octad.
+    // Put ``w = 0`` if v is an octad and ``w = 1`` otherwise.
+    theta = MAT24_THETA_TABLE[(v >> 12) & 0x7ff];
+    w = ((theta >> 13) ^ (v >> 23) ^ 1) & 1;
+    // Store octad as a bit vector in ``vect``.
+    vect = mat24_def_gcode_to_vect((v ^ (w << 23)) >> 12);
+    // Store the first five entries of octad in ``src``.
+    mat24_vect_to_list(vect, 5, src);
+    // Let ``syn`` be the syndrome of the cocode part as a bit vector.
+    // Put ``syn`` = 0xff000000 if the syndrome has bit weight 4.
+    coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
+    syn = mat24_cocode_syndrome(coc, 24);
+    // If syndrome has weight 4 then find the tetrad of the 
+    // corresponding sextet intersecting with the octad in more 
+    // than one entry. Store that tetrad in ``syn``.
+    if (syn & 0xff000000) {
+         mat24_cocode_to_sextet(coc, sextet);
+         for (i = 0; i < 24; i += 4) {
+             syn = (1 << sextet[i]) |  (1 << sextet[i+1])
+                | (1 << sextet[i+2]) |  (1 << sextet[i+3]);
+             special = syn & vect;
+             if (vect & (vect - 1)) break;
+         }
+    }
+    // revove entries of the octad from ``syn``. 
+    syn &= ~vect;
+    // Now ``syn`` is a singleton. Store that entry in src[5]
+    src[5] = (uint8_t)(mat24_lsbit24(syn));  
+    // Compute the permutation that maps the first 6 entries
+    // of ``src`` to the entries given by ``OCTAD``.
+    return apply_perm(v, src, OCTAD, 6, p_res);
+}
+
+
 
 /// @endcond  
 
@@ -704,7 +760,7 @@ static int32_t
 reduce_type4(uint32_t v, uint32_t vtype, uint32_t *pg_out)
 {
     uint32_t *pg_end = pg_out; // pointer to end of word g
-    uint32_t  vtype_start;     // subtype of input vector v
+    uint32_t  vtype_start = vtype; // subtype of input vector v
     uint32_t  coc;             // Cocode part of v in cocode rep
     uint32_t  round;           // main round counter
     int32_t   exp;             // exponent of \f$xi\f$
@@ -984,7 +1040,8 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
   Am octad \f$g\f$ is mapped to the standard
   octad ``(0,1,2,3,4,5,6,7)``. If ``c`` is not a suboctad of ``g``
   then we map (one shortest representative of) ``c`` into the
-  set ``(0,1,2,3,4,5,6,7,8,9)``.
+  set ``(0,1,2,3,4,5,6,7,8,9)``, using entry ``9`` only if the
+  scalar product of ``o`` and ``c`` is 0.
 
   If \f$g \in \{0, \Omega\}\f$ then  \f$c\f$ is  is mapped to the
   cocode element ``(2,3)``, or to ``(0,1,2,3)``, or to zero,
@@ -1027,21 +1084,19 @@ int32_t gen_leech2_reduce_perm(uint32_t v, uint32_t *pg_out)
         case 2:
         case 4:
         {
-            res = find_octad_permutation(v, pg_out);
+            res = (vtype == 0x34) ? find_octad_permutation_odd(v, pg_out)
+                                  : find_octad_permutation(v, pg_out);
             return res < 0 ? -1 : vtype;
         }
         case 0:
         {
             uint8_t src[4];
-            uint32_t syn;
+            uint32_t syn, j;
             if ((v & 0x7ff) == 0) return vtype;
             syn = mat24_cocode_syndrome(v & 0x7ff, 0);
             mat24_vect_to_list(syn, 4, src);
-            if (mat24_bw24(syn) == 2) {
-                res = apply_perm(v, src, LSTD + 2, 2, pg_out);
-            } else {
-                res = apply_perm(v, src, LSTD, 4, pg_out);
-            }
+            j = mat24_bw24(syn) & 2;
+            res = apply_perm(v, src, LSTD + j, 4 - j, pg_out);
             return res < 0 ? -1 : vtype;           
         }
         default:
