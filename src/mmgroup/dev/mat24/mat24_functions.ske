@@ -1063,6 +1063,125 @@ uint32_t mat24_suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2)
 
 
 /*************************************************************************
+*** Represent a cocode element as a subset of a docecad
+*************************************************************************/
+
+/** 
+  @brief Represent a cocode element as a subset of a docecad
+
+  Given a Golay cocode element ``c1`` (in ``cocode`` representation)
+  and a dodecad ``v1`` (in ``gcode`` representation), the function
+  returns a bit vector ``c_out`` equivalent to the cocode word ``c1``,
+  which is a subset of the dodecad ``d1``. This is possible if the 
+  scalar product of ``c1`` and the complement of ``v1`` is even. 
+  Otherwise the function fails.
+
+  The user may specify a bit position ``0 <= u_single < 24`` disjoint
+  from the bits of dodecad ``d1``. Then that bit of the return value
+  ``c_out`` will be set if the scalar product mentioned above is odd, 
+  and the function succeeds also in this case.
+
+  The intersection of ``c_out`` with ``v1`` has bit weight at  most 6. 
+  If that bit weight is equal to 6 then ``c_out`` contains the
+  least significant bit of the bit vector corresponding to ``v1``. 
+
+  The function fails if ``v1`` is not a dodecad. It
+  returns ``(uint32_t)(-1)`` in case of failure.
+*/
+// %%EXPORT p
+uint32_t mat24_cocode_as_subdodecad(uint32_t c1, uint32_t v1, uint32_t u_single)
+{
+    uint32_t vect1, lsb, syn, res, i, w;
+    uint32_t single = 0;
+    uint8_t b[24];
+    uint32_t coc[9];
+    
+    // Fail if ``v1`` is not a dodecad.
+    if ((MAT24_THETA_TABLE[v1 & 0x7ff] & 0x1000) == 0) 
+        return (uint32_t)(0-1);
+    // Let ``vect1`` be the bit vector corresponding to ``v1``.
+    vect1 = mat24_def_gcode_to_vect(v1);
+    // Compute syndrome of cocode element ``c1`` in ``syn``.
+    // If syndrome has weight 4, it will intersect with ``vect1``.
+    lsb = mat24_def_lsbit24(vect1); // lowest bit of bit vector ``vect1``
+    syn = mat24_cocode_syndrome(c1, lsb);
+    // Abort if computation of syndrome has failed.
+    if (syn & 0xff000000) return  (uint32_t)(0-1);
+    // Put ``res = syn & vect1, syn = syn & ~vect1``.
+    // So ``res`` is the part of the syndrome already done, and ``syn``
+    // is the part of the syndrome yet to be processed.
+    res = syn & vect1; syn = syn & ~vect1;
+    // If syn has odd bit weight then we try to improve this
+    if (mat24_bw24(syn) & 1)  {
+        // Try to change the bit of ``syn`` at position ``u_single``.
+        // Remember correction in variable ``single``.
+        if (u_single >= 24 || (single = 1 << u_single) & vect1)
+            return (uint32_t)(0-1);
+        syn ^= single;
+    }
+
+    // Store the i-th entry of docecad ``vect1`` in ``b[i]``
+    // and the cocode element corresponding to that entry in 
+    // ``coc[i]`` in cocode representation. 
+    // Here we drop the parity bit 11 in ``coc[i]``.
+    // It suffices to compute the first 9 entries.
+    mat24_vect_to_bit_list(vect1, b);
+    for (i = 0; i <= 8; ++i) {
+        coc[i] = MAT24_RECIP_BASIS[b[i] & 0x1f] & 0x7ff; 
+    }
+
+    // Now the unprocessed syndrome ``syn`` has bit weight 0, 2 or 4.
+    while (syn) {
+        uint32_t syn2, j, u0, u1, u2, tab, syn1, c;
+        // Deal with syndrome ``syn`` of bit weight 2 or 4.
+        // Move the lowest two bits from ``syn`` to ``syn2``,
+        // and delete these two bits from ``syn``.
+        syn2 = syn & -syn;
+        syn &= ~syn2;
+        syn2 |= syn & -syn;
+        syn &= ~syn2;
+        // Now deal with the element ``syn2`` of  bit weight 2.
+        // For ``1 <= i < j <= 8`` do the following:
+        // Put ``u2 = syn2 ^ v1[0] ^ v1[i] ^ v1[j]``, where ``v1[k]`` is
+        // the ``k``-th entry of the dodecad ``v1``. We compute ``u2`` 
+        // in cocode representation, dropping the parity bit.
+        // Let ``syn1`` be the syndrome cocode element ``u2``, which
+        // has always bit weight 3. We are successful if ``syn1`` is 
+        // a subset of ``vect``; then we proceed as described below.
+        u0 = (mat24_vect_to_cocode(syn2) ^ coc[0]) & 0x7ff;
+        for (i = 1; i <= 7; ++i) {
+            u1 = u0 ^ coc[i];
+            for (j = i + 1; j <= 8; ++j) {
+                u2 = u1 ^ coc[j];
+                // Compute syndrome ``syn1`` of ``u2`` as described above.
+                tab =  MAT24_SYNDROME_TABLE[u2];
+                syn1 = mat24_def_syndrome_from_table(tab);
+                // Success if ``syn1`` is a subset of ``vect1``.
+                if ((syn1 & vect1) == syn1) {
+                    // Then we compute a bit vector ``c`` equivalent to
+                    // ``syn2``, such that ``c`` is a subset of ``vect1``.
+                    c = syn1 ^ (1 << b[0]) ^ (1 << b[i]) ^ (1 << b[j]);
+                    // We add ``c`` (instead of ``syn2``) to ``res`` .
+                    res ^= c;
+                    // Now we are done with this round of the main loop.
+                    goto loop_end;
+                }
+            }           
+        }
+        // Fail if no suitable syndrome ``syn1`` has been found.
+        return (uint32_t)(0-1);
+ loop_end:
+        ;
+    }
+    // Here we arrive in case of success with result ``res ^ single``.
+    // Complement ``res`` inside dodecad ``vect1`` if neccesary. 
+    w = mat24_bw24(res);   // bit weight of ``res``
+    if (w > 6 || (w == 6 && (res & (1 << lsb)) == 0)) res ^= vect1;
+    return res ^ single;
+}
+
+
+/*************************************************************************
 *** Parker Loop
 *************************************************************************/
 
@@ -2189,6 +2308,9 @@ uint32_t mat24_perm_from_dodecads(uint8_t *d1, uint8_t *d2, uint8_t *p_out)
             || mat24_perm_from_heptads(h1, h2, p_out)) 
             ? (uint32_t)(-1) : 0;
 }
+
+
+
 
 
 /*************************************************************************

@@ -256,6 +256,19 @@ def suboctad_scalar_prod(uint32_t u_sub1, uint32_t u_sub2):
     return mat24_suboctad_scalar_prod(u_sub1, u_sub2)
 
 ###########################################################################
+# Represent a cocode element as a subset of a docecad
+###########################################################################
+
+def cocode_as_subdodecad(uint32_t c1, uint32_t v1, uint32_t u_single = 24):
+    cdef uint32_t res
+    res =  mat24_cocode_as_subdodecad(c1, v1, u_single)
+    if res & 0xff000000:
+        err = "Cocode element is not a subset of the docecad"
+        raise ValueError(err)
+    return res
+
+
+###########################################################################
 # Parker Loop
 ###########################################################################
 
