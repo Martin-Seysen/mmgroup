@@ -73,7 +73,7 @@ def random_subdodecad(gc, odd=False):
 
 
 def get_testdata(gc):
-    for i in range(200):
+    for i in range(400):
         for odd in (0, 1):
             yield random_subdodecad(gc, odd)
 
@@ -84,7 +84,7 @@ def get_testdata(gc):
 
 
 @pytest.mark.mat24
-def test_dodecad_function(gc = mat24, verbose = False):
+def test_subdodecad(gc = mat24, verbose = 0):
     for n, (d, c, i)  in enumerate(get_testdata(gc)):
         ok = True
         try:
