@@ -54,9 +54,7 @@ uint32_t gen_leech2_mul(uint32_t x1, uint32_t x2)
 {
     uint_fast32_t scalar;      
     scalar = (x2 >> 12) &  x1 & 0xfff;
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    scalar = (0x96 >> (scalar & 7)) & 1;
+    mat24_def_parity12(scalar);
     x1 ^= x2 ^ (scalar << 24);
     return x1;
 }
@@ -76,9 +74,8 @@ uint32_t gen_leech2_pow(uint32_t x1, uint32_t e)
     x1 &= 0x1ffffff;
     if (e & 2) {
         scalar = (x1 >> 12) &  x1 & 0xfff;
-        scalar ^= scalar >> 6;
-        scalar ^= scalar >> 3;
-        scalar = ((0x96 >> (scalar & 7)) & 1) << 24;
+        mat24_def_parity12(scalar);
+        scalar <<= 24;
     }
     return (e & 1) ? x1 ^ scalar : scalar;
 }
@@ -97,10 +94,9 @@ uint32_t gen_leech2_pow(uint32_t x1, uint32_t e)
 uint32_t gen_leech2_scalprod(uint32_t x1, uint32_t x2)
 {
     uint_fast32_t scalar; 
-    scalar = (((x1 >> 12) & x2) ^ ((x2 >> 12) & x1)) & 0xfff;    
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    return (0x96 >> (scalar & 7)) & 1;
+    scalar = (((x1 >> 12) & x2) ^ ((x2 >> 12) & x1)) & 0xfff; 
+    mat24_def_parity12(scalar);
+    return scalar;
 }
 
 
@@ -219,9 +215,7 @@ uint32_t gen_leech2_subtype(uint64_t v2)
     coc = (v2 ^ theta) & 0xfff;
     // Put scalar = scalar product (code, cocode)
     scalar = (v2 >> 12) &  v2 & 0xfff;
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    scalar = (0x96 >> (scalar & 7)) & 1;
+    mat24_def_parity12(scalar);
 
     syn =  MAT24_SYNDROME_TABLE[coc & 0x7ff];
 
@@ -286,9 +280,8 @@ uint32_t gen_leech2_type(uint64_t v2)
 
     // Return 3 if scalar product <code, cocode> is odd
     scalar = (v2 >> 12) &  v2;
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    if ((0x96 >> (scalar & 7)) & 1) return 3;
+    mat24_def_parity12(scalar);
+    if (scalar) return 3;
 
     // Deal with odd cocode words
     if (v2 & 0x800) {   // Deal with odd cocode words
@@ -555,9 +548,7 @@ int32_t gen_leech2_start_type4(uint32_t v)
     }
     // Compute type of v (mod 2) in scalar; return -3 if this is odd
     scalar = (v >> 12) &  v & 0xfff;
-    scalar ^= scalar >> 6;
-    scalar ^= scalar >> 3;
-    scalar = (0x96 >> (scalar & 7)) & 1;
+    mat24_def_parity12(scalar);
     if (scalar) return -3;
 
     // Let syn be the syndrome table entry for the cocode part
@@ -634,8 +625,7 @@ uint32_t op_x_d_delta(uint32_t q0, uint32_t d, uint32_t delta)
     uint32_t s;
     delta ^= MAT24_THETA_TABLE[d & 0x7ff];
     s = ((q0 >> 12) & delta) ^ (q0 & d);
-    s ^= s >> 6; s ^= s >> 3;
-    s = (0x96 >> (s & 7)) & 1;
+    mat24_def_parity12(s);
     return q0 ^ (s << 24);
 }
 
@@ -721,12 +711,10 @@ uint32_t op_y(uint32_t q0, uint32_t d)
     theta_q0 = MAT24_THETA_TABLE[(q0 >> 12) & 0x7ff];
     theta_y = MAT24_THETA_TABLE[d & 0x7ff];
     s =  (theta_q0 & d) ^ (~odd &  q0 & d); 
-    s ^= s >> 6; s ^= s >> 3;
-    s = (0x96 >> (s & 7)) & 1;
+    mat24_def_parity12(s);
     o = (theta_y & (q0 >> 12)) ^ (q0 & d);
     o ^= (theta_y >> 12) & 1 & odd;
-    o ^= o >> 6; o ^= o >> 3;
-    o = (0x96 >> (o & 7)) & 1;
+    mat24_def_parity12(o);
     eps = theta_q0 ^ (theta_y & ~odd) 
            ^  MAT24_THETA_TABLE[((q0 >> 12) ^ d) & 0x7ff]; 
     q0 ^= (eps & 0xfff) ^ ((d << 12) & 0x1fff000 & odd);

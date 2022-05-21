@@ -545,8 +545,7 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
             res = to_suboctad(vf, p_oct); 
             res ^= (to_suboctad(vef, p_oct)) << 8;
             sign = d & eps;
-            sign ^= sign >> 6; sign ^= sign >> 3; 
-            sign = (0x96 >> (sign & 7)) & 1;
+            mat24_def_parity12(sign);
             sign ^= sign_e ^ PwrMap(d ^ e);
             *p_res++ = (uint16_t)(
                 res + (sign << 14) + ((eps & 0x800) << (15-11)));

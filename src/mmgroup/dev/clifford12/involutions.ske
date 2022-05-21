@@ -119,9 +119,8 @@ static inline uint64_t leech_type_mod2(uint64_t v)
 {
     uint64_t x = v;
     x &= (x >> 12);
-    x ^= x >> 6; 
-    x ^= x >> 3;
-    return (0x96ULL >> (x & 7)) & 1;
+    mat24_def_parity12(x);
+    return x;
 }
 
 /// @endcond 

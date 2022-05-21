@@ -468,8 +468,8 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
         v_out += MM_OP%{P}_OFS_T;
         for (i = 0; i < 759; ++i) {
             uint_mmv_t sign = mat24_def_octad_to_gcode(i) & delta;
-            sign ^=  sign >> 6; sign ^=  sign >> 3;
-            sign = -((0x96 >> (sign & 7)) & 1);
+            mat24_def_parity12(sign);
+            sign = 0 - sign;
             sign &= %{smask:P};
             // %%FOR i in range(%{V64_INTS})
             v_out[%{i}] = v_in[%{i}]  ^  sign;

@@ -193,9 +193,7 @@ uint32_t gen_xi_leech_to_short(uint32_t x)
         uint_fast32_t scalar;      
         if (cocodev & (cocodev - 1)) return 0;
         scalar = (x >> 12) &  x & 0xfff;
-        scalar ^= scalar >> 6;
-        scalar ^= scalar >> 3;
-        scalar = (0x96 >> (scalar & 7));
+        mat24_def_parity12(scalar);
         if ((scalar ^ w) & 1) return 0;
         code = ((x & 0x7ff000) >> 7) | mat24_lsbit24(cocodev);
         box = 4 + (code >> 15);
@@ -294,11 +292,9 @@ uint32_t gen_xi_short_to_leech(uint32_t x)
                 //w =  mat24_gcode_weight(gcode) 
                 //        ^ mat24_scalar_prod(gcode, cocode); 
                 w = ((MAT24_THETA_TABLE[gcode] >> 12) & 1)
-                 ^ (gcode & cocode);
-                w ^= w >> 6;
-                w ^= w >> 3;
-                w = 0x96 >> (w & 7);
-                gcode ^= (w & 1) << 11;
+                    ^ (gcode & cocode);
+                mat24_def_parity12(w);
+                gcode ^= w << 11;
             }
             break;
         default:

@@ -242,9 +242,7 @@ uint64_t gen_leech2to3_short(uint64_t v2)
         if (cocodev & (cocodev - 1)) return 0;
         // Put scalar = scalar product (code, cocode)
         scalar = (v2 >> 12) &  v2 & 0xfff;
-        scalar ^= scalar >> 6;
-        scalar ^= scalar >> 3;
-        scalar = (0x96 >> (scalar & 7));
+        mat24_def_parity12(scalar);
         if (scalar & 1) return 0;
         result = (gcodev ^ ((gcodev ^ 0xffffff) << 24))
                & ~(cocodev | (cocodev << 24));
@@ -351,8 +349,8 @@ uint64_t gen_leech3to2_short(uint64_t v3)
 */
 static inline uint32_t parity12(uint64_t x)
 {
-    x ^= x >> 6; x ^= x >> 3;
-    return (0x96 >> (x & 7)) & 1;
+    mat24_def_parity12(x);
+    return x;
 }
 
 
@@ -361,8 +359,9 @@ static inline uint32_t parity12(uint64_t x)
 */
 static inline uint32_t parity24(uint64_t x)
 {
-    x ^= x >> 12; x ^= x >> 6; x ^= x >> 3;
-    return (0x96 >> (x & 7)) & 1;
+    x ^= x >> 12; 
+    mat24_def_parity12(x);
+    return x;
 }
 
 

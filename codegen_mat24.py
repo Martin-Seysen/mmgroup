@@ -89,6 +89,7 @@ sys.path.append(REAL_SRC_DIR)
 
 from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.generators.gen_xi_ref import GenXi
+from mmgroup.dev.generators.gen_leech_reduce_n import GenLeechReduceY
 from mmgroup.generate_c import TableGenerator, make_doc
 from mmgroup.generate_c import pxd_to_pyx
 
@@ -154,6 +155,7 @@ GENERATORS_C_FILES = [
     "gen_leech",
     "gen_leech3",
     "gen_leech_reduce",
+    "gen_leech_reduce_n",
     "gen_random",
 ]
 
@@ -178,7 +180,7 @@ GENERATORS_H_FILES = [
 ]
 
 GENERATORS_TABLE_CLASSES = [
-     GenXi
+     GenXi, GenLeechReduceY
 ]
 
 H_GENERATORS_NAME = "mmgroup_generators.h"

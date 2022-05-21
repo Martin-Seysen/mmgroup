@@ -133,6 +133,20 @@ const uint8_t MAT24_LSBIT_TABLE[32] = {
 */
 #define mat24_def_lsbit24_pwr2(v1)  %{MAT24_LSBIT:v1,1}
 
+
+/**
+ @def mat24_def_parity12(v1) 
+ @brief Parity of vector ``v1`` of 12 bits length.
+
+ Generate a sequence of statements that replaces ``v1`` by
+ the bit parity of ``v1 & 0xfff``. 
+*/
+#define mat24_def_parity12(v1)   v1 ^= v1 >> 6; \
+   v1 ^= v1 >> 3; \
+   v1 = (0x96 >> (v1 & 7)) & 1;
+
+
+
 /**
   @def mat24_def_octad_to_gcode(o)
   @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
@@ -908,8 +922,8 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
 uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
 {
     v1 &= c1;
-    v1 ^= v1 >> 6;  v1 ^= v1 >> 3;
-    return (0x96 >> (v1 & 7)) & 1;
+    mat24_def_parity12(v1);
+    return v1;
 }
 
 
@@ -1235,10 +1249,8 @@ uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
 {
     uint_fast32_t s;
     s = MAT24_THETA_TABLE[v1 & 0x7ff] & v2 & 0xfff;
-    s ^= s >> 6;
-    s ^= s >> 3;
-    s = 0x96 >> (s & 7);
-    return s & 1; 
+    mat24_def_parity12(s);
+    return s; 
 }
 
 /** 
@@ -1300,8 +1312,8 @@ uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
     uint_fast32_t r;
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v2)
       ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v1);
-    r ^= r >> 6; r ^= r >> 3;
-    return (0x96 >> (r & 7)) & 1;      
+    mat24_def_parity12(r);
+    return r;      
 } 
 
 
@@ -1342,8 +1354,8 @@ uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v3)
       ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v3)
       ^ (MAT24_THETA_TABLE[(v1 ^ v2) & 0x7ff] & v3);
-    r ^= r >> 6; r ^= r >> 3;
-    return (0x96 >> (r & 7)) & 1;      
+    mat24_def_parity12(r);
+    return r;
 }
 
 

@@ -1500,8 +1500,7 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
                 cocode = mat24_vect_to_cocode(1 << j);
                 theta = MAT24_THETA_TABLE[i & 0x7ff];
                 w = ((theta >> 12) & 1) ^ (i & cocode);
-                w ^= w >> 6; 
-                w = (0x96 >> ((w ^ (w >> 3)) & 7)) & 1; 
+                mat24_def_parity12(w);
                 gcode = i ^ (w << 11); 
                 cocode ^= theta & 0xfff;
                 res = (gcode << 12) + cocode;
@@ -1543,9 +1542,7 @@ uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
          if ((syn & 0x3ff) < (24 << 5)) return 0;
          // Return  0 if scalar product <code, cocode> == 1  (mod 2)
          scalar = (v2 >> 12) &  v2 & 0xfff;
-         scalar ^= scalar >> 6;
-         scalar ^= scalar >> 3;
-         scalar = (0x96 >> (scalar & 7)) & 1;
+         mat24_def_parity12(scalar);
          if (scalar) return 0;
          // Here v2 is a short vector of shape (3^1,^1^23)
          // Return sparse vector with tag X
