@@ -227,8 +227,8 @@ find_in_Gx0(uint_mmv_t *v, uint32_t *g, uint32_t mode, uint_mmv_t *work)
 static uint32_t 
 find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 {
-    int32_t v_x, sign, len = 10, res, len1, i;
-    uint_fast32_t x, v_sign, tmp;
+    int32_t v_x, sign, len = 10, res, len1;
+    uint_fast32_t x, v_sign;
     uint32_t aa;
     
 

@@ -47,13 +47,28 @@ extern "C" {
 
 /// @cond DO_NOT_DOCUMENT 
 
-static uint8_t LSTD[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-static uint8_t OCTAD[7] = {0,1,2,3,4, 8,9};
+static uint8_t OCTAD_PLUS[7] = {0,1,2,3,4, 8,9};
 
-static uint8_t DODECAD[12] = {0,4,8, 13,14,15, 17,18,19, 21,22,23};
-static uint8_t CPL_DODECAD[12] = {1,2,3, 5,6,7, 9,10,11, 12,16,20};
+static uint8_t STD_OCTAD[8] = {
+    // %%TABLE LEECH_RED_STD_OCTAD, uint8
+};
 
+static uint8_t STD_DODECAD[12] = {
+    // %%TABLE LEECH_RED_STD_DODECAD, uint8
+};
+
+static uint8_t CPL_DODECAD[12] = {
+    // %%TABLE LEECH_RED_CPL_DODECAD, uint8
+};
+
+static uint16_t TABLE_OCTAD[15] = {
+    // %%TABLE LEECH_RED_TABLE_OCTAD, uint16
+};
+
+static uint16_t TABLE_DODECAD[15] = {
+    // %%TABLE LEECH_RED_TABLE_DODECAD, uint16
+};
 
 
 
@@ -95,7 +110,7 @@ static inline uint32_t find_octad_permutation_odd(uint32_t v, uint32_t *p_res)
              syn = (1 << sextet[i]) |  (1 << sextet[i+1])
                 | (1 << sextet[i+2]) |  (1 << sextet[i+3]);
              special = syn & vect;
-             if (vect & (vect - 1)) break;
+             if (special & (special - 1)) break;
          }
     }
     // revove entries of the octad from ``syn``. 
@@ -104,7 +119,29 @@ static inline uint32_t find_octad_permutation_odd(uint32_t v, uint32_t *p_res)
     src[5] = (uint8_t)(mat24_lsbit24(syn));  
     // Compute the permutation that maps the first 6 entries
     // of ``src`` to the entries given by ``OCTAD``.
-    return apply_perm(v, src, OCTAD, 6, p_res);
+    return apply_perm(v, src, OCTAD_PLUS, 6, p_res);
+}
+
+
+
+void op_y_x(uint32_t v, uint16_t *table, uint32_t *out)
+{
+   uint32_t c, y, i, x;
+
+    v = gen_leech2_op_atom(v, out[0]);
+    c = (v ^ table[0]) & 0x7ff;
+    y = 0;
+    for (i = 0; i < 11; ++i) y ^= table[i + 1] & (0 - ((c >> i) & 1));
+    out[1] = 0xC0000000 + y;
+    v = gen_leech2_op_atom(v, out[1]);
+    if (((v >> 23) ^ table[12]) & 1) {
+        y =  table[13];
+        v = gen_leech2_op_atom(v, 0xC0000000 + y);
+        out[1] ^= y ; 
+    }      
+    c = (v ^ table[0]) & 0x7ff;
+    x = (v & 0x1000000) ? table[14] : 0;
+    out[2] = 0x90000000 + x;
 }
 
 
@@ -168,10 +205,9 @@ static inline uint32_t find_octad_permutation_odd(uint32_t v, uint32_t *p_res)
   depending on its bit weight.
 */
 // %%EXPORT px
-int32_t gen_leech2_reduce_perm(uint32_t v, uint32_t *pg_out)
+int32_t gen_leech2_reduce_n(uint32_t v, uint32_t *pg_out)
 {
-    int32_t vtype, subtype, res; 
-    static uint8_t DODECAD[12] = {0,4,8, 13,14,15, 17,18,19, 21,22,23};
+    int32_t vtype, subtype, res = 0; 
 
     vtype = gen_leech2_subtype(v);
     subtype = vtype & 0xf;
@@ -182,45 +218,70 @@ int32_t gen_leech2_reduce_perm(uint32_t v, uint32_t *pg_out)
         case 3:
         {
             uint8_t src[3];
-            uint32_t coc, tab;
+            uint32_t coc, tab, l;
             coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
             tab = MAT24_SYNDROME_TABLE[coc & 0x7ff];
             src[0] = tab & 31; src[1] = (tab >> 5) & 31;
             src[2] = (tab >> 10) & 31;
-            if (src[1] < 24) res = apply_perm(v, src, LSTD+1, 3, pg_out);
-            else res = apply_perm(v, src, LSTD, 1, pg_out);
+            l =  (src[1] < 24) ? 3 : 1;
+            res = apply_perm(v, src, OCTAD_PLUS + (l >> 1), l, pg_out);
+            v = gen_leech2_op_atom(v, pg_out[0]);
+            pg_out[1] = 0xC0000000 + ((v >> 12) & 0x7ff);
+            v = gen_leech2_op_atom(v, pg_out[1]);
+            pg_out[2] = 0xB0000000 + ((v >> 13) & 0x800);
             return res < 0 ? -1 : vtype;
         }
         case 6:
         {
-            uint8_t pi[24], src[12];
-            uint32_t vect = mat24_def_gcode_to_vect(v >> 12);
+            uint8_t pi[24], src[12], *dest;
+            uint32_t gv, vect, coc, w;
+
+            gv = (v >> 12) & 0xfff; 
+            vect = mat24_gcode_to_vect(gv);
             mat24_vect_to_list(vect, 12, src);
-            res = mat24_perm_from_dodecads(DODECAD, src, pi);
-            if (res < 0) return -1;
-            *pg_out = 0xA0000000 + mat24_perm_to_m24num(pi);
+            dest = STD_DODECAD;
+            if (vtype == 0x36) {
+                coc = (v ^  mat24_ploop_theta(v >> 12)) & 0xfff;
+                w =  mat24_bw24(mat24_cocode_as_subdodecad(coc, gv, 24));
+                if (w & 2) dest = CPL_DODECAD; 
+            }
+            mat24_perm_from_dodecads(dest, src, pi);
+            pg_out[0] = 0xA0000000 + mat24_perm_to_m24num(pi);
+            op_y_x(v, TABLE_DODECAD, pg_out);
             return vtype;
         }
         case 2:
         case 4:
-        {
             res = (vtype == 0x34) ? find_octad_permutation_odd(v, pg_out)
                                   : find_octad_permutation(v, pg_out);
+            op_y_x(v, TABLE_OCTAD, pg_out);
             return res < 0 ? -1 : vtype;
-        }
         case 0:
+        case 8:
         {
             uint8_t src[4];
-            uint32_t syn, j;
-            if ((v & 0x7ff) == 0) return vtype;
-            syn = mat24_cocode_syndrome(v & 0x7ff, 0);
-            mat24_vect_to_list(syn, 4, src);
-            j = mat24_bw24(syn) & 2;
-            res = apply_perm(v, src, LSTD + j, 4 - j, pg_out);
-            return res < 0 ? -1 : vtype;           
+            uint32_t syn, j, y0, y, x;
+            if ((v & 0x7ff) == 0) {
+                pg_out[0] = 0xA0000000;  pg_out[1] = 0xC0000000;              
+                pg_out[2] = (v & 0x1800000) == 0x1800000 ? 
+                             0x90000800 : 0x90000000;
+            } else {
+                syn = mat24_cocode_syndrome(v & 0x7ff, 0);
+                mat24_vect_to_list(syn, 4, src);
+                j = mat24_bw24(syn) & 2;
+                res = apply_perm(v, src, OCTAD_PLUS  + j, 4 - j, pg_out);
+                v = gen_leech2_op_atom(v, pg_out[0]);
+                y0  = j ?  0x200 : 0x400;
+                y = v & 0x800000 ? y0 : 0;
+                pg_out[1] = 0xC0000000 + y;
+                v = gen_leech2_op_atom(v, pg_out[1]);
+                x = v & 0x1000000 ? y0 :  0;
+                pg_out[2] = 0xB0000000 + x;
+            } 
+            return res < 0 ? -1 : vtype;         
         }
         default:
-            return vtype;
+            return -1;
     } 
 }
 

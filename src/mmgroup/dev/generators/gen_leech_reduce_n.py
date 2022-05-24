@@ -16,6 +16,8 @@ from numpy import array, zeros, uint8, uint16, uint32
 from mmgroup.dev.mat24.mat24_ref import Mat24
 
 
+
+
 #######################################################################
 # Auxiliary functions 
 #######################################################################
@@ -105,6 +107,62 @@ def y_table(g, cocodes, sign, code_omega, cocode_x, verbose = 0):
         print("table =", [hex(x) for x in table])
     return table
 
+#####################################################################
+# Tables used in the function to be tested
+#####################################################################
+
+STD_OCTAD = list(range(8))
+CPL_OCTAD = list(range(8,24))
+OMEGA = list(range(24))
+STD_DODECAD = [0,4,8, 13,14,15, 17,18,19, 21,22,23]
+CPL_DODECAD = [1,2,3, 5,6,7, 9,10,11, 12,16,20]
+
+TABLE_OCTAD = y_table(STD_OCTAD, 
+    [[0, 8], [8, 9]], 
+    1,
+    range(8, 24, 2),
+    [0,12]
+)
+TABLE_DODECAD = y_table(STD_DODECAD, 
+    [[0,12]],
+    1,
+    CPL_DODECAD,
+    [0,16]
+)
+
+
+#####################################################################
+# Expected results of function gen_leech2_reduce_n
+#####################################################################
+
+
+EXPECTED = {
+      0:  ([],[]),
+   0x20:  ([], [2,3]),
+   0x21:  ([], [0]),
+   0x22:  (STD_OCTAD, []),
+   0x31:  (OMEGA, [0]),
+   0x34:  (STD_OCTAD, [0,8]),
+   0x33:  (OMEGA, [1,2,3]),
+   0x36:  (STD_DODECAD, []),
+   0x40:  ([], [0,1,2,3]),
+   0x42:  (CPL_OCTAD, []),
+   0x43:  ([], [1,2,3]),
+   0x44:  (STD_OCTAD, [8,9]),
+   0x46:  (STD_DODECAD, [0,12]),
+   0x48:  (OMEGA, []),
+}
+
+def vector(gcode, cocode):
+    gc = Mat24.vect_to_gcode(sum(1 << x for x in gcode))
+    coc = Mat24.vect_to_cocode(sum(1 << x for x in cocode))
+    return (gc << 12) ^ coc ^ Mat24.ploop_theta(gc)
+
+
+
+
+MAP_VECTOR = dict([(s, vector(*y)) for s, y in EXPECTED.items()])
+MAP_VECTOR[0] = 0x1000000
 
 
 #######################################################################
@@ -118,7 +176,19 @@ class GenLeechReduceY(object):
 
     """
 
-    tables = {}
+    tables = {
+        "LEECH_RED_STD_OCTAD": STD_OCTAD,
+        "LEECH_RED_CPL_OCTAD": CPL_OCTAD,
+        "LEECH_RED_TABLE_OCTAD": TABLE_OCTAD,
+
+        "LEECH_RED_STD_DODECAD": STD_DODECAD,
+        "LEECH_RED_CPL_DODECAD": CPL_DODECAD,
+        "LEECH_RED_TABLE_DODECAD": TABLE_DODECAD,
+
+        "LEECH_RED_TABLE_MAP_SUBOCTADS": MAP_VECTOR.keys(),
+        "LEECH_RED_TABLE_MAP_VECTORS": MAP_VECTOR.values(),
+
+    }
 
     directives = {}
 

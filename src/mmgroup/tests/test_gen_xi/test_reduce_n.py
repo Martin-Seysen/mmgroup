@@ -6,52 +6,35 @@ from __future__ import  unicode_literals
 
 
 
-from random import randint, choices, shuffle, sample
-from numbers import Integral
-from collections import defaultdict
+from random import randint 
 from functools import reduce
 
 import numpy as np
 import pytest
 
-from mmgroup import XLeech2, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
-
+from mmgroup import XLeech2 
 from mmgroup import mat24
-from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_op_word
-from mmgroup.generators import gen_leech2_start_type4
-from mmgroup.generators import gen_leech2_start_type24
-from mmgroup.generators import gen_leech2_reduce_type2
-from mmgroup.generators import gen_leech2_reduce_type2_ortho
-from mmgroup.generators import gen_leech2_reduce_type4
+from mmgroup.generators import gen_leech2_reduce_n
 
-from mmgroup.dev.generators.gen_leech_reduce_n import y_table
+from mmgroup.dev.generators.gen_leech_reduce_n import MAP_VECTOR
+from mmgroup.dev.generators.gen_leech_reduce_n import TABLE_OCTAD
+from mmgroup.dev.generators.gen_leech_reduce_n import TABLE_DODECAD
+from mmgroup.dev.generators.gen_leech_reduce_n import STD_DODECAD
+from mmgroup.dev.generators.gen_leech_reduce_n import CPL_DODECAD
 
-from mmgroup.tests.test_gen_xi.test_leech2_type import TYPE_DATA
 from mmgroup.tests.test_gen_xi.test_leech2_type import rand_n_elem
-from mmgroup.tests.test_gen_xi.test_leech2_type import xs_vector
-
-
-
-from mmgroup.tests.test_gen_xi.test_reduce import xi_reduce_octad
 from mmgroup.tests.test_gen_xi.test_reduce import apply_perm
 from mmgroup.tests.test_gen_xi.test_reduce import find_octad_permutation
 
-# Standard vector in the Leech lattice mod 2 in Leech lattice encoding
-# The standard fram \Omega
-OMEGA = 0x800000
-# The standard type-2 vector \beta
-BETA = 0x200 
-
-assert Cocode(BETA).syndrome() == GcVector(0xC)
 
 #####################################################################
 # Auxiliary functions
 #####################################################################
 
-OCTAD = [0,1,2,3,4, 8,9]
+OCTAD_PLUS = [0,1,2,3,4, 8,9]
 
 
 def find_octad_permutation_odd(v, result, verbose = 0):
@@ -83,7 +66,7 @@ def find_octad_permutation_odd(v, result, verbose = 0):
     else:
         syn = mat24.cocode_syndrome(coc, 24)
     src.append(mat24.lsbit24(syn & ~vect))  
-    return apply_perm(v, src, OCTAD, 6, result, verbose)
+    return apply_perm(v, src, OCTAD_PLUS, 6, result, verbose)
 
 
 def op_y_x(v, table, out):
@@ -106,29 +89,18 @@ def op_y_x(v, table, out):
 
 
 
+
+
+def map_vector(v):
+    return MAP_VECTOR[gen_leech2_subtype(v)] if v else 0
+
+
 #####################################################################
 # Python implementation of function to be tested
 #####################################################################
 
-DODECAD = [0,4,8, 13,14,15, 17,18,19, 21,22,23]
-CPL_DODECAD = [1,2,3, 5,6,7, 9,10,11, 12,16,20]
 
-TABLE_OCTAD = y_table(range(8), 
-    [[0, 8], [8, 9]], 
-    1,
-    range(8, 24, 2),
-    [0,12]
-)
-TABLE_DODECAD = y_table(DODECAD, 
-    [[0,12]],
-    1,
-    CPL_DODECAD,
-    [0,16]
-)
-
-
-
-def gen_leech2_reduce_n(v, verbose = 0):
+def ref_gen_leech2_reduce_n(v, verbose = 0):
     vtype = gen_leech2_subtype(v);
     subtype = vtype & 0xf;
 
@@ -150,7 +122,7 @@ def gen_leech2_reduce_n(v, verbose = 0):
         vect = mat24.gcode_to_vect(gv)
         src = mat24.vect_to_list(vect, mat24.bw24(vect))
         assert len(src) == 12
-        dest = DODECAD
+        dest = STD_DODECAD
         if (vtype == 0x36):
             coc = (v ^  mat24.ploop_theta(v >> 12)) & 0xfff;
             w =  mat24.bw24(mat24.cocode_as_subdodecad(coc, gv))
@@ -190,64 +162,12 @@ def gen_leech2_reduce_n(v, verbose = 0):
 
 
 
-#####################################################################
-# Expected results of function gen_leech2_reduce_n
-#####################################################################
 
-STD_OCTAD = list(range(8))
-CPL_OCTAD = list(range(8,24))
-OMEGA = list(range(24))
-
-EXPECTED = {
-      0:  ([],[]),
-   0x20:  ([], [2,3]),
-   0x21:  ([], [0]),
-   0x22:  (STD_OCTAD, []),
-   0x31:  (OMEGA, [0]),
-   0x34:  (STD_OCTAD, [0,8]),
-   0x33:  (OMEGA, [1,2,3]),
-   0x36:  (DODECAD, []),
-   0x40:  ([], [0,1,2,3]),
-   0x42:  (CPL_OCTAD, []),
-   0x43:  ([], [1,2,3]),
-   0x44:  (STD_OCTAD, [8,9]),
-   0x46:  (DODECAD, [0,12]),
-   0x48:  (OMEGA, []),
-}
-
-def vector(gcode, cocode):
-    gc = mat24.vect_to_gcode(sum(1 << x for x in gcode))
-    coc = mat24.vect_to_cocode(sum(1 << x for x in cocode))
-    return (gc << 12) ^ coc ^ mat24.ploop_theta(gc)
-
-
-for subtype, (gcode, cocode) in EXPECTED.items():
-    subtype1 =  gen_leech2_subtype(vector(gcode, cocode))
-    if subtype1 != subtype:
-        print("Subtype obtained: %s, expected: %s" % 
-             (hex(subtype1), hex(subtype)))
-        print("gcode", gcode)
-        print("cocode", cocode)
-        err = "Error in transversal of N_x0"
-        raise ValueError(err)
-
-
-
-MAP_VECTOR = dict([(s, vector(*y)) for s, y in EXPECTED.items()])
-
-def map_vector(v):
-    if v == 0x1000000:
-        return v
-    else:
-        return MAP_VECTOR[gen_leech2_subtype(v)]
-
-#####################################################################
-# Test function gen_leech2_reduce_n
-#####################################################################
 
 
 #####################################################################
-# Test data for function reduce_type_2()
+# Test data for testing function gen_leech2_reduce_n
+#####################################################################
 
 
 def reduce_n_testdata(ntests = 100):
@@ -282,6 +202,31 @@ def reduce_n_testdata(ntests = 100):
 #####################################################################
 
 
+
+
+#####################################################################
+# Test transversal in function gen_leech2_reduce_n
+#####################################################################
+
+
+
+@pytest.mark.gen_xi
+def test_std_subtapes():
+    for subtype, v in [(0,0)] + list(MAP_VECTOR.items()):
+        subtype1 =  gen_leech2_subtype(v)
+        if subtype1 != subtype:
+            print("Subtype obtained: %s, expected: %s" % 
+                (hex(subtype1), hex(subtype)))
+            print("gcode", gcode)
+            print("cocode", cocode)
+            err = "Error in transversal of N_x0"
+            raise ValueError(err)
+
+
+#####################################################################
+# Test function gen_leech2_reduce_n
+#####################################################################
+
 @pytest.mark.gen_xi
 def test_reduce_n(ntests = 100, verbose = 0):
     """Test function ``gen_leech2_reduce_n`` """
@@ -291,10 +236,46 @@ def test_reduce_n(ntests = 100, verbose = 0):
             print(" \nTest %d, v = %s, subtype  = %s" % 
                 (n+1, hex(v), hex(ref_subtype))
             )
-        subtype, op = gen_leech2_reduce_n(v)
-        ok =  ref_subtype == subtype
+        subtype, op = ref_gen_leech2_reduce_n(v)
+        ok = True 
+        err = "Unknown error"
+
+        ok1 =  ref_subtype == subtype 
+        if ok and not ok1:
+            err  = "Function gen_leech2_reduce_n returns wrong subtype"
+        ok &= ok1
+
         v_mapped = gen_leech2_op_word(v, op, len(op))
-        ok &= v_mapped == map_vector(v)
+        ok2 = v_mapped == map_vector(v)
+        if ok and not ok2:
+            err  = "Wrong mapping in function gen_leech2_reduce_n"
+        ok &= ok2
+
+        ok3 = len(op) == 3
+        tags = [x >> 28 for x in op]
+        ok3 &= tags[:2] == [0xa, 0xc] and tags[2] in [9, 0xb]
+        if ok and not ok3:
+            err  = "Error in computed operation on vector"
+        ok &= ok3
+
+        if  (op[2] & 0xf0000000) == 0xB and v != 0x18000000:
+            ok4 = op[2] & 0x800 == 0
+        else:
+            ok4 = True
+        if ok and not ok4:
+            err  = "Computed operation on vector must be even"
+        ok &= ok4
+
+        op_c = np.zeros(3, dtype = np.uint32)
+        subtype_c = gen_leech2_reduce_n(v, op_c) 
+        #op_c[1] &= ~2 # Produce an error for verifying the test
+        ok_C_function = subtype_c == subtype
+        ok_C_function &= (op_c == op).all()
+        if ok and not ok_C_function:
+            err  = "Error in C function"
+        ok &= ok_C_function
+    
+
         if verbose or not ok:
             if not ok:
                 print(" \nTest %d, v = %s, subtype  = %s" % 
@@ -303,15 +284,15 @@ def test_reduce_n(ntests = 100, verbose = 0):
             print("transformation", op)
             print("map expected:", hex(map_vector(v)), ", obtained",
                 hex(v_mapped) )
+            if not ok_C_function:
+                 print("Subtype from C function is %s, expected %s" %
+                     (hex(subtype_c), hex(subtype))
+                 )
+                 print("Operation from C function:", op_c)
+                 print("Expected:                 ", op)
             if not ok:
-                err = "Error in reducing vector mod N_x0"
                 raise ValueError(err)
-            assert len(op) == 3
-            assert op[0] & 0xf0000000 == 0xA
-            assert op[1] & 0xf0000000 == 0xC
-            assert op[2] & 0xf0000000 in [0, 0xB]
-            if  (op[2] & 0xf0000000) == 0xB and v != 0x18000000:
-                assert op[2] & 0x800 == 0
+
 
 
 
