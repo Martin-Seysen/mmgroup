@@ -130,6 +130,10 @@ C interface for file gen_leech_reduce.c
 .. doxygenfile:: gen_leech_reduce.c
 
 
+C interface for file gen_leech_reduce_n.c
+.........................................
+
+.. doxygenfile:: gen_leech_reduce_n.c
 
 
 Support for the generator  :math:`\xi` of the monster group

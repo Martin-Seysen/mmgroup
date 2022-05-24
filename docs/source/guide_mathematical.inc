@@ -872,8 +872,69 @@ with :math:`k = 2- \alpha` maps :math:`\lambda_r` to :math:`\beta`.
 Otherwise we first apply a permutation in :math:`M_{24}` that maps
 :math:`\delta` to :math:`\{0, 1\}`, and fixes :math:`2` and :math:`3`.
 
-.. _check_equality_monster:
 
+
+
+Orbits of the group :math:`N_{x0}` in the  group :math:`Q_{x0}`
+---------------------------------------------------------------
+
+Function ``gen_leech2_reduce_n`` in file ``gen_leechc_reduce_n.c`` 
+computes a standard representative of the orbit of a nonzero vector
+in the extraspecial subgroup :math:`Q_{x0}` of :math:`G_{x0}` under
+the action of the group :math:`N_{x0}`. Here :math:`N_{x0}` acts on
+the group :math:`Q_{x0}` of structure  :math:`2_+^{1+24}` by 
+conjugation.
+
+The quotient of :math:`Q_{x0}` by its center  :math:`\{x_{\pm 1}\}` 
+is isomophic to  :math:`\Lambda / 2 \Lambda`, i.e. to the Leech 
+lattice mod 2. So we may define the subtype of any 
+:math:`v \in Q_{x0}` as the subtype of the element :math:`v x_{\pm 1}`
+of  :math:`\Lambda / 2 \Lambda`. 
+
+With one exception the orbit of a nonzero vector :math:`v \in Q_{x0}` 
+under  :math:`N_{x0}` depends on the subtype of :math:`v` only. There are
+exactly two elements :math:`x_{\pm 1}` of  :math:`Q_{x0}` of subtype
+00, which are of course in different :math:`N_{x0}` orbits.
+
+For each nonzero orbit of :math:`N_{x0}` we choose a 
+rpresentative  :math:`x_d x_\delta`, 
+:math:`d \in \mathcal{P}, \delta \in \mathcal{C}^*` (depending
+on the subtype of the orbit) according to the following table:
+
+
+.. math::
+    \begin{array}{|c|c|c|}
+    \hline 
+    \mbox{Subtype} &  x_d  & \delta \\
+    \hline 
+    00   & x_{-1}         & \{\}  \\
+    20   & x_1            & \{2,3\} \\
+    21   & x_1            & \{0\} \\
+    22   & x_o            & \{\} \\
+    31   & x_\Omega       & \{0\} \\
+    33   & x_\Omega       & \{1,2,3\} \\
+    34   & x_o            & \{0,8\} \\
+    36   & x_D            & \{\} \\
+    40   & x_1            & \{0,1,2,3\} \\
+    42   & x_\Omega x_o   & \{\} \\
+    43   & x_1            & \{1,2,3\} \\
+    44   & x_o            & \{8, 9\} \\
+    46   & x_D            & \{0, 12\} \\
+    48   & x_\Omega       & \{\} \\
+    \hline 
+    \end{array}
+
+:math:`x_o` is the (positive) element of the Parker loop
+corresponding to the stadard octad :math:`\{0,1,2,3,4,5,6,7\}`.
+
+:math:`x_D` is the (positive) element of the Parker loop
+corresponding to the stadard dodecad 
+:math:`\{0,4,8, 13,14,15, 17,18,19, 21,22,23\}`.
+
+This table can be computed by function ``gen_leech2_reduce_n_rep`` 
+in file ``gen_leechc_reduce_n.c``.  
+
+.. _check_equality_monster:
 
 Checking equality of monster elements and membership in :math:`2^{1+24}.\mbox{Co}_1`
 -------------------------------------------------------------------------------------

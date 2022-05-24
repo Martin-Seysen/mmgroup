@@ -1,9 +1,13 @@
 /** @file gen_leech_reduce_n.c
-The functions in file ``gen_leech_reduce_n.c`` are yet to
-be documented!!
+Given a vector \f$v\f$ in the extraspecial group \f$Q_{x0}\f$, the
+functions in this module compute a transformation from \f$v\f$ to
+a standard representative of the class \f$v^N\f$.
+
+Here \f$Q_{x0}\f$ and \f$N = N_{x0}\f$ are as in the project
+documentation.
 
 We use the terminology defined in
-the document *The C interface of the mmgroup project*, 
+the document *The C interface of the mmgroup project*,
 section *Description of the mmgroup.generators extension*.
 */
 
@@ -71,6 +75,15 @@ static uint16_t TABLE_DODECAD[15] = {
 };
 
 
+
+
+static uint8_t TABLE_SUBOCTADS[] = {
+    // %%TABLE LEECH_RED_TABLE_MAP_SUBOCTADS, uint8
+};
+
+static uint32_t TABLE_MAP_VECTORS[] = {
+    // %%TABLE LEECH_RED_TABLE_MAP_VECTORS, uint32
+};
 
 
 /** @brief Find a suitable permutation for an octad.
@@ -152,57 +165,51 @@ void op_y_x(uint32_t v, uint16_t *table, uint32_t *out)
 
 
 /*************************************************************************
-*** Start reducing Leech lattice vector modulo N_x0
+*** Reduce Leech lattice vector modulo N_x0
 *************************************************************************/
 
 /** 
-  @brief Compute permutation for **reducing** Leech lattice vector
+  @brief  Reduce Leech lattice vector modulo the group N_x0
 
-  Given a vector ``v`` in the Leech lattice mod 2, in Leech
-  lattice encoding, we want to find a standard representative 
-  of the class \f$v N_{x0}\f$.
+  Given a vector \f$v\f$ in the extraspecial group \f$Q_{x0}\f$, we
+  want to find a standard representative of the class \f$v^N\f$,
+  where \f$Q_{x0}\f$ and \f$N = N_{x0}\f$ are as in the project
+  documentation. Here \f$v\f$ is  given in parameter ``v``
+  in **Leech lattice encoding**.
 
-  The first step for obtaining such a representative is to compute
-  a permutation  \f$\pi\f$ in the Mathieu group \f$M_{24}\f$ that
-  maps \f$v\f$ to a standard form. This function writes such
-  permutation (as a single generator of the monster group) into the
-  integer referred by ``pg_out``. It returns the type of a
-  vector ``v`` in the same way as in function ``gen_leech2_type``
-  in module ``gen_leech.c``.
+  This function computes such a representative \f$v_1 \in Q_{x0}\f$.
+  It returns an element \f$r\f$ of \f$N_{x0}\f$
+  with \f$v_1 = v^r\f$ as a word of length three in the generators
+  of \f$N_{x0}\f$. That word is stored in the buffer referred
+  by ``pg_out`` as an array of 3 integers of type ``uint32_t`` as
+  described in section **The monster group** in the API reference.
 
-  Such a function is not strictly needed in the current version
-  of the project, but implementing it elsewhere would lead to a
-  lot of duplication.
+  The user may call function ``gen_leech2_op_word`` in
+  file ``gen_leech.c`` for computing \f$v_1 = v^r\f$. There is
+  a faster alternative for  computing \f$v_1\f$ described in the
+  documetnation of function ``gen_leech2_reduce_n``.
 
-  Here are some more details about the computed permutation \f$\pi\f$.
+  The representative \f$v_1\f$ depends on the **subtype** of \f$v\f$
+  only, with one exception listed below. Here the subtype can be
+  also computed by function ``gen_leech2_subtype``in
+  file ``gen_leech.c``; it is explained
+  in **The mmgroup guide for developers** in
+  section **Computations in the Leech lattice modulo 2**.
 
-  Strictly speaking, \f$\pi\f$ is an automorphism of the Parker
-  loop, but here we consider the action of \f$\pi\f$ as a
-  permutation in \f$M_{24}\f$ only.
+  If the subtype of \f$v\f$ is ``00``then we have \f$v_1 =v\f$
+  for the two vectors \f$v = x_{\pm 1}\f$ of that subtype.
 
-  Let \f$v = g + c\f$, where \f$g\f$  is the Golay code part
-  of \f$v\f$, and \f$c\f$  is the cocode part  of \f$v\f$.
-  Thus \f$g\f$ corresponds to an generator \f$x_d\f$, and \f$c\f$
-  corresponds to a generator \f$x_\delta\f$ of the extraspecial
-  2 group \f$Q_{x0}\f$.
+  We compute a mapping \f$r = x_\pi y_e x_f\f$, where \f$r\f$ is
+  an automorphism of the Parker loop, \f$e\f$ is in the Parker
+  loop, and \f$f\f$ is either in the Parker loop or in the Golay
+  cocode.
 
-  If \f$c\f$ is odd then \f$c\f$ is mapped to the cocode element
-  ``(0)``, or ``(1,2,3)``, depending on its bit weight.
-
-  For an even cocode element \f$c\f$ we proceed as follows:
-
-  A dodecad \f$g\f$ is mapped to the standard
-  dodecad ``(0,4,8, 13,14,15, 17,18,19, 21,22,23)``.
-
-  Am octad \f$g\f$ is mapped to the standard
-  octad ``(0,1,2,3,4,5,6,7)``. If ``c`` is not a suboctad of ``g``
-  then we map (one shortest representative of) ``c`` into the
-  set ``(0,1,2,3,4,5,6,7,8,9)``, using entry ``9`` only if the
-  scalar product of ``o`` and ``c`` is 0.
-
-  If \f$g \in \{0, \Omega\}\f$ then  \f$c\f$ is  is mapped to the
-  cocode element ``(2,3)``, or to ``(0,1,2,3)``, or to zero,
-  depending on its bit weight.
+  The result \f$r\f$ is in the even subgroup of \f$N_{x0}\f$
+  except in case \f$v = x_{-\Omega}\f$, where this is not possible.
+  
+  See section  **Orbits of the group N_x0 in the group Q_x0**
+  in **The mmgroup guide for developers** for our choice of
+  the representative of the  \f$N_{x0}\f$ orbits.
 */
 // %%EXPORT px
 int32_t gen_leech2_reduce_n(uint32_t v, uint32_t *pg_out)
@@ -286,6 +293,28 @@ int32_t gen_leech2_reduce_n(uint32_t v, uint32_t *pg_out)
 }
 
 
+
+/** 
+  @brief  Compute standard representative of Q_x0 modulo the group N_x0
+
+  Given a subtype ``subtype`` in the Leech lattice modulo 2, the
+  function returns a representative of a nonzero orbit of \f$Q_{x0}\f$
+  under the action of \f$N_{x0}\f$.
+
+  See the table in section
+  **Orbits of the group N_x0 in the group Q_x0**
+  in **The mmgroup guide for developers** for our choice of such
+  a representative.
+*/
+// %%EXPORT px
+int32_t gen_leech2_reduce_n_rep(uint32_t subtype)
+{
+    uint32_t i;
+    for (i = 0; i < sizeof(TABLE_SUBOCTADS)/sizeof(uint8_t); ++i) {
+        if (subtype == TABLE_SUBOCTADS[i]) return TABLE_MAP_VECTORS[i];
+    }
+    return -1;
+};
 
 
 //  %%GEN h

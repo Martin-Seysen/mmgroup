@@ -18,6 +18,7 @@ from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_reduce_n
+from mmgroup.generators import gen_leech2_reduce_n_rep
 
 from mmgroup.dev.generators.gen_leech_reduce_n import MAP_VECTOR
 from mmgroup.dev.generators.gen_leech_reduce_n import TABLE_OCTAD
@@ -211,7 +212,7 @@ def reduce_n_testdata(ntests = 100):
 
 
 @pytest.mark.gen_xi
-def test_std_subtapes():
+def test_std_subtypes():
     for subtype, v in [(0,0)] + list(MAP_VECTOR.items()):
         subtype1 =  gen_leech2_subtype(v)
         if subtype1 != subtype:
@@ -221,6 +222,9 @@ def test_std_subtapes():
             print("cocode", cocode)
             err = "Error in transversal of N_x0"
             raise ValueError(err)
+    for subtype, v in list(MAP_VECTOR.items()):
+        v_c = gen_leech2_reduce_n_rep(subtype)
+        assert v == v_c
 
 
 #####################################################################

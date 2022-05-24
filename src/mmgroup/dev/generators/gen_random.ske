@@ -664,6 +664,12 @@ uint32_t gen_rng_modp(uint32_t p, uint64_t *seed)
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
+#define ONE ((uint64_t)1ULL)
+/// @endcond
+
+
+
 /**
   @brief Generate random bit field of integers modulo a number ``p``
 
@@ -685,7 +691,6 @@ uint64_t gen_rng_bitfields_modp(uint64_t p, uint32_t d, uint64_t *seed)
 {
     uint64_t r = xoro_next(seed), rh, res = 0, i, used;
 
-    #define ONE ((uint64_t)1ULL)
     if (d == 0 || d >= 64)  d = 64;
     if ((p & (p - 1)) == 0) {
         if (d >= 64) return r & (p - 1);
