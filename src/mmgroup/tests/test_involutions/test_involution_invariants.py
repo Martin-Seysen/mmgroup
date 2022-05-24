@@ -181,7 +181,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
     v = xsp2co1_elem_find_type4(gg._data)
     if not errors:
         if ref_chi[0] in (196883, 275, 4371):
-            # The g is of type 2A, 2B or 2A in the monster
+            # The g is of type 1A, 2B or 2A in the monster
             check(istate >= 2,  12, "istate (= %s)" % istate)
     if not errors:   
         if istate == 0:

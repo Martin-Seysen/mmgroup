@@ -543,10 +543,10 @@ static inline void expand_affine(
 
 /** Find a **nice** type-2 or type-4 vector in subset of Leech lattice mod 2
 
-    Here ``a`` is a sequence of three concatenated arrays ``a0, a1,``
-    and ``a2`` of elements of the Leech lattice mod 2
-    of length ``n0, n1,`` and ``n2`` respectively. ``a0`` and ``a1``
-    are input arrays, and ``a2`` is an output array.
+    Here ``a`` is a sequence of two concatenated arrays ``a0``
+    and ``a1`` of elements of the Leech lattice mod 2
+    of length ``n0`` and ``n1`` respectively. ``a0`` and ``a1``
+    are input arrays.
 
     The function runs through all vectors ``a0[i0] + a1[i1]``
     with ``0 <= i0 < n0`` and ``0 <= i1 < n1``. Let ``V`` be
@@ -554,12 +554,8 @@ static inline void expand_affine(
     be of Leech lattice type 0, 2, or 4; otherwise the function
     computes garbage.
 
-    If ``n2`` is zero then the function returns a type-4 vector
-    in ``V`` if such a vector exists; otherwise it returns zero.
-
-    If ``n2`` is positive then the function stores up to ``n2``
-    vectors of type 2 in the array ``a2``. Then the
-    function returns the number of type-2 vectors found.
+    The function returns a type-4 vector in ``V`` if such a vector 
+    exists; otherwise it returns zero.
 
     The function tries to find a **nice** type-4 vector, provided
     that the input has been echelonized properly (as e.g. in
@@ -567,14 +563,10 @@ static inline void expand_affine(
     properly as e.g. in function ``uint32_t expand_affine``.
 */
 // %%EXPORT px
-uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t n2)
+uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1)
 {  
-    uint32_t find_type2 = n2 > 0; // True if looking for type-2 vectors
     uint32_t v;                   // The current vector being analysed
-    uint32_t is_type2;            // True if current vector is of type 2
     uint32_t v_out = 0;           // 0 or a saved type-4 vector
-    uint32_t *pa2 = a + n0 + n1;  // Pointer to output array
-    uint32_t i2 = 0;              // Number of type-2 vectors found
     uint32_t i0, i1;
 
     for (i0 = 0; i0 < n0; ++i0) {
@@ -583,15 +575,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
             // to be analysed. v must be of type 0, 2, or 4.
             v = (a[i0] ^ a[n0 + i1]) & 0xffffffUL;
             // Continue if v is not of the type that we are looking for.
-            is_type2 = gen_leech2_type2(v) > 0;
-            if (find_type2 != is_type2) continue;
-            
-            // Here we look for vectors of type 2 ...
-            if (find_type2) {
-                // Store the type-2 vector v if still enough space.
-                if (i2 < n2) pa2[i2++] = v;
-                continue;
-            }
+            if (gen_leech2_type2(v) > 0) continue;
             
             // Here we look for a vector of type 4 ...
             
@@ -617,7 +601,7 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
     }
     // When searching for type 4 and a dodecad has been found then return
     // that dodecad. Otherwise return the number of type-2 vectors found.
-    return find_type2 ? i2 : v_out;
+    return v_out;
 }
 
 /// @endcond 
@@ -637,22 +621,14 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1,
    element \f$g\f$. This function is successful in case
    \f$\dim I_1 = 8\f$ only.
 
-   In case ``coset == 0`` we return a type-4 vector the
-   space \f$I_1\f$. If no such vector exists then we return 0.
-
-   In case ``coset == 1`` we return a type-4 vector that
-   is a sum of two type-2 vectors in the
-   space \f$(I_1)^+ \setminus I_1\f$. If no such vector exists 
-   then we return 0. In this case we use the fact that the space 
-   of the relevant type-2 vectors is an affine subspace 
-   of \f$(I_1)^+\f$, and that any two such vectors are 
-   orthogonal in the Leech lattice, unless equal or opposite. 
+   We return a type-4 vector the space \f$I_1\f$. If no such 
+   vector exists then we return 0.
 */
 // %%EXPORT px
-int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
+int32_t xsp2co1_involution_find_type4(uint64_t *invar)
 {
    uint64_t *pInv;
-   uint32_t a[48], v, n, n0, n1, e0, e1, e2;
+   uint32_t a[48], n, n0, n1, e0, e1;
 
    // Abort if ``invar`` is erroneous.
    if (invar[0] & 0x8000000UL) return -901;
@@ -676,27 +652,56 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t coset)
    // V_1 = {x0 + x1, x0 \in A0, x1 \in A1}. 
    n1 = n < 4 ? n : 4; n0 = n - n1;
    e0 = 1 << n0; e1 = 1 << n1;
-   expand_affine(pInv, n0, coset ? invar[0] : 0, a);
+   expand_affine(pInv, n0, 0, a);
    expand_affine(pInv + n0, n1, 0, a + e0);
  
    // If coset == 0 then return a type-4 vector in V_1.
    // Otherwise store the type-2 vectors in V_1 in the
    // array A2 =  (a[32],..,a[47]).
-   v = xsp2co1_involution_sub_find_type(a, e0, e1, coset ? 16 : 0); 
-   if (coset == 0) return v;
-     
-   // Here coset must be True.  Abort if no type-2  vector found
-   if ((e2 = v) == 0) return 0; // e2 = Number of type-2 vectors found
-
-   // Return a vector v_i = s_0 + s_i, 0 <= i < 16; if v_i is 
-   // of type 4; abort if no such v_i has been found.
-   a[e0 + e1 - 1] = a[e0 + e1];
-   return xsp2co1_involution_sub_find_type(a + e0 + e1 - 1, 1, e2, 0); 
+   return xsp2co1_involution_sub_find_type(a, e0, e1); 
 }
 
 
+/// @cond DO_NOT_DOCUMENT 
+/**
+   Find type-4 vector in a space computed by ``xsp2co1_involution_invariants``. 
 
+   Let \f$g\f$ be the element of the group \f$G_{x0}\f$,
+   and for that element \f$g\f$
+   let \f$A, A_1, I_1\f$, and \f$(I_1)^+\f$
+   be as in function ``xsp2co1_involution_invariants``. 
 
+   Here input parameter ``invar`` must be the output ``invar`` 
+   of function ``xsp2co1_involution_invariants`` applied to the
+   element \f$g\f$. This function is successful in case
+   \f$\dim I_1 = 8, \dim I_1^+ = 9\f$ only.
+
+   We return a type-4 vector in the space that can bw written as a sum
+   of two type-2 vectors in \f$I_1^+ \setminus I_1\f$. If no such 
+   vector exists then we return 0.
+*/
+static int32_t xsp2co1_involution_find_coset8(uint64_t *invar)
+{
+   uint32_t a0[16], a1[16], a2[16], i0, i1, i2 = 0, v;
+
+   // Abort if ``invar`` is erroneous.
+   if (invar[0] & 0x8000000UL) return -901;
+   if ((invar[0] & 0xf000000UL) == 0) return -951;
+   if (invar[1] & 0xf000000UL) return -952;
+   if (invar[9] & 0xffffffUL) return -953;
+
+   expand_affine(invar + 1, 4, invar[0], a0);
+   expand_affine(invar + 5, 4, 0, a1);
+   for (i0 = 0; i0 < 16; ++i0)  {
+       for (i1 = 0; i1 < 16; ++i1) {
+           v = a0[i0] ^ a1[i1];
+           if (gen_leech2_type2(v) && i2 < 16) a2[i2++] = v;
+       }
+   }
+   i2 -= i2 > 0;
+   return xsp2co1_involution_sub_find_type(a2, 1, i2);
+}
+/// @endcond 
 
 
 
@@ -759,7 +764,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
         case 8:
             // Then \f$(I_1^+) = I_1\f$ has dimension 8. Here
             // any type-4 vector in \f$I_1\f$ will do.
-            return xsp2co1_involution_find_type4(invar, 0);
+            return xsp2co1_involution_find_type4(invar);
         case 9:
             // Then the proper subspace \f$I_1\f$ of \f$(I_1^+)\f$ 
             // has dimension 8. Let \f$l\f$ be the linear form
@@ -776,12 +781,12 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             // In case t = 0 try to$A, A_1, I find a sum of two type-2
             // vectors in \f$(I_1^+) \setminus I_1\f$
             if (t == 0) {
-                 v = xsp2co1_involution_find_type4(invar, 1);
+                 v = xsp2co1_involution_find_coset8(invar);
                  if (v > 0) return v;
             } 
             // If this fails (or we have t == 2) then return a
             // vector in \f$I_1\f$ orthogonal to  v.
-            return xsp2co1_involution_find_type4(invar, 0);
+            return xsp2co1_involution_find_type4(invar);
         case 12:
             // Then \f$I_1\f$ has dimension 12, and the type
             // function on the Leech lattice mod 2 is a linear 

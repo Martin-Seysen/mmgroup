@@ -54,9 +54,6 @@ extern "C" {
 
 static uint8_t OCTAD_PLUS[7] = {0,1,2,3,4, 8,9};
 
-static uint8_t STD_OCTAD[8] = {
-    // %%TABLE LEECH_RED_STD_OCTAD, uint8
-};
 
 static uint8_t STD_DODECAD[12] = {
     // %%TABLE LEECH_RED_STD_DODECAD, uint8
@@ -301,8 +298,8 @@ int32_t gen_leech2_reduce_n(uint32_t v, uint32_t *pg_out)
   function returns a representative of a nonzero orbit of \f$Q_{x0}\f$
   under the action of \f$N_{x0}\f$.
 
-  See the table in section
-  **Orbits of the group N_x0 in the group Q_x0**
+  See the table in
+  section **Orbits of the group N_x0 in the group Q_x0**
   in **The mmgroup guide for developers** for our choice of such
   a representative.
 */
