@@ -25,8 +25,31 @@ if __name__ == "__main__":
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 
-from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers
 
+########################################################################
+########################################################################
+# Start axis vectors and involutions in the monster group
+########################################################################
+########################################################################
+
+# We give the standard axes and involutions as strings. So we can use
+# it in any suitable constructor of the for the monster or its rep.
+
+# Standard axes v^+ of 2A involution x_\beta, \beta = Cocode([2,3])
+V_AXIS = "A_2_2 - A_3_2 + A_3_3 - 2*B_3_2" 
+# Opposite axis v^- of of 2A involution x_{-1} * x_\beta  
+V_AXIS_OPP = "A_2_2 - A_3_2 + A_3_3 + 2*B_3_2" 
+
+# 2A involution x_\beta corresponding to standard axis v^+
+G_AXIS = "d_200h"
+# 2A involution x_{-1} x_\beta corresponding to opposite axis v^-
+G_AXIS_OPP = "x_1000h * d_200h"
+
+# Central involution in the subgroup G_x0 of the monster
+G_CENTRAL = "x_1000h"
+
+# Group element mapping v^+ to v^-
+G_MAP_STD_OPP = "x_200h"
 
 ########################################################################
 ########################################################################
@@ -39,42 +62,15 @@ V15 = MMV(15)               # Its representation space
 
 PROCESSES = 0
 
-########################################################################
-########################################################################
-# generate a group and a vector for a 2A axis
-########################################################################
-########################################################################
-
-def generate_axis(i0, i1, tag = None):
-    r"""Generate a 2A involution and also its corresponding 2A axis
-
-    The function computes a certain 2A involution ``g`` in the monster
-    and also the corresponding 2A axis ``v`` in the 196884-dimensional 
-    representation of the monster. The function returns the pair
-    ``(g, v)`` as a pair of strings.
-
-    Parameters ``i0`` and ``i1`` are different integers less than 24
-    specifying a Golay cocode vector ``c`` of weight 2. If ``tag`` is 
-    set to its default value then ``g`` will be the the 2A involution
-    in the subgroup :math:`Q_{x0}` of the monster corresponding to
-    the cocode vector ``c``.
-
-    If tag is not None (default) then it must be ``'x'``, ``'y'``,
-    or ``'z'``. Then ``g`` is conjugated by :math:`x_d`, :math:`y_d`, 
-    or  :math:`z_d`, where `d` is any element of the Parker Loop 
-    such that the scalar product of `d` and `c` is equal to 1.
-    """
-    coc = Cocode([i0,i1]) 
-    g = G('d', coc)
-    v = V15('I', i0, i1)
-    if tag:
-        assert len(tag) == 1 and tag in "xyz"
-        coc_value = coc.ord
-        x = PLoop(coc_value & -coc_value)
-        assert x & coc == Parity(1)
-        g_trans = G(tag, x)
-        g, v = g**g_trans, v * g_trans
-    return g.raw_str(), v.raw_str()
+def check_std_axes():
+    """Some consistency checks for standard axes and involutions"""
+    g_map_std_opp = G(G_MAP_STD_OPP)
+    g_axis, g_axis_opp = G(G_AXIS), G(G_AXIS_OPP)
+    assert g_axis ** g_map_std_opp == g_axis_opp
+    v_axis, v_axis_opp = V15(V_AXIS), V15(V_AXIS_OPP)
+    assert v_axis * g_map_std_opp == v_axis_opp
+    
+check_std_axes()
 
 
 ########################################################################
@@ -84,16 +80,21 @@ def generate_axis(i0, i1, tag = None):
 ########################################################################
 
 # The central involution in the subgroup ``G_x0``-
-g_central = G("x", 0x1000)  
+g_central = G(G_CENTRAL)  
 
-# The standard 2A element in the monste froup
-g_axis = G("d", Cocode([2,3]))
+# The standard 2A element in the monster group
+g_axis = G(G_AXIS)
 
-# Tuple describing the standard 2A axis vector
-v_start_tuple = ("I", 3, 2) 
+# The opposite standard 2A element in the monster group
+g_axis_opp = G(G_AXIS_OPP)
 
-# The standars 2A axis vector
-v_axis = V15(*v_start_tuple)
+# The standard 2A axis vector
+v_axis = V15(V_AXIS)
+
+# Opposite ofstandard 2A axis vector
+v_axis_opp = V15(V_AXIS_OPP)
+
+
 
 
 ########################################################################
@@ -107,10 +108,11 @@ v_axis = V15(*v_start_tuple)
 class GVector:
     r"""Models a 2A axis in the monster group
 
-    The constructor takes three argements ``i0, i1, tag``. These
-    arguments describe a 2A involution ``g0`` and the axis ``v0``
-    corresponding to ``g0`` in the same was as in function 
-    ``generate_axis``. See |Con85| for background on 2A axes.
+    The constructor takes three argements ``opp``. If this is
+    ``False`` (default) the instance is intialized with the
+    standard "A axis ``v^+``. Ohterwise it is initialized with
+    the opposite axis ``v^-``. See |Seysen22| for the description
+    of the 2A axes ``v^+``and ``v^-``.
 
     Attributes ``g0`` and ``v0``of an instance ""w"" of this class 
     contains that involution and its axis as an instance of class 
@@ -134,22 +136,26 @@ class GVector:
     """
     g_central = g_central
     __slots__ = "v", "g", "stage", "g0", "input"
-    def __init__(self, i0, i1, tag = None):
-        if i0 is not None:
-            g0, v0 = generate_axis(i0, i1, tag)
+    def __init__(self, opp = False):
+        if opp is not None:
+            g, v = self.get_gv_start(opp)
             self.g = G(1)
-            self.g0 = G(g0)
-            self.v = V15(v0)
+            self.g0 = G(g)
+            self.v = V15(v)
             self.stage = 0
-            self.input = (i0, i1, tag)
+            self.input = opp
+
+    @staticmethod 
+    def get_gv_start(opp):
+        return (G_AXIS_OPP, V_AXIS_OPP) if opp else (G_AXIS, V_AXIS)
 
     @property
     def v0(self):
-        return V15(generate_axis(i0, i1, tag))
+        return V15(self.get_gv_start(self.input)[1])
         
     def __mul__(self, g1):
         g1 = G(g1)
-        gv_new = self.__class__(None, None)
+        gv_new = self.__class__(None)
         gv_new.g = self.g * g1
         gv_new.v = self.v * g1
         gv_new.g0 = self.g0
@@ -330,7 +336,8 @@ def next_generation(
 
         This function takes an element ``v`` of ``V`` as input. It
         should apply a random element of the group ``K`` to ``v``
-        and return the result as an element of ``V``.
+        and return the result as an element of ``V``. The function
+        may return ``None`` if element ``v`` has no offspring.
         
     :param f_mark:
 
@@ -376,9 +383,10 @@ def next_generation(
     for i in range(n_spread):
         for gv in obj_list:
             gv_new = f_spread(gv)
-            m = f_mark(gv_new)
-            if m not in marks:
-                new_marks[m].append(gv_new)
+            if gv_new is not None:
+                m = f_mark(gv_new)
+                if m not in marks:
+                    new_marks[m].append(gv_new)
     if verbose:
         len_t = sum([len(x) for x in new_marks.values()]) 
         print("No of candidates tested: ", len_t)
@@ -406,9 +414,10 @@ def _spread(obj_list, n_spread, f_spread, f_mark, f_score, marks):
     for i in range(n_spread):
         for gv in obj_list:
             gv_new = f_spread(gv)
-            m = f_mark(gv_new)
-            if m not in marks:
-                new_marks[m].append((f_score(gv_new), gv_new))
+            if gv_new is not None:
+                m = f_mark(gv_new)
+                if m not in marks:
+                    new_marks[m].append((f_score(gv_new), gv_new))
     return new_marks
 
 def next_generation_pool(
@@ -612,9 +621,8 @@ def _show_sample(i, sample):
     print("dihedral class:", axis_type(gv.g))
 
 
-def explore_axes(stages, n_spread, n_keep, verbose = 0):
+def explore_axes(gv0, stages, f_spread, f_mark, f_score, n_spread, n_keep, verbose = 0):
     global all_samples
-    gv0 = GVector(2, 3)
     gv_list = [gv0]
     m = mark(gv0)
     marks = set([m])
@@ -626,9 +634,9 @@ def explore_axes(stages, n_spread, n_keep, verbose = 0):
         gv_list,  new_samples = next_generation_pool(
            gv_list,  
            marks,
-           f_spread = spread, 
-           f_mark = mark, 
-           f_score = score, 
+           f_spread = f_spread, 
+           f_mark = f_mark, 
+           f_score = f_score, 
            n_spread = n_spread, 
            n_keep = n_keep, 
            processes = PROCESSES,
@@ -647,7 +655,7 @@ def explore_axes(stages, n_spread, n_keep, verbose = 0):
             break
     num_samples = sum(len(x) for x in all_samples.values())
     print("Number of axes considered:", num_samples)
-    assert len(sample_list) == 12
+    assert len(sample_list) >= 12
     return sample_list
 
 
@@ -703,6 +711,8 @@ f_text = """# This file has been generated automatically. Do not change!
 g_central = "%s"
 g_axis = "%s"
 v_start = "%s" 
+g_axis_opp = "%s"
+v_start_opp = "%s" 
 
 g_strings = [
 %s
@@ -746,8 +756,8 @@ def sample_list_sort_key(sample_entry):
      return stage, int(s_class[:-1]), s_class[-1:]
 
 
-def write_axes(verbose = False):
-    sample_list = explore_axes(5, 100, 50, verbose = verbose)
+def write_axes(sample_list, verbose = False):
+    from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", "" 
     s_classes = ""
@@ -766,13 +776,10 @@ def write_axes(verbose = False):
         s_beautifiers += '"' + beautifiers[i] + '",\n'
         s_powers += '"' + AXIS_POWERS[class_] + '",\n'
         s_groups += '"' + AXIS_GROUPS[class_] + '",\n'
-
-    
-    s_g_central = g_central.raw_str()
-    s_g_axis, s_v_start = generate_axis(2, 3)
        
     with open(PATH + ".py", "wt") as f:
-        f.write(f_text % (s_g_central, s_g_axis, s_v_start, 
+        f.write(f_text % (G_CENTRAL, G_AXIS, V_AXIS, 
+            G_AXIS_OPP, V_AXIS_OPP,
           s_samples, s_stages, s_classes, s_marks, s_beautifiers))
 
         f.write(axes_text % (s_powers, s_groups)) 
@@ -785,6 +792,14 @@ def write_axes(verbose = False):
 ########################################################################
 
 
+def compute_and_write_axes(verbose = 0):
+    v0 = GVector()
+    sample_list = explore_axes(v0, 5, spread, mark, score, 
+            100, 50, verbose = verbose)
+    write_axes(sample_list, verbose)
+    time.sleep(0.1)
+
+
 def do_test_sample_axes(sample_axes):
     sax =  sample_axes
     l = [G(sax.g_central), G(sax.g_axis), MMVector(7, sax.v_start)]
@@ -794,13 +809,11 @@ def do_test_sample_axes(sample_axes):
 
 def import_sample_axes(calculate = False, verbose = 0):
     if calculate:
-        write_axes(verbose)
-        time.sleep(0.1)
+        compute_and_write_axes(verbose)
     try:
         from mmgroup.tests.test_axes import sample_axes
     except ImportError: 
-        write_axes(verbose)
-        time.sleep(0.1)
+        compute_and_write_axes(verbose)
         from mmgroup.tests.test_axes import sample_axes
     do_test_sample_axes(sample_axes)
     return sample_axes

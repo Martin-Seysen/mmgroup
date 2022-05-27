@@ -19,7 +19,7 @@ from mmgroup import MM0, MMV
 from mmgroup.mm_crt_space import MMVectorCRT 
 
 
-from mmgroup.tests.test_axes.get_sample_axes import import_sample_axes
+from mmgroup.tests.test_axes.get_nice_sample_axes import import_sample_axes
 from mmgroup.tests.test_axes.get_sample_axes import do_test_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import import_baby_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import do_test_baby_sample_axes

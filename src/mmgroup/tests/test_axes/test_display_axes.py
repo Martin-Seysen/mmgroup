@@ -25,6 +25,18 @@ from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3
 
+from mmgroup.tests.test_axes.get_sample_axes import G, V15
+from mmgroup.tests.test_axes.get_sample_axes import g_central
+from mmgroup.tests.test_axes.get_sample_axes import V_AXIS
+from mmgroup.tests.test_axes.get_sample_axes import V_AXIS_OPP
+from mmgroup.tests.test_axes.get_sample_axes import g_axis, g_axis_opp
+
+v_axis = MMVectorCRT(16, V_AXIS)
+v_axis_opp = MMVectorCRT(16, V_AXIS_OPP)
+v_axis15 = V15(V_AXIS)
+v_axis_opp15 = V15(V_AXIS_OPP)
+
+
 HEADER = r"""Classes of 2A axes
 
 We display information about the classes of 2A axes of the monster 
@@ -57,11 +69,6 @@ between classes.
 
 """ 
 
-g_central = MM0(sample_axes.g_central)
-g_axis =  MM0(sample_axes.g_axis)
-v_start = MMVectorCRT(16, sample_axes.v_start)
-V15 = MMV(15)
-v_start15 = V15(sample_axes.v_start)
 
 
 #######################################################################
@@ -90,7 +97,7 @@ def display_A(A):
 
 def x_equations(axis, t = 0):
     #print(".", end = "")
-    v = v_start15 * axis.g_all() * MM0('t', t)
+    v = v_axis15 * axis.g_all() * MM0('t', t)
     data = v["E", 300:300+98280]
     short = [MMSpace.index_to_short_mod2(i+300) 
         for i, x in enumerate(data) if x != 0]
@@ -177,7 +184,6 @@ def eigen(A):
 AXES= {}
 
 def get_axes():
-    v15 = V15(sample_axes.v_start)
     global AXES
     if len(AXES):
         return AXES
@@ -190,7 +196,7 @@ def get_axes():
         axis.group = sample_axes.groups[i]
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
-        axis.v15 =  v15 * MM0(sample_axes.g_strings[i])
+        axis.v15 =  v_axis15 * MM0(sample_axes.g_strings[i])
         axis.norm15 = mm_op15_norm_A(axis.v15.data)
         AXES[g_class] = axis
     return AXES
@@ -216,9 +222,8 @@ def norm_A_mod15(i):
         norms_A_mod15 = []
         sample_axes = import_sample_axes()
         V15 = MMV(15)
-        v_start = V15(sample_axes.v_start)
         for g in sample_axes.g_strings:
-             v = v_start * MM0(g)
+             v = v_axis * MM0(g)
              norms_A_mod15.append(mm_op15_norm_A(v.data))
         return norms_A_mod15[i]
 
@@ -292,10 +297,14 @@ def test_display_axes(verbose = 0):
             print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
             print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))
             #print("Dim intersection with Q_z0:", 24 - len(x_equations(axis,2)))
+            opp_axis_type = (v_axis_opp15 * MM0(axis.g)).axis_type()
+            print("Image of opposite axis: ", opp_axis_type) 
             print("A part of axis v:")
             display_A(axis.A())
             print("\nA part of axis v * MM('t', 1):")
             display_A(axis.Ax())
+            print("A part of opposite axis v:")
+            display_A(axis.A_opp())
         print("")
 
 

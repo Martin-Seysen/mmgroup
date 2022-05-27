@@ -24,8 +24,14 @@ from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 from mmgroup import GcVector, AutPL
 
 
+from mmgroup.tests.test_axes.get_sample_axes import G_CENTRAL
+from mmgroup.tests.test_axes.get_sample_axes import G_AXIS_OPP
+from mmgroup.tests.test_axes.get_sample_axes import V_AXIS_OPP
+from mmgroup.tests.test_axes.get_sample_axes import g_axis, v_axis
+from mmgroup.tests.test_axes.get_sample_axes import g_axis_opp
+from mmgroup.tests.test_axes.get_sample_axes import v_axis_opp
+
 from mmgroup.tests.test_axes.get_sample_axes import g_central, GVector
-from mmgroup.tests.test_axes.get_sample_axes import generate_axis
 from mmgroup.tests.test_axes.get_sample_axes import next_generation_pool
 from mmgroup.tests.test_axes.get_sample_axes import axis_type
 ########################################################################
@@ -38,15 +44,6 @@ G = MM0                     # The monster group
 V15 = MMV(15)               # Its representation space
 
 PROCESSES = 0
-
-g_axis_str, v_axis_str = generate_axis(3,2)
-g_axis, v_axis  = G(g_axis_str), V15(v_axis_str)
-
-g_axis_opp_str, v_axis_opp_str = generate_axis(3,2, 'x')
-g_axis_opp, v_axis_opp  = G(g_axis_opp_str), V15(v_axis_opp_str)
-
-assert g_axis_opp != g_axis
-
 
 
 ########################################################################
@@ -149,7 +146,7 @@ def _show_sample(i, sample):
 
 def explore_axes(stages, n_spread, n_keep, verbose = 0):
     global all_samples
-    gv0 = GVector(2, 3, 'x')
+    gv0 = GVector(opp = True)
     gv_list = [gv0]
     m = mark(gv0)
     marks = set([m])
@@ -251,13 +248,10 @@ def write_axes(verbose = False):
         s_marks += str(mark)  + ",\n"
         s_classes += '"' + baby_axis_type(sample) + '", '
 
-
-    
-    s_g_central = g_central.raw_str()
-    s_g_axis, s_v_start = generate_axis(2, 3, 'x')
        
     with open(PATH + ".py", "wt") as f:
-        f.write(f_text % (s_g_central, s_g_axis, s_v_start, 
+        f.write(f_text % (G_CENTRAL,  
+            G_AXIS_OPP, V_AXIS_OPP, 
           s_samples, s_stages, s_classes, s_marks))
 
 

@@ -26,14 +26,24 @@ from mmgroup.mm_crt_space import MMVectorCRT
 from mmgroup import mat24, GcVector, AutPL, Parity, GCode
 from mmgroup.clifford12 import bitmatrix64_solve_equation
 
-V_START = "A_2_2-A_3_2+A_3_3-2*B_3_2" 
 
+from mmgroup.tests.test_axes.get_sample_axes import G_CENTRAL
+from mmgroup.tests.test_axes.get_sample_axes import G_AXIS
+from mmgroup.tests.test_axes.get_sample_axes import V_AXIS
+from mmgroup.tests.test_axes.get_sample_axes import G_AXIS_OPP
+from mmgroup.tests.test_axes.get_sample_axes import V_AXIS_OPP
+from mmgroup.tests.test_axes.get_sample_axes import g_central
+from mmgroup.tests.test_axes.get_sample_axes import g_axis
+from mmgroup.tests.test_axes.get_sample_axes import g_axis_opp
 
-g_central = MM0("x_1000h")
-g_axis =  MM0("d_200h")
-v_start = MMVectorCRT(16, V_START)
 V15 = MMV(15)
-v_start15 = V15(V_START)
+
+
+
+v_axis = MMVectorCRT(16, V_AXIS)
+v_axis_opp = MMVectorCRT(16, V_AXIS_OPP)
+v_axis15 = V15(V_AXIS)
+v_axis_opp15 = V15(V_AXIS_OPP)
 
 
 #################################################################
@@ -786,7 +796,8 @@ class Axis:
     def __init__(self, g, g_class):
         self.g = MM0(g)
         self.g_class = g_class
-        self.v = MMVectorCRT(20, "I", 3, 2) * self.g
+        self.v = v_axis * self.g
+        self.v_opp = v_axis_opp * self.g
         self.g_beautify = MM0()
 
     def g_all(self):
@@ -795,15 +806,22 @@ class Axis:
     def __mul__(self, g):
         g = MM0(g)
         self.v *= g
+        self.v_opp *= g
         self.g_beautify *= g
         return self
 
+    @staticmethod
+    def A_int(A):
+        Afloat = 256 * np.copy(A)
+        Aint = np.array(Afloat, dtype = np.int32)
+        assert (Aint == Afloat).all(), Afloat
+        return Aint
 
     def A(self):
-        Afloat = 256 * self.v["A"]
-        A = np.array(Afloat, dtype = np.int32)
-        assert (A == Afloat).all(), Afloat
-        return A
+        return self.A_int(self.v["A"])
+
+    def A_opp(self):
+        return self.A_int(self.v_opp["A"])
 
     def blocks(self):
         return blocks(self.A())
@@ -817,15 +835,11 @@ class Axis:
         return self
 
     def axis_type(self, i):
-        v15 = v_start15 * self.g_all()
+        v15 = v_axis15 * self.g_all()
         return v15.axis_type(i)
 
     def Ax(self):
-        vt = self.v * MM0('t',1)
-        At_float = 256 * vt["A"]
-        At = np.array(At_float, dtype = np.int32)
-        assert (At == At_float).all(), Afloat
-        return At
+        return self.A_int((self.v * MM0('t',1))["A"])
 
     def reflection(self):
         return g_axis**self.g_all()        
