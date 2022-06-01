@@ -152,7 +152,7 @@ Co_2_OPP = calc_conjugate_to_opp(2, 3)
 
 def spread(gv):
     ax_type = gv.axis_type()
-    if ax_type == '8B':
+    if ax_type in ['6C', '8B', '6F', '10A', '10B', '12C']:
          return None
     if gv.stage < 3 :
         if ax_type == "4A" and randint(0,99) < 20:
@@ -248,4 +248,4 @@ def import_sample_axes(calculate = False, verbose = 0):
 if __name__ == "__main__":
     if PROCESSES != 1: 
         freeze_support()
-    import_sample_axes(calculate = True, verbose = True)
+    sample_axes = import_sample_axes(calculate = True, verbose = True)

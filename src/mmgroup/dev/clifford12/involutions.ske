@@ -561,19 +561,36 @@ static inline void expand_affine(
     that the input has been echelonized properly (as e.g. in
     function ``xsp2co1_involution_invariants``) and expanded
     properly as e.g. in function ``uint32_t expand_affine``.
+
+    Parameter ``guide`` should usually be zero. If ``guide`` is a
+    type-4 vector in the set ``V`` then the function
+    returns ``guide``. Otherwise parameter ``guide`` is ignored.
+
+    Array ``a`` is destroyed.
 */
-// %%EXPORT px
-uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1)
+static uint32_t 
+sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide)
 {  
     uint32_t v;                   // The current vector being analysed
     uint32_t v_out = 0;           // 0 or a saved type-4 vector
-    uint32_t i0, i1;
+    uint32_t i0, i1, n2 = n0 + n1;
+
+    for (i0 = 0; i0 < n2; ++i0) a[i0] &= 0xffffffUL;
+    if (gen_leech2_type(guide) == 4) {
+        guide &= 0xffffffUL;
+        for (i0 = 0; i0 < n0; ++i0) {
+            v = a[i0] ^ guide;
+            for (i1 = n0; i1 < n0 + n1; ++i1) {
+                 if (v == a[i1]) return a[i0] ^ a[i1];
+            }
+        }
+    }
 
     for (i0 = 0; i0 < n0; ++i0) {
-        for (i1 = 0; i1 < n1; ++i1) {
+        for (i1 = n0; i1 < n2; ++i1) {
             // let v be the vector in the Leech lattice mod 2
             // to be analysed. v must be of type 0, 2, or 4.
-            v = (a[i0] ^ a[n0 + i1]) & 0xffffffUL;
+            v = a[i0] ^ a[i1];
             // Continue if v is not of the type that we are looking for.
             if (gen_leech2_type2(v) > 0) continue;
             
@@ -623,9 +640,14 @@ uint32_t xsp2co1_involution_sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1)
 
    We return a type-4 vector the space \f$I_1\f$. If no such 
    vector exists then we return 0.
+
+   Parameter ``guide`` should usually be zero. If ``guide`` is a
+   type-4 vector in the Leech lattice mod 2 satisfying the
+   assumptions the return value ``v``then the function
+   returns ``v = guide``. Otherwise parameter ``guide`` is ignored.
 */
 // %%EXPORT px
-int32_t xsp2co1_involution_find_type4(uint64_t *invar)
+int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide)
 {
    uint64_t *pInv;
    uint32_t a[48], n, n0, n1, e0, e1;
@@ -658,7 +680,7 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar)
    // If coset == 0 then return a type-4 vector in V_1.
    // Otherwise store the type-2 vectors in V_1 in the
    // array A2 =  (a[32],..,a[47]).
-   return xsp2co1_involution_sub_find_type(a, e0, e1); 
+   return sub_find_type(a, e0, e1, guide); 
 }
 
 
@@ -679,8 +701,10 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar)
    We return a type-4 vector in the space that can bw written as a sum
    of two type-2 vectors in \f$I_1^+ \setminus I_1\f$. If no such 
    vector exists then we return 0.
+
+   Parameter ``guide`` is as in function ``sub_find_type``
 */
-static int32_t xsp2co1_involution_find_coset8(uint64_t *invar)
+static int32_t xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide)
 {
    uint32_t a0[16], a1[16], a2[16], i0, i1, i2 = 0, v;
 
@@ -699,7 +723,7 @@ static int32_t xsp2co1_involution_find_coset8(uint64_t *invar)
        }
    }
    i2 -= i2 > 0;
-   return xsp2co1_involution_sub_find_type(a2, 1, i2);
+   return sub_find_type(a2, 1, i2, guide);
 }
 /// @endcond 
 
@@ -711,7 +735,7 @@ static int32_t xsp2co1_involution_find_coset8(uint64_t *invar)
    in the array given by parameter ``elem``. In this function
    we require that the image of \f$g\f$ in the factor
    group \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order 1 or 2;
-   othereise the function fails.
+   otherwise the function fails.
 
    Let \f$\Lambda_2\f$ be the Leech lattice mod 2, with vectors 
    in \f$\Lambda_2\f$ coded in **Leech lattice encoding** as 
@@ -741,9 +765,16 @@ static int32_t xsp2co1_involution_find_coset8(uint64_t *invar)
    Caution:
 
    The last statement has been checked for classes 1A, 2A and 2B only!
+
+
+   Parameter ``guide`` should usually be zero. If ``guide`` is a
+   type-4 vector in the Leech lattice mod 2 satisfying the
+   assumptions the return value ``v``then the function
+   returns ``v = guide``. Otherwise parameter ``guide`` is ignored.
+   It is also ignored in case  \f$g \in Q_{x0}\f$.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_find_type4(uint64_t *elem)
+int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide)
 {
     uint64_t invar[12];   
     int_fast32_t v, t, n;
@@ -764,7 +795,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
         case 8:
             // Then \f$(I_1^+) = I_1\f$ has dimension 8. Here
             // any type-4 vector in \f$I_1\f$ will do.
-            return xsp2co1_involution_find_type4(invar);
+            return xsp2co1_involution_find_type4(invar, guide);
         case 9:
             // Then the proper subspace \f$I_1\f$ of \f$(I_1^+)\f$ 
             // has dimension 8. Let \f$l\f$ be the linear form
@@ -781,12 +812,12 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem)
             // In case t = 0 try to$A, A_1, I find a sum of two type-2
             // vectors in \f$(I_1^+) \setminus I_1\f$
             if (t == 0) {
-                 v = xsp2co1_involution_find_coset8(invar);
+                 v = xsp2co1_involution_find_coset8(invar, guide);
                  if (v > 0) return v;
             } 
             // If this fails (or we have t == 2) then return a
             // vector in \f$I_1\f$ orthogonal to  v.
-            return xsp2co1_involution_find_type4(invar);
+            return xsp2co1_involution_find_type4(invar, guide);
         case 12:
             // Then \f$I_1\f$ has dimension 12, and the type
             // function on the Leech lattice mod 2 is a linear 
@@ -843,7 +874,7 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1\f$
    // exists.
 
-   v = xsp2co1_elem_find_type4(elem);
+   v = xsp2co1_elem_find_type4(elem, 0);
    if (v < 0) return v;
 
    // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of

@@ -854,11 +854,11 @@ class Axis:
                 self *= trim_cooctad(Ax)
                 Ax = self.Ax()
             if t in positive_blocks:
-                d = change_signs_A(Ax, positive_blocks[t])
+                d = change_signs_A(Ax, positive_blocks[t], ignore=True)
                 #if (d): print("d =", d)
                 self *= MM0('x', d)
             elif t in negative_blocks:
-                d = change_signs_A(Ax, [], negative_blocks[t])
+                d = change_signs_A(Ax, [], negative_blocks[t], ignore=True)
                 if (d): print("d =", d)
                 self *= MM0('x', d)
             else:
