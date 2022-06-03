@@ -5,11 +5,13 @@ from random import randint, shuffle, sample
 from collections import defaultdict
 import numpy as np
 
-sys.path.append(r"C:\Data\projects\MonsterGit\src")
+if __name__ == "__main__":
+    sys.path.append("../../../")
 
 from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_involution_invariants
+from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 
 
 G = MM0
@@ -53,12 +55,6 @@ y8 = G("y", PLoop(range(8)))
 
 y12 =  G("y", PLoop([0,4,8,12,16,20,2,7,10,]))
 
-
-#from fourv import find_fourvolution
-#g4 = find_fourvolution()
-#Possible value for g4:
-#g4 = G("M0<y_3afh*d_480h*p_41443>")
-#assert g4.chi_G_x0()[0] == -13 and g4.order() == 4
 
 
 def is_nice_permutation(pi):
@@ -125,15 +121,15 @@ def invariant_count_type2(iv):
     v0  =  (int(iv[0]) >> 24) & 7 if len(iv) else 0
     while len(iv) and int(iv[-1]) == 0:
         iv = iv[:-1] 
-    if (v0 & 4 != 4):
-        return 0
-    data = [int(iv[0]) & 0xffffff]
-    for i in range(1, len(iv)):
-        if (int(iv[i]) >> 24) & 1 == 0:
-            x = int(iv[i]) & 0xffffff
-            data += [x ^ y for y in data]
-    s = sum((gen_leech2_type(x) == 2 for x in data))
-    return s
+    if (v0 & 4 == 4):
+         return xsp2co1_leech2_count_type2(np.copy(iv), len(iv))
+    if len(iv) == 12:
+        v1  =  (int(iv[1]) >> 24) & 7 
+        if v0 == 2 and v1 == 1:
+            cp = np.copy(iv[1:])
+            cp[0] = 0
+            return xsp2co1_leech2_count_type2(cp, 11)
+    return 0
     
 
 def invariant_type(g):
@@ -213,7 +209,8 @@ of G_x0 follows.
 After that, a representative of g of the class is printed.
 
 
-The list of invariant contains the following three tuples:
+The list of invariants contains the following three tuples,
+and an appended character value:
 
 Tuple 1:
    - Order of the class
@@ -233,14 +230,19 @@ Tuple 3:
    - Row 0, column bits 26, 25, 24  of invariant matrix ``invar``
    - Row 1, column bits 26, 25, 24  of invariant matrix ``invar``
    - Type of s^\perp in Leech lattice mod 2
-   - Number of type-2 vectors in (\im (A - 1))^-; this is
-     calculated for classes 1A and 2A  in Co_1 only.
+   - Related to the number of type-2 vectors in \im (A - 1)
+     For class 2A  in Co_1
+         Number of type-2 vectors in (\im (A - 1))^-
+     For class 2C  in Co_1
+         Number of type-2 vectors in (\im (A - 1))^+
+     For all other classes:
+         Not calculated, and set to zero
      
    Column bit 26 in row 0 is one iff (\im (A - 1))^- is strictly 
    greater than (\im (A - 1)); this is calculated for classes 1A 
    and 2A  in Co_1 only.
 
-   Column bit 25 in row 0 is 1 for class 2B in Co_1 and 0 for 
+   Column bit 25 in row 0 is 1 for class 2C in Co_1 and 0 for 
    all other classes in Co_1. It is 1 iff \im (A - 1) contains
    type-3 vectors.
 
@@ -255,14 +257,18 @@ Tuple 3:
 
       In row 1 iff s is not 0.
 
-   Class 2B in Co_1:  
+   Class 2C in Co_1:  
       In row 0 iff s is equal to the linear form x -> type(x) (mod 2).
 
       In row 1 iff s is not 0 and bit 24 in row 0 is not set to 1.
 
-   Class 2C in Co_1:
+   Class 2B in Co_1:
       In row 0 iff s is not 0. 
 
+
+Entry 4:
+   The character of the 98280-dimensional monomial representation
+   of the class.
 
 """
 
@@ -287,9 +293,9 @@ def print_invariants(file = None):
     show_characters(G(), file = file)
     print("\n#Characters for Co_1 class 2A", file = file)
     show_characters(y8, file = file)
-    print("\n#Characters for Co_1 class 2B", file = file)
-    show_characters(y12, file = file)
     print("\n#Characters for Co_1 class 2C", file = file)
+    show_characters(y12, file = file)
+    print("\n#Characters for Co_1 class 2B", file = file)
     g4 = find_fourvolution()
     show_characters(g4, file = file)
     if is_py:

@@ -315,7 +315,7 @@ static inline void get_radical(
 
 
 /**
-  dd vector to list of vectors in Leech lattice mod 2
+  Add vector to list of vectors in Leech lattice mod 2
 
   Let ``value`` be a vector in the Leech lattice mod 2. 
 
@@ -484,7 +484,7 @@ int32_t mm_reduce_analyze_2A_axis(uint_mmv_t *v, uint32_t * r)
     n = ax.n_leech2 > MAX_SHORT_ARRAY ? MAX_SHORT_ARRAY : ax.n_leech2;
     r[0] = ax.axis_type;
     r[1] = ax.target_axes[0];
-    r[2] = ax.target_axes[3];
+    r[2] = ax.target_axes[1];  
     r[3] = n;
     for (i = 0; i < n; ++i) r[i+4] = ax.v_leech2[i] & 0xffffff;
     return 0; 

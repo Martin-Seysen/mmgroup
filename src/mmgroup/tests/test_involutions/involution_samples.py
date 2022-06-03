@@ -1,6 +1,6 @@
 # This file has been created automatically, do not change!!!
 
-"""Classes of square roots of Q_x0 in G_x0.
+r"""Classes of square roots of Q_x0 in G_x0.
 
 The list INVOLUTION_SAMPLES shows invariants and representatives g of
 all classes in the subgroup G_x0 of the monster that square up to an 
@@ -30,7 +30,8 @@ of G_x0 follows.
 After that, a representative of g of the class is printed.
 
 
-The list of invariant contains the following three tuples:
+The list of invariants contains the following three tuples,
+and an appended character value:
 
 Tuple 1:
    - Order of the class
@@ -50,14 +51,19 @@ Tuple 3:
    - Row 0, column bits 26, 25, 24  of invariant matrix ``invar``
    - Row 1, column bits 26, 25, 24  of invariant matrix ``invar``
    - Type of s^\perp in Leech lattice mod 2
-   - Number of type-2 vectors in (\im (A - 1))^-; this is
-     calculated for classes 1A and 2A  in Co_1 only.
+   - Related to the number of type-2 vectors in \im (A - 1)
+     For class 2A  in Co_1
+         Number of type-2 vectors in (\im (A - 1))^-
+     For class 2C  in Co_1
+         Number of type-2 vectors in (\im (A - 1))^+
+     For all other classes:
+         Not calculated, and set to zero
      
    Column bit 26 in row 0 is one iff (\im (A - 1))^- is strictly 
    greater than (\im (A - 1)); this is calculated for classes 1A 
    and 2A  in Co_1 only.
 
-   Column bit 25 in row 0 is 1 for class 2B in Co_1 and 0 for 
+   Column bit 25 in row 0 is 1 for class 2C in Co_1 and 0 for 
    all other classes in Co_1. It is 1 iff \im (A - 1) contains
    type-3 vectors.
 
@@ -72,14 +78,18 @@ Tuple 3:
 
       In row 1 iff s is not 0.
 
-   Class 2B in Co_1:  
+   Class 2C in Co_1:  
       In row 0 iff s is equal to the linear form x -> type(x) (mod 2).
 
       In row 1 iff s is not 0 and bit 24 in row 0 is not set to 1.
 
-   Class 2C in Co_1:
+   Class 2B in Co_1:
       In row 0 iff s is not 0. 
 
+
+Entry 4:
+   The character of the 98280-dimensional monomial representation
+   of the class.
 
 
 """
@@ -101,15 +111,15 @@ INVOLUTION_SAMPLES = [
 [[(4, 4), (19, 43, 8, 0), (9, 4, 1, 4, 0)], -24, 'M0<y_80fh*d_803h>'] ,
 [[(4, 0), (19, 43, 8, 0), (9, 5, 0, 0, 0)], -24, 'M0<y_0fh*x_1003h*d_406h>'] ,
 
-#Characters for Co_1 class 2B
+#Characters for Co_1 class 2C
 [[(4, 4), (275, 11, 0, 64), (12, 2, 0, 0, 0)], 264, 'M0<y_2e0h>'] ,
 [[(2, 0), (275, 11, 0, 0), (12, 3, 0, 4, 0)], 264, 'M0<y_0ae0h*d_20h>'] ,
-[[(8, 3), (11, 11, 0, 0), (12, 2, 1, 3, 0)], 0, 'M0<y_0ae0h*d_800h>'] ,
-[[(4, 4), (19, 11, 0, 0), (12, 2, 1, 4, 0)], 8, 'M0<y_2e0h*x_1001h*d_0eh>'] ,
-[[(4, 4), (-13, 11, 0, 0), (12, 2, 1, 4, 0)], -24, 'M0<y_2e0h*x_1011h*d_21h>'] ,
-[[(4, 2), (51, 11, 0, 0), (12, 2, 1, 2, 0)], 40, 'M0<y_2e0h*x_1020h*d_0fh>'] ,
+[[(8, 3), (11, 11, 0, 0), (12, 2, 1, 3, 132)], 0, 'M0<y_0ae0h*d_800h>'] ,
+[[(4, 4), (19, 11, 0, 0), (12, 2, 1, 4, 136)], 8, 'M0<y_2e0h*x_1001h*d_0eh>'] ,
+[[(4, 4), (-13, 11, 0, 0), (12, 2, 1, 4, 120)], -24, 'M0<y_2e0h*x_1011h*d_21h>'] ,
+[[(4, 2), (51, 11, 0, 0), (12, 2, 1, 2, 152)], 40, 'M0<y_2e0h*x_1020h*d_0fh>'] ,
 
-#Characters for Co_1 class 2C
-[[(4, 0), (-13, -13, 0, 64), (12, 0, 0, 0, 0)], 0, 'M0<y_2ech*d_4f0h*p_31510131>'] ,
-[[(4, 4), (-13, -13, 0, 0), (12, 1, 0, 4, 0)], 0, 'M0<y_0aech*d_441h*p_31510131>'] ,
+#Characters for Co_1 class 2B
+[[(4, 0), (-13, -13, 0, 64), (12, 0, 0, 0, 0)], 0, 'M0<y_13a0h*d_600h*p_21289009>'] ,
+[[(4, 4), (-13, -13, 0, 0), (12, 1, 0, 4, 0)], 0, 'M0<y_1ba0h*d_6a1h*p_21289009>'] ,
 ]
