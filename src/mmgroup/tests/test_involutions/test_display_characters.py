@@ -73,13 +73,12 @@ def Co1_class(g):
 INVOLUTION_MAP = {}
 
 
-@pytest.mark.mmm
 @pytest.mark.involution
 def test_xsp2co1_elem_involution_class(verbose = 0):
     global INVOLUTION_MAP
     minus = Xsp2_Co1('x', 0x1000)
     length, classes = 0, set()
-    for data, _, s in INVOLUTION_SAMPLES:
+    for data, s in INVOLUTION_SAMPLES:
         g = Xsp2_Co1(s)
         cl = xsp2co1_elem_involution_class(g._data)
         if verbose:

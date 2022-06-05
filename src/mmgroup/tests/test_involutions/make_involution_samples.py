@@ -17,7 +17,7 @@ if __name__ == "__main__":
 from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
-from mmgroup.clifford12 import xsp2co1_traces_all_sub
+from mmgroup.clifford12 import xsp2co1_traces_all
 
 
 G = MM0
@@ -95,11 +95,11 @@ def get_perm(m):
 
 def characters(g):
     a = np.zeros(4, dtype = np.int32)
-    assert xsp2co1_traces_all_sub(Xsp2_Co1(g)._data, a, 0) == 0
-    chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
+    assert xsp2co1_traces_all(Xsp2_Co1(g)._data, a) == 0
+    chi24, chisq24, chi4096, chi98280  = map(int, a[:4])
     chi299 = (chi24**2 + chisq24) // 2 - 1
-    chi_M = chi299 + chi98260 + chi24 * chi4096
-    return chi_M, chi299, chi24, chi4096
+    chi_M = chi299 + chi98280  + chi24 * chi4096
+    return chi_M, chi299, chi24, chi4096, chi98280 
  
 
 def find_fourvolution():
@@ -201,7 +201,7 @@ def show_characters(g0, file):
             all_characters.append(o_chi)
             chi = o_chi[1] 
             x = chi[0] - chi[1] - chi[2] * chi[3]
-            print([list(o_chi), x, str(g)], ",", file = file)
+            print([list(o_chi), str(g)], ",", file = file)
             if o_chi[2][:3] == (4,1,4):
                 #display_involution_invariants(g)
                 pass
@@ -251,6 +251,7 @@ Tuple2:
    - Character in the 299-dimensional 299_x rep of Co_1
    - Character in the 24-dimensional rep 24-x of Co_0
    - Character in the 4096-dimensional rep 4096_x
+   - Character in the 98280-dimensional monomial rep 98280_x
 
    The last two reps are defined up to sign only, but the tensor
    product of these two reps is well defined as a rep of G_x0.
@@ -297,10 +298,6 @@ Tuple 3:
    Class 2B in Co_1:
       In row 0 iff s is not 0. 
 
-
-Entry 4:
-   The character of the 98280-dimensional monomial representation
-   of the class.
 
 """
 

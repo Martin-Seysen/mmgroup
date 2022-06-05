@@ -619,7 +619,7 @@ uint32_t  xsp2co1_leech2_count_type2(uint64_t *a, uint32_t n)
 /**
   @brief Compute character of \f$\rho_{98280}\f$ of element of \f$G_{x0}\f$
 
-  This is for internal use only.
+  This function is for internal use only.
 
   Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
   in **G_x0 representation**. The function returns the
@@ -765,9 +765,11 @@ int32_t traces_very_small(uint64_t *elem, int32_t *ptrace)
 /**
   @brief  Workhorse for function ``xsp2co1_traces_all``
 
+  This function is for internal use only.
+
   Parameters and operation are are as in function ``xsp2co1_traces_all``. 
   But this function does not compute the character of the 
-  representation  \f$\rho_{24}\f$ in ``ptrace[3]`` .
+  representation  \f$\rho_{24}\f$ in ``ptrace[3]``.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
@@ -788,105 +790,32 @@ int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
 }
 
 
-/*************************************************************************
-*** Fast table-based function for computing trace of rep 08280_x
-*************************************************************************/
-
-
-/// @cond DO_NOT_DOCUMENT 
-/*
-// Entry ``t`` of the following table contains the the character of 
-// the 98280-dimensional rep of an element of ``Q_x0`` corresponding
-// to a Leech lattice vector of type ``t``.
-static int32_t TAB_TRACE_98280[5] = {98280, 0, 4072, -24, -24};
-*/
-
-
-// The following tables have been created automatically
-// by executing file ``test_display_characters.py``
-// in module ``mmgroup.tests.test_involutions``.
-
-// Table f0r character chi_98280
-#define LEN_I_CHI_98280_TABLE 20
-static uint16_t KEYS_I_CHI_98280_TABLE[20] = {
- 0x21, 0x22, 0x122, 0x141, 0x142, 0x143, 0x244, 0x322, 
- 0x341, 0x342, 0x343, 0x344, 0x1011, 0x1121, 0x1122, 0x2041, 
- 0x2143, 0x2244, 0x2382, 0x3022
-};
-static int32_t DATA_I_CHI_98280_TABLE[20] = {
- 4072, -24, 232, 232, 8, -24, 0, 264, 
- 264, 40, 8, -24, 98280, 2280, 2280, -24, 
- -24, 0, 0, 98280
-};
-
-
-
-static inline int32_t trace_98280_fast(uint64_t *elem)
-// Yet to be documentd!!!
-{
-    int32_t i, cl = xsp2co1_elem_involution_class(elem);
-    if (cl > 0) {
-        for (i = 0; i < LEN_I_CHI_98280_TABLE; ++i) {
-            if (cl == (int32_t)KEYS_I_CHI_98280_TABLE[i]) {
-                return  DATA_I_CHI_98280_TABLE[i];
-            }
-        }
-    }
-    return -0x2000000;
-}
-
-
-/// @endcond 
-
-
-
-
-/**
-  @brief  Workhorse for function ``xsp2co1_traces_all``
-
-  Parameters are as in function ``xsp2co1_traces_all``. The additional
-  parameter ``use_table`` controls the use of the precomuted tables
-  and may be used for tests. Precomputed tables are used
-  if ``use_table`` is not zero.
-*/
-// %%EXPORT px
-int32_t xsp2co1_traces_all_sub(uint64_t *elem, int32_t *ptrace, uint32_t use_table)
-{
-    int32_t res;
-    res = xsp2co1_traces_small(elem, ptrace);
-    if (res < 0) return res;
-    res = xsp2co1_trace_98280(elem, use_table ? trace_98280_fast : NULL); 
-    if (res < -0x1000000) return res;
-    ptrace[3] = res;
-    return 0;    
-}
-
 
 /**
   @brief Compute relevant characters of element of \f$G_{x0}\f$
 
-  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
-  in **G_x0 representation**. The function computes the
-  characters of the representations
-  \f$\rho_{24}, \rho_{576}, \rho_{4096}, \rho_{98280}\f$
-  and stores the result in ``ptrace[0],..., ptrace[3]`` in
-  that order. Here  \f$\rho_{576}\f$ is the tensor square of
-  \f$\rho_{24}\f$.
+  This function is for internal purposes only.
 
-  This function returns 0 in case of success and a nonzero value
-  otherwise.
+  There is a considerably faster function ``xsp2co1_traces_all``
+  in module ``xsp2co1_traces.c`` performing exactly the same
+  operation.
 
-  Note that the tensor product \f$\rho_{24} \otimes \rho_{4096}\f$
-  is well defined, but the factors of that product are defined
-  up to sign only.
-  We normalize the characters corresponding to \f$\rho_{24}\f$
-  and \f$\rho_{4096}\f$ so that the first nonzero value of these
-  two charaacters (in the order given above) is positive.
+  Parmameters and return value are as in
+  function ``xsp2co1_traces_fast``. In contrast to
+  function ``xsp2co1_traces_fast``, this function does not
+  use any precomputed tables. Actually, this function is
+  used for precomputing those tables.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)
 {
-    return xsp2co1_traces_all_sub(elem, ptrace, 1);    
+    int32_t res;
+    res = xsp2co1_traces_small(elem, ptrace);
+    if (res < 0) return res;
+    res = xsp2co1_trace_98280(elem, NULL); 
+    if (res < -0x1000000) return res;
+    ptrace[3] = res;
+    return 0;    
 }
 
 

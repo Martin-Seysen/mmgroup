@@ -214,7 +214,7 @@ from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import mm_group_invert_word
 from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
 from mmgroup.clifford12 import xsp2co1_reduce_word      
-from mmgroup.clifford12 import xsp2co1_traces_all      
+from mmgroup.clifford12 import xsp2co1_traces_fast      
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_rand_word_G_x0
 from mmgroup.clifford12 import xsp2co1_rand_word_N_0
@@ -491,7 +491,7 @@ class MM0(AbstractMMGroupWord):
         elem = Xsp2_Co1(g)
 
         a = np.zeros(4, dtype = np.int32)
-        res = chk_qstate12(xsp2co1_traces_all(elem._data, a))
+        res = chk_qstate12(xsp2co1_traces_fast(elem._data, a))
         chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
         chi299 = (chi24**2 + chisq24) // 2 - 1
         chi_M = chi299 + chi98260 + chi24 * chi4096

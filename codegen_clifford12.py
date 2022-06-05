@@ -73,7 +73,7 @@ SIMPLE_SKE_FILES = ["qstate12", "qmatrix12"]
 PXI_SKE_FILES = [
     "bitmatrix64",  "uint_sort", "xsp2co1", 
     "leech3matrix", "xsp2co1_elem",
-    "involutions",
+    "involutions", "xsp2co1_traces",
 ]
 SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
 

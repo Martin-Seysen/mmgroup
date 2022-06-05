@@ -256,6 +256,12 @@ Module ``involutions.c``
    .. doxygenfile:: involutions.c
 
 
+Module ``xsp2co1_traces.c``
+---------------------------
+
+   .. doxygenfile:: xsp2co1_traces.c
+
+
 Description of the ``mmgroup.mm`` extension
 ===========================================
 

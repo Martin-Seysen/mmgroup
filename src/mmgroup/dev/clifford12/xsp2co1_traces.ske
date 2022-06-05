@@ -1,0 +1,215 @@
+/** @file xsp2co1_traces.c
+  File ``xsp2co1_traces.c`` contains  functions for computing
+  traces of some rpresentations of the  subgroup \f$G_{x0}\f$ 
+  (of structure \f$2^{1+24}.\mbox{Co}_1\f$)  of the monster. 
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+/*************************************************************************
+*** Compute traces of an element of G_x0
+*************************************************************************/
+
+
+/** 
+   Compute class information for certain elements of \f$G_{x0}\f$ 
+
+   This function is yet to be documented!
+*/
+// %%EXPORT px
+int32_t _xsp2co1_elem_involution_class(uint64_t *elem)
+{
+    uint64_t invar[12];   
+    int_fast32_t v, t, inv0,  n, n2;
+    int32_t traces[4];
+    static uint16_t v_types[] = {0x22, 0, 0x21, 0x2041};
+
+    // Compute involution invariants; abort if this fails.
+    // Let \f$A, A_1, I_1, (I_1^+)\f$, and \f$(\ker A_1^+)\f$ 
+    // be as in  function ``xsp2co1_involution_invariants``.
+    n = xsp2co1_involution_invariants(elem, invar);
+    if (n < 0) return 0;
+
+    switch (n) {
+        case 0:
+            // Co_1 class 1A: v = +- 1
+            return xsp2co1_is_unit_elem(elem) ? 0x1011 : 0x3022;
+        case 1:
+            // Co_1 class 1A: v in Q_x0, v != +-1
+            if ((v = xsp2co1_xspecial_vector(elem)) < 0) return 0;
+            return v_types[gen_leech2_type(v) & 3];
+        case 8:
+            // Co_1 class 2A, element not fused with its negative
+            if (xsp2co1_traces_small(elem, traces) < 0) return 0;
+            return traces[2] > 0 ? 0x1121 : 0x1122;
+        case 9:
+            // Co_1 class 2A, element fused with its negative
+            t =  (invar[1] >> 24) & 1;
+            n2 = xsp2co1_leech2_count_type2(invar, 9);
+            switch(n2) {
+                case 0:
+                    return t ? 0x143 : 0x2143;
+                case 2:
+                    return 0x142;
+                case 16:
+                    return t ? 0x141 : 0x122;
+                default:
+                    return 0;
+            } 
+        case 12:
+            inv0 =  (invar[0] >> 24) & 3;
+            t =  (invar[1] >> 24) & 1;
+            if (inv0 & 2) {
+                // Co_1 class 2C
+                if (t) {
+                    invar[1] = 0;
+                    n2 = xsp2co1_leech2_count_type2(invar + 1, 11);
+                    switch (n2) {
+                        case 120:
+                            return 0x344;
+                        case 132:
+                            return 0x2382;
+                        case 136:
+                            return 0x343;
+                        case 152:
+                            return 0x342;
+                        default:
+                            return 0;
+                    }
+                } else {
+                    return (inv0 & 1) ?  0x322 : 0x341;
+                }
+            } else {
+                // Co_1 class 2B
+                return (inv0 & 1) ? 0x244 : 0x2244;
+            }
+        default:            
+            return 0;
+    }
+}
+
+
+
+
+/*************************************************************************
+*** Fast table-based function for computing trace of rep 08280_x
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// The following tables have been created automatically
+// by executing file ``test_display_characters.py``
+// in module ``mmgroup.tests.test_involutions``.
+
+// Table f0r character chi_98280
+#define LEN_I_CHI_98280_TABLE 20
+static uint16_t KEYS_I_CHI_98280_TABLE[20] = {
+ 0x21, 0x22, 0x122, 0x141, 0x142, 0x143, 0x244, 0x322, 
+ 0x341, 0x342, 0x343, 0x344, 0x1011, 0x1121, 0x1122, 0x2041, 
+ 0x2143, 0x2244, 0x2382, 0x3022
+};
+static int32_t DATA_I_CHI_98280_TABLE[20] = {
+ 4072, -24, 232, 232, 8, -24, 0, 264, 
+ 264, 40, 8, -24, 98280, 2280, 2280, -24, 
+ -24, 0, 0, 98280
+};
+
+
+
+static inline int32_t trace_98280_fast(uint64_t *elem)
+// Yet to be documentd!!!
+{
+    int32_t i, cl = xsp2co1_elem_involution_class(elem);
+    if (cl > 0) {
+        for (i = 0; i < LEN_I_CHI_98280_TABLE; ++i) {
+            if (cl == (int32_t)KEYS_I_CHI_98280_TABLE[i]) {
+                return  DATA_I_CHI_98280_TABLE[i];
+            }
+        }
+    }
+    return -0x2000000;
+}
+
+
+/// @endcond 
+
+
+
+
+/**
+  @brief Compute relevant characters of element of \f$G_{x0}\f$
+
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  characters of the representations
+  \f$\rho_{24}, \rho_{576}, \rho_{4096}, \rho_{98280}\f$
+  and stores the result in ``ptrace[0],..., ptrace[3]`` in
+  that order. Here  \f$\rho_{576}\f$ is the tensor square of
+  \f$\rho_{24}\f$.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+ 
+  Note that the tensor product \f$\rho_{24} \otimes \rho_{4096}\f$
+  is well defined, but the factors of that product are defined
+  up to sign only.
+  We normalize the characters corresponding to \f$\rho_{24}\f$
+  and \f$\rho_{4096}\f$ so that the first nonzero value of these
+  two charaacters (in the order given above) is positive.
+*/
+// %%EXPORT px
+int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)
+{
+    int32_t res;
+    res = xsp2co1_traces_small(elem, ptrace);
+    if (res < 0) return res;
+    res = xsp2co1_trace_98280(elem, trace_98280_fast); 
+    if (res < -0x1000000) return res;
+    ptrace[3] = res;
+    return 0;    
+}
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif

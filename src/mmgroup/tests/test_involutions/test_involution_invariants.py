@@ -49,7 +49,7 @@ def make_involution_samples():
     ]
     for h, invar in NEW_SAMPLES:
         yield  h, invar
-    for invar, _, g in INVOLUTION_SAMPLES:
+    for invar, g in INVOLUTION_SAMPLES:
         g = MM0(g)
         g.in_G_x0()
         yield g, invar
@@ -132,6 +132,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
         print("g =", g)
     gg = Xsp2_Co1(g)
     ref_ord, ref_chi, ref_involution_invariants = ref_invariants
+    ref_chi = ref_chi[:4]
     invar, v1, v0  = gg._involution_invariants()
     ## invar[0] = int(invar[0]) & 0x3ffffff # this produces an error
     errors = 0

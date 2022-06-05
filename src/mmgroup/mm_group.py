@@ -168,7 +168,6 @@ from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import mm_group_invert_word
 from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
 from mmgroup.clifford12 import xsp2co1_reduce_word      
-from mmgroup.clifford12 import xsp2co1_traces_all      
 from mmgroup.clifford12 import chk_qstate12
 from mmgroup.clifford12 import xsp2co1_rand_word_G_x0
 from mmgroup.clifford12 import xsp2co1_rand_word_N_0

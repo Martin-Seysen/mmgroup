@@ -15,9 +15,8 @@ import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
 from mmgroup.generators import gen_leech2_type
-from mmgroup.clifford12 import xsp2co1_leech2_count_type2
-from mmgroup.clifford12 import xsp2co1_traces_all_sub
 from mmgroup.clifford12 import xsp2co1_traces_all
+from mmgroup.clifford12 import xsp2co1_traces_fast
 
 from mmgroup.tests.test_orders.check_monster_orders import ClassOrders
 from mmgroup.tests.test_orders.check_monster_orders import CharacterValues
@@ -55,25 +54,33 @@ def xsp2xco1_v2type(vtype):
 
 
 
-def xsp2co1_trace_98280(elem, use_table):
+def xsp2co1_traces(elem):
     tr = np.zeros([4], dtype = np.int32)
-    res = xsp2co1_traces_all_sub(elem._data, tr, bool(use_table))
+    tr_fast = np.zeros([4], dtype = np.int32)
+    res = xsp2co1_traces_all(elem._data, tr)
     assert res >= 0
-    return int(tr[3])
+    res_fast = xsp2co1_traces_fast(elem._data, tr_fast)
+    assert res_fast >= 0
+    assert (tr == tr_fast).all()
+    return [int(x) for x in tr]
+
+
+
+def xsp2co1_trace_98280(elem):
+    return xsp2co1_traces(elem)[3]
      
 
-@pytest.mark.orders
+@pytest.mark.involution
 def test_xsp2_count_table():
-    use_table = 1
     table = [0] * 5
     for vtype in [0,2,3,4]:
         elem_v = xsp2xco1_v2type(vtype)
-        tr_ref = xsp2co1_trace_98280(elem_v, use_table)
+        tr_ref = xsp2co1_trace_98280(elem_v)
         table[vtype] = tr_ref
         for j in range(2):
             w = rand_xsp2co1_elem()
             elem_v1 = w**-1 * elem_v  * w
-            tr = xsp2co1_trace_98280(elem_v1, 0)
+            tr = xsp2co1_trace_98280(elem_v1)
             assert tr == tr_ref
     print(table)
 
@@ -99,10 +106,8 @@ Xsp2_Co1_Element = type(Xsp2_Co1())
 
 def character(g, verbose = 0):
     assert isinstance(g, Xsp2_Co1_Element)
-    a = np.zeros(4, dtype = np.int32)
-    res = xsp2co1_traces_all(g._data, a)
-    if verbose: print("Subcharacters", [int(x) for x in a])
-    assert res >= 0, res
+    a = xsp2co1_traces(g)
+    if verbose: print("Subcharacters", a)
     chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
     chi299 = (chi24**2 + chisq24) // 2 - 1
     assert chi24 >= 0
@@ -124,7 +129,7 @@ def character_testcases():
     for i in range(200):
         yield  rand_xsp2co1_elem()
 
-@pytest.mark.orders
+@pytest.mark.involution
 def test_xsp2_characters(verbose = 0):
     if verbose:
         print("Test character calculation in G_x0")
