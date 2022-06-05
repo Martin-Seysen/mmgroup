@@ -805,6 +805,103 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uin
 }
 
 /*************************************************************************
+*** Check if an element of G_{x0} fixes or negates a short vector
+*************************************************************************/
+
+
+/**
+   @brief Check if an element of \f$G_{x0}\f$ fixes a short vector.
+
+   This function is deprecated!
+
+   Let \f$v\f$ be the short vector in the Leech lattice modulo 2
+   given by parameter ``v`` in **Leech lattice encoding**.
+   Let  \f$g \in G_{x0}\f$ be stored in the array ``elem``
+   in **G_x0 representation**.
+
+   If \f$v\f$ is short then it corresponds to a vector \f$v'\f$
+   in the 24-dimensional Leech lattice \f$\Lambda\f$  up to sign.
+   Note that the operation of \f$G_{x0}\f$ on \f$\Lambda\f$ is
+   also defined up to sign only. So in the general case we cannot
+   distinguish whether \f$g\f$ fixes or negates \f$v'\f$.
+
+   However, \f$G_{x0}\f$ has a (faithful) representation on the
+   tensor product \f$\Lambda \otimes 4096_x\f$ for a certain
+   representation \f$4096_x\f$, see [Con85] for details. Here
+   the operation of \f$G_{x0}\f$ on \f$4096_x\f$ is also
+   defined up to sign only.
+
+   If the character of \f$g\f$ on \f$4096_x\f$ is nonzero then
+   we can flip the signs in both representations, \f$\Lambda\f$
+   and \f$4096_x\f$, without changing the tensor product. Thus
+   requiring the character of \f$g\f$ on \f$4096_x\f$ to be
+   positive determines the sign of the operation of \f$g\f$
+   on \f$\Lambda\f$ uniquely. In this case  we return 0
+   if \f$g\f$ fixes the vector \f$v'\f$, and 1 if \f$g\f$
+   negates \f$v'\f$. Otherwise we return 6.
+
+   If the character of \f$g\f$ on \f$4096_x\f$ is zero then
+   there is no way to determine the sign of the operation
+   of \f$g\f$ on \f$\Lambda\f$. In this case  we return 2
+   if \f$g\f$ fixes the vector \f$v'\f$ (up to sign)
+   and 6 otherwise.
+
+   In cases where \f$g\f$ and \f$-g\f$ are in different
+   classes in \f$G_{x0}\f$ we may sometimes obtain the
+   class of \f$g\f$ by using this function.
+
+   We return a negative value in case of any error. It is an
+   error if \f$v'\f$ is not short, i.e. \f$v\f$ is not
+   of type 2.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_check_fix_short(uint64_t *elem1, uint32_t v)
+{
+    int32_t trace, sign;
+    int64_t res;
+    uint64_t v3, v3_img;
+    qstate12_type qs1;
+
+    // Let ``v3`` be the short vector in the Leech lattice modulo 3
+    // corresponding to ``v``; here ``v3`` is defined up to sign.  
+    // Abort if ``v`` is not short.
+    v3 =  gen_leech2to3_short(v);
+    if (v3 == 0) return ERR_QSTATE12_GX0_BAD_ELEM;
+       
+    // Store the matrix corresponding to the rep ``4096_x`` of ``g``
+    // in the structure ``qs1``. 
+    res = xsp2co1_elem_to_qs_i(elem1, &qs1);
+    if (res < 0) return (int32_t) res;  // abort in case of error
+
+    // Let ``v3_img `` be the image of ``v3`` under ``g`` 
+    // in ``Lambda``. Here the operations of ``g`` on ``Lambda``
+    // and on ``4096_x`` multiply up to the correct tensor product.
+    v3_img = res = map_short3(&qs1, STD_V3, elem1[0], v3);
+    if (res < 0) return (int32_t) res;  // abort in case of error
+    v3_img = short_3_reduce(v3_img);
+
+    // If the operation of ``g`` on ``Lambda`` fixes or negates ``v3``
+    // then store the sign bit in ``sign``. Otherwise return 6.
+    if (v3_img == v3) sign = 0;
+    else if (v3_img == gen_leech3_neg(v3)) sign = 1;
+    else return 6;
+      
+    // Store the trace of the peration of ``g`` in ``trace``.
+    // The trace is returned in a peculiar format:
+    // Bit 3 is set if it is zero; bit 2 is set if it is negative.
+    res = qstate12_mat_trace_factor(&qs1, &trace);
+    if (res < 0) return (int32_t) res;  // abort in case of error
+
+    // Return 2 if the trace is zero
+    if (trace & 8) return 2;
+
+    // Flip sign bit if trace is negative; then return the sign bit.
+    sign ^= (trace >> 2) & 1;
+    return sign;
+}
+
+
+/*************************************************************************
 *** Check if an element of G_{x0} is in the subgroup  Q_{x0}
 *************************************************************************/
 
@@ -1316,7 +1413,7 @@ int32_t xsp2co1_mul_elem_atom(uint64_t *elem, uint32_t v)
 }
 
 /**
-@brief Convert a genertor of \f$G_{x0}\f$ to G_x0 representation
+@brief Convert a generator of \f$G_{x0}\f$ to G_x0 representation
 
 Equivalent to ``xsp2co1_set_elem_word(elem, &v, 1)``
 */

@@ -16,9 +16,7 @@ import pytest
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
-from mmgroup.clifford12 import xsp2co1_trace_98280
-from mmgroup.clifford12 import xsp2co1_trace_4096
-from mmgroup.clifford12 import xsp2co1_traces_small
+from mmgroup.clifford12 import xsp2co1_traces_all_sub
 from mmgroup.clifford12 import xsp2co1_traces_all
 
 from mmgroup.tests.test_orders.check_monster_orders import ClassOrders
@@ -56,20 +54,27 @@ def xsp2xco1_v2type(vtype):
         raise ValueError("No Leech lattice vector of type", vtype)
 
 
+
+def xsp2co1_trace_98280(elem, use_table):
+    tr = np.zeros([4], dtype = np.int32)
+    res = xsp2co1_traces_all_sub(elem._data, tr, bool(use_table))
+    assert res >= 0
+    return int(tr[3])
+     
+
 @pytest.mark.orders
 def test_xsp2_count_table():
     use_table = 1
     table = [0] * 5
     for vtype in [0,2,3,4]:
-        tr = np.zeros([2], dtype = np.int32)
         elem_v = xsp2xco1_v2type(vtype)
-        xsp2co1_trace_98280(elem_v._data, tr, use_table)
-        table[vtype] = tr[0]
+        tr_ref = xsp2co1_trace_98280(elem_v, use_table)
+        table[vtype] = tr_ref
         for j in range(2):
             w = rand_xsp2co1_elem()
             elem_v1 = w**-1 * elem_v  * w
-            xsp2co1_trace_98280(elem_v1._data, tr[1:], 0)
-            assert tr[1] == tr[0]
+            tr = xsp2co1_trace_98280(elem_v1, 0)
+            assert tr == tr_ref
     print(table)
 
 

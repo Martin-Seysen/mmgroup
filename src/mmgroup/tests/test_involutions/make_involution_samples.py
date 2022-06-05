@@ -1,3 +1,9 @@
+"""Compute classes of square roots of Q_x0 in G_x0.
+
+Running this module creates a python file ``involution_samples.py``
+containing samples of these classes including documentation.
+"""
+
 import sys
 import time
 from math import floor
@@ -10,13 +16,13 @@ if __name__ == "__main__":
 
 from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, XLeech2
 from mmgroup.generators import gen_leech2_type
-from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
+from mmgroup.clifford12 import xsp2co1_traces_all_sub
 
 
 G = MM0
 
-def transversal_space(g):
+def transversal_basis(g):
     a = Xsp2_Co1(g)._involution_invariants()[0]
     while len(a) and int(a[-1]) == 0:
         a = a[:-1] 
@@ -26,7 +32,17 @@ def transversal_space(g):
     bl = set(range(1,25)) - set([x.bit_length() for x in a])
     assert len(bl) == 24 - len(a)
     return [1 << (x - 1) for x in bl]
+
+def invariant_basis(g):
+    a = Xsp2_Co1(g)._involution_invariants()[0]
+    return [int(x) & 0xffffff for x in a]
  
+
+def vector_space(basis):
+    c = [0]
+    for v in basis:
+        c += [v ^ x for x in c]
+    return c
 
 
 def iter_Q_x0():
@@ -40,12 +56,13 @@ def iter_transversal(g):
     if g == G():
         yield from iter_Q_x0()
         return
-    b = transversal_space(g)
+    b = transversal_basis(g)
     yield g * G("q", 0x1000000)
-    c = [0]
-    for v in b:
-        c += [v ^ x for x in c]
-    for x in c:
+    #print(len(vector_space(b)))
+    for x in vector_space(b):
+        yield g * G("q", x)    
+    b = invariant_basis(g)
+    for x in vector_space(b):
         yield g * G("q", x)    
 
 
@@ -76,6 +93,15 @@ def get_perm(m):
     raise ValueError("Permutation in monster element not found")
 
 
+def characters(g):
+    a = np.zeros(4, dtype = np.int32)
+    assert xsp2co1_traces_all_sub(Xsp2_Co1(g)._data, a, 0) == 0
+    chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
+    chi299 = (chi24**2 + chisq24) // 2 - 1
+    chi_M = chi299 + chi98260 + chi24 * chi4096
+    return chi_M, chi299, chi24, chi4096
+ 
+
 def find_fourvolution():
     """Return a certain 'fourvolution' in G_x0 as an element of MM
 
@@ -103,7 +129,7 @@ def find_fourvolution():
             v = (e ** (order//4))
             #v = e
             v.in_G_x0()
-            chi = v.chi_G_x0()
+            chi = characters(v)
             if chi[0] == -13:
                 if im is None and is_nice_permutation(get_perm(v)):
                     #print(chi, get_perm(v))
@@ -163,12 +189,16 @@ def display_involution_invariants(g):
    
 
 def show_characters(g0, file):
-    characters = []
-    for nn, g in enumerate(iter_transversal(g0)):
+    if g0 == G():
+        transversal = iter_Q_x0()
+    else:
+        transversal = iter_transversal(g0)
+    all_characters = []
+    for nn, g in enumerate(transversal):
         o = g.order(), XLeech2(g**2).type
-        o_chi =  o, g.chi_G_x0(), invariant_type(g)
-        if not o_chi in characters:
-            characters.append(o_chi)
+        o_chi =  o, characters(g), invariant_type(g)
+        if not o_chi in all_characters:
+            all_characters.append(o_chi)
             chi = o_chi[1] 
             x = chi[0] - chi[1] - chi[2] * chi[3]
             print([list(o_chi), x, str(g)], ",", file = file)
@@ -226,7 +256,7 @@ Tuple2:
    product of these two reps is well defined as a rep of G_x0.
 
 Tuple 3:
-   - Minumum of 12 and the dimension of  (\im (A - 1))^+
+   - Minimum of 12 and the dimension of  (\im (A - 1))^+
    - Row 0, column bits 26, 25, 24  of invariant matrix ``invar``
    - Row 1, column bits 26, 25, 24  of invariant matrix ``invar``
    - Type of s^\perp in Leech lattice mod 2
@@ -235,6 +265,8 @@ Tuple 3:
          Number of type-2 vectors in (\im (A - 1))^-
      For class 2C  in Co_1
          Number of type-2 vectors in (\im (A - 1))^+
+         This number is not calculated and set to zero if
+         (\im (A - 1))^- contains no vectors of type 2 or 4.
      For all other classes:
          Not calculated, and set to zero
      
@@ -291,10 +323,13 @@ def print_invariants(file = None):
         print('"""\n\nINVOLUTION_SAMPLES = [',file = file)
     print("#Characters for Co_1 class 1A", file = file)
     show_characters(G(), file = file)
+    print(".", end = "", flush = True)
     print("\n#Characters for Co_1 class 2A", file = file)
     show_characters(y8, file = file)
+    print(".", end = "", flush = True)
     print("\n#Characters for Co_1 class 2C", file = file)
     show_characters(y12, file = file)
+    print(".", end = "", flush = True)
     print("\n#Characters for Co_1 class 2B", file = file)
     g4 = find_fourvolution()
     show_characters(g4, file = file)
@@ -306,42 +341,6 @@ def print_invariants(file = None):
 
 
 
-
-"""Output:
-Possible orders, characters, and involution invariants of x*Q_x0
-
-
-INVOLUTION_SAMPLES = [
-#Characters for Co_1 class 1A
-[[(1, 0), (196883, 299, 24, 4096), (0, 0, 0, 0, 0)], 98280, 'M0<1>'] ,
-[[(2, 0), (275, 299, 24, -4096), (0, 0, 0, 0, 0)], 98280, 'M0<x_1000h>'] ,
-[[(2, 0), (4371, 299, 24, 0), (1, 4, 0, 0, 1)], 4072, 'M0<x_80fh>'] ,
-[[(4, 0), (275, 299, 24, 0), (1, 5, 0, 0, 0)], -24, 'M0<x_0ae0h>'] ,
-[[(2, 0), (275, 299, 24, 0), (1, 4, 0, 0, 0)], -24, 'M0<x_800h>'] ,
-
-#Characters for Co_1 class 2A
-[[(2, 0), (275, 43, 8, -256), (8, 0, 0, 0, 0)], 2280, 'M0<y_0fh>'] ,
-[[(2, 0), (4371, 43, 8, 256), (8, 0, 0, 0, 0)], 2280, 'M0<y_80fh>'] ,
-[[(4, 4), (275, 43, 8, 0), (9, 4, 1, 4, 16)], 232, 'M0<y_80fh*d_1h>'] ,
-[[(2, 0), (275, 43, 8, 0), (9, 4, 0, 0, 16)], 232, 'M0<y_80fh*d_3h>'] ,
-[[(4, 2), (51, 43, 8, 0), (9, 4, 1, 2, 2)], 8, 'M0<y_80fh*d_801h>'] ,
-[[(4, 4), (19, 43, 8, 0), (9, 4, 1, 4, 0)], -24, 'M0<y_80fh*d_803h>'] ,
-[[(4, 0), (19, 43, 8, 0), (9, 5, 0, 0, 0)], -24, 'M0<y_0fh*x_1003h*d_406h>'] ,
-
-#Characters for Co_1 class 2B
-[[(4, 4), (275, 11, 0, 64), (12, 2, 0, 0, 0)], 264, 'M0<y_2e0h>'] ,
-[[(2, 0), (275, 11, 0, 0), (12, 3, 0, 4, 0)], 264, 'M0<y_0ae0h*d_20h>'] ,
-[[(8, 3), (11, 11, 0, 0), (12, 2, 1, 3, 0)], 0, 'M0<y_0ae0h*d_800h>'] ,
-[[(4, 4), (19, 11, 0, 0), (12, 2, 1, 4, 0)], 8, 'M0<y_2e0h*x_1001h*d_0eh>'] ,
-[[(4, 4), (-13, 11, 0, 0), (12, 2, 1, 4, 0)], -24, 'M0<y_2e0h*x_1011h*d_21h>'] ,
-[[(4, 2), (51, 11, 0, 0), (12, 2, 1, 2, 0)], 40, 'M0<y_2e0h*x_1020h*d_0fh>'] ,
-
-#Characters for Co_1 class 2C
-[[(4, 0), (-13, -13, 0, 64), (12, 0, 0, 0, 0)], 0, 'M0<y_0a58h*d_140h*p_31510210>'] ,
-[[(4, 4), (-13, -13, 0, 0), (12, 1, 0, 4, 0)], 0, 'M0<y_258h*d_111h*p_31510210>'] ,
-
-
-"""
 
 
 if __name__ == "__main__":

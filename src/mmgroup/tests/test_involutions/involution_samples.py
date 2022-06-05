@@ -47,7 +47,7 @@ Tuple2:
    product of these two reps is well defined as a rep of G_x0.
 
 Tuple 3:
-   - Minumum of 12 and the dimension of  (\im (A - 1))^+
+   - Minimum of 12 and the dimension of  (\im (A - 1))^+
    - Row 0, column bits 26, 25, 24  of invariant matrix ``invar``
    - Row 1, column bits 26, 25, 24  of invariant matrix ``invar``
    - Type of s^\perp in Leech lattice mod 2
@@ -56,6 +56,8 @@ Tuple 3:
          Number of type-2 vectors in (\im (A - 1))^-
      For class 2C  in Co_1
          Number of type-2 vectors in (\im (A - 1))^+
+         This number is not calculated and set to zero if
+         (\im (A - 1))^- contains no vectors of type 2 or 4.
      For all other classes:
          Not calculated, and set to zero
      
@@ -120,6 +122,6 @@ INVOLUTION_SAMPLES = [
 [[(4, 2), (51, 11, 0, 0), (12, 2, 1, 2, 152)], 40, 'M0<y_2e0h*x_1020h*d_0fh>'] ,
 
 #Characters for Co_1 class 2B
-[[(4, 0), (-13, -13, 0, 64), (12, 0, 0, 0, 0)], 0, 'M0<y_13a0h*d_600h*p_21289009>'] ,
-[[(4, 4), (-13, -13, 0, 0), (12, 1, 0, 4, 0)], 0, 'M0<y_1ba0h*d_6a1h*p_21289009>'] ,
+[[(4, 0), (-13, -13, 0, 64), (12, 0, 0, 0, 0)], 0, 'M0<y_11a0h*d_6d0h*p_31510129>'] ,
+[[(4, 4), (-13, -13, 0, 0), (12, 1, 0, 4, 0)], 0, 'M0<y_19a0h*d_671h*p_31510129>'] ,
 ]
