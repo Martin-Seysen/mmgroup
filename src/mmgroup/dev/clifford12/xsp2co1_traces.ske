@@ -47,7 +47,7 @@ extern "C" {
    This function is yet to be documented!
 */
 // %%EXPORT px
-int32_t _xsp2co1_elem_involution_class(uint64_t *elem)
+int32_t xsp2co1_elem_involution_class(uint64_t *elem)
 {
     uint64_t invar[12];   
     int_fast32_t v, t, inv0,  n, n2;
@@ -187,7 +187,7 @@ static inline int32_t trace_98280_fast(uint64_t *elem)
   up to sign only.
   We normalize the characters corresponding to \f$\rho_{24}\f$
   and \f$\rho_{4096}\f$ so that the first nonzero value of these
-  two charaacters (in the order given above) is positive.
+  two characters (in the order given above) is positive.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)

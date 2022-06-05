@@ -21,6 +21,9 @@ from mmgroup.clifford12 import xsp2co1_traces_fast
 from mmgroup.tests.test_orders.check_monster_orders import ClassOrders
 from mmgroup.tests.test_orders.check_monster_orders import CharacterValues
 
+from mmgroup.tests.test_involutions.test_involution_invariants import INVOLUTION_SAMPLES
+
+
 #####################################################################
 # Create test matrices
 #####################################################################
@@ -28,7 +31,7 @@ from mmgroup.tests.test_orders.check_monster_orders import CharacterValues
 
 
 def rand_xsp2co1_elem():
-    return Xsp2_Co1([(x,'r') for x in "dxpylpylpylpy"])
+    return Xsp2_Co1('r', 'G_x0')
 
 def xsp2xco1_xsp2(v):
     pl = PLoop(v >> 12)
@@ -87,8 +90,9 @@ def test_xsp2_count_table():
 
 
 
+
 #####################################################################
-# Test computation of characters in group G_{x1}
+# Test computation of characters in group G_{x0}
 #####################################################################
 
 
@@ -142,5 +146,19 @@ def test_xsp2_characters(verbose = 0):
         if verbose:  print("Character =", chi)
         assert chi in good_orders, (o, chi, good_orders)
 
+
+
+
+@pytest.mark.involution
+def test_involution_samples(verbose = 0):
+    if verbose:
+        print("Test character calculation on involutions in G_x0/Q_x0")
+    for (_1, chi, _2), g_str in  INVOLUTION_SAMPLES:
+        chi_576 = 2 * (chi[1]  + 1) - chi[2]**2
+        chi_ref = [chi[2], chi_576, chi[3], chi[4]]
+        g = Xsp2_Co1(g_str)
+        for j in range(4):
+            w = rand_xsp2co1_elem()
+            assert xsp2co1_traces(g**w) == chi_ref
 
 
