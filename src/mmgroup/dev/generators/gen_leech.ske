@@ -279,7 +279,7 @@ uint32_t gen_leech2_type(uint64_t v2)
     uint_fast32_t theta, syn, scalar, w, coc, octad;
 
     // Return 3 if scalar product <code, cocode> is odd
-    scalar = (v2 >> 12) &  v2;
+    scalar = (uint32_t)((v2 >> 12) &  v2);
     mat24_def_parity12(scalar);
     if (scalar) return 3;
 

@@ -12,6 +12,7 @@ This *document* describes the functionality of the C modules in this
 project. For most of these C modules there is also a python extension.
 
 
+.. highlight:: none
 
 
 Description of the ``mmgroup.mat24`` extension

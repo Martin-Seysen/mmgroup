@@ -796,15 +796,24 @@ int32_t xsp2co1_traces_small(uint64_t *elem, int32_t *ptrace)
 
   This function is for internal purposes only.
 
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  characters of the representations
+  \f$\rho_{24}, \rho_{576}, \rho_{4096}, \rho_{98280}\f$
+  and stores the result in ``ptrace[0],..., ptrace[3]`` in
+  that order.
+
+  This function returns 0 in case of success and a nonzero value
+  otherwise.
+
   There is a considerably faster function ``xsp2co1_traces_all``
   in module ``xsp2co1_traces.c`` performing exactly the same
-  operation.
+  operation depending in the same input parameters. More details
+  are given in the documentation of that function.
 
-  Parmameters and return value are as in
-  function ``xsp2co1_traces_fast``. In contrast to
-  function ``xsp2co1_traces_fast``, this function does not
-  use any precomputed tables. Actually, this function is
-  used for precomputing those tables.
+  In contrast to function ``xsp2co1_traces_fast``, this function
+  does not use any precomputed tables. Actually, this function
+  is used for precomputing those tables.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_all(uint64_t *elem, int32_t *ptrace)

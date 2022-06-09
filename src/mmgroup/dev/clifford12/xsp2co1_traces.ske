@@ -1,7 +1,33 @@
 /** @file xsp2co1_traces.c
-  File ``xsp2co1_traces.c`` contains  functions for computing
-  traces of some rpresentations of the  subgroup \f$G_{x0}\f$ 
-  (of structure \f$2^{1+24}.\mbox{Co}_1\f$)  of the monster. 
+  File ``xsp2co1_traces.c`` contains functions for computing
+  characters of some representations of the subgroup \f$G_{x0}\f$
+  (of structure \f$2^{1+24}.\mbox{Co}_1\f$) of the monster.
+
+  Such computations can be very expensive, especially for some
+  classes of involutions, or for elements that map to involutions
+  in the factor group \f$\mbox{Co}_1\f$ of \f$G_{x0}\f$.
+
+  This file contains a function ``xsp2co1_elem_involution_class``
+  for the classification of elements that map to involutions
+  in \f$\mbox{Co}_1\f$.
+
+  Function ``xsp2co1_traces_fast`` uses a precomputed table for
+  computing the characters of elements of \f$G_{x0}\f$. That
+  table is addressed by the class information computed by
+  function ``xsp2co1_elem_involution_class``. The functions in
+  module ``mmgroup\tests\test_involutions.make_involution_samples.py``
+  precompute that table. We simply copy and paste the table
+  from the output of that python function to to this file.
+  
+  The precomputation of the table requires the
+  function ``xsp2co1_traces_all`` in file ``xsp2co1_elem.c``. That
+  function computes the same characters as
+  function ``xsp2co1_traces_fast`` without using precomputed tables. 
+
+  Function ``xsp2co1_traces_fast`` does not use a precomputed table,
+  but the verification of this function requires inspection of the
+  output of the module ``make_involution_samples.py`` mentioned
+  above.
 */
 
 
@@ -42,9 +68,58 @@ extern "C" {
 
 
 /** 
-   Compute class information for certain elements of \f$G_{x0}\f$ 
+  Compute class information for certain elements of \f$G_{x0}\f$ 
 
-   This function is yet to be documented!
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. If \f$g\f$ maps to an involution
+  in the factor group \f$\mbox{Co}_1\f$ of \f$G_{x0}\f$ then
+  the function returns a nonzero value indicating some class
+  information about \f$g\f$. Otherwise the function returns 0.
+
+  The class information in the return value is to interpreted as follows:
+
+        bits  7 .. 0: class of element  g  in the Monster group, e.g
+                      0x21 means class 2A,
+                      0x41 means class 2A, 0x42 means class 4B, etc.
+
+        bits 11 .. 8: Class of element  g  in the factor group Co_1
+                      0 means class 1A in Co_1
+                      1 means class 2A in Co_1
+                      2 means class 2B in Co_1
+                      3 means class 2C in Co_1
+
+        bit 12:       0 if  g  and  -g  are in the same class in the Monster
+                      1 otherwise
+
+        bit 13:       1 if q g  is equal to or powers up to -1
+                      0 otherwise
+
+  All other bits in the return value are set to zero.
+
+  Here \f$-1\f$ is the central involution \f$x_{-1}\f$ in \f$G_{x0}\f$,
+  and \f$-g = x_{-1} \cdot g\f$ .
+
+  Write \f$h(g)\f$ as an abbreviation for the result of this function
+  applied to an element \f$g\f$ of \f$G_{x0}\f$. Then the following
+  assertions have been checked computationally in
+  files ``make_involution_samples.py``, or ``test_xp2_traces.py``,
+  or can easily be checked mathematically.
+
+  Possible values \f$h(g)\f$ (depending on the class of \f$g Q_{x0}\f$)
+  in \f$\mbox{Co}_1\f$ are:
+
+       class 1A: 0x1011, 0x3022, 0x0022, 0x0021, 0x2041
+       class 2A: 0x1121, 0x1122, 0x0143, 0x2143, 0x0142, 0x0141, 0x0122
+       class 2B: 0x0244, 0x2244
+       class 2C: 0x0322, 0x0341, 0x0344, 0x2382, 0x0343, 0x0342
+ 
+  The value \f$h(g)\f$ determines the characters of the
+  representations \f$98280_x, 299_x, 24_x, 4096_x\f$ of \f$g\f$
+  uniquely, where by construction of \f$G_{x0}\f$ the last two
+  characters are determined up to sign only.
+
+  The class of an involution \f$g\f$ is determined uniquely
+  by \f$h(g)\f$.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_involution_class(uint64_t *elem)
@@ -149,7 +224,7 @@ static int32_t DATA_I_CHI_98280_TABLE[20] = {
 
 
 static inline int32_t trace_98280_fast(uint64_t *elem)
-// Yet to be documentd!!!
+// Yet to be documented!!!
 {
     int32_t i, cl = xsp2co1_elem_involution_class(elem);
     if (cl > 0) {

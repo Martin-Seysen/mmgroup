@@ -570,17 +570,17 @@ int32_t qstate12_copy_alloc(qstate12_type *pqs1, qstate12_type *pqs2, uint64_t *
 
   The function returns:
 
-   4  if the result is complex, but not real.
+        4  if the result is complex, but not real.
  
-   3  if the result is real, but not rational.
+        3  if the result is real, but not rational.
  
-   2  if the result is rational, but not integral.
+        2  if the result is rational, but not integral.
 
-   1  if the result is integral, but not  zero.
+        1  if the result is integral, but not  zero.
 
-   0  if the result is zero.
+        0  if the result is zero.
 
-   ERR_QSTATE12_SCALAR_OVFL in case of overflow or underflow
+        ERR_QSTATE12_SCALAR_OVFL in case of overflow or underflow
 
 */
 // %%EXPORT p
@@ -1692,15 +1692,15 @@ int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
 
   Depending on the computed matrix entries, the function returns
  
-   4  if all entries are complex, but not all are real.
+       4  if all entries are complex, but not all are real.
  
-   3  if all entries are real, but not all are rational
+       3  if all entries are real, but not all are rational
  
-   2  if all entries are rational, but not all are integers.
+       2  if all entries are rational, but not all are integers.
 
-   1  if all entries are integers, but not all are zero.
+       1  if all entries are integers, but not all are zero.
 
-   0  if all entries are zero.
+       0  if all entries are zero.
 
   A negative return value indicates an error. 
 */

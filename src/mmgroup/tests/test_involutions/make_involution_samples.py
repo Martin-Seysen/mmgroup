@@ -2,6 +2,9 @@
 
 Running this module creates a python file ``involution_samples.py``
 containing samples of these classes including documentation.
+
+This file also checl some assertions about 
+
 """
 
 import sys
@@ -14,13 +17,55 @@ import numpy as np
 if __name__ == "__main__":
     sys.path.append("../../../")
 
-from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1, XLeech2
+from mmgroup import MM0, GCode, AutPL, PLoop, Cocode, Xsp2_Co1, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 from mmgroup.clifford12 import xsp2co1_traces_all
 
 
 G = MM0
+
+
+def std_hexads(*i):
+    """Return a certain umbral hexad as a list h[i].
+
+    Here ``0 <= i < 4 must hold``.
+    For i = 0  return ``h[0] = [0, 4, 8, 12, 16, 20, 24]``. Otherwise 
+    return ``h[i] = [4*j + 1 + (l[j + i]) mod 3], 0 <= i < 6``;
+    where ``l[j] = [0, 1, 0, 1, 0, 1]``.
+    
+    If several parameters ``i1``, ``i2``, ... are given then the 
+    corresponding lists  ``h[i1]``, ``[i2]``, are concatenated.
+
+    Function ``check_std_hexads`` checks that the lists 
+    ``std_hexads(0, i)`` are dodecads for 1 <= i <= 3.
+    """
+    if len(i) != 1:
+        return sum([std_hexads(j) for j in i], [])
+    i = i[0] & 3
+    if i == 0:
+        return list(range(0, 24, 4))
+    l = [0, 1] * 3
+    return [4*j + 1 + (l[j] + i) % 3 for j in range(6)]
+
+
+def check_std_hexads(verbose = 0):
+    """Check that some lists returned by ``std_hexads()`` are dodecads.
+
+    Assertions in this function fail if this is not the case.
+    See function ``std_hexads()`` for details.  
+    """
+    if verbose:
+        print("Standard dodecads")
+    for i in range(1, 4):
+        l = std_hexads(0, i)
+        assert set(GCode(l).bit_list) == set(l)
+        if verbose:
+            print(std_hexads(0,i))
+
+check_std_hexads(verbose = 0)
+
+
 
 def transversal_basis(g):
     a = Xsp2_Co1(g)._involution_invariants()[0]
@@ -57,20 +102,57 @@ def iter_transversal(g):
         yield from iter_Q_x0()
         return
     b = transversal_basis(g)
-    yield g * G("q", 0x1000000)
-    #print(len(vector_space(b)))
-    for x in vector_space(b):
-        yield g * G("q", x)    
-    b = invariant_basis(g)
-    for x in vector_space(b):
-        yield g * G("q", x)    
+    if len(b) >= 16:
+        for x in vector_space(b):
+            yield g * G("q", x)    
+        for x in invariant_basis(b):
+            yield g * G("q", x)    
+            yield g * G("q", x) * G("x", 0x1000)   
+    else:  
+        for x in vector_space(b):
+            yield g * G("q", x)    
+
+
 
 
 
 
 y8 = G("y", PLoop(range(8)))
 
-y12 =  G("y", PLoop([0,4,8,12,16,20,2,7,10,]))
+#y12 =  G("y", PLoop([0,4,8,12,16,20,2,7,10,]))
+y12 =  G("y", PLoop(std_hexads(0, 1)))
+neg =G('x', 0x1000)
+
+
+
+
+
+def check_y12_involution_conjugates_to_its_negative():
+    n_total = 0
+    n_involution_transversals = 0
+    n_good_tansversals = 0
+    for g in iter_transversal(y12):
+        n_total += 1
+        #print(g.order())
+        if g.order() == 2:
+            n_involution_transversals += 1
+            good = False
+            #print(y12, g)
+            g_neg = g * neg
+            for i in range(1000000):
+                c = G('x', 'r') * G('d', 'r') 
+                g_conj = g ** c
+                if g_conj == g_neg:
+                    #print("YEEAH", i)
+                    good = True
+                    break
+            if good: n_good_tansversals += 1
+    assert  n_involution_transversals == n_good_tansversals  == 2
+    assert n_total == 2**13, n_total
+
+
+check_y12_involution_conjugates_to_its_negative()
+
 
 
 
@@ -102,7 +184,11 @@ def characters(g):
     return chi_M, chi299, chi24, chi4096, chi98280 
  
 
-def find_fourvolution():
+
+
+STD_FOURVOLUTION = None
+
+def find_fourvolution(verbose = 0):
     """Return a certain 'fourvolution' in G_x0 as an element of MM
 
     Here a 'fourvolution' is an element v of G_x0 auch that the
@@ -118,12 +204,12 @@ def find_fourvolution():
     Here pi is a permutation that centralizes the standard sextet.
     The standard sextet contains the tetrad [0,1,2,3].
     """
-    y12 = PLoop([0,4,8,12,16,20,2,7,10,])
-    neg =G('x', 0x1000)
+    global STD_FOURVOLUTION 
+    if STD_FOURVOLUTION is not None:
+        return STD_FOURVOLUTION  
     print("Searching for a 'fourvolution' in G_x0...")
-    im = None
     for i in range(1000000):
-        e = G([("y",y12), ("p","r")])
+        e = y12 *  G('p', 'r') # G([("y",y12), ("p","r")])
         order, a = e.half_order()
         if a == neg and order % 4 == 0:
             v = (e ** (order//4))
@@ -131,16 +217,20 @@ def find_fourvolution():
             v.in_G_x0()
             chi = characters(v)
             if chi[0] == -13:
-                if im is None and is_nice_permutation(get_perm(v)):
+                if is_nice_permutation(get_perm(v)):
                     #print(chi, get_perm(v))
-                    if im is None: 
-                        print("found")
-                        return v
-    if not im is None: return im
+                    print("found", v)
+                    if verbose:
+                        print("y part")
+                        print(GCode(v.mmdata[0]).bit_list)
+                        print("permutation part")
+                        print(AutPL(0, v.mmdata[2] & 0xfffffff).perm)
+                    STD_FOURVOLUTION  = v
+                    return v
     raise ValueError("No suitable fourvolution found")
 
 
-
+#find_fourvolution()
 
 
 def invariant_count_type2(iv):

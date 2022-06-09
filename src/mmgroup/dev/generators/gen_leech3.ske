@@ -350,7 +350,7 @@ uint64_t gen_leech3to2_short(uint64_t v3)
 static inline uint32_t parity12(uint64_t x)
 {
     mat24_def_parity12(x);
-    return x;
+    return (uint32_t)x;
 }
 
 
@@ -361,7 +361,7 @@ static inline uint32_t parity24(uint64_t x)
 {
     x ^= x >> 12; 
     mat24_def_parity12(x);
-    return x;
+    return (uint32_t)x;
 }
 
 
