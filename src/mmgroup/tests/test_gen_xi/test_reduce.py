@@ -381,7 +381,7 @@ def type2_testdata(ntests):
 @pytest.mark.gen_xi
 def test_reduce_type_2(ntests = 500, verbose = 0):
     """Test function ``reduce_type2`` """
-    for n, v in enumerate(type2_ortho_testdata(ntests)):
+    for n, v in enumerate(type2_testdata(ntests)):
         if verbose:
             print(" \nTest %d, v = %s, subtype  =%s" % 
                 (n+1, hex(v), hex(gen_leech2_subtype(v)))

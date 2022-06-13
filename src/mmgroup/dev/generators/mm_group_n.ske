@@ -546,6 +546,35 @@ uint32_t mm_group_n_scan_word(uint32_t *w, uint32_t n)
 
 
 
+/**
+ @brief Connjugate \f$g \in N_0\f$ with an element of the monster.
+
+ Let ``w`` be a word of generators of the monster group of
+ length ``n``. Let ``k`` be the greatest number such that all
+ prefixes of ``w`` of length at most ``k`` are in the
+ group \f$N_{0}\f$. Let \f$a\f$ be the element of \f$N_{0}\f$
+ corresponding to the prefix of ``w`` of length ``k``.
+
+ Let \f$g \in N_{0}\f$ is given as an array ``g`` of five
+ 32-bit integers.
+
+ Then the function replaces the value \f$g\f$ in the array ``g``
+ by  \f$a^{-1} \cdot g \cdot a\f$. It returns the 
+ number ``k`` of atoms of the word ``w`` processed.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_conj_word_scan(uint32_t *g, uint32_t *w, uint32_t n)
+{
+    uint32_t g1[5], res;
+
+    g1[0] = g1[1] = g1[2] = g1[3] = g1[4] = 0; 
+    res = mm_group_n_mul_word_scan(g1, w, n);
+    mm_group_n_conjugate_element(g, g1, g);
+    return res;
+}
+
+
+
 
 
 /// @cond DO_NOT_DOCUMENT 

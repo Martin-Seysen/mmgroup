@@ -277,6 +277,212 @@ int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)
 }
 
 
+/*************************************************************************
+*** Auxiliary structure for function xsp2co1_elem_conjugate_involution_Gx0
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+#define s_N_x0_IND_y 1 
+#define s_N_x0_IND_x 2 
+
+typedef struct {
+    uint32_t gn0[5];
+    uint32_t tf_n0[5];
+} s_N_x0_involution;
+
+static inline
+int32_t s_N_x0_init(s_N_x0_involution *p_i, uint64_t *elem)
+{    
+    int32_t res;
+    if ((res = xsp2co1_elem_to_N0(elem, p_i->gn0)) < 0) return res;
+    if (p_i->gn0[0] | p_i->gn0[4]) return ERR_QSTATE12_GX0_BAD_ELEM;
+    mm_group_n_mul_element(p_i->gn0, p_i->gn0, p_i->tf_n0);
+    if (mm_group_n_reduce_element(p_i->tf_n0))
+        return ERR_QSTATE12_GX0_BAD_ELEM;
+    mm_group_n_reduce_element(p_i->gn0);
+    return 0;
+}
+
+static inline
+int32_t s_N_x0_get_xy(s_N_x0_involution *p_i, uint32_t index)
+{    
+    return p_i->gn0[index] & 0x7ff;
+}
+
+static inline
+int32_t s_N_x0_get_q(s_N_x0_involution *p_i)
+{ 
+    uint32_t q = p_i->gn0[2];
+    if (p_i->gn0[0] | p_i->gn0[1] | p_i->gn0[4]) 
+        return ERR_QSTATE12_GX0_BAD_ELEM;
+    return (q << 12) ^ (MAT24_THETA_TABLE[q & 0x7ff] & 0x7ff) 
+        ^ p_i->gn0[3];
+}
+
+static inline
+int32_t s_N_x0_transform(s_N_x0_involution *p_i, uint32_t *a, uint32_t len_a)
+{
+    if (mm_group_n_conj_word_scan(p_i->gn0,  a, len_a) < len_a
+        || mm_group_n_mul_word_scan(p_i->tf_n0, a, len_a) < len_a)
+        return ERR_QSTATE12_GX0_TAG;
+    mm_group_n_reduce_element(p_i->gn0); 
+    return 0;   
+}
+
+
+static inline
+int32_t s_N_x0_out(s_N_x0_involution *p_i, uint32_t *a_out)
+// This destroys *p_i
+{
+    uint32_t length;
+    mm_group_n_inv_element(p_i->tf_n0, p_i->gn0);
+    length = mm_group_n_to_word(p_i->gn0, a_out);
+    mm_group_invert_word(a_out, length);
+    return (int32_t)length;
+}
+
+
+/// @endcond
+
+
+/*************************************************************************
+*** Conjugating an invoulution to a standard value
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline
+int32_t conj_involution_Gx0_type2(uint32_t vx, uint32_t guide, uint32_t *a)
+{
+    int32_t len_a = 0, len_a2;
+    if  (gen_leech2_type(guide) == 4 && gen_leech2_type(guide ^ vx) == 2) {
+        len_a = gen_leech2_reduce_type4(guide, a);
+        if (len_a < 0) return len_a;
+        vx = gen_leech2_op_word(vx, a, len_a);
+    }      
+    len_a2 = gen_leech2_reduce_type2(vx, a + len_a);
+    if  (len_a2 < 0) return len_a2;
+    vx =  gen_leech2_op_word(vx, a + len_a, len_a2);      
+    len_a += len_a2;
+    if (vx & 0x1000000) a[len_a++] = 0xB0000200;
+    return len_a;
+}
+
+/// @endcond  
+
+
+
+/**
+   Map an involution in \f$G_{x0}\f$ to a standard form.
+
+   Let \f$g\f$ be an involution in the group \f$G_{x0}\f$ stored
+   in the array given by parameter ``elem``.
+
+   The function computes an element \f$a\f$ in \f$G_{x0}\f$ such
+   that \f$h = a^{-1} g a\f$ is a (fixed) representative of the
+   class of \f$g\f$ in the group \f$G_{x0}\f$.
+
+   The element \f$a\f$ is stored in the array ``a`` as a word of
+   generators of  the monster group. In case of success the
+   function returns  ``len(a)``, where ``len(a)`` is the length
+   of the data in the array ``a``. The function returns a negative
+   value in case of failure, e.g. if \f$g\f$ is not an involution.
+   The array ``a`` must have length at least \f$10\f$.
+ 
+   Parameter ``guide`` should usually be zero. If ``guide`` is a
+   type-4 vector \f$v_4\f$ in the Leech lattice mod 2 such that
+   the two  conditions \f$h = a^{-1} g a\f$
+   and \f$v_4 \cdot a = \Omega\f$ can both be achieved then we
+   compute an element \f$a\f$ satisfying these two conditions.
+   Otherwise parameter ``guide`` is ignored. Here \f$\Omega\f$
+   is the standard frame in the Leech lattice.
+ 
+   In the sequel we list the representatives of all classes of
+   involutions in \f$G_{x0}\f$ computed by this function. For
+   any such representative we also list the number indicating 
+   the class of the involution as computed by
+   function ``xsp2co1_elem_involution_class``.
+
+   Class ``0x1101``: the neutral element \f$x_1\f$
+
+   Class ``0x3022``: the central involution \f$x_{-1}\f$
+   
+   Class ``0x0021``: the element \f$x_{\{2,3\}}\f$
+
+   Class ``0x0022``: the element \f$x_{\Omega}\f$
+
+   Class ``0x1121``: the element \f$y_o\f$
+
+   Class ``0x1122``: the element \f$x_{-1} y_o\f$
+
+   Class ``0x0122``: the element \f$y_o x_{\{8,9\}}\f$
+
+   Class ``0x0322``: the element \f$y_D x_{\{0, 12\}}\f$
+
+
+   Here in \f$x_{\{i,j\}}\f$ the index \f$\{i,j\}\f$ indicates a Golay
+   cocode word of length 2 given by the entries \f$i\f$ and \f$j\f$.
+   Octad \f$o\f$ is the standard octad  \f$\{0,1,2,3,4,5,6,7\}\f$.
+   Dodecad \f$D\f$ is the standard
+   dodecad \f$\{0, 4, 8, 13, 14, 15, 17, 18, 19, 21, 22, 23\}\f$.
+    
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_conjugate_involution_Gx0(uint64_t *elem, uint32_t guide, uint32_t *a)
+{
+    int32_t v4, len_a, res;
+    uint64_t elem1[26];
+    s_N_x0_involution invol;
+    if ((v4 = xsp2co1_elem_find_type4(elem, guide)) < 0) return v4;
+    if ((len_a = gen_leech2_reduce_type4(v4, a)) < 0) return len_a;
+    xsp2co1_copy_elem(elem, elem1);
+    if ((res = xsp2co1_conjugate_elem(elem1, a, len_a)) < 0) return res;
+    if ((res = s_N_x0_init(&invol, elem1)) < 0) return res;
+
+    if (s_N_x0_get_xy(&invol,s_N_x0_IND_y)) {
+        uint32_t b[3], vy, len_a2;
+        if (s_N_x0_get_xy(&invol,s_N_x0_IND_x)) {
+            b[0] = 0x10000800;
+            if ((res = s_N_x0_transform(&invol, b, 1)) < 0) return res;
+        }
+        b[0] = 0x50000002;   // (this is t**2)
+        if ((res = s_N_x0_transform(&invol, b, 1)) < 0) return res;
+        vy = res = s_N_x0_get_q(&invol);
+        if (res < 0) return res;
+        gen_leech2_reduce_n(vy, b);
+        if ((res = s_N_x0_transform(&invol, b, 3)) < 0) return res;
+        b[0] = 0x50000001;   // (this is t**1)
+        if ((res = s_N_x0_transform(&invol, b, 1)) < 0) return res;
+        len_a2 = res = s_N_x0_out(&invol, a + len_a);
+        if (res < 0) return res;
+        return len_a + len_a2;
+    } else {
+        uint32_t vx, t;
+        if (len_a) return ERR_QSTATE12_GX0_BAD_ELEM;
+        vx = res = s_N_x0_get_q(&invol);
+        if (res < 0) return res;
+        t =  gen_leech2_type(vx);
+        switch(t) {
+            case 0:
+                if  ((gen_leech2_type(guide)) != 4) return 0;
+                len_a = gen_leech2_reduce_type4(guide, a);
+                return len_a;
+            case 4:
+                len_a = gen_leech2_reduce_type4(vx, a);
+                if  (len_a < 0) return len_a;
+                vx = gen_leech2_op_word(vx, a, len_a);
+                if (vx & 0x1000000) a[len_a++] = 0x90000800;
+                return len_a;
+            case 2:
+                return conj_involution_Gx0_type2(vx, guide, a);
+            default:
+                return ERR_QSTATE12_GX0_BAD_ELEM;
+        }
+    }
+}
+
 
 
 //  %%GEN h
