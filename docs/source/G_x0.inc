@@ -15,6 +15,29 @@ representation of :math:`\mathcal{C}_{12}` is as in section
 :ref:`qstate_matrix_label`. Note that :math:`G(4096_x)`
 is also of structure :math:`2^{1+24}_+.\mbox{Co}_1`.
 
+We remark that the subgroup :math:`G_{x0}` of the monster has
+five classes of involutions that map to 2B involutions in the
+monster, see :cite:`Wilson13`. From Table 2 in :cite:`Nor98` we 
+conclude that :math:`G_{x0}` has two classes of involutions
+that map to 2A involutions in the monster. 
+According to :cite:`Con85`, the restriction of the
+196883-dimensional representation of the monster to
+:math:`G_{x0}` leads to a representation of :math:`G_{x0}`
+of shape 
+
+.. math::
+    299_x \oplus 98280_x \oplus 24_x \otimes 4096_x \, .
+
+We can compute the characters of all these representations
+of :math:`G_{x0}`, e.g. with the C function 
+``xsp2co1_traces_fast`` in file ``xsp2co1_traces.c``, or with
+function ``xsp2co1_traces_all`` in file ``xsp2co1_elem.c``.
+The calculations in the python module
+``mmgroup.tests.test_involutions.make_involution_samples``
+show that the class of an involution in the group :math:`G_{x0}`
+can be identified by computing the four cahracters given above. 
+
+
 We use the ideas in section :ref:`qstate_matrix_label` for 
 implementing the representation :math:`4096_x`. In principle,
 the representation :math:`24_x` is straightforward. The part

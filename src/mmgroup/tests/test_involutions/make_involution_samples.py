@@ -3,8 +3,72 @@
 Running this module creates a python file ``involution_samples.py``
 containing samples of these classes including documentation.
 
-This file also checl some assertions about 
+Ideally, we would like to separate all classes of square roots 
+of :math:`Q_{x0}` :math:`G_{x0}`, e.g. by computing the 
+characters in the representations
+:math:`299_x, 98280_x, 24_x \otimes 4096_x` of :math:`G_{x0}`,
+plus some information obtained from inspecting involutions
+in the factor group :math:`\mbox{Co}_1` of :math:`G_{x0}` e.g.
+with the C functions in module ``involutions.c``.
 
+According to [Wil13] there are five classes of involutions in
+the group :math:`G_{x0}` that map to 2B involutions in the
+monster. According to Table 2 in [Nor98] there are two classes 
+of involutions in the group :math:`G_{x0}` that map to 
+2A involutions in the monster. In this module we compute the
+abovementioned characters of many involutions in :math:`G_{x0}`,
+and we will se that these charaters enable us to separate the
+seven classes of involutions in  :math:`G_{x0}` .
+
+We store samples of different classes of square roots 
+(including class information for these samples)
+of :math:`Q_{x0}` in :math:`G_{x0}` in file
+``involution_samples.py``. From this we conclude that
+we can separate the seven classes of involutions.
+
+For any :math:`h \in \mbox{Co}_1` let :math:`M(h)` be the 
+matrix representing :math:`h` in the natural 24-dimensional
+representation :math:`R` of :math:`\mbox{Co}_1` over 
+:math:`\mathbb{F}_2` acting on :math:`\Lambda / 2 \Lambda`, 
+i.e. on the Leech lattice modulo 2.
+
+For :math:`h \in \mbox{Co}_1` let :math:`\imath(h)` be the
+image of the matrix :math:`M(h) - 1`. For 
+:math:`g \in G_{x0}` we put :math:`\imath(g) = \imath(h)`,
+where :math:`h = g Q_{x0} \in \mbox{Co}_1`.
+
+Let :math:`\phi` be the natural mapping 
+:math:`Q_{x0} \rightarrow \Lambda / 2 \Lambda` with kernel 
+:math:`x_{\pm 1}`. 
+
+It is not difficult to show that for any :math:`g \in G_{x0}`
+there is an :math:`x \in \phi^{-1}(\imath(g)) \subset Q_{x0}',
+such that  :math:`g x` is in the same class of :math:`G_{x0}` 
+as :math:`g`. The proof of this statement relies on the
+well-known fact that :math:`G_{x0} / Z(G_{x0})` is isomorphic
+to affine group :math:`\mathbb{F}_2^{24}.R` obtained from
+the matrix representation :math:`R` of :math:`\mbox{Co}_1`. 
+Here :math:`Z(G_{x0}) = \{x_{\pm 1}\}` is the centre of 
+:math:`G_{x0}`.
+Thus for finding representatives of all classes 
+of :math:`G_{x0}` in the coset  :math:`g Q_{x0}` it suffices
+to check :math:`g x` all :math:`x \in \phi^{-1}(L)`, where
+:math:`L` is a maximal subspace of :math:`\mathbb{F}_2^{24}`
+with :math:`L \cap \imath(g) = \{0\}`.
+
+There are three classes of involutions in the factor group
+group :math:`\mbox{Co}_1` of :math:`G_{x0}`, which are
+labelled 2A, 2B, and 2C in the ATLAS :cite:`CCN+85`. If 
+:math:`h \in \mbox{Co}_1` is of class  2A, 2B, or 2C then
+:math:`\imath(h)` has dimension 8, 12, or 12, respectively.
+So we have to check :math:`2^{17}, 2^{13}, 2^{13}` entries
+in these three cases. Thus these checks are not too tedious; 
+they are done in this module.
+
+Apart from this we have to check the central elements 
+:math:`x_{\pm 1}` and the preimages :math:`\phi^{-1}(v)`
+for a vector :math:`v \in \Lambda / 2 \Lambda` of 
+type 2, 3, and 4.
 """
 
 import sys
@@ -339,12 +403,14 @@ Tuple 1:
 Tuple2:
    - Character in the 196883-dimensional rep of the monster
    - Character in the 299-dimensional 299_x rep of Co_1
-   - Character in the 24-dimensional rep 24-x of Co_0
+   - Character in the 24-dimensional rep 24_x of Co_0
    - Character in the 4096-dimensional rep 4096_x
    - Character in the 98280-dimensional monomial rep 98280_x
 
-   The last two reps are defined up to sign only, but the tensor
-   product of these two reps is well defined as a rep of G_x0.
+   Representations 24_x and 4096_x are defined up to sign only, 
+   but the tensor product of these two representations is well 
+   defined. We normalize a pair of characters (chi_24, chi_4096)
+   so that the first onzero entry of that pair is positive.
 
 Tuple 3:
    - Minimum of 12 and the dimension of  (\im (A - 1))^+

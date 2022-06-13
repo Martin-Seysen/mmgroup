@@ -1,4 +1,14 @@
-"""This module is yet to be documented!!!"""
+"""Test the C function xsp2co1_elem_conjugate_involution_Gx0
+
+Given a involution  :math:`g` in the subgroup :math:`G_{x0}` of the 
+monster, the C function ``xsp2co1_elem_conjugate_involution_Gx0`` in
+file ``xspco1_traces.c`` computes a representative of the class of 
+:math:`g` in  :math:`G_{x0}`. That function also computes a number as 
+an indication for the class, as give by the C function
+``xsp2co1_elem_involution_class`` in the same file. For the 
+numbering of the classes of involutions in :math:`G_{x0}` we also
+also refer to module ``mmgroup.tests.test_involutions.test_xp2_trace``.
+"""
 
 import sys
 import os
@@ -31,6 +41,7 @@ from mmgroup.clifford12 import xsp2co1_elem_to_N0
 from mmgroup.clifford12 import xsp2co1_conjugate_elem
 from mmgroup.clifford12 import xsp2co1_elem_involution_class
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution_Gx0
+from mmgroup.clifford12 import xsp2co1_map_involution_class_Gx0
 from mmgroup.tests.test_involutions.test_involution_invariants import INVOLUTION_SAMPLES
 
 #print("Hello world")
@@ -42,9 +53,12 @@ from mmgroup.tests.test_involutions.test_involution_invariants import INVOLUTION
 
 
 class N_x0_involution:
+    """Model the natural mapping :math:`G_{x0} \rightarrow N_{x0}`
+
+
+    """  
     IND_Y = 1
     IND_X = 2
-    IND_D = 3
     
     def __init__(self, elem):
         self.gn0 =  np.zeros(5, dtype = np.uint32)
@@ -177,9 +191,11 @@ def conjugate_involution_in_Gx0(elem, guide = 0):
 def xsp2co1_elem_conjugate_involution_Gx0_C(elem, guide = 0):
     a = np.zeros(10, dtype = np.uint32)
     data = Xsp2_Co1(elem)._data
-    length = xsp2co1_elem_conjugate_involution_Gx0(data, guide, a)
+    res = xsp2co1_elem_conjugate_involution_Gx0(data, guide, a)
+    assert res >= 0
+    iclass, length = res >> 8, res & 0xff
     assert 0 <= length <= 10
-    return MM0('a', a[:length])
+    return iclass, MM0('a', a[:length])
 
 
 #######################################################################
@@ -240,7 +256,6 @@ def conjugate_testdata(n_samples = 10):
 #######################################################################
 
 
-@pytest.mark.mmm
 @pytest.mark.involution
 def test_std_rep(ntests = 50, verbose = 0):
     Omega = XLeech2(0x800000)
@@ -260,9 +275,11 @@ def test_std_rep(ntests = 50, verbose = 0):
         if guide:
             Omega1 = XLeech2(guide) * c
             assert (Omega1.ord ^ Omega.ord) & 0xffffff == 0
-        cc = xsp2co1_elem_conjugate_involution_Gx0_C(g, guide)
-        if (cc != c):
+        c_class, cc = xsp2co1_elem_conjugate_involution_Gx0_C(g, guide)
+        if (cc != c or c_class != iclass):
             print("Involution class %s:\n g =" % hex(iclass), g)
+            if c_class != iclass:
+                print("Class computed by C function", hex(c_class))
             if guide:
                 print(" guide =", hex(guide))
             print(" t**-1 =", (MM0(c)**(-1)).reduce())
@@ -273,6 +290,10 @@ def test_std_rep(ntests = 50, verbose = 0):
             print(" array", [hex(x) for x in cc.mmdata])
             err = "Error in C function"
             raise ValueError(err)
+        a = np.zeros(2, np.uint32)
+        len_a =  xsp2co1_map_involution_class_Gx0(iclass, a)
+        g2 = Xsp2_Co1('a', a[:len_a])
+        assert g1 == g2, (hex(iclass), g1, g2)
     print("passed")
 
 
@@ -283,6 +304,17 @@ def test_std_rep(ntests = 50, verbose = 0):
 def vector_to_bitlist(x):
     w, l =  mat24.vect_to_bit_list(x)
     return l[:w]
+
+def display_q_xy(g):
+    g_n0 = N_x0_involution(Xsp2_Co1(g)._data)
+    try:
+        print("  in N_x0:", hex(g_n0.get_q()))
+    except (ValueError, AssertionError):
+        b = np.array([0x50000002], dtype = np.uint32)
+        g_n0.transform(b)
+        print("  in N_y0:",  hex(g_n0.get_q()))
+       
+
        
 def display_g(g):
     point = 0
@@ -319,6 +351,7 @@ def display_g(g):
             print(display_code(x, 'y'))
         else:
             raise ValueError("Cannot display group element")
+    display_q_xy(g)
         
 def display_std_rep():
     print("\nRepresentatives of classes of involutions in G_x0")
@@ -327,6 +360,38 @@ def display_std_rep():
         display_g(g)
 
 
+
+#######################################################################
+# Display a table mapping numbers of classes to representatives in G_x0
+#######################################################################
+
+def display_involution_map():
+    s = """
+// Here is a mapping from the numbers of the involution classes
+// to the elements of ``G_x0``. Images are given as alements of 
+// the Monster. This mapping has been computed by function 
+// ``display_involution_map`` in module ``test_involution_G_x0.py.
+"""
+    print(s)
+    classes, data = [], []
+    for iclass, g in get_std_rep().items():
+        classes.append(iclass)
+        g_data = list((MM0(g).reduce()).mmdata)
+        assert len(g_data) <= 2, g_data
+        while len(g_data) < 2:
+            g_data.append(0)
+        data.append(g_data)
+    print("static uint16_t _MAP_INVOLUTION_KEYS[] = {")
+    for (i, c) in enumerate(classes):
+            separator = ", " if i < len(data) - 1 else ""
+            print("0x%04x%s" % (c, separator))
+    print("};")
+    print("static uint32_t _MAP_INVOLUTION_VALUES[][2] = {")
+    for i, (d1, d2) in enumerate(data):
+            separator = ", " if i < len(data) - 1 else ""
+            print("{%s, %s}%s" % (hex(d1), hex(d2), separator))
+    print("};")
+    
 
 #######################################################################
 # Execution as a stand-alone program
@@ -338,5 +403,5 @@ def display_std_rep():
 if __name__ == "__main__":
     test_std_rep(100, 1)
     display_std_rep()
-
+    display_involution_map()
 
