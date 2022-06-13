@@ -560,10 +560,12 @@ static uint32_t _MAP_INVOLUTION_VALUES[][2] = {
 // %%EXPORT px
 int32_t xsp2co1_map_involution_class_Gx0(uint32_t iclass, uint32_t *a)
 {
-    uint32_t i, length = 0;
+    uint32_t i, length;
     for (i = 0; i < 8; ++i) if (_MAP_INVOLUTION_KEYS[i] == iclass) {
+        length = 0;
         while (length < 2 && _MAP_INVOLUTION_VALUES[i][length]) {
-            a[length++] = _MAP_INVOLUTION_VALUES[i][length];
+            a[length] = _MAP_INVOLUTION_VALUES[i][length];
+            ++length;
         }
         return length;
     }
