@@ -64,13 +64,13 @@ Tuple 3:
      For all other classes:
          Not calculated, and set to zero
      
-   Column bit 26 in row 0 is one iff (\im (A - 1))^- is strictly 
+   Column bit 26 in row 0 is one iff (\im (A - 1))^+ is strictly 
    greater than (\im (A - 1)); this is calculated for classes 1A 
    and 2A  in Co_1 only.
 
    Column bit 25 in row 0 is 1 for class 2C in Co_1 and 0 for 
    all other classes in Co_1. It is 1 iff \im (A - 1) contains
-   type-3 vectors.
+   any type-3 vectors.
 
    Column bits 24 are set to one in the following cases only:
 
@@ -121,6 +121,6 @@ INVOLUTION_SAMPLES = [
 [[(4, 2), (51, 11, 0, 0, 40), (12, 2, 1, 2, 152)], 'M0<y_2e0h*x_1020h*d_0fh>'] ,
 
 #Characters for Co_1 class 2B
-[[(4, 0), (-13, -13, 0, 64, 0), (12, 0, 0, 0, 0)], 'M0<y_1ae9h*d_700h*p_10221249>'] ,
-[[(4, 4), (-13, -13, 0, 0, 0), (12, 1, 0, 4, 0)], 'M0<y_1ae9h*d_761h*p_10221249>'] ,
+[[(4, 0), (-13, -13, 0, 64, 0), (12, 0, 0, 0, 0)], 'M0<y_0ae7h*d_50h*p_10221249>'] ,
+[[(4, 4), (-13, -13, 0, 0, 0), (12, 1, 0, 4, 0)], 'M0<y_0ae7h*d_31h*p_10221249>'] ,
 ]

@@ -117,7 +117,7 @@ from mmgroup.clifford12 import xsp2co1_leech2_count_type2
 from mmgroup.clifford12 import xsp2co1_traces_all
 
 
-G = MM0
+G = Xsp2_Co1
 
 
 def std_hexads(*i):
@@ -281,7 +281,6 @@ def check_y12_involution_conjugates_to_its_negative():
                     good = True
                     break
             if good: n_good_tansversals += 1
-    print(n_involution_transversals, n_good_tansversals )
     assert  n_involution_transversals == n_good_tansversals  == 2
     assert n_total == 2**13, n_total
 
@@ -345,11 +344,11 @@ def find_fourvolution(verbose = 0):
     print("Searching for a 'fourvolution' in G_x0...")
     for i in range(1000000):
         e = y12 *  G('p', 'r') # G([("y",y12), ("p","r")])
-        order, a = e.half_order()
-        if a == neg and order % 4 == 0:
+        order = e.order()
+        if  order % 4 == 0:
             v = (e ** (order//4))
-            #v = e
-            v.in_G_x0()
+            if v * v != neg:
+                continue
             chi = characters(v)
             if chi[0] == -13:
                 if is_nice_permutation(get_perm(v)):
@@ -426,10 +425,7 @@ def show_characters(g0, file):
             all_characters.append(o_chi)
             chi = o_chi[1] 
             x = chi[0] - chi[1] - chi[2] * chi[3]
-            print([list(o_chi), str(g)], ",", file = file)
-            if o_chi[2][:3] == (4,1,4):
-                #display_involution_invariants(g)
-                pass
+            print([list(o_chi), str(MM0(g))], ",", file = file)
         #if nn & 0xffff == 0: print(".")
 
 
@@ -498,13 +494,13 @@ Tuple 3:
      For all other classes:
          Not calculated, and set to zero
      
-   Column bit 26 in row 0 is one iff (\im (A - 1))^- is strictly 
+   Column bit 26 in row 0 is one iff (\im (A - 1))^+ is strictly 
    greater than (\im (A - 1)); this is calculated for classes 1A 
    and 2A  in Co_1 only.
 
    Column bit 25 in row 0 is 1 for class 2C in Co_1 and 0 for 
    all other classes in Co_1. It is 1 iff \im (A - 1) contains
-   type-3 vectors.
+   any type-3 vectors.
 
    Column bits 24 are set to one in the following cases only:
 

@@ -135,6 +135,10 @@ int32_t xsp2co1_elem_involution_class(uint64_t *elem)
     n = xsp2co1_involution_invariants(elem, invar);
     if (n < 0) return 0;
 
+    // The following calculation can be verified by inspecting
+    // the list INVOLUTION_SAMPLES in the python module
+    // ``mmgroup.tests.test_involutions.involution_samples``.
+
     switch (n) {
         case 0:
             // Co_1 class 1A: v = +- 1
@@ -222,7 +226,18 @@ static int32_t DATA_I_CHI_98280_TABLE[20] = {
 };
 
 
+/**
+  @brief Try to compute the character \f$98280_x\f$ of \f$G_{x0}\f$
 
+  Let \f$g \in G_{x0}\f$ be stored in the array ``elem``
+  in **G_x0 representation**. The function computes the
+  class information about \f$g\f$ using 
+  function ``xsp2co1_elem_involution``. If this succeeds
+  then the function reads the character of the 
+  representation \f$98280_x\f$ of \f$g\f$ and returns
+  that information. Otherwise this function fails 
+  and returns -0x2000000.
+*/
 static inline int32_t trace_98280_fast(uint64_t *elem)
 // Yet to be documented!!!
 {
@@ -263,6 +278,11 @@ static inline int32_t trace_98280_fast(uint64_t *elem)
   We normalize the characters corresponding to \f$\rho_{24}\f$
   and \f$\rho_{4096}\f$ so that the first nonzero value of these
   two characters (in the order given above) is positive.
+
+  So this function performs the same action as
+  function ``xsp2co1_traces_all`` in file ``xsp2co1_elem.c``,
+  but it is considerably faster, since it uses precomputed
+  tables for som hard cases.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)
@@ -270,6 +290,9 @@ int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)
     int32_t res;
     res = xsp2co1_traces_small(elem, ptrace);
     if (res < 0) return res;
+    // Try to compute the character of the rep 99280_x
+    // with function ``trace_98280_fast``; and fall back
+    // to the standard method if this fails.
     res = xsp2co1_trace_98280(elem, trace_98280_fast); 
     if (res < -0x1000000) return res;
     ptrace[3] = res;
@@ -282,6 +305,25 @@ int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
+
+
+// The stuff in this section is an almost literal translation of
+// the python class 
+// mmgroup.tests.test_involutions.test_involution_Gx0.N_x0_involution
+// into C.
+// That class is an auxiliary class for the python function
+// ``xsp2co1_elem_conjugate_involution_in_Gx0_py`` in the same
+// module. That function is equivalent to the C function
+// ``xsp2co1_elem_conjugate_involution_Gx0`` in this module.
+// The structure ``s_N_x0_involution`` defined in this section
+// stores the data of an instance of class ``N_x0_involution``.
+// The functions ``s_N_x0_xxx`` correspond to the methods ``xxx``
+// of class ``N_x0_involution``.  Here the C function 
+// ``s_N_x0_init`` corresponds to the constructor of 
+//  class ``N_x0_involution``.
+// For further details we refer to the documentation
+// of class ``N_x0_involution``.  
+
 
 #define s_N_x0_IND_y 1 
 #define s_N_x0_IND_x 2 
@@ -355,6 +397,10 @@ int32_t s_N_x0_out(s_N_x0_involution *p_i, uint32_t *a_out)
 
 static inline
 int32_t conj_involution_Gx0_type2(uint32_t vx, uint32_t guide, uint32_t *a)
+// This function implements a specific case of function 
+// ``xsp2co1_elem_conjugate_involution_Gx0``. It corresponds to the
+// python function with the same name in module
+// ``mmgroup.tests.test_involutions.test_involution_Gx0``
 {
     int32_t len_a = 0, len_a2;
     if  (gen_leech2_type(guide) == 4 && gen_leech2_type(guide ^ vx) == 2) {
@@ -387,7 +433,8 @@ static inline int32_t _get_class(uint32_t vy) {
    Map an involution in \f$G_{x0}\f$ to a standard form.
 
    Let \f$g\f$ be an involution in the group \f$G_{x0}\f$ stored
-   in the array given by parameter ``elem``.
+   in the array given by parameter ``elem`` 
+   in **G_x0 representation**.
 
    The function computes an element \f$a\f$ in \f$G_{x0}\f$ such
    that \f$h = a^{-1} g a\f$ is a (fixed) representative of the
@@ -398,7 +445,7 @@ static inline int32_t _get_class(uint32_t vy) {
    function returns  ``0x100 * iclass + len(a)``, where ``len(a)``
    is the length  of the data in the array ``a``, and ``iclass``
    is explained below. The function  returns a negative value
-   in case of failure, e.g. if \f$g\f$ is not an involution.
+   in case of failure, e.g. if \f$g\f$ has order greater than 2.
    The array ``a`` must have length at least \f$10\f$.
  
    In the sequel we list the representatives of all classes of
@@ -444,6 +491,12 @@ int32_t xsp2co1_elem_conjugate_involution_Gx0(uint64_t *elem, uint32_t guide, ui
     int32_t v4, len_a, res, iclass;
     uint64_t elem1[26];
     s_N_x0_involution invol;
+
+    // The implementation of this function is along the lines of the
+    // python function ``xsp2co1_elem_conjugate_involution_in_Gx0_py``
+    // in module ``mmgroup.tests.test_involutions.test_involution_Gx0``.
+    // For details, we refer to the documentation of that function.
+
     if ((v4 = xsp2co1_elem_find_type4(elem, guide)) < 0) return v4;
     if ((len_a = gen_leech2_reduce_type4(v4, a)) < 0) return len_a;
     xsp2co1_copy_elem(elem, elem1);
