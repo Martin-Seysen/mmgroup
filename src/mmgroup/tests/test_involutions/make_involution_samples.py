@@ -3,13 +3,25 @@
 Running this module creates a python file ``involution_samples.py``
 containing samples of these classes including documentation.
 
+Let :math:`Q_{x0}` be the  extraspecial normal subgroup of
+structure :math:`2^{1+24}` of the group  math:`G_{x0}`. Then
+:math:`G_{x0} / Q_{x0} \cong \mbox{Co}_1`,
+and there is a natural homomrphism :math:`\phi` from  
+:math:`Q_{x0}` to :math:`\Lambda / 2 \Lambda`,
+i.e. to the Leech lattice modulo 2.  The kernel of
+:math:`\phi` is :math:`Z(Q_{x0}) = \{x_{\pm 1}\}`. So the
+group `\mbox{Co}_1` operates on :math:`Q_{x0} / Z(Q_{x0})`
+by conjugation, an this operation is compatible with the
+natural action of `\mbox{Co}_1` on :math:`\Lambda / 2 \Lambda`.
+
 Ideally, we would like to separate all classes of square roots 
-of :math:`Q_{x0}` :math:`G_{x0}`, e.g. by computing the 
-characters in the representations
-:math:`299_x, 98280_x, 24_x \otimes 4096_x` of :math:`G_{x0}`,
-plus some information obtained from inspecting involutions
-in the factor group :math:`\mbox{Co}_1` of :math:`G_{x0}` e.g.
-with the C functions in module ``involutions.c``.
+of :math:`Q_{x0}` in :math:`G_{x0}`, e.g. by computing the 
+characters of the representations
+:math:`299_x, 98280_x, 24_x \otimes 4096_x` of :math:`G_{x0}`.
+But actually, we just separate the classes of involutions
+in  :math:`G_{x0}`; and we generate a set of elements of
+:math:`G_{x0}` runnning through all classes of square roots 
+of :math:`Q_{x0}`.
 
 According to [Wil13] there are five classes of involutions in
 the group :math:`G_{x0}` that map to 2B involutions in the
@@ -17,58 +29,76 @@ monster. According to Table 2 in [Nor98] there are two classes
 of involutions in the group :math:`G_{x0}` that map to 
 2A involutions in the monster. In this module we compute the
 abovementioned characters of many involutions in :math:`G_{x0}`,
-and we will se that these charaters enable us to separate the
+and we will see that these characters enable us to separate the 
 seven classes of involutions in  :math:`G_{x0}` .
 
-We store samples of different classes of square roots 
-(including class information for these samples)
-of :math:`Q_{x0}` in :math:`G_{x0}` in file
-``involution_samples.py``. From this we conclude that
-we can separate the seven classes of involutions.
+We store samples of different classes elements of
+:math:`G_{x0}` that square up to elements of :math:`G_{x0}`,
+(including the above characters of these samples) in file 
+``involution_samples.py``. From this information we conclude 
+that we can separate the seven classes of involutions 
+in :math:`G_{x0}` by computing characters.
 
+There are three classes of involutions in the factor group
+group :math:`\mbox{Co}_1` of :math:`G_{x0}`, which are
+labelled 2A, 2B, and 2C in the ATLAS :cite:`CCN+85`. 
+Thus for any involution :math:`y \in G_{x0}` the coset
+:math:`y Q_{x0}` must either be equal to :math:`Q_{x0}`
+or lie in one of these classes of  :math:`\mbox{Co}_1`.
+
+So it suffices to check the cosets :math:`g Q_{x0}` for
+involutions, where :math:`g` runs through the neutral
+element of :math:`G_{x0}`, and through one preimage in
+:math:`G_{x0}` of the three classes of involutions
+in :math:`\mbox{Co}_1`.
+
+Running through all :math:`2^{25}` elements of a
+coset :math:`g Q_{x0}` is still a formidable task. In
+case :math:`g = 1` it suffices to inspect the
+elements :math:`\{x_{\pm 1}\}`, and three other elements
+in :math:`h \in Q_{x0}` such the the type of 
+in :math:`\phi(h)` in :math:`\Lambda / 2 \Lambda` runs 
+through the three possible nonzero values 2, 3, and 4. 
+
+We deal with the preimages :math:`g` of involutions of
+:math:`\mbox{Co}_1` as follows. 
 For any :math:`h \in \mbox{Co}_1` let :math:`M(h)` be the 
 matrix representing :math:`h` in the natural 24-dimensional
 representation :math:`R` of :math:`\mbox{Co}_1` over 
-:math:`\mathbb{F}_2` acting on :math:`\Lambda / 2 \Lambda`, 
-i.e. on the Leech lattice modulo 2.
-
+:math:`\mathbb{F}_2` acting on :math:`\Lambda / 2 \Lambda`.
 For :math:`h \in \mbox{Co}_1` let :math:`\imath(h)` be the
 image of the matrix :math:`M(h) - 1`. For 
 :math:`g \in G_{x0}` we put :math:`\imath(g) = \imath(h)`,
 where :math:`h = g Q_{x0} \in \mbox{Co}_1`.
 
-Let :math:`\phi` be the natural mapping 
-:math:`Q_{x0} \rightarrow \Lambda / 2 \Lambda` with kernel 
-:math:`x_{\pm 1}`. 
-
 It is not difficult to show that for any :math:`g \in G_{x0}`
-there is an :math:`x \in \phi^{-1}(\imath(g)) \subset Q_{x0}',
+and :math:`v \in \imath(g))` there is an 
+:math:`x \in \phi^{-1}(v) \subset Q_{x0}`,
 such that  :math:`g x` is in the same class of :math:`G_{x0}` 
 as :math:`g`. The proof of this statement relies on the
-well-known fact that :math:`G_{x0} / Z(G_{x0})` is isomorphic
-to affine group :math:`\mathbb{F}_2^{24}.R` obtained from
-the matrix representation :math:`R` of :math:`\mbox{Co}_1`. 
-Here :math:`Z(G_{x0}) = \{x_{\pm 1}\}` is the centre of 
-:math:`G_{x0}`.
+fact (mentioned above) that the operation of `\mbox{Co}_1` 
+on :math:`Q_{x0} / Z(Q_{x0})` by conjugation is compatible 
+with the action of `\mbox{Co}_1` on :math:`\Lambda / 2 \Lambda`.
+
 Thus for finding representatives of all classes 
 of :math:`G_{x0}` in the coset  :math:`g Q_{x0}` it suffices
 to check :math:`g x` all :math:`x \in \phi^{-1}(L)`, where
-:math:`L` is a maximal subspace of :math:`\mathbb{F}_2^{24}`
-with :math:`L \cap \imath(g) = \{0\}`.
+:math:`L` is a maximal subspace of  
+:math:`\Lambda / 2 \Lambda` with 
+:math:`L \cap \imath(g) = \{0\}`.
 
-There are three classes of involutions in the factor group
-group :math:`\mbox{Co}_1` of :math:`G_{x0}`, which are
-labelled 2A, 2B, and 2C in the ATLAS :cite:`CCN+85`. If 
-:math:`h \in \mbox{Co}_1` is of class  2A, 2B, or 2C then
+If :math:`h \in \mbox{Co}_1` is of class  2A, 2B, or 2C then
 :math:`\imath(h)` has dimension 8, 12, or 12, respectively.
 So we have to check :math:`2^{17}, 2^{13}, 2^{13}` entries
 in these three cases. Thus these checks are not too tedious; 
-they are done in this module.
+and they are done in this module.
 
-Apart from this we have to check the central elements 
-:math:`x_{\pm 1}` and the preimages :math:`\phi^{-1}(v)`
-for a vector :math:`v \in \Lambda / 2 \Lambda` of 
-type 2, 3, and 4.
+We store some more information for all computed samples
+(depending on the class of the sample only) in file
+``involution_samples.py``. This information is used to
+accelerate the computation of the character of the
+representation  :math:`98280_x` in some cases, where that
+computation would take a long time otherwise.
 """
 
 import sys
@@ -132,22 +162,38 @@ check_std_hexads(verbose = 0)
 
 
 def transversal_basis(g):
+    """Compute basis of a transversal for :math:`g \in G_{x0}`
+
+    Let ``g`` be an element of the group  :math:`G_{x0}`, such
+    that ``Xsp2_Co1(g)`` constructs an instance of class
+    `Xsp2_Co1``.
+
+    Let :math:`\imath(g)` be the subspace of 
+    :math:`\Lambda / 2 \Lambda` defined in the header of
+    this module, and let :math:`L` be a complement of
+    :math:`\imath(g)`, ad defined in ibid. Then the function 
+    returns basis of :math:`\imath(g)` as a list of
+    vectors in **Leech lattice encoding**.
+    """
     a = Xsp2_Co1(g)._involution_invariants()[0]
     while len(a) and int(a[-1]) == 0:
         a = a[:-1] 
-    while len(a) and  int(a[0]) & 0x7000000:
+    while len(a) and  int(a[0]) & 0x4000000:
         a = a[1:]
     a = [int(x) & 0xffffff for x in a]
     bl = set(range(1,25)) - set([x.bit_length() for x in a])
     assert len(bl) == 24 - len(a)
     return [1 << (x - 1) for x in bl]
 
-def invariant_basis(g):
-    a = Xsp2_Co1(g)._involution_invariants()[0]
-    return [int(x) & 0xffffff for x in a]
  
 
 def vector_space(basis):
+    """Map basis of vector space to vector space.
+
+    Given a ``basis`` of a subspace of :math:`\Lambda / 2 \Lambda`
+    in **Leech lattice encoding**, the function returns the list
+    of all vectors spannned by that basis.
+    """
     c = [0]
     for v in basis:
         c += [v ^ x for x in c]
@@ -155,36 +201,47 @@ def vector_space(basis):
 
 
 def iter_Q_x0():
+    """Iterator for all samples in :math:`Q_{x0}` to be checked
+
+    This function performs the case ``g = 1`` in function
+    ``iter_transversal```.
+    """
     yield G()
     yield G("x", 0x1000)
     yield G("x", PLoop(range(8)))
     yield G("x", PLoop([0,4,8,12,16,20,2,7,10,]))
     yield G("x", 0x800)
 
+
 def iter_transversal(g):
+    """Iterator for all samples in :math:`g Q_{x0}` to be checked
+
+    Let ``g`` be an element of the group :math:`G_{x0}` such
+    that the coset :math:`g Q_{x0}` in  :math:`{Co}_1` has 
+    order 1 or 2. Then the function iterates over the subset
+    of :math:`g Q_{x0}` containing representatives of all 
+    classes of :math:`G_{x0}` occuring in :math:`g Q_{x0}`,
+    as described in the header of this module.
+    """
     if g == G():
         yield from iter_Q_x0()
         return
     b = transversal_basis(g)
-    if len(b) >= 16:
-        for x in vector_space(b):
-            yield g * G("q", x)    
-        for x in invariant_basis(b):
-            yield g * G("q", x)    
-            yield g * G("q", x) * G("x", 0x1000)   
-    else:  
-        for x in vector_space(b):
-            yield g * G("q", x)    
+    for x in vector_space(b):
+        yield g * G("q", x)    
+        yield g * G("q", x) * G("x", 0x1000)   
 
 
 
 
 
-
+# This is a representative of class 2A in :math:`\mbox{Co}_1`
 y8 = G("y", PLoop(range(8)))
 
-#y12 =  G("y", PLoop([0,4,8,12,16,20,2,7,10,]))
+# This is a representative of class 2C in :math:`\mbox{Co}_1`
 y12 =  G("y", PLoop(std_hexads(0, 1)))
+
+# This is a the central involution in :math:`Q_{x0}`
 neg =G('x', 0x1000)
 
 
@@ -192,6 +249,19 @@ neg =G('x', 0x1000)
 
 
 def check_y12_involution_conjugates_to_its_negative():
+    """Check involutions corresponding to class 2C 
+
+    Let :math:`g \in G_{x0}` be such that :math:`g Q_{x0}`
+    is of class 2C in :math:`\mbox{Co}_1`. We may e.g. put
+    ``g = y12``.
+
+    Then we check that all involutions in the coset
+    :math:`g Q_{x0}` of :math:`G_{x0}` belong to the same 
+    class of :math:`G_{x0}`, and that any such involution
+    is in the same class as its nagative. (Here negation
+    means multiplication with the central involution
+    of :math:`G_{x0}`).
+    """
     n_total = 0
     n_involution_transversals = 0
     n_good_tansversals = 0
@@ -211,6 +281,7 @@ def check_y12_involution_conjugates_to_its_negative():
                     good = True
                     break
             if good: n_good_tansversals += 1
+    print(n_involution_transversals, n_good_tansversals )
     assert  n_involution_transversals == n_good_tansversals  == 2
     assert n_total == 2**13, n_total
 
@@ -256,9 +327,9 @@ def find_fourvolution(verbose = 0):
     """Return a certain 'fourvolution' in G_x0 as an element of MM
 
     Here a 'fourvolution' is an element v of G_x0 auch that the
-    the image vQ of v in Co_1 is in class 2B of Co_1. Then any
-    preimage of vQ in Co_0 squares to -1. The returned element
-    of v has the following properties:
+    the image v Q_x0 of v in Co_1 is in class 2B of Co_1. Then 
+    any preimage of v Q_x0 in Co_0 squares to -1. The returned 
+    element of v has the following properties:
 
        vQ    is in   y12 * pi * Q,
 

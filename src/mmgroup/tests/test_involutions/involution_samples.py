@@ -40,12 +40,14 @@ Tuple 1:
 Tuple2:
    - Character in the 196883-dimensional rep of the monster
    - Character in the 299-dimensional 299_x rep of Co_1
-   - Character in the 24-dimensional rep 24-x of Co_0
+   - Character in the 24-dimensional rep 24_x of Co_0
    - Character in the 4096-dimensional rep 4096_x
    - Character in the 98280-dimensional monomial rep 98280_x
 
-   The last two reps are defined up to sign only, but the tensor
-   product of these two reps is well defined as a rep of G_x0.
+   Representations 24_x and 4096_x are defined up to sign only, 
+   but the tensor product of these two representations is well 
+   defined. We normalize a pair of characters (chi_24, chi_4096)
+   so that the first onzero entry of that pair is positive.
 
 Tuple 3:
    - Minimum of 12 and the dimension of  (\im (A - 1))^+
@@ -103,12 +105,12 @@ INVOLUTION_SAMPLES = [
 
 #Characters for Co_1 class 2A
 [[(2, 0), (4371, 43, 8, 256, 2280), (8, 0, 0, 0, 0)], 'M0<y_80fh>'] ,
+[[(2, 0), (275, 43, 8, -256, 2280), (8, 0, 0, 0, 0)], 'M0<y_0fh>'] ,
 [[(4, 4), (275, 43, 8, 0, 232), (9, 4, 1, 4, 16)], 'M0<y_80fh*d_1h>'] ,
 [[(2, 0), (275, 43, 8, 0, 232), (9, 4, 0, 0, 16)], 'M0<y_80fh*d_3h>'] ,
 [[(4, 2), (51, 43, 8, 0, 8), (9, 4, 1, 2, 2)], 'M0<y_80fh*d_801h>'] ,
 [[(4, 4), (19, 43, 8, 0, -24), (9, 4, 1, 4, 0)], 'M0<y_80fh*d_803h>'] ,
 [[(4, 0), (19, 43, 8, 0, -24), (9, 5, 0, 0, 0)], 'M0<y_0fh*x_1003h*d_406h>'] ,
-[[(2, 0), (275, 43, 8, -256, 2280), (8, 0, 0, 0, 0)], 'M0<y_0fh>'] ,
 
 #Characters for Co_1 class 2C
 [[(4, 4), (275, 11, 0, 64, 264), (12, 2, 0, 0, 0)], 'M0<y_0ae0h>'] ,
@@ -119,6 +121,6 @@ INVOLUTION_SAMPLES = [
 [[(4, 2), (51, 11, 0, 0, 40), (12, 2, 1, 2, 152)], 'M0<y_2e0h*x_1020h*d_0fh>'] ,
 
 #Characters for Co_1 class 2B
-[[(4, 0), (-13, -13, 0, 64, 0), (12, 0, 0, 0, 0)], 'M0<y_1a6dh*d_150h*p_10221297>'] ,
-[[(4, 4), (-13, -13, 0, 0, 0), (12, 1, 0, 4, 0)], 'M0<y_1a6dh*d_1b1h*p_10221297>'] ,
+[[(4, 0), (-13, -13, 0, 64, 0), (12, 0, 0, 0, 0)], 'M0<y_1ae9h*d_700h*p_10221249>'] ,
+[[(4, 4), (-13, -13, 0, 0, 0), (12, 1, 0, 4, 0)], 'M0<y_1ae9h*d_761h*p_10221249>'] ,
 ]
