@@ -90,6 +90,7 @@ sys.path.append(REAL_SRC_DIR)
 from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup.dev.generators.gen_leech_reduce_n import GenLeechReduceY
+from mmgroup.dev.generators.gen_cocode_short import ShortCocodeTables
 from mmgroup.generate_c import TableGenerator, make_doc
 from mmgroup.generate_c import pxd_to_pyx
 
@@ -153,6 +154,7 @@ GENERATORS_C_FILES = [
     "gen_xi_functions",
     "mm_group_n",
     "gen_leech",
+    "gen_leech_type",
     "gen_leech3",
     "gen_leech_reduce",
     "gen_leech_reduce_n",
@@ -180,7 +182,7 @@ GENERATORS_H_FILES = [
 ]
 
 GENERATORS_TABLE_CLASSES = [
-     GenXi, GenLeechReduceY
+     GenXi, GenLeechReduceY, ShortCocodeTables
 ]
 
 H_GENERATORS_NAME = "mmgroup_generators.h"

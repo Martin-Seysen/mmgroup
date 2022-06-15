@@ -31,7 +31,6 @@ import numpy as np
 
 import mmgroup
 from mmgroup import structures, MM0, MMV
-from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4

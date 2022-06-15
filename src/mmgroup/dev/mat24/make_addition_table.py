@@ -114,8 +114,8 @@ def small_addition_tree(data):
 def make_addition_tree(data, singleton = False, granularity = 8):
     """Create a direct addition tree for a set of integers
 
-    The function returns a pair ``(dist, stage)``. Here 
-    dictionary``dict`` has entries of shape ``r:  (x, y)``
+    The function returns a pair ``(dict, stage)``. Here 
+    dictionary ``dict`` has entries of shape ``r:  (x, y)``
     for integers ``r, x, y`` such that ``r = x ^ y``, and  each of 
     the entries ``x, y`` is either of bit weight 1 or it is also
     contained as a key in the dictionry.

@@ -119,6 +119,12 @@ C interface for file gen_leech.c
 .. doxygenfile:: gen_leech.c
 
 
+C interface for file gen_leech_type.c
+......................................
+
+.. doxygenfile:: gen_leech_type.c
+
+
 C interface for file gen_leech3.c
 .................................
 
