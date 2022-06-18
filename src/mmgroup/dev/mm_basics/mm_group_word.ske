@@ -1,4 +1,8 @@
+/// @cond DO_NOT_DOCUMENT 
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
 #include "mm_basics.h"
+/// @endcond 
 
 // %%EXPORT_KWD MM_BASICS_API
 
@@ -143,6 +147,87 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
         mm_group_iter_next_atom(pit);
     }
 
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Sspport for operation on part ABC on a vector
+/////////////////////////////////////////////////////////////////////////
+
+// %%EXPORT 
+int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
+{
+    uint32_t i, tag, len_a; 
+    uint32_t g_status = 0; // bit 0: tag t has been found
+                           // bit 1: tag l has been found
+                           // bit 2: g must be reduced
+    for (i = 0; i < len_g; ++i) {
+        // Gf both, tag t and l peviously have occcured
+        // The we must reduce g
+        g_status |= (g_status + 1) & 4;
+        // Srore current tag in t
+        tag = (g[i] >> 28) & 7;
+        switch (tag) {
+            case 5:  // tag t
+                if (g[i] & 0xfffffff) g_status |= 1;
+                break;
+            case 6:   //tag l
+                if (g[i] & 0xfffffff) g_status |= 2;
+                // Reduce g if tag l occures after tag t
+                g_status |= (g_status & 1) << 2;
+            default:  // any tag except for t
+                break;
+        }
+    }
+
+    if ((g_status & 2) == 0) {
+        // If tag t is not present, compute in subgroupe N_0
+        uint32_t gn[5];
+        mm_group_n_clear(gn);
+        if (mm_group_n_mul_word_scan(gn, g, len_g) < 0) return -1;
+        a[0] = 0;
+        len_a = mm_group_n_to_word(gn, a + 1);
+        return len_a + 0x101;
+    } else if ((g_status & 4) || len_g > 16) {
+       // Reduce g if this is required. The we present a prefix of g 
+       // as a product of ``elem`` in G_x0 and ``gn`` in N_0
+       uint32_t gn[5];    
+       uint64_t elem[26];
+       uint32_t pos = 0, scan, e;
+
+       // Scan longest prefix of ``g`` in G_x0, and store it in ``elem``
+       scan = xsp2co1_set_elem_word_scan(elem, g, len_g, 0);
+       pos += scan;
+       // Store remaining part of ``g`` in N_x0 if possible; 
+       // abort if this is impossible.
+       mm_group_n_clear(gn);
+       scan = mm_group_n_mul_word_scan(gn, g + pos, len_g - pos);
+       if (pos + scan < len_g) return -1;
+       // If ``elem`` is in N0 then store  ``g`` as an element 
+       // of ``N_x0`` in ``a`` with a preceding zero atom
+       if (xsp2co1_elem_subtype(elem) == 0x48) {
+           // Store ``elem`` in a + 1 as an element of N_x0
+           if (xsp2co1_elem_to_N0(elem, a + 1)) return -1;
+           // multiply it with ``gn``.
+           mm_group_n_mul_element(a + 1, gn, a + 1);
+           // Return g as a ward in a, preceded by a zero atom
+           a[0] = 0;
+           len_a = mm_group_n_to_word(gn, a + 1);
+           return len_a + 0x101;
+       } else {
+           e = mm_group_n_right_coset_N_x0(gn);
+           len_a = mm_group_n_to_word(gn, gn);
+           if (xsp2co1_mul_elem_word(elem, gn, len_a) < 0) return -1;
+           len_a =xsp2co1_elem_to_word(elem, a);
+           if (len_a < 0) return -1;
+           if (e) a[len_a++] = 0x5000000 + e;
+           return len_a + 0x100;
+       }
+       
+    } else {
+       return len_g;
+    }
 }
 
 

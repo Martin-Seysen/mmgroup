@@ -371,6 +371,17 @@ uint32_t gen_leech2_op_atom(uint32_t q0, uint32_t g)
 *************************************************************************/
 
 
+#define N_OPS_MAP_STD_SUBFRAME %{ShortCocode_NumOps}
+
+static const uint8_t TABLE_IN_MAP_STD_SUBFRAME[11] = {
+// %%TABLE ShortCocode_InTable, uint8
+};
+
+static const 
+uint8_t TABLE_OP_MAP_STD_SUBFRAME[3 * N_OPS_MAP_STD_SUBFRAME] = {
+// %%TABLE ShortCocode_OpTable, uint8
+};
+
 /** Transform the standard subframe of Leech lattice mod 2
 
  This function is yet to be implemented!!!
@@ -436,8 +447,25 @@ uint32_t gen_leech2_op_atom(uint32_t q0, uint32_t g)
 // %%EXPORT px
 int32_t gen_leech2_map_std_subframe(uint32_t *g, uint32_t len_g, uint32_t *a)
 {
-    // Yet to be implemented!!!!
-    return -1;
+    uint32_t i, q0;
+
+    for (i = 0; i < 11; ++i) {
+        q0 = 1UL << i;
+        if ((q0 = gen_leech2_op_word(q0, g, len_g)) & 0x80000000UL) return -1;
+        a[TABLE_IN_MAP_STD_SUBFRAME[i]] = q0;
+    }
+
+    for (i = 0; i < 3 * N_OPS_MAP_STD_SUBFRAME; i += 3) {
+        uint32_t op1 = a[TABLE_OP_MAP_STD_SUBFRAME[i]];
+        uint32_t op2 = a[TABLE_OP_MAP_STD_SUBFRAME[i + 1]];
+        gen_leech2_def_mul(op1, op2, q0);
+        a[TABLE_OP_MAP_STD_SUBFRAME[i + 2]] = q0;
+    }
+    
+    q0 = 0x800000;
+    if ((q0 = gen_leech2_op_word(q0, g, len_g)) & 0x80000000UL) return -1;
+    a[0] = q0;
+    return 0;
 }
 
 

@@ -100,3 +100,20 @@ def test_ll_div(verbose = 0):
     print("passed")
 
 
+####################################################################
+# Test coset decomposition
+####################################################################
+
+@pytest.mark.auto_group
+def test_coset_decomp(verbose = 0):
+    for i in  range(50):
+        g = group(make_rand_word("dpxyt", 10))
+        g_Nx0, g_t = g.right_coset_N_x0()
+        assert g == g_Nx0 * g_t
+        assert g_Nx0.data[0] == 0
+        d = g_t.data 
+        assert d[1] | d[2] | d[3] | d[4] == 0
+        
+
+
+

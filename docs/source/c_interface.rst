@@ -575,12 +575,10 @@ as shown in the following paragraph:
     
     mm_reduce
        + mm<p>
-          + clifford12
-             + generators
-                 + mat24
           + mm
-             + generators
-                 + mat24
+             + clifford12
+                + generators
+                    + mat24
  
 
 

@@ -116,7 +116,8 @@ from mmgroup.generators import mm_group_n_mul_delta_pi, mm_group_n_mul_x
 from mmgroup.generators import mm_group_n_mul_inv_delta_pi
 from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
 from mmgroup.generators import mm_group_n_reduce_element
-
+from mmgroup.generators import mm_group_n_copy_element
+from mmgroup.generators import mm_group_n_right_coset_N_x0
 
 from mmgroup.mat24 import pow_ploop
 
@@ -159,6 +160,21 @@ class GroupN_Word(AbstractMMGroupWord):
         if element[3]: a.append(0x10000000 + element[3])
         if element[4]: a.append(0x20000000 + element[4])
         return np.array(a, dtype = np.uint32)
+
+    def right_coset_N_x0(self):
+        """Decmpose element as right coset of ``N_x0``
+
+        The function returns two group elements ``g_Nx0``, ``g_t``
+        such that the product of these two elements is equal to
+        this element, ``g_Nx0`` is in the subgroup ``N_x0`` of
+        ``N_0``, and  ``g_t`` is a power of the triality element.
+        """
+        g_Nx0 = GroupN_Word()
+        g_t = GroupN_Word()
+        mm_group_n_copy_element(self.data, g_Nx0.data)
+        g_t.data[0] = mm_group_n_right_coset_N_x0(g_Nx0.data)
+        return g_Nx0, g_t
+        
 
 
 ######################################################################

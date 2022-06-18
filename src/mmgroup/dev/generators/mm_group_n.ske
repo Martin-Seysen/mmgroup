@@ -9,9 +9,10 @@ the document *The C interface of the mmgroup project*.
 
 
 
-
+/// @cond DO_NOT_DOCUMENT 
 #include "mat24_functions.h"
 #include "mmgroup_generators.h"
+/// @endcond 
 
 
 // %%EXPORT_KWD MAT24_API
@@ -563,7 +564,7 @@ uint32_t mm_group_n_scan_word(uint32_t *w, uint32_t n)
  number ``k`` of atoms of the word ``w`` processed.
 */
 // %%EXPORT px
-uint32_t mm_group_n_conj_word_scan(uint32_t *g, uint32_t *w, uint32_t n)
+uint32_t  mm_group_n_conj_word_scan(uint32_t *g, uint32_t *w, uint32_t n)
 {
     uint32_t g1[5], res;
 
@@ -658,6 +659,25 @@ uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
    if (g[4]) word[len++] = (g[4] & 0xfffffff) | 0x20000000;
    return len;
 
+}
+
+
+/**
+ @brief Map\f$g \in N_0\f$ to an element of \f$N_{x0}\f$.
+
+ The function changes the element \f$g\f$ of \f$N_0\f$ to an 
+ element  \f$g'\f$ of \f$N_{x0}\f$ and returns an 
+ exponent \f$0 \leq e < 3\f$ such that \f$g = g' \cdot \tau^e\f$.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_right_coset_N_x0(uint32_t *g)
+{
+   uint_fast32_t e;
+   mm_group_n_reduce_element(g);
+   e = g[0];
+   if (e && g[3] & 0x800) e = 3 - e;
+   mm_group_n_mul_t(g, 3 - e);
+   return e;
 }
 
 

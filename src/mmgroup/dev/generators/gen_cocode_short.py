@@ -57,6 +57,7 @@ class ShortCocodeTables:
        "ShortCocode_InTable" : in_table,
        "ShortCocode_OpTable" : op_table,
        "ShortCocode_LenOpTable" : len(op_table),
+       "ShortCocode_NumOps" : len(op_table) // 3,
     }
 
     directives = {}
