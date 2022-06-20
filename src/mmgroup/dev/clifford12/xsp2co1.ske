@@ -1326,8 +1326,7 @@ _mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
                break;
             case MMGROUP_ATOM_TAG_IT:
             case MMGROUP_ATOM_TAG_T:
-               v = v % 3;
-               if (v) return i;
+               if (v % 3) goto final;
                break;
             case MMGROUP_ATOM_TAG_IL:
                v ^= 0xfffffff;
@@ -1339,7 +1338,7 @@ _mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
                }
                break;
             default:
-               return i;
+               goto final;
         }
         res = 0;
         if (multiply) res = qstate12_matmul(&qs_atom, &qs, &qs);
@@ -1347,10 +1346,10 @@ _mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
         if (res < 0) return res;
         p_atom = &qs_atom;
     }
-       
+  final:   
     res = xsp2co1_qs_to_elem_i(&qs, v3, elem);
     if (res < 0) return res;
-    return n;
+    return i;
 }
 
 /// @endcond  

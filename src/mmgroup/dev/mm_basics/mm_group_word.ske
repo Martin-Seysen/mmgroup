@@ -155,77 +155,121 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
 // Sspport for operation on part ABC on a vector
 /////////////////////////////////////////////////////////////////////////
 
-// %%EXPORT 
+
+
+/**
+  @brief Auxiliary function for function ``mm_op<p>_word_tag_ABC``
+
+  Let \f$g\f$ be the element of the monster group stored in the array
+  of length ``len_g`` referred by the pointer ``g``. Here we require
+  that \f$g\f$ and also every prefix of the word representing \f$g\f$
+  is in the product \f$G_{x0} \cdot N_{0}\f$.
+
+  Then we try to reduce \f$g\f$ in such away that, for any given
+  vector  \f$v\f$ of the representation  \f$\rho_p\f$ of the
+  monster, the part with tags ``A``, ``B``, ``C`` of the 
+  vector \f$v \cdot g\f$ can be computed quickly. 
+
+  The function returns a bits ``b0``in bit 8 the return value, and
+  the length of the output in buffer ``a`` in bits 7,...,0 of the 
+  return value. It returns a negative value in case of failure.
+  Buffer ``a´` should have length at least 11.
+
+  If the bit ``b0`` is set then we have \f$g \in N_0\f$, and \f$g\f$
+  is stored as a word of length at most 5 with possible tags 'tyxdp' 
+  (in that order). In this case we append a zero atom to buffer ``a``.
+
+  if the bit ``b1`` is cleared then we may have \f$g \notin N_0\f$
+  and \f$g\f$ is stored as a word of generators of \f$G_{x0}\f$,
+  possibly followed by a single atom with tag `t`. Here \f$g\f$
+  in stored in buffer ``a``: it may or not be equal to the input
+  value f$g\f$.
+*/
+// %%EXPORT px
 int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
 {
-    uint32_t i, tag, len_a; 
-    uint32_t g_status = 0; // bit 0: tag t has been found
-                           // bit 1: tag l has been found
-                           // bit 2: g must be reduced
+    uint32_t i;
+    uint32_t has_t = 0;  // True if tag t has been found
+    uint32_t has_l = 0;  // True if tag l has been found
+    uint32_t reduce = 0; // True if g gas to be reduced
+
     for (i = 0; i < len_g; ++i) {
-        // Gf both, tag t and l peviously have occcured
-        // The we must reduce g
-        g_status |= (g_status + 1) & 4;
-        // Srore current tag in t
-        tag = (g[i] >> 28) & 7;
+        // If both, tag t and l peviously have occcured
+        // then we must reduce g.
+        reduce |= has_t;
+        // Store current tag in ``tag``.
+        uint32_t tag = (g[i] >> 28) & 7;
         switch (tag) {
-            case 5:  // tag t
-                if (g[i] & 0xfffffff) g_status |= 1;
+            case 5:  // tag t: accumulate in ``g_status`` bit 0
+                if (g[i] & 0xfffffff) has_t = 1;
                 break;
-            case 6:   //tag l
-                if (g[i] & 0xfffffff) g_status |= 2;
-                // Reduce g if tag l occures after tag t
-                g_status |= (g_status & 1) << 2;
-            default:  // any tag except for t
+            case 6:   //tag l: accumulate in ``g_status`` bit 1
+                if (g[i] & 0xfffffff) has_l = 1;
+                break;
+            case 7:   // illegal tag
+                return -1001;
+            default:  // any other tag
                 break;
         }
     }
 
-    if ((g_status & 2) == 0) {
-        // If tag t is not present, compute in subgroupe N_0
-        uint32_t gn[5];
-        mm_group_n_clear(gn);
-        if (mm_group_n_mul_word_scan(gn, g, len_g) < 0) return -1;
-        a[0] = 0;
-        len_a = mm_group_n_to_word(gn, a + 1);
+    if (!has_l) {
+        int32_t len_a; 
+        // If no atom with tag 'l' is present, compute in subgroupe N_0
+        mm_group_n_clear(a);
+        if (mm_group_n_mul_word_scan(a, g, len_g) < 0) return -1002;
+        len_a = mm_group_n_to_word(a, a);
+        a[len_a] = 0;
         return len_a + 0x101;
-    } else if ((g_status & 4) || len_g > 16) {
-       // Reduce g if this is required. The we present a prefix of g 
-       // as a product of ``elem`` in G_x0 and ``gn`` in N_0
-       uint32_t gn[5];    
+    } else if (reduce || len_g > 11) {
+       // Reduce g if this is required. Then we present  g  as
+       // a product of ``elem`` in G_x0 and ``gn`` in N_0
+       uint32_t gn[5], pos = 0, scan, e;   
        uint64_t elem[26];
-       uint32_t pos = 0, scan, e;
+       int32_t len_a; 
 
-       // Scan longest prefix of ``g`` in G_x0, and store it in ``elem``
-       scan = xsp2co1_set_elem_word_scan(elem, g, len_g, 0);
-       pos += scan;
+       // Scan longest prefix of ``g`` in G_x0, and store it in ``elem``.
+       pos = xsp2co1_set_elem_word_scan(elem, g, len_g, 0);
+       if (pos < 0 || pos > len_g) return -0x1009;
        // Store remaining part of ``g`` in N_x0 if possible; 
        // abort if this is impossible.
        mm_group_n_clear(gn);
        scan = mm_group_n_mul_word_scan(gn, g + pos, len_g - pos);
-       if (pos + scan < len_g) return -1;
-       // If ``elem`` is in N0 then store  ``g`` as an element 
-       // of ``N_x0`` in ``a`` with a preceding zero atom
+       if (scan < 0) return -0x1010;
+       if (pos + scan != len_g) return -1003;
+       // Here we have ``g = elem * gn``.
+
+       // If ``elem`` is in N_x0 then store  ``g`` as an element 
+       // of ``N_x0`` in ``a``.
        if (xsp2co1_elem_subtype(elem) == 0x48) {
-           // Store ``elem`` in a + 1 as an element of N_x0
-           if (xsp2co1_elem_to_N0(elem, a + 1)) return -1;
-           // multiply it with ``gn``.
-           mm_group_n_mul_element(a + 1, gn, a + 1);
-           // Return g as a ward in a, preceded by a zero atom
-           a[0] = 0;
-           len_a = mm_group_n_to_word(gn, a + 1);
+           // Store ``elem`` in ``a`` as an element of N_x0
+           if (xsp2co1_elem_to_N0(elem, a)) return -1004;
+           // multiply ``a`` with ``gn``.
+           mm_group_n_mul_element(a, gn, a);
+           // Return g as a word in ``a``, followed by a zero atom
+           len_a = mm_group_n_to_word(a, a);
+           a[len_a] = 0;
            return len_a + 0x101;
-       } else {
+       } else {  // Otherwise store a word equal to g in ``a``.
+           // Store g as a word in generators of G_x0, possibly
+           // followed by an atom with tag `t`. Therefore we
+           // change  ``gn`` such that ``old_gn = gn * t**e``,
+           // and ``gn`` is in ``N_x0``.
            e = mm_group_n_right_coset_N_x0(gn);
            len_a = mm_group_n_to_word(gn, gn);
-           if (xsp2co1_mul_elem_word(elem, gn, len_a) < 0) return -1;
-           len_a =xsp2co1_elem_to_word(elem, a);
-           if (len_a < 0) return -1;
-           if (e) a[len_a++] = 0x5000000 + e;
-           return len_a + 0x100;
-       }
-       
+           // Put ``elem *= gn``. Then ``g = elem * t**e``
+           if (xsp2co1_mul_elem_word(elem, gn, len_a) < 0) return -1005;
+           // Store word reresenting ``elem`` in output buffer ``a``
+           len_a = xsp2co1_elem_to_word(elem, a);
+           if (len_a < 0) return -1006;  // abort if this fails
+           if (len_a > 10) return -1007;  // abort if  too long
+           // Append atom ``t**e`` if present
+           if (e) a[len_a++] = 0x50000000 + e;
+           return len_a;
+       }       
     } else {
+       // Here we return the input ``g`` without any changes.
+       for (i = 0; i < len_g; ++i) a[i] = g[i];
        return len_g;
     }
 }
