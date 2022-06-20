@@ -268,6 +268,8 @@ static void pi24_2048(
   ``mm_op%{P}_pi(v_in, delta, pi, v_out)`` is equivalent to
 
         mm_sub_op_pi_type s_op; // defined in mm_basics.h
+        // Borrow memory from v_out
+        s_op.tbl_perm64 = (mm_sub_op_pi64_type*)(v_out + MM_OP%{P}_OFS_X);
         mm_sub_prep_pi(delta, pi, &s_op);
         mm_op%{P}_do_pi(v_in, &s_op, v_out);
 
@@ -303,7 +305,29 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
     pi24_n(v_in, p_perm1 + 2048, small_perm, v_out, 72);
     // %%END IF
     
-    // Step 1: do rows with 24 entries 
+
+    // Step 1: do rows with 64 entries // TODO: comment properly!!!!
+    {
+        // TODO: check this !!!!!!!!!!!!
+        mm_sub_op_pi64_type *p_perm = p_op->tbl_perm64;
+        uint8_t bytes[64];
+        uint_mmv_t *p_out = v_out + MM_OP%{P}_OFS_T;
+        uint_mmv_t *p_end = p_out + 759 * %{V64_INTS};
+        uint_mmv_t *v1_in =  v_in + MM_OP%{P}_OFS_T;
+        for (; p_out < p_end; p_out += %{V64_INTS}) {
+            {
+               uint_mmv_t v = p_perm->preimage;
+               uint_mmv_t *p_in = v1_in + ((v & 0x3ff) << %{LOG_V64_INTS});
+               // %%LOAD_PERM64 p_in, bytes, v, uint8_t
+            }
+            {
+               // %%STORE_PERM64 bytes, p_out, "(p_perm->perm)"
+            }
+            ++p_perm;
+        } 
+    }
+
+    // Step 2: do rows with 24 entries 
     // TODO: comment properly!!!!
     a_src[0] = v_in + MM_OP%{P}_OFS_X;
     a_dest[0] = v_out + MM_OP%{P}_OFS_X;
@@ -323,26 +347,6 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
             pi24_2048(a_src[i], p_perm1, small_perm, i + 12, a_dest[i]);
     }
 
-    // Step 2: do rows with 64 entries // TODO: comment properly!!!!
-    {
-        // TODO: check this !!!!!!!!!!!!
-        mm_sub_op_pi64_type *p_perm = p_op->tbl_perm64;
-        uint8_t bytes[64];
-        uint_mmv_t *p_out = v_out + MM_OP%{P}_OFS_T;
-        uint_mmv_t *p_end = p_out + 759 * %{V64_INTS};
-        v_in +=  MM_OP%{P}_OFS_T;
-        for (; p_out < p_end; p_out += %{V64_INTS}) {
-            {
-               uint_mmv_t v = p_perm->preimage;
-               uint_mmv_t *p_in = v_in + ((v & 0x3ff) << %{LOG_V64_INTS});
-               // %%LOAD_PERM64 p_in, bytes, v, uint8_t
-            }
-            {
-               // %%STORE_PERM64 bytes, p_out, "(p_perm->perm)"
-            }
-            ++p_perm;
-        } 
-    }
 
     // If d is odd: negate some entries    
     if (p_op->eps & 0x800) {
@@ -381,6 +385,8 @@ void mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_
 {
   // %%IF* GENERATE_CODE
     mm_sub_op_pi_type s_op;
+    // Borrow memory from v_out
+    s_op.tbl_perm64 = (mm_sub_op_pi64_type *)(v_out + MM_OP%{P}_OFS_X);
     mm_sub_prep_pi(delta, pi, &s_op);
     mm_op%{P}_do_pi(v_in, &s_op, v_out);
   // %%END IF  # GENERATE_CODE

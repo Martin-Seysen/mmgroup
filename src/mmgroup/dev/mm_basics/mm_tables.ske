@@ -20,6 +20,7 @@
  elements of the Mathieu group \f$M_{24}\f$. We denote
  such an automorphism  \f$\pi\f$ by its number.
 */
+#include <stdlib.h>
 #include <stdint.h>
 
 #include "mat24_functions.h"
@@ -151,8 +152,13 @@ typedef struct {
        Bits 5,...,0: Associator ``\delta' = A(o(d), f))`` encoded as a suboctad
        
        Bits 11,...,6: Associator ``a = A(o(d), ef))`` encoded as a suboctad.
+
+       Caution:
+
+       Pointer ``tbl_perm64`` must be initialized with an array 
+       of type ``mm_sub_op_pi64_type a_tbl_perm64[759]``.
     */
-    mm_sub_op_pi64_type tbl_perm64[759];
+    mm_sub_op_pi64_type *tbl_perm64;
 } mm_sub_op_pi_type;
 
 // %%GEN c
@@ -341,6 +347,13 @@ static const uint8_t MM_SUBOCTAD_TABLE[128] = {
   relevant data for performing that operation on the representation
   of the monster. These data are stored in the structure of
   type ``mm_sub_op_pi_type`` referred by parameter ``p_op``.
+
+  Caution:
+
+  Component ``p_op->tbl_perm64`` must be initialized with an array 
+  of type ``mm_sub_op_pi64_type a_tbl_perm64[759]`` befor aclling 
+  this function!!!.
+
 */
 // %%EXPORT 
 void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
@@ -435,16 +448,22 @@ void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
 
 */
 // %%EXPORT px
-void  mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
+int32_t mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
 {
     mm_sub_op_pi_type op_pi;
     uint_fast32_t i,j;
+    mm_sub_op_pi64_type *tbl_perm64;
+
+    tbl_perm64 = calloc(759, sizeof(mm_sub_op_pi64_type));
+    if (tbl_perm64 == NULL) return -1;
+    op_pi.tbl_perm64 = tbl_perm64;
     mm_sub_prep_pi(eps, pi, &op_pi);
     for (i = 0; i < 759; ++i) {
         p_tbl[0] = op_pi.tbl_perm64[i].preimage;
         for (j = 0; j < 6; ++j)  p_tbl[j+1] = op_pi.tbl_perm64[i].perm[j];
         p_tbl += 7;
     }
+    return 0;
 }
 
 

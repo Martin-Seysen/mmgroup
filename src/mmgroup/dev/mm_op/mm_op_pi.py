@@ -346,8 +346,11 @@ uint_fast8_t i;
     def copy(self, var_src, var_dest):
         s = ""
         for i in range(self.V24_INTS_USED):
-            s += "{dest}{i} = {src}{i};\n".format(
+            s += "({dest})[{i}] = ({src})[{i}];\n".format(
                  src = var_src, dest = var_dest, i = i)
+        for i in range(self.V24_INTS_USED, self.V24_INTS):
+            s +=  "({dest})[{i}] = 0;\n".format(
+                    dest = var_dest, i = i)
         return s;
 
     def store(self, destination, var = None):
@@ -356,6 +359,9 @@ uint_fast8_t i;
         for i in range(self.V24_INTS_USED):
             s += "({destination})[{i}] = {var}{i} ;\n".format(
                  destination = destination, var = var, i = i)
+        for i in range(self.V24_INTS_USED, self.V24_INTS):
+            s +=  "({destination})[{i}] = 0;\n".format(
+                    destination = destination, i = i)
         return s;
 
     def make_tables(self):
