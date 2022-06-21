@@ -75,6 +75,118 @@ static void invert%{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
 
 // %%END IF  # GENERATE_CODE
 
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+  @brief Auxiliary function for function ``mm_op%{P}_t``
+
+  Parameters ``v_in`` and ``v_out``are as in function ``mm_op%{P}_t``.
+  This function performs the action of that function for the 
+  tags ``A, B, C``.  Parameter ``exp1`` should be 0 or -1 if the
+  actual exponent ``exp`` in function ``mm_op%{P}_t`` is 1 or 2, 
+  respectively. This function should not be called in 
+  case ``exp = 0``.
+*/
+static inline void 
+op%{P}_t_ABC(uint_mmv_t *v_in,  uint_mmv_t exp1, uint_mmv_t *v_out)
+{
+    uint_mmv_t i, j;
+
+  // %%IF* GENERATE_CODE
+    for (i = 0; i < 24; ++i) {
+        // Compute index of diagonal element
+        uint_mmv_t i_diag = i >> %{LOG_INT_FIELDS};
+        // Compute mask for diagonal element
+        uint_mmv_t m_diag = %{hex:P} << ((i << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1});
+        // Load shifted value of diagonal element of part A to ``v_diag``
+        uint_mmv_t v_diag = v_in[i_diag] & m_diag;
+ 
+        // Do off-diagonal part of tags A, B, C
+        for (j = 0; j < %{V24_INTS_USED}; ++j) {
+            // %%MUL_MATRIX_T3 v_in, exp1, v_out
+            // Advance pointers to input and output
+            ++v_in; ++v_out;
+        }
+        // Zero slack
+        // %%IF* 24 % INT_FIELDS 
+        v_out[-1] &= %{smask:P, range(24 % INT_FIELDS)};
+        v_out[%{int:24*V24_INTS-1}] &= %{smask:P, range(24 % INT_FIELDS)};
+        v_out[%{int:48*V24_INTS-1}] &= %{smask:P, range(24 % INT_FIELDS)};  
+        // %%END IF    
+        // %%FOR* j in range(V24_INTS - V24_INTS_USED) 
+        v_out[%{j}] = 0;
+        v_out[%{int:24*V24_INTS+j}] = 0;
+        v_out[%{int:48*V24_INTS+j}] = 0;
+        // %%END FOR
+        // %%IF* V24_INTS > V24_INTS_USED
+        // Advance pointer to input
+        v_in += %{int:V24_INTS - V24_INTS_USED};
+        // %%END IF   
+        // Restore diagonal element of part A 
+        v_out -= %{V24_INTS_USED}; // Same position as at start of loop
+        m_diag = ~m_diag;          // Mask for non-diagonal part
+        v_out[i_diag] = (v_out[i_diag] & m_diag) | v_diag;
+        // Zero diagonal elements of parts B and C 
+        v_out[i_diag + %{int:24*V24_INTS}] &= m_diag;
+        v_out[i_diag + %{int:48*V24_INTS}] &= m_diag;
+        // Advance pointer to output
+        v_out +=  %{V24_INTS};
+    }
+  // %%END IF
+}
+
+/**
+  @brief Simplified version of function ``op%{P}_t_ABC``
+
+  Same as function ``op%{P}_t_ABC``; but here we only compute
+  the ``A`` part of the output vector.
+*/
+static inline void 
+op%{P}_t_A(uint_mmv_t *v_in,  uint_mmv_t exp1, uint_mmv_t *v_out)
+{
+    uint_mmv_t i, j;
+
+  // %%IF* GENERATE_CODE
+    for (i = 0; i < 24; ++i) {
+        // Compute index of diagonal element
+        uint_mmv_t i_diag = i >> %{LOG_INT_FIELDS};
+        // Compute mask for diagonal element
+        uint_mmv_t m_diag = %{hex:P} << ((i << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1});
+        // Load shifted value of diagonal element of part A to ``v_diag``
+        uint_mmv_t v_diag = v_in[i_diag] & m_diag;
+ 
+        // Do off-diagonal part of tags A, B, C
+        for (j = 0; j < %{V24_INTS_USED}; ++j) {
+            // %%MUL_MATRIX_T3A v_in, exp1, v_out
+            // Advance pointers to input and output
+            ++v_in; ++v_out;
+        }
+        // Zero slack
+        // %%IF* 24 % INT_FIELDS 
+        v_out[-1] &= %{smask:P, range(24 % INT_FIELDS)};
+        // %%END IF    
+        // %%FOR* j in range(V24_INTS - V24_INTS_USED) 
+        v_out[%{j}] = 0;
+        // %%END FOR
+        // %%IF* V24_INTS > V24_INTS_USED
+        // Advance pointer to input
+        v_in += %{int:V24_INTS - V24_INTS_USED};
+        // %%END IF   
+        // Restore diagonal element of part A 
+        v_out -= %{V24_INTS_USED}; // Same position as at start of loop
+        m_diag = ~m_diag;          // Mask for non-diagonal part
+        v_out[i_diag] = (v_out[i_diag] & m_diag) | v_diag;
+        // Advance pointer to output
+        v_out +=  %{V24_INTS};
+    }
+  // %%END IF
+}
+
+
+/// @endcond 
+
+
+
 /**
   @brief Compute an operation of the monster group on a vector
 
@@ -95,7 +207,7 @@ static void invert%{P}_xyz(uint_mmv_t *v_in, uint_mmv_t *v_out)
 // %%EXPORT px
 void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
-    uint_mmv_t i, j, exp1;
+    uint_mmv_t i, exp1;
  
   // %%IF* GENERATE_CODE
     exp %= 3;
@@ -105,44 +217,8 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     }
     exp1 = %{hex:1} - (uint_mmv_t)exp;
 
-    // Do off-diagonal part of tags A, B, C
-    // %%IF* 24 % INT_FIELDS 
-    for (i = 0; i < %{int:24*V24_INTS}; ++i) {
-        // %%MUL_MATRIX_T3 v_in, exp1, v_out
-        ++v_in; ++v_out;
-    }
-    // %%ELSE
-    for (i = 0; i < 24; ++i) {
-        for (j = 0; j < %{V24_INTS_USED}; ++j) {
-            // %%MUL_MATRIX_T3 v_in, exp1, v_out
-            ++v_in; ++v_out;
-        }
-        // %%FOR* j in range(V24_INTS - V24_INTS_USED) 
-        ++v_in;
-        *v_out++ = 0;
-        // %%END FOR
-    }
-    // %%END IF
-
-    v_in -= %{int:24*V24_INTS};
-    v_out -= %{int:24*V24_INTS};
-    // Do diagonal part of tags A, B, C
-    for (i = 0; i < 24; ++i) {
-        // Copy diagonal of A, zero diagonals of B and C
-        uint_mmv_t mask = %{hex:P} << ((i << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1});
-        j = (i << %{LOG_V24_INTS}) + (i >> %{LOG_INT_FIELDS});
-        v_out[j] = (v_out[j] & ~mask) | (v_in[j] & mask);
-        v_out[j + %{int:24*V24_INTS}] &= ~mask;
-        v_out[j + %{int:48*V24_INTS}] &= ~mask;
-        // %%IF* 24 % INT_FIELDS 
-        // Zero slack
-        j = ((i + 1) << %{LOG_V24_INTS}) - 1;
-        v_out[j] &= %{smask:P, range(24 % INT_FIELDS)};
-        v_out[j + %{int:24*V24_INTS}] &= %{smask:P, range(24 % INT_FIELDS)};
-        v_out[j + %{int:48*V24_INTS}] &= %{smask:P, range(24 % INT_FIELDS)};  
-        // %%END IF    
-    }
-
+    // Do tags A, B, C
+    op%{P}_t_ABC(v_in, exp1, v_out);
 
     // Do tag T
     v_in += MM_OP%{P}_OFS_T;
@@ -213,7 +289,7 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 // %%EXPORT px
 void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
-    uint_mmv_t i, j, exp1;
+    uint_mmv_t i, exp1;
  
   // %%IF* GENERATE_CODE
     exp %= 3;
@@ -222,27 +298,44 @@ void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
         return;
     }
     exp1 = %{hex:1} - (uint_mmv_t)exp;
-    for (i = 0; i < %{int:24*V24_INTS}; ++i) {
-        // %%MUL_MATRIX_T3A v_in, exp1, v_out
-        ++v_in; ++v_out;
-    }
-
-    v_in -= %{int:24*V24_INTS};
-    v_out -= %{int:24*V24_INTS};
-    // Do diagonal part of tag A
-    for (i = 0; i < 24; ++i) {
-        // Copy diagonal of A, zero diagonals of B and C
-        uint_mmv_t mask = %{hex:P} << ((i << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1});
-        j = (i << %{LOG_V24_INTS}) + (i >> %{LOG_INT_FIELDS});
-        v_out[j] = (v_out[j] & ~mask) | (v_in[j] & mask);
-        // %%IF* 24 % INT_FIELDS 
-        // Zero slack
-        j = ((i + 1) << %{LOG_V24_INTS}) - 1;
-        v_out[j] &= %{smask:P, range(24 % INT_FIELDS)};
-        // %%END IF    
-    } 
+    op%{P}_t_A(v_in, exp1, v_out);
   // %%END IF  # GENERATE_CODE
 }
+
+
+
+/**
+  @brief Another restricted version of function ``mm_op%{P}_t``
+
+  Function ``mm_op%{P}_t`` computes a certain operation of the
+  monster group on a vector ``v_in`` and stores the result in a
+  vector ``v_out``. That operation depends on a parameter ``exp``.
+  
+  Function ``mm_op%{P}_t_ABC`` computes the same
+  operation on the entries of the vector ``v = v_in`` with
+  tag ``A, B, C`` only, and ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``A, B, C`` are changed. 
+  This function is much faster than  function ``mm_op%{P}_t``.
+*/
+// %%EXPORT px
+void mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
+{
+    uint_mmv_t  exp1;
+ 
+  // %%IF* GENERATE_CODE
+    exp %= 3;
+    if (exp == 0) return;
+    exp1 = %{hex:1} - (uint_mmv_t)exp;
+    op%{P}_t_ABC(v, exp1, v);
+  // %%END IF  # GENERATE_CODE
+}
+
+
 
 
 
