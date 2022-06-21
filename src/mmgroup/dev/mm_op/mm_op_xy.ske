@@ -106,6 +106,76 @@ static const uint32_t TABLE24_START[4] = {
 
 
 
+static inline void
+op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv_t *v_out)
+{
+
+    uint_mmv_t mask[%{int:4*V24_INTS}];
+    uint_mmv_t neg_mask[%{V24_INTS}];
+    uint_mmv_t f = p_op->f_i, ef = p_op->ef_i, eps;
+    uint32_t i;
+
+  // %%IF* GENERATE_CODE
+    // %%FOR* i in range(V24_INTS_USED)
+    mask[%{i}] = f >>  %{int: i << LOG_INT_FIELDS};
+    mask[%{int:i + V24_INTS}] = ef >> %{int: i << LOG_INT_FIELDS};
+    // %%IF i < V24_INTS_USED - 1 or 24 % INT_FIELDS == 0
+    neg_mask[%{i}] = %{smask: P};
+    // %%ELSE
+    neg_mask[%{i}] = %{smask: P, range(24 % INT_FIELDS)};
+    // %%END IF
+    // %%END FOR
+    for (i = 0; i < %{int:V24_INTS + V24_INTS_USED}; ++i) {
+        uint_mmv_t x = mask[i];
+        // %%MMV_UINT_SPREAD x, x
+        mask[i] = x = x & neg_mask[i & %{int:V24_INTS-1}];
+        mask[i + %{int:2*V24_INTS}] = x ^ neg_mask[i & %{int:V24_INTS-1}];
+    }
+
+    f =  p_op->f_i << %{int:LOG_V24_INTS +1};
+    for (i = 0; i < %{int:24*V24_INTS}; i += %{V24_INTS}) {
+        uint_mmv_t t, t1;
+        // %%FOR* j in range(V24_INTS_USED)
+        // process uint_mmv_t %{j} of row i/%{V24_INTS} for tag A
+        t1 = v_in[i + MM_OP%{P}_OFS_A + %{j}]; 
+        t = mask[%{j} + (f & %{hex:2*V24_INTS})];
+        v_out[i + MM_OP%{P}_OFS_A + %{j}] = t1 ^ t; 
+        // %%END FOR
+        // %%FOR* j in range(V24_INTS_USED, V24_INTS)
+        v_out[i + MM_OP%{P}_OFS_A + %{j}] = 0;
+        // %%END FOR
+        f >>= 1;    
+    }
+
+    if (mode) return;
+
+    f =  p_op->f_i << %{int:LOG_V24_INTS +1};
+    ef =  p_op->ef_i << %{int:LOG_V24_INTS +1};
+    eps = 0 - ((p_op->eps >> 11) & %{hex:1});
+    for (i = 0; i < %{int:24*V24_INTS}; i += %{V24_INTS}) {
+        uint_mmv_t t, t1, t2;
+        // %%FOR j in range(V24_INTS_USED)
+        // process uint_mmv_t %{j} of row i/%{V24_INTS} for tags B, C
+        t1 = v_in[i + MM_OP%{P}_OFS_B + %{j}]; 
+        t2 = v_in[i + MM_OP%{P}_OFS_C + %{j}];
+        t = mask[%{j} + (f & %{hex:2*V24_INTS})];
+        t &= (t1 ^ t2);
+        t ^= mask[%{int:j+V24_INTS} + (ef & %{hex:2*V24_INTS})];
+        v_out[i + MM_OP%{P}_OFS_B + %{j}] = t1 ^ t;
+        t2 ^= eps & neg_mask[%{j}];
+        v_out[i + MM_OP%{P}_OFS_C + %{j}] = t2 ^ t;
+        // %%END FOR
+        // %%FOR* j in range(V24_INTS_USED, V24_INTS)
+        v_out[i + MM_OP%{P}_OFS_B + %{j}] = 0;
+        v_out[i + MM_OP%{P}_OFS_C + %{j}] = 0;
+        // %%END FOR
+        f >>= 1; ef >>= 1;      
+    }
+  // %%END IF # GENERATE_CODE
+}
+
+
+
 
 /**
   @brief Workhorse for function ``mm_op%{P}_xy``
@@ -196,57 +266,7 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
 
 
     // Step 3: do rows with 24 entries, tags A, B, C // TODO: comment properly!!!!
-    {
-        uint_mmv_t mask[%{int:4*V24_INTS}];
-        uint_mmv_t neg_mask[%{V24_INTS}];
-        uint_mmv_t f = p_op->f_i, ef = p_op->ef_i, eps;
-        for (i = 0; i < %{V24_INTS_USED}; ++i) {
-             mask[i] = f >> (i << %{LOG_INT_FIELDS});
-             mask[i + %{V24_INTS}] = ef >> (i << %{LOG_INT_FIELDS});
-        }
-        // %%FOR* i in range(V24_INTS)
-        // %%IF* i >= V24_INTS_USED
-        neg_mask[%{i}] = 0;
-        // %%ELSE IF i < V24_INTS_USED - 1 or 24 % INT_FIELDS == 0
-        neg_mask[%{i}] = %{smask: P};
-        // %%ELSE
-        neg_mask[%{i}] = %{smask: P, range(24 % INT_FIELDS)};
-        // %%END IF
-        // %%END FOR
-        for (i = 0; i < %{int:2*V24_INTS}; ++i) {
-            uint_mmv_t x = mask[i];
-            // %%MMV_UINT_SPREAD x, x
-            mask[i] = x = x & neg_mask[i & %{int:V24_INTS-1}];
-            mask[i + %{int:2*V24_INTS}] = x ^ neg_mask[i & %{int:V24_INTS-1}];
-        }
-
-        f <<= %{int:LOG_V24_INTS +1};
-        ef <<= %{int:LOG_V24_INTS +1};
-        eps = 0 - ((p_op->eps >> 11) & %{hex:1});
-        for (i = 0; i < %{int:24*V24_INTS}; i += %{V24_INTS}) {
-            uint_mmv_t t, t1, t2;
-            // %%FOR j in range(V24_INTS_USED)
-            // process uint_mmv_t %{j} of row i/%{V24_INTS} for tags A, B, C
-            t1 = v_in[i + MM_OP%{P}_OFS_A + %{j}]; 
-            t = mask[%{j} + (f & %{hex:2*V24_INTS})];
-            v_out[i + MM_OP%{P}_OFS_A + %{j}] = t1 ^ t; 
-            t1 = v_in[i + MM_OP%{P}_OFS_B + %{j}]; 
-            t2 = v_in[i + MM_OP%{P}_OFS_C + %{j}];
-            t &= (t1 ^ t2);
-            t ^= mask[%{int:j+V24_INTS} + (ef & %{hex:2*V24_INTS})];
-            v_out[i + MM_OP%{P}_OFS_B + %{j}] = t1 ^ t;
-            t2 ^= eps & neg_mask[%{j}];
-            v_out[i + MM_OP%{P}_OFS_C + %{j}] = t2 ^ t;
-            // %%END FOR
-            // %%FOR* j in range(V24_INTS_USED, V24_INTS)
-            v_out[i + MM_OP%{P}_OFS_A + %{j}] = 0;
-            v_out[i + MM_OP%{P}_OFS_B + %{j}] = 0;
-            v_out[i + MM_OP%{P}_OFS_C + %{j}] = 0;
-            // %%END FOR
-            f >>= 1; ef >>= 1;      
-        }
-        //yet to be done!!!!
-    }
+    op%{P}_do_ABC(v_in, p_op, 0, v_out);
 
 
 
@@ -351,48 +371,28 @@ void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
   monster group on a vector ``v_in``. That operation depends
   on parameters ``f, e,`` and ``eps``.
   
-  Function ``mm_op%{P}_xy_tag_A`` computes the same
+  Function ``mm_op%{P}_xy_tag_ABC`` computes the same
   operation on the entries of the vector ``v = v_in`` with
-  tag ``A`` only, and ignores the other entries of ``v``.
+  tag ``A, B, C`` only, and ignores the other entries of ``v``.
   See section **The representation of the monster group**
   in the **API reference** for tags of entries of a vector in
   the representation of the monster.
 
   The function overwrites the vector ``v`` with the result.
-  Here only entries of ``v`` with tag ``A`` are changed. The
-  restriction of the operation to tag ``A`` does not depend
-  depend on parameters ``e`` and ``eps``; so these parameters
-  are dropped. This function is much faster than
+  Here only entries of ``v`` with tag ``A, B, C`` are changed. 
+  If parameter ``mode`` is not zero the we update the entries
+  with  tag ``A`` only. This function is much faster than
   function ``mm_op%{P}_xy``.
 */
 // %%EXPORT px
-void mm_op%{P}_y_tag_A(uint_mmv_t *v, uint32_t f)
+void mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps, uint32_t mode)
 {
   // %%IF* GENERATE_CODE
-        uint_mmv_t mask[2][%{V24_INTS}], x;
-        uint_fast32_t i, sign;
-
-        f = mat24_gcode_to_vect(f); 
-        // %%FOR* i in range(V24_INTS_USED)
-        // %%IF i < V24_INTS_USED - 1 or 24 % INT_FIELDS == 0
-        mask[1][%{i}] = %{smask: P};
-        // %%ELSE
-        mask[1][%{i}] = %{smask: P, range(24 % INT_FIELDS)};
-        // %%END IF
-        // %%END FOR
-        for (i = 0; i < %{V24_INTS_USED}; ++i) {
-            x = f >> (i << %{LOG_INT_FIELDS});
-            // %%MMV_UINT_SPREAD x, x
-            mask[0][i] = x & mask[1][i];
-            mask[1][i] ^= mask[0][i];
-        }
-        for (i = 0; i < 24 * %{V24_INTS}; i +=  %{V24_INTS}) {
-            sign = f & 1;
-            // %%FOR* j in range(V24_INTS_USED)
-            v[i + %{j}] ^= mask[sign][%{j}];
-            // %%END FOR
-            f >>= 1;
-        }
+    mm_sub_op_xy_type s_op;
+    s_op.sign_XYZ = NULL;
+    s_op.s_T = NULL;
+    mm_sub_prep_xy(f, e, eps, &s_op);
+    op%{P}_do_ABC(v, &s_op, mode, v);
   // %%END IF   # GENERATE_CODE
 }
 
