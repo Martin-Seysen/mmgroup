@@ -149,7 +149,7 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
          if (h[0])  mm_op%{P}_xi_tag_A(v, h[0]); 
          if (h[1])  return -1;
          if (h[2])  mm_op%{P}_y_tag_A(v, h[2]);
-         if (h[5])  mm_op%{P}_pi_tag_A(v, h[5]);
+         if (h[5])  mm_op%{P}_pi_tag_ABC(v, h[5], 0, 1);
      } while (status == 0);
      if (mm_aux_reduce_mmv_fields(%{P}, v, MM_AUX_OFS_B) < 0) return -1;
      return status - 1;

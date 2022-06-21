@@ -102,12 +102,18 @@ static const uint32_t TABLE24_START[4] = {
 
 // %%END IF #  GENERATE_CODE
 
+
+
+
+
+
 /**
   @brief Workhorse for function ``mm_op%{P}_xy``
 
   ``mm_op%{P}_xy(v_in, f, e, eps, v_out)`` is equivalent to
 
         mm_sub_op_xy_type s_op;  // defined in mm_basics.h
+          ... // allocate storage for s_op.sign_XYZ and s_op.p_T
         mm_sub_prep_xy(f, e, eps, &s_op);
         mm_op%{P}_do_xy(v_in, &s_op, v_out);
 
@@ -120,7 +126,6 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
     uint_fast32_t i;
 
   // %%IF* GENERATE_CODE
-    for (i = 0; i < MM_OP%{P}_LEN_V; ++i) v_out[i] = 0;
     
     // Step 1: do rows with 24 entries, tags X, Z, Y 
     {
@@ -278,7 +283,10 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
 void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
   // %%IF* GENERATE_CODE
+    uint16_t s_T[759];
     mm_sub_op_xy_type s_op;
+    s_op.sign_XYZ =  (uint8_t*)(v_out + MM_OP%{P}_OFS_T);
+    s_op.s_T = s_T;
     mm_sub_prep_xy(f, e, eps, &s_op);
     mm_op%{P}_do_xy(v_in, &s_op, v_out);
   // %%END IF   # GENERATE_CODE

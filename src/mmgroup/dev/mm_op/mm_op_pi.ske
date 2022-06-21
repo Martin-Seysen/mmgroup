@@ -268,7 +268,8 @@ static void pi24_2048(
   ``mm_op%{P}_pi(v_in, delta, pi, v_out)`` is equivalent to
 
         mm_sub_op_pi_type s_op; // defined in mm_basics.h
-        // Borrow memory from v_out
+        // Borrow memory from v_out suficient for an array of 759
+        // entries of type  ``mm_sub_op_pi64_type``
         s_op.tbl_perm64 = (mm_sub_op_pi64_type*)(v_out + MM_OP%{P}_OFS_X);
         mm_sub_prep_pi(delta, pi, &s_op);
         mm_op%{P}_do_pi(v_in, &s_op, v_out);
@@ -404,7 +405,8 @@ void mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_
 void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 {
     uint_fast32_t i, i1;
-    uint8_t signs[2048];
+    // Borrow space from ``v_out`` sufficient for an array of length 2048
+    uint8_t *signs = (uint8_t*)(v_out + MM_OP%{P}_OFS_T);
     uint_mmv_t *a_src[3], *a_dest[3];
 
   // %%IF* GENERATE_CODE
@@ -502,28 +504,29 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 }
 
 /**
-  @brief Restriction of function ``mm_op%{P}_pi`` to tag ``A``
+  @brief Restriction of function ``mm_op%{P}_pi`` to tag ``ABC``
 
   Function ``mm_op%{P}_pi`` computes an automorphism of the
   Parker loop on a vector ``v_in`` and stores the result
   in ``v_out``. That automorphism depends on parameters
   ``d``  and ``p``.
   
-  Function ``mm_op%{P}_pi_tag_A`` computes the same
+  Function ``mm_op%{P}_pi_tag_ABC`` computes the same
   automorphism on the entries of the vector ``v = v_in`` with
-  tag ``A`` only, and ignores the other entries of ``v``.
+  tags ``ABC`` only, and ignores the other entries of ``v``.
   See section **The representation of the monster group**
   in the **API reference** for tags of entries of a vector in
   the representation of the monster.
 
-  The function overwrites the vector ``v`` with the result. 
-  Here only entries of ``v`` with tag ``A`` are changed. The
-  restriction of the automorphism to tag ``A`` does not depend
-  depend on parameter ``d``; so that parameter is dropped. This
-  function is much faster than function ``mm_op%{P}_pi``.
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``ABC`` are changed.
+
+  If parameter ``mode`` is set then we perform the operation on
+  entries with tag ``A`` only. This  function is much faster 
+  than function ``mm_op%{P}_pi``.
 */
 // %%EXPORT px
-void mm_op%{P}_pi_tag_A(uint_mmv_t *v, uint32_t pi)
+void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t pi, uint32_t d, uint32_t mode)
 {
     uint_mmv_t v_tmp[24 *  %{V24_INTS}];
     uint16_t row_perm[24];
@@ -542,9 +545,66 @@ void mm_op%{P}_pi_tag_A(uint_mmv_t *v, uint32_t pi)
             = ((uint8_t)i & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
     }
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
-    for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];    
+    for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
+    if (mode) return;
+
+    v += 24 *  %{V24_INTS};
+    pi24_n(v, row_perm, col_perm, v_tmp, 24);
+    for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
+
+    v += 24 *  %{V24_INTS};
+    if (d & 0x800) for(i = 0; i < 24; ++i) row_perm[i] ^= 0x8000;
+    pi24_n(v, row_perm, col_perm, v_tmp, 24);
+    for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
+ 
   // %%END IF  # GENERATE_CODE
 }
+
+
+
+
+/**
+  @brief Restriction of function ``mm_op%{P}_pi`` to tag ``ABC``
+
+  Function ``mm_op%{P}_delta`` computes an automorphism of the
+  Parker loop on a vector ``v_in`` and stores the result
+  in ``v_out``. That automorphism depends on parameter ``d``.
+  
+  Function ``mm_op%{P}_delta_tag_ABC`` computes the same
+  automorphism on the entries of the vector ``v = v_in`` with
+  tags ``ABC`` only, and ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``ABC`` are changed.
+
+  If parameter ``mode`` is set then we perform the operation on
+  entries with tag ``A`` only. This  function is much faster 
+  than function ``mm_op%{P}_delta``.
+*/
+// %%EXPORT px
+void mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
+{
+    uint32_t i1;
+
+  // %%IF* GENERATE_CODE
+    if (mode || (d & 0x800) == 0) return;
+    v += 2 * 24 * %{V24_INTS};
+    for (i1 = 0; i1 < 24; ++i1) {
+        // %%FOR* i in range(V24_INTS_USED)  
+        // %%IF* i == V24_INTS_USED - 1 and 24 % INT_FIELDS
+        v[%{i}] ^= %{smask:P, range(24 % INT_FIELDS)};
+        // %%ELSE 
+        v[%{i}] ^=  %{smask:P};
+        // %%END IF
+        // %%END FOR   #  FOR i
+        v +=  %{V24_INTS};      
+    }
+  // %%END IF  # GENERATE_CODE
+}
+
 
 
 //  %%GEN h

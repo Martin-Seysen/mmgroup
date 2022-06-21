@@ -234,16 +234,17 @@ typedef struct {
     */
     uint32_t lin_d[3];
     /**
-       Used for calculations of signs as described above. Here we use the
+       Pointer ``sign_XYZ`` refers to an array of length 2048. This is
+       used for calculations of signs as described above. Here we use the
        formula in section **Implementing generators of the Monster group**
        of the  **mmgroup guide for developers**, dropping all terms
        depending on ``i``.
     */
-    uint8_t sign_XYZ[2048];
+    uint8_t *sign_XYZ;
     /**
-       Entry ``d`` of the following array refers to the octad ``o(d)``
-       with number ``d``. The bits of entry ``d`` are interpreted as
-       follows: 
+       Pointer ``s_T`` refers to an array of length 759.  Entry ``d`` 
+       of this array refers to the octad ``o(d)``  with number ``d``. 
+       The bits of entry ``d`` are interpreted as follows: 
     
        Bits 5,...,0: The asscociator ``delta' = A(o(d), f)`` encoded
        as a suboctad of octad ``o(d))``.
@@ -270,7 +271,7 @@ typedef struct {
        Here the product ``<\alpha, \delta>`` must be computed as the
        bit length of an intersection of two suboctads.        
     */
-    uint16_t s_T[759];
+    uint16_t *s_T;
 } mm_sub_op_xy_type;
 
 // %%GEN c
@@ -498,6 +499,13 @@ int32_t mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
   relevant data for performing that operation on the representation
   of the monster. These data are stored in the structure of
   type ``mm_sub_op_xy_type`` referred by parameter ``p_op``.
+
+  Caution!
+
+  Component ``p_op->sign_XYZ`` must either be NULL or refer to an
+  array of type ``uint8_t`` of length 2048.
+  Component ``p_op->s_T`` must either be NULL or refer to an
+  array of type ``uint8_t`` of length 759.
 */
 // %%EXPORT 
 void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_op)
@@ -506,52 +514,54 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
     p_op->e = e = e & 0x1fff; 
     p_op->eps = eps = eps & 0xfff; 
 
-    {
-        uint_fast16_t ld0 = eps ^ mat24_ploop_cap(e, f) 
-                                ^ mat24_ploop_theta(f);
-        uint_fast16_t ld2 = eps ^ mat24_ploop_theta(e);
-        uint_fast16_t ld1 = ld2 ^ mat24_ploop_theta(f);
-        uint_fast8_t *p_XYZ = p_op->sign_XYZ;
-        uint_fast16_t li, i, v, j;
+    p_op->lin_i[0] = mat24_gcode_to_vect(e);
+    p_op->lin_i[1] = p_op->lin_i[2] = p_op->f_i = mat24_gcode_to_vect(f);
+    p_op->ef_i = p_op->lin_i[0] ^ p_op->f_i;
 
-        p_op->lin_i[0] = mat24_gcode_to_vect(e);
-        p_op->lin_i[1] = p_op->lin_i[2] = p_op->f_i
-                       = mat24_gcode_to_vect(f);
-        p_op->ef_i = p_op->lin_i[0] ^ p_op->f_i;
-        p_XYZ[0] = (uint_fast8_t)(
-            (PwrMap(f) ^ PwrMap(e ^ f) ^ (f >> 12) ) 
-            ^ ((mat24_ploop_cocycle(f, e) ^ ((e ^ f) >> 12)) << 1)
-            ^ (((PwrMap(f) ^ (e >> 12) ^ (e >> 11)) & 1) << 2) 
+    if (p_op->sign_XYZ != NULL) {
+        {
+            uint_fast16_t ld0 = eps ^ mat24_ploop_cap(e, f) 
+                                ^ mat24_ploop_theta(f);
+            uint_fast16_t ld2 = eps ^ mat24_ploop_theta(e);
+            uint_fast16_t ld1 = ld2 ^ mat24_ploop_theta(f);
+            uint_fast8_t *p_XYZ = p_op->sign_XYZ;
+            uint_fast16_t li, i, v, j;
+
+            p_XYZ[0] = (uint_fast8_t)(
+              (PwrMap(f) ^ PwrMap(e ^ f) ^ (f >> 12) ) 
+              ^ ((mat24_ploop_cocycle(f, e) ^ ((e ^ f) >> 12)) << 1)
+              ^ (((PwrMap(f) ^ (e >> 12) ^ (e >> 11)) & 1) << 2) 
             );
 
-        for (li = 0; li < 11; ++li) {
-            i = 1 << li ;
-            v = ((ld0 >> li) & 1) + (((ld1 >> li) & 1) << 1)
-              + (((ld2 >> li) & 1) << 2);
-            for (j = 0; j < i; ++j) {
-                p_XYZ[i + j] = (uint_fast8_t)(p_XYZ[j] ^ v);
+            for (li = 0; li < 11; ++li) {
+                i = 1 << li ;
+                v = ((ld0 >> li) & 1) + (((ld1 >> li) & 1) << 1)
+                  + (((ld2 >> li) & 1) << 2);
+                for (j = 0; j < i; ++j) {
+                    p_XYZ[i + j] = (uint_fast8_t)(p_XYZ[j] ^ v);
+                }
             }
         }
-    }
 
-    {
-        uint_fast16_t e1 = (e & 0x7ff);
-        uint_fast16_t ef1 = ((e ^ f) & 0x7ff);
-        uint_fast16_t eps1 = ((eps & 0x800) ^ 0x800) << 1; 
-        uint_fast8_t *p_XYZ = p_op->sign_XYZ;
-        uint_fast16_t d;
+        {
+            uint_fast16_t e1 = (e & 0x7ff);
+            uint_fast16_t ef1 = ((e ^ f) & 0x7ff);
+            uint_fast16_t eps1 = ((eps & 0x800) ^ 0x800) << 1; 
+            uint_fast8_t *p_XYZ = p_op->sign_XYZ;
+            uint_fast16_t d;
 
-        for (d = 0; d < 2048; ++d) {
-            p_XYZ[d] ^= ((-(PwrMapH(d ^ ef1) & 0x1000)) >> 12)
-                     ^ ((-(PwrMapH(d ^ e1) & 0x1000)) >> 11) 
-                     ^  ((PwrMapH(d) & eps1) >> 12);
+            for (d = 0; d < 2048; ++d) {
+              p_XYZ[d] ^= ((-(PwrMapH(d ^ ef1) & 0x1000)) >> 12)
+                       ^ ((-(PwrMapH(d ^ e1) & 0x1000)) >> 11) 
+                       ^  ((PwrMapH(d) & eps1) >> 12);
+            }
+            p_op->lin_d[0] = e1 ^ ef1;
+            p_op->lin_d[1] = ef1;
+            p_op->lin_d[2] = e1;
         }
-        p_op->lin_d[0] = e1 ^ ef1;
-        p_op->lin_d[1] = ef1;
-        p_op->lin_d[2] = e1;
     }
 
-    {
+    if (p_op->s_T != NULL) {
         uint_fast32_t vf =  p_op->lin_i[1]; 
         uint_fast32_t vef = vf ^ p_op->lin_i[0];
         uint_fast16_t sign_e = PwrMap(e);
@@ -584,7 +594,11 @@ void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint
 // function mm_sub_prep_pi(), various components (dependding
 // on n) in structure mm_sub_prep_p are stored to p_tbl[]. 
 {
+    uint16_t s_T[759];
+    uint8_t sign_XYZ[2048];
     mm_sub_op_xy_type op_xy;
+    op_xy.sign_XYZ = sign_XYZ;
+    op_xy.s_T = s_T;
     uint_fast32_t i;
     mm_sub_prep_xy(f, e, eps, &op_xy);
     switch(n) {
