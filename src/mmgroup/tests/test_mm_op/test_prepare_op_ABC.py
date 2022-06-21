@@ -122,7 +122,6 @@ def prep_op_ABC_testdata():
     
 
 
-@pytest.mark.mmm
 @pytest.mark.mm_op
 def test_op_ABC(verbose = 0):
     print("Testing function mm_group_prepare_op_ABC")

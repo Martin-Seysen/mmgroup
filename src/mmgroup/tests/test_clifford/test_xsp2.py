@@ -43,7 +43,6 @@ def dirty_elem():
     return np.array([randint(0, 0xffffffffffffffff) for i in range(26)],
         dtype = np.uint64)
 
-@pytest.mark.mmm
 @pytest.mark.xsp2co1
 def test_xsp2co1_set_elem_word_scan():
     for a, len_a in construct_xsp2co1_testcases():

@@ -183,7 +183,7 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
   and \f$g\f$ is stored as a word of generators of \f$G_{x0}\f$,
   possibly followed by a single atom with tag `t`. Here \f$g\f$
   in stored in buffer ``a``: it may or not be equal to the input
-  value f$g\f$.
+  value \f$g\f$.
 */
 // %%EXPORT px
 int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)

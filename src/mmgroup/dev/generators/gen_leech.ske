@@ -370,6 +370,8 @@ uint32_t gen_leech2_op_atom(uint32_t q0, uint32_t g)
 *** Operation of generators of G{x0} on a subframe
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
 
 #define N_OPS_MAP_STD_SUBFRAME %{ShortCocode_NumOps}
 
@@ -381,6 +383,10 @@ static const
 uint8_t TABLE_OP_MAP_STD_SUBFRAME[3 * N_OPS_MAP_STD_SUBFRAME] = {
 // %%TABLE ShortCocode_OpTable, uint8
 };
+
+/// @endcond 
+
+
 
 /** Transform the standard subframe of Leech lattice mod 2
 
