@@ -262,6 +262,9 @@ static void pi24_2048(
 * Operation x_delta * x_pi
 ***************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+
 /**
   @brief Workhorse for function ``mm_op%{P}_pi``
 
@@ -277,7 +280,7 @@ static void pi24_2048(
    So the functions called by function ``mm_op%{P}_pi``
    can be tested individually.
 */
-// %%EXPORT
+static
 void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_out)
 {
     uint_mmv_t *a_src[3], *a_dest[3];
@@ -365,6 +368,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
   // %%END IF  # GENERATE_CODE
 } 
 
+/// @endcond 
 
 
 

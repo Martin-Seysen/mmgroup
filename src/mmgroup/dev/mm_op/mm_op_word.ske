@@ -41,6 +41,10 @@
 /// @endcond
 
 
+//////////////////////////////////////////////////////////////////////////
+// Operation of a word of the monster group on a vector
+//////////////////////////////////////////////////////////////////////////
+
 
 /** 
   @brief Compute operation of the monster group on a vector
@@ -158,6 +162,134 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
 /// @cond DO_NOT_DOCUMENT 
 #undef  h 
 /// @endcond
+
+//////////////////////////////////////////////////////////////////////////
+// ABC part of pperation of a word of the monster group on a vector
+//////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void
+extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
+{
+    #define make_index(row, column) (((row) << 5) + (column))
+    #define store(index, value) v_out[(index) >> %{LOG_INT_FIELDS}] |= \
+        (value) << (((index) << %{LOG_FIELD_BITS}) & %{int:INT_BITS-1})
+
+    uint_fast32_t i, j, index, c, sparse;
+    uint_mmv_t value;
+
+    v_out += MM_OP%{P}_OFS_B; // point to part B of output vector
+    for (i = 0; i < %{int:48*V24_INTS}; ++i) v_out[i] = 0;
+
+    for (i = 0; i < 24; ++i) {
+        for (j = i + 1; j < 24; ++j) {
+            c = a[j];
+            sparse = mm_aux_index_leech2_to_sparse(c);
+            sparse |= (0 - ((c >> 24) & 1)) & %{P};
+            value  = mm_aux_mmv_get_sparse(%{P}, v_in, sparse) & %{P};
+            index = make_index(i, j); 
+            store(index, value);
+            index = make_index(j, i); 
+            store(index, value);
+
+            gen_leech2_def_mul(a[0], a[j], c);
+            sparse = mm_aux_index_leech2_to_sparse(c);
+            sparse |= (0 - ((c >> 24) & 1)) & %{P};
+            value  = mm_aux_mmv_get_sparse(%{P}, v_in, sparse) & %{P};
+            index = make_index(24 + i, j); 
+            store(index, value);
+            index = make_index(24 + j, i); 
+            store(index, value);
+
+            if (j > i + 1) {
+                gen_leech2_def_mul(a[i+1], a[j], c);
+                a[j] = c;
+            }
+        }         
+    }
+
+    #undef make_index
+    #undef store
+}
+
+/// @endcond 
+
+
+/** 
+  @brief Compute ABC part of the operation of the monster group on a vector
+
+
+  Yet to be documented and tested!!!
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t *v_out)
+{
+    uint32_t g1[12], *pg1;
+    int32_t len_g1;
+    len_g1 = mm_group_prepare_op_ABC(g, len_g, g1);
+    if (len_g1 < 0) return len_g1;
+    if (len_g1 & 0x100) {
+        uint32_t i;
+        for (i = 0; i < %{int:72*V24_INTS}; ++i) v_out[i] = v[i];
+        len_g1 &= 0xff;
+        pg1 = g1;
+    } else {
+        uint32_t i, subframe[24];
+        int32_t len_g0, res;
+        len_g0 = gen_leech2_map_std_subframe(g1, len_g1, subframe);
+        if (len_g0 < 0) return len_g0;
+        if (len_g0 > len_g1) return -1;
+        extract_BC(v, subframe, v_out);
+        for (i = 0; i < %{int:24*V24_INTS}; ++i) v_out[i] = v[i];
+        res = mm_op%{P}_word_tag_A(v, g1, len_g0, 1);
+        if (res < 0) return res;
+        pg1 = g1 + len_g0; len_g1 -= len_g0;
+    }
+
+    if (len_g1 == 0) return 0;
+    // Deal with tag t
+    if (((pg1[0] >> 28) & 0xf) == 5) {
+        mm_op%{P}_t_ABC(v_out, pg1[0] & 0xfffffff);
+        pg1++; len_g1--;
+    }
+
+    if (len_g1 == 0) return 0;
+    // Set Termination atom in order to simplify scanning subwords of g1
+    pg1[len_g1] = 0xffffffff; 
+    {
+        // Deal with tag sequence 'y', 'x', 'd'
+        uint32_t y = 0, x = 0, d = 0, *pg2 = pg1;
+
+        // tags x_e, y_e, x_\epsilon perform no action on part ABC
+        // of the vector if e in \{+-1, +-\Omega\} or if \epsilon
+        // is an even cocode element. 
+        if (((pg2[0] >> 28) & 0xf) == 4)  y = *pg2++ & 0x7ff;
+        if (((pg2[0] >> 28) & 0xf) == 3)  x = *pg2++ & 0x7ff;
+        if (x | y && ((pg2[0] >> 28) & 0xf) == 1) d = *pg2++ & 0xfff; 
+        if (pg2 > pg1) {
+            if (x | y) mm_op%{P}_xy_tag_ABC(v_out, y, x, d, 0);
+            len_g1 -= (uint32_t)(pg2 - pg1);
+            if (len_g1 == 0) return 0;
+            pg1 = pg2;
+        }
+    }
+
+    {
+        // Deal with tag sequence 'd', 'p'
+        uint32_t d = 0, pi = 0, *pg2 = pg1;
+
+        if (((pg2[0] >> 28) & 0xf) == 1)  d = *pg2++ & 0x800;
+        if (((pg2[0] >> 28) & 0xf) == 2)  pi = *pg2++ & 0xfffffff;
+        if (pg2 > pg1) {
+            if (pi) mm_op%{P}_pi_tag_ABC(v_out, d, pi, 0);
+            else if (d) mm_op%{P}_delta_tag_ABC(v_out, d, 0);
+            len_g1 -= (uint32_t)(pg2 - pg1);
+        }
+    }
+    return len_g1 ? -1 : 0;
+}
 
 
 

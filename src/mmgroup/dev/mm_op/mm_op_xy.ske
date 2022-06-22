@@ -105,6 +105,7 @@ static const uint32_t TABLE24_START[4] = {
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 
 static inline void
 op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv_t *v_out)
@@ -174,8 +175,11 @@ op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv
   // %%END IF # GENERATE_CODE
 }
 
+/// @endcond 
 
 
+
+/// @cond DO_NOT_DOCUMENT 
 
 /**
   @brief Workhorse for function ``mm_op%{P}_xy``
@@ -190,7 +194,7 @@ op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv
    So the functions called by function ``mm_op%{P}_xy``
    can be tested individually.
 */
-// %%EXPORT
+static
 void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_out)
 {
     uint_fast32_t i;
@@ -275,6 +279,11 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
     if (p_op->eps & 0x800) mm_op%{P}_neg_scalprod_d_i(v_out + MM_OP%{P}_OFS_X); 
   // %%END IF # GENERATE_CODE
 } 
+
+
+/// @endcond
+
+
 
 /**
   @brief Compute an operation of the monster group on a vector

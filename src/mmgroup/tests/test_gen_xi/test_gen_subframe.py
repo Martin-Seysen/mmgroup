@@ -74,7 +74,7 @@ def test_maps_std_subframe(verbose = 0):
             a_ref[i] = gen_leech2_op_word(preimages[i], g, len(g))
             assert a_ref[i] & BAD_MASK == 0
         res = gen_leech2_map_std_subframe(g, len(g), a)
-        assert res >= 0
+        assert res == len(g)
         ok = (a == a_ref).all()
         if verbose or not ok:
             print("Output obtained")

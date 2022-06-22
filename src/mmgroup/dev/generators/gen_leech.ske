@@ -390,8 +390,6 @@ uint8_t TABLE_OP_MAP_STD_SUBFRAME[3 * N_OPS_MAP_STD_SUBFRAME] = {
 
 /** Transform the standard subframe of Leech lattice mod 2
 
- This function is yet to be implemented!!!
-
  A **frame** in the Leech lattice \f$\Lambda\f$ is a maximal
  set of pairwise orthogonal vectors of type 4. In
  \f$\Lambda / 2 \Lambda\f$ (which is the Leech lattice mod 2)
@@ -447,13 +445,22 @@ uint8_t TABLE_OP_MAP_STD_SUBFRAME[3 * N_OPS_MAP_STD_SUBFRAME] = {
  The function stores these 24 elements in the array ``a`` 
  (in that order) in **Leech lattice encoding**.
 
- The function returns 0 in case of success and a negative value 
- in case of failure.
+ In case of success the function returns the number of entries of 
+ the word ``g`` being processed. It returns a negative value in 
+ case of failure.
 */
 // %%EXPORT px
 int32_t gen_leech2_map_std_subframe(uint32_t *g, uint32_t len_g, uint32_t *a)
 {
     uint32_t i, q0;
+
+    for (i = 0; i < len_g; ++i) {
+        uint32_t tag = (g[i] >> 28) & 7;
+        if (tag == 7 || (tag == 5 && (g[i] & 0xfffffff) % 3 == 0)) {
+            len_g = i;
+            break;
+        }
+    }
 
     for (i = 0; i < 11; ++i) {
         q0 = 1UL << i;
@@ -471,7 +478,7 @@ int32_t gen_leech2_map_std_subframe(uint32_t *g, uint32_t len_g, uint32_t *a)
     q0 = 0x800000;
     if ((q0 = gen_leech2_op_word(q0, g, len_g)) & 0x80000000UL) return -1;
     a[0] = q0;
-    return 0;
+    return len_g;
 }
 
 
