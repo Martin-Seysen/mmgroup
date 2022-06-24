@@ -748,7 +748,7 @@ static uint32_t checksum(uint32_t *r, uint32_t len_r)
 
 
 /**
-  @brief Workhirse for function ``mm_reduce_vector_vp``.
+  @brief Workhorse for function ``mm_reduce_vector_vp``.
 
   More details are yet to be documented.
 */
