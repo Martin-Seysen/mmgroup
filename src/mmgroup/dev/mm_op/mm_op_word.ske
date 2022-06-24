@@ -153,7 +153,7 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
          if (h[0])  mm_op%{P}_xi_tag_A(v, h[0]); 
          if (h[1])  return -1;
          if (h[2])  mm_op%{P}_xy_tag_ABC(v, h[2], 0, 0, 1);
-         if (h[5])  mm_op%{P}_pi_tag_ABC(v, h[5], 0, 1);
+         if (h[5])  mm_op%{P}_pi_tag_ABC(v, 0, h[5], 1);
      } while (status == 0);
      if (mm_aux_reduce_mmv_fields(%{P}, v, MM_AUX_OFS_B) < 0) return -1;
      return status - 1;
@@ -170,7 +170,7 @@ int32_t mm_op%{P}_word_tag_A(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t 
 
 /// @cond DO_NOT_DOCUMENT 
 
-static inline void
+static inline int32_t
 extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
 {
     #define make_index(row, column) (((row) << 5) + (column))
@@ -187,6 +187,7 @@ extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
         for (j = i + 1; j < 24; ++j) {
             c = a[j];
             sparse = mm_aux_index_leech2_to_sparse(c);
+            if (sparse == 0) return -1;
             sparse |= (0 - ((c >> 24) & 1)) & %{P};
             value  = mm_aux_mmv_get_sparse(%{P}, v_in, sparse) & %{P};
             index = make_index(i, j); 
@@ -209,6 +210,7 @@ extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
             }
         }         
     }
+    return 0;
 
     #undef make_index
     #undef store
@@ -220,8 +222,22 @@ extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
 /** 
   @brief Compute ABC part of the operation of the monster group on a vector
 
+  Let \f$v\f$ be a vector of the representation \f$\rho_{%{P}}\f$
+  of the monster group stored in the array referred by ``v``.
 
-  Yet to be documented and tested!!!
+  Let \f$g\f$ be the element of the monster group stored in the
+  array of length ``len_g`` referred by the pointer ``g``. Here
+  \f$g\f$, and also all prefixes of the word representing \f$g\f$,
+  must be in the set \f$G_{x0} \cdot N_0\f$.
+
+  The function computes the parts with tags ``A``, ``B``, and ``C``
+  of the vector \f$v \cdot g\f$  and stores the result in the
+  array ``v_out``. The other parts of the vector \f$v \cdot g\f$
+  are not computed. Here the array ``a_out`` must have at
+  least %{int:72*V24_INTS} entries of type ``uint_mmv_t``.
+
+  This function is much faster than function ``mm_op%{P}_word``.
+  It is mainly used for dealing with a 2A axis \f$v\f$.
 */
 // %%EXPORT px
 int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t *v_out)
@@ -229,7 +245,8 @@ int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t
     uint32_t g1[12], *pg1;
     int32_t len_g1;
     len_g1 = mm_group_prepare_op_ABC(g, len_g, g1);
-    if (len_g1 < 0) return len_g1;
+    if ((len_g1 & 0xff) > 11) return  -300003;
+    if (len_g1 < 0) return len_g1 - 100000;
     if (len_g1 & 0x100) {
         uint32_t i;
         for (i = 0; i < %{int:72*V24_INTS}; ++i) v_out[i] = v[i];
@@ -238,17 +255,23 @@ int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t
     } else {
         uint32_t i, subframe[24];
         int32_t len_g0, res;
-        len_g0 = gen_leech2_map_std_subframe(g1, len_g1, subframe);
-        if (len_g0 < 0) return len_g0;
-        if (len_g0 > len_g1) return -1;
-        extract_BC(v, subframe, v_out);
+        len_g1 &= 0xff;  
         for (i = 0; i < %{int:24*V24_INTS}; ++i) v_out[i] = v[i];
-        res = mm_op%{P}_word_tag_A(v, g1, len_g0, 1);
-        if (res < 0) return res;
+        len_g0 =  gen_leech2_prefix_Gx0(g1, len_g1);
+        res = mm_op%{P}_word_tag_A(v_out, g1, len_g0, 1);
+        if (res < 0) return res - 400000;
+        mm_group_invert_word(g1, len_g0);
+        res = gen_leech2_map_std_subframe(g1, len_g0, subframe);
+        if (res != len_g0) return (len_g0 < 0) ? len_g0 - 200000 :-300001;
+        if (extract_BC(v, subframe, v_out)) return -300002;
+        if (res < 0) return res - 500000;
         pg1 = g1 + len_g0; len_g1 -= len_g0;
     }
 
     if (len_g1 == 0) return 0;
+    // Set Termination atom in order to simplify scanning subwords of g1
+    pg1[len_g1] = 0xffffffff; 
+
     // Deal with tag t
     if (((pg1[0] >> 28) & 0xf) == 5) {
         mm_op%{P}_t_ABC(v_out, pg1[0] & 0xfffffff);
@@ -256,8 +279,6 @@ int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t
     }
 
     if (len_g1 == 0) return 0;
-    // Set Termination atom in order to simplify scanning subwords of g1
-    pg1[len_g1] = 0xffffffff; 
     {
         // Deal with tag sequence 'y', 'x', 'd'
         uint32_t y = 0, x = 0, d = 0, *pg2 = pg1;
@@ -288,7 +309,7 @@ int32_t mm_op%{P}_word_ABC(uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t
             len_g1 -= (uint32_t)(pg2 - pg1);
         }
     }
-    return len_g1 ? -1 : 0;
+    return len_g1 ? -600000 - len_g1 : 0;
 }
 
 

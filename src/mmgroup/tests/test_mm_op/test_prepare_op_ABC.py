@@ -54,8 +54,7 @@ def py_prepare_op_ABC(g):
         len_a = mm_group_n_mul_word_scan(a, g, len(g))
         assert len_a == len(g) 
         len_a = mm_group_n_to_word(a, a)
-        a[len_a] = 0
-        return 1, a[:len_a+1]
+        return 1, a[:len_a]
 
     if reduce or len(g) > 11:
         gn = np.zeros(5, dtype = np.uint32)
@@ -73,8 +72,7 @@ def py_prepare_op_ABC(g):
             assert res >= 0
             mm_group_n_mul_element(a, gn, a)
             len_a = mm_group_n_to_word(a, a)
-            a[len_a] = 0
-            return 1, a[:len_a+1]
+            return 1, a[:len_a]
         else:
             e = mm_group_n_right_coset_N_x0(gn)
             len_a = mm_group_n_to_word(gn, gn)
@@ -123,7 +121,7 @@ def prep_op_ABC_testdata():
 
 
 @pytest.mark.mm_op
-def test_op_ABC(verbose = 0):
+def test_prepare_op_ABC(verbose = 0):
     print("Testing function mm_group_prepare_op_ABC")
     for i, (g, must_be_in_N0) in enumerate(prep_op_ABC_testdata()):
         b0, g1 = py_prepare_op_ABC(g)

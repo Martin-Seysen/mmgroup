@@ -365,6 +365,30 @@ uint32_t gen_leech2_op_atom(uint32_t q0, uint32_t g)
 
 
 
+/**
+  @brief Scan prefix in \f$G_{x0}\f$ of a word in the monster group
+
+  Let \f$g \in G_{x0}\f$ be stored in the array ``g`` of
+  length ``len_g`` as a word of generators of the
+  subgroup \f$G_{x0}\f$ of the  monster. The function returns the
+  maximum length ``len_g`` such that every prefix of the word
+  in  ``g`` of length ``<= len_g`` is in the group  \f$G_{x0}\f$.
+*/
+// %%EXPORT px
+uint32_t gen_leech2_prefix_Gx0(uint32_t *g, uint32_t len_g)
+{
+    uint32_t i;
+
+    for (i = 0; i < len_g; ++i) {
+        uint32_t tag = (g[i] >> 28) & 7;
+        if (tag == 7 || (tag == 5 && (g[i] & 0xfffffff) % 3 != 0)) {
+            return i;
+        }
+    }
+    return len_g;
+}
+
+
  
 /*************************************************************************
 *** Operation of generators of G{x0} on a subframe
@@ -454,13 +478,7 @@ int32_t gen_leech2_map_std_subframe(uint32_t *g, uint32_t len_g, uint32_t *a)
 {
     uint32_t i, q0;
 
-    for (i = 0; i < len_g; ++i) {
-        uint32_t tag = (g[i] >> 28) & 7;
-        if (tag == 7 || (tag == 5 && (g[i] & 0xfffffff) % 3 == 0)) {
-            len_g = i;
-            break;
-        }
-    }
+    len_g = gen_leech2_prefix_Gx0(g, len_g);
 
     for (i = 0; i < 11; ++i) {
         q0 = 1UL << i;

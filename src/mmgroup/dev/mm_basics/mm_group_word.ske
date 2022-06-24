@@ -219,8 +219,7 @@ int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
         mm_group_n_clear(a);
         if (mm_group_n_mul_word_scan(a, g, len_g) < 0) return -1002;
         len_a = mm_group_n_to_word(a, a);
-        a[len_a] = 0;
-        return len_a + 0x101;
+        return len_a + 0x100;
     } else if (reduce || len_g > 11) {
        // Reduce g if this is required. Then we present  g  as
        // a product of ``elem`` in G_x0 and ``gn`` in N_0
@@ -248,8 +247,7 @@ int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
            mm_group_n_mul_element(a, gn, a);
            // Return g as a word in ``a``, followed by a zero atom
            len_a = mm_group_n_to_word(a, a);
-           a[len_a] = 0;
-           return len_a + 0x101;
+           return len_a + 0x100;
        } else {  // Otherwise store a word equal to g in ``a``.
            // Store g as a word in generators of G_x0, possibly
            // followed by an atom with tag `t`. Therefore we

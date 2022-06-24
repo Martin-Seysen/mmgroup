@@ -513,7 +513,7 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
   Function ``mm_op%{P}_pi`` computes an automorphism of the
   Parker loop on a vector ``v_in`` and stores the result
   in ``v_out``. That automorphism depends on parameters
-  ``d``  and ``p``.
+  ``delta``  and ``p``.
   
   Function ``mm_op%{P}_pi_tag_ABC`` computes the same
   automorphism on the entries of the vector ``v = v_in`` with
@@ -530,7 +530,7 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
   than function ``mm_op%{P}_pi``.
 */
 // %%EXPORT px
-void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t pi, uint32_t d, uint32_t mode)
+void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t mode)
 {
     uint_mmv_t v_tmp[24 *  %{V24_INTS}];
     uint16_t row_perm[24];
@@ -557,7 +557,7 @@ void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t pi, uint32_t d, uint32_t mode)
     for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
 
     v += 24 *  %{V24_INTS};
-    if (d & 0x800) for(i = 0; i < 24; ++i) row_perm[i] ^= 0x8000;
+    if (delta & 0x800) for(i = 0; i < 24; ++i) row_perm[i] ^= 0x8000;
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
     for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
  
