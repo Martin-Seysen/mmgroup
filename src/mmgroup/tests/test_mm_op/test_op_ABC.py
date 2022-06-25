@@ -105,7 +105,7 @@ def test_op_word_ABC(verbose = 0):
 
 
 #######################################################################
-# Bechmark for function mm_group_prepare_op_ABC
+# Benchmark for function mm_group_prepare_op_ABC
 #######################################################################
 
 
@@ -139,9 +139,8 @@ def benchmark_mm_op15_word(a):
 
 def benchmark_mm_op15_map_t(a):
     from collections import defaultdict
-    from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    from mmgroup.mm_reduce import mm_reduce_op_2A_axis_type
     d = defaultdict(int)
-    f = OP_ABC[15]
     axes = []
     for i in range(64):
         axes.append( (MMV(15)('I', 2, 3) * MM0('r', 5)).data )
@@ -151,14 +150,13 @@ def benchmark_mm_op15_map_t(a):
     op_t_A = MMV(15)().ops.op_t_A
     w1 = np.zeros(24*4, dtype = np.uint64)
     t_start = time.process_time()
+    mode = 0x16
     for i, g in enumerate(a):
-        f(axes[i & mask], g, 6, w)
-        op_t_A(w, 1, w1) 
-        d[mm_reduce_2A_axis_type(w1) >> 24] += 1
-        op_t_A(w, 2, w1) 
-        d[mm_reduce_2A_axis_type(w1) >> 24] += 1
+        axtypes = mm_reduce_op_2A_axis_type(axes[i & mask], g, 6, mode)
+        d[(axtypes >> 8) & 0xff] += 1
+        d[(axtypes >> 16) & 0xff] += 1
     t = time.process_time() - t_start
-    print(dict(d))
+    #print(dict(d))
     return t / len(a)
 
 
@@ -179,7 +177,7 @@ def benchmark_empty(a):
 @pytest.mark.bench
 @pytest.mark.mm_op
 def test_benchmark_op_word():
-    n = 5000
+    n = 2000
     a = make_benchmark_sample(n)
     t_0 =  benchmark_empty(a)
     t_f =  benchmark_mm_op15_word(a)
@@ -187,12 +185,12 @@ def test_benchmark_op_word():
     t_ax =  benchmark_mm_op15_map_t(a)
     print("Average run times:")
     names = ["mm_op15_word", 
-       "reduced axis types",
+       "mm_reduce_op_2A_axis_type",
        "mm_op15_word_ABC",
        "empty loop",
     ]
     for name, value in zip(names, [t_f, t_ax, t_fABC, t_0]):
-        print(" Function %-18s: %7.4f ms" % (name, 1000 * value))
+        print(" Function %-25s: %7.4f ms" % (name, 1000 * value))
 
 
 

@@ -94,6 +94,7 @@ C_REDUCE_SKELETONS = [
    "mm_order_vector",
    "mm_order",
    "mm_reduce",
+   "mm_suborbit",
  
 ]
 

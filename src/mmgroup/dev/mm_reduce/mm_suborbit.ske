@@ -1,0 +1,93 @@
+/** @file mm_suborbit.c
+
+ This file contains the technical function ``mm_reduce_op_2A_axis_type``
+ for computing the type of an image of a 2A axis.
+*/
+
+#include "mm_reduce.h"   
+   
+// %%EXPORT_KWD MM_REDUCE_API
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Obtain the type of a 2A axis
+/////////////////////////////////////////////////////////////////////////
+
+/** @brief Return the type of an image of a 2A axis
+
+   This is a rather technical function to be used for the
+   computation of suborbit diagrams.
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo ``15``, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions*. Here ``v``
+   should be a 2A axis as in function ``mm_reduce_2A_axis_type``.
+
+   Let \f$g\f$ be the element of the monster group stored in the
+   array of length ``len_g`` referred by the pointer ``g``. Here
+   \f$g\f$, and also all prefixes of the word representing \f$g\f$,
+   must be in the set \f$G_{x0} \cdot N_0\f$, in the same way
+   as in function ``mm_op%{P}_word_ABC``.
+
+   Then \f$w = v \cdot g\f$ is another 2A axis. The function
+   computes the type of the axis \f$w\f$, or of one or more axes 
+   related to \f$w\f$, depending on parameter ``mode``.
+
+   If bit 4 of ``mode`` is set then the function computes the
+   types  ``T_e`` of the axes  \f$w \cdot \tau^e\f$ 
+   for \f$e = 0, 1, 2\f$; and it 
+   returns \f$0x10000 * T_2 + 0x100 * T_1 + T_0\f0.
+   Here  ``T_e`` is computed only if bit ``e`` of ``mode``
+   is set; otherwise we put ``T_e = 0``.
+   If bit 3 of ``mode`` is set and ``T_e`` means
+   type ``2A`` or ``2B`` then we modify the bits 
+   bit ``8 * e + 3`` of the return value as follows.
+   We set bit  ``8 * e + 3`` if the application of the 
+   matrix \f$M_A\f$ (corresponding to the ``A`` part of ``v``)
+   to the standard axis \f$v^+\f$ yields a nonzero value.
+
+   If bit 4 of ``mode`` is cleared then the function returns 
+   the same result as function ``mm_reduce_2A_axis_type``
+   applied to \f$w = v \cdot g\f$.
+
+   Caution:
+
+   This is a quick disambiguation of the type of a 2A axis. The
+   function may return any axis type if ``v`` is not  a 2A axis.
+*/
+// %%EXPORT px
+uint32_t mm_reduce_op_2A_axis_type(uint_mmv_t *v, uint32_t *g, uint32_t len_g, uint32_t mode)
+{
+    uint_mmv_t vABC[72 * %{V24_INTS}], vA[24 *  %{V24_INTS}];
+    uint32_t e, axtype, result = 0;
+
+    if (mm_op15_word_ABC(v, g, len_g, vABC) < 0) return 0;
+    if ((mode & 0x10) == 0) return mm_reduce_2A_axis_type(vABC);
+    for (e = 0; e < 3; ++e) {
+        if ((mode >> e) & 1) {
+            mm_op15_t_A(vABC, e, vA);
+            axtype =  (mm_reduce_2A_axis_type(vA) >> 24) & 0xff;
+            if (mode & 8 && (axtype & 0xf0) == 0x20) {
+                if (mm_op15_eval_A(vA, 0x200)) axtype |= 8;
+            }
+            result |= axtype << (e << 3);
+        }    
+    }
+    return result;
+}
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
