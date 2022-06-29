@@ -187,6 +187,34 @@ def gen_tl(tag, e = "r"):
 
 
 ###########################################################################
+# Rules deleting neutral elements
+###########################################################################
+
+
+def rule_x0(group, word):
+    x = word[0].pl & 0x1fff
+    if x == 0:
+        return []
+    else:
+        raise AutoGroupMulError
+
+def rule_p0(group, word):
+    d, p = word[0].cocode & 0xfff, word[0].m24num
+    if (d | p)  == 0:
+        return []
+    else:
+        raise AutoGroupMulError
+
+
+def rule_tl0(group, word):
+    exp = word[0].exp & 3
+    if exp == 0:
+        return []
+    else:
+        raise AutoGroupMulError
+
+
+###########################################################################
 # Rules for the group N 
 ###########################################################################
 
@@ -274,6 +302,8 @@ def kernel_rule_y(group, word):
     x = table[y & mask]
     y_new = y & ~mask & 0x1fff
     #print("kernel", hex(y), hex(y_new))
+    if y == 0:
+        return []
     if y_new == y:
         raise AutoGroupMulError
     return [ xy_Atom('y', y_new),  xy_Atom('x', x) ]
@@ -468,6 +498,10 @@ class MGroupN(AutoGroup):
         r"pt": rule_pt,
         r"xt": rule_xt,
         r"yt": rule_yt,
+        r"x":  rule_x0,
+        r"p":  rule_p0,
+        r"t":  rule_tl0,
+        r"l":  rule_tl0,
     }
 
     kernel_rules = {

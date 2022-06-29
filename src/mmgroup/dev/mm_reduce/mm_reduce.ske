@@ -93,6 +93,9 @@
 
 /// @cond DO_NOT_DOCUMENT 
 
+// In the following function we make an extra axis check if CHECK_AXIS is #defined
+// #define CHECK_AXIS
+
 
 #define MAX_SHORT_ARRAY 892
 
@@ -778,17 +781,26 @@ static int32_t reduce_v_axis(
             }
             len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
             if (len_r1 < 0) return -10002;
+          #ifdef CHECK_AXIS
             mm_op15_word(v, r + len_r, len_r1, 1, p_work);
+            vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
+          #else
+            mm_op15_word_ABC(v, r + len_r, len_r1, p_work);
+            vt = mm_aux_get_mmv1(15, p_work, (24+3)*32 + 2);
+          #endif
             len_r += len_r1;
             r[len_r++] = 0x82000000 + vt;
-            vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
             if (vt != 15-2) {
-               r[len_r] = 0xB0000200;
-               mm_op15_word(v, r + len_r, 1, 1, p_work);
-               len_r += 1;
+                r[len_r] = 0xB0000200;
+              #ifdef CHECK_AXIS
+                mm_op15_word(v, r + len_r, 1, 1, p_work);
+              #endif
+                len_r += 1;
             }
+          #ifdef CHECK_AXIS
             mm_reduce_load_axis(p_work, 0);
             if (mm_op15_compare(v, p_work)) return -10003;
+          #endif
             r[len_r++] = 0x84000200;
             return len_r;
         }
@@ -928,11 +940,9 @@ int32_t mm_reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, 
 /// @cond DO_NOT_DOCUMENT 
 
 
-// In the following function we make an extra axis check if CHECK_AXIS is #defined
-// #define CHECK_AXIS
 
 /**
-  @brief Workhirse for function ``mm_reduce_vector_vm``.
+  @brief Workhorse for function ``mm_reduce_vector_vm``.
 
   More details are yet to be documented.
 */
@@ -960,18 +970,26 @@ static int32_t reduce_v_baby_axis(
                 vt ^= axis;
                 len_r1 = gen_leech2_reduce_type4(vt, r + len_r); 
                 if (len_r1 < 0) return -20011;
+              #ifdef CHECK_AXIS
                 mm_op15_word(v, r + len_r, len_r1, 1, p_work);
+                vt = mm_reduce_2A_axis_type(v) & 0xffffff;
+                vt = v_leech2_adjust_sign(v, vt);
+              #else
+                mm_op15_word_ABC(v, r + len_r, len_r1, p_work);
+                vt = mm_reduce_2A_axis_type(p_work) & 0xffffff;
+                vt = v_leech2_adjust_sign(p_work, vt);
+              #endif
                 if (op_axis(&axis, r + len_r, len_r1)) return -20011;
                 len_r += len_r1;
                 r[len_r++] = 0x82000000 + (vt & 0xffffff);
-                vt = mm_reduce_2A_axis_type(v) & 0xffffff;
-                vt = v_leech2_adjust_sign(v, vt);
                 vt = gen_leech2_mul(vt, axis); 
                 if ((vt & 0xffffff) != 0x800000) return -20012;
                 e = 1 + ((vt >> 24) & 1);
                 r[len_r] = 0xD0000003 - e;
+              #ifdef CHECK_AXIS
                 mm_op15_word(v, r + len_r, 1, 1, p_work);
                 if (op_axis(&axis, r + len_r, 1)) return -20013;
+              #endif
                 len_r += 1;
             } else  {
                 if (val2 != 4)  return -20014;

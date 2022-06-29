@@ -36,6 +36,8 @@ def rand_word(tags, length):
 
 def make_testcases():
     testdata = [
+        ([("t", 2), ("x",0)], []),
+        ([("d", 2), ("d",2)], []),
         ([("p", 220249159)], []),
         ([("y", 0x1000),('p', 234579)], [("y", 0x1800)]),
         ([("y", 0x1000),('t',2)], [("y", 0x1800)]),
@@ -57,7 +59,7 @@ def make_testcases():
 # Test group multiplication
 ####################################################################
 
-def ll_mul_test_case(g1, g2, verbose = 1):
+def ll_mul_test_case(g1, g2, verbose = 0):
     g1, g2 = ref_group(g1), ref_group(g2)
     g1 = MM0(g1)
     g2 = MM0(g2)
@@ -65,12 +67,17 @@ def ll_mul_test_case(g1, g2, verbose = 1):
     g2ref = ref_group(g2) 
     g12ref = g1ref * g2ref
     g12 = g1 * g2
-    assert MM0(g12ref) == g12, (g12ref, g12)
-    assert ref_group(g12) == g12ref, (g1, g2) 
+    if verbose:
+        print("g1 =", g1)
+        print("g2 =", g2)
+        print("g1 * g2 =", ref_group(g12))
+        print("ref     =", g12ref)
+    assert MM0(g12ref) == g12, (g1, g2, g12ref, g12)
+    assert ref_group(g12) == g12ref, (g1, g2, ref_group(g12), g12ref)
 
 
 @pytest.mark.auto_group
-def test_ll_mul(verbose = 1):
+def test_ll_mul(verbose = 0):
     print("testing low-level multiplication in group N")
     for g1, g2 in make_testcases():
         ll_mul_test_case(g1, g2, verbose)
@@ -82,7 +89,7 @@ def test_ll_mul(verbose = 1):
 # Test group division 
 ####################################################################
 
-def ll_div_test_case(g1, g2, verbose = 1):
+def ll_div_test_case(g1, g2, verbose = 0):
     g1 = MM0(g1)
     g2 = MM0(g2)
     g1ref = ref_group(g1) 
