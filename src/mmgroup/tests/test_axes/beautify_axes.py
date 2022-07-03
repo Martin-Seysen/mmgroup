@@ -788,7 +788,7 @@ trim_cooctad_required = ["6F", "4C"]
 
 
 #################################################################
-#  Helper class for beatifying 2A axes
+#  Helper class for beautifying 2A axes
 #################################################################
 
 

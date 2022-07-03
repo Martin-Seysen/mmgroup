@@ -56,7 +56,10 @@ from numbers import Integral
 from mmgroup.bitfunctions import bitparity, bitweight
 from mmgroup.dev.mm_op.mm_op import MM_Op, INT_BITS, c_hex
 
-
+####################################################################
+# Here we should set FAST_MOD3 = False, since the new version 
+# is yet buggy.
+FAST_MOD3 = False # Use new fast code for P = 3 when set
 
 def as_c_expr(x):
     """Map integers to hex string, don't change anything else
@@ -81,6 +84,9 @@ def as_c_expr(x):
 
 
 
+def n_ops(x):
+    return x.n_ops if isinstance(x, C_Expr) else 0
+
 class C_Expr:
     """Models an arbitrary C expression
 
@@ -98,8 +104,9 @@ class C_Expr:
     Here only the C operators required for our purposes are 
     implemented. We do not make any attempt to save brackets.
     """
-    def __init__(self, name):
-         self.name = name
+    def __init__(self, name, n_ops = None):
+        self.name = name
+        self.n_ops = 0 if n_ops is None else n_ops
 
     def __repr__(self):
         return self.name
@@ -111,9 +118,9 @@ class C_Expr:
          if other == 0:
               return self
          elif other > 0:
-              return C_Expr("(%s << %d)" % (self, other) ) 
+              return C_Expr("(%s << %d)" % (self, other), self.n_ops + 1) 
          elif other < 0:
-              return C_Expr("(%s >> %d)" % (self, -other) ) 
+              return C_Expr("(%s >> %d)" % (self, -other), self.n_ops + 1) 
 
     def __rshift__(self, other):
          return self.__lshift__(-other)
@@ -121,11 +128,12 @@ class C_Expr:
     def _binop(self, other, op):
          oper1 = str(as_c_expr(self))
          oper2 = str(as_c_expr(other)).strip()
+         ops = self.n_ops + n_ops(other) + 1
          if len(oper1) + len(oper2) > 40:
              op_ = "\n    " + op + " "
          else:
              op_ = " " + op + " "
-         return  C_Expr("(" + oper1 + op_ + oper2 + ")") 
+         return  C_Expr("(" + oper1 + op_ + oper2 + ")", ops) 
 
     def __add__(self, other):
         return self._binop(other, '+')
@@ -170,7 +178,7 @@ class C_Expr:
         'value' must be another instance of this class or a string  
         containing a valid C expression or an integer.
         """ 
-        return  "%s ^= %s;\n" % (self, as_c_expr(value))
+        return "%s ^= %s;\n" % (self, as_c_expr(value))
 
     def assign_and(self, value):
         """Returnstring encoding an assignment statement: self &= value;
@@ -178,7 +186,7 @@ class C_Expr:
         'value' must be another instance of this class or a string  
         containing a valid C expression or an integer.
         """ 
-        return  "%s &= %s;\n" % (self, as_c_expr(value))
+        return "%s &= %s;\n" % (self, as_c_expr(value))
 
     def assign_or(self, value):
         """Return string encoding an assignment statement: self |= value;
@@ -186,7 +194,7 @@ class C_Expr:
         'value' must be another instance of this class or a string  
         containing a valid C expression or an integer.
         """ 
-        return  "%s |= %s;\n" % (self, as_c_expr(value))
+        return "%s |= %s;\n" % (self, as_c_expr(value))
 
 
 class C_UintVar(C_Expr):
@@ -218,9 +226,59 @@ class C_UintVar(C_Expr):
          passed with argument 'var_number'.
          """
          self.name = name
+         self.n_ops = 0
          self.var_number = var_number
          self.index = index
          self.c_type = c_type 
+         self.context = None
+
+
+    def set_context(self, context):
+        """Set a context for a variable
+
+        Usually a context is an instance of class ``HadamardMatrixCode``.
+        If a context ``ct`` has been set than method
+
+        self.assign(value)
+
+        is equivalent to
+
+        self.context.assign(self, value)
+
+        Similarly,
+
+        self.assign_xxx(value)
+
+        is equivalent to        
+
+        self.context.assign_xxx(self, value)
+
+        for 'xxx' = 'and', 'or', 'xor'.
+        """
+        self.context = context
+
+    def assign(self, value):
+        """Generate C code computing 'self = value;' in a context
+
+        When calling the method, a conext must have been set with 
+        method ``self.set_context``.
+
+        Similarly,
+
+        self.assign_and(value)  generates code 'self &= value;'
+
+        self.assign_or(value)  generates code 'self |= value;'
+
+        self.assign_xor(value)  generates code 'self ^= value;'
+        """
+        self.context.assign(self, value)
+
+    def assign_and(self, value):
+        self.context.assign_and(self, value)
+    def assign_or(self, value):
+        self.context.assign_or(self, value)
+    def assign_xor(self, value):
+        self.context.assign_xor(self, value)
 
 
 class C_UintVarPool:
@@ -263,6 +321,7 @@ class C_UintVarPool:
     these variables in a C program.
     """
     LINE_LEN = 50
+    context = None
 
     def __init__(self, c_type = "uint_mmv_t", name = "r%d", length = 0):
         """Create a pool of variables of type 'ctype'.
@@ -285,6 +344,17 @@ class C_UintVarPool:
         self.resize(length)  # Create 'length' official variables
          
 
+    def set_context(self, context):
+        """Set a context for the variables in this pool.
+
+        This means that we will apply method ``x.set_context(context)``
+        to any new variable ``x`` in htis pool
+        """
+        self.context = context
+        for v in self.vars:
+            v.set_context(context)
+
+
     def extend_pool(self, new_size):
         """Internal method
 
@@ -294,7 +364,10 @@ class C_UintVarPool:
         while len(self.vars) < new_size:
             l = len(self.vars)
             name = self.name % l
-            self.vars.append(C_UintVar(self.c_type, name, l, l))
+            var = C_UintVar(self.c_type, name, l, l)
+            if self.context:
+                var.set_context(self.context)
+            self.vars.append(var)
 
     def __getitem__(self, i):
         """Return the i-th official variable"""
@@ -433,6 +506,8 @@ class HadamardMatrixCode(MM_Op):
         super(HadamardMatrixCode, self).__init__(p)
         self.LOG_VLEN = log_vlength   
         self.NO_CARRY = self.FIELD_BITS == self.P_BITS
+        if FAST_MOD3 and self.P == 3:
+             self.NO_CARRY = FALSE
         self.verbose = verbose
         self.make_h_masks()
         self.reset_vars()
@@ -453,6 +528,7 @@ class HadamardMatrixCode(MM_Op):
         if self.verbose: print("reset vars")
         self.vlen = max(1, (1 << self.LOG_VLEN) >> self.LOG_INT_FIELDS)
         self.vars = C_UintVarPool("uint_mmv_t", "r%d", self.vlen)
+        self.vars.set_context(self)
         self.expanded = 0
         self.matrix_code = ""     # C implementation of matrix operation
         self.n_code_lines = 0     # just for staticstics
@@ -500,6 +576,8 @@ class HadamardMatrixCode(MM_Op):
             mask = [x for x in range(self.INT_FIELDS) if x & i == i]
             self.B1_MASK[i] = self.smask(self.P, mask)
             self.H_MASK[i] = self.B1_MASK[i] & self.H_MASK_EXTERN
+        if self.P == 3:
+            self.BIT1_MASK = self.smask(2, -1, self.FIELD_BITS)
        
             
     def comment(self, comment):
@@ -522,6 +600,48 @@ class HadamardMatrixCode(MM_Op):
                (self.n_code_lines, self.n_operations))
         if reset:
             self.n_code_lines = self.n_operations = 0;
+
+    def _assign(self, var, value, op = ""):
+        ops = n_ops(value) + bool(op)
+        self.n_operations += ops
+        s_ops = " // %d ops" % ops if ops > 1 else ""
+        s =  "%s %s= %s;%s\n" % (var, op, as_c_expr(value), s_ops)
+        self.matrix_code +=  s
+        self.n_code_lines += 1
+
+    def assign(self, var, value):
+        """Generate C code computing 'var = value;'"""
+        self._assign(var, value)
+
+    def assign_and(self, var, value):
+        """Generate C code computing 'var &= value;'"""
+        self._assign(var, value, '%')
+      
+    def assign_or(self, var, value):
+        """Generate C code computing 'var |= value;'"""
+        self._assign(var, value, '|')
+      
+    def assign_xor(self, var, value):
+        """Generate C code computing 'var ^= value;'"""
+        self._assign(var, value, '^')
+      
+
+
+    def add_mode3(self, var_a, var_b, var_c, var_tmp = None):
+        """Put var_c = var_a + var_b (mod 3).
+   
+        This function performs the complete addition modulo 3,
+        including reduction mod 3. This works for self.p == 3
+        and self.P_BITS == 2 only. It uses a temporary variable
+        var_temp.
+        """
+        assert self.P == 3 and self.P_BITS == 2
+        t = self.vars.temp() if var_tmp is None else var_tmp
+        self.assign(t, var_a & var_b);
+        self.assign_or(t, (t << 1) & (var_a ^ var_b))
+        self.assign_and(t, self.BIT1_MASK)
+        self.assign(var_c, var_a + var_b - t - (t >> 1))
+       
      
     def reduce_butterfly(self, var, dest = None):
         """Auxilary function for method butterfly_op().
@@ -532,16 +652,17 @@ class HadamardMatrixCode(MM_Op):
         The reduced result is stored in variable 'dest'.
         'dest' defaults to 'var'.
         """
+        if FAST_MOD3 and self.P == 3:
+            if dest != var:
+                self.assign(dest, var)
+            return 
         mask = self.H_MASK_EXTERN 
         if dest is None or dest == var:
             dest, t = var, self.vars.temp()
         else:
             t = dest
-        s = t.assign(var & self.H_MASK_CARRY)
-        s += dest.assign(var - t + (t >> self.P_BITS))            
-        self.matrix_code += s
-        self.n_code_lines += 2
-        self.n_operations += 4
+        self.assign(t, var & self.H_MASK_CARRY)
+        self.assign(dest, var - t + (t >> self.P_BITS))            
 
     def internal_butterfly(self, var, j):
         """Auxilary function for method butterfly_op().
@@ -562,16 +683,16 @@ class HadamardMatrixCode(MM_Op):
         if 2 * bsh  == self.INT_BITS:
             # We may save a bit in this case
             all_mask = self.ALL1_MASK
-            s = t.assign((var << bsh) | (var >> bsh))
-            self.n_operations += 3
+            self.assign(t, (var << bsh) | (var >> bsh))
         else:
-            s = t.assign(((var << bsh) & msk) | ((var & msk) >> bsh))
-            self.n_operations += 5
-        s += var.assign((var ^ msk) + t)
-        self.n_operations += 2
-        self.matrix_code += s
-        self.n_code_lines += 2 
-        self.reduce_butterfly(var)
+            self.assign(t, ((var << bsh) & msk) | ((var & msk) >> bsh))
+        if FAST_MOD3 and self.P == 3:
+            t1 = self.vars.temp(1) 
+            self.assign(t, var ^ msk)
+            self.add_mode3(var, t, var, t1)
+        else: 
+            self.assign(var, (var ^ msk) + t)
+            self.reduce_butterfly(var)
 
 
     def external_butterfly(self, v1, v2):
@@ -586,14 +707,18 @@ class HadamardMatrixCode(MM_Op):
         Each result is reduced modulo p.
         """
         mask = self.H_MASK_EXTERN
-        t = self.vars.temp()
-        s = t.assign( v1 + (v2 ^ mask) )
-        s += v1.assign(v1 + v2)
-        self.matrix_code += s
-        self.n_code_lines += 2 
-        self.n_operations += 3
-        self.reduce_butterfly(t, v2)
-        self.reduce_butterfly(v1)
+        if FAST_MOD3 and self.P == 3:
+            t1, t2 = self.vars.temp(0), self.vars.temp(1) 
+            self.add_mode3(v1, v2, t1, t2)
+            self.assign_xor(v2, mask)
+            self.add_mode3(v1, v2, v2, t2)
+            self.assign(v1, t1)
+        else:
+            t = self.vars.temp()
+            self.assign(t, v1 + (v2 ^ mask) )
+            self.assign(v1, v1 + v2)
+            self.reduce_butterfly(t, v2)
+            self.reduce_butterfly(v1)
 
     def external_butterfly_all(self, j):
         """Auxilary function for method butterfly_op().
@@ -662,7 +787,7 @@ class HadamardMatrixCode(MM_Op):
     def expand_hadamard_intern(self, v1, position):
         """Auxiliary method method for method expand_hadamard()
 
-        It operats on a variables v1 type uint_mmv_t.
+        It operates on a variables v1 type uint_mmv_t.
         It zeros the components v1[2*i + 1] in vector v1 and it
         copies the old component v1[2*i + 1] to component 
         v1[2*i + 2**position].
@@ -672,10 +797,7 @@ class HadamardMatrixCode(MM_Op):
         SH = (self.FIELD_BITS << position) - self.FIELD_BITS
         LO_MASK = self.B0_MASK[1] & self.B0_MASK[1 << position] 
         HI_MASK = LO_MASK << self.FIELD_BITS
-        s = v1.assign((v1 & LO_MASK) | ((v1 & HI_MASK) << SH))
-        self.matrix_code += s
-        self.n_code_lines += 1
-        self.n_operations += 4
+        self.assign(v1, (v1 & LO_MASK) | ((v1 & HI_MASK) << SH))
 
     def expand_hadamard_intern_all(self, position):
         """Auxiliary method method for method expand_hadamard()
@@ -696,11 +818,8 @@ class HadamardMatrixCode(MM_Op):
         Components v1[2*i + 1] of v1 are set to zero.
         """
         mask = self.H_MASK_EXTERN
-        s = v2.assign( (v1 >> self.FIELD_BITS) & mask )
-        s += v1.assign( v1 & mask )
-        self.n_code_lines += 2
-        self.n_operations += 3
-        self.matrix_code += s
+        self.assign(v2, (v1 >> self.FIELD_BITS) & mask )
+        self.assign(v1, v1 & mask)
 
 
     def expand_hadamard_extern_all(self, position):
@@ -790,10 +909,7 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         LO_MASK = self.B0_MASK[1] & self.B0_MASK[1 << position] 
         HI_MASK = LO_MASK << self.FIELD_BITS
         for var in self.vars:
-            s = var.assign( (var & LO_MASK) | ((var >> SH) & HI_MASK) )
-            self.matrix_code += s
-            self.n_code_lines += 1
-            self.n_operations += 4
+            self.assign(var, (var & LO_MASK) | ((var >> SH) & HI_MASK))
  
 
     def compress_hadamard_extern(self, v1, v2):
@@ -802,11 +918,7 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         It operates on two variables v1, v2 of type uint_mmv_t. It
         revereses the effect of method expand_hadamard_extern().
         """
-        s = v1.assign_xor( v2 << self.FIELD_BITS )
-        self.n_code_lines += 1
-        self.n_operations += 2
-        self.matrix_code += s
-
+        self.assign_xor(v1, v2 << self.FIELD_BITS )
 
     def do_compress_hadamard_extern(self, position):
         """Auxiliary method method for method compress_hadamard()
@@ -853,10 +965,7 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
             hs = self.P_BITS - ls
             m_l = self.smask(range(hs))
             m_h = self.smask(range(hs, self.P_BITS))
-            s = var.assign(((var & m_l) << ls) | ((var & m_h) >> hs))
-            self.matrix_code += s
-            self.n_code_lines += 1
-            self.n_operations += 5
+            self.assign(var, ((var & m_l) << ls) | ((var & m_h) >> hs))
 
       
 

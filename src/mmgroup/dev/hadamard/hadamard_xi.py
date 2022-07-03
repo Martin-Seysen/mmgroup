@@ -57,10 +57,8 @@ class C_UintVarArray(C_UintVarPool):
         else:
             indices = ["(%s) + %d" % (start, i) for i in range(len(pool))]
         name = self.array_name
-        s = ""
         for i, index in enumerate(indices):
-            s += pool[i].assign("%s[%s]" %  (name, index)) 
-        return s
+            pool[i].assign("%s[%s]" %  (name, index)) 
 
     def store_pool(self, pool, start):
         """Store a 'pool' to the array of variables
@@ -75,10 +73,9 @@ class C_UintVarArray(C_UintVarPool):
         else:
             indices = ["(%s) + %d" % (start, i) for i in range(len(pool))]
         name = self.array_name
-        s = ""
         for i, index in enumerate(indices):
-            s += "%s[%s] = %s;\n" %  (name, index, pool[i])
-        return s
+            s = "%s[%s] = %s;\n" %  (name, index, pool[i])
+            self.context.matrix_code += s
 
     def _bad(self, *args, **kwds):
         raise NotImplementedError
@@ -174,7 +171,8 @@ class HadamardOpXi64(HadamardMatrixCode):
             cy = self.NO_CARRY
             array_size, log_vars = 24 << cy, 3 + cy
         self.reset_vars(self.LOG_INT_FIELDS + log_vars)
-        self.array = C_UintVarArray(length = array_size)    
+        self.array = C_UintVarArray(length = array_size) 
+        self.array.set_context(self)   
 
     def load_var(self, source, i, ofs, p_mask, dest, tmp = None):
         if tmp is None:
@@ -182,14 +180,11 @@ class HadamardOpXi64(HadamardMatrixCode):
         i1 = 15 - i if bitparity(i) else i
         index = (i1 << self.LOG_V24_INTS) + ofs
         mindex = 2 * self.MDIAG16[i1] 
-        s = dest.assign("%s[%d] ^  %s[%s]" % (source, index, p_mask, mindex))
+        dest.assign("%s[%d] ^  %s[%s]" % (source, index, p_mask, mindex))
         sh = self.FIELD_BITS
         swap_mask = self.smask(self.P, range(1, 24, 4))
-        s += tmp.assign((dest ^ (dest >> sh)) & swap_mask)
-        s += dest.assign_xor(tmp | (tmp << sh))
-        self.matrix_code += s
-        self.n_code_lines += 3
-        self.n_operations += 7
+        tmp.assign((dest ^ (dest >> sh)) & swap_mask)
+        dest.assign_xor(tmp | (tmp << sh))
 
 
     def store_var(self, source, p_mask, dest, i, ofs, tmp = None):
@@ -220,12 +215,9 @@ class HadamardOpXi64(HadamardMatrixCode):
             v0, v1, v2 = self.vars[i], self.array[i+8], self.array[i+16]
             self.load_var(source, 2*i, 0, p_mask, v0, t1)
             self.load_var(source, 2*i+1, 0, p_mask, t, t1)
-            s = v1.assign(((v0 >> sh1) & m0) | ((t << sh1) & m2))
-            s += v2.assign(((v0 >> sh2) & m0) | ((t) & m2))
-            s += v0.assign(((v0) & m0) | ((t << sh2) & m2))
-            self.matrix_code += s
-            self.n_code_lines += 3
-            self.n_operations += 13
+            v1.assign(((v0 >> sh1) & m0) | ((t << sh1) & m2))
+            v2.assign(((v0 >> sh2) & m0) | ((t) & m2))
+            v0.assign(((v0) & m0) | ((t << sh2) & m2))
         self.free_cy_pos = 3
         self.hadamard_operations = 3 + (15 << 4)
             
@@ -236,16 +228,12 @@ class HadamardOpXi64(HadamardMatrixCode):
         m0, m1, m2 = [self.smask(self.P, range(8*i, 8*i+8)) for i in range(3)]
         for i in range(8):
             v0, v1, v2 = self.array[i], self.array[i+8], self.vars[i]
-            s = t.assign((v0 & m0) | ((v1 << sh1) & m1) | (v2 << sh2))
-            self.matrix_code += s
+            t.assign((v0 & m0) | ((v1 << sh1) & m1) | (v2 << sh2))
             self.mul_var_pwr2(t, -3)           
             self.store_var(t, p_mask, dest, i+i, 0, t1)   
-            s = v0.assign(((v0 >> sh2) & m0) | ((v1 >> sh1) & m1) | (v2 & m2))
-            self.matrix_code += s
+            v0.assign(((v0 >> sh2) & m0) | ((v1 >> sh1) & m1) | (v2 & m2))
             self.mul_var_pwr2(v0, -3)           
             self.store_var(v0, p_mask, dest, i+i+1, 0, t1)
-            self.n_code_lines += 2
-            self.n_operations += 7 + 7
 
 
     def load_all_v24_2(self, source, p_mask):
@@ -256,15 +244,11 @@ class HadamardOpXi64(HadamardMatrixCode):
             v0, v1, v2 = self.vars[i], self.array[i+8], self.array[i+16]
             self.load_var(source, 2*i, 0, p_mask, v0, t1)
             self.load_var(source, 2*i+1, 0, p_mask, t, t1)
-            s = v1.assign(((v0 >> sh1) & m0) | ((t) & m1))
-            s += v0.assign(((v0) & m0) | ((t << sh1) & m1))
-            self.matrix_code += s
+            v1.assign(((v0 >> sh1) & m0) | ((t) & m1))
+            v0.assign(((v0) & m0) | ((t << sh1) & m1))
             self.load_var(source, 2*i, 1, p_mask, v2, t1)
             self.load_var(source, 2*i+1, 1, p_mask, t, t1)
-            s = v2.assign(((v2) & m0) | ((t << sh1) & m1))
-            self.matrix_code += s
-            self.n_code_lines += 3
-            self.n_operations += 12
+            v2.assign(((v2) & m0) | ((t << sh1) & m1))
         self.hadamard_operations = 3 + (15 << 3)
             
 
@@ -274,23 +258,17 @@ class HadamardOpXi64(HadamardMatrixCode):
         m0, m1 = [self.smask(self.P, range(8*i, 8*i+8)) for i in range(2)]
         for i in range(8):
             v0, v1, v2 = self.array[i], self.array[i+8], self.vars[i]
-            s = t.assign((v0 & m0) | ((v1 << sh1) & m1)) 
-            self.matrix_code += s
+            t.assign((v0 & m0) | ((v1 << sh1) & m1)) 
             self.mul_var_pwr2(t, -3)           
             self.store_var(t, p_mask, dest, 2*i, 0, t1)   
-            s = v0.assign(((v0 >> sh1) & m0) | ((v1) & m1))
-            self.matrix_code += s
+            v0.assign(((v0 >> sh1) & m0) | ((v1) & m1))
             self.mul_var_pwr2(v0, -3)           
             self.store_var(v0, p_mask, dest, 2*i+1, 0, t1)
             self.mul_var_pwr2(v2, -3)           
-            s = t.assign((v2) & m0)
-            self.matrix_code += s
+            t.assign((v2) & m0)
             self.store_var(t, p_mask, dest, 2*i, 1, t1)
-            s = v2.assign((v2 >> sh1) & m0)
-            self.matrix_code += s
+            v2.assign((v2 >> sh1) & m0)
             self.store_var(v2, p_mask, dest, 2*i+1, 1, t1)
-            self.n_code_lines += 4
-            self.n_operations += 5 + 5 + 1 + 2 
 
 
     def load_all_v24_2_no_cy(self, source, p_mask):
@@ -300,12 +278,9 @@ class HadamardOpXi64(HadamardMatrixCode):
         for i in range(16):
             v0, v1, v2 = self.vars[i], self.array[i+16], self.array[i+32]
             self.load_var(source, i, 0, p_mask, v0, t)
-            s = v1.assign((v0 >> sh1) & m0)
-            s += v0.assign((v0) & m0)
-            self.matrix_code += s
+            v1.assign((v0 >> sh1) & m0)
+            v0.assign((v0) & m0)
             self.load_var(source, i, 1, p_mask, v2, t)
-            self.n_code_lines += 2
-            self.n_operations += 3
         self.hadamard_operations = 3 + (15 << 4)
         self.free_cy_pos = 3
 
@@ -315,11 +290,8 @@ class HadamardOpXi64(HadamardMatrixCode):
         m0, m1 = [self.smask(self.P, range(8*i, 8*i+8)) for i in range(2)]
         for i in range(16):
             v0, v1, v2 = self.array[i], self.array[i+16], self.vars[i]
-            s = v0.assign((v0 & m0) | ((v1 << sh1) & m1))
-            s += v2.assign(v2)
-            self.matrix_code += s
-            self.n_code_lines += 2
-            self.n_operations += 4
+            v0.assign((v0 & m0) | ((v1 << sh1) & m1))
+            v2.assign(v2)
             self.mul_var_pwr2(v0, -3)           
             self.mul_var_pwr2(v2, -3)           
             self.store_var(v0, p_mask, dest, i, 0, t)
@@ -370,9 +342,9 @@ class HadamardOpXi64(HadamardMatrixCode):
         a = self.array
         self.matrix_code += "i = 0;\ngoto %s;\n" % l2
         self.matrix_code += l1 + ":\n"
-        self.matrix_code += a.store_pool(self.vars, "i")
+        a.store_pool(self.vars, "i")
         self.matrix_code += "i += %d;\n" % len(self.vars)
-        self.matrix_code += a.load_pool("i",  self.vars)
+        a.load_pool("i",  self.vars)
         self.matrix_code += l2 + ":\n"
         self.expand_hadamard(self.free_cy_pos)   
         self.hadamard_op(self.hadamard_operations)
@@ -494,14 +466,11 @@ class HadamardOpXi16(HadamardMatrixCode):
         i1 = [0, 2, 1, 3][i]
         index = (i1 << self.LOG_V24_INTS)
         m = self.hex(self.MASKS[i1 == 0])
-        s = dest.assign("%s[%d] ^  (%s & %s)" % (source, index, m, mask))
+        dest.assign("%s[%d] ^  (%s & %s)" % (source, index, m, mask))
         sh = self.FIELD_BITS
         swap_mask = self.smask(self.P, range(1, 24, 4))
-        s += tmp.assign((dest ^ (dest >> sh)) & swap_mask)
-        s += dest.assign_xor(tmp | (tmp << sh))
-        self.matrix_code += s
-        self.n_code_lines += 3
-        self.n_operations += 8
+        tmp.assign((dest ^ (dest >> sh)) & swap_mask)
+        dest.assign_xor(tmp | (tmp << sh))
 
 
     def store_var(self, source, mask, dest, i):

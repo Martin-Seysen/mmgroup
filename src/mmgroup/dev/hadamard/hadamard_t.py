@@ -97,10 +97,7 @@ class HadamardOpT64(HadamardMatrixCode):
         mask0, mask1 = self.PARITY_MASK
         if bitparity(parity) == 1:
             mask0, mask1 = mask1, mask0
-        s = dest.assign((var0 & mask0) | (var1 & mask1))
-        self.matrix_code += s
-        self.n_operations += 3
-        self.n_code_lines += 1 
+        dest.assign((var0 & mask0) | (var1 & mask1))
 
     def swap_fields(self, var):
         """Swap entries of vector stored in variable 'var'.
@@ -109,19 +106,14 @@ class HadamardOpT64(HadamardMatrixCode):
         var[0], ..., var[m - 1], for m = self.INT_FIELD.
         The function exchanges var[i] with var[m - i - 1].
         """
-        s = ""
         for i0 in range(self.LOG_INT_FIELDS - 1, -1, -1):
             i = 1 << i0
             msk = self.B0_MASK[i]
             sh = i << self.LOG_FIELD_BITS
             if sh << 1 == self.INT_BITS:
-                s += var.assign((var << sh) | (var >> sh))
-                self.n_operations += 3
+                var.assign((var << sh) | (var >> sh))
             else:
-                s += var.assign(((var & msk) << sh) | ((var >> sh) & msk))
-                self.n_operations += 5
-            self.n_code_lines += 1 
-        self.matrix_code += s
+                var.assign(((var & msk) << sh) | ((var >> sh) & msk))
 
     def swap_odd_parities_log_nvars_even(self):
         """Auxiliary method for method swap_parities.
@@ -475,9 +467,8 @@ class HadamardOpT3A(HadamardMatrixCode):
         Each result is reduced modulo p. This is a simplified version
         of method external_butterfly().
         """
-        self.matrix_code +=  v1.assign(v1 + v2)
-        self.n_code_lines += 1 
-        self.n_operations += 1
+        print("vvvvvv!", v1, type(v1), v1.context)
+        v1.assign(v1 + v2)
         self.reduce_butterfly(v1)
 
     def main_op(self):
