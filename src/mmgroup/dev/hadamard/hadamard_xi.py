@@ -75,7 +75,7 @@ class C_UintVarArray(C_UintVarPool):
         name = self.array_name
         for i, index in enumerate(indices):
             s = "%s[%s] = %s;\n" %  (name, index, pool[i])
-            self.context.matrix_code += s
+            self.context.add(s, 1)
 
     def _bad(self, *args, **kwds):
         raise NotImplementedError
@@ -201,9 +201,7 @@ class HadamardOpXi64(HadamardMatrixCode):
         else:
             s += "%s[%d] = %s ^  %s[%s];\n" % (
                 dest, index, source, p_mask, mindex)
-        self.matrix_code += s
-        self.n_code_lines += 1
-        self.n_operations += 1
+        self.add(s, 1, 1)
 
 
     def load_all_v24_1_no_cy(self, source, p_mask):
@@ -329,7 +327,7 @@ class HadamardOpXi64(HadamardMatrixCode):
 
     def add_mask(self, p_mask, value):
         d = {1: "++", -1: "--"}
-        self.matrix_code +=  "%s%s;\n" %(d[value], p_mask)
+        self +=  "%s%s;\n" %(d[value], p_mask)
         
     def label(self, index):
         return "l_mmv%d_op_l64_%d"  % (self.P, index)
@@ -340,22 +338,22 @@ class HadamardOpXi64(HadamardMatrixCode):
         l1, l2 = self.label(1), self.label(2)
         self.comment_statistics()
         a = self.array
-        self.matrix_code += "i = 0;\ngoto %s;\n" % l2
-        self.matrix_code += l1 + ":\n"
+        self += "i = 0;\ngoto %s;\n" % l2
+        self += l1 + ":\n"
         a.store_pool(self.vars, "i")
-        self.matrix_code += "i += %d;\n" % len(self.vars)
+        self += "i += %d;\n" % len(self.vars)
         a.load_pool("i",  self.vars)
-        self.matrix_code += l2 + ":\n"
+        self += l2 + ":\n"
         self.expand_hadamard(self.free_cy_pos)   
         self.hadamard_op(self.hadamard_operations)
         self.compress_hadamard()   
         self.comment_statistics()
         i_end = 2 * len(a) // 3
-        self.matrix_code += "if (i < %d) goto %s;\n" % (i_end, l1)
+        self += "if (i < %d) goto %s;\n" % (i_end, l1)
         self.small_store_all(p_mask, dest)
-        self.matrix_code += "%s += %d;\n" % (source, 16 * self.V24_INTS)
+        self += "%s += %d;\n" % (source, 16 * self.V24_INTS)
         if dest != source:
-            self.matrix_code += "%s += %d;\n" % (dest, 16 * self.V24_INTS)
+            self += "%s += %d;\n" % (dest, 16 * self.V24_INTS)
         self.comment_statistics()
 
     def large_op_on_int(self, source, p_mask, dest):
@@ -366,29 +364,29 @@ class HadamardOpXi64(HadamardMatrixCode):
         for i in range(16):
             self.mul_var_pwr2(self.vars[i], -3)           
             self.store_var(self.vars[i], p_mask, dest, i, 0, t)
-        self.matrix_code += "%s++;\n" % source
+        self += "%s++;\n" % source
         if dest != source:
-            self.matrix_code += "%s++;\n" % dest
+            self += "%s++;\n" % dest
 
 
     def large_op(self, source, p_mask, dest):
         USED = self.V24_INTS_USED
-        self.matrix_code += "for (i = 0; i < %d; ++i) {\n" % USED
+        self += "for (i = 0; i < %d; ++i) {\n" % USED
         self.large_op_on_int(source, p_mask, dest)
-        self.matrix_code += "}\n"
+        self += "}\n"
         for i in range(16):
             for j in range(self.V24_INTS - USED):
                 k = i * self.V24_INTS + j
-                self.matrix_code += "%s[%d] = 0;\n" % (dest, k)
+                self += "%s[%d] = 0;\n" % (dest, k)
         k = 16 * self.V24_INTS - USED
-        self.matrix_code += "%s += %d;\n" % (source, k)
+        self += "%s += %d;\n" % (source, k)
         if dest != source:
-            self.matrix_code += "%s += %d;\n" % (dest, k)
+            self += "%s += %d;\n" % (dest, k)
 
 
     def additional_declare(self):
-        self.matrix_code += self.array.declare()
-        self.matrix_code += ("uint_fast32_t i;\n\n")
+        self += self.array.declare()
+        self += ("uint_fast32_t i;\n\n")
 
     def make_code(self, source, p_mask, dest):
         """Apply operation on vector.
@@ -478,9 +476,7 @@ class HadamardOpXi16(HadamardMatrixCode):
         m = self.hex(self.MASKS[i == 0])
         s =  "%s[%d] = %s ^ (%s & %s);\n" % (
             dest, index, source, mask, m)
-        self.matrix_code += s
-        self.n_code_lines += 1
-        self.n_operations += 2
+        self.add(s, 1, 2)
 
 
 
@@ -494,9 +490,9 @@ class HadamardOpXi16(HadamardMatrixCode):
             self.mul_var_pwr2(self.vars[i], -2)           
             self.store_var(self.vars[i], mask, dest, i)  
         self.comment_statistics()
-        self.matrix_code += "%s++;\n" % source
+        self += "%s++;\n" % source
         if dest != source:
-            self.matrix_code += "%s++;\n" % dest
+            self += "%s++;\n" % dest
 
 
     def make_code(self, source, mask, dest):
@@ -518,31 +514,29 @@ class HadamardOpXi16(HadamardMatrixCode):
         self.reset_vars()
         USED = self.V24_INTS_USED
         if USED > 1:
-            self.matrix_code += "uint_fast32_t i;\n"
+            self += "uint_fast32_t i;\n"
         self.comment(
 """TODO: write comment!!!
 """.format(p = self.P, source = source, mask = mask, dest = dest)
         )
         if USED > 1:
-            self.matrix_code += "for (i = 0; i < %d; ++i) {\n" % USED
+            self += "for (i = 0; i < %d; ++i) {\n" % USED
         self.op(source, mask, dest)
         if USED > 1:
-            self.matrix_code += "}\n" 
+            self += "}\n" 
         if USED == 2:
             for i in range(-1, 7, 2):
                 mask1 = self.hex(self.smask(self.P, range(8)))
-                self.matrix_code += "%s[%s] &= %s;\n" % (dest, i, mask1)
-                self.n_code_lines += 1
-                self.n_operations += 1
+                self.add("%s[%s] &= %s;\n" % (dest, i, mask1), 1, 1)
         elif USED >= 3:
             for i in range(4):
                 for j in range(self.V24_INTS - USED):
                     k = i * self.V24_INTS + j
-                    self.matrix_code += "%s[%d] = 0;\n" % (dest, k)
+                    self += "%s[%d] = 0;\n" % (dest, k)
         k = 4 * self.V24_INTS - USED
-        self.matrix_code += "%s += %d;\n" % (source, k)
+        self += "%s += %d;\n" % (source, k)
         if dest != source:
-            self.matrix_code += "%s += %d;\n" % (dest, k)
+            self += "%s += %d;\n" % (dest, k)
         return self.generate()
 
     def make_directives(self):

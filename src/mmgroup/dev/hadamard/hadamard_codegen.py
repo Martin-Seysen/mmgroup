@@ -492,7 +492,7 @@ class HadamardMatrixCode(MM_Op):
     with j = 2**m, for all integers i where bit m of i is zero. 
     """
     def __init__(self, p, log_vlength, verbose = 0):
-        """Create an instance of class c_matrix_code
+        """Create an instance of class HadamardMatrixCode
 
         Operation on vectors are done modulo p as described
         in class mm/mm_aux.py. p must be of shape
@@ -530,7 +530,7 @@ class HadamardMatrixCode(MM_Op):
         self.vars = C_UintVarPool("uint_mmv_t", "r%d", self.vlen)
         self.vars.set_context(self)
         self.expanded = 0
-        self.matrix_code = ""     # C implementation of matrix operation
+        self.matrix_code = []     # C implementation of matrix operation
         self.n_code_lines = 0     # just for staticstics
         self.n_operations = 0     # just for staticstics
       
@@ -579,11 +579,29 @@ class HadamardMatrixCode(MM_Op):
         if self.P == 3:
             self.BIT1_MASK = self.smask(2, -1, self.FIELD_BITS)
        
-            
+    def add(self, s, n_lines = 0, n_ops = 0):
+        """Add the string ``s`` to the generated C code.
+
+        String ``s`` must contain a linefeed character if such
+        a character is to be addedto the C code.
+
+        The line counter and the oepration counter are incrmented 
+        by the optional parameters ``n_lines`` and ``n_ops``.
+        """
+        self.matrix_code.append(s)
+        self.n_code_lines += n_lines
+        self.n_operations += n_ops
+
+    def __iadd__(self, s):
+        """``self += s`` is equivalent to ``self.add(s)``"""
+        self.matrix_code.append(s)
+        return self
+      
+
     def comment(self, comment):
         """Enter a 'comment' into the C code"""
         for s in comment.split("\n"):
-            self.matrix_code += "// " + s + "\n"
+            self.matrix_code.append("// " + s + "\n")
 
     def comment_vector(self):     
         """Comment of represention of vector v in  variables"""
@@ -603,11 +621,9 @@ class HadamardMatrixCode(MM_Op):
 
     def _assign(self, var, value, op = ""):
         ops = n_ops(value) + bool(op)
-        self.n_operations += ops
         s_ops = " // %d ops" % ops if ops > 1 else ""
         s =  "%s %s= %s;%s\n" % (var, op, as_c_expr(value), s_ops)
-        self.matrix_code +=  s
-        self.n_code_lines += 1
+        self.add(s, 1, ops)
 
     def assign(self, var, value):
         """Generate C code computing 'var = value;'"""
@@ -993,11 +1009,8 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         referring to array A.
         """
         self.comment("Loading vector v from array %s" % array_name)
-        s = ""
         for i,v in enumerate(self.vars):
-            s += "%s = %s[%d];\n" % (v, array_name, i) 
-            self.n_code_lines += 1
-        self.matrix_code += s
+            self.add("%s = %s[%d];\n" % (v, array_name, i), 1) 
         self.comment_vector()  
 
     def store_vector_direct(self, array_name):
@@ -1007,11 +1020,8 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         referring to array A.
         """ 
         self.comment("Storing vector v to array %s" % array_name)
-        s = ""
         for i,v in enumerate(self.vars):
-            s += "%s[%d] = %s;\n" % (array_name, i, v) 
-            self.n_code_lines += 1
-        self.matrix_code += s
+            self.add("%s[%d] = %s;\n" % (array_name, i, v), 1) 
 
 
     def complement_variable(self, var):
@@ -1021,7 +1031,8 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         self.n_operations += 1
 
     def code(self, string):
-        self.matrix_code += string;
+        """Deprecated"""
+        self.add(string)
 
 
 
@@ -1034,7 +1045,7 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
 {
 """     
         s += self.vars.declare() + "\n"
-        s += self.matrix_code 
+        s += "".join(self.matrix_code) 
         s +="""}
 // End of automatically generated matrix operation.
  

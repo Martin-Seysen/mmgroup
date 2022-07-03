@@ -195,13 +195,10 @@ has odd parity; fix it if i has even parity."""
 with diagonal matrix if %s == -1."""
             % (array_name, mask)
         )
-        s = ""
         for i,v in enumerate(self.vars):
-            s += "%s = %s[%d] ^ ((%s) & %s);\n" % (v, 
+            s = "%s = %s[%d] ^ ((%s) & %s);\n" % (v, 
                 array_name, i, mask, self.hex(self.DIAG_MASK[i])) 
-            self.n_code_lines += 1
-            self.n_operations += 2
-        self.matrix_code += s
+            self.add(s, 1, 2)
         self.comment_vector()  
 
     def store_vector_mul_diagonal(self, mask, array_name):
@@ -222,11 +219,9 @@ with diagonal matrix if %s == -1."""
         )
         s = ""
         for i,v in enumerate(self.vars):
-            s += "%s[%d] = %s ^ ((%s) & %s);\n" % (array_name, i, 
+            s = "%s[%d] = %s ^ ((%s) & %s);\n" % (array_name, i, 
                 v, mask, self.hex(self.DIAG_MASK[i])) 
-            self.n_code_lines += 1
-            self.n_operations += 2
-        self.matrix_code += s
+            self.add(s, 1, 2)
 
 
     def make_code(self, source, mask, dest):
@@ -343,9 +338,7 @@ Negate v[2] if %s == -1."""
         s += "%s = (%s)[%d] ^ ((%s) & %s);\n" % (self.vars[2], 
                 array_name, 48 * self.V24_INTS, mask, 
                 self.hex(self.smask(self.P)) ) 
-        self.n_code_lines += 3
-        self.n_operations += 2
-        self.matrix_code += s
+        self.add(s, 3, 2)
         self.comment_vector()  
 
     def store_vector_mul_diagonal(self, mask, array_name):
@@ -375,9 +368,7 @@ Negate v[2] if %s == -1."""
         s += "(%s)[%d]  = %s ^ ((%s) & %s);\n" % ( 
                 array_name, 48 * self.V24_INTS, self.vars[2],
                 mask,  self.hex(self.smask(self.P)) ) 
-        self.n_code_lines += 3
-        self.n_operations += 2
-        self.matrix_code += s
+        self.add(s, 3, 2)
 
 
     def make_code(self, source, mask, dest):
@@ -511,9 +502,7 @@ Negate v[2] if %s == -1."""
         s += "%s = (%s)[%d] ^ ((%s) & %s);\n" % (self.vars[1], 
                 array_name, 48 * self.V24_INTS, mask, 
                 self.hex(self.smask(self.P)) ) 
-        self.n_code_lines += 2
-        self.n_operations += 2
-        self.matrix_code += s
+        self.add(s, 2, 2)
         self.comment_vector()  
 
     def store_vector(self, array_name):
@@ -532,8 +521,7 @@ tags A. Here %s refers to the tag A part. """
             % (array_name)
         )
         s = "(%s)[0] = %s;\n" % (array_name, self.vars[0])
-        self.n_code_lines += 1
-        self.matrix_code += s
+        self.add(s, 1)
 
 
     def make_code(self, source, mask, dest):
