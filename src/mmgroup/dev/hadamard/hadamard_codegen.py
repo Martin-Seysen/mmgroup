@@ -57,9 +57,7 @@ from mmgroup.bitfunctions import bitparity, bitweight
 from mmgroup.dev.mm_op.mm_op import MM_Op, INT_BITS, c_hex
 
 ####################################################################
-# Here we should set FAST_MOD3 = False, since the new version 
-# is yet buggy.
-FAST_MOD3 = False # Use new fast code for P = 3 when set
+FAST_MOD3 = True # Use new fast code for P = 3 when set
 
 def as_c_expr(x):
     """Map integers to hex string, don't change anything else
@@ -506,8 +504,8 @@ class HadamardMatrixCode(MM_Op):
         super(HadamardMatrixCode, self).__init__(p)
         self.LOG_VLEN = log_vlength   
         self.NO_CARRY = self.FIELD_BITS == self.P_BITS
-        if FAST_MOD3 and self.P == 3:
-             self.NO_CARRY = FALSE
+        self.FAST_MOD3 = FAST_MOD3 and self.P == 3
+        self.NO_CARRY &= not self.FAST_MOD3
         self.verbose = verbose
         self.make_h_masks()
         self.reset_vars()
@@ -518,7 +516,7 @@ class HadamardMatrixCode(MM_Op):
     def reset_vars(self, log_vlen = None):
         """Reset variables 
 
-        This method resets all all information required for the 
+        This method resets all information required for the 
         the code generation process, including the pool self.vars 
         of variables, which is an intance of class C_UintVarPool.
 
@@ -585,7 +583,7 @@ class HadamardMatrixCode(MM_Op):
         String ``s`` must contain a linefeed character if such
         a character is to be addedto the C code.
 
-        The line counter and the oepration counter are incrmented 
+        The line counter and the operation counter are incremented 
         by the optional parameters ``n_lines`` and ``n_ops``.
         """
         self.matrix_code.append(s)
@@ -631,7 +629,7 @@ class HadamardMatrixCode(MM_Op):
 
     def assign_and(self, var, value):
         """Generate C code computing 'var &= value;'"""
-        self._assign(var, value, '%')
+        self._assign(var, value, '&')
       
     def assign_or(self, var, value):
         """Generate C code computing 'var |= value;'"""
@@ -643,7 +641,7 @@ class HadamardMatrixCode(MM_Op):
       
 
 
-    def add_mode3(self, var_a, var_b, var_c, var_tmp = None):
+    def add_mod3(self, var_a, var_b, var_c, var_tmp = None):
         """Put var_c = var_a + var_b (mod 3).
    
         This function performs the complete addition modulo 3,
@@ -668,7 +666,7 @@ class HadamardMatrixCode(MM_Op):
         The reduced result is stored in variable 'dest'.
         'dest' defaults to 'var'.
         """
-        if FAST_MOD3 and self.P == 3:
+        if self.FAST_MOD3:
             if dest != var:
                 self.assign(dest, var)
             return 
@@ -702,10 +700,10 @@ class HadamardMatrixCode(MM_Op):
             self.assign(t, (var << bsh) | (var >> bsh))
         else:
             self.assign(t, ((var << bsh) & msk) | ((var & msk) >> bsh))
-        if FAST_MOD3 and self.P == 3:
+        if self.FAST_MOD3:
             t1 = self.vars.temp(1) 
-            self.assign(t, var ^ msk)
-            self.add_mode3(var, t, var, t1)
+            self.assign(var, var ^ msk)
+            self.add_mod3(var, t, var, t1)
         else: 
             self.assign(var, (var ^ msk) + t)
             self.reduce_butterfly(var)
@@ -723,11 +721,11 @@ class HadamardMatrixCode(MM_Op):
         Each result is reduced modulo p.
         """
         mask = self.H_MASK_EXTERN
-        if FAST_MOD3 and self.P == 3:
+        if self.FAST_MOD3:
             t1, t2 = self.vars.temp(0), self.vars.temp(1) 
-            self.add_mode3(v1, v2, t1, t2)
+            self.add_mod3(v1, v2, t1, t2)
             self.assign_xor(v2, mask)
-            self.add_mode3(v1, v2, v2, t2)
+            self.add_mod3(v1, v2, v2, t2)
             self.assign(v1, t1)
         else:
             t = self.vars.temp()
@@ -977,7 +975,9 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         Modulo p = 2**k-1, this is simply a bit rotation.
         """
         ls = l % self.P_BITS
-        if ls != 0:
+        if ls != 0 and self.P == 3:
+            self.assign(var, ~var)
+        elif ls != 0:
             hs = self.P_BITS - ls
             m_l = self.smask(range(hs))
             m_h = self.smask(range(hs, self.P_BITS))
@@ -1026,13 +1026,13 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
 
     def complement_variable(self, var):
         """Generate code: 'var = ~var'; for variable 'var'"""
-        self.code("%s = ~(%s);\n" % (var, var))
-        self.n_code_lines += 1
-        self.n_operations += 1
+        self.add("%s = ~(%s);\n" % (var, var), 1, 1)
 
     def code(self, string):
         """Deprecated"""
-        self.add(string)
+        err = "Method 'code' has been removed, use 'add' instead!"
+        raise AttributeError(err)
+        #self.add(string)
 
 
 
@@ -1040,16 +1040,16 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         if self.verbose:
             print("Generate C code using class HadamardMatrixCode")
         """Return C code generated so far as a string"""
-        s = """
+        s00 = """
 // This is an automatically generated matrix operation, do not change!
 {
 """     
-        s += self.vars.declare() + "\n"
-        s += "".join(self.matrix_code) 
-        s +="""}
+        s01 = self.vars.declare() + "\n"
+        s1 ="""}
 // End of automatically generated matrix operation.
  
 """   
+        s = "".join([s00, s01] + self.matrix_code + [s1]) 
         self.reset_vars()
         return s
 

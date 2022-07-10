@@ -33,6 +33,7 @@ class C_UintVarArray(C_UintVarPool):
         """
         super(C_UintVarArray, self).__init__(c_type, name, length)
         self.array_name = self.name[:self.name.index("[")]
+             
 
     def declare(self):
         """Declare the array in C
@@ -203,6 +204,20 @@ class HadamardOpXi64(HadamardMatrixCode):
                 dest, index, source, p_mask, mindex)
         self.add(s, 1, 1)
 
+    def load_all_v24_1(self, source, p_mask):
+        t = self.vars.temp(0)
+        for i in range(16):
+            v0 = self.vars[i]
+            self.load_var(source, i, 0, p_mask, v0, t)
+        self.hadamard_operations = 3 + (15 << 5)
+
+    def store_all_v24_1(self, p_mask, dest):
+        t = self.vars.temp(0)
+        for i in range(16):
+            v0 = self.vars[i]
+            self.mul_var_pwr2(v0, -3) 
+            self.store_var(v0, p_mask, dest, i, 0, t)   
+
 
     def load_all_v24_1_no_cy(self, source, p_mask):
         t, t1 = self.vars.temp(0), self.vars.temp(1)
@@ -332,6 +347,20 @@ class HadamardOpXi64(HadamardMatrixCode):
     def label(self, index):
         return "l_mmv%d_op_l64_%d"  % (self.P, index)
 
+
+    def very_small_op(self, source, p_mask, dest):
+        self.reset_vars(4+5)
+        self.load_all_v24_1(source, p_mask)
+        self.comment_statistics()
+        self.hadamard_op(self.hadamard_operations)
+        self.comment_statistics()
+        self.store_all_v24_1(p_mask, dest)
+        self += "%s += %d;\n" % (source, 16 * self.V24_INTS)
+        if dest != source:
+            self += "%s += %d;\n" % (dest, 16 * self.V24_INTS)
+        self.comment_statistics()
+
+
         
     def small_op(self, source, p_mask, dest):
         self.small_load_all(source, p_mask)
@@ -405,13 +434,17 @@ class HadamardOpXi64(HadamardMatrixCode):
         'source' and 'dest' must be pointers of type uint_mmv_t*. 
         """
         self.reset_vars()
-        self.additional_declare()
+        if not self.FAST_MOD3:
+            self.additional_declare()
         self.comment(
 """TODO: write comment!!!
 """.format(p = self.P, source = source, p_mask = p_mask, dest = dest)
         )
         if self.V24_INTS_USED < 3:
-            self.small_op(source, p_mask, dest)  
+            if self.FAST_MOD3:
+                self.very_small_op(source, p_mask, dest)
+            else:
+                self.small_op(source, p_mask, dest)
         else: 
             self.large_op(source, p_mask, dest)  
         return self.generate()

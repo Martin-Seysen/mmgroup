@@ -44,7 +44,7 @@
    If bit 4 of ``mode`` is set then the function computes the
    types  ``T_e`` of the axes  \f$w \cdot \tau^e\f$ 
    for \f$e = 0, 1, 2\f$; and it 
-   returns \f$0x10000 * T_2 + 0x100 * T_1 + T_0\f0.
+   returns \f$0x10000 * T_2 + 0x100 * T_1 + T_0\f$.
    Here  ``T_e`` is computed only if bit ``e`` of ``mode``
    is set; otherwise we put ``T_e = 0``.
    If bit 3 of ``mode`` is set and ``T_e`` means

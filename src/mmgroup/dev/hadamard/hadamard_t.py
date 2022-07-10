@@ -458,9 +458,11 @@ class HadamardOpT3A(HadamardMatrixCode):
         Each result is reduced modulo p. This is a simplified version
         of method external_butterfly().
         """
-        print("vvvvvv!", v1, type(v1), v1.context)
-        v1.assign(v1 + v2)
-        self.reduce_butterfly(v1)
+        if self.FAST_MOD3:
+            self.add_mod3(v1, v2, v1)
+        else:
+            v1.assign(v1 + v2)
+            self.reduce_butterfly(v1)
 
     def main_op(self):
         """yet to be documented!!!"""
