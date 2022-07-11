@@ -754,6 +754,7 @@ class HadamardMatrixCode(MM_Op):
         for all entrie participating on the Hadamard operation.
         """
         if self.lazy:
+            self.comment("Final reduction")
             for var in self.vars:
                 if self.shift_stage > 1:
                     self.prereduce(var)
@@ -805,12 +806,8 @@ class HadamardMatrixCode(MM_Op):
             return var ^ msk, 0
         shifted_msk = msk << self.shift_stage
         xor_msk = msk | shifted_msk
-        if 0:
-            excess = xor_msk - shifted_msk
-            return (var ^ xor_msk) - excess, 0
-        else:
-            excess = (var.excess ^ xor_msk) - shifted_msk
-            return var ^ xor_msk, excess
+        excess = (var.excess ^ xor_msk) - shifted_msk
+        return var ^ xor_msk, excess
            
 
     def internal_butterfly(self, var, j):
@@ -898,7 +895,39 @@ class HadamardMatrixCode(MM_Op):
             if i & y == 0:
                 self.external_butterfly(self.vars[i], self.vars[i + y])
 
-    def hadamard_op(self, operations = -1, shift = 0):
+    def lazy_shift(self, shift):
+        """Try to do a shift data within a butterfly_operation
+
+        The function tries to do multiply the vector by the scalar
+        ``2**shift`` if the is can be done easily within a buterfly
+        operation.
+
+        It returns True if the code for this operation has been
+        generated and False otherwise. In case of failure the same
+        operation can be done with method ``mul_pwr2``.
+        """
+        shift1 = shift % self.P_BITS
+        if shift1 == 0:
+            s = "Multiplication by 2**%d is trivial mod %d"
+            self.comment(s % (shift, self.P))
+            return True
+        if not self.lazy:
+            return False
+        doable = 1 <= shift1 <= self.FREE_BITS - self.shift_stage
+        doable &= self.shift_stage > 1
+        if not doable:
+            return False
+        s = "Multiply vector by scalar 2**%d mod %d"
+        self.comment(s % (shift, self.P))
+        for var in self.vars:
+            var.assign(var << shift1)
+            var.excess <<= shift1
+        self.shift_stage += shift1
+        return True
+
+
+
+    def hadamard_op(self, operations = -1, shift = 0, compress = False):
          """Multiply vector v by Hadamard matrix H.
 
          Internal operation:
@@ -910,13 +939,20 @@ class HadamardMatrixCode(MM_Op):
 
          for all i with i & y == 0.
 
+         The result is multipled with the fixed scalar ``2**shift`` 
+         (mod p). Here ``shift`` defaults to 0.
+
          Remerk on internal operation:
 
          In cases p = 3, 15, 255, perform method expand_hadamard()
          before doing any butterfly operations. After that 
          expansion, sh has to run through  1,...,self.LOG_VLEN 
          instead. This expansion is reversed after the operation,
-         so that the user need not bother about this special case.  
+         so that the user need not bother about this special case. 
+
+         If parameter ``compress`` is True then compression is
+         always done, even if expnasion has bee done befor calling
+         this function.
          """
          operations &= (1 << self.LOG_VLEN) - 1
          pre_expanded = self.expanded
@@ -927,8 +963,7 @@ class HadamardMatrixCode(MM_Op):
          operations |=  expand_
          lazy = self.P == 15 and bitweight(operations >= 6)
          self.reset_butterfly(lazy)
-         shift %= self.P_BITS
-         if verbose:
+         if self.verbose:
              s = "Butterfly p=%d, vars=%d, op=%s, sh=%d, lazy=%d, width=%d, free=%d"
              print(s % (self.P, len(self.vars), hex(operations), shift,
                 self.lazy, self.H_BITS, self.FREE_BITS)
@@ -946,9 +981,12 @@ class HadamardMatrixCode(MM_Op):
                  self.external_butterfly_all(i)
              self.comment_vector()
              self.increment_shift_stage_after_butterfly()
+         shift_done = self.lazy_shift(shift)
          self.reduce_butterfly_final_all()
-         if not pre_expanded:
-            self.compress_hadamard()
+         if not pre_expanded or compress:
+             self.compress_hadamard()
+         if not shift_done:
+             self.mul_pwr2(shift)
          self.reset_butterfly()
 
 
