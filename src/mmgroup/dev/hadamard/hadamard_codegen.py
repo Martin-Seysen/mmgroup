@@ -229,6 +229,7 @@ class C_UintVar(C_Expr):
          self.index = index
          self.c_type = c_type 
          self.context = None
+         self.excess = 0
 
 
     def set_context(self, context):
@@ -531,6 +532,7 @@ class HadamardMatrixCode(MM_Op):
         self.matrix_code = []     # C implementation of matrix operation
         self.n_code_lines = 0     # just for staticstics
         self.n_operations = 0     # just for staticstics
+        self.reset_butterfly()
       
 
     def make_h_masks(self):
@@ -563,17 +565,17 @@ class HadamardMatrixCode(MM_Op):
         self.B0_MASK = {} 
         self.B1_MASK = {} 
         self.H_MASK = {} 
-        mask = self.smask(self.P, -1, self.FIELD_BITS << self.NO_CARRY) 
-        self.H_MASK_EXTERN = mask
-        mask = self.smask(self.P+1, -1, self.FIELD_BITS << self.NO_CARRY) 
-        self.H_MASK_CARRY = mask
+        NC = bool(self.NO_CARRY)
+        self.H_BITS = H_BITS = self.FIELD_BITS << NC
+        self.H_MASK_EXTERN = self.smask(self.P, -1, H_BITS) 
+        self.H_MASK_CARRY =  self.smask(self.P+1, -1, H_BITS)
         for i0 in range(self.LOG_INT_FIELDS):
             i = 1 << i0
             mask = [x for x in range(self.INT_FIELDS) if x & i == 0]
             self.B0_MASK[i] = self.smask(self.P, mask)
             mask = [x for x in range(self.INT_FIELDS) if x & i == i]
             self.B1_MASK[i] = self.smask(self.P, mask)
-            self.H_MASK[i] = self.B1_MASK[i] & self.H_MASK_EXTERN
+            self.H_MASK[i << NC] = self.smask(-1, mask, H_BITS)
         if self.P == 3:
             self.BIT1_MASK = self.smask(2, -1, self.FIELD_BITS)
        
@@ -640,6 +642,39 @@ class HadamardMatrixCode(MM_Op):
         self._assign(var, value, '^')
       
 
+    def reset_butterfly(self, lazy = False):
+        """Reset attribute for butterfly operation.
+
+        A Hadamard operation is essentially a sequence of butterfly
+        operations ``(x[i], x[j]) = (x[i] + x[j], x[i] - x[j])``
+        modulo p. 
+
+        If parameter ``lazy`` is ``False`` (default) then  we will 
+        reduce all entries ``x`` of a vector modulo p immediately 
+        after an addition or subtraction  such such that 
+        ``0 <= x <= p`` holds. Therefore we use 
+        method ``reduce_final``.
+
+        If parameter ``lazy`` is ``True`` then we will reduce these
+        entries only before an overflow (across a bit field of
+        width ``self.H_BITS``) may occur. Therefore we use 
+        method ``prereduce`` when necessary and method 
+        ``reduce_final`` once at the end of a Hadamard operation.
+
+        Setting  ``lazy = True`` may lead to more efficient code if 
+        self.H_BITS - self.P_BITS > 3, say. The function stores
+        parameter ``lazy`` in the attribute ``self.lazy``. It may
+        put ``self.lazy = 0`` if lazy reduction is impossible or
+        inefficient.
+        """
+        self.FREE_BITS = self.H_BITS - self.P_BITS
+        self.H_MASK_EXTERN_HI = ((self.H_MASK_EXTERN ^ self.ALL1_MASK) 
+             >> self.P_BITS)
+        self.lazy = lazy and self.FREE_BITS > 2 and not self.FAST_MOD3
+        self.shift_stage = 0
+        for v in self.vars:
+            v.excess = 0
+
 
     def add_mod3(self, var_a, var_b, var_c, var_tmp = None):
         """Put var_c = var_a + var_b (mod 3).
@@ -651,32 +686,132 @@ class HadamardMatrixCode(MM_Op):
         """
         assert self.P == 3 and self.P_BITS == 2
         t = self.vars.temp() if var_tmp is None else var_tmp
-        self.assign(t, var_a & var_b);
-        self.assign_or(t, (t << 1) & (var_a ^ var_b))
-        self.assign_and(t, self.BIT1_MASK)
-        self.assign(var_c, var_a + var_b - t - (t >> 1))
+        t.assign(var_a & var_b);
+        t.assign_or((t << 1) & (var_a ^ var_b))
+        t.assign_and(self.BIT1_MASK)
+        var_c.assign(var_a + var_b - t - (t >> 1))
        
      
-    def reduce_butterfly(self, var, dest = None):
-        """Auxilary function for method butterfly_op().
+    def reduce_final(self, var, dest = None):
+        """Auxilary reduction function for method butterfly_op().
    
-        Performs reduction mod p after a butterfly operation
-        for all vomponents v[i] stored in variable 'var'.
-
-        The reduced result is stored in variable 'dest'.
-        'dest' defaults to 'var'.
+        Performs reduction mod p after a butterfly operation for all 
+        components ``var[i]`` stored in variable ``var``. The function 
+        requires ``0 <= var[i] <= 2*p`` for all entries of the variable.
+        After reduction we have ``0 <= var[i] <= p`` for all  entries.
         """
+        if dest is None:
+            dest = var
         if self.FAST_MOD3:
             if dest != var:
-                self.assign(dest, var)
+                dest.assign(var)
             return 
-        mask = self.H_MASK_EXTERN 
-        if dest is None or dest == var:
-            dest, t = var, self.vars.temp()
+        t = self.vars.temp() if var == dest else dest
+        t.assign(var & self.H_MASK_CARRY)
+        dest.assign(var - t + (t >> self.P_BITS)) 
+
+    def prereduce(self, var, dest = None):
+        """Auxilary reduction function for method butterfly_op().
+   
+        Performs reduction mod p after a butterfly operation for all 
+        components ``var[i]`` stored in variable ``var``. The function 
+        requires ``0 <= var[i] < 2**self.H_BITS`` for all entries of 
+        the variable. After reduction we have ``0 <= var[i] <= 2*p`` 
+        for all  entries.
+
+        Thif function is used in case ``self.lazy = True`` only.
+        """
+        if dest is None:
+            dest = var
+        if var.excess:
+            var.assign(var - var.excess)
+        dest.assign((var & self.H_MASK_EXTERN) +
+            ((var >> self.P_BITS) & self.H_MASK_EXTERN_HI))
+        dest.excess = 0
+
+
+    def reduce_butterfly(self, var, dest = None):
+        """Auxilary reduction function for method butterfly_op().
+
+        This function sould be called after each bufferfly
+        operation for all participating variables ``var``.
+        The reduced C veriable ``var`` is stroed in the C
+        variable ``dest``.
+        """
+        if self.lazy:
+            if self.shift_stage >= self.FREE_BITS - 1:
+                self.prereduce(var, dest)
+            elif not dest in [var, None]:
+                dest.assign(var)
         else:
-            t = dest
-        self.assign(t, var & self.H_MASK_CARRY)
-        self.assign(dest, var - t + (t >> self.P_BITS))            
+            self.reduce_final(var, dest)
+
+    def reduce_butterfly_final_all(self):
+        """Finaly reduction function for method butterfly_op().
+
+        This function should be called once after completing a
+        Hadamard operation. At exit we have ``0 <= x <= p`` 
+        for all entrie participating on the Hadamard operation.
+        """
+        if self.lazy:
+            for var in self.vars:
+                if self.shift_stage > 1:
+                    self.prereduce(var)
+                self.reduce_final(var)
+        self.shift_stage = 0
+
+    def increment_shift_stage_after_butterfly(self):
+        """Adjust size of entries after butterfly operations
+
+        This method is relevant in case ``self.lazy = 1``only.
+        In this case the lengths of the entries grow by one bit
+        after completing a sequence of butterfly operations at the 
+        same level. A butterfly operation reduces the size of an 
+        entry before overflow can occur.
+
+        This function sould be called after completing a sequence 
+        of butterfly operations at the same level, in order to
+        adjust the member ``self.shift_stage`` counting the
+        excess bits of an entry.
+        """
+        if self.lazy:
+            self.shift_stage += 1
+            if self.shift_stage == self.FREE_BITS:
+                self.shift_stage = 1
+          
+                
+
+
+    def negate_expression(self, var, j = None):
+        """Return expression negating certain fields of variable ``var``
+
+        More_precisely the function returns a pair ``(expr, excess)``,
+        where ``expr`` is C expression and ``excess`` is an integer
+        constant such that ``vneg = expr - excess`` is the computed
+        expression that negates some fields of ``var``.
+
+        Here ``var`` must be a C variable and ``j`` must be a power of
+        two. Then the computed expression ``vneg`` contains the entries
+        of variable ``var``, where the entries of ``var`` with 
+        indices ``i`` are negated in case ``i & j != 0`.
+
+        If ``j`` is ``None`` (default) then the all  entries of ``var``
+        are negated.
+        """
+        msk = self.H_MASK_EXTERN 
+        if not j is None:
+             msk &= self.H_MASK[j] 
+        if self.shift_stage == 0:
+            return var ^ msk, 0
+        shifted_msk = msk << self.shift_stage
+        xor_msk = msk | shifted_msk
+        if 0:
+            excess = xor_msk - shifted_msk
+            return (var ^ xor_msk) - excess, 0
+        else:
+            excess = (var.excess ^ xor_msk) - shifted_msk
+            return var ^ xor_msk, excess
+           
 
     def internal_butterfly(self, var, j):
         """Auxilary function for method butterfly_op().
@@ -696,17 +831,21 @@ class HadamardMatrixCode(MM_Op):
         t = self.vars.temp() 
         if 2 * bsh  == self.INT_BITS:
             # We may save a bit in this case
-            all_mask = self.ALL1_MASK
             self.assign(t, (var << bsh) | (var >> bsh))
         else:
             self.assign(t, ((var << bsh) & msk) | ((var & msk) >> bsh))
+        neg_var, neg_excess = self.negate_expression(var, j)
         if self.FAST_MOD3:
             t1 = self.vars.temp(1) 
-            self.assign(var, var ^ msk)
+            var.assign(neg_var)
             self.add_mod3(var, t, var, t1)
         else: 
-            self.assign(var, (var ^ msk) + t)
+            var.assign(neg_var + t)
             self.reduce_butterfly(var)
+            if self.lazy:
+                 x = var.excess
+                 x = ((x << bsh) & msk) | ((x & msk) >> bsh)
+                 var.excess = x + neg_excess
 
 
     def external_butterfly(self, v1, v2):
@@ -720,17 +859,21 @@ class HadamardMatrixCode(MM_Op):
 
         Each result is reduced modulo p.
         """
-        mask = self.H_MASK_EXTERN
+        neg_v2, neg_excess = self.negate_expression(v2)
         if self.FAST_MOD3:
             t1, t2 = self.vars.temp(0), self.vars.temp(1) 
             self.add_mod3(v1, v2, t1, t2)
-            self.assign_xor(v2, mask)
+            v2.assign(neg_v2)
             self.add_mod3(v1, v2, v2, t2)
-            self.assign(v1, t1)
+            v1.assign(t1)
         else:
             t = self.vars.temp()
-            self.assign(t, v1 + (v2 ^ mask) )
-            self.assign(v1, v1 + v2)
+            t.assign(v1 + neg_v2)
+            v1.assign(v1 + v2)
+            if self.lazy:
+                x1, x2 = v1.excess, v2.excess
+                v1.excess = x1 + x2
+                t.excess = v2.excess = x1 + neg_excess 
             self.reduce_butterfly(t, v2)
             self.reduce_butterfly(v1)
 
@@ -744,8 +887,8 @@ class HadamardMatrixCode(MM_Op):
 
             v[i], v[i+j] = v[i] + v[j], v[i] - v[j] , 
 
-        for j a power of two, j >= self.INT_FIELDS, if the bit
-        oc valence j in i is qualt to 0.
+        of j a power of two, j >= self.INT_FIELDS, if the bit
+        oc valence j in i is equal to 0.
         """
         if self.verbose: 
             print("ext butterfly", j, self.INT_FIELDS)
@@ -755,7 +898,7 @@ class HadamardMatrixCode(MM_Op):
             if i & y == 0:
                 self.external_butterfly(self.vars[i], self.vars[i + y])
 
-    def hadamard_op(self, operations = -1):
+    def hadamard_op(self, operations = -1, shift = 0):
          """Multiply vector v by Hadamard matrix H.
 
          Internal operation:
@@ -782,6 +925,14 @@ class HadamardMatrixCode(MM_Op):
          expand_ = (operations & 1) << self.expanded
          operations &=  ~1 & ~(1 << self.expanded)
          operations |=  expand_
+         lazy = self.P == 15 and bitweight(operations >= 6)
+         self.reset_butterfly(lazy)
+         shift %= self.P_BITS
+         if verbose:
+             s = "Butterfly p=%d, vars=%d, op=%s, sh=%d, lazy=%d, width=%d, free=%d"
+             print(s % (self.P, len(self.vars), hex(operations), shift,
+                self.lazy, self.H_BITS, self.FREE_BITS)
+            )     
          for lg_i in range(self.LOG_VLEN + 1):
              i = 1 << lg_i
              if i & operations == 0:
@@ -794,8 +945,11 @@ class HadamardMatrixCode(MM_Op):
              else:    
                  self.external_butterfly_all(i)
              self.comment_vector()
+             self.increment_shift_stage_after_butterfly()
+         self.reduce_butterfly_final_all()
          if not pre_expanded:
             self.compress_hadamard()
+         self.reset_butterfly()
 
 
     def expand_hadamard_intern(self, v1, position):
