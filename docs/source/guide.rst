@@ -22,6 +22,8 @@ Directory structure
 .. include:: guide_directory.inc
 
 
+.. _install_from_source_label:
+
 Installation from a source distribution
 =======================================
 

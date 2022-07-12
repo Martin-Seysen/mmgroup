@@ -1,4 +1,5 @@
 recursive-include . *.ske *.pyx *.ini *.rst *.bat
+recursive-include src/mmgroup *.py
 include .gitignore
 include *.py
 include docs/source/*.rst
