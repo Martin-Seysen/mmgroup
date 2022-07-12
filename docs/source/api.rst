@@ -24,7 +24,7 @@ construction :cite:`Con85` of the monster group :math:`\mathbb{M}`.
 Its is the first implementation of the monster group where arbitrary
 oprations in that group can effectively be performed. On the author's 
 PC (Intel i7-8750H at 4 MHz runnning on 64-bit Windows) 
-the group multiplication in :math:`\mathbb{M}` takes less than 50 ms.
+the group multiplication in :math:`\mathbb{M}` takes less than 40 ms.
 This is about five orders of magnitude faster than estimated in 2013
 in :cite:`Wilson13`.
 
@@ -335,6 +335,8 @@ Version history
 | Version 0.0.5, 2021-08-02. Word shortening in monster implemented
 | Version 0.0.6, 2021-12-01. Group operation accelerated
 | Version 0.0.7, 2021-12-01. Bugfix in version generation
+| Version 0.0.8, 2022-07-12. Performance improved
+
 
 
 .. only:: html
