@@ -357,7 +357,7 @@ int32_t qstate12_check(qstate12_type *pqs)
 *************************************************************************/
 
 /**
-  @brief Assign memeory to a structure of type ``qstate12_type``.
+  @brief Assign memory to a structure of type ``qstate12_type``.
 
   Assign the array ``data`` of ``size`` integers of type ``uint64_t`` as
   memory to  structure of type ``qstate12_type`` referred by ``pqs``.
@@ -880,12 +880,12 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 /**
   @brief Auxiliary function for function qstate12_reduce().
   
-  Let ``M`` be the bit matrix stored in  ``pqs->data``. The pivoting 
-  process is controlled by the bit vector ``v``. If ``k < i`` and bit 
-  ``k`` of ``v ``is set  then row ``i`` of bit matrix ``M ``is xored 
-  to row ``k`` of ``M``. The columns of the  part ``Q`` of ``M`` are 
-  also adjusted. ``1 <= i < pqs->nrows`` must hold. Pivoting does not 
-  change the state. 
+  Let ``M`` be the bit matrix stored in  ``pqs->data``. The pivoting
+  process is controlled by the bit vector ``v``. If ``k < i`` and
+  bit  ``k`` of ``v ``is set  then row ``i`` of bit matrix ``M ``is
+  xored to row ``k`` of ``M``. The columns of the  part ``Q`` of ``M``
+  are also adjusted. ``1 <= i < pqs->nrows`` must hold. Pivoting does
+  not change the state. 
   
   For internal use only. Input conditions are not checked.
 */
@@ -937,7 +937,7 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
 
   Sum up the kernel of the transformation matrix ``A``, which
   is part of the bit matrix ``M = pqs->data``. We assume that ``A``
-  is echelonized in the sense that all nonzero rows of ``A`` are 
+  is echelonized in the sense that all nonzero rows of ``A`` are
   linear independent and that they occur before the zero rows.
 */
 // %%EXPORT 
@@ -1009,15 +1009,15 @@ int32_t qstate12_sum_up_kernel(qstate12_type *pqs)
 
 /** @brief Convert the state represented by ``pqs`` to echelon form
 
-  The representation state referred by ``pqs`` is converted to (not 
-  necessarily reduced) echelon form, and the kernel of bit matrix 
-  ``A``, which is part of the bit matrix ``M = pqs->data`` is  
-  summed up as described in the guide, section 
-  'Reducing the representation of a quadratic mapping'. 
+  The representation state referred by ``pqs`` is converted to (not
+  necessarily reduced) echelon form, and the kernel of bit
+  matrix ``A``, which is part of the bit matrix ``M = pqs->data``
+  is summed up as described in the guide,
+  section 'Reducing the representation of a quadratic mapping'.
   The representation of the state is not changed if this is
   already the case.
   
-  This function does not change the state. 
+  This function does not change the state.
 */
 // %%EXPORT p
 int32_t qstate12_echelonize(qstate12_type *pqs)
@@ -1049,17 +1049,17 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
     return qstate12_sum_up_kernel(pqs);
 }
 
-/** @brief Reduce the state represented by ``pqs`` 
+/** @brief Reduce the state represented by ``pqs``
 
-  The representation state referred by ``pqs`` is converted to  
-  reduced echelon form, and the kernel of bit matrix ``A``, which 
+  The representation state referred by ``pqs`` is converted to
+  reduced echelon form, and the kernel of bit matrix ``A``, which
   is part of the bit matrix ``M = pqs->data`` is summed up as
-  described in the guide, section 
-  'Reducing the representation of a quadratic mapping'. 
+  described in the guide,
+  section 'Reducing the representation of a quadratic mapping'.
   The representation of the state is not changed if this is
   already the case.
   
-  This function does not change the state. 
+  This function does not change the state.
 */
 // %%EXPORT p
 int32_t qstate12_reduce(qstate12_type *pqs)
@@ -1095,15 +1095,15 @@ int32_t qstate12_reduce(qstate12_type *pqs)
 /**
   @brief Compute a certain table for the state referred by ``pqs``
 
-  Compute a row table for the state ``qs`` referred by ``pqs``. 
-  ``qs`` must be in (not necessarily reduced) echelon form. 
+  Compute a row table for the state ``qs`` referred by ``pqs``.
+  Here ``qs`` must be in (not necessarily reduced) echelon form.
   
   
   The function computes ``row_table[j] = i`` if the leading bit
   of row ``i`` of part ``A`` of the bit matrix ``M = pqs->data``
   is in column ``j``, for ``0 <= j < pqs->ncols`` and
   ``1 <= i < pqs->nrows``. If now such row exists for column
-  ``j`` then we put  ``row_table[j] = QSTATE12_UNDEF_ROW``
+  ``j`` then we put  ``row_table[j] = QSTATE12_UNDEF_ROW``.
   
   The representation of the state is not changed.
 */
@@ -1172,20 +1172,20 @@ int32_t qstate12_equal(qstate12_type *pqs1, qstate12_type *pqs2)
 /**
   @brief Insert qubits into a state and set them to 0
 
-  We insert ``nqb`` zero qubits into the state ``qs`` referred 
-  by  ``pqs`` starting at position ``j``. 
+  We insert ``nqb`` zero qubits into the state ``qs`` referred
+  by  ``pqs`` starting at position ``j``.
  
-  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
   following state ``qs1`` depending on ``n + nqb`` qubits:
  
-  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])``
   is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])`` if
   ``y[0] = ... = y[nqb-1] = 0`` and equal to zero otherwise.
   So we increment ``pqs->ncols`` by ``nqb``.
  
   If the input is reduced then the result is also reduced.
-  ``pqs->shape1`` is set to 0, i.e. a column vector is 
+  ``pqs->shape1`` is set to 0, i.e. a column vector is
   returned.
 */
 // %%EXPORT p
@@ -1213,18 +1213,18 @@ int32_t qstate12_extend_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 /**
   @brief Insert qubits into a state
 
-  We insert ``nqb`` qubits into the state ``qs`` referred 
-  by  ``pqs`` starting at position ``j``. 
+  We insert ``nqb`` qubits into the state ``qs`` referred
+  by  ``pqs`` starting at position ``j``.
  
-  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
   following state ``qs1`` depending on ``n + nqb`` qubits:
  
-  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])`` 
+  ``qs1(x[n-1],...,x[j],y[nqb-1],...,y[0],x[j-1]...,x[0])``
   is equal to ``qs(x[n-1],...,x[j],x[j-1]...,x[0])``.
   So we increment ``pqs->ncols`` by ``nqb``.
  
-  The result is not reduced. ``pqs->shape1`` is set to 0, i.e. 
+  The result is not reduced. ``pqs->shape1`` is set to 0, i.e.
   a column vector is  returned.
 */
 // %%EXPORT p
@@ -1250,10 +1250,10 @@ int32_t qstate12_extend(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 /**
   @brief Sum up the functional values for some qubits
   
-  We sum up ``nqb`` qubits of the state ``qs`` referred by ``pqs`` 
-  starting at position ``j``. 
+  We sum up ``nqb`` qubits of the state ``qs`` referred by ``pqs``
+  starting at position ``j``.
  
-  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
   following state ``qs1`` depending on ``n - ncols`` qubits:
  
@@ -1285,11 +1285,11 @@ int32_t qstate12_sum_cols(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 /**
   @brief Restrict ``nqb`` qubits starting at postion ``j`` to 0.
  
-  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by
   ``pqs`` depends on ``n`` qubits. We change ``qs`` to the
   following state ``qs1`` depending on ``n`` qubits:
  
-  ``qs1(x[n-1],...,x[0])`` is equal to ``qs(x[n-1],...,x[0])`` if 
+  ``qs1(x[n-1],...,x[0])`` is equal to ``qs(x[n-1],...,x[0])`` if
   ``x[j] = ... = x[j+nqb-1] = 0`` and equal to zero otherwise.
   We do not change the shape of ``qs``.
   
@@ -1327,19 +1327,19 @@ int32_t qstate12_restrict_zero(qstate12_type *pqs, uint32_t j, uint32_t nqb)
   Similar to function ``qstate12_restrict_zero``, but with deleting
   the restricted qubits.
  
-  Let ``n = pqs->ncols`` so that the state ``qs`` referred by 
+  Let ``n = pqs->ncols`` so that the state ``qs`` referred by
   ``pqs`` depends on ``n`` qubits.  We change ``qs`` to the
   following state ``qs1`` depending  on ``n1 = n - nqb`` qubits:
   
-  ``qs1(x[n1-1],...,x[0])`` is equal to 
-  ``qs(x[n1-1],...,x[j],0,...,0,x[j-1],...,x[0])``. 
+  ``qs1(x[n1-1],...,x[0])`` is equal to
+  ``qs(x[n1-1],...,x[j],0,...,0,x[j-1],...,x[0])``.
   So we decrement ``pqs->ncols`` by ``nqb``.
  
   The output is not reduced.
   ``pqs->shape1`` is set to ``0``, i.e. a column vector is returned.
   
   In quantum computing theory this operation can be interpreted
-  as measurement of the corresponding qubits with postselection, 
+  as measurement of the corresponding qubits with postselection,
   setting all measured qubits to 0.
 */
 // %%EXPORT p
@@ -1363,8 +1363,8 @@ int32_t qstate12_restrict(qstate12_type *pqs, uint32_t j, uint32_t nqb)
 /**
   @brief Apply a not gate to a state
 
-  Change the state ``qs`` referred by ``pqs`` to a state ``qs1`` 
-  with ``qs1(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise 
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
+  with ``qs1(x) = qs(x (+) v)``, where ``'(+)'`` is the bitwise
   xor operation.
   The result is not reduced.
   
@@ -1385,17 +1385,17 @@ int32_t qstate12_gate_not(qstate12_type *pqs, uint64_t v)
 /**
   @brief Apply a contol-not gate to a state
 
-  Change the state ``qs`` referred by ``pqs`` to a state ``qs1`` 
-  with ``qs1(x) = qs(x (+) <vc,x> * v)``, where ``'(+)'`` is 
-  the bitwise  xor operation, and ``<.,.>`` is the scalar 
+  Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
+  with ``qs1(x) = qs(x (+) <vc,x> * v)``, where ``'(+)'`` is
+  the bitwise  xor operation, and ``<.,.>`` is the scalar
   product of bit vectors. The result is not reduced.
   The scalar product of the bit vectors ``j`` and ``jc`` must
   be zero. Otherwise the ``ctrl not`` operation is not
   unitary.
  
-  Computing ``qstate12_gate_ctrl_not(pqs, 1 << jc, 1 << j)``, 
+  Computing ``qstate12_gate_ctrl_not(pqs, 1 << jc, 1 << j)``,
   for ``jc != j``, corresponds to applying a controlled not
-  gate  to qubit ``j``,  contolled by qubit ``jc``. 
+  gate  to qubit ``j``,  contolled by qubit ``jc``.
 */
 // %%EXPORT p
 int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
@@ -1426,12 +1426,12 @@ int32_t qstate12_gate_ctrl_not(qstate12_type *pqs, uint64_t vc, uint64_t v)
   
   Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
   with ``qs1(x) = qs(x) * sqrt(-1)**(phi * <v,x>)``, where
-  ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
+  ``<.,.>`` is the scalar product of bit vectors and ``'**'``
   denotes exponentiation.
   The result is reduced if the input is reduced.
-  Computing ``qstate12_gate_ph(pqs, 1 << j, phi)`` 
-  corresponds to applying a  phase ``(phi * pi/2)``  gate 
-  to qubit ``j``. 
+  Computing ``qstate12_gate_ph(pqs, 1 << j, phi)``
+  corresponds to applying a  phase ``(phi * pi/2)``  gate
+  to qubit ``j``.
 */
 // %%EXPORT p
 int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
@@ -1465,13 +1465,13 @@ int32_t qstate12_gate_phi(qstate12_type *pqs, uint64_t v, uint32_t phi)
   
   Change the state ``qs`` referred by ``pqs`` to a state ``qs1``
   with ``qs1(x) = qs(x) * (-1)**(<v1,x>*<v2,x>)``, where
-  ``<.,.>`` is the scalar product of bit vectors and ``'**'`` 
+  ``<.,.>`` is the scalar product of bit vectors and ``'**'``
   denotes exponentiation.
   
   The result is reduced if the input is reduced.
   Computing ``qstate12_gate_ctrl_phi(pqs, 1 << j1, 1 << j2)``
-  corresponds to applying a  phase ``pi`` gate to 
-  qubit ``j2`` controlled by qubit ``j1``. 
+  corresponds to applying a  phase ``pi`` gate to
+  qubit ``j2`` controlled by qubit ``j1``.
 */
 // %%EXPORT p
 int32_t qstate12_gate_ctrl_phi(qstate12_type *pqs, uint64_t v1, uint64_t v2)
@@ -1551,211 +1551,7 @@ int32_t qstate12_gate_h(qstate12_type *pqs, uint64_t v)
 
 
 
-/*************************************************************************
-*** Converting a state to a complex vector
-*************************************************************************/
 
-
-// Suggestions for treatment of complex numbers in C and Cython see:
-// https://numpy.org/devdocs/user/c-info.python-as-glue.html#complex-addition-in-cython
-// https://stackoverflow.com/questions/31932781/how-to-interface-a-numpy-complex-array-with-c-function-using-ctypes
-// https://stackoverflow.com/questions/6418807/how-to-work-with-complex-numbers-in-c
-// https://en.cppreference.com/w/c/numeric/complex
-
-
-/// @cond DO_NOT_DOCUMENT 
-
-static int32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
-// Let ``c`` be the complex number ``qstate12_factor_to_complex(e)``.
-// We store ``c * (1 + 0j)**k)`` in ``(p_real[k], p_imag[k]``.
-// for  ``k = 0,...,3``.
-{
-     int32_t res = qstate12_factor_to_complex(e, p_real);
-     // Put (p_real, p_imag)[0] = complex result
-     p_imag[0] = p_real[1];
-     // Put (p_real, p_imag)[2] = - result
-     // We don't like a negative floatingg point zero
-     p_real[2] = p_real[0] ? -p_real[0] : 0;
-     p_imag[2] = p_imag[0] ? -p_imag[0] : 0;
-     // (p_real, p_imag)[1] = (0 + 1j) * result;
-     p_real[1] = p_imag[2];
-     p_imag[1] = p_real[0];
-     // (p_real, p_imag)[1] = (0 - 1j) * result;
-     p_real[3] = p_imag[0];
-     p_imag[3] = p_real[2];
-     return res;
-}
-
-static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
-{
-     return (qf_all & 1 && res < 4) ? 4 : res;
-}
-
-
-// qstate12_lsbtab[i] is the position of least significant bit of i | 0x40
-const uint8_t qstate12_lsbtab[64] = {
-    6,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    5,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0 
-};
-
-
-/// @endcond
-
-
-/**
-  @brief Expand a state to an array of complex numbers
-  
-  Expand the state ``qs`` referred by ``pqs`` to the array
-  referred by the pointer ``pc``. The real part of ``qs[i]`` is 
-  stored in ``pc[2*i]`` and the imaginary part of ``qs[i]`` is 
-  stored in ``pc[2*i+1]``. The function reduces ``qs``. Here the 
-  integer ``i`` is interpreted as a bit vector as usual.
-  
-  ``pqs->shape1`` is ignored. The user has to care for the
-  shape of the returned array. The state ``qs`` is reduced.
-
-  Caution: The function sets ``2 * 2**pqs->ncols`` entries 
-  in the array ``pc``.
-
-  Return value is as in function ``qstate12_entries``.
-*/
-// %%EXPORT p
-int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
-{    
-    uint64_t qf = 0;    // current value of quadratic form Q[i]
-    uint64_t qf_all = 0; // OR sum of all values qf obtained
-    uint64_t *m;        // pointer to pqs->data
-    uint64_t *m_end;    // pointer to pqs->data + pqs->nrows - 1
-    uint64_t ncols;     // equal to pqs->ncols
-    uint64_t nrc;       // equal to pqs->ncols + pqs->nrows - 1; 
-    uint64_t n_iterations; // Number 1 << (pqs->nrows-1) of nonzero entries
-    uint64_t mask;      // mask (1 << ncols) - 1; 
-    uint64_t assoc;     // Current value of row  A[i] and Q[i]
-    uint64_t i;         // Index running thru n_iterations nonzero entries
-    double freal[4], fimag[4]; // The complex number (freal[k], fimag[k]) is
-                               // the value of an entry where qf = k (mod 4) 
-    int32_t res;        // Return value of subroutines
-
-    if ((res = qstate12_reduce(pqs)) < 0) return res;
-    ncols = pqs->ncols; 
-    for (i = 0; i < (2*ONE) << ncols; ++i) pc[i] = 0.0;
-    if (pqs->nrows == 0) return 0;
-    m = pqs->data;
-    assoc = m[0]; 
-    m_end = pqs->data + pqs->nrows - 1;
-    nrc = ncols + pqs->nrows - 1; 
-    n_iterations = ONE << (pqs->nrows - 1); 
-    mask = (ONE << ncols) - 1; 
-    res = set_complex_factors(pqs->factor & FACTOR_MASK , freal, fimag);
-   
-    for (i = 1; i <= n_iterations; ++i) {
-        uint64_t i1, diag, index;
-        int64_t d, d1;
-        index = (assoc & mask) << 1;
-        qf_all |= qf;
-        pc[index] = freal[qf & 3];
-        pc[index + 1] = fimag[qf & 3];
-        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
-        while (d1 == 6) {
-            i1 >>= 6;
-            d1 = qstate12_lsbtab[i1 & 63];
-            d += d1;
-        } 
-        diag = (m_end[-d] >> (nrc - d)) & 1;
-        qf += ((assoc >> (nrc - 1 - d)) & 2) + diag;
-        assoc ^= m_end[-d];
-        /* A simpler implementation of the last 3 lines would be:
-        diag = (m[d+1] >> (ncols + d + 1)) & 1;
-        qf += ((assoc >> (ncols + d)) & 2) + diag;
-        assoc ^= m[d+1];
-        // But our implementation has a better locality of
-        // write accesses to the array ``pc``.
-        */
-    } 
-    return qf_result_type(res, qf_all);       
-}
-
-
-/**
-  @brief Convert entries of a state to complex numbers
-  
-  The function computes the entries ``qs[v[i]]`` of the state
-  ``qs`` referred by ``pqs``  for ``0 <= i < n`` and stores these
-  entries in the array  ``pc``. The real part of ``qs[v[i]]`` is
-  stored in ``pc[2*i]`` and the imaginary part is stored in
-  ``pc[2*i+1]``. The state ``qs`` is reduced.
-
-  Caution: The function sets ``2 * n`` entries   in the 
-  array ``pc``.
-
-  Depending on the computed matrix entries, the function returns
- 
-       4  if all entries are complex, but not all are real.
- 
-       3  if all entries are real, but not all are rational
- 
-       2  if all entries are rational, but not all are integers.
-
-       1  if all entries are integers, but not all are zero.
-
-       0  if all entries are zero.
-
-  A negative return value indicates an error. 
-*/
-// %%EXPORT p
-int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc)
-// Obtain complex entries of state vector ``qs`` referred by ``pqs``
-// Here ``v`` is an array of indices of length ``n``.
-// The values ``qs[v[i]], 0 <= i < n`` are stored in  
-// ``(pc[2*i], pc[2*i+1])`` as a complex number
-// ``pqs`` is reduced. ``pqs->shape1`` is ignored.
-{
-    uint8_t row_table[MAXCOLS+1];
-    int32_t factor, factor_all = 0, res, j;
-    uint32_t i,sh; 
-    uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
-    double freal[5], fimag[5];
-    
-    if ((res = qstate12_reduce(pqs)) < 0) return res;
-    if (pqs->nrows == 0) {
-        while (n--) {
-            *pc++ = 0.0; *pc++ = 0.0;
-        }
-        return 0;
-    }
-
-    res = set_complex_factors(pqs->factor, freal, fimag);
-    freal[4] = fimag[4] = 0.0;
-    qstate12_row_table(pqs, row_table);
-    while (n--) {
-        factor = 0;
-        m0 = m[0] ^ (vmask & *v++);
-        // m0 is a copy of row 0 with bits of index equal to 1 flipped
-        for (j = pqs->ncols - 1; j >= 0; --j) {
-            if ((m0 >> j) & 1) {
-                i = row_table[j];
-                if (i == QSTATE12_UNDEF_ROW) {
-                    // Then the entry is 0
-                    factor = 4;
-                    goto factor_done;
-                }
-                // Otherwise add row j to row 0 as in qstate12_pivot()
-                sh = pqs->ncols + i;
-                factor += (((m0 >> sh) & 1) << 1) + ((m[i] >> sh) & 1);
-                m0 ^= m[i];
-            }
-        }
-        factor &= 3;
-        factor_all |= factor | 4;
-      factor_done:           
-        *pc++ = freal[factor];
-        *pc++ = fimag[factor];
-    }
-    if ((factor_all & 4) == 0) return 0;
-    return qf_result_type(res, factor_all);
-}
 
 
 //  %%GEN h

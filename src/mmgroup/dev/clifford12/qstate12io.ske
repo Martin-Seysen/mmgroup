@@ -1,0 +1,265 @@
+// For this module we refer to the section
+// 'Computation in the Clifford group' in the guide, see
+// https://mmgroup.readthedocs.io/en/latest/
+
+
+/** @file qstate12io.c
+  File ``qstate12io.c`` contains  functions for converting quadratic
+  state matrices as described in the *API reference* in 
+  section **Computation in the Clifford group** to complex numbers.
+
+
+  The function in this module are coded according the conventions
+  in  module  ``qstate12.c``.
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+#include <string.h>
+#include <math.h>
+
+/// @cond DO_NOT_DOCUMENT 
+#define CLIFFORD12_INTERN
+/// @endcond 
+#include "clifford12.h"
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+// %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+// %%GEN c
+
+
+
+
+/*************************************************************************
+*** Converting a state to a complex vector
+*************************************************************************/
+
+
+// Suggestions for treatment of complex numbers in C and Cython see:
+// https://numpy.org/devdocs/user/c-info.python-as-glue.html#complex-addition-in-cython
+// https://stackoverflow.com/questions/31932781/how-to-interface-a-numpy-complex-array-with-c-function-using-ctypes
+// https://stackoverflow.com/questions/6418807/how-to-work-with-complex-numbers-in-c
+// https://en.cppreference.com/w/c/numeric/complex
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static int32_t set_complex_factors(int32_t e, double  *p_real, double *p_imag)
+// Let ``c`` be the complex number ``qstate12_factor_to_complex(e)``.
+// We store ``c * (1 + 0j)**k)`` in ``(p_real[k], p_imag[k]``.
+// for  ``k = 0,...,3``.
+{
+     int32_t res = qstate12_factor_to_complex(e, p_real);
+     // Put (p_real, p_imag)[0] = complex result
+     p_imag[0] = p_real[1];
+     // Put (p_real, p_imag)[2] = - result
+     // We don't like a negative floatingg point zero
+     p_real[2] = p_real[0] ? -p_real[0] : 0;
+     p_imag[2] = p_imag[0] ? -p_imag[0] : 0;
+     // (p_real, p_imag)[1] = (0 + 1j) * result;
+     p_real[1] = p_imag[2];
+     p_imag[1] = p_real[0];
+     // (p_real, p_imag)[1] = (0 - 1j) * result;
+     p_real[3] = p_imag[0];
+     p_imag[3] = p_real[2];
+     return res;
+}
+
+static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
+{
+     return (qf_all & 1 && res < 4) ? 4 : res;
+}
+
+
+// qstate12_lsbtab[i] is the position of least significant bit of i | 0x40
+const uint8_t qstate12_lsbtab[64] = {
+    6,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
+    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
+    5,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
+    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0 
+};
+
+
+/// @endcond
+
+
+/**
+  @brief Expand a state to an array of complex numbers
+  
+  Expand the state ``qs`` referred by ``pqs`` to the array
+  referred by the pointer ``pc``. The real part of ``qs[i]`` is
+  stored in ``pc[2*i]`` and the imaginary part of ``qs[i]`` is
+  stored in ``pc[2*i+1]``. The function reduces ``qs``. Here the
+  integer ``i`` is interpreted as a bit vector as usual.
+  
+  ``pqs->shape1`` is ignored. The user has to care for the
+  shape of the returned array. The state ``qs`` is reduced.
+
+  Caution: The function sets ``2 * 2**pqs->ncols`` entries
+  in the array ``pc``.
+
+  Return value is as in function ``qstate12_entries``.
+*/
+// %%EXPORT p
+int32_t qstate12_complex(qstate12_type *pqs,  double *pc)
+{    
+    uint64_t qf = 0;    // current value of quadratic form Q[i]
+    uint64_t qf_all = 0; // OR sum of all values qf obtained
+    uint64_t *m;        // pointer to pqs->data
+    uint64_t *m_end;    // pointer to pqs->data + pqs->nrows - 1
+    uint64_t ncols;     // equal to pqs->ncols
+    uint64_t nrc;       // equal to pqs->ncols + pqs->nrows - 1; 
+    uint64_t n_iterations; // Number 1 << (pqs->nrows-1) of nonzero entries
+    uint64_t mask;      // mask (1 << ncols) - 1; 
+    uint64_t assoc;     // Current value of row  A[i] and Q[i]
+    uint64_t i;         // Index running thru n_iterations nonzero entries
+    double freal[4], fimag[4]; // The complex number (freal[k], fimag[k]) is
+                               // the value of an entry where qf = k (mod 4) 
+    int32_t res;        // Return value of subroutines
+
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    ncols = pqs->ncols; 
+    for (i = 0; i < (2*ONE) << ncols; ++i) pc[i] = 0.0;
+    if (pqs->nrows == 0) return 0;
+    m = pqs->data;
+    assoc = m[0]; 
+    m_end = pqs->data + pqs->nrows - 1;
+    nrc = ncols + pqs->nrows - 1; 
+    n_iterations = ONE << (pqs->nrows - 1); 
+    mask = (ONE << ncols) - 1; 
+    res = set_complex_factors(pqs->factor & FACTOR_MASK , freal, fimag);
+   
+    for (i = 1; i <= n_iterations; ++i) {
+        uint64_t i1, diag, index;
+        int64_t d, d1;
+        index = (assoc & mask) << 1;
+        qf_all |= qf;
+        pc[index] = freal[qf & 3];
+        pc[index + 1] = fimag[qf & 3];
+        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
+        while (d1 == 6) {
+            i1 >>= 6;
+            d1 = qstate12_lsbtab[i1 & 63];
+            d += d1;
+        } 
+        diag = (m_end[-d] >> (nrc - d)) & 1;
+        qf += ((assoc >> (nrc - 1 - d)) & 2) + diag;
+        assoc ^= m_end[-d];
+        /* A simpler implementation of the last 3 lines would be:
+        diag = (m[d+1] >> (ncols + d + 1)) & 1;
+        qf += ((assoc >> (ncols + d)) & 2) + diag;
+        assoc ^= m[d+1];
+        // But our implementation has a better locality of
+        // write accesses to the array ``pc``.
+        */
+    } 
+    return qf_result_type(res, qf_all);       
+}
+
+
+/**
+  @brief Convert entries of a state to complex numbers
+  
+  The function computes the entries ``qs[v[i]]`` of the state
+  ``qs`` referred by ``pqs``  for ``0 <= i < n`` and stores these
+  entries in the array  ``pc``. The real part of ``qs[v[i]]`` is
+  stored in ``pc[2*i]`` and the imaginary part is stored in
+  ``pc[2*i+1]``. The state ``qs`` is reduced.
+
+  Caution: The function sets ``2 * n`` entries in the
+  array ``pc``.
+
+  Depending on the computed matrix entries, the function returns
+ 
+       4  if all entries are complex, but not all are real.
+ 
+       3  if all entries are real, but not all are rational.
+ 
+       2  if all entries are rational, but not all are integers.
+
+       1  if all entries are integers, but not all are zero.
+
+       0  if all entries are zero.
+
+  A negative return value indicates an error.
+*/
+// %%EXPORT p
+int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc)
+// Obtain complex entries of state vector ``qs`` referred by ``pqs``
+// Here ``v`` is an array of indices of length ``n``.
+// The values ``qs[v[i]], 0 <= i < n`` are stored in  
+// ``(pc[2*i], pc[2*i+1])`` as a complex number
+// ``pqs`` is reduced. ``pqs->shape1`` is ignored.
+{
+    uint8_t row_table[MAXCOLS+1];
+    int32_t factor, factor_all = 0, res, j;
+    uint32_t i,sh; 
+    uint64_t *m = pqs->data, vmask = (ONE << pqs->ncols) - 1, m0;
+    double freal[5], fimag[5];
+    
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    if (pqs->nrows == 0) {
+        while (n--) {
+            *pc++ = 0.0; *pc++ = 0.0;
+        }
+        return 0;
+    }
+
+    res = set_complex_factors(pqs->factor, freal, fimag);
+    freal[4] = fimag[4] = 0.0;
+    qstate12_row_table(pqs, row_table);
+    while (n--) {
+        factor = 0;
+        m0 = m[0] ^ (vmask & *v++);
+        // m0 is a copy of row 0 with bits of index equal to 1 flipped
+        for (j = pqs->ncols - 1; j >= 0; --j) {
+            if ((m0 >> j) & 1) {
+                i = row_table[j];
+                if (i == QSTATE12_UNDEF_ROW) {
+                    // Then the entry is 0
+                    factor = 4;
+                    goto factor_done;
+                }
+                // Otherwise add row j to row 0 as in qstate12_pivot()
+                sh = pqs->ncols + i;
+                factor += (((m0 >> sh) & 1) << 1) + ((m[i] >> sh) & 1);
+                m0 ^= m[i];
+            }
+        }
+        factor &= 3;
+        factor_all |= factor | 4;
+      factor_done:           
+        *pc++ = freal[factor];
+        *pc++ = fimag[factor];
+    }
+    if ((factor_all & 4) == 0) return 0;
+    return qf_result_type(res, factor_all);
+}
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+

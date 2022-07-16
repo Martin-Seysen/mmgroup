@@ -277,8 +277,8 @@ shared_libs_before_stage1 = [
 
 
 clifford12_sources = [
-    "qstate12", "qmatrix12", "bitmatrix64",  "uint_sort", "xsp2co1", 
-    "leech3matrix", "xsp2co1_elem", "involutions",
+    "qstate12", "qstate12io", "qmatrix12", "bitmatrix64",  "uint_sort", 
+    "xsp2co1",  "leech3matrix", "xsp2co1_elem", "involutions",
      "xsp2co1_traces",
 ]
 
