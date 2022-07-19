@@ -1,0 +1,92 @@
+from __future__ import absolute_import, division, print_function
+from __future__ import  unicode_literals
+
+
+
+from random import randint #, shuffle, sample
+from functools import reduce
+from operator import __or__
+
+import numpy as np
+import pytest
+
+from mmgroup.structures.qs_matrix import QStateMatrix
+from mmgroup.structures.qs_matrix import qs_rand_real_matrix
+from mmgroup.structures.qs_matrix import qs_unit_matrix
+from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
+from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
+from mmgroup.structures.qs_matrix import FORMAT_REDUCED
+
+
+
+#####################################################################
+# Display and check some matrices
+#####################################################################
+
+
+
+
+qs_matrix_data = [
+     (0, 0, (1,0), []),
+     (0, 4, (1,4), [0, 8, 4, 2, 1]),
+     (0, 5, (1,4), [0, 16, 8, 4, 2, 1]),
+     (0, 6, (1,4), [0, 32, 16, 8, 4, 2]),
+     (0, 6, (2,0), [0, 32, 16, 8, 4, 2, 1]),
+    ]
+
+
+def create_testvectors():
+    """yield instances of class ``QStateMatrix`` for tests """
+    for rows, cols, factor, data in qs_matrix_data:
+        m = QStateMatrix(rows, cols, data)
+        m.mul_scalar(*factor) 
+        yield m
+    for i in (2,3,4,5, 6, 7):
+        yield qs_unit_matrix(i) 
+    for i in range(20):
+        yield qs_rand_real_matrix(2, 0, 3)
+    for i in range(20):
+        yield qs_rand_real_matrix(1, 0, 2)
+    for rows in range(6):
+        for cols in range(5):
+            for nr in [1,2] + list(range(rows+cols, rows+cols+3)):
+                for _ in range(2):
+                    m = qs_rand_real_matrix(rows, cols, nr)
+                    m.mul_scalar(randint(-8, 8), randint(0,7) & 4)  
+                    yield m                
+                
+#####################################################################
+# Test conversion to bitmaps
+#####################################################################
+
+
+
+
+@pytest.mark.qstate
+def test_qs_matrix(verbose = 1):
+    """Basic test for class ``QStateMatrix`` 
+    
+    It tests the ``__str__ `` method, the conversion to a
+    complex matrix and the echelonization and the reduction of 
+    an instance of class ``QStateMatrix``.
+    """
+    FORMAT_REDUCED = False
+    display_len =  len(qs_matrix_data)
+    for ntest, m in enumerate(create_testvectors()):
+        if verbose or ntest < display_len:
+            print("TEST %s" % (ntest+1))
+            print(m.copy().reshape((sum(m.shape), 0)))
+        a = m.complex().real.ravel()
+        b = [0 if x == 0 else 1 + ((x < 0) << 1) for x in a]
+        bm = m.as_bitmap()
+        blist = [((int(bm[i >> 5])) >> ((i & 31) << 1)) & 3
+            for i in range(len(a)) ]
+        if b != blist:
+            print("TEST %s" % (ntest+1))
+            print(m.copy().reshape((sum(m.shape), 0)))
+            print("expected:", b)
+            print("obtained:", blist)
+            print("delta   :", [x ^ y for x, y in zip(b,blist)])
+            err = "Error in computing bitmap"
+            raise ValueError(err)
+    

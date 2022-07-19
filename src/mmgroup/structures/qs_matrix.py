@@ -892,6 +892,13 @@ def qs_rand_matrix(rows, cols, data_rows):
     data = [randint(0, limit) for i in range(data_rows)]
     return QStateMatrix(rows, cols, data, mode = 1)
           
+def qs_rand_real_matrix(rows, cols, data_rows):
+    limit = (1 << (rows  + cols + data_rows)) - 1 
+    data = [randint(0, limit) for i in range(data_rows)]
+    for i in range(len(data)):
+        data[i] &= ~(1 << (rows + cols + i))  
+    return QStateMatrix(rows, cols, data, mode = 1)
+          
 def qs_column_monomial_matrix(data):
     nqb = len(data) - 1
     qs = QStateMatrix(nqb, nqb) 

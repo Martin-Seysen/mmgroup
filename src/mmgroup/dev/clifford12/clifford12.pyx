@@ -479,6 +479,19 @@ cdef class QState12(object):
         return c.reshape((1 << n0, 1 << n1))
 
     #########################################################################
+    # Conversion of a state matrix to a bitmap
+
+    def as_bitmap(self):
+        """Convert the state to a bitmap"""
+        cdef uint32_t ncols = self.ncols
+        cdef uint32_t n_out = 1 << (0 if ncols < 5 else ncols - 5)
+        a = np.empty(n_out, dtype = np.uint64)
+        cdef uint64_t[:] a_view = a
+        chk_qstate12(cl.qstate12_to_bitmap(&self.qs, &a_view[0]))
+        return a
+
+
+    #########################################################################
     # Comparing state matrices
 
     def __eq__(self, QState12 other):
