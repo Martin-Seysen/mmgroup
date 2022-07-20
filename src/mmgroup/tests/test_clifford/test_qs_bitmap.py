@@ -56,14 +56,22 @@ def create_testvectors():
                     yield m                
                 
 #####################################################################
-# Test conversion to bitmaps
+# Test conversion to array of signs
 #####################################################################
 
 
 
+def modify_sign_bitmap(bm, ncols):
+    bm1 = np.copy(bm)
+    r = randint(0,  (2 << ncols) - 1)
+    index, bit = divmod(r, 64)
+    bm1[index] = int(bm1[index]) ^ (1 << bit)
+    return bm1
+
+
 
 @pytest.mark.qstate
-def test_qs_matrix(verbose = 1):
+def test_qs_matrix(verbose = 0):
     """Basic test for class ``QStateMatrix`` 
     
     It tests the ``__str__ `` method, the conversion to a
@@ -73,12 +81,12 @@ def test_qs_matrix(verbose = 1):
     FORMAT_REDUCED = False
     display_len =  len(qs_matrix_data)
     for ntest, m in enumerate(create_testvectors()):
-        if verbose or ntest < display_len:
+        if verbose:
             print("TEST %s" % (ntest+1))
             print(m.copy().reshape((sum(m.shape), 0)))
         a = m.complex().real.ravel()
         b = [0 if x == 0 else 1 + ((x < 0) << 1) for x in a]
-        bm = m.as_bitmap()
+        bm = m.to_signs()
         blist = [((int(bm[i >> 5])) >> ((i & 31) << 1)) & 3
             for i in range(len(a)) ]
         if b != blist:
@@ -87,6 +95,10 @@ def test_qs_matrix(verbose = 1):
             print("expected:", b)
             print("obtained:", blist)
             print("delta   :", [x ^ y for x, y in zip(b,blist)])
-            err = "Error in computing bitmap"
+            err = "Error in computing array of signs"
             raise ValueError(err)
+        assert m.compare_signs(bm)
+        for i in range(2):
+           bm1 = modify_sign_bitmap(bm, sum(m.shape))
+           assert m.compare_signs(bm1) == False
     

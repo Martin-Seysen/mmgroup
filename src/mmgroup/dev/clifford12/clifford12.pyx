@@ -481,14 +481,44 @@ cdef class QState12(object):
     #########################################################################
     # Conversion of a state matrix to a bitmap
 
-    def as_bitmap(self):
-        """Convert the state to a bitmap"""
+    def to_signs(self):
+        """Convert signs of the state to an array
+
+        Let ``qs`` be the quadratic state matrix given by ``self``.
+        Assume that ``qs`` is real and has shape ``(I, J)``.
+        Let ``t[i * 2**J + j] = 0, 1, or 3``, if entry ``qs[i, j]``
+        is zero, positive, or negative, respectively. Then we
+        store ``t[k]`` in  bits ``2 * l + 1, 2 * l``
+        of ``a[k >> 5]``, with ``l = k & 0x1f``, and ``a`` a
+        one-dimensional numpy array of type ``numpy.uint64``.
+        The function returns the numpy array ``a``
+        """
         cdef uint32_t ncols = self.ncols
         cdef uint32_t n_out = 1 << (0 if ncols < 5 else ncols - 5)
         a = np.empty(n_out, dtype = np.uint64)
         cdef uint64_t[:] a_view = a
-        chk_qstate12(cl.qstate12_to_bitmap(&self.qs, &a_view[0]))
+        chk_qstate12(cl.qstate12_to_signs(&self.qs, &a_view[0]))
         return a
+
+    def compare_signs(self, a):
+        """Compare signs of the state with an array
+
+        Let ``qs`` be the quadratic state matrix given by ``self``.
+        The function returns True if ``a == qs.to_signs()`` and
+        False otherwise. Here ``a`` must be a sufficiently long
+        one-dimensional numpy array of type ``numpy.uint64``.
+        """
+        cdef uint32_t ncols = self.ncols
+        cdef uint32_t n_out = 1 << (0 if ncols < 5 else ncols - 5)
+        cdef uint64_t[:] a_view = a
+        if len(a) < n_out:
+            err = "Array in method compare_signs of class %s is too short"
+            raise ValueError(err % self.__class__)
+        cdef int32_t b
+        b = chk_qstate12(cl.qstate12_compare_signs(&self.qs, &a_view[0]))
+        return bool(b)
+
+
 
 
     #########################################################################
