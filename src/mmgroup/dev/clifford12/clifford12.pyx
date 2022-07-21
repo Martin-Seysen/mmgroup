@@ -997,6 +997,18 @@ def bitmatrix64_find_masked_row(m, uint64_t mask, uint64_t v):
     res = cl.bitmatrix64_find_masked_row(&m_view[0], i, mask, v)
     return res
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def bitmatrix64_find_low_bit(m, uint32_t imin, uint32_t imax):
+    cdef uint64_t[:] m_view = m
+    cdef uint64_t imax1 = imax
+    cdef uint64_t len_m = len(m)
+    if len_m < (imax1 + 63) >> 6:
+        raise IndexError("Index of bitmatrix64 out of range")
+    cdef int32_t res
+    res = cl.bitmatrix64_find_low_bit(&m_view[0], imin, imax)
+    return res
+
 
 @cython.wraparound(False)
 @cython.boundscheck(False)

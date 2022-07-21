@@ -20,7 +20,7 @@ from mmgroup.clifford12 import bitmatrix64_cap_h
 from mmgroup.clifford12 import bitmatrix64_mul
 from mmgroup.clifford12 import bitmatrix64_inv
 from mmgroup.clifford12 import bitmatrix64_error_pool
-
+from mmgroup.clifford12 import bitmatrix64_find_low_bit
 
 
  
@@ -267,3 +267,52 @@ def test_bitmatrix_mul_inv(verbose = 0):
 
 
    
+
+
+#####################################################################
+# Test function  bitmatrix64_find_low_bit()
+#####################################################################
+
+
+def int_to_bitmartix(x, excess = 0, bmax = 0):
+    l = []
+    assert x >= 0
+    while x:
+        l.append(x & 0xffffffffffffffff)
+        x >>= 64
+    l += [0] * excess
+    nmax = (bmax + 63) >> 6
+    if len(l) < nmax:
+        l += [0] * (nmax - len(l))
+    return np.array(l, dtype = np.uint64)
+
+
+bvalues = [0,1,2, 62, 63, 64, 65, 87, 127, 128, 129]
+
+
+def find_low_bit_testdata():
+    lv = len(bvalues)
+    for i in range(lv):
+        for j in range(i, lv):
+            for k in range(j, lv):
+                t = tuple([bvalues[n] for n in (i,j,k)]) 
+                yield t + (1,)
+                r = randint(1, 1 << 65) | 1
+                yield t + (r,)
+
+@pytest.mark.qstate
+def test_bitmatrix64_find_low_bit(verbose = 0):
+    if verbose:
+        print("\nTesting function bitmatrix64_find_low_bit")
+    for n, (imin, b, imax, factor) in enumerate(find_low_bit_testdata()):
+        bm = int_to_bitmartix(factor << b, bmax = imax)
+        if verbose:
+           print("Test %d:" % n, imin, b, imax, 
+               ", factor =", hex(factor))
+        b1 = bitmatrix64_find_low_bit(bm, imin, imax)
+        assert b1 == b, (imin, b, imax, b1)
+ 
+         
+    
+    
+

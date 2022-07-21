@@ -116,18 +116,58 @@ static inline uint32_t bw64(uint64_t v)
    return (uint32_t)((v + (v >> 32)) & 0x7f); 
 }    
 
+
+
+
+
+// %%EXPORT_TABLE p
+const uint8_t UINT64T_HIGHBIT_TABLE[128] = {
+// %%TABLE BIT64_HIGH_TABLE, uint8
+};
+
+// %%EXPORT_TABLE p
+const uint8_t UINT64T_LOWBIT_TABLE[128] = {
+// %%TABLE BIT64_LOW_TABLE, uint8
+};
+
+
+
+
+
+// For function bitlen64 we use the idea from
+// https://stackoverflow.com/questions/21888140/de-bruijn-algorithm-binary-digit-count-64bits-c-sharp
+
+
 /**
  @brief Returns the bit length of a 64-bit integer ``v``.      
 */ 
 static inline uint32_t bitlen64(uint64_t v)
 {
-   uint32_t result = 0;
-   if (v & 0xffffffff00000000ULL) {result += 32; v >>= 32;}
-   if (v & 0xffff0000UL) {result += 16; v >>= 16;}
-   if (v & 0xff00) {result += 8; v >>= 8;}
-   if (v & 0xf0) {result += 4; v >>= 4;}
-   return result + (uint32_t)((0x4444444433332210ULL >> (v << 2)) & 0xf); 
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v = (uint64_t)(v * %{hex:BIT64_HIGH_MULTIPLIER});
+    return UINT64T_HIGHBIT_TABLE[v >> 57]; 
 }
+
+
+
+/**
+ @brief Returns position of lowest bit of a 64-bit integer ``v``. 
+
+ In case ``v = 0`` the function returns 64.     
+*/ 
+static inline uint32_t lowest_bit64(uint64_t v)
+{
+    v &= 0ULL - v;
+    v = (uint64_t)(v * %{hex:BIT64_LOW_MULTIPLIER});
+    return UINT64T_LOWBIT_TABLE[v >> 57]; 
+}
+
+
 
 /// @endcond 
 
@@ -210,6 +250,41 @@ int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint
         if ((m[k] & mask) == v) return k;
     }
     return ERR_QSTATE12_NOTFOUND;
+}
+
+
+
+/*************************************************************************
+*** Lowest nonzero bit of a bit matrix
+*************************************************************************/
+
+/**
+  @brief Find position of lowest bit in a bit matrix
+
+  The function returns the lowest position ``k`` of a bit in the
+  bit matrix ``m``, which is set to one. It scans only the bits at
+  positions ``imin <= k < imax``. If all bits at these positions
+  are zero then the function returns ``imax``.
+
+  Here bit ``j`` of ``m[i]`` is considered at position ``64*i + j``.
+  Bit matrix ``m`` should have at least ``(imax + 63) >> 6`` entries.
+*/
+// %%EXPORT p
+uint32_t bitmatrix64_find_low_bit(uint64_t *m, uint32_t imin, uint32_t imax)
+{
+    uint32_t n = imin >> 6;
+    uint32_t nmax = (uint32_t)(((uint64_t)imax + 63ULL) >> 6); 
+    uint64_t v;
+
+    if (imin >= imax) return imax;
+    v = m[n] & (0ULL - (ONE << (imin & 63)));
+    if (v) return (n << 6) + lowest_bit64(v);
+
+    for (++n; n <= nmax; ++n) if ((v = m[n]) != 0) {
+        uint32_t res = (n << 6) + lowest_bit64(v);
+        return res < imax ? res : imax;
+    }
+    return imax;
 }
 
 

@@ -55,6 +55,7 @@ sys.path.append(REAL_SRC_DIR)
 import mmgroup
 from mmgroup.generate_c import TableGenerator, make_doc
 from mmgroup.generate_c import pxd_to_pyx
+from mmgroup.dev.clifford12.bit64_tables import Bit64Tables
 
 
 
@@ -200,6 +201,7 @@ cdef extern from "clifford12.h":
 
 
 TABLE_CLASSES = [
+    Bit64Tables,
 ]
 
 

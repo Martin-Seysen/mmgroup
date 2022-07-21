@@ -256,7 +256,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 
 
 /*************************************************************************
-*** Converting the signs of a real state to an array and vice versa
+*** Converting the signs of a real state to an array
 *************************************************************************/
 
 
@@ -347,6 +347,11 @@ int32_t qstate12_to_signs(qstate12_type *pqs,  uint64_t *bmap)
     return 0; 
 }
 
+
+
+/*************************************************************************
+*** Comparing the signs of a real state with an array
+*************************************************************************/
 
 
 
@@ -512,6 +517,27 @@ int32_t qstate12_compare_signs(qstate12_type *pqs, uint64_t *bmap)
 
 /// @cond DO_NOT_DOCUMENT 
 #undef LB_LEN_A_NONZERO
+/// @endcond  
+
+
+
+
+/*************************************************************************
+*** Reading a real state with an array of signs
+*************************************************************************/
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline 
+int32_t _scan_signs(uint64_t *bmap, uint32_t imin, uint32_t imax)
+{
+   return bitmatrix64_find_low_bit(bmap, imin << 1, imax << 1) >> 1;
+}
+
+
 /// @endcond  
 
 
