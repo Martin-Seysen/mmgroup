@@ -19,6 +19,7 @@ from mmgroup.clifford12 import qstate12_pauli_matrix
 from mmgroup.clifford12 import error_string
 from mmgroup.clifford12 import qstate12_pauli_vector_mul
 from mmgroup.clifford12 import qstate12_pauli_vector_exp
+from mmgroup.clifford12 import qstate12_from_signs
 
 
 FORMAT_REDUCED = True
@@ -184,7 +185,19 @@ class QStateMatrix(QState12):
     def copy(self):
         """Return a deep copy of the matrix"""
         return self.__class__(self)
-            
+ 
+    def maxabs(self):
+        """Return maximum absolute value of matrix as a ``float``"""
+        self.reduce()
+        if self.nrows == 0:
+            return 0.0
+        e, _ = self.factor
+        f = 1.414213562373095048801688724209 if e & 1 else 1.0 
+        return math.ldexp(f, e >> 1)
+        
+
+
+           
     #########################################################################
     # Reshaping a state matrix
 
@@ -350,6 +363,24 @@ class QStateMatrix(QState12):
         The result is not reduced.
         """
         return super(QStateMatrix, self).gate_h(v)
+
+    #########################################################################
+    # Conversion of a state matrix to a bitmap
+
+    def to_signs(self):
+        """Convert signs of the state to an array
+
+        Let ``qs`` be the quadratic state matrix given by ``self``.
+        Assume that ``qs`` is real and has shape ``(I, J)``.
+        Let ``t[i * 2**J + j] = 0, 1, or 3``, if entry ``qs[i, j]``
+        is zero, positive, or negative, respectively. Then we
+        store ``t[k]`` in  bits ``2 * l + 1, 2 * l``
+        of ``a[k >> 5]``, with ``l = k & 0x1f``, and ``a`` a
+        one-dimensional numpy array of type ``numpy.uint64``.
+        The function returns the numpy array ``a``
+        """
+        return super(QStateMatrix, self).to_signs()
+
 
 
     #########################################################################
@@ -910,6 +941,30 @@ def qs_row_monomial_matrix(data):
     qs = QStateMatrix(nqb, nqb) 
     qstate12_row_monomial_matrix(qs, nqb, data)
     return qs
+
+
+def qs_from_signs(bmap, n):
+    """Construct a state vector from a sign matrix
+
+    Let ``bmap`` be an array with ``2**n`` entries representing 0 or
+    (positive or negative) signs as in method ``to_signs`` of
+    class ``QStateMatrix``. Here ``bmap`` must be a one-dimensional
+    numpy array of dytpe ``np.uint64`` as returned by that method.
+ 
+    Then ``bmap`` may correspond to a quadratic state vector
+    with entries 0, 1, and -1.
+
+
+    If ``bmap`` corresponds to a quadratic state vector ``V``
+    (with entries 0, 1, and -1) then the function returns ``V``
+    as an instance of class ``QStateMatrix``. Here the returned
+    state vector is a (column) vector of shape ``(0, n)``. 
+
+    If the array ``bmap``  does not correspond to any quadratic 
+    state vector then the function returnes None.
+    """
+    res = qstate12_from_signs(bmap, n)
+    return None if res is None else QStateMatrix(res)
 
 
 def qs_pauli_matrix(nqb, v):

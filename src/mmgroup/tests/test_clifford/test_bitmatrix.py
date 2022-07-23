@@ -305,7 +305,9 @@ def test_bitmatrix64_find_low_bit(verbose = 0):
     if verbose:
         print("\nTesting function bitmatrix64_find_low_bit")
     for n, (imin, b, imax, factor) in enumerate(find_low_bit_testdata()):
-        bm = int_to_bitmartix(factor << b, bmax = imax)
+        b_int = factor << b
+        b_int |= randint(0, (1 << imin) - 1)
+        bm = int_to_bitmartix(b_int, bmax = imax)
         if verbose:
            print("Test %d:" % n, imin, b, imax, 
                ", factor =", hex(factor))

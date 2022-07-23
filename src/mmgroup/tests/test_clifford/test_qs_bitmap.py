@@ -15,6 +15,7 @@ from mmgroup.structures.qs_matrix import qs_rand_real_matrix
 from mmgroup.structures.qs_matrix import qs_unit_matrix
 from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
+from mmgroup.structures.qs_matrix import qs_from_signs
 from mmgroup.structures.qs_matrix import FORMAT_REDUCED
 
 
@@ -50,7 +51,7 @@ def create_testvectors():
     for rows in range(6):
         for cols in range(5):
             for nr in [1,2] + list(range(rows+cols, rows+cols+3)):
-                for _ in range(2):
+                for _ in range(200):
                     m = qs_rand_real_matrix(rows, cols, nr)
                     m.mul_scalar(randint(-8, 8), randint(0,7) & 4)  
                     yield m                
@@ -99,6 +100,34 @@ def test_qs_matrix(verbose = 0):
             raise ValueError(err)
         assert m.compare_signs(bm)
         for i in range(2):
-           bm1 = modify_sign_bitmap(bm, sum(m.shape))
-           assert m.compare_signs(bm1) == False
+            bm1 = modify_sign_bitmap(bm, sum(m.shape))
+            assert m.compare_signs(bm1) == False
+
+
+        abs_m = m.maxabs()
+        m1 = m / abs_m if abs_m > 0 else m * 1
+        m1 = m1.reshape((-1, 0))
+        #m1 = abs(m1)
+        try:
+            m_from_signs = qs_from_signs(bm, sum(m.shape))
+        except:
+            print(m_from_signs)
+            #raise
+            print("WTF")
+        try:
+            eq = m_from_signs == m1
+        except:
+            print("original      m", m1)
+            print("reconstructed m", m_from_signs)
+            raise
+        if not eq:
+            print("original      m", m1)
+            print("reconstructed m", m_from_signs)
+            if sum(m.shape) <= 8: print("signs", bm)
+            err = "Reconstruction of state vector from signs failed"
+            raise ValueError(err)
+
+
+
+          
     

@@ -531,16 +531,192 @@ int32_t qstate12_compare_signs(qstate12_type *pqs, uint64_t *bmap)
 /// @cond DO_NOT_DOCUMENT 
 
 
-static inline 
-int32_t _scan_signs(uint64_t *bmap, uint32_t imin, uint32_t imax)
+
+/**
+ @brief Returns highest bit (at its position) of a 64-bit integer ``v``.      
+*/ 
+static inline uint64_t hibit(uint64_t v)
 {
-   return bitmatrix64_find_low_bit(bmap, imin << 1, imax << 1) >> 1;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    return v & ~(v >> 1); 
+}
+
+
+
+#define find_low_bit(bmap, imin, imax) \
+  (bitmatrix64_find_low_bit(bmap, (imin) << 1, (imax) << 1) >> 1)
+
+
+/**
+  @brief Find affine support for state vector given by sign matrix
+
+  Let ``bmap`` be an array with ``2**n`` entries representing 0 or
+  (positive or negative) signs as in function ``qstate12_to_signs``.
+  Then ``bmap`` may correspond to a quadratic state vector
+  with entries 0, 1, and -1.
+  The function tries to find an affine subspace ``V`` of ``GF_2^n``
+  containing the indices of the nonzero entries in that state 
+  vector. It encodes ``V`` in the quadratic state vector ``qs`` 
+  referred by ``pqs``. 
+
+  If such a affine space ``V`` exists then the function sets the
+  entries of ``qs`` with index in ``V`` to one and the other
+  entries of ``qs`` to zero, yet ignoring the signs. If no such 
+  space ``V`` exists then the function selects an (arbitrary 
+  undefined) affine space ``V`` instead. The returned state ``qs``
+  is a (column) vector of shape ``(0, n)``.
+
+  At this stage there is no (efficient) way to decide whether
+  such an affine space ``V`` exists or not.
+
+  The function returns zero in case of success and a negative 
+  value in case of an error.
+*/
+static inline 
+int32_t _scan_affine(uint64_t *bmap, uint32_t n, qstate12_type *pqs)
+{
+   uint32_t imax, imin, rows, mask, maxlen = ONE << n;
+   int32_t res;
+   uint64_t *m = pqs->data, m0;
+
+   if ((res = qstate12_zero(pqs, n)) < 0) return res; 
+   if (n >= pqs->maxrows || n > 30) return ERR_QSTATE12_BUFFER_OVFL;
+   m0 =  find_low_bit(bmap, 0, maxlen);
+   if (m0 >= maxlen) return 0;
+   rows = 1;
+     
+   for (mask = 1; mask <= m0; mask <<= 1) if ((mask & m0) == 0) {
+       imin = (m0 & (0ULL - mask)) + mask;
+       imax = imin + mask;
+       imin = find_low_bit(bmap, imin, imax);
+       if (imin < imax) m[rows++] = imin ^ m0; 
+   }
+   for (; mask < ONE << n; mask <<= 1) {
+       imax = mask << 1;
+       imin = find_low_bit(bmap, mask, imax);
+       if (imin < imax) m[rows++] = imin ^ m0; 
+   }
+   m[0] = (uint64_t)m0 | maxlen;
+   pqs->nrows = bitmatrix64_echelon_h(m, rows, n+1, n+1);
+   pqs->nrows = rows;
+   m[0] &= ~maxlen;
+   return 0;    
+}
+
+
+#undef find_low_bit
+
+
+
+#define _LOAD_BMAP(bmap, i) (bmap[(i) >> 5] >> (((i) & 31) << 1))
+
+
+
+static inline 
+int32_t _fill_affine(uint64_t *bmap, qstate12_type *pqs)
+{
+   uint64_t *m = pqs->data;
+   uint64_t ncols1 = pqs->ncols;
+   uint64_t nrows = pqs->nrows;
+   uint64_t amask = (ONE << ncols1) - 1;
+   uint64_t bmap_acc = 1;
+   uint64_t m0, index, entry, sign;
+   uint64_t row0, sign_row0, sum_index, sum_entry;
+   uint32_t i, j;
+
+   if (nrows == 0) return 0;
+
+   // Load factor from entry m[0]
+   sum_index = index = m0 = m[0] & amask;
+   entry = _LOAD_BMAP(bmap, index);
+   bmap_acc &= entry;
+   sum_entry = sign = entry & 2;
+   pqs->factor |= sign << 1;
+   row0 = 0ULL;
+   sign_row0 = 0UL - (sign >> 1);
+   if (ncols1-- == 0) {
+       if (bmap_acc) return 0;
+       pqs->factor = 0;
+       return -1;
+   }
+    
+   for (i = 1; i < nrows; ++i) {
+       // Compute Q[0, i] and Q[i, 0]
+       index = (m0 ^ m[i]) & amask;
+       entry = _LOAD_BMAP(bmap, index);
+       sum_index = (sum_index ^ m[i]) & amask;
+       bmap_acc &= entry; 
+       entry = (entry ^ sign) & 2;
+       sum_entry ^= entry;
+       m[i] |= entry << ncols1;
+       entry <<= i;
+       row0 |= entry;
+       sign_row0 ^= entry;
+       for (j = 1; j < i; ++j) {
+           // Compute Q[i, j] and Q[j, i]
+           index = (m0 ^ m[i] ^ m[j]) & amask;
+           entry = _LOAD_BMAP(bmap, index);
+           bmap_acc &= entry;
+           entry ^= (row0 >> i) ^ (sign_row0 >> j);
+           entry &= 2;
+           m[i] |= entry << (ncols1 + j);
+           m[j] |= entry << (ncols1 + i);
+           sum_entry ^= entry;
+       }
+       // Check that entry m[0] ^ m[1] ^ ... 1 m[i] of bmap is correct
+       // and return -1 if not
+       entry = _LOAD_BMAP(bmap, sum_index & amask) & 3;
+       entry ^= sum_entry & 2;
+       entry &= (2 | bmap_acc);
+       if (entry != 1) {
+           qstate12_zero(pqs, (uint32_t)ncols1 + 1);
+           return -1;
+       }
+   }
+   m[0] |= row0 << ncols1;
+   return 0; 
 }
 
 
 /// @endcond  
 
 
+
+
+/**
+  @brief Construct a state vector from a sign matrix
+
+  Let ``bmap`` be an array with ``2**n`` entries representing 0 or
+  (positive or negative) signs as in function ``qstate12_to_signs``.
+  Then ``bmap`` may correspond to a quadratic state vector
+  with entries 0, 1, and -1.
+
+
+  If these enrties correspond to a quadratic state vector ``V``
+  (with entries 0, 1, and -1) then the function stores ``V`` in
+  the quadratic state vector ``qs`` referred by ``pqs`` and
+  returns 0. The returned state ``qs`` is a (column) vector of
+  shape ``(0, n)``. If the array ``bmap``  does not correspond
+  to any quadtatic state vector then the function sets ``qs``
+  to the zero vector of shape ``(0, n)``and returns -1.
+
+  The function returns negative value less than -1 in case of
+  an error.
+*/
+// %%EXPORT p
+int32_t qstate12_from_signs(uint64_t *bmap, int32_t n, qstate12_type *pqs)
+{ 
+   int32_t res;
+   if ((res = _scan_affine(bmap, n, pqs)) < 0) return res;
+   if ((res = _fill_affine(bmap, pqs)) < 0) return res;
+   if ((res = qstate12_compare_signs(pqs, bmap)) < 0) return res;
+   return res ? 0 : -1;
+}
 
 
 //  %%GEN h

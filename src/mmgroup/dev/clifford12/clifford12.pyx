@@ -617,6 +617,19 @@ cdef class QState12(object):
     def __pos__(self):
         return self    
 
+    def __abs__(self):
+        """Return absolute value of state matrix
+
+        The absolute value of a state matrix is the matrix where all
+        entries are replaced by their absolute values, as in **numpy**.
+        """
+        qs1 = self.copy()
+        cdef p_qstate12_type pqs1 = pqs12(qs1)
+        chk_qstate12(cl.qstate12_abs(pqs1))
+        return qs1
+
+
+
     
     #########################################################################
     # A rather general multiplication function
@@ -898,6 +911,42 @@ def qstate12_row_monomial_matrix(QState12 qs, uint32_t nqb, a):
         aa[i] = a[i]
     chk_qstate12(cl.qstate12_monomial_row_matrix(m_pqs, nqb, &aa[0])) 
     return qs
+
+
+def qstate12_from_signs(bmap, uint32_t n):
+    """Construct a state vector from a sign matrix
+
+    Let ``bmap`` be an array with ``2**n`` entries representing 0 or
+    (positive or negative) signs as in method ``to_signs`` of
+    class ``QState12``. Here ``bmap`` must be a one-dimensional
+    numpy array of dytpe ``np.uint64`` as returned by that method.
+ 
+    Then ``bmap`` may correspond to a quadratic state vector
+    with entries 0, 1, and -1.
+
+
+    If ``bmap`` corresponds to a quadratic state vector ``V``
+    (with entries 0, 1, and -1) then the function returns ``V``
+    as an instance of class ``QState12``. Here the returned
+    state vector is a (column) vector of shape ``(0, n)``. 
+
+    If the array ``bmap``  does not correspond to any quadratic 
+    state vector then the function returnes None.
+    """
+    cdef uint32_t n_out = 1 << (0 if n < 5 else n - 5)
+    cdef uint64_t[:] bmap_view = bmap
+    if len(bmap) < n_out:
+        err = "Array in function qstate12_from_signs is too short"
+        raise ValueError(err)
+    qs = QState12(0, n);
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    cdef int32_t res = cl.qstate12_from_signs(&bmap_view[0], n, m_pqs)
+    if res < -1:
+        chk_qstate12(res)
+    return None if res == -1 else qs
+
+
+
 
 ####################################################################
 # Wrappers for other exported C functions  

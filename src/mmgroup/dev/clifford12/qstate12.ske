@@ -691,6 +691,25 @@ int32_t qstate12_mul_scalar(qstate12_type *pqs, int32_t e, uint32_t phi)
 
 
 
+/**
+  @brief Replace entries of a state by their absolute values
+
+  The function replaces the entries of the state referred 
+  by ``pqs`` by their absolute values.
+*/
+// %%EXPORT p
+int32_t qstate12_abs(qstate12_type *pqs)
+{
+    uint_fast32_t k;
+    uint64_t *m = pqs->data, mask = (ONE << pqs->ncols) - 1;
+    if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
+    for (k = 0; k < pqs->nrows; ++k)  m[k] &=  mask;
+    pqs->factor &= 0ULL - (uint64_t)0x10ULL;
+    return 0;
+}
+
+
+
 /*************************************************************************
 *** Low-level functions
 *************************************************************************/
