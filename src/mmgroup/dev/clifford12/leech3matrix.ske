@@ -696,6 +696,59 @@ uint32_t leech2_matrix_expand(uint64_t *basis, uint32_t dim, uint32_t *v2)
     return len;
 }
 
+
+
+
+/*************************************************************************
+** Map Leech vector in the rep of the Monster mod 3 to signs
+*************************************************************************/
+
+/**
+@brief Map vector in rep of the Monster mod 3 to array of signs
+
+Let ``v`` be a part of a vector of the 198884-dimensional
+representation of the monster group modulo 3, which is organized
+as a ``n`` times ``24`` matrix of integers mod 3. Here ``v`` is
+the relevant part of a vector encoded as in the ``mmgroup.mm3``
+extension; see *The C interface of the mmgroup project*,
+section *Description of the mmgroup.mm extension* for details.
+
+Let ``mult`` be  a vector  of 24 integers mod 3 encoded in
+the **Leech lattice mod 3** encoding.
+
+The function computes the scalar product of each row of ``v``
+with ``mult`` and stores the ``n`` signs of these products
+in the array ``sign``. Here the signs are stored in natural order
+and encoded as in function ``qstate12_to_signs``  in
+module ``qstate12io.c``. As usual, the integers 0, 1, and 2 (mod 3)
+are mapped to 0, '+', and '-', respectively.
+
+Output array ``signs`` should have at least ``(n + 31) >> 5``
+entries.
+*/
+// %%EXPORT px
+void leech3_vect_mod3_to_signs(uint64_t *v, uint64_t mult, uint32_t n, uint64_t *signs)
+{
+    uint64_t and_mask, xor_mask, w;
+    uint32_t i;
+
+    mult = xsp2co1_to_vect_mod3(mult);
+    and_mask = (mult ^ (mult >> 1)) & 0x555555555555ULL;
+    and_mask |= and_mask << 1;
+    xor_mask = (mult & 0xaaaaaaaaaaaaULL);
+    xor_mask |= xor_mask >> 1;
+
+    for (i = 0; i < ((uint64_t)(n) + 31) >> 5; ++i) signs[i] = 0;
+    for (i = 0; i < n; ++i) {
+        w = (v[i] ^ xor_mask) & and_mask;
+        w %= 3; w = (0x34 >> (2*w)) & 3;
+        signs[i >> 5] |= w << ((i & 31) << 1);
+    }
+
+}
+
+
+
 /*************************************************************************
 *** End of of C code
 *************************************************************************/

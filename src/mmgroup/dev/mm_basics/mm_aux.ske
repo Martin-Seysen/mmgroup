@@ -1232,7 +1232,7 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
   @brief Scalar multiplication and modular reduction in sparse representation
 
   The function multiplies a vector ``sp`` in sparse representation 
-  with a factor ``f`` and reduced the result module a number ``p1``.
+  with a factor ``f`` and reduces the result modulo a number ``p1``.
   
   The vector ``sp`` has length ``length`` and is stored in sparse
   representation as a vector modulo an odd number ``2 < p < 256``.
