@@ -199,7 +199,9 @@ Python classes implementing the monster group
 .. autoclass:: mmgroup.MM
    :members:  as_tuples, copy,  is_reduced, reduce, order, mmdata,
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
-              half_order_chi, conjugate_involution
+              half_order_chi, conjugate_involution,
+              conjugate_involution_G_x0,
+
 
 
 .. _mmrep-label:
@@ -315,11 +317,12 @@ Class ``QStateMatrix`` modelling a quadratic state matrix
 .. include:: G_x0.inc
 
 
-Class ``XSp2_Co1`` modelling an element of the group :math:`G_{x0}`
+Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 -------------------------------------------------------------------
 
 .. autoclass:: mmgroup.structures.xsp2_co1.Xsp2_Co1
-   :members: order, type_Q_x0, conjugate_involution, subtype
+   :members: order, type_Q_x0, conjugate_involution, subtype,
+             conjugate_involution_G_x0,
 
 
 

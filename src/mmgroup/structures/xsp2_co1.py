@@ -47,6 +47,7 @@ from mmgroup.clifford12 import xsp2co1_involution_invariants
 from mmgroup.clifford12 import xsp2co1_involution_orthogonal
 from mmgroup.clifford12 import xsp2co1_conjugate_elem
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
+from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution_Gx0
 from mmgroup.clifford12 import xsp2co1_elem_subtype
 
 from mmgroup.structures.qs_matrix import QStateMatrix
@@ -250,6 +251,65 @@ class Xsp2_Co1(AbstractMMGroupWord):
         len_a = xsp2co1_elem_conjugate_involution(self._data, a)
         chk_qstate12(len_a)
         return (len_a >> 8), mmgroup('a', a[:len_a & 0xff])
+
+
+    def conjugate_involution_G_x0(self, guide = None, group = None):
+        r"""Map an involution in :math:`G_{x0}` to a standard form.
+
+        Assume that the element :math:`g` represented by ``self`` is
+        an involution in the group :math:`G_{x0}`.
+
+        The function computes an element :math:`a` in :math:`G_{x0}` 
+        such that :math:`h = a^{-1} g a` is a (fixed) representative 
+        of the class of :math:`g` in the group :math:`G_{x0}`.
+        The the function returns a pair ``(iclass, a)``, where
+        ``a`` is the computed element of :math:`G_{x0}`, and 
+        ``iclass`` describes the representative :math:`h` of the
+        involution class as given in the following list:
+
+        ``iclass = 0x1101``: the neutral element :math:`x_1`
+
+        ``iclass = 0x3022``: the central involution :math:`x_{-1}`
+   
+        ``iclass = 0x0021``: the element :math:`x_{\{2,3\}}`
+
+        ``iclass = 0x0022``: the element :math:`x_{\Omega}`
+
+        ``iclass = 0x1121``: the element :math:`y_o`
+
+        ``iclass = 0x1122``: the element :math:`x_{-1} y_o`
+
+        ``iclass = 0x0122``: the element :math:`y_o x_{\{8,9\}}`
+
+        ``iclass = 0x0322``: the element :math:`y_D x_{\{0, 12\}}`
+
+
+        Here in :math:`x_{\{i,j\}}` the index :math:`\{i,j\}` indicates
+        a Golaycocode word of length 2 given by the entries :math:`i` 
+        and :math:`j`. Octad :math:`o` is the standard octad 
+        :math:`\{0,1,2,3,4,5,6,7\}`.
+        Dodecad :math:`D` is the standard dodecad 
+        :math:`\{0, 4, 8, 13, 14, 15, 17, 18, 19, 21, 22, 23\}`.
+
+        By default, ``a`` is an instance of this class. If
+        parameter ``group`` is set to a class representing a suitable
+        subgroup of the monster (e.g. ``group = mmgroup.MM``) then 
+        ``a`` is returned as an instance of that class.
+ 
+        Parameter ``guide`` should usually be zero. If ``guide`` is a
+        type-4 vector :math:`v_4` in the Leech lattice mod 2 such that
+        the two  conditions :math:`h = a^{-1} g a`
+        and :math:`v_4 \cdot a = \Omega` can both be achieved then we
+        compute an element :math:`a` satisfying these two conditions.
+        Otherwise parameter ``guide`` is ignored. Here :math:`\Omega`
+        is the standard frame in the Leech lattice.  
+        """
+        group = Xsp2_Co1 if group is None else group
+        a = np.zeros(10, dtype = np.uint32)
+        len_a = xsp2co1_elem_conjugate_involution_Gx0(
+            self._data, guide, a)
+        chk_qstate12(len_a)
+        return (len_a >> 8), group('a', a[:len_a & 0xff])
 
 
 

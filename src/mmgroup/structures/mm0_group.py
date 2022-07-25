@@ -568,6 +568,29 @@ class MM0(AbstractMMGroupWord):
             import_Xsp2_Co1()
         return mm_conjugate_involution(self, check, ntrials, verbose)
 
+
+    def conjugate_involution_G_x0(self, guide = 0, group = None):
+        """Wrapper for corresponding method in class ``mmgroup.Xsp2_Co1``
+
+        Here ``self`` must be an involution :math:`g` in the subgroup
+        :math:`G_{x0}` of the Monster.
+        This function performs the same computation as the
+        corresponding method in class ``mmgroup.Xsp2_Co1``. 
+        It returns a pair ``(iclass, a)`` such that
+        :math:`h = a^{-1} g a` is a (fixed) representative of 
+        the class of :math:`g` in the  group :math:`G_{x0}`. Here 
+        ``h`` is described by the integer ``iclass`` as documented 
+        in the corresponding method mentioned above.
+
+        If ``group`` is ``None`` (default) then ``a`` is an instance
+        of the same class as ``g``.
+        """ 
+        if group is None: group = self.__class__
+        elem = Xsp2_Co1('a', self.data)
+        return elem.conjugate_involution_G_x0(guide, None)
+
+
+
     def half_order_chi(self,  ntrials=40):
         r"""Return order and some character information of the element
 

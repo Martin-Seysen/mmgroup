@@ -403,13 +403,18 @@ def xsp2co1_elem_conjugate_involution_Gx0_C(elem, guide = 0):
     involution ``elem`` in :math:`G_{x0}`, as returned by 
     the C function ``xsp2co1_elem_involution_class``.
     """
+    elem =  Xsp2_Co1(elem)
+    return elem.conjugate_involution_G_x0(guide, MM0) 
+
+    """
     a = np.zeros(10, dtype = np.uint32)
     data = Xsp2_Co1(elem)._data
-    res = xsp2co1_elem_conjugate_involution_Gx0(data, guide, a)
+    res = xsp2co1_elem_conjugate_involution_G_x0(data, guide, a)
     assert res >= 0
     iclass, length = res >> 8, res & 0xff
     assert 0 <= length <= 10
     return iclass, MM0('a', a[:length])
+    """
 
 
 #######################################################################
@@ -498,7 +503,6 @@ def conjugate_testdata(n_samples = 10):
 #######################################################################
 # Test the C function xsp2co1_elem_conjugate_involution_Gx0
 #######################################################################
-
 
 @pytest.mark.involution
 def test_std_rep(ntests = 50, verbose = 0):

@@ -12,3 +12,4 @@
 .. |MMSpace| replace:: :py:class:`~mmgroup.MMSpace`
 .. |MMVector| replace:: :py:class:`~mmgroup.MMVector`
 
+
