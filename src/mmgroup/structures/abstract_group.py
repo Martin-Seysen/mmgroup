@@ -154,7 +154,7 @@ class AbstractGroupWord(object):
         elif isinstance(exp, Parity):
             one = self.group.neutral()
             if self * self == one:
-                return self if other.value & 1 else one
+                return self if exp.value & 1 else one
             raise ValueError("Group element has not order 1 or 2")
         else:
             return NotImplemented

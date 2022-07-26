@@ -585,8 +585,10 @@ class MM0(AbstractMMGroupWord):
         If ``group`` is ``None`` (default) then ``a`` is an instance
         of the same class as ``g``.
         """ 
+        if mm_conjugate_involution is None: 
+            import_Xsp2_Co1()
         if group is None: group = self.__class__
-        elem = Xsp2_Co1('a', self.data)
+        elem = Xsp2_Co1('a', self.mmdata)
         return elem.conjugate_involution_G_x0(guide, None)
 
 
