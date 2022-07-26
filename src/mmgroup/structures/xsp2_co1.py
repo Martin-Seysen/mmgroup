@@ -63,6 +63,20 @@ FORMAT_REDUCED = True
 ###########################################################################
 
 
+DICT_INVOLUTION_G_x0 = {
+   0x1011 : '1A_x+',  # the neutral element :math:`x_1`
+   0x3022 : '2B_x-',  # the central involution :math:`x_{-1}`
+   0x0021 : '2A_x0',  # the element :math:`x_{\{2,3\}}`
+   0x0022 : '2B_x0',  # the element :math:`x_{\Omega}`
+   0x1121 : '2A_o+',  # the element :math:`y_o`
+   0x1122 : '2B_o-',  # the element :math:`x_{-1} y_o`
+   0x0122 : '2B_o0',  # the element :math:`y_o x_{\{8,9\}}`
+   0x0322 : '2B_d0',  # the element :math:`y_D x_{\{0, 12\}}
+}
+
+
+
+
 MM = None
 
 def import_MM():
@@ -267,29 +281,34 @@ class Xsp2_Co1(AbstractMMGroupWord):
         ``iclass`` describes the representative :math:`h` of the
         involution class as given in the following list:
 
-        ``iclass = 0x1101``: the neutral element :math:`x_1`
+        ``iclass = '1A_x+'``: the neutral element :math:`x_1`
 
-        ``iclass = 0x3022``: the central involution :math:`x_{-1}`
+        ``iclass = '2B_x-'``: the central involution :math:`x_{-1}`
    
-        ``iclass = 0x0021``: the element :math:`x_{\{2,3\}}`
+        ``iclass = '2A_x0'``: the element :math:`x_{\{2,3\}}`
 
-        ``iclass = 0x0022``: the element :math:`x_{\Omega}`
+        ``iclass = '2B_x0'``: the element :math:`x_{\Omega}`
 
-        ``iclass = 0x1121``: the element :math:`y_o`
+        ``iclass = '2A_o+'``: the element :math:`y_o`
 
-        ``iclass = 0x1122``: the element :math:`x_{-1} y_o`
+        ``iclass = '2B_o-'``: the element :math:`x_{-1} y_o`
 
-        ``iclass = 0x0122``: the element :math:`y_o x_{\{8,9\}}`
+        ``iclass = '2B_o0'``: the element :math:`x_{\{8,9\}} y_o`
 
-        ``iclass = 0x0322``: the element :math:`y_D x_{\{0, 12\}}`
+        ``iclass = '2B_d0'``: the element :math:`x_{\{0, 12\}} y_d`
 
 
         Here in :math:`x_{\{i,j\}}` the index :math:`\{i,j\}` indicates
-        a Golaycocode word of length 2 given by the entries :math:`i` 
+        a Golay cocode word of length 2 given by the entries :math:`i` 
         and :math:`j`. Octad :math:`o` is the standard octad 
         :math:`\{0,1,2,3,4,5,6,7\}`.
-        Dodecad :math:`D` is the standard dodecad 
+        Dodecad :math:`d` is the standard dodecad 
         :math:`\{0, 4, 8, 13, 14, 15, 17, 18, 19, 21, 22, 23\}`.
+
+        The first two characters of the string ``iclass`` denote the 
+        class in the Monster containing that class. The last character 
+        of the string ``iclass`` denotes the sign of the character of 
+        the class in the representation :math:`24_x \otimes 4096_x`.
 
         By default, ``a`` is an instance of this class. If
         parameter ``group`` is set to a class representing a suitable
@@ -309,7 +328,8 @@ class Xsp2_Co1(AbstractMMGroupWord):
         len_a = xsp2co1_elem_conjugate_involution_Gx0(
             self._data, guide, a)
         chk_qstate12(len_a)
-        return (len_a >> 8), group('a', a[:len_a & 0xff])
+        iclass = DICT_INVOLUTION_G_x0[len_a >> 8]
+        return iclass, group('a', a[:len_a & 0xff])
 
 
 

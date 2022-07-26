@@ -17,6 +17,7 @@ import os
 if __name__ == "__main__":
     sys.path.append("../../../")
 
+from numbers import Integral
 from random import randint
 from collections import OrderedDict
 import numpy as np
@@ -42,9 +43,14 @@ from mmgroup.clifford12 import xsp2co1_conjugate_elem
 from mmgroup.clifford12 import xsp2co1_elem_involution_class
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution_Gx0
 from mmgroup.clifford12 import xsp2co1_map_involution_class_Gx0
+from mmgroup.structures.xsp2_co1 import DICT_INVOLUTION_G_x0
 from mmgroup.tests.test_involutions.test_involution_invariants import INVOLUTION_SAMPLES
 
 #print("Hello world")
+
+
+def hexx(x):
+    return hex(x) if isinstance(x, Integral) else x
 
 
 #######################################################################
@@ -394,6 +400,14 @@ def conjugate_involution_in_Gx0(elem, guide = 0):
 # Wrapper for C function xsp2co1_elem_conjugate_involution_Gx0
 #######################################################################
 
+
+REVERSE_DICT_INVOLUTION_G_x0 = {}
+for key, value in DICT_INVOLUTION_G_x0.items():
+    REVERSE_DICT_INVOLUTION_G_x0[value] = key
+
+
+
+
 def xsp2co1_elem_conjugate_involution_Gx0_C(elem, guide = 0):
     r"""Wrapper for the corresponding C function
 
@@ -404,17 +418,9 @@ def xsp2co1_elem_conjugate_involution_Gx0_C(elem, guide = 0):
     the C function ``xsp2co1_elem_involution_class``.
     """
     elem =  Xsp2_Co1(elem)
-    return elem.conjugate_involution_G_x0(guide, MM0) 
-
-    """
-    a = np.zeros(10, dtype = np.uint32)
-    data = Xsp2_Co1(elem)._data
-    res = xsp2co1_elem_conjugate_involution_G_x0(data, guide, a)
-    assert res >= 0
-    iclass, length = res >> 8, res & 0xff
-    assert 0 <= length <= 10
-    return iclass, MM0('a', a[:length])
-    """
+    iclass, g = elem.conjugate_involution_G_x0(guide, MM0) 
+    hex_iclass = REVERSE_DICT_INVOLUTION_G_x0[iclass]
+    return hex_iclass, g
 
 
 #######################################################################
@@ -504,6 +510,7 @@ def conjugate_testdata(n_samples = 10):
 # Test the C function xsp2co1_elem_conjugate_involution_Gx0
 #######################################################################
 
+@pytest.mark.mmm
 @pytest.mark.involution
 def test_std_rep(ntests = 50, verbose = 0):
     r"""Test C function ``xsp2co1_elem_conjugate_involution_Gx0``
@@ -536,9 +543,9 @@ def test_std_rep(ntests = 50, verbose = 0):
             assert (Omega1.ord ^ Omega.ord) & 0xffffff == 0
         c_class, cc = xsp2co1_elem_conjugate_involution_Gx0_C(g, guide)
         if (cc != c or c_class != iclass):
-            print("Involution class %s:\n g =" % hex(iclass), g)
+            print("Involution class %s:\n g =" % hexx(iclass), g)
             if c_class != iclass:
-                print("Class computed by C function", hex(c_class))
+                print("Class computed by C function", hexx(c_class))
             if guide:
                 print(" guide =", hex(guide))
             print(" t**-1 =", (MM0(c)**(-1)).reduce())
