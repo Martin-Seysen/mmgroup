@@ -94,3 +94,9 @@ except:
     warnings.warn(w, UserWarning)
     
     
+try:
+    from mmgroup.mm_crt_space import  MMVectorCRT
+except:
+    pass
+
+

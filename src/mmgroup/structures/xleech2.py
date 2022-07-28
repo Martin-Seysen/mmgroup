@@ -650,6 +650,43 @@ class XLeech2(AbstractGroupWord):
         return mat24.gcode_to_octad(self.value >> 12, 0)
 
 
+    @classmethod
+    def gen_type(cls, vtype = 2, positive = True):
+        r"""Return generator that yields the vectors of a given type 
+
+        The function returns a generator that yields all elements of
+        :math:`Q_{x0}` that map to a vector of the type ``vtype`` in 
+        the Leech lattice (mod 2) as instances of class |XLeech2|.
+
+        Parameter ``vtype`` must be 0, 2, 3 or 4, where ``vtype = 2``
+        (default) means the short Leech lattice vectors.
+        
+        If parameter ``positive``is ``True`` (default) then the 
+        elements with positive sign are generated only.
+        """
+        if vtype == 2:
+            for ve in range(300, 98560):
+                vs = mm_aux_index_extern_to_sparse(ve)
+                yield XLeech2(vs)
+                if not positive:
+                    yield XLeech2(vs ^ 0x1000000)
+        elif vtype == 0: 
+            yield XLeech2(0)
+            if not positive:
+                yield XLeech2(vs ^ 0x1000000)
+        elif vtype in [3,4]:
+            for vs in range(0x1000000):
+                if gen_leech2_type(vs) == vtype:
+                    yield XLeech2(vs)
+                    if not positive:
+                        yield XLeech2(vs ^ 0x1000000)
+        else:
+            err = "Bad parameter 'vtype' in class XLeech2, method gen_type"
+            raise ValueError(err)
+
+
+
+
 add_to_embedded_classes(XLeech2)
 
 

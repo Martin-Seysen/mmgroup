@@ -34,6 +34,7 @@ from mmgroup.structures.mm_space_indices import tuple_to_sparse
 from mmgroup.structures.mm_space_indices import numeric_index_to_sparse
 from mmgroup.structures.mm_space_indices import sparse_from_indices
 from mmgroup.structures.abstract_group import AbstractGroupWord
+from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup.mm_space  import MMSpace, MMVector, mm_ops
 from mmgroup.mm_space  import standard_mm_group
 from mmgroup.structures.parse_atoms import AtomDict 
@@ -296,6 +297,16 @@ class MMVectorCRT(AbstractMmRepVector):
             return
         elif isinstance(tag, str) and len(tag) == 1:
             d += vsparse(tag, i0, i1)
+        elif isinstance(tag, str) and tag == "Axis":
+            g = None
+            if isinstance(i0, AbstractMMGroupWord):
+               i0, g = cls._mm_element_to_axis(cls, mm)
+               i1 = None
+            for p in (7, 31, 127, 255):
+                self.data[p]  = MMVector(p, tag, i0, i1) << self.shift
+            if g is not None:
+                self *= g
+            return
         elif isinstance(tag, str):
             d += vsparse_from_str(tag)
         elif isinstance(tag, list):

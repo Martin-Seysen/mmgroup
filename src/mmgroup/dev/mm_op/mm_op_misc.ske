@@ -17,6 +17,7 @@
 */
 
 #include "mm_op%{P}.h"
+#include "clifford12.h"
 
 // %%EXPORT_KWD MM_OP%{P}_API
 
@@ -225,6 +226,47 @@ uint32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
     // %%END IF
 }
 
+
+
+/** 
+  @brief Set a vector in \f$\rho_{%{P}}\f$ to an axis.
+
+  Let ``x`` be an element of the subgroup  \f$Q_{x0}\f$ 
+  if the Monster that maps to a short Leech lattice vector.
+  Here ``x`` must be given in  **Leech lattice encoding** 
+  as in the **Description of the mmgroup.generators extension**
+  in the documentation of the **C interface**.
+
+  Then ``x`` corresponds to vector in \f$\rho_{%{P}}\f$
+  that is called a **2A axis**. The function stores that
+  2A axis in ``mv``.
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_store_axis(uint32_t x, uint_mmv_t *mv)
+{
+   uint32_t i, j, ind, ua[24];
+   int8_t a[24];
+   uint8_t  b[32];
+   int32_t res;
+   
+   mm_aux_zero_mmv(%{P}, mv);
+   if ((res = xsp2co1_short_2_to_leech(x, a)) < 0) return res;
+   for (i = 0; i < 24; ++i) {
+       uint32_t entry = ((int32_t)a[i] + (%{P} << 8)) << %{int:P_BITS-2};
+       ua[i] =  entry % %{P};
+   }
+   for (i = 0; i < 24; ++i) {
+       uint32_t ua_i = ua[i];
+       for (j = 0; j < 24; ++j) {
+           b[j] = (uint8_t)(ua_i * ua[j] % %{P});
+       }
+       mm_aux_write_mmv24(%{P}, b, mv + %{V24_INTS} * i, 1);
+   }
+   ind = mm_aux_index_leech2_to_sparse(x) + 2;
+   if ((x & 0x1000000) == 0) ind ^= %{P};
+   mm_aux_mmv_set_sparse(%{P}, mv, &ind, 1);
+   return 0;
+}
 
 
 //  %%GEN h

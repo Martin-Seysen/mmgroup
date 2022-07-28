@@ -1626,6 +1626,56 @@ int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
 
 
 /*************************************************************************
+*** Convert short element of Leech lattice mod 2 or 3 to vector
+*************************************************************************/
+
+
+/**
+@brief Compute integral short Leech lattice vector from vector mod 3
+
+Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
+lattice mod 3** encoding, the function computes the real coordinates
+of vector ``x`` in the array referred by ``pdest``. ``pdest``
+must have length 24. As usual, the norm (i.e. the squared sum of the
+coordinates) of the computed short vector is normalized to 32.
+
+The function returns 0 if ``x`` encodes a short Leech lattice vector
+mod 3 and a negative value otherwise.
+*/
+// %%EXPORT px
+int32_t xsp2co1_short_3_to_leech(uint64_t x, int8_t *pdest)
+{
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) pdest[i] = 0;
+    return xsp2co1_add_short_3_leech(x, 1, pdest, pdest);
+}
+
+
+/**
+@brief Compute integral short Leech lattice vector from vector mod 2
+
+Given a short Leech lattice vector ``x`` (modulo 2) in **Leech
+lattice** encoding, the function computes the real coordinates
+of vector ``x`` in the array referred by ``pdest``. ``pdest``
+must have length 24. As usual, the norm (i.e. the squared sum of the
+coordinates) of the computed short vector is normalized to 32.
+Note that the result is defiined up to sign only. Here the function
+chooses an arbitrary sign.
+
+The function returns 0 if ``x`` encodes a short Leech lattice vector
+mod 2 and a negative value otherwise.
+*/
+// %%EXPORT px
+int32_t xsp2co1_short_2_to_leech(uint64_t x, int8_t *pdest)
+{
+    uint64_t x3;
+    if ((x3 = gen_leech2to3_short(x & 0xffffff)) == 0) return -1;
+    return xsp2co1_short_3_to_leech(x3, pdest);
+}
+
+
+
+/*************************************************************************
 *** Convert element of G_{x0} to a word in its generators
 *************************************************************************/
 

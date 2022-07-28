@@ -1,4 +1,4 @@
-"""Compute classes of square roots of Q_x0 in G_x0.
+r"""Compute classes of square roots of Q_x0 in G_x0.
 
 Running this module creates a python file ``involution_samples.py``
 containing samples of these classes including documentation.
@@ -162,7 +162,7 @@ check_std_hexads(verbose = 0)
 
 
 def transversal_basis(g):
-    """Compute basis of a transversal for :math:`g \in G_{x0}`
+    r"""Compute basis of a transversal for :math:`g \in G_{x0}`
 
     Let ``g`` be an element of the group  :math:`G_{x0}`, such
     that ``Xsp2_Co1(g)`` constructs an instance of class
@@ -188,7 +188,7 @@ def transversal_basis(g):
  
 
 def vector_space(basis):
-    """Map basis of vector space to vector space.
+    r"""Map basis of vector space to vector space.
 
     Given a ``basis`` of a subspace of :math:`\Lambda / 2 \Lambda`
     in **Leech lattice encoding**, the function returns the list
@@ -201,7 +201,7 @@ def vector_space(basis):
 
 
 def iter_Q_x0():
-    """Iterator for all samples in :math:`Q_{x0}` to be checked
+    r"""Iterator for all samples in :math:`Q_{x0}` to be checked
 
     This function performs the case ``g = 1`` in function
     ``iter_transversal```.
@@ -214,7 +214,7 @@ def iter_Q_x0():
 
 
 def iter_transversal(g):
-    """Iterator for all samples in :math:`g Q_{x0}` to be checked
+    r"""Iterator for all samples in :math:`g Q_{x0}` to be checked
 
     Let ``g`` be an element of the group :math:`G_{x0}` such
     that the coset :math:`g Q_{x0}` in  :math:`{Co}_1` has 
@@ -249,7 +249,7 @@ neg =G('x', 0x1000)
 
 
 def check_y12_involution_conjugates_to_its_negative():
-    """Check involutions corresponding to class 2C 
+    r"""Check involutions corresponding to class 2C 
 
     Let :math:`g \in G_{x0}` be such that :math:`g Q_{x0}`
     is of class 2C in :math:`\mbox{Co}_1`. We may e.g. put
@@ -323,7 +323,7 @@ def characters(g):
 STD_FOURVOLUTION = None
 
 def find_fourvolution(verbose = 0):
-    """Return a certain 'fourvolution' in G_x0 as an element of MM
+    r"""Return a certain 'fourvolution' in G_x0 as an element of MM
 
     Here a 'fourvolution' is an element v of G_x0 auch that the
     the image v Q_x0 of v in Co_1 is in class 2B of Co_1. Then 

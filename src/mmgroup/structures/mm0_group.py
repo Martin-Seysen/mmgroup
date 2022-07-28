@@ -549,9 +549,10 @@ class MM0(AbstractMMGroupWord):
         if :math:`g` is a 2B involution (in the monster) then we let 
         :math:`z` be the central involution in :math:`G_{x0}`
 
-        The function returns the element :math:`h` of the monster. It
-        raises ``ValueError`` if :math:`g` is not an involution in
-        the monster, or no suitable element  :math:`h` can be foound. 
+        The function returns a pair ``(I, h)``, where :math:`h` as an 
+        element of the instance  ``MM`` of class ``MMGroup``. We put
+        ``I = 0`` if :math:`g = 1`. We put ``I = 1, 2`` if 
+        :math:`g` is a 2A or 2B involution, respectively.
 
         This function may take a long time. Parameter  ``ntrials``
         gives the number of trials to find a suitable element

@@ -525,6 +525,7 @@ class MMVectorOps:
         self.op_xy = mm.op_xy
         self.op_omega = mm.op_omega
         self.op_word_tag_A = mm.op_word_tag_A
+        self.op_store_axis = mm.op_store_axis
         self.mm_vector = partial(mm_vector, p)
         del mm
 
@@ -953,7 +954,51 @@ class MMSpace(AbstractMmRepSpace):
     def imul_scalar(self, v1, a):
         v1.ops.op_scalar_mul(a % v1.p, v1.data)
         return v1
-           
+ 
+
+    #######################################################################
+    # Support for axes 
+    #######################################################################
+
+
+    STD_AXES = {"v+": 0x200, "v-":0x1000200}
+
+          
+    @classmethod
+    def _mm_element_to_axis(cls, mm):
+        if import_pending:
+            complete_import()
+        try:
+            inv_type, h = i0.conjugate_involution()
+            assert inv_type == 1
+        except:
+            err = "Group element after tag 'Axis' must be a 2A involution"
+            raise ValueError(err)
+        return "v+", h**-1
+
+
+
+    @classmethod
+    def _make_axis(cls, p, i0, *_):
+        if import_pending:
+            complete_import()
+        if isinstance(i0, str) and i0 in cls.STD_AXES:
+            i0 = cls.STD_AXES[i0]
+        elif isinstance(i0, XLeech2):
+            i0 = v.ord
+        if isinstance(i0, Integral):
+            v = cls.vector_type(p, 0)
+            v.ops.op_store_axis(i0, v.data)
+            return v
+        elif isinstance(i0, AbstractMMGroupWord):
+            std_axis, g = cls._mm_element_to_axis(cls, mm)
+            return cls._make_axis(p, std_axis) * g
+        else:
+            err = "Illegal type %s after tag 'Axis'"
+            raise VaueError(err % type(i0))
+
+
+
     #######################################################################
     # Group operation 
     #######################################################################
@@ -1307,5 +1352,9 @@ def order_vector():
    mm_order_load_vector(v.data)
    return v
 
+
+
+         
+    
 
 

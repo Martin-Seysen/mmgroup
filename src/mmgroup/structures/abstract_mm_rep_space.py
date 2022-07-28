@@ -814,19 +814,24 @@ def add_vector(vector, tag = 0, i0 = None, i1 = None):
         return
     p = vector.p
     space = vector.space
-    if isinstance(tag, str) and len(tag) == 1:
-        if tag in "ABCTXZYDEIJUS0":
-            space.additems_sparse(vector,
-                tuple_to_sparse(p, tag, i0, i1))
-        elif tag == "R":
-            space.set_rand_uniform(vector)
-        elif tag == "V":
-            v1 = space.from_bytes(p, i0)
-            space.iadd(vector, v1)
-        else:
-            err = "Illegal tag '%s' for MM vector"
-            raise ValueError(err % tag)
-    elif isinstance(tag, (AbstractMmRepVector, str)):
+    if isinstance(tag, str):
+        if len(tag) == 1:
+            if tag in "ABCTXZYDEIJUS0":
+                space.additems_sparse(vector,
+                    tuple_to_sparse(p, tag, i0, i1))
+            elif tag == "R":
+                space.set_rand_uniform(vector)
+            elif tag == "V":
+                v1 = space.from_bytes(p, i0)
+                space.iadd(vector, v1)
+            else:
+                err = "Illegal tag '%s' for MM vector"
+                raise ValueError(err % tag)
+        elif tag == "Axis":
+            space.iadd(vector, space._make_axis(p, i0, i1))
+        else: 
+            add_conv_vector(vector, tag, factor = 1)
+    elif isinstance(tag, AbstractMmRepVector):
          add_conv_vector(vector, tag, factor = 1)
     elif isinstance(tag, list):
         for x in tag:
