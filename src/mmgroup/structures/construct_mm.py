@@ -48,6 +48,14 @@ tag_dict = {
 }
 
 
+STD_Q_ELEMENTS = {
+   "v+": 0x200, "v-":0x1000200, 
+   "Omega":0x800000, "-Omega":0x1800000,
+   "-":0x1000000, "+":0,
+   "omega": 0x400, "-omega": 0x1000400, 
+}
+
+
 
 
 tags = " dpxytl"
@@ -57,6 +65,23 @@ ERR_ATOM_VALUE = "Illegal value of atom in constructor of monster group with tag
 ERR_ATOM_TYPE = "Illegal type '%s' of atom in constructor of monster group with tag '%s'"
 ERR_TAG_VALUE = "Illegal tag '%s' in constructor of monster group"
 ERR_TAG_TYPE = "Illegal type '%s' of tag in constructor of monster group"
+
+
+def std_q_element(tag, r):
+    try:
+        e = STD_Q_ELEMENTS[r]
+    except KeyError:
+        raise ValueError(ERR_ATOM_VALUE % tag) 
+    if tag == 'q':
+        return e
+    if tag in 'xyz' and e & 0xfff == 0:
+        return e >> 12
+    if tag == 'd' and e & 0x1fff000 == 0:
+        return e
+    raise ValueError(ERR_ATOM_VALUE % tag) 
+  
+
+
 
 def iter_d(tag, d):
     if isinstance(d, Integral ):
@@ -70,7 +95,7 @@ def iter_d(tag, d):
         if  len(d) == 1 and d in "rnoe":
             yield 0x10000000 + (cocode & 0xfff)
         else:
-            raise ValueError(ERR_ATOM_VALUE % 'd')            
+            yield 0x10000000 + std_q_element(tag, d)            
     else:
         try:
             cocode = Cocode(d).cocode
@@ -109,7 +134,7 @@ def gen_ploop_element(tag, r):
         r_num = randint(r == 'n', 0x1fff)
         if  len(r) == 1 and r in "rn":
             return r_num
-        raise ValueError(ERR_ATOM_VALUE % tag)            
+        return std_q_element(tag, r)            
     else:
         try:
             return PLoop(r).ord
@@ -145,12 +170,19 @@ def iter_tl(tag, r):
 ERR_Q_x0 = "Atom for tag 'q' must represent element of subgroup Q_x0 of the monster"
 
 
+
+
 def iter_q(tag, r):
     if isinstance(r, Integral):
         e = r & 0x1ffffff
     elif isinstance(r, str):
-        e = randint(r == 'n', 0x1ffffff) 
-        if  len(r) != 1 or not d in "rn":
+        if  len(r) == 1 and d in "rn":
+            e = randint(r == 'n', 0x1ffffff) 
+        elif r in STD_Q_ELEMENTS:
+            e = STD_Q_ELEMENTS[r]
+        elif r[:1] == '-' and r[1:] in STD_Q_ELEMENTS:
+            e = STD_Q_ELEMENTS[r] ^ 0x1000000
+        else:
             raise ValueError(ERR_ATOM_VALUE % tag) 
     else:
         try:

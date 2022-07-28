@@ -510,7 +510,6 @@ def conjugate_testdata(n_samples = 10):
 # Test the C function xsp2co1_elem_conjugate_involution_Gx0
 #######################################################################
 
-@pytest.mark.mmm
 @pytest.mark.involution
 def test_std_rep(ntests = 50, verbose = 0):
     r"""Test C function ``xsp2co1_elem_conjugate_involution_Gx0``

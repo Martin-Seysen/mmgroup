@@ -122,8 +122,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, MM0
+    global import_pending, MM0, std_q_element 
     from mmgroup.structures.mm0_group import MM0
+    from mmgroup.structures.construct_mm import std_q_element
     import_pending = False
 
 
@@ -231,7 +232,10 @@ def value_from_ploop(ploop=0, cocode = None, *args):
                  return randint(0, 0x1ffffff)
              elif cocode in [0,2,3,4]:
                  return  rand_xleech2_type(cocode)
-        raise ValueError(ERR_XL_TUPLE)            
+        try:
+            return std_q_element("q", ploop) 
+        except:
+            raise ValueError(ERR_XL_TUPLE)            
     else:
         return TypeError(ERR_XL_TYPE % type(ploop))
     return d ^ c
@@ -297,38 +301,41 @@ class XLeech2(AbstractGroupWord):
     Depending on its type parameter **value** is  interpreted as follows:
 
     .. table:: Legal types for constructor of class ``XLeech2``
-      :widths: 20 80
+      :widths: 25 75
 
-      ===================== ================================================
-      type of ``value``     Evaluates to
-      ===================== ================================================
-      ``int``               Here the code word with number ``value`` is
-                            returned.  ``0 <= value < 0x2000000`` must hold.
+      ====================== ================================================
+      type of ``value``      Evaluates to
+      ====================== ================================================
+      ``int``                Here the code word with number ``value`` is
+                             returned.  ``0 <= value < 0x2000000`` must hold.
                               
-      class |XLeech2|       A deep copy of the object ``value``
-                            is created. 
+      class |XLeech2|        A deep copy of the object ``value``
+                             is created. 
 
-      class |GCode|         The corresponding Golay code element is
-                            converted to a (positive) element of
-                            :math:`Q_{x0}`. 
+      class |GCode|          The corresponding Golay code element is
+                             converted to a (positive) element of
+                             :math:`Q_{x0}`. 
 
-      class |PLoop|         The corresponding Parker loop element is
-                            converted to an element of :math:`Q_{x0}`. 
+      class |PLoop|          The corresponding Parker loop element is
+                             converted to an element of :math:`Q_{x0}`. 
 
-      class |MM|            Then ``value`` in an element of the monster
-                            group. If that element is in the subgroup
-                            :math:`Q_{x0}` of the monster, then it is
-                            converted to the coresponding instance of 
-                            class |XLeech2|.
+      class |MM|             Then ``value`` in an element of the monster
+                             group. If that element is in the subgroup
+                             :math:`Q_{x0}` of the monster, then it is
+                             converted to the coresponding instance of 
+                             class |XLeech2|.
 
-      ``'r'``               Create random element depending on the string,
-                            see explanation below.
+      ``'r'``                Create random element depending on the string,
+                             see explanation below.
 
-      A letter ``BCTXE``    If ``value`` is a single capital letter in
-                            ``BCTXE`` then we create an element
-                            corresponding to a unit vector 
-                            in :math:`\rho_p` as described below.
-      ===================== ================================================
+      A letter ``BCTXE``     If ``value`` is a single capital letter in
+                             ``BCTXE`` then we create an element
+                             corresponding to a unit vector 
+                             in :math:`\rho_p` as described below.
+
+      Any other string ``s`` This is intepreted as the element ``MM('q', s)``
+                             of the Monster group.
+      ====================== ================================================
 
     If value is of one of the type listed above then the following
     parameter is converted to an element of the Golay cocode (as in

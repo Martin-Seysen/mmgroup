@@ -386,7 +386,6 @@ class MM(MM0):
     subgroup is generated. The follwing subgroups are recognized:
 
     .. table:: Subgroups of the Monster group recognized
-          :widths: 15 85
 
        +----------------+---------------------------------------------+
        | Parameter ``i``| Subgroup                                    | 
@@ -480,6 +479,32 @@ class MM(MM0):
       +---------------------+-------------------------------------------+
 
 
+    **Special strings accepted as a value after tag 'q'**
+
+    The following strings are accepted after  tag 'q'. They denote special 
+    elements in the group :math:`Q_{x0}` as indicated in the follwing table. 
+
+      +------------------------+-------------------------------------------+
+      | String after tag ``q`` | Evaluates to                              |
+      +========================+===========================================+
+      | ``'+', '-'``           | :math:`x_1,  x_{-1}`                      |
+      +------------------------+-------------------------------------------+
+      | ``'Omega', '-Omega'``  | :math:`x_\Omega,  x_{-\Omega}`, where     |
+      |                        | :math:`\Omega` is the Golay code word     |
+      |                        | :math:`(1, \ldots, 1)`                    |
+      +------------------------+-------------------------------------------+
+      | ``'omega', '-omega'``  | :math:`x_\omega,  x_{-1}x_{\omega}` , for |
+      |                        | the cocode word :math:`\omega` = [0,1,2,3]|
+      +------------------------+-------------------------------------------+
+      | ``'v+', 'v-'``         | :math:`x_\delta,  x_{-1} x_{\delta}`, for |
+      |                        | the cocode word :math:`\delta` = [2,3],   |
+      |                        | see :cite:`Seysen22` background           |
+      +------------------------+-------------------------------------------+
+
+    The strings ``'+', '-', 'Omega', '-Omega'`` are also accepted after 
+    a tag ``x``, meaning the same element. They are also accepted after
+    tags ``x, z`` with the obvious meaning, e.g. ``('y', '-Omega')`` =
+    :math:`y_{-\Omega}`, ``('z', '-')`` = :math:`z_{-1}`.
     """
     MIN_LEN = 128
     _MAGIC = randint(0, 0xffffffffffffffff)

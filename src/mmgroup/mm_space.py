@@ -420,29 +420,38 @@ be set.
     .. table:: Legal types for constructing a vector
       :widths: 20 80
 
-      ====================== ============================================= 
+      ====================== ============================================== 
       type                   Evaluates to                               
-      ====================== ============================================= 
+      ====================== ============================================== 
       List of tuples         This evaluates to a vector as described in
                              subsection 
                              *Representing a vector as a list of tuples*.
 
                              An entry of such a list may also be an 
                              instance of class |MMVector| or a string. 
-      ---------------------- --------------------------------------------- 
+      ---------------------- ---------------------------------------------- 
        class |MMVector|      A deep copy of the given vector is returned.            
-      ---------------------- --------------------------------------------- 
+      ---------------------- ---------------------------------------------- 
        class |XLeech2|       If ``tag`` is of type |XLeech2| then the
                              (possibly negative) basis vector 
                              corresponding to that ``tag`` 
                              in :math:`Q_{x0}` is created.
-      ---------------------- --------------------------------------------- 
+      ---------------------- ---------------------------------------------- 
        ``str``               For an vector ``v`` in ``V`` we have      
                              ``V(str(v)) == v``. 
 
                              This is helpful for rereading printed 
                              vectors.       
-      ====================== ============================================= 
+      ---------------------- ----------------------------------------------
+      ``('Axis', g)``        If a pair containing the string ``'Axis'`` and
+                             a 2A involution ``g`` in the Monster group is 
+                             given then we contruct the axis corresponding
+                             to that involution (with norm 8) as
+                             described in :cite:`Con85`. Here ``g``
+                             should be an instance of class |XLeech2| or
+                             |MM|. A integer or string ``g`` describes the
+                             element ``MM('q', g)``.
+      ====================== ============================================== 
 
 
 
@@ -576,10 +585,12 @@ import_pending = True
 def complete_import():
     global mm_op15_eval_A, mm_reduce_2A_axis_type
     global XLeech2, mm_op15_eval_X_count_abs 
+    global std_q_element
     from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type 
     from mmgroup.mm15 import op_eval_X_count_abs as mm_op15_eval_X_count_abs
     from mmgroup import XLeech2
+    from mmgroup.structures.construct_mm import std_q_element
     import_pending = False    
 
 
@@ -961,7 +972,6 @@ class MMSpace(AbstractMmRepSpace):
     #######################################################################
 
 
-    STD_AXES = {"v+": 0x200, "v-":0x1000200}
 
           
     @classmethod
@@ -969,7 +979,7 @@ class MMSpace(AbstractMmRepSpace):
         if import_pending:
             complete_import()
         try:
-            inv_type, h = i0.conjugate_involution()
+            inv_type, h = MM0(i0).conjugate_involution()
             assert inv_type == 1
         except:
             err = "Group element after tag 'Axis' must be a 2A involution"
@@ -982,8 +992,12 @@ class MMSpace(AbstractMmRepSpace):
     def _make_axis(cls, p, i0, *_):
         if import_pending:
             complete_import()
-        if isinstance(i0, str) and i0 in cls.STD_AXES:
-            i0 = cls.STD_AXES[i0]
+        if isinstance(i0, str):
+            try:
+                i0 = std_q_element('q', i0)
+            except:
+                err = "Unknown string after tag 'Axis'"
+                raise ValueError(err)
         elif isinstance(i0, XLeech2):
             i0 = v.ord
         if isinstance(i0, Integral):
@@ -991,7 +1005,7 @@ class MMSpace(AbstractMmRepSpace):
             v.ops.op_store_axis(i0, v.data)
             return v
         elif isinstance(i0, AbstractMMGroupWord):
-            std_axis, g = cls._mm_element_to_axis(cls, mm)
+            std_axis, g = cls._mm_element_to_axis(i0)
             return cls._make_axis(p, std_axis) * g
         else:
             err = "Illegal type %s after tag 'Axis'"
