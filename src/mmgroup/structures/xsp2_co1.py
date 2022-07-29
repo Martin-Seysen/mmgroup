@@ -7,6 +7,7 @@ import re
 import numpy as np
 import warnings
 from functools import partial
+from numbers import Integral
 
 from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
@@ -16,6 +17,7 @@ from mmgroup.structures.construct_mm import iter_mm
 
 from mmgroup.structures.ploop import Cocode, PLoop
 from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
+from mmgroup.structures.xleech2 import XLeech2
 from mmgroup.structures.construct_mm import iter_mm       
 from mmgroup.structures.construct_mm import load_group_name     
 
@@ -260,14 +262,14 @@ class Xsp2_Co1(AbstractMMGroupWord):
         that class.
         """
         if mmgroup is None:
-             mmgroup = MM if MM is not None else import_MM()            
+             mmgroup = import_MM()            
         a = np.zeros(15, dtype = np.uint32)
         len_a = xsp2co1_elem_conjugate_involution(self._data, a)
         chk_qstate12(len_a)
         return (len_a >> 8), mmgroup('a', a[:len_a & 0xff])
 
 
-    def conjugate_involution_G_x0(self, guide = None, group = None):
+    def conjugate_involution_G_x0(self, guide = 0, group = None):
         r"""Map an involution in :math:`G_{x0}` to a standard form.
 
         Assume that the element :math:`g` represented by ``self`` is
@@ -324,6 +326,10 @@ class Xsp2_Co1(AbstractMMGroupWord):
         is the standard frame in the Leech lattice.  
         """
         group = Xsp2_Co1 if group is None else group
+        if not guide:
+             guide = 0
+        elif not isinstance(guide, Integral):
+             guide = XLeech2(guide).ord
         a = np.zeros(10, dtype = np.uint32)
         len_a = xsp2co1_elem_conjugate_involution_Gx0(
             self._data, guide, a)

@@ -300,7 +300,7 @@ class MMVectorCRT(AbstractMmRepVector):
         elif isinstance(tag, str) and tag == "Axis":
             g = None
             if isinstance(i0, AbstractMMGroupWord):
-               i0, g = cls._mm_element_to_axis(cls, mm)
+               i0, g = MMSpace._mm_element_to_axis(i0)
                i1 = None
             for p in (7, 31, 127, 255):
                 self.data[p]  = MMVector(p, tag, i0, i1) << self.shift

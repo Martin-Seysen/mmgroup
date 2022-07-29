@@ -176,12 +176,10 @@ def iter_q(tag, r):
     if isinstance(r, Integral):
         e = r & 0x1ffffff
     elif isinstance(r, str):
-        if  len(r) == 1 and d in "rn":
+        if  len(r) == 1 and r in "rn":
             e = randint(r == 'n', 0x1ffffff) 
         elif r in STD_Q_ELEMENTS:
             e = STD_Q_ELEMENTS[r]
-        elif r[:1] == '-' and r[1:] in STD_Q_ELEMENTS:
-            e = STD_Q_ELEMENTS[r] ^ 0x1000000
         else:
             raise ValueError(ERR_ATOM_VALUE % tag) 
     else:

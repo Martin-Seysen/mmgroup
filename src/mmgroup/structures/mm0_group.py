@@ -590,7 +590,7 @@ class MM0(AbstractMMGroupWord):
             import_Xsp2_Co1()
         if group is None: group = self.__class__
         elem = Xsp2_Co1('a', self.mmdata)
-        return elem.conjugate_involution_G_x0(guide, None)
+        return elem.conjugate_involution_G_x0(guide, group)
 
 
 

@@ -979,7 +979,7 @@ class MMSpace(AbstractMmRepSpace):
         if import_pending:
             complete_import()
         try:
-            inv_type, h = MM0(i0).conjugate_involution()
+            inv_type, h = MM0(mm).conjugate_involution()
             assert inv_type == 1
         except:
             err = "Group element after tag 'Axis' must be a 2A involution"
@@ -999,7 +999,7 @@ class MMSpace(AbstractMmRepSpace):
                 err = "Unknown string after tag 'Axis'"
                 raise ValueError(err)
         elif isinstance(i0, XLeech2):
-            i0 = v.ord
+            i0 = i0.ord
         if isinstance(i0, Integral):
             v = cls.vector_type(p, 0)
             v.ops.op_store_axis(i0, v.data)

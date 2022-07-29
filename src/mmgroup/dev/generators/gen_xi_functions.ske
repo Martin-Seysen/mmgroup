@@ -164,6 +164,41 @@ uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 }
 
 
+
+
+
+/**
+  @brief Similar to function ``gen_xi_op_xi``, ingoring sign 
+  
+  The function returns \f$\xi^{-e} x \xi^e\f$ for an element 
+  \f$x\f$  of the group \f$Q_{x0}\f$. Input \f$x\f$ and the
+  return value are encoded in *Leech lattice encoding* as described
+  above. This function computes the result up to sign only.
+*/
+// %%EXPORT px
+uint32_t gen_xi_op_xi_nosign(uint32_t x, uint32_t e)
+{
+    uint_fast32_t tv, tc; 
+    // reduce e mod 3, no action if e is 0 (mod 3)
+    if ((e = e % 3) == 0) return x;
+    // map e = 1, 2   to  e = -1,  0
+    e -= 2;   
+    // tv = w2(code), g(code);   tc = w2(cocode), g(cocode);      
+    tv = MAT24_XI_G_GRAY_TABLE[compress_gray(x >> 12)]; 
+    tc = MAT24_XI_G_COCODE_TABLE[compress_gray(x)];
+    // if old e = 1: x &= ~0xc0f000, i.e. kill gray code part
+    // if old e = 2: x &= ~0xc0f, i.e. kill gray cocode part
+    x &= ~(0xc0fUL << (e & 12)); 
+    // xor g(code) to cocode and g(cocode) to code
+    x ^= expand_gray(tv);       // xor g(code) to cocode
+    x ^= expand_gray(tc) << 12; // xor g(cocode) to code
+    return x;
+}
+
+
+
+
+
 /*************************************************************************
 *** Conversion between 'short' and 'Leech' representation of vectors
 *************************************************************************/
