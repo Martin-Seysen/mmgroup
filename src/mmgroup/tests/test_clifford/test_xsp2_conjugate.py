@@ -14,7 +14,15 @@ import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_op_word
+from mmgroup.generators import gen_leech2_op_word_Omega
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
+
+
+###################################################################
+###################################################################
+# Test C function gen_leech2_op_word and derived python functions
+###################################################################
+###################################################################
 
 
 #####################################################################
@@ -73,6 +81,7 @@ def conj_x_by_word(x, g_mm):
     w_g = g_mm.mmdata
     return gen_leech2_op_word(x, w_g, len(w_g))
 
+
     
 @pytest.mark.xsp2co1
 def test_xsp2_conjugate(verbose = 0):
@@ -128,8 +137,54 @@ def test_xsp2_conjugate(verbose = 0):
         assert conj_nosign == [x & mask for x in conj]
 
 
+###################################################################
+###################################################################
+# Test C function gen_leech2_op_word_Omega
+###################################################################
+###################################################################
 
 
+def gen_leech2_op_word_Omega_testdata():  
+    testdata = [[('l', i)] for i in range(1,2)]
+    tags = "xyzdp"
+    testdata += [[(tag, 'r')] for tag in tags]
+    for data in testdata:
+        yield MM0(data)
+    testdata2 = [[('l', 'n'),(tag, 'r'),('l', 'n')] for tag in tags]
+    for data in testdata2:
+        g = MM0(data)
+        yield g
+        a = g.mmdata
+        a[1] ^= 0x80000000
+        g._setdata(a)
+        yield g
+    # test with some more random data
+    for i in range(10):
+        g = rand_xsp2co1_elem()
+        yield g
 
 
+@pytest.mark.xsp2co1
+def test_gen_leech2_op_word_Omega(verbose = 0):
+    Omega = 0x800000
+    for ntest, g in enumerate(gen_leech2_op_word_Omega_testdata()):
+        for inv in [0, 1]:
+            g1 = g ** -1 if inv else g
+            gdata, len_gdata = g.mmdata, len(g.mmdata)
+            ref = conj_x_by_word(Omega, g1 ) & 0xffffff
+            res = gen_leech2_op_word_Omega(gdata, len(gdata), inv)
+            ok = ref == res
+            if verbose or not ok: 
+                inv = " (inverse)" if inv else ""
+                print("\nTest %d%s:\ng = %s" % (ntest, inv, g))
+                if len(g.mmdata) <= 3:
+                    print("Data of g:", [hex(x) for x in g1.mmdata])
+                if ok:
+                    print(" Result:", hex(res))
+                else:
+                    print(" Obtained:", hex(res))
+                    print(" Expected:", hex(ref))
+                    err = "Error in C function gen_leech2_op_word_Omega"
+                    raise ValueError(err)
 
+    

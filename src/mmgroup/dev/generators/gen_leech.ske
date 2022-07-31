@@ -458,16 +458,16 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
 /**
   @brief Perform operation of \f$G_{x0}\f$ on \f$\Omega\f$
 
-  Let \f$g_0 \in G_{x0}\f$ be stored in the array ``g`` of
-  length ``n`` as a word of generators of the
+  Let \f$g_0 \in G_{x0}\f$ be stored in the array ``g`` (referred
+  by ``pg``) of length ``n`` as a word of generators of the
   subgroup \f$G_{x0}\f$ of the  monster. Put \f$g = g_0\f$
   if ``back == 0`` and \f$g = g_0^{-1}\f$ otherwise.
 
-  The the function returns \f$\Omega \cdot g\f$, where
+  Then the function returns \f$\Omega \cdot g\f$,
   where \f$\Omega\f$ is the vector in the Leech lattice
   mod 2 corresponding to the standard frame.
   
-  The result is given Leech lattice encoding, with the sign
+  The result is given in Leech lattice encoding, with the sign
   bit set to zero.
 
   The function is optimized for speed. It returns garbage if
@@ -481,7 +481,7 @@ uint32_t gen_leech2_op_word_Omega(uint32_t *pg, uint32_t n, uint32_t back)
     static uint8_t perm[24];
 
     if (back) {
-        d = -1; pg += n - 1; imask = 0x8000000;
+        d = -1; pg += n - 1; imask = 0x80000000UL;
     }
 
     while (n && (pg[0] & 0x70000000UL) != MMGROUP_ATOM_TAG_L) {
@@ -502,7 +502,7 @@ uint32_t gen_leech2_op_word_Omega(uint32_t *pg, uint32_t n, uint32_t back)
             case MMGROUP_ATOM_TAG_P:
                if (mat24_m24num_to_perm(v,perm)) return 0;
             _perm:
-               v = op_perm_nosign(v, perm);
+               q0 = op_perm_nosign(q0, perm);
                break;
             case MMGROUP_ATOM_TAG_IY:
                y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
