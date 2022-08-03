@@ -14,8 +14,8 @@ import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_op_word
-from mmgroup.generators import gen_leech2_op_word_Omega
-from mmgroup.clifford12 import xsp2co1_leech2_count_type2
+from mmgroup.generators import gen_leech2_op_word_leech2
+#from mmgroup.clifford12 import xsp2co1_leech2_count_leech2
 
 
 ###################################################################
@@ -145,40 +145,42 @@ def test_xsp2_conjugate(verbose = 0):
 
 
 def gen_leech2_op_word_Omega_testdata():  
+    Omega = 0x800000
     testdata = [[('l', i)] for i in range(1,2)]
     tags = "xyzdp"
     testdata += [[(tag, 'r')] for tag in tags]
     for data in testdata:
-        yield MM0(data)
+        yield Omega, MM0(data)
     testdata2 = [[('l', 'n'),(tag, 'r'),('l', 'n')] for tag in tags]
     for data in testdata2:
         g = MM0(data)
-        yield g
+        yield Omega, g
         a = g.mmdata
         a[1] ^= 0x80000000
         g._setdata(a)
-        yield g
+        yield Omega, g
     # test with some more random data
     for i in range(10):
         g = rand_xsp2co1_elem()
-        yield g
+        yield Omega, g
+        yield randint(0, 0xffffff), g
 
 
 @pytest.mark.xsp2co1
-def test_gen_leech2_op_word_Omega(verbose = 0):
-    Omega = 0x800000
-    for ntest, g in enumerate(gen_leech2_op_word_Omega_testdata()):
+def test_gen_leech2_op_word_leech2(verbose = 0):
+    for ntest, (l, g) in enumerate(gen_leech2_op_word_Omega_testdata()):
         for inv in [0, 1]:
             g1 = g ** -1 if inv else g
             gdata, len_gdata = g.mmdata, len(g.mmdata)
-            ref = conj_x_by_word(Omega, g1 ) & 0xffffff
-            res = gen_leech2_op_word_Omega(gdata, len(gdata), inv)
+            ref = conj_x_by_word(l, g1 ) & 0xffffff
+            res = gen_leech2_op_word_leech2(l, gdata, len(gdata), inv)
             ok = ref == res
             if verbose or not ok: 
                 inv = " (inverse)" if inv else ""
-                print("\nTest %d%s:\ng = %s" % (ntest, inv, g))
+                print("\nTest %d%s:\n g = %s" % (ntest, inv, g))
+                print(" Leech2 vector", hex(l))
                 if len(g.mmdata) <= 3:
-                    print("Data of g:", [hex(x) for x in g1.mmdata])
+                    print(" Data of g:", [hex(x) for x in g1.mmdata])
                 if ok:
                     print(" Result:", hex(res))
                 else:

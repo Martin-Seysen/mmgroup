@@ -456,27 +456,30 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
 
 
 /**
-  @brief Perform operation of \f$G_{x0}\f$ on \f$\Omega\f$
+  @brief Perform operation of \f$G_{x0}\f$ on Leech lattice mod 2
 
-  Let \f$g_0 \in G_{x0}\f$ be stored in the array ``g`` (referred
-  by ``pg``) of length ``n`` as a word of generators of the
-  subgroup \f$G_{x0}\f$ of the  monster. Put \f$g = g_0\f$
+  Let \f$g_0 \in G_{x0}\f$ be stored in the array referred
+  by ``pg``` as a word of generators of the subgroup \f$G_{x0}\f$
+  of the  monster. Here \f$g_0\f$ is given as a word of genenators
+  of length \f$n\f$ in the array ``pg``. Each atom of the
+  word \f$g\f$ is encoded as defined in the header
+  file ``mmgroup_generators.h``. Put \f$g = g_0\f$
   if ``back == 0`` and \f$g = g_0^{-1}\f$ otherwise.
 
-  Then the function returns \f$\Omega \cdot g\f$,
-  where \f$\Omega\f$ is the vector in the Leech lattice
-  mod 2 corresponding to the standard frame.
-  
-  The result is given in Leech lattice encoding, with the sign
-  bit set to zero.
+  The function returns the element \f$l \cdot g\f$ for a
+  vector \f$l\f$ in the Leech lattice mod 2.
+
+  Parameter \f$l\f$ is encoded in Leech lattice encoding,
+  igoring the sign. The function returns \f$l \cdot g\f$,
+  in Leech lattice encoding, with the sign bit set to zero.
 
   The function is optimized for speed. It returns garbage if
   any generator in the buffer ``g`` is not in \f$G_{x0}\f$.
 */
 // %%EXPORT px
-uint32_t gen_leech2_op_word_Omega(uint32_t *pg, uint32_t n, uint32_t back)
+uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *pg, uint32_t n, uint32_t back)
 {
-    uint_fast32_t tag, v, y, q0 = 0x800000, imask = 0;
+    uint_fast32_t tag, v, y, q0 = l & 0xffffff, imask = 0;
     int_fast32_t d = 1;
     static uint8_t perm[24];
 
@@ -484,8 +487,10 @@ uint32_t gen_leech2_op_word_Omega(uint32_t *pg, uint32_t n, uint32_t back)
         d = -1; pg += n - 1; imask = 0x80000000UL;
     }
 
-    while (n && (pg[0] & 0x70000000UL) != MMGROUP_ATOM_TAG_L) {
-       pg += d; --n;
+    if ((l & 0x7fffff) == 0) {
+        while (n && (pg[0] & 0x70000000UL) != MMGROUP_ATOM_TAG_L) {
+            pg += d; --n;
+        }
     }
     while (n--) {
         v = pg[0] ^ imask; 

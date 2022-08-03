@@ -1835,7 +1835,7 @@ class ``mmgroup.MMGroup`` for the meaning of these tags.
 
 It uses function ``xsp2co1_elem_to_word`` for computing \f$w_1\f$.
 The word \f$w_1\f$ stored in the array ``a1`` may have up
-to 10 entries.
+to 10 entries. Arrays ``a`` and ``a1`` may overlap.
 */
 // %%EXPORT px
 int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)

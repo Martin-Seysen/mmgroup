@@ -95,6 +95,7 @@ C_REDUCE_SKELETONS = [
    "mm_order",
    "mm_reduce",
    "mm_suborbit",
+   "mm_shorten",
  
 ]
 
@@ -151,6 +152,28 @@ from libc.stdint cimport int64_t, int32_t
 from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t
 
 INT_BITS = {INT_BITS}
+
+
+cdef extern from "mm_reduce.h":
+    enum: MAX_GT_WORD_DATA
+    ctypedef struct gt_subword_type:
+        uint32_t type
+        uint32_t length
+        uint32_t data[MAX_GT_WORD_DATA]
+        uint32_t img_Omega
+        uint32_t img_Omega_inv
+        gt_subword_type *p_prev
+        gt_subword_type *p_next
+        gt_word_type  *p_master
+
+    ctypedef struct gt_word_type:
+        uint32_t n_subwords
+        gt_subword_type *p_fst
+        gt_subword_type *p_end
+        gt_subword_type *p_free
+        gt_subword_type a[1]
+
+
 """.format(INT_BITS = INT_BITS)
 
 
@@ -270,7 +293,8 @@ def generate_files():
         pxi_comment("Wrappers for C functions from file %s" % pxd_f, f_pxi)
         pxi_content = pxd_to_pyx(
             os.path.join(PXD_DIR, pxd_f),
-            os.path.split(pxd_f)[0]
+            os.path.split(pxd_f)[0],
+            select = True
         )
         print(pxi_content, file = f_pxi)
     f_pxi.close()

@@ -2348,9 +2348,11 @@ uint32_t mat24_perm_from_dodecads(uint8_t *d1, uint8_t *d2, uint8_t *p_out)
 // %%EXPORT p
 uint32_t mat24_op_vect_perm(uint32_t v1, uint8_t *p1)
 {
-   uint_fast32_t i, w = 0;
-   for (i = 0; i < 24; ++i) w |=  ((v1 >> i) & 1) << p1[i];
-   return w;
+    uint_fast32_t  w = 0;
+    // %%FOR i in range(24)
+    w |=  ((v1 >> %{i}) & 1) << p1[%{i}];
+    // %%END FOR
+    return w;
 }
 
 
@@ -2516,7 +2518,6 @@ static const uint32_t MAT24_AUTPL_QF_TABLE[] = {
 // %%EXPORT p
 void mat24_autpl_set_qform(uint32_t *m_io)
 {
-    uint_fast32_t i;
     uint_fast%{INT_BITS}_t v,  m2[10];
 
     // The quadratic form qf on the Golay code is defined as follows:
@@ -2541,6 +2542,7 @@ void mat24_autpl_set_qform(uint32_t *m_io)
     // Most of the work is the computation of  theta(m[i], m[j]).
 	
   // %%IF* INT_BITS == 32
+    uint_fast32_t i;
   
     // We read theta(b[i],b[j]) from table MAT24_AUTPL_QF_TABLE.
     // Store m[i], bit 0..10, in m2[i], bit 0..10,
@@ -2569,11 +2571,11 @@ void mat24_autpl_set_qform(uint32_t *m_io)
 
   // %%ELSE	
 	
-    for (i = 0; i < 10; ++i)  {
-        v =  (m_io[i] & 0x7ff);
-        v ^= v << 12; v ^= v << 24;
-        m2[i] = v ^ (v << 48);
-    }
+     // %%FOR i in range(10)
+     v =  (m_io[%{i}] & 0x7ff);
+     v ^= v << 12; v ^= v << 24;
+     m2[%{i}] = v ^ (v << 48);
+	// %%END FOR
 	
 	v = (uint64_t)MAT24_THETA_TABLE[m_io[1] & 0x7ff] & 0x7ff;
 	// %%FOR i in range(1, 5)
@@ -2640,9 +2642,10 @@ void mat24_autpl_set_qform(uint32_t *m_io)
 // %%EXPORT p
 void mat24_perm_to_autpl(uint32_t c1, uint8_t *p1, uint32_t *m_out)
 {
-    uint_fast32_t i;
     mat24_perm_to_matrix(p1, m_out);
-    for (i = 0; i < 12; ++i) m_out[i] ^= ((c1 >> i) & 1) << 12;
+    // %%FOR i in range(12)
+    m_out[%{i}] ^= (c1 << %{hex:12-i}) & 0x1000;
+    // %%END FOR
     mat24_autpl_set_qform(m_out);
 }
 
@@ -2666,10 +2669,9 @@ void mat24_perm_to_autpl(uint32_t c1, uint8_t *p1, uint32_t *m_out)
 // %%EXPORT p
 void mat24_cocode_to_autpl(uint32_t c1, uint32_t *m_out)
 {
-    uint_fast32_t i;
-    for (i = 0; i < 12; ++i) {
-        m_out[i] = (1 << i) + (((c1 >> i) & 1) << 12);
-    }
+    // %%FOR i in range(12)
+    m_out[%{i}] = %{hex:1 << i} + ((c1 << %{hex:12-i}) & 0x1000);
+    // %%END FOR
 }
 
 
@@ -2708,8 +2710,10 @@ void mat24_autpl_to_perm(uint32_t *m1, uint8_t  *p_out)
 // %%EXPORT p
 uint32_t mat24_autpl_to_cocode(uint32_t *m1)
 {
-    uint_fast32_t i, v = 0;
-    for (i = 0; i < 12; ++i)  v += ((m1[i] >> 12) & 1) << i;
+    uint_fast32_t v = 0;
+    // %%FOR i in range(12)
+    v += (m1[%{i}] >> %{hex:12-i}) & %{hex:1 << i};
+    // %%END FOR
     return v;
 }
 
