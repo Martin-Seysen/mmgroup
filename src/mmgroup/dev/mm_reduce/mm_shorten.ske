@@ -30,14 +30,13 @@
    @brief Yet to be documented
 */
 typedef struct gt_subword_type {
-    uint32_t type;                  /** 0 = unused, 1 = node, 2 = end node */
+    uint32_t eof;                   /** 0 = standard, 1 = EOF mark */
     uint32_t length;                /** No of entries in component data */
-    uint32_t data[MAX_GT_WORD_DATA]; /** Element of monster group */
     uint32_t img_Omega;             /** Image of Omega under element*/
-    uint32_t img_Omega_inv;         /** Image of Omega under inverse elem.*/
+    uint32_t t_exp;                 /** Exponent of final tag 't' */
     struct gt_subword_type *p_prev; /** Pointer to previous subword */
     struct gt_subword_type *p_next; /** Pointer to previous subword */
-    struct gt_word_type  *p_master; /** Pointer to master word */
+    uint32_t data[MAX_GT_WORD_DATA]; /** Element of monster group */
 } gt_subword_type;
 
 
@@ -48,8 +47,8 @@ typedef struct gt_subword_type {
 */
 typedef struct gt_word_type {
     uint32_t n_subwords;            /** Max No of subwords allocated */
-    struct gt_subword_type *p_fst;  /** Pointer to first subword */
     struct gt_subword_type *p_end;  /** Pointer to end mark subword */
+    struct gt_subword_type *p_node; /** Pointer current subword */
     struct gt_subword_type *p_free; /** Pointer list of free subwords */
     gt_subword_type a[1];           /** Array of subwords */
 } gt_word_type;
@@ -83,6 +82,8 @@ extern "C" {
 // Manipulating the doubly linked list
 /////////////////////////////////////////////////////////////////////////
 
+#define OMEGA 0x800000
+
 
 /**
 @brief Yet to be documented!
@@ -95,6 +96,21 @@ uint32_t gt_word_size(uint32_t n)
 }
 
 
+
+/**
+@brief Yet to be documented!
+
+Set a subword to the emoty subword.
+
+*/
+// %%EXPORT p
+void gt_subword_clear(gt_subword_type *p_gtsub)
+{
+    p_gtsub->length = p_gtsub->t_exp = 0; 
+    p_gtsub->img_Omega =  OMEGA; 
+} 
+
+
 /**
 @brief Yet to be documented!
 
@@ -104,20 +120,17 @@ void gt_word_init(gt_word_type *p_gtw, uint32_t n)
 {
     uint32_t i;
     p_gtw->n_subwords = 0;
-    for (i = 1; i <= n; ++i) {
-       p_gtw->a[i].type = 0;
+    for (i = 0; i <= n; ++i) {
+       p_gtw->a[i].eof = 0;
        p_gtw->a[i].p_next = &(p_gtw->a[i + 1]);
-       p_gtw->a[i].p_master = p_gtw;
     }
-    p_gtw->a[n-1].p_next = NULL;
-    p_gtw->a[0].p_next = p_gtw->a[0].p_prev = NULL;
-    p_gtw->a[0].type = 2; 
-    p_gtw->a[0].p_master = p_gtw;
-    p_gtw->a[0].length = 0;
-    p_gtw->a[0].img_Omega = 0;
-    p_gtw->a[0].img_Omega_inv = 0;
-    p_gtw->p_fst = p_gtw->p_end = &(p_gtw->a[0]);
-    p_gtw->p_free =  &(p_gtw->a[1]);
+    p_gtw->a[n].p_next = NULL;
+    p_gtw->p_free = p_gtw->a[0].p_next;
+    p_gtw->p_end = p_gtw->p_node = p_gtw->a[0].p_next = 
+        p_gtw->a[0].p_prev = p_gtw->a;
+    p_gtw->a[0].eof = 1;
+
+    gt_subword_clear(p_gtw->a+0);
     p_gtw->n_subwords = n;
 } 
 
@@ -125,65 +138,96 @@ void gt_word_init(gt_word_type *p_gtw, uint32_t n)
 /**
 @brief Yet to be documented!
 
+Insert an empty subword after the current subword,
+set the position of the current subword to the new subword.
+
+Return -1 if out of memory
 */
 // %%EXPORT p
-gt_subword_type *gt_subword_insert(gt_subword_type *p_gtsub)
+int32_t gt_word_insert(gt_word_type *p_gt)
 {
-    gt_word_type *p_master;
-    gt_subword_type *p_new, *p_prev;
+    gt_subword_type *p_new, *p_cur, *p_next;
 
-    if (p_gtsub == NULL || p_gtsub->type == 0) return NULL;
-    p_master = p_gtsub->p_master;
-    p_new = p_master->p_free;
-    p_prev = p_gtsub->p_prev;
+    if ((p_new = p_gt->p_free) == NULL) return -1;
+    p_gt->p_free = p_new->p_next;
+    gt_subword_clear(p_new);
 
-    if (p_new == NULL) return NULL;
-    p_master->p_free = p_new->p_next;
-
-    p_new->p_next = p_gtsub;
-    p_gtsub->p_prev = p_new;
-    p_new->p_prev = p_prev;
-    if (p_prev != NULL) p_prev->p_next = p_new;
-    else p_master->p_fst = p_new;
-
-    p_new->type = 1; 
-    p_new->length = 0;
-    p_new->img_Omega = 0;
-    p_new->img_Omega_inv = 0;
-    return p_new;  
+    p_cur = p_gt->p_node;
+    p_next = p_cur->p_next;
+    p_new->p_next = p_next;
+    p_new->p_prev = p_cur;
+    p_cur->p_next = p_next->p_prev = p_gt->p_node = p_new;
+    return 0;  
 }
 
 /**
 @brief Yet to be documented!
 
+Delete the current subword, and
+set the position of the current subword to its predecessor.
+
+Return -1 on an attempt to delete an EOF mark
 */
 // %%EXPORT p
-gt_subword_type *gt_subword_delete(gt_subword_type *p_gtsub)
+int32_t gt_word_delete(gt_word_type *p_gt)
 {
-    gt_word_type *p_master;
-    gt_subword_type *p_next, *p_prev;
+    gt_subword_type *p_prev, *p_cur, *p_next;
  
-    if (p_gtsub == NULL || p_gtsub->type != 1) return NULL;
-    p_master = p_gtsub->p_master;
-    p_next = p_gtsub->p_next;
-    p_prev = p_gtsub->p_prev;
-
-    p_gtsub->type = 0;
-    p_gtsub->p_next = p_master->p_free;
-    p_master->p_free = p_gtsub;
+    if ((p_cur = p_gt->p_node)->eof) return -1;
+    p_next = p_cur->p_next;
+    p_prev = p_cur->p_prev;
 
     p_next->p_prev = p_prev;
-    if (p_prev != NULL) p_prev->p_next = p_next;
-    else p_master->p_fst = p_next;
-    return p_next;  
+    p_prev->p_next = p_next;
+
+    p_cur->p_next = p_gt->p_free;
+    p_gt->p_free = p_cur;
+
+    return 0;  
 }
 
+
+
+
+/**
+@brief Yet to be documented!
+
+Move the pointer to the curren subword to position 'pos'
+Her pos = 0 means the EOF mark if 'set' is True,
+and the position of the current subword otherwise. 
+pos = i+1 means the subword after  pos = i,
+pos = i-1 means node subword  pos = i.
+
+
+It is an error to move p_gt->p_node across the EOF node.
+When starting at the EOF node we may move forward or back
+until finding the EOF node once again, but not any further.
+*/
+// %%EXPORT p
+int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
+{
+    int32_t i;
+    if (set) p_gt->p_node = p_gt->p_end;
+    if (pos > 0) {
+        for (i = 1; i <= pos; ++i) {
+            p_gt->p_node = p_gt->p_node->p_next;
+            if (p_gt->p_node->eof) return -(pos != i);
+        }
+    } else if (pos < 0) {
+        for (i = -1; i >= pos; --i) {
+            p_gt->p_node = p_gt->p_node->p_prev;
+            if (p_gt->p_node->eof) return -(pos != i);
+        }
+    }
+    return 0;
+}
 
 
 /////////////////////////////////////////////////////////////////////////
 // Load a subword
 /////////////////////////////////////////////////////////////////////////
 
+/// @cond DO_NOT_DOCUMENT 
 
 
 /**
@@ -191,9 +235,9 @@ gt_subword_type *gt_subword_delete(gt_subword_type *p_gtsub)
 
 */
 // %%EXPORT px
-uint32_t gt_word_n_subwords(uint32_t *a,  uint32_t n)
+uint32_t gt_word_n_subwords(uint32_t *a, uint32_t n)
 {
-    uint32_t i, k = 0;
+    uint32_t i, k = 1;
     for (i = 0; i < n; ++i) if ((a[i] & 0x70000000) == 0x50000000) ++k;
     return k;
 }
@@ -204,79 +248,154 @@ uint32_t gt_word_n_subwords(uint32_t *a,  uint32_t n)
 #define MAX_INTERN_WORD_DATA (MAX_GT_WORD_DATA+40)
 
 
+
+
+/// @endcond
+
+
+
+
+
 /**
 @brief Yet to be documented!
 
+Try to append a prefix of word 'a' of length 'n' to the current subword.
+Return number of atoms of 'a' sucessfully appended to that word. 
+A negative return value inducates an error.
 */
 // %%EXPORT p
-int32_t gt_subword_load(gt_subword_type *p_gtsub, uint32_t *a,  uint32_t n)
+int32_t gt_word_append_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 {
-    uint32_t i = 0, j, ulen = 0, e, w[MAX_INTERN_WORD_DATA], g[5];
+    
+    gt_subword_type *p_cur = p_gt->p_node;
+    uint32_t i = 0, ulen = 0, img_omega_len = 0, j, e, v;
+    uint32_t w[MAX_INTERN_WORD_DATA], g[5];
     int32_t res;
 
-    if (p_gtsub->type != 1) return -1;
-    do {
-        for ( ; i < n; ++i) {
-            uint32_t v = a[i];
-            uint32_t tag = v & 0x70000000;
-            switch(tag) {
-                case 0:
-                    continue;
-                case 0x70000000:
-                    return -1;
-                case 0x50000000:
-                   if ((v & 0xfffffff) % 3 == 0) continue;
-                   goto end_scan_Gx0;
-                default:
-                   if ((v & 0xfffffff) == 0) continue;
-                   w[ulen++] = v; 
-                   break;
-            }               
-            if (ulen > MAX_INTERN_WORD_DATA - 5) {
-                if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
-                   return res;
-                ulen = res;
-            }
-        }
-      end_scan_Gx0:
+    if (p_cur->eof) return 0;
+    img_omega_len = ulen = p_cur->length;
+    e = p_cur->t_exp;
+    for (j = 0; j < ulen; ++j) w[j] = p_cur->data[j];
+    
+    while (1)  {
         mm_group_n_clear(g);
+        g[0] = e;
         i += mm_group_n_mul_word_scan(g, a + i, n - i);
         e = mm_group_n_right_coset_N_x0(g);
         ulen += mm_group_n_to_word(g, w + ulen);
-    } while (e == 0);
-    if (ulen > MAX_GT_WORD_DATA -1) {
+        if (e || i >= n) break;
+        v = a[i++];
+        if ((v & 0x70000000) != 0x60000000) return -1;
+        v = (v ^ (0 - (v >> 31)) & 0xffffffff) % 3;
+        if (v) w[ulen++] = v + 0x60000000;
+        if (ulen > MAX_INTERN_WORD_DATA - 6) {
+            if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
+                   return res;
+            ulen = res;
+            img_omega_len = 0;
+            p_cur->img_Omega = OMEGA;
+        }
+    }
+    p_cur->img_Omega = gen_leech2_op_word_leech2(p_cur->img_Omega, 
+        w + img_omega_len, ulen - img_omega_len, 0);
+    p_cur->t_exp = e;
+    if (ulen > MAX_GT_WORD_DATA - 1 || p_cur->img_Omega == OMEGA) {
        if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) return res;
        ulen = res;
     }
-    if (e > 0) w[ulen++] = 0x50000000 + e;
-    p_gtsub->length = ulen;
-    for (j = 0; j < ulen; ++j) p_gtsub->data[j] = w[j];
-    p_gtsub->img_Omega = p_gtsub->img_Omega_inv = 0;
+    p_cur->length = ulen;
+    for (j = 0; j < ulen; ++j) p_cur->data[j] = w[j];
     return i;
 }
 
 
+
 /**
 @brief Yet to be documented!
 
+Join current subwort p_gt->p_node with its predecessors if possible, 
+ignoring all successors of the current subword.
+Set the current subword to the last word that has been modified.
+Do not change the current subword if no joining has taken place.
+
 */
 // %%EXPORT p
-int32_t gt_word_load(gt_word_type *p_gtw, uint32_t *a,  uint32_t n)
+int32_t gt_word_join(gt_word_type *p_gt)
+{
+    gt_subword_type *p_cur, *p_prev;
+    uint32_t i;
+
+    if (p_gt->p_node->eof) return 0;
+    do {
+        p_cur = p_gt->p_node;
+        p_prev = p_cur->p_prev;
+        if (p_prev->eof) {
+            if (p_cur->length == 0 && p_cur->t_exp==0) {
+                 gt_word_delete(p_gt);
+            }
+            return 0;
+        } else {
+           if (p_prev->t_exp == 0 || p_cur->img_Omega == OMEGA) {
+               gt_word_delete(p_gt);
+               // The following isn't threadsafe
+               p_cur->data[p_cur->length++] = 0x60000000 + p_cur->t_exp;
+               i = gt_word_append_part(p_gt,
+                    p_cur->data, p_cur->length);
+               if (i != p_cur->length) return -1;
+           } else {
+               return 0;
+           }
+        } 
+    } while(1);
+}
+
+
+
+
+/**
+@brief Yet to be documented!
+
+Append the word 'a' of length 'n' to current subword.
+Shorten  subword p_gt->p_node and preceding words if possible, 
+ignoring the successors the original subword.
+Set the current subword to the last word that has been modified.
+
+A negative return value inducates an error.
+*/
+// %%EXPORT p
+int32_t gt_word_append_subword(gt_word_type *p_gt, uint32_t *a, uint32_t n)
 {
     uint32_t i = 0, j;
-    gt_subword_type *p_new;
-
-    if ((p_gtw->p_fst->type) != 2) gt_word_init(p_gtw, p_gtw->n_subwords);
+    int32_t res;
 
     while (i < n) {
-        if ((p_new = gt_subword_insert(p_gtw->p_fst)) == NULL) return -1;
-        if ((j = gt_subword_load(p_new, a + i,  n - i)) < 0) return j;
+        gt_word_insert(p_gt);
+        if ((j = gt_word_append_part(p_gt, a + i,  n - i)) < 0) 
+            return -1;
         i += j;
+        if ((res = gt_word_join(p_gt)) < 0) return -2;
     } 
     return 0;
 }
 
 
+/**
+Append the word 'a' of length 'n' at the end of the current subword.
+Shorten the result if possible. 
+Set the current subword to the last word before the EOF mark.
+
+A negative return value inducates an error.
+*/
+// %%EXPORT p
+int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
+{
+    int32_t res;
+    p_gt->p_node = p_gt->p_end->p_prev;
+    res = gt_word_append_subword(p_gt, a, n);
+    p_gt->p_node = p_gt->p_end->p_prev;
+    return res;    
+}
+
 
 
 /**
@@ -284,16 +403,12 @@ int32_t gt_word_load(gt_word_type *p_gtw, uint32_t *a,  uint32_t n)
 
 */
 // %%EXPORT p
-int32_t gt_word_length(gt_word_type *p_gtw)
+int32_t gt_word_length(gt_word_type *p_gt)
 {
-    uint32_t length = 0, nwords = 0;
-    gt_subword_type *p_cur = p_gtw->p_fst;
-    for (; p_cur->type != 2; p_cur = p_cur->p_next) {
-        if (nwords++ > p_gtw->n_subwords) return -2;
-        if (p_cur->p_master != p_gtw) return -3;
-        if (p_cur->type != 1) return -4;
-        if (p_cur->length > MAX_GT_WORD_DATA) return -5;
-        length += p_cur->length;
+    uint32_t length = 0;
+    gt_subword_type *p_cur = p_gt->p_end->p_next;
+    for (; p_cur->eof == 0; p_cur = p_cur->p_next) {
+        length += p_cur->length + (p_cur->t_exp != 0);
     } 
     return length;
 }
@@ -305,16 +420,38 @@ int32_t gt_word_length(gt_word_type *p_gtw)
 
 */
 // %%EXPORT p
-int32_t gt_word_store(gt_word_type *p_gtw, uint32_t *pa, uint32_t maxlen)
+int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 {
-    uint32_t *p_out = pa, *p_end = pa + maxlen, *p_data, j;
-    gt_subword_type *p_cur = p_gtw->p_fst;
-    for (; p_cur->type == 1; p_cur = p_cur->p_next) {
-        if  (p_out + (j = p_cur->length) > p_end) return -1; 
-        p_data = p_cur->data; 
-        while (j--) *p_out++ = *p_data++;
+    uint32_t *p_out = pa, *p_end = pa + maxlen, *p_data, n, e;
+    gt_subword_type *p_cur = p_gt->p_end->p_next;
+    for (; p_cur->eof == 0; p_cur = p_cur->p_next) {
+        e = p_cur->t_exp;
+        p_data = p_cur->data;
+        p_data[n = p_cur->length] = 0x50000000 + e;
+        n += e != 0;
+        if  (p_out + n > p_end) return -1; 
+        while (n--) *p_out++ = *p_data++;
     } 
     return (int32_t)(p_out - pa);
+}
+
+
+/**
+@brief Yet to be documented!
+
+*/
+// %%EXPORT p
+int32_t gt_word_store_sub(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
+{
+    uint32_t  *p_data, n, e, i;
+    gt_subword_type *p_cur = p_gt->p_node;
+    e = p_cur->t_exp;
+    p_data = p_cur->data;
+    p_data[n = p_cur->length] = 0x50000000 + e;
+    n += e != 0;
+    if (n > maxlen) return -1;
+    for (i = 0; i < n; ++i) pa[i] = p_data[i];
+    return n;
 }
 
 

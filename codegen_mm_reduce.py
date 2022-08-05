@@ -156,15 +156,15 @@ INT_BITS = {INT_BITS}
 
 cdef extern from "mm_reduce.h":
     enum: MAX_GT_WORD_DATA
+
     ctypedef struct gt_subword_type:
-        uint32_t type
+        uint32_t eof  
         uint32_t length
-        uint32_t data[MAX_GT_WORD_DATA]
         uint32_t img_Omega
-        uint32_t img_Omega_inv
+        uint32_t t_exp
         gt_subword_type *p_prev
         gt_subword_type *p_next
-        gt_word_type  *p_master
+        uint32_t data[MAX_GT_WORD_DATA]
 
     ctypedef struct gt_word_type:
         uint32_t n_subwords

@@ -400,7 +400,7 @@ uint32_t gen_leech2_prefix_Gx0(uint32_t *g, uint32_t len_g)
 
 
 /*************************************************************************
-*** Conjugating \Omega in the extraspecial group 2^{1+24}/{+-1}
+*** Operation of group G_x0 on the Leech lattice mod 2
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
