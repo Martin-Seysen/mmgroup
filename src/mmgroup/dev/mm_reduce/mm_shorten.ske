@@ -34,6 +34,7 @@ typedef struct gt_subword_type {
     uint32_t length;                /** No of entries in component data */
     uint32_t img_Omega;             /** Image of Omega under element*/
     uint32_t t_exp;                 /** Exponent of final tag 't' */
+    uint32_t reduced;               /** True if part 'data' is reduced */
     struct gt_subword_type *p_prev; /** Pointer to previous subword */
     struct gt_subword_type *p_next; /** Pointer to previous subword */
     uint32_t data[MAX_GT_WORD_DATA]; /** Element of monster group */
@@ -107,7 +108,8 @@ Set a subword to the emoty subword.
 void gt_subword_clear(gt_subword_type *p_gtsub)
 {
     p_gtsub->length = p_gtsub->t_exp = 0; 
-    p_gtsub->img_Omega =  OMEGA; 
+    p_gtsub->img_Omega =  OMEGA;
+    p_gtsub->reduced = 1; 
 } 
 
 
@@ -192,7 +194,7 @@ int32_t gt_word_delete(gt_word_type *p_gt)
 /**
 @brief Yet to be documented!
 
-Move the pointer to the curren subword to position 'pos'
+Move the pointer to the current subword to position 'pos'
 Her pos = 0 means the EOF mark if 'set' is True,
 and the position of the current subword otherwise. 
 pos = i+1 means the subword after  pos = i,
@@ -255,7 +257,6 @@ uint32_t gt_word_n_subwords(uint32_t *a, uint32_t n)
 
 
 
-
 /**
 @brief Yet to be documented!
 
@@ -264,11 +265,12 @@ Return number of atoms of 'a' sucessfully appended to that word.
 A negative return value inducates an error.
 */
 // %%EXPORT p
-int32_t gt_word_append_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
+int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 {
     
     gt_subword_type *p_cur = p_gt->p_node;
     uint32_t i = 0, ulen = 0, img_omega_len = 0, j, e, v;
+    uint32_t reduced = p_cur->reduced;
     uint32_t w[MAX_INTERN_WORD_DATA], g[5];
     int32_t res;
 
@@ -282,31 +284,81 @@ int32_t gt_word_append_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
         g[0] = e;
         i += mm_group_n_mul_word_scan(g, a + i, n - i);
         e = mm_group_n_right_coset_N_x0(g);
-        ulen += mm_group_n_to_word(g, w + ulen);
+        j = mm_group_n_to_word(g, w + ulen);
+        reduced &= !j;
+        ulen += j;
         if (e || i >= n) break;
         v = a[i++];
         if ((v & 0x70000000) != 0x60000000) return -1;
-        v = (v ^ (0 - (v >> 31)) & 0xffffffff) % 3;
-        if (v) w[ulen++] = v + 0x60000000;
+        v ^=  0 - ((v >> 31) & 1);
+        v = (v & 0xfffffff) % 3;
+        if (v) {
+            w[ulen++] = v + 0x60000000;
+            reduced = 0;
+        }
         if (ulen > MAX_INTERN_WORD_DATA - 6) {
             if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
                    return res;
             ulen = res;
             img_omega_len = 0;
             p_cur->img_Omega = OMEGA;
+            reduced = 1;
         }
     }
     p_cur->img_Omega = gen_leech2_op_word_leech2(p_cur->img_Omega, 
         w + img_omega_len, ulen - img_omega_len, 0);
     p_cur->t_exp = e;
-    if (ulen > MAX_GT_WORD_DATA - 1 || p_cur->img_Omega == OMEGA) {
+    if (ulen > MAX_GT_WORD_DATA - 1) {
        if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) return res;
        ulen = res;
     }
     p_cur->length = ulen;
+    p_cur->reduced = reduced;
     for (j = 0; j < ulen; ++j) p_cur->data[j] = w[j];
     return i;
 }
+
+
+
+/**
+@brief Yet to be documented!
+
+Reduce current subword
+mode = 0: lazy reduction (just word shortening)
+mode = 1: standard reduction
+mode = 2: as mode 1, move prefix in N_x0 to previous node
+*/
+// %%EXPORT p
+int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
+{
+    gt_subword_type *p_cur = p_gt->p_node;
+    uint32_t *w;
+    int32_t res;
+    uint32_t i, j;
+    if (p_cur->eof) return 0;
+    p_cur->reduced |= !p_cur->length;
+    w = p_cur->data;
+    if (!p_cur->reduced) {
+        res = xsp2co1_reduce_word(w, p_cur->length, w);
+        if (res < 0) return res;
+        p_cur->length = res;
+        p_cur->reduced = 1;
+    }
+    if (mode < 2 || p_cur->p_prev->eof) return 0;
+    for (i = 0; i < p_cur->length; ++i) {
+       if ((w[i] & 0x70000000) == 0x60000000) break;
+    }
+    if (i) {
+        p_gt->p_node = p_cur->p_prev;
+        if ((res = gt_word_append_sub_part(p_gt, w, i)) < 0) return res;
+        p_gt->p_node = p_cur;
+        p_cur->length -= i;
+        for (j = 0; j < p_cur->length; ++j) w[j] = w[i + j];
+    }
+    return 0;
+}
+
+
 
 
 
@@ -324,22 +376,24 @@ int32_t gt_word_join(gt_word_type *p_gt)
 {
     gt_subword_type *p_cur, *p_prev;
     uint32_t i;
+    int32_t res;
 
     if (p_gt->p_node->eof) return 0;
     do {
         p_cur = p_gt->p_node;
         p_prev = p_cur->p_prev;
         if (p_prev->eof) {
-            if (p_cur->length == 0 && p_cur->t_exp==0) {
-                 gt_word_delete(p_gt);
+            if (p_cur->img_Omega == OMEGA && p_cur->t_exp == 0) {
+                if ((res = gt_word_reduce_sub(p_gt, 1)) < 0) return res;
+                if (p_cur->length == 0) gt_word_delete(p_gt);
             }
             return 0;
         } else {
-           if (p_prev->t_exp == 0 || p_cur->img_Omega == OMEGA) {
+           if (p_prev->t_exp == 0  || p_cur->img_Omega == OMEGA) {
                gt_word_delete(p_gt);
                // The following isn't threadsafe
-               p_cur->data[p_cur->length++] = 0x60000000 + p_cur->t_exp;
-               i = gt_word_append_part(p_gt,
+               p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
+               i = gt_word_append_sub_part(p_gt,
                     p_cur->data, p_cur->length);
                if (i != p_cur->length) return -1;
            } else {
@@ -347,6 +401,32 @@ int32_t gt_word_join(gt_word_type *p_gt)
            }
         } 
     } while(1);
+}
+
+
+
+/**
+@brief Yet to be documented!
+
+Reduce the complete group element
+mode = 0: lazy reduction (just word shortening)
+mode = 1: standard reduction
+mode = 2: as mode 1, move prefix in N_x0 to previous node
+
+Set the position of the current subword to end mark.
+*/
+// %%EXPORT p
+int32_t gt_word_reduce(gt_word_type *p_gt, uint32_t mode)
+{
+    p_gt->p_node = p_gt->p_end->p_prev;
+    while( p_gt->p_node->eof == 0) {
+       int32_t res = gt_word_reduce_sub(p_gt, mode);
+       if (res < 0) return res;
+       if ((res = gt_word_join(p_gt)) < 0) return res;
+       if (p_gt->p_node->eof) break;
+       p_gt->p_node = p_gt->p_node->p_prev;
+    }
+    return 0;
 }
 
 
@@ -363,14 +443,14 @@ Set the current subword to the last word that has been modified.
 A negative return value inducates an error.
 */
 // %%EXPORT p
-int32_t gt_word_append_subword(gt_word_type *p_gt, uint32_t *a, uint32_t n)
+int32_t gt_word_append_sub(gt_word_type *p_gt, uint32_t *a, uint32_t n)
 {
     uint32_t i = 0, j;
     int32_t res;
 
     while (i < n) {
         gt_word_insert(p_gt);
-        if ((j = gt_word_append_part(p_gt, a + i,  n - i)) < 0) 
+        if ((j = gt_word_append_sub_part(p_gt, a + i,  n - i)) < 0) 
             return -1;
         i += j;
         if ((res = gt_word_join(p_gt)) < 0) return -2;
@@ -391,7 +471,7 @@ int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
 {
     int32_t res;
     p_gt->p_node = p_gt->p_end->p_prev;
-    res = gt_word_append_subword(p_gt, a, n);
+    res = gt_word_append_sub(p_gt, a, n);
     p_gt->p_node = p_gt->p_end->p_prev;
     return res;    
 }

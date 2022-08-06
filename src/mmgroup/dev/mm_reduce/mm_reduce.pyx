@@ -75,6 +75,9 @@ cdef class GtWord():
         else:
             length = _n_subwords(arg) + 6
         self.p_gt = <p_gt_word_type>malloc(mr.gt_word_size(length)) 
+        if self.p_gt == NULL:
+            err = "Memory allocation has failed in class GtWord"
+            raise MemoryError(err)
         mr.gt_word_init(self.p_gt, length)
 
 
@@ -86,14 +89,14 @@ cdef class GtWord():
         cdef int32_t res
         cdef uint32_t[:] a_view
         cdef uint32_t length
-        if self.p_gt == NULL:
-            err = "Memory allocation has failed in class GtWord"
-            raise MemoryError(err)
         if not isinstance(arg, Integral):
             a_view = mm_as_array_view(arg)
             length = len(a_view)
             res = mr.gt_word_append(self.p_gt, &a_view[0], length)
             assert res == 0
+
+    def eof(self):
+        return self.p_gt.p_node.eof
 
     def seek(self, int32_t pos, int32_t seek_set):
         cdef int32_t res = mr.gt_word_seek(self.p_gt, pos, seek_set)
@@ -141,17 +144,17 @@ cdef class GtWord():
         assert res >= 0
 
     @cython.boundscheck(False)    
-    def append_subword_part(self, a):
+    def append_sub_part(self, a):
         cdef uint32_t[:] a_view = mm_as_array_view(a)
-        cdef int32_t n = mr.gt_word_append_part(
+        cdef int32_t n = mr.gt_word_append_sub_part(
             self.p_gt, &a_view[0], len(a_view))
         assert n >= 0
         return n, tail_word(a, n)
 
     @cython.boundscheck(False)    
-    def append_subword(self, a):
+    def append_sub(self, a):
         cdef uint32_t[:] a_view = mm_as_array_view(a)
-        cdef int32_t n = mr.gt_word_append_subword(
+        cdef int32_t n = mr.gt_word_append_sub(
             self.p_gt, &a_view[0], len(a_view))
         assert n >= 0
 
@@ -161,6 +164,14 @@ cdef class GtWord():
         cdef int32_t n = mr.gt_word_append(
             self.p_gt, &a_view[0], len(a_view))
         assert n >= 0
+
+    def reduce_sub(self, uint32_t mode = 1):
+        cdef int32_t res = mr.gt_word_reduce_sub(self.p_gt, mode)
+        assert res >= 0
+
+    def reduce(self, uint32_t mode = 1):
+        cdef int32_t res = mr.gt_word_reduce(self.p_gt, mode)
+        assert res >= 0
 
 
     @cython.boundscheck(False)    
@@ -184,6 +195,7 @@ cdef class GtWord():
             sub.length = length
             sub.t_exp = ptr.t_exp
             sub.img_Omega = ptr.img_Omega
+            sub.reduced = ptr.reduced
             subword_list.append(sub)
             ptr = ptr.p_next
         return subword_list
