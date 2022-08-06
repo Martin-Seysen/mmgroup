@@ -76,7 +76,9 @@
 
 */
 
-#include "mm_reduce.h"   
+/// @cond DO_NOT_DOCUMENT 
+#include "mm_reduce.h"
+/// @endcond   
    
 // %%EXPORT_KWD MM_REDUCE_API
 

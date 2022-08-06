@@ -4,7 +4,10 @@
  for computing the type of an image of a 2A axis.
 */
 
-#include "mm_reduce.h"   
+/// @cond DO_NOT_DOCUMENT 
+#include "mm_reduce.h" 
+/// @endcond
+  
    
 // %%EXPORT_KWD MM_REDUCE_API
 

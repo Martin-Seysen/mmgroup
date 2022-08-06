@@ -519,6 +519,12 @@ Python module ``mmgroup.dev.mm_reduce.find_order_vector``
 .. automodule:: mmgroup.dev.mm_reduce.find_order_vector
 
 
+Header file mm_reduce.h
+--------------------------------------
+
+.. doxygenfile:: mm_reduce.h
+
+
 
 C interface for file mm_order_vector.c
 --------------------------------------
@@ -537,6 +543,12 @@ C interface for file mm_reduce.c
 --------------------------------
 
 .. doxygenfile:: mm_reduce.c
+
+
+C interface for file mm_shorten.c
+---------------------------------
+
+.. doxygenfile:: mm_shorten.c
 
 
 
