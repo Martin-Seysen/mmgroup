@@ -117,7 +117,7 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
 @pytest.mark.mmgroup 
 def test_shorten_pyx(ntests = 10, verbose = 1):
     print("")
-    print("Test omitted, function tested here are still buggy!"
+    print("Test omitted, function tested here are still buggy!")
     return 
 
     for i, g in enumerate(word_shorten_testdata(ntests)):
