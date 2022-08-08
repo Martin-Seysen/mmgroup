@@ -571,14 +571,18 @@ int32_t gt_word_join(gt_word_type *p_gt)
     uint32_t i;
     int32_t res;
 
-    if (p_gt->p_node->eof) return 0;
     do {
+        if (p_gt->p_node->eof) return 0;
         p_cur = p_gt->p_node;
         p_prev = p_cur->p_prev;
         if (p_prev->eof) {
             if (p_cur->img_Omega == OMEGA && p_cur->t_exp == 0) {
-                if ((res = gt_word_reduce_sub(p_gt, 1)) < 0) return res;
+                res = xsp2co1_reduce_word(
+                   p_cur->data, p_cur->length, p_cur->data);
+                if (res < 0) return _ERROR(-0x14, res);
+                p_cur->length = res;
                 if (p_cur->length == 0) gt_word_delete(p_gt);
+                else p_cur->reduced = 1;
             }
             return 0;
         } else {
@@ -592,7 +596,7 @@ int32_t gt_word_join(gt_word_type *p_gt)
                if (i != p_cur->length) return _ERROR(2, -4);
            } else if (p_cur->img_Omega == OMEGA) {
                gt_word_delete(p_gt);
-               // if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
+               if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
                // The following isn't threadsafe
                res = xsp2co1_reduce_word(
                    p_cur->data, p_cur->length, p_cur->data);

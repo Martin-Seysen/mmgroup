@@ -164,7 +164,6 @@ cdef class GtWord():
             self.p_gt, &a_view[0], len(a_view))
         if n < 0:
             self._complain(n, "append_sub")
-        return n, tail_word(a, n)
 
     @cython.boundscheck(False)    
     def append(self, a):
@@ -173,7 +172,6 @@ cdef class GtWord():
             self.p_gt, &a_view[0], len(a_view))
         if n < 0:
             self._complain(n, "append")
-        return n, tail_word(a, n)
 
     def reduce_sub(self, uint32_t mode = 1):
         cdef int32_t res = mr.gt_word_reduce_sub(self.p_gt, mode)
@@ -184,7 +182,6 @@ cdef class GtWord():
         cdef int32_t res = mr.gt_word_reduce(self.p_gt, mode)
         if res < 0:
             self._complain(res, "reduce")
-        assert res >= 0
 
 
     @cython.boundscheck(False)    
