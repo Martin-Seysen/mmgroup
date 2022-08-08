@@ -67,6 +67,12 @@ cdef class GtWord():
     def n_subwords(w):
         return _n_subwords(w)
 
+    @staticmethod
+    def _complain(res, method):
+        if (res < 0):
+            err = "Internal error %s in class GtWord, method %s"
+            raise ValueError(err % (hex(res), method))  
+
     @cython.boundscheck(False)    
     def __cinit__(self, arg):
         cdef uint32_t length
@@ -93,7 +99,8 @@ cdef class GtWord():
             a_view = mm_as_array_view(arg)
             length = len(a_view)
             res = mr.gt_word_append(self.p_gt, &a_view[0], length)
-            assert res == 0
+            if res < 0:
+                self._complain(res, "__init__")
 
     def eof(self):
         return self.p_gt.p_node.eof
@@ -101,8 +108,7 @@ cdef class GtWord():
     def seek(self, int32_t pos, int32_t seek_set):
         cdef int32_t res = mr.gt_word_seek(self.p_gt, pos, seek_set)
         if res < 0:
-            err = "Method seek failed on <GtWord>  object"
-            raise ValueError(err) 
+            self._complain(res, "seek")
 
 
     def size(self):
@@ -116,8 +122,7 @@ cdef class GtWord():
         cdef uint32_t[:] a_view = a
         length = mr.gt_word_store(self.p_gt, &a_view[0], length)
         if (length < 0):
-            err = "Method mmdata failed on <GtWord>  object"
-            raise ValueError(err)
+            self._complain(length, "mmdata")
         a = a[:length]      
         if group is None:
             return a
@@ -131,8 +136,7 @@ cdef class GtWord():
         cdef uint32_t[:] a_view = a
         length = mr.gt_word_store_sub(self.p_gt, &a_view[0], length)
         if (length < 0):
-            err = "Method mmdata failed on <GtWord>  object"
-            raise ValueError(err)
+            self._complain(length, "mmdata_sub")
         a = a[:length]      
         if group is None:
            return a
@@ -141,14 +145,16 @@ cdef class GtWord():
 
     def join(self):
         cdef int32_t res = mr.gt_word_join(self.p_gt)
-        assert res >= 0
+        if res < 0:
+           self._complain(res, "join")
 
     @cython.boundscheck(False)    
     def append_sub_part(self, a):
         cdef uint32_t[:] a_view = mm_as_array_view(a)
         cdef int32_t n = mr.gt_word_append_sub_part(
             self.p_gt, &a_view[0], len(a_view))
-        assert n >= 0
+        if n < 0:
+            self._complain(n, "append_sub_part")
         return n, tail_word(a, n)
 
     @cython.boundscheck(False)    
@@ -156,21 +162,28 @@ cdef class GtWord():
         cdef uint32_t[:] a_view = mm_as_array_view(a)
         cdef int32_t n = mr.gt_word_append_sub(
             self.p_gt, &a_view[0], len(a_view))
-        assert n >= 0
+        if n < 0:
+            self._complain(n, "append_sub")
+        return n, tail_word(a, n)
 
     @cython.boundscheck(False)    
     def append(self, a):
         cdef uint32_t[:] a_view = mm_as_array_view(a)
         cdef int32_t n = mr.gt_word_append(
             self.p_gt, &a_view[0], len(a_view))
-        assert n >= 0
+        if n < 0:
+            self._complain(n, "append")
+        return n, tail_word(a, n)
 
     def reduce_sub(self, uint32_t mode = 1):
         cdef int32_t res = mr.gt_word_reduce_sub(self.p_gt, mode)
-        assert res >= 0
+        if res < 0:
+            self._complain(res, "reduce_sub")
 
     def reduce(self, uint32_t mode = 1):
         cdef int32_t res = mr.gt_word_reduce(self.p_gt, mode)
+        if res < 0:
+            self._complain(res, "reduce")
         assert res >= 0
 
 
@@ -203,6 +216,8 @@ cdef class GtWord():
     
     def __len__(self):
         cdef int32_t l = mr.gt_word_length(self.p_gt)
+        if l < 0:
+            self._complain(l, "__len__")
         return l
 
 

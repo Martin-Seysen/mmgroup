@@ -160,6 +160,9 @@ extern "C" {
 
 #define OMEGA 0x800000
 
+#define _ERROR(source, error) ((-(source) << 24) - ((-(error)) & 0xffffff)) 
+
+
 /// @endcond  
 
 
@@ -252,14 +255,14 @@ uint32_t gt_word_size(uint32_t n)
 Insert an empty subword after the current subword,
 set the position of the current subword to the new subword.
 
-Return -1 if out of memory
+Return a negative value if out of memory
 */
 // %%EXPORT p
 int32_t gt_word_insert(gt_word_type *p_gt)
 {
     gt_subword_type *p_new, *p_cur, *p_next;
 
-    if ((p_new = p_gt->p_free) == NULL) return -1;
+    if ((p_new = p_gt->p_free) == NULL) return _ERROR(1, -1);
     p_gt->p_free = p_new->p_next;
     gt_subword_clear(p_new);
 
@@ -277,7 +280,7 @@ int32_t gt_word_insert(gt_word_type *p_gt)
 Delete the current subword, and
 set the position of the current subword to its predecessor.
 
-Return -1 on an attempt to delete an EOF mark
+Return a negative on an attempt to delete an EOF mark
 */
 // %%EXPORT p
 int32_t gt_word_delete(gt_word_type *p_gt)
@@ -294,7 +297,7 @@ int32_t gt_word_delete(gt_word_type *p_gt)
     p_cur->p_next = p_gt->p_free;
     p_gt->p_free = p_cur;
 
-    return 0;  
+    return _ERROR(1, -2);  
 }
 
 
@@ -322,12 +325,12 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
     if (pos > 0) {
         for (i = 1; i <= pos; ++i) {
             p_gt->p_node = p_gt->p_node->p_next;
-            if (p_gt->p_node->eof) return -(pos != i);
+            if (p_gt->p_node->eof && pos != i) return _ERROR(1, -3);
         }
     } else if (pos < 0) {
         for (i = -1; i >= pos; --i) {
             p_gt->p_node = p_gt->p_node->p_prev;
-            if (p_gt->p_node->eof) return -(pos != i);
+            if (p_gt->p_node->eof && pos != i) return _ERROR(1, -4);
         }
     }
     return 0;
@@ -339,7 +342,7 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
 
 
 /////////////////////////////////////////////////////////////////////////
-// Load a subword
+// Append part of a monster group element to a subword
 /////////////////////////////////////////////////////////////////////////
 
 /// @cond DO_NOT_DOCUMENT 
@@ -402,7 +405,7 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
         ulen += j;
         if (e || i >= n) break;
         v = a[i++];
-        if ((v & 0x70000000) != 0x60000000) return -1;
+        if ((v & 0x70000000) != 0x60000000) return _ERROR(2,-1);
         v ^=  0 - ((v >> 31) & 1);
         v = (v & 0xfffffff) % 3;
         if (v) {
@@ -411,20 +414,24 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
         }
         if (ulen > MAX_INTERN_WORD_DATA - 6) {
             if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
-                   return res;
+                   return _ERROR(-0x10, res);
             ulen = res;
             img_omega_len = 0;
             p_cur->img_Omega = OMEGA;
             reduced = 1;
         }
     }
-    p_cur->img_Omega = gen_leech2_op_word_leech2(p_cur->img_Omega, 
-        w + img_omega_len, ulen - img_omega_len, 0);
     p_cur->t_exp = e;
     if (ulen > MAX_GT_WORD_DATA - 1) {
-       if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) return res;
+       if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
+          return _ERROR(-0x11, res);
        ulen = res;
+       img_omega_len = 0;
+       p_cur->img_Omega = OMEGA;
+       reduced = 1;
     }
+    p_cur->img_Omega = gen_leech2_op_word_leech2(p_cur->img_Omega, 
+        w + img_omega_len, ulen - img_omega_len, 0);
     p_cur->length = ulen;
     p_cur->reduced = reduced;
     for (j = 0; j < ulen; ++j) p_cur->data[j] = w[j];
@@ -432,14 +439,74 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// Reduce a subword
+/////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+@brief Yet to be documented!
+
+Compute 'complexity' of an element \f$g\f$ of \f$G_{x0}\f$ from
+the image of \f$\Omega\f$  under \f$g\f$ .
+
+Here the complexity of \f$g\f$ is the minimum number of atoms
+of tag ``l`` required to represent \f$g\f$. 
+*/
+static inline uint32_t complexity(uint32_t img_omega)
+{
+    uint32_t weight;
+    if (img_omega & 0x800) return 3;
+    if ((img_omega & 0x7ff800) == 0) return (img_omega & 0x7fffff) != 0;
+    weight = (MAT24_THETA_TABLE[(img_omega >> 12) & 0x7ff] >> 12) & 1;
+    return 2 + weight;
+}
+
+/**
+@brief Yet to be documented!
+
+Return True if an element  \f$g\f$ of \f$G_{x0}\f$ stored in the
+array of ``a`` of length ``n`` is so complex that lazy reduction
+is worth the effort.
+
+Here Parameter ``l_weight`` is the output of function ``complexity``
+applied to \f$g\f$. 
+*/
+static inline 
+uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
+{
+    uint32_t n_atoms[8], i;
+
+    if (n > 12) return 1;
+
+    for (i = 0; i < 8; ++i) n_atoms[i] = 0;
+    for (i = 0; i < n; ++i) ++(n_atoms[(a[i] >> 28) & 7]);
+    if (n_atoms[6] > l_weight) return 1;        // tag 'l'
+    if (n_atoms[2] > l_weight + 1) return 1;    // tag 'p'
+    if (n_atoms[3] > 1) return 1;               // tag 'x'
+    if (n_atoms[4] > 1) return 1;               // tag 'y'
+    if (n_atoms[1] > 2) return 1;               // tag 'd'
+    return 0;
+}
+
+
+/// @endcond
+
 
 /**
 @brief Yet to be documented!
 
 Reduce current subword
-mode = 0: lazy reduction (just word shortening)
+
+mode = 0: lazy reduction (just some word shortening)
+
 mode = 1: standard reduction
-mode = 2: as mode 1, move prefix in N_x0 to previous node
+
+mode = 2: as mode 0, but move also prefix in N_x0 to previous subword
+
+mode = 3: as mode 1, but move also prefix in N_x0 to previous subword
 */
 // %%EXPORT p
 int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
@@ -448,30 +515,43 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
     uint32_t *w;
     int32_t res;
     uint32_t i, j;
-    if (p_cur->eof) return 0;
-    p_cur->reduced |= !p_cur->length;
+    uint32_t length = p_cur->length;
+    if (p_cur->eof || length < 2) {
+        p_cur->reduced = 1;
+        return 0;
+    }
     w = p_cur->data;
     if (!p_cur->reduced) {
-        res = xsp2co1_reduce_word(w, p_cur->length, w);
-        if (res < 0) return res;
-        p_cur->length = res;
-        p_cur->reduced = 1;
+        uint32_t reduce = mode & 1;
+        if (reduce == 0) {
+            uint32_t l_weight = complexity(p_cur->img_Omega);
+            reduce = over_complex(w, length,l_weight); 
+        }
+        if (reduce) {
+            res = xsp2co1_reduce_word(w, length, w);
+            if (res < 0) return _ERROR(-0x12, res);
+            p_cur->length = res;
+            p_cur->reduced = 1;
+        }
     }
     if (mode < 2 || p_cur->p_prev->eof) return 0;
-    for (i = 0; i < p_cur->length; ++i) {
+    for (i = 0; i < length; ++i) {
        if ((w[i] & 0x70000000) == 0x60000000) break;
     }
     if (i) {
         p_gt->p_node = p_cur->p_prev;
         if ((res = gt_word_append_sub_part(p_gt, w, i)) < 0) return res;
         p_gt->p_node = p_cur;
-        p_cur->length -= i;
+        p_cur->length = length - i;
         for (j = 0; j < p_cur->length; ++j) w[j] = w[i + j];
     }
     return 0;
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// Join a subword with its predecessors if possible
+/////////////////////////////////////////////////////////////////////////
 
 
 
@@ -502,13 +582,26 @@ int32_t gt_word_join(gt_word_type *p_gt)
             }
             return 0;
         } else {
-           if (p_prev->t_exp == 0  || p_cur->img_Omega == OMEGA) {
+           if (p_prev->t_exp == 0) {
                gt_word_delete(p_gt);
+               // if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
                // The following isn't threadsafe
                p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
                i = gt_word_append_sub_part(p_gt,
                     p_cur->data, p_cur->length);
-               if (i != p_cur->length) return -1;
+               if (i != p_cur->length) return _ERROR(2, -4);
+           } else if (p_cur->img_Omega == OMEGA) {
+               gt_word_delete(p_gt);
+               // if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
+               // The following isn't threadsafe
+               res = xsp2co1_reduce_word(
+                   p_cur->data, p_cur->length, p_cur->data);
+               if (res < 0) return _ERROR(-0x14, res);
+               p_cur->length = res;
+               p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
+               i = gt_word_append_sub_part(p_gt,
+                    p_cur->data, p_cur->length);
+               if (i != p_cur->length) return _ERROR(2, -5);
            } else {
                return 0;
            }
@@ -517,14 +610,18 @@ int32_t gt_word_join(gt_word_type *p_gt)
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// Reduce a complete word
+/////////////////////////////////////////////////////////////////////////
+
+
 
 /**
 @brief Yet to be documented!
 
 Reduce the complete group element
-mode = 0: lazy reduction (just word shortening)
-mode = 1: standard reduction
-mode = 2: as mode 1, move prefix in N_x0 to previous node
+
+Here parameter ``mode`` is as in function ``gt_word_reduce_sub``.
 
 Set the position of the current subword to end mark.
 */
@@ -543,6 +640,9 @@ int32_t gt_word_reduce(gt_word_type *p_gt, uint32_t mode)
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// Insert or append monster group element to a word
+/////////////////////////////////////////////////////////////////////////
 
 
 /**
@@ -564,9 +664,9 @@ int32_t gt_word_append_sub(gt_word_type *p_gt, uint32_t *a, uint32_t n)
     while (i < n) {
         if ((res = gt_word_insert(p_gt)) < 0) return res;
         if ((j = gt_word_append_sub_part(p_gt, a + i,  n - i)) < 0) 
-            return -1;
+            return j;
         i += j;
-        if ((res = gt_word_join(p_gt)) < 0) return -2;
+        if ((res = gt_word_join(p_gt)) < 0) return j;
     } 
     return 0;
 }
@@ -588,6 +688,11 @@ int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
     p_gt->p_node = p_gt->p_end->p_prev;
     return res;    
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+// Store a word or a subword as an array of atoms
+/////////////////////////////////////////////////////////////////////////
 
 
 
@@ -622,7 +727,7 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
         p_data = p_cur->data;
         p_data[n = p_cur->length] = 0x50000000 + e;
         n += e != 0;
-        if  (p_out + n > p_end) return -1; 
+        if  (p_out + n > p_end) return _ERROR(2, -7); 
         while (n--) *p_out++ = *p_data++;
     } 
     return (int32_t)(p_out - pa);
@@ -642,7 +747,7 @@ int32_t gt_word_store_sub(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
     p_data = p_cur->data;
     p_data[n = p_cur->length] = 0x50000000 + e;
     n += e != 0;
-    if (n > maxlen) return -1;
+    if (n > maxlen) return _ERROR(2, -8); ;
     for (i = 0; i < n; ++i) pa[i] = p_data[i];
     return n;
 }

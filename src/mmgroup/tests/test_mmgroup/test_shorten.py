@@ -27,6 +27,13 @@ from mmgroup.generators import mm_group_invert_word
 
 
 def word_shorten_testdata(ntests = 3):
+    SAMPLE_TAGS = "dxyppllt" * 12
+    test_elements = [
+       [('l',1), ('l',2)],
+    ]
+    for g in test_elements:
+        yield MM0(g)
+    
     testdata = [
        "", "pdx", "xt", "xtpx", "ltl",
     ] 
@@ -35,6 +42,8 @@ def word_shorten_testdata(ntests = 3):
     for r in range(0, 5):
         for k in range(ntests):
             yield MM0('r', r)
+    for i in range(5*ntests):
+        yield MM0([(t, 'n') for t in sample(SAMPLE_TAGS, 30)])
 
 
 
@@ -99,11 +108,9 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
    
 
 
-    if g_ref is not None:
-        g_ref = MM0(g_ref)
-
+#@pytest.mark.mmm 
 @pytest.mark.mmgroup 
-def test_shorten_pyx(ntests = 5, verbose = 0):
+def test_shorten_pyx(ntests = 5, verbose = 1):
     print("")
     for i, g in enumerate(word_shorten_testdata(ntests)):
         if verbose:
@@ -112,10 +119,58 @@ def test_shorten_pyx(ntests = 5, verbose = 0):
         g_length = GtWord.n_subwords(g) 
         gtw = GtWord(g_length)
         gtw.append(g)
+        ## The following addon yet leads to a bug!!!!!
+        ##!!!! gtw.reduce(mode=3)
         check_subwords(gtw, g, verbose = verbose, is_reduced = False)
         gi = g.mmdata
         mm_group_invert_word(gi, len(gi))
         #print([hex(x) for x in gi])
         gtwi = GtWord(gi)  
         check_subwords(gtwi, g**-1, verbose = verbose, is_reduced = False)
+
+
+#####################################################################################
+# Benchmark shortening in monster group
+#####################################################################################
+
+
+N_MUL_SAMPLES = 16
+
+def mark_MM_element(g):
+    def mark_atom(v):
+        tag = (v >> 28) & 7
+        return "TxE"[tag - 5] if tag >= 5 else "" 
+    return "".join([mark_atom(v) for v in g.mmdata])
+
+
+def make_mul_samples(n = N_MUL_SAMPLES, verbose = 0):
+    indices = list(range(n))
+    glist = [ MM('r', 'M').reduce() for i in range(n) ]
+    if verbose:
+        for g in glist:
+            print(mark_MM_element(g))
+    return indices, glist
+
+
+def benchmark_shorten(ncases = 32, verbose = 0):
+    indices, glist = make_mul_samples(verbose = verbose)
+    t_start = time.process_time()
+    for i in range(ncases):
+        gtw = GtWord(glist[i & 15])  
+    t = time.process_time() - t_start
+    return t / ncases
+
+
+#@pytest.mark.mmm 
+@pytest.mark.bench 
+@pytest.mark.mmgroup 
+def test_benchmark_mul(ntests = 10000, verbose = 0):
+    print("")
+    for i in range(1):
+        t = benchmark_shorten(ntests, verbose=verbose) 
+        s = "Runtime of word shortening in class  MM, %d tests: %.3f us" 
+        print(s % (ntests, 1000000*t))
+
+
+
 
