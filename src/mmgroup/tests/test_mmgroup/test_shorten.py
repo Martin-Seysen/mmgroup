@@ -59,14 +59,17 @@ def word_shorten_testdata(ntests = 3):
 
 def display_subwords(text, w):
     print(text)
-    for w in w.subwords():
-        print("", MM0('a', w.data,), ('t', w.t_exp), ", img_O:",
+    fpos, words = w.subwords()
+    for i, w in enumerate(words):
+        s = "->" if i == fpos else "  "
+        print(s, MM0('a', w.data,), ('t', w.t_exp), ", img_O:",
             hex(w.img_Omega)
         )
 
 OMEGA = 0x800000
 
 def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
+    #print("CHECK", verbose, text)
     messages = {
        1: "Inconsistent value of GtWord object!",
        2: "Value of GtWord object differs from expected value!",
@@ -76,11 +79,11 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
       32: "Inconsistent length indicator in GtWord object!",
     }
     g1 =  gtw.mmdata(MM0)
-    w = gtw.subwords()
+    _, w = gtw.subwords()
     g2 = MM0()
     err = 0
     for x in w:
-        g2 *= MM0('a', x.data,) * MM0('t', x.t_exp) 
+        g2 *= MM0('a', x.data) * MM0('t', x.t_exp) 
     err |= bool(g1 != g2) << 0
     ref_error = False
     if g_ref is not None:
@@ -97,11 +100,8 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
                 err |= 1 << 4
          err |= bool(x.length != len(x.data)) << 5
     if verbose  or err:
-        print(text if text else "Subwords of GtWord object")
-        for x in w:
-            print("", MM0('a', x.data,), ('t', x.t_exp), ", img_O:",
-                hex(x.img_Omega)
-            )
+        text = text if text else "Subwords of GtWord object"
+        display_subwords(text, gtw)
         print("Value:", g1)
         if ref_error:
             print("g in:", g_ref)
@@ -113,28 +113,43 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
    
 
 
-#@pytest.mark.mmm 
-@pytest.mark.mmgroup 
-def test_shorten_pyx(ntests = 10, verbose = 1):
-    print("")
-    print("Test omitted, function tested here are still buggy!")
-    return 
+def py_load_word(g, check = True, verbose = True):
+    g_length = GtWord.n_subwords(g) 
+    gtw = GtWord(g_length)
+    gtw.append(g)
+    vb = verbose > 1
+    gtw.seek(1,1)
+    if check: 
+       check_subwords(gtw, g, verbose = vb, text="start word")
+    while not gtw.eof():
+       success = gtw.rule_join()
+       if not success:
+          gtw.seek(1,0)
+       if check: 
+          check_subwords(gtw, g, verbose = vb, text="intermediate word")
+    return gtw
 
+
+@pytest.mark.mmm 
+@pytest.mark.mmgroup 
+def test_shorten_pyx(ntests = 2, verbose = 0):
     for i, g in enumerate(word_shorten_testdata(ntests)):
         if verbose:
-            print("Test", i+1)
+            print("\nTest", i+1)
             print("g =", g)
-        g_length = GtWord.n_subwords(g) 
-        gtw = GtWord(g_length)
-        gtw.append(g)
-        ## The following addon yet leads to a bug!!!!!
-        ##!!!! gtw.reduce(mode=3)
-        check_subwords(gtw, g, verbose = verbose, is_reduced = False)
-        gi = g.mmdata
-        mm_group_invert_word(gi, len(gi))
-        #print([hex(x) for x in gi])
-        gtwi = GtWord(gi)  
-        check_subwords(gtwi, g**-1, verbose = verbose, is_reduced = False)
+        gtw = py_load_word(g, check = True, verbose = verbose)
+
+        check_subwords(gtw, g, verbose = verbose, text = "result word")
+        if verbose:
+            print("\nTest inverse of g")
+        a = g.mmdata
+        mm_group_invert_word(a, len(a))
+        gi = MM0('a', a)
+        if verbose > 1:
+            print("mmdata:", [hex(x) for x in gi.mmdata])
+        gtwi = py_load_word(gi, check = True, verbose = verbose)
+        check_subwords(gtwi, g**-1, verbose = verbose, 
+            text = "result word")
 
 
 #####################################################################################

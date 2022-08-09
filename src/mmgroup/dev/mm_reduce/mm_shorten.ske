@@ -287,17 +287,17 @@ int32_t gt_word_delete(gt_word_type *p_gt)
 {
     gt_subword_type *p_prev, *p_cur, *p_next;
  
-    if ((p_cur = p_gt->p_node)->eof) return -1;
+    if ((p_cur = p_gt->p_node)->eof) return _ERROR(1, -2);
     p_next = p_cur->p_next;
     p_prev = p_cur->p_prev;
 
-    p_next->p_prev = p_prev;
+    p_gt->p_node = p_next->p_prev = p_prev;
     p_prev->p_next = p_next;
 
     p_cur->p_next = p_gt->p_free;
     p_gt->p_free = p_cur;
 
-    return _ERROR(1, -2);  
+    return 0;  
 }
 
 
@@ -439,6 +439,32 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 }
 
 
+
+
+
+/**
+Append the word 'a' of length 'n' at the end of the current subword.
+Set the current subword to the last word before the appended word 'a'.
+
+A negative return value inducates an error.
+*/
+// %%EXPORT p
+int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
+{
+    int32_t res;
+    uint32_t i = 0;
+    gt_subword_type *p_cur = p_gt->p_node = p_gt->p_end->p_prev;
+    while (i < n) {
+        if ((res = gt_word_insert(p_gt)) < 0) return res;
+        if ((res = gt_word_append_sub_part(p_gt, a + i,  n - i)) <= 0) 
+            return res < 0 ? res : _ERROR(2,-3);
+        i += res;
+    } 
+    p_gt->p_node = p_cur;
+    return 0;    
+}
+
+
 /////////////////////////////////////////////////////////////////////////
 // Reduce a subword
 /////////////////////////////////////////////////////////////////////////
@@ -558,140 +584,64 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
 /**
 @brief Yet to be documented!
 
-Join current subwort p_gt->p_node with its predecessors if possible, 
-ignoring all successors of the current subword.
-Set the current subword to the last word that has been modified.
-Do not change the current subword if no joining has taken place.
-
-*/
+Try to join current subwort p_gt->p_node with its predecessor. 
+Return 1 and point to (the joined) predecssor if this it possible.
+Return 0 and do not change the pointer this it not possible.
+Return a negative number in case of a fatal error.
+*/ 
 // %%EXPORT p
-int32_t gt_word_join(gt_word_type *p_gt)
+int32_t gt_word_rule_join(gt_word_type *p_gt)
 {
     gt_subword_type *p_cur, *p_prev;
-    uint32_t i;
     int32_t res;
 
-    do {
-        if (p_gt->p_node->eof) return 0;
-        p_cur = p_gt->p_node;
-        p_prev = p_cur->p_prev;
-        if (p_prev->eof) {
-            if (p_cur->img_Omega == OMEGA && p_cur->t_exp == 0) {
-                res = xsp2co1_reduce_word(
-                   p_cur->data, p_cur->length, p_cur->data);
-                if (res < 0) return _ERROR(-0x14, res);
-                p_cur->length = res;
-                if (p_cur->length == 0) gt_word_delete(p_gt);
-                else p_cur->reduced = 1;
+    p_cur = p_gt->p_node;
+    if (p_cur->eof) return 0;
+    p_prev = p_cur->p_prev;
+    if (p_prev->eof) {
+        if (p_cur->img_Omega == OMEGA && p_cur->t_exp == 0) {
+            res = xsp2co1_reduce_word(
+                p_cur->data, p_cur->length, p_cur->data);
+            if (res < 0) return _ERROR(-0x14, res);
+            if (res == 0) {
+                gt_word_delete(p_gt);
+                return 1;
             }
-            return 0;
-        } else {
-           if (p_prev->t_exp == 0) {
-               gt_word_delete(p_gt);
-               // if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
-               // The following isn't threadsafe
-               p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
-               i = gt_word_append_sub_part(p_gt,
-                    p_cur->data, p_cur->length);
-               if (i != p_cur->length) return _ERROR(2, -4);
-           } else if (p_cur->img_Omega == OMEGA) {
-               gt_word_delete(p_gt);
-               if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
-               // The following isn't threadsafe
-               res = xsp2co1_reduce_word(
-                   p_cur->data, p_cur->length, p_cur->data);
-               if (res < 0) return _ERROR(-0x14, res);
-               p_cur->length = res;
-               p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
-               i = gt_word_append_sub_part(p_gt,
-                    p_cur->data, p_cur->length);
-               if (i != p_cur->length) return _ERROR(2, -5);
-           } else {
-               return 0;
-           }
-        } 
-    } while(1);
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-// Reduce a complete word
-/////////////////////////////////////////////////////////////////////////
-
-
-
-/**
-@brief Yet to be documented!
-
-Reduce the complete group element
-
-Here parameter ``mode`` is as in function ``gt_word_reduce_sub``.
-
-Set the position of the current subword to end mark.
-*/
-// %%EXPORT p
-int32_t gt_word_reduce(gt_word_type *p_gt, uint32_t mode)
-{
-    p_gt->p_node = p_gt->p_end->p_prev;
-    while( p_gt->p_node->eof == 0) {
-       int32_t res = gt_word_reduce_sub(p_gt, mode);
-       if (res < 0) return res;
-       if ((res = gt_word_join(p_gt)) < 0) return res;
-       if (p_gt->p_node->eof) break;
-       p_gt->p_node = p_gt->p_node->p_prev;
+            p_cur->length = res;
+            p_cur->reduced = 1;
+        }
+        return 0;
     }
-    return 0;
-}
 
-
-/////////////////////////////////////////////////////////////////////////
-// Insert or append monster group element to a word
-/////////////////////////////////////////////////////////////////////////
-
-
-/**
-@brief Yet to be documented!
-
-Append the word 'a' of length 'n' to current subword.
-Shorten  subword p_gt->p_node and preceding words if possible, 
-ignoring the successors the original subword.
-Set the current subword to the last word that has been modified.
-
-A negative return value inducates an error.
-*/
-// %%EXPORT p
-int32_t gt_word_append_sub(gt_word_type *p_gt, uint32_t *a, uint32_t n)
-{
-    uint32_t i = 0, j;
-    int32_t res;
-
-    while (i < n) {
-        if ((res = gt_word_insert(p_gt)) < 0) return res;
-        if ((j = gt_word_append_sub_part(p_gt, a + i,  n - i)) < 0) 
-            return j;
-        i += j;
-        if ((res = gt_word_join(p_gt)) < 0) return j;
+    if (p_prev->t_exp == 0) {
+        gt_word_delete(p_gt);
+        if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
+        p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
+        res = gt_word_append_sub_part(p_gt, p_cur->data, p_cur->length);
+        if (res != (int32_t)p_cur->length) 
+            return res < 0 ? res : _ERROR(2, -4);
+        return 1;
+    } else if (p_cur->img_Omega == OMEGA) {
+        gt_word_delete(p_gt);
+        if (p_gt->p_node != p_prev) return _ERROR(2, -0x105);
+        res = xsp2co1_reduce_word(
+             p_cur->data, p_cur->length, p_cur->data);
+        if (res < 0) return _ERROR(-0x14, res);
+        p_cur->length = res;
+        p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
+        res = gt_word_append_sub_part(p_gt, p_cur->data, p_cur->length);
+        if (res != (int32_t)p_cur->length) 
+            return res < 0 ? res : _ERROR(2, -5);
+        return 1;
     } 
     return 0;
 }
 
 
-/**
-Append the word 'a' of length 'n' at the end of the current subword.
-Shorten the result if possible. 
-Set the current subword to the last word before the EOF mark.
 
-A negative return value inducates an error.
-*/
-// %%EXPORT p
-int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
-{
-    int32_t res;
-    p_gt->p_node = p_gt->p_end->p_prev;
-    res = gt_word_append_sub(p_gt, a, n);
-    p_gt->p_node = p_gt->p_end->p_prev;
-    return res;    
-}
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////

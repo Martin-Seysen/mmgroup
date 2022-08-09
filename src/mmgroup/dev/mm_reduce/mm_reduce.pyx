@@ -143,10 +143,11 @@ cdef class GtWord():
         assert issubclass(group, AbstractMMGroupWord)
         return group('a', a)
 
-    def join(self):
-        cdef int32_t res = mr.gt_word_join(self.p_gt)
+    def rule_join(self):
+        cdef int32_t res = mr.gt_word_rule_join(self.p_gt)
         if res < 0:
-           self._complain(res, "join")
+           self._complain(res, "rule_join")
+        return res
 
     @cython.boundscheck(False)    
     def append_sub_part(self, a):
@@ -157,13 +158,6 @@ cdef class GtWord():
             self._complain(n, "append_sub_part")
         return n, tail_word(a, n)
 
-    @cython.boundscheck(False)    
-    def append_sub(self, a):
-        cdef uint32_t[:] a_view = mm_as_array_view(a)
-        cdef int32_t n = mr.gt_word_append_sub(
-            self.p_gt, &a_view[0], len(a_view))
-        if n < 0:
-            self._complain(n, "append_sub")
 
     @cython.boundscheck(False)    
     def append(self, a):
@@ -178,21 +172,19 @@ cdef class GtWord():
         if res < 0:
             self._complain(res, "reduce_sub")
 
-    def reduce(self, uint32_t mode = 1):
-        cdef int32_t res = mr.gt_word_reduce(self.p_gt, mode)
-        if res < 0:
-            self._complain(res, "reduce")
 
 
     @cython.boundscheck(False)    
     def subwords(self):
         cdef p_gt_subword_type ptr = self.p_gt.p_end.p_next
+        cdef p_gt_subword_type p_node = self.p_gt.p_node
         cdef uint32_t i
         cdef uint32_t[:] a_view
         cdef uint32_t[:] src_view
         cdef uint32_t length
         cdef int32_t maxlength = mr.MAX_GT_WORD_DATA
         subword_list = []
+        cdef int32_t fpos = -1
         while not ptr.eof:
             sub = GtSubWord()
             sub.data = np.zeros(maxlength, dtype = np.uint32)
@@ -207,8 +199,10 @@ cdef class GtWord():
             sub.img_Omega = ptr.img_Omega
             sub.reduced = ptr.reduced
             subword_list.append(sub)
+            if ptr == p_node:
+                fpos = len(subword_list) - 1
             ptr = ptr.p_next
-        return subword_list
+        return fpos, subword_list
 
     
     def __len__(self):
