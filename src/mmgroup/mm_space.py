@@ -502,6 +502,7 @@ from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_sparse_to_leech
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
+from mmgroup.mm import mm_aux_hash
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 #standard_seed = mm_rng_make_seed()
@@ -810,6 +811,10 @@ class MMVector(AbstractMmRepVector):
             return None
         s = str((t >> 28) & 15) + "?ABCDEFGHIJKLMNO"[(t >> 24) & 15]
         return s
+
+    def hash(self):
+        """Return a hash value of the vector"""
+        return int(mm_aux_hash(self.p, self.data))
             
 
 ######################################################################

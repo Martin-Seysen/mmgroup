@@ -130,7 +130,7 @@ def py_load_word(g, check = True, verbose = True):
     return gtw
 
 
-@pytest.mark.mmm 
+#@pytest.mark.mmm 
 @pytest.mark.mmgroup 
 def test_shorten_pyx(ntests = 2, verbose = 0):
     for i, g in enumerate(word_shorten_testdata(ntests)):
