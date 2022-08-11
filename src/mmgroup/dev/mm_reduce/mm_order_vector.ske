@@ -311,6 +311,28 @@ int32_t mm_order_compare_vector_part_A(uint_mmv_t *p_v)
     return check24(OFS_ABC, p_v + MM_OP15_OFS_A, 24);
 }
 
+
+/************************************************************************
+** Hash value of the vector 
+************************************************************************/
+
+
+
+
+/** 
+  @brief Return the hash value of the ordervector
+
+  The function returns the hash value of the precomuted order vector
+  as given by function ``mm_aux_hash`` in file ``mm_aux.c``.
+  
+*/
+// %%EXPORT px
+uint64_t mm_order_hash_vector(uint_mmv_t *p_dest)
+{
+    return %{hex:ORDER_VECTOR_HASH};
+}
+
+
 //  %%GEN h
 /// @endcond 
 //  %%GEN c
