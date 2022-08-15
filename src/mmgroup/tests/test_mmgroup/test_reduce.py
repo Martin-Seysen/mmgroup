@@ -172,7 +172,7 @@ def test_mul(ncases = 20):
 #####################################################################################
 
 
-def benchmark_mul(ncases = 20):
+def benchmark_mul(ncases = 20, verbose = 0):
     indices, glist = make_mul_samples()
     index_pairs = [sample(indices, 2) for i in range(ncases)]
     #print(glist, "\n", index_pairs)
@@ -182,7 +182,8 @@ def benchmark_mul(ncases = 20):
         t_start = time.process_time()
         glist[i] *= glist[j]
         t.append(time.process_time() - t_start)
-        #print(mm_pattern(glist[i]))
+        if verbose:
+            print(mm_pattern(glist[i]))
     n = len(index_pairs) + 0.0
     mu = sum(t) / n
     var = sum([(x - mu)**2 for x in t]) / (n-1)
@@ -191,10 +192,10 @@ def benchmark_mul(ncases = 20):
 
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
-def test_benchmark_mul(ncases = 100):
+def test_benchmark_mul(ncases = 100, verbose = 0):
     print("")
     for i in range(1):
-        n, mu, sigma = benchmark_mul(ncases) 
+        n, mu, sigma = benchmark_mul(ncases, verbose = verbose) 
         s = "Runtime of multiplication in class MM, %d tests: %.3f+-%.3f ms" 
         print(s % (n, 1000*mu, 1000*sigma))
 

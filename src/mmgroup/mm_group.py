@@ -534,7 +534,7 @@ class MM(MM0):
 ###########################################################################
 
 
-REDUCE_MODE = 1
+REDUCE_MODE = 0
 
 @singleton
 class MMGroup(AbstractMMGroup):
@@ -582,7 +582,7 @@ class MMGroup(AbstractMMGroup):
                 return g2
             else:
                 a = np.zeros(128, dtype = np.uint32)
-                length = mm_reduce_M(g1._data, g1.length, 1, a)
+                length = mm_reduce_M(g1._data, g1.length, REDUCE_MODE, a)
                 if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE % length)
                 g1._setdata(a[:length])

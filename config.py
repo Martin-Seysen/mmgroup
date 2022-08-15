@@ -38,6 +38,7 @@ msvc_compile_args = ["/O2"]
 if NATIVE:
      mingw32_compile_args.append("-march=native") 
      unix_compile_args.append("-march=native") 
+     msvc_compile_args.append("/arch:AVX2")
 
 EXTRA_COMPILE_ARGS.update({
     'mingw32' : mingw32_compile_args,
