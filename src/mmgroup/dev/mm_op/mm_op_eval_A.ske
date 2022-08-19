@@ -369,7 +369,8 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
     }
     return 0;
     // %%ELSE IF P == 3 and INT_BITS == 64
-    uint_fast32_t i, j, d[8], m, w0[24];
+    uint_fast32_t i, j, d[8], m;
+    uint32_t w0[24];
     uint64_t mask = 3, diag = 0, a;
     for (i = 0; i < 8; ++i) d[i] = 0;  // avoid compiler warnings
     for (i = 0; i < 9; ++i) w[i] = 24; // make output w erroneous
