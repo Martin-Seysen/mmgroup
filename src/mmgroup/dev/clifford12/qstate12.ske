@@ -172,6 +172,7 @@ enum qstate12_error_type
     ERR_QSTATE12_SHAPE_COMP = -11,  ///< Shape mismatch in comparing matrices
     ERR_QSTATE12_SCALAR_INT = -12,  ///< Scalar factor is not an integer
     ERR_QSTATE12_PARAM = -13,       ///< Parameter error
+    ERR_QSTATE12_DOMAIN = -14,      ///< Matrix is not is the expected domain
 	
     ERR_QSTATE12_SHAPE_OP = -101,   ///< Shape mismatch in matrix operation
     ERR_QSTATE12_MATRIX_INV = -102, ///< Matrix is not invertible
