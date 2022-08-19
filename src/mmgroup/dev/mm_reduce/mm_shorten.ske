@@ -280,7 +280,7 @@ int32_t gt_word_insert(gt_word_type *p_gt)
 Delete the current subword, and
 set the position of the current subword to its predecessor.
 
-Return a negative on an attempt to delete an EOF mark
+Return a negative value on an attempt to delete an EOF mark
 */
 // %%EXPORT p
 int32_t gt_word_delete(gt_word_type *p_gt)

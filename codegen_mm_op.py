@@ -195,6 +195,7 @@ C_FILE_SPECIFIC_SKELETONS = defaultdict(list)
 C_FILE_SPECIFIC_SKELETONS.update( {
    3:   [
          "mm{P}_op_rank_A",
+         "mm{P}_op_eval_A",
         ],
    15:  [
          "mm{P}_op_rank_A",

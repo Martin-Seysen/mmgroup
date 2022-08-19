@@ -3,7 +3,7 @@ from __future__ import  unicode_literals
 
 
 
-from random import randint #, shuffle, sample
+from random import randint, shuffle, sample
 from functools import reduce
 from operator import __or__
 from multiprocessing import Pool
@@ -16,6 +16,7 @@ from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_set_elem_word_scan
 from mmgroup.clifford12 import xsp2co1_unit_elem
+from mmgroup.clifford12 import xsp2co1_reduce_word
 from mmgroup.structures.construct_mm import iter_mm
 
 
@@ -60,6 +61,61 @@ def test_xsp2co1_set_elem_word_scan():
 
 
 
+
+#####################################################################
+# Benchmarks
+#####################################################################
+
+
+def benchmark_mul_xsp2co1(ncases = 20):
+    glist = []
+    for i in range(64):
+        glist.append(Xsp2_Co1('r', 'G_x0'))
+    indices = range(len(glist))
+    index_pairs = [sample(indices, 2) for i in range(ncases)]
+    t_start = time.process_time()
+    for i, j in index_pairs:
+        glist[i] *= glist[j]
+    t = time.process_time() - t_start
+    return ncases, t
+
+
+
+
+
+
+@pytest.mark.bench 
+@pytest.mark.xsp2co1
+def test_benchmark_mul(ncases = 20000, verbose = 0):
+    s = "Runtime of multiplication in class Xsp2_Co1, %d tests: %.5f ms" 
+    print("")
+    for i in range(1):
+        n, t = benchmark_mul_xsp2co1(ncases) 
+        print(s % (n, 1000*t/n))
+
+
+
+
+def benchmark_reduce_word(ncases = 20):
+    glist = []
+    for i in range(64):
+        glist.append(MM0([(tag, 'n') for tag in "xydplplplp"]).mmdata)
+    buffer = np.zeros(10, dtype = np.uint32)
+    t_start = time.process_time()
+    for i in range(ncases):
+        xsp2co1_reduce_word(glist[i & 63], len(glist[i & 63]), buffer)
+    t = time.process_time() - t_start
+    return ncases, t
+
+
+@pytest.mark.bench 
+@pytest.mark.xsp2co1
+def test_benchmark_reduce_word(ncases = 5000, verbose = 0):
+    s = "Runtime of word reduction in G_x0, %d tests: %.5f ms" 
+    print("")
+    for i in range(1):
+        n, t = benchmark_reduce_word(ncases) 
+        print(s % (n, 1000*t/n))
 
 
 

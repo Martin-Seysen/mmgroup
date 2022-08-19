@@ -275,7 +275,7 @@ uint32_t mm_op%{P}_norm_A(uint_mmv_t *v)
 
 
 /*************************************************************************
-*** Watermark a 24 times 24 times matrices mod %{P}
+*** Watermark a 24 times 24 times matrix mod %{P}
 *************************************************************************/
 
 
@@ -304,7 +304,7 @@ static inline void insertsort(uint32_t *a, int32_t n)
    Then we watermark 24 the rows of matrix ``A``. For each of the
    rows ``A[i], 0 <= i < 24`` we compute a watermark ``w(i)`` in
    the array ``w``. Note that the watermark ``w(i)`` contains an
-   information about the marked row ``i`` in its lower bis. We store
+   information about the marked row ``i`` in its lower bits. We store
    the sorted array of these watermarks in the array ``w`` of length
    24. If all these watermarks (ignoring the information about the
    row) are different, we can easily recognize a permutation of the
@@ -316,14 +316,26 @@ static inline void insertsort(uint32_t *a, int32_t n)
    row ``i``. Thus permutations of the columns and sign changes in
    the matrix do not affect these watermarks.
 
-   // %%IF* P == 15 and INT_BITS == 64
+   // %%IF* P in [3, 15] and INT_BITS == 64
    The function returns 0 in case of success and a negative value 
    in case of error.
 
-   The watermark of row \f$i\f$  is 
-   \f$ i + \sum_{j=1}^7 32 \cdot 13^{j-1} \cdot e_j\f$, where 
-   \f$e_j\f$ is the number of entries with absolute value \f$j\f$
-   in that row.
+   The watermark of row \f$i\f$  is equal to \f$i + 32\cdot S(A,i)\f$. 
+   Here \f$S(A,i)\f$ depends on the entries of matrix ``A``.
+   The value \f$S(A,i)\f$   it is invariant under sign changes of 
+   any off-diagonal elements of ``A``. It is also invariant under 
+   any permutation of the symmetric matrix ``A`` fixing row and 
+   column \f$i\f$. 
+   // %%IF* P == 3
+
+   When working in the representation modulo 3 we fail unless at 
+   least nine rows of ``A`` have a unique watermark. This is
+   sufficient for reconstructing a permutation in the Mathieu group.
+   
+   We assert that watermarking ``A + k*I`` succeeds if and only if
+   watermarking ``A`` succeeds, for any multiple  ``k*I`` of the
+   unit matrix.
+   // %%END IF
    // %%ELSE
    The function is not supported for modulus %{P}.  
    It always returns a negative value.
@@ -356,11 +368,57 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
         if (((w[i] ^ w[i+1]) & 0xffffffe0) == 0) return -1L;
     }
     return 0;
-    
+    // %%ELSE IF P == 3 and INT_BITS == 64
+    uint_fast32_t i, j, d[8], m, w0[24];
+    uint64_t mask = 3, diag = 0, a;
+    for (i = 0; i < 8; ++i) d[i] = 0;  // avoid compiler warnings
+    for (i = 0; i < 9; ++i) w[i] = 24; // make output w erroneous
+    for (i = 0; i < 24; ++i) {
+        diag += v[i] & mask;   // store diagonal of A in ``diag``
+        mask <<= 2; 
+    }
+    // Reduce diagonal entries of ``A`` in ``diag`` mod 3
+    a = (diag ^ (diag >> 1)) & 0x555555555555ULL;
+    diag ^= a ^ (a << 1);
+    diag <<= 1;  // diag[i] = A[i,i] is now in bits (2*i+2, 2*i+1)
+    // The main loop now computes a watermark value a0[i] for the  
+    // rows i (with 0 <= i < 24) of matrix ``A``
+    for (i = 0; i < 24; ++i) {
+        // Store abs(A[i,j]) in bit 2*j of variable ``a``
+        a = v[i] ^ (v[i] >> 1);
+        // Count entries j with diag[j] = x and abs(A[i,j]) = y 
+        // in d[2*x + j]. We only need the cases y = 1.
+        d[5] = d[3] = d[1] = 0; 
+        for (j = 0; j < 48; j += 2) {
+            ++d[((diag >> j) & 6) + ((a >> j) & 1)];
+        }
+        // Enter d[j], j = 1,3,5 and diag[i] into bits 21...5 of
+        // the watermark; store i in the low bits of the watermark.
+        w0[i] = i + (d[1] << 5) + (d[3] << 10) + (d[5] << 15)
+                 + (((diag >> (i << 1)) & 3) << 20);
+    }
+    // Sort the array of watermarks
+    insertsort(w0, 24);
+    // Duplicate watermarks are likely when computing in the rep mod 3.
+    // Set bit m[i] if watermark w0[i] is not duplicated in another row.
+    m = 0;
+    for (i = 0; i < 23; ++i) {
+        if (((w0[i] ^ w0[i+1]) & 0xffffffe0) == 0) m |= 3UL << i;
+       
+    }
+    m ^= 0xffffffUL;
+    // Abort if there are less than 9 non-duplicate watermarks.
+    if (mat24_bw24(m) < 9) return -1;
+    // Store the (sorted) lowest 9 non-duplicate watermarks in array w.
+    for (i = j = 0; j < 9; ++i) {
+        w[j] = w0[i];
+        j += (m >> i) & 1;
+    }
+    return 0;    // success
     // %%ELSE
-        uint_fast32_t i;
-        for (i = 0; i < 24; ++i) w[i] = 24;
-        return -1L;
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) w[i] = 24;
+    return -1L;  // fail if P not in [3,15] or  INT_BITS != 64
     // %%END IF
 }
 
@@ -372,7 +430,7 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
    be the watermark of another matrix ``A'`` which is obtained
    from ``A`` by permutations of the rows and columns, and by
    sign changes. Here the watermark ``w`` must have been computed
-   by function ``leech3matrix_watermark``.
+   by function ``mm_op%{P}_watermark_A``.
 
    Then the function watermarks matrix ``A`` and computes a
    permutation that maps ``A'`` to ``A``. If that permutation
@@ -390,26 +448,46 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
    permutation is in \f$M_{24}\f$ then the function returns the
    number of that permutation. In all other cases the function
    fails.
+   // %%ELSE IF P == 3 and INT_BITS == 64
+   If the first 9 watermarks in the array ``w`` (ignoring the 
+   information about the row in the lower 5 bits) are different 
+   then there is at most one permutation in \f$M_{24}\f$ that 
+   maps ``A'`` to ``A``. If such a permutation exists then the 
+   function returns the number of that permutation. In all other 
+   cases the function fails.
    // %%ELSE
-   The funtion is not supported for moduls %{P}. It always fails.
+   The function is not supported for modulus %{P}. It always fails.
    // %%END IF
 */
 // %%EXPORT px
 int32_t mm_op%{P}_watermark_A_perm_num(uint32_t *w, uint_mmv_t *v)
 {
     // %%IF* P == 15 and INT_BITS == 64
-    uint32_t w1[24];
+    uint32_t w1[24], err = 0;
     uint8_t perm[32];
     uint_fast32_t i;
     
     if (mm_op%{P}_watermark_A(v, w1) < 0) return -1L;
     for (i = 0; i < 24; ++i) perm[i] = 24;
     for (i = 0; i < 24; ++i) {
-        if ((w[i] ^ w1[i]) & 0xffffffe0) 
-            return -1L;
+        err |= w[i] ^ w1[i];
         perm[w[i] & 0x1f] = w1[i] & 0x1f;
     }
-    if (mat24_perm_check(perm)) return -1L;
+    if ((err & 0xffffffe0) || mat24_perm_check(perm)) return -1L;
+    return mat24_perm_to_m24num(perm);
+    // %%ELSE IF P == 3 and INT_BITS == 64
+    uint32_t w1[9], err = 0;
+    uint8_t perm[32], h[9], h1[9];
+    uint_fast32_t i;
+    
+    if (mm_op%{P}_watermark_A(v, w1) < 0) return -1L;
+    for (i = 0; i < 9; ++i) {
+        err |= w[i] ^ w1[i];
+        h[i] = w[i] & 0x1f;
+        h1[i] = w1[i] & 0x1f;
+    }
+    if ((err & 0xffffffe0) || 
+        mat24_perm_from_map(h, h1, 9, perm) != 1) return -1L;
     return mat24_perm_to_m24num(perm);
     // %%ELSE
     return -1L;
