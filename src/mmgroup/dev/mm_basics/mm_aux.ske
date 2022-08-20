@@ -34,8 +34,11 @@
 
 
 
+/// @cond DO_NOT_DOCUMENT 
 #include <stdlib.h>
+#include "clifford12.h"
 #include "mm_basics.h"
+/// @endcond  
 
 // %%EXPORT_KWD MM_BASICS_API
 
@@ -1192,7 +1195,7 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
   The function extracts the signs of certain entries of the
   vector ``mv`` depending on the vector ``sp ``. Vector ``mv`` is 
   given in internal representation  with modulus ``p``.  Vector ``sp`` 
-  is given in sparse representation  and has length ``length``. 
+  is given in sparse representation  and has length ``n``. 
 
   Entry ``sp[i]`` specifies a multiple ``c[i] * u[i]`` of a unit 
   vector ``u[i]``. Let ``m[i]`` be the coordinate of
@@ -1201,19 +1204,19 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
   if ``m[i] = -c[i]``. In all other cases we assign a random
   value 0 or 1 to ``s[i]``. Then the function returns the sum of
   the values ``s[i] << i``, where ``i`` ranges from ``0``
-  to ``length - 1``.
+  to ``n - 1``.
 */
 // %%EXPORT px
-int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t length)
+int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t n)
 {
     uint_fast32_t i, v1 = 0, t;
     uint32_t sp1[32];
 
     if (mm_aux_bad_p(p)) return -1L;
-    if (length > 31) return -1L;
-    for (i = 0; i < length; ++i) sp1[i] = sp[i] & 0xffffff00UL;
-    mm_aux_mmv_extract_sparse(p, mv, sp1, length);
-    for (i = 0; i < length; ++i) {
+    if (n > 31) return -1L;
+    for (i = 0; i < n; ++i) sp1[i] = sp[i] & 0xffffff00UL;
+    mm_aux_mmv_extract_sparse(p, mv, sp1, n);
+    for (i = 0; i < n; ++i) {
         if ((sp1[i] & p) == 0) return -1L;
         t = (sp[i] ^ sp1[i]) & p;
         if ((t != 0) && (t != p)) return -1L;
@@ -1221,6 +1224,72 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
     }
     return (int32_t)v1;
 }
+
+
+
+
+/**
+  @brief Extract some bits of a vector in internal representation
+
+  The function extracts the least significant bits of certain entries
+  of the vector ``mv`` depending on the vector ``a``. Vector ``mv`` is
+  given in internal representation  of the Monster with modulus ``p``.
+ 
+  Vector ``a`` is a an array of ``n`` elements of the group ``Q_x0``
+  of structure \f$2^{1+24}\f$, with each element given
+  in **Leech lattice encoding**. Here each element of ``Q_x0`` must
+  correspond to a Leech lattice vector of type 2; otherwise the
+  function fails.
+
+  The array ``elem`` represents an element of the group ``G_x0`` of
+  stucture \f$2^{1+24}.\mbox{Co}_1\f$, given in **G_x0 representation**.
+  Internally, the function transforms (i.e. conjugates) all elements
+  of ``Q_x0`` in the array ``a`` with the element ``elem``, i.e. it
+  calculates the element ``a'[i] = elem^-1 * a[i] * elem`` of ``Q_x0``.
+  Then it extracts the least significant bit ``b[i]`` of the entry of
+  the vector ``mv`` with the coordinate labelled by ``a'[i]``.
+
+  Note theat negating ``a'[i]`` corresponds to negating the coordinate
+  with label ``a'[i]`` in the vector ``mv``. Hence when
+  negating ``a'[i]`` we also have to flip the bit ``b[i]``.
+  The function fails in case ``a'[i] = 0``.
+
+  The function returns the sum of the values ``b[i] << i``,
+  where ``i`` ranges from ``0`` to ``n - 1``. The function also fails
+  in case ``i > 31``. It returns a negative value in case of failure.
+
+  Assume that a vector ``mv' = mv * q * g`` is given with a known
+  vector ``mv``, a  known ``g`` in ``G_x0``, and an unknown ``q``
+  in ``Q_x0``. Then the  main use case of this function  is to
+  find the element ``q`` (up to sign)  without modifying ``mv'``.
+*/
+// %%EXPORT px
+int32_t mm_aux_mmv_extract_x_signs(uint32_t p, uint_mmv_t *mv, uint64_t *elem, uint32_t *a, uint32_t n)
+{
+    uint_fast32_t i, v1 = 0, b;
+    uint32_t sp1[32];
+    uint64_t ax[32];
+    int32_t res;
+
+    if (mm_aux_bad_p(p)) return -1L;
+    if (n > 31) return -1L;
+    for (i = 0; i < n; ++i) ax[i] = a[i];
+    res = xsp2co1_xspecial_conjugate(elem, n, ax, 1);
+    if (res < 0) return res;
+    for (i = 0; i < n; ++i) {
+        res = mm_aux_index_leech2_to_sparse((uint32_t)ax[i]);
+        if (res == 0) return -1;
+        sp1[i] = res & 0xffffff00;
+    }
+    mm_aux_mmv_extract_sparse(p, mv, sp1, n);
+    for (i = 0; i < n; ++i) {
+        if ((sp1[i] & p) == 0) return -1;
+        b =  (sp1[i] ^ (uint_fast32_t)(ax[i] >> 24)) & 1;
+        v1 |= b << i;
+    }
+    return (int32_t)v1;
+}
+
 
 
 

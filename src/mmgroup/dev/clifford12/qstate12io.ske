@@ -266,7 +266,7 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
   
   Expand the state ``qs`` referred by ``pqs`` to the array of integers
   (of type ``int32_t``)  referred by the pointer ``pi``. Here ``qs[i]``
-  is stored in ``pc[i]``. The function  reduces ``qs``. The
+  is stored in ``pi[i]``. The function  reduces ``qs``. The
   integer ``i`` is interpreted as a bit vector as usual.
   
   ``pqs->shape1`` is ignored. The user has to care for the

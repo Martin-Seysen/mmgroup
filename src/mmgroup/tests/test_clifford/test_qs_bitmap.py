@@ -17,7 +17,7 @@ from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_from_signs
 from mmgroup.structures.qs_matrix import FORMAT_REDUCED
-
+from mmgroup.structures.qs_matrix import qstate12_mul_matrix_mod3
 
 
 #####################################################################
@@ -132,6 +132,78 @@ def test_qs_matrix(verbose = 0):
             raise ValueError(err)
 
 
+#####################################################################
+# Test function qstate12_mul_matrix_mod3
+#####################################################################
 
+def create_rational_testmatrices():
+    """yield instances of class ``QStateMatrix`` for tests """
+    for rows, cols, factor, data in qs_matrix_data:
+        if not 0 <= factor[0] < 62:
+            continue
+        m = QStateMatrix(rows, cols, data)
+        factor = (factor[0] & -2, factor[1] & 4)
+        m.mul_scalar(*factor) 
+        yield m
+    for i in (2,3,4,5, 6, 7):
+        yield qs_unit_matrix(i) 
+    for i in range(20):
+        yield qs_rand_real_matrix(2, 0, 3)
+    for i in range(20):
+        yield qs_rand_real_matrix(1, 0, 2)
+    for rows in range(6):
+        for cols in range(5):
+            for nr in [1,2] + list(range(rows+cols, rows+cols+3)):
+                for _ in range(5):
+                    m = qs_rand_real_matrix(rows, cols, nr)
+                    m.mul_scalar(randint(-8, 8) & -2, randint(0,7) & 4)  
+                    yield m  
+
+MAX_UINT64 = 0xffffffffffffffff
+
+def create_test_matrix_mod3(n):
+    a = [randint(0, MAX_UINT64) for i in range(1 << n)]
+    w = MAX_UINT64
+    return a, w
+
+
+
+def scalar_prod_mod3_uint64(a, b):
+    s = sum(((a >> i) & 3) * ((b >> i) & 3) for i in range(0, 64, 2))
+    return s % 3
+
+def mul_a_w(a, w, max_check = 3):
+    w_and = (w ^ (w >> 1)) & 0x5555555555555555
+    w_and |= w_and << 1
+    w_xor = w & 0xaaaaaaaaaaaaaaaa
+    w_xor |= w_xor >> 1
+    aw = [((x ^ w_xor) & w_and) % 3 for x in a]
+    for i in range(min(max_check, len(a))):
+        assert aw[i] == scalar_prod_mod3_uint64(a[i], w)
+    return np.array(aw, dtype = np.int32)
+
+
+def mul_m_a_w(m, a, w):
+    f, phi = m.factor
+    assert phi & 3 == 0 and f & 1 == 0
+    m1 = m.copy().mul_scalar(-(f & -16) + 16)
+    return m1.int32().ravel() @ mul_a_w(a, w)
           
-    
+@pytest.mark.qstate
+def test_qstate12_mul_matrix_mod3(verbose = 0):
+    for ntest, m in enumerate(create_rational_testmatrices()):
+        a, w = create_test_matrix_mod3(m.ncols)
+        if verbose:
+            print("TEST %s" % (ntest+1))
+            print(m.copy().reshape((sum(m.shape), 0)))
+            if m.ncols < 4:
+                print("a =", [hex(x) for x in a])
+                print("w = ", hex(w))
+        ref_prod = mul_m_a_w(m, a, w)
+        if verbose:
+            print("Product mod 3 =", ref_prod)
+        prod = qstate12_mul_matrix_mod3(m, a, w)
+        if prod != ref_prod:
+            print("Product obtained =", prod)
+            err = "Error in function qstate12_mul_matrix_mod3"
+            raise ValueError(err)

@@ -20,6 +20,7 @@ from mmgroup.clifford12 import error_string
 from mmgroup.clifford12 import qstate12_pauli_vector_mul
 from mmgroup.clifford12 import qstate12_pauli_vector_exp
 from mmgroup.clifford12 import qstate12_from_signs
+from mmgroup.clifford12 import qstate12_mul_matrix_mod3
 
 
 FORMAT_REDUCED = True
