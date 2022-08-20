@@ -466,7 +466,7 @@ cdef class QState12(object):
         return self
         
     #########################################################################
-    # Conversion of a state matrix to a complex vector
+    # Conversion of a state matrix to a complex or integer vector
         
     def complex(self):
         """Convert the state to a complex vector"""
@@ -478,6 +478,15 @@ cdef class QState12(object):
         c = a[0::2] + 1j * a[1::2]
         del a
         return c.reshape((1 << n0, 1 << n1))
+
+    def int32(self):
+        """Convert the state to a vector of 32-bit integers"""
+        cdef uint32_t n0, n1
+        n0, n1 = self.shape
+        a = np.empty(1 << self.ncols, dtype = np.int32)
+        cdef int32_t[:] a_view = a
+        chk_qstate12(cl.qstate12_int32(&self.qs, &a_view[0]))
+        return a.reshape((1 << n0, 1 << n1))
 
     #########################################################################
     # Conversion of a state matrix to a bitmap
@@ -817,10 +826,36 @@ def qstate12_mul_scalar(QState12 qs, x):
 
 
 
+def qstate12_mul_matrix_mod3(QState12 qs, v, uint64_t w):
+    """Compute a certain product modulo 3 with a state matrix
 
+    Assume that ``qs`` is rational and has shape ``(I, J)``.
+    Let ``q`` be the row vector of length ``2**(I+J)``
+    with ``q[i * 2**J + j] = qs[i, j]``.
+ 
+    We consider ``v``  as a ``2**(I+J)`` times ``32`` matrix ``M``
+    of integers modulo 3 with ``M[k,l]`` stored in  bits ``2*l+1``
+    and ``2*l`` of entry ``v[k]``. We consider ``w``  as a column
+    vector of ``32`` integers mod 3 with ``w[l]`` stored in
+    bits ``2*l+1`` and ``2*l`` of the variable ``w``.
+
+    Then the function returns the matrix product ``q * M * v``
+    (modulo 3) as a nonnegative integer less than 3. It raises
+    VelueError in case of error, e.g. if ``qs`` is not rational.
+    """
+    a = np.array(v, dtype = np.uint64)
+    cdef uint64_t[:] a_view = a
+    if len(a_view) < 1 << qs.ncols:
+        err = "Index out of range in function qstate12_mul_matrix_mod3"
+        raise IndexError(err)
+    cdef p_qstate12_type m_pqs = pqs12(qs)
+    cdef int32_t res = chk_qstate12(
+        cl.qstate12_mul_matrix_mod3(m_pqs, &a_view[0], w))
+    return res
+    
  
 ####################################################################
-# Wrappers for C functions contructing state matrices
+# Wrappers for C functions constructing state matrices
 ####################################################################
 
 def qstate12_unit_matrix(QState12 qs, uint32_t n):

@@ -85,7 +85,11 @@ def test_qs_matrix(verbose = 0):
         if verbose:
             print("TEST %s" % (ntest+1))
             print(m.copy().reshape((sum(m.shape), 0)))
-        a = m.complex().real.ravel()
+        ac = m.complex()
+        a = ac.real.ravel()
+        fr, fphi = m.factor
+        if 0 <= fr < 62 and fr & 1 == 0 and fphi & 3 == 0:
+            assert (ac == m.int32()).all()
         b = [0 if x == 0 else 1 + ((x < 0) << 1) for x in a]
         bm = m.to_signs()
         blist = [((int(bm[i >> 5])) >> ((i & 31) << 1)) & 3

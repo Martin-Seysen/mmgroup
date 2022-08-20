@@ -256,6 +256,91 @@ int32_t qstate12_entries(qstate12_type *pqs, uint32_t n, uint32_t *v, double *pc
 
 
 /*************************************************************************
+*** Convering a state to an integer vector
+*************************************************************************/
+
+
+
+/**
+  @brief Expand a state to an array of 32-bit integers
+  
+  Expand the state ``qs`` referred by ``pqs`` to the array of integers
+  (of type ``int32_t``)  referred by the pointer ``pi``. Here ``qs[i]``
+  is stored in ``pc[i]``. The function  reduces ``qs``. The
+  integer ``i`` is interpreted as a bit vector as usual.
+  
+  ``pqs->shape1`` is ignored. The user has to care for the
+  shape of the returned array. The state ``qs`` is reduced.
+
+  Caution: The function sets ``2**pqs->ncols`` entries in the
+  array ``pc``.
+
+  The function returns 0 in case of success, and a negative value
+  in case of error, e.g. if ``qs`` is not integral or in case of
+  integer overflow.
+*/
+// %%EXPORT p
+int32_t qstate12_int32(qstate12_type *pqs,  int32_t *pi)    
+{    
+    // Implementation is along the lines of function ``qstate12_complex``
+
+    uint64_t qf = 0;    // current value of quadratic form Q[i]
+    uint64_t *m;        // pointer to pqs->data
+    uint64_t *m_end;    // pointer to pqs->data + pqs->nrows - 1
+    uint64_t ncols;     // equal to pqs->ncols
+    uint64_t nrc;       // equal to pqs->ncols + pqs->nrows - 1; 
+    uint64_t n_iterations; // Number 1 << (pqs->nrows-1) of nonzero entries
+    uint64_t mask;      // mask (1 << ncols) - 1; 
+    uint64_t assoc;     // Current value of row  A[i] and Q[i]
+    uint64_t i;         // Index running thru n_iterations nonzero entries
+    uint64_t y;         // general purpose
+    int32_t res;        // Return value of subroutines
+    int32_t entry[2];  // nonzero entry of ``qs`` and its negative
+
+  
+    if ((res = qstate12_reduce(pqs)) < 0) return res;
+    ncols = pqs->ncols; 
+    for (i = 0; i < ONE << ncols; ++i) pi[i] = 0;
+    if (pqs->nrows == 0) return 0;
+    m = pqs->data;
+    assoc = m[0]; 
+    m_end = pqs->data + pqs->nrows - 1;
+    nrc = ncols + pqs->nrows - 1; 
+    n_iterations = ONE << (pqs->nrows - 1); 
+    mask = (ONE << ncols) - 1; 
+
+    y = 0; // accumulate diagonal of Q part of ``qs`` in bit 0 of ``y``
+    for (i = 1; i < pqs->nrows; ++i) y |= m[i] >> i;
+    y = (y >> ncols) & 1;
+    y |= pqs->factor;
+    if (y & 0x13 || y < 0) return ERR_QSTATE12_DOMAIN;
+    if (y >= 31 << 5) return ERR_QSTATE12_SCALAR_OVFL;
+    y = (ONE << (y >> 5)) * (ONE - ((y >> 1) & 2L)); // The scalar factor
+    entry[0] = (int32_t)y; 
+    entry[1] = -entry[0];
+   
+    for (i = 1; i <= n_iterations; ++i) {
+        uint64_t i1;
+        int64_t d, d1;
+        pi[assoc & mask] = entry[qf];
+        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
+        while (d1 == 6) {
+            i1 >>= 6;
+            d1 = qstate12_lsbtab[i1 & 63];
+            d += d1;
+        } 
+        qf ^= (assoc >> (nrc - d)) & 1;
+        assoc ^= m_end[-d];
+    }
+    return 0;
+}
+
+
+
+
+
+
+/*************************************************************************
 *** Converting the signs of a real state to an array
 *************************************************************************/
 
@@ -718,38 +803,31 @@ int32_t qstate12_from_signs(uint64_t *bmap, int32_t n, qstate12_type *pqs)
 }
 
 /*************************************************************************
-*** Sum up vector o integers mod 3
+*** Sum up vector of integers mod 3
 *************************************************************************/
 
 
 
 /**
-  @brief Compute certain product modulo 3 with a state matrix
+  @brief Compute a certain product modulo 3 with a state matrix
 
   Let ``qs`` be the quadratic state matrix referred by ``pqs``.
   Assume that ``qs`` is rational and has shape ``(I, J)``.
-  Let ``t[i * 2**J + j] = qs[i, j]``.
-  Let ``w[k] = (v[k] ^ m_xor) & m_and`` for ``0 <= k < 2**(I+J)``.
-  Then the function returns the scalar product  of ``w`` and ``t``
-  modulo 3, where  ``w`` and ``t`` are vectors of length ``2**(I+J)``.
-  The user must make sure that ``m_and << (I+J) < 2**64`` holds.
+  Let ``q`` be the row vector of length ``2**(I+J)``
+  with ``q[i * 2**J + j] = qs[i, j]``.
 
-  The function returns 0, 1, or 2 in case of success and a negative
-  value in case of error, e.g. if ``qs`` is not rational.
+  We consider ``v``  as a ``2**(I+J)`` times ``32`` matrix ``M``
+  of integers modulo 3 with ``M[k,l]`` stored in  bits ``2*l+1``
+  and ``2*l`` of entry ``v[k]``. We consider ``w``  as a column
+  vector of ``32`` integers mod 3 with ``w[l]`` stored in
+  bits ``2*l+1`` and ``2*l`` of the variable ``w``.
 
-  This function looks weird. But is has a reasonable interpretation
-  if ``qs`` is considered as a row vector of length ``2**(I+J)``
-  and  ``v`` is  considered as a ``2**(I+J)`` times ``K`` matrix ``M``
-  of integers mod 3 with ``2*K + I + J <= 64``. For matrix ``M`` we
-  assume that ``M[k, l]`` is stored in bits ``2*l+1`` and ``2*l`` of
-  entry ``v[k]``. Then for a suitable choice of ``m_and``
-  and ``m_xor``, the function computes the matrix
-  product ``qs * M * u`` (modulo 3), where ``u`` may be any column
-  vector of length ``K`` of integers modulo 3.
-
+  Then the function returns the matrix product ``q * M * v``
+  (modulo 3) as a nonnegative integer less than 3. It returns a 
+  negative value in case of error, e.g. if ``qs`` is not rational.
 */
 // %%EXPORT p
-int32_t qstate12_scalar_mod3(qstate12_type *pqs, uint64_t *v, uint64_t m_and, uint64_t m_xor)
+int32_t qstate12_mul_matrix_mod3(qstate12_type *pqs, uint64_t *v, uint64_t w)
 {    
     // Implementation is along the lines of function ``qstate12_complex``
 
@@ -762,10 +840,13 @@ int32_t qstate12_scalar_mod3(qstate12_type *pqs, uint64_t *v, uint64_t m_and, ui
     uint64_t mask;      // mask (1 << ncols) - 1; 
     uint64_t assoc;     // Current value of row  A[i] and Q[i]
     uint64_t i;         // Index running thru n_iterations nonzero entries
-    int32_t res;        // Return value of subroutines
     uint64_t acc = 0;   // Accumulator for result
-    uint64_t sign;      // sign of scalar factor (mod 3)
-
+    uint64_t hi_acc = 0;   // High part of accumulator for result
+    uint64_t w_and;     // value to be 'and_ed' to a row of v 
+    uint64_t w_xor;     // value to be 'xor_ed' to a row of v 
+    uint64_t y;         // general purpose
+    int32_t res;        // Return value of subroutines
+  
     if ((res = qstate12_reduce(pqs)) < 0) return res;
     ncols = pqs->ncols; 
     if (pqs->nrows == 0) return 0;
@@ -775,11 +856,25 @@ int32_t qstate12_scalar_mod3(qstate12_type *pqs, uint64_t *v, uint64_t m_and, ui
     nrc = ncols + pqs->nrows - 1; 
     n_iterations = ONE << (pqs->nrows - 1); 
     mask = (ONE << ncols) - 1; 
+
+    y = 0; // accumulate diagonal of Q part of ``qs`` in bit 0 of ``y``
+    for (i = 1; i < pqs->nrows; ++i) y |= m[i] >> i;
+    y = (y >> ncols) & 1;
+    y |= pqs->factor;
+    if (y & 0x13) return ERR_QSTATE12_DOMAIN;
+    y = 0ULL - (((y >> 2) ^ (y >> 5)) & 1); // - scalar factor (mod 3)
+    w_and = (w ^ (w >> 1)) & 0x5555555555555555ULL;
+    w_and ^= w_and << 1;
+    w_xor = w & 0xaaaaaaaaaaaaaaaaULL;
+    w_xor ^= (w_xor >> 1) ^ y;
+
    
     for (i = 1; i <= n_iterations; ++i) {
         uint64_t i1;
         int64_t d, d1;
-        acc += (v[assoc & mask] ^ m_xor ^ qf) & m_and;
+        y = (v[assoc & mask] ^ w_xor ^ qf) & w_and;
+        acc += y; 
+        hi_acc += y >> 32;
 
         d1 = d = qstate12_lsbtab[(i1 = i) & 63];
         while (d1 == 6) {
@@ -787,16 +882,14 @@ int32_t qstate12_scalar_mod3(qstate12_type *pqs, uint64_t *v, uint64_t m_and, ui
             d1 = qstate12_lsbtab[i1 & 63];
             d += d1;
         } 
-        qf ^= 0 - ((assoc >> (nrc - d)) & 1);
+        qf ^= 0ULL - ((assoc >> (nrc - d)) & 1);
         assoc ^= m_end[-d];
     }
-    sign = pqs->factor;
-    qf = 0;  // accumulate diagonal of Q part in qf
-    for (i = 0; i < pqs->nrows - 1; ++i) qf |= m_end[-i] >> (nrc - i);
-    sign |= qf & 1;
-    if (sign & 0x13) return ERR_QSTATE12_DOMAIN;
-    sign = 0 -  (((sign >> 2) ^ (sign >> 5)) & 1);
-    return (int32_t)((acc ^ sign) % 3);
+
+    hi_acc += ((acc >> 32) - hi_acc) & 0xffffffffULL;
+    acc = (acc & 0xffffffffULL) +  (hi_acc & 0xffffffffULL)
+        + (hi_acc >> 32);
+    return (int32_t)(acc % 3);
 }
 
 
