@@ -346,7 +346,7 @@ def find_vector_71_mod3(verbose = 0):
     ``w = sum(v71 * g71**i for i in range(71))`` is not trivial. 
     Then ``w`` is stabilized by ``g71``. More precisely, the 
     projection of ``w`` onto the 196883-dimensional irreducible
-    representation of tthe monster is not trivial.
+    representation of the monster is not trivial.
     
     The vector ``w`` satisfies the following additional property:
     

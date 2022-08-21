@@ -161,63 +161,89 @@ uint32_t op_x_d_delta(uint32_t q0, uint32_t d, uint32_t delta)
 }
 
 
+
+
+
+/**
+  @brief Encode element \f$x_\delta x_\pi\f$ of the group \f$G_{x0}\f$
+
+  The function encodes the element \f$g = x_\delta x_\pi\f$ of
+  a subgroup the group \f$G_{x0}\f$.  Here  parameter ``pi`` is the
+  number of the permutation \f$\pi\f$  in \f$M_{24}\f$, and ``delta``
+  is the number of the cocode element \f$\delta x\f$. These numbers are
+  defined in the API reference  in sections **Automorphisms of the
+  Parker loop** and  **The Golay code and its cocode**, respectively.
+  
+  The function fills the arrays ``perm`` and ``autpl`` with data
+  representing the element \f$g\f$, using the
+  functions ``mat24_m24num_to_perm`` and ``mat24_perm_to_autpl`` in
+  file ``mat24_functions.c`` for computing these data.
+
+  Function ``op_delta_pi`` in this module uses these two arrays for
+  conjugating an element of \f$Q_{x0}\f$ with \f$g\f$.
+*/
+static void prep_delta_pi(
+    uint32_t delta,
+    uint32_t pi,
+    uint8_t perm[24],
+    uint32_t autpl[12]
+)
+{
+    mat24_m24num_to_perm(pi, perm);
+    mat24_perm_to_autpl(delta, perm, autpl);
+}
+
+/**
+  @brief Encode the inverse of the element \f$x_\delta x_\pi\f$
+
+  This function is similar to function ``prep_delta_pi``; but it
+  encodes the element \f$g^{-1} = (x_\delta x_\pi)^{-1}\f$ in the
+  two arrays ``perm`` and ``autpl`` instead of  \f$g\f$.
+*/
+
+static void prep_delta_pi_inv(
+    uint32_t delta,
+    uint32_t pi,
+    uint8_t perm[24],
+    uint32_t autpl[12]
+)
+{
+    uint8_t i_perm[24];
+    mat24_m24num_to_perm(pi, i_perm);
+    mat24_perm_to_iautpl(delta, i_perm, perm, autpl);
+}
+
+
 /**
   @brief Perform operation \f$x_\delta x_\pi\f$ on \f$Q_{x0}\f$
 
-  The function returns the element \f$q_0 x_\delta x_\pi\f$ for
-  \f${q_0} \in Q_{x0}\f$. Here  parameter ``pi`` is the number 
-  of the permutation \f$\pi\f$  in \f$M_{24}\f$, and ``d`` is the
-  number of the cocode element \f$\delta x\f$. These numbers are 
-  defined in the API reference  in sections **Automorphisms of the 
-  Parker loop** and  **The Golay code and its cocode**, respectively.
-  
-  Parameter \f${q_0}\f$ and the result are given Leech lattice 
-  encoding.
+  The function returns the element \f$q_0^g\f$
+  for \f${q_0} \in Q_{x0}\f$ and some element \f$g = x_\delta x_\pi\f$.
+  Here the element \f$g\f$ must have been encoded in the two
+  arrays ``perm`` and ``autpl`` by a previous call to
+  function ``prep_delta_pi`` (or to function ``prep_delta_pi_inv``).
+  Arrays  ``perm`` and ``autpl`` must be passed to
+  function ``op_delta_pi`` as input parameters.
 */
 static inline
-uint32_t op_delta_pi(uint32_t q0, uint32_t delta, uint32_t pi)
+int32_t op_delta_pi(
+    uint32_t q0,
+    uint8_t perm[24],
+    uint32_t autpl[8]
+)
 {
     uint32_t xd, xdelta;
-    uint8_t perm[24];
-    uint32_t autpl[12];
-    
+
     xd = (q0 >> 12) & 0x1fff;
     xdelta =  (q0 ^ MAT24_THETA_TABLE[(q0 >> 12) & 0x7ff]) & 0xfff;
-    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
-        xd ^=  mat24_scalar_prod(xd, delta) << 12;
-    } else {
-        mat24_perm_to_autpl(delta, perm, autpl);
-        xd = mat24_op_ploop_autpl(xd, autpl);
-        xdelta =  mat24_op_cocode_perm(xdelta, perm);
-    }
+    xd = mat24_op_ploop_autpl(xd, autpl);
+    xdelta =  mat24_op_cocode_perm(xdelta, perm);
     return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
 }
 
 
-/**
-  @brief Inverse of function ``op_delta_pi``
 
-  We have 
-  ``op_delta_pi(op_delta_pi_inv(q0, delta , pi), delta, pi) = q0``.
-*/
-static inline
-uint32_t op_delta_pi_inv(uint32_t q0, uint32_t delta, uint32_t pi)
-{
-    uint32_t xd, xdelta;
-    uint8_t perm[24], inv_perm[24];
-    uint32_t inv_autpl[12];
-    
-    xd = (q0 >> 12) & 0x1fff;
-    xdelta =  (q0 ^ MAT24_THETA_TABLE[(q0 >> 12) & 0x7ff]) & 0xfff;
-    if (pi == 0 || mat24_m24num_to_perm(pi, perm)) {
-        xd ^=  mat24_scalar_prod(xd, delta) << 12;
-    } else {
-        mat24_perm_to_iautpl(delta, perm, inv_perm, inv_autpl);
-        xd = mat24_op_ploop_autpl(xd, inv_autpl);
-        xdelta =  mat24_op_cocode_perm(xdelta, inv_perm);
-    }
-    return (xd << 12) ^ xdelta ^ (MAT24_THETA_TABLE[xd & 0x7ff] & 0xfff);
-}
+
 
 /**
   @brief Perform operation \f$x_d\f$ on \f$Q_{x0}\f$
@@ -302,6 +328,8 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
 // 
 {
     uint_fast32_t tag, i, v, y;
+    uint8_t perm[24];
+    uint32_t autpl[12];
     static uint8_t  o[2][4] = {{0,2,3,1},{0,3,1,2}};
  
     q0 &= 0x1ffffff;
@@ -319,10 +347,14 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *pg, uint32_t n)
                q0 = op_x_d_delta(q0, 0, v & 0xfff);
                break;
             case MMGROUP_ATOM_TAG_IP:
-               q0 = op_delta_pi_inv(q0, 0, v);
+               if (v == 0) break;
+               prep_delta_pi_inv(0, v, perm, autpl);
+               q0 = op_delta_pi(q0, perm, autpl);
                break;
             case MMGROUP_ATOM_TAG_P:
-               q0 = op_delta_pi(q0, 0, v);
+               if (v == 0) break;
+               prep_delta_pi(0, v, perm, autpl);
+               q0 = op_delta_pi(q0, perm, autpl);
                break;
             case MMGROUP_ATOM_TAG_IX:
             case MMGROUP_ATOM_TAG_X:
