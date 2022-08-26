@@ -815,6 +815,28 @@ class MMVector(AbstractMmRepVector):
     def hash(self):
         """Return a hash value of the vector"""
         return int(mm_aux_hash(self.p, self.data))
+
+
+
+    def __mod__(self, p):
+        """Return the vector modulo ``p``. 
+
+        The function returns a vector object of class ``MMVector``
+        if reduction modulo ``p`` is possible.
+        """ 
+        if  p == self.p:
+            v = MMVector(self.p, 0)
+            np.copyto(v.data, self.data)
+            return v
+        elif isinstance(p, Integral) and p > 0 and self.p % p == 0:
+            return MMVector(p, self)
+        elif isinstance(p, Integral):
+            err = "Cannot reduce MMVector object modulo %d"
+            raise ValueError(err % p)
+        else:
+            err = "Modulus for reducing MMVector object must be int"
+            raise TypeError(err)
+
             
 
 ######################################################################

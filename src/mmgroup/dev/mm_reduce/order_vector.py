@@ -33,6 +33,7 @@ from mmgroup.mm15 import op_compare as mm_op15_compare
 from mmgroup.mm15 import op_word as mm_op15_word
 from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
 from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
+from mmgroup.mm3 import op_watermark_A as mm_op3_watermark_A
 
 from mmgroup.dev.mm_reduce import find_order_vector
 from mmgroup.dev.mm_reduce.find_order_vector import stabilizer_vector
@@ -111,27 +112,38 @@ def identity_vector(factor):
 
 
    
-
-
-def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
+def make_order_vector_mod3(s_g71, s_v71, s_gA, diag):
     v71 = vector_from_data(10, s_v71)
     g71 = mm_element_from_data(s_g71)
     w71 = stabilizer_vector(v71, g71, 71)
     assert w71 is not None
     w71 *= mm_element_from_data(s_gA)
+    if not isinstance(diag, int): diag = diag[0]
+    w71 += identity_vector(5 * diag % 15)
+    diag = 0
+    v3 = mm_op15_eval_A_rank_mod3(w71.data, diag) & 0xffffffffffff
+    assert v3 != 0
+    v_type4 = gen_leech3to2_type4(v3)
+    assert v_type4 == 0x800000
+    w71.reduce()
+    return w71
+
+
+def make_order_vector_mod15(w71, s_g94, s_v94):
     v94 = vector_from_data(6, s_v94)
     g94 = mm_element_from_data(s_g94)
     w94 = stabilizer_vector(v94 - v94 * g94, g94**2, 47)
     assert w94 is not None
-    if not isinstance(diag, int): diag = diag[0]
-    w = w71 + w94 + identity_vector(5 * diag % 15)
-    diag = 0
-    v3 = mm_op15_eval_A_rank_mod3(w.data, diag) & 0xffffffffffff
-    assert v3 != 0
-    v_type4 = gen_leech3to2_type4(v3)
-    assert v_type4 == 0x800000
+    w = w71 + w94
     w.reduce()
     return w
+
+
+def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
+    v3 = make_order_vector_mod3(s_g71, s_v71, s_gA, diag)
+    return make_order_vector_mod15(v3, s_g94, s_v94)
+
+
 
 
 
@@ -229,7 +241,7 @@ def eqn_system(vector, tag_indices, map_f, n):
     rows, cols = 0, n
     out_indices = []
     for (entry, index) in zip(entries, indices):
-        if 1 <= entry < 15:
+        if 1 <= entry < vector.p:
             eqn = map_f(index)
             new_rows = leech2matrix_add_eqn(matrix, rows, cols, eqn)
             if new_rows:
@@ -245,30 +257,52 @@ def eqn_system(vector, tag_indices, map_f, n):
 
 
 def eqn_sign(vector):
-    for j in range(24):
-        if 1 <= vector["Z", 0, j] < 15:
-            return [ MMSpace.index_to_sparse("Z", 0, j) ]
+    p = vector.p
+    if p == 15:
+        for j in range(24):
+            if 1 <= vector["Z", 0, j] < 15:
+                return [ MMSpace.index_to_sparse("Z", 0, j) ]
+    if p == 3:
+        for i in range(100):
+            v2, v3 = vector["Z", i, 2:4]
+            if 1 <= v2 < 3 and 1 <= (v2 - v3) % 3 < 3:
+                return [ MMSpace.index_to_sparse("Z", i, 2) ]
     return None
 
 
 def augment_v_data(v, data):
     a = np.array(data, dtype = np.uint32)
-    mm_aux_mmv_extract_sparse(15, v.data, a, len(a))
+    mm_aux_mmv_extract_sparse(v.p, v.data, a, len(a))
     return [x for x in a]
 
 
 def check_v(v, verbose = 0):
     vB = v['B']
-    for p in (3,5):
-        if (vB % p == 0).all():
-            if verbose:
-                print("Vector may be zero (mod %d)" % p)
-            return None
     mark = np.zeros(24, dtype = np.uint32)
-    if mm_op15_watermark_A(v.data, mark) < 0:
+    if v.p == 15:
+        for p in (3,5):
+            if (vB % p == 0).all():
+                if verbose:
+                    print("Vector may be zero (mod %d)" % p)
+                return None
+        if mm_op15_watermark_A(v.data, mark) < 0:
+            if verbose:
+                print("Permutation watermarking failed")
+            return None
+    elif v.p == 3:
+        if (vB == 0).all():
+            if verbose:
+               print("Vector may be zero (mod 3)")
+            return None
+        if mm_op3_watermark_A(v.data, mark) < 0:
+            if verbose:
+                print("Permutation watermarking failed")
+            return None
+    else:
         if verbose:
-            print("Permutation watermarking failed")
+            print("Vector is not given mod 3 or mod 15")
         return None
+
     result_y = eqn_system(v, Y_INDICES, map_y, 11)
     if result_y is None:
         if verbose:
@@ -322,18 +356,28 @@ def str_data(text, data):
     return s
 
 
-def find_order_vector(verbose = 1):
+def find_order_vector(verbose = 0):
     verbose = 1
     if verbose:
         print("Trying to find a vector of order 71")
-    s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose)
+    for trials in range(200,-1,-1):
+        s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose)
+        v3 = make_order_vector_mod3(s_g71, s_v71, s_gA, diag)
+        tag_data_mod3 = check_v(v3 % 3, verbose=verbose)
+        if tag_data_mod3 is not None:
+            if verbose:
+                print("Tests for v71 passed")
+            break
+    if not trials:
+        err = "No suitable vector mod 3 in the monster representation found"
+        raise ValueError(err) 
     if verbose:
         print("Trying to find a vector of order 94")
     for trials in range(200,-1,-1):
         s_g94, s_v94 = find_vector_v94_mod5(verbose = verbose)
         if s_v94 is None:
             continue
-        v = make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94)
+        v = make_order_vector_mod15(v3, s_g94, s_v94)
         tag_data = check_v(v, verbose=verbose)
         if tag_data is not None:
             if verbose:

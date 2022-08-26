@@ -325,7 +325,7 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *g, uint32_t n)
 // given by ``v``. Atom ``v`` is interpreted as follows:
 // Bit 31:      sign of exponent
 // Bit 30..28   tag
-// Bit 27..0    operarand
+// Bit 27..0    operand
 // Tag are as follows:
 //
 //                bit
