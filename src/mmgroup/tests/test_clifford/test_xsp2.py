@@ -13,10 +13,12 @@ import numpy as np
 import pytest
 
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
+from mmgroup import MMV
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_set_elem_word_scan
 from mmgroup.clifford12 import xsp2co1_unit_elem
 from mmgroup.clifford12 import xsp2co1_reduce_word
+from mmgroup.clifford12 import xsp2co1_elem_read_mod3
 from mmgroup.structures.construct_mm import iter_mm
 
 
@@ -118,4 +120,48 @@ def test_benchmark_reduce_word(ncases = 5000, verbose = 0):
         print(s % (n, 1000*t/n))
 
 
+
+
+#####################################################################
+# Test function xsp2co1_elem_read_mod3
+#####################################################################
+
+V3 = MMV(3)
+
+def make_testcases_mod3():
+    for i in range(50):
+        v = V3('R')
+        g = Xsp2_Co1('r', 'G_x0')
+        row = randint(0, 0xfff)
+        col = randint(0, 23) if i & 1 else 24
+        yield v, g, row, col
+
+
+
+def ref_xsp2co1_elem_read_mod3(v, g, row, col):
+    v1 = v.copy() * g**-1
+    r = v1['Z', row] if row < 2048 else  v1['Y', row - 2048]  
+    if col < 24:
+        return r[col]
+    else:
+        return (r[2] + 3 - r[3]) % 3
+
+OFS_Z = 116416 >> 5
+
+@pytest.mark.xsp2co1
+def test_xsp2co1_elem_read_mod3(verbose = 1):
+    for n, (v, g, row, col) in enumerate(make_testcases_mod3()):
+        x_ref = ref_xsp2co1_elem_read_mod3(v, g, row, col)
+        x = xsp2co1_elem_read_mod3(v.data[OFS_Z:], g._data, row, col)
+        ok = x == x_ref
+        if verbose or not ok:
+            print("Test %d, row = %d, column =%d" % (n+1, row,col))
+            print("  inverse of g =", g)
+            vg = v * g
+            r = vg['Z', row] if row < 2048 else  vg['Y', row - 2048]  
+            print("  (v*g)[row] =", list(r))
+            print("  (v*g)[row, col] =", x, ", expected:", x_ref)
+            if not ok:
+                raise ValueError("Test failed")
+        
 

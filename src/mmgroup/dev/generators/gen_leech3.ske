@@ -114,6 +114,27 @@ static inline uint32_t short_3_scalprod(uint64_t v3_1, uint64_t v3_2)
     return (uint32_t)res;
 }
 
+
+/**
+  @brief Add vectors in Leech lattice mod 3
+
+  The function returns the sum of the vectors \f$v_{31}\f$
+  and  \f$v_{32}\f$. These two vectors must be given in Leech
+  lattice mod 3 encoding. The result is reduced and also
+  given in Leech lattice mod 3 encoding.
+*/
+static inline uint64_t compute_3_sum(uint64_t v31, uint64_t v32)
+{
+    uint64_t a1 = v31 ^ v32;
+    uint64_t a2 = v31 & v32 & 0xffffffffffffULL;
+    a2 = ((a2 << 24) | (a2 >> 24)) & 0xffffffffffffULL;
+    v31 = a1 ^ a2;
+    v32 = a1 & a2 & 0xffffffffffffULL;
+    v32 = ((v32 << 24) | (v32 >> 24)) & 0xffffffffffffULL;
+    return v31 | v32;
+}
+
+
 /// @endcond  
 
 #endif // #ifdef MMGROUP_GENERATORS_INTERN

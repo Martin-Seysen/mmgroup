@@ -1506,7 +1506,7 @@ uint64_t xsp2co1_from_vect_mod3(uint64_t x)
 @brief add short Leech lattice vector (given mod 3) to Leech lattice vector
 
 Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
-lattice mod 3** encoding, and short Leech latice vectors 
+lattice mod 3** encoding, and short Leech lattice vectors 
 ``src`` and ``dest``, referred by ``psrc`` and ``pdest``, the 
 function computes  ``dest = src + factor * x``. Here ``src`` and 
 ``dest`` are given in the standard basis, so that a unit vector of 
@@ -1659,7 +1659,7 @@ lattice** encoding, the function computes the real coordinates
 of vector ``x`` in the array referred by ``pdest``. ``pdest``
 must have length 24. As usual, the norm (i.e. the squared sum of the
 coordinates) of the computed short vector is normalized to 32.
-Note that the result is defiined up to sign only. Here the function
+Note that the result is defined up to sign only. Here the function
 chooses an arbitrary sign.
 
 The function returns 0 if ``x`` encodes a short Leech lattice vector
@@ -2007,7 +2007,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
     x_data[1] = xsp2co1_to_vect_mod3(~x);
 
     ncols = qs2.ncols; 
-    if (ncols != 12 || qs2.nrows > 12) return ERR_QSTATE12_REP_GX0;
+    if (ncols != 12 || qs2.nrows > 13) return ERR_QSTATE12_REP_GX0;
     for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
     if (qs2.nrows == 0) return 0; // Vector is zero
     n_iterations = ONE << (qs2.nrows - 1);
@@ -2033,6 +2033,66 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 
 
 
+
+
+
+/*************************************************************************
+*** Read entry of a transfromed vector of the monster rep modulo 3
+*************************************************************************/
+
+/**
+@brief Read entry of a transfromed vector of the monster rep modulo 3
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. Let \f$v\f$
+be the vector of the representation  \f$4096_x \otimes 24_x\f$
+modulo 3 stored in the array  ``v`` in a format compatible to the 
+format used in the ``mmgroup.mm3`` extension. Then the function
+returns the entry of the vector  \f$v' = v \cdot g^{-1}\f$ in 
+row ``0 <= row < 4096`` and column ``0 <= column < 24`` of \f$v'\f$.
+
+This function is considerably faster than the computation 
+of \f$v' = v \cdot g^{-1}\f$ using the functions in 
+the  ``mmgroup.mm3`` extension.
+
+In case ``column = 24`` the function returns the
+value ``(v'[row,2] - v'[row,3]) mod 3``.  In case of success the 
+return value is a nonnegative integer less than 3. A negative return
+value indicates failure.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_read_mod3(uint64_t *v, uint64_t *elem, uint32_t row, uint32_t column)
+{
+    int32_t res;
+    qstate12_type qs1, qs2;
+    uint64_t data2[MAXROWS_ELEM], w, v3_1[4], v3_2[4], j;
+
+    res = xsp2co1_elem_to_qs_i(elem, &qs1);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_gate_not(&qs2, (row & 0xfff));
+    if (res < 0) return res;
+    res = qstate12_restrict(&qs2, 0, 12);
+    if (res < 0) return res;
+    res = qstate12_reduce(&qs2);
+    if (res < 0) return res;
+    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX0;
+    if (qs2.ncols != 12 || qs2.nrows > 13) return ERR_QSTATE12_REP_GX0;
+
+    if (column < 24) {
+        j = column == 2 ? 3: 2;
+        v3_1[0] = STD_V3;
+        v3_1[1] = (ONE << (column + 24)) + (ONE << j);
+        v3_1[3] = (ONE << (column + 24)) + (ONE << (j + 24));
+        v3_1[2] = xsp2co1_find_chain_short_3(v3_1[1], v3_1[3]);
+        v3_2[0] = elem[0];
+        res = xsp2co1_chain_short_3(&qs1, 4, v3_1, v3_2);
+        if (res < 0) return res;
+        w = compute_3_sum(v3_2[1], v3_2[3]);
+    } else w = elem[0];
+    w = xsp2co1_to_vect_mod3(w);
+    return qstate12_mul_matrix_mod3(&qs2, v, w);
+}
 
 
 //  %%GEN h
