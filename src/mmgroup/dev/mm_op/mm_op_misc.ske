@@ -96,6 +96,28 @@ uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
     return mm_op%{P}_compare_len(mv1, mv2, %{MMV_INTS}); 
 }
    
+
+
+/** 
+  @brief Check if a vector ``mv`` in \f$\rho_{%{P}}\f$ is zero
+
+  The function checks it the vector ``mv`` in the 
+  representation \f$\rho_{%{P}}\f$ is zero.
+
+  It returns 0 in case ``mv == 0`` and 1 otherwise. It is optimized
+  for the case that ``mv`` is expected to be zero.
+*/
+// %%EXPORT px
+uint32_t mm_op%{P}_checkzero(uint_mmv_t *mv)
+{
+    uint_mmv_t acc = 0;
+    uint_fast32_t i;
+    for (i = 0; i < %{MMV_INTS}; ++i) acc |= mv[i] ^ (mv[i] >> 1);
+    return (acc & %{smask:P>>1}) != 0;
+}
+   
+    
+
     
 
 /** 

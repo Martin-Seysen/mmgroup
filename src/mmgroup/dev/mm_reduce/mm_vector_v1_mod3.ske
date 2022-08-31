@@ -1,0 +1,138 @@
+/** @file mm_vector_v1_mod3.c
+
+ File ``mm_vector_v1_mod3`` contains a precomuted vector ``v1_mod3``
+ of the representtion of the monster group (mod 3). This vector can
+ be used for obtaining an (unknown) element \f$g\f$ of the
+ subgroup \f$G_{x0}\f$ of the monster from and image of that vector
+ under \f$g\f$.
+
+ So the functions in this module are similar to those in
+ module ``mm_order.c``, but faster.
+
+ Note that we cannot check membership in \f$G_{x0}\f$
+ with the functions in this module!
+
+ This module is yet a stub!!!
+*/
+
+/// @cond DO_NOT_DOCUMENT 
+#include "mat24_functions.h"
+#include "clifford12.h"
+#include "mm_op3.h"   
+#include "mm_reduce.h"   
+/// @endcond
+
+   
+// %%EXPORT_KWD MM_REDUCE_API
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/************************************************************************
+** order vector tag table
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+static  uint32_t V1_MOD3_DATA[] = {
+// %%TABLE V1_MOD3_DATA, uint32
+};
+
+
+// %%USE_TABLE
+static  uint32_t V1_MOD3_TAG_DATA[] = {
+// %%TABLE V1_MOD3_TAG_DATA, uint32
+};
+
+
+// Length of table V1_MOD3_DATA
+#define LEN_V1_MOD3  %{int:len(V1_MOD3_DATA)}
+
+/// @endcond 
+
+
+
+
+
+/************************************************************************
+** load order vector
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+// Offsets in order vector stored in the table
+#define OFS3_WATERMARK_PERM  0
+#define OFS3_TAGS_Y          9
+#define OFS3_SOLVE_Y        20
+#define OFS3_TAGS_X         31
+#define OFS3_SOLVE_X        55
+
+
+
+
+/// @endcond 
+
+/** 
+  @brief Load order vector from tables to a buffer
+
+  The function stores the precomputed vector ``v1_mod3`` into the
+  array referred by ``p_dest``. That array must must be sufficiently
+  long to store a vector of the representation  \f$\rho_{3}\f$.
+ 
+*/
+// %%EXPORT px
+void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
+{
+    mm_aux_zero_mmv(3, p_dest);
+    mm_aux_mmv_add_sparse(3, V1_MOD3_DATA, %{int:len(V1_MOD3_DATA)}, p_dest);
+}
+
+
+/************************************************************************
+** Check if a vector is equal to the order vector
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/// @endcond 
+
+
+/** 
+  @brief Compare vector with precomputed order vector
+  
+  The function compares the vector \f$v\f$ in the
+  representation \f$\rho_{3}\f$ of the monster group referred
+  by ``v`` with  \f$v_1\f$ , where  \f$v_1\f$ is
+  the precomute vector ``v1_mod3``.
+
+  The function returns 0 in case of equality and 1 otherwise.
+  It destroys the vector in the buffer ``v``.
+*/
+// %%EXPORT px
+int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
+{  
+    uint32_t a[LEN_V1_MOD3];
+    uint32_t i;
+    for (i = 0; i < LEN_V1_MOD3; ++i) {
+        a[i] = V1_MOD3_DATA[i] ^3;
+    }
+    mm_aux_mmv_add_sparse(3, a, LEN_V1_MOD3, v);
+    return mm_op3_checkzero(v);
+}
+
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c

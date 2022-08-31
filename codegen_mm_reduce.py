@@ -48,6 +48,7 @@ if  __name__ == "__main__":
     from mmgroup.generate_c import pxd_to_pyx
     from mmgroup.dev.mm_op import mm_op
     from mmgroup.dev.mm_reduce import order_vector_tables
+    from mmgroup.dev.mm_reduce import vector_v1_mod3
 
 
 
@@ -70,11 +71,13 @@ def table_classes():
         TABLE_CLASSES = [
             mm_op.Mockup_MM_Op,
             order_vector_tables.Mockup_OrderVectorTable,
+            vector_v1_mod3.V1_Mod3_Table,
         ]
     else:
         TABLE_CLASSES = [
             mm_op.MM_Op,
             order_vector_tables.OrderVectorTable,
+            vector_v1_mod3.Mockup_V1_Mod3_Table,
         ]  
     return TABLE_CLASSES
 
@@ -96,6 +99,7 @@ C_REDUCE_SKELETONS = [
    "mm_reduce",
    "mm_suborbit",
    "mm_shorten",
+   "mm_vector_v1_mod3",
  
 ]
 

@@ -136,7 +136,7 @@ class OrderVectorTable:
         """Compute data for table classes
 
         We cannot to this ab initio; because the required inputs 
-        are not available if sys.arg contains tan argument ``mockup``.
+        are not available if sys.arg contains the argument ``mockup``.
         """
         if not self.__class__.tables is None:
             return

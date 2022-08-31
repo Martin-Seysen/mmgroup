@@ -551,6 +551,13 @@ C interface for file mm_shorten.c
 .. doxygenfile:: mm_shorten.c
 
 
+C interface for file mm_vector_v1_mod3.c
+-----------------------------------------
+
+.. doxygenfile:: mm_vector_v1_mod3.c
+
+
+
 
 Shared libraries and dependencies between Cython extensions
 ===========================================================

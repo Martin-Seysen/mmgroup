@@ -492,7 +492,7 @@ reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
 
 
 shared_libs_stage2_augmented = shared_libs_stage2 + [
-       mm_op_shared[15].lib_name
+       mm_op_shared[15].lib_name,  mm_op_shared[3].lib_name
 ] if not on_readthedocs else []
 
 

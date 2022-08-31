@@ -1271,19 +1271,19 @@ int32_t mm_aux_mmv_extract_x_signs(uint32_t p, uint_mmv_t *mv, uint64_t *elem, u
     uint64_t ax[32];
     int32_t res;
 
-    if (mm_aux_bad_p(p)) return -1L;
-    if (n > 31) return -1L;
+    if (mm_aux_bad_p(p)) return -10001L;
+    if (n > 31) return -10002L;
     for (i = 0; i < n; ++i) ax[i] = a[i];
     res = xsp2co1_xspecial_conjugate(elem, n, ax, 1);
     if (res < 0) return res;
     for (i = 0; i < n; ++i) {
         res = mm_aux_index_leech2_to_sparse((uint32_t)ax[i]);
-        if (res == 0) return -1;
+        if (res == 0) return -10003L;
         sp1[i] = res & 0xffffff00;
     }
     mm_aux_mmv_extract_sparse(p, mv, sp1, n);
     for (i = 0; i < n; ++i) {
-        if ((sp1[i] & p) == 0) return -1;
+        if ((sp1[i] & p) == 0) return -10004L;
         b =  (sp1[i] ^ (uint_fast32_t)(ax[i] >> 24)) & 1;
         v1 |= b << i;
     }

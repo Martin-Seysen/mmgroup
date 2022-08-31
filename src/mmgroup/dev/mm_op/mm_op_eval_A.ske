@@ -379,7 +379,7 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
         mask <<= 2; 
     }
     // Reduce diagonal entries of ``A`` in ``diag`` mod 3
-    a = (diag ^ (diag >> 1)) & 0x555555555555ULL;
+    a = diag & (diag >> 1) & 0x555555555555ULL;
     diag ^= a ^ (a << 1);
     diag <<= 1;  // diag[i] = A[i,i] is now in bits (2*i+2, 2*i+1)
     // The main loop now computes a watermark value a0[i] for the  
@@ -396,7 +396,7 @@ int32_t  mm_op%{P}_watermark_A(uint_mmv_t *v, uint32_t *w)
         // Enter d[j], j = 1,3,5 and diag[i] into bits 21...5 of
         // the watermark; store i in the low bits of the watermark.
         w0[i] = i + (d[1] << 5) + (d[3] << 10) + (d[5] << 15)
-                 + (((diag >> (i << 1)) & 3) << 20);
+                 + (((diag >> (i << 1)) & 6) << 19);
     }
     // Sort the array of watermarks
     insertsort(w0, 24);
@@ -481,14 +481,15 @@ int32_t mm_op%{P}_watermark_A_perm_num(uint32_t *w, uint_mmv_t *v)
     uint8_t perm[32], h[9], h1[9];
     uint_fast32_t i;
     
-    if (mm_op%{P}_watermark_A(v, w1) < 0) return -1L;
+    if (mm_op%{P}_watermark_A(v, w1) < 0) return -2001L;
     for (i = 0; i < 9; ++i) {
         err |= w[i] ^ w1[i];
         h[i] = w[i] & 0x1f;
         h1[i] = w1[i] & 0x1f;
     }
-    if ((err & 0xffffffe0) || 
-        mat24_perm_from_map(h, h1, 9, perm) != 1) return -1L;
+    if (err & 0xffffffe0) return -2002L;
+    err =  mat24_perm_from_map(h, h1, 9, perm);
+    if (err != 1) return (err % 1000) - 1000;
     return mat24_perm_to_m24num(perm);
     // %%ELSE
     return -1L;
