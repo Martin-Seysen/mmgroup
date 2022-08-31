@@ -74,6 +74,7 @@ static  uint32_t V1_MOD3_TAG_DATA[] = {
 #define OFS3_TAGS_X         31
 #define OFS3_SOLVE_X        55
 
+#define OFS3_Z  (116416 >> 5)
 
 
 
@@ -100,9 +101,6 @@ void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
 ************************************************************************/
 
 
-/// @cond DO_NOT_DOCUMENT 
-
-/// @endcond 
 
 
 /** 
@@ -130,6 +128,83 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 
 
+/************************************************************************
+** Find an element of G_x0
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+#define error(pos, err) (int32_t)(((-pos << 24) + err) | 0x80000000UL)
+
+/// @endcond 
+
+
+
+/** 
+  @brief Find an element \f$g\f$ of the subgroup \f$G_{x0}\f$ 
+
+  Yet to be documented!!!
+*/
+// %%EXPORT px
+int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
+{
+    uint64_t w3 = mm_op3_eval_A_rank_mod3(v, 0);
+    uint32_t w_type4 = (uint32_t)(gen_leech3to2_type4(w3));
+    int32_t len, i, res, v_y, y, v_x, x;
+    uint64_t A[24], elem_g_i[26];
+    uint32_t perm_num, g_inv[8], v_sign, aa, sign;
+
+
+    if ((w3 >> 48) != 23 || (w3 & 0xffffffffffffULL) == 0) return -0x101;
+    if (w_type4 == 0) return -0x102;
+    len = gen_leech2_reduce_type4(w_type4, g);
+    if (len < 0) return error(2, len);
+    for (i = 0; i < 24; ++i) A[i] = v[i];
+    res = mm_op3_word_tag_A(A, g, len, 1);
+    if (res < 0) return error(3, res);
+    res =  mm_op3_watermark_A_perm_num(
+        V1_MOD3_TAG_DATA +  OFS3_WATERMARK_PERM, A);
+    if (res < 0) return error(4, res);
+    perm_num = res;
+    if (perm_num) {
+        g[len] = 0xA0000000UL + perm_num;
+        res = mm_op3_word_tag_A(A, g + len, 1, 1);
+        if (res < 0) return error(5, res);
+        len += 1;
+    }
+    v_y = mm_aux_mmv_extract_sparse_signs(3, A, 
+        V1_MOD3_TAG_DATA + OFS3_TAGS_Y, 11);
+    if (v_y < 0) return  error(6, v_y);
+    y = leech2matrix_solve_eqn(
+        V1_MOD3_TAG_DATA + OFS3_SOLVE_Y, 11, v_y);
+    if (y > 0) {
+        g[len] = 0xC0000000 + y;
+        res = mm_op15_word_tag_A(A, g + len, 1, 1);
+        if (res < 0) return error(7, res);
+        len += 1;
+    }
+
+    for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
+    res = xsp2co1_set_elem_word(elem_g_i, g_inv, len);
+    if (res < 0) return error(8, res);
+    v_x = mm_aux_mmv_extract_x_signs(3, v, elem_g_i, 
+        V1_MOD3_TAG_DATA + OFS3_TAGS_X, 24);
+    if (v_x < 0) return  error(9, v_x);
+    x = leech2matrix_solve_eqn(V1_MOD3_TAG_DATA + OFS3_SOLVE_X, 24, v_x);
+    v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
+    aa = xsp2co1_elem_read_mod3(v + OFS3_Z, elem_g_i, v_sign, 24); 
+    sign = aa - 1;
+    if (sign & 0xfffffffe) return -0x104;
+    sign ^= uint64_parity(x & (x >> 12) & 0x7ff);
+    x ^= sign << 24;
+
+    x ^= mat24_ploop_theta(x >> 12);
+    if (x & 0xfff)  g[len++] = 0x90000000 + (x & 0xfff); 
+    x = (x >> 12) & 0x1fff;
+    if (x) g[len++] = 0xB0000000 + x;
+    return len;
+}
 
 
 

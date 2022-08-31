@@ -15,7 +15,7 @@ import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
 from mmgroup.mm_reduce import mm_reduce_M
-from mmgroup import MM0, MM, MMV
+from mmgroup import MM0, MM, MMV,  Xsp2_Co1
 from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
 
 #####################################################################################
@@ -141,6 +141,42 @@ def test_reduce(ncases = 10, verbose = 0):
         results = pool.map(single_test_reduce, testvalues)
     pool.join()
     assert results ==  [POOL_MAGIC] * NPROCESSES
+
+
+
+#####################################################################################
+# Test fast reduction with function  mm_order_find_Gx0_via_v1_mod3
+#####################################################################################
+
+def G_x0_samples(n = 100):
+    for i in range(n):
+         yield  Xsp2_Co1('r', 'G_x0')
+
+@pytest.mark.mmgroup 
+def test_mm_order_find_Gx0_via_v1_mod3(verbose = 0):
+    from mmgroup.mm_reduce import mm_order_load_vector_v1_mod3
+    from mmgroup.mm_reduce import mm_order_find_Gx0_via_v1_mod3
+    from mmgroup.mm_reduce import mm_order_compare_v1_mod3
+    MMV3 = MMV(3) 
+    v = MMV3()
+    g_one = Xsp2_Co1()
+    gi_buf = np.zeros(10, dtype = np.uint32)
+    print("\nTesting function mm_order_find_Gx0_via_v1_mod3")
+    for i, g in  enumerate(G_x0_samples()):
+        if verbose:
+            print("Test %d, g = %s" % (i+1, g))
+        mm_order_load_vector_v1_mod3(v.data)
+        v *= g
+        length = mm_order_find_Gx0_via_v1_mod3(v.data, gi_buf)
+        gi = Xsp2_Co1('a', gi_buf[:length])
+        res = mm_order_compare_v1_mod3((v * gi).data)
+        assert res == 0
+        assert g * gi == g_one
+        
+         
+        
+
+
 
 
 #####################################################################################

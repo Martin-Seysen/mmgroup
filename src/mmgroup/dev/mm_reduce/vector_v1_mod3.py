@@ -11,8 +11,6 @@ from random import randint, sample
 if __name__ == "__main__":
    sys.path.append(os.path.join('..', '..', '..'))
 
-from mmgroup.dev.mm_reduce import order_vector
-from mmgroup.dev.mm_reduce.order_vector import str_data
 
 
 import_pending = True
@@ -45,8 +43,6 @@ def import_all():
     global  mm_op3_watermark_A_perm_num
     global  mm_op3_word_tag_A
     global  mm_op3_checkzero
-    global  order_vector
-    global  str_data
 
     from mmgroup import MMV, MMVector, Xsp2_Co1
     from mmgroup.mat24 import vect_to_cocode
@@ -195,6 +191,16 @@ HEADER = """# This file has been created automatically, do not change!
 # :cite:`Seysen22`) in sparse representation.
 
 """
+
+
+def str_data(text, data):
+    s = "%s = [\n   " % text
+    for i, x in enumerate(data):
+        s += hex(x) + ","
+        s += "\n   " if i % 6 == 5 else " "
+    s += "\n]\n"
+    return s
+
 
 def write_v1_mod3(result):
     print("Writing file " + PY_FILENAME)
@@ -357,7 +363,7 @@ def do_check_sample(V1_MOD3, v):
     assert mm_op3_checkzero(v.data) == 0
 
 
-def do_test_sample(v1, v1_mod3_tags, g, verbose = 0):
+def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
     w03 = mm_op3_eval_A_rank_mod3(v1.data, 0)
     assert w03 >> 48 == 23 and w03 & 0xffffffffffff != 0, hex(w03)
     g1 = np.zeros(11, dtype = np.uint32)
@@ -380,7 +386,7 @@ def do_test_sample(v1, v1_mod3_tags, g, verbose = 0):
     perm_num = mm_op3_watermark_A_perm_num( 
         v1_mod3_tags[OFS3_WATERMARK_PERM:], work_A
     )
-    assert perm_num >= 0, p_num
+    assert perm_num >= 0, perm_num
     if (perm_num):
         g1[len_g1] = 0xA0000000 + perm_num;
         res = mm_op3_word_tag_A(work_A, g1[len_g1:], 1, 1);
@@ -432,18 +438,26 @@ def do_test_sample(v1, v1_mod3_tags, g, verbose = 0):
     if verbose:
         print("g product final =", g_sign)
     assert Xsp2_Co1(g * MM0('a',g1[:len_g1])) == Xsp2_Co1()
-    return Xsp2_Co1('a', g1[:len_g1])
+    g_inv = Xsp2_Co1('a', g1[:len_g1])
+    if test_C:
+       from mmgroup.mm_reduce import mm_order_find_Gx0_via_v1_mod3
+       a_gi = np.zeros(10, dtype = np.uint32)
+       l = mm_order_find_Gx0_via_v1_mod3(v.data, a_gi)
+       assert l >= 0, hex(l)
+       g_inv_C = Xsp2_Co1('a', a_gi[:l])
+       assert g_inv_C == g_inv
+    return g_inv
 
 
     
     
-def test_samples(V1_MOD3, v1_mod3_tags, ntests = 1, verbose =  0):
+def test_samples(V1_MOD3, v1_mod3_tags, ntests=1, test_C=0, verbose=0):
     v1 =  MMV3('S',V1_MOD3)
     for i, g in enumerate(make_test_samples(ntests)):
         if verbose:
             print("Test %d" % (i+1))
             print("g =", g)
-        gi = do_test_sample(v1, v1_mod3_tags, g, verbose)
+        gi = do_test_sample(v1, v1_mod3_tags, g, test_C, verbose)
         #do_check_sample(V1_MOD3, v1 * g * gi)
 
 
@@ -459,6 +473,8 @@ def parse_args():
     parser = OptionParser(usage)
     parser.add_option("-r",  dest="recompute", action="store_true",
         help="Recompute vector v1 (mod 3)" )
+    parser.add_option("-c",  dest="test_C", action="store_true",
+        help="When testing: test also the C function" )
     parser.add_option("-t", type="int", dest="ntests",  metavar="NTESTS",
         default=0,
         help = "Test vector v1 with  NTESTS random samples in group G_x0" )
@@ -474,12 +490,17 @@ def parse_args():
 if __name__ == "__main__":
    import_all()
    options, args = parse_args()
+   if options.recompute and options.test_C:
+       err = """Options -r and -c are imcompatible. You must compile the
+C file after recomputing with option -r!"""
+       raise ValueError(err)
    V1_MOD3 = get_v1_mod3_data(options.recompute, options.verbose)
    v1_mod3_tags = make_v1_mod3_tags(V1_MOD3)
    table = V1_Mod3_Table()
    mockup_table = Mockup_V1_Mod3_Table()
    ntests = int(max(0, options.ntests))
-   test_samples(V1_MOD3, v1_mod3_tags, ntests, options.verbose)
+   test_samples(V1_MOD3, v1_mod3_tags, ntests, options.test_C, 
+       options.verbose)
    if ntests:
        print("%d tests passed" % ntests)
 

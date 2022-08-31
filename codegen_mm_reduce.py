@@ -71,13 +71,13 @@ def table_classes():
         TABLE_CLASSES = [
             mm_op.Mockup_MM_Op,
             order_vector_tables.Mockup_OrderVectorTable,
-            vector_v1_mod3.V1_Mod3_Table,
+            vector_v1_mod3.Mockup_V1_Mod3_Table,
         ]
     else:
         TABLE_CLASSES = [
             mm_op.MM_Op,
             order_vector_tables.OrderVectorTable,
-            vector_v1_mod3.Mockup_V1_Mod3_Table,
+            vector_v1_mod3.V1_Mod3_Table,
         ]  
     return TABLE_CLASSES
 
