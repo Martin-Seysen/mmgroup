@@ -5,7 +5,8 @@ from __future__ import absolute_import, division, print_function
 # History
 ####################################################################
 
-VERSION = '0.0.8' # 2022-07-12. Performance improved
+VERSION = '0.0.9' # 2022-09-01. Performance improved
+# VERSION = '0.0.8' # 2022-07-12. Performance improved
 # VERSION = '0.0.7' # 2021-12-01. Bugfix in version generation
 # VERSION = '0.0.6' # 2021-12-01. Group operation accelerated
 # VERSION = '0.0.5' # 2021-08-02. Word shortening in monster implemented

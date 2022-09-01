@@ -691,23 +691,10 @@ static inline int32_t transform_v4(
   Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
 */
 // %%EXPORT px
-void  mm_reduce_load_axis(uint_mmv_t *v, uint32_t s)
+int32_t  mm_reduce_load_axis(uint_mmv_t *v, uint32_t s)
 {
     uint32_t axis = 0x200 + ((s & 1) << 24);
     return mm_op15_store_axis(axis, v);
-    /**
-
-    mm_aux_zero_mmv(15, v);
-    static uint32_t sp[4] = {
-        (1 << 25) + (2 << 14) + (2 << 8) + 1,
-        (1 << 25) + (2 << 14) + (3 << 8) + 15 - 1,
-        (1 << 25) + (3 << 14) + (3 << 8) + 1,
-        (2 << 25) + (2 << 14) + (3 << 8) 
-    };
-    sp[3] &= 0xffffff00;
-    sp[3] += sign ? 2 : 15 - 2;
-    mm_aux_mmv_set_sparse(15, v, sp, 4);
-    **/
 }
 
 
@@ -1194,7 +1181,33 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 }
 
 
+/**
+  @brief Variant of Step 3 of the reduction of an element of the monster
 
+  This is a variant of function ``mm_reduce_vector_v1`` that
+  works with precomputed order vector \f$v_1 \in \rho_{3}\f$
+  instead of an order vector in  \f$\rho_{15}\f$. Parameters and
+  operation are the same as in function ``mm_reduce_vector_v1``.
+  But here input ``v`` of this function must refer to the image of
+  the precomputed order vector \f$v_1 \in \rho_{3}\f$ under the 
+  operation of the same element \f$g\f$ of the monster group as 
+  described in the documentation of function ``mm_reduce_vector_vp``.
+
+  The order vector \f$v_1 \in \rho_{3}\f$ can be obtained by using
+  the functions in module ``mm_vector_v1_mod3.c``.
+
+  This function is faster than function ``mm_reduce_vector_v1``.
+  But the order vector in  \f$v_1 \in \rho_{3}\f$ may have a 
+  non-trivial centralizer in the Monster; so we cannot use it for 
+  checking equality of elements of the Monster.
+  
+  The buffer referred by ``r`` should have length at least 128.
+
+  A negative return value indicates a fatal error.
+
+  Parameter ``work`` must refer to a work buffer of size at
+  least ``MM_OP3_LEN_V``.
+*/
 int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 {
     int32_t res;
