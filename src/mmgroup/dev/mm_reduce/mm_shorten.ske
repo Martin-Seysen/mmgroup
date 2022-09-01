@@ -709,6 +709,59 @@ int32_t gt_word_store_sub(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 
 
 
+/////////////////////////////////////////////////////////////////////////
+// Exported functions for shortening a word
+/////////////////////////////////////////////////////////////////////////
+
+/**
+@brief Yet to be documented!
+
+*/
+// %%EXPORT px
+int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1, uint32_t mode)
+{
+    gt_word_type* p_gt = NULL;
+    uint32_t nsub, n_out;
+    int32_t res, status = 0;
+
+    nsub = gt_word_n_subwords(g, n) + 5;
+    p_gt = malloc(SIZE_GT_WORD_DATA(nsub)); 
+    if (p_gt == NULL) return -1;
+    gt_word_init(p_gt, nsub);
+    res = gt_word_append(p_gt, g, n);
+    status = 2; if (res < 0) goto done;
+
+    res = gt_word_seek(p_gt, 1, 1);
+    status = 3; if (res < 0) goto done;
+    while (!p_gt->p_node->eof) {
+       res = gt_word_rule_join(p_gt);
+       status = 4; if (res < 0) goto done;
+       if (!res) res = gt_word_seek(p_gt, 1, 0);
+       status = 5; if (res < 0) goto done;
+    }
+
+    res = gt_word_seek(p_gt, -1, 1);
+    status = 6; if (res < 0) goto done;
+    while (!p_gt->p_node->eof) {
+       res = gt_word_reduce_sub(p_gt, mode);
+       status = 7; if (res < 0) goto done;
+       res = gt_word_seek(p_gt, -1, 0);
+       status = 8; if (res < 0) goto done;
+    }
+
+    n_out = gt_word_length(p_gt);
+    status = 9; res = -1;
+    if (n_out < n1) goto done;
+    status = 10;
+    res = gt_word_store(p_gt, g1, n1);
+
+  done:
+    if (p_gt != NULL) free(p_gt);
+    if (res >= 0) return res;
+    return (int32_t)(((-status << 24) + res) & 0x80000000);
+
+}
+
 //  %%GEN h
 /// @endcond  
 //  %%GEN c

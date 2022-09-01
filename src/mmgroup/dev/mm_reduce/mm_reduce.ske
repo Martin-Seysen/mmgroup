@@ -683,16 +683,20 @@ static inline int32_t transform_v4(
 /**
   @brief Load the 2A axis \f$v^+\f$ or \f$v^-\f$ into a vector in \f$\rho_{15}\f$
 
-  The function loads the 2A axis \f$v^+\f$ (in case ``sign == 0``)
-  or \f$v^-\f$  (in case ``sign != 0``) in the vector referred
-  by ``v``. That vector will store an element of the
-  representation \f$\rho_{15}\f$ of the monster group as described in
-  the header of this file.
+  The function loads the 2A axis \f$v^+\f$ (in case ``s == 0``)
+  or \f$v^-\f$  (in case ``s == 1``) in the vector referred by ``v``.
+  Other values of ``s`` are illegal. Vector ``v`` will store an element
+  of the representation \f$\rho_{15}\f$ of the monster group as
+  described in the header of this file.
   Vectors \f$v^+\f$ and \f$v^-\f$ are defined in [Sey22], Section 6.
 */
 // %%EXPORT px
-void  mm_reduce_load_axis(uint_mmv_t *v, uint32_t sign)
+void  mm_reduce_load_axis(uint_mmv_t *v, uint32_t s)
 {
+    uint32_t axis = 0x200 + ((s & 1) << 24);
+    return mm_op15_store_axis(axis, v);
+    /**
+
     mm_aux_zero_mmv(15, v);
     static uint32_t sp[4] = {
         (1 << 25) + (2 << 14) + (2 << 8) + 1,
@@ -703,8 +707,38 @@ void  mm_reduce_load_axis(uint_mmv_t *v, uint32_t sign)
     sp[3] &= 0xffffff00;
     sp[3] += sign ? 2 : 15 - 2;
     mm_aux_mmv_set_sparse(15, v, sp, 4);
+    **/
 }
 
+
+/**
+  @brief Load the image of a 2A axis into a vector in \f$\rho_{15}\f$
+
+  Let \f$v = v^+\f$ if ``s = 0`` and \f$v = v^-\f$ if ``s = 1``,
+  where \f$v^+\f$ and \f$v^-\f$ defined as in [Sey22], Section 6. Any
+  other values of ``s`` are illegal.  Let \f$g\f$ be the element of
+  the monster given as a word of generators in the buffer ``a`` of
+  length ``n``. Then the function loads the 2A axis \f$v \cdot g\f$
+  into  the vector referred  by ``v``. That vector will store an
+  element of the  representation \f$\rho_{15}\f$ of the monster group
+  as described in the header of this file.
+  
+  The function returns 0 in case of succes an a negative value in case
+  of failure. It requires a work buffer ``work`` of the same type and
+  size as parameter ``v``.
+*/
+// %%EXPORT px
+int32_t mm_reduce_map_axis(uint_mmv_t *v, uint32_t s, uint32_t *a, uint32_t n, uint_mmv_t *work)
+{
+    uint32_t axis = 0x200 + ((s & 1) << 24);
+    int32_t res = gen_leech2_op_word_many(&axis, 1, a, n);
+    uint32_t n0 = res;
+    if (res < 0) return res;
+    res = mm_op15_store_axis(axis, v);
+    if (res < 0) return res;
+    res = mm_op15_word(v, a + n0, n - n0, 1, work);
+    return 0 - (res != 0);
+}
 
 
 
@@ -1160,9 +1194,53 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 }
 
 
+
+int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
+{
+    int32_t res;
+    uint32_t len_start = r[0] & ~MM_REDUCE_MARK_MASK;
+    if ((r[0] &  MM_REDUCE_MARK_MASK) != MM_REDUCE_MARK_VM_DONE) {
+        res = -((int)(r[1]));
+        if (r[0] == MM_REDUCE_MARK_ERROR && res < 0) return res;
+        return -0x30000;
+    }
+    if (len_start < 2 || len_start > 80 || 
+        (r[len_start - 1] & ~0x1ffffffUL) != 0x86000000 ||
+        checksum(r, len_start) != r[len_start]) return -0x20000;
+
+
+    res =  mm_op3_word(v, r, len_start, 1, work);
+    if (res >= 0)
+         res = mm_order_find_Gx0_via_v1_mod3(v, r + len_start);
+    if (res >= 0 && res <= 12) {
+         res += len_start;
+         r[0] = 0;
+         mm_group_invert_word(r, res);
+         return res;
+    }
+
+    if (res >= 0) res = -30001;
+    r[0] = MM_REDUCE_MARK_ERROR;
+    r[1] = -res;
+    return res;
+}
+
+
+
+
 /////////////////////////////////////////////////////////////////////////
 // Reducing an element of the moster group
 /////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT
+// Size of buffer for copy of Monster group word to be reduced 
+// This is used for preprocessing a word with ``gt_word_shorten(()``.
+// Preprocessing is omitted if A_BUFSITE is set to 0.
+#define A_BUFSITE 0
+/// @endcond  
+
+
 
 /**
   @brief Reduce an element in the monster group
@@ -1194,28 +1272,46 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 // %%EXPORT px
 int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
 {
+
+    typedef struct {
+      #if A_BUFSIZE > 0
+        uint32_t buf[A_BUFSITE];
+      #endif
+        uint_mmv_t v[MM_OP15_LEN_V];
+        uint_mmv_t work[MM_OP15_LEN_V];
+    } t_work;
+
     int32_t res;
+    uint_mmv_t *v, *work;
+    t_work *p_work = malloc(sizeof(t_work)); 
+       
+    if (p_work == 0) return -1;    
+    v = p_work->v;
+    work = p_work->work;
 
-    uint_mmv_t *v = calloc(2 * MM_OP15_LEN_V, sizeof(uint_mmv_t));
-    uint_mmv_t *work;
-    if (v == 0) return -1;
-    work = v + MM_OP15_LEN_V;
+  #if A_BUFSIZE > 0
+    res = gt_word_shorten(a, n, p_work->buf, A_BUFSITE, 0);
+    if (res >= 0) {n = res; a = p_work->buf;}
+  #endif
 
-    mm_reduce_load_axis(v, 0);
-    if ((res = mm_op15_word(v, a, n, 1, work)) < 0) goto done;
+    if ((res = mm_reduce_map_axis(v, 0, a, n, work)) < 0) goto done;
     if ((res = mm_reduce_vector_vp(v, mode, r, work)) < 0) goto done;    
 
-    mm_reduce_load_axis(v, 1);
-    if ((res = mm_op15_word(v, a, n, 1, work)) < 0) goto done;
+    if ((res = mm_reduce_map_axis(v, 1, a, n, work)) < 0) goto done;
     if ((res = mm_reduce_vector_vm(v, r, work)) < 0) goto done;   
-    
+        
+  #ifdef CHECK_AXIS
     mm_order_load_vector(v); 
     if ((res = mm_op15_word(v, a, n, 1, work)) < 0) goto done;
     res = mm_reduce_vector_v1(v, r, work);   
-
+  #else
+    mm_order_load_vector_v1_mod3(v);
+    if ((res = mm_op3_word(v, a, n, 1, work)) < 0) goto done;
+    res = mm_reduce_vector_v1_mod3(v, r, work);
+  #endif
 
  done:
-    free(v);
+    free(p_work);
     return res;
 }
 

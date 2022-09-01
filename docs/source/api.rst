@@ -24,9 +24,9 @@ construction :cite:`Con85` of the monster group :math:`\mathbb{M}`.
 Its is the first implementation of the monster group where arbitrary
 oprations in that group can effectively be performed. On the author's 
 PC (Intel i7-8750H at 4 MHz runnning on 64-bit Windows) 
-the group multiplication in :math:`\mathbb{M}` takes less than 40 ms.
-This is about five orders of magnitude faster than estimated in 2013
-in :cite:`Wilson13`.
+the group multiplication in :math:`\mathbb{M}` takes less than 30 ms.
+This is more than five orders of magnitude faster than estimated 
+in 2013 in :cite:`Wilson13`.
 
 The monster group :math:`\mathbb{M}` has a rational representation 
 :math:`\rho` of dimension  :math:`196884`, see :cite:`Con85`. In that 

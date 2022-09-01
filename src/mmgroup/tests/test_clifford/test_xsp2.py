@@ -149,7 +149,7 @@ def ref_xsp2co1_elem_read_mod3(v, g, row, col):
 OFS_Z = 116416 >> 5
 
 @pytest.mark.xsp2co1
-def test_xsp2co1_elem_read_mod3(verbose = 1):
+def test_xsp2co1_elem_read_mod3(verbose = 0):
     for n, (v, g, row, col) in enumerate(make_testcases_mod3()):
         x_ref = ref_xsp2co1_elem_read_mod3(v, g, row, col)
         x = xsp2co1_elem_read_mod3(v.data[OFS_Z:], g._data, row, col)
