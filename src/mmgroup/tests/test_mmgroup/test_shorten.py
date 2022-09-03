@@ -29,13 +29,19 @@ from mmgroup.generators import mm_group_invert_word
 def word_shorten_testdata(ntests = 3):
     SAMPLE_TAGS = "dxyppllt" * 12
     test_elements = [
+       [('t',1), ('l',1), ('l',2), ('t',2)],
+       [('l',1), ('t',1), ('t',2), ('l',2)],
+       [('l',1), ('t',2)] * 7,
        [('l',1), ('l',2), ('t', 1), ('p',2)],
+       [('t',1), ('l',2), ('p', 345881), ('t',2)],
        [('l',1), ('l',2)],
+       "M0<y_0e63h*p_34152306*t_1*p_136787193*t_2*t_2*x_1b5ch*l_2*l_1*y_3dh*x_301h*d_6f0h>",
        "M0<l_1*l_2*l_1*x_0cc1h*d_0e1eh*p_210218281*t_1>",
        "M0<x_1383h*p_184462007*l_2*l_1*y_709h*x_198dh*t_2>",
        "M0<y_0b17h*l_1*y_34h*x_1ba5h*d_84ah*p_87380788*l_2*l_2*l_1*y_1c5ch*d_691h*l_2*l_1*x_1029h*d_4b5h*l_1*t_2>",
 
     ]
+
     for g in test_elements:
         yield MM0(g)
 
@@ -57,14 +63,6 @@ def word_shorten_testdata(ntests = 3):
 #####################################################################################
 
 
-def display_subwords(text, w):
-    print(text)
-    fpos, words = w.subwords()
-    for i, w in enumerate(words):
-        s = "->" if i == fpos else "  "
-        print(s, MM0('a', w.data,), ('t', w.t_exp), ", img_O:",
-            hex(w.img_Omega)
-        )
 
 OMEGA = 0x800000
 
@@ -101,7 +99,7 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
          err |= bool(x.length != len(x.data)) << 5
     if verbose  or err:
         text = text if text else "Subwords of GtWord object"
-        display_subwords(text, gtw)
+        gtw.display_subwords(text)
         print("Value:", g1)
         if ref_error:
             print("g in:", g_ref)
@@ -123,21 +121,34 @@ def py_load_word(g, check = True, verbose = True):
        check_subwords(gtw, g, verbose = vb, text="start word")
     while not gtw.eof():
        success = gtw.rule_join()
+       if vb: 
+           print("join", success)
        if not success:
-          gtw.seek(1,0)
+           success = gtw.rule_t_xi_t()
+           if vb:
+               print("t_xi_t", success)
+           if not success:
+               gtw.seek(1,0)
+       else:
+           pass
        if check: 
           check_subwords(gtw, g, verbose = vb, text="intermediate word")
+    gtw.seek(-1,1)
+    while not gtw.eof():
+        gtw.reduce_sub(mode = 3)
+        gtw.seek(-1, 0)
+    
     return gtw
 
 
-#@pytest.mark.mmm 
 @pytest.mark.mmgroup 
-def test_shorten_pyx(ntests = 2, verbose = 0):
+def test_shorten_pyx(ntests = 20, verbose = 0):
     for i, g in enumerate(word_shorten_testdata(ntests)):
+        check = i < 10
         if verbose:
             print("\nTest", i+1)
             print("g =", g)
-        gtw = py_load_word(g, check = True, verbose = verbose)
+        gtw = py_load_word(g, check = check, verbose = verbose)
 
         check_subwords(gtw, g, verbose = verbose, text = "result word")
         if verbose:
@@ -147,7 +158,7 @@ def test_shorten_pyx(ntests = 2, verbose = 0):
         gi = MM0('a', a)
         if verbose > 1:
             print("mmdata:", [hex(x) for x in gi.mmdata])
-        gtwi = py_load_word(gi, check = True, verbose = verbose)
+        gtwi = py_load_word(gi, check = check, verbose = verbose)
         check_subwords(gtwi, g**-1, verbose = verbose, 
             text = "result word")
 
@@ -184,10 +195,9 @@ def benchmark_shorten(ncases = 32, verbose = 0):
     return t / ncases
 
 
-#@pytest.mark.mmm 
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
-def test_benchmark_mul(ntests = 10000, verbose = 0):
+def test_benchmark_shorten(ntests = 10000, verbose = 0):
     print("")
     for i in range(1):
         t = benchmark_shorten(ntests, verbose=verbose) 

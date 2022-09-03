@@ -541,8 +541,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
     uint32_t *w;
     int32_t res;
     uint32_t i, j;
-    uint32_t length = p_cur->length;
-    if (p_cur->eof || length < 2) {
+    if (p_cur->eof || p_cur->length == 0) {
         p_cur->reduced = 1;
         return 0;
     }
@@ -551,24 +550,25 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
         uint32_t reduce = mode & 1;
         if (reduce == 0) {
             uint32_t l_weight = complexity(p_cur->img_Omega);
-            reduce = over_complex(w, length,l_weight); 
+            reduce = over_complex(w, p_cur->length,l_weight); 
         }
         if (reduce) {
-            res = xsp2co1_reduce_word(w, length, w);
+            res = xsp2co1_reduce_word(w, p_cur->length, w);
             if (res < 0) return _ERROR(-0x12, res);
             p_cur->length = res;
             p_cur->reduced = 1;
         }
     }
     if (mode < 2 || p_cur->p_prev->eof) return 0;
-    for (i = 0; i < length; ++i) {
+    for (i = 0; i < p_cur->length; ++i) {
        if ((w[i] & 0x70000000) == 0x60000000) break;
     }
     if (i) {
         p_gt->p_node = p_cur->p_prev;
         if ((res = gt_word_append_sub_part(p_gt, w, i)) < 0) return res;
         p_gt->p_node = p_cur;
-        p_cur->length = length - i;
+        p_cur->length -=  i;
+        p_cur->reduced = 0;
         for (j = 0; j < p_cur->length; ++j) w[j] = w[i + j];
     }
     return 0;
@@ -640,8 +640,97 @@ int32_t gt_word_rule_join(gt_word_type *p_gt)
 
 
 
+/////////////////////////////////////////////////////////////////////////
+// Replace t^e xi^f t^g g by xi^e' t^f' xi^g' 
+/////////////////////////////////////////////////////////////////////////
+
+/// @cond DO_NOT_DOCUMENT 
+
+/***************************************************************
+Every element ``g = t^e[0] xi^e[1] t^e[2]`` of the Monster 
+group with ``1 <= e[i] <= 2`` can also be expressed in the 
+form ``g = xi^f[0] t^f[1] xi^f[2]`` with ``1 <= f[i] <= 2``.
+Put ``e = e[0] - 1 + 2 * (e[1] - 1) + 4 * (e[2] - 1)``
+and ``f = f[0] - 1 + 2 * (f[1] - 1) + 4 * (f[2] - 1)``.
+Then ``0 <= e, f < 8``; and the change of the representation 
+of ``g`` mentioned above can be considered as a 
+function ``F_TLT : {0,...,7} -> {0,...,7}`` that maps ``e`` 
+to ``f``. We encode the precomputed function ``F_TLT`` in the 
+following constant ``TLT_CONVERSION``
+as ``F_TLT(e) = (TLT_CONVERSION >> (e << 2)) & 7``.
+****************************************************************/
+
+#define TLT_CONVERSION  %{hex:ORDER_VECTOR_TLT_CONVERSION}
+#define F_TLT(e) ((TLT_CONVERSION >> ((e) << 2)) & 7)
+
+/// @endcond
 
 
+/**
+@brief Yet to be documented!
+*/ 
+// %%EXPORT p
+int32_t gt_word_rule_t_xi_t(gt_word_type *p_gt)
+{
+    gt_subword_type *p_cur, *p_prev;
+    int32_t res;
+    uint32_t e, f, l[2], pi = 0, len;
+
+    p_cur = p_gt->p_node;
+    if (p_cur->eof) return 0;
+    if (p_cur->t_exp == 0) return 0;
+    p_prev = p_cur->p_prev;
+    if (p_prev->eof) return 0;
+    if (p_prev->t_exp == 0) return 0;
+    if (complexity(p_cur->img_Omega) != 1) return 0;
+    if ((res = gt_word_reduce_sub(p_gt, 3)) < 0) return res;
+    if (p_cur->t_exp < 1 || p_cur->t_exp > 2) return -501;
+    if (p_prev->t_exp < 1 || p_prev->t_exp > 2) return -502;
+    switch (p_cur->length) {
+        case 2:
+           pi = p_cur->data[1];
+           if ((pi >> 28) != 2) return -503;
+        case 1:
+           e = p_cur->data[0];
+           if (e < 0x60000001 || e > 0x60000002) return -0x504;
+           break;
+        default:
+           return -505;
+    }
+
+    // Now the last atom in ``*p_prev`` is ``t^e[0]``, and
+    // we have  ``*p_cur = xi^e[1] t^e[2]``, for some
+    // 1 <= e[i] <= 2. 
+    // Let ``g = t^e[0] ^ xi^e[1] t^e[2]`` as in the comment above.
+    // We will replace ``g`` by ``xi^f[0] t^f[1] xi^f[2]`` as
+    // indicated in that comment.
+
+    // Compute ``f = F_TLT(e)`` with ``e, f`` as in the comment.
+    e = ((e-1) & 1) << 1;
+    e += (p_prev->t_exp - 1);
+    e += (p_cur->t_exp - 1) << 2;
+    f = F_TLT(e);
+
+    // Store xi^[(f & 1)/4 + 1)] in ``*p_cur``.
+    gt_subword_clear(p_cur);
+    l[0] = 0x60000001 + ((f >> 2) & 1);
+    l[1] = pi;
+    len =  1 + (pi != 0);
+    if (gt_word_append_sub_part(p_gt, l,len) != (int32_t)len)  
+         return -0x508;
+
+    // Move the pointer to its predecessor ``p_prev``
+    p_gt->p_node = p_prev;  // point to  ``*p_prev``
+
+    // Kill the last atom ``t^e[0]`` in ``*p_prev``.
+    p_prev->t_exp = 0;  
+    // Append l = xi^((f & 1) + 1))  ^((f & 1)/2 + 1)) to ``*p_prev``.
+    l[0] = 0x60000001 + (f & 1);
+    l[1] = 0x50000001 + ((f >> 1) & 1);
+    p_gt->p_node = p_prev;  // point to  ``*p_prev``
+    if (gt_word_append_sub_part(p_gt, l, 2) != 2) return -0x507;
+    return 1;
+}
 
 
 /////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@ import os
 from random import sample
 import datetime
 import time
-
+from collections import defaultdict
 
 import pytest
 
@@ -184,18 +184,25 @@ def test_mm_order_find_Gx0_via_v1_mod3(verbose = 0):
 #####################################################################################
 
 
-N_MUL_SAMPLES = 10
+N_MUL_SAMPLES = 30
 
-def make_mul_samples(n = N_MUL_SAMPLES):
-    indices = list(range(n))
-    glist = [ MM('r', 'M').reduce() for i in range(n) ]
-    return indices, glist
+_mul_samples = None
+
+def get_mul_samples():
+    global _mul_samples
+    n = N_MUL_SAMPLES 
+    if _mul_samples is None: 
+        indices = list(range(n))
+        glist = [ MM('r', 'M').reduce() for i in range(n) ]
+        _mul_samples = indices, glist
+    return _mul_samples
+
 
 
 @pytest.mark.mmgroup 
 def test_mul(ncases = 20):
     vtest= MMV(127)('R')
-    indices, glist = make_mul_samples()
+    indices, glist = get_mul_samples()
     for n in range(ncases):
         i, j =  sample(indices, 2)
         vt1 = vtest * glist[i] * glist[j]
@@ -208,22 +215,39 @@ def test_mul(ncases = 20):
 #####################################################################################
 
 
+class MM_Pattern():
+    def __init__(self):
+        self.d = defaultdict(int)
+        self.n = 0
+    def add_pattern(self, s):
+        for tag in s:
+            self.d[tag] += 1
+        self.n += 1
+    def stat(self, tag):
+        return self.d[tag] / self.n
+    def stat_as_str(self):
+        freq = ["%s:%.2f" % (tag,self.stat(tag)) for tag in "dxyplT"]
+        return ", ".join(freq)  
+
+
 def benchmark_mul(ncases = 20, verbose = 0):
-    indices, glist = make_mul_samples()
+    indices, glist = get_mul_samples()
     index_pairs = [sample(indices, 2) for i in range(ncases)]
-    #print(glist, "\n", index_pairs)
     glist[0] *= glist[1]
+    stat = MM_Pattern()
     t = []
     for i, j in index_pairs:
         t_start = time.process_time()
         glist[i] *= glist[j]
         t.append(time.process_time() - t_start)
+        pattern = mm_pattern(glist[i])
+        stat.add_pattern(pattern)
         if verbose:
-            print(mm_pattern(glist[i]))
+            print(pattern)
     n = len(index_pairs) + 0.0
     mu = sum(t) / n
     var = sum([(x - mu)**2 for x in t]) / (n-1)
-    return n, mu, var**0.5
+    return n, mu, var**0.5, stat.stat_as_str()
 
 
 @pytest.mark.bench 
@@ -231,8 +255,10 @@ def benchmark_mul(ncases = 20, verbose = 0):
 def test_benchmark_mul(ncases = 100, verbose = 0):
     print("")
     for i in range(1):
-        n, mu, sigma = benchmark_mul(ncases, verbose = verbose) 
+        n, mu, sigma, stat = benchmark_mul(ncases, verbose = verbose) 
         s = "Runtime of multiplication in class MM, %d tests: %.3f+-%.3f ms" 
         print(s % (n, 1000*mu, 1000*sigma))
+        print("Average number of tags per reduced group element:")
+        print(stat)
 
 

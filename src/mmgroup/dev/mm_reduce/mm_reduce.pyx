@@ -149,6 +149,14 @@ cdef class GtWord():
            self._complain(res, "rule_join")
         return res
 
+    def rule_t_xi_t(self):
+        cdef int32_t res = mr.gt_word_rule_t_xi_t(self.p_gt)
+        if res < 0:
+           s = "Error %d in method GtWord.rule_t_xi_t:" % res
+           self.display_subwords(s)
+           self._complain(res, "rule_join")
+        return res
+
     @cython.boundscheck(False)    
     def append_sub_part(self, a):
         cdef uint32_t[:] a_view = mm_as_array_view(a)
@@ -220,7 +228,21 @@ cdef class GtWord():
         return "%s<%s>" % (self.group_name, s)
 
 
+    def display_subwords(self, text = None):
+        if text:
+            print(text)
+        fpos, subword_list = self.subwords()
+        for i, w in enumerate(subword_list):
+            m = "^" if i == fpos else " "
+            m += "r " if w.reduced else "  "
+            strings = iter_strings_from_atoms(w.data, abort_if_error=0)
+            s = "*".join(strings)
+            if w.t_exp:
+                 s += ("*" if len(s) else "") + "t^%d" % w.t_exp
+            print(m + s)
 
+
+        
 
 
 
