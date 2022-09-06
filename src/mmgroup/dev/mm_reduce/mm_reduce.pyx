@@ -74,28 +74,22 @@ cdef class GtWord():
             raise ValueError(err % (hex(res), method))  
 
     @cython.boundscheck(False)    
-    def __cinit__(self, arg):
-        cdef uint32_t length
-        if isinstance(arg, Integral):
-            length = max(arg, 1)
-        else:
-            length = _n_subwords(arg) + 6
-        self.p_gt = <p_gt_word_type>malloc(mr.gt_word_size(length)) 
+    def __cinit__(self, arg = None):
+        self.p_gt = mr.gt_word_alloc(NULL, 0)
         if self.p_gt == NULL:
             err = "Memory allocation has failed in class GtWord"
             raise MemoryError(err)
-        mr.gt_word_init(self.p_gt, length)
 
 
     def  __dealloc__(self):
-        if self.p_gt != NULL: free(self.p_gt)
+        mr.gt_word_free(self.p_gt)
 
     @cython.boundscheck(False)    
-    def __init__(self, arg):
+    def __init__(self, arg = None):
         cdef int32_t res
         cdef uint32_t[:] a_view
         cdef uint32_t length
-        if not isinstance(arg, Integral):
+        if arg:
             a_view = mm_as_array_view(arg)
             length = len(a_view)
             res = mr.gt_word_append(self.p_gt, &a_view[0], length)
@@ -111,8 +105,6 @@ cdef class GtWord():
             self._complain(res, "seek")
 
 
-    def size(self):
-        return self.p_gt.n_subwords
 
     @cython.boundscheck(False)    
     def mmdata(self, group = None):
@@ -139,22 +131,22 @@ cdef class GtWord():
             self._complain(length, "mmdata_sub")
         a = a[:length]      
         if group is None:
-           return a
+            return a
         assert issubclass(group, AbstractMMGroupWord)
         return group('a', a)
 
     def rule_join(self):
         cdef int32_t res = mr.gt_word_rule_join(self.p_gt)
         if res < 0:
-           self._complain(res, "rule_join")
+            self._complain(res, "rule_join")
         return res
 
     def rule_t_xi_t(self):
         cdef int32_t res = mr.gt_word_rule_t_xi_t(self.p_gt)
         if res < 0:
-           s = "Error %d in method GtWord.rule_t_xi_t:" % res
-           self.display_subwords(s)
-           self._complain(res, "rule_join")
+            s = "Error %d in method GtWord.rule_t_xi_t:" % res
+            self.display_subwords(s)
+            self._complain(res, "rule_join")
         return res
 
     @cython.boundscheck(False)    
@@ -185,6 +177,7 @@ cdef class GtWord():
     @cython.boundscheck(False)    
     def subwords(self):
         cdef p_gt_subword_type ptr = self.p_gt.p_end.p_next
+        assert ptr.p_prev == self.p_gt.p_end
         cdef p_gt_subword_type p_node = self.p_gt.p_node
         cdef uint32_t i
         cdef uint32_t[:] a_view
@@ -209,6 +202,7 @@ cdef class GtWord():
             subword_list.append(sub)
             if ptr == p_node:
                 fpos = len(subword_list) - 1
+            assert ptr == ptr.p_next.p_prev
             ptr = ptr.p_next
         return fpos, subword_list
 
@@ -228,6 +222,23 @@ cdef class GtWord():
         return "%s<%s>" % (self.group_name, s)
 
 
+    @cython.boundscheck(False)    
+    def _insert(self):
+        cdef int32_t res = mr.gt_word_insert(self.p_gt)
+        if res < 0:
+            s = "Error %d in method GtWord._insert:" % res
+            self.display_subwords(s)
+            self._complain(res, "_insert")
+
+    @cython.boundscheck(False)    
+    def _delete(self):
+        cdef int32_t res = mr.gt_word_delete(self.p_gt)
+        if res < 0:
+            s = "Error %d in method GtWord._delete:" % res
+            self.display_subwords(s)
+            self._complain(res, "delete")
+
+
     def display_subwords(self, text = None):
         if text:
             print(text)
@@ -238,8 +249,10 @@ cdef class GtWord():
             strings = iter_strings_from_atoms(w.data, abort_if_error=0)
             s = "*".join(strings)
             if w.t_exp:
-                 s += ("*" if len(s) else "") + "t^%d" % w.t_exp
+                s += ("*" if len(s) else "") + "t^%d" % w.t_exp
             print(m + s)
+        m = "^end" if fpos == -1 else " end"
+        print(m)
 
 
         

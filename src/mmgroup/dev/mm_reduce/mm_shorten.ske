@@ -9,16 +9,17 @@
  of the Monster.
  
  Internally, we store a word ``a`` of generators of the Monster in
- a structure of type ``gt_subword_type``. Here the word ``a`` is
+ a structure of type ``gt_word_type``. Here the word ``a`` is
  split into subwords, where each subword is in the double
  coset \f$G_{x0} N_0\f$. Such a subword is represented as a word
  of generators of  \f$G_{x0}\f$, followed by a power of the
- triality element \f$\xi\f$.
+ triality element \f$\xi\f$. A subword is stored in a strcture
+ of type ``gt_subword_type``.
 
  Unless otherwise stated, a negative return value of a function
  is this module indicated an error.
 
- Structues required for this module are defined in 
+ Structues required for this module are defined in
  file ``mm_reduce.h``.
 
  Warning:
@@ -53,7 +54,7 @@
 /** 
    @brief Stucture to store a subword of generators of the Monster
 
-   This structure is required in file ``mm_shorten.c``
+   This structure is required in file ``mm_shorten.c``.
 
    It stores a subword of a word in the Monster in a node
    of a circular doubly-linked list. There is a dedicated EOF (end of
@@ -94,16 +95,35 @@ struct gt_subword_s {
 } ;
 
 
+
+
 /** 
    @brief typedef for structure ``struct gt_subword_s``
 */
 typedef struct gt_subword_s gt_subword_type;
 
 
+struct gt_subword_buf_s {
+    uint32_t capacity;   ///< max No of type ``gt_subword_s `` entries
+    uint32_t n_used;     ///< used No of type ``gt_subword_s `` entries
+    struct gt_subword_buf_s *p_next; ///< Pointer to next buffer
+    gt_subword_type subwords[1];     ///< array of subwords in this buffer
+} ;
+
+
+
+
+/** 
+   @brief typedef for structure ``struct gt_subword_buf_s``
+*/
+typedef struct gt_subword_buf_s gt_subword_buf_type;
+
+
+
 /** 
    @brief Stucture to store a word of generators of the Monster
 
-   This structure is required in file ``mm_shorten.c``
+   This structure is required in file ``mm_shorten.c``.
 
    It stores a word in the Monster in a circular
    doubly-linked listof nodes of type ``gt_subword_type``. Each of
@@ -120,16 +140,16 @@ typedef struct gt_subword_s gt_subword_type;
 
 */
 typedef struct {
-    uint32_t n_subwords;      ///< Max Number of subwords allocated 
     gt_subword_type *p_end;   ///< Pointer to the **end mark** subword 
     gt_subword_type *p_node;  ///< Pointer to current subword 
     gt_subword_type *p_free;  ///< Pointer to list of free subwords 
-    gt_subword_type a[1];     ///< Array of subwords 
+
+    /* memory management */
+    uint32_t is_allocated;     //< 1 if this structure has been allcocated
+    gt_subword_buf_type *pb0;  //< pointer to first buffer
+    gt_subword_buf_type *pbe;  //< pointer to last buffer
+    gt_subword_buf_type buf;  ///< 1st buffer containing Array of subwords 
 } gt_word_type;
-
-
-
-
 
 
 
@@ -166,6 +186,138 @@ extern "C" {
 /// @endcond  
 
 
+
+
+/////////////////////////////////////////////////////////////////////////
+// Memory management
+/////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// Min capacity (in units of struct gt_subword_s) of an allocated buffer
+#define MIN_CAPACITY 1
+// Max capacity (in units of struct gt_subword_s) of an allocated buffer
+#define MAX_CAPACITY 0x8000
+// Size of an allocated buffer of type gt_word_type in bytes
+#define MIN_GT_WORD_BYTELENGTH (sizeof(gt_word_type) +  \
+                    (MIN_CAPACITY - 1) * sizeof(gt_subword_type))
+// Memory alignment for a buffer provided by the user
+#define ALIGN_MEM ((uintptr_t)16)
+
+
+
+
+/* @brief Initialize a buffer of type ``gt_word_type``
+
+This function initializes an (already allocated) buffer referred
+by ``p_gt`` of a given ``bytesize``. The number of entries of
+the circular doubly linked list stored in that buffer is not known
+in advance. Thus functions adding entries to that list might have
+to call ``malloc`` for allocating for such entries. Here
+function ``_gt_word_new_subword`` returns a pointer to a new entry
+of the linked list. Function ``_gt_word_delete_all_subwords`` frees
+all memory  allocated by function ``_gt_word_new_subword``.
+
+In order to avoid memory leaks, only the three functions mentioned
+above will allocate or free memory for entries of the linked list.
+The following activities are out of the scope of these three funtions:
+
+allocating and deallocating the buffer referred by ``p_gt``,
+manipulating the doubly linked list in that buffer, recycling of
+entries of that list which are no longer used.
+
+For recycling such entries, will will use the pointer ``p_gt->p_free``
+in other functions.
+
+The buffer referred by ``p_gt`` already contains memory for a number
+of entries of the linked list (at least for one entry). Any such
+entry is of type ``gt_subword_type``.
+If ``bytesize < MIN_GT_WORD_BYTELENGTH`` then the buffer referred
+by ``p_gt`` is to small and the function fails. The function
+returns 0 in case of success and -1 in case of failure.
+*/ 
+static inline int32_t 
+_gt_word_init(gt_word_type *p_gt, size_t bytesize)
+{
+   gt_subword_buf_type *p_buf;
+   if (bytesize < sizeof(gt_word_type)) return -1;
+   p_buf = &(p_gt->buf);
+   p_gt->pb0 = p_gt->pbe = p_buf;
+   p_buf->capacity = (uint32_t)((bytesize - sizeof(gt_word_type)) /
+                    sizeof(gt_subword_type)) + 1;
+   p_buf->n_used = 0;
+   p_buf->p_next = NULL;
+   p_gt->p_end = p_gt->p_node = p_gt->p_free = NULL;
+   return 0;
+}
+
+/* @brief Create entry for the linked list in ``gt_word_type `` object
+
+The function returns a new entry of type ``gt_subword_type`` to be
+used in the circular doubly linked list stored in the bufter of
+type ``gt_word_type`` referred by ``p_gt``. Such an entry can be used
+in the linked list associated with ``p_gt`` only. The function returns
+a pointer to the new entry in case of success and ``NULL`in case of
+failure.
+
+In order to reduce the calls to the function ``malloc``, we maintain
+buffers of type ``gt_subword_buf_type``, where any such buffer may
+may contain an arbitrary number of entries. This number of entries
+cannot be changed after creating the buffer. We have to allocate a
+new buffer when more entries are needed. We double the size of such
+a buffer when allocating memory for a new buffer. Thus ``n`` buffers
+can be created with ``O(log n)`` calls to ``malloc``.
+*/ 
+static inline gt_subword_type* 
+_gt_word_new_subword(gt_word_type *p_gt)
+{
+   gt_subword_buf_type *p_buf = p_gt->pbe, *p_nextbuf;
+   uint32_t capacity = p_buf->capacity;
+   if (p_buf->n_used < capacity) {
+       return p_buf->subwords + (p_buf->n_used)++;
+   }
+   capacity <<= 1;
+   if (capacity < MIN_CAPACITY) capacity =  MIN_CAPACITY;
+   if (capacity > MAX_CAPACITY) capacity =  MAX_CAPACITY;
+   p_nextbuf = malloc( sizeof(gt_subword_buf_type) +
+       (capacity - 1) * sizeof(gt_subword_type) );
+   if (p_nextbuf == NULL) return NULL;
+
+   p_nextbuf->capacity = capacity;
+   p_nextbuf->n_used = 1;
+   p_nextbuf->p_next = NULL;
+   p_gt->pbe = p_buf->p_next =  p_nextbuf;
+   return p_nextbuf->subwords;
+}
+
+/* @brief Delete entries for the linked list in ``gt_word_type `` object
+
+The function frees all buffers for entries to be used in the circular
+doubly linked list associated with the buffer of
+type ``gt_word_type`` referred by ``p_gt``. All these entries hav been
+createdby function ``_gt_word_new_subword``.
+*/ 
+static void
+_gt_word_delete_all_subwords(gt_word_type *p_gt)
+{
+    gt_subword_buf_type *p_buf = p_gt->pb0->p_next, *p_next;
+    while (p_buf != NULL) {
+        p_next = p_buf->p_next;
+        free(p_buf);
+        p_buf = p_next;
+    }
+    p_gt->pbe = p_buf = p_gt->pb0;
+    p_buf->n_used = 0;
+    p_buf->p_next = NULL;
+    p_gt->p_end = p_gt->p_node = p_gt->p_free = NULL;
+}
+
+
+/// @endcond  
+
+
 /////////////////////////////////////////////////////////////////////////
 // Creating and manipulating the doubly linked list
 /////////////////////////////////////////////////////////////////////////
@@ -173,7 +325,6 @@ extern "C" {
 
 
 
-/// @cond DO_NOT_DOCUMENT 
 
 
 /**
@@ -188,63 +339,122 @@ void gt_subword_clear(gt_subword_type *p_gtsub)
     p_gtsub->length = p_gtsub->t_exp = 0; 
     p_gtsub->img_Omega =  OMEGA;
     p_gtsub->reduced = 1; 
+    p_gtsub->eof = 0;
 } 
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline void set_eof_word(gt_word_type *p_gt)
+{
+   p_gt->p_end = p_gt->p_node = _gt_word_new_subword(p_gt);
+   p_gt->p_end->p_prev = p_gt->p_end->p_next = p_gt->p_end;
+   gt_subword_clear(p_gt->p_end);
+   p_gt->p_end->eof = 1;
+} 
+
 
 /// @endcond  
 
 
 
 /**
-@brief Yet to be documented!
+@brief Create a structure of type ``gt_word_type``
 
-This function initilizes an (existing) buffer referred by
-parameter ``p_gtw`` as a pointer to a valid structure of
-type ``gt_word_type``, so that up to ``n`` subwords can be
-stored in the nodes belonging to that structure.
+This function creates a valid structure of type ``gt_word_type``
+and returns a pointer to that struture. If a buffer ``p_buffer``
+of ``nbytes``  bytes length is given as a parameter the
+the structure may be ininitalized inside this buffer.
 
-Here the nodes belonging to that structure are stored in the
-same memory block as the header (of type ``gt_word_type``) of
-that structure. The maximum number ``n`` of subwords to be
-stored must be known when calling this function.
+If ``p_buffer = NULL`` or ``nbytes`` is too small then a buffer
+is allocated via the C function ``malloc``. You should always use
+the returned pointer as a pointer to a valid  structure of
+type ``gt_word_type`` containing the neutral element of the Monster.
 
-The minimum number of bytes required for the buffer referred
-by ``p_gtw`` is equal to ``gt_word_size(n)``.
+The structure referred by returned pointer will contain the
+circular doubly linked list with a single entry of
+type ``gt_subword_type``. This entry is an end-of-file mark.
+So the whole word stored in that structure corresponds to the
+neutral element of the Monster group.
 
-On exit the structure contains the empty word.
+In any case function ``gt_word_free`` must be called to
+free all buffers allocated by this function and, possibly, by
+other function in this module applied to the pointer returned
+by this function.
+
+This function returns ``NULL`` in case of failure.
 */
 // %%EXPORT p
-void gt_word_init(gt_word_type *p_gtw, uint32_t n)
+gt_word_type *gt_word_alloc(void *p_buffer, size_t nbytes)
 {
-    uint32_t i;
-    p_gtw->n_subwords = 0;
-    for (i = 0; i <= n; ++i) {
-       p_gtw->a[i].eof = 0;
-       p_gtw->a[i].p_next = &(p_gtw->a[i + 1]);
-    }
-    p_gtw->a[n].p_next = NULL;
-    p_gtw->p_free = p_gtw->a[0].p_next;
-    p_gtw->p_end = p_gtw->p_node = p_gtw->a[0].p_next = 
-        p_gtw->a[0].p_prev = p_gtw->a;
-    p_gtw->a[0].eof = 1;
+    gt_word_type *p_gt = NULL;
 
-    gt_subword_clear(p_gtw->a+0);
-    p_gtw->n_subwords = n;
+    if (p_buffer != NULL) {
+        uintptr_t slack = (((uintptr_t)p_buffer + ALIGN_MEM - 1)
+                            & (0-ALIGN_MEM)) - (uintptr_t)p_buffer;
+        if (nbytes > (size_t) slack + MIN_GT_WORD_BYTELENGTH) {
+            p_buffer = (unsigned char*)p_buffer + slack;
+            nbytes -= (size_t)slack;
+        } else p_buffer = NULL;
+    }
+    if (p_buffer == NULL) {
+        p_gt = malloc(nbytes = MIN_GT_WORD_BYTELENGTH);  
+        if (p_gt == NULL) return NULL;
+        p_gt->is_allocated = 1;  
+    } else {
+        p_gt = p_buffer;
+        p_gt->is_allocated = 0;  
+    }
+
+    if (_gt_word_init(p_gt, nbytes) != 0) goto failure;
+    set_eof_word(p_gt);
+    if (p_gt->buf.n_used != 1) goto failure;
+    return p_gt;
+
+  failure:
+    if (p_gt->is_allocated) free(p_gt);
+    return NULL;
 } 
+
+
+
+/**
+@brief Free a structure of type ``gt_word_type``
+
+This function frees the memory allocated to a structure of
+type ``gt_word_type`` created by function ``gt_word_alloc``.
+For avoiding memory leaks, it must be a pointer returned by 
+that function. It is safe to apply function ``gt_word_free``
+to the ``NULL`` pointer.
+*/
+// %%EXPORT p
+void gt_word_free(gt_word_type *p_gt)
+{
+    if (p_gt == NULL) return;
+    _gt_word_delete_all_subwords(p_gt);
+    if (p_gt->is_allocated) free(p_gt);
+}
 
 
 
 /**
 @brief Yet to be documented!
 
-Return the number of bytes required by the buffer given as
-store a parameter to function ``gt_word_init`` in order to
-``n`` subwords. 
+This function sets the value of the structure of type ``gt_word_type``
+refereed by ``p_gt`` to the neutral element of the Monster. It also
+frees all allocated memory blocks referred by ``p_gt``, except for
+the block ``p_gt```itself.
 */
 // %%EXPORT p
-uint32_t gt_word_size(uint32_t n) 
+void gt_word_clear(gt_word_type *p_gt)
 {
-    return sizeof(gt_word_type) + n*sizeof(gt_subword_type);
+    if (p_gt == NULL) return;
+    _gt_word_delete_all_subwords(p_gt);
+    set_eof_word(p_gt);
 }
+
+
+
 
 
 
@@ -255,15 +465,20 @@ uint32_t gt_word_size(uint32_t n)
 Insert an empty subword after the current subword,
 set the position of the current subword to the new subword.
 
-Return a negative value if out of memory
+Return a negative value if out of memory.
 */
 // %%EXPORT p
 int32_t gt_word_insert(gt_word_type *p_gt)
 {
     gt_subword_type *p_new, *p_cur, *p_next;
 
-    if ((p_new = p_gt->p_free) == NULL) return _ERROR(1, -1);
-    p_gt->p_free = p_new->p_next;
+    if (p_gt->p_free == NULL) {
+        p_new = _gt_word_new_subword(p_gt);
+        if (p_new == NULL) return -1;
+    } else {
+        p_new = p_gt->p_free;
+        p_gt->p_free = p_new->p_next;
+    }
     gt_subword_clear(p_new);
 
     p_cur = p_gt->p_node;
@@ -308,7 +523,7 @@ int32_t gt_word_delete(gt_word_type *p_gt)
 
 Move the pointer to the current subword to position 'pos'
 Her pos = 0 means the EOF mark if 'set' is True,
-and the position of the current subword otherwise. 
+and the position of the current subword otherwise.
 pos = i+1 means the subword after  pos = i,
 pos = i-1 means node subword  pos = i.
 
@@ -359,7 +574,7 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
 @brief Yet to be documented!
 
 
-Return number of subwords in a doubly linked list of 
+Return number of subwords in a doubly linked list of
 type ``gt_word_type`` required to store the word of generators
 of the Monster of length ``n`` referred by ``a``.
 */
@@ -377,7 +592,7 @@ uint32_t gt_word_n_subwords(uint32_t *a, uint32_t n)
 @brief Yet to be documented!
 
 Try to append a prefix of word 'a' of length 'n' to the current subword.
-Return number of atoms of 'a' sucessfully appended to that word. 
+Return number of atoms of 'a' sucessfully appended to that word.
 A negative return value inducates an error.
 */
 // %%EXPORT p
@@ -479,7 +694,7 @@ Compute 'complexity' of an element \f$g\f$ of \f$G_{x0}\f$ from
 the image of \f$\Omega\f$  under \f$g\f$ .
 
 Here the complexity of \f$g\f$ is the minimum number of atoms
-of tag ``l`` required to represent \f$g\f$. 
+of tag ``l`` required to represent \f$g\f$.
 */
 static inline uint32_t complexity(uint32_t img_omega)
 {
@@ -498,7 +713,7 @@ array of ``a`` of length ``n`` is so complex that lazy reduction
 is worth the effort.
 
 Here Parameter ``l_weight`` is the output of function ``complexity``
-applied to \f$g\f$. 
+applied to \f$g\f$.
 */
 static inline 
 uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
@@ -584,7 +799,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
 /**
 @brief Yet to be documented!
 
-Try to join current subwort p_gt->p_node with its predecessor. 
+Try to join current subwort p_gt->p_node with its predecessor.
 Return 1 and point to (the joined) predecssor if this it possible.
 Return 0 and do not change the pointer this it not possible.
 Return a negative number in case of a fatal error.
@@ -605,6 +820,7 @@ int32_t gt_word_rule_join(gt_word_type *p_gt)
             if (res < 0) return _ERROR(-0x14, res);
             if (res == 0) {
                 gt_word_delete(p_gt);
+                p_gt->p_node = p_gt->p_node->p_next;
                 return 1;
             }
             p_cur->length = res;
@@ -809,14 +1025,11 @@ int32_t gt_word_store_sub(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 // %%EXPORT px
 int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1, uint32_t mode)
 {
-    gt_word_type* p_gt = NULL;
-    uint32_t nsub, n_out;
-    int32_t res, status = 0;
+    gt_word_type* p_gt = gt_word_alloc(NULL, 0);
+    uint32_t n_out;
+    int32_t res = -1, status = 0;
 
-    nsub = gt_word_n_subwords(g, n) + 5;
-    p_gt = malloc(SIZE_GT_WORD_DATA(nsub)); 
-    if (p_gt == NULL) return -1;
-    gt_word_init(p_gt, nsub);
+    if (p_gt == NULL) goto done;
     res = gt_word_append(p_gt, g, n);
     status = 2; if (res < 0) goto done;
 
@@ -845,7 +1058,7 @@ int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1, uint
     res = gt_word_store(p_gt, g1, n1);
 
   done:
-    if (p_gt != NULL) free(p_gt);
+    gt_word_free(p_gt);
     if (res >= 0) return res;
     return (int32_t)(((-status << 24) + res) & 0x80000000);
 

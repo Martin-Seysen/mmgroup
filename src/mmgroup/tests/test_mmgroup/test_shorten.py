@@ -31,7 +31,7 @@ def word_shorten_testdata(ntests = 3):
     test_elements = [
        [('t',1), ('l',1), ('l',2), ('t',2)],
        [('l',1), ('t',1), ('t',2), ('l',2)],
-       [('l',1), ('t',2)] * 7,
+       [('l',1), ('t',2)] * 14,
        [('l',1), ('l',2), ('t', 1), ('p',2)],
        [('t',1), ('l',2), ('p', 345881), ('t',2)],
        [('l',1), ('l',2)],
@@ -44,7 +44,7 @@ def word_shorten_testdata(ntests = 3):
 
     for g in test_elements:
         yield MM0(g)
-
+    
     testdata = [
        "", "pdx", "xt", "xtpx", "ltl",
     ] 
@@ -112,8 +112,8 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
 
 
 def py_load_word(g, check = True, verbose = True):
-    g_length = GtWord.n_subwords(g) 
-    gtw = GtWord(g_length)
+    gtw = GtWord()
+    gtw.display_subwords("Subwords")
     gtw.append(g)
     vb = verbose > 1
     gtw.seek(1,1)
