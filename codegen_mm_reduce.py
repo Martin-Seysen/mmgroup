@@ -172,11 +172,10 @@ cdef extern from "mm_reduce.h":
         uint32_t data[MAX_GT_WORD_DATA]
 
     ctypedef struct gt_word_type:
-        uint32_t n_subwords
         gt_subword_type *p_end
         gt_subword_type *p_node
         gt_subword_type *p_free
-        gt_subword_type a[1]
+        int32_t reduce_mode;
 
 
 """.format(INT_BITS = INT_BITS)

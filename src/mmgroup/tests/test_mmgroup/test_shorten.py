@@ -113,7 +113,6 @@ def check_subwords(gtw, g_ref=None, is_reduced=False, verbose=0, text=""):
 
 def py_load_word(g, check = True, verbose = True):
     gtw = GtWord()
-    gtw.display_subwords("Subwords")
     gtw.append(g)
     vb = verbose > 1
     gtw.seek(1,1)

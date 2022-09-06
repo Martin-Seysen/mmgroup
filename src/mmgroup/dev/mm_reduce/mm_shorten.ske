@@ -102,7 +102,16 @@ struct gt_subword_s {
 */
 typedef struct gt_subword_s gt_subword_type;
 
+/** 
+   @brief Structure to store an array of entries of type ``gt_subword_type``
 
+   We allocate several entries of of type ``gt_subword_type`` with a
+   single call to function ``malloc``. This saves a considerable amount
+   of interaction with the operating system.
+
+   This structure contains an array of type ``gt_subword_type[]`` plus
+   the necessary bookkeeping information.
+*/
 struct gt_subword_buf_s {
     uint32_t capacity;   ///< max No of type ``gt_subword_s `` entries
     uint32_t n_used;     ///< used No of type ``gt_subword_s `` entries
@@ -142,12 +151,13 @@ typedef struct gt_subword_buf_s gt_subword_buf_type;
 typedef struct {
     gt_subword_type *p_end;   ///< Pointer to the **end mark** subword 
     gt_subword_type *p_node;  ///< Pointer to current subword 
-    gt_subword_type *p_free;  ///< Pointer to list of free subwords 
+    gt_subword_type *p_free;  ///< Pointer to list of free subwords
+    int32_t reduce_mode;      ///< Mode for the reduction of a word 
 
     /* memory management */
-    uint32_t is_allocated;     //< 1 if this structure has been allcocated
-    gt_subword_buf_type *pb0;  //< pointer to first buffer
-    gt_subword_buf_type *pbe;  //< pointer to last buffer
+    uint32_t is_allocated;    ///< 1 if this structure has been allcocated
+    gt_subword_buf_type *pb0; ///< pointer to first buffer
+    gt_subword_buf_type *pbe; ///< pointer to last buffer
     gt_subword_buf_type buf;  ///< 1st buffer containing Array of subwords 
 } gt_word_type;
 
@@ -349,6 +359,7 @@ static inline void set_eof_word(gt_word_type *p_gt)
 {
    p_gt->p_end = p_gt->p_node = _gt_word_new_subword(p_gt);
    p_gt->p_end->p_prev = p_gt->p_end->p_next = p_gt->p_end;
+   p_gt->reduce_mode = 1;
    gt_subword_clear(p_gt->p_end);
    p_gt->p_end->eof = 1;
 } 
@@ -657,28 +668,6 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 
 
 
-/**
-Append the word 'a' of length 'n' at the end of the current subword.
-Set the current subword to the last word before the appended word 'a'.
-
-A negative return value inducates an error.
-*/
-// %%EXPORT p
-int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
-{
-    int32_t res;
-    uint32_t i = 0;
-    gt_subword_type *p_cur = p_gt->p_node = p_gt->p_end->p_prev;
-    while (i < n) {
-        if ((res = gt_word_insert(p_gt)) < 0) return res;
-        if ((res = gt_word_append_sub_part(p_gt, a + i,  n - i)) <= 0) 
-            return res < 0 ? res : _ERROR(2,-3);
-        i += res;
-    } 
-    p_gt->p_node = p_cur;
-    return 0;    
-}
-
 
 /////////////////////////////////////////////////////////////////////////
 // Reduce a subword
@@ -741,16 +730,16 @@ uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
 
 Reduce current subword
 
-mode = 0: lazy reduction (just some word shortening)
+sub_mode = 0: lazy reduction (just some word shortening)
 
-mode = 1: standard reduction
+sub_mode = 1: standard reduction
 
-mode = 2: as mode 0, but move also prefix in N_x0 to previous subword
+sub_mode = 2: as sub_mode 0, but move also prefix in N_x0 to previous subword
 
-mode = 3: as mode 1, but move also prefix in N_x0 to previous subword
+sub_mode = 3: as sub_mode 1, but move also prefix in N_x0 to previous subword
 */
 // %%EXPORT p
-int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
+int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
 {
     gt_subword_type *p_cur = p_gt->p_node;
     uint32_t *w;
@@ -762,7 +751,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
     }
     w = p_cur->data;
     if (!p_cur->reduced) {
-        uint32_t reduce = mode & 1;
+        uint32_t reduce = sub_mode & 1;
         if (reduce == 0) {
             uint32_t l_weight = complexity(p_cur->img_Omega);
             reduce = over_complex(w, p_cur->length,l_weight); 
@@ -774,7 +763,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t mode)
             p_cur->reduced = 1;
         }
     }
-    if (mode < 2 || p_cur->p_prev->eof) return 0;
+    if (sub_mode < 2 || p_cur->p_prev->eof) return 0;
     for (i = 0; i < p_cur->length; ++i) {
        if ((w[i] & 0x70000000) == 0x60000000) break;
     }
@@ -949,6 +938,35 @@ int32_t gt_word_rule_t_xi_t(gt_word_type *p_gt)
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////
+// Append element of the monster group to a word
+/////////////////////////////////////////////////////////////////////////
+
+
+/**
+Append the word 'a' of length 'n' at the end of the current subword.
+Set the current subword to the last word before the appended word 'a'.
+
+A negative return value inducates an error.
+*/
+// %%EXPORT p
+int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
+{
+    int32_t res;
+    uint32_t i = 0;
+    gt_subword_type *p_cur = p_gt->p_node = p_gt->p_end->p_prev;
+    while (i < n) {
+        if ((res = gt_word_insert(p_gt)) < 0) return res;
+        if ((res = gt_word_append_sub_part(p_gt, a + i,  n - i)) <= 0) 
+            return res < 0 ? res : _ERROR(2,-3);
+        i += res;
+    } 
+    p_gt->p_node = p_cur;
+    return 0;    
+}
+
+
 /////////////////////////////////////////////////////////////////////////
 // Store a word or a subword as an array of atoms
 /////////////////////////////////////////////////////////////////////////
@@ -992,24 +1010,6 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
     return (int32_t)(p_out - pa);
 }
 
-
-/**
-@brief Yet to be documented!
-
-*/
-// %%EXPORT p
-int32_t gt_word_store_sub(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
-{
-    uint32_t  *p_data, n, e, i;
-    gt_subword_type *p_cur = p_gt->p_node;
-    e = p_cur->t_exp;
-    p_data = p_cur->data;
-    p_data[n = p_cur->length] = 0x50000000 + e;
-    n += e != 0;
-    if (n > maxlen) return _ERROR(2, -8); ;
-    for (i = 0; i < n; ++i) pa[i] = p_data[i];
-    return n;
-}
 
 
 

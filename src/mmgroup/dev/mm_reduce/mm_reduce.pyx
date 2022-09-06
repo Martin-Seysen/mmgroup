@@ -99,6 +99,12 @@ cdef class GtWord():
     def eof(self):
         return self.p_gt.p_node.eof
 
+    def reduce_mode(self):
+        return self.p_gt.reduce_mode
+
+    def set_reduce_mode(self, uint32_t reduce_mode):
+        self.p_gt.reduce_mode = reduce_mode
+
     def seek(self, int32_t pos, int32_t seek_set):
         cdef int32_t res = mr.gt_word_seek(self.p_gt, pos, seek_set)
         if res < 0:
@@ -121,19 +127,6 @@ cdef class GtWord():
         assert issubclass(group, AbstractMMGroupWord)
         return group('a', a)
 
-    @cython.boundscheck(False)    
-    def mmdata_sub(self, group = None):
-        cdef int32_t length = mr.MAX_GT_WORD_DATA
-        a = np.zeros(length, dtype = np.uint32)
-        cdef uint32_t[:] a_view = a
-        length = mr.gt_word_store_sub(self.p_gt, &a_view[0], length)
-        if (length < 0):
-            self._complain(length, "mmdata_sub")
-        a = a[:length]      
-        if group is None:
-            return a
-        assert issubclass(group, AbstractMMGroupWord)
-        return group('a', a)
 
     def rule_join(self):
         cdef int32_t res = mr.gt_word_rule_join(self.p_gt)
