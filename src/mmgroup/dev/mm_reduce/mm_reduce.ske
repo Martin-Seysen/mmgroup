@@ -769,7 +769,34 @@ static uint32_t checksum(uint32_t *r, uint32_t len_r)
 /// @cond DO_NOT_DOCUMENT 
 
 
-
+static inline int32_t reduce_v_axis_final(
+    uint32_t vt, 
+    uint32_t *r, 
+    uint32_t len_r, 
+    uint32_t std_axis
+)
+{
+    uint32_t len_r1;
+    if (!std_axis) {
+        r[len_r++] = 0x84000000 + vt;
+        return len_r;
+    }
+    len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
+    if (len_r1 < 0) return -10003;
+    vt = gen_leech2_op_word(vt, r+len_r, len_r1);
+    len_r += len_r1;
+    if (vt & 0x1000000) {
+        r[len_r++] = 0xB0000200;
+      #ifdef CHECK_AXIS
+        vt = gen_leech2_op_word(vt, r+len_r-1, 1);
+      #endif
+    }
+  #ifdef CHECK_AXIS
+    if (vt != 0x200) return -10004;
+  #endif
+    r[len_r++] = 0x84000200;
+    return len_r;
+}
 
 
 
@@ -797,35 +824,13 @@ static int32_t reduce_v_axis(
 
         if (ax_type == 0x21) {
             vt = p_ax->v_leech2[0];
-            if (!std_axis) {
-                vt = v_leech2_adjust_sign(v, vt);
-                r[len_r++] = 0x84000000 + vt;
-                return len_r;
-            }
-            len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
-            if (len_r1 < 0) return -10002;
+            vt = v_leech2_adjust_sign(v, vt);
+            // vt is the element of Q_x0 equivalent to the current axis
           #ifdef CHECK_AXIS
-            mm_op15_word(v, r + len_r, len_r1, 1, p_work);
-            vt = mm_aux_get_mmv1(15, v, (24+3)*32 + 2);
-          #else
-            mm_op15_word_ABC(v, r + len_r, len_r1, p_work);
-            vt = mm_aux_get_mmv1(15, p_work, (24+3)*32 + 2);
+            mm_op15_store_axis(vt, p_work);
+            if (mm_op15_compare(v, p_work)) return -10002;
           #endif
-            len_r += len_r1;
-            r[len_r++] = 0x82000000 + vt;
-            if (vt != 15-2) {
-                r[len_r] = 0xB0000200;
-              #ifdef CHECK_AXIS
-                mm_op15_word(v, r + len_r, 1, 1, p_work);
-              #endif
-                len_r += 1;
-            }
-          #ifdef CHECK_AXIS
-            mm_reduce_load_axis(p_work, 0);
-            if (mm_op15_compare(v, p_work)) return -10003;
-          #endif
-            r[len_r++] = 0x84000200;
-            return len_r;
+            return reduce_v_axis_final(vt, r, len_r, std_axis);
         }
 
         v4 = find_type4(p_ax, 0);
@@ -1249,8 +1254,8 @@ int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 /// @cond DO_NOT_DOCUMENT
 // Size of buffer for copy of Monster group word to be reduced 
 // This is used for preprocessing a word with ``gt_word_shorten(()``.
-// Preprocessing is omitted if A_BUFSITE is set to 0.
-#define A_BUFSITE 0
+// Preprocessing is omitted if A_BUFSIZE is set to 0.
+#define A_BUFSIZE 0
 /// @endcond  
 
 
@@ -1288,7 +1293,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
 
     typedef struct {
       #if A_BUFSIZE > 0
-        uint32_t buf[A_BUFSITE];
+        uint32_t buf[A_BUFSIZE];
       #endif
         uint_mmv_t v[MM_OP15_LEN_V];
         uint_mmv_t work[MM_OP15_LEN_V];
@@ -1303,7 +1308,8 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     work = p_work->work;
 
   #if A_BUFSIZE > 0
-    res = gt_word_shorten(a, n, p_work->buf, A_BUFSITE, 0);
+    #error Integration of module mm_shorten.c not yet functional!
+    res = gt_word_shorten(a, n, p_work->buf, A_BUFSIZE, 2);
     if (res >= 0) {n = res; a = p_work->buf;}
   #endif
 
