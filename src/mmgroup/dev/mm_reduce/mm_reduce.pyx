@@ -74,8 +74,8 @@ cdef class GtWord():
             raise ValueError(err % (hex(res), method))  
 
     @cython.boundscheck(False)    
-    def __cinit__(self, arg = None):
-        self.p_gt = mr.gt_word_alloc(NULL, 0)
+    def __cinit__(self, *args, **kwds):
+        self.p_gt = mr.gt_word_alloc(0, NULL, 0)
         if self.p_gt == NULL:
             err = "Memory allocation has failed in class GtWord"
             raise MemoryError(err)
@@ -85,10 +85,11 @@ cdef class GtWord():
         mr.gt_word_free(self.p_gt)
 
     @cython.boundscheck(False)    
-    def __init__(self, arg = None):
+    def __init__(self, arg = None, reduce_mode = 1):
         cdef int32_t res
         cdef uint32_t[:] a_view
         cdef uint32_t length
+        self.p_gt.reduce_mode = reduce_mode
         if arg:
             a_view = mm_as_array_view(arg)
             length = len(a_view)
@@ -165,7 +166,10 @@ cdef class GtWord():
         if res < 0:
             self._complain(res, "reduce_sub")
 
-
+    def reduce(self):
+        cdef int32_t res = mr.gt_word_reduce(self.p_gt)
+        if res < 0:
+            self._complain(res, "reduce_sub")
 
     @cython.boundscheck(False)    
     def subwords(self):

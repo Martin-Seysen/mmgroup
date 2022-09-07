@@ -17,7 +17,7 @@
  of type ``gt_subword_type``.
 
  Unless otherwise stated, a negative return value of a function
- is this module indicated an error.
+ is this module indicates an error.
 
  Structues required for this module are defined in
  file ``mm_reduce.h``.
@@ -25,6 +25,36 @@
  Warning:
 
  This module is yet experimental and not for public use!
+
+
+ The following code block demonstrates the reduction of a word
+ with the functions in this module (ignoring error handling).
+
+ @code
+ // Assume that the following buffer contains a word ``g``
+ // of length 10 of generators of the Monster group
+ #define INPUT_LENGTH 10
+ uint32_t in_buf[INPUT_LENGTH]; 
+ // Declare a sufficiently long output buffer
+ #define MAX_OUTPUT_LENGTH 20
+ uint32_t out_buf[MAX_OUTPUT_LENGTH];
+ // Define a reduction mode as specified in function gt_word_alloc
+ #define REDUCTION_MODE 1 
+ // Allocate a structure for reduction
+ gt_word_type* p_gt = gt_word_alloc(REDUCTION_MODE, NULL, 0);
+ // Enter the word ``g`` into that structure
+ gt_word_append(p_gt, in_buf, INPUT_LENGTH);
+ // Reduce the word in that structure
+ gt_word_reduce(p_gt);
+ // Store the reduced word in the output buffer and the actual
+ // length of that word in variable output_length
+ int32_t output_length;
+ output_length = gt_word_store(p_gt, out_buf, MAX_OUTPUT_LENGTH);
+ // Free the allocated structure
+ gt_word_free(p_gt);
+ @endcode
+
+
 
 */
 
@@ -135,7 +165,7 @@ typedef struct gt_subword_buf_s gt_subword_buf_type;
    This structure is required in file ``mm_shorten.c``.
 
    It stores a word in the Monster in a circular
-   doubly-linked listof nodes of type ``gt_subword_type``. Each of
+   doubly-linked list of nodes of type ``gt_subword_type``. Each of
    these node represents subword of that word, and there is a
    dedicated EOF (end of file) mark in that list that marks both,
    the beginning and the end of the list. Member ``p_end`` always
@@ -207,7 +237,7 @@ extern "C" {
 
 
 // Min capacity (in units of struct gt_subword_s) of an allocated buffer
-#define MIN_CAPACITY 1
+#define MIN_CAPACITY 32
 // Max capacity (in units of struct gt_subword_s) of an allocated buffer
 #define MAX_CAPACITY 0x8000
 // Size of an allocated buffer of type gt_word_type in bytes
@@ -306,7 +336,7 @@ _gt_word_new_subword(gt_word_type *p_gt)
 
 The function frees all buffers for entries to be used in the circular
 doubly linked list associated with the buffer of
-type ``gt_word_type`` referred by ``p_gt``. All these entries hav been
+type ``gt_word_type`` referred by ``p_gt``. All these entries have been
 createdby function ``_gt_word_new_subword``.
 */ 
 static void
@@ -338,7 +368,7 @@ _gt_word_delete_all_subwords(gt_word_type *p_gt)
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
 Set a subword to the empty subword.
 
@@ -373,9 +403,11 @@ static inline void set_eof_word(gt_word_type *p_gt)
 @brief Create a structure of type ``gt_word_type``
 
 This function creates a valid structure of type ``gt_word_type``
-and returns a pointer to that struture. If a buffer ``p_buffer``
-of ``nbytes``  bytes length is given as a parameter the
-the structure may be ininitalized inside this buffer.
+and returns a pointer to that structure. The returned structure
+contains the empty word of generators of the Monster. If a
+buffer ``p_buffer`` of ``nbytes``  bytes length is given as a
+parameter then the structure may be ininitalized inside this
+buffer. We recommend ``nbytes >= 4096``.
 
 If ``p_buffer = NULL`` or ``nbytes`` is too small then a buffer
 is allocated via the C function ``malloc``. You should always use
@@ -386,17 +418,31 @@ The structure referred by returned pointer will contain the
 circular doubly linked list with a single entry of
 type ``gt_subword_type``. This entry is an end-of-file mark.
 So the whole word stored in that structure corresponds to the
-neutral element of the Monster group.
+neutral element of the Monster group. 
 
 In any case function ``gt_word_free`` must be called to
 free all buffers allocated by this function and, possibly, by
 other function in this module applied to the pointer returned
 by this function.
 
-This function returns ``NULL`` in case of failure.
+Parameter ``mode`` specifies the reduction mode:
+
+``mode = 0`` means no reduction. Here the user has to apply the
+low-level functions in this module to perform reduction. This 
+mode is used for testing.
+
+``mode = 1`` means the maximum possible reduction which is supported.
+
+``mode = 2`` means a lazy mode of reduction. The idea is to reduce
+only in cases where we can expect a substantial decrease of the word
+length. This mode is faster than ``mode = 1``.
+
+
+This function returns ``NULL`` in case of failure, e.g. if the C
+function ``malloc```fails to allocate memory.
 */
 // %%EXPORT p
-gt_word_type *gt_word_alloc(void *p_buffer, size_t nbytes)
+gt_word_type *gt_word_alloc(uint32_t mode, void *p_buffer, size_t nbytes)
 {
     gt_word_type *p_gt = NULL;
 
@@ -416,7 +462,8 @@ gt_word_type *gt_word_alloc(void *p_buffer, size_t nbytes)
         p_gt = p_buffer;
         p_gt->is_allocated = 0;  
     }
-
+    if (mode > 2) mode = 1;
+    p_gt->reduce_mode = mode;
     if (_gt_word_init(p_gt, nbytes) != 0) goto failure;
     set_eof_word(p_gt);
     if (p_gt->buf.n_used != 1) goto failure;
@@ -434,9 +481,10 @@ gt_word_type *gt_word_alloc(void *p_buffer, size_t nbytes)
 
 This function frees the memory allocated to a structure of
 type ``gt_word_type`` created by function ``gt_word_alloc``.
-For avoiding memory leaks, it must be a pointer returned by 
-that function. It is safe to apply function ``gt_word_free``
-to the ``NULL`` pointer.
+Ultimately, it must be applied to all pointers created by
+function ``gt_word_alloc`` in order to avoid memory leaks. It
+is safe to apply function ``gt_word_free`` to the ``NULL``
+pointer.
 */
 // %%EXPORT p
 void gt_word_free(gt_word_type *p_gt)
@@ -449,12 +497,12 @@ void gt_word_free(gt_word_type *p_gt)
 
 
 /**
-@brief Yet to be documented!
+@brief Set content of the structure ``*p_gt`` to the empty word
 
 This function sets the value of the structure of type ``gt_word_type``
-refereed by ``p_gt`` to the neutral element of the Monster. It also
+referred by ``p_gt`` to the neutral element of the Monster. It also
 frees all allocated memory blocks referred by ``p_gt``, except for
-the block ``p_gt```itself.
+the block ``p_gt`` itself.
 */
 // %%EXPORT p
 void gt_word_clear(gt_word_type *p_gt)
@@ -471,9 +519,9 @@ void gt_word_clear(gt_word_type *p_gt)
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
-Insert an empty subword after the current subword,
+Insert an empty subword after the current subword pf ``*p_gt`` and
 set the position of the current subword to the new subword.
 
 Return a negative value if out of memory.
@@ -501,12 +549,12 @@ int32_t gt_word_insert(gt_word_type *p_gt)
 }
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
-Delete the current subword, and
-set the position of the current subword to its predecessor.
+Delete the current subword, and set the position of the current
+subword to its predecessor.
 
-Return a negative value on an attempt to delete an EOF mark
+Return a negative value on an attempt to delete an EOF mark.
 */
 // %%EXPORT p
 int32_t gt_word_delete(gt_word_type *p_gt)
@@ -530,7 +578,7 @@ int32_t gt_word_delete(gt_word_type *p_gt)
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
 Move the pointer to the current subword to position 'pos'
 Her pos = 0 means the EOF mark if 'set' is True,
@@ -582,25 +630,7 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
 
 
 /**
-@brief Yet to be documented!
-
-
-Return number of subwords in a doubly linked list of
-type ``gt_word_type`` required to store the word of generators
-of the Monster of length ``n`` referred by ``a``.
-*/
-// %%EXPORT px
-uint32_t gt_word_n_subwords(uint32_t *a, uint32_t n)
-{
-    uint32_t i, k = 1;
-    for (i = 0; i < n; ++i) if ((a[i] & 0x70000000) == 0x50000000) ++k;
-    return k;
-}
-
-
-
-/**
-@brief Yet to be documented!
+@brief Low-level function
 
 Try to append a prefix of word 'a' of length 'n' to the current subword.
 Return number of atoms of 'a' sucessfully appended to that word.
@@ -677,7 +707,7 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
 Compute 'complexity' of an element \f$g\f$ of \f$G_{x0}\f$ from
 the image of \f$\Omega\f$  under \f$g\f$ .
@@ -695,7 +725,7 @@ static inline uint32_t complexity(uint32_t img_omega)
 }
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
 Return True if an element  \f$g\f$ of \f$G_{x0}\f$ stored in the
 array of ``a`` of length ``n`` is so complex that lazy reduction
@@ -726,7 +756,7 @@ uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level function
 
 Reduce current subword
 
@@ -786,11 +816,12 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level reduction function
 
-Try to join current subwort p_gt->p_node with its predecessor.
-Return 1 and point to (the joined) predecssor if this it possible.
-Return 0 and do not change the pointer this it not possible.
+Try to join current subwort ``p_gt->p_node`` with its predecessor.
+Return 1 and let ``p_gt->p_node`` point to first node being changed
+if the rule could be applied.
+Return 0 and do not change ``p_gt->p_node`` this is not the case.
 Return a negative number in case of a fatal error.
 */ 
 // %%EXPORT p
@@ -872,7 +903,19 @@ as ``F_TLT(e) = (TLT_CONVERSION >> (e << 2)) & 7``.
 
 
 /**
-@brief Yet to be documented!
+@brief Low-level reduction function
+
+This function tries to apply a rule:
+
+\f$t^{e_1} \xi^{e_2} t^{e_3} \rightarrow \xi^{e_4} t^{e_4} \xi^{e_6}\f$.
+
+Such a rule exists for all \f$0 < e_1, e_2, e_3 < 3\f$. This rule is
+applied to the subword ``p_gt->p_node`` and to its predecessor.
+
+Return 1 and let ``p_gt->p_node`` point to first node being changed
+if the rule could be applied.
+Return 0 and do not change ``p_gt->p_node`` this is not the case.
+Return a negative number in case of a fatal error.
 */ 
 // %%EXPORT p
 int32_t gt_word_rule_t_xi_t(gt_word_type *p_gt)
@@ -940,29 +983,67 @@ int32_t gt_word_rule_t_xi_t(gt_word_type *p_gt)
 
 
 /////////////////////////////////////////////////////////////////////////
+// Reduce a word
+/////////////////////////////////////////////////////////////////////////
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+@brief Low-level reduction function
+
+Yet to be documented!
+*/ 
+// %%EXPORT p
+int32_t gt_word_reduce_input(gt_word_type *p_gt)
+{
+    int32_t res;
+    while (!p_gt->p_node->eof) {
+        res = gt_word_rule_join(p_gt);
+        if (res < 0) return res;
+        if (res== 0) res = gt_word_rule_t_xi_t(p_gt);
+        if (res < 0) return res;
+        if (res == 0) p_gt->p_node = p_gt->p_node->p_next; 
+    }
+    return 0;
+}
+
+/// @endcond 
+
+
+/////////////////////////////////////////////////////////////////////////
 // Append element of the monster group to a word
 /////////////////////////////////////////////////////////////////////////
 
 
 /**
-Append the word 'a' of length 'n' at the end of the current subword.
-Set the current subword to the last word before the appended word 'a'.
+@brief Append word of generators to strcture ``*p_gt``
+
+Append the word ``a`` of length ``n`` to the word in the buffer
+refered by ``p_gt``.
 
 A negative return value inducates an error.
+
+At exit, pointer ``p_gt->p_node`` will point to the ``EOF`` mark.
 */
 // %%EXPORT p
 int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
 {
     int32_t res;
     uint32_t i = 0;
-    gt_subword_type *p_cur = p_gt->p_node = p_gt->p_end->p_prev;
+    p_gt->p_node = p_gt->p_end->p_prev;
     while (i < n) {
         if ((res = gt_word_insert(p_gt)) < 0) return res;
         if ((res = gt_word_append_sub_part(p_gt, a + i,  n - i)) <= 0) 
             return res < 0 ? res : _ERROR(2,-3);
         i += res;
-    } 
-    p_gt->p_node = p_cur;
+        if (p_gt->reduce_mode) {
+            res = gt_word_reduce_input(p_gt);
+            if (res < 0) return res;
+            p_gt->p_node = p_gt->p_end->p_prev;
+        }
+    }
+    p_gt->p_node = p_gt->p_end; 
     return 0;    
 }
 
@@ -972,9 +1053,26 @@ int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
 /////////////////////////////////////////////////////////////////////////
 
 
+/**
+@brief Return number of subwords required to store element of the Monster
+
+
+Return (an upper bound for) the number of subwords in a doubly
+linked list of type ``gt_word_type`` required to store the word
+of generators of the Monster of length ``n`` referred by ``a``.
+*/
+// %%EXPORT px
+uint32_t gt_word_n_subwords(uint32_t *a, uint32_t n)
+{
+    uint32_t i, k = 1;
+    for (i = 0; i < n; ++i) if ((a[i] & 0x70000000) == 0x50000000) ++k;
+    return k;
+}
+
+
 
 /**
-@brief Yet to be documented!
+@brief Return the length of the word stored in ``*p_gt``.
 
 */
 // %%EXPORT p
@@ -990,16 +1088,55 @@ int32_t gt_word_length(gt_word_type *p_gt)
 
 
 
+
+
 /**
-@brief Yet to be documented!
+@brief Reduce the word stored in ``*p_gt``.
+
+
+The function reduces the word stored in the structure ``*p_gt``.
+The mode of reduction depends on the parameter ``mode`` passed to
+function ``gt_word_alloc`` when creating that structure.
+*/
+// %%EXPORT p
+int32_t gt_word_reduce(gt_word_type *p_gt)
+{
+    uint32_t sub_mode = p_gt->reduce_mode == 2 ? 2 : 3;
+    gt_subword_type *p_old = p_gt->p_node;
+
+    p_gt->p_node = p_gt->p_end->p_prev;
+    for ( ; p_gt->p_node->eof == 0; p_gt->p_node = p_gt->p_node->p_prev) {
+        int32_t res = gt_word_reduce_sub(p_gt, sub_mode);
+        if (res < 0) return res;
+    }
+    p_gt->p_node = p_old;
+    return 0;
+}
+
+
+
+
+
+/**
+@brief Store the word in ``*p_gt`` in an array.
+
+The function stores the word in ``*p_gt`` in the array ``a`` (of
+length ``maxlen``) referred by ``pa``. It returns the actual 
+length ``n``of the word stored in the array ``a``.
+
+The function returns a negative value in case of failure, e.g.
+if ``n > maxlen``.
 
 */
 // %%EXPORT p
 int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 {
     uint32_t *p_out = pa, *p_end = pa + maxlen, *p_data, n, e;
-    gt_subword_type *p_cur = p_gt->p_end->p_next;
-    for (; p_cur->eof == 0; p_cur = p_cur->p_next) {
+    gt_subword_type *p_cur;
+
+
+    p_cur = p_gt->p_end->p_next;
+    for ( ; p_cur->eof == 0; p_cur = p_cur->p_next) {
         e = p_cur->t_exp;
         p_data = p_cur->data;
         p_data[n = p_cur->length] = 0x50000000 + e;
@@ -1019,48 +1156,45 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 /////////////////////////////////////////////////////////////////////////
 
 /**
-@brief Yet to be documented!
+@brief Reduce a word of generators of the Monster group
+
+Let \f$g\f$ be the word of the monster group of length ``n``
+stored in the array ``g``. The function reduces the word \f$g\f$
+and stores the reduced word in the buffer ``g1`` of length ``n1max``.
+It returns the actual length ``n1`` of the reduced word.
+
+Internally, the function uses a buffer of type ``gt_word_type``
+for reduction. Parameter ``mode`` controls the reduction mode;
+it is specified as in function ``gt_word_alloc``.
+
+The function returns a negative value in case of failure, e.g.
+if ``n1 > n1max ``.
 
 */
 // %%EXPORT px
-int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1, uint32_t mode)
+int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1max, uint32_t mode)
 {
-    gt_word_type* p_gt = gt_word_alloc(NULL, 0);
-    uint32_t n_out;
+    gt_word_type* p_gt = gt_word_alloc(mode, NULL, 0);
+    uint32_t n1;
     int32_t res = -1, status = 0;
 
     if (p_gt == NULL) goto done;
     res = gt_word_append(p_gt, g, n);
     status = 2; if (res < 0) goto done;
 
-    res = gt_word_seek(p_gt, 1, 1);
+    res = gt_word_reduce(p_gt);
     status = 3; if (res < 0) goto done;
-    while (!p_gt->p_node->eof) {
-       res = gt_word_rule_join(p_gt);
-       status = 4; if (res < 0) goto done;
-       if (!res) res = gt_word_seek(p_gt, 1, 0);
-       status = 5; if (res < 0) goto done;
-    }
 
-    res = gt_word_seek(p_gt, -1, 1);
-    status = 6; if (res < 0) goto done;
-    while (!p_gt->p_node->eof) {
-       res = gt_word_reduce_sub(p_gt, mode);
-       status = 7; if (res < 0) goto done;
-       res = gt_word_seek(p_gt, -1, 0);
-       status = 8; if (res < 0) goto done;
-    }
-
-    n_out = gt_word_length(p_gt);
-    status = 9; res = -1;
-    if (n_out < n1) goto done;
-    status = 10;
+    n1 = gt_word_length(p_gt);
+    status = 4; res = -1;
+    if (n1 > n1max) goto done;
+    status = 5;
     res = gt_word_store(p_gt, g1, n1);
 
   done:
     gt_word_free(p_gt);
     if (res >= 0) return res;
-    return (int32_t)(((-status << 24) + res) & 0x80000000);
+    return (int32_t)(((-status << 24) + res) | 0x80000000);
 
 }
 

@@ -14,7 +14,7 @@ import pytest
 import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
-from mmgroup.mm_reduce import mm_reduce_M
+from mmgroup.mm_reduce import mm_reduce_M, gt_word_shorten
 from mmgroup import MM0, MM
 from mmgroup.mm_reduce import GtWord
 from mmgroup.generators import gen_leech2_op_word_leech2
@@ -115,6 +115,7 @@ def py_load_word(g, check = True, verbose = True):
     gtw = GtWord()
     gtw.append(g)
     vb = verbose > 1
+    gtw.set_reduce_mode(0)
     gtw.seek(1,1)
     if check: 
        check_subwords(gtw, g, verbose = vb, text="start word")
@@ -140,16 +141,39 @@ def py_load_word(g, check = True, verbose = True):
     return gtw
 
 
+def fast_load_word(g, mode = 1, verbose = 0):
+    gtw = GtWord()
+    gtw.set_reduce_mode(mode)
+    gtw.append(g)
+    gtw.reduce()
+    g_reduced = MM0('a', gtw.mmdata())
+    assert g == g_reduced
+    if verbose:
+        print("Reduced:",  g_reduced)
+    
+
+
 @pytest.mark.mmgroup 
 def test_shorten_pyx(ntests = 20, verbose = 0):
+    LEN_A_MAX = 1000
+    A = np.zeros(LEN_A_MAX, dtype = np.uint32)
+    reduce_mode = 1
+    print("Testing module mm_shorten.c")
+    t_start = time.process_time()
     for i, g in enumerate(word_shorten_testdata(ntests)):
         check = i < 10
         if verbose:
             print("\nTest", i+1)
             print("g =", g)
-        gtw = py_load_word(g, check = check, verbose = verbose)
+        if check:
+            gtw = py_load_word(g, check = check, verbose = verbose)
+            check_subwords(gtw, g, verbose = verbose, 
+                text = "result word")
+        fast_load_word(g, mode = reduce_mode, verbose = verbose)
+        LEN_A = gt_word_shorten(g.mmdata, len(g.mmdata), A, LEN_A_MAX, 2)
+        assert LEN_A >= 0, hex(LEN_A)
+        assert g == MM0('a', A[:LEN_A])
 
-        check_subwords(gtw, g, verbose = verbose, text = "result word")
         if verbose:
             print("\nTest inverse of g")
         a = g.mmdata
@@ -157,9 +181,13 @@ def test_shorten_pyx(ntests = 20, verbose = 0):
         gi = MM0('a', a)
         if verbose > 1:
             print("mmdata:", [hex(x) for x in gi.mmdata])
-        gtwi = py_load_word(gi, check = check, verbose = verbose)
-        check_subwords(gtwi, g**-1, verbose = verbose, 
-            text = "result word")
+        if check:
+            gtwi = py_load_word(gi, check = check, verbose = verbose)
+            check_subwords(gtwi, g**-1, verbose = verbose, 
+                text = "result word")
+        fast_load_word(gi, mode = reduce_mode, verbose = verbose)
+    t = time.process_time() - t_start
+    print("%d tests passed after %.3f seconds" % (i+1, t))
 
 
 #####################################################################################
@@ -185,21 +213,22 @@ def make_mul_samples(n = N_MUL_SAMPLES, verbose = 0):
     return indices, glist
 
 
-def benchmark_shorten(ncases = 32, verbose = 0):
+def benchmark_shorten(ncases = 32, reduce_mode = 1, verbose = 0):
     indices, glist = make_mul_samples(verbose = verbose)
     t_start = time.process_time()
     for i in range(ncases):
-        gtw = GtWord(glist[i & 15])  
+        gtw = GtWord(glist[i & 15], reduce_mode) 
+        gtw.reduce() 
     t = time.process_time() - t_start
     return t / ncases
 
 
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
-def test_benchmark_shorten(ntests = 10000, verbose = 0):
+def test_benchmark_shorten(ntests = 10000, reduce_mode = 2, verbose = 0):
     print("")
     for i in range(1):
-        t = benchmark_shorten(ntests, verbose=verbose) 
+        t = benchmark_shorten(ntests, reduce_mode, verbose=verbose) 
         s = "Runtime of word shortening in class  MM, %d tests: %.3f us" 
         print(s % (ntests, 1000000*t))
 
