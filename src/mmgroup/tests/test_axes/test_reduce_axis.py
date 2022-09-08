@@ -472,12 +472,14 @@ def make_axis_testcases():
 ERR_REDUCE_V_AXIS = "Error in function reduce_v_axis_C, status = %d"
 
 
+ZERO = np.zeros(1, dtype = np.uint32)
+
 def reduce_v_axis_C(v, std_axis):
     va = mm_vector(15, 2)
     vc, work = va[0].data, va[1].data
     mm_op15_copy(v.data, vc)    
     r = np.zeros(200, dtype = np.uint32)
-    res = mm_reduce_vector_vp(vc, std_axis, r, work)
+    res = mm_reduce_vector_vp(ZERO, vc, std_axis, r, work)
     if not 0 < res <= 200:
         raise ValueError(ERR_REDUCE_V_AXIS, res) 
     g = MM0('a', r[:res])
@@ -546,7 +548,7 @@ def mm_reduce_v_baby_axis_C(v, axis = V_START, mode = 0):
     res = mm_reduce_vector_shortcut(1, mode, axis, r)
     if res < 0:
         raise ValueError(ERR_REDUCE_MM_V_BABY_AXIS % res)
-    res = mm_reduce_vector_vm(vc, r, work)
+    res = mm_reduce_vector_vm(ZERO, vc, r, work)
     if res < 0:
         raise ValueError(ERR_REDUCE_MM_V_BABY_AXIS % res)
     g = MM0('a', r[:res])
@@ -641,13 +643,13 @@ def reduce_G_x0(g, mode = 0):
     mm_reduce_load_axis(v, 0);
     res = mm_op15_word(v, g1, n, 1, work)
     if res < 0: raise ValueError(ERR_GX0 % res)
-    res = mm_reduce_vector_vp(v, mode, r, work)    
+    res = mm_reduce_vector_vp(ZERO, v, mode, r, work)    
     if res < 0: raise ValueError(ERR_GX0 % res)
 
     mm_reduce_load_axis(v, 1);
     res = mm_op15_word(v, g1, n, 1, work)
     if res < 0: raise ValueError(ERR_GX0 % res)
-    res = mm_reduce_vector_vm(v, r, work)  
+    res = mm_reduce_vector_vm(ZERO, v, r, work)  
     if res < 0: raise ValueError(ERR_GX0 % res)
     reduce_time = time.perf_counter() - t_start
     return MM0('a', r[:res])

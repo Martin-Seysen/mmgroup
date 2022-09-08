@@ -101,8 +101,11 @@
 
 #define MAX_SHORT_ARRAY 892
 
-/* Vector \fv^+\f$ in Leech lattice encoding */
-#define V_START 0x200
+/* Vector \f$v^+\f$ in Leech lattice encoding */
+#define V_PLUS 0x200
+
+/* Vector \f$v^-\f$ in Leech lattice encoding */
+#define V_MINUS 0x1000200
 
 
 
@@ -629,11 +632,11 @@ static inline int32_t v_leech2_adjust_sign(uint_mmv_t *v, uint32_t v2)
   It returns 0 an case of success and a negative value otherwise.
   
   Warning: the function does not change  \f$q\f$ if \f$q\f$  is
-  equal to ``V_START``.
+  equal to ``V_PLUS``.
 */
 static inline int32_t op_axis(uint32_t *p_axis, uint32_t *a, uint32_t n)
 {  
-    if (*p_axis == V_START) return 0;
+    if (*p_axis == V_PLUS) return 0;
     *p_axis = gen_leech2_op_word(*p_axis, a, n);
     return *p_axis < 0 ? *p_axis : 0; 
 }
@@ -699,31 +702,43 @@ int32_t  mm_reduce_load_axis(uint_mmv_t *v, uint32_t s)
 
 
 /**
-  @brief Load the image of a 2A axis into a vector in \f$\rho_{15}\f$
+  @brief Transform a 2A axis with an element of the Monster group
 
-  Let \f$v = v^+\f$ if ``s = 0`` and \f$v = v^-\f$ if ``s = 1``,
-  where \f$v^+\f$ and \f$v^-\f$ defined as in [Sey22], Section 6. Any
-  other values of ``s`` are illegal.  Let \f$g\f$ be the element of
-  the monster given as a word of generators in the buffer ``a`` of
-  length ``n``. Then the function loads the 2A axis \f$v \cdot g\f$
-  into  the vector referred  by ``v``. That vector will store an
-  element of the  representation \f$\rho_{15}\f$ of the monster group
-  as described in the header of this file.
+  Here we encode a 2A axis \f$v\f$ as follows. It may be encoded
+  as an element  of the group \f$Q_{x0}\f$ in the integer referred 
+  by ``vt``. In case ``*vt = 0`` we encode \f$v\f$ as a vector
+  of the representation \f$\rho_{15}\f$ of the Monster in the
+  array ``v``. In case ``*vt != 0`` the value ``*vt`` must be
+  a short element (corresponding to a type-2 vector 
+  in \f$\Lambda/2\Lambda\f$) of the group \f$Q_{x0}\f$, 
+  in **Leech lattice encoding**. ``v`` is ignored in 
+  case ``*vt != 0``.
+
+  Let \f$g\f$ be the element of the monster given as a word of 
+  generators in the buffer ``a`` of  length ``n``. Then  the 
+  function computes \f$v' = v \cdot g\f$ and stores \f$v'\f$ 
+  in ``*vt`` (if possible), or in ``v``. In last case it
+  sets ``*vt`` to zero.
   
   The function returns 0 in case of succes an a negative value in case
   of failure. It requires a work buffer ``work`` of the same type and
   size as parameter ``v``.
 */
 // %%EXPORT px
-int32_t mm_reduce_map_axis(uint_mmv_t *v, uint32_t s, uint32_t *a, uint32_t n, uint_mmv_t *work)
+int32_t mm_reduce_map_axis(uint32_t *vt, uint_mmv_t *v, uint32_t *a, uint32_t n, uint_mmv_t *work)
 {
-    uint32_t axis = 0x200 + ((s & 1) << 24);
-    int32_t res = gen_leech2_op_word_many(&axis, 1, a, n);
-    uint32_t n0 = res;
-    if (res < 0) return res;
-    res = mm_op15_store_axis(axis, v);
-    if (res < 0) return res;
-    res = mm_op15_word(v, a + n0, n - n0, 1, work);
+    int32_t res;
+    if (*vt) {
+        if (gen_leech2_type(*vt) != 2) return -1;
+        uint32_t n0 = res = gen_leech2_op_word_many(vt, 1, a, n);
+        if (res < 0) return res;
+        if ((uint32_t)res == n) return 0;
+        res = mm_op15_store_axis(*vt, v);
+        *vt = 0;
+        if (res < 0) return res;
+        a += n0; n -= n0;
+    }
+    res = mm_op15_word(v, a, n, 1, work);
     return 0 - (res != 0);
 }
 
@@ -806,14 +821,17 @@ static inline int32_t reduce_v_axis_final(
   More details are yet to be documented.
 */
 static int32_t reduce_v_axis(
+    uint32_t vt, 
     uint_mmv_t *v, 
     uint32_t * r, 
     uint32_t std_axis,
     uint_mmv_t *p_work
 )
 {
-    uint32_t len_r = 0, i, status, len_r1, vt, v4, ax_type;
+    uint32_t len_r = 0, i, status, len_r1, v4, ax_type;
     uint32_t target_axes[2];
+
+    if (vt) return reduce_v_axis_final(vt, r, 0, std_axis);
 
     for (i = 0; i < 5; ++i) {
         axes_reduce_t *p_ax = (axes_reduce_t *)(p_work);
@@ -851,9 +869,11 @@ static int32_t reduce_v_axis(
 /**
   @brief Step 1 of the reduction of an element of the monster
 
-  Here input ``v`` of this function must refer to the image of
-  the 2A axis \f$v^+ \in \rho_{15}\f$ under the operation of an 
-  element \f$g\f$ of the monster group.
+  Here inputs ``vt`` and  ``v`` of this function encode a 
+  2A axis \f$v\f$ as described in function ``mm_reduce_map_axis``.
+  Here \f$v\f$ is considered as an image \f$v = v^+ \cdot g\f$
+  of \f$v^+\f$ under the operation of an (unknown)
+  element \f$g\f$ of the Monster group.
 
   The function computes an element \f$h\f$ of the monster group
   with   \f$v \cdot h = v^+\f$. We use the method in [Sey22],
@@ -878,11 +898,11 @@ static int32_t reduce_v_axis(
   More details are yet to be documented!!!!
 */
 // %%EXPORT px
-int32_t mm_reduce_vector_vp(uint_mmv_t *v, uint32_t mode, uint32_t *r, uint_mmv_t *work)
+int32_t mm_reduce_vector_vp(uint32_t *vt, uint_mmv_t *v, uint32_t mode, uint32_t *r, uint_mmv_t *work)
 {
     int32_t res;
     r[0] = 0;
-    res =  reduce_v_axis(v, r + 1, mode & 1, work);
+    res =  reduce_v_axis(*vt, v, r + 1, mode & 1, work);
     if (res > 0 && res <= 40) {
         ++res;
         r[0] = MM_REDUCE_MARK_VP_DONE + res;
@@ -913,16 +933,16 @@ reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, uint32_t *r
     r[len_r++] = 0;
     axis &= 0x1ffffff;
     if (stage < 1 || stage > 2)  return -10001;
-    if (mode & 1 && axis != V_START) {
+    if (mode & 1 && axis != V_PLUS) {
         len_r1 = gen_leech2_reduce_type2(axis, r + len_r);
         if (len_r1 < 0) return -10002;
         len_r += len_r1;
         r[len_r++] = 0x82000000 + axis;
         axis = gen_leech2_op_word(axis, r, len_r);
         if (axis < 0) return -0x11000 + (axis & 0x3ff);
-        if ((axis & 0xffffff) == V_START)  return -10002;
+        if ((axis & 0xffffff) == V_PLUS)  return -10002;
         if (axis & 0x1ffffff) r[len_r++] = 0xB0000200;
-        axis = V_START;
+        axis = V_PLUS;
     }    
     r[len_r++] = 0x84000000 + axis;
     r[0] = MM_REDUCE_MARK_VP_DONE + len_r;
@@ -975,13 +995,14 @@ int32_t mm_reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, 
   More details are yet to be documented.
 */
 static int32_t reduce_v_baby_axis(
+    uint32_t vt,
     uint_mmv_t *v, 
     uint32_t axis, 
     uint32_t *r,
     uint_mmv_t *p_work
 )
 {
-    uint32_t len_r = 0, i, status, len_r1, val2, vt, v4, ax_type, e;
+    uint32_t len_r = 0, i, status, len_r1, val2, v4, ax_type, e;
     uint32_t target_axes[2];
 
     for (i = 0; i < 5; ++i) {
@@ -990,6 +1011,12 @@ static int32_t reduce_v_baby_axis(
         target_axes[0] = p_ax->target_axes[0];
         target_axes[1] = p_ax->target_axes[1];
         ax_type = p_ax->axis_type;
+
+        if (vt) {  // Preliminary !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+             int32_t res = mm_op15_store_axis(vt, v);
+             if (res < 0) return res;
+        }
+
 
         if (ax_type == 0x21) {
             vt = p_ax->v_leech2[0];
@@ -1054,10 +1081,11 @@ static int32_t reduce_v_baby_axis(
   This function should be applied immediately after
   function ``mm_reduce_vector_vp``.
 
-  Here input ``v`` of this function must refer to the image of
-  the 2A axis \f$v^- \in \rho_{15}\f$ under the operation of the 
-  same element \f$g\f$ of the monster group as described in the
-  documentation of function ``mm_reduce_vector_vp``.
+  Here inputs ``vt`` and  ``v`` of this function encode a 
+  2A axis \f$v\f$ as described in function ``mm_reduce_map_axis``.
+  Here \f$v\f$ is considered as an image \f$v = v^+ \cdot g\f$
+  of \f$v^+\f$ under the operation of an (unknown)
+  element \f$g\f$ of the Monster group.
 
   The function computes an element \f$h\f$ of the monster group
   with   \f$v \cdot h = v^-\f$. We use the method in [Sey22],
@@ -1079,7 +1107,7 @@ static int32_t reduce_v_baby_axis(
   More details are yet to be documented!!!!
 */
 // %%EXPORT px
-int32_t mm_reduce_vector_vm(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
+int32_t mm_reduce_vector_vm(uint32_t *vt, uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 {
     int32_t res;
     uint32_t len_start = r[0] & ~MM_REDUCE_MARK_MASK, axis;
@@ -1093,9 +1121,13 @@ int32_t mm_reduce_vector_vm(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
         checksum(r, len_start) != r[len_start]) return -0x20000;
 
     axis = r[len_start - 1] & 0x1ffffff;
-    res =  mm_op15_word(v, r, len_start, 1, work);
+
+    res = mm_reduce_map_axis(vt, v, r, len_start, work);
+    if (*vt) mm_op15_store_axis(*vt, v);
+
+    // res =  mm_op15_word(v, r, len_start, 1, work);
     if (res >= 0)
-         res = reduce_v_baby_axis(v, axis, r + len_start, work);
+         res = reduce_v_baby_axis(*vt, v, axis, r + len_start, work);
     if (res > 0 && res <= 40) {
          res += len_start;
          r[0] = MM_REDUCE_MARK_VM_DONE + res;
@@ -1301,6 +1333,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
 
     int32_t res;
     uint_mmv_t *v, *work;
+    uint32_t vt;
     t_work *p_work = malloc(sizeof(t_work)); 
        
     if (p_work == 0) return -1;    
@@ -1313,11 +1346,15 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     if (res >= 0) {n = res; a = p_work->buf;}
   #endif
 
-    if ((res = mm_reduce_map_axis(v, 0, a, n, work)) < 0) goto done;
-    if ((res = mm_reduce_vector_vp(v, mode, r, work)) < 0) goto done;    
+    vt = V_PLUS;
+    if ((res = mm_reduce_map_axis(&vt, v, a, n, work)) < 0) goto done;
+    if (vt) mm_op15_store_axis(vt, v);
+    if ((res = mm_reduce_vector_vp(&vt, v, mode, r, work)) < 0) goto done;    
 
-    if ((res = mm_reduce_map_axis(v, 1, a, n, work)) < 0) goto done;
-    if ((res = mm_reduce_vector_vm(v, r, work)) < 0) goto done;   
+    vt = V_MINUS;
+    if ((res = mm_reduce_map_axis(&vt, v, a, n, work)) < 0) goto done;
+    if (vt) mm_op15_store_axis(vt, v);
+    if ((res = mm_reduce_vector_vm(&vt, v, r, work)) < 0) goto done;   
         
   #ifdef CHECK_AXIS
     mm_order_load_vector(v); 
