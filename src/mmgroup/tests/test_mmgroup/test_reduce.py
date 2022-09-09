@@ -66,6 +66,8 @@ def reduce_mm_C(g, check = True, mode = 0):
     return g
 
 def reduce_testcases_C():
+    for i in range(30):
+          yield  MM0('r','N_0') * MM0('r','G_x0'), i & 1
     for quality in range(1,16):
         for i in range(2):
               yield  MM0('r', quality), i & 1  
@@ -260,5 +262,25 @@ def test_benchmark_mul(ncases = 100, verbose = 0):
         print(s % (n, 1000*mu, 1000*sigma))
         print("Average number of tags per reduced group element:")
         print(stat)
+
+
+
+@pytest.mark.bench 
+@pytest.mark.mmgroup 
+def test_benchmark_mul_G_x0(ncases = 5000, verbose = 0):
+    glist = []
+    for i in range(100):
+        glist.append(MM('r', 'G_x0'))
+    indices = range(len(glist))
+    index_pairs = [sample(indices, 2) for i in range(ncases)]
+    t_start = time.process_time()
+    for i, j in index_pairs:
+        glist[i] *= glist[j]
+    t = time.process_time() - t_start
+    s = "\nRuntime of multiplication in subgroup G_x0 in class MM,"
+    s += " %d tests: %.3f us" 
+    print(s % (ncases, 1.0e6*t/ncases))
+
+
 
 

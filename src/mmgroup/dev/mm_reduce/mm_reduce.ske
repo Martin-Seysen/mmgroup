@@ -58,13 +58,13 @@
      uint_mmv_t v[MM_OP15_LEN_V];     // buffer for 2A axes 
      uint_mmv_twork[MM_OP15_LEN_V];   // work buffer
 
-     mm_reduce_load_axis(v, 0);       // Load 2A axis v_plus
+     mm_op15_store_axis(V_PLUS, v );  // Store 2A axis V_PLUS in v
      mm_op15_word(v, a, n, 1, work);  // multiply v_plus with g
-     mm_reduce_vector_vp(v, mode, r, work); // reduce using axis v_plus  
+     mm_reduce_vector_vp(0, v, mode, r, work); // reduce V_PLUS * g  
 
-     mm_reduce_load_axis(v, 1);       // Load 2A axis v_minus
+     mm_op15_store_axis(V_MINUS, v );  // Store 2A axis V_MINUS in v
      mm_op15_word(v, a, n, 1, work);  // multiply v_minus with g
-     mm_reduce_vector_vm(v, r, work); // reduce using axis v_minus   
+     mm_reduce_vector_vm(0,v, r, work); // reduce V_MINUS * g    
     
      mm_order_load_vector(v);         // load the order vector v_1
      mm_op15_word(v, a, n, 1, work);  // multiply v_1 with g 
@@ -657,7 +657,6 @@ static inline int32_t transform_v4(
         
     if (len_r < 0) return -1000 + len_r;
     mm_op15_word(v, r, len_r, 1, p_work);
-    r[len_r++] = 0x82000000 + (v4 & 0xffffff);
     if (target_axes[0] & 0xffffff00) return len_r;
     
     for (e = 1; e < 3; ++e) {
@@ -793,7 +792,7 @@ static inline int32_t reduce_v_axis_final(
 {
     uint32_t len_r1;
     if (!std_axis) {
-        r[len_r++] = 0x84000000 + vt;
+        r[len_r++] = 0x84000000 + (vt & 0x1ffffffUL);
         return len_r;
     }
     len_r1 = gen_leech2_reduce_type2(vt, r+len_r);
@@ -937,7 +936,6 @@ reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, uint32_t *r
         len_r1 = gen_leech2_reduce_type2(axis, r + len_r);
         if (len_r1 < 0) return -10002;
         len_r += len_r1;
-        r[len_r++] = 0x82000000 + axis;
         axis = gen_leech2_op_word(axis, r, len_r);
         if (axis < 0) return -0x11000 + (axis & 0x3ff);
         if ((axis & 0xffffff) == V_PLUS)  return -10002;
@@ -989,6 +987,36 @@ int32_t mm_reduce_vector_shortcut(uint32_t stage, uint32_t mode, uint32_t axis, 
 
 
 
+static inline int32_t reduce_v_baby_axis_final(
+    uint32_t vp, 
+    uint32_t vn, 
+    uint32_t *r, 
+    uint32_t len_r 
+)
+{
+    uint32_t v4 = gen_leech2_mul(vp, vn), len_r1, e;
+    if (v4 & 0xffffff) {
+        len_r1 = gen_leech2_reduce_type4(v4, r + len_r); 
+        if (len_r1 < 0) return -20012;
+        v4 = gen_leech2_op_word(v4, r+len_r, len_r1);
+        vn = gen_leech2_op_word(vn, r+len_r, len_r1);
+        len_r += len_r1;
+        if ((v4 & 0xffffff) != 0x800000) return -20013;
+    
+        e = 1 + ((v4 >> 24) & 1);
+        r[len_r] = 0xD0000003 - e;
+        v4 = gen_leech2_op_word(v4, r+len_r, 1);
+        vn = gen_leech2_op_word(vn, r+len_r, 1);
+        ++len_r; 
+    }
+    if (v4 != 0x1000000) return -20014;
+    r[len_r++] = 0x86000000 + (vn & 0x1ffffff);
+    return len_r;
+}
+
+
+
+
 /**
   @brief Workhorse for function ``mm_reduce_vector_vm``.
 
@@ -1002,8 +1030,10 @@ static int32_t reduce_v_baby_axis(
     uint_mmv_t *p_work
 )
 {
-    uint32_t len_r = 0, i, status, len_r1, val2, v4, ax_type, e;
+    uint32_t len_r = 0, i, status, len_r1, v4, ax_type;
     uint32_t target_axes[2];
+
+    if (vt) return reduce_v_baby_axis_final(axis, vt, r, len_r);
 
     for (i = 0; i < 5; ++i) {
         axes_reduce_t *p_ax = (axes_reduce_t *)(p_work);
@@ -1012,51 +1042,14 @@ static int32_t reduce_v_baby_axis(
         target_axes[1] = p_ax->target_axes[1];
         ax_type = p_ax->axis_type;
 
-        if (vt) {  // Preliminary !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-             int32_t res = mm_op15_store_axis(vt, v);
-             if (res < 0) return res;
-        }
-
-
         if (ax_type == 0x21) {
-            vt = p_ax->v_leech2[0];
-            val2 = mm_op15_eval_A(v, axis);
-            if (val2 == 0)  {
-                vt ^= axis;
-                len_r1 = gen_leech2_reduce_type4(vt, r + len_r); 
-                if (len_r1 < 0) return -20011;
-              #ifdef CHECK_AXIS
-                mm_op15_word(v, r + len_r, len_r1, 1, p_work);
-                vt = mm_reduce_2A_axis_type(v) & 0xffffff;
-                vt = v_leech2_adjust_sign(v, vt);
-              #else
-                mm_op15_word_ABC(v, r + len_r, len_r1, p_work);
-                vt = mm_reduce_2A_axis_type(p_work) & 0xffffff;
-                vt = v_leech2_adjust_sign(p_work, vt);
-              #endif
-                if (op_axis(&axis, r + len_r, len_r1)) return -20011;
-                len_r += len_r1;
-                r[len_r++] = 0x82000000 + (vt & 0xffffff);
-                vt = gen_leech2_mul(vt, axis); 
-                if ((vt & 0xffffff) != 0x800000) return -20012;
-                e = 1 + ((vt >> 24) & 1);
-                r[len_r] = 0xD0000003 - e;
-              #ifdef CHECK_AXIS
-                mm_op15_word(v, r + len_r, 1, 1, p_work);
-                if (op_axis(&axis, r + len_r, 1)) return -20013;
-              #endif
-                len_r += 1;
-            } else  {
-                if (val2 != 4)  return -20014;
-            }
-            #ifdef CHECK_AXIS
-                vt = mm_reduce_2A_axis_type(v) & 0xffffff;
-                vt = v_leech2_adjust_sign(v, vt);
-                if (vt < 0) return -22000 + vt;
-                if ((vt ^ axis ^ 0x1000000) & 0x1ffffff) return -20015;
-            #endif
-            r[len_r++] = 0x86000000 + (axis & 0x1ffffff);
-            return len_r;
+            vt = mm_reduce_2A_axis_type(v) & 0xffffff;
+            vt = v_leech2_adjust_sign(v, vt);
+          #ifdef CHECK_AXIS
+            mm_op15_store_axis(vt, p_work);
+            if (mm_op15_compare(v, p_work)) return -20011;
+          #endif
+            return reduce_v_baby_axis_final(axis, vt, r, len_r);
         }
 
         v4 = find_type4(p_ax, axis);
@@ -1123,9 +1116,6 @@ int32_t mm_reduce_vector_vm(uint32_t *vt, uint_mmv_t *v, uint32_t *r, uint_mmv_t
     axis = r[len_start - 1] & 0x1ffffff;
 
     res = mm_reduce_map_axis(vt, v, r, len_start, work);
-    if (*vt) mm_op15_store_axis(*vt, v);
-
-    // res =  mm_op15_word(v, r, len_start, 1, work);
     if (res >= 0)
          res = reduce_v_baby_axis(*vt, v, axis, r + len_start, work);
     if (res > 0 && res <= 40) {
@@ -1203,7 +1193,7 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 
     res =  mm_op15_word(v, r, len_start, 1, work);
     if (res >= 0)
-         res = mm_order_check_in_Gx0(v, r + len_start, 3, work);
+         res = mm_order_check_in_Gx0(v, r + len_start, 1, work);
     if (res >= 0 && res <= 12) {
          res += len_start;
          r[0] = 0;
@@ -1245,6 +1235,7 @@ int32_t mm_reduce_vector_v1(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
   Parameter ``work`` must refer to a work buffer of size at
   least ``MM_OP3_LEN_V``.
 */
+static inline
 int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
 {
     int32_t res;
@@ -1275,6 +1266,78 @@ int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
     return res;
 }
 
+
+/**
+  @brief Special case of Step 3 of reduction of an element of the monster
+
+  This is a variant of function ``mm_reduce_vector_v1`` that works in
+  the special case when all prefixes of a word \f$g\f$ in the Monster
+  map the 2A-involutions \f$v^+\f$ and  \f$v^-\f$ to
+  2A-involutions in the subgroup \f$Q_{x0}\f$ of \f$G_{x0}\f$. Here
+  the mapping is done via conjuation.That condition holds e.g if all
+  prefixes of the word \f$g\f$ are in \f$\in N_x \cdot G_{x0}\f$.
+
+  The function returns 0 in case of success and a negative value in
+  case of failure. In case of success, this function is (at least)
+  100 times faster than function ``mm_reduce_vector_v1``. So using
+  this function leads to a substantial speedup when computing in
+  the 2-local subgroups  \f$N_x\f$ or \f$G_{x0}\f$ of the Monster.
+  The user profits from this speedup without effort, since
+  function ``mm_reduce_M`` calls
+  function ``mm_reduce_vector_shorten`` when appropriate.
+
+  Here the original element \f$g\f$ of the Monster to be reduced
+  must be stored in the buffer ``a`` of length ``n`` as usual.
+  Parameters ``r`` and ``work`` are as in
+  function ``mm_reduce_vector_v1``.
+
+  If function ``mm_reduce_vector_shorten`` returns a negative value
+  then we may retry the final reduction of \f$g\f$ with one of the
+  functions ``mm_reduce_vector_v1`` or ``mm_reduce_vector_v1_mod3``.
+*/
+static inline
+int32_t mm_reduce_vector_shorten(uint32_t *a, uint32_t n, uint32_t *r, uint_mmv_t *work)
+{
+    int32_t res, i;
+    uint32_t len_start = r[0] & ~MM_REDUCE_MARK_MASK, out_buf[12];
+    gt_word_type* p_gt = gt_word_alloc(1, work,
+         MM_OP15_LEN_V * sizeof(uint_mmv_t) );
+    
+    if ((r[0] &  MM_REDUCE_MARK_MASK) != MM_REDUCE_MARK_VM_DONE) {
+        res = -((int)(r[1]));
+        if (r[0] == MM_REDUCE_MARK_ERROR && res < 0) return res;
+        return -0x30000;
+    }
+    if (len_start < 2 || len_start > 80 || 
+        (r[len_start - 1] & ~0x1ffffffUL) != 0x86000000 ||
+        checksum(r, len_start) != r[len_start]) return -0x20000;
+
+    res = -1;
+    p_gt = gt_word_alloc(1, work, MM_OP15_LEN_V * sizeof(uint_mmv_t));
+    if (p_gt == NULL) goto done;
+    if ((res = gt_word_append(p_gt, a, n)) < 0) goto done;
+    if ((res = gt_word_append(p_gt, r, len_start)) < 0) goto done;
+    res = gt_word_reduce(p_gt);
+    if (res < 0) goto done;
+    if ((res & 2) == 0) {
+        res = -0x7000000 - (res & 0xffffff);
+        goto done;
+    }
+    res = gt_word_store(p_gt, out_buf, sizeof(out_buf)/sizeof(uint32_t));
+    if (res < 0) goto done;
+    mm_group_invert_word(out_buf, res);
+    for (i = 0; i < res; ++i) r[len_start+i] = out_buf[i];
+    res += len_start;
+    r[0] = 0;
+    mm_group_invert_word(r, res);
+    return res;
+
+done:
+    gt_word_free(p_gt);
+    return res;
+
+  
+}
 
 
 
@@ -1333,7 +1396,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
 
     int32_t res;
     uint_mmv_t *v, *work;
-    uint32_t vt;
+    uint32_t vp, vm, easy;
     t_work *p_work = malloc(sizeof(t_work)); 
        
     if (p_work == 0) return -1;    
@@ -1346,16 +1409,21 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     if (res >= 0) {n = res; a = p_work->buf;}
   #endif
 
-    vt = V_PLUS;
-    if ((res = mm_reduce_map_axis(&vt, v, a, n, work)) < 0) goto done;
-    if (vt) mm_op15_store_axis(vt, v);
-    if ((res = mm_reduce_vector_vp(&vt, v, mode, r, work)) < 0) goto done;    
+    vp = V_PLUS;
+    if ((res = mm_reduce_map_axis(&vp, v, a, n, work)) < 0) goto done;
+    easy = vp > 0;
+    if ((res = mm_reduce_vector_vp(&vp, v, mode, r, work)) < 0) goto done;    
 
-    vt = V_MINUS;
-    if ((res = mm_reduce_map_axis(&vt, v, a, n, work)) < 0) goto done;
-    if (vt) mm_op15_store_axis(vt, v);
-    if ((res = mm_reduce_vector_vm(&vt, v, r, work)) < 0) goto done;   
-        
+    vm = V_MINUS;
+    if ((res = mm_reduce_map_axis(&vm, v, a, n, work)) < 0) goto done;
+    easy &= vm > 0;
+    if ((res = mm_reduce_vector_vm(&vm, v, r, work)) < 0) goto done;  
+
+    if (easy) {
+        res = mm_reduce_vector_shorten(a, n, r, work);
+        if (res >= 0) goto done;
+    }
+
   #ifdef CHECK_AXIS
     mm_order_load_vector(v); 
     if ((res = mm_op15_word(v, a, n, 1, work)) < 0) goto done;
@@ -1366,7 +1434,7 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     res = mm_reduce_vector_v1_mod3(v, r, work);
   #endif
 
- done:
+  done:
     free(p_work);
     return res;
 }
