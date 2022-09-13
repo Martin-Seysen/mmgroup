@@ -16,6 +16,8 @@ temp/
 PKG-INFO
 zip.bat
 msvc.bat
+applications/Hurwitz/*.txt
+applications/Hurwitz/*.bat
 
 
 __pycache__
