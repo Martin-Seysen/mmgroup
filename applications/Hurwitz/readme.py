@@ -111,8 +111,8 @@ Using pairs of generators
 
 For using a pair of generators of the Monster, the user may
 simply import the file ``hurwitz_monster_samples.py``. This file
-essentialy contains a list of pairs of elements of the Monster, 
-so that each of these pairs generate the Monster as a Hurwitz 
+essentially contains a list of pairs of elements of the Monster, 
+so that each of these pairs generates the Monster as a Hurwitz 
 group. That list also contains certificates for these pairs as
 discussed in the last section.
 A precomputed file ``hurwitz_monster_samples.py`` containing
@@ -120,7 +120,7 @@ A precomputed file ``hurwitz_monster_samples.py`` containing
 of the project.
 
 The script ``hurwitz_verify.py`` checks all pairs 
-:math:`(a,b)` contaned in file ``hurwitz_monster_samples.py``
+:math:`(a,b)` contained in file ``hurwitz_monster_samples.py``
 and displays the order of the commutator :math:`[a,b]`. This
 activity takes just a few seconds for each pair.
 

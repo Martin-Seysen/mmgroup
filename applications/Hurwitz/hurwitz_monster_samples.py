@@ -26,3 +26,53 @@ hurwitz_monster_data.append((g3, ge, verifiers))
 # found after 19900000 trials
 # (No data found)
 
+
+# Generators of the Monster as a Hurwitz group 
+# found after 23500000 trials
+# (No data found)
+
+
+
+
+# Generators of the Monster as a Hurwitz group 
+# found after 21650000 trials
+# (No data found)
+
+
+
+
+# I thank Gabriel Goller in Augsburg, Germany for computing the following 5 examples:
+#
+# Generators of the Monster as a Hurwitz group 
+# found after 107350000 trials
+
+
+g3 ='M0<y_8dh*x_13e1h*d_7a9h*p_1800584*l_2*p_515520>'
+ge ='M0<y_4cah*x_14b1h*d_7a8h*p_23706532*t_1*p_172307648*l_1*t_2*p_110911002*l_1*t_1*p_227850388*l_1*t_2*p_29552119*l_1*t_2*p_230549337*l_2*t_2*p_187283467*l_2*t_1*p_88672640*l_2>'
+verifiers = [0x9d0e5a790c03166e, 0xa356cae22bca9ef4]
+hurwitz_monster_data.append((g3, ge, verifiers))
+
+
+g3 ='M0<y_36ah*x_359h*d_5adh*p_74513291*l_1*p_45281280>'
+ge ='M0<y_5c2h*x_1de6h*d_0e1fh*p_219013768*t_2*p_242413709*l_2*t_1*p_19572947*l_2*t_2*p_60747481*l_2*t_2*p_194812863*l_2*t_1*p_125965028*l_1*t_2*p_121672611*l_2*t_2*p_114446957*l_2>'
+verifiers = [0xb20edd4b6fe6f8f5, 0x0aedddd491e71e2e]
+hurwitz_monster_data.append((g3, ge, verifiers))
+
+
+g3 ='M0<y_49ch*x_450h*d_86bh*p_21862094*l_1*p_1584000>'
+ge ='M0<y_1efh*x_119eh*d_48fh*p_202990346*t_2*p_69379290*l_1*t_2*p_60720726*l_2*t_2*p_189418847*l_1*t_1*p_44761819*l_1*t_1*p_195562575*l_1*t_1*p_170133565*l_2*t_1*p_58637370*l_2>'
+verifiers = [0xf928da6acd215477, 0xae146c8ace058e11]
+hurwitz_monster_data.append((g3, ge, verifiers))
+
+
+g3 ='M0<y_3c0h*x_1703h*d_4bbh*p_2361692*l_1*p_1507200>'
+ge ='M0<y_72dh*x_1f94h*d_0e2ch*p_65519163*t_2*p_217995942*l_1*t_2*p_198147457*l_2*t_2*p_46373797*l_1*t_2*p_21068057*l_2*t_2*p_145799105*l_1*t_2*p_9625755*l_1*t_1*p_127361996*l_1>'
+verifiers = [0x5ed79072afc0d04d, 0x0c458f432f925680]
+hurwitz_monster_data.append((g3, ge, verifiers))
+
+
+g3 ='M0<y_38bh*x_0df2h*d_0d0bh*p_2825614*l_1*p_2857920>'
+ge ='M0<y_257h*x_1cadh*d_0af7h*p_197296992*t_2*p_122980298*l_1*t_1*p_209368585*l_1*t_2*p_35676965*l_2*t_2*p_119713037*l_1*t_2*p_57883453*l_2*t_2*p_35093622*l_2*t_2*p_186928522*l_1>'
+verifiers = [0xccffb1a6671ed23f, 0x0d16a7553083ed07]
+hurwitz_monster_data.append((g3, ge, verifiers))
+
