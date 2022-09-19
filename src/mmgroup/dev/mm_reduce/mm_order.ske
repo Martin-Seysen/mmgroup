@@ -1,7 +1,7 @@
 /** @file mm_order.c
 
  File ``mm_order.c`` contains functions for checking if an element is
- in the subgroup \f$G_{x0}\f$ (or \f$Q_{x0}\f$) of the moster group.
+ in the subgroup \f$G_{x0}\f$ (or \f$Q_{x0}\f$) of the monster group.
  If this is the case, the element is expressed as a word in the
  generators of the corresponding subgroup.
 
@@ -87,7 +87,7 @@
 */
 enum tag_offsets {
     OFS_NORM_A = 0,  /**< Sum of the squares of the A part of \f$v_1\f$ (mod 15) */
-    OFS_DIAG_VA = 1, /**< For compatiiliy with older versions, always equal to 0 */
+    OFS_DIAG_VA = 1, /**< For compatibly with older versions, always equal to 0 */
     OFS_WATERMARK_PERM = 2,  /**< Watermark of  the A part of \f$v_1\f$ (mod 15) */
     OFS_TAGS_Y = 26,  /**< Entries of \f$v_1\f$ used for computing \f$y_e\f$ */
     OFS_SOLVE_Y = 37, /**< Equation system used for computing  \f$y_e\f$ */
@@ -211,7 +211,7 @@ find_in_Gx0(uint_mmv_t *v, uint32_t *g, uint32_t mode, uint_mmv_t *work)
 
   Input ``v``, and the return value are as in
   function ``mm_order_check_in_Gx0``.  Parameter ``g`` must contain
-  the corrsponding output of function ``find_in_Gx0``, when
+  the corresponding output of function ``find_in_Gx0``, when
   called successfully with the same input parameters. The function also
   requires an array ``work`` of length %{MMV_INTS} as a work buffer.
 

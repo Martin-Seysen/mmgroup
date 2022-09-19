@@ -230,7 +230,7 @@ subspace of :math:`W`, and that the restriction of
 :math:`t \circ h` to :math:`W'` is a quadratic function up to
 a scalar multiple in  :math:`R_8`.
  
-Since :math:`r` is a fourth root ot unity, :math:`t(0)` and
+Since :math:`r` is a fourth root of unity, :math:`t(0)` and
 :math:`t(1)` are in :math:`R_8`. If :math:`h` is zero then 
 :math:`t \circ h` is a constant function on :math:`W`. 
 
@@ -679,7 +679,7 @@ x_\lambda \in \mathbb{F}_2^{n_\lambda-j}`. We abbreviate
 
 If :math:`g^{(1)}` and  :math:`g^{(2)}` are quadratic mappings
 then :math:`(g^{(1)} \odot g^{(2)})_n` is a quadratic 
-mapping by Lemma 1. Condsidering the corresponding quadratic 
+mapping by Lemma 1. Considering the corresponding quadratic 
 state vectors we see that
 :math:`(g^{(1)} \odot g^{(2)})_0` is just the tensor product
 :math:`g^{(1)} \otimes g^{(2)}` of  
@@ -917,7 +917,7 @@ If the symmetric :math:`(m+1) \times (m+1)` bit matrices
 :math:`Q^{(\lambda)}, \lambda = 1,2`, represent the quadratic
 functions 
 :math:`q^{(\lambda)} : \mathbb{F}_2^m \rightarrow\mathbb{T}`,
-then we define :math:`Q^{(1)} \odot  Q^{(2)}` as the symmtric
+then we define :math:`Q^{(1)} \odot  Q^{(2)}` as the symmetric
 :math:`(m+1) \times (m+1)` bit matrix representing the
 quadratic function :math:`q^{(1)} \cdot  q^{(2)}`.
 The entries  :math:`Q^{(1 \odot 2)}_{i,j}` of 
@@ -941,7 +941,7 @@ The corrections in row and column :math:`0` of
 entries of :math:`Q^{(1)}`and :math:`Q^{(2)}` are to be 
 interpreted modulo :math:`4`.
    
-So our algorithm allows us to multiply guadratic mappings 
+So our algorithm allows us to multiply quadratic mappings 
 effectively. 
 
 Remark
@@ -963,7 +963,7 @@ Thus only cases 1 and 2 can occur in the above computation,
 and adding  row :math:`i` of  :math:`A^{(1,j-1)}` to any
 other row in that matrix affects column :math:`j` of 
 :math:`A^{(1,j-1)}` only, and does not affect :math:`Q^{(1,j-1)}`.
-In our implmentation we make use of this simplification
+In our implementation we make use of this simplification
 wherever appropriate.
 
 
@@ -1001,7 +1001,7 @@ Then we simply have
 :math:`(g^{(1)} \odot g^{(2)})_j = g^{(1')} \cdot g^{(2')}`.
 
 
-Using the techniqes discussed in section 
+Using the techniques discussed in section 
 *Extending a quadratic mapping* and in the last section we can
 compute a representation of :math:`(g^{(1)} \odot g^{(2)})_j`
 from representations of :math:`g^{(1)}` and   :math:`g^{(2)}`.
@@ -1130,7 +1130,7 @@ entry :math:`i_0 \cdot 2^{n_1} + i_1` of that quadratic state
 vector :math:`V` for :math:`0 \leq i_0 <  2^{n_0}` and  
 :math:`0 \leq i_1 <  2^{n_1}`. Also, entry :math:`i` of the
 quadratic state vector :math:`V` corresponds to a row
-vector of  :math:`n` bits containg the binary representation
+vector of  :math:`n` bits containing the binary representation
 of :math:`i`.
 
 We concatenate matrices :math:`A` and :math:`Q` to a  
@@ -1175,7 +1175,7 @@ specify below.
 The support of the coordinate function is an affine 
 subspace :math:`a_0 + V`, where  
 :math:`a_0  \in \mathbb{F}_2^n` and :math:`V` is a linear
-subpace of :math:`\mathbb{F}_2^n` with a basis, say,
+subspace of :math:`\mathbb{F}_2^n` with a basis, say,
 :math:`(a_1,\ldots a_m)`.
 In order to specify the support of the coordinate function,
 we write  :math:`a_0` in *bra-ket* notation as above, and
@@ -1202,7 +1202,7 @@ matrix matrix :math:`Q`. Then we put:
         \prod_{i, j = 0}^m  q_{i,j}^{x_i \cdot x_j} \, .
 
 We use the same notation if the values :math:`a_i` are
-*kets* or matrices witten in the form ``|ket><bra|``.
+*kets* or matrices written in the form ``|ket><bra|``.
 For example: 
 
 .. code-block:: none
@@ -1252,7 +1252,7 @@ quadratic state vector. That representation satisfies the
 following conditions:
 
  1. We require that the representation :math:`(e, A, Q)` is 
-    echelonized (but not necessarly reduced), as described in 
+    echelonized (but not necessarily reduced), as described in 
     section
     *Reducing the representation of a quadratic mapping*.
     
@@ -1295,7 +1295,7 @@ as follows:
   * Starting from a reduced representation :math:`(e_0, A_0, Q_0)` 
     of a quadratic state vector :math:`S` we may obtain a 
     representation :math:`(e_1, A_1, Q_1)` of the matrix  :math:`S` 
-    satifying condition *(2.)* by applying a seqence of  
+    satisfying condition *(2.)* by applying a sequence of  
     transformations :math:`T_{i,j}, i < j`. Then 
     :math:`A_1` is also in echelon form. :math:`T_{i,j}` 
     is defined in section *Implementation of quadratic mappings*. 
@@ -1319,7 +1319,7 @@ quadratic state matrix :math:`S` has a variety of advantages.
 
    For :math:`(e, A, Q)` let :math:`K_0, K_1, Q'` be defined as 
    above. Let  :math:`K_2` be the subset :math:`K_1` containing 
-   all rows of :math:`A` such that the corrsponding row of 
+   all rows of :math:`A` such that the corresponding row of 
    bit matrix  :math:`Q'` is zero. Then the binary logarithm of
    the rank of :math:`S` is equal to the number of rows of
    matrix :math:`A` with are neither in  :math:`K_0` nor in 
@@ -1343,7 +1343,7 @@ quadratic state matrix :math:`S` has a variety of advantages.
    :math:`O(n \cdot 2^n)`.
 
    Essentially, we have used such a decomposition for 
-   multiplying the non-monimial part of generator :math:`\xi` 
+   multiplying the non-monomial part of generator :math:`\xi` 
    of the monster :math:`\mathbb{M}` with a vector of our 
    representation of :math:`\mathbb{M}`. Since this special
    case is discussed elsewhere, we do not go into details here.
@@ -1352,7 +1352,7 @@ quadratic state matrix :math:`S` has a variety of advantages.
    :math:`\mathcal{P}_{n}`, which is an important normal 
    subgroup of :math:`\mathcal{X}_{n}`. Using the reduced 
    matrix representation of an element :math:`S` of 
-   :math:`\mathcal{X}_{n}` we can conugate any element
+   :math:`\mathcal{X}_{n}` we can conjugate any element
    of :math:`\mathcal{P}_{n}` with :math:`S` in  
    :math:`O(n^2)` bit operations.
    
@@ -1364,7 +1364,7 @@ quadratic state matrix :math:`S` has a variety of advantages.
 
 Function ``qstate12_reduce_matrix`` in file ``qmatrix12.c``
 converts any representation of a quadratic state matrix to a
-reduced matrix representation. For the sake of effiency, 
+reduced matrix representation. For the sake of efficiency, 
 we relax condition 3 on matrix :math:`Q'` as follows.
 A permutation of the rows of  :math:`Q'` is in echelon form 
 when the columns of :math:`Q'` are reversed.
@@ -1400,7 +1400,7 @@ stored as a bit vector as follows:
 
 
 Factors are ordered by bit positions, with the most significant 
-bit position occuring first. In the C language we represent bit 
+bit position occurring first. In the C language we represent bit 
 vectors a integers as usual.
 
 All generators commute and have order :math:`2` except for the
@@ -1429,7 +1429,7 @@ follows:
   * Right multiply :math:`S` with :math:`p` by applying the 
     appropriate gates to :math:`S`. This affects row 
     :math:`0` of the bit matrix :math:`A` and  row and 
-    column :math:`0` of the symmetic bit  matrix :math:`Q` 
+    column :math:`0` of the symmetric bit  matrix :math:`Q` 
     only.
 
   * Restore the original values  :math:`A[0,j]` for all
@@ -1497,16 +1497,16 @@ Applying a gate to a quadratic mapping
 
 In the theory of quantum computing we may apply so-called
 *gates* to a quadratic state vector in 
-:math:`(\mathbb{C}^2)^{\otimes n}`. For our puposes a gate
+:math:`(\mathbb{C}^2)^{\otimes n}`. For our purposes a gate
 is a linear operation on  
 :math:`(\mathbb{C}^2)^{\otimes n} = (\mathbb{C}^2)^{\otimes k}
 \otimes  (\mathbb{C}^2)^{\otimes n-k}`
 which may be written as a tensor product of a unitary
 :math:`2^k \times 2^k` matrix `G` and a
-:math:`2^{n-k} \times 2^{n-k}` identitiy matrix for a small
+:math:`2^{n-k} \times 2^{n-k}` identity matrix for a small
 number :math:`1 \leq k \leq 2`. Here we may permute the factors
 :math:`\mathbb{C}^2` of :math:`(\mathbb{C}^2)^{\otimes n}` 
-arbitrarily before the decompostion into a tensor product as 
+arbitrarily before the decomposition into a tensor product as 
 above.
 
 We state without proofs how to apply a certain gates to a 
@@ -1618,7 +1618,7 @@ The Hadamard gate
     
     
  We implement the application of a Hadamard gate on qubit 
- :math:`j` to a quadatic mapping :math:`g` represented as 
+ :math:`j` to a quadratic mapping :math:`g` represented as 
  :math:`(e, A, Q)` as follows.
 
  We append a zero row at :math:`A` and also a zero row and a
@@ -1635,7 +1635,7 @@ The Hadamard gate
 
 Correctness of the implementation of the Hadamard gate
 
- The correctness of that imlpementation can be seen as follows.
+ The correctness of that implementation can be seen as follows.
  W.l.o.g we assume that :math:`j` is the last index :math:`0`.
  Let :math:`x = (x_{n-1},\ldots, x_0) \in \mathbb{F}_2^n`,
  :math:`y  = (y_0,\ldots, y_m) \in   \mathbb{F}_2^{m+1}`

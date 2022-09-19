@@ -12,7 +12,7 @@ type::
 Installation on Linux
 ---------------------
 
-There is experimantal support for installing the *mmgroup* package on a 
+There is experimental support for installing the *mmgroup* package on a 
 Linux system from a source distribution. Details are given in the 
 *guide for developers*.
 

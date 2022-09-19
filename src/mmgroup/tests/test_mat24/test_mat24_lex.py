@@ -1,4 +1,4 @@
-"""Test lecical orderin of the Mathieu group M_24
+"""Test lexical ordering of the Mathieu group M_24
 
 The C function mat24_m24num_to_perm() in file mat24_functions.c 
 converts a number 0 <= n < 244823040 to a permutation in the Mathieu 
@@ -11,14 +11,14 @@ to the elements of M_24). In this script we test if that ordering is
 indeed lexicographic. Therefore we generate a large number of random
 numbers  0 <= n < 244823040 and compute the permutations for these 
 numbers. The we sort the list of the generated numbers and we check
-that the list of permutations corrsponding to that sorted list of 
+that the list of permutations corresponding to that sorted list of 
 numbers is also sorted.
 
 Furthermore, function  mat24_m24num_to_perm() has two reference 
 implementations in python and function mat24_perm_to_m24num()
-has one refernece implementation in python. For a small fraction 
+has one reference implementation in python. For a small fraction 
 of the test data we also check that the the (slow) reference 
-implementions of the two C functions compute the same result as the
+implementations of the two C functions compute the same result as the
 (fast) C functions.
 
 """ 
@@ -55,7 +55,7 @@ def mat24lex_testcases(ntests = 1000):
     yield from range(10)
     # Yield the highest 10 permutation numbers
     yield from range(MAT24_ORDER - 10, MAT24_ORDER)
-    # Yield a random intveral of 100 adjacent numbers
+    # Yield a random interval of 100 adjacent numbers
     r = randint(0, MAT24_ORDER - 100)
     for i in range(r, r+100):
         yield i
@@ -110,7 +110,7 @@ def test_mat24lex(ntests = 5000, verbose = 0):
             # previous number n0).
             assert p1 > p0
         elif n1 == n0:
-            # Birthday paradoxon: n1 == n0 may (and will) happen
+            # Birthday paradox: n1 == n0 may (and will) happen
             assert p1 == p0
         else:
             raise ValueError("Something is going wrong here")

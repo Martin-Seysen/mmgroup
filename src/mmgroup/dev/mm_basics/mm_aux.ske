@@ -6,7 +6,7 @@
  Here the integer ``p`` is called the modulus. 
 
  Especially, we deal with vectors in such a representation as 
- desrcibed in  *The C interface of the mmgroup project*, 
+ described in  *The C interface of the mmgroup project*, 
  section *Description of the mmgroup.mm extension*.
 
  For such a vector there is an internal representation, an external
@@ -14,7 +14,7 @@
  documentation mentioned above.
 
  The functions in this file provide access to the internal representation 
- of such a vector. The also support the conversion between the differnt 
+ of such a vector. The also support the conversion between the different 
  representations of a vector.  
 
  Usually, the order of the parameters of functions in this file is:
@@ -354,7 +354,7 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
   required to store a vector with modulus ``p`` in internal
   representation.
 
-  The functiion returns 0 if ``p`` is illegal modulus.
+  The function returns 0 if ``p`` is illegal modulus.
 */
 // %%EXPORT px
 uint32_t mm_aux_mmv_size(uint32_t p)
@@ -542,7 +542,7 @@ void mm_aux_random_mmv(uint32_t p, uint_mmv_t *mv, uint64_t *seed)
   modulus ``p`` in internal representation to a standard form, so 
   that equal vectors are represented by equal arrays of integers.
 
-  Note that a zero entry in such a vactor can be represented either 
+  Note that a zero entry in such a vector can be represented either 
   by the bit string  ``0...0`` or by ``1...1``. This functions sets 
   all zero entries of the vector to ``0...0``.
 
@@ -719,7 +719,7 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
 }
 
 /**********************************************************************
-*** Low-level functions supperting external rep of vectors in R_p
+*** Low-level functions supporting external rep of vectors in R_p
 **********************************************************************/
 
 /** 
@@ -734,7 +734,7 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
  
   This function maps the 852 entries of the array ``b_src`` 
   (corresponding to tags ``A, B, C``) to the array ``b_dest`` of
-  size 3 * 24 * 24 (corrsponding to three
+  size 3 * 24 * 24 (corresponding to three
   symmetric 24 times 24 times matrices). 
   Function ``mm_aux_write_mmv24`` can be used to write the data
   from the array ``b_dest`` to the initial segment of the internal
@@ -776,7 +776,7 @@ void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
   symmetric 24 times 24 times matrices. 
  
   This function maps the 3 * 24 * 24 entries of the array ``b_src``
-  (corrsponding to three symmetric 24 times 24 times matrices)
+  (corresponding to three symmetric 24 times 24 times matrices)
   to the  852 entries of the array ``b_dest``  (corresponding to 
   tags ``A, B, C`` in external representation).
 
@@ -1242,14 +1242,14 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
   function fails.
 
   The array ``elem`` represents an element of the group ``G_x0`` of
-  stucture \f$2^{1+24}.\mbox{Co}_1\f$, given in **G_x0 representation**.
+  structure \f$2^{1+24}.\mbox{Co}_1\f$, given in **G_x0 representation**.
   Internally, the function transforms (i.e. conjugates) all elements
   of ``Q_x0`` in the array ``a`` with the element ``elem``, i.e. it
   calculates the element ``a'[i] = elem^-1 * a[i] * elem`` of ``Q_x0``.
   Then it extracts the least significant bit ``b[i]`` of the entry of
   the vector ``mv`` with the coordinate labelled by ``a'[i]``.
 
-  Note theat negating ``a'[i]`` corresponds to negating the coordinate
+  Note that negating ``a'[i]`` corresponds to negating the coordinate
   with label ``a'[i]`` in the vector ``mv``. Hence when
   negating ``a'[i]`` we also have to flip the bit ``b[i]``.
   The function fails in case ``a'[i] = 0``.
@@ -1430,7 +1430,7 @@ void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
   The function converts an index ``i`` for the sparse representation 
   of a vector to an index for the external representation of a vector
   and returns the converted index. The function returns -1 if the
-  input ``i`` denots an illegal index. The coordinate value encoded
+  input ``i`` denotes an illegal index. The coordinate value encoded
   in the input ``i`` is ignored.
  
   Indices for the sparse representation are defined as 
@@ -1527,7 +1527,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
   conversion  is successful if ``i`` denotes a legal index for one of 
   the tags tags ``B, C, T, X``. The function returns a short Leech 
   lattice vector modulo 2, encoded in **Leech lattice encoding**, as
-  descrbed in 
+  described in 
   section **Description of the mmgroup.generators extension**. 
 
   The function returns 0 in case of failure.

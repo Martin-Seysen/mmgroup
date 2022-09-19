@@ -253,7 +253,7 @@ class MMVectorCRT(AbstractMmRepVector):
     Such a vector should be constructed by calling an instance ``V``
     of class ``MMSpaceCRT`` which models a real representation of
     the monster group. Calculations in this space are exact in
-    fixed-point arithmetic with a precsion of about %.2f bits.    
+    fixed-point arithmetic with a precision of about %.2f bits.    
 
     ValueError is raised in case of overflow or underflow.
     
@@ -373,7 +373,7 @@ class MMVectorCRT(AbstractMmRepVector):
     def check(self):
         """Check if the vector is correct
 
-        Raise ValueError if the vector is errorneous.
+        Raise ValueError if the vector is erroneous.
         """
         return True
 
@@ -395,7 +395,7 @@ class MMVectorCRT(AbstractMmRepVector):
         """Return the vector modulo ``p``. 
 
         ``p``  must be in (7, 31, 127, 255). Actually, we divide 
-        the vector by the *scaling factor* befor reducing it 
+        the vector by the *scaling factor* before reducing it 
         modulo ``p``.
 
         This method is mainly for testing.
@@ -467,13 +467,13 @@ class MMSpaceCRT(AbstractMmRepSpace):
     """Models a ``196884``-dimensional representation of the monster group 
 
     This class models a real representation of the monster group 
-    with fixed-point arithmetic. Calcuations are done by combining
+    with fixed-point arithmetic. Calculations are done by combining
     vectors modulo ``p = 7, 31, 127, 255`` with Chinese remaindering.
-    This way we achive about %.2f bit precision.
+    This way we achieve about %.2f bit precision.
 
     The construction of a vector in this space and the computation
     with such vectors works in the same way as in class |MMSpace|.
-    But there are som limitaions:
+    But there are som limitations:
 
       * Vectors may be constructed as in class |MMSpace|, but
         the arguments of the constructor may be tuples only. 
@@ -485,7 +485,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
         are illegal.
 
       * A vector may be reduced modulo one of the primes
-        ``p = 7, 31, 127, 255`` using the modulo operatior ``%%``.
+        ``p = 7, 31, 127, 255`` using the modulo operator ``%%``.
         The result is a vector in the space ``MMSpace(p)``.
 
       * Changing entries of a vector via item assignment is
@@ -496,7 +496,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
         integers or numpy  arrays with ``dtype = np.int32``.
         On output, each number is multiplied with ``2**k``
         in order to obtain an integer. Here ``k`` is the
-        argument given in the cnstructor by parameter ``shift``.
+        argument given in the constructor by parameter ``shift``.
         
         You may multiply such an integer value with the attribute
         ``factor`` of the space for obtaining an exact floating

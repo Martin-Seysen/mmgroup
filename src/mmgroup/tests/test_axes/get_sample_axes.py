@@ -108,9 +108,9 @@ v_axis_opp = V15(V_AXIS_OPP)
 class GVector:
     r"""Models a 2A axis in the monster group
 
-    The constructor takes three argements ``opp``. If this is
+    The constructor takes three arguments ``opp``. If this is
     ``False`` (default) the instance is intialized with the
-    standard "A axis ``v^+``. Ohterwise it is initialized with
+    standard "A axis ``v^+``. Otherwise it is initialized with
     the opposite axis ``v^-``. See |Seysen22| for the description
     of the 2A axes ``v^+``and ``v^-``.
 
@@ -120,16 +120,16 @@ class GVector:
     attribute ``v0`` is stored as a vector of integers modulo  15. 
     These two attributes are never changed.
 
-    After construction, that instance ``w`` contains another atribute 
+    After construction, that instance ``w`` contains another attribute 
     ``g``, which is initialized to to the neutral element of the 
     monster group, and also an attribute ``v``, which is initialized
-    to ``v0``.  Then instance ``w`` can be right mutiplied with an
+    to ``v0``.  Then instance ``w`` can be right multiplied with an
     arbitrary element ``g1`` of the monster group. If such a 
     multiplication is performed the both attributes, ``g`` and ``v0``
     are right multiplied with ``g1``. Note that all elements of the
-    monster are implemented as intances of class ``mmgroup.MM0``.
+    monster are implemented as instances of class ``mmgroup.MM0``.
 
-    A conseqence of that synchronous multiplication is that
+    A consequence of that synchronous multiplication is that
     ``g**(-1) * g0 * g`` is a 2A involution which has axis ``v``
     for any instance of this class with attributes ``g``, ``g0``,
     and ``v``.
@@ -164,7 +164,7 @@ class GVector:
         return gv_new
 
     def g_axis(self):
-        r"""Return 2A involution coresponding to current axis
+        r"""Return 2A involution corresponding to current axis
 
         The current 2A axis of an instance ``w`` of this class is
         given by ``w.v``. The function returns the 2A involution
@@ -200,15 +200,15 @@ class GVector:
         Since :math:`G_{x0}` operates monomially on a 98280-dimensional
         subspace of the real vector space ``V`` containing the 2A
         axes, it is natural to count the absolute values of the 98280
-        coordintes of ``V`` corrsponding to that subspace.
+        coordinates of ``V`` corresponding to that subspace.
 
         Since coordinates in ``V`` are stored modulo 15, these
-        absolute values correspond to the integere 0,...,7. We return
+        absolute values correspond to the integers 0,...,7. We return
         an 8-tupel ``t``, where ``t[i]`` contains the number of
         coordinates in that subspace with absolute value ``i``. 
 
         It turns out that this kind of watermarking allows us to
-        distinguish bewtween all 12 orbits of 2A axes. The orbits
+        distinguish between all 12 orbits of 2A axes. The orbits
         of 2A axes under :math:`G_{x0}` are described in |Nor98|.      
         """
         return self.v.count_short()
@@ -240,7 +240,7 @@ class GVector:
         #print(self.axis_type())
         bonus = 0
         if axis_type == "10A" and max(diag_bins) >= 22:
-            # Special treatement for case 10A: Prefer solution with
+            # Special treatment for case 10A: Prefer solution with
             # large No of off-diagonal elements of same absolute value
             d = defaultdict(list)
             for i, x in enumerate(DIAG):
@@ -255,7 +255,7 @@ class GVector:
                 return 1000 + max_occur
         elif axis_type == "10B":
             bonus = diag_bins == [4,20]
-            # Special treatement for case 10B: Prefer solution with
+            # Special treatment for case 10B: Prefer solution with
             # block [4, 24]
             #print("YEEEAHHH", diag_bins)
         elif axis_type == "12C":
@@ -298,7 +298,7 @@ def next_generation(
 
     Let ``K`` be a subgroup of ``G`` containing ``H``. Let
     ``obj_list`` be a set of certain elements of ``V``. We multiply
-    each object ``o`` in ``obj_list`` with a number of differnet
+    each object ``o`` in ``obj_list`` with a number of different
     random elements of ``K``. We watermark all products obtained
     that way. For each yet unknown watermark we keep a certain 
     number of objects with that watermark, and  we return the list
@@ -315,7 +315,7 @@ def next_generation(
     the set of 2A axes in the 196884-dimensional representation
     of the monster, ``H`` is the subgroup :math:`G_{x0}` of the
     monster, and ``K = H T``, where ``T`` is the group generated
-    by the triality element of the moster, see :cite:`Con85`. 
+    by the triality element of the monster, see :cite:`Con85`. 
     Then the 12 orbits of ``G`` in ``V`` are known, see
     :cite:`Nor98`, and we can easily find them with this function.
     

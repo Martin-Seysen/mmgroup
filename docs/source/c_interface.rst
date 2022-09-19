@@ -352,7 +352,7 @@ generated from the same source file with extension ``.ske``.
 Naming conventions
 ------------------
 
-For each supported characteristic ``p`` there is a cython extersion
+For each supported characteristic ``p`` there is a cython extension
 ``mm<p>`` in module ``mmgroup``. So e.g. for ``p = 15`` there is the
 extension ``mm15``.
 
@@ -362,11 +362,11 @@ subdirectory ``mmgroup.dec.mm_op``. So e.g. from the source file
 ``mm_op_pi.ske`` we generate the file ``mm3_op_pi.c`` for ``p=3``,
 ``mm7_op_pi.c`` for ``p=7``, etc. The code generator provides
 different instances of class ``mmgroup.dev.mm_op.MM_Op`` for different 
-characteritics ``p``. Any of these classes provides certain macro
+characteristics ``p``. Any of these classes provides certain macro
 variables and functions for the corresponding characteristic ``p``.
 Here the most important variable is ``P``, which is set to the
 characteristic ``p``. So e.g. for ``p = 31`` the code generator
-changes every occurence of the string ``%{P}`` in a ``.ske`` file
+changes every occurrence of the string ``%{P}`` in a ``.ske`` file
 to the string ``31`` in the generated C file. Of course, there are 
 also macros for more sophisticated replacements.
 
@@ -374,14 +374,14 @@ Every exported C function in one of the modules ``mm<p>`` has a name
 starting with ``mm_op%{P}_`` in the ``.ske`` file containing its
 implementation. The code generation process also generates a 
 ``.pyx`` file with name ``mm_op<p>.pyx`` for each supported 
-charactereistic ``p``. In the ``.pyx`` file a C function with
+characteristic ``p``. In the ``.pyx`` file a C function with
 prefix ``mm_op%{P}_`` is wrapped into a Cython function with
 prefix ``op_``.
 
 So e.g. in case ``p = 15``, for the C function with name 
 ``mm_op%{P}_pi`` in file ``mm_op_pi.ske`` we generate a C function
 with name ``mm_op15_pi`` in file ``mm15_op_pi.c``. We also
-generate the file ``mm_op15.pyx`` containg a function with name
+generate the file ``mm_op15.pyx`` containing a function with name
 ``op_pi`` that wraps the C function ``mm15_op_pi.c``. It is an
 (arguable) advantage that cython functions doing the same job
 for different characteristics ``p`` have the same name.

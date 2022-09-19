@@ -20,7 +20,7 @@
  certain **2A axes**, and \f$v_1 \in \rho_{15}\f$ is certain vector
  used  for recognizing an element of the subgroup \f$G_{x0}\f$ of
  the monster, see ibid. for details. Representation \f$\rho_{15}\f$
- is the 198884-dimensional faithful rperesentation of the monster
+ is the 198884-dimensional faithful representation of the monster
  group modulo 15. Vector  \f$v_1\f$ is also called
  an **order vector**; and we can use the functions in
  module ``mm_order.c`` for dealing with a fixed precomputed order
@@ -36,17 +36,17 @@
  the images \f$v^+ g\f$, \f$v^- g\f$, and \f$v_1 g\f$ in that order.
  This file also exports subfunctions for performing these tasks. We
  use subfunctions ``mm_reduce_vector_vp``, ``mm_reduce_vector_vm``,
- and ``mm_reduce_vector_v1`` for analzing  \f$v^+ g\f$, \f$v^- g\f$,
+ and ``mm_reduce_vector_v1`` for analyzing  \f$v^+ g\f$, \f$v^- g\f$,
  and \f$v_1 g\f$, respectively. These functions accumulate their
  results in a buffer (of type ``uint32_t[]`` and size at least 128)
- that will evtually contain the reduced word equal to \f$g\f$.
+ that will eventually contain the reduced word equal to \f$g\f$.
 
  The following code example shows an implementation of the main
  function ``mm_reduce_M`` based on these subfunctions, ignoring
  the error handling.
  
  \code{.c}
-     // The follwing buffers contain the element ``g`` to be reduced
+     // The following buffers contain the element ``g`` to be reduced
      uint32_t a[256];                 // buffer containing element ``g``
      uint32_t n;                      // length of data in buffer ``a``
 
@@ -235,7 +235,7 @@ uint32_t mm_reduce_2A_axis_type(uint_mmv_t *v)
 /**
   @brief Return certain array of short vectors in Leech lattice mod 2
 
-  Let ``v`` be a vector in the rep of the moster mod 15.
+  Let ``v`` be a vector in the rep of the monster mod 15.
 
   In case ``value1 == 0`` the function computes the list of all
   vectors ``v2`` in the Leech lattice mod 2 such that the absolute
@@ -267,7 +267,7 @@ static inline void get_short(
 /**
   Return certain subspace of short vectors in Leech lattice mod 2
 
-  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  Let ``v`` be a vector in the rep of the monster mod 15, and let
   ``L`` be the set of vectors in the Leech lattice mod 2
   returned by function ``short(v, value)``. The function computes
   the linear subspace of the Leech lattice mod 2 spanned by ``L``
@@ -295,7 +295,7 @@ static inline void get_span(
 /**
   Return certain subspace of short vectors in Leech lattice mod 2
 
-  Let ``v`` be a vector in the rep of the moster mod 15, and let
+  Let ``v`` be a vector in the rep of the monster mod 15, and let
   ``L`` be the set of vectors in the Leech lattice mod 2
   returned by function ``short(v, value)``. let ``V`` be the
   linear space spanend by ``L``. 
@@ -1342,7 +1342,7 @@ done:
 
 
 /////////////////////////////////////////////////////////////////////////
-// Reducing an element of the moster group
+// Reducing an element of the monster group
 /////////////////////////////////////////////////////////////////////////
 
 
