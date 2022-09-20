@@ -6,6 +6,12 @@ include docs/source/*.rst
 include docs/source/*.inc
 include docs/source/*.py
 include docs/source/*.bib
+include src/mmgroup/dev/clifford12/*.h
+include src/mmgroup/dev/generators/*.h
+include src/mmgroup/dev/mat24/*.h
+include src/mmgroup/dev/mm_basics/*.h
+include src/mmgroup/dev/mm_op/*.h
+include src/mmgroup/dev/mm_reduce/*.h
 
 
 
