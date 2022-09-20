@@ -125,7 +125,7 @@ def mat24_make_c_code():
     print("Creating C source from file mat24_functions.ske\n")
     MAT24_C_FILE = "mat24_functions"
     SKE_DIR = os.path.join(DEV_DIR, "mat24")
-    # The follwing two tables can't easily be computed earlier
+    # The following two tables can't easily be computed earlier
     Mat24.tables["Mat24_doc_basis"] = Mat24.str_basis()
     generator = TableGenerator(Mat24.tables, Mat24.directives)
     f = os.path.join(SKE_DIR, MAT24_C_FILE)

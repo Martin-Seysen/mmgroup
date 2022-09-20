@@ -5,7 +5,7 @@ with the ``Cython`` package. We have added the following functionality
 to the standard build process:
 
   * The user may call arbitrary functions or processes, e.g.
-    for the atomatic generation of C code.
+    for the automatic generation of C code.
 
   * The user may generate a shared library that may be used by
     several extensions.
@@ -75,7 +75,7 @@ Creating a new version
 ----------------------
 
 You should have slept well the night before creating a new version,
-since this is a tedious process with a bewilderng variety of possible
+since this is a tedious process with a bewildering variety of possible
 errors. Here the ultimate goal is to upload a new python version to 
 the **pypi** server. 
 
@@ -116,14 +116,14 @@ github repository:
 
 https://github.com/Martin-Seysen/mmgroup
 
-After uploading, you should create a new release in the gitbub repository.
+After uploading, you should create a new release in the github repository.
 Therefore, click **Create a new release** in  main page of the github
-repository. Here you sould write the tag **v0.0.8** into the field
+repository. Here you should write the tag **v0.0.8** into the field
 **Choose a tag**. The **Target** of the release should be **master**,
-referring to the master branch in git. Yo sould enter the title 
+referring to the master branch in git. You should enter the title 
 **mmgroup v0.0.8** into the field **Release title**.
 We recommend to enter (at least)
-the version desciption (which is 'Performance improved' in our case)
+the version description (which is 'Performance improved' in our case)
 into the field **Describe this release**. Finally, you should click the 
 button **Publish release** in the github window.
 
@@ -133,9 +133,9 @@ Generating the wheels
 
 Here you must generate a wheel for each python version, and also for
 each operating system that you want to support. Here we assume that
-Anaconda is used for creating whieels for Windows 64 for various 
+Anaconda is used for creating wheels for Windows 64 for various 
 python versions. An Anaconda environment e.g for python 3.9 is
-created by typing the folloing command
+created by typing the following command
 
  .. code-block:: text
 
@@ -171,7 +171,7 @@ The second line creates a source distribution; this must be done
 only once. The wheels and source distributions are stored in 
 subdirectory **dist**. The wheel for mmgroup version 0.0.8 for python
 3.9 has a name similar to ``mmgroup-0.0.9-cp37-cp37m-win_amd64.whl``;
-and the source distrbution has a name like  ``mmgroup-0.0.8.zip``.
+and the source distribution has a name like  ``mmgroup-0.0.8.zip``.
 
 
 Uploading the version to **pypi** 

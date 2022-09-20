@@ -47,7 +47,7 @@ tuple ``(tag, i0, i1)`` the user may call the constructor
 ``MMVector(p, tag, i0, i1)``.
 
 For a fixed characteristic ``p`` the function ``MMV(p)`` returns 
-an object correponding to the vector space  :math:`\rho_p`.
+an object corresponding to the vector space  :math:`\rho_p`.
 Thus the sequence
 
  .. code-block:: python
@@ -213,7 +213,7 @@ Special tags for creating vectors in the representation :math:`\rho_p`
 .......................................................................
 
 Apart from the standard tags ``A``, ``B``, ``C``, ``T``, ``X``, ``Y``,
-and ``Z``, the constructor of class |MMVector| acceps a variety of 
+and ``Z``, the constructor of class |MMVector| accepts a variety of 
 special tags. Details are given in the following list:
 
 .. table:: Special tags for constructing a vector
@@ -282,7 +282,7 @@ Remarks
 
 The vectors labelled by ``('I', i0, i1)`` and ``('J', i0, i1)`` are 
 axes of the elements :math:`x_\delta` and :math:`x_{-1} x_\delta` of 
-the monster, respecively, see  :cite:`Con85`. The centralizers of 
+the monster, respectively, see  :cite:`Con85`. The centralizers of 
 these elements and also of their axes in the monster have structure 
 :math:`2 \cdot B`, where :math:`B` is the Baby Monster, see 
 :cite:`Asc86`, :cite:`Con85`, :cite:`Iva09` for background. E.g. 
@@ -413,7 +413,7 @@ Tags are mapped to integers as follows:
 Other data types accepted as tags for vectors in :math:`\rho_p` 
 ................................................................
 
-Some data types are accepted as tags and interprted as described in the
+Some data types are accepted as tags and interpreted as described in the
 following table. In this case parameters `i0`, `i1` after a tag must not
 be set.
     
@@ -610,7 +610,7 @@ class MMVector(AbstractMmRepVector):
     The construction of vectors in the representations :math:`\rho_p`
     of the monster group (using e.g. the constructor of this class)
     is documented at the  beginning of section :ref:`mmrep-label`.
-    There a basis vector of that representation is dscribed as a
+    There a basis vector of that representation is described as a
     tuple ``(tag, i0, i1)``, where ``tag`` is a single capital letter
     and ``i0``, ``i1`` are integers. So we may invoke the constructor
     of this class as follows:
@@ -640,7 +640,7 @@ class MMVector(AbstractMmRepVector):
     as an instance of this class) by right multiplication.
 
     An entry of a vector ``v`` (given as an instance of this class)
-    may be adressed as ``v[tag, i0, i1]``, where ``tag`` is a single 
+    may be addressed as ``v[tag, i0, i1]``, where ``tag`` is a single 
     letter in the string ``ABCTXYZD`` and ``i0`` and ``i1`` are 
     integers, such that the tuple ``(tag, i0, i1)`` describes a 
     basis vector. Getting and setting entries of a vector is as in
@@ -651,7 +651,7 @@ class MMVector(AbstractMmRepVector):
     in the remarks after table :ref:`table-vector-tags` .
 
     The entries of vector ``v``  also have a linear order as 
-    described at the beginnning of section  :ref:`mmrep-label`.
+    described at the beginning of section  :ref:`mmrep-label`.
     Here ``v['E', i]`` is the ``i``-th entry in that order.  Index
     ``i`` may also be a slice of integers in the same way as
     in a one-dimensional ``numpy`` array.
@@ -672,7 +672,7 @@ class MMVector(AbstractMmRepVector):
     def check(self):
         """Check if the vector is correct
 
-        Raise ValueError if the vector is errorneous.
+        Raise ValueError if the vector is erroneous.
         """
         self.space.check(self)
 
@@ -680,7 +680,7 @@ class MMVector(AbstractMmRepVector):
     def mul_exp(self, g, e = 1, break_g = False):
         """Multiply the vector with ``g ** e`` inplace
 
-        Here ``g`` is an element of the moster group represented
+        Here ``g`` is an element of the monster group represented
         as an instance of class |MM| and ``e`` is an integer.
         The vector is updated and the updated vector is returned.
         
@@ -690,7 +690,7 @@ class MMVector(AbstractMmRepVector):
 
         By default, we try to simplify the expression ``g ** e`` 
         before multiplying it with the vector. If ``break_g`` is 
-        set,  we always do ``abs(e)`` muliplications with ``g`` or
+        set,  we always do ``abs(e)`` multiplications with ``g`` or
         with its inverse.
         """
         return self.space.vector_mul_exp(self, g, e, break_g)
@@ -849,7 +849,7 @@ class MMSpace(AbstractMmRepSpace):
     r"""Models a ``196884``-dimensional representation of the monster group 
 
     This class contains a collection of functions for manipulating
-    vectors in the rpresentation :math:`\rho_p` of the monster group.
+    vectors in the representation :math:`\rho_p` of the monster group.
     Such vectors are instances of class |MMVector|.
     Most of these function are used implicitly in the operators
     applied to these vectors.
@@ -902,7 +902,7 @@ class MMSpace(AbstractMmRepSpace):
         """Return a uniform distributed random vector.
 
         ``seed`` is a seed for the random generator. The current version 
-        supporst the default seed only. Here some random data taken from 
+        supports the default seed only. Here some random data taken from 
         the operating system and from the clock are entered into the seed.
         """
         seed = rand_get_seed(seed)
@@ -1074,7 +1074,7 @@ class MMSpace(AbstractMmRepSpace):
         separately. Otherwise, the expression  g**e  may be
         optimized. This option is mainly for benchmarking.
 
-        After applying this function to vecter v1, the vector
+        After applying this function to vector v1, the vector
         v1 has an attribute v1.last_timing containing the run
         time of the C part of this operation in seconds.
         """
@@ -1355,7 +1355,7 @@ MMVector.space = StdMMSpace
 
 
 def MMV(p):
-   r"""Return an object correponding to the space :math:`\rho_p`
+   r"""Return an object corresponding to the space :math:`\rho_p`
 
    Here characteristic ``p`` is as in the constructor of
    class |MM|. Thus the sequence

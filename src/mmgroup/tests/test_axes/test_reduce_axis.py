@@ -59,7 +59,7 @@ S_AXIS = "  %d coordinates of the axis in 98280_x have absolute value %d"
 def short(v, value, verbose = 0):
     """Return certain array of short vectors in Leech lattice mod 2
 
-    Let ``v`` be a vector in the rep of the moster mod 15.
+    Let ``v`` be a vector in the rep of the monster mod 15.
 
     The function returns the list of all vectors ``v2`` in the Leech
     lattice mod 2 such that the absolute value of the entry of ``v``
@@ -76,7 +76,7 @@ def short(v, value, verbose = 0):
 def span(v, value, verbose = 0):
     """Return certain subspace of short vectors in Leech lattice mod 2
 
-    Let ``v`` be a vector in the rep of the moster mod 15, and let
+    Let ``v`` be a vector in the rep of the monster mod 15, and let
     ``L`` be the set of vectors in the Leech lattice mod 2
     returned by function ``short(v, value)``. The function returns
     linear subspace of the Leech lattice mod 2 spanned by ``L``
@@ -98,7 +98,7 @@ def span(v, value, verbose = 0):
 def radical(v, value, verbose = 0):
     """Return certain subspace of short vectors in Leech lattice mod 2
 
-    Let ``v`` be a vector in the rep of the moster mod 15, and let
+    Let ``v`` be a vector in the rep of the monster mod 15, and let
     ``L`` be the set of vectors in the Leech lattice mod 2
     returned by function ``short(v, value)``. let ``V`` be the
     linear space spanend by ``L``. 

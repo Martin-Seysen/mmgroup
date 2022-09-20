@@ -207,7 +207,7 @@ class HexacodeToGolay(object):
 
     @classmethod
     def check_cocode_basis(cls, cocode_basis):
-        """Checks correcteness of a basis of a transversal of the Golay cocode"""
+        """Checks correctness of a basis of a transversal of the Golay cocode"""
         assert len(cocode_basis) == 12, cocode_basis
         bit_mat_inverse( cls.any_golay_basis() + cocode_basis )
             # this inverse must exist!!
@@ -285,7 +285,7 @@ def encoding_tables(basis):
 
 
 def make_syndrome_table(recip_basis):
-     """Generates a table for fast calulation of syndrome of a bit vector
+     """Generates a table for fast calculation of syndrome of a bit vector
 
      Table input is a 11-bit number representing an odd cocode word
      ``c``. Since basis vector 11 is the only vector with odd parity, 
@@ -302,7 +302,7 @@ def make_syndrome_table(recip_basis):
      We set bit 15 of entry ``e`` in the table to one iff the (even)
      cocode word with number ``e`` has bit weight 2.
 
-     Input recip_basis is the reciprocal basis of the choosen basis
+     Input recip_basis is the reciprocal basis of the chosen basis
      for the Golay code. (Lower 12 basis vectors must span a 
      transversal of the Golay code. All but the least of these 
      lower basis vector must have even parity.)
@@ -338,7 +338,7 @@ def make_octad_tables(basis):
 
        (oct_enc_table, oct_dec_table, oct_enc_offset)
 
-    Given octad o, the correspondig Golay code word in gcode
+    Given octad o, the corresponding Golay code word in gcode
     representation is oct_dec_table(o), for 0 <= 0 < 759.
 
     Given an octad (or a complement of an octad) v in 'gcode' 
@@ -348,7 +348,7 @@ def make_octad_tables(basis):
 
     where  v1 = v & 0x7ff.
 
-    The vector v is a (possibly complemeted) octad if the following 
+    The vector v is a (possibly complemented) octad if the following 
     condition holds:
 
        oct_enc_table[v1] < 255  .
@@ -452,7 +452,7 @@ class Mat24Tables(object):
 
         Let w be the bit weight of v1 & 0xffffff, i.e. number n of bits 
         of v1 at positions < 24 equal  to one. Then the ordered bit
-        positions where the corrsponding bit of v1 is 1 are stored in
+        positions where the corresponding bit of v1 is 1 are stored in
         a list  l1.
        
         Then v1 & 0xffffff has  24 - w  zero bits. The ordered list of 
@@ -588,7 +588,7 @@ class Mat24Tables(object):
         """Return equivalent Golay cocode word to 'v1' of length at most four.
 
         If that cocode word has length four, 0 <= 'u_tetrad' < 24 is a bit 
-        position where the (not uniquely defined) eqivalent cocode word will 
+        position where the (not uniquely defined) equivalent cocode word will 
         have a 'one' bit. Otherwise, that cocode word is uniquely defined, and 
         'tetrad' is ignored. in any case 0 <= 'u_tetrad' <= 24 is required. 
         Here 24 means don't care.  Thus u_tetrad = Mat24.lsbit24(x) is legal 
@@ -736,7 +736,7 @@ class Mat24Tables(object):
         i = 1,...,6. Combining suboctads by disjoint union corresponds to 
         combining their numbers by xor. The empty subocatad has number 0.
         This yields a 1:1 correspondence between the integers 0,...,63 and
-        the suboctads of a fixed octad v1, when idedentifying a suboctad with
+        the suboctads of a fixed octad v1, when identifying a suboctad with
         its complement.
 
         The function returns the suboctad of v1 with number u_sub in 'cocode'

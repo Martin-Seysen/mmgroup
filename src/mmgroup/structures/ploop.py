@@ -29,7 +29,7 @@ by :cite:`Seysen20`, see :ref:`basis-golay-label` for details.
 We represent elements of :math:`\mathcal{P}` as instances of 
 class |PLoop|. For Golay code word  ``g`` given as an instance of 
 class |GCode|, the value ``PLoop(g)``  is the positive element 
-``(g,0)`` of the Parker loop, and  ``-PLoop(g)`` is the corresponsing 
+``(g,0)`` of the Parker loop, and  ``-PLoop(g)`` is the corresponding 
 negative element ``(g,1)``. The constant  ``PLoopOne`` is equal
 to the neutral element ``(0,0)`` and the constant ``PLoopOmega``
 is equal to the central element ``~PLoopOne``. Here the ``~``
@@ -48,7 +48,7 @@ multiplication formula given above can be coded as follows:
   ``PLoop(g1) * PLoop(g2) == (-1)**g1.theta(g2) * PLoop(g1 + g2)`` .
 
 The elements of the Parker loop are numbered from ``0`` to 
-``0x1fff``. Here the numbers of the  posivtive Parker loop
+``0x1fff``. Here the numbers of the  positive Parker loop
 elements correspond to the numbers of the Golay code words.
 The numbering system for the Parker loop is also used for 
 indexing certain elements of the monster group :math:`\mathbb{M}`.
@@ -253,7 +253,7 @@ class PLoop(GCode):
     multiplication with the neutral element ``PLoopOne`` or 
     with its negative ``-PLoopOne``, respectively.
     
-    If any of the oprations  ``+``, ``-`` or ``&`` is applied to a Parker
+    If any of the operations  ``+``, ``-`` or ``&`` is applied to a Parker
     loop element, that element is converted to a Golay code word of 
     type |GCode|, ignoring the sign. This conversion also takes place if
     a Parker loop element is multiplied or divided by an integer

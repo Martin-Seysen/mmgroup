@@ -52,9 +52,9 @@ def _repeat_f(repetitions, f, args):
     
     This function executes ``f(*args)`` repeatedly (at most
     ``repetitions`` times) until the return value is a result 
-    differnt from None.  It returns the pair ``(result, n)``, 
+    different from None.  It returns the pair ``(result, n)``, 
     where ``result`` is the result of the last execution of 
-    ``f``, and ``n`` is the number of ececutions of `f``.
+    ``f``, and ``n`` is the number of executions of `f``.
     
     """
     for i in range(repetitions):
@@ -158,10 +158,10 @@ def rand_mm_element(size = 1):
 
     Here ``size`` is a measure for the requested word length. 
     of ``g``. The returned random element is not uniform
-    distrbuted. It is just sufficiently random, so that
+    distributed. It is just sufficiently random, so that
     elements of a high order occur sufficiently often
 
-    ``g`` is returend as an instance of class ``MM0``.
+    ``g`` is returned as an instance of class ``MM0``.
     """    
     data = []
     for i in range(size):
@@ -181,7 +181,7 @@ def rand_elem_of_order(factors, elem_size):
     order.
 
     The order is checked by applying a random vector ``v`` in the 
-    representation :math:`\rho_3` and by multplying ``v`` with 
+    representation :math:`\rho_3` and by multiplying ``v`` with 
     powers of ``g``. 
     """    
     g = rand_mm_element(elem_size)
@@ -201,7 +201,7 @@ def find_element_of_order(order, minsize = 1, verbose = 0):
 
     We ``g`` that check acts as an element of given ``order`` on a
     vector ``v`` in characteristic ``p``.  So ``g`` has that order
-    with a very high probalibility, if ``v`` is selected at random.
+    with a very high probability, if ``v`` is selected at random.
     But, theoretically, the order of ``g`` may be a multiple of 
     ``order``. ``v`` should be specified as a list of tuples or set 
     to set to zero for generating a random vector.
@@ -245,7 +245,7 @@ def stabilizer_vector(v, g, n):
     """Compute a vector stabilized by an element of the monster
 
     Le ``g`` be an element of the monster group of order ``n`` and 
-    ``v`` a vector in a represention of the monster. We return the
+    ``v`` a vector in a representation of the monster. We return the
     vector ``sum(v * g**i for i  in range(n))`` which is stabilized
     by ``g``. We always return ``None`` if that sum is 0 or a 
     multiple of the 1 element in the representation space. The 
@@ -270,7 +270,7 @@ def stabilizer_vector(v, g, n):
 
     
 def gA_from_type4(v_type4):
-    r"""Comupute a group element reducing a type-4 Leech lattice vector 
+    r"""Compute a group element reducing a type-4 Leech lattice vector 
     
     Let ``v_type_4`` be a vector of type 4 in the Leech lattice mod 2
     in **Leech lattice encoding**.  The function returns an element
@@ -287,21 +287,21 @@ def make_v71_sample(g71):
     r"""Compute a vector stabilized by a group element of order 71
     
     Let ``g71`` be an element of the monster group of order 71. The
-    function generates  a random vector ``v71`` in the representatoon
+    function generates  a random vector ``v71`` in the representation
     of the monster modulo 3 and computes the vector
     ``w = sum(v71 * g71**i for i in range(71))``. ``w`` is
     stabilized by ``g71``. 
     
     The function returns triple containing ``v71`` if ``w`` is 
     non-trivial and ``w`` satisfies an additional property
-    described below. Ohterwise the function returns ``None``. The 
+    described below. Otherwise the function returns ``None``. The 
     function succeeds with probability about 1/700; so it must be 
     repeated several times.
     
     The part of the vector ``w`` labelled with the tag ``A`` 
     corresponds to a symmetric bilinear form over the Leech lattice
-    modulo 3. The function succeeds if that bilinear form correponding
-    to ``w`` has a one-dimesional eigenspace with the eigenvalue 
+    modulo 3. The function succeeds if that bilinear form corresponding
+    to ``w`` has a one-dimensional eigenspace with the eigenvalue 
     ``diag`` containing a type-4 eigenvector in the Leech lattice. 
     
     In case of success we return the triple ``(v71, gA, diag)``. Here 
@@ -343,8 +343,8 @@ def find_vector_71_mod3(verbose = 0):
     
     The part of a vector ``w`` labelled with the tag ``A`` always
     corresponds to a symmetric bilinear form over the Leech lattice
-    modulo 3. The bilinear form correponding to the computed vector
-    ``w`` has a one-dimesional eigenspace with the eigenvalue 
+    modulo 3. The bilinear form corresponding to the computed vector
+    ``w`` has a one-dimensional eigenspace with the eigenvalue 
     ``diag`` containing a type-4 eigenvector in the Leech lattice.
 
     Such a vector ``w`` satisfies the requirements for the
@@ -385,7 +385,7 @@ def make_v94_sample(s_g94):
     """Auxiliary function for function ``find_vector_94_mod5``
  
     Given ab element ``g94`` of order 94 in the monster, the function
-    computes a vector ``v94``  in the representatoon of the  monster 
+    computes a vector ``v94``  in the representation of the  monster 
     modulo 15, such that the vector
     ``w = 3 * sum((-1)**i * v94 * g94**i for i in range(94))``
     is not trivial. Then `w`` is stabilized by ``g94**2``, but not 
@@ -406,7 +406,7 @@ def do_find_vector_v94_mod5(s_g94, verbose = 0):
     """Compute a vector stabilized by a group element of order 47
  
     The function computes and element ``g94`` of order 94 in the
-    monster and a vector ``v94``  in the representatoon of the
+    monster and a vector ``v94``  in the representation of the
     monster modulo 15, such that the vector
     ``w = 3 * sum((-1)**i * v94 * g94**i for i in range(94))``
     is not trivial. Then `w`` is stabilized by ``g94**2``, but not 
@@ -435,13 +435,13 @@ def find_vector_v94_mod5(verbose = 0):
     r"""Compute a vector stabilized by a group element of order 94
 
     The function computes an element ``g94`` of order 94 of the
-    monster,  and a (sparse) vector ``v94``  in the representatoon 
+    monster,  and a (sparse) vector ``v94``  in the representation 
     of the monster modulo 15, such that the vector
     ``w = 3 * sum((-1)**i * v94 * g94**i for i in range(94))``
     is not trivial. Then `w`` is stabilized by ``g94**2``, but not 
     by ``g94``.
     
-    Such a vector ``w`` satifies the requirements for the
+    Such a vector ``w`` satisfies the requirements for the
     vector :math:`v_{94} \in \rho_5` in :cite:`Seysen22`. 
 
     The function returns the the pair ``(g94, v94)`` in case of 

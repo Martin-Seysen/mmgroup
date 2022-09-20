@@ -22,8 +22,8 @@ That construction has been simplified by Conway :cite:`Con85`.
 The *mmgroup* package is a python implementation of Conway's 
 construction :cite:`Con85` of the monster group :math:`\mathbb{M}`. 
 Its is the first implementation of the monster group where arbitrary
-oprations in that group can effectively be performed. On the author's 
-PC (Intel i7-8750H at 4 MHz runnning on 64-bit Windows) 
+operations in that group can effectively be performed. On the author's 
+PC (Intel i7-8750H at 4 MHz running on 64-bit Windows) 
 the group multiplication in :math:`\mathbb{M}` takes less than 30 ms.
 This is more than five orders of magnitude faster than estimated 
 in 2013 in :cite:`Wilson13`.
@@ -77,7 +77,7 @@ These points are identified with the basis vectors of
 Module ``mmgroup`` contains fast C routines for computing with the
 Golay code  :math:`\mathcal{C}`, its cocode :math:`\mathcal{C^*}`,
 and the Mathieu group :math:`M_{24}`. There are Python classes 
-for a more convient handling of these objects that wrap these
+for a more convenient handling of these objects that wrap these
 C functions; these classes are described in this section.
 
 In this section we also describe Python classes modelling more
@@ -242,7 +242,7 @@ The subgroup :math:`G_{x0}` of the monster and the Clifford group
 ========================================================================
 
 The section describes the fast computation in a certain subgroup 
-:math:`G_{x0}` of structrue :math:`2^{1+24}.Co_1` of the monster 
+:math:`G_{x0}` of structure :math:`2^{1+24}.Co_1` of the monster 
 :math:`\mathbb{M}` in detail. A person who simply wants do do 
 calculations in the monster group need not read this section. 
 

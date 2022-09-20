@@ -35,7 +35,7 @@ function ``xsp2co1_traces_all`` in file ``xsp2co1_elem.c``.
 The calculations in the python module
 ``mmgroup.tests.test_involutions.make_involution_samples``
 show that the class of an involution in the group :math:`G_{x0}`
-can be identified by computing the four cahracters given above. 
+can be identified by computing the four characters given above. 
 
 
 We use the ideas in section :ref:`qstate_matrix_label` for 
@@ -94,7 +94,7 @@ from these scalar products.
 
 These ideas lead to a very fast implementation of the subgroup
 :math:`G_{x0}` of the monster  :math:`\mathbb{M}`. Details of
-that implementationa are given in 
+that implementation are given in 
 the **C interface of the mmgroup project** in section 
 :ref:`c-functions-G-x0-label`.
 

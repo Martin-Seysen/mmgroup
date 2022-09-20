@@ -196,7 +196,7 @@ of structure :math:`2^{1+24}`.
 The group :math:`\mbox{Co}_1 = G_{x0}/Q_{x0}` is the automorphism
 group of :math:`\Lambda / 2 \Lambda`.  We assume that 
 :math:`\mbox{Co}_1` and also :math:`G_{x0}` operate on  
-:math:`\Lambda / 2 \Lambda` by right multiplcation. Let 
+:math:`\Lambda / 2 \Lambda` by right multiplication. Let 
 :math:`\Omega` \in :math:`\Lambda / 2 \Lambda` be the 
 type-4 vector corresponding to the the standard coordinate frame 
 in :math:`\Lambda`.
@@ -247,7 +247,7 @@ type 2,3, and 4 on :math:`\Lambda` have been described in
 on the  the lattice :math:`\sqrt{8} \Lambda`, which has integers
 coordinates in the standard Euclidean basis. Thus an orbit of 
 :math:`N_{x0}` on :math:`\Lambda / 2 \Lambda` can be described by 
-the *shapes* of the shortest vectors in the corrsponding orbit of
+the *shapes* of the shortest vectors in the corresponding orbit of
 :math:`\sqrt{8} \Lambda`. Here the shape of a vector is the 
 multiset of the absolute values of the coordinates of the vector. 
 E.g. a vector of shape :math:`(3^5 1^{19})` has 5 coordinates 
@@ -269,7 +269,7 @@ shape to each orbit of  :math:`N_{x0}` on the vectors of type
 2, 3, and 4 in  :math:`\Lambda`. The table at  Lemma 4.6.1. 
 in :cite:`Iva99` assigns a name and one or more shapes to each 
 orbit of :math:`N_{x0}` on the vectors of type 4 in  
-:math:`\Lambda / 2 \Lambda`. We repreduce this information
+:math:`\Lambda / 2 \Lambda`. We reproduce this information
 for the orbits of :math:`N_{x0}` on :math:`\Lambda / 2 \Lambda`
 in the following table. Here we also assign a subtype (which is 
 a 2-digit number) to each orbit. The first digit of the subtype
@@ -283,7 +283,7 @@ is the Golay cocode. For
 defined as in :cite:`Seysen20`, Theorem 6.1. Conway's definition
 of :math:`\lambda_d, \lambda_\delta` in :cite:`Con85` differs
 slightly from that definition. Each 
-:math:`v \in  \Lambda / 2 \Lambda` has a unique decomposion 
+:math:`v \in  \Lambda / 2 \Lambda` has a unique decomposition 
 :math:`v = \lambda_d + \lambda_\delta, d \in \mathcal{C}, 
 \delta \in \mathcal{C}^*`. The subtype of a vector 
 :math:`\lambda_d + \lambda_\delta \in \Lambda / 2\Lambda` can
@@ -549,15 +549,15 @@ to keep the inverse of the selected element of
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` as simple as possible.
 More specifically, for that inverse we select the standard 
 representative in :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the 
-least feasible permutation in lexicograpic order. We use the
+least feasible permutation in lexicographic order. We use the
 function ``mat24_perm_from_map`` in file ``mat24_functions.c``
 for finding a suitable permutation in :math:`M_{24}`.
 
 
 
 
-Incorporating the baby monster into the computation of a tranversal
-...................................................................
+Incorporating the baby monster into the computation of a transversal
+....................................................................
 
 The capability of computing in a subgroup :math:`H^+` of structure 
 :math:`2.B` of the monster :math:`\mathbb{M}` (where :math:`B` is
@@ -776,7 +776,7 @@ points of  :math:`o` to :math:`4, 5, 6, 7` as follows.
 
 We compute the syndrome of the set  :math:`c_0, c_1, o_0, o_1, o_2`.
 That syndrome intersects with  :math:`o` in exactly one point
-:math:`o_j`. The we contruct a permutation in :math:`M_{24}` that 
+:math:`o_j`. The we construct a permutation in :math:`M_{24}` that 
 maps the hexad :math:`(c_0, c_1, o_0, o_1, o_2, o_j)` to the hexad
 :math:`(2, 3, 4, 5, 6, 7)`. Such a permutation exists, since both
 hexads are subsets of an octad.
@@ -809,7 +809,7 @@ represented by :math:`\{0,1,2,3\}` then there is a unique power of
 which is of type 48.
 
 Otherwise let :math:`c` be the tetrad containing the point :math:`0`
-that correponds to :math:`\delta`. The we first apply a permutation
+that corresponds to :math:`\delta`. The we first apply a permutation
 in  :math:`M_{24}` that maps  :math:`c` to  :math:`\{0,1,2,3\}`.
 
 
@@ -897,7 +897,7 @@ exactly two elements :math:`x_{\pm 1}` of  :math:`Q_{x0}` of subtype
 00, which are of course in different :math:`N_{x0}` orbits.
 
 For each nonzero orbit of :math:`N_{x0}` we choose a 
-rpresentative  :math:`x_d x_\delta`, 
+representative  :math:`x_d x_\delta`, 
 :math:`d \in \mathcal{P}, \delta \in \mathcal{C}^*` (depending
 on the subtype of the orbit) according to the following table:
 
@@ -950,15 +950,15 @@ respectively. In :cite:`LPWW98` it is shown that only the neutral
 element of the monster fixes both vectors, :math:`w_{71}` and 
 :math:`w_{94}`. So we may check if an element is the identity in
 the monster. Here the corresponding calculations can be done modulo 
-any odd prime; and we may even use differnt primes for the 
+any odd prime; and we may even use different primes for the 
 operation on :math:`w_{71}` and on :math:`w_{94}`. 
 
 The python script ``mmgroup.structures.find_order_vectors.py``
 generates suitable vectors :math:`w_{71}` and :math:`w_{94}` at
-random and stores data for the fast recomuptation of these vectors
+random and stores data for the fast recomputation of these vectors
 in file  ``order_vector_data.py``. Since we actually work in the
 representation :math:`\rho` of dimension 1 + 196883, we have to 
-make sure that the generated vactors are not fixed by the monster.
+make sure that the generated vectors are not fixed by the monster.
 
 More precisely, we generate :math:`w_{71}` as a vector in the 
 representation :math:`\rho_3` of the monster in characteristic
@@ -1047,11 +1047,11 @@ the element of :math:`M_{24}` performing that action
 and compute a preimage :math:`h_2` of the inverse of that
 element in :math:`N_{x0}`. Thus :math:`gh_1 h_2` is in the
 subgroup  :math:`2^{1+24+11}` of :math:`N_{x0}`. Note that, 
-orginally, the vector :math:`w` has been defined modulo 15, so 
+originally, the vector :math:`w` has been defined modulo 15, so 
 that almost certainly we have enough information in the matrix
 :math:`w_{(A,15)}` to compute the permutation in :math:`M_{24}`. In 
 the implementation we compute a hash function on the 24 multisets
-obtaiend from the rows of :math:`w_{(A,15)}`, and we generate a new 
+obtained from the rows of :math:`w_{(A,15)}`, and we generate a new 
 vector :math:`w` if these 24 hash values are not mutually different.
 
 Now that task of reducing an element of  :math:`2^{1+24+11}` is easy.
@@ -1083,7 +1083,7 @@ in its source code together with some data required for
 using :math:`w` and for checking its correctness.
 We believe that this method simplifies the integration of
 our project into computer algebra systems like GAP or Magma,
-since these systems may now simply call C funtions for 
+since these systems may now simply call C functions for 
 computing in the monster group, without bothering how to 
 generate a suitable vector :math:`w`.
 

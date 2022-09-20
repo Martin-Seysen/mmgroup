@@ -335,14 +335,14 @@ class MM(MM0):
     If ``tag == 'd'`` then  ``i = 'o'`` generates a random odd 
     and ``i = 'e'`` generates a  random even diagonal automorphism.
     In this case `i`` may also be an instance of class |Cocode|, 
-    representing the diagonal automorphism correspnding to the
+    representing the diagonal automorphism corresponding to the
     given element of the Golay cocode.   
         
     If ``tag == 'p'`` then ``i`` may also be an instance of class 
     |AutPL|. Then the returned atom is the Parker loop automorphism
     given by that instance. If ``i`` is an integer then the Parker 
     loop  automorphism ``AutPL(0, i)`` is returned. This 
-    automorphism is the standard rpresentative of the i-th element 
+    automorphism is the standard representative of the i-th element 
     of the  Mathieu group ``M_24`` in the automorphism group of the 
     Parker loop.
 
@@ -383,7 +383,7 @@ class MM(MM0):
     If parameter ``tag`` is equal to the string ``'r'`` then parameter 
     ``'i'`` should be a string describing a subgroup of the 
     monster group. Then a uniform distributed element from that
-    subgroup is generated. The follwing subgroups are recognized:
+    subgroup is generated. The following subgroups are recognized:
 
     .. table:: Subgroups of the Monster group recognized
 
@@ -482,7 +482,7 @@ class MM(MM0):
     **Special strings accepted as a value after tag 'q'**
 
     The following strings are accepted after  tag 'q'. They denote special 
-    elements in the group :math:`Q_{x0}` as indicated in the follwing table. 
+    elements in the group :math:`Q_{x0}` as indicated in the following table. 
 
       +------------------------+-------------------------------------------+
       | String after tag ``q`` | Evaluates to                              |
