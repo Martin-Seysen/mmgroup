@@ -1,6 +1,7 @@
 numpy
 scipy
 Cython
+wheel
 breathe
 regex
 pytest
