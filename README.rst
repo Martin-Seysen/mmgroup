@@ -8,8 +8,8 @@ Project Documentation see
 
 https://mmgroup.readthedocs.io/en/latest/
 
-Quick installation and test
----------------------------
+Quick installation and test (Linux)
+-----------------------------------
 
 Create a venv, activate it, and run
 
@@ -17,6 +17,7 @@ Create a venv, activate it, and run
  pip3 install -r requirements.txt
  python3 setup.py build_ext --inplace
 ```
+
 
 License
 -------

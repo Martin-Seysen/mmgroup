@@ -27,6 +27,7 @@ should install the following python packages:
                            ``mmgroup`` package
   ``numpy``                Runtime: Most arrays used by the ``mmgroup`` package 
                            are ``numpy`` arrays
+  ``wheel``                Distribution: package for generating a Python wheel
   ``pytest``               Testing: basic package used for testing
   ``regex``                Development: parsing balanced curly braces
   ``scipy``                Testing: statistical tests
@@ -151,31 +152,33 @@ Installing the *mmgroup* package on Linux
 -----------------------------------------
 
 We describe some experimental support for building a Linux version
-of the mmgroup package.
-For building a Linux version of this package you have to install 
-a source distribution of the package. Then you should run::
+of the *mmgroup* package. If you have installed an older version of
+the *mmgroup* package then you should unistall the old version first.
 
-   python setup.py bdist_wheel
+Then clone the *git* repository:
 
-Please ignore all errors related to the *auditwheel* tool. After
-completing the build process you will find a wheel for linux in
-subdirectory ``dist``.
+https://github.com/Martin-Seysen/mmgroup
 
-You may install that wheel using ``pip install`` in the standard way.
-Afterwords you have to make sure that the Linux dynamic loader can 
-find the shared libraries ``libmmgroup_mat24.so`` and 
-``libmmgroup_mm_basics.so`` in subdirectory ``usr/mmgroup`` of the
-package. Therefore you may either copy these
-libraries to the  default path  for shared libraries in your system
-(usually ``/lib`` or ``/usr/lib``). Alternatively, you may change 
-the environment variable ``LD_LIBRARY_PATH`` appropriately.
+Then open a shell, go to the root directory of the cloned repository,
+and  type:
 
-A more comfortable installation process should be compliant with the 
-*manylinux* standard, see e.g.:
+ .. code-block:: none
+    
+    export PYTHONPATH=$PWD/src
+    export LD_LIBRARY_PATH=$PWD/src/mmgroup
+    pip3 install -r requirements.txt
+    python3 setup.py build_ext --inplace
+    python3 -m pytest ./src/mmgroup -v -s -m "not slow"
 
-https://github.com/pypa/python-manylinux-demo  .
+The last command tests the installation of the package.
+    
+Remarks
+....... 
 
-In a Linux distribution, it may be necessary to install **pip**,
+You might have to adjust the values of the environment variables
+PYTHONPATH and LD_LIBRARY_PATH to your requirements.
+
+In a Linux distribution, it may be necessary to install **pip3**,
 **sphinx**, **texlive**, and **doxygen** as follows:
 
  .. code-block:: none
@@ -185,20 +188,12 @@ In a Linux distribution, it may be necessary to install **pip**,
     sudo apt-get install texlive
     sudo apt-get install doxygen
 
-Note that some distributions require the string 'python' to be 
-replaced by 'python3'.
 
 
-Remarks
-.......
+A more comfortable installation process should be compliant with the 
+*manylinux* standard, see e.g.:
 
-On some Linux systems the user may have to type ``python3`` instead of
-``python`` and ``pip3`` instead of ``pip`` when working with python 3.x.
-
-On some Linux-like systems (e.g. on MacOS with a Clang C compiler) it 
-might help to remove the string ``-static-libgc`` from all lists in 
-file ``config.py``.
-
+https://github.com/pypa/python-manylinux-demo  .
 
 
 
