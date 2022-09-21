@@ -154,12 +154,11 @@ Installing the *mmgroup* package on Linux
 We describe some experimental support for building a Linux version
 of the *mmgroup* package. If you have installed an older version of
 the *mmgroup* package then you should unistall the old version first.
-
-First clone the *git* repository:
+Then clone the *git* repository:
 
 https://github.com/Martin-Seysen/mmgroup
 
-Then create a virtual enviroment, activate it, open a shell, go to 
+Next create a virtual enviroment, activate it, open a shell, go to 
 the root directory of the cloned repository, and type:
 
  .. code-block:: none
@@ -170,7 +169,7 @@ the root directory of the cloned repository, and type:
     python3 setup.py build_ext --inplace
     python3 -m pytest ./src/mmgroup -v -s -m "not slow"
 
-The last command tests the installation of the package.
+The last command tests the package.
     
 Remarks
 ....... 
