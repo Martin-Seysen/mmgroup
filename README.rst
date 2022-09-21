@@ -8,15 +8,17 @@ Project Documentation see
 
 https://mmgroup.readthedocs.io/en/latest/
 
-Quick installation and test (Linux)
------------------------------------
+Quick installation and test
+---------------------------
 
-Create a venv, activate it, and run
+For Windows 64 see:
 
-```shell
- pip3 install -r requirements.txt
- python3 setup.py build_ext --inplace
-```
+https://mmgroup.readthedocs.io/en/latest/api.html#installation
+
+
+For Linux see:
+
+https://mmgroup.readthedocs.io/en/latest/guide.html#installing-the-mmgroup-package-on-linux
 
 
 License
@@ -27,5 +29,7 @@ Copyright Martin Seysen, 2020.
 Distributed under the terms of the `MIT`_ license, mmgroup is free and 
 open source software.
 
-.. _`MIT`: https://github.com/Martin-Seysen/test_repository/blob/master/LICENSE
+https://github.com/Martin-Seysen/test_repository/blob/master/LICENSE
+
+
 

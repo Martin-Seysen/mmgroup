@@ -155,12 +155,12 @@ We describe some experimental support for building a Linux version
 of the *mmgroup* package. If you have installed an older version of
 the *mmgroup* package then you should unistall the old version first.
 
-Then clone the *git* repository:
+First clone the *git* repository:
 
 https://github.com/Martin-Seysen/mmgroup
 
-Then open a shell, go to the root directory of the cloned repository,
-and  type:
+Then create a virtual enviroment, activate it, open a shell, go to 
+the root directory of the cloned repository, and type:
 
  .. code-block:: none
     
