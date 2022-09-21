@@ -30,9 +30,7 @@ EXTRA_COMPILE_ARGS = defaultdict(list)
 #     python setup.py build_ext --help-compiler
 
 mingw32_compile_args =  ["-m64", "-Ofast", "-flto", "-funroll-loops"]
-unix_compile_args = ["-static-libgcc",  
-             "-Ofast", "-flto", "-funroll-loops"
-            ]
+unix_compile_args = ["-Ofast", "-flto", "-funroll-loops"]
 msvc_compile_args = ["/O2"]
 
 if NATIVE:
@@ -54,12 +52,6 @@ EXTRA_LINK_ARGS = defaultdict(list)
 # the EXTRA_LINK_ARGS dictionary with a list of pairs
 #     compiler : <list of options> .
 
-
-unix_link_args = ["-static-libgcc"]
-
-EXTRA_LINK_ARGS.update({
-    'unix' : unix_link_args,
-})
 
 ###############################################################################
 # Directories
