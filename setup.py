@@ -684,7 +684,7 @@ def build_posix_wheel():
 
 
 
-if os.name == "posix":
+if os.name == "posix" and not on_readthedocs:
     ## build_posix_wheel()  # This does not work
     from linuxpatch import  patch_linux
     patch_linux()

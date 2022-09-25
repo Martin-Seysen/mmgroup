@@ -1,7 +1,9 @@
 numpy>=1.23
+scipy
+Cython
+wheel
 breathe
 regex
 pytest
 sphinx>=2.0
 sphinxcontrib.bibtex
-
