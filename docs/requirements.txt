@@ -1,0 +1,7 @@
+numpy>=1.23
+breathe
+regex
+pytest
+sphinx>=2.0
+sphinxcontrib.bibtex
+
