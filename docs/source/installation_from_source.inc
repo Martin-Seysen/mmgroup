@@ -154,7 +154,7 @@ Installing the *mmgroup* package on Linux
 We describe some experimental support for building a Linux version
 of the *mmgroup* package. If you have installed an older version of
 the *mmgroup* package then you should unistall the old version first.
-Then clone the *git* repository:
+Then clone  -mthe *git* repository:
 
 https://github.com/Martin-Seysen/mmgroup
 
@@ -164,7 +164,6 @@ the root directory of the cloned repository, and type:
  .. code-block:: none
     
     export PYTHONPATH=$PWD/src
-    export LD_LIBRARY_PATH=$PWD/src/mmgroup
     pip3 install -r requirements.txt
     python3 setup.py build_ext --inplace
     python3 -m pytest ./src/mmgroup -v -s -m "not slow"
@@ -178,15 +177,24 @@ You might have to adjust the values of the environment variables
 PYTHONPATH and LD_LIBRARY_PATH to your requirements.
 
 In a Linux distribution, it may be necessary to install **pip3**,
-**sphinx**, **texlive**, and **doxygen** as follows:
+**patchelf**, **sphinx**, **texlive**, and **doxygen** as follows:
 
  .. code-block:: none
 
     sudo apt-get install python-pip
+    sudo apt-get install patchelf
     sudo apt-get install python-sphinx
     sudo apt-get install texlive
     sudo apt-get install doxygen
 
+The **patchelf** utility is used to patch the shared libraries so
+that python can find all of them in the place where they are. If
+this does not work then it may help to adjust the environment
+variable LD_LIBRARY_PATH:
+
+ .. code-block:: none
+
+    export LD_LIBRARY_PATH=$PWD/src/mmgroup
 
 
 A more comfortable installation process should be compliant with the 

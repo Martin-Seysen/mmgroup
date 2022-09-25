@@ -12,10 +12,10 @@ def patch_linux():
     ok = True
     for filename in shared:
         path = os.path.join(PATH, filename)
-        args = ['patchelf', '--set-path', '$ORIGIN', path]
+        args = ['patchelf', '--set-rpath', '$ORIGIN', path]
         try:
             subprocess.check_call(args)
-            print(path)
+            #print(path)
         except:
             print('Executing', ' '.join(args))
             print('failed')
