@@ -32,5 +32,4 @@ __pycache__
 *.old
 *.obj
 *~
-
-
+*.so

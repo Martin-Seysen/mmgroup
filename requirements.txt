@@ -1,4 +1,4 @@
-numpy
+numpy>=1.23
 scipy
 Cython
 wheel
@@ -7,4 +7,5 @@ regex
 pytest
 sphinx>=2.0
 sphinxcontrib.bibtex
+patchelf-wrapper; sys_platform == 'linux' or sys_platform == 'darwin'  
 

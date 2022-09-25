@@ -686,6 +686,8 @@ def build_posix_wheel():
 
 if os.name == "posix":
     ## build_posix_wheel()  # This does not work
+    from linuxpatch import  patch_linux
+    patch_linux()
     pass
 
 
