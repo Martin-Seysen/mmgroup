@@ -1730,47 +1730,50 @@ function ``xsp2co1_elem_to_word``.  Parameter ``img_omega`` should
 usually be zero.
 
 In contrast to function ``xsp2co1_elem_to_word``, this function
-destroys the element ``elem``.
+destroys the element ``elem``, and is stores the inverse of the
+reduced word in buffer ``a``.
 
 There are cases where the image \f$g^{-1} x_\Omega g\f$ of the
 generator \f$x_\Omega\f$  is known in advance. Then run time can
 be saved encoding that image in parameter ``img_omega``
 in **Leech lattice encoding**.
 */
-static
+static inline
 int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 {
-    int32_t res, len_a0, len_a, x, i;
-    uint64_t img_Omega = 0x800000;
-    uint32_t a0[10];
+    int32_t res, res1, len_a = 0, x;
     
     // Compute image of \Omega under conjugation and store
-    // the result in img_Omega, if ``img_omega`` is zero.
+    // the result in img_omega, if ``img_omega`` is zero.
     // If ``img_omega`` != 0 just take the image from there.
-    if ((img_omega & 0xffffff) == 0) {
-        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_Omega, 0);
+    img_omega &= 0xffffffUL;
+    if (img_omega == 0) {
+        img_omega = 0x800000UL;
+        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_omega, 0);
         if (res < 0) return res;
-    } else img_Omega = img_omega & 0xffffff;
+        img_omega &= 0xffffffUL;
+    } 
     // Compute a word w0 of generators of G_{x0} that maps
-    // img_Omega to Omega (by conjugation) and store the result 
-    // in a0. We store the length of the word w0 in len_a0.
-    len_a0 = gen_leech2_reduce_type4((uint32_t)img_Omega, a0);
-    if (len_a0 < 0) return len_a0;
-    // Compute g * w0 in ``elem``. Then ``elem``
-    // stabilizes \Omega. Hence ``elem`` is monomial
-    // in the rep ``4096_x``.
-    res = xsp2co1_mul_elem_word(elem, a0, len_a0);
-    if (res < 0) return res;
+    // img_omega to Omega (by conjugation) and store the result 
+    // in a. We store the length of the word w0 in len_a.
+    if (img_omega != 0x800000UL) {
+        res = gen_leech2_reduce_type4((uint32_t)img_omega, a);
+        if (res < 0) return res;
+        len_a = res;
+        // Compute g * w0 in ``elem``. Then ``elem``
+        // stabilizes \Omega. Hence ``elem`` is monomial
+        // in the rep ``4096_x``.
+        res = xsp2co1_mul_elem_word(elem, a, len_a);
+        if (res < 0) return res;
+    }
     // Compute a word ``w1`` of generators of G_{x0} such that
     // ``elem * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
-    len_a = xsp2co1_elem_monomial_to_xsp(elem, a0 + len_a0);
-    if (len_a < 0) return len_a;
-    // Multiply ``elem`` with the word ``w1``
-    res =  xsp2co1_mul_elem_word(elem, a0 + len_a0, len_a);
+    res = xsp2co1_elem_monomial_to_xsp(elem, a + len_a);
     if (res < 0) return res;
-    // Keep the word ``w = w0 w1`` in ``a0`` and store its length
-    // in ``len_a0``.
-    len_a0 = len_a0 + len_a;
+    // Multiply ``elem`` with the word ``w1``
+    res1 =  xsp2co1_mul_elem_word(elem, a + len_a, res);
+    if (res1 < 0) return res1;
+    len_a += res;
     // Now ``elem`` is in Q_{x0}, Store the value of
     // ``elem`` in ``x`` in ``Leech lattice encoding``.
     x = xsp2co1_xspecial_vector(elem);
@@ -1779,19 +1782,16 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // Now the result is ``x * w0**(-1)``. We will store a word
     // representing the result in the array ``a``. We will use   
     // ``len_a`` for recording the length of the stored word.
-    len_a = 0;
     x ^= mat24_ploop_theta(x >> 12);  // apply cocycle to get x_delta
-    // First store a word representing ``x`` in ``a``.
-    if (x & 0x1fff000) a[len_a++] = 0x30000000 + (x >> 12); // x_d
-    if (x & 0xfff) a[len_a++] = 0x10000000 + (x & 0xfff); // x_delta
-    // Then append the word ``w**(-1)`` to the word in ``a``.
-    for (i = 0; i < len_a0; ++i) {
-        a[len_a + i] = a0[len_a0 - 1 - i] ^ 0x80000000;
-    }
-    len_a = len_a + len_a0;
+    // First store invers of the  word representing ``x`` in ``a``.
+    if (x & 0xfff) a[len_a++] = 0x90000000 + (x & 0xfff); // x_delta
+    if (x & 0x1fff000) a[len_a++] = 0xB0000000 + (x >> 12); // x_d
     // Return length of the final word a
     return len_a;
 }
+
+
+
 
 
 /// @endcond
@@ -1817,10 +1817,100 @@ assert that the number of entries with tag ``l`` is minimal.
 // %%EXPORT px
 int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 {
+    uint32_t res;
     uint64_t elem_reduced[26];
     xsp2co1_copy_elem(elem, elem_reduced);
-    return elem_to_word(elem_reduced, a, 0);
+    res = elem_to_word(elem_reduced, a, 0);
+    if (res < 0) return res;
+    mm_group_invert_word(a, res);
+    return res;
 }
+
+
+/// @cond DO_NOT_DOCUMENT 
+#define REDUCE_WORD_TRESHOLD 50
+
+
+static inline 
+uint32_t reduce_state(uint32_t *a, uint32_t n)
+// Make an educated guess if the word ``a`` if length ``n``
+// looks like a reduced word in G_x0. Returns
+// 0 if element is known to be in subgroup N_x0
+// 1 is this is not known and element may be reduced
+// 2 is this is not known and element is not reduced
+{
+    uint32_t i, state = 0;
+    // state = 0: tags d, x, y, p  yet found only
+    // state = 1: p found after l
+    // state = 2: l found before
+    uint32_t num_l = 0;  // number of tags l found
+    for (i = 0; i < n; ++i) switch (a[i] >> 28) {
+        case 0: // comment
+        case 8: // comment
+            continue;
+        case 1: // tag d
+        case 3: // tag x
+        case 4: // tag y
+        case 9: // tag d^-1
+        case 10: // tag p^-1
+        case 11: // tag x^-1
+        case 12: // tag y^-1
+            if (state) return 2;
+            continue;
+        case 2: // tag p
+            if (state & 1) return 2;  
+            if (state) state = 1;
+            continue;
+        case 6: // tag l
+            if (++num_l > 3 || state > 1) return 2;  
+            state = 2;
+            continue;
+        default:
+            return 2;
+    }
+    return state ? 1 : 0;
+}
+
+
+// Reduce a word ``a`` of length ``n`` in N_x0. Output is same as
+// in function ``elem_to_word``. So we output the inverse of the 
+// input word if it is in N_x0 and return a negative avlaue 
+// otherwise.
+// Note that the output order of the generators in function
+// ``elem_to_word`` differs form the internal order of the
+// generators of N_x0 used in module ``mm_group_n.c.
+static inline
+int32_t reduce_N_x0_word(uint32_t *a, uint32_t n, uint32_t *a1)
+{
+    uint32_t g[5], len_a1 = 0, atom;
+    int32_t res;
+
+    mm_group_n_clear(g);
+    if (mm_group_n_mul_word_scan(g, a, n) < n) return -1;
+    //  process  x_pi if present and output its inverse
+    if (g[4]) {
+        atom = (g[4] & 0xfffffff) + 0xA0000000UL;
+        a1[len_a1++] = atom;
+        if ((res = mm_group_n_mul_atom(g, atom)) < 0) return res;
+    }
+    //  process  y_d if present and output its inverse
+    if (g[1] & 0x7ff) {
+        atom = (g[1] & 0x7ff) + 0xC0000000UL;
+        a1[len_a1++] = atom;
+        if ((res = mm_group_n_mul_atom(g, atom)) < 0) return res;
+    }
+    mm_group_n_reduce_element(g);
+    // output inverses of x_\delta and x_d
+    if (g[0] | g[1] | g[4]) return -1;
+    if (g[3] & 0x0fff) a1[len_a1++] = 0x90000000UL + (g[3] & 0x0fff);
+    if (g[2] & 0x1fff) a1[len_a1++] = 0xB0000000UL + (g[2] & 0x1fff);
+    return len_a1;   
+}
+
+
+
+
+/// @endcond
 
 
 /**
@@ -1842,9 +1932,56 @@ int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
 {
     uint64_t elem[26];
     int32_t res;
-    res = xsp2co1_set_elem_word(elem, a, n);
-    if (res < 0) return res;
-    return elem_to_word(elem, a1, 0);
+    uint32_t abuf[2*REDUCE_WORD_TRESHOLD + 20];
+    uint32_t len_abuf, len_a1;
+    uint32_t state = reduce_state(a, n);
+    uint32_t img_omega = state ? 0 : 0x800000;
+
+    // The method used in the first 'else' statement is the fastest
+    // and simples way so solve the problem.
+    // Here we make some effort to accelerate the re-reduction of an
+    // alread reduce word.
+ 
+    if (state == 0) {
+        // Work in subgroup N_x0
+        len_a1 = res = reduce_N_x0_word(a, n, a1);
+        if (res < 0) return res;
+    } else if (n > REDUCE_WORD_TRESHOLD || state > 1) {
+        // The method used here is easy and works always fine; but it
+        // is a bit slow if the word in ``a`` is already reduced. For
+        // a very long word ``a`` we do it that way to save memory.
+        res = xsp2co1_set_elem_word(elem, a, n);
+        if (res < 0) return res;
+        len_a1 = res = elem_to_word(elem, a1, img_omega);
+        if (res < 0) return res;
+    } else {
+        // Copy ``a`` to ``abuf`` and do a simple reduction on the fly
+        len_abuf = mm_group_mul_words(abuf, 0, a, n, 1);
+        // Compute image of vector Omega
+        if (img_omega == 0) {
+            img_omega = gen_leech2_op_word(0x800000, abuf, len_abuf);
+        }
+        if (img_omega & 0xfe000000UL) return -1;   // abort on error
+        // Store a word reducing ``img_omega`` in buffer ``a1``
+        res = gen_leech2_reduce_type4(img_omega, a1);
+        if (res < 0) return res;  // abort if error
+        len_a1 = res;
+        // multiply ``a`` with ``a1`` and do a simple reduction
+        len_abuf = mm_group_mul_words(abuf, len_abuf, a1, len_a1, 1);
+        // Now ``abuf`` should be in the subgroup ``N_x0`` of ``G_x0``
+        state = reduce_state(abuf, len_abuf);
+        if (state) {
+            res = xsp2co1_set_elem_word(elem, abuf, len_abuf);
+            if (res < 0) return res;  // abort if error
+            res = elem_to_word(elem, a1 + len_a1, 0x800000);
+        } else {
+            res = reduce_N_x0_word(abuf, len_abuf, a1 + len_a1);
+        }
+        if (res < 0) return res;
+        len_a1 += res;
+    }
+    mm_group_invert_word(a1, len_a1);
+    return len_a1;   
 }
 
 
@@ -2037,7 +2174,7 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 
 
 /*************************************************************************
-*** Read entry of a transfromed vector of the monster rep modulo 3
+*** Read entry of a transformed vector of the monster rep modulo 3
 *************************************************************************/
 
 /**
