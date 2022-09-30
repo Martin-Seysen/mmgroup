@@ -19,14 +19,16 @@ and rebuild the package!
 
 
 
-def patch_linux():
+def patch_linux(verbose = 0):
     if  os.name != 'posix':
         print("This function works for posix systems only")
         return
     ok = True
     print("Patching shared libraries in Linux...")
     for filename in shared:
-        path = os.path.join(PATH, filename)
+        path = os.path.abspath(os.path.join(PATH, filename))
+        if verbose:
+             print("patching " + path)
         args = ['patchelf', '--set-rpath', '$ORIGIN', path]
         try:
             subprocess.check_call(args)
