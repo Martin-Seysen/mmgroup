@@ -7,5 +7,5 @@ regex
 pytest
 sphinx>=2.0
 sphinxcontrib.bibtex
-patchelf-wrapper; sys_platform == 'linux' or sys_platform == 'darwin'  
+patchelf; sys_platform == 'linux' or sys_platform == 'darwin'  
 

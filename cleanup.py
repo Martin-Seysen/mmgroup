@@ -13,7 +13,7 @@ PROGRAM_FILES = [".c", ".h", ".pxd", ".pxi", ".pyx"]
 if os.name == "posix":
    EXTENSIONS = [".so"]
 elif os.name == "nt":
-   EXTENSIONS = [".pyd"]
+   EXTENSIONS = [".pyd", ".dll", "lib"]
 else:
    EXTENSIONS = []
 
@@ -95,19 +95,24 @@ def del_data(verbose = False):
 def del_ext(verbose = False):
     if verbose:
         print("\nDeleting automatically generated python extensions") 
-    if os.name == "nt":
-        dir = os.path.join(ROOT_DIR, "src", "mmgroup")
-        files = os.listdir(dir)
-        for name in files:
-            if os.path.splitext(name)[1] == ".pyd":
-                path = os.path.join(dir, name)
-                try:
-                    if verbose:
-                       print("Delete %s" % path)
-                    os.remove(path)
-                except:
-                    if verbose:
-                        print("failed")
+    EXT_DIRS = [
+        ["src", "mmgroup", "dev", "c_files"],
+        ["src", "mmgroup"],
+    ]
+    if len(EXTENSIONS):
+        for ext_dir in EXT_DIRS:
+            dir = os.path.join(ROOT_DIR, *ext_dir)
+            files = os.listdir(dir)
+            for name in files:
+                if os.path.splitext(name)[1] in EXTENSIONS:
+                    path = os.path.join(dir, name)
+                    try:
+                        if verbose:
+                           print("Delete %s" % path)
+                        os.remove(path)
+                    except:
+                        if verbose:
+                            print("failed")
     else:
         s = "Dont't know how do delete python extensions in '%s' system"
         print(s % os.name)

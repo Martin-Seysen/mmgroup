@@ -3,11 +3,13 @@ backup/
 dist/
 build/
 _reports/
+wheelhouse/
 docs/build
 docs/doxygen/html
 docs/doxygen/latex
 docs/doxygen/xml
 src/mmgroup/*.dll
+src/mmgroup/dev/config.py
 src/mmgroup/dev/c_doc/
 src/mmgroup/dev/c_files/
 src/mmgroup/dev/pxd_files/

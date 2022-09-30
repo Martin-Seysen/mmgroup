@@ -402,7 +402,6 @@ class MM_Const(MM_Basics):
     def __init__(self):
         new_tables = {
            self.T_NAME : self.table,
-           "P_LIST" : config.PRIMES, 
            "MMV_CONST" : UserFormat(self.f, "ss"),
            "smask":  UserFormat(smask, fmt = c_hex),
         }

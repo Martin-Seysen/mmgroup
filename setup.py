@@ -34,6 +34,12 @@ import shutil
 import setuptools
 from setuptools import setup, find_packages
 from collections import defaultdict
+
+
+ROOTDIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(ROOTDIR)
+
+
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
 from build_ext_steps import BuildExtCmd
 from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
@@ -51,6 +57,24 @@ from config import PRIMES
 from codegen_mm_op import mm_op_p_sources
 from codegen_mm_reduce import mm_reduce_sources
 
+
+####################################################################
+# print command line arguments (if desired)
+####################################################################
+
+
+def print_commandline_args():
+    print("Command line arguments of setup.py (in mmgroup project):")
+    for arg in sys.argv:
+        print(" " + arg)
+    print("Current working directory os.path.getcwd():")
+    print(" " + os.getcwd())
+    print("Absolute path of file setup.py:")
+    print(" " + os.path.abspath(__file__))
+    print("")
+
+
+#print_commandline_args()
 
 ####################################################################
 # Global options
@@ -210,6 +234,18 @@ def copy_pyx_sources():
     for filename in pyx_sources:
         shutil.copy(filename, PXD_DIR)
 
+
+def copy_config_py():
+    from config import INT_BITS, PRIMES
+    s = """# This an automatically generated file, do not edit!
+#
+# It contains configuration data that are relevant at run time.
+INT_BITS = %d  # Bit length of an integer used in the rep of the Monster
+PRIMES = %s    # Supported moduli for the rep of the Monster
+"""
+    f = open(os.path.join(DEV_DIR, "config.py"), "wt")
+    f.write(s % (INT_BITS, PRIMES))
+    f.close()
     
 
 general_presteps = CustomBuildStep("Starting code generation",
@@ -218,6 +254,7 @@ general_presteps = CustomBuildStep("Starting code generation",
   [force_delete],
   [copy_pyx_sources],
   [extend_path],
+  [copy_config_py],
 )
 if STAGE > 1:
     general_presteps = CustomBuildStep("Starting code generation",
