@@ -578,6 +578,35 @@ ext_modules += [
 
 
 ####################################################################
+# Patching shared libraries for Linux version
+####################################################################
+
+
+def build_posix_wheel():
+    """This does not work!!!"""
+    assert  os.name == "posix"
+    if not on_readthedocs and "bdist_wheel" in sys.argv:
+        PROJECT_NAME = r"mmgroup"
+        SUFFIX_MATCH = r"[-0-9A-Za-z._]+linux[-0-9A-Za-z._]+\.whl"
+        DIST_DIR = "dist"
+        w_match = re.compile(PROJECT_NAME + SUFFIX_MATCH)
+        wheels = [s for s in os.listdir(DIST_DIR) if w_match.match(s)]
+        for wheel in wheels:
+            wheel_path = os.path.join(DIST_DIR, wheel)
+            args = ["auditwheel", "-v", "repair", wheel_path]
+            print(" ".join(args))
+            subprocess.check_call(args)
+
+
+
+if os.name == "posix" and not on_readthedocs:
+    from linuxpatch import  patch_linux
+    patch_step =  CustomBuildStep("Patching shared libraries",
+        [patch_linux])
+    ext_modules.append(patch_step)
+
+
+####################################################################
 # After building the externals we add a tiny little test step.
 ####################################################################
 
@@ -696,35 +725,5 @@ setup(
     include_dirs=[np.get_include()],  # This gets all the required Numpy core files
 )
 
-
-####################################################################
-# In linux, use 'auditwheel' afterwards, to build the final wheel.
-#
-# The current version is still erroneous.
-####################################################################
-
-
-
-def build_posix_wheel():   
-    assert  os.name == "posix" 
-    if not on_readthedocs and "bdist_wheel" in sys.argv:
-        PROJECT_NAME = r"mmgroup"
-        SUFFIX_MATCH = r"[-0-9A-Za-z._]+linux[-0-9A-Za-z._]+\.whl"
-        DIST_DIR = "dist"
-        w_match = re.compile(PROJECT_NAME + SUFFIX_MATCH)
-        wheels = [s for s in os.listdir(DIST_DIR) if w_match.match(s)]
-        for wheel in wheels:
-            wheel_path = os.path.join(DIST_DIR, wheel)
-            args = ["auditwheel", "-v", "repair", wheel_path]
-            print(" ".join(args))
-            subprocess.check_call(args)
-
-
-
-if os.name == "posix" and not on_readthedocs:
-    ## build_posix_wheel()  # This does not work
-    from linuxpatch import  patch_linux
-    patch_linux()
-    pass
 
 

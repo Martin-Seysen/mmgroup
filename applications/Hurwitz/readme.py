@@ -20,7 +20,7 @@ generators  :math:`a, b` of the Monster satisfying the relations
 given above, so that we can compute the order of the 
 commutator :math:`[a,b]`.
 
-In [1], Wilson has given explicit generators :math:`a` (in class 2A)
+In [1], Wilson has given explicit generators :math:`a` (in class 2B)
 and :math:`b` (in class 3B) of the Monster satifying the relations
 given above. It appears to be extremely difficult to translate
 these two generators from the language used in [1] to the language

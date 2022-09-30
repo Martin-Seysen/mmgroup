@@ -3,6 +3,7 @@ recursive-include src/mmgroup *.py
 include .gitignore
 include *.py
 include src/*.py
+include src/mmgroup/dev/config.py
 include docs/source/*.rst
 include docs/source/*.inc
 include docs/source/*.py
