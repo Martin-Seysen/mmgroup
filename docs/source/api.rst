@@ -23,7 +23,7 @@ The *mmgroup* package is a python implementation of Conway's
 construction :cite:`Con85` of the monster group :math:`\mathbb{M}`. 
 Its is the first implementation of the monster group where arbitrary
 operations in that group can effectively be performed. On the author's 
-PC (Intel i7-8750H at 4 MHz running on 64-bit Windows) 
+PC (Intel i7-8750H at 4 GHz running on 64-bit Windows) 
 the group multiplication in :math:`\mathbb{M}` takes less than 30 ms.
 This is more than five orders of magnitude faster than estimated 
 in 2013 in :cite:`Wilson13`.
