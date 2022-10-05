@@ -279,14 +279,14 @@ from Cython.Distutils import build_ext as _build_ext
 
 
 class DistutilsError (Exception):
-    """The root of all Distutils evil.
+    """The root of all Distutils exceptions.
 
     Specifically, I do not know how and when exactly 'distutils'
     will eventually become deprecated.
 
-    Since I'm not willing to dig any deeper into the details of
-    setuptools/distutils, I simply copy the relevant exceptions
-    here. (This is a weird way to deal with a weird concept!)
+    Since the autor is not willing to dig any deeper into the details
+    of setuptools/distutils, I simply copy the relevant exceptions
+    here. 
     """
     pass
 
@@ -362,12 +362,22 @@ class SharedExtension(_Extension):
             self.lib_name = "lib" + self.lib_name
 
 
+class BuildExtCmdObj:
+    """Placeholder for argument in class CustomBuildStep
 
-
+    When class BuildExtCmd is used as a substitute for
+    class setuptools.command.build_ext then there is subclass
+    CustomBuildStep of class Extension that may simply execute a 
+    python function. This object ``BuildExtCmdObj`` may be passed
+    to such a python function as a placeholder for the
+    object of class BuildExtCmd that has invoked that python
+    function.
+    """
+    pass
 
 
 class  BuildExtCmd(_build_ext):
-    """Substitute for class setuptools.extension import Extension
+    """Substitute for class setuptools.command.build_ext 
 
     The ``run`` function of this class treats an instance  of class
     Extension in the usual way, i.e. it builds a python extension. 
@@ -421,7 +431,12 @@ class  BuildExtCmd(_build_ext):
                             raise             
                     else:
                         # Then execute a python function
-                        args[0](*(args[1:])) 
+                        f, f_args = args[0], args[1:]
+                        for i, arg in enumerate(f_args):
+                            ## Substitute BuildExtCmdObj by self
+                            if arg == BuildExtCmdObj:
+                                f_args[i] = self
+                        f(*f_args) 
             elif isinstance(ext, SharedExtension):
                 # Then we build a shared librry using method
                 # self.build_shared_extension()

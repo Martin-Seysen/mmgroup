@@ -8,11 +8,10 @@ from __future__ import  unicode_literals
 
 from collections.abc import Iterable
 from numbers import Integral, Complex
-import cmath, time
+import math, cmath, time
 
 import numpy as np
 from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t, int8_t
-from libc.math cimport fabs, log, round
 from libc.stdlib cimport malloc, free
 
 
@@ -815,11 +814,11 @@ def qstate12_mul_scalar(QState12 qs, x):
     r, phi = cmath.polar(x)
     if r <= MIN_ABS:
         return qs.set_zero()
-    e = 2.0 * log(r) / LOG2
+    e = 2.0 * math.log(r) / LOG2
     phi8 = 4.0 * phi / PI
     e_r, phi8_r = round(e), round(phi8)
     e_i, phi8_i = <int32_t>e_r, <int32_t>phi8_r
-    if (max(fabs(e - e_r), fabs(phi8 - phi8_r)) < EPS):
+    if (max(abs(e - e_r), abs(phi8 - phi8_r)) < EPS):
         return qs.mul_scalar(e_i, phi8_i)
     err = "Cannot convert number to factor for QStateMatrix"
     raise ValueError(err)    

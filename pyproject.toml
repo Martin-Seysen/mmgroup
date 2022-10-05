@@ -9,9 +9,9 @@ requires = [
    "pytest"
 ]
 build-backend = "setuptools.build_meta"
-build-verbosity = 2
 
 
 [tool.cibuildwheel]
 environment = "pip-global-option=\"build_ext --inplace\""
-skip = "*-win32 *-manylinux_i686 cp36-*"
+skip = "*-win32 *-manylinux_i686 cp36-* cp311-* pp*"
+build-verbosity = 3

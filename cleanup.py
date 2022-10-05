@@ -10,12 +10,8 @@ ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 PROGRAM_FILES = [".c", ".h", ".pxd", ".pxi", ".pyx"]
 
-if os.name == "posix":
-   EXTENSIONS = [".so"]
-elif os.name == "nt":
-   EXTENSIONS = [".pyd", ".dll", "lib"]
-else:
-   EXTENSIONS = []
+EXTENSIONS = [".pyd", ".dll", ".lib", ".so"]
+
 
 EXTENSION_STR = ", ".join(EXTENSIONS) if len(EXTENSIONS) else "?"
 

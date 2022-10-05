@@ -41,7 +41,7 @@ sys.path.append(ROOTDIR)
 
 
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
-from build_ext_steps import BuildExtCmd
+from build_ext_steps import BuildExtCmd, BuildExtCmdObj
 from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
 
 
@@ -59,7 +59,7 @@ from codegen_mm_reduce import mm_reduce_sources
 
 
 ####################################################################
-# print command line arguments (if desired)
+# Print command line arguments (if desired)
 ####################################################################
 
 
@@ -74,7 +74,19 @@ def print_commandline_args():
     print("")
 
 
-#print_commandline_args()
+print_commandline_args()
+
+
+####################################################################
+# Get output directory from command line arguments 
+####################################################################
+
+def get_output_directory_from_args():
+    for i in range(len(sys.argv) - 1):
+        if sys.argv[i] == "--dist-dir":
+            return sys.argv[i + 1]
+    return None
+
 
 ####################################################################
 # Global options
@@ -251,6 +263,7 @@ PRIMES = %s    # Supported moduli for the rep of the Monster
 general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "c_files"],
   [make_dir, "src", "mmgroup", "dev", "pxd_files"],
+  [sys.executable, "cleanup.py", "-cx"],
   [force_delete],
   [copy_pyx_sources],
   [extend_path],
@@ -602,7 +615,7 @@ def build_posix_wheel():
 if os.name == "posix" and not on_readthedocs:
     from linuxpatch import  patch_linux
     patch_step =  CustomBuildStep("Patching shared libraries",
-        [patch_linux])
+        [patch_linux, BuildExtCmdObj, 1])
     ext_modules.append(patch_step)
 
 
