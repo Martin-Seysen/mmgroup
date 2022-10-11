@@ -26,7 +26,7 @@ License
 
 Copyright Martin Seysen, 2020.
 
-Distributed under the terms of the `MIT`_ license, mmgroup is free and 
+Distributed under the terms of the MIT license, mmgroup is free and 
 open source software.
 
 https://github.com/Martin-Seysen/test_repository/blob/master/LICENSE

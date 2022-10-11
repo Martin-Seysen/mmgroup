@@ -17,7 +17,6 @@ include src/mmgroup/dev/mm_reduce/*.h
 include applications/Hurwitz/*.py
 include pytest.ini
 include README.rst
-include constraints.txt
 include requirements.txt
 include pyproject.toml
 include readthedocs.yaml
