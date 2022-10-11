@@ -6,8 +6,6 @@ from numbers import Integral
 import numpy as np
 from random import randint
 
-import scipy
-from scipy import stats
 
 import pytest
 
@@ -22,6 +20,7 @@ from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmVector
 
+from mmgroup.tests.chisquare import chisquare
 
 
 
@@ -57,7 +56,7 @@ def chisquare_crosscor(p, b1, b2 = None, d = 1, m = 0):
         f_exp = f_exp * len(a) / p
         p = m
     bins = np.bincount(a, minlength=p)
-    chisq, prob = scipy.stats.chisquare(bins, f_exp)
+    chisq, prob = chisquare(bins, f_exp)
     return prob
 
 def chisquare_crosscor_ok(p, b1, b2 = 0, d = 1, m = 0):

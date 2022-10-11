@@ -4,8 +4,6 @@ from collections import OrderedDict, defaultdict
 from random import sample
 
 import numpy as np
-import scipy
-from scipy import linalg, matrix
 import pytest
 
 if __name__ == "__main__":

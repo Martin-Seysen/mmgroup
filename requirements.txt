@@ -1,5 +1,4 @@
 numpy>=1.23
-scipy
 Cython
 wheel
 breathe

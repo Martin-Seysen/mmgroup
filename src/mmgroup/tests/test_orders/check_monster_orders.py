@@ -10,11 +10,12 @@ import time
 
 from multiprocessing import Pool, TimeoutError
 from collections import defaultdict
-from scipy.stats import chisquare
+
 
 from mmgroup import MM0, MMV
 from mmgroup.mm_space import MMSpace
 from mmgroup.mm import INT_BITS
+from mmgroup.tests.chisquare import chisquare
 
 ################################################################
 # Class and character for the monster information taken from GAP

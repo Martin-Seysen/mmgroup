@@ -23,9 +23,7 @@ from collections import defaultdict
 from multiprocessing import Pool, TimeoutError
 
 import numpy as np
-import scipy
-import scipy.special
-from scipy.stats import chisquare
+from mmgroup.tests.chisquare import chisquare
 import pytest
 
 from mmgroup import MM0
@@ -35,6 +33,7 @@ from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_op_vector_atom
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_op_atom
+from mmgroup.bitfunctions import binomial
 
 
 
@@ -350,9 +349,6 @@ def test_type4(verbose = 0):
 
 
 
-def binom(n, k):
-    """Return binommial coeffient n choose k"""
-    return int(scipy.special.binom(n, k) + 0.1)
 
 # The dictionary contains the number DATA_GEOMETRY[w] of type-4 
 # vectors in the Leech lattice modulo 3 of weight w. 
@@ -360,11 +356,11 @@ def binom(n, k):
 DATA_GEOMETRY = {
    1: 48, 
    7: 759 * 8 * 2**7,
-  22: binom(24,3) * 3 * 2**12,
-   4: binom(24,4) * 2**4,
-  10: 759 * binom(16,2) * 2**9,
+  22: binomial(24,3) * 3 * 2**12,
+   4: binomial(24,4) * 2**4,
+  10: 759 * binomial(16,2) * 2**9,
   13: 2576 * 12 * 2**12,
-  19: binom(24,5) * 2**12,
+  19: binomial(24,5) * 2**12,
   16: 759 * 16 * 2**11,
 }  
  

@@ -32,7 +32,7 @@ from glob import glob
 import shutil
 
 import setuptools
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 from collections import defaultdict
 
 
@@ -612,10 +612,11 @@ def build_posix_wheel():
 
 
 
-if os.name == "posix" and not on_readthedocs:
-    from linuxpatch import  patch_linux
-    patch_step =  CustomBuildStep("Patching shared libraries",
-        [patch_linux, BuildExtCmdObj, 1])
+if not on_readthedocs:
+    from linuxpatch import  patch_and_copy_shared
+    patch_step =  CustomBuildStep(
+        "Patching and copying shared libraries",
+        [patch_and_copy_shared, BuildExtCmdObj, 1])
     ext_modules.append(patch_step)
 
 
@@ -669,6 +670,15 @@ ext_modules = [
 ]
 """
 
+if os.name ==  "posix": 
+   EXCLUDE = ['*.dll', '*.pyd', '*.*.dll', '*.*.pyd'] 
+elif os.name ==  "nt": 
+   EXCLUDE = ['*.so', '*.*.so'] 
+else:
+   EXCLUDE = [] 
+
+
+
 setup(
     name = 'mmgroup',    
     version = VERSION,    
@@ -678,10 +688,13 @@ setup(
     author='Martin Seysen',
     author_email='m.seysen@gmx.de',
     url='https://github.com/Martin-Seysen/mmgroup',
-    packages=find_packages('src'),
+    packages=find_namespace_packages(
+        where = 'src',
+        exclude = EXCLUDE
+    ),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-    include_package_data=True,
+    include_package_data=False,
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -689,16 +702,15 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         #'Operating System :: Unix',
-        #'Operating System :: POSIX',
+        'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
-        #Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        #'Programming Language :: Python :: 3.4',
-        #'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        #'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         # uncomment if you test on these interpreters:
@@ -709,14 +721,14 @@ setup(
     ],
     project_urls={
        # 'Changelog': 'yet unknown',
-       # 'Issue Tracker': 'yet unknown',
+       'Issue Tracker': 'https://github.com/Martin-Seysen/mmgroup/issues',
     },
     keywords=[
         'sporadic group', 'monster group', 'finite simple group'
     ],
     python_requires='>=3.6',
     install_requires=[
-         'numpy',
+         'numpy', 'regex',
     ],
     extras_require={
         # eg:
@@ -724,11 +736,11 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     setup_requires=[
-        'numpy', 'scipy', 'pytest-runner', 'cython', 'regex',
+        'numpy', 'pytest-runner', 'cython', 'regex',
         # 'sphinx',  'sphinxcontrib-bibtex',
     ],
     tests_require=[
-        'pytest', 'scipy', 
+        'pytest', 'numpy', 'regex',
     ],
     cmdclass={
         'build_ext': BuildExtCmd,

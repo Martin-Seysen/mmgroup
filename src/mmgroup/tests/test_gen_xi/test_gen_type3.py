@@ -22,9 +22,6 @@ from collections import defaultdict
 from multiprocessing import Pool, TimeoutError
 
 import numpy as np
-import scipy
-import scipy.special
-from scipy.stats import chisquare
 import pytest
 
 from mmgroup import MM0
@@ -146,17 +143,13 @@ def test_type3(verbose = 0):
 
 
 
-"""Return binommial coeffient n choose k"""
-def binom(n, k):
-    return int(scipy.special.binom(n, k) + 0.1)
-
 # The dictionary contains the number DATA_GEOMETRY[w] of type-3 
 # vectors in the Leech lattice modulo 3 of weight w. 
 # This table is obtained from :cite:`Iva99`, Lemma 4.4.1
 DATA_GEOMETRY = {
   24: 24 * 2**12, 
    9: 759 * 16 * 2**8,
-  21: binom(24,3) * 2**12,
+  21: 2**12 * 24 * 23 * 22 // 6,
   12: 2576 * 2**11,
 }  
  

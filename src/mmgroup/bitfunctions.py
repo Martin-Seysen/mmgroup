@@ -557,7 +557,20 @@ def rand_perm(n):
        return bit_perm_mul(p1,p2)
         
 
-
-
+try:
+    from math import comb as binomial
+except:
+    def binomial(n, k):
+        """Return binomial coefficient ``n`` over ``k``"""
+        assert isinstance(k, Integral) 
+        assert isinstance(n, Integral) and n >= 0
+        if k + k > n:
+            k = n - k
+        if k > 0:
+            x = 1
+            for i in range(1, k+1):
+                x = (x * (n + 1 - i)) // i
+            return x
+        return 1 if k == 0 else 0
 
 

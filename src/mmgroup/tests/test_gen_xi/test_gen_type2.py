@@ -22,9 +22,6 @@ from collections import defaultdict
 from multiprocessing import Pool, TimeoutError
 
 import numpy as np
-import scipy
-import scipy.special
-from scipy.stats import chisquare
 import pytest
 
 from mmgroup import MM0

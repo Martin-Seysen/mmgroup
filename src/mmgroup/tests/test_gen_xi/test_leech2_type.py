@@ -23,9 +23,6 @@ from multiprocessing import Pool
 import time
 
 import numpy as np
-import scipy
-import scipy.special
-from scipy.stats import chisquare
 
 import pytest
 
@@ -37,6 +34,7 @@ from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_type_selftest
 from mmgroup.clifford12 import xsp2co1_leech2_count_type2
+from mmgroup.bitfunctions import binomial
 
 
 
@@ -207,9 +205,6 @@ def test_leech2_type(verbose = 0):
 #************************************************************************/
 
 
-def binom(n, k):
-    """Return binommial coeffient n choose k"""
-    return int(scipy.special.binom(n, k) + 0.1)
 
 
 
@@ -218,16 +213,16 @@ def binom(n, k):
 # obtained from :cite:`Iva99`, Lemmas 4.4.1 and 4.6.1.
 TYPE_LENGTHS = {               # Name in :cite:`Iva99`
  0x00: 1,
- 0x20: binom(24,2) * 2,        # \Lambda_2^4
+ 0x20: binomial(24,2) * 2,     # \Lambda_2^4
  0x21: 24 * 2**11,             # \Lambda_2^3
  0x22: 759 * 2**6,             # \Lambda_2^2
  0x31: 24 * 2**11,             # \Lambda_3^5
- 0x33: binom(24,3) * 2**11,    # \Lambda_3^3
+ 0x33: binomial(24,3) * 2**11, # \Lambda_3^3
  0x34: 759 * 16 * 2**7,        # \Lambda_3^4
  0x36: 2576 * 2**10,           # \Lambda_3^2
  0x40: 2 * 1771,               # \bar{\Lambda}_4^{4a}
  0x42: 759 * 2**6,             # \bar{\Lambda}_4^{6} 
- 0x43: binom(24,3) * 2**11,    # \bar{\Lambda}_4^{5}
+ 0x43: binomial(24,3) * 2**11, # \bar{\Lambda}_4^{5}
  0x44: 15 * 759 * 2**7,        # \bar{\Lambda}_4^{4b}
  0x46: 1288 * 2**11,           # \bar{\Lambda}_4^{4c}
  0x48: 1                       # \bar{\Lambda}_4^{8}
