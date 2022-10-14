@@ -21,7 +21,4 @@ test-requires = [
 
 
 # Run the package tests using `pytest`
-# before-test = "pip install mmgroup"
-test-command = "pytest --pyargs mmgroup -v -s -m \"mmm and not slow\""
-#test-skip =  "*-*linux_*"
-#dependency-versions = "./constraints.txt"
+test-command = "pytest --pyargs mmgroup -v -s -m \"not slow\""

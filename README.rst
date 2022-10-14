@@ -11,14 +11,21 @@ https://mmgroup.readthedocs.io/en/latest/
 Quick installation and test
 ---------------------------
 
-For Windows 64 see:
+For Windows 64:
 
-https://mmgroup.readthedocs.io/en/latest/api.html#installation
+.. code-block::
 
+   pip install mmgroup
+   pip install pytest
+   python -m pytest --pyargs mmgroup -m "not slow"
 
-For Linux see:
+For Linux:
 
-https://mmgroup.readthedocs.io/en/latest/guide.html#installing-the-mmgroup-package-on-linux
+.. code-block::
+
+   pip3 install mmgroup
+   pip3 install pytest
+   python3 -m pytest --pyargs mmgroup -m "not slow"
 
 
 License
