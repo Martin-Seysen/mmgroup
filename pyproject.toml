@@ -22,4 +22,4 @@ test-requires = [
 
 # Run the package tests using `pytest`
 test-command = "pytest --pyargs mmgroup -v -s -m \"not slow\""
-test_skip = "*-macOS*"
+test-skip = "*-macOS*"
