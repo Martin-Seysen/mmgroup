@@ -4,6 +4,7 @@ from __future__ import  unicode_literals
 
 import sys
 import os
+import platform
 from random import sample
 import datetime
 import time
@@ -12,7 +13,18 @@ from collections import defaultdict
 import pytest
 
 import numpy as np
-from multiprocessing import Pool, TimeoutError, cpu_count
+
+MULTITASKING = True
+if platform.system() == "darwin":
+    MULTITASKING = False 
+
+if MULTITASKING:
+    from multiprocessing import Pool,  cpu_count
+    NPROCESSES =  max(1, cpu_count() - 1)
+else:
+    NPROCESSES = 1
+
+
 
 from mmgroup.mm_reduce import mm_reduce_M
 from mmgroup import MM0, MM, MMV,  Xsp2_Co1
@@ -120,8 +132,6 @@ def one_test_reduce(g, verbose = 0):
 
 # Support for multiprocessing         
 POOL_MAGIC = 0x23f124ee
-NPROCESSES =  max(1, cpu_count() - 1)
-#NPROCESSES = 1
 
 def single_test_reduce(ncases, verbose = 0):
      for i, g in enumerate(reduce_testcases(ncases)):
@@ -136,13 +146,14 @@ def single_test_reduce(ncases, verbose = 0):
 def test_reduce(ncases = 10, verbose = 1):
     if verbose or NPROCESSES <= 1:
         single_test_reduce(ncases, verbose = verbose)
-        return    
-    with Pool(processes = NPROCESSES) as pool:
-        num_cases = (ncases - 1) // (NPROCESSES)  + 1
-        testvalues = [num_cases] * NPROCESSES
-        results = pool.map(single_test_reduce, testvalues)
-    pool.join()
-    assert results ==  [POOL_MAGIC] * NPROCESSES
+        return 
+    else:   
+        with Pool(processes = NPROCESSES) as pool:
+            num_cases = (ncases - 1) // (NPROCESSES)  + 1
+            testvalues = [num_cases] * NPROCESSES
+            results = pool.map(single_test_reduce, testvalues)
+        pool.join()
+        assert results ==  [POOL_MAGIC] * NPROCESSES
 
 
 
