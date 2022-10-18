@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 
 
 [tool.cibuildwheel]
-skip = "*-win32 *-manylinux_i686 cp36-* cp311-* pp* *-musllinux*"
+skip = "*-win32 *-manylinux_i686 cp36-* cp311-* pp* *-musllinux* cp37-* cp38-*"
 build-verbosity = 3
 test-requires = [
    "pytest",
@@ -22,4 +22,4 @@ test-requires = [
 
 # Run the package tests using `pytest`
 test-command = "pytest --pyargs mmgroup -v -s -m \"not slow\""
-test-skip = "*-macOS* *-macos*"
+#test-skip = "*-macOS* *-macos*"

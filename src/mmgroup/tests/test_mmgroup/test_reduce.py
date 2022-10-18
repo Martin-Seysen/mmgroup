@@ -133,7 +133,7 @@ def single_test_reduce(ncases, verbose = 0):
 
 # The final test programm
 @pytest.mark.mmgroup 
-def test_reduce(ncases = 10, verbose = 0):
+def test_reduce(ncases = 10, verbose = 1):
     if verbose or NPROCESSES <= 1:
         single_test_reduce(ncases, verbose = verbose)
         return    

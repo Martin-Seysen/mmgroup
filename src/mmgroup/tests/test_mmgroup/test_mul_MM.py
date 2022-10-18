@@ -27,8 +27,9 @@ def mul_testcases(ncases = 1):
          for i in range(ncases):
               yield MM('r', complexity)
 
+@pytest.mark.slow 
 @pytest.mark.mmgroup 
-def test_mul_MM(verbose = 0):
+def test_mul_MM(verbose = 1):
     print("Test multiplcation in monster group in class MM")
     TEXT = "Test %d: multiply random vector v (mod 3) with g1 and g2"
     V = MMV(3)
