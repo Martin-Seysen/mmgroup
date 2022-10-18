@@ -54,9 +54,11 @@ def reduce_mm_C(g, check = True, mode = 0):
     global reduce_mm_time
  
     g1 = np.zeros(256, dtype = np.uint32)
+    print("Invoking the C function mm_reduce_M")
     t_start = time.perf_counter() 
     res = mm_reduce_M(g._data, g.length, mode, g1)
     reduce_mm_time = time.perf_counter() - t_start
+    print("result is", res)
     if (res < 0):
         err = "Reduction of element of monster failed"
         raise ValueError(err)
@@ -90,12 +92,15 @@ def reduce_testcases_C():
 @pytest.mark.mmgroup
 def test_reduce_mm_C(verbose = 0):
     for n, (g, mode) in enumerate(reduce_testcases_C()):
-        g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
-        ok = g == g1
         if verbose:
             print("Test", n + 1)
-        if verbose or not ok:
             print("g =", g)
+        g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
+        ok = g == g1
+        if not verbose and not ok:
+            print("Test", n + 1)
+            print("g =", g)
+        if verbose or not ok:
             print("reduced:", g1)
             print("Time: %.3f ms" % (1000 * reduce_mm_time),
                  ", complexity;", g_complexity(g), ",", g_complexity(g1))
