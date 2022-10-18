@@ -90,12 +90,13 @@ def reduce_testcases_C():
 
 
 @pytest.mark.mmgroup
-def test_reduce_mm_C(verbose = 0):
+def test_reduce_mm_C(verbose = 1):
     for n, (g, mode) in enumerate(reduce_testcases_C()):
         if verbose:
             print("Test", n + 1)
             print("g =", g)
-        g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
+        #g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
+        g = MM0()
         ok = g == g1
         if not verbose and not ok:
             print("Test", n + 1)
