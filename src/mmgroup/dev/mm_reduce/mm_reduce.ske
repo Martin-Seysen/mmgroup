@@ -1302,15 +1302,19 @@ int32_t mm_reduce_vector_shorten(uint32_t *a, uint32_t n, uint32_t *r, uint_mmv_
     uint32_t len_start = r[0] & ~MM_REDUCE_MARK_MASK, out_buf[12];
     gt_word_type* p_gt = gt_word_alloc(1, work,
          MM_OP15_LEN_V * sizeof(uint_mmv_t) );
+    if (p_gt == NULL) return -1;
     
     if ((r[0] &  MM_REDUCE_MARK_MASK) != MM_REDUCE_MARK_VM_DONE) {
         res = -((int)(r[1]));
-        if (r[0] == MM_REDUCE_MARK_ERROR && res < 0) return res;
-        return -0x30000;
+        if (r[0] != MM_REDUCE_MARK_ERROR || res >= 0) res = -0x30000;
+        goto done;
     }
     if (len_start < 2 || len_start > 80 || 
         (r[len_start - 1] & ~0x1ffffffUL) != 0x86000000 ||
-        checksum(r, len_start) != r[len_start]) return -0x20000;
+        checksum(r, len_start) != r[len_start]) {
+        res = -0x20000;
+        goto done;
+    }
 
     res = -1;
     p_gt = gt_word_alloc(1, work, MM_OP15_LEN_V * sizeof(uint_mmv_t));
@@ -1330,12 +1334,10 @@ int32_t mm_reduce_vector_shorten(uint32_t *a, uint32_t n, uint32_t *r, uint_mmv_
     res += len_start;
     r[0] = 0;
     mm_group_invert_word(r, res);
-    return res;
 
 done:
     gt_word_free(p_gt);
     return res;
-
   
 }
 
