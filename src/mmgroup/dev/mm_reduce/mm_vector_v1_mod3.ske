@@ -178,12 +178,7 @@ int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
     if (v_y < 0) return  error(6, v_y);
     y = leech2matrix_solve_eqn(
         V1_MOD3_TAG_DATA + OFS3_SOLVE_Y, 11, v_y);
-    if (y > 0) {
-        g[len] = 0xC0000000 + y;
-        res = mm_op15_word_tag_A(A, g + len, 1, 1);
-        if (res < 0) return error(7, res);
-        len += 1;
-    }
+    if (y > 0) g[len++] = 0xC0000000 + y;
 
     for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
     res = xsp2co1_set_elem_word(elem_g_i, g_inv, len);
