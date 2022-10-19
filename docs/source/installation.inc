@@ -5,7 +5,7 @@ Installation on 64-bit Windows
 For installing the *mmgroup* package on a 64-bit Windows system,
 python 3 must be installed. Then type:
 
-.. code-block::
+.. code-block:: text
 
    pip install mmgroup
    pip install pytest
@@ -15,14 +15,14 @@ python 3 must be installed. Then type:
 The last command tests the installation.
 32-bit Windows systems are not supported.
 
-Installation on Linux
----------------------
+Installation on Linux and macOS
+-------------------------------
 
-For installing the *mmgroup* package on a Linux system,
+For installing the *mmgroup* package on a Linux or macOS system,
 python 3 must be installed. Then type:
 
 
-.. code-block::
+.. code-block:: text
 
    pip3 install mmgroup
    pip3 install pytest

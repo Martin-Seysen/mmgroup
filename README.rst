@@ -19,7 +19,7 @@ For Windows 64:
    pip install pytest
    python -m pytest --pyargs -Wignore mmgroup -m "not slow"
 
-For Linux:
+For Linux and macOS:
 
 .. code-block::
 

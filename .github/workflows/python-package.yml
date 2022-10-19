@@ -61,4 +61,20 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
-          
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+
+      - name: Build sdist
+        run: python3 setup.py sdist
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./dist/*.tar.gz

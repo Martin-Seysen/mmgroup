@@ -74,20 +74,19 @@ copied to the  ``mmgroup`` project.
 Creating a new version
 ----------------------
 
-You should have slept well the night before creating a new version,
-since this is a tedious process with a bewildering variety of possible
-errors. Here the ultimate goal is to upload a new python version to 
-the **pypi** server. 
+The ultimate goal of building a new version is to upload a new python 
+version to  the **pypi** server. 
 
-At present we will only upload a source distribution and python wheels
-for 64-bit Windows, say, for the latest two or three python versions.
+At present we will upload a source distribution and python 3 wheels
+for 64-bit Windows, Linux and macOS, say, for the latest two or three 
+python versions.
 
 Before creating a new version, (at least) the following test should 
 be executed in a shell in Windows 64, and also in some Linux version:
 
  .. code-block:: text
 
-    pytest src/mmgroup/ -v -s -m "not very_slow"
+    pytest src/mmgroup/ -v -s -m "very_slow"
 
 Version numbering 
 .................
@@ -112,7 +111,7 @@ you should add the following line to the version history:
     | Version 0.0.8, 2022-07-12. Performance improved
 
 Then you should upload the new version with these changes to the
-github repository:
+``master`` branch in the github repository:
 
 https://github.com/Martin-Seysen/mmgroup
 
@@ -130,6 +129,12 @@ button **Publish release** in the github window.
 
 Generating the wheels 
 .....................
+
+
+This subsection describes how to create wheels manually. This process
+has now been automated to some extent by using ``GitHub`` actions
+that trigger the python tool ``cibuildwheel``. So the reader may skip
+this section.
 
 Here you must generate a wheel for each python version, and also for
 each operating system that you want to support. Here we assume that

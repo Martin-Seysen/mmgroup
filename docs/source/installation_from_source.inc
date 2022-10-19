@@ -1,9 +1,8 @@
 
 
 The current version of the ``mmgroup`` package is a source distribution that has 
-been tested on a 64-bit Windows platform only. It runs with python 3.6 or higher. 
-There is also experimental support for Linux. The source distribution can be 
-downloaded from
+been tested on a 64-bit Windows, Linux and macOS. It runs with python 3.7 or 
+higher. The sources of the project can be downloaded from
 
 https://github.com/Martin-Seysen/mmgroup . 
 
@@ -30,7 +29,6 @@ should install the following python packages:
   ``wheel``                Distribution: package for generating a Python wheel
   ``pytest``               Testing: basic package used for testing
   ``regex``                Development: parsing balanced curly braces
-  ``scipy``                Testing: statistical tests
   ``setuptools``           Development: basic package used for setup and building
                            extensions
   ``sphinx``               Documentation: basic package used for documentation
@@ -62,30 +60,33 @@ also install the following programs:
 Installing the package
 ----------------------
 
-To install the required package, go to the root directory of the distribution.
+To build the required package on your local computer, go to the root directory 
+of the distribution.
 This is the directory containing the files ``setup.py`` and ``README.rst``.
-From there run the following command::
-
-    python setup.py install -f
-
-For testing the installation, run the following command::
-
-    python -m pytest ./src/mmgroup/ -v -s -m "not slow"
+From there run the following commands in a shell:
 
 
-For building a wheel you may run:: 
+.. code-block::
 
-    python setup.py bdist_wheel
+   python -m pip install -r requirements.txt
+   python setup.py bdist_wheel
+
+In Linux or macOS you'll have to change the ``python`` command to ``python3``.
+
+For testing the installation, run the following command:
+
+.. code-block::
+
+   python -m pytest ./src/mmgroup/ -Wignore -v -s -m "not slow"
+
+
 
 Distributing a *wheel* is the standard way to distribute a python
 package, see e.g. 
 
 https://packaging.python.org/guides/distributing-packages-using-setuptools/#wheels
 
-The current version supports building wheels for 64-bit Windows only.
-
-There is experimental support for building a Linux version from a
-source distribution.
+The current version supports building wheels for 64-bit Windows, Linux and maccOS.
 
 Remarks
 .......
@@ -148,59 +149,12 @@ line the author had to type::
 Here the path my be different on the user's Windows system.
 
 
-Installing the *mmgroup* package on Linux
------------------------------------------
 
-We describe some experimental support for building a Linux version
-of the *mmgroup* package. If you have installed an older version of
-the *mmgroup* package then you should unistall the old version first.
-Then clone  -mthe *git* repository:
-
-https://github.com/Martin-Seysen/mmgroup
-
-Next create a virtual enviroment, activate it, open a shell, go to 
-the root directory of the cloned repository, and type:
-
- .. code-block:: none
-    
-    export PYTHONPATH=$PWD/src
-    pip3 install -r requirements.txt
-    python3 setup.py build_ext --inplace
-    python3 -m pytest ./src/mmgroup -v -s -m "not slow"
-
-The last command tests the package.
     
 Remarks
 ....... 
 
-You might have to adjust the values of the environment variables
-PYTHONPATH and LD_LIBRARY_PATH to your requirements.
-
-In a Linux distribution, it may be necessary to install **pip3**,
-**patchelf**, **sphinx**, **texlive**, and **doxygen** as follows:
-
- .. code-block:: none
-
-    sudo apt-get install python-pip
-    sudo apt-get install patchelf
-    sudo apt-get install python-sphinx
-    sudo apt-get install texlive
-    sudo apt-get install doxygen
-
-The **patchelf** utility is used to patch the shared libraries so
-that python can find all of them in the place where they are. If
-this does not work then it may help to adjust the environment
-variable LD_LIBRARY_PATH:
-
- .. code-block:: none
-
-    export LD_LIBRARY_PATH=$PWD/src/mmgroup
-
-
-A more comfortable installation process should be compliant with the 
-*manylinux* standard, see e.g.:
-
-https://github.com/pypa/python-manylinux-demo  .
-
-
+You may also use the python package ``cibuildwheel`` to build several wheels on
+differnt operating systems. The GitHub repository of the project contains
+actions to build several wheelson differnt opating systems. 
 
