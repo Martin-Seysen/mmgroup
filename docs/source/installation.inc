@@ -35,6 +35,6 @@ The last command tests the installation.
 Other operating systems
 -----------------------
 
-For other operating systems, the package must be compiled from a
+For other operating systems the package must be compiled from a
 source distribution. Some hints for doing so are given in the
-*guide for developers*.
+*Guide for developers*.

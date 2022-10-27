@@ -40,19 +40,16 @@ calculating in such representations :math:`\rho_p` of the monster
 :math:`\mathbb{M}`. The main ingredient for speeding up the
 computation in :math:`\mathbb{M}` is the calculation and the
 analysis of the images of certain vectors in :math:`\rho_p`
-that are called 2A axes in :cite:`Con85`. More details will be
-published in another research paper.
+that are called 2A axes in :cite:`Con85`.
 
 In the description of the *mmgroup* package we use the notation
-in :cite:`Seysen20`, where an explicit description of the 
-representations :math:`\rho(g), g \in G` is given for a 
-generating subset :math:`G` of the monster :math:`\mathbb{M}`.
-For a mathematical description of the implementation we
-refer to :cite:`Seysen22`.
+in :cite:`Seysen20`, where an explicit generating set of the
+monster :math:`\mathbb{M}` is given. For a mathematical description
+of the implementation we refer to :cite:`Seysen22`.
 
 
-Installation
-============
+Installation and test
+=====================
 
 .. include:: installation.inc
 

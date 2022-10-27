@@ -7,7 +7,7 @@ e.g. :cite:`Asc86`, :cite:`Con85`.
 We also write ``1`` for the neutral element 
 :math:`(0,0) \in  \mathcal{C} \times \mathbb{F}_2 = \mathcal{P}` of
 the Parker loop and ``-1`` for its negative :math:`(0,1)`. 
-Let :math:`\Omega` = :math:`(0,\tilde{\Omega})`, where 
+Let :math:`\Omega` = :math:`(\tilde{\Omega}, 0)`, where
 :math:`\tilde{\Omega}` is the Golay code word ``1,...,1``. Then the 
 center :math:`Z(\mathcal{P})` of :math:`\mathcal{P}` is 
 :math:`\{1, -1, \Omega, -\Omega\}`.  An element :math:`(g,s)`,

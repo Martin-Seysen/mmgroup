@@ -478,7 +478,7 @@ static inline int32_t analyze_axis(
    Caution:
 
    This is a quick analyis of a 2A axis. The
-   function return garbage if ``v`` is not  a 2A axis.
+   function returns garbage if ``v`` is not  a 2A axis.
 
 */
 // %%EXPORT px
@@ -1335,6 +1335,68 @@ done:
   
 }
 
+
+
+
+/**
+  @brief Step finish incomplete reduction of an element of the monster
+
+  This function should be applied immediately after
+  function ``mm_reduce_vector_vp`` or after
+  function ``mm_reduce_vector_vn``.
+
+  The function outputs the word already stored in the buffer ``r``
+  computed by the functions  ``mm_reduce_vector_vp`` and,
+  possibly, ``mm_reduce_vector_vn`` and returns the length of the
+  data in buffer ``r``. Here we assume that subsequent calls to
+  the functions in the sequence
+
+  ``mm_reduce_vector_vp, mm_reduce_vector_vn, mm_reduce_vector_v1``,
+
+  that have not yet been called, would contribute nothing the
+  the output assembled in buffer ``r``.
+
+  The buffer referred by ``r`` should have length at least 128.
+
+  A negative return value indicates a fatal error.
+
+  More details are yet to be documented!!!!
+*/
+// %%EXPORT px
+int32_t mm_reduce_vector_incomplete(uint32_t *r)
+{
+
+
+    int32_t res;
+    uint32_t len_start = r[0] & ~MM_REDUCE_MARK_MASK;
+    uint32_t status = r[0] & MM_REDUCE_MARK_MASK;
+    if (status == MM_REDUCE_MARK_VP_DONE) {
+        if (len_start < 2 || len_start > 40 ||
+            (r[len_start - 1] & ~0x1ffffffUL) != 0x84000000 ||
+            checksum(r, len_start) != r[len_start]) return -0x20000;
+        r[0] = 0;
+        mm_group_invert_word(r, res = len_start);
+        return res;
+    }
+
+    if (status == MM_REDUCE_MARK_VM_DONE) {
+        if (len_start < 2 || len_start > 80 ||
+            (r[len_start - 1] & ~0x1ffffffUL) != 0x86000000 ||
+            checksum(r, len_start) != r[len_start]) return -0x20000;
+        r[0] = 0;
+        mm_group_invert_word(r, res = len_start);
+        return res;
+    }
+
+
+    res = -((int)(r[1]));
+    if (r[0] == MM_REDUCE_MARK_ERROR && res < 0) return res;
+    return -0x20000;
+
+
+
+
+}
 
 
 /////////////////////////////////////////////////////////////////////////
