@@ -43,6 +43,9 @@ Some mathematical aspects of the implementation
 .. include:: guide_mathematical.inc
 
 
+.. include:: guide_mathematical_2.inc
+
+
 .. _code-generation-label:
 
 Code generation

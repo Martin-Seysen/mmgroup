@@ -360,7 +360,7 @@ uint32_t mat24_extract_b24(uint32_t v1, uint32_t u_mask)
  @brief Spread bits of 24-bit vector ``v1`` according to the mask ``u_mask``
  
  If ``u_mask`` has bits equal to one at positions ``i_0, i_1, ..., i_k``
- (in ascending order) then the bit of ``v1`` at position ``i`` is copied 
+ (in ascending order) then the bit of ``v1`` at position ``j`` is copied 
  to the bit at position ``i_j`` of the return value for ``j = 0,...,k``.
 */
 // %%EXPORT p

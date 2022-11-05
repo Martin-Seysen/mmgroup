@@ -218,8 +218,8 @@ in ``C*``) in ``cocode`` representation. Function
 ``theta(v1, v2)``, which is 0 or 1.
 
 
-The group ``AutPl`` of standard automorphisms of the ``Pl``
-...........................................................
+The group ``AutPl`` of standard automorphisms of the Parker loop
+................................................................
 
 
 An automorphism of the Parker loop is implemented as an array ``a``
