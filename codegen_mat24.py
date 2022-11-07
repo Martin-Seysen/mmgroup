@@ -105,12 +105,89 @@ from libc.stdint cimport uint32_t, uint16_t, uint8_t
 """
 
 
+MAT24_C_FILES = [
+     "mat24_functions",
+     "mat24_random",
+]
+
+
+MAT24_H_FILE = "mat24_functions"
+
+
+
+
+
+MAT24_H_FILE_BEGIN = """
+
+// %%GEN h
+#ifndef MAT24_FUNCTIONS_H
+#define MAT24_FUNCTIONS_H
+
+#include <stdint.h>
+
+/** @file mat24_functions.h
+  File ``mat24_functions.h`` is the header file for ``mat24_functions.c``. 
+*/
+
+/// @cond DO_NOT_DOCUMENT 
+
+#define MAT24_DLL  // We want a DLL!!
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+  #define MAT24_HELPER_DLL_IMPORT __declspec(dllimport)
+  #define MAT24_HELPER_DLL_EXPORT __declspec(dllexport)
+  #define MAT24_HELPER_DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define MAT24_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define MAT24_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define MAT24_HELPER_DLL_IMPORT
+    #define MAT24_HELPER_DLL_EXPORT
+    #define MAT24_HELPER_DLL_LOCAL
+  #endif
+#endif
+
+// Now we use the generic helper definitions above to define MAT24_API 
+// and MAT24_LOCAL.
+// MAT24_API is used for the public API symbols. It either DLL imports 
+// or DLL exports (or does nothing for static build). 
+// MAT24_LOCAL is used for non-api symbols.
+
+#ifdef MAT24_DLL // defined if MAT24 is compiled as a DLL
+  #ifdef MAT24_DLL_EXPORTS // defined if we are building the MAT24 DLL 
+                           // (instead of using it)
+    #define MAT24_API MAT24_HELPER_DLL_EXPORT
+  #else
+    #define MAT24_API MAT24_HELPER_DLL_IMPORT
+  #endif // MAT24_DLL_EXPORTS
+  #define MAT24_LOCAL MAT24_HELPER_DLL_LOCAL
+#else // MAT24_DLL is not defined: this means MAT24 is a static lib.
+  #define MAT24_API
+  #define MAT24_LOCAL
+#endif // MAT24_DLL
+
+/// @endcond
+"""
+
+
+MAT24_H_FILE_END = """
+// %%GEN h
+#endif  //  ifndef MAT24_FUNCTIONS_H
+// %%GEN c
+"""
+
+
+
+
 
 def mat24_make_c_code():
     """Create .c and .h file with the functionality of class Mat24
 
-    The input of this function is the file MAT24_C_FILE.ske that 
-    contains a (much faster) C version of the functions in class
+    The input files of this function are the files in  MAT24_C_FILES
+    that contain a (much faster) C versions of the functions in class
     mmgroup.dev.mat24.mat24_ref.Mat24.
 
     The functions in the .ske file make use of the tables that have 
@@ -123,21 +200,29 @@ def mat24_make_c_code():
     in module make_c_tables.  
     """ 
     print("Creating C source from file mat24_functions.ske\n")
-    MAT24_C_FILE = "mat24_functions"
     SKE_DIR = os.path.join(DEV_DIR, "mat24")
     # The following two tables can't easily be computed earlier
     Mat24.tables["Mat24_doc_basis"] = Mat24.str_basis()
     generator = TableGenerator(Mat24.tables, Mat24.directives)
-    f = os.path.join(SKE_DIR, MAT24_C_FILE)
-    path_ = os.path.join(C_DIR, MAT24_C_FILE)  
-    #print("pwd", os.getcwd())
-    #print(os.path.realpath(path_ + ".c"))
-    generator.generate(f + ".ske", path_ + ".c", path_ + ".h")
-    ## generator.export_tables(file_name = "mat24_export.py")
+    mat24_header_inputs = [MAT24_H_FILE_BEGIN]
+    for file in MAT24_C_FILES:
+        f = os.path.join(SKE_DIR, file)
+        path_ = os.path.join(C_DIR, file)  
+        #print("pwd", os.getcwd())
+        #print(os.path.realpath(path_ + ".c"))
+        generator.generate(f + ".ske", path_ + ".c")
+        mat24_header_inputs.append(f + ".ske")
+        ## generator.export_tables(file_name = "mat24_export.py")
+    mat24_header_inputs.append(MAT24_H_FILE_END)
+
+    h_file = MAT24_H_FILE + ".h"
+    h_path = os.path.join(C_DIR, h_file)
+    print("Creating %s from previous .ske files" % h_file)
+    generator.generate(mat24_header_inputs, None, h_path)
 
     generator.generate_pxd(
-        os.path.join(PXD_DIR, MAT24_C_FILE + ".pxd"), 
-        MAT24_C_FILE + ".h",  
+        os.path.join(PXD_DIR, MAT24_H_FILE + ".pxd"), 
+        MAT24_H_FILE + ".h",  
         pxd_declarations   
     )
     print("C files for extension mat24 have been created" )

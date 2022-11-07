@@ -73,15 +73,14 @@ We have the following inclusions:
    \end{array}
 
 Membership of an element of :math:`M_{24}` in any of these subgroups
-can easily be checked computationally. Thus an inclusion of
-two intersections of these subgroups can be disproved
-computationally by finding an element of :math:`M_{24}` contadicting
-that inclusion.
+can easily be checked computationally. Thus an inclusion of two 
+intersections of these subgroups can be disproved computationally by 
+finding an element of :math:`M_{24}` contadicting that inclusion. 
+This computation is done in function ``test_mat24_rand`` in module 
+``mmgroup.tests.test_mat24`` during the standard test. 
 
-TODO: Show computationally that the above list contains all inclusions.
 
-
-In the remainder of this subsection we will show the inclusions
+In the remainder of this subsection we will prove the inclusions
 given above. The first inclusion is obvious. Next we justify the 
 following two inclusions. 
 
@@ -172,7 +171,7 @@ is in that Steiner system. This proves
 :math:`M_3 \cap M_l \subset M_s`. We obviously have
 :math:`M_3 \cap M_t \subset M_o`, and hence
 :math:`M_3 \cap M_t` fixes another Steiner system in :math:`o`.
-Here the set :math:`\{0,1,2,3\}`  is also in this Steiner system,
+Here the set :math:`\{0,1,2,3\}` is also in this Steiner system,
 implying :math:`M_3 \cap M_t \subset M_o \cap M_s`. 
 
 The group  :math:`M_t \cap M_l` fixes a line incident with a 

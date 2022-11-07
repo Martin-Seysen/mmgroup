@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
-from libc.stdint cimport uint32_t, uint16_t, uint8_t;
+from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t;
 
 
 
@@ -669,6 +669,10 @@ def perm_to_iautpl(c1, p1):
     return [pi[i] for i in range(24)], [m1[i] for i in range(12)]
 
 
+
+
+
+
 ###########################################################################
 # Auxiliary functions for the Monster group
 #
@@ -711,6 +715,37 @@ def op_all_cocode(c1):
     cdef int i
     mat24_op_all_cocode(c1i, p_res)
     return [res[i] for i in range(2048)]
+
+
+
+
+###########################################################################
+# Functions from file mat24_random.ske
+###########################################################################
+
+
+def complete_rand_mode(uint32_t u_mode):
+    cdef uint32_t res = mat24_complete_rand_mode(u_mode)
+    return res
+
+
+def perm_in_local(p1):
+    cdef uint8_t p1a[24]
+    cdef int i
+    for i in range(24): p1a[i] = int(p1[i])
+    cdef uint32_t res = mat24_perm_in_local(p1a)
+    return res
+
+
+def perm_rand_local(uint32_t u_mode, uint32_t u_rand):
+    cdef uint8_t p1a[24]
+    cdef uint8_t *p_p1a = p1a
+    cdef int32_t res = mat24_perm_rand_local(u_mode, u_rand, p_p1a)
+    if res:
+        err = "Generation of random permutation has failed"
+        raise ValueError(err)
+    cdef int i
+    return [p1a[i] for i in range(24)]
 
 
 

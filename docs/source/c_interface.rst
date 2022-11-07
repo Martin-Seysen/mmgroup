@@ -29,7 +29,7 @@ C interface
 
 .. doxygenfile:: mat24_functions.c
 
-
+.. doxygenfile:: mat24_random.c
 
 
 Generating C code for the ``mmgroup.mat24`` extension

@@ -1,0 +1,412 @@
+
+
+/** @file mat24_random.c
+ File ``mat24_random.c`` contains the C implementations of the
+ functions for generation random elements of some subgroups of the
+ Mathieu group \f$M_{24}\f$.
+
+ Equivalent python function are coded in
+ module ``mmgroup.tests.test_mat24.test_mat24_rand``.
+*/
+
+
+
+#include <stdint.h>
+// #include <stdio.h>
+#include <string.h>
+#include "mat24_functions.h"
+
+// %%EXPORT_KWD MAT24_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+// %%GEN h
+
+/** 
+  @enum mat24_rand_flags
+  @brief Flags describing subgroups of the Mathieu group \f$M_{24}\f$
+
+  This enumeration contains flags describing some subgroups of the
+  Mathieu group \f$M_{24}\f$ fixing certain subsets (or sets of
+  subsets) of the set \f$\tilde{\Omega} = \{0,\ldots,23\}\f$ on
+  which the group \f$M_{24}\f$ acts. Intersetions of these subgroups
+  may be described by combining these flags with the bitwise or
+  operator ``|``. For each flag we state the set being fixed.
+
+*/
+enum mat24_rand_flags {
+  MAT24_RAND_2 =  1, ///< fixes \f$\{2, 3\} \f$ 
+  MAT24_RAND_o =  2, ///< fixes \f$\{0, \ldots,7 \}\f$
+  MAT24_RAND_t =  4, ///< fixes \f$\{\{8i,\ldots,8i+7\} \mid i < 3 \}\f$
+  MAT24_RAND_s =  8, ///< fixes \f$\{\{4i,\ldots,4i+3\} \mid i < 6 \}\f$
+  MAT24_RAND_l = 16, ///< fixes \f$\{\{2i, 2i+1\} \mid  4 \leq i < 12 \}\f$
+  MAT24_RAND_3 = 32, ///< fixes \f$\{1, 2, 3\} \f$ 
+};
+
+// %%GEN c
+
+
+
+
+// %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+// %%GEN c
+
+
+/// @cond DO_NOT_DOCUMENT 
+// We want shorter names for the flags in enum mat24_rand_flags
+#define RAND_2 MAT24_RAND_2
+#define RAND_o MAT24_RAND_o
+#define RAND_t MAT24_RAND_t
+#define RAND_s MAT24_RAND_s
+#define RAND_l MAT24_RAND_l
+#define RAND_3 MAT24_RAND_3
+/// @endcond 
+
+
+
+
+/***********************************************************************
+** Function mat24_complete_rand_mode
+***********************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+// Modify an intersection ``mode`` of subgroups of \f$M_{24}\f$
+// encoded as a combination of flags of type ``enum mat24_rand_flags``
+// as follows: If ``mode`` is in subgroup ``mode_subgroup`` then
+// modifiy ``mode`` such that ``mode`` is also in ``mode_of``. Here
+// ``mode_subgroup`` and ``mode_of`` are also encoded as
+// combinations of flags of type ``enum mat24_rand_flags``.
+#define subgroup(mode, mode_subgroup, mode_of) \
+    if (((mode) & (mode_subgroup)) == (mode_subgroup)) mode |= (mode_of)
+
+/// @endcond 
+
+
+
+/**
+ @brief Complete an intersection of subgroups of \f$M_{24}\f$
+
+ Here the integer ``u_mode`` is a combination of flags of
+ type ``enum mat24_rand_flags`` describing an
+ intersection \f$H\f$ of subgroups of \f$M_{24}\f$. Then
+ the group \f$H\f$ may be contained in more subgroups
+ of \f$M_{24}\f$ encoded as bits of an integer of 
+ type ``enum mat24_rand_flags``.
+ This function sets all bits in ``u_mode`` corresponding to
+ groups containing  \f$H\f$. Furthermore, the function clears
+ all unused bits in parameter ``u_mode``.
+    
+ The function returns the modified parameter ``u_mode``.
+*/
+// %%EXPORT p
+uint32_t mat24_complete_rand_mode(uint32_t u_mode)
+{
+    subgroup(u_mode, RAND_l,  RAND_o);
+    subgroup(u_mode, RAND_l | RAND_2,  RAND_t);
+    subgroup(u_mode, RAND_t | RAND_2,  RAND_l | RAND_o);
+    subgroup(u_mode, RAND_3 | RAND_t,  RAND_o | RAND_s);
+    subgroup(u_mode, RAND_3 | RAND_l,  RAND_o | RAND_s);
+    subgroup(u_mode, RAND_3 | RAND_t | RAND_l,  RAND_o | RAND_2);
+    return u_mode;
+}
+
+
+
+/***********************************************************************
+** Function  mat24_perm_in_local
+***********************************************************************/
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/**
+  @brief Check if permutation ``p1`` fixes a certain set.
+
+  This set is the set 
+  {{i,...,i + diff -1} for i = start, start + diff, start + 2*diff...}
+*/
+static inline
+uint32_t check_in_set(uint8_t *pi, uint32_t start, uint32_t diff)
+{
+    uint32_t s = 0, i, j;
+    for (i = start; i < 24; i += diff) 
+        for (j = 1; j < diff; ++j) s |= pi[i] ^ pi[i + j];
+    return (s & (0-diff)) == 0;
+}
+
+/// @endcond  
+
+
+
+/**
+ @brief Compute some subgroups containing an element of \f$M_{24}\f$
+
+ Let \f$p_1\f$ be a permutation in \f$M_{24}\f$ given as an array of 
+ 24 integers. The function computes a set of subgroups of \f$M_{24}\f$
+ containing \f$p_1\f$. These computations are done for all subgroups
+ corresponding to the flags defined in ``enum mat24_rand_flags``.
+ The function returns an integer ``mode`` that is the combination
+ of flags of type ``enum mat24_rand_flags`` describing the
+ subgroups of \f$M_{24}\f$ containing  \f$H\f$ .
+    
+ The function returns -1 if \f$p_1\f$ is not in \f$M_{24}\f$.
+*/
+// %%EXPORT p
+int32_t mat24_perm_in_local(uint8_t *p1)
+{
+    uint32_t mode = 0, s;
+    if (mat24_perm_check(p1)) return -1;
+
+    s = (1 << p1[2]) | (1 << p1[3]);  
+    if (s == 0xc) mode |= RAND_2;
+    s |= (1 << p1[1]);
+    if (s == 0xe) mode |= RAND_3;
+    s |= (1 << p1[0]) | (1 << p1[4]) | (1 << p1[5])
+                      | (1 << p1[6]) | (1 << p1[7]);
+    if (s == 0xff) mode |= RAND_o;
+    if (check_in_set(p1, 8, 2)) mode |= RAND_l;
+    if (check_in_set(p1, 0, 4)) mode |= RAND_s;
+    if (check_in_set(p1, 0, 8)) mode |= RAND_t;
+    return mode;
+}
+
+
+/***********************************************************************
+** Some small auxiliary functions for function  mat24_perm_rand_local
+***********************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+ @brief Select a 'random' cleared bit from a mask
+
+ Let ``mask`` be the integer referred by ``*p_mask`` considered as 
+ a bit mask. The function selects a cleared bit from that mask. Here 
+ we consider the lowest 24 bits of parameter ``mask`` only. Let 
+ ``r1 = r / w``, ``b = r % w``. Then the function returns the
+ position ``k`` of the ``b``-th cleared bit in mask ``mask``.
+ It also puts ``*p_mask = mask | (1 << k)`` and ``*p_r = r1``.
+
+*/
+static inline 
+uint8_t free_bit24(uint32_t *p_mask, uint32_t *p_r)
+{
+    uint32_t mask, w, r1, b, bmask;
+
+    mask = *p_mask & 0xffffff;
+    w = 24 - mat24_bw24(mask);
+    r1 = *p_r / w;  b = *p_r - r1 * w; *p_r = r1;
+    bmask = mat24_spread_b24(1 << b, 0xffffff & ~mask);
+    *p_mask = mask | bmask;
+    return (uint8_t)(mat24_lsbit24(bmask));
+}
+
+
+/**
+ @brief Return a mask computed from array ``h2`` and mask ``new_mask``
+
+
+ The returned mask contains all bits in the array ``h2`` of
+ length ``len_h2`` and also all bits not set in ``new_mask``. It 
+ contains bits at positions less than 24 only.
+*/
+static inline 
+uint32_t remask(uint8_t *h2, uint32_t len_h2, uint32_t new_mask)
+{
+    uint32_t mask = ~new_mask, i;
+    for (i = 0; i < len_h2; ++i) mask |= 1 << h2[i];
+    return mask & 0xffffff;
+}
+
+
+static uint8_t H1[7] = {3, 2, 1, 0, 5, 4, 8}; 
+
+
+
+/**
+ @brief Complete image of subset of octad to an element of ``M_24``
+
+ Let the array ``h2`` of length ``len_h2 <= 6`` be an image of 
+ the prefix of the same length of the octad given by ``H1``.
+ Then this function completes the mapping  from (a prefix of)
+ ``H1`` to ``h2`` to a permutation in ``M_24`` and stores
+ that permutation in the array referred by ``pi``.
+
+ If necessary,  ``h1`` is first completed to an subset of an 
+ octad of by selecting bits cleared in the mask ``mask``.
+ We use function ``free_bit24`` for this purpose. Parameter ``r`` 
+ in this function has the same meaning the parameter referred
+ by ``p_r``as in function ``free_bit24`` .
+
+ The function return 0 in case of success and -1 in case of failure.
+
+ Array ``h2`` is modified and must have length at least 7.
+*/
+static inline 
+int32_t perm_from_suboctad(uint8_t *h2, uint32_t len_h2, 
+                          uint32_t mask, uint32_t r, uint8_t *pi)
+{
+    uint32_t mask_o = 0, i, syn, n_syn, res;
+    uint8_t b;
+    for (i = 0; i < len_h2; ++i) mask_o |= 1 << h2[i];
+    mask = (mask | mask_o) & 0xffffff;
+    while (len_h2 < 5) {
+        b = free_bit24(&mask, &r);
+        mask_o |= (uint32_t)1 << (uint32_t)b;
+        h2[len_h2++] = b;
+    }
+    syn = mat24_syndrome(mask_o, 24);
+    if (syn & ~0xffffff) return -1;
+    n_syn = ~syn;
+    if (len_h2 < 6) h2[5] = (uint8_t)(free_bit24(&n_syn, &r));
+    mask_o |= syn;
+    h2[6] = free_bit24(&mask_o, &r);
+    res = mat24_perm_from_heptads(H1, h2, pi);
+    return res ? -1 : 0;
+}
+
+
+
+
+static
+uint8_t complete_aff_trio(uint32_t h1, uint32_t h2, uint32_t h3) 
+{
+    return (uint8_t)(h1 ^ h2 ^ h3);
+}
+
+static uint8_t AL[8] = {0,1,2,3,4,5,7,6};
+
+static 
+uint8_t complete_aff_line(uint32_t h1, uint32_t h2, uint32_t h3)
+{
+    uint32_t v = AL[h1 & 7] ^ AL[h2 & 7] ^ AL[h3 & 7];
+    return AL[v];
+}
+
+
+
+
+/// @endcond 
+
+
+/***********************************************************************
+** Function  mat24_perm_rand_local
+***********************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline
+int32_t complete_perm(uint32_t u_mode, uint32_t u_rand, uint8_t *p_out)
+{
+    uint32_t r =  u_rand, r1, mode = u_mode;
+    uint32_t mask, mask2, mask3, mask4, mask8;
+    uint8_t h2[7], b;
+    uint32_t len_h2 = 0, k;
+    uint8_t (*f)(uint32_t, uint32_t, uint32_t);
+
+
+    if (mode & RAND_o) mask8 = 0xff;
+    else if (mode & RAND_t) {
+        r1 = r/3; k = r - 3*r1; r = r1;
+        mask8 = 0xff << (8 * k);
+    }
+    else mask8 = 0xffffff;
+    mask2 = mask3 =  mask4 = mask8;
+    if (mode & (RAND_2 | RAND_3)) {
+        if (mode & RAND_s) mask4 = 0xf;
+        mask3 = mode & RAND_3 ? 0xe : mask4;
+        mask2 = mode & RAND_2 ? 0xc : mask3;
+    } else if (mode & RAND_s) {
+        mask = ~(mask8 & 0x111111) & 0xffffff;
+        b = free_bit24(&mask, &r);
+        mask2 = mask3 = mask4 = 15 << b;
+    }
+    mask = ~mask2; 
+
+    h2[len_h2++] = b = free_bit24(&mask, &r);
+    if ((mode & (RAND_t | RAND_l)) == (RAND_t | RAND_l)) {
+        h2[len_h2++] = b ^ 1;
+        mask = remask(h2, len_h2, mask3); 
+        h2[len_h2++] = b = free_bit24(&mask, &r); 
+        h2[len_h2++] = b ^ 1;
+        mask = remask(h2, len_h2, mask8);
+        h2[len_h2++] = b = free_bit24(&mask, &r);
+        h2[len_h2++] = b ^ 1;
+    } else {
+        h2[len_h2++] = b = free_bit24(&mask, &r);
+        mask = remask(h2, len_h2, mask3);
+        h2[len_h2++] = b = free_bit24(&mask, &r);
+        mask = remask(h2, len_h2, mask4);
+        if (mode & (RAND_t | RAND_l)) {
+            f = mode & RAND_t ? complete_aff_trio : complete_aff_line;
+            h2[len_h2++] = b = f(h2[0], h2[1], h2[2]);
+            mask = remask(h2, len_h2, mask8);
+            h2[len_h2++] = b = free_bit24(&mask, &r);
+            h2[len_h2++] = b = f(h2[0], h2[1], h2[4]);
+        } else {
+            h2[len_h2++] = b = free_bit24(&mask, &r);
+        }
+    }
+    
+    return perm_from_suboctad(h2, len_h2, ~mask8, r, p_out);
+}
+
+/// @endcond 
+
+
+
+/**
+ @brief Generate a random element of a subgroup of \f$M_{24}\f$
+
+ The function generates an element of a subgroup \f$H\f$ of the
+ Mathieu group  \f$M_{24}\f$.  Here the parameter ``u_mode`` is a 
+ combination of flags of type ``enum mat24_rand_flags`` describing 
+ the group \f$H\f$ as an intersection  of subgroups of \f$M_{24}\f$.
+ The generated permutation is stored in the array ``p_out`` of
+ length 24.
+ 
+ Parameter ``u_rand`` is an integer describing the element of
+ subgroup \f$H\f$ to be generated. Here ``u_rand`` is reduced modulo
+ the order of  \f$H\f$. In order to generate a uniform random element
+ of \f$H\f$, the user should generate a uniform random 
+ number ``0 <= u_rand < MAT24_ORDER``, where ``MAT24_ORDER`` is
+ the order of the group \f$M_{24}\f$.
+
+ The function returns 0 in case of success and -1 in case of failure.
+*/
+// %%EXPORT p
+int32_t mat24_perm_rand_local(uint32_t u_mode, uint32_t u_rand, uint8_t *p_out)
+{
+    uint32_t mode = mat24_complete_rand_mode(u_mode);
+    return complete_perm(mode, u_rand, p_out);
+
+}
+
+
+
+// %%GEN h
+/// @endcond  
+// %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+// %%GEN c
+
+
+
+
