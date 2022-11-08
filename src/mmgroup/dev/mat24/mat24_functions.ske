@@ -1976,7 +1976,7 @@ uint32_t mat24_m24num_to_perm(uint32_t u_m24, uint8_t *p_out)
   Given a permutation ``i -> p1[i], 0 <= i < 24``, the function
   returns the number ``n`` of that permutation. We have 
   ``0 <= n < 244823040``, as described in function 
-  ``mat24_int_to_perm``.
+  ``mat24_m24num_to_perm``.
 
   The function returns garbage if ``p1`` is not a valid permutation
   in ``Mat24``. One may use function mat24_perm_check() to check

@@ -59,7 +59,8 @@ assert reduce(__and__, RAND_FLAGS) == 0
 RAND_USED = reduce(__or__, RAND_FLAGS)
 
 
-
+for letter, flag in zip("2otsl3", RAND_FLAGS):
+    assert  mat24.MAT24_RAND[letter] == flag
 
 
 
@@ -345,7 +346,9 @@ def py_mat24_perm_rand_local(mode, r, verbose = 0):
     random element of :math:`H`, the user should generate a uniform 
     random number ``0 <= u_rand < MAT24_ORDER``, where ``MAT24_ORDER`` 
     is the order of the group :math:`M_{24}`.
-    """        
+    """
+    if (mode & RAND_USED) == 0:
+        return mat24.m24num_to_perm(r % MAT24_ORDER)       
     mode = py_mat24_complete_rand_mode(mode)
     return complete_perm(mode, r, verbose)
 
@@ -488,14 +491,12 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     for i in range(n):
         r = randint(0, R_MAX)
         pi = py_mat24_perm_rand_local(mode, r, verbose)
-        # Check ``mat24.perm_rand_local`` 
-        #print("mode = 0x%02x, 0x%02x, r= %d" % (mode, super_mode, r))  
-        #print("exp:", pi)
         pi_c = mat24.perm_rand_local(mode, r)
-        #print("obt:", pi_c)
         assert pi_c == pi
-        ###################
+        num_pi = mat24.perm_to_m24num(pi)
+        assert mat24.m24num_rand_local(mode, r) == num_pi
         mat24.perm_check(pi)
+
         sets.union_perm(pi)
         in_group =  py_mat24_perm_in_local(pi)
         assert in_group == mat24.perm_in_local(pi)

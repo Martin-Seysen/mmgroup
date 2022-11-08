@@ -724,6 +724,22 @@ def op_all_cocode(c1):
 ###########################################################################
 
 
+
+cdef extern from "mat24_functions.h":
+    uint32_t  MAT24_RAND_2, MAT24_RAND_o, MAT24_RAND_t
+    uint32_t  MAT24_RAND_s, MAT24_RAND_l, MAT24_RAND_3
+
+MAT24_RAND = {
+    '2' : MAT24_RAND_2,
+    'o' : MAT24_RAND_o,
+    't' : MAT24_RAND_t,
+    's' : MAT24_RAND_s,
+    'l' : MAT24_RAND_l,
+    '3' : MAT24_RAND_3,
+}
+
+
+
 def complete_rand_mode(uint32_t u_mode):
     cdef uint32_t res = mat24_complete_rand_mode(u_mode)
     return res
@@ -736,16 +752,22 @@ def perm_in_local(p1):
     cdef uint32_t res = mat24_perm_in_local(p1a)
     return res
 
+ERR_MAT24_RANDOM = "Generation of random permutation in Mat24 has failed"
 
 def perm_rand_local(uint32_t u_mode, uint32_t u_rand):
     cdef uint8_t p1a[24]
     cdef uint8_t *p_p1a = p1a
     cdef int32_t res = mat24_perm_rand_local(u_mode, u_rand, p_p1a)
     if res:
-        err = "Generation of random permutation has failed"
-        raise ValueError(err)
+        raise ValueError(ERR_MAT24_RANDOM)
     cdef int i
     return [p1a[i] for i in range(24)]
+
+def m24num_rand_local(uint32_t u_mode, uint32_t u_rand):
+    cdef int32_t res = mat24_m24num_rand_local(u_mode, u_rand)
+    if res < 0:
+        raise ValueError(ERR_MAT24_RANDOM)
+    return res
 
 
 

@@ -94,7 +94,7 @@ representatives in the subgroup
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of the
 monster :math:`\mathbb{M}`. 
 
-The easiest way to create an element of :math:`M_{24}` is to
+One way to create an element of :math:`M_{24}` is to
 map an *umbral heptad* to another umbral heptad. Here an
 umbral heptad is a set of ``7`` elements of 
 :math:`\{0,\ldots,23\}` such that precisely ``6`` of these
@@ -140,6 +140,66 @@ an instance of a subclass of  ``mmgroup.structures.AbstractGroup``.
 That subclass models the group
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`.
 
+
+
+
+Generating random elements of certain subgroups of :math:`M_{24}`
+..................................................................
+
+We support the generation of random elements of certain subgroups
+of :math:`M_{24}`. Here any such subgroup stabilizes a subset
+(or a sets of subsets) of the set
+:math:`\bar{\Omega} = \{0,\ldots,23\}` on which :math:`M_{24}` acts.
+Furthermore, any such group is named by a flag (which is a character),
+as indicated in the table below. Intersections of these subgroups
+are described by combining the characters. The character ``r``
+describes the whole group  :math:`M_{24}`. A string of characters
+describing such a subgroup should start with ``r``. Whitespace is
+ignored.
+
+Table of subgroups:
+
+.. math::
+      \begin{array}{|c|c|c|c|}
+      \hline 
+      \mbox{Flag} & \mbox{Mnemonic} &
+         \mbox{Subgroup stabilizing the set} &
+         \mbox{Structure}  \\
+      \hline
+      \mbox{'r'} & \mbox{(random)} & \mbox{the whole set } \bar{\Omega} &
+         M_{24} \\ 
+      \mbox{'2'} & \mbox{2-set} & \{2,3\} &
+         M_{22}:2 \\ 
+      \mbox{'o'} & \mbox{octad}  &  \{0,\ldots,7\} &
+         2^4:A_8  \\
+      \mbox{'t'} & \mbox{trio}   & 
+         {\{ \{8i,\ldots,8i+7\} \mid i < 3 \}} &
+         2^6:(S_3 \times L_3(2))   \\
+      \mbox{'s'} & \mbox{sextet} & 
+         {\{ \{4i,\ldots,4i+3\} \mid i < 6 \}} &
+         2^6:3.S_6 \\
+      \mbox{'l'} & \mbox{(line)} & \{ \{2i, 2i+1\} \mid 4 \leq i < 12 \} &
+       2^{1+6}:L_3(2)  \\
+      \mbox{'3'} & \mbox{3-set} & \{1, 2,3\}   &
+         L_3(4):S_3 \\
+      \hline 
+      \end{array}
+
+For mathematical background we refer to section :ref:`subgroup-mat24-label`.
+
+
+.. table:: Examples of strings describing subgoups of :math:`M_{24}`
+      :widths: 25 75
+
+      ========== ========================================================
+      String     Action
+      ========== ========================================================
+      ``'r'``    Generate a random element of :math:`M_{24}`
+
+      ``'r 2o'`` Generate a random element of :math:`M_{24}` stabilizing
+                 :math:`\{0,\ldots,7\}` and :math:`\{2,3\}`
+      ========== ========================================================
+
 """
 
 import re
@@ -162,20 +222,22 @@ from mmgroup.structures.parse_atoms import eval_atom_expression
 try:
     # Try importing the fast C function
     from mmgroup import mat24 
-    from mmgroup.mat24 import MAT24_ORDER
+    from mmgroup.mat24 import MAT24_ORDER, MAT24_RAND
 except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24
     MAT24_ORDER = Mat24.MAT24_ORDER
+    MAT24_RAND = Mat24.MAT24_RAND
     
 
+MAT24_ORDER_M1 = MAT24_ORDER - 1
 
-
-
-
-ERR_TYPE = "unsupported operand types for %s: '%s' and '%s'"
+ERR_TYPE = "Unsupported operand types for %s: '%s' and '%s'"
 ERR_RAND = "Illegal string for constricting type %s element" 
+
+ERR_RND_S = "String describing a random permutation must begin with 'r'"
+ERR_RND_CH = "Illegal character '%s' for describing a random permutation"
 
 
 
@@ -199,6 +261,27 @@ def complete_import():
     from mmgroup.structures.cocode import Cocode
     import_pending = False
 
+
+#######################################################################
+# Generating a random permutation number form a string
+#######################################################################
+
+
+
+
+def rand_perm_num(s):
+    """Return number of a random permutation depending on string 's'"""
+    mode = 0
+    if s[:1] != "r":
+        raise ValueError(ERR_RND_S)
+    for c in s[1:]:
+        if not c.isspace():
+            try:
+                mode |= MAT24_RAND[c]
+            except KeyError:
+                raise ValueError(ERR_RND_CH % c)
+    rand = randint(0, MAT24_ORDER_M1)
+    return mat24.m24num_rand_local(mode, rand)
 
 
 
@@ -269,8 +352,8 @@ def autpl_from_obj(d = 0, p = 0, unique = 1):
         d_out, p_out =  f(d)
         return d_out, p_out
             
-    if p == 'r':
-        return d_out, randint(0, MAT24_ORDER - 1)
+    if isinstance(p, str):
+        return d_out, rand_perm_num(p)
     if isinstance(p, Integral):
         if 0 <= p <  MAT24_ORDER:
             return d_out, int(p)
@@ -369,34 +452,37 @@ class AutPL(AbstractGroupWord):
 
 
     .. table:: Legal types for parameter ``p`` in constructor of class ``AutPL``
-      :widths: 25 75
+      :widths: 25 25 50
 
-      ===================== ==================================================
-      type                  Evaluates to
-      ===================== ==================================================
-      ``int``               Here the integer is the number of a permutation  
-                            in the Mathieu group ``M_24``. 
-
-      ``list`` of ``int``   A list ``l_p`` of ``24`` of disjoint integers
-                            ``0 <= i < 24`` is interpreted as a permutation
-                            in ``M_24`` that maps ``i`` to ``l_p[i]``.
-
-      ``dict``              A dictionary specifies a mapping from a subset
-                            of the integers ``0 <= i < 24`` to integers
-                            ``0 <= dict[i] < 24``. This mapping must
-                            extend to a permutation in ``M_24``. 
-                            If parameter  ``unique`` is ``True`` (default)
-                            then that permutation must be unique.
-
-      ``zip`` object        ``zip(x,y)`` is equivalent to 
-                            ``dict(zip(x,y))``.
-
-      ``str``               Create random element depending on ``str``
-                              | ``'r'``: Create an random element of ``M_24``
-                            
-                            Any other string is illegal.
-      ===================== ==================================================
-
+      +-------------------+--------------------------------------------------+
+      |type               |Evaluates to                                      |
+      +===================+==================================================+
+      |``int``            |Here the integer is the number of a permutation   |
+      |                   |in the Mathieu group ``M_24``.                    |
+      +-------------------+--------------------------------------------------+
+      |``list`` of ``int``|A list ``l_p`` of ``24`` of disjoint integers     |
+      |                   |``0 <= i < 24`` is interpreted as a permutation   |
+      |                   |in ``M_24`` that maps ``i`` to ``l_p[i]``.        |
+      +-------------------+--------------------------------------------------+
+      |``dict``           |A dictionary specifies a mapping from a subset    |
+      |                   |of the integers ``0 <= i < 24`` to integers       |
+      |                   |``0 <= dict[i] < 24``. This mapping must          |
+      |                   |extend to a permutation in ``M_24``.              |
+      |                   |If parameter  ``unique`` is ``True`` (default)    |
+      |                   |then that permutation must be unique in ``M_24``. |
+      +-------------------+--------------------------------------------------+
+      |``zip`` object     |``zip(x,y)`` is equivalent to ``dict(zip(x,y))``. |
+      +-------------------+--------------------------------------------------+
+      |``str``            |Create random element depending on the string     |
+      |                   +---------------+----------------------------------+
+      |                   |``'r'``        | Create random element of ``M_24``|
+      |                   +---------------+----------------------------------+
+      |                   |``'r <flags>'``| Create random element of subgroup|
+      |                   |               | of ``M_24``, depending on        |
+      |                   |               | ``<flags>``, see explanation     |
+      |                   |               | above.                           |
+      +-------------------+---------------+----------------------------------+
+                         
 
 
     Let ``a`` be an instance of class |GcVector|, |GCode|, |Cocode|,
@@ -408,7 +494,10 @@ class AutPL(AbstractGroupWord):
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
 
-    ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.    
+    ``g1 ** g2`` means ``g2**(-1) * g1 * g2``. 
+
+
+   
     """
     __slots__ = "_cocode", "_perm_num", "_perm", "rep"
     ERR_UNDEF = "Parker loop automorphism is not defined by input data"

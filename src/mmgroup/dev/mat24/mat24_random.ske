@@ -68,6 +68,8 @@ enum mat24_rand_flags {
 #define RAND_s MAT24_RAND_s
 #define RAND_l MAT24_RAND_l
 #define RAND_3 MAT24_RAND_3
+
+#define RAND_ALL 0x3f
 /// @endcond 
 
 
@@ -389,11 +391,44 @@ int32_t complete_perm(uint32_t u_mode, uint32_t u_rand, uint8_t *p_out)
 // %%EXPORT p
 int32_t mat24_perm_rand_local(uint32_t u_mode, uint32_t u_rand, uint8_t *p_out)
 {
-    uint32_t mode = mat24_complete_rand_mode(u_mode);
+    uint32_t mode;
+    if ((u_mode & RAND_ALL) == 0) {
+        return mat24_m24num_to_perm(u_rand % MAT24_ORDER, p_out);
+    }
+    mode = mat24_complete_rand_mode(u_mode);
     return complete_perm(mode, u_rand, p_out);
 
 }
 
+
+/***********************************************************************
+** Function  mat24_m24num_rand_local
+***********************************************************************/
+
+
+
+/**
+ @brief Generate number of random element of a subgroup of \f$M_{24}\f$
+
+ The function generates an element of a subgroup \f$H\f$ of the
+ Mathieu group  \f$M_{24}\f$.  Here the parameters ``u_mode`` and
+ and ``u_rand`` are as in function ``mat24_perm_rand_local``.
+
+ The function returns the number of the generated element
+ of \f$M_{24}\f$ in case of success and -1 in case of failure.
+
+ See function ``mat24_m24num_to_perm`` for the numbering of the
+ elements  of  \f$M_{24}\f$.
+*/
+// %%EXPORT p
+int32_t mat24_m24num_rand_local(uint32_t u_mode, uint32_t u_rand)
+{
+
+    uint8_t pi[24];
+    if ((u_mode & RAND_ALL) == 0) return u_rand % MAT24_ORDER;
+    if (mat24_perm_rand_local(u_mode, u_rand, pi) < 0) return -1;
+    return mat24_perm_to_m24num(pi);
+}
 
 
 // %%GEN h
