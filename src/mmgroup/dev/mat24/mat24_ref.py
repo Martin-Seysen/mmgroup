@@ -98,6 +98,16 @@ class Mat24(Mat24Tables):
     verbose = False
     basis_weights_8 = Mat24Tables.basis_weights_8()
 
+    MAT24_RAND = {
+    '2' : 1,
+    'o' : 2,
+    't' : 4,
+    's' : 8,
+    'l' : 16,
+    '3' : 32,
+    }
+
+
     # recip_basis(i & 31) shall not fail in C 
     recip_basis_c = numpy.append(Mat24Tables.recip_basis.copy(), [0]*8)
 
@@ -209,7 +219,8 @@ Golay cocode vectors are to be understood modulo the Golay code.
         bit 12:         Parker loop sign
         otther bits:    ignored
         """
-        return v1 ^ v2 ^ (cls.ploop_cocycle(v1, v2) << 12)
+
+        return v1 ^ v2 ^ (cls.ploop_cocycle(v1, v2) << 12)
 
 
     @classmethod
