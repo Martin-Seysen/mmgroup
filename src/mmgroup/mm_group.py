@@ -345,6 +345,14 @@ class MM(MM0):
     automorphism is the standard representative of the i-th element 
     of the  Mathieu group ``M_24`` in the automorphism group of the 
     Parker loop.
+        
+    If ``tag == 'p'`` then ``i`` may also be a string starting with
+    the letter ``r``. This string indicates a certain subgroup of
+    the  Mathieu group ``M_24`` as described in section
+    :ref:`aut_ploop_rand_label`. Then we generate a random element
+    ``g`` of that subgroup, and the returned atom is the standard
+    representative ``AutPL(0, g)`` of ``g`` in the automorphism
+    group of the Parker loop.
 
     If ``tag`` is ``'x'``,   ``'y'`` or ``'z'`` then ``i`` 
     may also be an instance of class |PLoop|, representing an 

@@ -141,6 +141,7 @@ That subclass models the group
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`.
 
 
+.. _aut_ploop_rand_label:
 
 
 Generating random elements of certain subgroups of :math:`M_{24}`

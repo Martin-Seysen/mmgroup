@@ -56,11 +56,12 @@ following table:
     \end{array}
 
 All these groups, except for :math:`M_l`, are maximal subgrous of
-:math:`M_{24}` and discussed in :cite:`CS99`, Ch. 11. The structure 
-of :math:`M_l` (as a subgoup of :math:`M_o`) is fairly obvious; the 
-central element of :math:`M_l` of order 2 is obtained by exchanging 
-all entries :math:`2i` with :math:`2i+1` for  :math:`i \geq 4`.
-We have the following inclusions:
+:math:`M_{24}` and discussed in :cite:`CS99`, Ch. 11. The structure
+of :math:`M_l` (as a subgoup of :math:`M_o`) is described in
+:cite:`Iva09` in the text after Lemma 4.1.3. The central element of
+:math:`M_l` of order 2 is obtained by exchanging all entries
+:math:`2i` with :math:`2i+1` for  :math:`i \geq 4`. We have the
+following inclusions:
 
 .. math::
     \begin{array}{lll}

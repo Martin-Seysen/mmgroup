@@ -28,7 +28,7 @@ from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom, AtomDict
 from mmgroup.structures.parse_atoms import  eval_atom_expression  
-from mmgroup.structures.autpl import autpl_from_obj      
+from mmgroup.structures.autpl import autpl_from_obj, rand_perm_num
 from mmgroup import Cocode, PLoop, AutPL
 
 
@@ -110,11 +110,14 @@ def iter_p(tag, perm):
             raise ValueError(err)
         yield 0x20000000 + perm
     elif isinstance(perm, str):
-        perm_num = randint(perm == 'n', MAT24_ORDER-1)
-        if  len(perm) == 1 and perm in "rn":
-            yield 0x20000000 + perm_num
-        else:
-            raise ValueError(ERR_ATOM_VALUE % 'p')            
+        try:
+            perm_num = rand_perm_num(perm)
+        except ValueError:
+            if perm == 'n':
+                perm_num = randint(1, MAT24_ORDER-1)
+            else:
+                raise ValueError(ERR_ATOM_VALUE % 'p')
+        yield 0x20000000 + perm_num
     elif isinstance(perm, AutPL):
         yield 0x10000000 + perm._cocode
         yield 0x20000000 + perm._perm_num
