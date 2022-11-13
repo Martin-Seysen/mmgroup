@@ -274,6 +274,14 @@ Module ``xsp2co1_traces.c``
    .. doxygenfile:: xsp2co1_traces.c
 
 
+Module ``xsp2co1_map.c``
+--------------------------
+
+   .. doxygenfile:: xsp2co1_map.c
+
+
+
+
 Description of the ``mmgroup.mm`` extension
 ===========================================
 

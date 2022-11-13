@@ -52,10 +52,24 @@ from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR 
 sys.path.append(REAL_SRC_DIR)
 
-import mmgroup
-from mmgroup.generate_c import TableGenerator, make_doc
-from mmgroup.generate_c import pxd_to_pyx
-from mmgroup.dev.clifford12.bit64_tables import Bit64Tables
+
+##########################################################################
+# Entering tables and automatically generated code
+##########################################################################
+
+
+
+
+def import_all():
+    global TABLE_CLASSES, TableGenerator, make_doc
+    global pxd_to_pyx, Bit64Tables
+    import mmgroup
+    from mmgroup.generate_c import TableGenerator, make_doc
+    from mmgroup.generate_c import pxd_to_pyx
+    from mmgroup.dev.clifford12.bit64_tables import Bit64Tables
+    TABLE_CLASSES = [
+        Bit64Tables,
+    ]
 
 
 
@@ -75,6 +89,7 @@ PXI_SKE_FILES = [
     "bitmatrix64",  "uint_sort", "xsp2co1", 
     "leech3matrix", "xsp2co1_elem",
     "involutions", "xsp2co1_traces",
+    "xsp2co1_map", 
 ]
 SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
 
@@ -99,8 +114,9 @@ H_FILE_BEGIN = """
 
 /** @file clifford12.h
  File ``clifford.h`` is the header file for shared library 
- ``mmgroup_clifford12``. This comprises the C modules
- in the lists SIMPLE_SKE_FILES and PXI_SKE_FILES.
+ ``mmgroup_clifford12``. This comprises the following C modules:
+
+ {0}.
 */
 
 #ifndef CLIFFORD12_H
@@ -153,7 +169,7 @@ H_FILE_BEGIN = """
 
 /// @endcond 
 
-"""
+""".format(",\n".join([x + ".c" for x in SKE_FILES]))
 
 
 H_FILE_END = """
@@ -195,20 +211,9 @@ cdef extern from "clifford12.h":
 
 
 
-##########################################################################
-# Entering tables and automatically generated code
-##########################################################################
-
-
-TABLE_CLASSES = [
-    Bit64Tables,
-]
 
 
 
-##########################################################################
-# Generating the .pyx file
-##########################################################################
 
 
 ##########################################################################
@@ -251,6 +256,7 @@ def make_clifford12():
     Return pair of lists, one of the .c files and one of the.
     .pxd files generated
     """
+    import_all()
     tables = {}
     directives = {}
     global generated_tables
@@ -305,6 +311,7 @@ def generate_files():
     """
     def pxi_comment(text, f):
         print("\n" + "#"*70 + "\n### %s\n" % text + "#"*70 + "\n\n",file=f)
+    import_all()
     c_files,  pxd_files =  make_clifford12() 
     f_pxi = open(os.path.join(PXD_DIR, PXI_FILE_NAME), "wt")
     print(PXD_DECLARATIONS, file = f_pxi)

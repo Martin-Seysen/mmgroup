@@ -1,0 +1,98 @@
+/** @file xsp2co1_map.c
+  File ``xsp2co1_map.c`` contains  functions for computing an
+  element \f$g\f$ of the group \f$G_{x0} = 2^{1+24}.\mbox{Co}_1\f$
+  from the action of  \f$g\f$ on the normal
+  subgroup \f$Q_{x0} = 2^{1+24}\f$ of \f$G_{x0}\f$.
+
+  Here the  group \f$G_{x0}\f$ is the maximal subgroup of the
+  Monster used in our construction of the Monster. We store an
+  element of \f$G_{x0}\f$ as word of  generators of that group as
+  described in file``mmgroup_generators.h``. Internally, we also use
+  the **G_x0 representation** for elements of \f$G_{x0}\f$
+  as described in file ``xsp2co1.c``.
+
+  Elements of the group \f$Q_{x0}\f$ are stored in **Leech lattice
+  encoding** as described in
+  section **Description of the mmgroup.generators extension**.
+
+  Note that an element of \f$G_{x0}\f$ is determined by its action
+  on \f$Q_{x0}\f$ up to sign only.
+
+  This file is yet a stub!!!
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+// %%EXPORT_KWD CLIFFORD12_API
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+/*************************************************************************
+*** Functions
+*************************************************************************/
+
+
+/**
+   @brief Compute preimage in \f$G_{x0}\f$ of element of \f$\mbox{Co}_1\f$
+
+   Let Matrix \f$m\f$ (given by parameter ``m``) be a 24 times 24 
+   bit matrix that describes an automorphism \f$g' \in \mbox{Co}_1\f$ 
+   of \f$\Lambda/2\Lambda\f$. Here \f$\Lambda/2\Lambda\f$
+   is the Leech lattice modulo 2, and \f$m\f$ acts by right
+   multiplcation on vectors in \f$\Lambda/2\Lambda\f$ encoded 
+   in **Leech lattice encoding**.
+
+   Then this function computes a preimage \f$g \in G_{x0}\f$ 
+   of \f$g'\f$ as a word of generators of \f$G_{x0}\f$ and stores
+   that word in the buffer referred by parameter ``g``.
+   It returns the length of that word in case of success and
+   an negative value in case of failure.
+ 
+   The function is not yet implemented!!!
+*/
+// %%EXPORT px
+int32_t xsp2co1_Co1_matrix_to_word(uint64_t *m, uint32_t *g)
+{
+    return -1;
+}
+
+
+
+
+
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+

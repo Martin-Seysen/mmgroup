@@ -330,11 +330,9 @@ shared_libs_before_stage1 = [
 
 
 
-clifford12_sources = [
-    "qstate12", "qstate12io", "qmatrix12", "bitmatrix64",  "uint_sort", 
-    "xsp2co1",  "leech3matrix", "xsp2co1_elem", "involutions",
-     "xsp2co1_traces",
-]
+
+
+from codegen_clifford12 import SKE_FILES as clifford12_sources
 
 clifford12_shared = SharedExtension(
     name = "mmgroup.mmgroup_clifford12", 
