@@ -57,12 +57,17 @@ extern "C" {
 *************************************************************************/
 
 
+/// @cond DO_NOT_DOCUMENT
+// parity of x is PARITY64 >> x for 0 <= x < 64 
+#define PARITY64 0x6996966996696996ULL
+/// @endcond
+
 
 /**
    @brief Compute a certain mapping from \f$Q_{x0}\f$ to itself
 
    Let \f$g \in G_{x0}\f$ be such that \f$g\f$
-   conjugates \f$m_{1,j}\f$ to \f$m_{2,j}\f$
+   maps \f$m_{1,j}\f$ to \f$m_{2,j}\f$ via conjugation,
    for \f$m_{i,j} \in Q_{x0}\f$, \f$i = 1,2; 0 \leq j \leq 24\f$.
    If the \f$m_{1,j}\f$ (considered as vectors
    in \f$\Lambda/2 \Lambda\f$) are linear independent then there
@@ -78,22 +83,64 @@ extern "C" {
    The function stores the vectors  \f$m_{3,j}\f$ in the
    array ``m_out`` of length 24 in **Leech lattice encoding**.
    
-   The function returns -1 it it detects an error and 0 if it
-   does not detect any error. If the function returns 0 and the
-   output is a correct image of the standard basis then the
+   The function a negative value if it detects an error and 0 if
+   it does not detect any error. If the function returns 0 and 
+   the output is a correct image of the standard basis then the
    there exists a \f$g\f$ that maps \f$m_{1,j}\f$
-   to \f$m_{2,j}\f$.   
+   to \f$m_{2,j}\f$. Any overlapping between the 
+   arrays referred by ``m1, m2, m_out`` is allowed.
 */
 // %%EXPORT px
 int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
 {
     int_fast32_t row, col, k1, k2;
-    uint64_t v, col_mask, m[24], sign;
+    uint64_t v, w, col_mask, m[24], sign, acc = 0;
+
+    // Store columns 0,...,23 of m1[i] in columns 24,...,47 of m[i].
+    // Store columns 0,...,23 of m2[i] in columns  0,...,23 of m[i].
+    // Store the XOR sum of column 24 of m1[i] and m2[i] in 
+    // column 48 of m[i].
     for (row = 0; row < 24; ++row) {
         m[row] =  ((m2[row] & 0x1ffffffULL) << 24) 
                  ^  (m1[row] & 0xffffffULL)
                 ^ ((m1[row] & 0x1000000ULL) << 24);
     }
+
+    // Check that scalar products <.,.> and types (mod 2) in m1 
+    //  and m2 are the same; abort if this is not the case.
+    for (k1 = 0; k1 < 24; ++k1) {
+         // Check that m1[k1] and m2[k1] have same type (mod 2)
+         v = m[k1];
+         sign = v & (v >> 12);
+         sign ^= sign >> 24;
+         sign ^= sign >> 6;
+         acc |= PARITY64 >> (sign & 0x3f);
+         // Check if <m1[k1], m1[k2]> = <m2[k1], m2[k2]>
+         for (k2 = k1 + 1; k2 < 24; ++k2) {
+              w = m[k2];
+              sign = (v & (w >> 12)) ^ (w & (v >> 12));
+              sign ^= sign >> 24;
+              sign ^= sign >> 6;
+              acc |= PARITY64 >> (sign & 0x3f);
+         }
+    }
+    if (acc & 1) return -2;
+
+
+    // The following loop is essentially a copy of the main loop in
+    // function ``bitmatrix64_echelon_l`` in file ``bitmatrix64.c``,
+    // operating on matrix ``m`` with 24 rows, and echelonizing the
+    // columns from 0 to 24 in that order. 
+    // In contrast to the original loop, this loop aborts with an
+    // error if these 24 columns are not linear independent.
+    // Also, we add elements of the extraspecial group Q_x0 =
+    // 2^{1+24} instead of elements of the vector field. GF(2^24).
+    // We store (the modified) ``m1`` in columns 0,...23 of ``m``,
+    // and  (the modified) ``m2`` in columns 24,...47 of ``m``.
+    // For reasons of speed, we store the sign of each row as
+    // the bit parity of columns 48,...,59. Here an odd parity
+    // means that the row of ``m1`` is mapped to the negative
+    // of ``m2`` in the same row.
 
     for (col = 0; col < 24; ++col) {
         col_mask = ONE << col;
@@ -102,8 +149,15 @@ int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
                 v = m[k1];
                 for (k2 = k1 - 1; k2 >= 0; --k2) {
                     if (m[k2] & col_mask) {
+                        // 'Add' m1[k2] to m1[k1] and m2[k2] to m2[k1]
+                        // in order to zero bit m1[k1, col]. Therefore
+                        // we compute the XOR sum of the signs of 
+                        // m1[k1]*m1[k1] and m2[k1]*m2[k1] as the
+                        // XOR sum of columns 0,...,11 of ``sign``
                         sign = v & (m[k2] >> 12);
                         sign ^= sign >> 24;
+                        // Put m1[k2] *=  m1[k1], m2[k2] *=  m2[k1],
+                        // and adjust signs in m[k2], col. 48,...,59.
                         m[k2] ^= v ^ (sign << 48);
                     }
                 }
@@ -114,15 +168,18 @@ int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
         if (k1 < col) return -1; // abort if column not done
     } 
 
-    for (row = 0; row < 24; ++row) m_out[row] = m[row]; // WTF!!
-    
+    // Now ``m1`` is the 24 times 24 unit matrix (i.e. the standard
+    // basis of Q_x0),  and ``m2`` is the image of ``m1``. The sign
+    // of such an image is stored in columns 48,...,59.
+    // So we may easily copy the result from ``m`` to ``m_out``.
     for (row = 0; row < 24; ++row) {
+        // Compute sign bit of row in ``sign``.
         sign = ((m[row] >> 48) ^ (m[row] >> 54)) & 0x3f;
-        sign = (0x6996966996696996ULL >> sign) & 1;
+        sign = (PARITY64 >> sign) & 1;
+        // Copy ``(sign, m2)`` for the row to ``m_out``.
         m_out[row] = ((m[row] >> 24) & 0xffffffULL) | (sign << 24);
     } 
 
-    // TODO: It make sense to chec the scalar products of the output!!
        
     return 0;
 }
