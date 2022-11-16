@@ -57,6 +57,82 @@ extern "C" {
 *************************************************************************/
 
 
+
+/**
+   @brief Compute a certain mapping from \f$Q_{x0}\f$ to itself
+
+   Let \f$g \in G_{x0}\f$ be such that \f$g\f$
+   conjugates \f$m_{1,j}\f$ to \f$m_{2,j}\f$
+   for \f$m_{i,j} \in Q_{x0}\f$, \f$i = 1,2; 0 \leq j \leq 24\f$.
+   If the \f$m_{1,j}\f$ (considered as vectors
+   in \f$\Lambda/2 \Lambda\f$) are linear independent then there
+   is at most one such \f$g\f$, up to sign.
+
+   Here inputs  \f$m_{1,j}, m_{2,j}\f$ are given in the
+   arrays ``m1, m2`` in **Leech lattice encoding**.
+
+   The function computes \f$g\f$ as a 
+   mapping \f$m_{0,j} \mapsto m_{3,j}\f$, where \f$m_{0,j}\f$
+   is the standard basis of \f$\Lambda/2 \Lambda\f$
+   (with  \f$m_{0,j}\f$ = ``1 << j`` in  **Leech lattice encoding**).
+   The function stores the vectors  \f$m_{3,j}\f$ in the
+   array ``m_out`` of length 24 in **Leech lattice encoding**.
+   
+   The function returns -1 it it detects an error and 0 if it
+   does not detect any error. If the function returns 0 and the
+   output is a correct image of the standard basis then the
+   there exists a \f$g\f$ that maps \f$m_{1,j}\f$
+   to \f$m_{2,j}\f$.   
+*/
+// %%EXPORT px
+int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
+{
+    int_fast32_t row, col, k1, k2;
+    uint64_t v, col_mask, m[24], sign;
+    for (row = 0; row < 24; ++row) {
+        m[row] =  ((m2[row] & 0x1ffffffULL) << 24) 
+                 ^  (m1[row] & 0xffffffULL)
+                ^ ((m1[row] & 0x1000000ULL) << 24);
+    }
+
+    for (col = 0; col < 24; ++col) {
+        col_mask = ONE << col;
+        for (k1 = 23; k1 >= col; --k1) {
+            if (m[k1] &  col_mask) {
+                v = m[k1];
+                for (k2 = k1 - 1; k2 >= 0; --k2) {
+                    if (m[k2] & col_mask) {
+                        sign = v & (m[k2] >> 12);
+                        sign ^= sign >> 24;
+                        m[k2] ^= v ^ (sign << 48);
+                    }
+                }
+                m[k1] = m[col]; m[col] = v;
+                break;
+            }
+        }
+        if (k1 < col) return -1; // abort if column not done
+    } 
+
+    for (row = 0; row < 24; ++row) m_out[row] = m[row]; // WTF!!
+    
+    for (row = 0; row < 24; ++row) {
+        sign = ((m[row] >> 48) ^ (m[row] >> 54)) & 0x3f;
+        sign = (0x6996966996696996ULL >> sign) & 1;
+        m_out[row] = ((m[row] >> 24) & 0xffffffULL) | (sign << 24);
+    } 
+
+    // TODO: It make sense to chec the scalar products of the output!!
+       
+    return 0;
+}
+
+
+
+
+
+
+
 /**
    @brief Compute preimage in \f$G_{x0}\f$ of element of \f$\mbox{Co}_1\f$
 
