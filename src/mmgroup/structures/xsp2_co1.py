@@ -151,6 +151,14 @@ class Xsp2_Co1(AbstractMMGroupWord):
         a = np.zeros(24, dtype = np.uint64)
         xsp2co1_elem_to_bitmatrix(self._data, a) 
         return a        
+
+    def __neg__(self):
+        neg = Xsp2_Co1(self)
+        xsp2co1_neg_elem(self._data)
+        return neg
+
+    def __pos__(self):
+        return self
         
     def order(self, max_order = 119):
         """Return the order of the element of the monster group
@@ -533,6 +541,7 @@ class Xsp2_Co1_Group(AbstractMMGroup):
         if n == 1:
             return w
         raise TypeError("Cannot convert a number to a group element")
+
         
     def from_qs(self, qs, x):  
         w = self.word_type()

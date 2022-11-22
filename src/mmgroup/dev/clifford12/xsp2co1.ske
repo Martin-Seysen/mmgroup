@@ -1940,7 +1940,7 @@ int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
     // The method used in the first 'else' statement is the fastest
     // and simples way so solve the problem.
     // Here we make some effort to accelerate the re-reduction of an
-    // alread reduce word.
+    // already reduced word.
  
     if (state == 0) {
         // Work in subgroup N_x0

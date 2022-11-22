@@ -53,6 +53,37 @@ extern "C" {
 
 
 /*************************************************************************
+*** Debug Pool
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+// #define DEBUG_POOL
+
+#ifdef DEBUG_POOL
+#define LEN_POOL 72
+static uint64_t pool[LEN_POOL];
+#endif 
+
+
+// %%EXPORT px
+uint32_t xsp2co1_Co1_debug_pool_mapping(uint64_t *dest, uint32_t len)
+{
+  #ifdef DEBUG_POOL
+    uint32_t i;
+    if (len > LEN_POOL) len = LEN_POOL;
+    for (i = 0; i < len; ++i) dest[i] = pool[i];
+    return len;
+  #else
+    return 0;
+  #endif
+}
+
+
+/// @endcond
+
+
+/*************************************************************************
 *** Functions
 *************************************************************************/
 
@@ -61,6 +92,11 @@ extern "C" {
 // parity of x is PARITY64 >> x for 0 <= x < 64 
 #define PARITY64 0x6996966996696996ULL
 /// @endcond
+
+
+
+
+
 
 
 /**
@@ -76,22 +112,22 @@ extern "C" {
    Here inputs  \f$m_{1,j}, m_{2,j}\f$ are given in the
    arrays ``m1, m2`` in **Leech lattice encoding**.
 
-   The function computes \f$g\f$ as a 
+   The function computes \f$g\f$ as a
    mapping \f$m_{0,j} \mapsto m_{3,j}\f$, where \f$m_{0,j}\f$
    is the standard basis of \f$\Lambda/2 \Lambda\f$
    (with  \f$m_{0,j}\f$ = ``1 << j`` in  **Leech lattice encoding**).
    The function stores the vectors  \f$m_{3,j}\f$ in the
    array ``m_out`` of length 24 in **Leech lattice encoding**.
    
-   The function a negative value if it detects an error and 0 if
-   it does not detect any error. If the function returns 0 and 
-   the output is a correct image of the standard basis then the
-   there exists a \f$g\f$ that maps \f$m_{1,j}\f$
-   to \f$m_{2,j}\f$. Any overlapping between the 
+   The function returns a negative value if it detects an error,
+   and it returns 0 if it does not detect any error. If the function 
+   returns 0 and the output is a correct image of the standard basis 
+   then there exists a \f$g\f$ that maps \f$m_{1,j}\f$
+   to \f$m_{2,j}\f$. Any overlapping between the
    arrays referred by ``m1, m2, m_out`` is allowed.
 */
 // %%EXPORT px
-int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
+int32_t xsp2co1_Co1_get_mapping(uint32_t *m1, uint32_t *m2, uint32_t *m_out)
 {
     int_fast32_t row, col, k1, k2;
     uint64_t v, w, col_mask, m[24], sign, acc = 0;
@@ -101,12 +137,12 @@ int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
     // Store the XOR sum of column 24 of m1[i] and m2[i] in 
     // column 48 of m[i].
     for (row = 0; row < 24; ++row) {
-        m[row] =  ((m2[row] & 0x1ffffffULL) << 24) 
-                 ^  (m1[row] & 0xffffffULL)
-                ^ ((m1[row] & 0x1000000ULL) << 24);
+        m[row] =  (((uint64_t)(m2[row]) & 0x1ffffffULL) << 24)
+                 ^  ((uint64_t)(m1[row]) & 0xffffffULL)
+                ^ (((uint64_t)(m1[row]) & 0x1000000ULL) << 24);
     }
 
-    // Check that scalar products <.,.> and types (mod 2) in m1 
+    // Check that scalar products <.,.> and types (mod 2) in m1
     //  and m2 are the same; abort if this is not the case.
     for (k1 = 0; k1 < 24; ++k1) {
          // Check that m1[k1] and m2[k1] have same type (mod 2)
@@ -177,7 +213,9 @@ int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
         sign = ((m[row] >> 48) ^ (m[row] >> 54)) & 0x3f;
         sign = (PARITY64 >> sign) & 1;
         // Copy ``(sign, m2)`` for the row to ``m_out``.
-        m_out[row] = ((m[row] >> 24) & 0xffffffULL) | (sign << 24);
+        m_out[row] = (uint32_t)(
+            ((m[row] >> 24) & 0xffffffULL) | (sign << 24)
+        );
     } 
 
        
@@ -191,27 +229,88 @@ int32_t xsp2co1_Co1_get_mapping(uint64_t *m1, uint64_t *m2, uint64_t *m_out)
 
 
 /**
-   @brief Compute preimage in \f$G_{x0}\f$ of element of \f$\mbox{Co}_1\f$
+   @brief Compute preimage in \f$G_{x0}\f$ of automorphism on \f$Q_{x0}\f$
 
-   Let Matrix \f$m\f$ (given by parameter ``m``) be a 24 times 24 
-   bit matrix that describes an automorphism \f$g' \in \mbox{Co}_1\f$ 
-   of \f$\Lambda/2\Lambda\f$. Here \f$\Lambda/2\Lambda\f$
-   is the Leech lattice modulo 2, and \f$m\f$ acts by right
-   multiplcation on vectors in \f$\Lambda/2\Lambda\f$ encoded 
-   in **Leech lattice encoding**.
+   Let matrix \f$m\f$ (given by parameter ``m``) be a 24 times 25
+   bit matrix that describes an automorphism \f$g'\f$ acting
+   on \f$Q_{x0}\f$. Here row ``m[i]`` is the image of the
+   (positive) element in \f$Q_{x0}\f$ corresponding to 
+   the ``i``-th basis vector of \f$\Lambda/2\Lambda\f$, 
+   and ``m[i]`` is encoded in **Leech lattice encoding**.
 
-   Then this function computes a preimage \f$g \in G_{x0}\f$ 
-   of \f$g'\f$ as a word of generators of \f$G_{x0}\f$ and stores
-   that word in the buffer referred by parameter ``g``.
-   It returns the length of that word in case of success and
-   an negative value in case of failure.
- 
-   The function is not yet implemented!!!
+   If possible, the function computes a \f$g \in G_{x0}\f$ that
+   acts on \f$Q_{x0}\f$ by conjugation in the same way as \f$g'\f$
+   acts on  \f$Q_{x0}\f$. If such a \f$g\f$ exists, it is
+   determined up to sign only. 
+
+   In case of success the function stores \f$g\f$ as a word of
+   generators of \f$G_{x0}\f$ in the buffer referred by
+   parameter ``g`` and returns the length of that word. In case
+   of failure the function returns a negative value.
+
+   Array ``g`` must have length at least 10.
 */
 // %%EXPORT px
-int32_t xsp2co1_Co1_matrix_to_word(uint64_t *m, uint32_t *g)
+int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
 {
-    return -1;
+    uint32_t a[24], a_pi[12];
+    uint32_t len, i, pi, y, q = 0, acc = 0, x; 
+    uint8_t perm[24];
+    int32_t res;
+
+  #ifdef DEBUG_POOL
+    for (i = 0; i < 72; ++i) pool[i] = 0;
+  #endif
+
+    len = res = gen_leech2_reduce_type4(m[23], g);
+    if (res < 0) return res;
+    for (i = 0; i < 24; ++i) a[i] = m[i];
+    res = gen_leech2_op_word_many(a, 24, g, len);
+    if (res != (int32_t)len) return -100001;
+
+  #ifdef DEBUG_POOL
+    for (i = 0; i < 24; ++i) pool[i] = a[i];
+  #endif
+
+    for (i = 0; i < 11; ++i) a_pi[i] = (a[i + 12] >> 12) & 0x7ff;
+    a_pi[11] = 0;
+    mat24_matrix_from_mod_omega(a_pi);
+    mat24_matrix_to_perm(a_pi, perm);
+    if (mat24_perm_check(perm)) return -100002;
+    pi = mat24_perm_to_m24num(perm);
+    if (pi) {
+        g[len++] = MMGROUP_ATOM_TAG_IP + pi; 
+        res = gen_leech2_op_word_many(a, 24, g + len - 1, 1);
+        if (res != 1) return -100003;
+    }
+  #ifdef DEBUG_POOL
+    for (i = 0; i < 24; ++i) pool[i+24] = a[i];
+  #endif
+
+    y = (a[11] >> 12) & 0x7ff;
+    if (y) {
+        g[len++] = MMGROUP_ATOM_TAG_IY + y; 
+        res = gen_leech2_op_word_many(a, 24, g + len - 1, 1);
+        if (res != 1) return -100004;
+    }
+
+    for (i = 0; i < 24; ++i) {
+        acc |= a[i] ^ (1UL << i);
+        q ^= ((a[i] >> 24) & 1) << i ;
+    } 
+  #ifdef DEBUG_POOL
+    for (i = 0; i < 24; ++i) pool[i+48] = a[i];
+  #endif
+    if (acc & 0xffffff) return -100004;
+
+    x = q & 0xfff;
+    q = (q >> 12) & 0xfff;
+    q ^=  MAT24_THETA_TABLE[x & 0x7ff] & 0x7ff;
+    if (q) g[len++] = MMGROUP_ATOM_TAG_ID + q;
+    g[len++] = MMGROUP_ATOM_TAG_IX + x;
+      
+    mm_group_invert_word(g, len);
+    return len;
 }
 
 
