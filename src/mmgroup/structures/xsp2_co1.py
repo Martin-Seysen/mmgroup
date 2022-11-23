@@ -51,6 +51,7 @@ from mmgroup.clifford12 import xsp2co1_conjugate_elem
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution_Gx0
 from mmgroup.clifford12 import xsp2co1_elem_subtype
+from mmgroup.clifford12 import xsp2co1_traces_fast      
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.construct_mm import iter_strings_from_atoms
@@ -345,6 +346,40 @@ class Xsp2_Co1(AbstractMMGroupWord):
         iclass = DICT_INVOLUTION_G_x0[len_a >> 8]
         return iclass, group('a', a[:len_a & 0xff])
 
+
+    def chi_G_x0(self):
+        r"""Compute characters of element
+
+        The function returns a tuple 
+        :math:`(\chi_M, \chi_{299}, \chi_{24}, \chi_{4096})`
+        of integers.
+
+        Here :math:`\chi_M` is the character of the element in the
+        196833-dimensional rep :math:`198883_x` of the monster.
+
+        By Conway's construction of the monster we have:
+
+        :math:`198883_x =  299_x \oplus 24_x \otimes  4096_x
+        \oplus 98280_x`,
+
+        for suitable irreducible representations 
+        :math:`299_x, 24_x, 4096_x, 98280_x` of the group 
+        :math:`G_{x0}`. The corresponding characters of the
+        element of  :math:`G_{x0}` are returned in the tuple
+        given above.  
+
+        While the product :math:`\chi_{24} \cdot \chi_{4096}`
+        is well defined, the factors  :math:`\chi_{24}` and 
+        :math:`\chi_{4096}` are defined up to sign only. We
+        normalize these factors such that the first nonzero value 
+        of the pair :math:`(\chi_{24}, \chi_{4096})` is positive. 
+        """
+        a = np.zeros(4, dtype = np.int32)
+        res = chk_qstate12(xsp2co1_traces_fast(self._data, a))
+        chi24, chisq24, chi4096, chi98260 = map(int, a[:4])
+        chi299 = (chi24**2 + chisq24) // 2 - 1
+        chi_M = chi299 + chi98260 + chi24 * chi4096
+        return chi_M, chi299, chi24, chi4096
 
 
     def _qs_v2(self):

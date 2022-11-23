@@ -14,6 +14,7 @@ import pytest
 from mmgroup import Xsp2_Co1, XLeech2
 from mmgroup.clifford12 import xsp2co1_Co1_get_mapping
 from mmgroup.clifford12 import xsp2co1_Co1_matrix_to_word
+from mmgroup.clifford12 import xsp2co1_elem_from_mapping
 
 
 
@@ -26,6 +27,11 @@ from mmgroup.clifford12 import xsp2co1_Co1_matrix_to_word
 
 STD_BASIS = [1 << i  for i in range(24)]
 
+PLUS = Xsp2_Co1()
+MINUS = -PLUS
+PM = [PLUS, MINUS]
+
+
 
 def create_test_bases_get_mapping():
     def ar(m):
@@ -35,14 +41,14 @@ def create_test_bases_get_mapping():
         m1 = t.xsp_conjugate(STD_BASIS)
         m2 = c.xsp_conjugate(m1)
         #assert m2 == t.c.xsp_conjugate(m)
-        return ar(m1), ar(m2), ar(m)
+        return ar(m1), ar(m2), ar(m), c
 
 
     testdata = [
-        [[1 << i for i in range(24)]]*3
+        [[1 << i for i in range(24)]]*3 + [Xsp2_Co1()]
     ]
-    for m1, m2, m in testdata:
-        yield ar(m1), ar(m2), ar(m)
+    for m1, m2, m, g in testdata:
+        yield ar(m1), ar(m2), ar(m), g
     for i in range(100):
         c = Xsp2_Co1('r', 'G_x0') 
         t = Xsp2_Co1('r', 'G_x0')
@@ -50,14 +56,33 @@ def create_test_bases_get_mapping():
  
 
 
+def elem_from_mapping(m1, m2):
+    a = np.zeros(10, dtype = np.uint32)
+    res = xsp2co1_elem_from_mapping(m1, m2, a)
+    if res < 0:
+        err = "xsp2co1_elem_from_mapping returns %d"
+        raise ValueError(err % res)
+    g = Xsp2_Co1('a', a[:res & 0xff])
+    order = (res >> 8) & 0xff 
+    o = order //  (order & -order)
+    assert g.order() == order
+    nonzero = bool((res >> 16) & 1)
+    chars = (g**o).chi_G_x0()
+    chi = chars[2] * chars[3]
+    assert chi >= 0
+    assert nonzero == bool(chi)
+    return g      
+
+
+
 
 @pytest.mark.xsp2co1
 def test_xsp2co1_Co1_get_mapping(verbose = 0):
-    for n, (m1, m2, mref) in enumerate(create_test_bases_get_mapping()):
+    for n, (m1, m2, mref, g) in enumerate(create_test_bases_get_mapping()):
         m = np.zeros(24, dtype = np.uint32)
         res = xsp2co1_Co1_get_mapping(m1, m2, m)
 
-        ok = res == 0 and (m == mref).all()
+        ok = res >= 0 and (m == mref).all()
         if verbose or not ok:
             print("Test", n)
             print('m1='   , m1)
@@ -65,11 +90,16 @@ def test_xsp2co1_Co1_get_mapping(verbose = 0):
             print('m_obt=', m)
             print('m_exp=', mref)
             if not ok:
-                if (res): 
-                    s = "Function xsp2co1_Co1_get_mapping returns %d"
-                    print(s % res)
+                s = "Function xsp2co1_Co1_get_mapping returns %d"
+                print(s % res)
                 ERR = "Error in conjugating with element l"
                 raise ValueError(ERR)
+        o2, mod = divmod(g.order(), res)
+        assert mod == 0, (g.order(), res)
+        assert o2 > 0 and (o2 & (o2 - 1)) == 0, (g.order(), res)
+
+        assert elem_from_mapping(m1, m2) * g**(-1) in PM
+        
 
 
   
@@ -93,9 +123,6 @@ def create_test_elements(n = 100):
 
 @pytest.mark.xsp2co1
 def test_xsp2co1_matrix_to_word(verbose = 0):
-    PLUS = Xsp2_Co1()
-    MINUS = -PLUS
-    PM = [PLUS, MINUS]
     for n, (elem, m) in enumerate(create_test_elements()):
         g = np.zeros(10, dtype = np.uint32)
         res = xsp2co1_Co1_matrix_to_word(m, g)
@@ -124,4 +151,11 @@ def test_xsp2co1_matrix_to_word(verbose = 0):
                 except:
                     pass
                 raise ValueError(ERR)
+
+
+
+
+    
+
+    
 

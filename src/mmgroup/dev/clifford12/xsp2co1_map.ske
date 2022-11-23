@@ -18,7 +18,10 @@
   Note that an element of \f$G_{x0}\f$ is determined by its action
   on \f$Q_{x0}\f$ up to sign only.
 
-  This file is yet a stub!!!
+  The main function ``xsp2co1_elem_from_mapping`` in this module
+  tries to find the 'nicer' of the elements \f$\pm g\f$ from its
+  action on \f$Q_{x0}\f$. 
+
 */
 
 
@@ -118,13 +121,19 @@ uint32_t xsp2co1_Co1_debug_pool_mapping(uint64_t *dest, uint32_t len)
    (with  \f$m_{0,j}\f$ = ``1 << j`` in  **Leech lattice encoding**).
    The function stores the vectors  \f$m_{3,j}\f$ in the
    array ``m_out`` of length 24 in **Leech lattice encoding**.
+
+   Let \f$o\f$ be the odd part of the order of \f$g\f$, so that
+   \f$g\f$ has order \f$2^k \cdot o\f$.  
    
    The function returns a negative value if it detects an error,
-   and it returns 0 if it does not detect any error. If the function 
-   returns 0 and the output is a correct image of the standard basis 
-   then there exists a \f$g\f$ that maps \f$m_{1,j}\f$
-   to \f$m_{2,j}\f$. Any overlapping between the
-   arrays referred by ``m1, m2, m_out`` is allowed.
+   and it returns \f$o\f$ if it does not detect any error. If the
+   function returns \f$o \geq 0\f$ and the output is a correct
+   image of the standard basis then there exists a \f$g \in G_{x0}\f$
+   that maps \f$m_{1,j}\f$ to \f$m_{2,j}\f$. The order of any such 
+   element \f$g\f$ divided by \f$o\f$ is a power of two.
+
+   Any overlapping between the arrays referred by ``m1, m2, m_out`` 
+   is allowed.
 */
 // %%EXPORT px
 int32_t xsp2co1_Co1_get_mapping(uint32_t *m1, uint32_t *m2, uint32_t *m_out)
@@ -213,13 +222,11 @@ int32_t xsp2co1_Co1_get_mapping(uint32_t *m1, uint32_t *m2, uint32_t *m_out)
         sign = ((m[row] >> 48) ^ (m[row] >> 54)) & 0x3f;
         sign = (PARITY64 >> sign) & 1;
         // Copy ``(sign, m2)`` for the row to ``m_out``.
-        m_out[row] = (uint32_t)(
-            ((m[row] >> 24) & 0xffffffULL) | (sign << 24)
-        );
+        m[row] = ((m[row] >> 24) & 0xffffffULL) | (sign << 24);
+        m_out[row] = (uint32_t)(m[row]);
     } 
-
        
-    return 0;
+    return xsp2co1_odd_order_bitmatrix(m);
 }
 
 
@@ -262,8 +269,22 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
     for (i = 0; i < 72; ++i) pool[i] = 0;
   #endif
 
+    // Define ``g`` to be an element of ``G_x0`` that maps 
+    // the standard basis to ``a``, where ``a = a[0:24]``.
+    // We will abort with an error if no such ``g'`` exists.
+ 
+    // We will compute a `´g'`` that maps the basis given
+    // by ``a`` to the standard basis.
+    // As a first step we compute a ``g'`` in ``G_x0`` that
+    // maps the image ``m[23]`` of ``Omega`` to ``+-Omega``. 
+    // Then ``g * g'`` fixes ``Omega`` up to sign, so that it
+    // is in the subgroup ``N_x0`` of ``G_x0``. We store 
+    // ``g'`` in the first ``len`` entries of output
+    // buffer ``g``.
     len = res = gen_leech2_reduce_type4(m[23], g);
     if (res < 0) return res;
+    // Put ``a[i] = m[i] * g'``; so  ``g * g'`` maps
+    // the standard basis to ``a``.
     for (i = 0; i < 24; ++i) a[i] = m[i];
     res = gen_leech2_op_word_many(a, 24, g, len);
     if (res != (int32_t)len) return -100001;
@@ -272,11 +293,27 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
     for (i = 0; i < 24; ++i) pool[i] = a[i];
   #endif
 
+    // Store the bit matrix  ``a[12:23,12:23]`` in
+    // ``a_pi[0:11,0:11]``.  From ``a_pi`` we can compute
+    // a permutation ``perm`` in the Mathieu group ``M_24``
+    // that maps the standard basis of the Golay code
+    // to ``a_pi``. Let ``pi`` be a preimage of ``perm``
+    // in the subgroup ``AutPL``  of ``N_x0``, i.e. in the 
+    // automorphism group of the Parker loop. 
     for (i = 0; i < 11; ++i) a_pi[i] = (a[i + 12] >> 12) & 0x7ff;
     a_pi[11] = 0;
+    // Complete ``a_pi`` to a 12 times 12 bit matrix, so that
+    // we can compute ``perm`` with a function in 
+    // file ``mat24_functions.c``.
     mat24_matrix_from_mod_omega(a_pi);
     mat24_matrix_to_perm(a_pi, perm);
     if (mat24_perm_check(perm)) return -100002;
+    // Let ``pi`` be the standard preimage of ``perm`` in
+    // ``AutPL``. We replace ``g'`` by ``g' * pi**(-1)``, and 
+    // ``a[i]`` by ``a[i] * pi**(-1)`` for all ``i``.
+    // Then ``g * g'`` is in the subgroup of ``N_x0`` generated 
+    // by ``Q_x0`` and generators of type ``y_d`` of ``N_x0``
+    // and maps the standard basis to ``a``.
     pi = mat24_perm_to_m24num(perm);
     if (pi) {
         g[len++] = MMGROUP_ATOM_TAG_IP + pi; 
@@ -287,13 +324,23 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
     for (i = 0; i < 24; ++i) pool[i+24] = a[i];
   #endif
 
+    // Compute a generator of type ``y_d`` such that
+    // ``g * g' * y_d**(-1)`` is in ``Q_x0``. Here the value
+    // ``d`` can be read from the image of ``a[11]``, where
+    // ``a[11]`` is the image of an odd Golay cocode vector.
     y = (a[11] >> 12) & 0x7ff;
+    // Put ``g'`` = ``g' * y_d**(-1)`` and replace 
+    // ``a`` by ``a * y_d**(-1)``. Then ``g * g'`` is in 
+    // ``Q_x0`` and maps the standard basis to ``a``.
     if (y) {
         g[len++] = MMGROUP_ATOM_TAG_IY + y; 
         res = gen_leech2_op_word_many(a, 24, g + len - 1, 1);
         if (res != 1) return -100004;
     }
 
+    // Check that ``a[i]`` is equal to the ``i``-th basis vector
+    // up to sign; abort if that is not the case. Accumulate the
+    // signs of the images ``a[i]`` of the basis vectors in ``q``.
     for (i = 0; i < 24; ++i) {
         acc |= a[i] ^ (1UL << i);
         q ^= ((a[i] >> 24) & 1) << i ;
@@ -303,20 +350,110 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
   #endif
     if (acc & 0xffffff) return -100004;
 
+    // Put ``x' = ((q & 0xfff) << 12) | ((q >> 12) | 0xfff)``. Then
+    // the element ``x'`` of ``Q_x0`` (in Leech lattice encoding)
+    // maps the standard basis to ``a`` and vice versa.
+    // Convert ``x'`` to a pair of generators of ``Q_x0`` and
+    // put ``g' = g' * x'``. 
     x = q & 0xfff;
     q = (q >> 12) & 0xfff;
     q ^=  MAT24_THETA_TABLE[x & 0x7ff] & 0x7ff;
     if (q) g[len++] = MMGROUP_ATOM_TAG_ID + q;
+    // For internal purposes the first atom must always have tag 'x'.
     g[len++] = MMGROUP_ATOM_TAG_IX + x;
-      
+
+    // Now ``g * g'`` fixes the standard basis, so we just have
+    // to invert ```g'`` in order to obtain ``g``.  
     mm_group_invert_word(g, len);
     return len;
 }
 
 
 
+/// @cond DO_NOT_DOCUMENT
+#define CHI_24_4096_BAD 0x80000000UL
+/**
+   @brief Compute character of rep \f$\rho_{98280\f$ of \f$g \in G_{x0}\f$
+
+   Let \f$g \in G_{x0}\f$ be given by parameter ``elem`` as usual. Then
+   the function returns the character  \f$\rho_{98280\f$ of \f$g\f$.
+   IN case of failure it retunrs the special value ``CHI_24_4096_BAD``.
+
+   Array ``g`` must have length at least 10.
+*/
+static int32_t chi_24_4096(uint64_t *elem)
+{
+    int32_t atrace[4];
+    int32_t res = xsp2co1_traces_small(elem, atrace);
+    return  (res < 0) ? CHI_24_4096_BAD : atrace[0] * atrace[2];
+}
+/// @endcond
 
 
+
+
+/**
+   @brief Compute \f$g \in G_{x0}\f$ from its operation on \f$Q_{x0}\f$
+
+   Let \f$g \in G_{x0}\f$ be such that \f$g\f$
+   maps \f$m_{1,j}\f$ to \f$m_{2,j}\f$ via conjugation,
+   for \f$m_{i,j} \in Q_{x0}\f$, \f$i = 1,2; 0 \leq j \leq 24\f$.
+   If the \f$m_{1,j}\f$ (considered as vectors
+   in \f$\Lambda/2 \Lambda\f$) are linear independent then there
+   is at most one such \f$g\f$, up to sign.
+
+   Here inputs  \f$m_{1,j}, m_{2,j}\f$ are given in the
+   arrays ``m1, m2`` in **Leech lattice encoding**.
+
+   If possible then the function computes a \f$g \in G_{x0}\f$
+   that maps \f$m_{1,j}\f$ to \f$m_{2,j}\f$ via conjugation.
+   In case of success it stores \f$g\f$ as a word of
+   generators of \f$G_{x0}\f$ in the buffer referred by
+   parameter ``g`` and returns the length of that word in the
+   lower 8 bits of the return value. In case of failure the 
+   function returns a negative value.
+
+   Array ``g`` must have length at least 10.
+
+   Note that \f$g\f$ is determined up to sign only. The function
+   makes a considerable effort to return the 'nicer' value of
+   the two values \f$\pm g\f$. 
+
+   TODO: Details are yet to be documented!!!
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_from_mapping(uint32_t *m1, uint32_t *m2, uint32_t *g)
+{
+    uint32_t o, length, not_zero, i;
+    int32_t res, chi;
+    uint32_t m[24];
+    uint64_t elem[26];
+   
+    o = res = xsp2co1_Co1_get_mapping(m1, m2, m);
+    if (res < 0) return res;
+    length = res = xsp2co1_Co1_matrix_to_word(m, g);
+    if (res < 0) return res;
+    // put elem = g**o
+    res = xsp2co1_set_elem_word(elem, g, length);
+    if (res < 0) return res;
+    res = xsp2co1_power_elem(elem, o, elem);
+    if (res < 0) return res;
+    chi = res = chi_24_4096(elem);
+    if (res == CHI_24_4096_BAD) return -100007;
+    if (chi < 0) {
+        g[0] ^= 0x1000;
+        xsp2co1_neg_elem(elem);
+    }
+    for (i = 0; i < 7; ++i) {
+        if (xsp2co1_is_unit_elem(elem)) break;
+        res = xsp2co1_mul_elem(elem, elem, elem);
+        if (res < 0) return res;
+        o <<= 1;
+    }
+    if (i == 7) return -100008;
+    not_zero = chi != 0;
+    return (not_zero << 16) + (o << 8) + length;
+}
 
 
 //  %%GEN h

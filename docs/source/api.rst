@@ -319,7 +319,7 @@ Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 
 .. autoclass:: mmgroup.structures.xsp2_co1.Xsp2_Co1
    :members: order, type_Q_x0, conjugate_involution, subtype,
-             conjugate_involution_G_x0,
+             conjugate_involution_G_x0, chi_G_x0,
 
 
 
