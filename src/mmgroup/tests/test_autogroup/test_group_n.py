@@ -59,6 +59,8 @@ def ll_mul_test_case(g1, g2, verbose = 0):
     # next test mixed operation
     #assert g12 == g1 * g2ref
     #assert g12ref == g1ref * g2
+    g1_std = group('a', g1.std_word())
+    assert g1_std == g1, (g1_std, g1)
 
 
 @pytest.mark.auto_group

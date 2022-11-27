@@ -1833,7 +1833,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 
 static inline 
 uint32_t reduce_state(uint32_t *a, uint32_t n)
-// Make an educated guess if the word ``a`` if length ``n``
+// Make an educated guess if the word ``a`` of length ``n``
 // looks like a reduced word in G_x0. Returns
 // 0 if element is known to be in subgroup N_x0
 // 1 is this is not known and element may be reduced
@@ -1879,6 +1879,8 @@ uint32_t reduce_state(uint32_t *a, uint32_t n)
 // Note that the output order of the generators in function
 // ``elem_to_word`` differs form the internal order of the
 // generators of N_x0 used in module ``mm_group_n.c.
+// We are a bit sloppy here, tolerating atoms with tag `t`,
+// provided that the will cancel in the word ``a``.
 static inline
 int32_t reduce_N_x0_word(uint32_t *a, uint32_t n, uint32_t *a1)
 {
@@ -1887,23 +1889,9 @@ int32_t reduce_N_x0_word(uint32_t *a, uint32_t n, uint32_t *a1)
 
     mm_group_n_clear(g);
     if (mm_group_n_mul_word_scan(g, a, n) < n) return -1;
-    //  process  x_pi if present and output its inverse
-    if (g[4]) {
-        atom = (g[4] & 0xfffffff) + 0xA0000000UL;
-        a1[len_a1++] = atom;
-        if ((res = mm_group_n_mul_atom(g, atom)) < 0) return res;
-    }
-    //  process  y_d if present and output its inverse
-    if (g[1] & 0x7ff) {
-        atom = (g[1] & 0x7ff) + 0xC0000000UL;
-        a1[len_a1++] = atom;
-        if ((res = mm_group_n_mul_atom(g, atom)) < 0) return res;
-    }
-    mm_group_n_reduce_element(g);
-    // output inverses of x_\delta and x_d
-    if (g[0] | g[1] | g[4]) return -1;
-    if (g[3] & 0x0fff) a1[len_a1++] = 0x90000000UL + (g[3] & 0x0fff);
-    if (g[2] & 0x1fff) a1[len_a1++] = 0xB0000000UL + (g[2] & 0x1fff);
+    if (g[0] % 3) return -1; // Abort if tag 't' is present
+    len_a1 = mm_group_n_to_word_std(g, a1);
+    mm_group_invert_word(a1, len_a1);
     return len_a1;   
 }
 

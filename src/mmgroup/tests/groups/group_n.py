@@ -36,7 +36,7 @@
  An element of the group N is represented as an instance of class 
  FastGroupN_Word.
 
- For interfacing with class FastGroupN_Word, generating elements
+ For interfacing with class GroupN_Word, generating elements
  of the group N may be given as tuples as follows:
 
  ('t', exp)     means  t**exp for an integer exp.
@@ -79,7 +79,7 @@ mgroup_n.MGroupN. In addition, the tuple ('l', exp) represents the
 element l**exp of MM. So we can describe elements of the monster MM 
 by sequences of such tuples.
 
-Class FastGroupN_Word executres the group operations in the group N 
+Class FastGroupN_Word executes the group operations in the group N
 by using the fast routines in module mm_group_n.c.
 
 Expnonentiation is also supported in the usual way, with g**2 = g*g  
@@ -118,6 +118,7 @@ from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
 from mmgroup.generators import mm_group_n_reduce_element
 from mmgroup.generators import mm_group_n_copy_element
 from mmgroup.generators import mm_group_n_right_coset_N_x0
+from mmgroup.generators import mm_group_n_to_word_std
 
 from mmgroup.mat24 import pow_ploop
 
@@ -174,7 +175,18 @@ class GroupN_Word(AbstractMMGroupWord):
         mm_group_n_copy_element(self.data, g_Nx0.data)
         g_t.data[0] = mm_group_n_right_coset_N_x0(g_Nx0.data)
         return g_Nx0, g_t
-        
+
+    def std_word(self):
+        """Return element as word of generators in standard order
+
+        The function returns the element as a word of generators
+        of the Monster in standard order in a ``numpy`` array of
+        length at most 5.
+        """
+        a = np.zeros(5, dtype = np.uint32)
+        length = mm_group_n_to_word_std(self.data, a)
+        assert 0 <= length <= 5
+        return a[:length]
 
 
 ######################################################################

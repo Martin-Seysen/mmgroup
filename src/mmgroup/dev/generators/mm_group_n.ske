@@ -548,7 +548,7 @@ uint32_t mm_group_n_scan_word(uint32_t *w, uint32_t n)
 
 
 /**
- @brief Connjugate \f$g \in N_0\f$ with an element of the monster.
+ @brief Conjugate \f$g \in N_0\f$ with an element of the monster.
 
  Let ``w`` be a word of generators of the monster group of
  length ``n``. Let ``k`` be the greatest number such that all
@@ -632,7 +632,7 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
  The representation of \f$g\f$ is converted to a word of
  generators of the monster group. The entries of that word are
  stored in the buffer referred by parameter ``w``. The entries
- of that word are encoded as described in 
+ of that word are encoded as described in
  file  ``mmgroup_generators.h``. Word ``w`` may have up to five
  entries. The function returns the length of the word ``w``.
 
@@ -644,19 +644,15 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
  It is legal to put ``w`` = ``g``.
 */
 // %%EXPORT px
-uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *word)
-// Convert the element g of the group N_0 to an array 'word' of atoms
-// as specified in function mm_group_n_mul_atom() and return the
-// length of that array. That array may have length up to 5.
-// The word g is reduced with function mm_group_n_reduce_element()
+uint32_t mm_group_n_to_word(uint32_t *g, uint32_t *w)
 {
    uint_fast32_t len = 0;
    mm_group_n_reduce_element(g);
-   if (g[0]) word[len++] = (g[0] & 0xfffffff) | 0x50000000;
-   if (g[1]) word[len++] = (g[1] & 0x1fff) | 0x40000000;
-   if (g[2]) word[len++] = (g[2] & 0x1fff) | 0x30000000;
-   if (g[3]) word[len++] = (g[3] & 0xfff) | 0x10000000;
-   if (g[4]) word[len++] = (g[4] & 0xfffffff) | 0x20000000;
+   if (g[0]) w[len++] = (g[0] & 0xfffffff) | 0x50000000;
+   if (g[1]) w[len++] = (g[1] & 0x1fff) | 0x40000000;
+   if (g[2]) w[len++] = (g[2] & 0x1fff) | 0x30000000;
+   if (g[3]) w[len++] = (g[3] & 0xfff) | 0x10000000;
+   if (g[4]) w[len++] = (g[4] & 0xfffffff) | 0x20000000;
    return len;
 
 }
@@ -679,6 +675,55 @@ uint32_t mm_group_n_right_coset_N_x0(uint32_t *g)
    mm_group_n_mul_t(g, 3 - e);
    return e;
 }
+
+
+
+/**
+ @brief Convert \f$g \in N_0\f$ to a standard word of generators.
+
+ The representation of \f$g\f$ is converted to a word of
+ generators of the monster group in the standard order. The
+ entries of that word are stored in the buffer referred by
+ parameter ``w``.
+
+ The standard order of the generators of the monster group
+ in the reduced representation of an element of \f$N_0\f$
+ differs from the order of the generators returned by
+ function ``mm_group_n_to_word``. Apart from this difference
+ the action of this function is the same as in that function.
+
+ It is legal to put ``w`` = ``g``.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_to_word_std(uint32_t *g, uint32_t *w)
+{
+   uint_fast32_t e, y, len = 0;
+   uint32_t h[5], out[5];
+   // Copy reduced element g to h.
+   mm_group_n_reduce_element(g);
+   mm_group_n_copy(g, h);
+   // output part  't' as last generator and kill it in h
+   out[4] = mm_group_n_right_coset_N_x0(h);
+   // output part  'p' before part 't' and kill it in h
+   out[3] = h[4]; h[4] = 0;
+   // output part  'y' before part 'p' and kill it in h
+   y = h[1] & 0x7ff;
+   out[2] = y;
+   y ^= MAT24_THETA_TABLE[y] & 0x1000;
+   mm_group_n_mul_y(h, y);
+   mm_group_n_reduce_element(h);
+   // Copy 'x' and 'd' part from h to the output
+   out[0] = h[2]; out[1] = h[3];
+   // Copy output from ``out`` to output buffer and add tags
+   if (out[0]) w[len++] = (out[0] & 0x1fff) | 0x30000000;
+   if (out[1]) w[len++] = (out[1] & 0xfff) | 0x10000000;
+   if (out[2]) w[len++] = (out[2] & 0x1fff) | 0x40000000;
+   if (out[3]) w[len++] = (out[3] & 0xfffffff) | 0x20000000;
+   if (out[4]) w[len++] = (out[4] & 0xfffffff) | 0x50000000;
+   return len;
+}
+
+
 
 
 /**

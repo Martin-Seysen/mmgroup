@@ -1399,18 +1399,158 @@ int32_t mm_reduce_vector_incomplete(uint32_t *r)
 }
 
 
+
+
+
+
 /////////////////////////////////////////////////////////////////////////
-// Reducing an element of the monster group
+// Work buffer tyoe for main reduction function
 /////////////////////////////////////////////////////////////////////////
+
 
 
 /// @cond DO_NOT_DOCUMENT
+
 // Size of buffer for copy of Monster group word to be reduced 
 // This is used for preprocessing a word with ``gt_word_shorten(()``.
 // Preprocessing is omitted if A_BUFSIZE is set to 0.
-#define A_BUFSIZE 0
-/// @endcond  
+#define A_BUFSIZE 0x1000
 
+typedef struct {
+    uint32_t buf[A_BUFSIZE];
+    uint32_t len_buf;
+    uint_mmv_t v[MM_OP15_LEN_V];
+    uint_mmv_t work[MM_OP15_LEN_V];
+} t_work;
+
+/// @endcond
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Pre-reduction of an element of the monster group
+/////////////////////////////////////////////////////////////////////////
+
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
+/** TODO: Yet to be documented!!!
+
+*/
+static inline
+uint32_t eval_G_x0_complexity(uint32_t n_atoms[8])
+{
+    uint32_t i, reduce =
+        (n_atoms[6] > 3) || (n_atoms[2] > 4) || (n_atoms[3] > 1) ||
+        (n_atoms[4] > 1) || (n_atoms[1] > 2);
+    for (i = 0; i < 8; ++i) n_atoms[i] = 0;
+    return reduce;
+}
+
+
+/** TODO: Yet to be documented!!!
+
+    1 = reduce in group N_0
+
+    2 = reduce in group G_x0
+
+    3 = use functions in file ``mm_shorten.c`` for preprocessing
+
+    4 = use standard reduction algorithm
+
+*/
+static inline int32_t reduction_strategy(uint32_t *a,  uint32_t n)
+{
+    uint32_t n_atoms[8], i, tag, acc_atoms = 0, G_x0_complexity = 0;
+
+    for (i = 0; i < 8; ++i) n_atoms[i] = 0;
+    for (i = 0; i < n; ++i) {
+        tag = (a[i] >> 28) & 7;
+        switch(tag) {
+            case 0:
+               continue;
+            case 5:
+               G_x0_complexity |= eval_G_x0_complexity(n_atoms);
+               if (((a[i] & 0xfffffff) % 3) == 0) continue;
+               break;
+            case 6:
+               if (((a[i] & 0xfffffff) % 3) == 0) continue;
+               break;
+            case 7:
+               return 4;
+            default:
+               break;
+        }
+        ++ n_atoms[tag];
+        acc_atoms |= 1 << tag;
+    }
+    G_x0_complexity |= eval_G_x0_complexity(n_atoms);
+
+    if ((acc_atoms & 0x40) == 0) return 1;  // We are in N_x0
+    if ((acc_atoms & 0x20) == 0) return 2;  // We are in G_x0
+    return G_x0_complexity ? 3 : 4;
+}
+
+/** TODO: Yet to be documented!!!
+
+    0 = reduced expression is in p_work->buf
+
+    1 = pre-reduced expression is in p_work->buf
+
+    2 = No pre-reduction has been done
+
+*/
+static inline
+int32_t prereduce(uint32_t *a,  uint32_t n, uint32_t force, t_work *p_work)
+{
+    uint32_t k, strategy = reduction_strategy(a,  n);
+    int32_t status = -1;
+    gt_word_type* p_gt = NULL;
+
+    switch (strategy) {
+        case 1:
+            // abuse buffer p_work->buf for storing an element of N_0
+            mm_group_n_clear(p_work->buf);
+            k = mm_group_n_mul_word_scan(p_work->buf, a, n);
+            if (k != n) return 2;
+            // Copy element from that buffer to the output buffer
+            // and convert it to the standard form.
+            p_work->len_buf = mm_group_n_to_word_std(
+                               p_work->buf, p_work->buf);
+            return 0;
+        case 2:
+            // Reduce word in subgroup G_x0
+            p_work->len_buf = xsp2co1_reduce_word(a, n, p_work->buf);
+            return p_work->len_buf >= 0 ? 0 : 2;
+        default:
+            if (!force) return 2;
+        case 3:
+            p_gt = gt_word_alloc(force ? 1 : 2, p_work->work,
+                     sizeof(p_work->work));
+            if (p_gt == NULL) goto undo_alloc;
+            if (gt_word_append(p_gt, a, n) < 0) goto undo_alloc;
+            if ((status = gt_word_reduce(p_gt)) < 0) goto undo_alloc;
+            p_work->len_buf = gt_word_store(p_gt, p_work->buf, A_BUFSIZE);
+          undo_alloc:
+            gt_word_free(p_gt);
+            if (status < 0 || p_work->len_buf < 0) return 2;
+            return status >= 4 ? 0 : 1;
+    }
+}
+
+
+/// @endcond
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing an element of the monster group
+/////////////////////////////////////////////////////////////////////////
 
 
 /**
@@ -1444,13 +1584,6 @@ int32_t mm_reduce_vector_incomplete(uint32_t *r)
 int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
 {
 
-    typedef struct {
-      #if A_BUFSIZE > 0
-        uint32_t buf[A_BUFSIZE];
-      #endif
-        uint_mmv_t v[MM_OP15_LEN_V];
-        uint_mmv_t work[MM_OP15_LEN_V];
-    } t_work;
 
     int32_t res;
     uint_mmv_t *v, *work;
@@ -1461,11 +1594,6 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     v = p_work->v;
     work = p_work->work;
 
-  #if A_BUFSIZE > 0
-    #error Integration of module mm_shorten.c not yet functional!
-    res = gt_word_shorten(a, n, p_work->buf, A_BUFSIZE, 2);
-    if (res >= 0) {n = res; a = p_work->buf;}
-  #endif
 
     vp = V_PLUS;
     if ((res = mm_reduce_map_axis(&vp, v, a, n, work)) < 0) goto done;
@@ -1496,6 +1624,9 @@ int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
     free(p_work);
     return res;
 }
+
+
+
 
 
 

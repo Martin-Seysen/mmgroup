@@ -340,7 +340,7 @@ class XLeech2(AbstractGroupWord):
     If value is of one of the type listed above then the following
     parameter is converted to an element of the Golay cocode (as in
     the constructor of class |Cocode| multiplied to the converted
-    parmeter ``value`` from the right.
+    parameter ``value`` from the right.
 
     Alternatively, parameter ``value`` may be a single letter. If
     ``value`` is one of the capital letters ``BCTXE`` then that letter

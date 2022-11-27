@@ -1101,20 +1101,26 @@ creating that structure. The function returns:
 
 0 if \f$g\f$ is not known to be in any subgroup of the Monster
 
-1 if \f$g\f$ is known to be in \f$N_0\f$
+4 if \f$g\f$ is known to be in \f$G_{x0} \cdot N_0\f$
 
-2 if \f$g\f$ is known to be in \f$G_{x0}\f$
+5 if \f$g\f$ is known to be in \f$N_0\f$
 
-3 if \f$g\f$ is known to be in \f$N_{x0} = G_{x0} \cap N_0\f$
+6 if \f$g\f$ is known to be in \f$G_{x0}\f$
 
-A negative value in case of failure
+7 if \f$g\f$ is known to be in \f$N_{x0} = G_{x0} \cap N_0\f$
+
+A negative value in case of failure.
+
+If the return value is > 0  (i.e. if we
+know \f$g \in G_{x0} \cdot N_0\f$) then we also have
+performed a full reduction of the result.
 */
 // %%EXPORT p
 int32_t gt_word_reduce(gt_word_type *p_gt)
 {
     uint32_t sub_mode = p_gt->reduce_mode == 2 ? 2 : 3;
     gt_subword_type *p_old = p_gt->p_node, *p_fst;
-    int32_t res;
+    int32_t res, res1;
 
     p_gt->p_node = p_gt->p_end->p_prev;
     for ( ; p_gt->p_node->eof == 0; p_gt->p_node = p_gt->p_node->p_prev) {
@@ -1127,9 +1133,16 @@ int32_t gt_word_reduce(gt_word_type *p_gt)
     p_fst = p_gt->p_end->p_next;                // obtain first subword
     if (p_fst == p_gt->p_end) return 3;         // done if word is empty
     if (p_fst->p_next != p_gt->p_end) return 0; // ignorant if >1 subwords
-    res = 4;                                    // start with pessimism
+
+    // Here we are in  \f$G_{x0} \cdot N_0\f$
+    res = 4;
     if ((p_fst->img_Omega & 0x7fffff) == 0) res |= 1; // are we in N_0?
-    if (p_fst->t_exp == 0) res |= 2;                  // are we in G_x0?             
+    if (p_fst->t_exp == 0) res |= 2;                  // are we in G_x0?
+    // We can reduce the result completely, so we'll just do so.
+    p_gt->p_node = p_gt->p_end->p_prev;
+    res1 = gt_word_reduce_sub(p_gt, 1);
+    if (res1 < 0) return res;
+    p_gt->p_node = p_old;
     return res;
 }
 
