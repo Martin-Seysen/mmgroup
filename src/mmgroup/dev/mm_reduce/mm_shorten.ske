@@ -1,7 +1,7 @@
 /** @file mm_shorten.c
 
  This file contains function for reducing a word of generators
- of the monster group. Here word reduction is done by computations
+ of the Monster group. Here word reduction is done by computations
  in the subgroups \f$G_{x0} = 2^{1+24}.\mbox{Co}_1\f$
  and \f$N_0 = 2^{2+11+22}.(\mbox{Mat}_{24} \times \mbox{Sym}_3)\f$.
  To some extent, we will also compute in the Frobenius group
@@ -13,18 +13,14 @@
  split into subwords, where each subword is in the double
  coset \f$G_{x0} N_0\f$. Such a subword is represented as a word
  of generators of  \f$G_{x0}\f$, followed by a power of the
- triality element \f$\xi\f$. A subword is stored in a strcture
+ triality element \f$\xi\f$. A subword is stored in a structure
  of type ``gt_subword_type``.
 
  Unless otherwise stated, a negative return value of a function
  is this module indicates an error.
 
- Structues required for this module are defined in
+ Structures required for this module are defined in
  file ``mm_reduce.h``.
-
- Warning:
-
- This module is yet experimental and not for public use!
 
 
  The following code block demonstrates the reduction of a word

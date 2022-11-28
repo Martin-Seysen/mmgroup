@@ -373,7 +373,7 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
 /// @cond DO_NOT_DOCUMENT
 #define CHI_24_4096_BAD 0x80000000UL
 /**
-   @brief Compute character of rep \f$\rho_{98280\f$ of \f$g \in G_{x0}\f$
+   @brief Compute character of rep \f$\rho_{24} \otimes \rho_{4096}\f$ of \f$g \in G_{x0}\f$
 
    Let \f$g \in G_{x0}\f$ be given by parameter ``elem`` as usual. Then
    the function returns the character  \f$\rho_{98280\f$ of \f$g\f$.
@@ -410,16 +410,32 @@ static int32_t chi_24_4096(uint64_t *elem)
    In case of success it stores \f$g\f$ as a word of
    generators of \f$G_{x0}\f$ in the buffer referred by
    parameter ``g`` and returns the length of that word in the
-   lower 8 bits of the return value. In case of failure the 
+   lower 8 bits of the return value. In case of failure the
    function returns a negative value.
 
    Array ``g`` must have length at least 10.
 
    Note that \f$g\f$ is determined up to sign only. The function
-   makes a considerable effort to return the 'nicer' value of
-   the two values \f$\pm g\f$. 
+   makes a considerable effort to  disambiguate the two 
+   elements \f$\pm g\f$. 
 
-   TODO: Details are yet to be documented!!!
+   If one of the two element \f$\pm g\f$ has odd order then the other
+   one has necessarily even order; in that case we return the element
+   with odd order. Otherwise both elements have the same (even)
+   order \f$2^k \cdot o, o\f$ odd. Then at most one of the
+   elements \f$\pm g^o\f$ may have a negative character \f$\chi(g^o)\f$
+   in the representation \f$\rho_{24} \otimes \rho_{4096}\f$
+   of \f$G_{x0}\f$; and in this case we return an element
+   with \f$\chi(g^o) \geq 0\f$. This leads to a disambiguation
+   of \f$\pm g\f$ in case \f$\chi(g^o) \neq 0\f$.
+
+   We store the order of the computed element \f$g\f$ in 
+   bits 15...,8 of the return value. We set bit 16 of the return
+   value precisely if we could disambiguate \f$g\f$ from \f$-g\f$,
+   i.e. in case  \f$\chi(g^o) \neq 0\f$. (Note that \f$g^o = 1\f$
+   if \f$g\f$ has odd order, implying  \f$\chi(g^o) > 0\f$.)
+
+   The function returns a negative value in case of failure.
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_from_mapping(uint32_t *m1, uint32_t *m2, uint32_t *g)

@@ -1437,43 +1437,32 @@ typedef struct {
 
 /// @cond DO_NOT_DOCUMENT
 
-/** TODO: Yet to be documented!!!
-
-*/
-static inline
-uint32_t eval_G_x0_complexity(uint32_t n_atoms[8])
-{
-    uint32_t i, reduce =
-        (n_atoms[6] > 3) || (n_atoms[2] > 4) || (n_atoms[3] > 1) ||
-        (n_atoms[4] > 1) || (n_atoms[1] > 2);
-    for (i = 0; i < 8; ++i) n_atoms[i] = 0;
-    return reduce;
-}
 
 
-/** TODO: Yet to be documented!!!
 
-    1 = reduce in group N_0
+/** Analyse an element of the Monster group.
 
-    2 = reduce in group G_x0
+    The function analyzes the element the Monster group of
+    length ``n`` in the buffer ``a``.
+    It returns one of the following values:
 
-    3 = use functions in file ``mm_shorten.c`` for preprocessing
+    1 = Element is in group N_0
 
-    4 = use standard reduction algorithm
+    2 = Element is in group G_x0
+
+    3 = Element is not known to be an any of these groups
 
 */
 static inline int32_t reduction_strategy(uint32_t *a,  uint32_t n)
 {
-    uint32_t n_atoms[8], i, tag, acc_atoms = 0, G_x0_complexity = 0;
+    uint32_t i, tag, acc_atoms = 0;
 
-    for (i = 0; i < 8; ++i) n_atoms[i] = 0;
     for (i = 0; i < n; ++i) {
         tag = (a[i] >> 28) & 7;
         switch(tag) {
             case 0:
                continue;
             case 5:
-               G_x0_complexity |= eval_G_x0_complexity(n_atoms);
                if (((a[i] & 0xfffffff) % 3) == 0) continue;
                break;
             case 6:
@@ -1484,27 +1473,38 @@ static inline int32_t reduction_strategy(uint32_t *a,  uint32_t n)
             default:
                break;
         }
-        ++ n_atoms[tag];
         acc_atoms |= 1 << tag;
     }
-    G_x0_complexity |= eval_G_x0_complexity(n_atoms);
 
     if ((acc_atoms & 0x40) == 0) return 1;  // We are in N_x0
     if ((acc_atoms & 0x20) == 0) return 2;  // We are in G_x0
-    return G_x0_complexity ? 3 : 4;
+    return 3;
 }
 
-/** TODO: Yet to be documented!!!
+/** Shorten an element of the monster using simple reduction rules
 
-    0 = reduced expression is in p_work->buf
+    The function tries to (partially) reduce the element the Monster
+    group of length ``n`` in the buffer ``a``. It tries to reduce
+    that  element with function ``gt_word_reduce`` in
+    file ``mm_shorten.c`` (with ``mode = 1``).
 
-    1 = pre-reduced expression is in p_work->buf
+    The function also requires a work buffer of type ``t_work``
+    referred by parameter ``p_work``. If a (partial) reduction
+    has been acomplished then the reduced word is storoed in
+    in buffer ``p_work->buf`` and the length of that word is
+    stored in ``p_work->len_buf``.
 
-    2 = No pre-reduction has been done
+    The function returns one of the following values:
+
+    0 = A fully reduced expression is in buffer ``p_work->buf``
+
+    1 = A partially reduced expression is in buffer ``p_work->buf``
+
+    2 = No (partial) reduction has been done
 
 */
 static inline
-int32_t prereduce(uint32_t *a,  uint32_t n, uint32_t force, t_work *p_work)
+int32_t prereduce(uint32_t *a,  uint32_t n, t_work *p_work)
 {
     uint32_t k, strategy = reduction_strategy(a,  n);
     int32_t status = -1;
@@ -1526,10 +1526,7 @@ int32_t prereduce(uint32_t *a,  uint32_t n, uint32_t force, t_work *p_work)
             p_work->len_buf = xsp2co1_reduce_word(a, n, p_work->buf);
             return p_work->len_buf >= 0 ? 0 : 2;
         default:
-            if (!force) return 2;
-        case 3:
-            p_gt = gt_word_alloc(force ? 1 : 2, p_work->work,
-                     sizeof(p_work->work));
+            p_gt = gt_word_alloc(1, p_work->work, sizeof(p_work->work));
             if (p_gt == NULL) goto undo_alloc;
             if (gt_word_append(p_gt, a, n) < 0) goto undo_alloc;
             if ((status = gt_word_reduce(p_gt)) < 0) goto undo_alloc;
@@ -1553,73 +1550,119 @@ int32_t prereduce(uint32_t *a,  uint32_t n, uint32_t force, t_work *p_work)
 /////////////////////////////////////////////////////////////////////////
 
 
+
+/// @cond DO_NOT_DOCUMENT
+
+/** 
+  @brief Workhorse for function ``mm_reduce_M``
+
+  Parameters ``a, n, mode,`` and ``r`` are as in
+  function ``mm_reduce_M``. The function also requires a work buffer
+  of type ``t_work``. The function does the whole work of
+  function ``mm_reduce_M``, except for the pre-reduction of the
+  element of the Monster with function ``prereduce`` in this module.
+*/
+static inline
+int32_t reduce_M(
+    uint32_t *a,
+    uint32_t n,
+    uint32_t mode,
+    uint32_t *r,
+    t_work *p_work
+)
+{
+    int32_t res;
+    uint_mmv_t *v, *work;
+    uint32_t vp, vm, easy;
+ 
+    v = p_work->v;
+    work = p_work->work;
+
+    vp = V_PLUS;
+    if ((res = mm_reduce_map_axis(&vp, v, a, n, work)) < 0) return res;
+    easy = vp > 0;
+    if ((res = mm_reduce_vector_vp(&vp, v, mode, r, work)) < 0) return res;    
+
+    vm = V_MINUS;
+    if ((res = mm_reduce_map_axis(&vm, v, a, n, work)) < 0) return res;
+    easy &= vm > 0;
+    if ((res = mm_reduce_vector_vm(&vm, v, r, work)) < 0) return res;  
+
+    if (easy) {
+        res = mm_reduce_vector_shorten(a, n, r, work);
+        if (res >= 0) return res;
+    }
+
+  #ifdef CHECK_AXIS
+    mm_order_load_vector(v); 
+    if ((res = mm_op15_word(v, a, n, 1, work)) < 0) return res;
+    res = mm_reduce_vector_v1(v, r, work);   
+  #else
+    mm_order_load_vector_v1_mod3(v);
+    if ((res = mm_op3_word(v, a, n, 1, work)) < 0) return res;
+    res = mm_reduce_vector_v1_mod3(v, r, work);
+  #endif
+    return res;
+}
+/// @endcond
+
+
 /**
   @brief Reduce an element in the monster group
 
   This is the most important function in the project. It reduces
   an arbitrary element \f$g\f$ of the monster to an element \f$h\f$.
-  The size of the element \f$h\f$ depends on the value of \f$g\f$ 
-  as an element of the monster group, but not of the representation 
+  The value of the element \f$h\f$ depends on the value of \f$g\f$
+  as an element of the monster group, but not of the representation
   of  \f$g\f$.
 
   Let \f$g\f$ be the element of the monster given as a word of
   generators in the buffer ``a`` of length ``n``. Then the function
-  computes the reduced element \f$h\f$ of the monster with 
+  computes the reduced element \f$h\f$ of the monster with
   \f$g = h\f$. We use the method in [Sey22] for computing \f$h\f$.
 
-  The function stores \f$h\f$ as a word of generators in the 
+  The function stores \f$h\f$ as a word of generators in the
   array ``r`` as described in the header of this file and returns
   the length of this word.
-  
+
+  A negative return value indicates a fatal error.
+
   The buffer referred by ``r`` should have length at least 128.
 
-  Parameter ``mode`` should be set to the value 1 for strict
-  compatibility with the reduction process described in [Sey22].
-  Other possibilities for parameter ``mode`` will be documented
-  in a future version.
+  Parameter ``mode`` should usually be set to zero. It
+  is interpreted as follows:
 
-  A negative return value indicates a fatal error.  
+  If bit 0 of ``mode`` is set then the reduction is strictly
+  compatible with the reduction process described in [Sey22].
+  Otherwise we perform a more practical reduction. The latter
+  reduction ensures e.g. that an element of the subgroup \f$G_{x0}\f$
+  is always represented as a word in the generators of that subgroup.
+  This feature greatly accelerates computations in the
+  subgroup \f$G_{x0}\f$.
+
+  Bit 1 of ``mode`` should be set for tests only. If this bit is
+  set then we omit some simplifications of the input prior to the
+  actual reduction.
 */
+
 // %%EXPORT px
-int32_t mm_reduce_M(uint32_t *a,  uint32_t n, uint32_t mode, uint32_t *r)
+int32_t mm_reduce_M(uint32_t *a, uint32_t n, uint32_t mode, uint32_t *r)
 {
 
 
-    int32_t res;
-    uint_mmv_t *v, *work;
-    uint32_t vp, vm, easy;
-    t_work *p_work = malloc(sizeof(t_work)); 
-       
-    if (p_work == 0) return -1;    
-    v = p_work->v;
-    work = p_work->work;
-
-
-    vp = V_PLUS;
-    if ((res = mm_reduce_map_axis(&vp, v, a, n, work)) < 0) goto done;
-    easy = vp > 0;
-    if ((res = mm_reduce_vector_vp(&vp, v, mode, r, work)) < 0) goto done;    
-
-    vm = V_MINUS;
-    if ((res = mm_reduce_map_axis(&vm, v, a, n, work)) < 0) goto done;
-    easy &= vm > 0;
-    if ((res = mm_reduce_vector_vm(&vm, v, r, work)) < 0) goto done;  
-
-    if (easy) {
-        res = mm_reduce_vector_shorten(a, n, r, work);
-        if (res >= 0) goto done;
+    int32_t res, status = 2, i;
+    t_work *p_work = malloc(sizeof(t_work));
+    if (p_work == 0) return -1;
+    if ((mode & 2) == 0) status = prereduce(a, n, p_work);
+    if (status == 0) {
+        res = p_work->len_buf;
+        for(i = 0; i < res; ++i) r[i] = p_work->buf[i];
+        goto done;
     }
-
-  #ifdef CHECK_AXIS
-    mm_order_load_vector(v); 
-    if ((res = mm_op15_word(v, a, n, 1, work)) < 0) goto done;
-    res = mm_reduce_vector_v1(v, r, work);   
-  #else
-    mm_order_load_vector_v1_mod3(v);
-    if ((res = mm_op3_word(v, a, n, 1, work)) < 0) goto done;
-    res = mm_reduce_vector_v1_mod3(v, r, work);
-  #endif
-
+    if (status == 1) {
+        n = p_work->len_buf; a = p_work->buf;
+    }
+    res = reduce_M(a, n, mode & 1, r, p_work);
   done:
     free(p_work);
     return res;

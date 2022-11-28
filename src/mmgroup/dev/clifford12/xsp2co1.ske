@@ -1828,7 +1828,7 @@ int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 
 
 /// @cond DO_NOT_DOCUMENT 
-#define REDUCE_WORD_TRESHOLD 50
+#define REDUCE_WORD_TRESHOLD 64
 
 
 static inline 
@@ -1926,7 +1926,7 @@ int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
     uint32_t img_omega = state ? 0 : 0x800000;
 
     // The method used in the first 'else' statement is the fastest
-    // and simples way so solve the problem.
+    // and simplest way so solve the problem.
     // Here we make some effort to accelerate the re-reduction of an
     // already reduced word.
  
