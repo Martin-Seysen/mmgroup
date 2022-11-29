@@ -78,7 +78,7 @@ Implementation of the generators of the monster group
 
 Math papers may use (at least) Latin or Greek letters for labelling
 objects, but most programming languages are restricted to ASCII characters.
-The following table shows how to create generating of the monster group
+The following table shows how to create generators of the monster group
 using the constructor of class |MM|:
 
 

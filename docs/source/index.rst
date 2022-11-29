@@ -13,6 +13,7 @@ Welcome to mmgroup's documentation!
    api.rst
    guide.rst
    c_interface.rst
+   applications.rst
 
 
 Indices and tables
