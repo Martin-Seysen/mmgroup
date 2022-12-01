@@ -183,6 +183,6 @@ breathe_projects_source = {
 tikz_proc_suite = 'GhostScript'
 
 
-
+tikz_tikzlibraries =  'patterns, calc, positioning, arrows, matrix, fit'
 
 

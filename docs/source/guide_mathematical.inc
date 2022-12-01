@@ -431,59 +431,41 @@ act as permutations and sign changes on the coordinates of
 :math:`\Lambda`, respectively; they do not change the subtype. 
 
 From the *Leech graph* in :cite:`Iva99`, section 4.7, we see
-that generators :math:`\xi` and :math:`\xi^2` may change
-the subtype of a type-4 vector in  :math:`\Lambda / 2 \Lambda` 
-as follows:
-
-.. only:: html
-
-    
-        * subtype 48 to 40
-        
-        * subtype 40 to 40, 48, 42, 44
-        
-        * subtype 42 to 40, 42, 44, 43
-        
-        * subtype 44 to 40, 42, 44, 43, 46
-        
-        * subtype 43 to 42, 44, 43, 46
-        
-        * subtype 46 to 44, 43, 46
+how the generators :math:`\xi` and :math:`\xi^2` may change
+the subtype of a type-4 vector in  :math:`\Lambda / 2 \Lambda`.
+The following figure shows a subgraph of that graph. It shows
+the transitions of subtypes of type-4 vectors (due to transformations
+by  :math:`\xi` or :math:`\xi^2`) that we actually use.
 
 
  
+.. tikz:: Transitions of subtypes of type-4 vectors in the Leech lattice mod 2
 
-.. raw:: latex
+   nodes={draw, % General options for all nodes
+   line width=1pt,
+   anchor=center, 
+   text centered,
+   rounded corners,
+   minimum width=1.5cm, minimum height=8mm
+   }, 
+   \matrix (m) [matrix of  nodes,row sep=2.0ex,column sep=2em,
+   minimum width=2em, nodes={rounded corners=6pt, draw}]
+   {   
+   43 &    &  42   &     \\
+   &      &       &   40 &  48  \\
+   46 	&      &  44 \\
+   };         	
+   \path[->] 
+   (m-1-1) edge (m-1-3) 
+   (m-1-1) edge (m-3-3) 
+   (m-3-1) edge (m-3-3) 
+   (m-1-3) edge (m-2-4) 
+   (m-3-3) edge (m-2-4) 
+   (m-2-4) edge (m-2-5) 
+   ;
 
-    \begin{figure}[h]
-    \setlength{\unitlength}{1cm}
-    \centering
-    \begin{picture}(10,6)
-	\put(0.5,3){\oval(1.0, 0.75)}
-	\put(0.3,2.9){$48$}
-	\put(3.5,3){\oval(1.0, 0.75)}
-    \put(3.3,2.9){$40$}
-    \put(1.0,3){\line(1,0){2}}
-    \put(4,3.1){\line(1,1){1.5}}
-	\put(6.0,4.7){\oval(1.0, 0.75)}
-    \put(5.8,4.6){$42$}
-    \put(4,2.9){\line(1,-1){1.5}}
-    \put(6.0,1.3){\oval(1.0, 0.75)}
-    \put(6.0,1.75){\line(0,1){2.5}}
-    \put(5.8,1.2){$44$}
-    \put(6.5,1.5){\line(1,1){2.8}}s
-	\put(9.5,4.7){\oval(1.0, 0.75)}
-    \put(9.3,4.6){$43$}
-	\put(9.5,1.3){\oval(1.0, 0.75)}
-    \put(9.3,1.2){$46$}
-    \put(6.5,4.7){\line(1,0){2.5}}
-    \put(6.5,1.2){\line(1,0){2.5}}
-    \put(9.5,1.75){\line(0,1){2.5}}   
-    \end{picture}
-    \caption{A line between two subtypes means that $\xi$ and $\xi^2$ 
-    may map one subtype to the other subtype. Every subtype apart from
-    48 may also be mapped to itself.}    
-    \end{figure}
+
+
 
 
 

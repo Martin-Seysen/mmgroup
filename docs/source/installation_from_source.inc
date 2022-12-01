@@ -31,6 +31,8 @@ should install the following python packages:
   ``regex``                Development: parsing balanced curly braces
   ``setuptools``           Development: basic package used for setup and building
                            extensions
+  ``patchelf``             Development (Linux and macOS only): patching shared
+                           libraries
   ``sphinx``               Documentation: basic package used for documentation
   ``sphinx-rtd-theme``     Documentation: 'theme' to be used by sphinx 
   ``sphinxcontrib-bibtex`` Documentation: bibliography in BibTeX style
@@ -55,7 +57,7 @@ also install the following programs:
   doxygen    Documentation  https://www.doxygen.nl/download.html
              of C files
   Ghostcript Documentation: https://ghostscript.com/releases/gsdnld.html
-             Drawings in    
+             using TikZ in    
              Sphinx
   ========== ============== ======================================================
 
