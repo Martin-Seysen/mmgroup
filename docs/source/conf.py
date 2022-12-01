@@ -69,7 +69,8 @@ extensions = [
    'sphinx_rtd_theme',
    'sphinx.ext.autodoc',
    'sphinxcontrib.bibtex',
-    'breathe',
+   'sphinxcontrib.tikz',
+   'breathe',
 ]
 
 
@@ -175,6 +176,13 @@ breathe_default_project = "mmgroup"
 breathe_projects_source = {
     "mmgroup" :  (C_DIR, C_FILES) # C_FILES not yet known
 }
+
+
+# -- TikZ configuration --------------------------------------------
+
+tikz_proc_suite = 'GhostScript'
+
+
 
 
 

@@ -6,5 +6,6 @@ regex
 pytest
 sphinx>=2.0
 sphinxcontrib.bibtex
+sphinxcontrib-tikz
 patchelf; sys_platform == 'linux' or sys_platform == 'darwin'  
 

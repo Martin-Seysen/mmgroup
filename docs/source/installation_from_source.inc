@@ -34,7 +34,8 @@ should install the following python packages:
   ``sphinx``               Documentation: basic package used for documentation
   ``sphinx-rtd-theme``     Documentation: 'theme' to be used by sphinx 
   ``sphinxcontrib-bibtex`` Documentation: bibliography in BibTeX style
-  ``breathe``              Documentation: link between ``doxygen`` and ``sphinx``
+  ``sphinxcontrib-tikz``   Documentation: link between ``doxygen`` and ``sphinx``
+  ``breathe``              Documentation: link between ``TikZ`` and ``sphinx``
   ======================== =========================================================
 
 Packages used for the purpose of documentation are required only if you want to 
@@ -46,14 +47,17 @@ also install the following programs:
   :widths: 20 30 50
 
 
-  ========= ============== ===========================================================
-  Program   Purpose        Location 
-  ========= ============== ===========================================================
-  miktex    Documentation  https://miktex.org/
-  Perl      Documentation  https://www.perl.org/get.html
-  doxygen   Documentation  https://www.doxygen.nl/download.html
-            of C files
-  ========= ============== ===========================================================
+  ========== ============== ======================================================
+  Program    Purpose        Location 
+  ========== ============== ======================================================
+  miktex     Documentation  https://miktex.org/
+  Perl       Documentation  https://www.perl.org/get.html
+  doxygen    Documentation  https://www.doxygen.nl/download.html
+             of C files
+  Ghostcript Documentation: https://ghostscript.com/releases/gsdnld.html
+             Drawings in    
+             Sphinx
+  ========== ============== ======================================================
 
 
 

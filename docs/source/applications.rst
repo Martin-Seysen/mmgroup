@@ -26,6 +26,11 @@ Representing the Monster as a Hurwitz group
 .. automodule:: applications.Hurwitz.readme
 
 
+Mapping the Coxeter group :math:`Y_{555}` into the Bimonster
+=============================================================
+
+.. automodule:: applications.Y555.readme
+
 
 
 
