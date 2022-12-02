@@ -42,13 +42,64 @@ That presentation of the Bimonster is called :math:`Y_{555}`.
 
 The graph corresponding to the Coxeter relations in
 :math:`Y_{555}` is given in the followining 
-figure 1.
+Figure 1. The names of the generating refelctions of :math:`Y_{555}`
+in that figure are as in  :cite:`Atlas`.
 
 
-.. tikz:: Warning: This is just an example to check that TikZ works in various environments
+.. tikz:: Coxeter relations in the group Y_555
 
-   \draw[thick,rounded corners=8pt]
-   (0,0)--(0,2)--(1,3.25)--(2,2)--(2,0)--(0,2)--(2,2)--(0,0)--(2,0);
+   [
+   dot/.style = {circle, fill, minimum size=#1,
+   inner sep=0pt, outer sep=0pt},
+   dot/.default = 4pt  % size of the circle diameter 
+   ]  
+   \node[dot](f1) at (0,5){} ;
+   \node [left=1mm of f1] {$f_1$};
+   \node[dot](e1) at (0.5,4.5){};
+   \node [left=1mm of e1]{$e_1$};
+   \node[dot](d1) at (1,4){};
+   \node [left=1mm of d1]{$d_1$};
+   \node[dot](c1) at (1.5,3.5){};
+   \node [left=1mm of c1]{$c_1$};
+   \node[dot](b1) at (2,3){};
+   \node [left=1mm of b1]{$b_1$};
+   \node[dot](a) at (2.5,2.5){};
+   \node [above=1mm of a]{$a$};
+   \path[-]
+   (f1) edge (e1) edge (d1) edge (c1) edge (b1) edge (a)	  ;
+   \node[dot](b3) at (2.5,2.0){} ;
+   \node [left=1mm of b3] {$b_3$};
+   \node[dot](c3) at (2.5,1.5){} ;
+   \node [left=1mm of c3] {$c_3$};
+   \node[dot](d3) at (2.5,1.0){} ;
+   \node [left=1mm of d3] {$d_3$};
+   \node[dot](e3) at (2.5,0.5){} ;
+   \node [left=1mm of e3] {$e_3$};
+   \node[dot](f3) at (2.5,0.0){} ;
+   \node [left=1mm of f3] {$f_3$};
+   \path[-]
+   (f3) edge (e3) edge (d3) edge (c3) edge (b3) edge (a)	  ;
+   \node[dot](b2) at (3,3){} ;
+   \node [right=1mm of b2] {$b_2$};
+   \node[dot](c2) at (3.5,3.5){} ;
+   \node [right=1mm of c2] {$c_2$};
+   \node[dot](d2) at (4,4){} ;
+   \node [right=1mm of d2] {$d_2$};
+   \node[dot](e2) at (4.5,4.5){} ;
+   \node [right=1mm of e2] {$e_2$};
+   \node[dot](f2) at (5,5){} ;
+   \node [right=1mm of f2] {$f_2$};
+   \path[-]
+   (f2) edge (e2) edge (d2) edge (c2) edge (b2) edge (a)	  ;	  
+
+
+We let :math:`Y_{555}` be the Coxeter group given by the generators
+and relations in Figure 1 together with the following additional 
+relation:
+
+.. math:: 
+
+   (a b_1 c_1 a b_2 c_2 a b_3 c_3)^{10} = 1 \, . 
 
 
 
