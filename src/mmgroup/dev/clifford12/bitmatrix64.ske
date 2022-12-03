@@ -189,6 +189,67 @@ uint32_t uint64_parity(uint64_t v)
 }   
 
 
+
+
+/**
+ @brief Returns position of lowest bit of a 64-bit integer ``v``.  
+
+ In case ``v = 0`` the function returns 64.         
+*/ 
+// %%EXPORT px
+uint32_t uint64_low_bit(uint64_t v)
+{
+   return lowest_bit64(v);
+}   
+
+
+
+/**
+ @brief Returns the bit length of a 64-bit integer ``v``.      
+*/ 
+// %%EXPORT px
+uint32_t uint64_bit_len(uint64_t v)
+{
+    return bitlen64(v);
+}
+
+
+
+/**
+ @brief Returns the bit weight of a 64-bit integer ``v``.      
+*/
+// %%EXPORT px
+uint32_t uint64_bit_weight(uint64_t v)
+{
+    return bw64(v);
+}
+
+
+/**
+ @brief Convert 64-bit integer ``v`` to a bit list.
+
+ Return the (sorted) array ``bl`` of the positions of all
+ bits set in the integer ``v``. The function returns the
+ length of the computed array, which is equal to the
+ bit weight of ``v``. Array ``bl`` should have length at 
+ least 64. The function is optimized for integers ``v``
+ of low bit weight.
+*/ 
+// %%EXPORT px
+uint32_t uint64_to_bitarray(uint64_t v, uint8_t *bl)
+{
+   uint_fast8_t len = 0, b;
+   while(v) {
+       bl[len++] = b = (uint_fast8_t)lowest_bit64(v);
+       v &= ~(ONE << b);
+   }
+   return (uint32_t)len;
+}   
+
+
+
+
+
 /*************************************************************************
 *** Simple bit matrix operations
 *************************************************************************/

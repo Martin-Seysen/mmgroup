@@ -1058,6 +1058,16 @@ def xsp2co1_qs_to_elem_i(QState12 qstate, uint64_t x1):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+def uint64_to_bitlist(uint64_t v):
+    """Return sorted list of the positions of the bits set in ``v``"""
+    cdef uint8_t bl[64]
+    cdef uint32_t length = cl.uint64_to_bitarray(v, &bl[0])
+    return [x for x in bl[:length]]
+
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def bitmatrix64_add_diag(m, uint32_t j):
     cdef uint64_t[:] m_view = m
     cdef uint32_t i = len(m)
