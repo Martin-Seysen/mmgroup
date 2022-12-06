@@ -23,18 +23,18 @@ applications, as described in the **API reference** of this project.
 Representing the Monster as a Hurwitz group
 ===========================================
 
-.. automodule:: applications.Hurwitz.readme
+.. automodule:: Hurwitz.readme
 
 
 Mapping the Coxeter group :math:`Y_{555}` into the Bimonster
 =============================================================
 
-.. automodule:: applications.Y555.readme
+.. automodule:: Y555.readme
 
 
 
 .. autoclass:: Y555.inc_p3.P3_object
-   :members:  y_name,
+   :members:  y_name
 
 .. autoclass:: Y555.inc_p3.AutP3
    :members:  order, map, point_map, line_map
