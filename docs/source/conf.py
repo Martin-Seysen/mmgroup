@@ -15,7 +15,7 @@ import sys
 import subprocess
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'applications')))
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 
 
