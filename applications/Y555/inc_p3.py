@@ -16,7 +16,8 @@ import numpy as np
 
 from mmgroup import XLeech2, Cocode, PLoop, MM
 from mmgroup.bitfunctions import bitparity
-from mmgroup.clifford12 import  uint64_low_bit
+from mmgroup.clifford12 import uint64_to_bitlist
+from mmgroup.clifford12 import uint64_low_bit
 from mmgroup.clifford12 import uint64_to_bitarray
 from mmgroup.clifford12 import uint64_bit_weight
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -24,7 +25,8 @@ from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
 try:
-    from mmgroup.clifford12 import uint64_to_bitlist
+    # A stupid way circumvent the mockup process for readthedocs
+    assert uint64_to_bitlist(3) == [0,1]
 except:
     def uint64_to_bitlist(n):
         return [i for i in range(64) if (n >> i) & 1]
