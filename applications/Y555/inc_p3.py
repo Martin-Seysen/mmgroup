@@ -12,21 +12,22 @@ from operator import __and__, __or__
 
 import numpy as np
 
-sys.path.append(r"C:\Data\projects\MonsterGit\src")
 
 
 from mmgroup import XLeech2, Cocode, PLoop, MM
 from mmgroup.bitfunctions import bitparity
 from mmgroup.clifford12 import  uint64_low_bit
 from mmgroup.clifford12 import uint64_to_bitarray
-from mmgroup.clifford12 import uint64_to_bitlist
 from mmgroup.clifford12 import uint64_bit_weight
-from mmgroup.clifford12 import xsp2co1_elem_from_mapping
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
-
+try:
+    from mmgroup.clifford12 import uint64_to_bitlist
+except:
+    def uint64_to_bitlist(n):
+        return [i for i in range(64) if (n >> i) & 1]
 
 ERR_PROJ = "Mapping does not preserve the projective plane P3"
 ERR_UNIQUE = "Mapping is underdetermined in the projective plane P3"
