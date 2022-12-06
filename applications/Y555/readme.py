@@ -130,8 +130,7 @@ The projective plane  :math:`P3` contains 13 points :math:`P_i` and
 incident with line :math:`P_j` if :math:`i + j` is 0, 1, 3, or 9
 (modulo 13). This construction of :math:`P3` is also used in
 :cite:`CNS88`,  :cite:`Nor02`, and :cite:`Far12`. 
-According to :cite:`Far12`, we may map the 16 vertices
-of :math:`Y_{555}` to a subset
+We may map the 16 vertices of :math:`Y_{555}` to a subset
 of the set of 26 vertices of :math:`\mbox{IncP3}` as follows:
 
 
@@ -141,9 +140,12 @@ of the set of 26 vertices of :math:`\mbox{IncP3}` as follows:
     a & b_1 & b_2 & b_3 & c_1 & c_2 & c_3 & d_1 & d_2 & d_3 & 
       e_1 & e_2 & e_3 & f_1 & f_2 & f_3  \\
     \hline
-    P_0 & L_3 & L_0 & L_1 & P_{10} & P_1 & P_2 & 
-    L_4 & L_2 & L_7 & P_5 & P_7 & P_6 &
-    L_8 & L_6 & L_{10}
+    P_0 & 
+    L_0 & L_1 & L_3 &
+    P_1 & P_2 & P_{11} & 
+    L_8 & L_7 & L_5 & 
+    P_5 & P_7 & P_4 &
+    L_4 & L_6 & L_{10}
     \end{array}
 
 

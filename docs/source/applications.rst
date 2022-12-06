@@ -33,4 +33,8 @@ Mapping the Coxeter group :math:`Y_{555}` into the Bimonster
 
 
 
+.. autoclass:: applications.Y555.inc_p3.P3_object
+   :members:  y_name,
 
+.. autoclass:: applications.Y555.inc_p3.AutP3
+   :members:  order, map, point_map, line_map
