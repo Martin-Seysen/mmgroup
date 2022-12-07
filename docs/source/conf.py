@@ -15,7 +15,7 @@ import sys
 import subprocess
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'applications')))
+sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
 
 
@@ -108,7 +108,20 @@ def setup(app):
 # The following option should remove excessive blank pages.
 
 latex_elements = {
-  'extraclassoptions': 'openany,oneside'
+    'extraclassoptions': 'openany,oneside',
+    'preamble': r'''
+\usepackage{cite}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{mathrsfs} % for \mathscr{F}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{array,multirow}
+\usepackage{caption}   % for tables
+''',
 }
 
 

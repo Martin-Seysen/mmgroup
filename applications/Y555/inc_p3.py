@@ -1,9 +1,10 @@
 """Projective plane over GF(3) and Norton's generators of the Monster
 
 
-This module implements the projective plane over :math:`\bathbb{F}_3
+This module implements the projective plane over :math:`\mathbb{F}_3`
 and its automorphism group.
 """
+import os
 import sys
 from numbers import Integral
 from random import randint, sample, choice
@@ -12,10 +13,14 @@ from operator import __and__, __or__
 
 import numpy as np
 
+try:
+    import mmgroup
+except:
+    sys.path.append(os.path.join('..', '..', 'src'))
+    import mmgroup
 
 
 from mmgroup import XLeech2, Cocode, PLoop, MM
-from mmgroup.bitfunctions import bitparity
 from mmgroup.clifford12 import uint64_to_bitlist
 from mmgroup.clifford12 import uint64_low_bit
 from mmgroup.clifford12 import uint64_to_bitarray
@@ -24,13 +29,24 @@ from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
+
+
+# The following code block is just for generating documentation
+# with readthedocs and can be ignored.
 try:
-    # A stupid way circumvent the mockup process for readthedocs
+    # A stupid way to circumvent the mockup process for readthedocs
     assert uint64_to_bitlist(3) == [0,1]
+    #assert False
 except:
     def uint64_to_bitlist(n):
         return [i for i in range(64) if (n >> i) & 1]
+    def uint64_bit_weight(n):
+        return sum([(n >> i) & 1 for i in range(64)])
+    def uint64_low_bit(n):
+        n |= 1 << 64
+        return (n & -n).bit_length() - 1
 
+# Some error messages
 ERR_PROJ = "Mapping does not preserve the projective plane P3"
 ERR_UNIQUE = "Mapping is underdetermined in the projective plane P3"
 ERR_DUPL = "Duplicate entry in mapping of projective plane P3"
