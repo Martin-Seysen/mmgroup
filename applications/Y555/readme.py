@@ -148,6 +148,23 @@ of the set of 26 nodes of :math:`\mbox{IncP3}` as follows:
     \end{array}
 
 
+In the description of the Monster group, the ATLAS :cite:`Atlas`
+uses the names of the 16 nodes of :math:`Y_{555}` given in the
+table above. It also uses names for remaining 10 nodes of
+:math:`P3`, and it states the incidences between all these nodes.
+We number the remaining nodes in the ATLAS (preserving their
+incidence relations) as indicated in the follwing table:
+
+.. math::
+
+    \begin{array}{c|c|c|c|c|c|c|c|c|c}
+    f & a_1 & a_2 & a_3 & g_1 & g_2 & g_3 & z_1 & z_2 & z_3  \\
+    \hline
+    L_9 &
+    P_3 & P_{12} & P_{10} &
+    P_9 & P_8 & P_6 &
+    L_{11} & L_2 & L_{12}
+    \end{array}
 
 """
 

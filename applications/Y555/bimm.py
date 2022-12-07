@@ -1,7 +1,7 @@
 import os
 import sys
 from numbers import Integral
-from random import sample, choice
+from random import randint, sample, choice
 
 import numpy as np
 
@@ -14,9 +14,10 @@ from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
-from inc_p3 import incidence, find_collinear_points, p3_list
+from inc_p3 import p3_list, P3_node
 from p3_to_mm import PointP3, StarP3
 from p3_to_mm import AutP3
+from p3_to_mm import AutP3_MM
 from p3_to_mm import Norton_generators
 
 #####################################################################
@@ -60,6 +61,7 @@ class BiMM(AbstractGroupWord):
         return a.m1.order(), a.m2.order(), par
 
     def order(self):
+        """Return the order of an element of the group BiMM"""
         o1, o2, s = self.orders()
         return s * o1 * o2 // gcd(o1, o2)
 
@@ -162,8 +164,11 @@ points_lines_list()
 
 
 def P3_BiMM(pl):
+    if isinstance(pl, (Integral, P3_node)):
+        pl = [P3_node(pl).ord]
+    else:
+        pl = p3_list(pl)
     a = np.zeros((2, len(pl), MAXLEN_PL_DATA), dtype = np.uint32)
-    pl = p3_list(pl)
     len_pl = len(pl)
     for i in range(0, len_pl & -2, 2):
         k = pl[i]
@@ -181,6 +186,13 @@ def P3_BiMM(pl):
    
 
 
+#####################################################################
+# Enter automorphisms of ``P3`` into the BiMonster
+#####################################################################
+
+def AutP3_BiMM(g):
+    g = AutP3_MM(AutP3(g))
+    return BiMM(g, g.copy())
 
 #####################################################################
 # Tests
@@ -226,12 +238,24 @@ def test_Coxeter_orders(multiprocessing = False):
     print("passed")
 
      
-
+def test_AutP3_BiMM(ntests=10, verbose = 0):
+    print("Test embedding of AutP3 into the BiMonster")
+    for i in range(ntests):
+        g_autp3 = AutP3('r')
+        g = AutP3_BiMM(g_autp3)
+        for j in range(4):
+            node_p3 =  P3_node(randint(0,25))
+            node = P3_BiMM(node_p3)
+            img_p3 = node_p3 * g_autp3
+            img = P3_BiMM(img_p3)
+            assert img == node ** g
+    print("passed")
 
 
 
 def random_hexagon():
-    inc = incidence
+    from inc_p3 import find_collinear_points
+    from inc_p3 import incidence as inc
     while 1:
         points = sample(range(13), 3)
         if not find_collinear_points(points):
@@ -266,6 +290,7 @@ def test_spider_relation():
 
 def test_all():
     test_P3_BiMM()
+    test_AutP3_BiMM()
     test_Coxeter_orders(multiprocessing = True)
     test_hexagon_relations() 
     test_spider_relation()

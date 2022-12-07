@@ -25,10 +25,10 @@ import numpy as np
 try:
     import mmgroup
 except:
+    # Get package from inplace build location if it is not installed
     sys.path.append(os.path.join('..', '..', 'src'))
     import mmgroup
 
-from mmgroup import XLeech2, Cocode, PLoop, MM
 from mmgroup.clifford12 import uint64_to_bitlist
 from mmgroup.clifford12 import uint64_low_bit
 from mmgroup.clifford12 import uint64_to_bitarray
@@ -617,7 +617,7 @@ def P3_point_set_type(s):
 #####################################################################
 
 
-
+# Enter names of the nodes in Y_555 notation into dictionary P3_OBJ
 P3_OBJ.update({'a':0, 'c1':1, 'c2':2, 'c3':11})
 assert find_cross([P3_OBJ[x] for x in ('a', 'c1', 'c2', 'c3')])
 def _join(args):
@@ -632,6 +632,9 @@ _join('f1 a2 a3, f2 a1 a3, f3 a1 a2, g1 b1 f1, g2 b2 f2, g3 b3 f3')
 _join('d1 g2 g3, d2 g1 g3, d3 g1 g2, e1 z1 d1, e2 z2 d2, e3 z3 d3')
 _join('f a e1')
 
+
+
+# Dictionary Y_names maps the numbers of the nodes to their Y_555 names
 Y_NAMES = {}
 for k, v in P3_OBJ.items():
     if isinstance(k, str) and k[0] in "abcdefgz":
@@ -850,13 +853,7 @@ class AutP3(AbstractGroupWord):
         ``f1 * f2`` where ``f1`` fixes the points 0 and 1, and
         ``f2`` is in a precomputed transversal of the group
         fixing these two points. The precomputed transversal is
-        is stored in ``AutP3.transversal``. 
-
-        When embedding an element ``g = f1 * f2`` into the 
-        Monster (with method ``_get_as_MM``) we will store the 
-        images of  ``f1`` and ``f2`` in the dictionary 
-        ``AutPL.known_MM``. So it suffices to compute all these 
-        images once only.    
+        is stored in ``AutP3.transversal``.
         """
         p = self.perm
         f2, f2i = self.transversal[(p[0], p[1])]
@@ -916,13 +913,76 @@ def show_Y555():
     def name(v):
         i = P3_OBJ[v]
         return "PL"[i//13]+str(i%13)
-    print("Vertexes in the Y_555 graph")
-    print("a:", name("a"))  # , ", f:", name("f"))
+    print("Nodes in the Y_555 graph")
+    print("a:", name("a"))
     A = lambda i,j : "bcdef"[i] + str(j)
     for j in range(1,4):
         d = [A(i, j) + ": " + name(A(i, j)) for i in range(5)]
-        print(", ".join(d)) 
+        print(", ".join(d))
+    print("More nodes in the plane with names as in the ATLAS")
+    print("f:", name("f"))
+    F = lambda i,j : "agz"[i] + str(j)
+    for j in range(1,4):
+        d = [F(i, j) + ": " + name(F(i, j)) for i in range(3)]
+        print(", ".join(d))
 
+
+def generate_inc_P3_test_cases_with_Y555_names(verbose = 0):
+    """Yield expected incidence relations from a table in the ATLAS
+
+    The function returns pairs ``(p, L)``, where ``p`` is the number
+    of a node in ``P3``, and ``L`` is the list of the numbers of
+    the nodes incident with node ``p``.
+
+    The ATLAS :cite:`Atlas` defines names for all 26 nodes of the
+    projective plane ``P3``; and it states the incidence relations
+    between these nodes in a table in the description of the Monster.
+    The list ``REL`` define inside this function is almost a
+    a direct copy of that table in ATLAS.
+
+    This generator function yields pairs ``(p,L)`` of incidence
+    relations as described above. Therefore it uses the table ``REL``
+    and the mapping from the ``Y_555`` notation of nodes (used in
+    the ATLAS) to the numbers of the nodes used in this class.
+    This mapping is described in the documentation of this
+    application and and implemented in class ``P3_node``
+    """
+    REL = [ # This is a essentially copy of a table in the ATLAS
+      'a,bi,bj,bk,f',   'zi,ai,cj,ck,ei',
+      'ai,zi,bi,fj,fk', 'bi,a,ai,ci,gi',
+      'ci,zj,zk,bi,di', 'di,ci,ei,gj,gk',
+      'ei,zi,di,fi,f',  'fi,aj,ak,ei,gi',
+      'gi,bi,dj,dk,fi', 'f,a,ei,ej,ek',
+      # 'ai,bi,bi,fj,fk', # This is an entry that should fail
+    ]
+    PERMS = [ # list of lists of permutations of n+1 numbers 1,2,...
+        [[1]],
+        [[1,2],[2,1]],
+        [[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1]]
+    ]
+    for r in REL:
+        for i, a in enumerate("ijk"):
+            r = r.replace(a, '{%d}' % i)
+        n = max(int(x) for x in r if x.isdigit())
+        for pi in PERMS[i]:
+            data = p3_list(r.format(*pi))
+            if verbose:
+                 print(r.format(*pi), 'maps to', data)
+            yield data[0], data[1:]
+
+
+def test_inc_P3_Y555_names(verbose = 0):
+    """Check the incidence of ``P3`` stated in the ATLAS.
+
+    Function ``generate_inc_P3_test_cases_with_Y555_names`` generates
+    incidence relations in ``P3`` obtained from a table in the
+    ATLAS. Function ``test_inc_P3_Y555_names`` simply tests these
+    relations.
+    """
+    print("Test incidence relations in P3 with names taken from ATLAS")
+    for p, inc in generate_inc_P3_test_cases_with_Y555_names(verbose):
+        assert set(incidences(p)) == set(inc), (p, inc, incidences(p))
+    print("passed")
 
 
 def test_all():
@@ -936,6 +996,7 @@ def test_all():
     #print(b, P3_node("b3")*b)
     assert b.order() == 3, b.order()
     print("Test passed")
+    test_inc_P3_Y555_names()
 
 if __name__ == "__main__":
     show_Y555()   
