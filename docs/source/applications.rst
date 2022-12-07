@@ -32,9 +32,30 @@ Mapping the Coxeter group :math:`Y_{555}` into the Bimonster
 .. automodule:: applications.Y555.readme
 
 
+Implementing the Bimonster and the homomorphism from :math:`Y_{555}` to it
+---------------------------------------------------------------------------
 
-.. autoclass:: applications.Y555.inc_p3.P3_object
+module Y555.inc_P3
+...................
+
+.. automodule:: applications.Y555.inc_p3
+
+
+.. autoclass:: applications.Y555.inc_p3.P3_node
    :members:  y_name
+
 
 .. autoclass:: applications.Y555.inc_p3.AutP3
    :members:  order, map, point_map, line_map
+
+
+module Y555.p3_to_mm
+......................
+
+
+.. automodule:: applications.Y555.p3_to_mm
+
+.. autofunction:: applications.Y555.p3_to_mm.Norton_generators
+
+
+

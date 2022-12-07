@@ -1,8 +1,17 @@
-"""Projective plane over GF(3) and Norton's generators of the Monster
+"""The module implements the projective plane over :math:`\mathbb{F}_3`
 
 
-This module implements the projective plane over :math:`\mathbb{F}_3`
-and its automorphism group.
+Module ``inc_p3`` implements the projective plane ``P3`` over
+:math:`\mathbb{F}_3` and its automorphism group. Points and lines
+in ``P3`` are implemented as instances of class ``P3_node``,
+automorphisms of ``P3`` are implemented as instances of 
+class ``AutP3``. 
+
+We mainly work with the incidence graph containing the points
+and the lines of ``P3`` as vertices.
+The union of the set of the points and of the set of the lines 
+in ``P3`` is called the set of the *nodes* of the projective 
+plane ``P3``.
 """
 import os
 import sys
@@ -18,7 +27,6 @@ try:
 except:
     sys.path.append(os.path.join('..', '..', 'src'))
     import mmgroup
-
 
 from mmgroup import XLeech2, Cocode, PLoop, MM
 from mmgroup.clifford12 import uint64_to_bitlist
@@ -50,14 +58,16 @@ except:
 ERR_PROJ = "Mapping does not preserve the projective plane P3"
 ERR_UNIQUE = "Mapping is underdetermined in the projective plane P3"
 ERR_DUPL = "Duplicate entry in mapping of projective plane P3"
-ERR_PL_ALL = "P3 objects in %s must all be points or all lines"
-ERR_P_ALL = "P3 objects in %s must all be points"
+ERR_PL_ALL = "P3 nodes in %s must all be points or all lines"
+ERR_P_ALL = "P3 nodes in %s must all be points"
 
 
 #####################################################################
-# Names of objects in the projective plane P3
+# Names of nodes in the projective plane P3
 #####################################################################
 
+# Dictionary ``P3_OBJ`` maps integers and string corrsponding to
+# number or names of nodes in the projective
 P3_OBJ = dict(zip(range(26), range(26)))
 for x in range(26):
     P3_OBJ[str(x)] = x
@@ -68,25 +78,25 @@ for x in range(13):
 
     
 def p3_obj(obj):
-    """Convert python object ``obj`` to (number of) P3 object"""
-    if isinstance(obj, P3_object):
+    """Convert python object ``obj`` to the number of a P3 node"""
+    if isinstance(obj, P3_node):
        return obj.ord
     try:
        return P3_OBJ[obj]
     except KeyError:
        if isinstance(obj, Integral):
-           raise IndexError("Number of P3 object out of range")
+           raise IndexError("Number of P3 node out of range")
        elif isinstance(obj, str):
            s = " '%s'" % obj if len(obj) < 11 else ""
-           err = "Cannot convert string%s to P3 object"
+           err = "Cannot convert string%s to P3 node"
            raise ValueError(err % s)
        else:
-           err = "Cannot convert %s object to P3 object"
+           err = "Cannot convert %s object to P3 node"
            raise TypeError(err % str(type(obj)))
 
 
 def p3_list(obj):
-    """Convert python object ``obj`` to list of P3 objects"""
+    """Convert python object ``obj`` to list of P3 nodes"""
     if isinstance(obj, str):
         s = [x.strip() for x in obj.split(',') if not x.isspace()]
         return [p3_obj(x) for x in s]
@@ -97,24 +107,24 @@ def p3_list(obj):
 
 
 
-class P3_object:
+class P3_node:
     r"""Models a point or a line the projective plane P3.
 
     We number the 13 points in the projective plane ``P3`` over
-    :math:`\mathbb{F}_3` from 0 to 12 and the 13 lines from
+    :math:`\mathbb{F}_3` from 0 to 12, and the 13 lines from
     13 to 25. Then a point with number ``i`` and a line with
-    number ``j`` are incident if 
-    :math:`i + j \equiv 0, 1, 3,` of :math:`9 \pmod{13}`.
+    number ``j`` are incident if
+    :math:`i + j \equiv 0, 1, 3,` or :math:`9 \pmod{13}`.
 
     Some strings are also accepted as a description of a point
-    or a line in ``P3``. The 13 points may be denoted as 
-    'P0',...,'P12' and the the 13 lines may be denoted as
+    or a line in ``P3``. The 13 points may be denoted as
+    'P0',...,'P12', and the the 13 lines may be denoted as
     'L0',...,'L12'.
 
-    The names 'a', 'b1', 'b2', 'b3',  'c1', 'c2', 'c3', etc.
-    refer to the embedding of the :math:`Y_{555}`` graph into 
-    projetive plane ``P3``, as  described in the documentation of
-    the application. For background, see :cite:`CNS88`, 
+    The names 'a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', etc.
+    refer to the embedding of the :math:`Y_{555}` graph into
+    the projective plane ``P3``, as described in the documentation
+    of the application. For background, see also :cite:`CNS88`,
     :cite:`Far12`.
 
     :param obj: An integer, a string, or an instance of
@@ -128,36 +138,36 @@ class P3_object:
         t = "point" if self.ord < 13 else "line"
         return "P3<%s %d>" % (t, self.ord % 13)
     def __eq__(self, other):
-        return isinstance(other, P3_object) and self.ord == other.ord
+        return isinstance(other, P3_node) and self.ord == other.ord
     def __ne__(self, other):
         return not self.__eq__(other)
     def __mul__(self, other):
         if isinstance(other, AutP3):
             o = self.ord
             if o < 13:
-                return P3_object(other.perm[o])
+                return P3_node(other.perm[o])
             else:
                 p1, p2 = INCIDENCE_LISTS[o, :2]
                 im1, im2 = other.perm[p1], other.perm[p2] 
-                return P3_object(incidence(im1, im2))  
+                return P3_node(incidence(im1, im2))  
         else:
-            err = "Cannot multiply class P3_object object with %s object"
+            err = "Cannot multiply class P3_node object with %s object"
             raise ValueError(err % type(other))
     def y_name(self):
-        """Return name of P3 object in Y_555 notation"""
+        """Return the name of the ``P3`` node in Y_555 notation"""
         return Y_NAMES[self.ord]
 
 #####################################################################
 # Elementary geometry in projective plane P3
 #####################################################################
 
-# Bit map containing all 26 objects of the projective plane P3
+# Bit map containing all 26 nodes of the projective plane P3
 ALL_BITS = 0x3ffffff
 
 # INCIDENCES[x] is the list of integers. Bit y of INCIDENCES[x] 
-# is set if object y is incident with object x.
+# is set if node y is incident with node x.
 INCIDENCES = np.zeros(26, dtype = np.uint32)
-# INCIDENCES_LISTS[x] is the array of the 4 objects incident with x 
+# INCIDENCES_LISTS[x] is the array of the 4 nodes incident with x 
 INCIDENCE_LISTS = np.zeros((26,4), dtype = np.uint32)
 for x in range(13):
     blist = sum(1 << ((p - x) % 13) for p in (0, 1, 3, 9))
@@ -169,42 +179,42 @@ for x in range(13):
 
 
 def incidences(*x):
-    """Return list of P3 objects incident with given P3 objects
+    """Return list of P3 nodes incident with given P3 nodes
 
     Here each argument of the function is a list of integers 
     :math:`0 \leq i < 26` describing a set :math:`S_i` of P3 
-    objects (i.e. points or lines) as specified above. An integer 
+    nodes (i.e. points or lines) as specified above. An integer 
     argument is interpreted as a singleton, i.e. a set of size 1.
-    A comma-separated string of names of P3 objects is accepted as
-    a set of P3 objects
+    A comma-separated string of names of P3 nodes is accepted as
+    a set of P3 nodes
 
-    The function returns the sorted list of P3 objects that are
-    incident with at least one object in each set :math:`S_i`
+    The function returns the sorted list of P3 nodes that are
+    incident with at least one node in each set :math:`S_i`
     and not contained in any of the sets :math:`S_i`. 
     """
-    objects = ALL_BITS
-    no_objects = 0
+    nodes = ALL_BITS
+    no_nodes = 0
     for l in x:
         if isinstance(l, Integral):
-            objects &= INCIDENCES[l]
-            no_objects |= 1 << l
+            nodes &= INCIDENCES[l]
+            no_nodes |= 1 << l
         else:
             l1 = p3_list(l)
-            objects &= reduce(__or__, [INCIDENCES[p] for p in l1], 0)
-            no_objects |= reduce(__or__, [1 << p for p in l1], 0)
-    return uint64_to_bitlist(objects & ~no_objects)
+            nodes &= reduce(__or__, [INCIDENCES[p] for p in l1], 0)
+            no_nodes |= reduce(__or__, [1 << p for p in l1], 0)
+    return uint64_to_bitlist(nodes & ~no_nodes)
 
 
 def incidence(*x): 
-    """Return (unique) P3 object incident with given P3 objects
+    """Return (unique) P3 node incident with given P3 nodes
 
     Here each argument of the function is an integer 
-    :math:`0 \leq i < 26` describing a P3 object (i.e. a point
+    :math:`0 \leq i < 26` describing a P3 node (i.e. a point
     or a line) as specified above. A string containing a name of
-    a P3 object is also accepted as an argument.
+    a P3 node is also accepted as an argument.
 
-    If there is a unique P3 object incident with all these P3
-    objects then the function returns the number of that object.
+    If there is a unique P3 node incident with all these P3
+    nodes then the function returns the number of that node.
     Otherwise the function raises ValueError.
 
     This function is a simplified version of function
@@ -215,22 +225,22 @@ def incidence(*x):
     if uint64_bit_weight(a) == 1:
         return  uint64_low_bit(a)
     if (a):
-        s = "Incident object in function incidence() is not unique"
+        s = "Incident node in function incidence() is not unique"
     else:
-        s = "No incident object found in function incidence()"
+        s = "No incident node found in function incidence()"
     raise ValueError(s)
     
 
 
     
 
-def remaining_P3_objects(x1, x2):
+def remaining_P3_nodes(x1, x2):
     """Complete points on a line or lines intersecting in a point
 
     If arguments ``x1, x2`` are numbers of different points in P3
     then the function returns the list of the two remaining points
     on the line through ``x1`` and ``x2``.  A string containing a 
-    name of a P3 object is also accepted as an argument.
+    name of a P3 node is also accepted as an argument.
 
     If arguments ``x1, x2`` are numbers of differnt lines in P3
     then the function returns the list of the two remaining lines
@@ -244,9 +254,9 @@ def remaining_P3_objects(x1, x2):
         rem = INCIDENCES[blist[0]] & ~((1 << x1) | (1 << x2))
         return uint64_to_bitlist(rem)
     if len(blist):
-        s = "Arguments in remaining_P3_objects() must be differnt"
+        s = "Arguments in remaining_P3_nodes() must be differnt"
     else:
-        s = ERR_PL_ALL % 'remaining_P3_objects()'
+        s = ERR_PL_ALL % 'remaining_P3_nodes()'
     raise ValueError(s)
 
 
@@ -329,7 +339,7 @@ def find_collinear_points(points):
     points = points[:5]
     for i1, x1 in enumerate(points):
         for x2 in points[i1 + 1:]:
-            x3, x4 = remaining_P3_objects(x1, x2)
+            x3, x4 = remaining_P3_nodes(x1, x2)
             if x3 in points:
                 return [x1, x2, x3, x4]
             if x4 in points:
@@ -370,7 +380,7 @@ def complete_cross_random(points):
         else:
             assert len(others) == 1
             y1 = others.pop()
-        y2 = choice(remaining_P3_objects(y1, line[2]))
+        y2 = choice(remaining_P3_nodes(y1, line[2]))
         return [line[0], line[1], y1, y2]
     # Here ``point`` contains at most 3 (non-collinear) points
     # Fill ``points`` with random points up to length at least 2
@@ -379,13 +389,13 @@ def complete_cross_random(points):
         points += sample(tuple(others), 2 - len(points))
         others = others - set(points)
     # Add a 3rd non-collinear (random) point if not present
-    others = others - set(remaining_P3_objects(*points[:2]))
+    others = others - set(remaining_P3_nodes(*points[:2]))
     if len(points) < 3:
         points.append(choice(tuple(others)))
         others.remove(points[2])
     # Add a 4-th non-collinear (random) point
-    others = others - set(remaining_P3_objects(points[0], points[2]))
-    others = others - set(remaining_P3_objects(points[1], points[2]))
+    others = others - set(remaining_P3_nodes(points[0], points[2]))
+    others = others - set(remaining_P3_nodes(points[1], points[2]))
     points.append(choice(tuple(others)))
     return points
 
@@ -479,11 +489,11 @@ def line_map_from_map(perm):
 
 
 def map_P3_to_perm(obj1, obj2, unique = True):
-    """Convert mapping of P3 objects to permutation of points
+    """Convert mapping of P3 nodes to permutation of points
 
     Arguments ``obj1`` and ``obj2`` are lists of integers of
     the same length that define a (partial) mapping
-    ``obj1[i] -> obj2[i]`` of P3 objects. The function tries
+    ``obj1[i] -> obj2[i]`` of P3 nodes. The function tries
     to find an automorphism of P3 compatible with that mapping.
     In the current version the entries of the lists ``obj1`` 
     and ``obj2`` must all be points or all lines.
@@ -645,13 +655,13 @@ def p3_mapping(src = None, random = False):
         if not random:
             return list(range(13))
         else:
-            src = {}
+            src = {0:randint(0,12)}
     if isinstance(src, str):
         try:
             s = [x.strip() for x in src.split(',') if not x.isspace()]
             src = dict([[y.strip() for y in x.split(':')] for x in s])
         except:
-            err = "Cannot evaluate string to a mapping of P3 objects"
+            err = "Cannot evaluate string to a mapping of P3 nodes"
             raise ValueError(err)
     elif isinstance(src, zip):
         src = dict(src)
@@ -673,8 +683,7 @@ class AutP3(AbstractGroupWord):
     r"""Models an automorphism of the projective plane ``P3``.
 
     This class models the automorphism group ``AutP3`` of the 
-    projective plane ``P3`` over the field ``GF(3)``. Points and 
-    lines in ``P3`` are implemented as in class ``P3_object``.
+    projective plane ``P3`` over the field :math:`\mathbb{F}_3`.
 
     Elements of ``AutP3`` should be given as (partial) mappings of 
     points or lines. The standard way to describe an automorphism  
@@ -693,8 +702,8 @@ class AutP3(AbstractGroupWord):
 
     :param data:
 
-      Additional data that describe a mapping of points or lines
-      in some special cases as indicated in the table below.
+      Additional data (optional) that describe a mapping of points 
+      or lines in some special cases as indicated in the table below.
    
 
     .. table:: Legal types for parameter ``mapping`` in the constructor
@@ -730,21 +739,22 @@ class AutP3(AbstractGroupWord):
 
     Remarks:
 
-    If parameter ``mapping`` is the string ``'r'`` then an optional
-    parameter of type ``dict`` or ``zip`` that describes a partial
-    mapping of points or lines may follow. In this case we construct 
-    a random  automorphism of ``P3`` satifying the constraints of
-    the mapping given by parameter ``data``, if present. Such a random
-    automorphism  is chosen from a uniform distribution of all
-    possible cases.
+    If parameter ``mapping`` is the string ``'r'``, then an optional
+    parameter``data`` of type ``dict`` or ``zip`` that describes a 
+    partial mapping of points or lines may follow. In this case we 
+    construct a random  automorphism of ``P3`` satifying the 
+    constraints of the mapping given by parameter ``data``, if present.
+    Such a random automorphism  is chosen from a uniform distribution 
+    of all possible cases.
 
+    For instances ``g1`` and ``g2`` of this class,
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
 
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``. 
 
-    Multiplying an object of class ``P3_object`` with an object
+    Multiplying an object of class ``P3_node`` with an object
     of class ``AutP3`` means application of an automorphism of ``P3``
     to a point or line in ``P3``.
     """
@@ -806,24 +816,26 @@ class AutP3(AbstractGroupWord):
         raise ValueError(s)
 
     def map(self):
-        """Return element of group AutP3 as a object permutation list
+        """Return the automorphism as a permutation list of length 26
 
-        Element ``g`` maps P3 object``x`` to object ``g.map[x]``.
+        Element ``g`` maps P3 node``x`` to node ``g.map[x]``. Here the
+        indices and values in the returned list are the numbers of the 
+        nodes as in class ``P3_Node``.
         """
         line_perm = [x + 13 for x in line_map_from_map(self.perm)]
         return self.perm[:] + line_perm
 
     def point_map(self):
-        """Return element of group AutP3 as a point permutation list
+        """Return the automorphism as a point permutation list of length 13
 
-        Element ``g`` maps P3 point``x`` to point ``g.map[x]``.
+        Element ``g`` maps P3 point``x`` to point ``g.map[x]``. 
         """
-        return self.perm[:] + line_map_from_map(self.perm)
+        return self.perm[:]
 
     def line_map(self):
-        """Return element of group AutP3 as a line permutation list
+        """Return the automorphism as a line permutation list of length 13
 
-        Element ``g`` maps line``x`` to line ``g.line_map[x]``.
+        Element ``g`` maps line ``x`` to line ``g.line_map[x]``.
         The entries in the list are reduced modulo 13.
         """
         return line_map_from_map(self.perm)
@@ -851,7 +863,7 @@ class AutP3(AbstractGroupWord):
         f1 = mul_perm_P3(p, f2i)
         #assert mul_perm_P3(f1, f2) == p
         #assert f1[:2] == [0,1], f1
-        return f1, f2
+        return AutP3('p', f1), AutP3('p', f2)
 
 
 
@@ -904,7 +916,7 @@ def show_Y555():
     def name(v):
         i = P3_OBJ[v]
         return "PL"[i//13]+str(i%13)
-    print("Vertexes in Y_555 graph")
+    print("Vertexes in the Y_555 graph")
     print("a:", name("a"))  # , ", f:", name("f"))
     A = lambda i,j : "bcdef"[i] + str(j)
     for j in range(1,4):
@@ -914,14 +926,14 @@ def show_Y555():
 
 
 def test_all():
-    print("Test classes P3_object and AutP3")
-    print("The graph Y_555 has a vertex e.g.", P3_object("f2"))     
+    print("Test classes P3_node and AutP3")
+    print("The graph Y_555 has a vertex e.g.", P3_node("f2"))     
     a = AutP3("r", "b1:b2 , d1:d2")
-    assert P3_object("c1") * a  ==  P3_object("c2")
+    assert P3_node("c1") * a  ==  P3_node("c2")
     c = AutP3("c1:c2, e1:e2, c2:c3, e2:e3, c3:c1, e3:e1 ")
     assert c.order() == 3, c.order()
     b = AutP3("b1:b2, d1:d2, b2:b3, d2:d3")
-    #print(b, P3_object("b3")*b)
+    #print(b, P3_node("b3")*b)
     assert b.order() == 3, b.order()
     print("Test passed")
 

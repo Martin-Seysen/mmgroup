@@ -1,4 +1,4 @@
-r"""Find a presentation of the Monster as a Hurwitz group
+r"""We want to find a presentation of the Monster as a Hurwitz group.
 
 
 Description of the task to be done
