@@ -58,4 +58,20 @@ module Y555.p3_to_mm
 .. autofunction:: applications.Y555.p3_to_mm.Norton_generators
 
 
+module Y555.bimm
+......................
+
+.. automodule:: applications.Y555.bimm
+
+
+.. autoclass:: applications.Y555.bimm.BiMM
+   :members:  order
+
+.. autofunction:: applications.Y555.bimm.P3_BiMM
+
+
+.. autofunction:: applications.Y555.bimm.AutP3_BiMM
+
+
+
 

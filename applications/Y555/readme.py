@@ -39,8 +39,8 @@ That presentation of the Bimonster is called :math:`Y_{555}`.
 
 The graph corresponding to the Coxeter relations in
 :math:`Y_{555}` is given in the following Figure 1. The 
-names of the generating refelctions of :math:`Y_{555}`
-in that figure are as in  :cite:`Atlas`.
+names of the generating reflections of :math:`Y_{555}`
+in that figure are as in the ATLAS :cite:`Atlas`.
 
 
 .. tikz:: Coxeter relations in the group Y_555
@@ -114,8 +114,8 @@ The graph :math:`Y_{555}` can be extended to the incidence graph
 over the field :math:`\mathbb{F}_3`. The 26-Node Theorem states 
 that there is a homomorphism from the Coxeter group given by
 :math:`\mbox{IncP3}` to the Bimonster :math:`\mathbb{M} \wr 2`,
-see :cite:`CNS88`. Defining relations in the generators 
-of that Coxeter group defining that homomorphism are well
+see :cite:`CNS88`. A presentation of the Bimonster with the 
+generators of that Coxeter group and defining relations is well
 known see e.g. :cite:`Nor02`, :cite:`Far12` for an 
 overview. We also write :math:`\mbox{IncP3}` for the Coxeter
 group corresponding to  to the incidence 
@@ -126,11 +126,11 @@ is more flexible than working with :math:`Y_{555}`.
 
 The projective plane  :math:`P3` contains 13 points :math:`P_i` and
 13 lines  :math:`L_i`, :math:`0 \leq i < 13`. Point  :math:`P_i` is
-incident with line :math:`P_j` if :math:`i + j` is 0, 1, 3, or 9
-(modulo 13). This construction of :math:`P3` is also used in
+incident with line :math:`L_j` if :math:`i + j \equiv 0, 1, 3,` or 
+:math:`9 \pmod{13}`. This construction of :math:`P3` is also used in
 :cite:`CNS88`,  :cite:`Nor02`, and :cite:`Far12`. 
 We may map the 16 nodes of :math:`Y_{555}` to a subset
-of the set of 26 nodes of :math:`\mbox{IncP3}` as follows:
+of the set of the 26 nodes of :math:`\mbox{IncP3}` as follows:
 
 
 .. math::

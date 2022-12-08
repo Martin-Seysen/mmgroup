@@ -1,3 +1,19 @@
+r"""This module implements the BiMonster.
+
+Class ``BiMM`` in this module implements an element of the BiMonster 
+:math:`\mathbb{M} \wr 2` as described in the documentation of this
+application. Let :math:`\mbox{IncP3}` be the Coxeter group as in
+that documentation. Function ``P3_BiMM`` maps a word of generators
+of :math:`\mbox{IncP3}` into the BiMonster. The generators of
+:math:`\mbox{IncP3}` correspond to the points and lines  of the 
+projective plane :math:`\mbox{P3}` over the field :math:`\mathbb{F}_3`.
+There is also a natural mapping from the automorphism group of
+:math:`\mbox{P3}` into the BiMonster compatible with the mapping
+from the Coxeter group into the BiMonster. Function 
+``AutP3_BiMM`` computes that mapping.
+
+TODO: Document more details, regarding classes P3_node and AutP3!
+"""
 import os
 import sys
 from numbers import Integral
@@ -7,18 +23,25 @@ import numpy as np
 
 if not r"." in sys.path:
     sys.path.append(r".")
-import inc_p3
 
 from mmgroup import  MM
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
-from inc_p3 import p3_list, P3_node
-from p3_to_mm import PointP3, StarP3
-from p3_to_mm import AutP3
-from p3_to_mm import AutP3_MM
-from p3_to_mm import Norton_generators
+import_done = False
+
+try:
+    import inc_p3
+    from inc_p3 import p3_list, P3_node
+    import p3_to_mm
+    from p3_to_mm import PointP3, StarP3, AutP3, AutP3_MM
+    from p3_to_mm import Norton_generators
+    import_done = True
+except (ImportError, ModuleNotFoundError):
+    # The usual Sphinx and Readthedocs nuisance: We have to survive
+    # for the sake of documentation if we could not import this stuff
+    print("Warning: could not import modules inc_p3, p3_to_mm")
 
 #####################################################################
 # class BiMM
@@ -36,7 +59,7 @@ def gcd(a, b):
 class BiMM(AbstractGroupWord):
     """This class models an element of the BiMonster.
 
-    Yet to be documented.
+    TODO: yet to be documented.
     """
     __slots__ = "m1", "m2", "alpha"
     group_name = "BiMM"
@@ -47,6 +70,7 @@ class BiMM(AbstractGroupWord):
             self.m1 = m1.m1
             self.m2 = m1.m2
             self.alpha = m1.alpha
+            assert not m2 and not alpha
         else:
             self.m1 = MM(m1)
             self.m2 = MM(m2)
@@ -61,7 +85,7 @@ class BiMM(AbstractGroupWord):
         return a.m1.order(), a.m2.order(), par
 
     def order(self):
-        """Return the order of an element of the group BiMM"""
+        """Return the order of the element of the BiMonster"""
         o1, o2, s = self.orders()
         return s * o1 * o2 // gcd(o1, o2)
 
@@ -125,21 +149,17 @@ BiMM.group = StdBiMMGroup
 #####################################################################
 
       
-def BiMM_Coxeter_Exp(x1, x2):
-    mi, ma = min(x1,x2), max(x1, x2)
-    assert 0 <= mi <= ma < 26
-    if mi < 13 and ma >= 13 and (mi + ma) % 13 in (0,1,3,9):
-         return 3
-    return 2 if mi != ma else 1
+precomputation_pending = True
 
 
 PL_VALUES = None
 PL_DATA = None
 MAXLEN_PL_DATA = 0
-ALPHA = BiMM([],[], 1)
+ALPHA = None #  This will be set to BiMM([],[], 1)
 
-def points_lines_list():
-    global PL_VALUES, PL_DATA, MAXLEN_PL_DATA
+def precompute_points_lines_list():
+    global PL_VALUES, PL_DATA, MAXLEN_PL_DATA, ALPHA
+    ALPHA = BiMM([],[], 1)
     PL_VALUES = []
     s, t, u, v, x =  Norton_generators()
     for i in range(13):
@@ -158,12 +178,17 @@ def points_lines_list():
         for j in range(2):
             d = data[i][j]
             PL_DATA[i, j, :len(d)] = d
-points_lines_list()
 
  
 
 
 def P3_BiMM(pl):
+    """Map a word of generators of :math:`\mbox{IncP3}` into the BiMonster
+
+    TODO: yet to be documented.
+    """
+    if precomputation_pending:
+        precompute_all()
     if isinstance(pl, (Integral, P3_node)):
         pl = [P3_node(pl).ord]
     else:
@@ -191,8 +216,26 @@ def P3_BiMM(pl):
 #####################################################################
 
 def AutP3_BiMM(g):
+    """Map an automorphism of :math:`\mbox{P3}` into the BiMonster
+
+    TODO: yet to be documented.
+    """
     g = AutP3_MM(AutP3(g))
     return BiMM(g, g.copy())
+
+
+#####################################################################
+# Precomputation
+#####################################################################
+
+def precompute_all():
+    # Do precompution on demand only. Otherwise Sphinx will fail.
+    global precomputation_pending
+    if not import_done:
+        err = "Failed to imprt module inc_p3 and p3_to_mm" 
+        raise ImportError(err)
+    precompute_points_lines_list()
+    precomputation_pending = False
 
 #####################################################################
 # Tests
@@ -203,25 +246,42 @@ def AutP3_BiMM(g):
 def P3_BiMM_slow(pl):
     result = BiMM()
     for x in pl:
-        result *= PL_VALUES[x]
+        result *= P3_BiMM(x)
     return result
 
 
-def test_P3_BiMM():
-    print("Testing function P3_BiMM")
+def test_P3_BIMM_cases(max_length):
     LL = list(range(26)) * 5
-    for i in range(20):
-        for j in range(3):
-            pl = sample(LL, 3)
-            assert P3_BiMM(pl) == P3_BiMM_slow(pl)
+    for i in range(max_length):
+        pl = sample(LL, i)
+        assert P3_BiMM(pl) == P3_BiMM_slow(pl)
+
+def test_P3_BiMM(multiprocessing = False):
+    print("Testing function P3_BiMM")
+    NTESTS = 5
+    MAX_LENGTH = 10
+    if multiprocessing:
+        from multiprocessing import Pool
+        with Pool() as pool:
+            pool.map(test_P3_BIMM_cases, [MAX_LENGTH] * NTESTS)
+        pool.join()
+    else:
+        for x in range(NTESTS):
+            test_P3_BIMM_cases(MAX_LENGTH)
     print("passed")
   
 
+def BiMM_Coxeter_Exp(x1, x2):
+    mi, ma = min(x1,x2), max(x1, x2)
+    assert 0 <= mi <= ma < 26
+    if mi < 13 and ma >= 13 and (mi + ma) % 13 in (0,1,3,9):
+         return 3
+    return 2 if mi != ma else 1
           
     
 def test_Coxeter_orders_for_one_node(x):
     for y in range(26):
-        o = (PL_VALUES[x] * PL_VALUES[y]).order()
+        o = (P3_BiMM(x) * P3_BiMM(y)).order()
         e = BiMM_Coxeter_Exp(x, y)         
         assert e == o, (x, y, e, o)    
 
@@ -281,7 +341,7 @@ def test_hexagon_relations(ntests = 10):
 
 
 def test_spider_relation():
-    print("Testing the sipder relation in Y_555")
+    print("Testing the spider relation in Y_555")
     spider = P3_BiMM('a,b1,c1,a,b2,c2,a,b3,c3')
     assert spider.order() == 10, spider.order()
     print("passed")
@@ -289,7 +349,7 @@ def test_spider_relation():
 
 
 def test_all():
-    test_P3_BiMM()
+    test_P3_BiMM(multiprocessing = True)
     test_AutP3_BiMM()
     test_Coxeter_orders(multiprocessing = True)
     test_hexagon_relations() 

@@ -25,7 +25,6 @@ if not r"." in sys.path:
 
 
 from mmgroup import XLeech2, Cocode, PLoop, MM
-from mmgroup.bitfunctions import bitparity
 from mmgroup.clifford12 import xsp2co1_elem_from_mapping
 
 import_done = False
@@ -147,6 +146,7 @@ def ord_StarP3(x):
 
 
 def precompute_all():
+    # Do precompution on demand only. Otherwise Sphinx will fail.
     global precomputation_pending
     global P0_DICT, PSTAR_DICT
     if not import_done:
@@ -169,10 +169,10 @@ def precompute_all():
     
 
 def test_P_Pstar():
+    from mmgroup.bitfunctions import bitparity
     def not_commuting(a, b):
        return  (a**(-1))**b * a  != MM() 
-    
-   
+       
     assert StarP3(range(13)) == MM()
     P0_list = [PointP3([0,i]) for i in range(13)]
     Pstar_list = [StarP3(i) for i in range(13)]
@@ -191,10 +191,6 @@ def test_P_Pstar():
         if i: assert XLeech2(Pst).type == 4, i
         for Pst2 in Pstar_list:
             assert not_commuting(Pst, Pst2) == 0
-
-
-
-
 
 
 

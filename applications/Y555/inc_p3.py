@@ -43,9 +43,10 @@ from mmgroup.structures.abstract_group import singleton
 # with readthedocs and can be ignored.
 try:
     # A stupid way to circumvent the mockup process for readthedocs
-    assert uint64_to_bitlist(3) == [0,1]
+    assert uint64_to_bitlist(3) == [0,1] # check if function is correct
     #assert False
 except:
+    # Reprogram (slow) low-level functions if fast versions not present
     def uint64_to_bitlist(n):
         return [i for i in range(64) if (n >> i) & 1]
     def uint64_bit_weight(n):
