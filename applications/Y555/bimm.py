@@ -1,18 +1,22 @@
 r"""This module implements the BiMonster.
 
-Class ``BiMM`` in this module implements an element of the BiMonster 
+Class ``BiMM`` in this module implements an element of the BiMonster
 :math:`\mathbb{M} \wr 2` as described in the documentation of this
 application. Let :math:`\mbox{IncP3}` be the Coxeter group as in
 that documentation. Function ``P3_BiMM`` maps a word of generators
 of :math:`\mbox{IncP3}` into the BiMonster. The generators of
-:math:`\mbox{IncP3}` correspond to the points and lines  of the 
+:math:`\mbox{IncP3}` correspond to the points and lines  of the
 projective plane :math:`\mbox{P3}` over the field :math:`\mathbb{F}_3`.
+A point or a line  of :math:`\mbox{P3}` is implemented as an
+instance of class ``P3_node`` in module ``inc_p3``.
+
 There is also a natural mapping from the automorphism group of
 :math:`\mbox{P3}` into the BiMonster compatible with the mapping
-from the Coxeter group into the BiMonster. Function 
-``AutP3_BiMM`` computes that mapping.
+from the Coxeter group into the BiMonster. Function
+``AutP3_BiMM`` computes that mapping. An automorphism  of
+:math:`\mbox{P3}` is implemented as an instance of class ``AutP3``
+in module ``inc_p3``.
 
-TODO: Document more details, regarding classes P3_node and AutP3!
 """
 import os
 import sys
@@ -49,7 +53,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 def gcd(a, b):
-    """Return greatest common divisor of ``a`` and ``b``"""
+    r"""Return greatest common divisor of ``a`` and ``b``"""
     assert a > 0 and b > 0
     while b > 0: a, b = b, a % b
     return a
@@ -57,27 +61,87 @@ def gcd(a, b):
 
 
 class BiMM(AbstractGroupWord):
-    """This class models an element of the BiMonster.
+    r"""This class models an element of the BiMonster.
 
-    TODO: yet to be documented.
+    The BiMonster is the group  :math:`\mathbb{M} \wr 2` of
+    structure  :math:`(\mathbb{M} \times \mathbb{M}).2`, where
+    :math:`\mathbb{M}`  is the Monster group.
+
+    :param m1:
+     
+       An element :math:`m_1` of the Monster that embeds into the
+       BiMonster as :math:`(m_1, 1)`. Default is the neutral
+       element :math:`1` of the Monster.
+
+    :type m1:
+
+       Instance of class ``MM``
+
+    :param m2:
+     
+       An element :math:`m_2` of the Monster that embeds into the
+       BiMonster as :math:`(1, m_2)`.  Default is the neutral
+       element :math:`1` of the Monster.
+
+    :type m2:
+
+       Instance of class ``MM``
+
+    :param e:
+
+       An optional exponent of the involution :math:`\alpha`,
+       default is 0.
+       Conjugation of an element of 
+       :math:`\mathbb{M} \times \mathbb{M}` by  :math:`\alpha`
+       means swapping the two factors in the direct procuct.
+
+    :type e:
+
+       integer
+
+    :return: 
+
+       The element :math:`(m_1, m_2) \cdot \alpha ^ e` of the
+       Bimonster
+           
+    :rtype:  
+
+       Instance of class ``BiMM``
+
+    Arguments ``m1`` or ``m2`` may be anything that is accepted by
+    the constructor of class ``MM`` as a single argument.
+
+    Alternatively, ``m1`` may be an instance of class ``BiMM``;
+    then arguments ``m2`` and ``e`` must be dropped.
+
+    Let ``g1`` and ``g2`` be instances of class ``BiMM`` representing 
+    elements of the BiMonster group.
+    ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
+    exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
+    is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
+    We have ``1 * g1 == g1 * 1 == g1`` and ``1 / g1 == g1 ** (-1)``.
+
+    ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.   
+
+
     """
     __slots__ = "m1", "m2", "alpha"
     group_name = "BiMM"
     group = None       # will be set to StdBiMMGroup later
 
-    def __init__(self, m1 = None, m2 = None, alpha = 0):
+    def __init__(self, m1 = None, m2 = None, e = 0):
         if isinstance(m1, BiMM):
             self.m1 = m1.m1
             self.m2 = m1.m2
             self.alpha = m1.alpha
-            assert not m2 and not alpha
+            assert not m2 and not e
         else:
             self.m1 = MM(m1)
             self.m2 = MM(m2)
-            self.alpha = alpha & 1
+            self.alpha = e & 1
             
     def orders(self):
-        """Return orders(!) of element of the group BiMM"""
+        r"""Return orders(!) of element of the group BiMM"""
         if self.alpha:
              a, par = self * self, 2
         else:
@@ -85,7 +149,7 @@ class BiMM(AbstractGroupWord):
         return a.m1.order(), a.m2.order(), par
 
     def order(self):
-        """Return the order of the element of the BiMonster"""
+        r"""Return the order of the element of the BiMonster"""
         o1, o2, s = self.orders()
         return s * o1 * o2 // gcd(o1, o2)
 
@@ -130,7 +194,7 @@ class BiMMGroup(AbstractGroup):
         return g1.m1 == g2.m1 and g1.m2 == g2.m2 and g1.alpha == g2.alpha
 
     def str_word(self, g):
-        """Convert group atom g to a string
+        r"""Convert group atom g to a string
 
         """
         s1, s2 = str(g.m1), str(g.m2)
@@ -182,10 +246,37 @@ def precompute_points_lines_list():
  
 
 
-def P3_BiMM(pl):
-    """Map a word of generators of :math:`\mbox{IncP3}` into the BiMonster
+def P3_BiMM(pl = []):
+    r"""Map a word of generators in :math:`\mbox{IncP3}` into the BiMonster
 
-    TODO: yet to be documented.
+    :param lp:
+
+       List of generators in :math:`\mbox{IncP3}`. Each entry in the 
+       list should be an instance of class ``P3_node``. Such an entry
+       may also be an integer or a string accepted by the constructor
+       of class ``P3_node``.
+
+    :type lp:
+
+        List containing integers, strings, or instances of 
+        class ``P3_node``
+
+    :return: 
+
+       The image of the word of the given generators in the  Bimonster
+           
+    :rtype:  
+
+       Instance of class ``BiMM``
+
+     
+    An integer ``pl`` or an instance ``pl`` of class ``P3_node`` is
+    considered as a word of length 1.
+
+    ``pl`` may also be a string of alphanumric identifiers separated
+    by commas. This is interpreted as a sequence of generators,
+    where the names of the generators are interpreted as in the 
+    constructor of class ``P3_node``.
     """
     if precomputation_pending:
         precompute_all()
@@ -216,9 +307,28 @@ def P3_BiMM(pl):
 #####################################################################
 
 def AutP3_BiMM(g):
-    """Map an automorphism of :math:`\mbox{P3}` into the BiMonster
+    r"""Map an automorphism of :math:`\mbox{P3}` into the BiMonster
 
-    TODO: yet to be documented.
+    :param g:
+
+       Automorphism of :math:`\mbox{P3}`
+
+    :type g:
+  
+       Instance of class  ``AutP3``
+
+    :return: 
+
+       The image of the automorphism of :math:`\mbox{P3}` in the  
+       Bimonster
+           
+    :rtype:  
+
+       Instance of class ``BiMM``
+
+    Parameters ``g`` may be anything that is accepted by
+    the constructor of class ``AutP3`` as a single argument.
+    
     """
     g = AutP3_MM(AutP3(g))
     return BiMM(g, g.copy())
@@ -324,7 +434,7 @@ def random_hexagon():
 
 
 def check_hexagon_relation(u, v, w, x, y, z):
-    """Check relations in a hexagon in the BiMonster.
+    r"""Check relations in a hexagon in the BiMonster.
 
     Here ``(u, v, w, x, y, z)`` must be a hexagon in the 
     incidence graph of P3. We take the relation for that

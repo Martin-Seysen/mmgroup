@@ -6,11 +6,8 @@ presentation of the Monster to the representation of the Monster
 in :cite:`Gri82` and :cite:`Con85`. Our implemention of the 
 Monster is based on the representation in :cite:`Con85`. So we may
 use the presentation in :cite:`Nor02` to construct a homomorphism
-from the  *projecive plane* represetation of the Monster into our
+from the  *projecive plane* representation of the Monster into our
 implementation of the Monster that can be computed in practice.
-
-TODO: Details are yet to be documented!!
-
 
 """
 import os
