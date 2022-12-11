@@ -39,7 +39,7 @@ try:
     import inc_p3
     from inc_p3 import p3_list, P3_node
     import p3_to_mm
-    from p3_to_mm import PointP3, StarP3, AutP3, AutP3_MM
+    from p3_to_mm import PointP3, AutP3, AutP3_MM
     from p3_to_mm import Norton_generators
     import_done = True
 except (ImportError, ModuleNotFoundError):
@@ -93,7 +93,7 @@ class BiMM(AbstractGroupWord):
        default is 0.
        Conjugation of an element of 
        :math:`\mathbb{M} \times \mathbb{M}` by  :math:`\alpha`
-       means swapping the two factors in the direct procuct.
+       means swapping the two factors in the direct product.
 
     :type e:
 
@@ -227,7 +227,7 @@ def precompute_points_lines_list():
     PL_VALUES = []
     s, t, u, v, x =  Norton_generators()
     for i in range(13):
-        P_i = PointP3(list(range(13)) + [i])
+        P_i = MM(PointP3(list(range(13)) + [i]))
         bm = BiMM(P_i, P_i, 1)
         PL_VALUES.append(bm)
     for i in range(13):
@@ -454,6 +454,8 @@ def test_spider_relation():
     print("Testing the spider relation in Y_555")
     spider = P3_BiMM('a,b1,c1,a,b2,c2,a,b3,c3')
     assert spider.order() == 10, spider.order()
+    other_spider = ['a', 'b1', 'c1', 'a', 'b2', 'c2', 'a', 'b3', 'c3']
+    assert P3_BiMM(other_spider * 10) == BiMM(1)
     print("passed")
     
 

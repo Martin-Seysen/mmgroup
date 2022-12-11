@@ -702,12 +702,12 @@ class AutP3(AbstractGroupWord):
     :param mapping:
 
       Describes a mapping of points or lines in the projective
-      plane ``P3``.
+      plane ``P3`` as indicated in the table below.
 
     :param data:
 
       Additional data (optional) that describe a mapping of points 
-      or lines in some special cases as indicated in the table below.
+      or lines in some special cases.
    
 
     .. table:: Legal types for parameter ``mapping`` in the constructor
@@ -824,7 +824,7 @@ class AutP3(AbstractGroupWord):
 
         Element ``g`` maps P3 node``x`` to node ``g.map[x]``. Here the
         indices and values in the returned list are the numbers of the 
-        nodes as in class ``P3_Node``.
+        nodes as in class ``P3_node``.
         """
         line_perm = [x + 13 for x in line_map_from_map(self.perm)]
         return self.perm[:] + line_perm

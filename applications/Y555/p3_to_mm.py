@@ -45,12 +45,18 @@ except (ImportError, ModuleNotFoundError):
 
 precomputation_pending = True
 
+# The following dictionary maps some of the points of :math:`P3`
+# to the MOG as in the diagram on page 80 in :cite:`Nor02`.
 DICT_POINT_MOG = {
     2:13,  6:17,  7:21,  
     8:14, 11:18,  4:22,
    12:15, 10:19,  5:23,  
 }
 
+# The following dictionary maps some pairs of points of :math:`P3`
+# to the MOG as in the diagram on page 80 in :cite:`Nor02`.
+# Entry `i:j` means that the pair :math:`P_0 P_i` is mapped to
+# entry ``j`` of the  MOG.
 DICT_POINT_MOG_COLUMN = {1:0, 3:4, 9:8}
 
 
@@ -58,14 +64,52 @@ DICT_POINT_MOG_COLUMN = {1:0, 3:4, 9:8}
 
 
 def make_P(x = 0, delta = 0):
+    """Create an element of the group :math:`2^{1+24}`
+
+    Given parameters ``d`` and ``delta``,  the functions
+    returns the element  :math:`x_d x_{\delta}` of 
+    the group :math:`Q_{x0}` of structure :math:`2^{1+24}`
+    as an instance of class ``XLeech2``.
+    """
     return XLeech2(PLoop(x), Cocode(delta))
     #return MM([('x', PLoop(x)), ('d', Cocode(delta))])
 
 
 
+# Dictionary of images of 'points' :math:`P_0 P_i` in :math:`Q_{x0}`
 P0_DICT = {}
+
 def compute_P0(x):
-    if x == 0: return MM()
+    """Return image of 'point' :math:`P_0 P_i` in :math:`Q_{x0}`
+
+    Norton cite:`Nor02` defines a mapping of the 'points' :math:`P_i`
+    of :math:`P3` into the subgroup :math:`Q_{x0}` of structure 
+    :math:`2^{1+24}` of the Monster. More precisely, he defines
+    a mapping from the products of an even number of 'points' into
+    :math:`Q_{x0}` . Note that all 'points'  commute; so if suffices
+    to store the products :math:`P_0 P_i, 0 \leq i < 13` in a
+    dictionary.
+
+    According to cite:`Nor02` these products are mapped to the
+    Leech lattice modulo 2 as follows:
+
+    We have :math:`P_0^2 = 1`.  In case :math:`i = 1,3,9` we have
+    :math:`P_0 P_i = x_{o(i)}`, where :math:`o(i)` is the octad
+    with entries set in row  0 of the MOG and in column
+    ``DICT_POINT_MOG_COLUMN[i]/4`` of the MOG, excluding the 
+    intersection of row 0 with that column.
+
+    For the other cases of :math:`i` we have 
+    :math:`P_0 P_i = x_{\delta(i)}`, where :math:`x_{\delta(i)}`
+    is the Golay cocode word of weight 1 with a single entry at
+    position ``DICT_POINT_MOG[i]``.
+
+    This defines a mapping from the pairs :math:`P_0 P_i` to
+    :math:`Q_{x0}` up to sign. Here we simple map all these pairs
+    to elements of :math:`Q_{x0}` that by definition are considerd 
+    as *positive* in our construction of :math:`Q_{x0}`.    
+    """
+    if x == 0: return XLeech2()
     if x in (1, 3, 9):
         c = DICT_POINT_MOG_COLUMN[x]
         octad = [0, 4, 8, 12, 16, 20, c+1, c+2, c+3]
@@ -74,25 +118,31 @@ def compute_P0(x):
 
 
 def PointP3(x):
+    """Map product of 'points' of :math:`P3` into subgroup of Monster
+
+    Let parameter ``x`` be a list of 'points' in :math:`P3` 
+    of even length. Here an entry of that list may be anything
+    that is accepted by the constructor of class ``P3_node``.
+
+    The function compute the image of the product of the 
+    entries of that list in the subgroup :math:`Q_{x0}` of the
+    Monster under the mapping defined in function ``compute_P0``.
+    The function returns that image as an instance of 
+    class ``XLeech2``.
+    """
     if precomputation_pending:
         precompute_all()
     assert len(x) & 1 == 0
     p = XLeech2() 
     for x_i in  x:
        p *= P0_DICT[x_i % 13]
-    return MM(p)
+    return p
 
 
-def ord_PointP3(x):
-    if precomputation_pending:
-        precompute_all()
-    assert len(x) & 1 == 0
-    p = XLeech2() 
-    for x_i in  x:
-       p *= P0_DICT[x_i % 13]
-    return p.ord
 
-
+# :cite:`Nor02` defines so-called 'stars', see function ``StarP3``.
+# The following dictionary maps most of the 'stars' to entries
+# of the MOG as in the diagram on page 80 in :cite:`Nor02`.
 DICT_LINE_MOG = {
     1:12,  3:16,  9:20,
    12: 1, 11: 5,  7: 9,
@@ -100,60 +150,111 @@ DICT_LINE_MOG = {
     2: 3, 10: 7,  4:11, 
 }
 
-
-
+# Dictionary of images of 'stars' :math:`P_i^*` in :math:`Q_{x0}`
 PSTAR_DICT = {}
 
-def compute_StarP3(x):
-   if x == 0:
-      return make_P(~PLoop(), [0,1,2,3])
-   if x in (1,3,9):
-        return make_P(0,  [1,2,3,4,8, DICT_POINT_MOG_COLUMN[x]])
-   lines = [DICT_LINE_MOG[y % 13] for y in incidences(x)]
-   octad = [0 ,4 ,8, x] + lines
-   point =  DICT_POINT_MOG[x]
-   col = point & (-4)
-   cocode = [x for x in range(col+1, col+4) if x != point]
-   return make_P(octad, cocode)
+
+
+def compute_StarP3(i, check = False):
+    """Return image of 'star' :math:`P_i^*` in :math:`Q_{x0}`
+
+    Norton cite:`Nor02` defines a mapping of the so-called 'stars' 
+    :math:`P_i^*` to the subgroup :math:`Q_{x0}` of structure 
+    :math:`2^{1+24}` of the Monster.  See also function ``StarP3`` 
+    for a brief description of the 'stars'. On input ``i`` the 
+    function returns the image of the 'star' :math:`P_i^*` as an 
+    instance of class ``XLeech2``.
+
+    According to cite:`Nor02` these 'stars' commute and they are 
+    mapped to the Leech lattice modulo 2 as follows:
+
+    We have :math:`P_0^* = x_{\Omega} x_{\omega}`, where 
+    :math:`\Omega` is the (positive) element of the Parker loop
+    with image :math:`(1,\ldots,1)` in the Golay code, and 
+    :math:`\omega` is the cocode word of weight 4 corresponding
+    to an (arbitrary) column of the MOG. 
+
+    In case :math:`i = 1,3,9` we have 
+    :math:`P_i^* = x_{\omega} x_{\delta(i)}`, where 
+    :math:`x_{\delta(i)}` is the Golay cocode word of weight 2
+    containing the entries in positions :math:`0, 4, 8` different
+    from the value ``DICT_POINT_MOG_COLUMN[i]``.
+
+    In the other cases let :math:`\delta(i)` be the cocode word 
+    of weight 2 containing  the entries  at positions
+    ``DICT_POINT_MOG[j]`` for all  ``j != i`` such that
+    ``DICT_POINT_MOG[j]`` is in the same column as
+    ``DICT_POINT_MOG[i]``. Let :math:`o(i)` be the octad
+    containing the entries at positions :math:`0, 4, 8`,
+    ``DICT_POINT_MOG[i]``, and the positions 
+    ``DICT_LINE_MOG[l]`` for all lines ``l`` incident with
+    point :math:`i`.
+
+    This defines a mapping from the stars :math:`P_i^*` to
+    :math:`Q_{x0}` up to sign. Here we simple map all these 'stars'
+    to elements of :math:`Q_{x0}` that by definition are considerd 
+    as *positive* in our construction of :math:`Q_{x0}` .    
+    """
+    if i == 0:
+        return make_P(~PLoop(), [0,1,2,3])
+    if i in (1,3,9):
+        return make_P(0,  [1,2,3,4,8, DICT_POINT_MOG_COLUMN[i]])
+    lines = [DICT_LINE_MOG[y % 13] for y in incidences(i)]
+    octad = [0, 4, 8, DICT_POINT_MOG[i]] + lines
+    if check:
+         from mmgroup.mat24 import syndrome
+         assert syndrome(sum(1 << k for k in set(octad))) == 0
+    point =  DICT_POINT_MOG[i]
+    col = point & (-4)
+    cocode = [j for j in range(col+1, col+4) if j != point]
+    return make_P(octad, cocode)
 
 
 
 
 def StarP3(x):
-    if precomputation_pending:
-        precompute_all()
-    if isinstance(x, Integral):
-        return MM(PSTAR_DICT[x % 13])
-    p = XLeech2() 
-    for x_i in  x:
-        p *= PSTAR_DICT[x_i % 13]
-    return MM(p) 
+    """Map product of 'stars' of :math:`P3` into subgroup of Monster
 
-def ord_StarP3(x):
+    :cite:`Nor02` defines so-called 'stars' :math:`P_i^*`as words in 
+    the generators of ``P2`` (modulo the defining relations of the 
+    BiMonster). These 'stars' are numbered from 0 to 12 in th same 
+    way as the 'points'. :cite:`Nor02` also defines a mapping from 
+    these 'stars' into the subgroup :math:`Q_{x0}` of the Monster.
+     
+    Let parameter ``x`` be a list integers encoding a sequence of 
+    'stars'`. The function computes the image of the product of these 
+    'stars'`. It function returns that image as an instance of 
+    class ``XLeech2``.
+
+    An integer 'x' is interpreted as a list of lenght 1.
+    """
     if precomputation_pending:
         precompute_all()
     if isinstance(x, Integral):
-        return PSTAR_DICT[x % 13].ord
+        return PSTAR_DICT[x % 13]
     p = XLeech2() 
     for x_i in  x:
         p *= PSTAR_DICT[x_i % 13]
-    return p.ord 
+    return p 
+
 
 
 
 
 def precompute_all():
+    """Perform all precomputations required for this module"""
     # Do precompution on demand only. Otherwise Sphinx will fail.
     global precomputation_pending
-    global P0_DICT, PSTAR_DICT
-    if not import_done:
-        err = "Failed to imprt module inc_p3" 
-        raise ImportError(err)
-    for x in range(13):
-        P0_DICT[x] = compute_P0(x)
-    for x in range(13):
-        PSTAR_DICT[x] = compute_StarP3(x)
-    precomputation_pending = False
+    if precomputation_pending:
+        global P0_DICT, PSTAR_DICT
+        if not import_done:
+            err = "Failed to imprt module inc_p3" 
+            raise ImportError(err)
+        for x in range(13):
+            P0_DICT[x] = compute_P0(x)
+        for x in range(13):
+            PSTAR_DICT[x] = compute_StarP3(x)
+        precomputation_pending = False
 
 
 
@@ -168,9 +269,9 @@ def precompute_all():
 def test_P_Pstar():
     from mmgroup.bitfunctions import bitparity
     def not_commuting(a, b):
-       return  (a**(-1))**b * a  != MM() 
+       return  (a**(-1))**b * a  != XLeech2() 
        
-    assert StarP3(range(13)) == MM()
+    assert StarP3(range(13)) == XLeech2()
     P0_list = [PointP3([0,i]) for i in range(13)]
     Pstar_list = [StarP3(i) for i in range(13)]
     for i, P in enumerate(P0_list):
@@ -183,6 +284,9 @@ def test_P_Pstar():
 
         for P2 in P0_list:
             assert not_commuting(P, P2) == 0
+
+    for i in range(13):
+        compute_StarP3(i, check = True)
 
     for i, Pst in enumerate(Pstar_list):
         if i: assert XLeech2(Pst).type == 4, i
@@ -203,13 +307,12 @@ def test_P_sets(N = 1000, verbose = False):
         for n in range(N):
             s = sample(range(13), i)
             set_type = P3_point_set_type(s)
-            type_ = XLeech2(PointP3(s)).type
+            type_ = PointP3(s).type
             if set_type in types:
                  assert types[set_type] == type_
             else:
                  if (verbose): print(set_type, type_)
-                 types[set_type] = type_
- 
+                 types[set_type] = type_ 
 
     for i in range(1, 13):
         for n in range(N):
@@ -242,10 +345,10 @@ def MM_from_perm(perm, verbose = 0):
     for i in range(12):
        d_src = [0,i+1]
        d_dest = [pi0, perm[i+1]]
-       a_src[i] = ord_PointP3(d_src)
-       a_src[i + 12] = ord_StarP3(d_src)
-       a_dest[i] = ord_PointP3(d_dest)
-       a_dest[i + 12] = ord_StarP3(d_dest)
+       a_src[i] = PointP3(d_src).ord
+       a_src[i + 12] = StarP3(d_src).ord
+       a_dest[i] = PointP3(d_dest).ord
+       a_dest[i + 12] = StarP3(d_dest).ord
     res = xsp2co1_elem_from_mapping(a_src, a_dest, a)
     if res < 0:
         err = "xsp2co1_elem_from_mapping returns %d"
@@ -456,7 +559,7 @@ def Norton_generators_stuv(check = True):
     t = AutP3_MM(t_AutP3)
     u_AutP3 = s_AutP3 * t_AutP3 * s_AutP3**2 * t_AutP3**2
     u = s * t * s**2 * t**2
-    v = PointP3(range(1,13))
+    v = MM(PointP3(range(1,13)))
 
     if check:
         # A consistency check of generator u, just for fun
