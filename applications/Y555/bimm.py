@@ -15,7 +15,7 @@ There is also a natural mapping from the automorphism group of
 from the Coxeter group into the BiMonster. Function
 ``AutP3_BiMM`` computes that mapping. An automorphism  of
 :math:`\mbox{P3}` is implemented as an instance of class ``AutP3``
-in module ``inc_p3``.
+in module ``inc_p3``. For background see  :cite:`Nor02`.
 
 """
 import os
@@ -101,7 +101,7 @@ class BiMM(AbstractGroupWord):
 
     :return: 
 
-       The element :math:`(m_1, m_2) \cdot \alpha ^ e` of the
+       The element :math:`(m_1, m_2) \cdot \alpha^e` of the
        Bimonster
            
     :rtype:  
@@ -152,6 +152,18 @@ class BiMM(AbstractGroupWord):
         r"""Return the order of the element of the BiMonster"""
         o1, o2, s = self.orders()
         return s * o1 * o2 // gcd(o1, o2)
+
+    def decompose(self):
+        r"""Decompose the element of BiMonster 
+
+        The function returns a triple ``(m1, m2, e)`` such
+        that the element of the BiMonster is equal to
+        :math:`(m_1, m_2) \cdot \alpha^e`. Here ``m1`` and ``m2``
+        are instances of class ``MM`` representing the elements
+        :math:`m_1` and :math:`m_2` of the Monster, and ``e`` is
+        equal to 0 or 1.
+        """
+        return self.m1, self.m2, self.alpha
 
  
  
@@ -424,11 +436,11 @@ def test_AutP3_BiMM(ntests=10, verbose = 0):
 
 
 def random_hexagon():
-    from inc_p3 import find_collinear_points
-    from inc_p3 import incidence as inc
+    from inc_p3 import P3_is_collinear
+    from inc_p3 import P3_incidence as inc
     while 1:
         points = sample(range(13), 3)
-        if not find_collinear_points(points):
+        if not P3_is_collinear(points):
             p1, p2, p3 = points
             return p1, inc(p1, p2), p2, inc(p2, p3), p3, inc(p3, p1)
 

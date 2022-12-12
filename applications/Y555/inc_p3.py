@@ -132,31 +132,39 @@ class P3_node:
                 class ``AutP3`` describing a point or a line 
                 in the projective plane ``P3``.
     """
-    slots = ['ord']
+    slots = ['_ord']
     def __init__(self, obj):
-        self.ord = p3_obj(obj) 
+        self._ord = p3_obj(obj) 
     def __str__(self):
-        t = "point" if self.ord < 13 else "line"
-        return "P3<%s %d>" % (t, self.ord % 13)
+        t = "point" if self._ord < 13 else "line"
+        return "P3<%s %d>" % (t, self._ord % 13)
     def __eq__(self, other):
-        return isinstance(other, P3_node) and self.ord == other.ord
+        return isinstance(other, P3_node) and self._ord == other._ord
     def __ne__(self, other):
         return not self.__eq__(other)
     def __mul__(self, other):
         if isinstance(other, AutP3):
-            o = self.ord
+            o = self._ord
             if o < 13:
                 return P3_node(other.perm[o])
             else:
                 p1, p2 = INCIDENCE_LISTS[o, :2]
                 im1, im2 = other.perm[p1], other.perm[p2] 
-                return P3_node(incidence(im1, im2))  
+                return P3_incidence(im1, im2) 
         else:
             err = "Cannot multiply class P3_node object with %s object"
             raise ValueError(err % type(other))
+    @property
+    def ord(self):
+        """Return internal number of instance of class ``P3_node``"""
+        return self._ord
+    def name(self):
+        """Return the name of the ``P3`` node in standard notation"""
+        q, r = divmod(self._ord, 13)
+        return "PL"[q] + str(r)
     def y_name(self):
         """Return the name of the ``P3`` node in Y_555 notation"""
-        return Y_NAMES[self.ord]
+        return Y_NAMES[self._ord]
 
 #####################################################################
 # Elementary geometry in projective plane P3
@@ -179,19 +187,20 @@ for x in range(13):
 
 
 
-def incidences(*x):
+def P3_incidences(*x):
     """Return list of P3 nodes incident with given P3 nodes
 
-    Here each argument of the function is a list of integers 
-    :math:`0 \leq i < 26` describing a set :math:`S_i` of P3 
-    nodes (i.e. points or lines) as specified above. An integer 
-    argument is interpreted as a singleton, i.e. a set of size 1.
-    A comma-separated string of names of P3 nodes is accepted as
-    a set of P3 nodes
+    Here each argument of the function is a list of nodes of P3
+    describing a set :math:`S_i` of nodes (i.e. points or lines) of
+    P3. An entry of such a list may be anything that is accepted by
+    the constructor of class ``P3_node``. An integer argument is
+    interpreted as a singleton, i.e. a set of size 1. A comma-
+    separated string of names of P3 nodes is accepted as a set
+    of P3 nodes.
 
-    The function returns the sorted list of P3 nodes that are
-    incident with at least one node in each set :math:`S_i`
-    and not contained in any of the sets :math:`S_i`. 
+    The function returns the sorted list of P3 nodes (i.e instances of
+    class ``AutP3`` that are incident with at least one node in each
+    set :math:`S_i` and not contained in any of the sets :math:`S_i`.
     """
     nodes = ALL_BITS
     no_nodes = 0
@@ -203,28 +212,30 @@ def incidences(*x):
             l1 = p3_list(l)
             nodes &= reduce(__or__, [INCIDENCES[p] for p in l1], 0)
             no_nodes |= reduce(__or__, [1 << p for p in l1], 0)
-    return uint64_to_bitlist(nodes & ~no_nodes)
+    nodes = uint64_to_bitlist(nodes & ~no_nodes)
+    return [P3_node(x) for x in nodes]
 
 
-def incidence(*x): 
+def P3_incidence(*x): 
     """Return (unique) P3 node incident with given P3 nodes
 
-    Here each argument of the function is an integer 
-    :math:`0 \leq i < 26` describing a P3 node (i.e. a point
-    or a line) as specified above. A string containing a name of
-    a P3 node is also accepted as an argument.
+    Here each argument describes a P3 node (i.e. a point
+    or a line); it may be anything accepted by the constructor
+    of class ``P3_node``.
 
     If there is a unique P3 node incident with all these P3
-    nodes then the function returns the number of that node.
+    nodes then the function returns that node as an instance of
+    class ``P3_node``.
+
     Otherwise the function raises ValueError.
 
     This function is a simplified version of function
-    ``incidences``. Its typical use case is to find a line
+    ``P3_incidences``. Its typical use case is to find a line
     through two points or the intersection point of two lines.
     """ 
     a = reduce(__and__, [INCIDENCES[p3_obj(p)] for p in x], ALL_BITS)
     if uint64_bit_weight(a) == 1:
-        return  uint64_low_bit(a)
+        return  P3_node(uint64_low_bit(a))
     if (a):
         s = "Incident node in function incidence() is not unique"
     else:
@@ -235,19 +246,11 @@ def incidence(*x):
 
     
 
-def remaining_P3_nodes(x1, x2):
-    """Complete points on a line or lines intersecting in a point
+def _remaining_nodes(x1, x2):
+    """Internal version of function` `P3_remaining_nodes``
 
-    If arguments ``x1, x2`` are numbers of different points in P3
-    then the function returns the list of the two remaining points
-    on the line through ``x1`` and ``x2``.  A string containing a 
-    name of a P3 node is also accepted as an argument.
-
-    If arguments ``x1, x2`` are numbers of differnt lines in P3
-    then the function returns the list of the two remaining lines
-    containing the intersection point of ``x1`` and ``x2``.
- 
-    Otherwise the function returns ValueError.
+    Input and operation is as in function ``P3_remaining_nodes``.
+    But the result is returned as a list of integers.
     """
     blist = uint64_to_bitlist(
         INCIDENCES[p3_obj(x1)] & INCIDENCES[p3_obj(x2)])
@@ -255,10 +258,25 @@ def remaining_P3_nodes(x1, x2):
         rem = INCIDENCES[blist[0]] & ~((1 << x1) | (1 << x2))
         return uint64_to_bitlist(rem)
     if len(blist):
-        s = "Arguments in remaining_P3_nodes() must be differnt"
+        s = "Arguments in P3_remaining_nodes() must be differnt"
     else:
-        s = ERR_PL_ALL % 'remaining_P3_nodes()'
+        s = ERR_PL_ALL % 'P3_remaining_nodes()'
     raise ValueError(s)
+
+def P3_remaining_nodes(x1, x2):
+    """Complete points on a line or lines intersecting in a point
+
+    If arguments ``x1, x2`` are different points or lines in P3
+    then the function returns the list of the two remaining points
+    on the line through ``x1`` and ``x2``, or the list of the two
+    remaining lines containing the intersection point of ``x1`` and
+    ``x2``, respectively. Otherwise the function raises ValueError.
+
+    Arguments ``x1, x2`` may by anything accepted by the constructor
+    of class ``P3_node``. The result is returned as list of two     
+    instances of class ``P3_node``.
+    """
+    return [P3_node(x) for x in remaining_nodes(x1, x2)]
 
 
 
@@ -340,13 +358,34 @@ def find_collinear_points(points):
     points = points[:5]
     for i1, x1 in enumerate(points):
         for x2 in points[i1 + 1:]:
-            x3, x4 = remaining_P3_nodes(x1, x2)
+            x3, x4 = _remaining_nodes(x1, x2)
             if x3 in points:
                 return [x1, x2, x3, x4]
             if x4 in points:
                 return [x1, x2, x4, x3]
     return None            
        
+
+
+def P3_is_collinear(l):
+    """Check if list of P3 nodes contains 3 collinear nodes
+
+    Argument ``l`` of the function is a list of nodes of P3
+    describing a set of nodes (i.e. of points or lines) of P3. 
+    An entry of such a list may be anything that is accepted by
+    the constructor of class ``P3_node``.  A comma-separated
+    string of names of P3 nodes is accepted as a set of nodes.
+
+    The function returns ``True`` if that set of nodes contains 3 
+    collinear points or 3 collinear lines, and ``False`` otherwise.
+    """
+    bitmap = reduce(__or__, [1 << x for x in p3_list(l)], 0)
+    if find_collinear_points(uint64_to_bitlist(bitmap & 0x1fff)):
+        return True
+    if find_collinear_points(uint64_to_bitlist(bitmap >> 13)):
+        return True
+    return False
+
 
 
 def complete_cross_random(points):
@@ -381,7 +420,7 @@ def complete_cross_random(points):
         else:
             assert len(others) == 1
             y1 = others.pop()
-        y2 = choice(remaining_P3_nodes(y1, line[2]))
+        y2 = choice(_remaining_nodes(y1, line[2]))
         return [line[0], line[1], y1, y2]
     # Here ``point`` contains at most 3 (non-collinear) points
     # Fill ``points`` with random points up to length at least 2
@@ -390,13 +429,13 @@ def complete_cross_random(points):
         points += sample(tuple(others), 2 - len(points))
         others = others - set(points)
     # Add a 3rd non-collinear (random) point if not present
-    others = others - set(remaining_P3_nodes(*points[:2]))
+    others = others - set(_remaining_nodes(*points[:2]))
     if len(points) < 3:
         points.append(choice(tuple(others)))
         others.remove(points[2])
     # Add a 4-th non-collinear (random) point
-    others = others - set(remaining_P3_nodes(points[0], points[2]))
-    others = others - set(remaining_P3_nodes(points[1], points[2]))
+    others = others - set(_remaining_nodes(points[0], points[2]))
+    others = others - set(_remaining_nodes(points[1], points[2]))
     points.append(choice(tuple(others)))
     return points
 
@@ -484,8 +523,8 @@ def line_map_from_map(perm):
     line_perm = []
     for x in range(13,26):
         p1, p2 = INCIDENCE_LISTS[x,:2]
-        img = incidence(perm[p1], perm[p2])
-        line_perm.append(img % 13)
+        img = INCIDENCES[perm[p1]] & INCIDENCES[perm[p2]]
+        line_perm.append(uint64_low_bit(img >> 13))
     return line_perm
 
 
@@ -626,7 +665,7 @@ def _join(args):
     for s in triples:
         a = s.split(' ')
         if len(a) == 3: 
-            P3_OBJ[a[0]] = incidence(a[1], a[2]) 
+            P3_OBJ[a[0]] = P3_incidence(a[1], a[2])._ord 
 _join('b1 a c1, b2 a c2, b3 a c3, z1 c2 c3, z2 c1 c3, z3 c1 c2')
 _join('a1 b1 z1, a2 b2 z2, a3 b3 z3, c1 z2 z3, c2 z1 z3, c3 z1 z2')
 _join('f1 a2 a3, f2 a1 a3, f3 a1 a2, g1 b1 f1, g2 b2 f2, g3 b3 f3')
@@ -982,7 +1021,8 @@ def test_inc_P3_Y555_names(verbose = 0):
     """
     print("Test incidence relations in P3 with names taken from ATLAS")
     for p, inc in generate_inc_P3_test_cases_with_Y555_names(verbose):
-        assert set(incidences(p)) == set(inc), (p, inc, incidences(p))
+        inc_p = set([x._ord for x in P3_incidences(p)])
+        assert inc_p == set(inc), (p, inc, P3_incidences(p))
     print("passed")
 
 

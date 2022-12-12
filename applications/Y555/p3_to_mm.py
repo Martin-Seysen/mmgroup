@@ -28,7 +28,7 @@ import_done = False
 
 try:
     import inc_p3
-    from inc_p3 import incidences
+    from inc_p3 import P3_incidences
     from inc_p3 import P3_point_set_type
     from inc_p3 import AutP3
     import_done = True
@@ -199,7 +199,7 @@ def compute_StarP3(i, check = False):
         return make_P(~PLoop(), [0,1,2,3])
     if i in (1,3,9):
         return make_P(0,  [1,2,3,4,8, DICT_POINT_MOG_COLUMN[i]])
-    lines = [DICT_LINE_MOG[y % 13] for y in incidences(i)]
+    lines = [DICT_LINE_MOG[y.ord % 13] for y in P3_incidences(i)]
     octad = [0, 4, 8, DICT_POINT_MOG[i]] + lines
     if check:
          from mmgroup.mat24 import syndrome
@@ -248,7 +248,7 @@ def precompute_all():
     if precomputation_pending:
         global P0_DICT, PSTAR_DICT
         if not import_done:
-            err = "Failed to imprt module inc_p3" 
+            err = "Failed to import module inc_p3" 
             raise ImportError(err)
         for x in range(13):
             P0_DICT[x] = compute_P0(x)
