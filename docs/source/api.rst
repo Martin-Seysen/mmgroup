@@ -324,6 +324,68 @@ Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 
 
 
+.. _y555_label:
+
+
+The Coxeter group :math:`Y_{555}` and the Bimonster
+=============================================================
+
+.. automodule:: mmgroup.bimm.readme
+
+
+Implementing the Bimonster and the homomorphism from :math:`Y_{555}` to it
+---------------------------------------------------------------------------
+
+The projective plane over :math:`\mathbb{F}_3` and its automorphism group
+..........................................................................
+
+.. automodule:: mmgroup.bimm.inc_p3
+
+
+.. autoclass:: mmgroup.bimm.P3_node
+   :members:  y_name, name, ord
+
+
+.. autoclass:: mmgroup.bimm.AutP3
+   :members:  order, map, point_map, line_map
+
+.. autofunction:: mmgroup.bimm.P3_incidences 
+
+.. autofunction:: mmgroup.bimm.P3_incidence
+
+.. autofunction:: mmgroup.bimm.P3_remaining_nodes
+
+.. autofunction:: mmgroup.bimm.P3_is_collinear
+
+
+Norton's presentation of the Monster group
+...........................................
+
+
+.. automodule:: mmgroup.bimm.p3_to_mm
+
+.. autofunction::  mmgroup.bimm.Norton_generators
+
+
+The BiMonster and its presentation  :math:`Y_{555}`
+.....................................................
+
+.. automodule::  mmgroup.bimm.bimm
+
+
+.. autoclass::  mmgroup.bimm.BiMM
+   :members:  order, decompose
+
+.. autofunction::  mmgroup.bimm.P3_BiMM
+
+
+.. autofunction::  mmgroup.bimm.AutP3_BiMM
+
+
+
+
+
+
 
 Version history
 ===============

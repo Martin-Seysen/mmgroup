@@ -25,8 +25,8 @@ from random import randint, sample, choice
 
 import numpy as np
 
-if not r"." in sys.path:
-    sys.path.append(r".")
+#if not r"." in sys.path:
+#    sys.path.append(r".")
 
 from mmgroup import  MM
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -36,11 +36,11 @@ from mmgroup.structures.abstract_group import singleton
 import_done = False
 
 try:
-    import inc_p3
-    from inc_p3 import p3_list, P3_node
-    import p3_to_mm
-    from p3_to_mm import PointP3, AutP3, AutP3_MM
-    from p3_to_mm import Norton_generators
+    from mmgroup.bimm import inc_p3
+    from mmgroup.bimm.inc_p3 import p3_list, P3_node
+    from mmgroup.bimm import p3_to_mm
+    from mmgroup.bimm.p3_to_mm import PointP3, AutP3, AutP3_MM
+    from mmgroup.bimm.p3_to_mm import Norton_generators
     import_done = True
 except (ImportError, ModuleNotFoundError):
     # The usual Sphinx and Readthedocs nuisance: We have to survive
