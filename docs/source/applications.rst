@@ -42,11 +42,19 @@ module Y555.inc_P3
 
 
 .. autoclass:: applications.Y555.inc_p3.P3_node
-   :members:  y_name
+   :members:  y_name, name, ord
 
 
 .. autoclass:: applications.Y555.inc_p3.AutP3
    :members:  order, map, point_map, line_map
+
+.. autofunction:: applications.Y555.inc_p3.P3_incidences 
+
+.. autofunction:: applications.Y555.inc_p3.P3_incidence
+
+.. autofunction:: applications.Y555.inc_p3.P3_remaining_nodes
+
+.. autofunction:: applications.Y555.inc_p3.P3_is_collinear
 
 
 module Y555.p3_to_mm
@@ -65,7 +73,7 @@ module Y555.bimm
 
 
 .. autoclass:: applications.Y555.bimm.BiMM
-   :members:  order
+   :members:  order, decompose
 
 .. autofunction:: applications.Y555.bimm.P3_BiMM
 
