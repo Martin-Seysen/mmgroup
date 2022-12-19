@@ -5,7 +5,7 @@ r"""This little program checks the spider relation in the BiMonster.
 try:
     import mmgroup
 except (ImportError, ModuleNotFoundError):
-    # get the mmgroup package from its inplace location it not installed
+    # get the mmgroup package from its inplace location if not installed
     import os
     import sys
     sys.path.append(os.path.join('..', '..', 'src'))
