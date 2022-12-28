@@ -1,4 +1,4 @@
-"""The module implements the projective plane over :math:`\mathbb{F}_3`
+r"""The module implements the projective plane over :math:`\mathbb{F}_3`
 
 
 Module ``inc_p3`` implements the projective plane ``P3`` over
@@ -80,7 +80,7 @@ for x in range(13):
 
     
 def p3_obj(obj):
-    """Convert python object ``obj`` to the number of a P3 node"""
+    r"""Convert python object ``obj`` to the number of a P3 node"""
     if isinstance(obj, P3_node):
        return obj.ord
     try:
@@ -98,7 +98,7 @@ def p3_obj(obj):
 
 
 def p3_list(obj):
-    """Convert python object ``obj`` to list of P3 nodes"""
+    r"""Convert python object ``obj`` to list of P3 nodes"""
     if isinstance(obj, str):
         s = [x.strip() for x in obj.split(',') if not x.isspace()]
         return [p3_obj(x) for x in s]
@@ -157,14 +157,14 @@ class P3_node:
             raise ValueError(err % type(other))
     @property
     def ord(self):
-        """Return internal number of instance of class ``P3_node``"""
+        r"""Return internal number of instance of class ``P3_node``"""
         return self._ord
     def name(self):
-        """Return the name of the ``P3`` node in standard notation"""
+        r"""Return the name of the ``P3`` node in standard notation"""
         q, r = divmod(self._ord, 13)
         return "PL"[q] + str(r)
     def y_name(self):
-        """Return the name of the ``P3`` node in Y_555 notation"""
+        r"""Return the name of the ``P3`` node in Y_555 notation"""
         return Y_NAMES[self._ord]
 
 #####################################################################
@@ -189,7 +189,7 @@ for x in range(13):
 
 
 def P3_incidences(*x):
-    """Return list of P3 nodes incident with given P3 nodes
+    r"""Return list of P3 nodes incident with given P3 nodes
 
     Here each argument of the function is a list of nodes of P3
     describing a set :math:`S_i` of nodes (i.e. points or lines) of
@@ -218,7 +218,7 @@ def P3_incidences(*x):
 
 
 def P3_incidence(*x): 
-    """Return (unique) P3 node incident with given P3 nodes
+    r"""Return (unique) P3 node incident with given P3 nodes
 
     Here each argument describes a P3 node (i.e. a point
     or a line); it may be anything accepted by the constructor
@@ -248,7 +248,7 @@ def P3_incidence(*x):
     
 
 def _remaining_nodes(x1, x2):
-    """Internal version of function` `P3_remaining_nodes``
+    r"""Internal version of function` `P3_remaining_nodes``
 
     Input and operation is as in function ``P3_remaining_nodes``.
     But the result is returned as a list of integers.
@@ -265,7 +265,7 @@ def _remaining_nodes(x1, x2):
     raise ValueError(s)
 
 def P3_remaining_nodes(x1, x2):
-    """Complete points on a line or lines intersecting in a point
+    r"""Complete points on a line or lines intersecting in a point
 
     If arguments ``x1, x2`` are different points or lines in P3
     then the function returns the list of the two remaining points
@@ -282,7 +282,7 @@ def P3_remaining_nodes(x1, x2):
 
 
 def find_cross(points):
-    """Find quadruple of non-collinear points in list of points
+    r"""Find quadruple of non-collinear points in list of points
 
     Let ``points`` be a list of different points in the projective
     plane P3. Define a **cross** to be a set of four points in P3,
@@ -333,7 +333,7 @@ assert FST_CROSS == [0, 1, 2, 5]
 
 
 def find_collinear_points(points):
-    """Find triple of collinear points in list of points
+    r"""Find triple of collinear points in list of points
 
     Let ``points`` be a list of different points in the projective
     plane P3. The function tries to find a triple ``(x1, x2, x3)``
@@ -369,7 +369,7 @@ def find_collinear_points(points):
 
 
 def P3_is_collinear(l):
-    """Check if list of P3 nodes contains 3 collinear nodes
+    r"""Check if list of P3 nodes contains 3 collinear nodes
 
     Argument ``l`` of the function is a list of nodes of P3
     describing a set of nodes (i.e. of points or lines) of P3. 
@@ -390,7 +390,7 @@ def P3_is_collinear(l):
 
 
 def complete_cross_random(points):
-    """Find or complete quadruple of non-collinear points
+    r"""Find or complete quadruple of non-collinear points
 
     Let ``points`` be a list of different points in the projective
     plane P3. Define a **cross** to be a set of four points in P3,
@@ -445,7 +445,7 @@ def complete_cross_random(points):
 
 
 def cross_intersection(x11, x12, x21, x22):
-    """Intersection of two lines, each line given by to points
+    r"""Intersection of two lines, each line given by to points
 
     We assume that no three of the points ``x11, x12, x21, x22``
     in the projective plane P3 are collinear; otherwise the
@@ -460,7 +460,7 @@ def cross_intersection(x11, x12, x21, x22):
     The function returns the list ``[y, y1, y2]``
     """
     def remain(x1, x2):
-        """Return bitnap of remaining points on line through x1 and x2"""
+        r"""Return bitnap of remaining points on line through x1 and x2"""
         blist = uint64_to_bitlist(INCIDENCES[x1] & INCIDENCES[x2])
         assert len(blist) == 1
         return INCIDENCES[blist[0]] &~ ((1 << x1) | (1 << x2))
@@ -478,7 +478,7 @@ def cross_intersection(x11, x12, x21, x22):
 
 
 def map_cross(cross1, cross2):
-    """Return unique mapping from one cross to another cross
+    r"""Return unique mapping from one cross to another cross
 
     Let a *cross* be an (ordered) list of four non-collinear points 
     in P3 as in function ``find_cross``. If ``cross1`` and ``cross2``
@@ -506,7 +506,7 @@ def map_cross(cross1, cross2):
 
 
 def line_map_from_map(perm):
-    """Convert mapping of points of P3 to a mapping of lines
+    r"""Convert mapping of points of P3 to a mapping of lines
 
     Let ``perm`` be a list of length 13 such that the mapping
     ``i -> perm[i]`` of points is an automorphism of the projective 
@@ -530,7 +530,7 @@ def line_map_from_map(perm):
 
 
 def map_P3_to_perm(obj1, obj2, unique = True):
-    """Convert mapping of P3 nodes to permutation of points
+    r"""Convert mapping of P3 nodes to permutation of points
 
     Arguments ``obj1`` and ``obj2`` are lists of integers of
     the same length that define a (partial) mapping
@@ -580,7 +580,7 @@ def map_P3_to_perm(obj1, obj2, unique = True):
 
 
 def check_perm_P3(perm):
-    """Check if a mapping of points in P3 is an automorphism
+    r"""Check if a mapping of points in P3 is an automorphism
 
     Let a mapping of points in P3 be given by ``i-> perm[i]``,
     for ``0 <= i < 13´`. The function checks if that mapping is
@@ -599,7 +599,7 @@ def check_perm_P3(perm):
 
 
 def invert_perm_P3(perm):
-    """Invert a permutation of points in P3
+    r"""Invert a permutation of points in P3
 
     Let a permutation of points in P3 be given by ``i-> perm[i]``,
     for ``0 <= i < 13´`. The function returns the inverse of
@@ -616,7 +616,7 @@ def invert_perm_P3(perm):
 
 
 def mul_perm_P3(perm1, perm2):
-    """Multiply two permutations of points in P3
+    r"""Multiply two permutations of points in P3
 
     Let a ``perm1, perm2`` be permutations of points in P3 be given 
     by ``i-> perm1[i], i-> perm2[i]``,   for ``0 <= i < 13´`. The 
@@ -638,7 +638,7 @@ def mul_perm_P3(perm1, perm2):
 
 
 def P3_point_set_type(s):
-    """Return a certain invariant of a set of points of P3
+    r"""Return a certain invariant of a set of points of P3
 
     Given a list or a set ``s`` of points of P3, the function
     returns a certain tuple depending on ``s`` that is 
@@ -835,7 +835,7 @@ class AutP3(AbstractGroupWord):
             self.perm = p3_mapping(mapping)
 
     def check(self):
-        """Check automorphism for consistency via 'assert' statements
+        r"""Check automorphism for consistency via 'assert' statements
 
         ``a.check()`` returns ``a``.
         """
@@ -848,7 +848,7 @@ class AutP3(AbstractGroupWord):
 
 
     def order(self):
-        """Return order of element of the group AutP3"""
+        r"""Return order of element of the group AutP3"""
         if self.perm == NEUTRAL_PERM_P3:
             return 1
         pwr = AutP3(self)
@@ -860,7 +860,7 @@ class AutP3(AbstractGroupWord):
         raise ValueError(s)
 
     def map(self):
-        """Return the automorphism as a permutation list of length 26
+        r"""Return the automorphism as a permutation list of length 26
 
         Element ``g`` maps P3 node``x`` to node ``g.map[x]``. Here the
         indices and values in the returned list are the numbers of the 
@@ -870,14 +870,14 @@ class AutP3(AbstractGroupWord):
         return self.perm[:] + line_perm
 
     def point_map(self):
-        """Return the automorphism as a point permutation list of length 13
+        r"""Return the automorphism as a point permutation list of length 13
 
         Element ``g`` maps P3 point``x`` to point ``g.map[x]``. 
         """
         return self.perm[:]
 
     def line_map(self):
-        """Return the automorphism as a line permutation list of length 13
+        r"""Return the automorphism as a line permutation list of length 13
 
         Element ``g`` maps line ``x`` to line ``g.line_map[x]``.
         The entries in the list are reduced modulo 13.
@@ -888,7 +888,7 @@ class AutP3(AbstractGroupWord):
         return self.perm == NEUTRAL_PERM_P3
 
     def _split_transveral(self):
-        """Internal method
+        r"""Internal method
 
         The method splits the element of AutP3 into a product
         ``f1 * f2`` where ``f1`` fixes the points 0 and 1, and

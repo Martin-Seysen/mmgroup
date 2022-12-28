@@ -64,7 +64,7 @@ DICT_POINT_MOG_COLUMN = {1:0, 3:4, 9:8}
 
 
 def make_P(x = 0, delta = 0):
-    """Create an element of the group :math:`2^{1+24}`
+    r"""Create an element of the group :math:`2^{1+24}`
 
     Given parameters ``d`` and ``delta``,  the functions
     returns the element  :math:`x_d x_{\delta}` of 
@@ -80,7 +80,7 @@ def make_P(x = 0, delta = 0):
 P0_DICT = {}
 
 def compute_P0(x):
-    """Return image of 'point' :math:`P_0 P_i` in :math:`Q_{x0}`
+    r"""Return image of 'point' :math:`P_0 P_i` in :math:`Q_{x0}`
 
     Norton cite:`Nor02` defines a mapping of the 'points' :math:`P_i`
     of :math:`P3` into the subgroup :math:`Q_{x0}` of structure 
@@ -118,7 +118,7 @@ def compute_P0(x):
 
 
 def PointP3(x):
-    """Map product of 'points' of :math:`P3` into subgroup of Monster
+    r"""Map product of 'points' of :math:`P3` into subgroup of Monster
 
     Let parameter ``x`` be a list of 'points' in :math:`P3` 
     of even length. Here an entry of that list may be anything
@@ -156,7 +156,7 @@ PSTAR_DICT = {}
 
 
 def compute_StarP3(i, check = False):
-    """Return image of 'star' :math:`P_i^*` in :math:`Q_{x0}`
+    r"""Return image of 'star' :math:`P_i^*` in :math:`Q_{x0}`
 
     Norton cite:`Nor02` defines a mapping of the so-called 'stars' 
     :math:`P_i^*` to the subgroup :math:`Q_{x0}` of structure 
@@ -213,7 +213,7 @@ def compute_StarP3(i, check = False):
 
 
 def StarP3(x):
-    """Map product of 'stars' of :math:`P3` into subgroup of Monster
+    r"""Map product of 'stars' of :math:`P3` into subgroup of Monster
 
     :cite:`Nor02` defines so-called 'stars' :math:`P_i^*`as words in 
     the generators of ``P2`` (modulo the defining relations of the 
@@ -242,7 +242,7 @@ def StarP3(x):
 
 
 def precompute_all():
-    """Perform all precomputations required for this module"""
+    r"""Perform all precomputations required for this module"""
     # Do precompution on demand only. Otherwise Sphinx will fail.
     global precomputation_pending
     if precomputation_pending:
@@ -467,7 +467,7 @@ NORTON_GENERATORS = None
 
 
 def Norton_generators(check = False):
-    """Return the images of Norton's generators in the Monster
+    r"""Return the images of Norton's generators in the Monster
 
     Norton :cite:`Nor02` defines a presention of the Monster
     with generators :math:`(s,t,u,v,x)` and relations.
