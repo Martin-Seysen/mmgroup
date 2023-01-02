@@ -169,6 +169,11 @@ class BiMM(AbstractGroupWord):
  
 @singleton
 class BiMMGroup(AbstractGroup):
+    """Auxilary class for class ``BiMM`` 
+
+    This makes the methods in class ``AbstractGroup`` available to
+    instancs of class ``BiMM``.
+    """
     word_type = BiMM   
     conversions = {}
 
@@ -224,17 +229,34 @@ BiMM.group = StdBiMMGroup
 # Enter points and lines into the BiMonster
 #####################################################################
 
-      
+# This will be set to ``False``  after finishing the precomputation    
 precomputation_pending = True
 
 
-PL_VALUES = None
-PL_DATA = None
-MAXLEN_PL_DATA = 0
+
+# ``ALPHA`` a will be set to the involution (in the Bimonster)
+# swapping the two copies of the Monster.
 ALPHA = None #  This will be set to BiMM([],[], 1)
 
+# PL_DATA will be an array of shape (26, 2, MAXLEN_PL_DATA).
+# Then the node ``P3_node(i)`` of the projective plane ``P3`` will be
+# mapped to ``BiMM(MM('a', PL_DATA[i,0]), MM('a', PL_DATA[i,1])) * ALPHA 
+PL_DATA = None
+MAXLEN_PL_DATA = 0
+
 def precompute_points_lines_list():
-    global PL_VALUES, PL_DATA, MAXLEN_PL_DATA, ALPHA
+    """Perform the precomputations required for this module.
+
+    The function sets the values ``PL_DATA`` and ``ALPHA`` as
+    defined above. We map the point ``P_i`` to 
+    ``(P_0 * P_1 * ... * P_12 * P_i)`` * ALPHA. Here the points in
+    that product are given by function  ``PointP3`` in module
+    ``inc_p3``. We map the line ``L_i`` to 
+    ``ALPHA * BiMM(L_i, L_i ** (-1))``, with ``L_i = (v*x) ** (u**i)``.
+    Here ``u, v, x`` are as returned by function ``Norton_generators``
+    in module ``p3_to_mm``.    
+    """
+    global PL_DATA, MAXLEN_PL_DATA, ALPHA
     ALPHA = BiMM([],[], 1)
     PL_VALUES = []
     s, t, u, v, x =  Norton_generators()
@@ -261,14 +283,14 @@ def precompute_points_lines_list():
 def P3_BiMM(pl = []):
     r"""Map a word of generators in :math:`\mbox{IncP3}` into the BiMonster
 
-    :param lp:
+    :param pl:
 
        List of generators in :math:`\mbox{IncP3}`. Each entry in the 
        list should be an instance of class ``P3_node``. Such an entry
        may also be an integer or a string accepted by the constructor
        of class ``P3_node``.
 
-    :type lp:
+    :type pl:
 
         List containing integers, strings, or instances of 
         class ``P3_node``
@@ -359,129 +381,3 @@ def precompute_all():
     precompute_points_lines_list()
     precomputation_pending = False
 
-#####################################################################
-# Tests
-#####################################################################
-
-
-
-def P3_BiMM_slow(pl):
-    result = BiMM()
-    for x in pl:
-        result *= P3_BiMM(x)
-    return result
-
-
-def test_P3_BIMM_cases(max_length):
-    LL = list(range(26)) * 5
-    for i in range(max_length):
-        pl = sample(LL, i)
-        assert P3_BiMM(pl) == P3_BiMM_slow(pl)
-
-def test_P3_BiMM(multiprocessing = False):
-    print("Testing function P3_BiMM")
-    NTESTS = 5
-    MAX_LENGTH = 10
-    if multiprocessing:
-        from multiprocessing import Pool
-        with Pool() as pool:
-            pool.map(test_P3_BIMM_cases, [MAX_LENGTH] * NTESTS)
-        pool.join()
-    else:
-        for x in range(NTESTS):
-            test_P3_BIMM_cases(MAX_LENGTH)
-    print("passed")
-  
-
-def BiMM_Coxeter_Exp(x1, x2):
-    mi, ma = min(x1,x2), max(x1, x2)
-    assert 0 <= mi <= ma < 26
-    if mi < 13 and ma >= 13 and (mi + ma) % 13 in (0,1,3,9):
-         return 3
-    return 2 if mi != ma else 1
-          
-    
-def test_Coxeter_orders_for_one_node(x):
-    for y in range(26):
-        o = (P3_BiMM(x) * P3_BiMM(y)).order()
-        e = BiMM_Coxeter_Exp(x, y)         
-        assert e == o, (x, y, e, o)    
-
-def test_Coxeter_orders(multiprocessing = False):
-    print("Testing  orders of Coxeter generators of BiMM")
-    if multiprocessing:
-        from multiprocessing import Pool
-        with Pool() as pool:
-            pool.map(test_Coxeter_orders_for_one_node, range(26))
-        pool.join()
-    else:
-        for x in range(26):
-            test_Coxeter_orders_for_one_node(x)
-    print("passed")
-
-     
-def test_AutP3_BiMM(ntests=10, verbose = 0):
-    print("Test embedding of AutP3 into the BiMonster")
-    for i in range(ntests):
-        g_autp3 = AutP3('r')
-        g = AutP3_BiMM(g_autp3)
-        for j in range(4):
-            node_p3 =  P3_node(randint(0,25))
-            node = P3_BiMM(node_p3)
-            img_p3 = node_p3 * g_autp3
-            img = P3_BiMM(img_p3)
-            assert img == node ** g
-    print("passed")
-
-
-
-def random_hexagon():
-    from inc_p3 import P3_is_collinear
-    from inc_p3 import P3_incidence as inc
-    while 1:
-        points = sample(range(13), 3)
-        if not P3_is_collinear(points):
-            p1, p2, p3 = points
-            return p1, inc(p1, p2), p2, inc(p2, p3), p3, inc(p3, p1)
-
-
-def check_hexagon_relation(u, v, w, x, y, z):
-    r"""Check relations in a hexagon in the BiMonster.
-
-    Here ``(u, v, w, x, y, z)`` must be a hexagon in the 
-    incidence graph of P3. We take the relation for that
-    hexagon from [Iva99], Theorem 8.2.2.
-    """
-    a = P3_BiMM([u, x, v, y, w, z])
-    assert a.order() == 4
-
-def test_hexagon_relations(ntests = 10):
-    print("Testing some (random) hexagon relations in P3")
-    for i in range(ntests):
-        check_hexagon_relation(*random_hexagon())
-    print("passed")
-
-
-def test_spider_relation():
-    print("Testing the spider relation in Y_555")
-    spider = P3_BiMM('a,b1,c1,a,b2,c2,a,b3,c3')
-    assert spider.order() == 10, spider.order()
-    other_spider = ['a', 'b1', 'c1', 'a', 'b2', 'c2', 'a', 'b3', 'c3']
-    assert P3_BiMM(other_spider * 10) == BiMM(1)
-    print("passed")
-    
-
-
-def test_all():
-    test_P3_BiMM(multiprocessing = True)
-    test_AutP3_BiMM()
-    test_Coxeter_orders(multiprocessing = True)
-    test_hexagon_relations() 
-    test_spider_relation()
-
-
-if __name__ == "__main__":
-    test_all()
-
-
-  

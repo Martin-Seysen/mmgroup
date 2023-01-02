@@ -163,5 +163,38 @@ incidence relations) as indicated in the follwing table:
     L_{11} & L_2 & L_{12}
     \end{array}
 
+
+
+
+Example: Checking the spider relation in the group :math:`Y_{555}` 
+------------------------------------------------------------------
+
+
+As stated above, the spider relation in the group :math:`Y_{555}` is:
+
+.. math:: 
+
+   (a b_1 c_1 a b_2 c_2 a b_3 c_3)^{10} = 1 \, . 
+
+The spider relation can be checked as follows:
+
+.. code-block:: python
+
+    from mmgroup.bimm import  BiMM, P3_BiMM
+    spider10 = ['a', 'b1', 'c1', 'a', 'b2', 'c2', 'a', 'b3', 'c3'] * 10
+    assert P3_BiMM(spider10) == BiMM(1)
+
+
+Alternatively, the spider relation can be verified as follows:
+
+.. code-block:: python
+
+    from mmgroup.bimm import  P3_BiMM
+    spider1 = P3_BiMM('a, b1, c1, a, b2, c2, a, b3, c3')
+    assert spider1.order() == 10
+
+
+
+
 """
 

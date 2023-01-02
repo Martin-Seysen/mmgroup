@@ -270,6 +270,57 @@ def precompute_all():
 
 
 def MM_from_perm(perm, verbose = 0):
+    r"""Map an element of ``AutP3`` into the Monster group
+
+    Here parameter ``perm`` is a list of 13 integers
+    ``0 <= perm[i] < 13`` such that the mapping ``i -> perm[i]`` is
+    an automorphism ``a`` of points of the projective plane ``P3``.
+
+    The function maps automorphsm ``a`` into the subgroup ``G_x0``
+    of the Monster. Therefore it uses the operation of ``a`` on the
+    points and stars for constructing the iamge ``g`` of ``a`` in 
+    ``G_x0``.  Here ``a`` operates (by conjugation) on the 'points' 
+    and 'stars', which are elements of the extraspecial subgroup 
+    ``Q_x0`` of structure :math:`2^{1+24}` of ``G_x0``.
+
+    Note that this operation of ``a`` determines the element ``g``
+    of the subgroup ``G_x0`` of the Monster up to sign only. We use
+    the C function ``xsp2co1_elem_from_mapping``  for constructing
+    one of the elements ``+g`` or ``-g``. At most one of these two
+    elements may have odd order, and we compute the element of odd
+    order if such an element exists. Thus, if ``a`` has odd order
+    then the returned element ``g`` is the correct image of ``a``.
+
+    More precisely, we return a triple ``(g, order, special)``,
+    where ``g`` is the image of ``a``  in ``G_x0`` given as an
+    instance of class ``MM``.  Here ``order`` is the order of ``g``,
+    which is odd if possible. The part ``special`` of the result
+    is ``True`` if the function can distinguish between ``g`` and 
+    ``-g`` by computing the orders and certain characters of these 
+    two elements in ``G_x0``.
+    
+    Remark:
+
+    If ``MM_from_perm(a1)`` returns ``(g1, order, True)``, and the 
+    automorphism ``a2`` of ``AutP3`` is conjugate to ``a1`` then
+    ``MM_from_perm(a2)`` returns ``(g2, order, True)``; and it is
+    guaranteed that ``g2`` is conjugate to ``g1``, but not to ``-g1``
+    in ``G_x0``. So once we know the 'right' image ``+g1`` or ``-g1``
+    of ``a1``, we can also deduce the  'right' image ``+g2`` or
+    ``-g2`` of ``a2``.
+
+    The group ``AutP3`` is isomorphic to :math:`L_3(3)` in ATLAS
+    notation. From the ATLAS we see that for each even order the
+    group :math:`L_3(3)` has at most on conjugacy class with that
+    order. So if ``MM_from_perm(a)`` returns ``(g, order, True)``
+    for an even ``order``, and we have found the 'right' image
+    ``g`` or ``-g`` of ``a``, then we can easily find the 'right'
+    images of all other elements of ``AutP3`` of the same order.
+   
+    If cannot find the 'right' image ``+-g`` of an element ``a`` of
+    ``AutP3`` that way, then we may always decompose ``a`` into a 
+    (random) product of elements of odd order.
+    """
     a_src = np.zeros(24, dtype = np.uint32)
     a_dest = np.zeros(24, dtype = np.uint32)
     a = np.zeros(10, dtype = np.uint32)
@@ -427,7 +478,12 @@ def comm(a,b):
 
 
 def Norton_generators_stuv(check = True):
-    r"""Auxiliary function for function ``Norton_generators``"""
+    r"""Auxiliary function for function ``Norton_generators``
+
+    The function returns a tuple of the first four values to be
+    returned by that function. Parameter ``check`` is as in that
+    function.
+    """
     if precomputation_pending:
         precompute_all()
     MM1 = MM()

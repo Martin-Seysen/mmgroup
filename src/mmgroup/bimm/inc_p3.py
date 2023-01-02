@@ -403,7 +403,6 @@ def complete_cross_random(points):
     that cross.
 
     Duplicate entries in the list ``points`` are illegal.
-
     """
     if len(points) == 0:
         points = [randint(0,12)]
@@ -659,14 +658,27 @@ def P3_point_set_type(s):
 
 
 # Enter names of the nodes in Y_555 notation into dictionary P3_OBJ
+# We start with assigning numbers to the nodes 'a', 'c1', 'c2', 'c3'.
 P3_OBJ.update({'a':0, 'c1':1, 'c2':2, 'c3':11})
 assert find_cross([P3_OBJ[x] for x in ('a', 'c1', 'c2', 'c3')])
 def _join(args):
+    r"""Add names of the nodes in Y_555 notation into dictionary P3_OBJ
+
+    Here 'args' is a comma-sparated string of triples of alphanumeric
+    names of nodes. Those triples are separated by whitespace. 
+
+    A triple ``(x, y, z)`` means that ``z`` is the unique node
+    incident with the two nodes ``x`` and ``y``. Here the names ``x``
+    and ``y`` must already be keys in the dictionary ``P3_OBJ``.
+    """
     triples = [x.strip() for x in args.split(',') if not x.isspace()]
     for s in triples:
         a = s.split(' ')
         if len(a) == 3: 
             P3_OBJ[a[0]] = P3_incidence(a[1], a[2])._ord 
+# Enter all nodes (in Y_555 notation) into the dictionary P3_OBJ.
+# Starting with the above assignment of nodes the construction is forced.
+# Names of the nodes and their incidences are taken from the ATLAS.
 _join('b1 a c1, b2 a c2, b3 a c3, z1 c2 c3, z2 c1 c3, z3 c1 c2')
 _join('a1 b1 z1, a2 b2 z2, a3 b3 z3, c1 z2 z3, c2 z1 z3, c3 z1 z2')
 _join('f1 a2 a3, f2 a1 a3, f3 a1 a2, g1 b1 f1, g2 b2 f2, g3 b3 f3')
@@ -695,6 +707,7 @@ assert len(Y_NAMES) == len(set(Y_NAMES.values())) == 26
 
 
 def p3_mapping(src = None, random = False):
+    """Implements the constructor of class AutP3, standard cases"""
     if src is None:
         if not random:
             return list(range(13))
@@ -784,7 +797,7 @@ class AutP3(AbstractGroupWord):
     Remarks:
 
     If parameter ``mapping`` is the string ``'r'``, then an optional
-    parameter``data`` of type ``dict`` or ``zip`` that describes a 
+    parameter ``data`` of type ``dict`` or ``zip`` that describes a 
     partial mapping of points or lines may follow. In this case we 
     construct a random  automorphism of ``P3`` satifying the 
     constraints of the mapping given by parameter ``data``, if present.
@@ -816,16 +829,16 @@ class AutP3(AbstractGroupWord):
                 pi = invert_perm_P3(p)
                 transversal[(x0, x1)] = (p, pi)    
 
-    def __init__(self, mapping = None, date = None):
+    def __init__(self, mapping = None, data = None):
         if not mapping:
             self.perm = list(range(13))
         elif isinstance(mapping, AutP3):
             self.perm = mapping.perm[:]
         elif isinstance(mapping, str) and len(mapping) == 1:
             if mapping == 'r':
-                self.perm = p3_mapping(date, random = True)
+                self.perm = p3_mapping(data, random = True)
             elif  mapping in 'pl':
-                self.perm = check_perm_P3([x % 13 for x in date])
+                self.perm = check_perm_P3([x % 13 for x in data])
                 if mapping == 'l':
                     self.perm = line_map_from_map(self.perm)
             else:
@@ -908,6 +921,11 @@ class AutP3(AbstractGroupWord):
 
 @singleton
 class AutP3Group(AbstractGroup):
+    """Auxilary class for class ``AutP3``
+
+    This makes the methods in class ``AbstractGroup`` available to
+    instancs of class ``AutP3``.
+    """
     word_type = AutP3              # type of an element (=word) in the group
     conversions = {}
 
