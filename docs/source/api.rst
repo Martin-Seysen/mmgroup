@@ -9,26 +9,28 @@ The mmgroup API reference
 Introduction
 ============
 
-In the area of mathematics known as group theory, the monster group 
+In the area of mathematics known as group theory, the Monster group 
 :math:`\mathbb{M}` is the largest finite sporadic simple group.
 It has order 
 
    :math:`2^{46} \cdot 3^{20} \cdot 5^9 \cdot 7^6 \cdot 11^2 \cdot 13^3 \cdot 17 \cdot 19 \cdot 23 \cdot 29 \cdot 31 \cdot 41 \cdot 47 \cdot 59 \cdot 71` 
    = :math:`\small 808.017.424.794.512.875.886.459.904.961.710.757.005.754.368.000.000.000` . 
 
-The monster group has first been constructed by Griess :cite:`Gri82`.
+The Monster group has first been constructed by Griess :cite:`Gri82`.
 That construction has been simplified by Conway :cite:`Con85`. 
+For more information about the Monster group we refer to
+:cite:`wiki:monster`.
 
 The *mmgroup* package is a python implementation of Conway's 
-construction :cite:`Con85` of the monster group :math:`\mathbb{M}`. 
-Its is the first implementation of the monster group where arbitrary
+construction :cite:`Con85` of the Monster group :math:`\mathbb{M}`. 
+Its is the first implementation of the Monster group where arbitrary
 operations in that group can effectively be performed. On the author's 
 PC (Intel i7-8750H at 4 GHz running on 64-bit Windows) 
 the group multiplication in :math:`\mathbb{M}` takes less than 30 ms.
 This is more than five orders of magnitude faster than estimated 
 in 2013 in :cite:`Wilson13`.
 
-The monster group :math:`\mathbb{M}` has a rational representation 
+The Monster group :math:`\mathbb{M}` has a rational representation 
 :math:`\rho` of dimension  :math:`196884`, see :cite:`Con85`. In that 
 representation the denominators of the matrix coefficients are powers 
 of two. So reducing these coefficients modulo a small odd prime 
@@ -36,7 +38,7 @@ of two. So reducing these coefficients modulo a small odd prime
 :math:`\mathbb{M}` over the finite field :math:`\mathbb{F}_p`. 
  
 The *mmgroup* package uses highly optimized C programs for 
-calculating in such representations :math:`\rho_p` of the monster
+calculating in such representations :math:`\rho_p` of the Monster
 :math:`\mathbb{M}`. The main ingredient for speeding up the
 computation in :math:`\mathbb{M}` is the calculation and the
 analysis of the images of certain vectors in :math:`\rho_p`
@@ -44,7 +46,7 @@ that are called 2A axes in :cite:`Con85`.
 
 In the description of the *mmgroup* package we use the notation
 in :cite:`Seysen20`, where an explicit generating set of the
-monster :math:`\mathbb{M}` is given. For a mathematical description
+Monster :math:`\mathbb{M}` is given. For a mathematical description
 of the implementation we refer to :cite:`Seysen22`.
 
 
@@ -62,7 +64,7 @@ Installation and test
 Basic structures
 ================
 
-Conway's construction of the monster group starts with the extended 
+Conway's construction of the Monster group starts with the extended 
 binary Golay code :math:`\mathcal{C}`, which is a 12-dimensional 
 linear subspace of the 24-dimensional vector space 
 :math:`\mathbb{F}_2^{24}`. The Golay code has Hamming distance 8. 
@@ -88,7 +90,7 @@ loop that can be constructed as a double cover of the Golay code
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` or order :math:`2^{12}`
 is isomorphic to the Golay cocode  :math:`\mathcal{C^*}`.
 
-Another important ingredient of the construction of the monster
+Another important ingredient of the construction of the Monster
 is the Leech lattice :math:`\Lambda`, which is the densest lattice
 in dimension 24. We also consider the Leech lattice modulo 2,
 which we denote by :math:`\Lambda / 2 \Lambda`, and the automorphism
@@ -182,14 +184,14 @@ The basis of the Golay code and of its cocode
 
 .. _mmgroup-label:
 
-The monster group
+The Monster group
 =================
 
 
 .. automodule:: mmgroup.mm_group
 
 
-Python classes implementing the monster group
+Python classes implementing the Monster group
 --------------------------------------------- 
 
 
@@ -203,14 +205,14 @@ Python classes implementing the monster group
 
 .. _mmrep-label:
 
-The representation of the monster group
+The representation of the Monster group
 =======================================
 
 
 .. automodule:: mmgroup.mm_space
 
 
-Python classes implementing the representation of the monster group
+Python classes implementing the representation of the Monster group
 ------------------------------------------------------------------- 
 
 
@@ -224,7 +226,7 @@ Python classes implementing the representation of the monster group
 
 
 
-Auxiliary functions for the representation of the monster group
+Auxiliary functions for the representation of the Monster group
 --------------------------------------------------------------- 
 
 .. autofunction:: mmgroup.characteristics
@@ -235,20 +237,20 @@ Auxiliary functions for the representation of the monster group
 
 .. _clifford-group-label:
 
-The subgroup :math:`G_{x0}` of the monster and the Clifford group
+The subgroup :math:`G_{x0}` of the Monster and the Clifford group
 ========================================================================
 
 The section describes the fast computation in a certain subgroup 
-:math:`G_{x0}` of structure :math:`2^{1+24}.Co_1` of the monster 
+:math:`G_{x0}` of structure :math:`2^{1+24}.Co_1` of the Monster 
 :math:`\mathbb{M}` in detail. A person who simply wants do do 
-calculations in the monster group need not read this section. 
+calculations in the Monster group need not read this section. 
 
 
 Introduction
 ------------
 
 
-In Conway's construction :cite:`Con85` the monster :math:`\mathbb{M}`
+In Conway's construction :cite:`Con85` the Monster :math:`\mathbb{M}`
 has a subgroup :math:`G_{x0}` of structure 
 :math:`2^{1+24}_+.\mbox{Co}_1`.
 There :math:`G_{x0}` is constructed as a diagonal product of the
@@ -367,7 +369,7 @@ Norton's presentation of the Monster group
 .. autofunction::  mmgroup.bimm.Norton_generators
 
 
-The BiMonster and its presentation  :math:`Y_{555}`
+The Bimonster and its presentation  :math:`Y_{555}`
 .....................................................
 
 .. automodule::  mmgroup.bimm.bimm
@@ -382,6 +384,7 @@ The BiMonster and its presentation  :math:`Y_{555}`
 .. autofunction::  mmgroup.bimm.AutP3_BiMM
 
 
+.. automodule:: mmgroup.bimm.readme_math
 
 
 

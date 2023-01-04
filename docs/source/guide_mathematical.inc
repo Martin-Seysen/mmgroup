@@ -860,7 +860,7 @@ Otherwise we first apply a permutation in :math:`M_{24}` that maps
 Orbits of the group :math:`N_{x0}` in the  group :math:`Q_{x0}`
 ---------------------------------------------------------------
 
-Function ``gen_leech2_reduce_n`` in file ``gen_leechc_reduce_n.c`` 
+Function ``gen_leech2_reduce_n`` in file ``gen_leech_reduce_n.c`` 
 computes a standard representative of the orbit of a nonzero vector
 in the extraspecial subgroup :math:`Q_{x0}` of :math:`G_{x0}` under
 the action of the group :math:`N_{x0}`. Here :math:`N_{x0}` acts on
