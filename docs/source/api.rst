@@ -384,6 +384,9 @@ The Bimonster and its presentation  :math:`Y_{555}`
 .. autofunction::  mmgroup.bimm.AutP3_BiMM
 
 
+Construction of the mapping from the Coxeter group into the Bimonster
+---------------------------------------------------------------------
+
 .. automodule:: mmgroup.bimm.readme_math
 
 
