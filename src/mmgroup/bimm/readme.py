@@ -10,7 +10,7 @@ Description of the task to be done
 ----------------------------------
 
 
-The wreath product :math:`\mathbb{M} \wr 2` is of the Monster
+The wreath product :math:`\mathbb{M} \wr 2` of the Monster
 :math:`\mathbb{M}` with the group :math:`Z_2` of order 2 is called 
 the *Bimonster*. In ATLAS notation :cite:`Atlas` the Bimonster has 
 structure :math:`(\mathbb{M} \times \mathbb{M}).2`. It is generated
