@@ -383,6 +383,11 @@ The Bimonster and its presentation  :math:`Y_{555}`
 
 .. autofunction::  mmgroup.bimm.AutP3_BiMM
 
+Example: Checking the spider relation in the group :math:`Y_{555}` 
+.......................................................................
+
+.. automodule:: mmgroup.bimm.readme_example
+
 
 Construction of the mapping from the Coxeter group into the Bimonster
 ---------------------------------------------------------------------
