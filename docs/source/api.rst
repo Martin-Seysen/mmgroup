@@ -410,8 +410,9 @@ Version history
 | Version 0.0.7, 2021-12-01. Bugfix in version generation
 | Version 0.0.8, 2022-07-12. Performance improved
 | Version 0.0.9, 2022-09-01. Performance improved
-| VERSION 0.0.10, 2022-10-11. Support for cibuildwheel added
-| VERSION = 0.0.11, 2022-10-19. Bugfixes and macOS version added
+| Version 0.0.10, 2022-10-11. Support for cibuildwheel added
+| Version 0.0.11, 2022-10-19. Bugfixes and macOS version added
+| Version 0.0.12, 2023-01-09. Support for the group Y_555 and the Bimonster
 
 
 
