@@ -123,7 +123,7 @@ def do_test_construction_P3(ntests = 500, verbose = 0):
     print('  %d elements of AutP3 have been split with %d trials.' %
            (Precomputed_AutP3.n_splits, Precomputed_AutP3.n_split_trials))
     print('  Number of stored elements of AutP3:', 
-            len(Precomputed_AutP3.known_MM))
+            Precomputed_AutP3.num_MM - 1)
     print("Test construction of AutP3 passed")
    
 

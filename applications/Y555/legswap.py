@@ -127,7 +127,7 @@ def find_orders(nsamples):
         order2, h2 = m2.half_order() 
         if h2 == s2:
             order2 = order2 // 2
-        #print(order1, order2)
+        #print(i, nsamples, order1, order2)
         orders[(order1, order2)] += 1
     return orders
 
@@ -163,6 +163,8 @@ if __name__ == "__main__":
     legswap_involution_and_generators(verbose =  1)
     with Pool() as pool:
         results = pool.map(find_orders, [100] * 10)
+        #results = pool.map(find_orders, [10] * 4)
+        pass
     pool.join()
     orders = defaultdict(int)
     for d in results:

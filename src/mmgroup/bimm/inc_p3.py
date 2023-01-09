@@ -818,16 +818,7 @@ class AutP3(AbstractGroupWord):
     __slots__ = "perm"
     group_name = "Aut_P3"
     group = None       # will be set to StdAutP3Group later
-    transversal = {}   # transversal[(x0,x1)] is (p, pi), such that
-                       # p maps (0,1) to (x0, x1) and pi == p**(-1) 
-
     assert  find_cross([0,1,2,5])
-    for x0 in range(13):  # Compute transversal as spcified above
-        for x1 in range(13):
-            if x0 != x1:
-                p = map_P3_to_perm([0, 1], [x0, x1], False)
-                pi = invert_perm_P3(p)
-                transversal[(x0, x1)] = (p, pi)    
 
     def __init__(self, mapping = None, data = None):
         if not mapping:
@@ -899,23 +890,6 @@ class AutP3(AbstractGroupWord):
 
     def isneutral(self):
         return self.perm == NEUTRAL_PERM_P3
-
-    def _split_transveral(self):
-        r"""Internal method
-
-        The method splits the element of AutP3 into a product
-        ``f1 * f2`` where ``f1`` fixes the points 0 and 1, and
-        ``f2`` is in a precomputed transversal of the group
-        fixing these two points. The precomputed transversal is
-        is stored in ``AutP3.transversal``.
-        """
-        p = self.perm
-        f2, f2i = self.transversal[(p[0], p[1])]
-        f1 = mul_perm_P3(p, f2i)
-        #assert mul_perm_P3(f1, f2) == p
-        #assert f1[:2] == [0,1], f1
-        return AutP3('p', f1), AutP3('p', f2)
-
 
 
 

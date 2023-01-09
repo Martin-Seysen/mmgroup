@@ -159,8 +159,8 @@ by conjugation. Given such an automorphism :math:`\gamma` on
 ``xsp2co1_map.c`` computes the corresponding element :math:`g` of 
 the group :math:`G_{x0}` up to sign.
 
-In the remainder of this subsection we comment on the operation of
-function ``xsp2co1_elem_from_mapping``.
+We close with some remarks on how the
+C function ``xsp2co1_elem_from_mapping`` works.
 
 Class ``Xsp2_Co1`` in module ``mmgroup.structures.xsp_co1`` wraps
 fast C functions for computing in the group :math:`G_{x0}`, so that

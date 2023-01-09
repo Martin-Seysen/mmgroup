@@ -31,6 +31,9 @@ try:
     from mmgroup.bimm.inc_p3 import P3_incidences
     from mmgroup.bimm.inc_p3 import P3_point_set_type
     from mmgroup.bimm.inc_p3 import AutP3
+    from mmgroup.bimm.inc_p3 import invert_perm_P3
+    from mmgroup.bimm.inc_p3 import mul_perm_P3
+    from mmgroup.bimm.inc_p3 import check_perm_P3
     import_done = True
 except (ImportError, ModuleNotFoundError):
     # The usual Sphinx and Readthedocs nuisance: We have to survive
@@ -347,32 +350,133 @@ def MM_from_perm(perm, verbose = 0):
 
 
 
-
 class Precomputed_AutP3:
     r"""Auxiliary class for storing images of class ``AutP3`` in class ``MM``
 
     This class contains class methods only. Its purpose is to compute
     a (fixed) mapping of the automorphism group of the projectve plane
     ``P3`` into the subgroup :math:`G_{x0}` of 
-    structure :math:`2^{1+24}.\mabox{Co}_1` of the Monster. Any such
-    image computed by method ``as_MM`` of this class is remembered
-    for reusing it.
+    structure :math:`2^{1+24}.\mabox{Co}_1` of the Monster. 
+
+    Method ``as_MM`` of ths class computes this mapping. Some of
+    the images of this mapping will be remembered for reuse.
     """
+    # Store tranversal of a subgroup, see method ``_split_transveral``
+    MAX_IND = 2*13*13  # length of the following array ``transversal``
+    transversal = np.zeros((MAX_IND, 27), dtype = np.uint8)
+    # Enter the neutral element into cls.transversal[1]
+    transversal[1] = list(range(13)) * 2  + [1]
+
+    # Record the orders of elements of the group ``AutPL`` for which
+    # the sign conflicts (in ``G_x0``) can be resolved
     good_orders = {    # dict of 'good' orders where elements can be
                        # distinguished from their negatives
         1:1, 3:1, 13:1
     }
     bad_orders = {}    # dict of 'bad' orders where elements cannot
                        # be distinguished from their negatives
-    known_MM = {}      # Mappings AutP3 |-> MM that will be kept
-    transversal = {}   # transversal[(x0,x1)] is (p, pi), such that
-                       # p maps (0,1) to (x0, x1) and pi == p**(-1) 
+    # Record also some statistices
     n_splits = 0       # No of calls to method _split_into_good_orders
     n_split_trials = 0 # No of trials in method _split_into_good_orders
+
+    # Store the images of the elements in ``cls.transversal``
+    # We have to store at most 13*12 + 48 images in array data_MM
+    data_MM = np.zeros((1+192, 10), dtype = np.uint32)  
+    # cls.data_MM[ind_MM[i]] stores image of cls.transversal[i]  
+    # cls.ind_MM[i] = 0  means that the image has not yet been computed
+    ind_MM = np.zeros(MAX_IND, dtype = np.uint8)
+    # cls.num_MM is the number of entries of cls.data_MM used.
+    # Here we deliberately waste entry cls.data_MM[0], and we store
+    # the image of the neutral element in cls.data_MM[1].
+    ind_MM[1], num_MM = 1, 2
+
+
+    @classmethod
+    def _split_transveral(cls, g):
+        r"""Split inctance ``g`` of class ``AutP3`` into two factors
+
+        The method splits the element ``g`` of ``AutP3`` into a product
+        ``f1 * f2`` where ``f1`` fixes the points 0 and 1, and ``f2`` 
+        is in a transversal of the group fixing these two points. 
+
+        Here the tansversal has size 156 and the subgroup fixing points
+        0 and 1 has size 36. The functions in this class will store the
+        156 + 36 elements of ``AutP3`` obtained that way, and also the
+        images of these elements in the Monster, in internal arrays.
+
+        The function return a pair  ``(h1, h2)``, where ``h1, h2`` are 
+        indices pointing to the array ``cls.transversal``, such that
+        ``cls.transversal[h1, :13]`` and ``cls.transversal[h1, :13]``
+        are the permutations of the points ``P_i`` corresponding 
+        to ``f1`` and ``f2``.
+
+        We now describe the structure of ``cls.transversal``
+
+        For ``0 <= i, j < 13`` entry ``13*i+j`` stores an element
+        of the transversal that maps the points ``0`` and ``1`` to
+        the points ``i`` and ``j``. 
+ 
+        For ``0 <= i, j < 13`` entry ``169+13*i+j`` stores the element
+        fixing ponts ``0`` and ``1`` that maps the points ``2`` 
+        and ``5`` to the points ``i`` and ``j``. 
+
+        Each entry ``e`` of ``cls.transversal`` is an array of 27 
+        unsigned 8-bit integers, and it stores an element 
+        ``a`` of ``AutP3`` as follows:
+
+        ``e[i]`` is the image of the point ``P_i``, and ``e[13+i]``
+        is the preimage of ``P_i`` under the automporphism ``a``.
+        Entry ``e[26]`` if 1 if ``e`` is in use and 0 otherwise.
+
+        Remarks:
+
+        The entry with index 1 (corresponding to the identity in
+        ``AutP3``) is precomputed and always marked as used. 
+
+        The transversal is computed on demand; here we take the
+        element of a coset that is passed first to this function.
+        
+        The preimages of the points ``P_i`` are computed for the
+        entries containing the transversal only. 
+        """
+        p = g.perm
+        # We must check the input ``g``, since a bad input will
+        # permanently spoil the computed  transversal
+        check_perm_P3(p)
+        h2 = 13*p[0] + p[1]
+        t2 = cls.transversal[h2]
+        if t2[26] == 0:
+            t2[:13] = p
+            t2[13:26] = invert_perm_P3(t2[:13])
+            t2[26] = 1
+            return 1, h2
+        else:
+            f1 = mul_perm_P3(p, t2[13:26]) 
+            h1 = 169 + 13 * f1[2] + f1[5]
+            t1 =  cls.transversal[h1]
+            if t1[26] == 0:
+                t1[0:13] = f1
+                t1[26] = 1
+            return h1, h2
 
 
     @classmethod
     def _split_into_good_orders(cls, h):
+        """Split instance ``h`` of class ``AutP3`` into two factors
+
+        In some cases the sign of an image of an element ``h`` of
+        the group ``AutP3`` in :math:`G_{x0}` cannot be determined.
+        
+        Here we always split ``h`` into a product  ``h1 * h2``, 
+        choosing one of the factors at random, so that the signs of 
+        both, ``h1`` and ``h2``, can be determined. Then we return
+        ``h1, h2`` as a pair of instances of class ``AutP3``.
+
+        The question whether the sign of an element of ``AutP3`` can
+        be determined depends on the order of the element only. Here
+        we assume that all keys of dictionary ``cls.good_orders``
+        are orders for which this is possible.
+        """
         cls.n_splits += 1
         while (1):
             h1 = AutP3('r')
@@ -381,25 +485,23 @@ class Precomputed_AutP3:
             if (h1.order() in cls.good_orders  and
                 h2.order() in cls.good_orders):
                     return h1, h2
+
+    
     @classmethod
-    def as_MM(cls, h):
-        r"""Store an element of AutP3 as an element of the Monster group
+    def compute_image_in_MM(cls, h):
+        r"""Map the element  ```h`` of ``AutP3`` into the Monster group
+    
+        The function maps the instance ``h`` of class ``AutP3`` to an
+        element :math:`g` of the  subgroup 
+        :math:`G_{x0} = 2^{1.24}.\mbox{Co}_1` of the 
+        Monster.  It returns a numpy array ``a`` such that the result 
+        is equal to ``MM('a', a)``.
 
-        The function maps the instance ``h`` of class ``AutP3`` to an 
-        element :math:`g` of the
-        subgroup :math:`G_{x0} = 2^{1.24}.\mbox{Co}_1` f the  Monster. 
-        It returns the result as an instance of class ``MM``.
-
-        The function remembers all such arrays ``a`` already computed in
-        dictionary ``cls.known_MM``.
+        If the sign of the image of  ``h`` in :math:`G_{x0}` cannot be
+        determined directly then the function splits ``h`` into
+        a product of two factors such that the signs of these factors
+        can be determined.
         """
-        if precomputation_pending:
-            precompute_all()
-        # Compute hash value ``t`` of permutation perm
-        t = h.__hash__()
-        # Return image of element in ``G_x0`` if found in dictionary
-        if t in cls.known_MM:
-            return cls.known_MM[t]
         # Let ``order`` be the order of ``h``
         order = h.order()
         # If we know how embed an element of that order into ``G_x0``,
@@ -408,9 +510,7 @@ class Precomputed_AutP3:
             g, _, _1 = MM_from_perm(h.perm)
             if cls.good_orders[order] == 0:
                 g *= MM('x', 0x1000)
-            g_data = g.mmdata
-            cls.known_MM[t] = g_data
-            return g_data 
+            return g.mmdata
         # Else decompose ``g`` as a (random) a product ``g = h1 h2``.
         # such that we can deal with elements of the orders of ``h1``
         # and `h2`. Compute the images of ``h1`` and ``h2`` as in the
@@ -418,7 +518,6 @@ class Precomputed_AutP3:
         h1, h2 = cls._split_into_good_orders(h)
         g =  MM_from_perm(h1.perm)[0] * MM_from_perm(h2.perm)[0]
         g_data = g.mmdata 
-        cls.known_MM[t] = g_data
         # Try to deal with the order of input ``perm``. If we already
         # know that we cannot do so, we simply return the image.
         if order in cls.bad_orders:
@@ -436,8 +535,55 @@ class Precomputed_AutP3:
             else:
                 assert g1 == g *  MM('x', 0x1000)
                 cls.good_orders[order] = 0
+        return g_data
+
+
+    @classmethod
+    def map_to_MM(cls, t):
+        r"""Store an element of AutP3 as an element of the Monster group
+    
+        Given the integer ``t``, let  ``h``  be the instance 
+        ``h = AutP3('p', cls.tranversal[t, :13])   of class ``AutP3``
+        The function maps the instance ``h`` to an  element :math:`g` 
+        of the  subgroup :math:`G_{x0} = 2^{1.24}.\mbox{Co}_1` of the 
+        Monster.  It returns a numpy array ``a`` such that the result 
+        math:`g` is equal to ``MM('a', a)``.
+
+        The function remembers all such arrays ``a`` already computed in
+        the array ``cls.data_MM``.
+        """
+        # Return image of element in ``G_x0`` if already computed
+        index = cls.ind_MM[t]
+        if index:
+            return cls.data_MM[index]
+
+        # Do global precomputations if not yet done
+        if precomputation_pending:
+            precompute_all()
+        # Let ``h`` be the instance of class ``AutP3`` given by ``t``
+        h = AutP3('p', cls.transversal[t, :13])
+        # Comput the image ``g_data`` of ``h``
+        g_data = cls.compute_image_in_MM(h)
+        # Store that image in the  array ``cls.data_MM`` and return it
+        cls.ind_MM[t] = index = cls.num_MM
+        cls.data_MM[index, :len(g_data)] = g_data
+        cls.num_MM += 1
         return g_data       
-       
+ 
+    @classmethod
+    def as_MM(cls, h):
+        """Map instance ``h`` of class ``AutP3`` into the Monster"""
+        # Split ``h`` into two factors
+        h1, h2 = Precomputed_AutP3._split_transveral(h)
+        # Map the product of automorphisms corresponding to the
+        # entries ``cls.transversal[h1]`` and  ``cls.transversal[h2]``
+        # into the Monster group.     
+        return MM('a', np.hstack(
+            (cls.map_to_MM(h1),  cls.map_to_MM(h2))
+        ))
+  
+
+      
 
 def AutP3_MM(h):    
     r"""Embed  the element ``h`` of AutP3 into the Monster
@@ -450,14 +596,8 @@ def AutP3_MM(h):
     a fixed embedding of the automorphsm group of ``P3`` into 
     the Monster.
     """
-    # In order to save storage, we split the element into a 
-    # product of two factors that are (to be) precomputed. 
-    f1, f2 = h._split_transveral()
-    # Return (precomputed) product of images of these factors
-    data = np.hstack((Precomputed_AutP3.as_MM(f1), 
-                 Precomputed_AutP3.as_MM(f2)))
-    return MM('a', data)
-        
+    return Precomputed_AutP3.as_MM(h)
+       
            
 
 
