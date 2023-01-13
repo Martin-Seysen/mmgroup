@@ -32,4 +32,8 @@ Mapping the Coxeter group :math:`Y_{555}` into the Bimonster
 .. automodule:: applications.Y555.readme
 
 
+Computing standard generators of the Monster
+============================================
+
+.. automodule:: applications.StandardGenerators.stdgen
 
