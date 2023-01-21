@@ -27,12 +27,14 @@ import pytest
 from mmgroup import MM0
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.mat24 import bw24 as mat24_bw24
-from mmgroup.generators import gen_leech3to2_type3
+from mmgroup.generators import gen_leech3to2
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_op_vector_atom
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_op_atom
 from mmgroup.generators import gen_leech2_type_selftest
+from mmgroup.generators import gen_leech2to3_abs
+from mmgroup.generators import gen_leech3_neg
 
 from mmgroup.tests.test_gen_xi.test_gen_type4 import rand_xsp2co1_elem
 from mmgroup.tests.test_gen_xi.test_gen_type4 import create_test_elements
@@ -79,12 +81,12 @@ def v3_to_v2(v3):
     The result is unique. The function returns 0 if ``v3`` is not of
     type 3 in the Leech lattice mod 3
     
-    Tis function is a wrapper for the C function ``gen_leech3to2_type3`` 
-    in file ``gen_leech3.c``. 
+    This function is a wrapper for the C function ``gen_leech3to2`` 
+    in file ``gen_leech3.c`` for vectors of type 3. 
     """
-    result = gen_leech3to2_type3(v3)
-    assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
-    return result
+    result = gen_leech3to2(v3)
+    assert result >> 24 == 3, (str_v3(v3), weight_v3(v3), hex(result))
+    return result & 0xffffff
 
 
 
@@ -118,20 +120,27 @@ def test_type3(verbose = 0):
         v2_ref = mul_v2(v2_st, g) & 0xffffff
         v2 = v3_to_v2(v3) 
         ok = v2 == v2_ref 
-        #if  weights[w] <= 20:
-        #     assert  v2 == py_gen_leech3to2_type3(v3)        
-        if verbose or not ok:
+        v3_computed = gen_leech2to3_abs(v2)
+        v3neg = gen_leech3_neg(v3)
+        ok_computed = ok and v3_computed in [v3, v3neg]
+        if verbose or not ok or not ok_computed:
             if not verbose:
                 print("\nTEST %s" % (ntest+1))
-                print("v3_start = " , str_v3(v3st))
+                print("v3_start = " , str_v3(v3_st))
                 print("g =", g)
             print("v3 = v3_st*g =",str_v3(v3))
             print("weight =",w)
             print("v2 obtained= ", hex(v2))
             print("v2 expected= ", hex(v2_ref))
             if not ok:
-                ERR = "Error in opation mod 3"
+                ERR = "Error in operation mod 3"
                 raise ValueError(ERR)
+            print("v3_computed =",str_v3(v3_computed))
+            if not ok_computed:
+                ERR = "Error in recomputation of v3"
+                raise ValueError(ERR)
+
+
     print("weights =", dict(weights))
     assert set(weights.keys()) == set([9, 12, 21, 24])
     
@@ -207,8 +216,8 @@ def rand_v3_dict(n = BLOCKSIZE):
     d = defaultdict(int)
     for i in range(n):
         v3 = rand_v3()
-        v2 = gen_leech3to2_type3(v3) 
-        if (v2 == 0):
+        v2 = gen_leech3to2(v3) 
+        if ((v2 >> 24) != 3 or v2 == 0 ):
             d[0] += 1
         else: 
             w = mat24_bw24((v3 | (v3 >> 24)) & 0xffffff)

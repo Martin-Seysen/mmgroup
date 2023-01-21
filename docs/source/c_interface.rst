@@ -24,10 +24,21 @@ Description of the ``mmgroup.mat24`` extension
 C interface
 -----------
 
+Header files
+............
 
 .. doxygenfile:: mat24_functions.h
 
+
+C functions for the Mathieu group :math:`M_{24}`
+................................................
+
 .. doxygenfile:: mat24_functions.c
+
+
+C functions for generating random elements of :math:`M_{24}`
+..............................................................
+
 
 .. doxygenfile:: mat24_random.c
 
@@ -92,8 +103,8 @@ Header file mmgroup_generators.h
 .. doxygenfile::  mmgroup_generators.h
  
 
-Implementing the group :math:`N_{0}`
-------------------------------------
+C functions implementing the group :math:`N_{0}`
+-------------------------------------------------
 
 
 .. automodule:: mmgroup.dev.generators.mm_group_n_doc
@@ -106,8 +117,8 @@ C interface for file mm_group_n.c
 
 .. _op-leech-label:
 
-Operation of the group :math:`G_{x0}` on the Leech lattice
-----------------------------------------------------------
+C functions for the operation of :math:`G_{x0}` on the Leech lattice
+----------------------------------------------------------------------
 
 
 .. automodule:: mmgroup.dev.generators.gen_leech_doc
@@ -143,8 +154,8 @@ C interface for file gen_leech_reduce_n.c
 .. doxygenfile:: gen_leech_reduce_n.c
 
 
-Support for the generator  :math:`\xi` of the monster group
------------------------------------------------------------   
+C functions for the generator  :math:`\xi` of the monster group
+----------------------------------------------------------------   
 
 .. automodule:: mmgroup.dev.generators.gen_xi_ref
 
@@ -154,8 +165,8 @@ C interface for file gen_xi_functions.c
 .. doxygenfile:: gen_xi_functions.c
 
 
-A random generator
-------------------
+C functions implementing a random generator
+--------------------------------------------
 
 .. automodule:: mmgroup.dev.generators.gen_random_doc
 
@@ -173,8 +184,8 @@ C interface for file gen_random.c
 Description of the ``qstate12`` and ``clifford12`` extensions
 =============================================================
 
-C functions dealing with quadratic state vectors
-------------------------------------------------
+Quadratic state vectors
+-------------------------
 
 
 The C functions in modules ``qstate.c`` and ``qsmatrix.c`` perform 
@@ -208,74 +219,74 @@ Header file ``clifford12.h``
 ----------------------------
    .. doxygenfile:: clifford12.h
 
-Module ``bitmatrix64.c``
-------------------------
+C functions in  ``bitmatrix64.c``
+---------------------------------------
 
    .. doxygenfile:: bitmatrix64.c
 
-Module ``uint_sort.c``
-------------------------
+C functions in  ``uint_sort.c``
+--------------------------------
 
    .. doxygenfile:: uint_sort.c
 
 
-Module ``qstate12.c``
----------------------
+C functions in   ``qstate12.c``
+--------------------------------
      
    .. doxygenfile:: qstate12.c
 
-Module ``qstate12io.c``
-------------------------
+C functions in   ``qstate12io.c``
+----------------------------------
      
    .. doxygenfile:: qstate12io.c
 
-Module ``qmatrix12.c``
-----------------------
+C functions in   ``qmatrix12.c``
+---------------------------------
      
    .. doxygenfile:: qmatrix12.c
 
 
 .. _c-functions-G-x0-label:
 
-C functions dealing with the subgroup :math:`G_{x0}` of the monster
--------------------------------------------------------------------
+Computing in the subgroup :math:`G_{x0}` of the Monster
+--------------------------------------------------------
 
 .. automodule:: mmgroup.dev.clifford12.xsp2co1_doc
 
 
 
-Module ``xsp2co1.c``
-----------------------
+C functions in ``xsp2co1.c``
+----------------------------
 
    .. doxygenfile:: xsp2co1.c
 
 
-Module ``xsp2co1_elem.c``
---------------------------
+C functions in ``xsp2co1_elem.c``
+----------------------------------
 
    .. doxygenfile:: xsp2co1_elem.c
 
 
-Module ``leech3matrix.c``
---------------------------
+C functions in ``leech3matrix.c``
+----------------------------------
 
    .. doxygenfile:: leech3matrix.c
 
 
-Module ``involutions.c``
---------------------------
+C functions in ``involutions.c``
+---------------------------------
 
    .. doxygenfile:: involutions.c
 
 
-Module ``xsp2co1_traces.c``
----------------------------
+C functions in ``xsp2co1_traces.c``
+------------------------------------
 
    .. doxygenfile:: xsp2co1_traces.c
 
 
-Module ``xsp2co1_map.c``
---------------------------
+C functions in ``xsp2co1_map.c``
+---------------------------------
 
    .. doxygenfile:: xsp2co1_map.c
 

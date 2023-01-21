@@ -881,7 +881,7 @@ int32_t gen_leech2_reduce_type4(uint32_t v, uint32_t *pg_out)
 
  
 /*************************************************************************
-*** Self test
+*** Self test for function ``gen_leech2_reduce_type4``
 *************************************************************************/
 
 
@@ -937,7 +937,121 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 
 
 
+/*************************************************************************
+*** Isomorphsim type of pair of vectors in Leech lattice mod 2
+*************************************************************************/
 
+static inline 
+int32_t type23_excess(uint64_t v1, uint64_t v2, uint64_t v3)
+{   
+    uint64_t vp, vn, v3n;
+    v1 = gen_leech2to3_abs(v1);  
+    v2 = gen_leech2to3_abs(v2);  
+    v3 = gen_leech2to3_abs(v3); 
+    vp = gen_leech3_add(v1, v2);
+    vn = gen_leech3_add(v1, gen_leech3_neg(v2));
+    v3n = gen_leech3_neg(v3);
+    return !(v3 == vp || v3 == vn || v3n == vp || v3n == vn);
+}
+
+
+/**
+  @brief Isomorphsim type of pair of vectors in Leech lattice mod 2
+
+  Let \f$v_1\f$ and \f$v_2\f$ be two vectors in the Leech lattice
+  mod 2 and put \f$v_3 = v_1 + v_2\f$. Let \f$t_i, i = 1,2,3\f$ be
+  the type of \f$v_i\f$. Then the triple \f$(t_1, t_2, t_3)\f$
+  depends on the isomorphism type of the
+  pair \f$(v_1, v_2)\f$.
+
+  If one or three of the vectors \f$(v_1, v_2, v_3)\f$ are of type 4
+  then there may be several isomorphism types of
+  pairs \f$(v_1, v_2)\f$ with the same triple \f$(t_1, t_2, t_3)\f$.
+  In this case we define a subtype \f$s\f$ as follows. We map one of
+  the vectors \f$v_i\f$ of type 4 to the standard frame \f$\Omega\f$.
+  Let \f$w\f$ be the image of any of the vectors \f$v_j, j \neq i\f$
+  under any such mapping. Then we compute the subtype of \f$w\f$
+  with function ``gen_leech2_subtype``, and we let \f$s\f$ be the
+  last hexadecimal digit of the computed subtype. The result \f$s\f$
+  does not depend on the choices made in the description given above.
+
+  After reordering \f$t_1, t_2, t_3\f$, the possibilties for
+  tuples \f$(t_1, t_2, t_3, s)\f$ with a relevant component \f$s\f$
+  are (4,2,2,0), (4,3,3,4), (4,3,3,6), (4,4,4,0), (4,4,4,4),
+  (4,4,4,6).
+
+  If none of the vectors \f$(v_1, v_2, v_3)\f$ is of type 4 then all
+  the shortest corresponding vectors in the Leech lattice are defined
+  up to sign. Then these vectors may span a space of dimension 2
+  or 3; and we put \f$s = 1\f$ if that dimension is equal to 3,
+  and \f$s = 0\f$ otherwise. The case \f$s = 1\f$ may occur if and
+  only if at least two of the vectors \f$(v_1, v_2, v_3)\f$ are of
+  type 3 and none is of type 4.
+
+  In all other cases there is at most one such isomorphism type; and
+  we put \f$s = 0\f$.
+
+  The function takes \f$v_1\f$ and \f$v_2\f$ as parameters ``v1``
+  and ``v2`` in Leech lattice encding. It returns
+
+  \f$ 2^{12} \cdot t_1 +  2^8 \cdot t_2  +  2^4 \cdot t_3 + s .\f$
+
+  We sketch a proof that the returned result actually describes the
+  isomorphism type of the pair \f$(v_1, v_2)\f$. If one of the
+  vectors \f$(v_1, v_2, v_3)\f$ is of type 4 then may map that
+  vector to the standard frame \f$\Omega\f$ and check the possible 
+  subtypes of the other vectors. These subtypes are  described in
+  subsection **Computations in the Leech lattice modulo 2**
+  of **The guide for developers**, or in ``[Iva99]``,
+  Section 4.4 ff.  
+
+  Otherwise the shortest preimages \f$v'_1, v'_2, v'_3\f$
+  of \f$v_1, v_2, v_3\f$ in the Leech lattice are defined up
+  to sign. The cases where these preimages span a subspace of
+  dimension 2 of the Leech lattice are well known, see
+  e.g. ``[CS99]`` or ``[CCN+85]``. If \f$v'_1, v'_2, v'_3\f$
+  span a 3-dimensional space, then it is easy to see that at
+  least two of these vectors must be of type 3, and that all
+  vectors  \f$(v'_1 \pm v'_2 \pm v'_3)/2\f$ (with all possible
+  combinations of signs) are in the Leech lattice and of type at
+  most 3. The 3-dimensional lattices satifying these properties
+  can be shown to be S-lattices, as defined in ``[CCN+85]``.
+  Note that the S-lattices are also known.
+
+  Warning: This function has not yet been tested!
+*/ 
+// %%EXPORT px
+int32_t gen_leech2_pair_type(uint64_t v1, uint64_t v2)
+{
+    uint64_t v3, t1, t2, t3,  master, slave, t, w;
+    uint32_t g[6];
+    int32_t len_g, result;
+
+    t1 = gen_leech2_type(v1);
+    t2 = gen_leech2_type(v2);
+    t3 = gen_leech2_type(v3 = v1 ^ v2);
+    result = (int32_t)((t1 << 12) + (t2 << 8) + (t3 << 4));
+
+    if (t1 == 4 && t2 == t3) {
+        master = v1; slave = v2; t = t2;
+    } else if (t2 == 4 && t1 == t3) {
+        master = v2; slave = v1; t = t1;
+    } else if (t3 == 4 && t1 == t2) {
+        master = v3; slave = v1; t = t1;
+    } else {
+       if ((t1 & 1) + (t2 & 1) + (t3 & 1) >= 2) {
+            result += type23_excess(v1, v2, v3);
+       }
+       return result;
+    }
+
+    if (t == 2) return result;
+    len_g = gen_leech2_reduce_type4((uint32_t)master, g);
+    if (len_g < 0) return -1;
+    w = gen_leech2_op_word((uint32_t)slave, g, len_g);
+    if (w & 0x80000000) return -1;
+    return result + (int32_t)(gen_leech2_subtype(w) & 0xf);
+}
 
 
 

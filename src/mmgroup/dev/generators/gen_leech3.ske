@@ -236,7 +236,7 @@ uint64_t gen_leech3_neg(uint64_t v3)
 /**
   @brief Map short vector from \f$\Lambda/2\Lambda\f$ to \f$\Lambda/3\Lambda\f$
 
-  Here parmeter \f$v_2\f$ is a short vector (i.e. a vector of type 2)
+  Here parameter \f$v_2\f$ is a short vector (i.e. a vector of type 2)
   in \f$\Lambda/2\Lambda\f$ in Leech lattice encoding. 
 
   The function returns a short vector in \f$\Lambda/3\Lambda\f$
@@ -299,9 +299,93 @@ uint64_t gen_leech2to3_short(uint64_t v2)
     } 
 }
 
+/*************************************************************************
+** Convert a vector of type 2 or 3 (mod 2) to a  vector (mod 3)
+*************************************************************************/
 
 
+/**
+  @brief Map vector from \f$\Lambda/2\Lambda\f$ to \f$\Lambda/3\Lambda\f$
 
+  Here parameter \f$v_2\f$ is a short vector of type 2 or 3.
+  in \f$\Lambda/2\Lambda\f$ in Leech lattice encoding. 
+
+  The function returns a vector in \f$\Lambda/3\Lambda\f$
+  corresponding to \f$v_2\f$ in Leech lattice mod3 encoding.
+
+  The result is unique upto sign only. The function returns 0 if
+  \f$v_2\f$ is not of type 2 or 3.
+*/
+// %%EXPORT px
+uint64_t gen_leech2to3_abs(uint64_t v2)
+{
+    uint32_t scalar, i, j, gcodev1, gcode, coc;
+    uint64_t  gcodev, theta, cocodev, w, single, result;
+
+    // Put scalar = scalar product (code, cocode)
+    scalar = (uint32_t)((v2 >> 12) &  v2 & 0xfff);
+    mat24_def_parity12(scalar);
+    // use function gen_leech2to3_short is scalar is 0
+    if ((scalar & 1) == 0) return gen_leech2to3_short(v2);
+
+    // Put gcodev = codeword (in vector rep)
+    gcode = (uint32_t)v2 >> 12;
+    gcodev = mat24_gcode_to_vect(gcode); 
+    theta = MAT24_THETA_TABLE[((uint32_t)v2 >> 12) & 0x7ff]; 
+    // Put w = weight(code word gcodev) / 4
+    w = 0 - ((v2 >> 23) & 1);
+    w = (((theta >> 12) & 7) ^ w) + (w & 7);  
+    // Put coc = cocode word (in cocode rep)
+    coc = (uint32_t)(v2 ^ theta) & 0xfff; 
+
+    if (coc & 0x800) {  // case odd cocode
+        // Put cocodev = cocode word (in vector rep)
+        cocodev = mat24_cocode_syndrome(coc, 0);  
+        // Put result = 1...1; then negate entries given by gcodev
+        result = gcodev ^ ((~gcodev & 0xffffff) << 24);
+        // Put j = 0 iff cocodev has bit weight 1 
+        j = cocodev & (cocodev - 1);
+        // Expand cocodev to high part of vector mod 3
+        cocodev ^= (cocodev << 24);
+        result =  j ? result & ~cocodev : result ^ cocodev;
+        return result;   
+    } else { 
+        switch (w) {
+            case 4:
+                gcodev ^= 0xffffff;
+            case 2:
+                gcodev1 = (uint32_t)gcodev;
+                for (i = 0; i < 8; ++i) {
+                    j = mat24_def_lsbit24(gcodev1);
+                    if (j >= 24) return 0;
+                    cocodev = mat24_cocode_syndrome(coc, j);
+                    single = cocodev & ~gcodev;
+                    if ((single & (single - 1)) == 0) {
+                         w = (w ^ mat24_bw24((uint32_t)cocodev));
+                         cocodev &= ~single; 
+                         result = (gcodev & ~cocodev) | (cocodev << 24)
+                                  | (single << ((w & 2) ? 0 : 24));
+                         return result;
+                    }
+                    gcodev1 &= ~(1UL << j);
+                } 
+                return 0;
+            case 3:
+                cocodev = mat24_cocode_as_subdodecad(coc, gcode, 0);
+                if ((cocodev & gcodev) != cocodev) return 0;
+                j = mat24_bw24((uint32_t)cocodev);
+                if ((j & 2) == 0) {
+                    gcode ^= 0x800;  gcodev ^= 0xffffff;
+                    cocodev = mat24_cocode_as_subdodecad(coc, gcode, 0);
+                    if ((cocodev & gcodev) != cocodev) return 0;
+                }
+                return (gcodev & ~cocodev) | (cocodev << 24);
+            default:
+                return 0;
+        }
+    }
+
+}
 
 /*************************************************************************
 ** Convert a short vector (mod 3) to a short vector (mod 2)
@@ -389,9 +473,195 @@ static inline uint32_t parity24(uint64_t x)
 /// @endcond 
 
 /**
+  @brief Map vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
+
+  Here parameter \f$v_3\f$ is a vector in \f$\Lambda/3\Lambda\f$ in 
+  Leech lattice mod 3 encoding. 
+
+  If a shortest preimage \f$v\f$ of \f$v_3\f$ in \f$\Lambda\f$ if of 
+  type \f$t\f$ with \f$t \leq 4\f$ then the function computes the 
+  (unique) vector \f$v_2\f$ in \f$\Lambda/2\Lambda\f$ that has the 
+  same preimage \f$v\f$ in \f$\Lambda\f$. Otherwise the function fails.
+
+  In case of success the function returns \f$2^{24} \cdot t + v_2\f$,
+  with \f$v_2\f$ given in Leech lattice encoding. The function returns
+  ``uint64_t(-1)`` in case of failure.
+*/
+// %%EXPORT px
+uint64_t gen_leech3to2(uint64_t v3)
+{
+    uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, res;
+    uint_fast32_t omega = 0;
+    uint64_t vtype = 0 - 0x1ULL;
+    v3 = short_3_reduce(v3);
+    // Let h be the support of v3, i.e. the bit vector of nonzero
+    // coordinates of the vector v3 (modulo 3)
+    h = (uint_fast32_t)(((v3 >> 24) | v3) & 0xffffff);
+    // Let w be the number of indices with coordinate 1 or 2
+    w = mat24_bw24(h);
+    // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
+    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
+    // has to be corrected by a term 0xffffff. At the end of the
+    // switch statemnt, ``gcode`` might not correspond to a Golay
+    // code vector; this means that v3 is not of type 4.
+    switch (w) {
+        // Deal with type-4 vectors
+        case 22:
+            // type (5**1, 3**2, 1**21)
+            syn = mat24_syndrome((uint32_t)v3, 0);
+            gcodev = (v3 ^ syn) & 0xffffff;
+            t = h & syn;
+            cocodev = t | (0xffffff & ~h);
+            if ((t == 0) || (t & (t-1))) return vtype;
+            vtype = 4;
+            break;              
+        case 19:
+            // type (3**5, 1**19)
+            w1 = mat24_bw24((uint32_t)v3);
+            x1 = ((w1 & 1) ? v3 : (v3 >> 24)) & 0xffffff;
+            syn = mat24_syndrome(x1, 0);
+            cocodev = ~h & 0xffffff;
+            if (syn & h) syn = cocodev;            
+            gcodev = (x1 ^ syn) & 0xffffff;
+            vtype = 4;
+            break;
+        case 16:
+            // type (2**16, 0**8)
+            w1 = mat24_bw24((uint32_t)v3);
+            if (w1 & 1) return vtype;
+            gcodev = h;
+            omega = w1 >> 1;
+            cocodev = v3 & 0xfffffff;
+            vtype = 4;
+            break;
+        case 13:
+            // type (4**1, 2**12, 0**11)
+        case 10:
+            // type (4**2, 2**8, 0**14)
+            syn = mat24_syndrome(h & 0xffffff, 0);
+            if ((h & syn) != syn) return vtype;                  
+            gcodev = h ^ syn;
+            cocodev = syn | (v3 & ~syn & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + parity24(syn & v3) + w;
+            vtype = 4;
+            break; 
+        case 7:
+            // type (6**1, 2**7, 0**16)
+            syn = mat24_syndrome(h, 0);
+            if (syn & (syn - 1)) return vtype;
+            gcodev = h ^ syn;
+            cocodev = (v3 & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            cocodev |=  (0 - (w1 & 1)) & syn;
+            omega = ((w1 + 1) >> 1) + 1;
+            vtype = 4;
+            break; 
+        case 4:
+            // type (4**4, 0**20)
+            gcodev = 0;
+            cocodev = h;
+            omega = parity24(v3);
+            vtype = 4;
+            break;
+        case 1:
+            // type (8**1, 0**23)
+            gcodev = cocodev = 0;
+            omega = 1;
+            vtype = 4;
+            break;   
+        // Deal with type-3 vectors
+        case 24:
+            // type (5**1, 1**23)
+            cocodev = mat24_syndrome((uint32_t)v3, 0);
+            gcodev = (v3 ^ cocodev) & 0xffffff;
+            if ((cocodev == 0) || (cocodev & (cocodev-1))) return vtype;
+            vtype = 3;
+            break;              
+        case 21:
+            // type (3**3, 1**21)
+            syn = mat24_syndrome((uint32_t)v3, 0);
+            gcodev = (v3 ^ syn) & 0xffffff;
+            cocodev = 0xffffff & ~h;
+            if ((syn & cocodev) != syn) return vtype;
+            vtype = 3;
+            break;              
+        case 12:
+            // type (2**12, 0**12)
+            gcodev = h;
+            syn = mat24_syndrome(h, 0);
+            cocodev = v3 & 0xffffff;
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + 1;
+            vtype = 3;
+            break; 
+        case 9:
+            // type (4**1, 2**8, 0**15)
+            syn = mat24_syndrome(h, 0);
+            if ((h & syn) != syn) return 0;                  
+            gcodev = h ^ syn;
+            cocodev = syn | (v3 & ~syn & 0xffffff);
+            w1 = mat24_bw24(cocodev);
+            if (w1 & 1)  return 0;
+            omega = (w1 >> 1) + parity24(syn & v3);
+            vtype = 3;
+            break; 
+        // Deal with type-2 vectors
+        case 23:
+            // type (2**1, 1**23)
+            cocodev = ~h & 0xffffffUL;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) return vtype; 
+            w1 = (0 - parity24(v3)) & 24;
+            gcodev = (uint32_t)(v3 >> w1) & 0xffffffUL;
+            vtype = 2;
+            break;              
+        case 8:
+            // type (2**8, 0**16)
+            w1 = mat24_bw24((uint32_t)v3);
+            if (w1 & 1) return vtype;
+            gcodev = h;
+            cocodev = v3 & 0xffffffUL;
+            omega = w1 >> 1;
+            vtype = 2;
+            break;
+        case 2:
+            // type (4**2, 0**22)
+            cocodev = (v3 |  (v3 >> 24)) & 0xffffffUL;
+            gcodev = 0;
+            omega = mat24_bw24((uint32_t)v3) ^ 1;
+            vtype = 2;
+            break;
+        // Deal with zero vector
+        case 0:
+            // type (0**24)
+            return 0;
+        // Anything else is rejected
+        default:
+            return vtype;        
+    }
+    gcodev = mat24_vect_to_gcode(gcodev); 
+    if (gcodev & 0xfffff000UL) return 0 - 0x1ULL;
+    cocodev = mat24_vect_to_cocode(cocodev);
+    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
+    // correct ``gcodev`` by term ``Omega`` if omega is odd
+    gcodev ^= (omega & 1) << 11;         
+    res = (gcodev << 12) ^ cocodev;
+    // Correct an odd result
+    if (w >= 19) {
+        w1 = (vtype ^ parity12(res & (res >> 12))) & 1;
+        res ^= (0 - w1) & 0x800000;
+    }
+    return res | (vtype << 24);
+}
+
+
+
+/**
   @brief Map type-4 vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
 
-  Here parameter \f$v_3\f$ is a type-4 vector 
+  Here parameter \f$v_3\f$ must be a type-4 vector 
   in \f$\Lambda/3\Lambda\f$ in Leech lattice mod 3 encoding. 
 
   The function returns a type-4 vector in \f$\Lambda/2\Lambda\f$
@@ -403,171 +673,11 @@ static inline uint32_t parity24(uint64_t x)
 // %%EXPORT px
 uint64_t gen_leech3to2_type4(uint64_t v3)
 {
-    uint_fast32_t  gcodev, cocodev, h, w, w1, x1, syn, t, omega, res;
-    v3 = short_3_reduce(v3);
-    // Let h be the support of v3, i.e. the bit vector of nonzero
-    // coordinates of the vector v3 (modulo 3)
-    h = ((v3 >> 24) | v3) & 0xffffff;
-    // Let w be the number of indices with coordinate 1 or 2
-    w = mat24_bw24((uint32_t)h);
-    // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
-    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
-    // has to be corrected by a term 0xffffff. At the end of the
-    // switch statemnt, ``gcode`` might not correspond to a Golay
-    // code vector; this means that v3 is not of type 4.
-    switch (w) {
-        case 22:
-            // type (5**1, 3**2, 1**21)
-            syn = mat24_syndrome((uint32_t)v3, 0);
-            gcodev = (v3 ^ syn) & 0xffffff;
-            t = h & syn;
-            cocodev = t | (0xffffff & ~h);
-            if ((t == 0) || (t & (t-1))) return 0;
-            omega = 0;
-            break;              
-        case 19:
-            // type (3**5, 1**19)
-            w1 = mat24_bw24((uint32_t)v3);
-            x1 = ((w1 & 1) ? v3 : (v3 >> 24)) & 0xffffff;
-            syn = mat24_syndrome(x1, 0);
-            cocodev = ~h & 0xffffff;
-            if (syn & h) syn = cocodev;            
-            gcodev = (x1 ^ syn) & 0xffffff;
-            omega = 0;
-            break;
-        case 16:
-            // type (2**16, 0**8)
-            w1 = mat24_bw24((uint32_t)v3);
-            if (w1 & 1) return 0;
-            gcodev = h;
-            omega = w1 >> 1;
-            cocodev = v3 & 0xfffffff;
-            break;
-        case 13:
-            // type (4**1, 2**12, 0**11)
-        case 10:
-            // type (4**2, 2**8, 0**14)
-            syn = mat24_syndrome(h & 0xffffff, 0);
-            if ((h & syn) != syn) return 0;                  
-            gcodev = h ^ syn;
-            cocodev = syn | (v3 & ~syn & 0xffffff);
-            w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
-            omega = (w1 >> 1) + parity24(syn & v3) + w;
-            break; 
-        case 7:
-            // type (6**1, 2**7, 0**16)
-            syn = mat24_syndrome(h, 0);
-            if (syn & (syn - 1)) return 0;
-            gcodev = h ^ syn;
-            cocodev = (v3 & 0xffffff);
-            w1 = mat24_bw24(cocodev);
-            cocodev |=  (0 - (w1 & 1)) & syn;
-            omega = ((w1 + 1) >> 1) + 1;
-            break; 
-        case 4:
-            gcodev = 0;
-            cocodev = h;
-            omega = parity24(v3);
-            break;
-        case 1:
-            gcodev = cocodev = 0;
-            omega = 1;
-            break;    
-        default:
-            return 0;        
-    }
-    gcodev = mat24_vect_to_gcode(gcodev); 
-    if (gcodev & 0xfffff000UL) return 0;
-    cocodev = mat24_vect_to_cocode(cocodev);
-    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
-    // correct ``gcodev`` by term ``Omega`` if omega is odd
-    gcodev ^= (omega & 1) << 11;         
-    res = (gcodev << 12) ^ cocodev;
-    // Correct an odd result
-    if (w >= 19 && parity12(res & (res >> 12))) res ^= 0x800000;
-    return res;
+     uint64_t res = gen_leech3to2(v3);
+     return ((res >> 24) == 4) ? res & 0xffffff : 0; 
 }
 
 
-
-
-/**
-  @brief Map type-3 vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
-
-  Here parameter \f$v_3\f$ is a type-3 vector 
-  in \f$\Lambda/3\Lambda\f$ in Leech lattice mod 3 encoding. 
-
-  The function returns a type-3 vector in \f$\Lambda/2\Lambda\f$
-  corresponding to \f$v_3\f$ in Leech lattice encoding.
-
-  The result is unique. The function returns 0 if \f$v_3\f$ is not of
-  type 3.
-*/
-// %%EXPORT px
-uint64_t gen_leech3to2_type3(uint64_t v3)
-{
-    uint_fast32_t  gcodev, cocodev, h, w, w1, syn, omega, res;
-    v3 = short_3_reduce(v3);
-    // Let h be the support of v3, i.e. the bit vector of nonzero
-    // coordinates of the vector v3 (modulo 3)
-    h = ((v3 >> 24) | v3) & 0xffffff;
-    // Let w be the number of indices with coordinate 1 or 2
-    w = mat24_bw24((uint32_t)h);
-    // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
-    // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
-    // has to be corrected by a term 0xffffff. At the end of the
-    // switch statemnt, ``gcode`` might not correspond to a Golay
-    // code vector; this means that v3 is not of type 3.
-    switch (w) {
-        case 24:
-            // type (5**1, 1**23)
-            cocodev = mat24_syndrome((uint32_t)v3, 0);
-            gcodev = (v3 ^ cocodev) & 0xffffff;
-            if ((cocodev == 0) || (cocodev & (cocodev-1))) return 0;
-            omega = 0;
-            break;              
-        case 21:
-            // type (3**3, 1**21)
-            syn = mat24_syndrome((uint32_t)v3, 0);
-            gcodev = (v3 ^ syn) & 0xffffff;
-            cocodev = 0xffffff & ~h;
-            if ((syn & cocodev) != syn) return 0;
-            omega = 0;
-            break;              
-        case 12:
-            // type (2**12, 0**12)
-            gcodev = h;
-            syn = mat24_syndrome(h, 0);
-            cocodev = v3 & 0xffffff;
-            w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
-            omega = (w1 >> 1) + 1;
-            break; 
-        case 9:
-            // type (4**1, 2**8, 0**15)
-            syn = mat24_syndrome(h, 0);
-            if ((h & syn) != syn) return 0;                  
-            gcodev = h ^ syn;
-            cocodev = syn | (v3 & ~syn & 0xffffff);
-            w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
-            omega = (w1 >> 1) + parity24(syn & v3);
-            break; 
-        default:
-            return 0;
-    }
-    gcodev = mat24_vect_to_gcode(gcodev); 
-    if (gcodev & 0xfffff000UL) return 0;
-    cocodev = mat24_vect_to_cocode(cocodev);
-    cocodev ^= MAT24_THETA_TABLE[gcodev & 0x7ff] & 0xfff;
-    // correct ``gcodev`` by term ``Omega`` if omega is odd
-    gcodev ^= (omega & 1) << 11;         
-    res = (gcodev << 12) ^ cocodev;
-    // Correct an odd result by a term of Omega if required
-    if (w >= 21 && parity12(res & (res >> 12)) == 0) res ^= 0x800000;
-    return res;
-}
 
 
 /*************************************************************************

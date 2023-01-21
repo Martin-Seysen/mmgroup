@@ -27,6 +27,7 @@ import pytest
 from mmgroup import MM0
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.mat24 import bw24 as mat24_bw24
+from mmgroup.generators import gen_leech3to2
 from mmgroup.generators import gen_leech3to2_short
 from mmgroup.generators import gen_leech2to3_short
 from mmgroup.generators import gen_leech3_neg
@@ -95,6 +96,9 @@ def v3_to_v2(v3):
     """
     result = gen_leech3to2_short(v3)
     assert result != 0, (str_v3(v3), weight_v3(v3), hex(result))
+    result1 = gen_leech3to2(v3)
+    assert result1 >> 24 == 2
+    assert result1 & 0xffffff == result
     return result
 
 def v2_to_v3(v2):
