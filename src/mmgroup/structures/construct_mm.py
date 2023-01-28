@@ -485,6 +485,8 @@ def import_groups():
 
 def iter_mm(group, tag = None, atom = None, in_G_x0 = False):
     if isinstance(tag, str) and len(tag) == 1:
+        if atom is None and tag == 'r':
+            atom = 'G_x0' if in_G_x0 else 'M' 
         yield from iter_atom(tag, atom)
         return
     if tag is None:

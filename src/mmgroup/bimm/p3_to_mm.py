@@ -220,7 +220,7 @@ def StarP3(x):
 
     :cite:`Nor02` defines so-called 'stars' :math:`P_i^*`as words in 
     the generators of ``P2`` (modulo the defining relations of the 
-    BiMonster). These 'stars' are numbered from 0 to 12 in th same 
+    Bimonster). These 'stars' are numbered from 0 to 12 in th same 
     way as the 'points'. :cite:`Nor02` also defines a mapping from 
     these 'stars' into the subgroup :math:`Q_{x0}` of the Monster.
      

@@ -1,4 +1,4 @@
-"""This is the *mmgroup.bimm* package for computing in the BiMonster group.
+"""This is the *mmgroup.bimm* package for computing in the Bimonster group.
 
 Yet to be documented!
 """

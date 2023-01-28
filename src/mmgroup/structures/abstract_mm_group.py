@@ -259,31 +259,24 @@ class AbstractMMGroup(AbstractGroup):
 
 
 
-    def str_word(self, g):
-        """Convert group atom ``g`` to a string
-
-        For an element ``g`` of this group ``g.group.str_word(g)``
-        should be equivalent   to ``g.str()``.
-        """
-        """Represent group element as a string"""
-        atoms = g.mmdata
-        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
-        s = "*".join(strings) 
-        if s == "": s = "1"
-        return "%s<%s>" % (self.group_name, s)
-
     def raw_str_word(self, g):
         """Convert group atom ``g`` to a string
 
         For an element ``g`` of this group ``g.group.raw_str_word(g)``
         should be equivalent   to ``g.raw_str()``.
         """
-        """Represent group element as a string"""
         atoms = g.mmdata
-        strings = iter_strings_from_atoms(atoms, abort_if_error=0)
-        s = "*".join(strings) 
-        return "1" if  s == "" else s
+        s = "*".join(iter_strings_from_atoms(atoms, abort_if_error=0))
+        return s if s else "1"
                  
+
+    def str_word(self, g):
+        """Convert group atom ``g`` to a string
+
+        For an element ``g`` of this group ``g.group.str_word(g)``
+        should be equivalent   to ``g.str()``.
+        """
+        return "%s<%s>" % (self.group_name, self.raw_str_word(g))
 
     def neutral(self):
         """Return neutral element of the group"""

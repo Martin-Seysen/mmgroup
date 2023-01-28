@@ -1,18 +1,18 @@
-r"""This module implements the BiMonster.
+r"""This module implements the Bimonster.
 
-Class ``BiMM`` in this module implements an element of the BiMonster
+Class ``BiMM`` in this module implements an element of the Bimonster
 :math:`\mathbb{M} \wr 2` as described in the documentation of this
 application. Let :math:`\mbox{IncP3}` be the Coxeter group as in
 that documentation. Function ``P3_BiMM`` maps a word of generators
-of :math:`\mbox{IncP3}` into the BiMonster. The generators of
+of :math:`\mbox{IncP3}` into the Bimonster. The generators of
 :math:`\mbox{IncP3}` correspond to the points and lines  of the
 projective plane :math:`\mbox{P3}` over the field :math:`\mathbb{F}_3`.
 A point or a line  of :math:`\mbox{P3}` is implemented as an
 instance of class ``P3_node`` in module ``inc_p3``.
 
 There is also a natural mapping from the automorphism group of
-:math:`\mbox{P3}` into the BiMonster compatible with the mapping
-from the Coxeter group into the BiMonster. Function
+:math:`\mbox{P3}` into the Bimonster compatible with the mapping
+from the Coxeter group into the Bimonster. Function
 ``AutP3_BiMM`` computes that mapping. An automorphism  of
 :math:`\mbox{P3}` is implemented as an instance of class ``AutP3``
 in module ``inc_p3``. For background see  :cite:`Nor02`.
@@ -58,19 +58,19 @@ def gcd(a, b):
     while b > 0: a, b = b, a % b
     return a
 
-
+ERR_BIMM1 = "Single argument for class BiMM must be 'r' or instance of class BiMM"
 
 class BiMM(AbstractGroupWord):
-    r"""This class models an element of the BiMonster.
+    r"""This class models an element of the Bimonster.
 
-    The BiMonster is the group  :math:`\mathbb{M} \wr 2` of
+    The Bimonster is the group  :math:`\mathbb{M} \wr 2` of
     structure  :math:`(\mathbb{M} \times \mathbb{M}).2`, where
     :math:`\mathbb{M}`  is the Monster group.
 
     :param m1:
      
        An element :math:`m_1` of the Monster that embeds into the
-       BiMonster as :math:`(m_1, 1)`. Default is the neutral
+       Bimonster as :math:`(m_1, 1)`. Default is the neutral
        element :math:`1` of the Monster.
 
     :type m1:
@@ -80,7 +80,7 @@ class BiMM(AbstractGroupWord):
     :param m2:
      
        An element :math:`m_2` of the Monster that embeds into the
-       BiMonster as :math:`(1, m_2)`.  Default is the neutral
+       Bimonster as :math:`(1, m_2)`.  Default is the neutral
        element :math:`1` of the Monster.
 
     :type m2:
@@ -115,7 +115,7 @@ class BiMM(AbstractGroupWord):
     then arguments ``m2`` and ``e`` must be dropped.
 
     Let ``g1`` and ``g2`` be instances of class ``BiMM`` representing 
-    elements of the BiMonster group.
+    elements of the Bimonster group.
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
@@ -127,45 +127,72 @@ class BiMM(AbstractGroupWord):
     """
     __slots__ = "m1", "m2", "alpha"
     group_name = "BiMM"
-    group = None       # will be set to StdBiMMGroup later
+    group = None    # will be set to StdBiMMGroup later
 
-    def __init__(self, m1 = None, m2 = None, e = 0):
-        if isinstance(m1, BiMM):
-            self.m1 = m1.m1
-            self.m2 = m1.m2
-            self.alpha = m1.alpha
-            assert not m2 and not e
+    def __init__(self, *args):
+        if len(args) == 0:
+            self.m1 = MM()
+            self.m2 = MM()
+            self.alpha = 0
+        elif len(args) == 1:
+            m = args[0]
+            if isinstance(m, BiMM):
+                self.m1 = m.m1.copy()
+                self.m2 = m.m2.copy()
+                self.alpha = m.alpha
+            elif m == 1:
+                self.m1 = MM()
+                self.m2 = MM()
+                self.alpha = 0
+            elif m == 'r':
+                self.m1 = MM('r')
+                self.m2 = MM('r')
+                self.alpha = randint(0,1)
+            else:
+                raise TypeError(ERR_BIMM1) 
         else:
-            self.m1 = MM(m1)
-            self.m2 = MM(m2)
-            self.alpha = e & 1
+            self.m1, self.m2 = MM(args[0]),  MM(args[1])
+            self.alpha = args[2] & 1 if len(args) > 2 else 0
             
     def orders(self):
         r"""Return orders(!) of element of the group BiMM"""
-        if self.alpha:
+        self.reduce()
+        if self.alpha & 1:
              a, par = self * self, 2
         else:
              a, par = self, 1
         return a.m1.order(), a.m2.order(), par
 
     def order(self):
-        r"""Return the order of the element of the BiMonster"""
+        r"""Return the order of the element of the Bimonster"""
         o1, o2, s = self.orders()
         return s * o1 * o2 // gcd(o1, o2)
 
+
+    def reduce(self):
+        r"""Reduce the element of the Bimonster""" 
+        self.m1.reduce()
+        self.m2.reduce()
+        self.alpha &= 1
+
     def decompose(self):
-        r"""Decompose the element of BiMonster 
+        r"""Decompose the element of the Bimonster 
 
         The function returns a triple ``(m1, m2, e)`` such
-        that the element of the BiMonster is equal to
+        that the element of the Bimonster is equal to
         :math:`(m_1, m_2) \cdot \alpha^e`. Here ``m1`` and ``m2``
         are instances of class ``MM`` representing the elements
         :math:`m_1` and :math:`m_2` of the Monster, and ``e`` is
         equal to 0 or 1.
         """
+        self.reduce()
         return self.m1, self.m2, self.alpha
 
- 
+    def __hash__(self):
+        m1, m2, alpha = self.decompose()
+        self.mutable = False
+        return hash((hash(m1), hash(m2), alpha))
+
  
 @singleton
 class BiMMGroup(AbstractGroup):
@@ -181,42 +208,43 @@ class BiMMGroup(AbstractGroup):
         super(BiMMGroup, self).__init__()
 
 
-    def __call__(*args, **kwds):
-        raise TypeError("Class AutP3Group object is not callable")
-
     def atom(self, tag = None, data = None):
-        err = "Class AutPlGroup has no attribute 'atom'"
+        err = "Class BiMMGroup has no attribute 'atom'"
         raise AttributeError(err)
+
+   
 
     @staticmethod
     def _imul(g1, g2):
-        if g1.alpha:
+        if g1.alpha & 1:
             m1, m2 = g1.m1 * g2.m2, g1.m2 * g2.m1
         else:
             m1, m2 = g1.m1 * g2.m1, g1.m2 * g2.m2
-        return BiMM(m1, m2, g1.alpha ^ g2.alpha) 
+        return BiMM(m1, m2, (g1.alpha ^ g2.alpha) & 1) 
 
     @staticmethod
     def _invert(g1):
-        if g1.alpha:
+        if g1.alpha & 1:
             m1, m2 = g1.m2, g1.m1
         else:
             m1, m2 = g1.m1, g1.m2
-        return BiMM(m1**(-1), m2**(-1), g1.alpha )
+        return BiMM(m1**(-1), m2**(-1), g1.alpha & 1)
 
     def copy_word(self, g1):
         return BiMM(g1.m1, g1.m2, g1.alpha)
 
     def _equal_words(self, g1, g2):
+        g1.reduce()
+        g2.reduce()
         return g1.m1 == g2.m1 and g1.m2 == g2.m2 and g1.alpha == g2.alpha
 
     def str_word(self, g):
         r"""Convert group atom g to a string
 
         """
-        s1, s2 = str(g.m1), str(g.m2)
-        al = ',*' if g.alpha else ''
-        return "BiMM(%s, %s, %s)" % (s1, s2, al)
+        s1, s2 = g.m1.raw_str(), g.m2.raw_str()
+        al = ', *' if g.alpha & 1 else ''
+        return "BiMM<%s, %s%s>" % (s1, s2, al)
 
 
 StdBiMMGroup = BiMMGroup()   # This is the only instance of AutP3Group
@@ -226,7 +254,7 @@ BiMM.group = StdBiMMGroup
  
 
 #####################################################################
-# Enter points and lines into the BiMonster
+# Enter points and lines into the Bimonster
 #####################################################################
 
 # This will be set to ``False``  after finishing the precomputation    
@@ -281,7 +309,7 @@ def precompute_points_lines_list():
 
 
 def P3_BiMM(pl = []):
-    r"""Map a word of generators in :math:`\mbox{IncP3}` into the BiMonster
+    r"""Map a word of generators in :math:`\mbox{IncP3}` into the Bimonster
 
     :param pl:
 
@@ -337,11 +365,11 @@ def P3_BiMM(pl = []):
 
 
 #####################################################################
-# Enter automorphisms of ``P3`` into the BiMonster
+# Enter automorphisms of ``P3`` into the Bimonster
 #####################################################################
 
 def AutP3_BiMM(g):
-    r"""Map an automorphism of :math:`\mbox{P3}` into the BiMonster
+    r"""Map an automorphism of :math:`\mbox{P3}` into the Bimonster
 
     :param g:
 

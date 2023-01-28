@@ -1,18 +1,18 @@
-r"""This module implements the BiMonster.
+r"""This module implements tests for the Bimonster.
 
-Class ``BiMM`` in this module implements an element of the BiMonster
+Class ``BiMM`` in this module implements an element of the Bimonster
 :math:`\mathbb{M} \wr 2` as described in the documentation of this
 application. Let :math:`\mbox{IncP3}` be the Coxeter group as in
 that documentation. Function ``P3_BiMM`` maps a word of generators
-of :math:`\mbox{IncP3}` into the BiMonster. The generators of
+of :math:`\mbox{IncP3}` into the Bimonster. The generators of
 :math:`\mbox{IncP3}` correspond to the points and lines  of the
 projective plane :math:`\mbox{P3}` over the field :math:`\mathbb{F}_3`.
 A point or a line  of :math:`\mbox{P3}` is implemented as an
 instance of class ``P3_node`` in module ``inc_p3``.
 
 There is also a natural mapping from the automorphism group of
-:math:`\mbox{P3}` into the BiMonster compatible with the mapping
-from the Coxeter group into the BiMonster. Function
+:math:`\mbox{P3}` into the Bimonster compatible with the mapping
+from the Coxeter group into the Bimonster. Function
 ``AutP3_BiMM`` computes that mapping. An automorphism  of
 :math:`\mbox{P3}` is implemented as an instance of class ``AutP3``
 in module ``inc_p3``. For background see  :cite:`Nor02`.
@@ -99,7 +99,7 @@ def do_test_Coxeter_orders(multiprocessing = False):
 
      
 def do_test_AutP3_BiMM(ntests=10, verbose = 0):
-    print("Test embedding of AutP3 into the BiMonster")
+    print("Test embedding of AutP3 into the Bimonster")
     for i in range(ntests):
         g_autp3 = AutP3('r')
         g = AutP3_BiMM(g_autp3)
@@ -122,7 +122,7 @@ def random_hexagon():
 
 
 def check_hexagon_relation(u, v, w, x, y, z):
-    r"""Check relations in a hexagon in the BiMonster.
+    r"""Check relations in a hexagon in the Bimonster.
 
     Here ``(u, v, w, x, y, z)`` must be a hexagon in the 
     incidence graph of P3. We take the relation for that

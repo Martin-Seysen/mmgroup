@@ -234,7 +234,7 @@ def import_mm_order_functions():
 
 
 
-
+MAX_WORDLEN = 512
 
 class MM(MM0):
     r"""Models an element of the monster group :math:`\mathbb{M}`
@@ -534,7 +534,11 @@ class MM(MM0):
             if tag == 6: l.append('x')
         return "<" + "".join(l) + ">"
 
-
+    def __hash__(self):
+        self.reduce()
+        self.mutable = False
+        return hash(tuple(self.mmdata))
+       
 
 
 ###########################################################################
@@ -601,12 +605,13 @@ class MMGroup(AbstractMMGroup):
         
     def _imul(self, g1, g2):
         l1, l2 = g1.length, g2.length
+        g1.reduced = (g1.reduced and l2 == 0) or (g2.reduced and l1 == 0)
         g1._extend(2*(l1 + l2) + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
         l1 += l2
         g1.length = l1
-        g1.reduced = False
-        g1.reduce()
+        if g1.length > MAX_WORDLEN:
+            g1.reduce()
         return g1
 
     def _invert(self, g1):

@@ -941,6 +941,8 @@ uint32_t gen_leech2_type_selftest(uint32_t start, uint32_t n, uint32_t *result)
 *** Isomorphsim type of pair of vectors in Leech lattice mod 2
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
 static inline 
 int32_t type23_excess(uint64_t v1, uint64_t v2, uint64_t v3)
 {   
@@ -953,6 +955,8 @@ int32_t type23_excess(uint64_t v1, uint64_t v2, uint64_t v3)
     v3n = gen_leech3_neg(v3);
     return !(v3 == vp || v3 == vn || v3n == vp || v3n == vn);
 }
+
+/// @endcond
 
 
 /**

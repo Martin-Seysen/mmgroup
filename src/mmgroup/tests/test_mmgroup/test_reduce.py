@@ -236,11 +236,13 @@ def benchmark_mul(ncases = 20, verbose = 0):
     indices, glist = get_mul_samples()
     index_pairs = [sample(indices, 2) for i in range(ncases)]
     glist[0] *= glist[1]
+    glist[0].reduce()
     stat = MM_Pattern()
     t = []
     for i, j in index_pairs:
         t_start = time.process_time()
         glist[i] *= glist[j]
+        glist[i].reduce()
         t.append(time.process_time() - t_start)
         pattern = mm_pattern(glist[i])
         stat.add_pattern(pattern)
@@ -271,11 +273,13 @@ def test_benchmark_mul_G_x0(ncases = 5000, verbose = 0):
     glist = []
     for i in range(100):
         glist.append(MM('r', 'G_x0'))
+        glist[i].reduce()
     indices = range(len(glist))
     index_pairs = [sample(indices, 2) for i in range(ncases)]
     t_start = time.process_time()
     for i, j in index_pairs:
         glist[i] *= glist[j]
+        glist[i].reduce()
     t = time.process_time() - t_start
     s = "\nRuntime of multiplication in subgroup G_x0 in class MM,"
     s += " %d tests: %.3f us" 

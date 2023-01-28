@@ -50,7 +50,28 @@ class AbstractGroupWord(object):
     contain a class attribute 'group' referring to that group. Then 
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
+
+    Hashing and mutablity.
+
+    A group element is mutable until it is declared immutable.
+    The motivation for declaring a group word immutable is that we 
+    want to construct sets of group elements. In python this is
+    possible only if an element has a __hash__ method. Python calls
+    the __hash__ method of an object before entering it into a set 
+    or (as a key) into a dictionary. A __hash__ method makes sense
+    only if a group element has a unique reduced form. After calling
+    the __hash__ method, the value of the group element should not be 
+    changed anymore. E.g. in the __imul__ method (corresponding to
+    the operator g1 *= g2) this abstract class take care that the
+    old object referred by g1 is not changed; a new object is assigned
+    to g1 instead.
+
+    If the user implements a __hash__ method, that method should set 
+    the attribute ``mutable`` of the group element to False. The user
+    must not change the value of any group element if attribute
+    ``mutable`` is False. 
     """
+    mutable = True
     def __init__(self, *args, **kwds):
         try:
             self.group = kwds['group']
@@ -77,7 +98,8 @@ class AbstractGroupWord(object):
     def __imul__(self, other):
         """Implementation of the group multiplication"""
         g = self.group
-        return g._imul(self, g._to_group(other))
+        myself = self if self.mutable else g.copy_word(self)
+        return g._imul(myself, g._to_group(other))
 
     def __mul__(self, other):
         """Implementation of the group multiplication"""
@@ -110,6 +132,7 @@ class AbstractGroupWord(object):
         Here self / other    means    self * other**(-1) .
         """
         g = self.group
+        myself = self if self.mutable else g.copy_word(self)
         return g._imul(self, g._invert(g._to_group(other)))
 
     def __truediv__(self, other):
@@ -136,6 +159,7 @@ class AbstractGroupWord(object):
         """
         g = self.group
         if isinstance(exp, Integral):
+            self.reduce()
             if exp > 0:
                 res, start = g.copy_word(self), self
             elif exp == 0:
@@ -147,6 +171,7 @@ class AbstractGroupWord(object):
                 res = g._imul(res, res)
                 if exp & (1 << i):
                     res = g._imul(res, start) 
+                res.reduce()
             return res      
         elif isinstance(exp, AbstractGroupWord):
             e = self.group._to_group(exp) 
@@ -258,6 +283,8 @@ class AbstractGroup(object):
         g_copy = deepcopy(g1)
         # Even a deep copy of an element is still in the same group
         g_copy.group = g1.group
+        # A copy is mutable, until it will be declared immutable
+        g_copy.mutable = True
         return g_copy
 
     def _equal_words(self, g1, g2):

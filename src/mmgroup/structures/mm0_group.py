@@ -357,6 +357,7 @@ class MM0(AbstractMMGroupWord):
         of the array describes a generator. See section
         :ref:`header-mmgroup-generators-label` for details.
         """
+        self.reduce()
         return np.copy(self._data[:self.length])
 
 
@@ -367,6 +368,7 @@ class MM0(AbstractMMGroupWord):
         raise TypeError(self.ERR_ITER)
 
     def _setdata(self, data):
+        assert self.mutable
         len_ = len(data)
         self._extend(len_)
         self._data[:len_] = data
@@ -404,6 +406,7 @@ class MM0(AbstractMMGroupWord):
         """
         if check_mm_order is None:
             import_mm_order_functions()
+        self.reduce()
         return check_mm_order(self, max_order)
 
     def half_order(self, max_order = 119):
@@ -423,6 +426,7 @@ class MM0(AbstractMMGroupWord):
         """
         if check_mm_half_order is None:
             import_mm_order_functions()
+        self.reduce()
         return check_mm_half_order(self, max_order)
 
     def in_G_x0(self):
@@ -435,6 +439,7 @@ class MM0(AbstractMMGroupWord):
         This method uses geometric information about the Leech 
         lattice taken from :cite:`Iva99`.
         """
+        self.reduce()
         if check_mm_in_g_x0 is None:
             import_mm_order_functions()
         return check_mm_in_g_x0(self) is not None
@@ -565,6 +570,7 @@ class MM0(AbstractMMGroupWord):
 
         In future versions support for multiprocessing may be added.
         """
+        self.reduce()
         if mm_conjugate_involution is None: 
             import_Xsp2_Co1()
         return mm_conjugate_involution(self, check, ntrials, verbose)
@@ -586,6 +592,7 @@ class MM0(AbstractMMGroupWord):
         If ``group`` is ``None`` (default) then ``a`` is an instance
         of the same class as ``g``.
         """ 
+        self.reduce()
         if mm_conjugate_involution is None: 
             import_Xsp2_Co1()
         if group is None: group = self.__class__
