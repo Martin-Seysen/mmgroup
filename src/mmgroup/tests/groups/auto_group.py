@@ -264,7 +264,7 @@ class AutoGroup(AbstractGroup):
         
 
     def reduce_generator(self, generator):
-        return generator.reduce(self) if generator else None
+        return generator.reduce() if generator else None
 
 
 
@@ -274,11 +274,9 @@ class AutoGroup(AbstractGroup):
         return self.STR_FORMAT % "1"
 
 
-    def reduce(self, word, copy = False):
+    def reduce(self, word):
         if word.reduced >= len(word.seq):
             return word
-        if copy:
-            word = self.copy_word(word) 
         w = word.seq
         gap = 0
         pos = word.reduced + 1
@@ -331,17 +329,12 @@ class AutoGroup(AbstractGroup):
         This method is called for elements g1 and g2 of the group
         'self' only.
         """
-        g1 = self.reduce(g1, True)
-        g2 = self.reduce(g2, True)
+        g1 = self.reduce(g1.copy())
+        g2 = self.reduce(g2.copy())
         tup1 = self.iter_to_tuples(g1)
         tup2 = self.iter_to_tuples(g2)
         equ = (x == y for x, y in zip(tup1, tup2))
         return len(g1) == len(g2) and all(equ)
-
-        #tup1 = (x.to_tuple() for x in self.reduce(g1).iter_generators())
-        #tup2 = (x.to_tuple() for x in self.reduce(g2).iter_generators())
-        #equ = (x == y for x, y in zip(tup1, tup2))
-        #return len(g1) == len(g2) and all(equ)
 
 
     def _imul(self, g1, g2):

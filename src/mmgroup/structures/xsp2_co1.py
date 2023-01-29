@@ -539,7 +539,6 @@ class Xsp2_Co1_Group(AbstractMMGroup):
         super(Xsp2_Co1_Group, self).__init__()
         self.atom_parser = AtomDict(self.atom)
 
-
     def atom(self, tag = None, i = "r"):
         return self.word_type(tag, i)
 
@@ -557,9 +556,7 @@ class Xsp2_Co1_Group(AbstractMMGroup):
         xsp2co1_copy_elem(g1._data, w._data)
         return w
 
-    def reduce(self, g1, copy = False):
-        if copy:
-            g1 = self.copy_word(g1)
+    def reduce(self, g1):
         chk_qstate12(xsp2co1_reduce_elem(g1._data))
         return self
        

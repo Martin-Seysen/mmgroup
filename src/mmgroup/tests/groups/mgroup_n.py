@@ -68,7 +68,7 @@ class AutPLoopAtom(TaggedAtom):
             self.cocode = mat24.autpl_to_cocode(self.rep) 
             self.m24num = mat24.perm_to_m24num(self.perm)
 
-    def reduce(self, *args):
+    def reduce(self):
         self.cocode  &= 0xfff
         return None if self.cocode == self.m24num == 0 else self
 
@@ -107,7 +107,7 @@ class xy_Atom(TaggedAtom):
         self.tag = tag
         self.pl = pl & 0x1fff
 
-    def reduce(self, *args):
+    def reduce(self):
         self.pl  &= 0x1fff
         return None if self.pl == 0 else self
 
@@ -126,7 +126,7 @@ class tl_Atom(TaggedAtom):
         self.tag = tag
         self.exp = exp % 3
 
-    def reduce(self, *args):
+    def reduce(self):
         self.exp  %= 3
         return None if self.exp == 0 else self
 

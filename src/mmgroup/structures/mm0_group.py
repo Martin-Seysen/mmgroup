@@ -335,19 +335,23 @@ class MM0(AbstractMMGroupWord):
     MIN_LEN = 16
     __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, atom = None, *args, **kwds):
-        self.reduced = 0
-        atoms = iter_mm(self.group, tag, atom)
-        self._data = np.fromiter(atoms, dtype = np.uint32) 
-        self.length = len(self._data)
-        self._extend(self.MIN_LEN)
-        
+        if tag is None:
+            self._data = np.zeros(self.MIN_LEN, dtype = np.uint32) 
+            self.length = 0
+            self.reduced = 1
+        else:
+            self.reduced = 0
+            atoms = iter_mm(self.group, tag, atom)
+            self._data = np.fromiter(atoms, dtype = np.uint32) 
+            self.length = len(self._data)
+            if self.length < self.MIN_LEN:
+                self._data = np.resize(self._data, self.MIN_LEN)
                   
     def _extend(self, length):
-        len_ = len(self._data)
-        if length > len_:
-            ap = np.zeros(max(length - len_, len_), dtype = np.uint32)
-            self._data = np.append(self._data, ap)
-             
+        if length > len(self._data):
+            length = max(length, 3*len(self._data) >> 1)
+            self._data = np.resize(self._data, length)
+              
     @property
     def mmdata(self):
         """Return the internal representation of the group element
@@ -369,10 +373,9 @@ class MM0(AbstractMMGroupWord):
 
     def _setdata(self, data):
         assert self.mutable
-        len_ = len(data)
+        self.length = len_ = len(data)
         self._extend(len_)
         self._data[:len_] = data
-        self.length = len_
         self.reduced = False
 
         
@@ -760,11 +763,9 @@ class MM0Group(AbstractMMGroup):
         """
         super(MM0Group, self).__init__()
 
-    def reduce(self, g1, copy = False):
+    def reduce(self, g1):
         l1 = g1.length
         if g1.reduced < l1:
-            if copy:
-                g1 = self.copy_word(g1)
             l_tail = l1 - g1.reduced
             g1._extend(l1 + l_tail + 1)
             g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]

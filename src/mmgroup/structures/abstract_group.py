@@ -184,7 +184,7 @@ class AbstractGroupWord(object):
         else:
             return NotImplemented
 
-    def reduce(self, copy = False):
+    def reduce(self):
         """Reduce a group element
 
         We assume that the representation of a group element
@@ -196,11 +196,8 @@ class AbstractGroupWord(object):
 
         This method may be applied to a group element without
         notice.
-
-        If argument ``copy`` is True, a reduced copy of ``g``
-        should be returned if ``g`` is not reduced.
         """
-        return self.group.reduce(self, copy)
+        return self.group.reduce(self)
 
     def str(self):
         """Represent group element as a string"""
@@ -293,7 +290,7 @@ class AbstractGroup(object):
         This method is called for elements g1 and g2 of the group
         'self' only.
 		
-        In concrete group this method should be overwritten with
+        In a concrete group this method should be overwritten with
         a comparison of the relevant attributes of g1 and g2.
 
         Caution:
@@ -305,7 +302,7 @@ class AbstractGroup(object):
         return g1 == g2
 
 
-    def reduce(self, g, copy = False):
+    def reduce(self, g):
         """Reduce the word ``g`` which is an element of the group
 
         We assume that the representation of a group element
@@ -317,9 +314,6 @@ class AbstractGroup(object):
 
         This method may be applied to a group element without
         notice.
-
-        If argument ``copy`` is True, a reduced copy of ``g``
-        should be returned if ``g`` is not reduced.
         """
         return g
 

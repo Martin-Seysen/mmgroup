@@ -58,14 +58,12 @@ class AbstractMMGroupWord(AbstractGroupWord):
     constructor of that subclass of this class.
     """
     group_name = "AbstractMMGroup"
-    def __init__(self, tag = None, atom = None, reduce = True):
+    def __init__(self, tag = None, atom = None):
         self.from_data(self.group, tag, atom)
-        if reduce:
-            self.reduce()
- 
+  
 
 
-    def reduce(self, copy = False):
+    def reduce(self):
         """Reduce a group element
 
         If group elements are implemented as words, some functions
@@ -76,12 +74,8 @@ class AbstractMMGroupWord(AbstractGroupWord):
         reduced words unless stated otherwise. However, reducing all
         words representing the same group element to the same word may 
         be beyond the capabilties of a program. 
-
-        If ``copy`` is set then a reduced copy of the element is 
-        returned, in case that the input element is not already 
-        reduced.
         """
-        return self.group.reduce(self, copy)
+        return self.group.reduce(self)
 
     @property
     def mmdata(self):
@@ -164,41 +158,18 @@ class AbstractMMGroup(AbstractGroup):
 
         g1 may be destroyed but not g2.
 
-        This method is called for elements g1 and g2 of the group
-        'self' only. It should return the reduced product.
+        This method is called for elements g1 and g2 of the grou 'self'
+        only. It should return the (possibly unreduced) reduced product.
         """
         raise NotImplementedError("No multiplication in abstract group")
-
-    def _imul_nonreduced(self, g1, g2):
-        """ Non-reduced multiplication g1 * g2
-
-        The result of this mathod the product g1 * g2. If group 
-        elements are represented by words then the function returns  
-        the concatenation of the words g1 and g2 without reducing it.
-
-        Here g1 and g2 must be elements of the same group.
-
-        The default implementation does not distinguish between
-        non-reduced and reduced multipLication. 
-
-        g1 may be destroyed but not g2.
-
-        This method is called for elements g1 and g2 of the group
-        'self' only.
-
-        This method is used in method word() of this class for
-        constructing a word of the group without reducing it.
-        """
-        return self._imul(g1, g2) 
-
 
     def _invert(self, g1):
         """Return inverse g1**(-1) of group element g1.
 
         g1 must not be destroyed.
 
-        This method is called for elements g1 of the group
-        'self' only. It should return the reduced inverse.
+        This method is called for elements g1 of the group 'self' only. 
+        It should return the (possibly unreduced) inverse.
         """
         raise NotImplementedError("No inversion in abstract group")
         
@@ -206,10 +177,7 @@ class AbstractMMGroup(AbstractGroup):
 
     def copy_word(self, g1):
         """Return deep copy of group element ``g1``"""
-        g_copy = deepcopy(g1)
-        # Even a deep copy of an element is still in the same group
-        g_copy.group = g1.group
-        return g_copy
+        raise NotImplementedError("No copy constructor in abstract group")
 
     def _equal_words(self, g1, g2):
         """Return True iff elements g1 and g2 are equal 
@@ -226,10 +194,10 @@ class AbstractMMGroup(AbstractGroup):
         obtain the reduced form of g1. See method reduce() for
         details.
         """
-        return g1 == g2
+        raise NotImplementedError("No equality check in abstract group")
 
 
-    def reduce(self, g, copy = False):
+    def reduce(self, g):
         """Reduce the word ``g`` which is an element of the group
 
         We assume that the representation of a group element
@@ -248,9 +216,6 @@ class AbstractMMGroup(AbstractGroup):
         ``word()`` of this class with elements separated by 
         commas. Then no reduction takes place across the factors
         separated by commas. 
-
-        If argument ``copy`` is True, a reduced copy of ``g``
-        should be returned if ``g`` is not reduced.
         """
         return g
 

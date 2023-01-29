@@ -518,12 +518,17 @@ class MM(MM0):
     _MAGIC = randint(0, 0xffffffffffffffff)
     __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, i = None, *args, **kwds):
-        self.reduced = 0
-        atoms = iter_mm(self.group, tag, i)
-        self._data = np.fromiter(atoms, dtype = np.uint32) 
-        self.length = len(self._data)
-        self._extend(self.MIN_LEN)
-        self.reduce()
+        if tag is None:
+            self._data = np.zeros(self.MIN_LEN, dtype = np.uint32) 
+            self.length = 0
+            self.reduced = 1
+        else:
+            self.reduced = 0
+            atoms = iter_mm(self.group, tag, i)
+            self._data = np.fromiter(atoms, dtype = np.uint32) 
+            self.length = len(self._data)
+            if self.length < self.MIN_LEN:
+                self._data = np.resize(self._data, self.MIN_LEN)
 
     def _t_shape(self):
         l = []
@@ -578,51 +583,39 @@ class MMGroup(AbstractMMGroup):
 
 
 
-    def reduce(self, g1, copy = False):
-        l1 = g1.length
+    def reduce(self, g1):
         if not g1.reduced:
             if not mm_reduce_M:
                 import_mm_order_functions() 
-            if copy:
-                g2 = self.word_type()
-                length = mm_reduce_M(g1._data, g1.length, 
-                    REDUCE_MODE, g2._data)
-                if not 0 <= length <= 128:
+            a = np.zeros(128, dtype = np.uint32)
+            length = mm_reduce_M(g1._data, g1.length, REDUCE_MODE, a)
+            if not 0 <= length <= 128:
                     raise ValueError(self.ERR_REDUCE % length)
-                g2.length = length
-                g2.reduced = True
-                return g2
-            else:
-                a = np.zeros(128, dtype = np.uint32)
-                length = mm_reduce_M(g1._data, g1.length, REDUCE_MODE, a)
-                if not 0 <= length <= 128:
-                    raise ValueError(self.ERR_REDUCE % length)
-                g1._setdata(a[:length])
-                g1.reduced = True
-                return g1
-        return self.copy(g1) if copy else g1
+            g1._setdata(a[:length])
+            g1.reduced = True
+        return g1
 
         
     def _imul(self, g1, g2):
         l1, l2 = g1.length, g2.length
+        g1._extend(l1 + l2)
         g1.reduced = (g1.reduced and l2 == 0) or (g2.reduced and l1 == 0)
-        g1._extend(2*(l1 + l2) + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
-        l1 += l2
-        g1.length = l1
+        g1.length = l1 + l2
         if g1.length > MAX_WORDLEN:
             g1.reduce()
         return g1
 
     def _invert(self, g1):
         w = self.word_type()
-        w._setdata(np.flip(g1.mmdata) ^ 0x80000000)
+        w._setdata(g1._data[:g1.length])
+        mm_group_invert_word(w._data, w.length)
         w.reduced = False
         return w
 
     def copy_word(self, g1):
         result = self.word_type()
-        result._setdata(g1.mmdata)
+        result._setdata(g1._data[:g1.length])
         result.reduced = g1.reduced
         return result
 
