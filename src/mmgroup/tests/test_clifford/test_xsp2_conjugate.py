@@ -148,10 +148,10 @@ def gen_leech2_op_word_Omega_testdata():
     Omega = 0x800000
     testdata = [[('l', i)] for i in range(1,2)]
     tags = "xyzdp"
-    testdata += [[(tag, 'r')] for tag in tags]
+    testdata += [[(tag, 'n')] for tag in tags]
     for data in testdata:
         yield Omega, MM0(data)
-    testdata2 = [[('l', 'n'),(tag, 'r'),('l', 'n')] for tag in tags]
+    testdata2 = [[('l', 'n'),(tag, 'n'),('l', 'n')] for tag in tags]
     for data in testdata2:
         g = MM0(data)
         yield Omega, g
