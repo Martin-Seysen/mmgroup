@@ -22,6 +22,7 @@ import os
 import sys
 from numbers import Integral
 from random import randint, sample, choice
+from sys import getrefcount
 
 import numpy as np
 
@@ -190,7 +191,6 @@ class BiMM(AbstractGroupWord):
 
     def __hash__(self):
         m1, m2, alpha = self.decompose()
-        self.mutable = False
         return hash((hash(m1), hash(m2), alpha))
 
  
@@ -216,6 +216,11 @@ class BiMMGroup(AbstractGroup):
 
     @staticmethod
     def _imul(g1, g2):
+        # Beware of imumutability:
+        # If actually only one copy of g1 exits then we have g1,
+        # a call to g1.__mul__, to cls. _imul, and to getrefcount
+        if getrefcount(g1) > 4:
+            g1 = BiMM(g1.m1, g1.m2, g1.alpha)
         if g1.alpha & 1:
             m1, m2 = g1.m1 * g2.m2, g1.m2 * g2.m1
         else:
@@ -230,10 +235,12 @@ class BiMMGroup(AbstractGroup):
             m1, m2 = g1.m1, g1.m2
         return BiMM(m1**(-1), m2**(-1), g1.alpha & 1)
 
-    def copy_word(self, g1):
+    @staticmethod
+    def copy_word(g1):
         return BiMM(g1.m1, g1.m2, g1.alpha)
 
-    def _equal_words(self, g1, g2):
+    @staticmethod
+    def _equal_words(g1, g2):
         g1.reduce()
         g2.reduce()
         return g1.m1 == g2.m1 and g1.m2 == g2.m2 and g1.alpha == g2.alpha

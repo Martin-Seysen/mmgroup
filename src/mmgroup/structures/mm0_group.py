@@ -372,7 +372,6 @@ class MM0(AbstractMMGroupWord):
         raise TypeError(self.ERR_ITER)
 
     def _setdata(self, data):
-        assert self.mutable
         self.length = len_ = len(data)
         self._extend(len_)
         self._data[:len_] = data

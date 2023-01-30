@@ -157,7 +157,7 @@ def gen_leech2_op_word_Omega_testdata():
         yield Omega, g
         a = g.mmdata
         a[1] ^= 0x80000000
-        g._setdata(a)
+        g = MM0('a', a)
         yield Omega, g
     # test with some more random data
     for i in range(10):
