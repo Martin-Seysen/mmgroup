@@ -57,6 +57,7 @@ class AbstractMMGroupWord(AbstractGroupWord):
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
     """
+    __slots__ = []
     group_name = "AbstractMMGroup"
     def __init__(self, tag = None, atom = None):
         self.from_data(self.group, tag, atom)

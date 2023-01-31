@@ -51,6 +51,7 @@ class AbstractGroupWord(object):
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
     """
+    __slots__ = 'group'
     def __init__(self, *args, **kwds):
         try:
             self.group = kwds['group']

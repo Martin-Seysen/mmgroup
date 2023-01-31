@@ -514,9 +514,9 @@ class MM(MM0):
     tags ``x, z`` with the obvious meaning, e.g. ``('y', '-Omega')`` =
     :math:`y_{-\Omega}`, ``('z', '-')`` = :math:`z_{-1}`.
     """
+    __slots__ =  []
     MIN_LEN = 128
     _MAGIC = randint(0, 0xffffffffffffffff)
-    __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, i = None, *args, **kwds):
         if tag is None:
             self._data = np.zeros(self.MIN_LEN, dtype = np.uint32) 
@@ -599,7 +599,7 @@ class MMGroup(AbstractMMGroup):
         l1, l2 = g1.length, g2.length
         # Beware of imumutability:
         # If actually only one copy of g1 exits then we have g1,
-        # a call to g1.__mul__, to self. _imul, and to getrefcount
+        # a call to g1.__mul__, to self._imul, and to getrefcount
         if getrefcount(g1) > 4:
             g1 = self.copy_word(g1)
         g1._extend(l1 + l2)

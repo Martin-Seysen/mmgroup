@@ -37,4 +37,7 @@ Other operating systems
 
 For other operating systems the package must be compiled from a
 source distribution. Some hints for doing so are given in the
-*Guide for developers*.
+*Guide for developers*. Source code is available at:
+
+https://github.com/Martin-Seysen/mmgroup
+

@@ -331,9 +331,9 @@ class MM0(AbstractMMGroupWord):
        group.
   
     """
+    __slots__ =  "length", "_data", "reduced"
     ERR_ITER = "A monster group element g is not iterable. Use g.mmdata instead"
     MIN_LEN = 16
-    __slots__ =  "length", "_data", "reduced"
     def __init__(self,  tag = None, atom = None, *args, **kwds):
         if tag is None:
             self._data = np.zeros(self.MIN_LEN, dtype = np.uint32) 
