@@ -410,6 +410,9 @@ class  BuildExtCmd(_build_ext):
         self.compiler_name = self.compiler
         if self.compiler_name is None:
             # Then try to get the default compiler name
+            # The following line will no longer work in python 3.12. 
+            # As a future remedy, we might try:
+            # from setuptools._distutils.ccompiler import get_default_compiler
             from distutils.ccompiler import get_default_compiler
             self.compiler_name = get_default_compiler()
 

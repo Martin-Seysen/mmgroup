@@ -7,5 +7,6 @@ pytest
 sphinx>=2.0
 sphinxcontrib.bibtex
 sphinxcontrib-tikz
+sphinx-rtd-theme
 patchelf; sys_platform == 'linux' or sys_platform == 'darwin'  
 

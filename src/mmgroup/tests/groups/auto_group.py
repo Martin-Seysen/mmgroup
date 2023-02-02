@@ -177,7 +177,8 @@ class AutoGroupWord(AbstractGroupWord):
 
         Users should not refer to this class directly.
         """
-        super(AutoGroupWord, self).__init__(*generators, **kwds)
+        self.group = kwds['group']
+        assert isinstance(self.group, AutoGroup)
         self.seq =  []
         self.reduced = 0
         for generator in generators:

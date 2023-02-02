@@ -51,12 +51,9 @@ class AbstractGroupWord(object):
     the user  may contruct elements of that group using the 
     constructor of that subclass of this class.
     """
-    __slots__ = 'group'
+    __slots__ = []
     def __init__(self, *args, **kwds):
-        try:
-            self.group = kwds['group']
-        except:
-            assert isinstance(self.group, AbstractGroup)
+        raise NotImplementedError("Abstract group")
 
     # There is no need to modify any methods below this line.
     # You should overwrite the corresonding methods in the

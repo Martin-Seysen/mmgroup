@@ -61,7 +61,7 @@ FIXED_PAIR = [3,2]
 FIXED_TUPLE = ("I", 3, 2)
 
 
-PI22 = set([0,1] + list(range(4,24)))
+PI22 = [0,1] + list(range(4,24))
 PI7 = [2,3,0,1,4,5,8]
 
 StdCocodeVector = Cocode(FIXED_PAIR)
@@ -79,7 +79,7 @@ def rand_pi_m22():
     r = randint(0,1)
     img = [2+r, 3-r] + sample(PI22, 3)
     syn = GcVector(img).syndrome_list()
-    compl = set(range(24)) - set(img + syn)
+    compl = list(set(range(24)) - set(img + syn))
     img += sample(syn, 1) + sample(compl, 1)
     result =  AutPL('r', zip(PI7,img))
     return result
