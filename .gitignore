@@ -16,7 +16,8 @@ src/mmgroup.egg-info
 temp/
 PKG-INFO
 zip.bat
-msvc.bat
+msvc*.bat
+make_all_doc.bat
 applications/Hurwitz/*.txt
 applications/Hurwitz/*.bat
 
