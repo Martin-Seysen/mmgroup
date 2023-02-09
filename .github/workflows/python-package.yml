@@ -76,7 +76,7 @@ jobs:
         run: python3 -m pip install -r requirements.txt
 
       - name: Build sdist
-        run: python3 setup.py sdist
+        run: python3 -m build --sdist
 
       - uses: actions/upload-artifact@v3
         with:
