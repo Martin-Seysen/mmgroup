@@ -1,6 +1,7 @@
 numpy>=1.23
 Cython
 wheel
+build
 breathe
 regex
 pytest
