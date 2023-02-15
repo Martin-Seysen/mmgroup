@@ -214,6 +214,10 @@ def test_to_symplectic(verbose = 0):
         w_c = m.to_symplectic()
         #if len(w_c): w_c[0] += 1
         assert list(w_c) == w_ref, (w_c, w_ref)
+        if n > 0:
+            row = randint(0, n-1)
+            assert w_c[row] ==  m._to_symplectic_row(row)
+            assert w_c[n+row] ==  m._to_symplectic_row(n+row)
       
 
 #####################################################################

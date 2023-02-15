@@ -768,6 +768,16 @@ cdef class QState12(object):
         return a[:res]
 
  
+    def _to_symplectic_row(self, uint32_t row):
+        """Wrapper for C function  qstate12_to_symplectic_row
+
+        Documentation see corresponding method in subclass
+        ``mmgroup.structures.qs_matrix.QStateMatrix``.
+        """
+        return chk_qstate12(
+            cl.qstate12_to_symplectic_row(&self.qs, row))
+
+
 ####################################################################
 # Auxiliary functions  
 ####################################################################

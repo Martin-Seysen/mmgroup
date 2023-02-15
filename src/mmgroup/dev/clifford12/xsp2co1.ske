@@ -804,6 +804,36 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uin
     return 0;
 }
 
+
+/**
+@brief Conjugation of \f$\Omega\f$ with an element of \f$G_{x0}\f$
+
+Let  \f$g \in G_{x0}\f$ be stored in the array ``elem``
+in **G_x0 representation**, and let \f$\Omega\f$ be the standard frame
+in the Leech latice. The function returns \f$g^{-1} \Omega g\f$
+in **Leech lattice encoding**, ignoring the sign of the result.
+*/
+// %%EXPORT px
+int32_t xsp2co1_xspecial_img_omega(uint64_t *elem)
+{
+
+    int32_t res, sh;
+    qstate12_type qs;
+
+    // Put qs = elem2 (inverted)
+    res = xsp2co1_elem_to_qs_i(elem, &qs);
+    if (res < 0) return res;
+    // Put res =  elem**-1 * \Omega * elem
+    res =  qstate12_to_symplectic_row(&qs, 11);
+    if (res < 0) return res;
+    // adjust coordinates of result
+    sh = (res ^ (res >> 12)) & 0x800;
+    res ^= sh ^  (sh << 12);
+    return res & 0xffffffUL;
+}
+
+
+
 /*************************************************************************
 *** Check if an element of G_{x0} fixes or negates a short vector
 *************************************************************************/
@@ -1748,10 +1778,8 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // If ``img_omega`` != 0 just take the image from there.
     img_omega &= 0xffffffUL;
     if (img_omega == 0) {
-        img_omega = 0x800000UL;
-        res =  xsp2co1_xspecial_conjugate(elem, 1, &img_omega, 0);
+        img_omega = res = xsp2co1_xspecial_img_omega(elem);
         if (res < 0) return res;
-        img_omega &= 0xffffffUL;
     } 
     // Compute a word w0 of generators of G_{x0} that maps
     // img_omega to Omega (by conjugation) and store the result 
