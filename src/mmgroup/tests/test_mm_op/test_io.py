@@ -135,7 +135,7 @@ def do_test_random_io(p, verbose = False, to_sparse = 1):
     chisqu_ok = {}
     for (name, _, do_chisqu_test) in name_slices: 
         chisqu_ok[name] = not do_chisqu_test
-    for i in range(4):
+    for i in range(5):
         space = MMTestSpace(p)
         v = space(0)
         assert np.count_nonzero(v.data[:v.ops.MMV_INTS]) == 0
