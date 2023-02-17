@@ -151,7 +151,7 @@ def check_echelon(m, reduced = False):
 
 
 #####################################################################
-# Check that states are approcimately equal
+# Check that states are approximately equal
 #####################################################################
 
 EPS = 1.0e-8
@@ -304,6 +304,7 @@ def test_qs_matrix(verbose = 0):
         if verbose: 
             print("Reduced")
             print(m2)
+        assert m2._check_reduced(forced=True)
     FORMAT_REDUCED = True
 
  

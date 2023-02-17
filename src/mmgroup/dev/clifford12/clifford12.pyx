@@ -376,12 +376,32 @@ cdef class QState12(object):
         echelon form, as described in the guide.
         
         If ``forced`` is ``True``, also a previously reduced state
-        is recuced one again.
+        is reduced once again.
         """
         if forced:
             self.qs.reduced = 0
         chk_qstate12(cl.qstate12_reduce(&self.qs))
         return self 
+
+    def _check_reduced(self, forced = False):
+        """Wrapper for C function ``qstate12_check_reduced``
+        
+        Internal function for tests only!
+
+        This function is executed on a copy of ``self``,
+        so that ``self`` is not modified.
+        If ``forced`` is ``True``, then the state of the copy is
+        modified to 'not reduced' before applying function
+        ``qstate12_check_reduced``.
+        """
+        cdef QState12 qs1 = self.copy()
+        cdef p_qstate12_type pqs1 = pqs12(qs1)
+        if forced:
+            qs1.qs.reduced = 0
+        cdef int32_t result = chk_qstate12(cl.qstate12_check_reduced(pqs1))
+        assert result == qs1.qs.reduced
+        return result 
+
 
     def reduce_matrix(self):
         """Yet to be documented"""

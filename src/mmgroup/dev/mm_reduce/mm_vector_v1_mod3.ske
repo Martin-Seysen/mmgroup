@@ -1,7 +1,7 @@
 /** @file mm_vector_v1_mod3.c
 
  File ``mm_vector_v1_mod3`` contains a precomuted vector ``v1_mod3``
- of the representtion of the monster group (mod 3). This vector can
+ of the representation of the monster group (mod 3). This vector can
  be used for obtaining an (unknown) element \f$g\f$ of the
  subgroup \f$G_{x0}\f$ of the monster from and image of that vector
  under \f$g\f$.

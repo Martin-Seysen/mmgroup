@@ -83,9 +83,6 @@ def benchmark_mul_xsp2co1(ncases = 20):
 
 
 
-
-
-
 @pytest.mark.bench 
 @pytest.mark.xsp2co1
 def test_benchmark_mul(ncases = 20000, verbose = 0):
@@ -94,6 +91,32 @@ def test_benchmark_mul(ncases = 20000, verbose = 0):
     for i in range(1):
         n, t = benchmark_mul_xsp2co1(ncases) 
         print(s % (n, 1000*t/n))
+
+
+
+def benchmark_mul_rep_4096(ncases = 20):
+    glist = []
+    for i in range(64):
+        glist.append(Xsp2_Co1('r', 'G_x0').qs)
+    indices = range(len(glist))
+    index_pairs = [sample(indices, 2) for i in range(ncases)]
+    t_start = time.process_time()
+    for i, j in index_pairs:
+        glist[i] @= glist[j]
+    t = time.process_time() - t_start
+    return ncases, t
+
+@pytest.mark.bench 
+@pytest.mark.xsp2co1
+def test_benchmark_mul_rep_4096(ncases = 20000, verbose = 0):
+    s = "Runtime of multiplication in rep 4096x, %d tests: %.5f ms" 
+    print("")
+    for i in range(1):
+        n, t = benchmark_mul_rep_4096(ncases) 
+        print(s % (n, 1000*t/n))
+
+
+
 
 
 
@@ -119,6 +142,29 @@ def test_benchmark_reduce_word(ncases = 5000, verbose = 0):
         n, t = benchmark_reduce_word(ncases) 
         print(s % (n, 1000*t/n))
 
+
+
+
+
+def benchmark_mod2_op_xsp2co1(ncases = 20):
+    glist = []
+    for i in range(64):
+        glist.append(Xsp2_Co1('r', 'G_x0'))
+    t_start = time.process_time()
+    for i in range(ncases):
+        a = glist[i & 63].leech_mod2_op
+    t = time.process_time() - t_start
+    return ncases, t
+
+
+@pytest.mark.bench 
+@pytest.mark.xsp2co1
+def test_benchmark_reduce_to_Co1(ncases = 5000, verbose = 0):
+    s = "Runtime of reduction from G_x0 to Co_1, %d tests: %.5f ms" 
+    print("")
+    for i in range(1):
+        n, t = benchmark_mod2_op_xsp2co1(ncases) 
+        print(s % (n, 1000*t/n))
 
 
 

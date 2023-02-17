@@ -1069,6 +1069,63 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
     return qstate12_sum_up_kernel(pqs);
 }
 
+
+/** @brief Check if the state represented by ``pqs`` is reduced.
+
+  The function puts ``pqs->reduced = 1`` if the state is reduced;
+  and it performs no action on ``pqs`` otherwise. It returns
+  the updated value of ``pqs->reduced`` (which is 0 or 1) in
+  case of success, and a negative value in case of failure.
+
+  This check is much faster than actually performing a reduction.
+*/
+// %%EXPORT p
+int32_t qstate12_check_reduced(qstate12_type *pqs)
+{
+    uint64_t *m = pqs->data, v1 = 0, v2 = 0, mask, last_hi, hi;
+    uint_fast32_t row;
+    int_fast32_t res;
+    // Abort if state is bad
+    if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
+    // Done is state is already reduced
+    if (pqs->reduced) return pqs->reduced = 1;
+    // Done if state contains at most one row
+    if (pqs->nrows <= 1) {
+        if (pqs->nrows == 0) pqs->factor = 0; // Then state is zero
+        return pqs->reduced = 1; // The sthe state is reduced
+    }
+
+    // Otherwise we'll check if the state is reduced.
+    // Set bit ``i`` of  ``v2`` to 1 iff column ``i`` of matrix ``m``
+    // contains more than one nonzero bit.
+    for (row = 0; row < pqs->nrows; ++row) {
+         v2 |= m[row] & v1;
+         v1 |= m[row];
+    }
+
+    // Check that part A of state (excluding row 0) is in echelon form
+    last_hi = ONE << 62;   // a very large number
+    mask = (ONE << pqs->ncols) - 1; // mask columns of part A of state
+    for (row = 1; row < pqs->nrows; ++row) {
+        // Let ``hi`` be the bit field with only the most significant
+        // bit of the value ``m[row] & mask`` being set.
+        hi = m[row] & mask;  // here we always have mask < 2**32
+        hi |= hi >> 1;
+        hi |= hi >> 2;
+        hi |= hi >> 4;
+        hi |= hi >> 8;
+        hi |= hi >> 16;
+        hi = (hi + 1) >> 1;
+        // Abort if ``hi`` is not less than previous ``hi``, or if the
+        // column of bit matrix ``m`` corresponding to bit field ``hi``
+        // has more than one bit set, or if ``hi`` is zero.
+        if ((hi >= last_hi) || (hi & v2) || (hi == 0)) return 0;
+        last_hi = hi;    // remember this value ``hi`` for next round
+    }
+    return pqs->reduced = 1;
+}
+
+
 /** @brief Reduce the state represented by ``pqs``
 
   The representation state referred by ``pqs`` is converted to
@@ -1087,9 +1144,9 @@ int32_t qstate12_reduce(qstate12_type *pqs)
     uint_fast32_t row_pos = 1, i, i1; 
     int_fast32_t col, res; 
     uint64_t *m = pqs->data, v, mask;
-    if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT ;  // abort if state is bad
-    if (pqs->reduced) return 0;
-    if (pqs->nrows == 0) return pqs->factor = 0; // done if state is 0
+
+    if ((res = qstate12_check_reduced(pqs)) < 0) return res;
+    if (res) return 0;
 
     // Convert submatrix A of M to reduced echelon form
     if (pqs->ncols > 0) for (col = pqs->ncols - 1; col >= 0; --col) {
