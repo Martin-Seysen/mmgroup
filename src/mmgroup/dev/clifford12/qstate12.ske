@@ -1078,13 +1078,13 @@ int32_t qstate12_echelonize(qstate12_type *pqs)
   case of success, and a negative value in case of failure.
 
   This check is much faster than actually performing a reduction.
+  The function may perform some easy reduction steps on the state.
 */
 // %%EXPORT p
 int32_t qstate12_check_reduced(qstate12_type *pqs)
 {
-    uint64_t *m = pqs->data, v1 = 0, v2 = 0, mask, last_hi, hi;
+    uint64_t *m = pqs->data, v1 = 0, v2 = 0, mask, last_hi, hi, msk0 = 0;
     uint_fast32_t row;
-    int_fast32_t res;
     // Abort if state is bad
     if (bad_state(pqs)) return ERR_QSTATE12_INCONSISTENT;
     // Done is state is already reduced
@@ -1097,8 +1097,8 @@ int32_t qstate12_check_reduced(qstate12_type *pqs)
 
     // Otherwise we'll check if the state is reduced.
     // Set bit ``i`` of  ``v2`` to 1 iff column ``i`` of matrix ``m``
-    // contains more than one nonzero bit.
-    for (row = 0; row < pqs->nrows; ++row) {
+    // contains more than one nonzero bit. We ignore row ``m[0]``.
+    for (row = 1; row < pqs->nrows; ++row) {
          v2 |= m[row] & v1;
          v1 |= m[row];
     }
@@ -1121,6 +1121,29 @@ int32_t qstate12_check_reduced(qstate12_type *pqs)
         // has more than one bit set, or if ``hi`` is zero.
         if ((hi >= last_hi) || (hi & v2) || (hi == 0)) return 0;
         last_hi = hi;    // remember this value ``hi`` for next round
+        msk0 |= hi;
+    }
+    // Here ``msk0`` is the bitmap of the MSBits of all rows
+    // of part ``A`` of matrix ``m`` (ignoring row 0).
+    // State is reduced if all bits in ``msk0 & m[0]`` are zero.
+    if ((msk0 & m[0]) == 0) return pqs->reduced = 1;
+    // Otherwise we may easily reduce row 0 of matrix ``m``
+    for (row = pqs->nrows-1; row > 0; --row) {
+        hi = msk0 & (0 - msk0);  // LSBit of msk0
+        if (hi & m[0]) {
+             uint64_t k, sh = pqs->ncols + row;
+             // Abort in case of inconsistency (can be ignored)
+             if ((hi & m[row]) == 0) return 0;
+             // Same action as as in function qstate12_pivot:
+             // Put factor *= exp(pi/2 * sqrt(-1) * k), k = 2 * Q[0,i] + Q[i,i]
+             // see guide, section 'Implementation of quadratic mappings'
+             k = ((m[0] >> sh) & 1) << 1;
+             k += (m[row] >> sh) & 1;
+             pqs->factor = ADD_FACTORS(pqs->factor, k << 1);
+             // Reduce bit given by LSBit of msk0 in row 0 of ``m``
+             m[0] ^= m[row];
+        }
+        msk0 &= ~hi;   // Clear LSBit of msk0
     }
     return pqs->reduced = 1;
 }
