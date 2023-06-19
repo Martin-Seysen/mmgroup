@@ -626,6 +626,36 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
     return g[0] | g[1] | g[2] | g[3] | g[4];
 }
 
+
+
+/**
+ @brief Reduce \f$g \in N_0\f$ to a standard form.
+
+ The representation of \f$g\f$ is reduced to a standard form.
+
+ Here we reduce the product \f$y_f x_e\f$ to
+ \f$y_{f'} x_{e'}\f$, such
+ that \f$0 \leq f' < \mbox{0x800}\f$ *awlways** holds.
+
+ \f$g\f$ is given as an array of five 32-bit integers.
+*/
+// %%EXPORT px
+uint32_t mm_group_n_reduce_element_y(uint32_t *g)
+// Reduce the element g of the group N.
+// We reduce g modulo the kernel K_0 using the relations
+// y_Omega = x_(-1), y_(-1) = x_(-Omega).
+// Return 0 if g == 0 and a nonzero value otherwise.
+{
+    g[0] %= 3; g[1] &= 0x1fff; g[2] &= 0x1fff; g[3] &= 0xfff;
+    g[2] ^= ker_table_yx[g[1] >> 11];
+    g[1] &= 0x7ff;
+    return g[0] | g[1] | g[2] | g[3] | g[4];
+}
+
+
+
+
+
 /**
  @brief Convert \f$g \in N_0\f$ to a word of generators.
 

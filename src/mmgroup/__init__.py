@@ -68,7 +68,7 @@ except:
 
 try:
     import mmgroup.mm_group
-    from mmgroup.mm_group import MMGroup, MM
+    from mmgroup.mm_group import MMGroup, MM, MM_from_int
 except:
     w = "Class mmgroup.MM not found, package not functional!"
     warnings.warn(w, UserWarning)

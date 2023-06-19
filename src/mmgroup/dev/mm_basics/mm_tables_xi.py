@@ -74,6 +74,7 @@ try:
     from mmgroup import generators as gen 
 except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
+    print("\nUsing slow Python functions for table generation!!!\n")
     from mmgroup.dev.generators.gen_xi_ref import GenXi 
     gen = GenXi
 
@@ -119,7 +120,7 @@ def check_table(table, blocks, row_length):
 
 
 class Pre_MM_TablesXi: 
-    def __init__(self):   
+    def __init__(self):
         BCT, T0 = 24*32, 72*32 + 15*64
         T1, X0  = 72*32 + 375*64,  72*32 + 759*64
         X1 = X0 + 1024*32

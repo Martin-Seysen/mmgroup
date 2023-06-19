@@ -191,8 +191,6 @@ typedef struct {
 
 
 
-
-
 // %%GEN ch
 #ifdef __cplusplus
 extern "C" {
@@ -798,7 +796,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
         if ((res = gt_word_append_sub_part(p_gt, w, i)) < 0) return res;
         p_gt->p_node = p_cur;
         p_cur->length -=  i;
-        p_cur->reduced = 0;
+        p_cur->reduced &= ((uint32_t)res == i);
         for (j = 0; j < p_cur->length; ++j) w[j] = w[i + j];
     }
     return 0;
@@ -1178,6 +1176,59 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 
 
 
+/////////////////////////////////////////////////////////////////////////
+// Compress a fully reduced word into a 256-bit integer
+/////////////////////////////////////////////////////////////////////////
+
+
+/**
+@brief Compress word in ``*p_gt`` to strcuture of type ``mm_compress_type``
+
+Yet to be tested and documented!!!
+
+*/
+// %%EXPORT p
+int32_t gt_word_to_mm_compress(gt_word_type *p_gt, mm_compress_type *p_c)
+{
+    gt_subword_type *p_fst, *p_cur;
+    uint32_t  *p_data, n;
+    int32_t status;
+
+    mm_compress_pc_init(p_c, 0);
+    if ((status = gt_word_reduce(p_gt)) < 0) return status;
+    p_fst = p_cur = p_gt->p_end->p_next;
+    for ( ; p_cur->eof == 0; p_cur = p_cur->p_next) {
+        if (!(p_cur->reduced)) return -100001;
+        p_data = p_cur->data;
+        n = p_cur->length;
+        if (p_cur == p_fst) {
+            status = mm_compress_pc_add_nx(p_c, p_data, n);
+            if (status < 0) return status;
+        } else status = 0;
+        if (status < (int32_t)n && (p_data[status] >> 28) != 6)
+            return -1000002;
+        status = mm_compress_pc_add_type4(p_c, p_cur->img_Omega);
+        if (status < 0) return status;
+        status = mm_compress_pc_add_t(p_c, p_cur->t_exp);
+        if (status < 0) return status;
+    }
+    return 0;
+}
+
+
+/**
+@brief Compress word in ``*p_gt`` to a 256-bit integer``
+
+Yet to be tested and documented!!!
+
+*/
+// %%EXPORT p
+int32_t gt_word_compress(gt_word_type *p_gt, uint64_t *p_n)
+{
+    mm_compress_type c;
+    if (gt_word_to_mm_compress(p_gt, &c) < 0) return -1;
+    return mm_compress_pc(&c, p_n);
+}
 
 
 /////////////////////////////////////////////////////////////////////////

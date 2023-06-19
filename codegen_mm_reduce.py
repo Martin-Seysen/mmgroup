@@ -96,6 +96,7 @@ H_REDUCE_SKELETONS = [
 C_REDUCE_SKELETONS = [
    "mm_order_vector",
    "mm_order",
+   "mm_compress",
    "mm_reduce",
    "mm_suborbit",
    "mm_shorten",
@@ -160,6 +161,7 @@ INT_BITS = {INT_BITS}
 
 cdef extern from "mm_reduce.h":
     enum: MAX_GT_WORD_DATA
+    enum: MM_COMPRESS_TYPE_NENTRIES
 
     ctypedef struct gt_subword_type:
         uint32_t eof  
@@ -176,6 +178,10 @@ cdef extern from "mm_reduce.h":
         gt_subword_type *p_node
         gt_subword_type *p_free
         int32_t reduce_mode;
+
+    ctypedef struct mm_compress_type:
+        uint64_t nx
+        uint32_t w[MM_COMPRESS_TYPE_NENTRIES]
 
 
 """.format(INT_BITS = INT_BITS)

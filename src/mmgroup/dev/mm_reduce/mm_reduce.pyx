@@ -90,7 +90,7 @@ cdef class GtWord():
         cdef uint32_t[:] a_view
         cdef uint32_t length
         self.p_gt.reduce_mode = reduce_mode
-        if arg:
+        if arg is not None:
             a_view = mm_as_array_view(arg)
             length = len(a_view)
             res = mr.gt_word_append(self.p_gt, &a_view[0], length)
@@ -203,7 +203,36 @@ cdef class GtWord():
             ptr = ptr.p_next
         return fpos, subword_list
 
-    
+
+    @cython.boundscheck(False)
+    def as_int(self):
+        self.reduce()
+        cdef uint64_t a[4]
+        cdef uint64_t[:] a_view = a
+        cdef res = mr.gt_word_compress(self.p_gt, &a_view[0])
+        if res:
+             raise ValueError("Cound not convert element to int")
+        return (int(a[0]) + (int(a[1]) << 64) +
+             (int(a[2]) << 128) + (int(a[3]) << 192))
+
+    @cython.boundscheck(False)
+    def as_int_debug_compress(self):
+        cdef mm_compress_type c
+        a = np.zeros(MM_COMPRESS_TYPE_NENTRIES + 1, dtype = np.uint64)
+        cdef int32_t status = mr.gt_word_to_mm_compress(self.p_gt, &c)
+        cdef uint32_t i, j=1, ww
+        if (status < 0):
+             err = "Function gt_word_to_mm_compress failed, status = %d"
+             raise ValueError(err % status)
+        a[0] = c.nx
+        for i in range(MM_COMPRESS_TYPE_NENTRIES):
+            ww = c.w[i]
+            if ww:
+                a[j] =  ww
+                j += 1
+        return a[:j]
+
+
     def __len__(self):
         cdef int32_t l = mr.gt_word_length(self.p_gt)
         if l < 0:

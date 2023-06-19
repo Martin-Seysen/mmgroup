@@ -152,7 +152,7 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
 
 
 /////////////////////////////////////////////////////////////////////////
-// Sspport for operation on part ABC on a vector
+// Support for operation on part ABC on a vector
 /////////////////////////////////////////////////////////////////////////
 
 
@@ -165,7 +165,7 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
   that \f$g\f$ and also every prefix of the word representing \f$g\f$
   is in the product \f$G_{x0} \cdot N_{0}\f$.
 
-  Then we try to reduce \f$g\f$ in such away that, for any given
+  Then we try to reduce \f$g\f$ in such a way that, for any given
   vector  \f$v\f$ of the representation  \f$\rho_p\f$ of the
   monster, the part with tags ``A``, ``B``, ``C`` of the 
   vector \f$v \cdot g\f$ can be computed quickly. 

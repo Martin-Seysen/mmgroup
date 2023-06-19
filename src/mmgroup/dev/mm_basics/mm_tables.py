@@ -1,6 +1,6 @@
 """Generating tables for operations on the rep of the monster
 
-This includes also somw functions that use these table independent
+This includes also some functions that use these table independent
 of characteristic p
 """
 

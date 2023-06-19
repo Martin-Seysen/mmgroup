@@ -1,0 +1,542 @@
+/** @file mm_shorten.c
+
+ This file contains function for compressing a word of generators
+ of the Monster group to an integer
+
+
+
+*/
+
+/// @cond DO_NOT_DOCUMENT 
+#include "mm_reduce.h"   
+/// @endcond 
+   
+// %%EXPORT_KWD MM_REDUCE_API
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// Definitions of internally-used structures
+/////////////////////////////////////////////////////////////////////////
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+
+
+
+#define MM_COMPRESS_TYPE_NENTRIES 19
+
+/**
+  @brief Structure for storing an element of the Monster compactly
+
+  A properly *reduced* element of the Monster stored in a structure
+  of type `gt_word_type` may also be encoded in this structure in a
+  more compact form. This facilitates the conversion of that element
+  to an integer, which is out of the scope of this module.
+
+  This structure may store an element of the Monster as a word of
+  generators of shape
+
+  \f[
+      y_f \, x_d \, x_{\delta} \, \pi \, c_1 \, \tau_1 \, c_2 \,
+     \tau_1 \, c_3 \,  \tau_3 \, \ldots \, ,
+  \f]
+
+  where \f$d, f \in \mathcal{P}, \delta \in  \mathcal{C}^*\f$,
+  and \f$\pi \in \mbox{Aut}_{\mbox{St}} \mathcal{P}\f$.
+  Here \f$\pi\f$ must correspond to a generator with tag `p`. See
+  section *Implementation of the generators of the monster group*
+  in the *API reference* for details. \f$\tau_i\f$ is wqaul to
+  generator \f$\tau\f$ or to its inverse.
+
+  A generator \f$c_i\f$ is an element of the group \f$G_{x0}\f$
+  referred by a 24-bit integer `c_i`. This must be one of the
+  following:
+
+
+  If `c_i` represents a type-4 vector in *Leech lattice encoding*
+  then this encodes the element of \f$G_{x0}\f$ computed by applying
+  the C function `gen_leech2_reduce_type4` to `c_i`.
+
+  If `c_i` represents a type-2 vector in *Leech lattice encoding*
+  then this encodes the element of \f$G_{x0}\f$ computed by applying
+  the C function `gen_leech2_reduce_type2` to `c_i`.
+
+  The product \f$y_f \, x_d \, x_{\delta} \, \pi\f$ is encdoded in 
+  component `nx`, and the other generators are  encdoded in the 
+  entries of component `w`, as desribed in the procedures below.
+
+  For background see
+  section *Computations in the Leech lattice modulo 2*
+  in *The mmgroup guide for developers*.
+   
+*/
+typedef struct{
+   uint64_t nx;   ///< encoding of \f$ y_f \, x_d \, x_{\delta} \, \pi\f$ 
+   uint32_t w[MM_COMPRESS_TYPE_NENTRIES];  ///< encoding of \f$c_i, \tau_i\f$
+   uint32_t cur;  ///< index of last entry intered into component `w` 
+   uint32_t back; ///< True if structure is filled in reverse order.
+} mm_compress_type;
+
+
+
+
+
+//  %%GEN c
+
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// subroutines
+/////////////////////////////////////////////////////////////////////////
+
+/**********************************************************************
+We want to compress all type-4 vectors in the Leech lattice mod 2 from
+its natural 24-bit representation to a 23-bit representation. This
+sounds a bit crazy, but it helps us to represent an element of the
+Monster in an integer of at most 255 bit length.
+***********************************************************************/
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+ @brief Compress some Leech lattice vectors from 24 to 23 bits
+
+ This function compresses vector ``i`` of the Leech lattice mod 2
+ of even type from its natural 24-bit representation to a 23-bit 
+ represention.    
+
+ Here vector ``i`` must be of type 0, 2, or 4 in the Leech lattice
+ mod 2, and at least one of the bits 11,...,22 of ``i`` must be set. 
+ That condition excludes subtypes 00, 20, 40, and 48, as defined
+ in function ``gen_leech2_subtype`` in file ``gen_leech_type.c``.
+
+ The input conditions for vector ``i`` are not checked.
+*/ 
+static inline uint32_t compress_24_23(uint32_t i)
+{
+    uint32_t j, b;
+    i &= 0xffffff;
+    // Exchange bits 11 and 23 in i.
+    j = (i ^ (i >> 12)) & 0x800;
+    i ^= j + (j << 12);
+    // Delete bit at position k in i, where k is the position of the 
+    // lowest bit of i >> 12. Shift bits at pos. > k right by one. 
+    b = i >> 12;
+    b = b & (0 - b); // Bit k is set in b, other bits cleared
+    i = (i & (b - 1)) | ((i >> 1) & (0 - b));  
+    return i;  
+}
+
+
+/**
+ @brief Reverse the operation of function ``compress_24_23``.
+
+ So we have ``expand_23_24(compress_24_23(i)) == i``
+ for ``0 <= i < 0x1000000``, if ``i`` satisfies the conditions
+ stated in function ``compress_24_23``.
+
+ The function returns 0xffffffff in case of an error
+*/ 
+static inline uint32_t expand_23_24(uint32_t i)
+{
+    uint32_t j, b;
+    i &= 0x7fffff;
+    if ((i & 0x7ff800) == 0) return 0xffffffff;
+    // Insert a zero bit into i at position k,
+    // where k is the position of the lowest bit of i >> 11.
+    // Shift the bits in i at positions >= k left by one.
+    b = i >> 11;
+    b = b & (0 - b);  // Bit k is set in b, other bits cleared
+    i = (i & (b - 1)) | ((i & (0 - b)) << 1);
+    // Compute the parity of i & (i >> 12) in j.
+    j = i & (i >> 12);
+    j ^= j >> 6; j ^= j >> 3;
+    j = (0x96 >> (j & 7)) & 1;   // j = parity(i & (i >> 12))
+    // Adjust bit of i at pos. k so that this parity is even  
+    i ^= (0 - j) & b;
+    // exchange bits 11 and 23
+    j = (i ^ (i >> 12)) & 0x800;
+    i ^= j ^ (j << 12);
+    return i;    
+}
+
+#define  COCODE_0    0x800  // internal rep of cocode word [0]
+#define  COCODE_01   0x600  // internal rep of cocode word [0,1]
+#define  COCODE_STD  0x200  // internal rep of cocode word [0,2]
+
+static inline int32_t compress_type4_23(uint32_t i)
+{
+    uint32_t i0, j, b;
+    i &= 0xffffff;
+    if (gen_leech2_type(i) != 4) return -1;
+    if ((i & 0x7ff800) == 0) {
+        i0 = i & 0x7ff;
+        j = (i0 << 12) | (MAT24_THETA_TABLE[i0] & 0x7ff) | COCODE_0;
+        if (i & 0x800000) j ^= COCODE_01;
+        // Compute type of Leech vector j (mod 2) in b
+        b = j & (j >> 12);
+        mat24_def_parity12(b); // b = bit_parity(b) = type(j) mod 2
+        j ^= b << 23;          // make type of Leech vector j even
+        i = j;
+    }
+    return compress_24_23(i);
+}
+
+static inline int32_t expand_23_type4(uint32_t i)
+{
+    int32_t j, coc, i1 = i;
+    if ((i = expand_23_24(i)) & 0xff000000) return -11; 
+    switch (gen_leech2_type(i)) {
+        case 2:
+           // Then the result vector is of subtype 00, 20, 40, or 48.
+           // Store the result vector (modulo Omega) in j.
+           j = (i >> 12) & 0x7ff; 
+           // Abort if j has weight 2
+           if (MAT24_SYNDROME_TABLE[j] >> 15) return -12;
+           // Let coc be the cocode part of input i plus COCODE_0
+           coc = (i ^ MAT24_THETA_TABLE[j] ^ COCODE_0) & 0xfff;
+           // If ``coc`` is nonzero the it should be COCODE_01;
+           // and we'll have to add Omega to j.
+           if (coc) {
+               if (coc != COCODE_01) return -13;
+               j ^= 0x800000;
+           } else {
+               if (j == 0) return -14; // reject the zero vector
+           } 
+           return (int32_t) j;
+        case 4:
+           return (int32_t) i;
+        default:
+           return -15;
+    }
+}
+
+
+
+
+static void 
+insert_int256(uint64_t *p_n, uint64_t value, uint32_t pos, uint32_t nbits)
+{
+    uint32_t wpos =  pos >> 6;
+    uint64_t mask = 0;
+    if (wpos >= 4) return;
+    pos &= 0x3f;
+    if (nbits < 64) {
+        mask = ((uint64_t)1 << nbits) - 1;
+        value &= mask;
+    } 
+    p_n[wpos] &= ~(mask << pos);
+    p_n[wpos] |= value << pos;
+    if (wpos >= 3 || pos == 0) return;
+    p_n[wpos + 1] &= ~(mask >> (64 - pos));
+    p_n[wpos + 1] |= value >> (64 - pos);
+}
+
+static uint32_t 
+extract_int256(uint64_t *p_n, uint32_t nbits, uint32_t pos)
+{
+    uint32_t wpos =  pos >> 6;
+    uint64_t result;
+    if (wpos >= 4) return 0;
+    pos &= 0x3f;
+    result = p_n[wpos] >> pos;
+    if (wpos < 3 && pos != 0) result += p_n[wpos + 1] << (64 - pos);
+    if (nbits < 64) result &= ((uint64_t)1 << nbits) - 1;
+    return (uint32_t)result; 
+}
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+void mm_compress_pc_init(mm_compress_type *pc, uint32_t back)
+{
+    memset(pc, 0, sizeof(mm_compress_type));
+    pc->cur = back ? MM_COMPRESS_TYPE_NENTRIES - 1 : 0;
+    pc->back = back;
+}
+
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+int32_t mm_compress_pc_add_nx(mm_compress_type *pc, uint32_t *m, uint32_t len)
+{
+     uint32_t i, g[5];
+     mm_group_n_clear(g);
+     for (i = 0; i < len; ++i) if (((m[i] >> 28) & 7) > 4) break;
+     if (mm_group_n_mul_word_scan(g, m, i) != i) return -0x1001;
+     if (mm_group_n_reduce_element_y(g) == 0) return i;
+     if (pc->nx | (pc->w[0] & 0x2000000)) return -0x1002;
+     if (!pc->back && pc->w[pc->cur]) return -0x1003;
+     pc->nx = ((uint64_t)g[4]) + (((uint64_t)g[1]) << 28) +
+         (((uint64_t)g[2]) << 39) + (((uint64_t)g[3]) << 52);
+     return i;
+}
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+int32_t mm_compress_pc_add_type2(mm_compress_type *pc, uint32_t c)
+{
+     c &= 0xffffff;
+     if ((c & ~COCODE_STD) == 0) return 0;
+     if (pc->nx | (pc->w[pc->cur] & 0x6000000)) return -2001;
+     if (pc->back) {
+         if (pc->cur == 0 || pc->w[0] & 0x2000000) return -2002;
+         pc->cur = 0;
+     } else {
+         if (pc->cur | pc->w[pc->cur]) return -2003;
+     }
+     pc->w[pc->cur] = c | 0x2000000; 
+     return 0;
+}
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+int32_t  mm_compress_pc_add_type4(mm_compress_type *pc, uint32_t c)
+{
+     c &= 0xffffff;
+     if ((c & 0x7fffff) == 0) return 0;
+     if (pc->w[pc->cur] & 0x6000000) return -3001;
+     if (pc->back) {
+         if (pc->cur == 0 || pc->nx | (pc->w[0] & 0x2000000)) return -3002;
+         if (pc->w[pc->cur]) --pc->cur;
+     } else {
+         if (pc->w[pc->cur]) ++pc->cur;
+         if (pc->cur >= MM_COMPRESS_TYPE_NENTRIES) return -3003;
+     }
+     pc->w[pc->cur] = c | 0x4000000; 
+     return 0;
+}
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+int32_t mm_compress_pc_add_t(mm_compress_type *pc, uint32_t t)
+{
+     t %= 3;
+     if (t == 0) return 0;
+     t |= 0x1000000;
+     if (pc->w[pc->cur] & 0x1000000) return -4001;
+     if (pc->back) {
+         if (pc->cur == 0 || pc->nx | (pc->w[0] & 0x2000000)) return -4002;
+         if (pc->w[pc->cur]) --pc->cur;
+     } else {
+         if (pc->w[pc->cur]) ++pc->cur;
+         if (pc->cur >= MM_COMPRESS_TYPE_NENTRIES) return -4003;
+     }
+     pc->w[pc->cur] = t;
+     return 0;
+}
+
+
+
+
+
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT
+int32_t mm_compress_pc(mm_compress_type *pc, uint64_t *p_n)
+{
+    uint32_t pos_n, i, c, tag, last = 0, k;
+    p_n[0] = p_n[1] = p_n[2] = p_n[3] = 0;
+    if (pc->nx == 0) {
+        p_n[0] =  MAT24_ORDER;
+        pos_n = 28;
+    } else {
+        p_n[0] =  pc->nx;
+        pos_n = 64;
+    }
+
+    for (i = 0; i <  MM_COMPRESS_TYPE_NENTRIES; ++ i) {
+        tag = pc->w[i] >> 24;
+        c = pc->w[i] & 0xffffff;
+        switch(tag) {
+            case 1:
+                c %= 3;
+                if (last & 1 || c == 0) return -20001;
+                if (last == 0 && pos_n == 28) {
+                   p_n[0] += 1;
+                } else if (last == 0 && pos_n == 64) {
+                   k = compress_type4_23(0x800000);
+                   insert_int256(p_n, k, pos_n, 23);
+                   pos_n += 23;
+                }
+                insert_int256(p_n, c+1, pos_n, 2);
+                pos_n += 1;
+                break;
+            case 2:
+                if (last == 0 && pos_n == 28) {
+                   p_n[0] += 2;
+                } else return -20002;
+                k = mm_aux_index_leech2_to_sparse(c);
+                if (k <= 0) return -20003;
+                k = mm_aux_index_sparse_to_extern(k);
+                if (k < 300 || k >= 300 + 98280) return -20004;
+                insert_int256(p_n, k, pos_n, 17);
+                pos_n += 17;
+                break;
+            case 4:
+                if (last & 6) return -20005;
+                k = compress_type4_23(c);
+                insert_int256(p_n, k, pos_n, 23);
+                pos_n += 23;
+                break;
+            case 0:
+                continue;
+            default:
+                return -20006;                
+        }
+        last = tag;
+        if (pos_n > 255) return -20007;
+    }
+    return 0;
+}
+
+
+
+/**
+@brief yet to be documented
+
+
+
+*/
+// %%EXPORT px
+int32_t mm_compress_pc_expand_int(uint64_t *p_n, uint32_t *m)
+{
+    uint32_t pos_n = 28, len = 0,  with_t = 0, p, c;
+    int32_t status;
+
+    if (p_n[0] == 0 || p_n[3] >> 63) return -1;
+    p = (uint32_t)(p_n[0] & 0xfffffff);
+    if (p < MAT24_ORDER) {
+         uint32_t g[5];
+         g[0] = 0;
+         g[1] = (uint32_t)((p_n[0] >> 28) & 0x7ff);
+         g[2] = (uint32_t)((p_n[0] >> 39) & 0x1fff);
+         g[3] = (uint32_t)((p_n[0] >> 52) & 0xfff);
+         g[4] = p;
+         if (mm_group_n_reduce_element(g)) len = mm_group_n_to_word(g, m);
+         pos_n = 64;
+    } else switch (p) {
+         case MAT24_ORDER:
+             break;
+         case MAT24_ORDER + 1:
+             c = extract_int256(p_n, 1, pos_n++);
+             m[len++] = 0x50000001 + c;
+             break;
+         case MAT24_ORDER + 2:
+             c = extract_int256(p_n, 17, pos_n);
+             pos_n += 17;
+             c = mm_aux_index_extern_to_sparse(c);
+             if (c == 0) return -2;
+             c = mm_aux_index_sparse_to_leech2(c);
+             if (c == 0) return -3;
+             status = gen_leech2_reduce_type2(c, m + len);
+             if (status < 0) return status; 
+             if (status > 6) return -4; 
+             mm_group_invert_word(m + len, status);
+             len += status;
+             with_t = 1;
+             break;
+        default:
+             return -5;
+    }
+
+    while (1) {
+        c = extract_int256(p_n, 23 + with_t, pos_n);
+        pos_n += 23 + with_t;
+        if (with_t && c >= 2) m[len++] = 0x50000001 + (c & 1);
+        c >>= with_t;
+        with_t = 1;
+        if (c < 2) return len;
+        c = status = expand_23_type4(c);
+        if (status < 0) return status; 
+        status = gen_leech2_reduce_type4(c, m + len);
+        if (status < 0) return status; 
+        if (status > 6) return -6; 
+        mm_group_invert_word(m + len, status);
+        len += status;
+        if ((len + 7) > 80) return -7;
+    }
+    return -1;
+}
+
+
+
+
+
+/// @endcond  
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////////
+
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+

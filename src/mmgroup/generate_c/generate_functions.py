@@ -1130,7 +1130,7 @@ def format_line(line, dictionary=None, args = (), terminal = True):
         return regex.sub(mm_line, f_subst, line)
     except:
         print("\nError in formatting line:")
-        print(s + "\n")
+        print(line + "\n")
         raise
 
 

@@ -208,6 +208,8 @@ check_mm_equal = None
 check_mm_half_order = None
 check_mm_in_g_x0 = None
 mm_reduce_M = None
+GtWord = None
+mm_compress_pc_expand_int = None
 
 def import_mm_order_functions():
     """Import functions from module ``mmgroup.mm_order``.
@@ -217,13 +219,14 @@ def import_mm_order_functions():
     """
     global check_mm_order, check_mm_equal
     global check_mm_half_order, check_mm_in_g_x0
-    global mm_reduce_M
+    global mm_reduce_M, GtWord, mm_compress_pc_expand_int
     from mmgroup.structures.mm_order import check_mm_order
     from mmgroup.structures.mm_order import check_mm_equal 
     from mmgroup.structures.mm_order import check_mm_half_order
     from mmgroup.structures.mm_order import check_mm_in_g_x0
     from mmgroup.mm_reduce import mm_reduce_M 
-
+    from mmgroup.mm_reduce import GtWord
+    from mmgroup.mm_reduce import mm_compress_pc_expand_int
 
 
 
@@ -539,6 +542,14 @@ class MM(MM0):
             if tag == 6: l.append('x')
         return "<" + "".join(l) + ">"
 
+
+    def as_int(self):
+        if GtWord is None:
+            import_mm_order_functions()
+        self.reduce()
+        w = GtWord(self.mmdata)
+        return w.as_int()
+
     def __hash__(self):
         self.reduce()
         return hash(tuple(self.mmdata))
@@ -651,6 +662,29 @@ class MMGroup(AbstractMMGroup):
 StdMMGroup = MMGroup()
 MM.group = StdMMGroup
 load_group_name(StdMMGroup, "M")
+
+
+
+_MASK64 = 0xffffffffffffffff
+
+def MM_from_int(n):
+    """obtain an element of the Monster from its number ``n``
+
+    if ``g`` is an instance of class ``MM`` then we have
+
+    ``MM_from_int(g.as_int()) == g``
+    """
+    a = np.zeros(4, dtype = np.uint64)
+    g = np.zeros(80, dtype = np.uint32)
+    a[0] = n & _MASK64
+    a[1] = (n >> 64) & _MASK64
+    a[2] = (n >> 128) & _MASK64
+    a[3] = (n >> 192) & _MASK64
+    status = mm_compress_pc_expand_int(a, g)
+    if (status < 0):
+        err = "There is no element of the Monster with that number"
+        raise ValueError(err)
+    return MM('a', g[:status])
 
 
 
