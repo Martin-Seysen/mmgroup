@@ -5,6 +5,8 @@ breathe
 regex
 pytest
 sphinx<7
+# sphinx<7 appears to be necessary here in 2023-06, see
+# https://github.com/readthedocs/readthedocs.org/issues/10279
 sphinx_rtd_theme
 sphinxcontrib.bibtex
 sphinxcontrib.tikz

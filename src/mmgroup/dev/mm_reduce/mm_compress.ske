@@ -277,7 +277,9 @@ extract_int256(uint64_t *p_n, uint32_t nbits, uint32_t pos)
 // %%EXPORT
 void mm_compress_pc_init(mm_compress_type *pc, uint32_t back)
 {
-    memset(pc, 0, sizeof(mm_compress_type));
+    uint32_t i;
+    pc->nx = 0;
+    for (i = 0; i < MM_COMPRESS_TYPE_NENTRIES; ++i) pc->w[i] = 0;
     pc->cur = back ? MM_COMPRESS_TYPE_NENTRIES - 1 : 0;
     pc->back = back;
 }
