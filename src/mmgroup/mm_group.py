@@ -544,6 +544,24 @@ class MM(MM0):
 
 
     def as_int(self):
+        """Map element of the Monster to a 255-bit integer
+
+        The method returns a 255-bit integer ``n`` describing the
+        element of the Monster group. This integer is unique for
+        each element of the Monster, so that it can be used e.g. for
+        storing large subsets of the Monster in a hash table.
+
+        Function ``MM_from_int`` reconstructs the element of the
+        Monster from the number returned by this function.
+
+        Warning:
+
+        The numbering used here is not contiguous and not portable
+        between difffernt versions of the ``mmgroup`` package!
+
+        For writing a  element to a file, you should convert
+        it to a string instead!
+        """
         if GtWord is None:
             import_mm_order_functions()
         self.reduce()
@@ -668,7 +686,7 @@ load_group_name(StdMMGroup, "M")
 _MASK64 = 0xffffffffffffffff
 
 def MM_from_int(n):
-    """obtain an element of the Monster from its number ``n``
+    """Obtain an element of the Monster from its number ``n``
 
     if ``g`` is an instance of class ``MM`` then we have
 

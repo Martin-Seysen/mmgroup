@@ -635,7 +635,7 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
 
  Here we reduce the product \f$y_f x_e\f$ to
  \f$y_{f'} x_{e'}\f$, such
- that \f$0 \leq f' < \mbox{0x800}\f$ *awlways** holds.
+ that \f$0 \leq f' < \mbox{0x800}\f$ **always** holds.
 
  \f$g\f$ is given as an array of five 32-bit integers.
 */

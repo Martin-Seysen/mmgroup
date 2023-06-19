@@ -1,9 +1,9 @@
-/** @file mm_shorten.c
+/** @file mm_compress.c
 
- This file contains function for compressing a word of generators
- of the Monster group to an integer
+ This file contains functions for compressing a word of generators
+ of the Monster group to an integer.
 
-
+ TODO: Documentation yet missing!
 
 */
 
@@ -33,8 +33,10 @@ extern "C" {
 //  %%GEN h
 
 
-
+/// @cond DO_NOT_DOCUMENT
 #define MM_COMPRESS_TYPE_NENTRIES 19
+/// @endcond
+
 
 /**
   @brief Structure for storing an element of the Monster compactly
@@ -118,7 +120,7 @@ Monster in an integer of at most 255 bit length.
 
 
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
 
 /**
  @brief Compress some Leech lattice vectors from 24 to 23 bits
@@ -266,6 +268,9 @@ extract_int256(uint64_t *p_n, uint32_t nbits, uint32_t pos)
     if (nbits < 64) result &= ((uint64_t)1 << nbits) - 1;
     return (uint32_t)result; 
 }
+
+
+/// @endcond
 
 
 /**
@@ -522,7 +527,6 @@ int32_t mm_compress_pc_expand_int(uint64_t *p_n, uint32_t *m)
 
 
 
-/// @endcond  
 
 
 

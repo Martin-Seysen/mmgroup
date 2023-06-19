@@ -570,6 +570,12 @@ C interface for file mm_shorten.c
 .. doxygenfile:: mm_shorten.c
 
 
+C interface for file mm_compress.c
+-----------------------------------
+
+.. doxygenfile:: mm_compress.c
+
+
 C interface for file mm_vector_v1_mod3.c
 -----------------------------------------
 
