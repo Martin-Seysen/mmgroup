@@ -1912,8 +1912,7 @@ uint32_t reduce_state(uint32_t *a, uint32_t n)
 static inline
 int32_t reduce_N_x0_word(uint32_t *a, uint32_t n, uint32_t *a1)
 {
-    uint32_t g[5], len_a1 = 0, atom;
-    int32_t res;
+    uint32_t g[5], len_a1 = 0;
 
     mm_group_n_clear(g);
     if (mm_group_n_mul_word_scan(g, a, n) < n) return -1;

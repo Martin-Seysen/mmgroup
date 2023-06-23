@@ -692,6 +692,20 @@ class XLeech2(AbstractGroupWord):
             raise ValueError(err)
 
 
+    def as_Leech2_bitvector(self):
+        """Convert element to a bit vector in a numpy array
+
+        The element is returned as a numpy array ``v`` of length 24
+        of 8-bit unsigned integers, with each entry equal to
+        0 or 1. This array represents a vector in the Leech
+        lattice mod 2 in the standard encoding.
+
+        For an instance ``x`` of this class we have
+        ``v[i] =  (x.ord >> i) & 1``, for 0 <= ``i`` < 24.
+        """
+        v = self.value & 0xffffff
+        return np.array([(v >> i) & 1 for i in range(24)],
+             dtype = np.uint8)
 
 
 add_to_embedded_classes(XLeech2)

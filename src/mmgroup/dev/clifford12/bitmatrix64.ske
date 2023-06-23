@@ -262,7 +262,7 @@ uint32_t uint64_to_bitarray(uint64_t v, uint8_t *bl)
   We add one to all entries  ``m[k, j+k]`` for `0 <= k < i``.
 
 */
-// %%EXPORT p
+// %%EXPORT px
 void bitmatrix64_add_diag(uint64_t *m, uint32_t i, uint32_t j)
 {
     uint64_t mask;
@@ -285,7 +285,7 @@ void bitmatrix64_add_diag(uint64_t *m, uint32_t i, uint32_t j)
   in parameter ``mask``.  
 
 */
-// %%EXPORT p
+// %%EXPORT px
 void bitmatrix64_mask_rows(uint64_t *m, uint32_t i, uint64_t mask)
 {
     uint_fast32_t k;
@@ -303,7 +303,7 @@ void bitmatrix64_mask_rows(uint64_t *m, uint32_t i, uint64_t mask)
   ERR_QSTATE12_NOTFOUND if no such ``k`` exists.  
 
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint64_t v)
 {
     uint_fast32_t k;
@@ -311,6 +311,39 @@ int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint
         if ((m[k] & mask) == v) return k;
     }
     return ERR_QSTATE12_NOTFOUND;
+}
+
+
+
+/*************************************************************************
+*** Convert bit matrix to numpy array
+*************************************************************************/
+
+/**
+  @brief Convert bit matrix to numpy array
+
+  Here bit matrix ``m`` has ``rows`` rows and ``cols`` columns.
+
+  Then ``a`` bust be an array of ``rows * cols`` bytes length.
+  The function writes the bit ``m[i,j]`` to ``a[i * cols + j]``.
+
+  The function returns rows * cols in case of success and
+  ERR_QSTATE12_NOTFOUND in case of failure,
+  e.g. if ``cols > 64``.
+
+*/
+// %%EXPORT px
+int32_t bitmatrix64_to_numpy(uint64_t *m, uint32_t rows, uint32_t cols, uint8_t *a)
+{
+    uint32_t i, j;
+    uint64_t v;
+    if (cols > 64 || (uint64_t)rows * (uint64_t)cols >= 0x80000000ULL) 
+         return ERR_QSTATE12_QUBIT_INDEX;
+    for (i = 0; i < rows; ++i)  {
+        v = m[i];
+        for (j = 0; j < cols; ++j) *a++ = (uint8_t)((v >> j) & 1);
+    }
+    return rows * cols;
 }
 
 
@@ -330,7 +363,7 @@ int32_t bitmatrix64_find_masked_row(uint64_t *m, uint32_t i, uint64_t mask, uint
   Here bit ``j`` of ``m[i]`` is considered at position ``64*i + j``.
   Bit matrix ``m`` should have at least ``(imax + 63) >> 6`` entries.
 */
-// %%EXPORT p
+// %%EXPORT px
 uint32_t bitmatrix64_find_low_bit(uint64_t *m, uint32_t imin, uint32_t imax)
 {
     uint32_t n = imin >> 6;
@@ -368,7 +401,7 @@ uint32_t bitmatrix64_find_low_bit(uint64_t *m, uint32_t imin, uint32_t imax)
   Array ``m3`` may be equal to array ``m1``; but it may not overlap
   with ``m2``.
 */
-// %%EXPORT p
+// %%EXPORT px
 void bitmatrix64_mul(uint64_t *m1,  uint64_t *m2, uint32_t i1, uint32_t i2, uint64_t *m3)
 {
     uint_fast32_t i, j; 
@@ -407,7 +440,7 @@ void bitmatrix64_mul(uint64_t *m1,  uint64_t *m2, uint32_t i1, uint32_t i2, uint
   value if any column with index >= 64 is involved in the
   rotation.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t bitmatrix64_rot_bits(uint64_t *m, uint32_t i, int32_t rot, uint32_t nrot, uint32_t n0)
 {
     uint64_t mask_h, mask_l, mask;
@@ -481,7 +514,7 @@ int32_t bitmatrix64_xch_bits(uint64_t *m, uint32_t i, uint32_t sh, uint64_t mask
   value if any column with index >= 64 is involved in the
   operation.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t bitmatrix64_reverse_bits(uint64_t *m, uint32_t i, uint32_t n, uint32_t n0)
 {
     uint64_t mask, v, w;
@@ -516,7 +549,7 @@ int32_t bitmatrix64_reverse_bits(uint64_t *m, uint32_t i, uint32_t n, uint32_t n
    is given by ``(m1[m] >> n) & 1``. The function writes the transposed
    bit matrix of ``m1`` to ``m2``.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t bitmatrix64_t(uint64_t *m1, uint32_t i, uint32_t j, uint64_t *m2)
 {
     uint64_t v;

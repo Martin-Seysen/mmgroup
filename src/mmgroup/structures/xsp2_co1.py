@@ -52,6 +52,8 @@ from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution
 from mmgroup.clifford12 import xsp2co1_elem_conjugate_involution_Gx0
 from mmgroup.clifford12 import xsp2co1_elem_subtype
 from mmgroup.clifford12 import xsp2co1_traces_fast      
+from mmgroup.clifford12 import bitmatrix64_to_numpy
+    
 
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.construct_mm import iter_strings_from_atoms
@@ -187,6 +189,26 @@ class Xsp2_Co1(AbstractMMGroupWord):
 
     def as_xsp(self):
         return chk_qstate12(xsp2co1_xspecial_vector(self._data))
+
+
+    def as_Co1_bitmatrix(self):
+        """Convert element to a 24 times 24 bit matrix
+
+        The bit matrix is returned as a 24 times 24 bit numpy
+        array of 8-bit unsigned integers, with each entry equal to
+        0 or 1.
+
+        That matrix operates by right multiplication on a vector
+        representing an element of the Leech lattice mod 2.
+        See method ``mmgroup.XLeech2.as_Leech2_bitvector`` for the 
+        encoding of such a vector.
+        """
+        m = np.zeros(24, dtype = np.uint64)
+        chk_qstate12(xsp2co1_elem_to_bitmatrix(self._data, m))
+        bm = np.zeros(576, dtype = np.uint8)
+        length = chk_qstate12(bitmatrix64_to_numpy(m, 24, 24, bm))
+        assert length == 576
+        return bm.reshape((24,24))
 
     as_Q_x0_atom = as_xsp
 

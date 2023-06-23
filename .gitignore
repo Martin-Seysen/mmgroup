@@ -2,6 +2,7 @@ _doc/
 backup/
 dist/
 build/
+meson_info/
 _reports/
 wheelhouse/
 docs/build

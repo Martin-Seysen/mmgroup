@@ -503,6 +503,28 @@ class MM0(AbstractMMGroupWord):
         chi299 = (chi24**2 + chisq24) // 2 - 1
         chi_M = chi299 + chi98260 + chi24 * chi4096
         return chi_M, chi299, chi24, chi4096
+
+
+    def as_Co1_bitmatrix(self):
+        """Convert element of :math:`G_{x0}` to a 24 times 24 bit matrix
+
+        The bit matrix is returned as a 24 times 24 bit numpy
+        array of 8-bit unsigned integers, with each entry equal to
+        0 or 1.
+
+        That matrix operates by right multiplication on a vector
+        representing an element of the Leech lattice mod 2.
+        See method ``mmgroup.XLeech2.as_Leech2_bitvector`` for the
+        encoding of such a vector.
+
+        The function raises ValueError if the element is not in the
+        subgroup :math:`G_{x0}`  of the Monster.
+        """
+        if Xsp2_Co1 is None:
+            import_Xsp2_Co1()
+        elem = Xsp2_Co1(self)
+        return elem.as_Co1_bitmatrix()
+
        
     def in_N_x0(self):
         r"""Check if the element is in the subgroup :math:`N_{x0}`

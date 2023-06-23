@@ -63,6 +63,30 @@ def test_xsp2co1_set_elem_word_scan():
 
 
 
+#####################################################################
+# Test method as_Co1_bitmatrix of class Xsp2_Co1
+#####################################################################
+
+@pytest.mark.xsp2co1
+def test_xsp2co1_as_Co1_bitmatrix():
+    or_sum = 0
+    for i in range(3):
+         v  = XLeech2(randint(0, 0x1fffff))
+         v_ord = v.ord
+         or_sum |= v_ord
+         g =  Xsp2_Co1('r', 'G_x0')
+         v_bits = v.as_Leech2_bitvector()
+         ref_bits = [(v_ord >> i) & 1 for i in range(24)]
+         assert list(v_bits) == ref_bits
+         w = v * g
+         #print("v", v,  v_bits)
+         #print("g", g.as_Co1_bitmatrix())
+         w_bits = list((v_bits @ MM0(g).as_Co1_bitmatrix()) & 1)
+         w_ord = w.ord
+         w_ref_bits = [(w_ord >> i) & 1 for i in range(24)] 
+         assert w_bits == w_ref_bits
+    assert or_sum != 0
+
 
 #####################################################################
 # Benchmarks

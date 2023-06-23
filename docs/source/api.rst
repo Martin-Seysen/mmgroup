@@ -199,7 +199,8 @@ Python classes implementing the Monster group
    :members:  as_tuples, copy,  is_reduced, reduce, order, mmdata,
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
               half_order_chi, conjugate_involution,
-              conjugate_involution_G_x0, as_int
+              conjugate_involution_G_x0, as_int,
+              as_Co1_bitmatrix
 
 
 

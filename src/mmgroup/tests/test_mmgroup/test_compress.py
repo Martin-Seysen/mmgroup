@@ -178,7 +178,6 @@ def compress_testcases(ntests = 10):
 
 
 
-@pytest.mark.mmm
 @pytest.mark.mmgroup 
 def test_mm_decompress(ntests = 12, verbose = 0):
     print("Test conversion of Monster elements to integers")
