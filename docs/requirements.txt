@@ -7,6 +7,6 @@ pytest
 sphinx<7
 # sphinx<7 appears to be necessary here in 2023-06, see
 # https://github.com/readthedocs/readthedocs.org/issues/10279
-# sphinx_rtd_theme # Seems to have trouble with table of contents
+sphinx_rtd_theme # Seems to have trouble with table of contents
 sphinxcontrib.bibtex
 sphinxcontrib.tikz
