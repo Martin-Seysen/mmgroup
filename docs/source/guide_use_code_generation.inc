@@ -1,3 +1,11 @@
+Warning!
+
+At present the process of generating C code is under construction.
+
+We plan to switch to the ``meson`` build system. Therefore a much more
+declarative style is required for describing an buld operations.
+Thus the description here is pertty much outdated!
+
 
 For generating C code, an instance of class  ``TableGenerator`` in module
 ``mmgroup.generate_c`` must be generated. That instance takes two 

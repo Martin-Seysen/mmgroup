@@ -73,7 +73,7 @@ static const uint8_t MAT24_XI_G_COCODE_TABLE[64] = {
 */
 // %%EXPORT px
 uint32_t gen_xi_g_gray(uint32_t v)
-// %%PY_DOCSTR GenXi_doc.gen_xi_g_gray
+// // %%PY_DOCSTR GenXi_doc.gen_xi_g_gray
 {
     return expand_gray(MAT24_XI_G_GRAY_TABLE[compress_gray(v)]);
 }
@@ -103,7 +103,7 @@ uint32_t gen_xi_w2_gray(uint32_t v)
 */
 // %%EXPORT px
 uint32_t gen_xi_g_cocode(uint32_t c)
-// %%PY_DOCSTR GenXi_doc.gen_xi_g_cocode
+// // %%PY_DOCSTR GenXi_doc.gen_xi_g_cocode
 {
     return expand_gray(MAT24_XI_G_COCODE_TABLE[compress_gray(c)]);
 }
@@ -212,7 +212,7 @@ uint32_t gen_xi_op_xi_nosign(uint32_t x, uint32_t e)
 */
 // %%EXPORT px
 uint32_t gen_xi_leech_to_short(uint32_t x)
-// %%PY_DOCSTR GenXi_doc.gen_xi_leech_to_short
+// // %%PY_DOCSTR GenXi_doc.gen_xi_leech_to_short
 {
     uint32_t  gcodev, cocodev, sign, w, box = 0, code = 0;
     sign = (x >> 24) & 1;

@@ -210,6 +210,7 @@ class Lsbit24Function(object):
         """ 
         return { 
             "Mat24_lsbit_table" :  cls.table[:], 
+            "Mat24_lsbit_const" :  cls.CONST, 
             "MAT24_LSBIT" : UserFormat(cls.generate, "s", prefix=True),
         }
 

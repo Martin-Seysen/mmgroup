@@ -117,6 +117,9 @@ class TableGenerator(object):
         self.verbose = verbose
         self.tables = tables  # This is never changed
         self.names = {}       # Updated version of self.names
+        self.export_file = [] # List of lines of export file to be written
+        self.write_to_export_file = False
+                              # Write to export file only if this is True
         self.reset_names()    # initialize self.names from self.tables
         self.exported_table_names = {}
         #  dictionary python_table_name : c_table_name
@@ -152,7 +155,7 @@ class TableGenerator(object):
              "GEN":          self.gen,
              "COMMENT":      self.comment,
              "PY_DOCSTR":    self.docstr,
-             "PYX":          self.pyx,
+             "PYX":          self.pyx_cmd,
              "FOR":          self.block_for,
              "WITH":         self.block_with,
              "JOIN":         self.do_join,
@@ -163,6 +166,7 @@ class TableGenerator(object):
         self.use_table_pending = False
         self.export_pending = 0
         self.pxd_export_pending = 0
+        self.export_args = ""
         self.export_kwd = ""
         self.args = ()       # positional arguments passed to formatting
                              # function, not used for C files
@@ -185,6 +189,7 @@ class TableGenerator(object):
         self.names.update({
             "NAMES" : self.names,  
             "TABLES" : self.tables, 
+            "EXPORT" : self.export_file, 
         })
         self.adjust_names()
 
@@ -219,6 +224,7 @@ class TableGenerator(object):
         """built-in function USE_TABLE"""
         self.use_table_pending = 1 + self.export_pending
         self.export_pending = 0
+        self.export_args = "" 
         self.pxd_export_pending = 0
         return "", ""
 
@@ -226,8 +232,10 @@ class TableGenerator(object):
         """built-in function EXPORT_TABLE"""
         self.use_table_pending = 2
         self.export_pending = 0
+        self.set_export_args("EXPORT_TABLE", args)
         self.pxd_export_pending = 0
-        return self.export_kwd, self.export_kwd
+        export_str = self.export_kwd + "\n" if self.export_kwd else ""
+        return export_str, export_str
 
 
     def comment(self, args, *_):
@@ -238,14 +246,29 @@ class TableGenerator(object):
         )
         return "", ""
 
+    def set_export_args(self, directive, args):
+        """Set arguments for prefix for bnext line in export file"""
+        args = args.strip() 
+        if ";" in args:
+            err = "Illegal charcter ';' in %s directive" % directive
+        self.export_args = directive + " " + args
+
+    def append_export_file(self, prototype):
+        """Append a line to the export file"""
+        if self.export_args and self.write_to_export_file:
+            self.export_file.append(self.export_args + "; " + prototype)
+        self.export_args = ""
 
     def export_(self, args, *_):
         """built-in function EXPORT"""
         self.export_pending = True
+        args = args.strip() 
+        self.set_export_args("EXPORT", args)
         self.pxd_export_pending =  'p' in args
         if self.pxd_export_pending and 'x' in args:
             self.pyx("<wrap pxi>")
-        return self.export_kwd, self.export_kwd
+        export_str = self.export_kwd + "\n" if self.export_kwd else ""
+        return export_str, export_str
 
     def set_export(self, args, *_):
         """built-in directive SET_EXPORT, deprecated!!!!"""
@@ -255,7 +278,7 @@ class TableGenerator(object):
 
     def set_export_kwd(self, args, *_):
         """built-in function EXPORT_KWD"""
-        self.export_kwd = args.strip() + "\n"
+        self.export_kwd = args.strip()
         return "", ""
 
 
@@ -271,22 +294,20 @@ class TableGenerator(object):
         
 
     def pyx(self, args, *_):
-        """built-in function PYX"""
         #args = format_line(args, self.names, self.args)
         self.pxd_entries.append("# PYX " + args.strip())
         return "", ""
 
+    def pyx_cmd(self, args, *_):
+        """built-in function PYX"""
+        err = "The PYX directive is no longer supported"
+        raise ValueError(err)
+
 
     def docstr(self, args, *_):
         """built-in function PY_DOCSTR"""
-        args= eval_codegen_args(self.tables, args)
-        entry = args[0]
-        if not isinstance(entry, str):
-            entry = entry.__doc__
-        if len(args) > 1 and args[1]:
-            entry = format_line(entry, self.names, self.args, terminal=0)
-        return py_doc_to_comment(entry), ""
-
+        err = "The PY_DOCSTR directive is no longer supported"
+        raise ValueError(err)
 
 
     def parse_block(self, kwd, source):
@@ -501,7 +522,9 @@ class TableGenerator(object):
             if self.use_table_pending > 1:
                 found = line.find("=")
                 if found:
-                    h_out = "extern " + line[:found].strip() + ";\n"
+                    prototype = line[:found].strip()
+                    h_out = "extern " + prototype +  ";\n"
+                    self.append_export_file(prototype)
                     self.C_table_export = True
         self.use_table_pending = 0
         return "", h_out
@@ -512,7 +535,9 @@ class TableGenerator(object):
         """Do pending work of built-in function EXPORT"""
         if not self.export_pending:
             return
-        h_out =  line[:-1] + ";\n"
+        prototype = line[:-1].strip()
+        self.append_export_file(prototype)
+        h_out = prototype + ";\n"
         if self.pxd_export_pending:
             self.pxd_entries.append(line[:-1].strip())
         self.export_pending = False
@@ -702,6 +727,7 @@ class TableGenerator(object):
             h_file = open(h_filename,"wt")     # output .h file
             self.print_file(h_out, h_file)
 
+        self.write_to_export_file = bool(c_file)
         for c_out, h_out in self.iter_generate(inp):
             self.print_file(c_out, c_file)
             self.print_file(h_out, h_file)
@@ -716,172 +742,25 @@ class TableGenerator(object):
         return self.table_size_
 
 
+    def display_export_file(self, text):
+        """Display current export file at stdout"""
+        if text: print(text)
+        for line in self.export_file:
+            print(" " + line)
+
     def generate_pxd(self, pxd_file, h_file_name, source = None, nogil = False):
-        """Create .pxd file 'pxd_file' from last call to generate().
-
-        After calling method generate(), all exported functions 
-        preceded by an ``EXPORT`` directive are collected automatically. 
-
-        Method ``generate_pxd`` creates a .pxd file with name ``pxd_file`` 
-        that contains information about these exported function.
-
-        A .pxd file is used in Cython. Its content is::
-
-           cdef extern from <h_file_name>:
-               <exported function 1>
-               <exported function 2>
-               ...
-
-        The name  of the .h file is given as parameter and the exported
-        functions listed below that statement are those collected by
-        the last recent call to method generate(). 
- 
-        :param pxd_file:
-
-            Name of the output file.
-
-        :param h_file_name:
-
-            Name of the .h file to be placed in the
-            ``cdef extern from`` statement.
-    
-        :param source:
-     
-             An optional string written into the output file
-             in front of the ``cdef`` statement.  Format of parameter 
-             *source* is the same as in method generate()
-
-        :param nogil:
-
-             Optional, exported functions are declared as ``nogil``
-             when set.
-        """
-        s_gil = " nogil" if nogil else ""
-        f = open(pxd_file, "wt")
-        print("# This .pxd file has been generated automatically. Do not edit!\n",
-            file = f)     
-        if source:
-            old_source_name = self.source_name
-            for l in self.iter_source(source):
-                print(l, file = f, end = "")
-            print("", file = f)
-            self.source_name = old_source_name
-        print('cdef extern from "{0}"{1}:'.format(h_file_name, s_gil), file = f)  
-        for l in self.pxd_entries:
-            print("    " + l, file = f)
-        if len(self.pxd_entries) == 0:
-            print("    pass", file = f)
-        f.close()
-
-
-
-
+        err = """Method TableGenerator.generate_pxd of is no longer supported
+Use funtion mmgroup.generate_c.generate_pxd() instead.
+"""
+        raise NotImplementedError(err)
 
 
 
 
 def make_doc(source_file, output_file, tables = None):
-    r"""Extract documentation from C file, Deprecated!!
-
-    This function extracts documentation from C file that has usually
-    been generated by class ``TableGenerator``. The function is 
-    deprecated, since future versions of this project will use doxygen.
-
-    Here parameter ``source_file`` describes a source file to be used
-    as input for an instance of class ``TableGenerator``. 
-
-    Parameter ``source_file may`` be:
-        * the name of a C source file
-        * a string containing C statements with at least one *newline*
-          character
-        * a list of file names or string as defined above
-
-    Parameter ``output_file`` is the name of an output file to be generated.
-    The output file contains function declarations and comments for
-    each in the same way as in the processed source file. The bodies
-    of the C functions are dropped.
-
-    The source file is processed essentially in the same way as a
-    source file is processed by an instance of class  ``TableGenerator``.
-
-    If one of the ``TableGenerator`` directives ``EXPORT`` or ``COMMENT``
-    is found in the source file then everything of the source file is 
-    copied into the  output file up to and including the first comment.
- 
-    Here a comment line must begin with ``'/*'`` (preceded by white
-    space only) and end with ``'*/'``, or it must be as sequence of lines
-    containing  ``'//'`` preceded by white  space only. 
-
-    Parameter ``tables`` is an optional dictionary that plays the same 
-    role as in the constructor of class ``TableGenerator``.
-    """
-    def iter_source(source_file):
-        if isinstance(source_file, list):
-            for i, f in enumerate(source_file):
-                for l in self.iter_source(f):
-                    yield(l)
-                if i < len(source_file) - 1:
-                    yield "\n"
-        else:
-            try:
-                is_filename = not "\n" in source
-            except:
-                is_filename = True
-            if is_filename:
-                with open(source_file, "rt") as f:
-                    for l in f:
-                        yield l               
-            else:
-                if source_file[-1] == "\n":
-                    source_file = source_file[:-1]
-                for l in source_file.split("\n"):
-                    yield l + "\n"     
-    warnings.warn(
-        "Function make_doc() is deprecated. One may use doxygen instead",
-         DeprecationWarning
-    )
-
-
-    g = open(output_file, "wt")
-    m_copy_comment =   re.compile(r"\s*//\s*\%\%(EXPORT|COMMENT)\b")
-    m_begin_comment =  re.compile(r"\s*/\*.*(\*/)?")
-    m_end_comment = re.compile(r".*\*/")
-    m_is_comment = re.compile(r"\s*//")
-    m_stop = re.compile(r"\s*[{$]")
-    m_any_directive =   re.compile(r"\s*//\s*\%\%[A-Za-z0-9_]*\b")
-    comment_pending = in_comment = copy = is_keyword = False 
-    for l in iter_source(source_file):
-        is_keyword = False
-        if  m_copy_comment.match(l):
-            comment_pending  = is_keyword = True
-            in_comment, copy = False, True
-        elif m_begin_comment.match(l):
-            if comment_pending:
-                copy, comment_pending = True, False
-                closing = m_begin_comment.match(l).groups()[0]
-                in_comment = not closing
-                comment_pending = False
-        elif in_comment and m_end_comment.match(l):
-            in_comment = False
-        elif m_is_comment.match(l):
-            if comment_pending:
-                copy, comment_pending = True, False
-        else:
-            if not in_comment:
-                if copy and not comment_pending:
-                    print("\n\n",  file = g)
-                    copy = False
-
-        if  copy and not is_keyword:
-            try:
-                l = format_line(l, tables, terminal=0)
-            except:
-                pass 
-            if not m_any_directive.match(l): 
-                print(l, end = "", file = g)
-    g.close()        
- 
-
+    err=  """Function make_doc is no longer supported.
+Use doxygen for documenting C files!"""
+    raise NotImplementedError(err)
 
 
 def c_snippet(source, *args, **kwds):

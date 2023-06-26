@@ -158,13 +158,15 @@ from config import SRC_DIR, DEV_DIR,  C_DIR, PXD_DIR
 from config import REAL_SRC_DIR
 from config import INT_BITS, PRIMES
 SKE_DIR = os.path.join(DEV_DIR, "mm_op")
+DISPATCH_SKE_DIR = os.path.join(DEV_DIR, "mm_basics")
 
 
 
 if  __name__ == "__main__":
     sys.path.append(REAL_SRC_DIR)
     from mmgroup.generate_c import TableGenerator, make_doc, format_item
-    from mmgroup.generate_c import pxd_to_pyx, pxd_to_function_list
+    from mmgroup.generate_c import generate_pxd, pxd_to_pxi
+    from mmgroup.generate_c import pxd_to_function_list
     sys.path.pop()
 
 
@@ -383,9 +385,12 @@ def make_c_h_pxd(p):
     pyx_declarations = PYX_DECLARATIONS.format(
         INT_BITS = INT_BITS, P = p
     )
-    tg.generate_pxd(
+    generate_pxd(
        os.path.join(PXD_DIR, pxd_file), 
-       h_file, pyx_declarations, nogil = True
+       tg,
+       h_file, 
+       pyx_declarations, 
+       nogil = True
     )
     return c_files,  [ pxd_file ]
 
@@ -433,7 +438,7 @@ def generate_pyx(p, pxd_files):
 
     for pxd_f in pxd_files:
         pyx_comment("Wrappers for C functions from file %s" % pxd_f, f_pyx)
-        pyx_code = pxd_to_pyx(
+        pyx_code = pxd_to_pxi(
             os.path.join(PXD_DIR, pxd_f), 
             None, translate_pxd, nogil=True
         )
@@ -447,6 +452,55 @@ def generate_pyx(p, pxd_files):
         print(declaration,  file = f_pyx)
 
     f_pyx.close()
+
+
+##########################################################################
+# Generate dispatchar for differnt values of p
+##########################################################################
+
+
+
+
+DISPATCH_SKE_DIR = os.path.join(DEV_DIR, "mm_basics")
+
+
+
+DISPATCH_H_FILE_SKELETONS = [
+]
+
+DISPATCH_C_FILE_SKELETONS = [
+    "mm_op",
+]
+
+
+
+def dispatch_table_classes():
+    from mmgroup.dev.mm_basics import dispatch_p
+
+    if "mockup" in sys.argv[1:]:
+        return [dispatch_p.Mockup_DispatchP(C_DIR)]
+    else:
+        return [dispatch_p.DispatchP(C_DIR)]
+
+ 
+
+def generate_dispatch():
+    """This is a future extension which is not yet used!"""
+    tables = {}
+    directives = {}
+    global generated_tables
+    for table_instance in dispatch_table_classes():
+        tables.update(table_instance.tables)
+        directives.update(table_instance.directives)
+    tg = TableGenerator(tables, directives, verbose = VERBOSE)
+    for name in DISPATCH_C_FILE_SKELETONS:
+        ske_file = name + ".ske"
+        ske_path = os.path.join(DISPATCH_SKE_DIR, ske_file)
+        c_file = name + ".c"
+        c_path= os.path.join(C_DIR, c_file)
+        print("Creating %s from %s" % (c_file, ske_file))
+        tg.generate(ske_path, c_path)
+
 
 
 
@@ -464,3 +518,7 @@ if __name__ == "__main__":
     for p in PRIMES:
         c_files,  pxd_files = make_c_h_pxd(p)
         generate_pyx(p, pxd_files)
+        generate_dispatch()
+
+
+

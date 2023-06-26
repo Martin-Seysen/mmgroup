@@ -9,8 +9,9 @@ from mmgroup.generate_c.make_c_tables import TableGenerator
 from mmgroup.generate_c.make_c_tables import make_doc
 from mmgroup.generate_c.make_c_tables import c_snippet
 
-from mmgroup.generate_c.make_pyx import pxd_to_pyx
-from mmgroup.generate_c.make_pyx import pxd_to_function_list
+from mmgroup.generate_c.make_pxd import generate_pxd
+from mmgroup.generate_c.make_pxi import pxd_to_pxi
+from mmgroup.generate_c.make_pxi import pxd_to_function_list
 
 
 

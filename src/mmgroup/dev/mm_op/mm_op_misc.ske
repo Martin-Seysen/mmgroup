@@ -30,7 +30,7 @@
   @brief Copy vector ``mv1`` in \f$\rho_{%{P}}\f$ to ``mv2``
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
+int32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
 // Copy mv1 to mv2. Here mv1 and mv2 are vectors of the
 // monster group representation modulo %{P}.
 {
@@ -56,7 +56,7 @@ uint32_t mm_op%{P}_copy(uint_mmv_t *mv1, uint_mmv_t *mv2)
   The function returns 0 in case of equality and 1 otherwise.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
+int32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
 {
     uint_mmv_t a, b, t, c;
     while (len--) {
@@ -88,7 +88,7 @@ uint32_t mm_op%{P}_compare_len(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
   It returns 0 in case of equality and 1 otherwise.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
+int32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Compare two vectors of the monster group representation modulo %{P}..
 //  Comparison is done modulo %{P}.
 //  The function returns 0 in case of equality and 1 otherwise.
@@ -108,7 +108,7 @@ uint32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
   for the case that ``mv`` is expected to be zero.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_checkzero(uint_mmv_t *mv)
+int32_t mm_op%{P}_checkzero(uint_mmv_t *mv)
 {
     uint_mmv_t acc = 0;
     uint_fast32_t i;
@@ -209,7 +209,7 @@ void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
   and 2 if  \f$q\f$ does not divide \f$p\f$.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
+int32_t mm_op%{P}_compare_mod_q(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
 //  Compare two vectors of the monster group representation modulo %{P}.
 //  Comparison is done modulo q. q must divide %{P}. The function returns:
 //  0  if mmv1 == mmv2 (mod q) 

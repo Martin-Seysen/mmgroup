@@ -51,6 +51,15 @@ Some mathematical aspects of the implementation
 Code generation
 ===============
 
+Warning!
+
+At present the process of generating C code is under construction.
+
+We plan to switch to the ``meson`` build system. Therefore a much more
+declarative style is required for describing an buld operations.
+Thus the description here is pertty much outdated!
+
+
 In this section we describe the most important functions and classes
 used for the automatic generation of C code.
   
@@ -63,7 +72,7 @@ Classes and functions provided by the code generator
  
 
 .. autoclass:: mmgroup.generate_c.TableGenerator
-   :members: generate, generate_pxd
+   :members: generate
 
 
 .. autoclass:: mmgroup.generate_c.UserDirective
@@ -83,7 +92,9 @@ Classes and functions provided by the code generator
   
 .. autofunction::   mmgroup.generate_c.pxd_to_function_list
   
-.. autofunction::   mmgroup.generate_c.pxd_to_pyx
+.. autofunction::   mmgroup.generate_c.pxd_to_pxi
+  
+.. autofunction::   mmgroup.generate_c.generate_pxd
 
     
 

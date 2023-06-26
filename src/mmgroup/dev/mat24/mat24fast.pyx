@@ -11,10 +11,6 @@ from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t;
 include "../pxd_files/mat24_functions.pxd"
 
 
-cdef extern from "mat24_functions.h":
-    const uint32_t MAT24_BASIS[24]
-    const uint32_t MAT24_RECIP_BASIS[32]
-    const uint16_t MAT24_SYNDROME_TABLE[0x800]
 
 
 

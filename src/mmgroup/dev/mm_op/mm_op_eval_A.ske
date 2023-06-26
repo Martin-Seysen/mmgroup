@@ -227,7 +227,7 @@ int32_t mm_op%{P}_eval_A(uint64_t *v, uint32_t v2)
   // %%END IF
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_norm_A(uint_mmv_t *v)
+int32_t mm_op%{P}_norm_A(uint_mmv_t *v)
 {
     uint_mmv_t w;
     uint_fast32_t i, norm = 0;
@@ -269,7 +269,7 @@ uint32_t mm_op%{P}_norm_A(uint_mmv_t *v)
 
         v += %{V24_INTS};
     }                                  // End main loop of rows
-    return norm % %{P};
+    return (int32_t)(norm % %{P});
 }
 
 

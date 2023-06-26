@@ -65,7 +65,7 @@ def _parse_pxd_enable(l):
 
 
 
-def pxd_to_pyx(pxd_file, module = None, translate = None, select = True, nogil = False): 
+def pxd_to_pxi(pxd_file, module = None, translate = None, select = True, nogil = False): 
     """Extract Cython wrappers from prototypes in a .pxd file
 
     A .pxd file contains prototypes of external C functions and it
@@ -74,8 +74,9 @@ def pxd_to_pyx(pxd_file, module = None, translate = None, select = True, nogil =
 
     This function returns a string containing python wrappers of the
     C functions in the pxd file. This string may be used as a part of 
-    an automatically generated .pyx file. Here the C functions in the
-    .pxd file must be sufficiently simple as indicated below.
+    an automatically generated .pxi file that can be included directly
+    into a .pyx file. Here the C functions in the .pxd file to be 
+    included must be sufficiently simple as indicated below.
 
     The returned string starts with two lines::
  
@@ -200,7 +201,7 @@ def pxd_to_function_list(pxd_file):
 
     Returns a list of function names found in a .pxd file.
     This list contains exactly the names of the functions that
-    would be wrapped by calling ``pxd_to_pyx(pxd_file)``.
+    would be wrapped by calling ``pxd_to_pxi(pxd_file)``.
     """
     l_out = []
     with open(pxd_file, "rt") as input_file:

@@ -1,0 +1,65 @@
+
+#include <stdlib.h>
+#include "mm_basics.h"
+
+// %%EXPORT_KWD MM_BASICS_API
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/** 
+  @brief Compute operation of the monster group on a vector
+
+  Let \f$v\f$ be a vector of the representation \f$\rho_p\f$
+  of the monster group stored in the array referred by ``v``.
+  Here \f$p\f$ must be in %{LEGAL_P:mm_op_word}.
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array of length ``len_g`` referred by the pointer ``g``.
+
+  Then the function computes the vector \f$v \cdot g^e\f$  and 
+  overwrites the vector in the array ``v`` with that vector.
+  Here \f$e\f$ is the exponent given by the integer ``e``.
+
+  The function requires a work buffer (referrd by ``work``), which is
+  an array of ``mm_aux_mmv_size(p)`` entries of type ``uint_mmv_t``.
+  So the work buffer has the same size as the vector ``v``.
+
+  The function returns 0 in case of success and a nonzero
+  value in case of failure.
+
+  Internally, the function simplifies all substrings of the string 
+  representing the word \f$g^e\f$, except for atoms corresponding
+  to nonzero powers of the generator \f$\xi\f$. So the user need 
+  not 'optimize' the input \f$g\f$. Of course, this simplification
+  does not change the input array ``g``.
+*/ 
+// %%EXPORT px
+int32_t mm_op_word(uint32_t p, uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
+{
+// %%DISPATCH_P mm_op_word, p, v, g, len_g, e, work   
+}
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+//  %%GEN c

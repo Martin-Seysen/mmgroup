@@ -56,7 +56,7 @@ EXTRA_LINK_ARGS = defaultdict(list)
 ###############################################################################
 # Directories
 
-ROOT_DIR = "."
+ROOT_DIR = os.path.realpath(os.path.dirname(__file__))
 SRC_DIR = os.path.join(ROOT_DIR, "src")
 PACKAGE_DIR = os.path.join(SRC_DIR, "mmgroup")
 DEV_DIR = os.path.join(PACKAGE_DIR, "dev")

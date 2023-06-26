@@ -204,7 +204,7 @@ static int32_t find_short_all(
   some entries will be dropped without notice.
 */
 // %%EXPORT px
-uint32_t mm_op%{P}_eval_X_find_abs(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
+int32_t mm_op%{P}_eval_X_find_abs(uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
 {
      return find_short_all(v, p_out, n, y0, y1);
 }

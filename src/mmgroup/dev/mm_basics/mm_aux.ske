@@ -53,14 +53,14 @@ static const uint32_t MMV_CONST_TABLE[] = {
 };
 
 
-// %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
+// // %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
 static const uint16_t MM_AUX_TBL_ABC[] = {
 // %%TABLE MM_AUX_TBL_ABC, uint16
 };
 
 
 
-// %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
+// // %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
 static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 // %%TABLE MM_AUX_TBL_REDUCE, uint%{INT_BITS}
 };

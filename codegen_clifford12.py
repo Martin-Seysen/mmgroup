@@ -62,10 +62,10 @@ sys.path.append(REAL_SRC_DIR)
 
 def import_all():
     global TABLE_CLASSES, TableGenerator, make_doc
-    global pxd_to_pyx, Bit64Tables
+    global generate_pxd, pxd_to_pxi, Bit64Tables
     import mmgroup
     from mmgroup.generate_c import TableGenerator, make_doc
-    from mmgroup.generate_c import pxd_to_pyx
+    from mmgroup.generate_c import generate_pxd, pxd_to_pxi
     from mmgroup.dev.clifford12.bit64_tables import Bit64Tables
     TABLE_CLASSES = [
         Bit64Tables,
@@ -91,7 +91,7 @@ PXI_SKE_FILES = [
     "involutions", "xsp2co1_traces",
     "xsp2co1_map", 
 ]
-SKE_FILES = SIMPLE_SKE_FILES + PXI_SKE_FILES
+SKE_FILES = (SIMPLE_SKE_FILES + PXI_SKE_FILES)[:]
 
 
 ##########################################################################
@@ -285,9 +285,11 @@ def make_clifford12():
     h_path =  os.path.join(C_DIR, h_file)
     pxd_file =  PXD_FILE_NAME
     print("Creating %s from previous .ske files" % h_file)
+ 
     tg.generate(all_ske_files, None, h_path)
-    tg.generate_pxd(
+    generate_pxd(
         os.path.join(PXD_DIR, pxd_file), 
+        tg,
         h_file, 
         PXD_DECLARATIONS
     )
@@ -318,7 +320,7 @@ def generate_files():
     
     for pxd_f in pxd_files:
         pxi_comment("Wrappers for C functions from file %s" % pxd_f, f_pxi)
-        pxi_content = pxd_to_pyx(
+        pxi_content = pxd_to_pxi(
             os.path.join(PXD_DIR, pxd_f),
             os.path.split(pxd_f)[0],
             select = True

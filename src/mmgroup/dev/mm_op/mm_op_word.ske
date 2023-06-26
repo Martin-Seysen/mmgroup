@@ -73,7 +73,7 @@
   does not change the input array ``g``.
 */ 
 // %%EXPORT px
-uint32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
+int32_t mm_op%{P}_word(uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
 {
      uint32_t status;
      uint_mmv_t *p0 = v, *p1 = work, *pt;

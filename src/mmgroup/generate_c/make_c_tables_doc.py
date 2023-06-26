@@ -232,17 +232,11 @@ r"""The C code generator generates code from a source file automatically.
             6 * table[3];
 
      * ``PY_DOCSTR`` <string>, <format>
-         Creates a comment from a python docstring <string> and  
-         writes this comment into the C file.
-         If <format> is set to 1, the string is formatted, see
-         section *String formatting*. 
-         if <string> does not evaluate to a python string then we
-         also try to use <string>.__doc__ .         
+         This directive is no longer supported       
 
      * ``PYX`` <string>
-        Write a comment of shape::
+         This directive is no longer supported       
 
-            # PYX <string>
 
         into the .pxd file, when generating a .pxd file. This has
         no effect on the generated .c or .h file. It may be used for

@@ -92,7 +92,7 @@ from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup.dev.generators.gen_leech_reduce_n import GenLeechReduceY
 from mmgroup.dev.generators.gen_cocode_short import ShortCocodeTables
 from mmgroup.generate_c import TableGenerator, make_doc
-from mmgroup.generate_c import pxd_to_pyx
+from mmgroup.generate_c import generate_pxd, pxd_to_pxi
 
 
 ########################################################################
@@ -220,8 +220,9 @@ def mat24_make_c_code():
     print("Creating %s from previous .ske files" % h_file)
     generator.generate(mat24_header_inputs, None, h_path)
 
-    generator.generate_pxd(
+    generate_pxd(
         os.path.join(PXD_DIR, MAT24_H_FILE + ".pxd"), 
+        generator,
         MAT24_H_FILE + ".h",  
         pxd_declarations   
     )
@@ -296,7 +297,6 @@ def generators_make_c_code():
         table_instance = table_class()
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
-    print(tables.keys())
     tg = TableGenerator(tables, directives)
 
     # Generate c files
@@ -319,12 +319,23 @@ def generators_make_c_code():
     print("Creating %s from previous .ske files" % h_file)
     tg.generate(all_ske_files, None, h_path)
 
+    """
     # generate .pxd file
     tg.generate_pxd(
         os.path.join(PXD_DIR, PXD_GENERATORS_NAME), 
         h_file, 
         PXD_DECLARATIONS
     )
+    """
+
+    generate_pxd(
+        os.path.join(PXD_DIR, PXD_GENERATORS_NAME), 
+        tg,
+        h_file, 
+        PXD_DECLARATIONS,
+   )
+
+
     print("C files for extension 'generators' have been created" )
         
     # generate .pxi file
@@ -338,7 +349,7 @@ def generators_make_c_code():
         f_pxi
     )
     print(PXD_DECLARATIONS, file = f_pxi)
-    pxi_content = pxd_to_pyx(
+    pxi_content = pxd_to_pxi(
         os.path.join(PXD_DIR, PXD_GENERATORS_NAME),
         os.path.split(PXD_GENERATORS_NAME)[0],
         select = True

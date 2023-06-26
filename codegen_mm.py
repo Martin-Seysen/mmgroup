@@ -142,7 +142,7 @@ from config import INT_BITS
 SKE_DIR = os.path.join(DEV_DIR, "mm_basics")
 
 from mmgroup.generate_c import TableGenerator, make_doc, format_item
-from mmgroup.generate_c import pxd_to_pyx
+from mmgroup.generate_c import generate_pxd, pxd_to_pxi
 
 import mmgroup.dev.mm_basics
 from mmgroup.dev.mm_basics import mm_aux, mm_tables, mm_basics
@@ -326,8 +326,9 @@ def make_basics():
     #print(all_ske_files)
     tg.generate(all_ske_files, None, h_path)
     print("Creating %s" % pxd_file)
-    tg.generate_pxd(
+    generate_pxd(
         os.path.join(PXD_DIR, pxd_file), 
+        tg,
         h_file, 
         PXD_DECLARATIONS
     )
@@ -362,7 +363,7 @@ def generate_files():
     print(PXD_DECLARATIONS, file = f_pxi)
     for pxd_f in pxd_files:
         pxi_comment("Wrappers for C functions from file %s" % pxd_f, f_pxi)
-        pxi_content = pxd_to_pyx(
+        pxi_content = pxd_to_pxi(
             os.path.join(PXD_DIR, pxd_f),
             os.path.split(pxd_f)[0]
         )
