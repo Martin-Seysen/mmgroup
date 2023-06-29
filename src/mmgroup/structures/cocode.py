@@ -8,15 +8,6 @@ from numbers import Integral, Number
 from random import randint
 
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
-
-
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
@@ -46,8 +37,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, PLoop
+    global import_pending, mat24, COCODE_BASIS, PLoop
     global AutPL, AutPlGroup, XLeech2
+    from mmgroup import mat24, COCODE_BASIS 
     from mmgroup.structures.ploop import PLoop
     from mmgroup.structures.autpl import AutPL, AutPlGroup
     from mmgroup.structures.xleech2 import XLeech2
@@ -146,7 +138,6 @@ class Cocode():
 
     """
     __slots__ = "value"
-    basis = mat24.basis[:12]
     parity_class = True
 
     def __init__(self, value):
@@ -331,7 +322,7 @@ class Cocode():
     @classmethod
     def str_basis(cls):
        b = "Golay cocode basis c_i[0,...,23], i = 0,...,11"
-       return str_basis(b, "c", cls.basis)
+       return str_basis(b, "c", COCODE_BASIS)
 
     @classmethod
     def show_basis(cls):

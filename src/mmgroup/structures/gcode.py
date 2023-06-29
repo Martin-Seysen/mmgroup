@@ -86,13 +86,6 @@ from operator import __xor__
 from numbers import Integral, Number
 from random import randint
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
 
 
 
@@ -123,8 +116,10 @@ def complete_import():
     if import_pending:
         complete_import()
     """
+    global BASIS, mat24
     global import_pending, Cocode, PLoop, PLoopIntersection
     global AutPL, AutPlGroup, XLeech2
+    from mmgroup import mat24, GCODE_BASIS
     from mmgroup.structures.cocode import Cocode
     from mmgroup.structures.cocode import PLoopIntersection
     from mmgroup.structures.ploop import PLoop
@@ -293,7 +288,6 @@ class GCode():
 
     """
     __slots__ = "value", "bit_list_"
-    basis = mat24.basis[12:24]
     parity = 0
     cocode = 0
     sign = 1
@@ -557,7 +551,7 @@ class GCode():
     @classmethod
     def str_basis(cls):
        b = "Golay code basis g_i[0,...,23], i = 0,...,11"
-       return str_basis(b, "g", cls.basis)
+       return str_basis(b, "g", GCODE_BASIS)
 
     @classmethod
     def show_basis(cls):

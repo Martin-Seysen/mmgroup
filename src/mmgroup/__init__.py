@@ -22,8 +22,12 @@ import warnings
 
 try:
     # Try importing the fast C function
+    from mmgroup import mat24
     from mmgroup.mat24 import MAT24_ORDER 
-except (ImportError, ModuleNotFoundError):
+    assert type(MAT24_ORDER) == int
+    GCODE_BASIS = mat24.basis[12:24]
+    COCODE_BASIS = mat24.basis[:12]
+except (ImportError, ModuleNotFoundError, AssertionError):
     # Import a pure python substitute for the mmgroup.mat24 extension
     # if the original extension has not been found. For background, 
     # see section 'Mock up C extension modules' in file
@@ -31,23 +35,36 @@ except (ImportError, ModuleNotFoundError):
     from mmgroup.dev.mat24.mat24_ref import  Mat24
     mat24 = Mat24    
     MAT24_ORDER = Mat24.MAT24_ORDER
+    GCODE_BASIS = mat24.basis[12:24]
+    COCODE_BASIS = mat24.basis[:12]
     del Mat24
     w = "Extension mmgroup.mat24 not found, package not functional!"
     warnings.warn(w, UserWarning)
 
 
 try:
+    _m = "parity"
     from mmgroup.structures.parity import Parity
+    _m = "gcode"
     from mmgroup.structures.gcode import GCode, GcVector
+    _m = "cocode"
     from mmgroup.structures.cocode import Cocode
+    _m = "ploop"
     from mmgroup.structures.ploop import PLoopOne, PLoopOmega
     from mmgroup.structures.ploop import  PLoop, PLoopZ
+    _m = "suboctad"
     from mmgroup.structures.suboctad import Octad, SubOctad
+    _m = "autpl"
     from mmgroup.structures.autpl import  AutPL
+    _m = "xleech2"
     from mmgroup.structures.xleech2 import XLeech2
 except:
-    w = "Extension mmgroup.mat24 not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    #import traceback
+    #traceback.print_stack()
+    w = "The %s package is not functional!"
+    warnings.warn(w % _m, UserWarning)
+del _m
+
 
 
 try:

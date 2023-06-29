@@ -65,13 +65,6 @@ from random import randint
 import warnings
 
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
 
 
 
@@ -107,7 +100,8 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending,  XLeech2
+    global import_pending, mat24, XLeech2
+    from mmgroup import mat24
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
 
@@ -214,6 +208,8 @@ def Octad(octad):
     if  parameter ``octad`` does not evaluate to an octad or a
     complement of an octad.      
     """
+    if import_pending:
+        complete_import()
     if isinstance(octad, Integral):
         if  not 0 <= octad < 759:
             raise ValueError("Bad octad number")
@@ -338,6 +334,8 @@ def SubOctad(octad, suboctad = 0):
     modulo the Golay code and has number ``s = 1 ^ 2 ^ 4 ^ 8 = 15``.
 
     """
+    if import_pending:
+        complete_import()
     ploop = Octad(octad)
     gcode = ploop.value & 0xfff
     if isinstance(suboctad, str):
@@ -351,8 +349,6 @@ def SubOctad(octad, suboctad = 0):
         value = Cocode(suboctad).cocode 
         suboctad_ = mat24.cocode_to_suboctad(value, gcode)
     cocode = mat24.suboctad_to_cocode(suboctad_, gcode)
-    if import_pending:
-       complete_import()
     result = XLeech2(ploop, cocode)
     subtype =  result.xsubtype
     assert subtype in [0x22, 0x42], (hex(subtype), hex(ploop), hex(cocode), hex(result.value))

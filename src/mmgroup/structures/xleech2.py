@@ -68,13 +68,6 @@ from random import randint
 
 import numpy as np
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
 
 
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
@@ -122,7 +115,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, MM0, std_q_element 
+    global mat24
+    global import_pending, MM0, std_q_element
+    from mmgroup import mat24 
     from mmgroup.structures.mm0_group import MM0
     from mmgroup.structures.construct_mm import std_q_element
     import_pending = False

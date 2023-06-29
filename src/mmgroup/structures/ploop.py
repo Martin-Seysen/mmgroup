@@ -73,13 +73,7 @@ from operator import __xor__
 from numbers import Integral, Number
 from random import randint
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
+
 
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
@@ -111,7 +105,8 @@ def complete_import():
         complete_import()
     """
     global import_pending
-    global AutPL, AutPlGroup, XLeech2
+    global mat24, AutPL, AutPlGroup, XLeech2
+    from mmgroup import mat24
     from mmgroup.structures.autpl import AutPL, AutPlGroup
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False

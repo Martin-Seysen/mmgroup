@@ -220,19 +220,7 @@ from mmgroup.structures.parse_atoms import eval_atom_expression
 
 
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-    from mmgroup.mat24 import MAT24_ORDER, MAT24_RAND
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
-    MAT24_ORDER = Mat24.MAT24_ORDER
-    MAT24_RAND = Mat24.MAT24_RAND
-    
 
-MAT24_ORDER_M1 = MAT24_ORDER - 1
 
 ERR_TYPE = "Unsupported operand types for %s: '%s' and '%s'"
 ERR_RAND = "Illegal string for constricting type %s element" 
@@ -258,7 +246,9 @@ def complete_import():
     if import_pending:
         complete_import()
     """
-    global import_pending, Cocode
+    global import_pending, mat24, MAT24_ORDER 
+    global Cocode
+    from mmgroup import mat24, MAT24_ORDER
     from mmgroup.structures.cocode import Cocode
     import_pending = False
 
@@ -272,16 +262,18 @@ def complete_import():
 
 def rand_perm_num(s):
     """Return number of a random permutation depending on string 's'"""
+    if import_pending:
+       complete_import()
     mode = 0
     if s[:1] != "r":
         raise ValueError(ERR_RND_S)
     for c in s[1:]:
         if not c.isspace():
             try:
-                mode |= MAT24_RAND[c]
+                mode |= mat24.MAT24_RAND[c]
             except KeyError:
                 raise ValueError(ERR_RND_CH % c)
-    rand = randint(0, MAT24_ORDER_M1)
+    rand = randint(0, MAT24_ORDER - 1)
     return mat24.m24num_rand_local(mode, rand)
 
 
@@ -496,17 +488,16 @@ class AutPL(AbstractGroupWord):
     is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
 
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``. 
-
-
    
     """
     __slots__ = "_cocode", "_perm_num", "_perm", "rep"
     ERR_UNDEF = "Parker loop automorphism is not defined by input data"
     _perm_ = list(range(24))  # neutral permutation
-    _rep_ = mat24.perm_to_autpl(0, _perm_)
     group = None       # will be set to StdAutPlGroup later
     
     def __init__(self, d = 0, p = 0, unique = 1):
+        if import_pending:
+            complete_import()
         self._cocode, self._perm_num = autpl_from_obj(d, p, unique)
         self._compute_from_numbers()
 
