@@ -144,7 +144,6 @@ from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
 
-
 import sys
 import os
 import collections
@@ -155,43 +154,12 @@ import numpy as np
 from random import randint, sample
 from sys import getrefcount
 
-from mmgroup.generators import rand_get_seed
-from mmgroup.generators import gen_rng_modp
-from mmgroup.structures.parse_atoms import ihex, TaggedAtom
 from mmgroup.structures.mm0_group import MM0
 from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
-from mmgroup.structures.parse_atoms import  AtomDict
 from mmgroup.structures.construct_mm import load_group_name     
 from mmgroup.structures.construct_mm import iter_mm       
-from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.generators import mm_group_invert_word
-from mmgroup.clifford12 import xsp2co1_check_word_g_x0 
-from mmgroup.clifford12 import xsp2co1_reduce_word      
-from mmgroup.clifford12 import chk_qstate12
-from mmgroup.clifford12 import xsp2co1_rand_word_G_x0
-from mmgroup.clifford12 import xsp2co1_rand_word_N_0
-from mmgroup.mm import mm_vector
-
-
-
-try:
-    from mmgroup import mat24
-    from mmgroup.mat24 import MAT24_ORDER, pow_ploop, ploop_theta
-except (ImportError, ModuleNotFoundError):
-    from mmgroup.dev.mat24.mat24_ref import Mat24  
-    mat24 = Mat24  
-    MAT24_ORDER = Mat24.MAT24_ORDER
-    pow_ploop = Mat24.pow_ploop
-    ploop_theta = Mat24.ploop_theta
-    del Mat24
-
-
-from mmgroup.structures.ploop import Cocode, PLoop
-from mmgroup.structures.autpl import StdAutPlGroup, autpl_from_obj, AutPL
-
-from mmgroup.generators import mm_group_mul_words
-
 
 
 
