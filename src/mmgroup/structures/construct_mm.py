@@ -1,3 +1,15 @@
+"""Construct an element of the Monster group
+
+The main function ``iter_mm()`` in this module constructs an element
+of the Monster group from data structures as specifies in section
+**The Monster group** of the **API reference**. This function
+yields the entries of a numpy array of type ``np.uint32`` containing 
+internal represntation of the construted element.
+
+Functions or data structures in this module starting with an
+underscore (``_``) should not be imported by other modules.
+"""
+
 import collections
 import re
 import warnings
@@ -29,7 +41,9 @@ from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parse_atoms import ihex, TaggedAtom, AtomDict
 from mmgroup.structures.parse_atoms import  eval_atom_expression  
 from mmgroup.structures.autpl import autpl_from_obj, rand_perm_num
-from mmgroup import Cocode, PLoop, AutPL
+from mmgroup.structures.cocode import Cocode
+from mmgroup.structures.ploop import PLoop
+from mmgroup.structures.autpl import AutPL
 
 
 
@@ -38,7 +52,7 @@ from mmgroup import Cocode, PLoop, AutPL
 ###########################################################################
 
 
-tag_dict = {
+_tag_dict = {
         "d": 0x10000000, 
         "p": 0x20000000, 
         "x": 0x30000000, 
@@ -48,7 +62,7 @@ tag_dict = {
 }
 
 
-STD_Q_ELEMENTS = {
+_STD_Q_ELEMENTS = {
    "v+": 0x200, "v-":0x1000200, 
    "Omega":0x800000, "-Omega":0x1800000,
    "-":0x1000000, "+":0,
@@ -57,8 +71,6 @@ STD_Q_ELEMENTS = {
 
 
 
-
-tags = " dpxytl"
 
 
 ERR_ATOM_VALUE = "Illegal value of atom in constructor of monster group with tag '%s'"
@@ -69,7 +81,7 @@ ERR_TAG_TYPE = "Illegal type '%s' of tag in constructor of monster group"
 
 def std_q_element(tag, r):
     try:
-        e = STD_Q_ELEMENTS[r]
+        e = _STD_Q_ELEMENTS[r]
     except KeyError:
         raise ValueError(ERR_ATOM_VALUE % tag) 
     if tag == 'q':
@@ -83,7 +95,7 @@ def std_q_element(tag, r):
 
 
 
-def iter_d(tag, d):
+def _iter_d(tag, d):
     if isinstance(d, Integral ):
         yield 0x10000000 + (d & 0xfff)
     elif isinstance(d, str):
@@ -103,7 +115,7 @@ def iter_d(tag, d):
         except:
             raise TypeError(ERR_ATOM_TYPE % (type(d), 'd'))
 
-def iter_p(tag, perm):
+def _iter_p(tag, perm):
     if isinstance(perm, Integral):
         if not 0 <= perm < MAT24_ORDER:
             err = "Tag 'p': bad permutation number for Mathieu group M24"
@@ -130,7 +142,7 @@ def iter_p(tag, perm):
             raise TypeError(ERR_ATOM_TYPE % (type(perm), tag))
 
 
-def gen_ploop_element(tag, r):
+def _gen_ploop_element(tag, r):
     if isinstance(r, Integral):
         return  r & 0x1fff
     elif isinstance(r, str):
@@ -144,15 +156,15 @@ def gen_ploop_element(tag, r):
         except:
             raise TypeError(ERR_ATOM_TYPE % (type(r), tag))
 
-def iter_xy(tag, r):
-    yield tag_dict[tag] + gen_ploop_element(tag, r)
+def _iter_xy(tag, r):
+    yield _tag_dict[tag] + _gen_ploop_element(tag, r)
 
-def iter_z(tag, r ):
-    pl = pow_ploop(gen_ploop_element(tag, r), 3)
-    yield tag_dict['x'] + pl
-    yield tag_dict['y'] + pl
+def _iter_z(tag, r ):
+    pl = pow_ploop(_gen_ploop_element(tag, r), 3)
+    yield _tag_dict['x'] + pl
+    yield _tag_dict['y'] + pl
 
-def iter_tl(tag, r):
+def _iter_tl(tag, r):
     if isinstance(r, Integral):
         e = r % 3
     elif isinstance(r, str):
@@ -162,7 +174,7 @@ def iter_tl(tag, r):
     else:
         raise TypeError(ERR_ATOM_TYPE % (type(r), tag))
     if e:
-        yield  tag_dict[tag] + e 
+        yield _tag_dict[tag] + e 
 
 
 ###########################################################################
@@ -175,14 +187,14 @@ ERR_Q_x0 = "Atom for tag 'q' must represent element of subgroup Q_x0 of the mons
 
 
 
-def iter_q(tag, r):
+def _iter_q(tag, r):
     if isinstance(r, Integral):
         e = r & 0x1ffffff
     elif isinstance(r, str):
         if  len(r) == 1 and r in "rn":
             e = randint(r == 'n', 0x1ffffff) 
-        elif r in STD_Q_ELEMENTS:
-            e = STD_Q_ELEMENTS[r]
+        elif r in _STD_Q_ELEMENTS:
+            e = _STD_Q_ELEMENTS[r]
         else:
             raise ValueError(ERR_ATOM_VALUE % tag) 
     else:
@@ -193,8 +205,8 @@ def iter_q(tag, r):
             raise TypeError(ERR_Q_x0)
     d = (e >> 12) & 0x1fff
     delta = (e ^ ploop_theta(d)) & 0xfff
-    yield tag_dict['x'] + d
-    yield tag_dict['d'] + delta
+    yield _tag_dict['x'] + d
+    yield _tag_dict['d'] + delta
 
 
 
@@ -202,16 +214,16 @@ def iter_q(tag, r):
 ERR_LEECH2 = "Atom for tag 'c' must represent a type-4 vector in Leech lattice mod 2"
 
 
-def rand_type4_vector():
+def _rand_type4_vector():
     c = 0
     while gen_leech2_type(c) != 4:
         c = randint(0, 0xffffff) 
     return c
 
-def iter_c(tag, r):
+def _iter_c(tag, r):
     if isinstance(r, str):
         if r == 'r':
-            c = rand_type4_vector() 
+            c = _rand_type4_vector() 
         else:
             raise ValueError(ERR_LEECH2)
     elif isinstance(r, Integral):
@@ -239,7 +251,7 @@ def iter_c(tag, r):
 
 ERR_TAG_A = "Atom for tag 'a' must be a list of unsigend 32-bit integers"
 
-def iter_a(tag, a):
+def _iter_a(tag, a):
     try:
         for x in a:
             yield x & 0xffffffff
@@ -253,7 +265,7 @@ def iter_a(tag, a):
 
 ERR_RAND_INTERN = "Internal error in generating random element of monster"
 
-def iter_rand_N_0(in_N_x0, even):
+def _iter_rand_N_0(in_N_x0, even):
     r"""Return random element of subgroup :math:`N_{0}`
 
     The function returns a uniform distributed random element
@@ -285,7 +297,7 @@ def iter_rand_N_0(in_N_x0, even):
     yield from buf[:length]
      
 
-def iter_rand_G_x0():
+def _iter_rand_G_x0():
     r"""Return random element of subgroup :math:`G_{x0}`
 
     The function returns a uniform distributed random element
@@ -301,7 +313,7 @@ def iter_rand_G_x0():
 
 
 
-def iter_rand_mm(quality):
+def _iter_rand_mm(quality):
     r"""Return a random element of the monster group
 
     The function returns a random element of the monster group.
@@ -336,21 +348,21 @@ def iter_rand_mm(quality):
 
 
 
-RAND_FUNCTIONS = {
-    "M"      : (iter_rand_mm, 18),  
-    "G_x0"   : (iter_rand_G_x0,),
-    "N_0"    : (iter_rand_N_0, 0, 0), 
-    "N_x0"   : (iter_rand_N_0, 1, 0), 
-    "N_0_e"  : (iter_rand_N_0, 0, 1), 
-    "N_x0_e" : (iter_rand_N_0, 1, 1), 
+_RAND_FUNCTIONS = {
+    "M"      : (_iter_rand_mm, 18),  
+    "G_x0"   : (_iter_rand_G_x0,),
+    "N_0"    : (_iter_rand_N_0, 0, 0), 
+    "N_x0"   : (_iter_rand_N_0, 1, 0), 
+    "N_0_e"  : (_iter_rand_N_0, 0, 1), 
+    "N_x0_e" : (_iter_rand_N_0, 1, 1), 
 }
 
-def iter_rand_subgroup(tag, s):
+def _iter_rand_subgroup(tag, s):
     if isinstance(s, Integral):
-        yield from iter_rand_mm(s)
+        yield from _iter_rand_mm(s)
         return
     try:
-        ff = RAND_FUNCTIONS[s]
+        ff = _RAND_FUNCTIONS[s]
     except KeyError:
         if isinstance(s, str):
             err = "Bad group name '%s' for tag 'r'"
@@ -369,34 +381,34 @@ def iter_rand_subgroup(tag, s):
 ###########################################################################
 
 
-def iter_neutral(*args):
+def _iter_neutral(*args):
     return
     yield 0
 
-gen_tag_dict = {
-        "d": iter_d, 
-        "p": iter_p, 
-        "x": iter_xy, 
-        "y" :iter_xy, 
-        "z" :iter_z, 
-        "t": iter_tl, 
-        "l": iter_tl, 
-        "q": iter_q, 
-        "c": iter_c, 
-        "a": iter_a, 
-        "r": iter_rand_subgroup,
-        "1": iter_neutral
+_gen_tag_dict = {
+        "d": _iter_d, 
+        "p": _iter_p, 
+        "x": _iter_xy, 
+        "y" :_iter_xy, 
+        "z" :_iter_z, 
+        "t": _iter_tl, 
+        "l": _iter_tl, 
+        "q": _iter_q, 
+        "c": _iter_c, 
+        "a": _iter_a, 
+        "r": _iter_rand_subgroup,
+        "1": _iter_neutral
 }
 
 
-def iter_atom(tag = None, number = None):
+def _iter_atom(tag = None, number = None):
     """Return list of integers representing element of monster group
 
     This is the workhorse for method MMGroup.atom().
     See that method for documentation.
     """
     try: 
-        gen_function = gen_tag_dict[tag]
+        gen_function = _gen_tag_dict[tag]
     except KeyError:
         if isinstance(tag, str):
             raise ValueError(ERR_TAG_VALUE % tag)
@@ -412,48 +424,48 @@ def iter_atom(tag = None, number = None):
 ###########################################################################
 
 
-FRAME = re.compile(r"^([A-Za-z][A-Za-z_0-9]*)?\<(.+)\>$") 
+_FRAME = re.compile(r"^([A-Za-z][A-Za-z_0-9]*)?\<(.+)\>$") 
 
-EMBEDDED_GROUPS = [
+_EMBEDDED_GROUPS = [
 ]
 
-EMBEDDED_CLASSES = (
+_EMBEDDED_CLASSES = (
    AutPL, Cocode,
 )
 
-TYPES_PARSED_FROM_LIST = EMBEDDED_CLASSES + (
+_TYPES_PARSED_FROM_LIST = _EMBEDDED_CLASSES + (
    Integral, str, AbstractGroupWord,
 )
 
-ATOM_PARSERS = {
+_ATOM_PARSERS = {
 }
 
 def add_to_embedded_classes(cls):
-    global EMBEDDED_CLASSES
-    if not cls in EMBEDDED_CLASSES:
-        EMBEDDED_CLASSES = EMBEDDED_CLASSES + (cls,) 
+    global _EMBEDDED_CLASSES
+    if not cls in _EMBEDDED_CLASSES:
+        _EMBEDDED_CLASSES = _EMBEDDED_CLASSES + (cls,) 
 
 
-def element_from_atom(group, tag, *data):
+def _element_from_atom(group, tag, *data):
      if tag.isalpha():
          return group(tag, *data)
      else:
          raise ERR_TAG_VALUE(tag)
 
 
-def iter_parse_mm_string(group, s):
-    m = FRAME.match(s)
+def _iter_parse_mm_string(group, s):
+    m = _FRAME.match(s)
     group_name, string = (m[1], m[2]) if m else (None, s)
     if not group_name:
         group_name = group
     try:
-        atom_dict = ATOM_PARSERS[group_name]
+        atom_dict = _ATOM_PARSERS[group_name]
     except KeyError:
         if isinstance(group_name, str):
             err = "Cannot parse string of shape '%s<..>' in monster group" 
             raise ValueError(err % group_name)
         else:
-            atom_dict = ATOM_PARSERS["M"] 
+            atom_dict = _ATOM_PARSERS["M"] 
     element = eval_atom_expression(string, atom_dict)
     if element != 1:
         yield from element.mmdata
@@ -461,14 +473,14 @@ def iter_parse_mm_string(group, s):
 
 
 def load_group_name(group, group_name = None):
-    global EMBEDDED_GROUPS, ATOM_PARSERS
+    global _EMBEDDED_GROUPS, _ATOM_PARSERS
     assert isinstance(group, AbstractGroup)
-    EMBEDDED_GROUPS.append(group)
-    atom_dict = AtomDict(partial(element_from_atom, group))
-    ATOM_PARSERS[group] = atom_dict
+    _EMBEDDED_GROUPS.append(group)
+    atom_dict = AtomDict(partial(_element_from_atom, group))
+    _ATOM_PARSERS[group] = atom_dict
     if group_name:
         assert isinstance(group_name, str) and group_name.isidentifier()
-        ATOM_PARSERS[group_name] = atom_dict
+        _ATOM_PARSERS[group_name] = atom_dict
 
 import_groups_pending = True
 
@@ -487,7 +499,7 @@ def iter_mm(group, tag = None, atom = None, in_G_x0 = False):
     if isinstance(tag, str) and len(tag) == 1:
         if atom is None and tag == 'r':
             atom = 'G_x0' if in_G_x0 else 'M' 
-        yield from iter_atom(tag, atom)
+        yield from _iter_atom(tag, atom)
         return
     if tag is None:
         return
@@ -495,17 +507,17 @@ def iter_mm(group, tag = None, atom = None, in_G_x0 = False):
         import_groups()
     if isinstance(tag, AbstractMMGroupWord):
         yield from tag.mmdata
-    elif isinstance(tag, EMBEDDED_CLASSES):
+    elif isinstance(tag, _EMBEDDED_CLASSES):
         yield from tag.mmdata
     elif isinstance(tag, str):
         if group is None:
             group = MMGroup
-        yield from iter_parse_mm_string(group, tag)
+        yield from _iter_parse_mm_string(group, tag)
     elif isinstance(tag, list):
         for element in tag:
             if isinstance(element, tuple):
-                yield from iter_atom(*element)
-            elif isinstance(element, TYPES_PARSED_FROM_LIST):
+                yield from _iter_atom(*element)
+            elif isinstance(element, _TYPES_PARSED_FROM_LIST):
                 yield from iter_mm(element)
             else:
                 raise TypeError(ERR_TAG_TYPE % type(element))
@@ -575,7 +587,7 @@ def print_mm_tuples(tag = None, data = None, group = None):
 
 ERR_ILLEGAL_ATOM = "Illegal atom %s in monster group element"
 
-def iter_strings_from_N_x0_element(element):
+def _iter_strings_from_N_x0_element(element):
     mm_group_n_reduce_element(element)
     if element[1]: yield "y_%s" % ihex(element[1])
     if element[2]: yield "x_%s" % ihex(element[2])
@@ -597,13 +609,13 @@ def iter_strings_from_atoms(atoms, abort_if_error = True):
             tag, v = t >> 28, a & 0xfffffff
             v = (-v if a & 0x80000000 else v) % 3
             if v:
-                yield from iter_strings_from_N_x0_element(N_x0_element)
+                yield from _iter_strings_from_N_x0_element(N_x0_element)
                 yield "%s_%d" % ("tl"[tag-5], v)
         else:
             if abort_if_error:
                 raise ValueError(ERR_ILLEGAL_ATOM % hex(a))
             yield "<Bad atom %s>" % hex(a)
-    yield from iter_strings_from_N_x0_element(N_x0_element)
+    yield from _iter_strings_from_N_x0_element(N_x0_element)
 
 
 def print_mm_string(tag = None, data = None, group = None):
@@ -613,23 +625,4 @@ def print_mm_string(tag = None, data = None, group = None):
 
 
 
-###########################################################################
-# Converting tuples to strings
-###########################################################################
-
-
-TUPLE_FMT_DICT = dict(zip("dpxytl", [ihex, str, ihex, ihex, str, str]))
-
-def iter_strings_from_tuples(tuples):
-     for tag, value in tuples:
-          try:
-              fmt = TUPLE_FMT_DICT[tag]
-          except KeyError:
-              if isinstance(tag, str):
-                  err = "Illagal tag in tuple of monster group atoms"
-                  raise ValueError(err)
-              else:
-                  err = "Tag in tuple of monster group atoms must be a string"
-                  raise TypeError(err)
-          yield "%s_%s" % (tag, fmt(value))
 

@@ -40,15 +40,7 @@ from importlib import import_module
 import numpy as np
 
     
-try:
-    # Try importing the fast C functions
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python functions if the C functions are not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
-
-
+from mmgroup import mat24 
 from mmgroup.structures.abstract_rep_space import mod_rand_invertible
 from mmgroup.structures.abstract_rep_space import mod_rand_unit
 

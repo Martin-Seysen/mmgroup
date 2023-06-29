@@ -22,12 +22,6 @@ from operator import __and__, __or__
 
 import numpy as np
 
-#try:
-#    import mmgroup
-#except:
-#    # Get package from inplace build location if it is not installed
-#    sys.path.append(os.path.join('..', '..', 'src'))
-#    import mmgroup
 
 import mmgroup
 from mmgroup.clifford12 import uint64_to_bitlist

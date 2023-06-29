@@ -9,24 +9,8 @@ import warnings
 from functools import partial
 from numbers import Integral
 
-from mmgroup.structures.abstract_group import singleton
-from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
-from mmgroup.structures.abstract_mm_group import AbstractMMGroup
-from mmgroup.structures.parse_atoms import AtomDict, ihex     
-from mmgroup.structures.construct_mm import iter_mm       
 
-from mmgroup.structures.ploop import Cocode, PLoop
-from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
-from mmgroup.structures.xleech2 import XLeech2
-from mmgroup.structures.construct_mm import iter_mm       
-from mmgroup.structures.construct_mm import load_group_name     
-
-try:
-    from mmgroup import mat24
-except (ImportError, ModuleNotFoundError):
-    from mmgroup.dev.mat24.mat24_ref import Mat24
-    mat24 = Mat24
-
+from mmgroup import mat24
 from mmgroup.generators import gen_leech2_type
 from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
 from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
@@ -55,7 +39,19 @@ from mmgroup.clifford12 import xsp2co1_traces_fast
 from mmgroup.clifford12 import bitmatrix64_to_numpy
     
 
+from mmgroup.structures.abstract_group import singleton
+from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
+from mmgroup.structures.abstract_mm_group import AbstractMMGroup
+from mmgroup.structures.parse_atoms import AtomDict    
+from mmgroup.structures.construct_mm import iter_mm       
+
+from mmgroup.structures.ploop import Cocode, PLoop
+from mmgroup.structures.autpl import StdAutPlGroup, AutPL ,autpl_from_obj
+from mmgroup.structures.xleech2 import XLeech2
 from mmgroup.structures.qs_matrix import QStateMatrix
+
+from mmgroup.structures.construct_mm import iter_mm       
+from mmgroup.structures.construct_mm import load_group_name     
 from mmgroup.structures.construct_mm import iter_strings_from_atoms
 
 
@@ -79,6 +75,19 @@ DICT_INVOLUTION_G_x0 = {
    0x0322 : '2B_d0',  # the element :math:`y_D x_{\{0, 12\}}
 }
 
+
+
+import_construct_mm_pending = True
+
+
+def import_construct_mm():
+    global import_construct_mm_pending, iter_mm
+    global iter_strings_from_atoms
+    from mmgroup.structures.construct_mm import iter_mm       
+    from mmgroup.structures.construct_mm import load_group_name     
+    from mmgroup.structures.construct_mm import iter_strings_from_atoms
+    load_group_name(StdXsp2_Co1_Group, "MX")
+    import_construct_mm_pending = False
 
 
 
@@ -122,6 +131,8 @@ class Xsp2_Co1(AbstractMMGroupWord):
     MIN_LEN = 16
     __slots__ =  "_data"
     def __init__(self,  tag = None, atom = None, *args, **kwds):
+        if import_construct_mm_pending:
+            import_construct_mm()
         atoms = iter_mm(self.group, tag, atom, in_G_x0 = True)
         a_atoms = np.fromiter(atoms, dtype = np.uint32) 
         self._data = np.zeros(26, dtype = np.uint64)
@@ -669,7 +680,6 @@ except:
 
 StdXsp2_Co1_Group = Xsp2_Co1_Group()
 Xsp2_Co1.group = StdXsp2_Co1_Group
-load_group_name(StdXsp2_Co1_Group, "MX")
 
 
 

@@ -17,29 +17,15 @@ from random import randint, sample, choice
 
 import numpy as np
 
-#if not r"." in sys.path:
-#    sys.path.append(r".")
-
-
 from mmgroup import XLeech2, Cocode, PLoop, MM
 from mmgroup.clifford12 import xsp2co1_elem_from_mapping
-
-import_done = False
-
-try:
-    from mmgroup.bimm import inc_p3
-    from mmgroup.bimm.inc_p3 import P3_incidences
-    from mmgroup.bimm.inc_p3 import P3_point_set_type
-    from mmgroup.bimm.inc_p3 import AutP3
-    from mmgroup.bimm.inc_p3 import invert_perm_P3
-    from mmgroup.bimm.inc_p3 import mul_perm_P3
-    from mmgroup.bimm.inc_p3 import check_perm_P3
-    import_done = True
-except (ImportError, ModuleNotFoundError):
-    # The usual Sphinx and Readthedocs nuisance: We have to survive
-    # for the sake of documentation if we could not import this stuff
-    print("Warning: could not import module inc_p3")
-
+from mmgroup.bimm import inc_p3
+from mmgroup.bimm.inc_p3 import P3_incidences
+from mmgroup.bimm.inc_p3 import P3_point_set_type
+from mmgroup.bimm.inc_p3 import AutP3
+from mmgroup.bimm.inc_p3 import invert_perm_P3
+from mmgroup.bimm.inc_p3 import mul_perm_P3
+from mmgroup.bimm.inc_p3 import check_perm_P3
 
 #####################################################################
 # Constructing 'Points' and 'Stars' in the Monster
@@ -250,9 +236,6 @@ def precompute_all():
     global precomputation_pending
     if precomputation_pending:
         global P0_DICT, PSTAR_DICT
-        if not import_done:
-            err = "Failed to import module inc_p3" 
-            raise ImportError(err)
         for x in range(13):
             P0_DICT[x] = compute_P0(x)
         for x in range(13):

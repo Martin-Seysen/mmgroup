@@ -26,27 +26,17 @@ from sys import getrefcount
 
 import numpy as np
 
-#if not r"." in sys.path:
-#    sys.path.append(r".")
-
 from mmgroup import  MM
 from mmgroup.structures.abstract_group import AbstractGroup
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import singleton
 
-import_done = False
+from mmgroup.bimm import inc_p3
+from mmgroup.bimm.inc_p3 import p3_list, P3_node
+from mmgroup.bimm import p3_to_mm
+from mmgroup.bimm.p3_to_mm import PointP3, AutP3, AutP3_MM
+from mmgroup.bimm.p3_to_mm import Norton_generators
 
-try:
-    from mmgroup.bimm import inc_p3
-    from mmgroup.bimm.inc_p3 import p3_list, P3_node
-    from mmgroup.bimm import p3_to_mm
-    from mmgroup.bimm.p3_to_mm import PointP3, AutP3, AutP3_MM
-    from mmgroup.bimm.p3_to_mm import Norton_generators
-    import_done = True
-except (ImportError, ModuleNotFoundError):
-    # The usual Sphinx and Readthedocs nuisance: We have to survive
-    # for the sake of documentation if we could not import this stuff
-    print("Warning: could not import modules inc_p3, p3_to_mm")
 
 #####################################################################
 # class BiMM
@@ -410,9 +400,6 @@ def AutP3_BiMM(g):
 def precompute_all():
     # Do precompution on demand only. Otherwise Sphinx will fail.
     global precomputation_pending
-    if not import_done:
-        err = "Failed to imprt module inc_p3 and p3_to_mm" 
-        raise ImportError(err)
     precompute_points_lines_list()
     precomputation_pending = False
 
