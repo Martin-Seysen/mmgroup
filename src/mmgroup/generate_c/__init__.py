@@ -6,6 +6,7 @@ from mmgroup.generate_c.generate_functions import UserFormat
 from mmgroup.generate_c.generate_functions import make_table
 
 from mmgroup.generate_c.make_c_tables import TableGenerator
+from mmgroup.generate_c.make_c_tables import TableGeneratorStream
 from mmgroup.generate_c.make_c_tables import make_doc
 from mmgroup.generate_c.make_c_tables import c_snippet
 

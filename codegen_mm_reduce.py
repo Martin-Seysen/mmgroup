@@ -44,7 +44,7 @@ SKE_DIR = os.path.join(DEV_DIR, "mm_reduce")
 
 if  __name__ == "__main__":
     sys.path.append(REAL_SRC_DIR)
-    from mmgroup.generate_c import TableGenerator, make_doc, format_item
+    from mmgroup.generate_c import TableGeneratorStream, make_doc, format_item
     from mmgroup.generate_c import generate_pxd, pxd_to_pxi
     from mmgroup.dev.mm_op import mm_op
     from mmgroup.dev.mm_reduce import order_vector_tables
@@ -240,7 +240,7 @@ def make_reduce():
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
     # print("Basic functions:\n",  directives.keys())
-    tg = TableGenerator(tables, directives, verbose = VERBOSE)
+    tg = TableGeneratorStream(tables, directives, verbose = VERBOSE)
     # first generate C files
     c_files = []
     all_ske_files = [H_REDUCE_BEGIN] 

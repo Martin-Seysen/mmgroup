@@ -102,6 +102,11 @@ class TableGenerator(object):
     :param verbose: 
 
         optional, may be set ``True`` for verbose console output
+
+
+    External modules importing this class should use methods
+    ``set_tables``, ``generate``, and ``table_size`` only.
+    The may also read attribute ``export_file`` of this class.
     """
 
     m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)(\*|\b)(.*)?")
@@ -110,23 +115,20 @@ class TableGenerator(object):
     is_terminal = True, # True: Error if cannot valuate %{..}  expression
                         # False: Let expression unchanged in that case
 
-    def __init__(self, tables, directives={}, verbose = False):
+    def __init__(self, tables = {}, directives={}, verbose = False):
         """Creates a Code generator with tables and directives
  
         """
         self.verbose = verbose
-        self.tables = tables  # This is never changed
         self.names = {}       # Updated version of self.names
         self.export_file = [] # List of lines of export file to be written
-        self.write_to_export_file = False
-                              # Write to export file only if this is True
-        self.reset_names()    # initialize self.names from self.tables
-        self.exported_table_names = {}
-        #  dictionary python_table_name : c_table_name
-        # 'python_table_name' is a key of dictionary tables.
-        # 'c_table_name' is the corresponding name of that table
-        # or entry in C.
+        self.start_sync()     # Reset all possibly pending items
+        self.set_tables(tables, directives)
 
+    def set_tables(self, tables = {}, directives = {}, args = ()):
+        self.sync() 
+        self.tables = tables
+        self.reset_names()    # initialize self.names from self.tables
         # Enter user-defined directives into dictionary self.directives
         self.directives = {}
         for fname, f in directives.items():
@@ -162,18 +164,59 @@ class TableGenerator(object):
              "IF":           self.block_if,
         } )
         self.directives.update(builtin_directives)
+        self.adjust_names()
 
+        self.args = args     # positional arguments passed to formatting
+                             # function, not used for C files
+
+    def start_sync(self):
+        """Reset all directives to the state 'completed'"""
+        self.exported_table_names = {}
+        #  dictionary python_table_name : c_table_name
+        # 'python_table_name' is a key of dictionary tables.
+        # 'c_table_name' is the corresponding name of that table
+        # or entry in C.
+        self.write_to_export_file = False
+                              # Write to export file only if this is True
         self.use_table_pending = False
+        self.join_pending = False
         self.export_pending = 0
-        self.pxd_export_pending = 0
         self.export_args = ""
         self.export_kwd = ""
-        self.args = ()       # positional arguments passed to formatting
-                             # function, not used for C files
         self.block_stack = [] # stack for loop keywords such as FOR, IF, ..
 
-        self.source_name = None  # name of C skeleteon file
         self.current_line = ""
+        self.table_size_ = 0
+        self.gen_c = True
+        self.gen_h = False
+
+
+    def sync(self):
+        """Complain if there are any uncompleted directives
+
+        This function also sets all relevant attriibutes such as
+        expected when enetering a new source file.
+        """
+        ERR_DIRECTIVE = r"Directive %s has not been processed properly"
+        if self.export_pending:
+            raise ValueErrort(ERR_DIRECTIVE % "%%EXPORT")
+        if self.use_table_pending:
+            DIR = "%%EXPORT_TABLE or %%USE_TABLE"
+            raise ValueError(ERR_DIRECTIVE % DIR)
+        if len(self.block_stack):
+            DIR = "%%" + self.block_stack[0]
+            raise ValueError(ERR_DIRECTIVE % DIR)
+        if self.join_pending:
+            raise ValueError(ERR_DIRECTIVE % "%%JOIN")
+        
+        self.C_table_name = None            # C name of table pending
+        self.C_table_export = False         # export C name of table pending if set
+        self.exported_table_names.clear() 
+        self.export_args = ""
+        self.export_kwd = ""
+        self.current_line = ""
+        self.gen_c = True
+        self.gen_h = False
 
 
     def reset_names(self):
@@ -225,7 +268,6 @@ class TableGenerator(object):
         self.use_table_pending = 1 + self.export_pending
         self.export_pending = 0
         self.export_args = "" 
-        self.pxd_export_pending = 0
         return "", ""
 
     def export_table(self, args, *_): 
@@ -233,7 +275,6 @@ class TableGenerator(object):
         self.use_table_pending = 2
         self.export_pending = 0
         self.set_export_args("EXPORT_TABLE", args)
-        self.pxd_export_pending = 0
         export_str = self.export_kwd + "\n" if self.export_kwd else ""
         return export_str, export_str
 
@@ -247,7 +288,7 @@ class TableGenerator(object):
         return "", ""
 
     def set_export_args(self, directive, args):
-        """Set arguments for prefix for bnext line in export file"""
+        """Set arguments for prefix for next line in export file"""
         args = args.strip() 
         if ";" in args:
             err = "Illegal charcter ';' in %s directive" % directive
@@ -264,9 +305,6 @@ class TableGenerator(object):
         self.export_pending = True
         args = args.strip() 
         self.set_export_args("EXPORT", args)
-        self.pxd_export_pending =  'p' in args
-        if self.pxd_export_pending and 'x' in args:
-            self.pyx("<wrap pxi>")
         export_str = self.export_kwd + "\n" if self.export_kwd else ""
         return export_str, export_str
 
@@ -292,11 +330,6 @@ class TableGenerator(object):
         self.gen_c =  self.gen_c or not (self.gen_c or self.gen_h)
         return "", ""
         
-
-    def pyx(self, args, *_):
-        #args = format_line(args, self.names, self.args)
-        self.pxd_entries.append("# PYX " + args.strip())
-        return "", ""
 
     def pyx_cmd(self, args, *_):
         """built-in function PYX"""
@@ -538,25 +571,11 @@ class TableGenerator(object):
         prototype = line[:-1].strip()
         self.append_export_file(prototype)
         h_out = prototype + ";\n"
-        if self.pxd_export_pending:
-            self.pxd_entries.append(line[:-1].strip())
         self.export_pending = False
-        self.pxd_export_pending = False
         return "", h_out
 
               
-       
-
-    def out_auto_headlines(self):
-        s = """{1}
-// This {0} file has been created automatically. Do not edit!!!
-{1}
-
-"""
-        cmt = "/" * 77
-        return s.format("C", cmt), s.format("C header", cmt)
-
-            
+                   
 
     def iter_generate_lines(self, source):
         """This iterator is the workhorse for method generate(line).
@@ -570,13 +589,6 @@ class TableGenerator(object):
         FOR directive, this method called once for each iteration 
         of the FOR loop.
         """
-        self.adjust_names()
-        self.export_pending = False      # set when EXPORT action pending
-        self.pxd_export_pending = False  # set when EXPORT include .pxd file
-        self.use_table_pending = False   # set when USE_TABLE action pending
-                                         # 1 = just remember C name of table
-                                         # 2 = also create prototype
-        self.join_pending = False        # set when JOIN action is pending
         for l in source:
             if self.verbose:
                 print("%d: %s" % (len(self.block_stack), l), end = "")
@@ -614,24 +626,122 @@ class TableGenerator(object):
         Parameter source should be an iterator that yields the lines of
         the source file.
         """
-        self.C_table_name = None            # C name of table pending
-        self.C_table_export = False         # export C name of table pending if set
-        self.gen_c = True                   
-        self.gen_h = False
-        self.exported_table_names.clear()
-        self.table_size_ = 0
-        self.pxd_entries = []
-
+        self.sync()
         for c_out, h_out in self.iter_generate_lines(source):
             yield c_out, h_out
+        self.sync()
+
+
+    def generate(self, source, c_stream = None, h_stream = None):
+        """Generate a .c and  a .h file form a source.
+
+        Here ``source`` must be an iterator that yields the lines
+        of the source file. This may be a readble object of class
+        ``_io.TextIOWrapper`` as returned by the built-in function
+        ``open()``.
+
+        Parameters ``c_stream`` and ``h_stream`` must be either
+        ``None`` or an instance of a class with a ``write`` method,
+        e.g. a writable object of class ``_io.TextIOWrapper``.
+        Then the output to the c file and to the h file is written
+        to ``c_stream`` and to ``h_stream``. 
+        """
+        self.write_to_export_file = bool(c_stream)
+
+        for c_out, h_out in self.iter_generate(source):
+            if c_out and c_stream:
+                 c_stream.write(c_out) 
+            if h_out and h_stream:
+                 h_stream.write(h_out) 
+
+
+    def table_size(self):
+        return self.table_size_
+
+
+    def display_export_file(self, text = None):
+        """Display current export file at stdout"""
+        if text: print(text)
+        for line in self.export_file:
+            print(" " + line)
 
 
 
- 
-    @staticmethod
-    def print_file(text, file):
-        if text and file:
-            print(text, end = "", file = file) 
+
+
+def c_snippet(source, *args, **kwds):
+    r"""Return a C code snippet as a string from a *source* string
+
+    Here ``source`` is a string that is interpreted in the same way 
+    as the text in a source file in method ``generate()`` of class 
+    ``TableGenerator``.
+    The function applies the code generator to the string ``source``
+    and returns the generated C code as a string.
+
+    All subsequent keyword arguments are treated as a dictionary and
+    they are passed to the code generator in class ``TableGenerator``
+    in the same way as parameter ``tables`` in the constructor of 
+    that class. 
+
+    One can also pass positional arguments to this function. In the
+    ``source`` string they an be accessed as ``%{0}``, ``%{1}``, etc.
+
+    A line starting with ``// %%`` is interpreted as a directive as
+    in class ``TableGenerator``.
+
+    The keyword ``directives`` is reserved for passing a dictionary
+    of directives as in class ``TableGenerator``.
+
+    In order to achieve a similar effect as generating C code with::
+
+         tg = TableGenerator(tables, directives)
+         tg.generate(source_file, c_file)
+
+    you may code e.g.::
+        
+        c_string = c_snippet(source, directives=directives, **tables) 
+
+    If this function cannot evaluate an expression of shape ``%{xxx}`` 
+    then the expression it is not changed; so a subsequent code 
+    generation step may evaluate that expression. An unevaluated 
+    argument in a directive leads to an error.
+    """ 
+    src = source.splitlines(True)
+    try:
+        directives = kwds['directives']
+    except KeyError:
+        directives = {}
+    tg = TableGenerator()
+    tg.is_terminal = False
+    tg.set_tables(kwds, directives, args)
+    return "".join(c for c, h in tg.iter_generate(src)) 
+
+
+
+def make_doc():
+    raise NotImplementedError
+
+
+class TableGeneratorStream(TableGenerator):
+    """This is a deprecated version of class TableGenerator
+
+    It is used for compatibility with the old code generation process
+    before switching to meson.
+
+    It will contain the methods of class TableGenerator that
+    will be dprecated when bulding the project with meson.
+    """
+    def __init__(self, *args, **kwds):
+        super(TableGeneratorStream, self).__init__(*args, **kwds)
+
+    def out_auto_headlines(self):
+        s = """{1}
+// This {0} file has been created automatically. Do not edit!!!
+{1}
+
+"""
+        cmt = "/" * 77
+        return s.format("C", cmt), s.format("C header", cmt)
 
 
 
@@ -645,7 +755,6 @@ class TableGenerator(object):
         The lines yielded by this function are fed into method
         iter_generate() of this class.
         """
-        self.source_name = None
         if isinstance(source, list):
             for i, f in enumerate(source):
                 for l in self.iter_source(f):
@@ -665,8 +774,6 @@ class TableGenerator(object):
             except:
                 is_filename = True
             if is_filename:
-                if not self.source_name:
-                    self.source_name = source
                 if self.verbose:
                     print(" > Opening file %s" % source)
                 with open(source, "rt") as f:
@@ -720,95 +827,17 @@ class TableGenerator(object):
             c_file = c_filename                # output .c file
         else:
             c_file = open(c_filename,"wt")     # output .c file
-            self.print_file(c_out, c_file)
+            c_file.write(c_out)
         if  not h_filename or isinstance(h_filename, file): 
             h_file = h_filename                # output .h file
         else:
             h_file = open(h_filename,"wt")     # output .h file
-            self.print_file(h_out, h_file)
+            h_file.write(h_out)
 
-        self.write_to_export_file = bool(c_file)
-        for c_out, h_out in self.iter_generate(inp):
-            self.print_file(c_out, c_file)
-            self.print_file(h_out, h_file)
-        inp = None
+        super(TableGeneratorStream, self).generate(inp, c_file, h_file)
 
         if c_filename and not isinstance(c_filename, file):
             c_file.close()
         if h_filename and not isinstance(h_filename, file):
             h_file.close()
-
-    def table_size(self):
-        return self.table_size_
-
-
-    def display_export_file(self, text):
-        """Display current export file at stdout"""
-        if text: print(text)
-        for line in self.export_file:
-            print(" " + line)
-
-    def generate_pxd(self, pxd_file, h_file_name, source = None, nogil = False):
-        err = """Method TableGenerator.generate_pxd of is no longer supported
-Use funtion mmgroup.generate_c.generate_pxd() instead.
-"""
-        raise NotImplementedError(err)
-
-
-
-
-def make_doc(source_file, output_file, tables = None):
-    err=  """Function make_doc is no longer supported.
-Use doxygen for documenting C files!"""
-    raise NotImplementedError(err)
-
-
-def c_snippet(source, *args, **kwds):
-    r"""Return a C code snippet as a string from a *source* string
-
-    Here ``source`` is a string that is interpreted in the same way 
-    as the text in a source file in method ``generate()`` of class 
-    ``TableGenerator``.
-    The function applies the code generator to the string ``source``
-    and returns the generated C code as a string.
-
-    All subsequent keyword arguments are treated as a dictionary and
-    they are passed to the code generator in class ``TableGenerator``
-    in the same way as parameter ``tables`` in the constructor of 
-    that class. 
-
-    One can also pass positional arguments to this function. In the
-    ``source`` string they an be accessed as ``%{0}``, ``%{1}``, etc.
-
-    A line starting with ``// %%`` is interpreted as a directive as
-    in class ``TableGenerator``.
-
-    The keyword ``directives`` is reserved for passing a dictionary
-    of directives as in class ``TableGenerator``.
-
-    In order to achieve a similar effect as generating C code with::
-
-         tg = TableGenerator(tables, directives)
-         tg.generate(source_file, c_file)
-
-    you may code e.g.::
-        
-        c_string = c_snippet(source, directives=directives, **tables) 
-
-    If this function cannot evaluate an expression of shape ``%{xxx}`` 
-    then the expression it is not changed; so a subsequent code 
-    generation step may evaluate that expression. An unevaluated 
-    argument in a directive leads to an error.
-    """ 
-    src = source.splitlines(True)
-    try:
-        directives = kwds['directives']
-    except KeyError:
-        directives = {}
-    tg = TableGenerator(kwds, directives)
-    tg.is_terminal = False
-    tg.args = args
-    return "".join(c for c,h in tg.iter_generate(src)) 
-
-
 

@@ -14,7 +14,7 @@ functions are also called by C functions written for other python
 extensions.
 
 We use the C code generation mechanism in class 
-``generate_c.TableGenerator``. Here a .c file  and a .h file is
+``generate_c.TableGeneratorStream``. Here a .c file  and a .h file is
 crreated from files ``*.ske`` in subdirectory
 ``src/mmgroup/dev/clifford12``. The .ske file is like a .c file, but 
 augmented with some code generation statements for entering tables 
@@ -61,10 +61,10 @@ sys.path.append(REAL_SRC_DIR)
 
 
 def import_all():
-    global TABLE_CLASSES, TableGenerator, make_doc
+    global TABLE_CLASSES, TableGeneratorStream, make_doc
     global generate_pxd, pxd_to_pxi, Bit64Tables
     import mmgroup
-    from mmgroup.generate_c import TableGenerator, make_doc
+    from mmgroup.generate_c import TableGeneratorStream, make_doc
     from mmgroup.generate_c import generate_pxd, pxd_to_pxi
     from mmgroup.dev.clifford12.bit64_tables import Bit64Tables
     TABLE_CLASSES = [
@@ -265,7 +265,7 @@ def make_clifford12():
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
     # print("Clifford 12 functions:\n",  directives.keys())
-    tg = TableGenerator(tables, directives, verbose = VERBOSE)
+    tg = TableGeneratorStream(tables, directives, verbose = VERBOSE)
     # first generate C files
     c_files = []
     all_ske_files = [H_FILE_BEGIN]

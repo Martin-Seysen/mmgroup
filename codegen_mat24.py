@@ -15,7 +15,7 @@ creating such a shared library is that that these functions are also
 called by C functions written for other python extensions.
 
 We use the C code generation mechanism in class 
-``generate_c.TableGenerator``. Here a .c file  and a .h file is
+``generate_c.TableGeneratorStream``. Here a .c file  and a .h file is
 crreated from file ``mat24_functions.ske`` in subdirectory
 ``src/mmgroup/dev/mat24``. The .ske file is like a .c file, but 
 augmented with some code generation statements for entering tables 
@@ -23,7 +23,7 @@ and automatically generated code into the .c file to be generated.
 This .ske file may also have statements for automatically 
 generating a .h file declaring the exported functions.  
 
-We create an instance ``tg`` of class ``TableGenerator`` for 
+We create an instance ``tg`` of class ``TableGeneratorStream`` for 
 generating the .c files. The table generator ``tg`` takes two
 dictionaries ``tables`` and ``directives`` as arguments. These
 dictionaries provide user-defined tables and directives for the
@@ -91,7 +91,7 @@ from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup.dev.generators.gen_leech_reduce_n import GenLeechReduceY
 from mmgroup.dev.generators.gen_cocode_short import ShortCocodeTables
-from mmgroup.generate_c import TableGenerator, make_doc
+from mmgroup.generate_c import TableGeneratorStream, make_doc
 from mmgroup.generate_c import generate_pxd, pxd_to_pxi
 
 
@@ -196,14 +196,14 @@ def mat24_make_c_code():
     code automatically makes sense is the matrix multiplication with
     a constant bit matrix.
      
-    The code generating process is described in class TableGenerator
+    The code generating process is described in class TableGeneratorStream
     in module make_c_tables.  
     """ 
     print("Creating C source from file mat24_functions.ske\n")
     SKE_DIR = os.path.join(DEV_DIR, "mat24")
     # The following two tables can't easily be computed earlier
     Mat24.tables["Mat24_doc_basis"] = Mat24.str_basis()
-    generator = TableGenerator(Mat24.tables, Mat24.directives)
+    generator = TableGeneratorStream(Mat24.tables, Mat24.directives)
     mat24_header_inputs = [MAT24_H_FILE_BEGIN]
     for file in MAT24_C_FILES:
         f = os.path.join(SKE_DIR, file)
@@ -297,7 +297,7 @@ def generators_make_c_code():
         table_instance = table_class()
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
-    tg = TableGenerator(tables, directives)
+    tg = TableGeneratorStream(tables, directives)
 
     # Generate c files
     all_ske_files = [os.path.join(SKE_DIR, name) 
