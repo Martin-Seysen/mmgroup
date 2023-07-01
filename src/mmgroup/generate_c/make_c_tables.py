@@ -106,7 +106,6 @@ class TableGenerator(object):
 
     External modules importing this class should use methods
     ``set_tables``, ``generate``, and ``table_size`` only.
-    The may also read attribute ``export_file`` of this class.
     """
 
     m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)(\*|\b)(.*)?")
@@ -121,7 +120,6 @@ class TableGenerator(object):
         """
         self.verbose = verbose
         self.names = {}       # Updated version of self.names
-        self.export_file = [] # List of lines of export file to be written
         self.start_sync()     # Reset all possibly pending items
         self.set_tables(tables, directives)
 
@@ -176,8 +174,6 @@ class TableGenerator(object):
         # 'python_table_name' is a key of dictionary tables.
         # 'c_table_name' is the corresponding name of that table
         # or entry in C.
-        self.write_to_export_file = False
-                              # Write to export file only if this is True
         self.use_table_pending = False
         self.join_pending = False
         self.export_pending = 0
@@ -199,7 +195,7 @@ class TableGenerator(object):
         """
         ERR_DIRECTIVE = r"Directive %s has not been processed properly"
         if self.export_pending:
-            raise ValueErrort(ERR_DIRECTIVE % "%%EXPORT")
+            raise ValueError(ERR_DIRECTIVE % "%%EXPORT")
         if self.use_table_pending:
             DIR = "%%EXPORT_TABLE or %%USE_TABLE"
             raise ValueError(ERR_DIRECTIVE % DIR)
@@ -232,7 +228,6 @@ class TableGenerator(object):
         self.names.update({
             "NAMES" : self.names,  
             "TABLES" : self.tables, 
-            "EXPORT" : self.export_file, 
         })
         self.adjust_names()
 
@@ -274,9 +269,9 @@ class TableGenerator(object):
         """built-in function EXPORT_TABLE"""
         self.use_table_pending = 2
         self.export_pending = 0
-        self.set_export_args("EXPORT_TABLE", args)
         export_str = self.export_kwd + "\n" if self.export_kwd else ""
-        return export_str, export_str
+        export_str_h = "// %%EXPORT_TABLE " + args + "\n"
+        return export_str, export_str_h + export_str
 
 
     def comment(self, args, *_):
@@ -287,26 +282,14 @@ class TableGenerator(object):
         )
         return "", ""
 
-    def set_export_args(self, directive, args):
-        """Set arguments for prefix for next line in export file"""
-        args = args.strip() 
-        if ";" in args:
-            err = "Illegal charcter ';' in %s directive" % directive
-        self.export_args = directive + " " + args
-
-    def append_export_file(self, prototype):
-        """Append a line to the export file"""
-        if self.export_args and self.write_to_export_file:
-            self.export_file.append(self.export_args + "; " + prototype)
-        self.export_args = ""
 
     def export_(self, args, *_):
         """built-in function EXPORT"""
         self.export_pending = True
         args = args.strip() 
-        self.set_export_args("EXPORT", args)
         export_str = self.export_kwd + "\n" if self.export_kwd else ""
-        return export_str, export_str
+        export_str_h = "// %%EXPORT " + args + "\n"
+        return export_str, export_str_h + export_str
 
     def set_export(self, args, *_):
         """built-in directive SET_EXPORT, deprecated!!!!"""
@@ -557,7 +540,6 @@ class TableGenerator(object):
                 if found:
                     prototype = line[:found].strip()
                     h_out = "extern " + prototype +  ";\n"
-                    self.append_export_file(prototype)
                     self.C_table_export = True
         self.use_table_pending = 0
         return "", h_out
@@ -569,7 +551,6 @@ class TableGenerator(object):
         if not self.export_pending:
             return
         prototype = line[:-1].strip()
-        self.append_export_file(prototype)
         h_out = prototype + ";\n"
         self.export_pending = False
         return "", h_out

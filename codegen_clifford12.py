@@ -289,8 +289,7 @@ def make_clifford12():
     tg.generate(all_ske_files, None, h_path)
     generate_pxd(
         os.path.join(PXD_DIR, pxd_file), 
-        tg,
-        h_file, 
+        h_path, 
         PXD_DECLARATIONS
     )
     return c_files,  [ pxd_file ]

@@ -267,8 +267,7 @@ def make_reduce():
     print("Creating %s" % pxd_file)
     generate_pxd(
         os.path.join(PXD_DIR, pxd_file),
-        tg, 
-        h_file, 
+        h_path, 
         PXD_DECLARATIONS
     )
     return c_files,  [ pxd_file ]

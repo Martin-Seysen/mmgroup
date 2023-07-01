@@ -387,8 +387,7 @@ def make_c_h_pxd(p):
     )
     generate_pxd(
        os.path.join(PXD_DIR, pxd_file), 
-       tg,
-       h_file, 
+       h_path, 
        pyx_declarations, 
        nogil = True
     )

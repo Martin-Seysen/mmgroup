@@ -222,8 +222,7 @@ def mat24_make_c_code():
 
     generate_pxd(
         os.path.join(PXD_DIR, MAT24_H_FILE + ".pxd"), 
-        generator,
-        MAT24_H_FILE + ".h",  
+        h_path,
         pxd_declarations   
     )
     print("C files for extension mat24 have been created" )
@@ -330,8 +329,7 @@ def generators_make_c_code():
 
     generate_pxd(
         os.path.join(PXD_DIR, PXD_GENERATORS_NAME), 
-        tg,
-        h_file, 
+        h_path, 
         PXD_DECLARATIONS,
    )
 
