@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 
 
 [tool.cibuildwheel]
-skip = "*-win32 *-manylinux_i686 cp36-*  pp* *-musllinux*"
+skip = "*-win32 *-manylinux_i686 cp37-* cp36-*  pp* *-musllinux*"
 build-verbosity = 3
 test-requires = [
    "pytest",
