@@ -32,7 +32,11 @@ def iter_exports_from_header(file):
         line = line.strip()
         m = m_kwd.match(line)
         if m:
-            export_pending = [s.strip() for s in m.groups()] 
+            kwd, args = [s.strip() for s in m.groups()] 
+            if kwd in ['EXPORT', 'EXPORT_TABLE']:
+                export_pending = kwd, args
+            elif kwd == 'FROM':
+                yield kwd, args, ""
         elif export_pending:
             kwd, args = export_pending
             if kwd == 'EXPORT': 
@@ -86,6 +90,8 @@ def make_pxd_entry(kwd, par, prototype):
             s += "    # PYX <wrap pxi>\n"
         if kwd in ['EXPORT', 'EXPORT_TABLE']:
             s += "    %s\n" % prototype
+        if kwd == 'FROM':
+            s = "     # from " + par
     return s  
     
 
@@ -168,6 +174,15 @@ def pxd_from_h(pxd_out, h_in, pxd_in = None, h_name = None, nogil = False):
         f.close()
 
 generate_pxd = pxd_from_h
+
+
+
+def c_file_list_from_h(h_in):
+    c_list = []
+    for directive, args, _ in iter_exports_from_header(h_in):
+        if directive == 'FROM':
+            c_list.append(args)
+    return c_list
 
 
 if __name__ == "__main__":

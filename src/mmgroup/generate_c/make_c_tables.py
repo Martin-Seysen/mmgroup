@@ -14,7 +14,8 @@ import ast
 from io import IOBase
 from operator import __or__, __xor__, __and__
 from numbers import Integral
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+
 from functools import partial
 import numpy
 
@@ -53,6 +54,16 @@ from mmgroup.generate_c.generate_functions import eval_codegen_join
 from mmgroup.generate_c.generate_functions import UserDirective
 from mmgroup.generate_c.generate_functions import UserFormat
 from mmgroup.generate_c.generate_functions import built_in_formats
+
+
+class NoDirectives(Mapping):
+    """Marker for suppressing directives in class TableGenerator"""
+    def __getitem__(self, key):
+        raise KeyError("class NoDirectives implements the empty Mapping")
+    def __iter__(self):
+        pass
+    def __len__(self):
+        return 0
 
 class TableGenerator(object):
     """Automatically generate a .c file and a .h file from a *source*
@@ -109,6 +120,9 @@ class TableGenerator(object):
     """
 
     m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)(\*|\b)(.*)?")
+    class m_no_kwds:
+        def match(*args, **kwds):
+            return None
     block_kwds = set(["FOR", "IF", "WITH"])
     ILLEGAL_INSIDE_BLOCK = "%s directive is illegal inside a codegen block"
     is_terminal = True, # True: Error if cannot valuate %{..}  expression
@@ -134,8 +148,9 @@ class TableGenerator(object):
                 try:
                     f = UserDirective(f)
                 except:
+                    ERR = "Could not register directive %s for code generator\n"
                     print("\nError:")
-                    print("Could not register directive %s for code generator\n" % fname)
+                    print(ERR % fname)
                     raise
             f.set_code_generator(self)
             self.directives[fname] = f
@@ -161,8 +176,12 @@ class TableGenerator(object):
              "JOIN":         self.do_join,
              "IF":           self.block_if,
         } )
-        self.directives.update(builtin_directives)
-        self.adjust_names()
+ 
+        self.m_kwd = self.__class__.m_no_kwds        
+        if directives != NoDirectives:
+            self.directives.update(builtin_directives)
+            self.m_kwd = self.__class__.m_kwd
+            self.adjust_names()
 
         self.args = args     # positional arguments passed to formatting
                              # function, not used for C files
@@ -597,7 +616,7 @@ class TableGenerator(object):
                 self.join_pending = False
 
 
-    def iter_generate(self, source):
+    def iter_generate(self, source, gen='c'):
         """Iterator for generating .c and .h file form a source file.
 
         The function yield pairs of lines. The first line of each pair
@@ -608,12 +627,15 @@ class TableGenerator(object):
         the source file.
         """
         self.sync()
+        gen = gen.strip()
+        if gen:
+            self.gen(gen)
         for c_out, h_out in self.iter_generate_lines(source):
             yield c_out, h_out
         self.sync()
 
 
-    def generate(self, source, c_stream = None, h_stream = None):
+    def generate(self, source, c_stream, h_stream = None, gen='c'):
         """Generate a .c and  a .h file form a source.
 
         Here ``source`` must be an iterator that yields the lines
@@ -627,9 +649,7 @@ class TableGenerator(object):
         Then the output to the c file and to the h file is written
         to ``c_stream`` and to ``h_stream``. 
         """
-        self.write_to_export_file = bool(c_stream)
-
-        for c_out, h_out in self.iter_generate(source):
+        for c_out, h_out in self.iter_generate(source, gen):
             if c_out and c_stream:
                  c_stream.write(c_out) 
             if h_out and h_stream:

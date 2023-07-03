@@ -199,6 +199,10 @@ def mat24_make_c_code():
     The code generating process is described in class TableGeneratorStream
     in module make_c_tables.  
     """ 
+    h_file = MAT24_H_FILE + ".h"
+    h_path = os.path.join(C_DIR, h_file)
+
+    """
     print("Creating C source from file mat24_functions.ske\n")
     SKE_DIR = os.path.join(DEV_DIR, "mat24")
     # The following two tables can't easily be computed earlier
@@ -215,10 +219,9 @@ def mat24_make_c_code():
         ## generator.export_tables(file_name = "mat24_export.py")
     mat24_header_inputs.append(MAT24_H_FILE_END)
 
-    h_file = MAT24_H_FILE + ".h"
-    h_path = os.path.join(C_DIR, h_file)
     print("Creating %s from previous .ske files" % h_file)
     generator.generate(mat24_header_inputs, None, h_path)
+    """
 
     generate_pxd(
         os.path.join(PXD_DIR, MAT24_H_FILE + ".pxd"), 

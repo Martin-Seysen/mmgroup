@@ -609,3 +609,9 @@ Golay cocode vectors are to be understood modulo the Golay code.
         return cls.inv_perm(p1), cls.inv_autpl(cls.perm_to_autpl(c1, p1)) 
 
 
+class Tables(Mat24):
+    def __init__(self):
+        self.tables["Mat24_doc_basis"] = Mat24.str_basis()
+
+        
+

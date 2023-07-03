@@ -46,9 +46,7 @@ sys.path.append(ROOTDIR)
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
 from build_ext_steps import BuildExtCmd, BuildExtCmdObj
 from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
-
-
-    
+   
 
 import config
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
@@ -293,8 +291,46 @@ if STAGE > 1:
 ####################################################################
 
 
+DIR_DICT = {
+   "SRC_DIR" : SRC_DIR,
+   "C_DIR" : C_DIR,
+   "DEV_DIR" : DEV_DIR,
+}
+
+
+
+def get_c_names(s):
+    outp = subprocess.run(
+       [sys.executable, "generate_code.py", "--output-c-names"
+           ] + s.split(), 
+       check = True,
+       text = True,
+       capture_output = True
+    )
+    return(outp.stdout).split()
+    
+
+MAT24_GENERATE = """
+ -v
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mat24
+ --out-dir {C_DIR}
+ --tables mmgroup.dev.mat24.mat24_ref 
+ --source-header mat24_functions.h
+ --out-header mat24_functions.h
+ --sources mat24_functions.ske mat24_random.ske
+""".format(**DIR_DICT)
+
+
+print(get_c_names(MAT24_GENERATE))
+
+
+
+
+
 
 mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
+  [sys.executable, "generate_code.py"] + MAT24_GENERATE.split(),
   [sys.executable, "codegen_mat24.py"],
   [sys.executable, "codegen_clifford12.py"],
 )
