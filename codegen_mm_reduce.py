@@ -303,8 +303,7 @@ def generate_files():
         pxi_comment("Wrappers for C functions from file %s" % pxd_f, f_pxi)
         pxi_content = pxd_to_pxi(
             os.path.join(PXD_DIR, pxd_f),
-            os.path.split(pxd_f)[0],
-            select = True
+            os.path.split(pxd_f)[0]
         )
         print(pxi_content, file = f_pxi)
     f_pxi.close()

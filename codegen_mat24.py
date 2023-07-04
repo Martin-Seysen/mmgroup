@@ -352,8 +352,7 @@ def generators_make_c_code():
     print(PXD_DECLARATIONS, file = f_pxi)
     pxi_content = pxd_to_pxi(
         os.path.join(PXD_DIR, PXD_GENERATORS_NAME),
-        os.path.split(PXD_GENERATORS_NAME)[0],
-        select = True
+        os.path.split(PXD_GENERATORS_NAME)[0]
     )
     print(pxi_content, file = f_pxi)
     f_pxi.close()

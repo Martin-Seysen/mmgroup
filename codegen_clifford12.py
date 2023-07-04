@@ -322,7 +322,6 @@ def generate_files():
         pxi_content = pxd_to_pxi(
             os.path.join(PXD_DIR, pxd_f),
             os.path.split(pxd_f)[0],
-            select = True
         )
         print(pxi_content, file = f_pxi)
      

@@ -94,7 +94,7 @@ def generate_code_parser():
         action=GenerateAction,
         help="Set set parameter PARAM to value VALUE. "
         "When generating code with subsequent '--sources' options "
-        "then table classes will set PARAM=VALUE."
+        "then the table classes will set PARAM=VALUE."
     )
 
     parser.add_argument('--subst', 
@@ -122,7 +122,7 @@ def generate_code_parser():
 
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
-        help = 'Set direcotry DIR for output files')
+        help = 'Set directory DIR for output files')
 
     parser.add_argument('--export-kwd', 
         default = None,

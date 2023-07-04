@@ -503,6 +503,7 @@ from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_sparse_to_leech
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_hash
+from mmgroup.mm import mm_aux_mmv_size
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 #standard_seed = mm_rng_make_seed()
@@ -522,7 +523,7 @@ class MMVectorOps:
         mm = mm_op_modules[p]  # fetch mm_op_modules[p]
         #self.mm = mm_op_modules[p]
                             # if we do this, we cannot pickle vectors
-        self.MMV_INTS = mm.MMV_INTS 
+        self.MMV_INTS = mm_aux_mmv_size(p) 
         self.op_vector_add = mm.op_vector_add
         self.op_scalar_mul = mm.op_scalar_mul
         self.op_word = mm.op_word

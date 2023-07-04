@@ -166,7 +166,6 @@ if  __name__ == "__main__":
     sys.path.append(REAL_SRC_DIR)
     from mmgroup.generate_c import TableGeneratorStream, make_doc, format_item
     from mmgroup.generate_c import generate_pxd, pxd_to_pxi
-    from mmgroup.generate_c import pxd_to_function_list
     sys.path.pop()
 
 
@@ -269,16 +268,7 @@ from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t
 """
 
 
-##########################################################################
-# Entering contants from class MM_Basics 
-##########################################################################
 
-# List of constants added to classes for a specific p from MM_Basics(p)
-MM_BASICS_CONSTANTS = [
-   "MMV_ENTRIES", "INT_BITS", "LOG_INT_BITS",
-   "P", "FIELD_BITS", "LOG_FIELD_BITS", 
-   "INT_FIELDS", "LOG_INT_FIELDS", "P_BITS", "MMV_INTS", 
-]   
 
 ##########################################################################
 # Entering tables and automatically generated code
@@ -443,12 +433,6 @@ def generate_pyx(p, pxd_files):
         )
         print(pyx_code, file = f_pyx)
 
-    pyx_comment("Constants", f_pyx)
-    basis = mm_op.MM_Op(p)
-    for name in MM_BASICS_CONSTANTS:
-        value = getattr(basis, name)
-        declaration = "%s = %d\n" % (name, value) 
-        print(declaration,  file = f_pyx)
 
     f_pyx.close()
 

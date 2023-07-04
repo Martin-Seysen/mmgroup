@@ -65,7 +65,7 @@ def _parse_pxd_enable(l):
 
 
 
-def pxd_to_pxi(pxd_file, module = None, translate = None, select = True, nogil = False): 
+def pxd_to_pxi(pxd_file, module = None, translate = None, nogil = False): 
     """Extract Cython wrappers from prototypes in a .pxd file
 
     A .pxd file contains prototypes of external C functions and it
@@ -127,10 +127,10 @@ def pxd_to_pxi(pxd_file, module = None, translate = None, select = True, nogil =
     The ``<return_type>`` may be void, but not be a pointer. Other 
     types  are not allowed.
 
-    If parameter ``select`` is True then we convert a function only
+    We convert a function only
     if a line containing the string "``# PYX``" (possibly with
     leading blanks) precedes the declaration of a function.
-    By default, ``select`` is True. In the code generator you may 
+    In the code generator you may 
     use the ``EXPORT`` directive with options ``px`` to enter such
     a line into the source file.
 
@@ -154,13 +154,12 @@ def pxd_to_pxi(pxd_file, module = None, translate = None, select = True, nogil =
     s += "cimport %s\n\n" % module
     if nogil:
         s += "cimport cython\n"
-    enable = not select
+    enable = False
     with open(pxd_file, "rt") as input_file:
         for l in input_file:
             data = _parse_pxd_line(l)
             if not data or not enable:
-                if select:
-                     enable = _parse_pxd_enable(l)
+                enable = _parse_pxd_enable(l)
                 continue
             return_type, function, args = data
             t_function = translate(function) if translate else function
@@ -192,25 +191,9 @@ def pxd_to_pxi(pxd_file, module = None, translate = None, select = True, nogil =
                 ) 
             if has_returnvalue:
                 s += "    return ret_\n"
-            enable = not select
+            enable = False
     return s
 
-
-def pxd_to_function_list(pxd_file): 
-    """Extract function names from prototypes in a .pxd file
-
-    Returns a list of function names found in a .pxd file.
-    This list contains exactly the names of the functions that
-    would be wrapped by calling ``pxd_to_pxi(pxd_file)``.
-    """
-    l_out = []
-    with open(pxd_file, "rt") as input_file:
-        for l_in in input_file:
-            data = _parse_pxd_line(l_in)
-            if  data:
-                _0, function, _1 = data
-                l_out.append(function)
-    return l_out
 
 
 
