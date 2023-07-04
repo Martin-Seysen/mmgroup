@@ -75,26 +75,19 @@ def generate_code_parser():
  
     parser.add_argument('--tables', 
         nargs = '*',  metavar='TABLES',
-        action=GenerateTables,
+        action = 'extend', default = [], 
         help="Add list TABLES of table classes "
-        "to be used for code generation."
+        "to the tables to be used for code generation."
     )
 
-    parser.add_argument('--param', 
-        nargs = '*',  metavar='PARAM',
-        action='append',
-        help="Set list PARAM of parameters to be passed to "
-        "subsequent table classes. "
-        "If no arguments follow then no parameter will be set."
-    )
 
     parser.add_argument('--set', 
         dest='actions',
-        nargs = '*',  metavar='PARAM VALUE',
+        nargs = '+',  metavar='VAR=VALUE',
         action=GenerateAction,
-        help="Set set parameter PARAM to value VALUE. "
+        help="Set variable VAR to value VALUE. "
         "When generating code with subsequent '--sources' options "
-        "then the table classes will set PARAM=VALUE."
+        "then the table classes will set VAR=VALUE."
     )
 
     parser.add_argument('--subst', 
@@ -108,7 +101,7 @@ def generate_code_parser():
         "SUBSTITUTION for obtaining a template for the name of the "
         "corresponding C file. Then we format that template with "
         "Python's .format method (using the values of the current "
-        "parameters) for obtaining the name of the C file."
+        "variables) for obtaining the name of the C file."
         )
     )
    
@@ -230,10 +223,10 @@ class ImmutableDict(Mapping):
 EmptyImmutableDict = ImmutableDict({})
 
 
-ERR_SET = "At most two arguments PARAM, VALUE may follow option --set" 
+ERR_SET = "Arguments following option --set must have shape VAR=VALUE" 
 ERR_SUBST = "Two arguments PATTERN, SUBSTITUTION must follow option --subst" 
 
-
+m_set = re.compile(r"([A-Za-z][A-Za-z0-9_]+)=(.*)")
 
 def subst_C_name(name, subst, param, extension):
     dir, filename = os.path.split(name)
@@ -251,12 +244,16 @@ def make_actions(s):
     subst = None
     for action, data in s.actions:
         if action == 'set':
-            if len(data) > 2:
-                raise ValueError(ERR_SET)
-            if len(data) == 2:
-                param[data[0]] = data[1]
-            if len(data) == 1 and data[0] in param:
-                del param[data[0]]
+            for instruction in data:
+                m = m_set.match(instruction)
+                if m is None:
+                    raise ERR_SET
+                var, value = m.groups()
+                value = value.strip()
+                if len(value):
+                    param[var] = value
+                else:
+                    del param[var]
         if action == 'sources':
             file_list = s.c_files.setdefault(ImmutableDict(param), [])
             for name in data:
@@ -300,21 +297,20 @@ def finalize_parse_args(s):
 def load_tables(tg, tables, params, mockup=False, directives=True):
     """Load tables into instance ``tg`` of class ``TableGenerator``
 
-    The  argument  ``tables`` must be a list of pairs 
-    ``(table_class, table_params)``. The class ``table_class``
-    should be a class with attributes ``tables`` and ``directives``
-    that are dictionaries mapping names to tables or directives.
-    The set ``table_params`` should be a set or a list of strings
-    interpreted as names of parameters.
+    The  argument  ``tables`` must be a list of table_classes.
+    Such a table class should be a class with attributes ``tables``
+    and ``directives`` that are dictionaries mapping names to tables
+    or to directives. 
 
     Argument ``params`` should be a mapping from parameter
     names to values.
 
-    Then for each pair ``(table_class, table_params)`` the parameter
-    names occuring in both objects, ``table_params`` and ``params``
-    are set to their values given by the mapping ``params``; and 
-    a dictionary mapping these parameters to their values is passed
+    Then for each table class the parameters occuring in ``params``
+    are set to the values given by the mapping ``params``; and the 
+    dictionary mapping these parameters to their values is passed 
     to the constructor of class ``table_class`` as keyword arguments.
+    We recommend that the constructor of a table class accepts
+    arbitrary keyword arguments and ignores redundant arguments.
 
     The instance of ``table_class`` constructed that way should also 
     have dictionaries ``tables`` and ``directives`` as attributes as
@@ -335,12 +331,8 @@ def load_tables(tg, tables, params, mockup=False, directives=True):
     assert isinstance(tg, TableGenerator)
     _tables = {}
     _directives = {} if directives else NoDirectives
-    for table_class, table_params in tables:
-         common_params = {}
-         for param in table_params:
-             if param in params:
-                 common_params[param] = params[param]
-         m_tables = table_class(**common_params)
+    for table_class in tables:
+         m_tables = table_class(**params)
          if mockup and getattr(m_tables, 'mockup_tables'):
              new_tables = m_tables.mockup_tables
          else:
@@ -473,10 +465,10 @@ class CodeGenerator:
         if getattr(self.s, "table_classes", None):
              return
         table_classes = self.s.table_classes = []
-        for module, module_params in self.s.tables:
+        for module in self.s.tables:
              m = import_module(module)
              table_class = m.Tables
-             table_classes.append((table_class, module_params))
+             table_classes.append(table_class)
 
     def load_table_generator(self, table_generator, params):
         assert isinstance(params, ImmutableDict)
@@ -488,9 +480,9 @@ class CodeGenerator:
         load_tables(table_generator, tables, params, mockup)
 
         """
-        for table_class, table_params in self.s.table_classes:
+        for table_class in self.s.table_classes:
              common_params = params.restrict(table_params)
-             m_tables = table_class(**common_params)
+             m_tables = table_class(params)
              if mockup and getattr(m_tables, 'mockup_tables', None):
                  new_tables = m_tables.mockup_tables
              else:
@@ -569,8 +561,8 @@ class CodeGenerator:
         tables = getattr(s, 'tables', None)
         if tables:
             print("tables:")
-            for table, par in tables:
-                print(" ", table, par)
+            for table in tables:
+                print(" ", table)
 
         attribs = [
             'source_header', 'out_header', 'py_path',

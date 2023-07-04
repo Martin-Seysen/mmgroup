@@ -610,7 +610,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
 
 
 class Tables(Mat24):
-    def __init__(self):
+    def __init__(self, **kwds):
         self.tables["Mat24_doc_basis"] = Mat24.str_basis()
 
         
