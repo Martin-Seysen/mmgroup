@@ -92,11 +92,14 @@ LOW_MULTIPLIER =  0x12e91e16a99fdf2b #   2962 trials
 
 
 #######################################################################
-# Class ``BitMatrixMulFix`` wrapping ``make_addition_operations``
+# Class Bit64Tables
 #######################################################################
 
 
 class Bit64Tables(object):
+    def __init__(self, *args, **kwds):
+       pass
+
     HIGH_MULTIPLIER = HIGH_MULTIPLIER
     LOW_MULTIPLIER = LOW_MULTIPLIER
     HIGH_TABLE = make_hi_bit64_table(HIGH_MULTIPLIER)
@@ -132,6 +135,8 @@ class Bit64Tables(object):
         x = x * cls.LOW_MULTIPLIER;
         return cls.LOW_TABLE[(x >> 57) & 0x7f]
 
+
+Tables = Bit64Tables
 
 
 #######################################################################

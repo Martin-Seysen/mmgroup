@@ -366,35 +366,55 @@ GENERATORS_GENERATE_PXD = """
 
 
 
+
+
+
+mat24_c_files = get_c_names(MAT24_GENERATE)
+mat24_c_files += get_c_names(GENERATORS_GENERATE)
+mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
+
+
+CLIFFORD12_GENERATE = """
+ -v
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/clifford12
+ --out-dir {C_DIR}
+ --tables mmgroup.dev.clifford12.bit64_tables
+ --source-header clifford12.h
+ --out-header clifford12.h
+ --sources  qstate12.ske qstate12io.ske qmatrix12.ske
+            bitmatrix64.ske uint_sort.ske xsp2co1.ske 
+            leech3matrix.ske xsp2co1_elem.ske
+            involutions.ske xsp2co1_traces.ske
+            xsp2co1_map.ske
+""".format(**DIR_DICT)
+
+
+
+CLIFFORD12_GENERATE_PXD = """
+ -v
+ --pxd-path {SRC_DIR}/mmgroup/dev/clifford12
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --h-in  clifford12.h
+ --pxd-in  clifford12.pxd
+ --pxd-out clifford12.pxd
+ --pxi-in  clifford12.pxd
+""".format(**DIR_DICT)
+
+
+clifford12_c_files = get_c_names(CLIFFORD12_GENERATE)
+clifford12_c_paths = [os.path.join(C_DIR, s) for s in clifford12_c_files]
+
+
 mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
   [sys.executable, "generate_code.py"] + MAT24_GENERATE.split(),
   [sys.executable, "generate_pxd.py"] + MAT24_GENERATE_PXD.split(),
   [sys.executable, "generate_code.py"] + GENERATORS_GENERATE.split(),
   [sys.executable, "generate_pxd.py"] + GENERATORS_GENERATE_PXD.split(),
- # [sys.executable, "codegen_mat24.py"],
-  [sys.executable, "codegen_clifford12.py"],
+  [sys.executable, "generate_code.py"] + CLIFFORD12_GENERATE.split(),
+  [sys.executable, "generate_pxd.py"] + CLIFFORD12_GENERATE_PXD.split(),
 )
-
-
-mat24_c_files = get_c_names(MAT24_GENERATE)
-mat24_c_files += get_c_names(GENERATORS_GENERATE)
-
-mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
-
-"""old stuff
-    sources=[
-        os.path.join(C_DIR, "mat24_functions.c"),
-        os.path.join(C_DIR, "mat24_random.c"),
-        os.path.join(C_DIR, "gen_xi_functions.c"),
-        os.path.join(C_DIR, "mm_group_n.c"),
-        os.path.join(C_DIR, "gen_leech_type.c"),
-        os.path.join(C_DIR, "gen_leech.c"),
-        os.path.join(C_DIR, "gen_leech3.c"),
-        os.path.join(C_DIR, "gen_leech_reduce.c"),
-        os.path.join(C_DIR, "gen_leech_reduce_n.c"),
-        os.path.join(C_DIR, "gen_random.c"),
-    ],
-"""
 
 
 mat24_shared = SharedExtension(
@@ -420,11 +440,10 @@ shared_libs_before_stage1 = [
 
 
 
-from codegen_clifford12 import SKE_FILES as clifford12_sources
 
 clifford12_shared = SharedExtension(
     name = "mmgroup.mmgroup_clifford12", 
-    sources = [os.path.join(C_DIR, f) + ".c" for f in clifford12_sources],
+    sources = clifford12_c_paths,
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     libraries = shared_libs_before_stage1, 
