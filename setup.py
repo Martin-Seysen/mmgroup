@@ -295,6 +295,7 @@ DIR_DICT = {
    "SRC_DIR" : SRC_DIR,
    "C_DIR" : C_DIR,
    "DEV_DIR" : DEV_DIR,
+   "PXD_DIR" : PXD_DIR,
 }
 
 
@@ -321,22 +322,66 @@ MAT24_GENERATE = """
  --sources mat24_functions.ske mat24_random.ske
 """.format(**DIR_DICT)
 
+MAT24_GENERATE_PXD = """
+ -v
+ --pxd-path {SRC_DIR}/mmgroup/dev/mat24
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --h-in  mat24_functions.h
+ --pxd-in  mat24_functions.pxd
+ --pxd-out mat24_functions.pxd
+""".format(**DIR_DICT)
 
-print(get_c_names(MAT24_GENERATE))
 
 
+# print(get_c_names(MAT24_GENERATE))
 
+
+GENERATORS_GENERATE = """
+ -v
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/generators
+ --out-dir {C_DIR}
+ --tables mmgroup.dev.generators.gen_cocode_short
+          mmgroup.dev.generators.gen_leech_reduce_n 
+          mmgroup.dev.generators.gen_xi_ref
+ --source-header mmgroup_generators.h
+ --out-header mmgroup_generators.h
+ --sources gen_xi_functions.ske mm_group_n.ske gen_leech.ske 
+           gen_leech_type.ske gen_leech3.ske gen_leech_reduce.ske
+           gen_leech_reduce_n.ske gen_random.ske
+""".format(**DIR_DICT)
+
+
+GENERATORS_GENERATE_PXD = """
+ -v
+ --pxd-path {SRC_DIR}/mmgroup/dev/generators
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --h-in  mmgroup_generators.h
+ --pxd-in  generators.pxd
+ --pxd-out generators.pxd
+ --pxi-in  generators.pxi
+""".format(**DIR_DICT)
 
 
 
 mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
   [sys.executable, "generate_code.py"] + MAT24_GENERATE.split(),
-  [sys.executable, "codegen_mat24.py"],
+  [sys.executable, "generate_pxd.py"] + MAT24_GENERATE_PXD.split(),
+  [sys.executable, "generate_code.py"] + GENERATORS_GENERATE.split(),
+  [sys.executable, "generate_pxd.py"] + GENERATORS_GENERATE_PXD.split(),
+ # [sys.executable, "codegen_mat24.py"],
   [sys.executable, "codegen_clifford12.py"],
 )
 
-mat24_shared = SharedExtension(
-    name = "mmgroup.mmgroup_mat24", 
+
+mat24_c_files = get_c_names(MAT24_GENERATE)
+mat24_c_files += get_c_names(GENERATORS_GENERATE)
+
+mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
+
+"""old stuff
     sources=[
         os.path.join(C_DIR, "mat24_functions.c"),
         os.path.join(C_DIR, "mat24_random.c"),
@@ -349,6 +394,12 @@ mat24_shared = SharedExtension(
         os.path.join(C_DIR, "gen_leech_reduce_n.c"),
         os.path.join(C_DIR, "gen_random.c"),
     ],
+"""
+
+
+mat24_shared = SharedExtension(
+    name = "mmgroup.mmgroup_mat24", 
+    sources = mat24_c_paths,
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],

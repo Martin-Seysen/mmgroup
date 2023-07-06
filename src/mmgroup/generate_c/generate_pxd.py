@@ -13,7 +13,11 @@ from mmgroup.generate_c.generate_code import MyArgumentParser
 
 from mmgroup.generate_c.generate_code import find_file
 from mmgroup.generate_c.generate_code import open_for_write
+from mmgroup.generate_c.generate_code import set_real_pathlist
+from mmgroup.generate_c.generate_code import set_real_path 
 from mmgroup.generate_c.make_pxd import pxd_from_h
+from mmgroup.generate_c.make_pxi import pxd_to_pxi
+
 
 
 
@@ -48,7 +52,13 @@ def generate_pxd_parser():
     parser.add_argument('--pxd-in', 
         metavar='PXD',
         action='store', default = None,
-        help="Set (optional) input .pxd file PXD for generating .pxd file."
+        help="Set input .pxd file PXD for generating .pxd file."
+    )
+
+    parser.add_argument('--pxi-in', 
+        metavar='PXI',
+        action='store', default = None,
+        help="Set input .px file PXI for generating .pxi file."
     )
 
     parser.add_argument('--h-name', 
@@ -59,14 +69,22 @@ def generate_pxd_parser():
     )
 
     parser.add_argument('--nogil', 
-        action='store_true', default = false,
+        action='store_true', default = False,
         help = "Optional, declare exported functions as 'nogil' "
         "when set."
     )
    
-    parser.add_argument('--source-path', nargs = '*', action='extend',
+    parser.add_argument('--pxd-path', nargs = '*', action='extend',
         metavar = 'PATHS', default = [],
-        help = 'Set list of PATHS for finding source files')
+        help = 'Set list of PATHS for finding input .pxd and .pxi files')
+
+    parser.add_argument('--h-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding input .h files')
+
+    parser.add_argument('--py-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding python scripts')
 
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
@@ -79,14 +97,46 @@ def generate_pxd_parser():
 
 
 
+
+ERR_GENPXI = "Cannot create .pxi file if not output .pxd file is given" 
+
+def set_pxi_out(instance):   
+    setattr(instance, 'pxi_out', None) 
+    if not getattr(instance,'pxi_in', None):
+       return
+    pxd_out =  getattr(instance,'pxd_out')
+    if not pxd_out:
+        raise ValueError(ERR_GENPXI)
+    pxd_name, _ = os.path.splitext(pxd_out) 
+    pxi_name = pxd_name + ".pxi"
+    setattr(instance, 'pxi_out', pxi_name) 
+
+
+def finalize_parse_args(s):
+    #print("\nFinalizing\n", s)
+    if getattr(s, 'finalized', None):
+        return
+    set_real_pathlist(s, 'h_path')
+    set_real_pathlist(s, 'pxd_path')
+    set_real_pathlist(s, 'py_path')
+    set_real_path(s, 'out_dir')
+    set_pxi_out(s)
+    #print("\nFinalized\n", s)
+    s.finalized = True
+ 
+
+
 def check_args_parsed(args):
     ERR = False
     if not getattr(args, "pxd_out", None):
         ERR = "No output .pxd file specified"
     if not getattr(args, "h_in", None):
         ERR = "No input header file specified"
+    if not getattr(args, "pxd_in", None):
+        ERR = "No input .pxd file specified"
     if ERR:
         raise ValueError(ERR)
+
 
 class pxdGenerator:
     """Yet to be documented"""
@@ -99,25 +149,86 @@ class pxdGenerator:
             self.s = parser.parse_args(args)
         elif isinstance(args, argparse.Namespace):
             self.s = args
+        else:
+            ERR = "Cannot constuct class %s object from %s object"
+            raise TypeError(ERR % (self.__class__, type(args)))
+        self.old_path = None
         check_args_parsed(self.s)
 
-    def find_file(self, filename):
-        return find_file(self.s.source_path, filename)
+    def generate_pxd_file(self):
+        finalize_parse_args(self.s)
+        s = self.s
+        h_in = os.path.normpath(s.h_in)
+        h_name = getattr(s, "h_name", None)
+        h_name = os.path.normpath(h_name) if h_name else h_in
+        h_in = find_file(self.s.h_path, h_name)
+        out_dir = os.path.normpath(getattr(s, "out_dir", None))
+        pxd_out = open_for_write(out_dir, s.pxd_out)
+        pxd_in = getattr(s, "pxd_in", None)
+        pxd_in = find_file(self.s.pxd_path, pxd_in) if pxd_in else None
+        nogil = getattr(s, "no_gil", False)
+        pxd_from_h(pxd_out, h_in, pxd_in, h_name, nogil)
+        pxd_out.close()
+ 
+
+    def generate_pxi_file(self):
+        finalize_parse_args(self.s)
+        s = self.s
+        """generate a .pxi file for the generated .pxd file"""
+        # generate .pxi file
+        if not s.pxi_in or not s.pxd_out:
+           return
+        out_dir = os.path.normpath(getattr(s, "out_dir", None))
+        pxi_out = open_for_write(out_dir, s.pxi_out)
+        pxi_out.write("""{0}
+### Wrappers for C functions from file {1}
+###
+### File has been generated automatically. Do not change!
+{0}
+
+""".format("#" * 70, s.pxd_out)
+        )
+        pxi_source_name = find_file(self.s.pxd_path, s.pxi_in)
+        pxi_source_text = open(pxi_source_name).read()
+        pxi_out.write(pxi_source_text)
+        pxi_out.write("\n")
+
+        pxd_source = os.path.join(out_dir, s.pxd_out)
+        pxi_content = pxd_to_pxi(pxd_source, nogil = s.nogil)
+        pxi_out.write(pxi_content)
+        pxi_out.close()
 
     def generate(self):
+        self.generate_pxd_file()
+        self.generate_pxi_file()
+
+    def activate_py_path(self):
+        finalize_parse_args(self.s)
         s = self.s
-        h_in = os.path.norm_path(s.h_in)
-        h_name = getattr(s, "h_name", None)
-        h_name = os.path.norm_path(h_name) if h_name else h_in
-        h_in = self.find_file(h_in)
-        out_dir = getattr(s, "out_dir", None)
-        pxd_out = open_for_write(out_dir, s.h_out)
-        pxd_in = getattr(s, "pxd_in", None)
-        pxd_in = self.find_file(pxd_in) if pxd_in else None
-        nogil = getattr(s, "no_gil", False)
-        pxd_from_h(pxd_out, h_in, pxd_in,  h_name, nogil)
+        if not s.py_path:
+            return
+        if self.old_path:
+            ERR = "Python path for class CodeGenerator object already active" 
+            raise ValueError(ERR)
+        self.old_path = [x for x in sys.path]
+        for i, path in enumerate(s.py_path):
+            sys.path.insert(i, path)
+
+    def deactivate_py_path(self):
+        finalize_parse_args(self.s)
+        if not self.s.py_path or not self.old_path:
+            return
+        if sys.path != self.s.py_path + self.old_path:
+            W = ("Could not deactivate python path for " 
+                 "class CodeGenerator object")
+            warnings.warn(W, UserWarning)
+        else:
+            del sys.path[:len(self.s.py_path)]
+
 
  
+###############################################################################
+
 
 def example():
     SAMPLE_ARGS = """ 

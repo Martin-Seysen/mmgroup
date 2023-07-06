@@ -539,3 +539,9 @@ class GenXi(object):
         table = (table & 0x7fff) % modulus
         return table, a
 
+
+
+class Tables(GenXi):
+    pass
+
+

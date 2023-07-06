@@ -91,7 +91,7 @@ def make_pxd_entry(kwd, par, prototype):
         if kwd in ['EXPORT', 'EXPORT_TABLE']:
             s += "    %s\n" % prototype
         if kwd == 'FROM':
-            s = "     # from " + par
+            s = "     # from " + par + "\n"
     return s  
     
 
@@ -159,10 +159,10 @@ def pxd_from_h(pxd_out, h_in, pxd_in = None, h_name = None, nogil = False):
     else:
         f = pxd_out
     print("# This .pxd file has been generated automatically. Do not edit!\n",
-        file = f)     
+        file = f)
     if pxd_in:
         for l in iter_pxd_in(pxd_in):
-            print(l, file = f, end = "")
+           print(l, file = f, end = "")
         print("", file = f)
     if h_name is None:
         _, h_name = os.path.split(h_in)

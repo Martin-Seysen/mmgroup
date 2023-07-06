@@ -68,6 +68,11 @@ class ShortCocodeTables:
         make_short_ops_table(verbose = 1)
 
 
+class Tables(ShortCocodeTables):
+    pass
+
+
+
 if __name__ == "__main__":
     ShortCocodeTables.display_op()
     print("Input table:")

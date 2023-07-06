@@ -193,3 +193,9 @@ class GenLeechReduceY(object):
     directives = {}
 
 
+
+
+class Tables(GenLeechReduceY):
+    pass
+
+

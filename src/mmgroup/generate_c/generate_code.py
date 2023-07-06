@@ -175,7 +175,7 @@ def find_file(pathlist, filename, verbose = 0):
         except:
             pass
     ERR = "File %s not found" 
-    raise ValueError(ERR % filename)  
+    raise IOError(ERR % filename)
 
      
 def set_out_header(instance):   
@@ -247,7 +247,7 @@ def make_actions(s):
             for instruction in data:
                 m = m_set.match(instruction)
                 if m is None:
-                    raise ERR_SET
+                    raise ValueError(ERR_SET)
                 var, value = m.groups()
                 value = value.strip()
                 if len(value):
@@ -270,7 +270,7 @@ def make_actions(s):
             if len(s.c_files):
                 ERR = ( "Option 'source-header' may not occur"
                       "after option 'sources'")
-                raise valueError(ERR)
+                raise ValueError(ERR)
             file_list = s.c_files.setdefault(ImmutableDict(param), [])
             src_name = os.path.normpath(data)
             file_list.append((src_name, None))
@@ -428,6 +428,9 @@ class CodeGenerator:
         elif isinstance(args, argparse.Namespace):
             check_arg_parser(args)
             self.s = args
+        else:
+            ERR = "Cannot construct class %s object from %s object"
+            raise TypeError(ERR % (self.__class__, type(args)))
         self.old_path = None
         finalize_parse_args(self.s)
 

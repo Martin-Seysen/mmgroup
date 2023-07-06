@@ -89,9 +89,7 @@ Classes and functions provided by the code generator
 .. autofunction::   mmgroup.generate_c.make_table
 
 .. autofunction::   mmgroup.generate_c.prepend_blanks
-  
-.. autofunction::   mmgroup.generate_c.pxd_to_function_list
-  
+   
 .. autofunction::   mmgroup.generate_c.pxd_to_pxi
   
 .. autofunction::   mmgroup.generate_c.generate_pxd

@@ -1,4 +1,10 @@
 // %%GEN h
+#ifndef MMGROUP_GENERATORS_H
+#define MMGROUP_GENERATORS_H
+// %%GEN c
+
+
+// %%GEN h
 /** @file mmgroup_generators.h
 
  The header file ``mmgroup_generators.h`` contains definitions for 
@@ -136,4 +142,11 @@ enum MMGROUP_ATOM_TAG_ {
 #define MMGROUP_ATOM_DATA 0xFFFFFFFUL
 
 
+
+// %%INCLUDE_HEADERS
+
+
+// %%GEN h
+#endif // ifndef MMGROUP_GENERATORS_H
+// %%GEN c
 
