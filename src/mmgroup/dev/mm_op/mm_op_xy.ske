@@ -354,7 +354,7 @@ int32_t mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
      
     v += MM_OP%{P}_OFS_X;
     d &= 0x1800;
-    if (d == 0) return;
+    if (d == 0) return 0;
     sh = 0x01120200UL >> ((d >> 11) << 3);
 
     for (i0 = 0; i0 < 8; i0 += 4) {

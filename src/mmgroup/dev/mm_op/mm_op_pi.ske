@@ -554,7 +554,7 @@ int32_t mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_
     }
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
     for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
-    if (mode) return;
+    if (mode) return 0;
 
     v += 24 *  %{V24_INTS};
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
@@ -599,7 +599,7 @@ int32_t mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
     uint32_t i1;
 
   // %%IF* GENERATE_CODE
-    if (mode || (d & 0x800) == 0) return;
+    if (mode || (d & 0x800) == 0) return 0;
     v += 2 * 24 * %{V24_INTS};
     for (i1 = 0; i1 < 24; ++i1) {
         // %%FOR* i in range(V24_INTS_USED)  
