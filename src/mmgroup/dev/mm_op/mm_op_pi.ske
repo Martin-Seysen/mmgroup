@@ -37,6 +37,7 @@
  the operation on \f$\rho_{%{P}}\f$. This helps us to keep
  the C interface for these  operations simple.
 
+ Unless otherwise stated, functions exported from this module return 0. 
 */
 
 #include <string.h>
@@ -74,7 +75,7 @@ static const uint_mmv_t MM%{P}_TBL_SCALPROD_LOW[] = {
 /// @cond DO_NOT_DOCUMENT 
 
 // %%EXPORT
-void mm_op%{P}_neg_scalprod_d_i(uint_mmv_t* v)
+int32_t mm_op%{P}_neg_scalprod_d_i(uint_mmv_t* v)
 // negate entries d (x) i with sclar product equal to 1
 {
   // %%IF* GENERATE_CODE
@@ -90,6 +91,7 @@ void mm_op%{P}_neg_scalprod_d_i(uint_mmv_t* v)
             v +=   4 * %{V24_INTS};
         }
     }
+  return 0;
   // %%END IF # GENERATE_CODE
 }
 
@@ -386,7 +388,7 @@ void mm_op%{P}_do_pi(uint_mmv_t *v_in, mm_sub_op_pi_type *p_op, uint_mmv_t * v_o
   Input vector  ``v_in`` is not changed.
 */
 // %%EXPORT px
-void mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
+int32_t mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
 {
   // %%IF* GENERATE_CODE
     mm_sub_op_pi_type s_op;
@@ -394,6 +396,7 @@ void mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_
     s_op.tbl_perm64 = (mm_sub_op_pi64_type *)(v_out + MM_OP%{P}_OFS_X);
     mm_sub_prep_pi(delta, pi, &s_op);
     mm_op%{P}_do_pi(v_in, &s_op, v_out);
+    return 0;
   // %%END IF  # GENERATE_CODE
 }
 
@@ -406,7 +409,7 @@ void mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_
   
 */
 // %%EXPORT px
-void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
+int32_t mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 {
     uint_fast32_t i, i1;
     // Borrow space from ``v_out`` sufficient for an array of length 2048
@@ -504,6 +507,7 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 
         mm_op%{P}_neg_scalprod_d_i(v); 
     }
+  return 0; 
   // %%END IF  # GENERATE_CODE
 }
 
@@ -530,7 +534,7 @@ void mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
   than function ``mm_op%{P}_pi``.
 */
 // %%EXPORT px
-void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t mode)
+int32_t mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t mode)
 {
     uint_mmv_t v_tmp[24 *  %{V24_INTS}];
     uint16_t row_perm[24];
@@ -560,6 +564,7 @@ void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t m
     if (delta & 0x800) for(i = 0; i < 24; ++i) row_perm[i] ^= 0x8000;
     pi24_n(v, row_perm, col_perm, v_tmp, 24);
     for (i = 0; i < 24 *  %{V24_INTS}; ++i) v[i] = v_tmp[i];
+    return 0;
  
   // %%END IF  # GENERATE_CODE
 }
@@ -589,7 +594,7 @@ void mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t m
   than function ``mm_op%{P}_delta``.
 */
 // %%EXPORT px
-void mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
+int32_t mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
 {
     uint32_t i1;
 
@@ -606,6 +611,7 @@ void mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
         // %%END FOR   #  FOR i
         v +=  %{V24_INTS};      
     }
+  return 0;
   // %%END IF  # GENERATE_CODE
 }
 

@@ -3,6 +3,8 @@ from mmgroup.generate_c.generate_functions import prepend_blanks
 from mmgroup.generate_c.generate_functions import format_item
 from mmgroup.generate_c.generate_functions import UserDirective
 from mmgroup.generate_c.generate_functions import UserFormat
+from mmgroup.generate_c.generate_functions import EmptyUserDirective
+from mmgroup.generate_c.generate_functions import ZeroUserFormat
 from mmgroup.generate_c.generate_functions import make_table
 
 from mmgroup.generate_c.make_c_tables import TableGenerator
@@ -18,6 +20,7 @@ from mmgroup.generate_c.generate_pxd import pxdGenerator
 from mmgroup.generate_c.generate_pxd import generate_pxd_parser
 
 from mmgroup.generate_c.make_pxd import generate_pxd
+from mmgroup.generate_c.make_pxd import iter_exports_from_header
 from mmgroup.generate_c.make_pxi import pxd_to_pxi
 
 

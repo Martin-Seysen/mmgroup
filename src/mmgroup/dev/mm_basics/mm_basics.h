@@ -1,3 +1,13 @@
+
+// %%EXPORT_KWD MM_BASICS_API
+
+
+// %%GEN h
+#ifndef MM_BASICS_H
+#define MM_BASICS_H
+
+
+
 // %%GEN h
 
 /** @file mm_basics.h
@@ -186,4 +196,15 @@ enum MM_SPACE_TAG {
 #define MM_SPACE_COORD_PAR1    0x1FFC000   
 
 /// @endcond
+
+
+
+// %%INCLUDE_HEADERS
+
+
+
+// %%GEN h
+
+#endif  // #ifndef MM_BASICS_H
+
 

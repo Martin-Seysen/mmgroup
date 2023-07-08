@@ -271,9 +271,11 @@ static inline void count_short64(
   Output is written into the array ``p_out`` of length  %{int:P//2+1}.
   Entry ``p_out[i]`` contains the number if entries of the monomial 
   part of ``v`` with absolute value ``i`` for ``0 <= i <= %{int:P//2}``. 
+
+  The function retuzrns 0.
 */
 // %%EXPORT px
-void mm_op%{P}_eval_X_count_abs(uint_mmv_t *v, uint32_t *p_out)
+int32_t mm_op%{P}_eval_X_count_abs(uint_mmv_t *v, uint32_t *p_out)
 {
      uint_fast32_t a[16], i;
 
@@ -285,6 +287,7 @@ void mm_op%{P}_eval_X_count_abs(uint_mmv_t *v, uint32_t *p_out)
      count_short64(v + MM_OP%{P}_OFS_T, 759, a);
      count_short24(v + MM_OP%{P}_OFS_X, 2048, a);
      for (i = 0; i < 8; ++i) p_out[i] = a[i] + a[15-i];
+     return 0;
 }
 
 

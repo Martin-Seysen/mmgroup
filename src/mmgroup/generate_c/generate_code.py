@@ -291,6 +291,24 @@ def finalize_parse_args(s):
     s.finalized = True
  
 
+def import_tables(table_modules, verbose = False):
+    """Import tables from python modules
+    
+    Here ``table_modules`` is a list of names of python modules in
+    the usual python syntax. This function tries to import a class 
+    with name ``Tables``` fro ech of these modules. 
+    It returns the ist of imported classes.
+    """
+    table_classes =  []
+    if table_modules:
+        for module in table_modules:
+            if verbose:
+                print("Importing Tables from module", module)
+            m = import_module(module)
+            table_class = m.Tables
+            table_classes.append(table_class)
+    return table_classes    
+
 
  
 
@@ -332,18 +350,25 @@ def load_tables(tg, tables, params, mockup=False, directives=True):
     _tables = {}
     _directives = {} if directives else NoDirectives
     for table_class in tables:
-         m_tables = table_class(**params)
-         if mockup and getattr(m_tables, 'mockup_tables'):
-             new_tables = m_tables.mockup_tables
-         else:
-             new_tables = m_tables.tables
-         _tables.update(new_tables)
-         if directives:
-             if mockup and getattr(m_tables, 'mockup_directives'):
-                 new_directives = m_tables.mockup_directives
-             else:
-                 new_directives = m_tables.directives
-             _directives.update(new_directives)
+        new_tables, new_directives = {}, {} 
+        m_tables = table_class(**params)
+        if mockup:
+            try: 
+                new_tables = m_tables.mockup_tables
+            except AttributeError:
+                pass
+        if not new_tables:
+            new_tables = m_tables.tables
+        _tables.update(new_tables)
+        if directives:
+            if mockup:
+                try: 
+                    new_directives = m_tables.mockup_directives
+                except AttributeError:
+                    pass
+            if not new_directives:
+                new_directives = m_tables.directives
+            _directives.update(new_directives)
     tg.set_tables(_tables, _directives)
 
 
@@ -381,6 +406,8 @@ class StringOutputFile():
         """Copy internal data to test_stream ``iostream``"""
         for s in self.s:
              ostream.write(s)
+    def as_string(self):
+        return "".join(self.s)    
     def close(self):
         self.s = []
 
@@ -465,13 +492,19 @@ class CodeGenerator:
 
     def import_tables(self):
         finalize_parse_args(self.s)
-        if getattr(self.s, "table_classes", None):
-             return
+        if getattr(self.s, "table_classes", None) is None:
+            table_modules = self.s.tables
+            verbose = self.s.verbose
+            table_classes = import_tables(table_modules, verbose)
+            self.s.table_classes = table_classes    
+        
+        """     
         table_classes = self.s.table_classes = []
         for module in self.s.tables:
              m = import_module(module)
              table_class = m.Tables
              table_classes.append(table_class)
+        """     
 
     def load_table_generator(self, table_generator, params):
         assert isinstance(params, ImmutableDict)
@@ -482,23 +515,7 @@ class CodeGenerator:
         mockup = self.s.mockup
         load_tables(table_generator, tables, params, mockup)
 
-        """
-        for table_class in self.s.table_classes:
-             common_params = params.restrict(table_params)
-             m_tables = table_class(params)
-             if mockup and getattr(m_tables, 'mockup_tables', None):
-                 new_tables = m_tables.mockup_tables
-             else:
-                 new_tables = m_tables.tables
-             if mockup and getattr(m_tables, 'mockup_directives', None):
-                 new_directives = m_tables.mockup_directives
-             else:
-                 new_directives = m_tables.directives
-             tables.update(new_tables)
-             directives.update(new_directives)
-             table_generator.set_tables(tables, directives)
-        """
-
+ 
     def generate(self):
         finalize_parse_args(self.s)
         end_header = StringOutputFile()

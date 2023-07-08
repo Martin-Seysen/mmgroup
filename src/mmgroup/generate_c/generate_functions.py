@@ -203,6 +203,13 @@ class UserDirective(object):
         res = str(self.function(*f_args))
         return prepend_blanks(res, indent),  ""
 
+def _empty_string(*args, **kwds):
+    return "" 
+
+EmptyUserDirective = UserDirective(_empty_string, '.')
+# This directive always createas the empty string. It is 
+# used for mockup in documentation generation with Sphinx. 
+
 #######################################################################
 # Support for user-defined formatting functions
 #######################################################################
@@ -349,6 +356,12 @@ class UserFormat(UserDirective):
         args += eval_codegen_args(self.tg.names, format_, self.eval_mode)
         return self.format_function(*args)
 
+def _zero_string(*args, **kwds):
+    return "0" 
+
+ZeroUserFormat = UserDirective(_zero_string, '.')
+# This user format always creates the string '0'. It is 
+# used for mockup in documentation generation with Sphinx. 
 
 
 #######################################################################

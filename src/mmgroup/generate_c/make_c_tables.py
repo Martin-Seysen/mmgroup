@@ -14,7 +14,8 @@ import ast
 from io import IOBase
 from operator import __or__, __xor__, __and__
 from numbers import Integral
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
+from collections import UserDict
 
 from functools import partial
 import numpy
@@ -56,14 +57,12 @@ from mmgroup.generate_c.generate_functions import UserFormat
 from mmgroup.generate_c.generate_functions import built_in_formats
 
 
-class NoDirectives(Mapping):
-    """Marker for suppressing directives in class TableGenerator"""
-    def __getitem__(self, key):
-        raise KeyError("class NoDirectives implements the empty Mapping")
-    def __iter__(self):
-        pass
-    def __len__(self):
-        return 0
+
+class NoDirectives:
+    pass
+
+########## NoDirectives = UserDict({})
+
 
 class TableGenerator(object):
     """Automatically generate a .c file and a .h file from a *source*
@@ -143,17 +142,17 @@ class TableGenerator(object):
         self.reset_names()    # initialize self.names from self.tables
         # Enter user-defined directives into dictionary self.directives
         self.directives = {}
-        for fname, f in directives.items():
-            if not isinstance(f, UserDirective):
-                try:
-                    f = UserDirective(f)
-                except:
-                    ERR = "Could not register directive %s for code generator\n"
-                    print("\nError:")
-                    print(ERR % fname)
-                    raise
-            f.set_code_generator(self)
-            self.directives[fname] = f
+        if directives != NoDirectives:
+            for fname, f in directives.items():
+                if not isinstance(f, UserDirective):
+                    try:
+                        f = UserDirective(f)
+                    except:
+                        print(("\nError: Could not register directive"
+                               + " %s for code generator\n") % fname )
+                        raise
+                f.set_code_generator(self)
+                self.directives[fname] = f
          
 
         # Enter built-in directives into dictionary self.directives

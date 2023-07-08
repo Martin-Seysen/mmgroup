@@ -289,6 +289,27 @@ class Mockup_MM_TablesXi:
     tables = TABLES
 
 
+class Tables:
+     mockup_tables = Mockup_MM_TablesXi.tables
+     mockup_directives = Mockup_MM_TablesXi.directives
+
+     def __init__(self, *args, **kwds):
+         self._table_class = None
+
+     def _load_tables(self):
+         if self._table_class is None:
+             self._table_class =  MM_TablesXi()
+         return self._table_class
+
+     @property
+     def tables(self):
+         return self._load_tables().tables
+
+     @property
+     def directives(self):
+         return self._load_tables().directives
+
+
 
 if __name__ == "__main__":
      MM_TablesXi().display_config() 

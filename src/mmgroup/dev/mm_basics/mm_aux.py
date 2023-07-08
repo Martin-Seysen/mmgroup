@@ -166,6 +166,11 @@ class MM_IO24:
         }
         
 
+class Tables(MM_IO24):
+    def __init__(self, *args, **kwds):
+        super().__init__()
+        pass
+
 
 
 

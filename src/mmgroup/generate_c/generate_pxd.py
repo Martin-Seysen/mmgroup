@@ -9,12 +9,17 @@ import re
 import os
 import argparse
 
-from mmgroup.generate_c.generate_code import MyArgumentParser
+from mmgroup.generate_c.make_c_tables import TableGenerator
 
+
+from mmgroup.generate_c.generate_code import MyArgumentParser
 from mmgroup.generate_c.generate_code import find_file
 from mmgroup.generate_c.generate_code import open_for_write
 from mmgroup.generate_c.generate_code import set_real_pathlist
 from mmgroup.generate_c.generate_code import set_real_path 
+from mmgroup.generate_c.generate_code import load_tables
+from mmgroup.generate_c.generate_code import import_tables
+from mmgroup.generate_c.generate_code import StringOutputFile
 from mmgroup.generate_c.make_pxd import pxd_from_h
 from mmgroup.generate_c.make_pxi import pxd_to_pxi
 
@@ -73,7 +78,15 @@ def generate_pxd_parser():
         help = "Optional, declare exported functions as 'nogil' "
         "when set."
     )
-   
+ 
+ 
+    parser.add_argument('--tables', 
+        nargs = '*',  metavar='TABLES',
+        action = 'extend', default = [], 
+        help="Add list TABLES of table classes "
+        "to the tables to be used for generating .pxd and .pxi files."
+    )
+  
     parser.add_argument('--pxd-path', nargs = '*', action='extend',
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding input .pxd and .pxi files')
@@ -89,6 +102,11 @@ def generate_pxd_parser():
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
         help = 'Set directory DIR for output file') 
+ 
+    parser.add_argument('--mockup', 
+        default = False,
+        action = 'store_true',
+        help = 'Use tables for Sphinx mockup if present')
  
     parser.add_argument('-v', '--verbose', action = 'store_true',
         help = 'Verbose operation')
@@ -155,6 +173,18 @@ class pxdGenerator:
         self.old_path = None
         check_args_parsed(self.s)
 
+    def string_from_input(self, path, filename, table_generator = None):
+        in_file = find_file(path, filename) if filename else None
+        string_file = StringOutputFile()
+        if in_file:
+            f = open(in_file)
+            if table_generator:
+                table_generator.generate(f, string_file) 
+            else:
+                string_file.write(f.read())
+        string_file.write("\n")
+        return string_file.as_string()
+
     def generate_pxd_file(self):
         finalize_parse_args(self.s)
         s = self.s
@@ -165,7 +195,12 @@ class pxdGenerator:
         out_dir = os.path.normpath(getattr(s, "out_dir", None))
         pxd_out = open_for_write(out_dir, s.pxd_out)
         pxd_in = getattr(s, "pxd_in", None)
+        """
         pxd_in = find_file(self.s.pxd_path, pxd_in) if pxd_in else None
+        """
+        tg = TableGenerator()
+        self.load_table_generator(tg)
+        pxd_in = self.string_from_input(s.pxd_path, s.pxd_in, tg)
         nogil = getattr(s, "no_gil", False)
         pxd_from_h(pxd_out, h_in, pxd_in, h_name, nogil)
         pxd_out.close()
@@ -188,8 +223,14 @@ class pxdGenerator:
 
 """.format("#" * 70, s.pxd_out)
         )
+        """
         pxi_source_name = find_file(self.s.pxd_path, s.pxi_in)
         pxi_source_text = open(pxi_source_name).read()
+        """
+        tg = TableGenerator()
+        self.load_table_generator(tg)
+        pxi_source_text = self.string_from_input(s.pxd_path, s.pxi_in, tg)
+
         pxi_out.write(pxi_source_text)
         pxi_out.write("\n")
 
@@ -225,6 +266,21 @@ class pxdGenerator:
         else:
             del sys.path[:len(self.s.py_path)]
 
+    def import_tables(self):
+        finalize_parse_args(self.s)
+        if getattr(self.s, "table_classes", None) is None:
+            table_modules = self.s.tables
+            verbose = self.s.verbose
+            table_classes = import_tables(table_modules, verbose)
+            self.s.table_classes = table_classes    
+
+    def load_table_generator(self, table_generator, params = {}):
+        assert isinstance(table_generator, TableGenerator)
+        #tables = {}
+        #directives = {}
+        tables = self.s.table_classes
+        mockup = self.s.mockup
+        load_tables(table_generator, tables, params, mockup, False)
 
  
 ###############################################################################

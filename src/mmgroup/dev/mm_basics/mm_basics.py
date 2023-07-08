@@ -493,5 +493,26 @@ class Mockup_MM_Const(MM_Const):
         self.tables["GENERATE_CODE"] = False
 
 
+class Tables():
+    def __init__(self, *args, **kwds):
+        self.MM_Const = MM_Const()
 
+    @property
+    def tables(self):
+        tables = {}
+        tables.update(MM_Basics.tables)
+        tables.update(self.MM_Const.tables)
+        return tables
+
+    @property
+    def directives(self):
+        return self.MM_Const.directives
+
+    @property
+    def mockup_tables(self):
+        tables = {}
+        tables.update(MM_Basics.tables)
+        tables.update(self.MM_Const.tables)
+        tables["GENERATE_CODE"] = False
+        return tables
 

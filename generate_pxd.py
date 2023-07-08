@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     cg = pxdGenerator(cmdline_args)
     cg.activate_py_path()
+    cg.import_tables()
     #cg.display_args()
     cg.generate()
     #cg.deactivate_py_path()

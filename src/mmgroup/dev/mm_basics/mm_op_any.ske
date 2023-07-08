@@ -1,0 +1,144 @@
+/** @file mm_op_any.c
+
+ 
+
+ File ``mm_op_pi.c`` implements the operation of the
+ generators \f$x_\pi\f$ and \f$x_\delta\f$ of the monster group
+ on a vector in the representation \f$\rho_p\f$ of the
+ Monster modulo \f$p\f$.
+
+ The representation \f$\rho_p\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo\f$p\f$, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ Unless otherwise stated, the first parameter of a function
+ in this module is the modulus \f$p\f$, and modulus may be
+ one of the values TODO: Yet to be documented!!!! .
+
+ An element of \f$\rho_p\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension** 
+ in this document.
+*/
+
+#include <string.h>
+#include "mm_op.h"   
+
+// %%EXPORT_KWD MM_OP_API
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+/***************************************************************
+* Auxiliary functions
+***************************************************************/
+
+
+
+/**
+ @brief Compute automophism of the Parker loop on a vector
+
+ File ``mm_op_pi.c`` implements the operation of the
+ generators \f$x_\pi\f$ and \f$x_\delta\f$ of the monster group
+ on a vector in the representation \f$\rho_p\f$ of the
+ Monster modulo ``p``..
+
+ Here generators \f$x_\pi\f$ and \f$x_\delta\f$ are defined as
+ automorphisms of the Parker loop as in section **The monster group**
+ of the **API reference**. An automophism of the Parker loop is
+ specified by a pair of integers ``d, pi`` as in the constructor
+ of the Python class ``AutPL``, see
+ section **Automophisms of the Parker loop** in the **API reference**.
+
+ The exact operation of an automorphism of the Parker loop on
+ \f$\rho\f$ is as defined in [Seysen19].
+
+ Note that the integers ``d, pi`` mentioned above describe the
+ number of an element of the Golay cocode and the number of a
+ permutation in the Mathieu group  \f$M_{24}\f$, respectively.
+ Internally, we use the C functions in file ``mat24_functions.c`` 
+ and the function ``mm_sub_prep_pi`` in file ``mm_tables.c`` for
+ converting the  integers ``d, pi`` to mathematical objects that
+ can be used for implementing the operation on \f$\rho_p\f$.
+ These conversions are very fast compared to the cost for
+ the operation on \f$\rho_p\f$. This helps us to keep
+ the C interface for these  operations simple.
+
+ Let ``v_in`` be a vector of the representation \f$\rho_p\f$
+ of the monster group. Then the function computes this automorphism
+ on the input  vector ``v_in`` and stores the result in the output 
+ vector ``v_out.`` Input vector  ``v_in`` is not changed.
+*/
+// %%EXPORT px
+void mm_op_pi(uint32_t p, uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
+{
+  // %%DISPATCH_P  mm_op_pi, p, v_in, delta, pi, v_out
+}
+
+
+/**
+  @brief Simplified version of function ``mm_op_pi``
+
+  ``mm_op_delta(p, v_in, delta, v_out)`` is equivalent to
+  ``mm_op_pi(p, v_in, 0, delta, v_out)``, but much faster.
+  
+*/
+// %%EXPORT px
+void mm_op_delta(uint32_t p, uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
+{
+   // %%DISPATCH_P  mm_op_delta, p, v_in, delta, pi, v_out
+}
+
+/**
+  @brief Restriction of function ``mm_op_pi`` to tag ``ABC``
+
+  Function ``mm_op_pi`` computes an automorphism of the
+  Parker loop on a vector ``v_in`` of integers modulo ``p``
+  and stores the result in ``v_out``. That automorphism
+  depends on parameters ``delta``  and ``pi``.
+  
+  Function ``mm_op_pi_tag_ABC`` computes the same
+  automorphism on the entries of the vector ``v = v_in`` with
+  tags ``ABC`` only, and ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``ABC`` are changed.
+
+  If parameter ``mode`` is set then we perform the operation on
+  entries with tag ``A`` only. This  function is much faster 
+  than function ``mm_op_pi``.
+*/
+// %%EXPORT px
+void mm_op_pi_tag_ABC(uint32_t p, uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t mode)
+{
+   // %%DISPATCH_P  mm_op_delta, p, v, delta, pi, mode
+}
+
+
+
+
+/**
+  @brief Simplified version of function ``mm_op_pi_tag_ABC``
+
+  ``mm_op_delta_tag_ABC(p, v_in, delta, v_out)`` is equivalent to
+  ``mm_op_pi_tag_ABC(p, v_in, 0, delta, v_out)``, but much faster.
+*/
+// %%EXPORT px
+void mm_op_delta_tag_ABC(uint32_t p, uint_mmv_t *v, uint32_t delta, uint32_t mode)
+{
+   // %%DISPATCH_P  mm_op_delta_tag_ABC, p, v, delta, mode
+}
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+

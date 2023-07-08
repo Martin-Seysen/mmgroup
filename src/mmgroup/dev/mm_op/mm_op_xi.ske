@@ -36,6 +36,8 @@
  also an array ``mm_sub_table_xi`` that provides public 
  access to these tables. The same tables are used for the
  operations on \f$\rho_p\f$ for all characteritics \f$p\f$. 
+
+ Unless otherwise stated, functions exported from this module return 0. 
 */
 
 #include <string.h>
@@ -173,7 +175,7 @@ static void mm_op%{P}_xi_a(uint_mmv_t *v_in,  uint32_t exp1, uint_mmv_t *v_out)
   Input vector  ``v_in`` is not changed.
 */
 // %%EXPORT px
-void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
+int32_t mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i;
     uint32_t exp1;
@@ -182,7 +184,7 @@ void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     exp %= 3;
     if (exp == 0) {
         for (i = 0; i < %{MMV_INTS}; ++i) v_out[i] = v_in[i];
-        return;
+        return 0;
     }
     exp1 =  exp - 1;
 
@@ -198,6 +200,7 @@ void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
         uint_mmv_t *p_src = v_in + MM_OP%{P}_OFS_Z + (i << HALF_YZ_SHIFT);
         mm_op%{P}_xi_yz(p_src, exp1, v_out + TAB%{P}_XI64_OFFSET[exp1][i]);
     }
+    return 0;
   // %%END IF # GENERATE_CODE    
 }
 
@@ -220,15 +223,16 @@ void mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
   function is much faster than function ``mm_op%{P}_xy``.
 */
 // %%EXPORT px
-void mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
+int32_t mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
 {
     uint_mmv_t v_tmp[24 * %{V24_INTS}];
     uint_fast32_t i;
     
     exp %= 3;
-    if (exp == 0) return;
+    if (exp == 0) return 0;
     mm_op%{P}_xi_a(v, exp - 1, v_tmp);
     for (i = 0; i < 24 * %{V24_INTS}; ++i) v[i] = v_tmp[i];
+    return 0;
 }
 
 

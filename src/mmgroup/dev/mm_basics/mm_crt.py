@@ -56,3 +56,10 @@ class MM_CrtCombine:
     }
 
     directives = {}
+
+
+
+class Tables(MM_CrtCombine):
+    def __init__(self, *args, **kwds):
+        pass
+

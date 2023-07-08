@@ -28,6 +28,8 @@
  ``hadamard_t.py`` in subdirectory ``mmgroup/dev/hadamard`` for
  generating C code that implements the products of Hadamard
  matrices corresponding to the generator \f$\tau^e\f$.
+
+ Unless otherwise stated, functions exported from this module return 0. 
 */
 
 
@@ -205,7 +207,7 @@ op%{P}_t_A(uint_mmv_t *v_in,  uint_mmv_t exp1, uint_mmv_t *v_out)
   Input vector ``v_in`` is not changed.
 */
 // %%EXPORT px
-void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
+int32_t mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i, exp1;
  
@@ -213,7 +215,7 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     exp %= 3;
     if (exp == 0) {
         for (i = 0; i < %{MMV_INTS}; ++i) v_out[i] = v_in[i];
-        return;
+        return 0;
     }
     exp1 = %{hex:1} - (uint_mmv_t)exp;
 
@@ -260,6 +262,7 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
          // Map Z to X for t and X to Z for t**2
          invert%{P}_xyz(pZXin, pZXout);
     }
+  return 0;
   // %%END IF  # GENERATE_CODE
 }
 
@@ -287,7 +290,7 @@ void mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
   function ``mm_op%{P}_t``.
 */
 // %%EXPORT px
-void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
+int32_t mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i, exp1;
  
@@ -295,10 +298,11 @@ void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     exp %= 3;
     if (exp == 0) {
         for (i = 0; i < %{int:24*V24_INTS}; ++i) v_out[i] = v_in[i];
-        return;
+        return 0;
     }
     exp1 = %{hex:1} - (uint_mmv_t)exp;
     op%{P}_t_A(v_in, exp1, v_out);
+    return 0;
   // %%END IF  # GENERATE_CODE
 }
 
@@ -323,15 +327,16 @@ void mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
   This function is much faster than  function ``mm_op%{P}_t``.
 */
 // %%EXPORT px
-void mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
+int32_t mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
 {
     uint_mmv_t  exp1;
  
   // %%IF* GENERATE_CODE
     exp %= 3;
-    if (exp == 0) return;
+    if (exp == 0) return 0;
     exp1 = %{hex:1} - (uint_mmv_t)exp;
     op%{P}_t_ABC(v, exp1, v);
+    return 0;
   // %%END IF  # GENERATE_CODE
 }
 

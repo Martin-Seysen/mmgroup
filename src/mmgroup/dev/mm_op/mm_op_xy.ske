@@ -30,6 +30,8 @@
 
  Internally, we use the C function ``mm_sub_prep_xy`` in 
  file ``mm_tables.c`` for computing the opetation stated above.
+
+ Unless otherwise stated, functions exported from this module return 0. 
 */
 
 
@@ -309,7 +311,7 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
   Input vector  ``v_in`` is not changed.
 */
 // %%EXPORT px
-void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
+int32_t mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
 {
   // %%IF* GENERATE_CODE
     uint16_t s_T[759];
@@ -318,6 +320,7 @@ void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_m
     s_op.s_T = s_T;
     mm_sub_prep_xy(f, e, eps, &s_op);
     mm_op%{P}_do_xy(v_in, &s_op, v_out);
+    return 0;
   // %%END IF   # GENERATE_CODE
 }
 
@@ -342,7 +345,7 @@ void mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_m
   version of function ``mm_op%{P}_xy``.
 */
 // %%EXPORT px
-void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
+int32_t mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
 // Multiply vector ``v`` with ``x_d`` inplace. Here ``d`` must be
 // 0, -1, \Omega or -\Omega.
 {
@@ -370,6 +373,7 @@ void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
             pv +=  %{V24_INTS};      
         }
     }
+    return 0;
 }
 
 
@@ -394,7 +398,7 @@ void mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
   function ``mm_op%{P}_xy``.
 */
 // %%EXPORT px
-void mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps, uint32_t mode)
+int32_t mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps, uint32_t mode)
 {
   // %%IF* GENERATE_CODE
     mm_sub_op_xy_type s_op;
@@ -402,6 +406,7 @@ void mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps, u
     s_op.s_T = NULL;
     mm_sub_prep_xy(f, e, eps, &s_op);
     op%{P}_do_ABC(v, &s_op, mode, v);
+    return 0;
   // %%END IF   # GENERATE_CODE
 }
 

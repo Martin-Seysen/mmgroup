@@ -298,17 +298,21 @@ DIR_DICT = {
    "PXD_DIR" : PXD_DIR,
 }
 
-
+DIR_DICT["MOCKUP"] = "--mockup\n" if on_readthedocs else ""
 
 def get_c_names(s):
-    outp = subprocess.run(
-       [sys.executable, "generate_code.py", "--output-c-names"
-           ] + s.split(), 
-       check = True,
-       text = True,
-       capture_output = True
-    )
-    return(outp.stdout).split()
+    process = [sys.executable, "generate_code.py", "--output-c-names"
+           ] + s.split()
+    try:
+        ls = subprocess.run(process, text = True,
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        ls.check_returncode()
+    except subprocess.CalledProcessError as e:
+        print("Error:\nreturn code: ", e.returncode, 
+              "\nOutput: ", e )
+        raise
+    return(ls.stdout).split()
     
 
 MAT24_GENERATE = """
@@ -502,14 +506,59 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 
 
 ####################################################################
-# Building the extenstions at stage 2
+# Building new extenstions at stage 2
+####################################################################
+
+
+MM_GENERATE = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mm_basics
+               {SRC_DIR}/mmgroup/dev/mm_op
+ --out-dir {C_DIR}
+ --tables mmgroup.dev.mm_basics.mm_basics
+          mmgroup.dev.mm_basics.mm_tables_xi
+          mmgroup.dev.mm_basics.mm_aux
+          mmgroup.dev.mm_basics.mm_tables
+          mmgroup.dev.mm_basics.mm_crt
+ --source-header mm_basics.h
+ --out-header mm_basics.h
+ --sources  mm_aux.ske mm_tables.ske mm_group_word.ske
+            mm_tables_xi.ske mm_crt.ske
+""".format(**DIR_DICT)
+
+
+
+MM_GENERATE_PXD = """
+ -v
+ --mockup {MOCKUP}
+ --py-path {SRC_DIR}
+ --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --tables mmgroup.dev.mm_basics.mm_basics
+ --h-in  mm_basics.h
+ --pxd-in  mm_basics.pxd
+ --pxd-out mm_basics.pxd
+ --pxi-in  mm_basics.pxd
+""".format(**DIR_DICT)
+
+
+### Yet to be done!!!!!!!!!!!!!!
+
+
+####################################################################
+# Building old extenstions at stage 2
 ####################################################################
 
 
 
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
-  [sys.executable, "codegen_mm.py"] + codegen_args,
-  [sys.executable, "codegen_mm_op.py"] + codegen_args,
+   [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
+   [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
+#  [sys.executable, "codegen_mm.py"] + codegen_args,
+   [sys.executable, "codegen_mm_op.py"] + codegen_args,
 )
 
 

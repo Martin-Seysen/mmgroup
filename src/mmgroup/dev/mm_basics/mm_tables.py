@@ -98,6 +98,14 @@ class MM_OctadTable:
 
     directives = {}
 
+
+
+class Tables(MM_OctadTable):
+    def __init__(self, *args, **kwds):
+        pass
+
+
+
     
     
  

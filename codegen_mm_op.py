@@ -501,7 +501,7 @@ if __name__ == "__main__":
     for p in PRIMES:
         c_files,  pxd_files = make_c_h_pxd(p)
         generate_pyx(p, pxd_files)
-        generate_dispatch()
+        #generate_dispatch()
 
 
 

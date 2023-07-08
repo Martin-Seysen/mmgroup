@@ -14,6 +14,9 @@
  of integers of type ``uint_mmv_t`` as described in
  section **Description of the mmgroup.mm extension**
  in this document.
+
+ Unless otherwise stated, functions exported from this module return 0. 
+
 */
 
 #include "mm_op%{P}.h"
@@ -128,7 +131,7 @@ int32_t mm_op%{P}_checkzero(uint_mmv_t *mv)
   result in the vector ``mv1``.
 */
 // %%EXPORT px
-void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
+int32_t mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
 //  Vector addition in the monster group representation modulo %{P}.
 //  Put mv1 = mv1 + mv2.
 {
@@ -158,6 +161,7 @@ void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
         // %%END IF
         *mv1++ = a1;
     } while (--len);
+    return 0;
 }
 
 
@@ -169,7 +173,7 @@ void mm_op%{P}_vector_add(uint_mmv_t *mv1, uint_mmv_t *mv2)
   integer ``factor`` and stores the result in the vector ``mv1``.
 */
 // %%EXPORT px
-void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
+int32_t mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
 //  Scalar multiplication in the monster group representation modulo %{P}.
 //  Put mv1 = factor * mv1.
 {
@@ -194,6 +198,7 @@ void mm_op%{P}_scalar_mul(int32_t factor, uint_mmv_t *mv1)
         a1 = a1 + (a2 << %{FIELD_BITS});
         *mv1++ = a1;
     } while (--len);
+    return 0;
 }
 
 

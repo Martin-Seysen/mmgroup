@@ -21,6 +21,23 @@ m_function = re.compile(r"[^()]+\([^()]*\)")
 
 
 def iter_exports_from_header(file):
+    """Yield list of export tuples from a generated header file
+
+    Here ``file`` is the name of the heder file to be read.
+
+    The function yields triples ``(directive, args, prototype)``
+    describing function to be exported, e.g. via a .pde file.
+    Here ``directive`` is the the directive read from the header
+    file. At present ``directive`` will be one of the strings
+    'EXPORT',  'EXPORT_TABLE', or 'FROM'. Component ``args``
+    is a single string containing the arguments red from the
+    directive. Component ``prototype`` is the prototype for the
+    exported function or table, such that it can be entered into
+    a .pxd file to be generated. For a 'FROM' directive, component
+    ``args`` is the name of the C source file from which the
+    subsequent functions and tables are exported; and ``prototype``
+    is the empty string.
+    """
     f = open(file, "rt")
     export_pending = None
     def prototype(line):
