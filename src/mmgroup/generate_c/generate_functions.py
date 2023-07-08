@@ -201,7 +201,10 @@ class UserDirective(object):
         f_args = [self.tg.names[name] for name in self.prefixes]
         f_args += eval_codegen_args(self.tg.names, args, self.eval_mode)
         res = str(self.function(*f_args))
-        return prepend_blanks(res, indent),  ""
+        res = prepend_blanks(res, indent)
+        res_c =  res if self.tg.gen_c else ""
+        res_h =  res if self.tg.gen_h else ""
+        return res_c, res_h
 
 def _empty_string(*args, **kwds):
     return "" 

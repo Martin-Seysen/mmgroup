@@ -61,13 +61,10 @@ def generate_code_parser():
     parser.add_argument('--sources', 
         dest='actions', nargs = '*',  metavar='SOURCES',
         action=GenerateAction,
-        help="Add list of SOURCES to actions for generating code."
+        help="Add list of SOURCES to actions for generating code. "
+             "If one of these SOURCES in the list has extension '.h' "
+             "then no corresponding C fle is generated."
     )
-
-    parser.add_argument('--source-header', 
-       metavar = 'HEADER', # , default = None,
-       dest='actions', action=GenerateAction,
-       help = 'Set name of source header file to HEADER.')
 
     parser.add_argument('--out-header', 
         metavar = 'HEADER', default = None,
@@ -231,6 +228,8 @@ m_set = re.compile(r"([A-Za-z][A-Za-z0-9_]+)=(.*)")
 def subst_C_name(name, subst, param, extension):
     dir, filename = os.path.split(name)
     name, _extension = os.path.splitext(filename)
+    if _extension == ".h":
+        return None
     if subst:
         #print("substitute", name, "using", subst, param) 
         name = re.sub(subst[0], subst[1], name)
@@ -518,7 +517,7 @@ class CodeGenerator:
  
     def generate(self):
         finalize_parse_args(self.s)
-        end_header = StringOutputFile()
+        end_headers = []
         s = self.s
         out_dir = s.out_dir
         out_header = open_for_write(out_dir, s.out_header)
@@ -544,12 +543,15 @@ class CodeGenerator:
                     out_header.write("\n")
                     dest.close()
                 else:
+                     end_header = StringOutputFile()
                      h_head, h_split, h_tail = split_header(src)
                      tg.generate(h_head, None, out_header, 'h')
                      end_header.write(h_split)
                      tg.generate(h_tail, None, end_header, 'h')
+                     end_headers.insert(0, end_header)
 
-        end_header.copy_to(out_header)
+        for end_header in end_headers:
+            end_header.copy_to(out_header)
         out_header.close()
 
     def c_files(self):

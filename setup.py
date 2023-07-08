@@ -321,7 +321,7 @@ MAT24_GENERATE = """
  --source-path {SRC_DIR}/mmgroup/dev/mat24
  --out-dir {C_DIR}
  --tables mmgroup.dev.mat24.mat24_ref 
- --source-header mat24_functions.h
+ --sources mat24_functions.h
  --out-header mat24_functions.h
  --sources mat24_functions.ske mat24_random.ske
 """.format(**DIR_DICT)
@@ -349,7 +349,7 @@ GENERATORS_GENERATE = """
  --tables mmgroup.dev.generators.gen_cocode_short
           mmgroup.dev.generators.gen_leech_reduce_n 
           mmgroup.dev.generators.gen_xi_ref
- --source-header mmgroup_generators.h
+ --sources mmgroup_generators.h
  --out-header mmgroup_generators.h
  --sources gen_xi_functions.ske mm_group_n.ske gen_leech.ske 
            gen_leech_type.ske gen_leech3.ske gen_leech_reduce.ske
@@ -384,7 +384,7 @@ CLIFFORD12_GENERATE = """
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --out-dir {C_DIR}
  --tables mmgroup.dev.clifford12.bit64_tables
- --source-header clifford12.h
+ --sources clifford12.h
  --out-header clifford12.h
  --sources  qstate12.ske qstate12io.ske qmatrix12.ske
             bitmatrix64.ske uint_sort.ske xsp2co1.ske 
@@ -522,7 +522,7 @@ MM_GENERATE = """
           mmgroup.dev.mm_basics.mm_aux
           mmgroup.dev.mm_basics.mm_tables
           mmgroup.dev.mm_basics.mm_crt
- --source-header mm_basics.h
+ --sources mm_basics.h
  --out-header mm_basics.h
  --sources  mm_aux.ske mm_tables.ske mm_group_word.ske
             mm_tables_xi.ske mm_crt.ske

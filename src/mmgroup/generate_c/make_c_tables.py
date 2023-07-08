@@ -59,9 +59,9 @@ from mmgroup.generate_c.generate_functions import built_in_formats
 
 
 class NoDirectives:
+    """This a fixed object ndicating that no directves are present"""
     pass
 
-########## NoDirectives = UserDict({})
 
 
 class TableGenerator(object):
@@ -108,6 +108,9 @@ class TableGenerator(object):
         following the directive are evaluated and passed to the 
         function ``function``. That function should return a
         string. This string is merged into the output .c file.
+
+        If ``directives`` is ``mmgroups.generate_c.NoDirectives``
+        then also built-in directives are not executed.
 
     :param verbose: 
 

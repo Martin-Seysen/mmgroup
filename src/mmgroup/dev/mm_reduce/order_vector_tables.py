@@ -163,11 +163,13 @@ class OrderVectorTable:
             "ORDER_VECTOR_TLT_CONVERSION": tlt_conversion,
             }
     
-    def __init__(self, *args):
+    def __init__(self, *args, **kwds):
         self.compute_data()
 
 
 class Mockup_OrderVectorTable:
+    def __init__(self, *args, **kwds):
+        pass
     a_ov =  np.array([0], dtype = np.uint32)
     tag_data = np.array([0], dtype = np.uint32)
     tag_indices = np.array([0,0], dtype = np.uint16)
@@ -181,8 +183,20 @@ class Mockup_OrderVectorTable:
     }
     directives = {}
 
-    def __init__(self, *args):
+
+    
+
+
+class Tables:
+    directives = {}
+    mockup_tables = Mockup_OrderVectorTable.tables
+ 
+    def ___init__(self, *args, **kwds):
         pass
+
+    @property
+    def tables(self):
+        return OrderVectorTable().tables
 
 
 
