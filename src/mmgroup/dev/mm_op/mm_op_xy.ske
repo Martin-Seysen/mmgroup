@@ -181,6 +181,9 @@ op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv
 
 
 
+
+
+
 /// @cond DO_NOT_DOCUMENT 
 
 /**
@@ -287,6 +290,15 @@ void mm_op%{P}_do_xy(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint_mmv_t *v_ou
 
 
 
+static inline void normalize_f_e(uint32_t *f, uint32_t *e)
+{
+// Map y_(f << 11) to x_e, where e = KER_TABLE_YX[f]; 0 <= f < 4.
+static uint32_t KER_TABLE_YX[4] = {0, 0x1000, 0x1800, 0x800};
+*e = ((*e) ^ KER_TABLE_YX[(*f & 0x1800) >> 11]) & 0x1fff;
+*f &= 0x7ff;
+}
+
+
 /**
   @brief Compute an operation of the monster group on a vector
 
@@ -316,6 +328,14 @@ int32_t mm_op%{P}_xy(uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uin
   // %%IF* GENERATE_CODE
     uint16_t s_T[759];
     mm_sub_op_xy_type s_op;
+    normalize_f_e(&f, &e);
+    eps &= 0xfff;
+    if ( ((e & 0x7ff) | (f & 0x7ff) | eps) == 0 ) { 
+        mm_op%{P}_copy(v_in, v_out);
+        return mm_op%{P}_omega(v_out, e);
+    }
+    if ((e | f) == 0) return mm_op%{P}_delta(v_in, eps, v_out);
+
     s_op.sign_XYZ =  (uint8_t*)(v_out + MM_OP%{P}_OFS_T);
     s_op.s_T = s_T;
     mm_sub_prep_xy(f, e, eps, &s_op);
@@ -397,7 +417,7 @@ int32_t mm_op%{P}_omega(uint_mmv_t *v, uint32_t d)
   with  tag ``A`` only. This function is much faster than
   function ``mm_op%{P}_xy``.
 */
-// %%EXPORT px
+// %%EXPORT
 int32_t mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps, uint32_t mode)
 {
   // %%IF* GENERATE_CODE

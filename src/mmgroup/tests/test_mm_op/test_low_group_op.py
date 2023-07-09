@@ -3,6 +3,7 @@ from __future__ import  unicode_literals
 
 from random import randint
 from collections import defaultdict
+import numpy as np
 
 import pytest
 
@@ -36,13 +37,15 @@ def mul_atom(v1, tag, i, v2):
     data2 = v2.data
     mm = v1.ops
     if tag == 'd':
-        mm.op_delta(data1, i, data2) 
+        mm.op_pi(data1, i, 0, data2) 
     elif tag == 'p':
         mm.op_pi(data1, 0, i, data2)
     elif tag == 't':
-        mm.op_t(data1,  i, data2)
+        a = np.array([0x50000000 + i % 3], dtype = np.uint32) 
+        mm.op_word(data1, a, 1, 1, data2)
     elif tag == 'l':
-        mm.op_xi(data1,  i, data2)
+        a = np.array([0x60000000 + i % 3], dtype = np.uint32) 
+        mm.op_word(data1, a, 1, 1, data2)
     elif tag == 'x':
         mm.op_xy(data1, 0, i, 0, data2)
     elif tag == 'y':

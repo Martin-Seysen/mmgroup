@@ -392,6 +392,7 @@ int32_t mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t *
 {
   // %%IF* GENERATE_CODE
     mm_sub_op_pi_type s_op;
+    if (pi == 0) return mm_op%{P}_delta(v_in, delta, v_out);
     // Borrow memory from v_out
     s_op.tbl_perm64 = (mm_sub_op_pi64_type *)(v_out + MM_OP%{P}_OFS_X);
     mm_sub_prep_pi(delta, pi, &s_op);
@@ -408,7 +409,7 @@ int32_t mm_op%{P}_pi(uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t *
   ``mm_op%{P}_pi(v_in, 0, delta, v_out)``, but much faster.
   
 */
-// %%EXPORT px
+// %%EXPORT 
 int32_t mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
 {
     uint_fast32_t i, i1;
@@ -533,7 +534,7 @@ int32_t mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
   entries with tag ``A`` only. This  function is much faster 
   than function ``mm_op%{P}_pi``.
 */
-// %%EXPORT px
+// %%EXPORT 
 int32_t mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_t mode)
 {
     uint_mmv_t v_tmp[24 *  %{V24_INTS}];
@@ -593,7 +594,7 @@ int32_t mm_op%{P}_pi_tag_ABC(uint_mmv_t *v, uint32_t delta, uint32_t pi, uint32_
   entries with tag ``A`` only. This  function is much faster 
   than function ``mm_op%{P}_delta``.
 */
-// %%EXPORT px
+// %%EXPORT 
 int32_t mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
 {
     uint32_t i1;

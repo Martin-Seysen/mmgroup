@@ -529,10 +529,9 @@ class MMVectorOps:
         self.op_word = mm.op_word
         self.op_compare = mm.op_compare
         self.op_t_A = mm.op_t_A
-        self.op_delta = mm.op_delta
         self.op_pi = mm.op_pi
-        self.op_t = mm.op_t
-        self.op_xi = mm.op_xi
+        #self.op_t = mm.op_t
+        #self.op_xi = mm.op_xi
         self.op_xy = mm.op_xy
         self.op_omega = mm.op_omega
         self.op_word_tag_A = mm.op_word_tag_A

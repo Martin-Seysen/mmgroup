@@ -206,7 +206,7 @@ op%{P}_t_A(uint_mmv_t *v_in,  uint_mmv_t exp1, uint_mmv_t *v_out)
 
   Input vector ``v_in`` is not changed.
 */
-// %%EXPORT px
+// %%EXPORT
 int32_t mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
 {
     uint_mmv_t i, exp1;
