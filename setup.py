@@ -310,7 +310,9 @@ def get_c_names(s):
         ls.check_returncode()
     except subprocess.CalledProcessError as e:
         print("Error:\nreturn code: ", e.returncode, 
-              "\nOutput: ", e )
+              "\nOutput:" )
+        print(e.stdout)
+        print(e.stderr)
         raise
     return(ls.stdout).split()
     
@@ -532,7 +534,7 @@ MM_GENERATE = """
 
 MM_GENERATE_PXD = """
  -v
- --mockup {MOCKUP}
+ {MOCKUP}
  --py-path {SRC_DIR}
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
  --h-path {C_DIR}
@@ -543,6 +545,11 @@ MM_GENERATE_PXD = """
  --pxd-out mm_basics.pxd
  --pxi-in  mm_basics.pxd
 """.format(**DIR_DICT)
+
+
+
+mm_c_files = get_c_names(MM_GENERATE)
+mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
 
 ### Yet to be done!!!!!!!!!!!!!!
@@ -557,18 +564,13 @@ MM_GENERATE_PXD = """
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
    [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
-#  [sys.executable, "codegen_mm.py"] + codegen_args,
    [sys.executable, "codegen_mm_op.py"] + codegen_args,
 )
 
 
 mm_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_basics", 
-    sources=[ os.path.join(C_DIR, f) for f in 
-        [ "mm_aux.c",  "mm_group_word.c",
-          "mm_tables.c","mm_tables_xi.c", "mm_crt.c",
-        ]
-    ],    
+    sources = mm_c_paths,
     libraries = shared_libs_stage1, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],

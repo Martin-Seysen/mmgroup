@@ -238,6 +238,7 @@ def subst_C_name(name, subst, param, extension):
     return os.path.join(dir, name + '.' + extension)    
 
 def make_actions(s):
+    n = 1
     param = {}
     s.c_files = OrderedDict()
     subst = None
@@ -258,21 +259,14 @@ def make_actions(s):
             for name in data:
                 src_name = os.path.normpath(name)
                 dest_name = subst_C_name(name, subst, param, 'c') 
-                file_list.append((src_name, dest_name))
+                file_list.append((src_name, dest_name, n))
+                n += 1
         if action == 'subst':
             if len(data) == 0:
                 subst = None   
             elif len(data) != 2:
                 raise ValueError(ERR_SUBST)
             subst = data
-        if action == 'source-header':
-            if len(s.c_files):
-                ERR = ( "Option 'source-header' may not occur"
-                      "after option 'sources'")
-                raise ValueError(ERR)
-            file_list = s.c_files.setdefault(ImmutableDict(param), [])
-            src_name = os.path.normpath(data)
-            file_list.append((src_name, None))
  
             
 
@@ -516,12 +510,11 @@ class CodeGenerator:
 
  
     def generate(self):
+        BIGINT = 0x7fffffff
         finalize_parse_args(self.s)
-        end_headers = []
+        out_headers = {}
         s = self.s
         out_dir = s.out_dir
-        out_header = open_for_write(out_dir, s.out_header)
-        write_warning_generated(out_header)
         tg = TableGenerator()
         if s.export_kwd:
             tg.export_kwd = s.export_kwd
@@ -530,7 +523,7 @@ class CodeGenerator:
             print("Generating header %s" % s.out_header)
         for param, c_files in s.c_files.items():
             self.load_table_generator(tg, param)
-            for src_name, dest_name in c_files:
+            for src_name, dest_name, n in c_files:
                 src_file_name = self.find_file(src_name)
                 src = open(src_file_name, "rt")
                 if dest_name:
@@ -538,27 +531,33 @@ class CodeGenerator:
                     if s.verbose:
                         print("Generating file %s" % dest_name)
                     write_warning_generated(dest)
-                    out_header.write("// %%%%FROM %s\n" % dest_name)
-                    tg.generate(src, dest, out_header)
-                    out_header.write("\n")
+                    out_h = out_headers[n] = StringOutputFile()
+                    out_h.write("// %%%%FROM %s\n" % dest_name)
+                    tg.generate(src, dest, out_h)
+                    out_h.write("\n")
                     dest.close()
                 else:
-                     end_header = StringOutputFile()
+                     out_h = out_headers[n] = StringOutputFile()
+                     end_h = out_headers[BIGINT-n] = StringOutputFile()
                      h_head, h_split, h_tail = split_header(src)
-                     tg.generate(h_head, None, out_header, 'h')
-                     end_header.write(h_split)
-                     tg.generate(h_tail, None, end_header, 'h')
-                     end_headers.insert(0, end_header)
+                     tg.generate(h_head, None, out_h, 'h')
+                     out_h.write("\n")
+                     end_h.write(h_split)
+                     tg.generate(h_tail, None, end_h, 'h')
+                     end_h.write("\n")
 
-        for end_header in end_headers:
-            end_header.copy_to(out_header)
+
+        out_header = open_for_write(out_dir, s.out_header)
+        write_warning_generated(out_header)
+        for key in sorted(out_headers):
+            out_headers[key].copy_to(out_header)
         out_header.close()
 
     def c_files(self):
         finalize_parse_args(self.s)
         result = []
         for _, c_files in self.s.c_files.items():
-            for _, dest_name in c_files:
+            for _, dest_name, _1 in c_files:
                 if dest_name:
                     unix_dest_name = re.sub(r"\\", "/", dest_name)
                     result.append(unix_dest_name)
@@ -578,8 +577,8 @@ class CodeGenerator:
                 dict = {}
                 dict.update(par)
                 print("c_files (%s):" % dict)
-                for src, dest in files:
-                    print(" ", src, ",", dest)
+                for src, dest, n in files:
+                    print(" ", src, ",", dest, "," , n)
         tables = getattr(s, 'tables', None)
         if tables:
             print("tables:")
