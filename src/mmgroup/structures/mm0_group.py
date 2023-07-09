@@ -762,6 +762,8 @@ class MM0Group(AbstractMMGroup):
 
     def reduce(self, g1):
         l1 = g1.length
+        if not 0 <= g1.reduced <= l1:
+            g1.reduced = 0
         if g1.reduced < l1:
             l_tail = l1 - g1.reduced
             g1._extend(l1 + l_tail + 1)
@@ -774,15 +776,12 @@ class MM0Group(AbstractMMGroup):
         
     def _imul(self, g1, g2):
         l1, l2 = g1.length, g2.length
+        if not 0 <= g1.reduced <= l1:
+            g1.reduced = 0
         g1._extend(2*(l1 + l2) + 1)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
-        l1 += l2
-        l_tail = l1 - g1.reduced
-        g1._data[l1 : l1 + l_tail] = g1._data[g1.reduced : l1]
-        tail = g1._data[l1:]
-        l1 = mm_group_mul_words(g1._data, g1.reduced, tail, l_tail, 1)
-        g1.reduced = g1.length = l1
-        return g1
+        g1.length = l1 + l2
+        return self.reduce(g1)
 
     def _invert(self, g1):
         w = self.word_type()
