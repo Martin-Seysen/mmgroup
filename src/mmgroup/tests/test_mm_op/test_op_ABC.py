@@ -147,7 +147,6 @@ def benchmark_mm_op15_map_t(a):
     mask = len(axes) - 1
     assert mask & (mask + 1) == 0
     w = MMV(15)().data
-    op_t_A = MMV(15)().ops.op_t_A
     w1 = np.zeros(24*4, dtype = np.uint64)
     t_start = time.process_time()
     mode = 0x16

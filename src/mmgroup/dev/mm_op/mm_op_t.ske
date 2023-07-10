@@ -326,7 +326,7 @@ int32_t mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
   Here only entries of ``v`` with tag ``A, B, C`` are changed. 
   This function is much faster than  function ``mm_op%{P}_t``.
 */
-// %%EXPORT px
+// %%EXPORT
 int32_t mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
 {
     uint_mmv_t  exp1;
