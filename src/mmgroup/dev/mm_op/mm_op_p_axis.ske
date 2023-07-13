@@ -1,0 +1,293 @@
+/** @file mm_op_p_axis.c
+
+ 
+
+ File ``mm_op_p_vector.c`` implements the operation of the
+ Monster group on a vector in the representation \f$\rho_p\f$
+ of the Monster modulo \f$p\f$. In this module such a vector
+ is usually a 2A ais.
+
+
+ The representation \f$\rho_p\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo\f$p\f$, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ The first parameter of a function in this module is the 
+ modulus \f$p\f$, and that modulus must be one of the values
+ specified in the function.
+
+ An element of \f$\rho_p\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+
+ The number of entries of a vector of type ``uint_mmv_t[]``
+ for modulus \f$p\f$  is equal to ``mm_aux_mmv_size(p)``.
+*/
+
+#include "mm_basics.h"
+#include "mm_op_p.h"
+
+
+// %%EXPORT_KWD MM_OP_API
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/** @brief Load the 'A' part of a vector of the representation of the monster
+
+   The function loads the part of with tag 'A' of a vector ``v`` of
+   the  representation of the monster modulo ``p`` to the matrix ``a``.
+   Here matrix ``a`` will be given in **matrix mod 3** encoding as
+   documented in the header of file ``leech3matrix.c``.
+
+   Here modulus ``p`` must be one of the
+   values %{LEGAL_P:mm_op_load_leech3matrix}.
+*/
+// %%EXPORT px
+int32_t mm_op_load_leech3matrix(uint32_t p, uint_mmv_t *v, uint64_t *a)
+{
+  // %%DISPATCH_P int32_t, mm_op_load_leech3matrix, p, v, a
+}
+
+
+
+
+
+
+
+/** @brief Rank of 'A' part of a vector of the representation of the monster
+
+   Let ``a`` be the symmetric 24 times matrix corresponding to the part 
+   with  tag 'A' of a input vector ``v`` in the representation of 
+   the  monster  modulo ``p``. Let  ``b = a - d * 1``, for an integer
+   input `d`, where ``1`` is the unit matrix. 
+
+   Let ``r`` be the rank of matrix ``b`` with entries taken modulo 3.
+   If matrix ``b`` has rank 23 then its kernel is one dimensional. In 
+   that case the kernel contains two nonzero vectors ``+-w``, and we
+   define ``w`` to be one of these vectors. Otherwise we let ``w`` be 
+   the zero vector.
+
+   The function returns the value ``(r << 48) + w``, with ``w`` the
+   vector defined above given in *Leech lattice mod 3 encoding* as 
+   described in *The C interface of the mmgroup project*. 
+
+   The number of entries of parameter ``v``
+   for modulus \f$p\f$  is equal to ``24 * mm_aux_int_fields(p)``.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_A_rank_mod3}.
+**/
+// %%EXPORT px
+int64_t  mm_op_eval_A_rank_mod3(uint32_t p, uint_mmv_t *v, uint32_t d)
+{
+  // %%DISPATCH_P int64_t, mm_op_eval_A_rank_mod3, p, v, d
+}
+
+
+
+
+
+/** @brief Auxiliary function for ``mm_op_eval_A``
+
+   Let matrix ``A`` be the part with tag 'A' of a  vector ``v``
+   of the representation of the monster modulo ``p``}. 
+
+   Let ``m_and[i]`` and ``m_xor[i]`` be the bit ``i`` of ``m_and`` 
+   and ``m_xor``, respectively. Define a vector ``y = (y[0],...,y[23])``
+   by: ``y[i] = m_and[i]  * (-1)**m_xor[i]``.
+
+   If ``row >= 24`` the function returns ``res = y * A * transpose(y)``
+   (modulo ``p``). We have ``0 < res < 0x8000``, but ``res`` is not
+   reduced modulo ``p``.
+
+   In case ``row < 24`` define the vector ``z`` by ``z[i] = y[i]``
+   if ``i = row`` and ``z[i] = 0`` otherwise. 
+   Put ``zz =  z * A * transpose(y)`` (modulo ``p``).  We 
+   have ``0 < res < 0x8000``, but ``res`` is not reduced modulo ``p``.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_A_aux}.
+*/
+// %%EXPORT px
+int32_t mm_op_eval_A_aux(uint32_t p, uint_mmv_t *v, uint32_t m_and, uint32_t m_xor, uint32_t row)
+{
+  // %%DISPATCH_P int32_t, mm_op_eval_A_aux, p, v, m_and, m_xor, row
+}
+
+
+
+/** @brief Evaluate A part in rep of monster at a short Leech vector
+
+   Let ``v`` be a vector in the 196884-dimensional representation
+   of the monster group modulo ``p``, encoded as described in
+   section *Description of the mmgroup.mm<p> extensions* in the
+   description of the *C interface*. The entries corresponding to
+   tag 'A' of ``v`` form a symmetric 24 times 24 matrix \f$A\f$. 
+
+   Let \f$v_2\f$ be a short Leech lattice vector given by parameter
+   ``v2``, encoded as a vector in  the Leech lattice modulo 2. 
+   Then \f$v_2\f$ is determined up to sign and \f$v_2 A v_2^\top\f$
+   is determined uniquely.
+
+   The function returns \f$r = v_2 A v_2^\top\f$ modulo ``p``,
+   with \f$0 \leq r < p\f$ in case of success. It returns -1
+   if  \f$v_2\f$ is not short (i.e. not of type 2).
+
+   The short Leech lattice vector \f$v_2\f$ (of norm 4) is scaled to
+   norm 32 as usual, when \f$v_2\f$ is given in integer coordinates.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_A_aux}.
+*/
+// %%EXPORT px
+int32_t mm_op_eval_A(uint32_t p, uint_mmv_t *v, uint32_t v2)
+{
+  // %%DISPATCH_P int32_t, mm_op_eval_A, p, v, v2
+}
+
+
+
+/** @brief Watermark 'A' part of a vector of the representation of the monster
+
+   Let matrix ``A`` be the part with tag 'A' of a  vector ``v`` of
+   the representation of the monster modulo ``p``.
+
+   Then we watermark 24 the rows of matrix ``A``. For each of the
+   rows ``A[i], 0 <= i < 24`` we compute a watermark ``w(i)`` in
+   the array ``w``. Note that the watermark ``w(i)`` contains an
+   information about the marked row ``i`` in its lower bits. We store
+   the sorted array of these watermarks in the array ``w`` of length
+   24. If all these watermarks (ignoring the information about the
+   row) are different, we can easily recognize a permutation of the
+   rows of matrix ``A`` by comparing the watermark of matrix ``A``
+   with the watermark of the permuted matrix ``A``.
+
+   The watermark ``w[i] `` depends on the distribution of the
+   absolute values of the entries ``w[i, j] `` (modulo ``p``) of
+   row ``i``. Thus permutations of the columns and sign changes in
+   the matrix do not affect these watermarks.
+
+   The function returns 0 in case of success and a negative value 
+   in case of error.
+
+   When working in the representation modulo ``p = 3`` we fail unless
+   at least nine rows of ``A`` have a unique watermark. This is
+   sufficient for reconstructing a permutation in the Mathieu group.
+
+   In the other cases the watermark of row \f$i\f$  is equal
+   to \f$i + 32\cdot S(A,i)\f$. Here \f$S(A,i)\f$ depends on the
+   entries of matrix ``A``. The value \f$S(A,i)\f$   it is invariant
+   under sign changes of any off-diagonal elements of ``A``. It is
+   also invariant under any permutation of the symmetric
+   matrix ``A`` fixing row and column \f$i\f$. 
+   
+   We assert that watermarking ``A + k*I`` succeeds if and only if
+   watermarking ``A`` succeeds, for any multiple  ``k*I`` of the
+   unit matrix.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_watermark_A}.
+*/
+// %%EXPORT px
+int32_t  mm_op_watermark_A(uint32_t p, uint_mmv_t *v, uint32_t *w)
+{
+  // %%DISPATCH_P int32_t, mm_op_watermark_A, p, v, w
+}
+
+
+
+
+/** @brief Compute permutation from watermarks of matrices
+
+   Let matrix ``A`` be the part with tag 'A' of a  vector ``v``
+   of the representation of the monster modulo ``p``. Let ``w``
+   be the watermark of another matrix ``A'`` which is obtained
+   from ``A`` by permutations of the rows and columns, and by
+   sign changes. Here the watermark ``w`` must have been computed
+   by function ``mm_op_watermark_A``.
+
+   Then the function watermarks matrix ``A`` and computes a
+   permutation that maps ``A'`` to ``A``. If that permutation
+   is in the Mathieu group \f$M_{24}\f$ then the function
+   returns the number of that permutation, as given by
+   function ``mat24_perm_to_m24num`` in file ``mat24_functions.c``.
+
+   The function returns a nonegative permutation number in case of 
+   success and a negative value in case of error.
+
+   If all watermarks in the array ``w`` (ignoring the information
+   about the row in the lower 5 bits) are different then there is
+   at most one permutation that maps ``A'`` to ``A``. If that
+   permutation is in \f$M_{24}\f$ then the function returns the
+   number of that permutation. In all other cases the function
+   fails.
+
+   In case ``p = 3`` we succeed already if the first 9 watermarks
+   in the array ``w`` are different. Then there is at most one 
+   permutation in \f$M_{24}\f$ that maps ``A'`` to ``A``.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_watermark_A}.
+*/
+// %%EXPORT px
+int32_t mm_op_watermark_A_perm_num(uint32_t p, uint32_t *w, uint_mmv_t *v)
+{
+  // %%DISPATCH_P int32_t, mm_op_watermark_A_perm_num, p, w, v
+}
+
+
+
+
+/**
+   @brief Find certain entries of a vector of the monster rep modulo %``p``
+
+   Let ``v`` be a vector of the monster group representation modulo %``p``.
+   The function tries to find all entries of the monomial part of ``v``
+   with absolute values ``y0`` and ``y1``, ``1 <= y0, y1 <= p / 2``.
+   In case ``y1 = 0`` entries with value ``y1`` are ignored.
+   
+   Here the monomial part of ``v`` consists of the entries with
+   tags 'B', 'C', 'T', 'X'. The coordinates of these entries
+   correspond to the short vectors of the Leech lattice.
+
+   Output is written into the array ``p_out`` of length ``n``. If the
+   monomial part of ``v`` contains an entry with absolute value ``y0``
+   then the coordinate of that entry is written into array ``p_out``
+   in **Leech lattice encoding**. If that part of ``v`` contains an
+   entry with absolute value ``y1`` then the coordinate of that entry
+   is witten into that array in the same encoding.
+
+   In addition, for entries in ``v`` with absolute value  ``y1`` the
+   bit 24 of the corresponding entry in ``p_out`` is set. In ``p_out``,
+   the entries with absolute value ``y1`` are stored after those with
+   absolute value ``y0``. Entries with the same absolute value are
+   stored in the same order as in ``v``.
+
+   The function returns the number of valid entries in the
+   array ``p_out``. If the length ``n`` of ``p_out`` is too small then
+   some entries will be dropped without notice.
+
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_X_find_abs}.
+*/
+// %%EXPORT px
+int32_t mm_op_eval_X_find_abs(uint32_t p, uint_mmv_t *v, uint32_t *p_out, uint32_t n,  uint32_t y0, uint32_t y1)
+{
+  // %%DISPATCH_P int32_t, mm_op_eval_X_find_abs, p, v, p_out, n, y0, y1
+}
+
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+
+
+

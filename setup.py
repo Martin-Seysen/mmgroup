@@ -687,6 +687,49 @@ for p in PRIMES:
 
 
 ####################################################################
+# Merging extensions for operations modulo p.
+####################################################################
+
+MM_OP_P = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mm_op
+ --out-dir {C_DIR}
+ --set C_DIR={C_DIR}
+ --tables mmgroup.dev.mm_op.dispatch_p
+ --sources mm_op_p.h
+ --out-header mm_op_p.h
+ --sources  mm_op_p_vector.ske mm_op_p_axis.ske
+""".format(**DIR_DICT)
+
+
+
+MM_OP_P_PXD = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --tables mmgroup.dev.mm_basics.mm_basics
+ --h-in  mm_op_p.h
+ --pxd-in  mm_op.pxd
+ --pxd-out mm_op_p.pxd
+ --pxi-in  mm_op.pxd
+""".format(**DIR_DICT)
+
+
+mm_op_p_steps =  CustomBuildStep("Code generation for module mm_op_p",
+   [sys.executable, "generate_code.py"] + MM_OP_P.split(),
+   [sys.executable, "generate_pxd.py"] + MM_OP_P_PXD.split(),
+)
+
+
+ext_modules.append(mm_op_p_steps)
+
+
+####################################################################
 # Building the extenstions at stage 3
 ####################################################################
 

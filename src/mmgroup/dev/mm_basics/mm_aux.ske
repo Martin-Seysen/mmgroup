@@ -350,22 +350,60 @@ void mm_aux_put_mmv1(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 /**
   @brief Return the size of a vector in internal representation
 
-  The  function  return number of integers of type ``uint_mmv_t``
-  required to store a vector with modulus ``p`` in internal
-  representation.
+  The  function returns the number of integers of type ``uint_mmv_t``
+  required to store a vector of the representation \f$\rho_p\f$
+  (in internal representation) with modulus ``p``.
 
   The function returns 0 if ``p`` is illegal modulus.
 */
 // %%EXPORT px
 uint32_t mm_aux_mmv_size(uint32_t p)
-// Returns the number of integers of type uint_mmv_t required to store
-// a vector of the representation R_p for a given p.
 {
     uint_fast32_t tbl;
     if (mm_aux_bad_p(p)) return 0;
     // %%MMV_LOAD_CONST  p, tbl
     // return the value MMV_INTS for the specified p
     return%{MMV_CONST:MMV_INTS,tbl};
+}
+
+
+/**
+  @brief Return number of entries stored in integer of type ``uint_mmv_t``
+
+  The function returns the number of entries of a vector of the
+  representation \f$\rho_p\f$ (in internal representation) that
+  can be stored in an integer of type ``uint_mmv_t``.
+
+  The function returns 0 if ``p`` is illegal modulus.
+*/
+uint32_t mm_aux_int_fields(uint32_t p)
+{
+    uint_fast32_t tbl;
+    if (mm_aux_bad_p(p)) return 0;
+    // %%MMV_LOAD_CONST  p, tbl
+    // return the value INT_FIELDS for the specified p
+    return%{MMV_CONST:INT_FIELDS,tbl};
+}
+
+
+/**
+  @brief Return number of integers of type ``uint_mmv_t`` to store 24 entries
+
+  The function returns the number of integers of type ``uint_mmv_t``
+  required to store a part of 24 entries of a vector of the
+  representation \f$\rho_p\f$ (in internal representation) with
+  modulus ``p``. Such parts of 24 entries arise naturally in the
+  construction of \f$\rho_p\f$.
+
+  The function returns 0 if ``p`` is illegal modulus.
+*/
+uint32_t mm_aux_v24_ints(uint32_t p)
+{
+    uint_fast32_t tbl;
+    if (mm_aux_bad_p(p)) return 0;
+    // %%MMV_LOAD_CONST  p, tbl
+    // return the value V24_INTS for the specified p
+    return%{MMV_CONST:V24_INTS,tbl};
 }
 
 

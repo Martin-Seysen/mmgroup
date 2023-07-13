@@ -1,0 +1,452 @@
+/** @file mm_op_p_vector.c
+
+ 
+
+ File ``mm_op_p_vector.c`` implements the operation of the
+ Monster group on a vector in the representation \f$\rho_p\f$
+ of the Monster modulo \f$p\f$.
+
+ The representation \f$\rho_p\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo\f$p\f$, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ Unless otherwise stated, the first parameter of a function
+ in this module is the modulus \f$p\f$, and that modulus must
+ be one of the values %{LEGAL_P:mm_op_word}.
+
+ An element of \f$\rho_p\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+
+ The number of entries of a vector of type ``uint_mmv_t[]``
+ for modulus \f$p\f$  is equal to ``mm_aux_mmv_size(p)``.
+*/
+
+#include "mm_basics.h"
+#include "mm_op_p.h"
+
+
+// %%EXPORT_KWD MM_OP_API
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+/** 
+  @brief Copy vector ``mv1`` in \f$\rho_p}\f$ to ``mv2``
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_copy}.
+*/
+// %%EXPORT px
+int32_t mm_op_copy(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+  // %%DISPATCH_P int32_t, mm_op_copy, p, mv1, mv2
+}
+
+
+
+/** 
+  @brief Compare arrays ``mv1`` and ``mv2`` of integers
+
+  The function compares parts of the two vectors ``mv1``
+  and ``mv2``of the representation \f$\rho_p\f$.
+
+  Here the function compares ``len`` integers of type
+  ``uint_mmv_t`` starting at the pointers ``mv1`` and ``mv2``.
+  These integers are interpreted as arrays of bit fields
+  containing integers modulo p.
+
+  The function returns 0 in case of equality and 1 otherwise.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_compare_len}.
+*/
+// %%EXPORT px
+int32_t mm_op_compare_len(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t len)
+{
+  // %%DISPATCH_P int32_t, mm_op_compare_len, p, mv1, mv2, len
+}
+
+
+/** 
+  @brief Compare vectors ``mv1`` and ``mv2`` of \f$\rho_p\f$
+
+  The function compares two vectors ``mv1`` and ``mv2`` of 
+  the representation \f$\rho_p\f$.
+
+  It returns 0 in case of equality and 1 otherwise.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_compare}.
+*/
+// %%EXPORT px
+int32_t mm_op_compare(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+  // %%DISPATCH_P int32_t, mm_op_compare, p, mv1, mv2
+}
+ 
+
+/** 
+  @brief Check if a vector ``mv`` in \f$\rho_p\f$ is zero
+
+  The function checks it the vector ``mv`` in the
+  representation \f$\rho_p\f$ is zero.
+
+  It returns 0 in case ``mv == 0`` and 1 otherwise. It is
+  optimized for the case that ``mv`` is expected to be zero.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_checkzero}.
+*/
+// %%EXPORT px
+int32_t mm_op_checkzero(uint32_t p, uint_mmv_t *mv)
+{
+  // %%DISPATCH_P int32_t, mm_op_checkzero, p, mv
+}
+   
+
+/** 
+  @brief Add vectors ``mv1`` and ``mv2`` of \f$\rho_p\f$
+
+  The function adds the two vectors ``mv1`` and ``mv2`` of
+  the representation \f$\rho_p\f$ and stores the
+  result in the vector ``mv1``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_vector_add}.
+*/
+// %%EXPORT px
+int32_t mm_op_vector_add(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+  // %%DISPATCH_P int32_t, mm_op_vector_add, p, mv1, mv2
+}
+
+
+
+/** 
+  @brief Multiply vector ``mv1`` of \f$\rho_p\f$ with scalar
+
+  The function multiplies the vector ``mv1`` of the
+  representation \f$\rho_p\f$ and with the (signed)
+  integer ``factor`` and stores the result in the vector ``mv1``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_scalar_mul}.
+*/
+// %%EXPORT px
+int32_t mm_op_scalar_mul(uint32_t p, int32_t factor, uint_mmv_t *mv1)
+{
+  // %%DISPATCH_P int32_t, mm_op_scalar_mul, p, factor, mv1
+}
+
+
+/** 
+  @brief Compare two vectors of \f$\rho_p\f$ modulo \f$q\f$
+
+  The function compares two vectors ``mv1`` and ``mv2`` of 
+  the representation \f$\rho_p\f$ modulo a number \f$q\f$.
+  Here \f$q\f$ should divide \f$p\f$.
+
+  It returns 0 in case of equality, 1 in case of inequality,
+  and 2 if  \f$q\f$ does not divide \f$p\f$.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_compare_mod_q}.
+*/
+// %%EXPORT px
+int32_t mm_op_compare_mod_q(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t q)
+{
+  // %%DISPATCH_P int32_t, mm_op_compare_mod_q, p, mv1, mv2, q
+}
+
+/** 
+  @brief Set a vector in \f$\rho_\f$ to an axis.
+
+  Let ``x`` be an element of the subgroup  \f$Q_{x0}\f$ 
+  if the Monster that maps to a short Leech lattice vector.
+  Here ``x`` must be given in  **Leech lattice encoding** 
+  as in the **Description of the mmgroup.generators extension**
+  in the documentation of the **C interface**.
+
+  Then ``x`` corresponds to vector in \f$\rho_p\f$
+  that is called a **2A axis**. The function stores that
+  2A axis in ``mv``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_store_axis}.
+*/
+// %%EXPORT px
+int32_t mm_op_store_axis(uint32_t p, uint32_t x, uint_mmv_t *mv)
+{
+  // %%DISPATCH_P int32_t, mm_op_store_axis, p, x, mv
+}
+
+
+
+/**
+ @brief Compute automophism of the Parker loop on a vector
+
+ File ``mm_op_pi.c`` implements the operation of the
+ generators \f$x_\pi\f$ and \f$x_\delta\f$ of the monster group
+ on a vector in the representation \f$\rho_p\f$ of the
+ Monster modulo ``p``. Here ``p`` must be %{LEGAL_P:mm_op_pi}.
+
+ Here generators \f$x_\pi\f$ and \f$x_\delta\f$ are defined as
+ automorphisms of the Parker loop as in section **The monster group**
+ of the **API reference**. An automophism of the Parker loop is
+ specified by a pair of integers ``d, pi`` as in the constructor
+ of the Python class ``AutPL``, see
+ section **Automophisms of the Parker loop** in the **API reference**.
+
+ The exact operation of an automorphism of the Parker loop on
+ \f$\rho\f$ is as defined in [Seysen19].
+
+ Note that the integers ``d, pi`` mentioned above describe the
+ number of an element of the Golay cocode and the number of a
+ permutation in the Mathieu group  \f$M_{24}\f$, respectively.
+ Internally, we use the C functions in file ``mat24_functions.c`` 
+ and the function ``mm_sub_prep_pi`` in file ``mm_tables.c`` for
+ converting the  integers ``d, pi`` to mathematical objects that
+ can be used for implementing the operation on \f$\rho_p\f$.
+ These conversions are very fast compared to the cost for
+ the operation on \f$\rho_p\f$. This helps us to keep
+ the C interface for these  operations simple.
+
+ Let ``v_in`` be a vector of the representation \f$\rho_p\f$
+ of the monster group. Then the function computes this automorphism
+ on the input  vector ``v_in`` and stores the result in the output 
+ vector ``v_out.`` Input vector  ``v_in`` is not changed.
+
+ Here modulus ``p`` must be one of the
+ values %{LEGAL_P:mm_op_pi}.
+
+*/
+// %%EXPORT px
+int32_t mm_op_pi(uint32_t p, uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint_mmv_t * v_out)
+{
+  // %%DISPATCH_P int32_t, mm_op_pi, p, v_in, delta, pi, v_out
+}
+
+
+
+
+/**
+  @brief Compute an operation of the monster group on a vector
+
+  Let ``v_in`` be a vector of the representation \f$\rho_p\f$
+  of the monster group.
+
+
+  The function implements the operation of the element
+  \f$y_f \cdot x_e \cdot x_\epsilon\f$ of the monster group
+  on a vector ``v_in`` in the representation \f$\rho_p\f$ of
+  the monster.
+
+  The integers ``f`` and ``e`` occuring in the generators \f$y_f\f$
+  and  \f$x_e\f$ encode elements of the Parker loop. The integer
+  ``eps`` encodes the element \f$\epsilon\f$ of the Golay cocode
+  occuring in the generator  \f$x_\epsilon\f$,  as indicated in the
+  header of this file. The function computes this operation of
+  the element of the monster (given by parameters ``f, e, eps``)
+  on the input  vector ``v_in`` and  stores the result in the output 
+  vector ``v_out.`` 
+
+  Input vector  ``v_in`` is not changed.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_xy}.
+*/
+// %%EXPORT px
+int32_t mm_op_xy(uint32_t p, uint_mmv_t *v_in, uint32_t f, uint32_t e, uint32_t eps, uint_mmv_t *v_out)
+{
+  // %%DISPATCH_P int32_t, mm_op_xy, p, v_in, f, e, eps, v_out
+}
+
+
+
+/**
+  @brief Compute an operation of the monster group on a vector
+
+  Let ``v`` be a vector of the representation \f$\rho_p\f$
+  of the monster group. 
+
+  The function implements the operation of the element
+  \f$x_d\f$ of the monster group  on a vector ``v`` in the 
+  representation \f$\rho_p\f$ of the monster. Here ``d`` must be 
+  one of the integers ``0, 0x800, 0x1000``, or ``0x1800``, encoding
+  the generators \f$x_1, x_\Omega, x_{-1}\f$, or \f$x_{-\Omega}\f$,
+  respectively.
+   
+  The function computes the operation \f$x_d\f$ on the
+  vector ``v`` and overwrites the vector ``v`` with the result.
+  The function can  be considered as a simplified (and much faster)
+  version of function ``mm_op_xy``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_omega}.
+
+*/
+// %%EXPORT px
+int32_t mm_op_omega(uint32_t p, uint_mmv_t *v, uint32_t d)
+{
+  // %%DISPATCH_P int32_t, mm_op_omega, p, v, d
+}
+
+
+
+/**
+  @brief Compute part A of operation of \f$\tau^e\f$ on vector``
+
+  Function ``mm_op_t_A`` computes a the operation of the 
+  monster group element \f$\tau^e\f$ on a vector ``v_in`` 
+  and stores the A part of the result in a vector ``v_out``. 
+  That operation depends on a parameter ``e``. The
+  other entries of vector ``v_out`` are not changed.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster. Note that the entries
+  of vector ``v_out`` with tag ``A`` also depend on entries
+  of vector ``v_in`` with tags different from ``A``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_t_A}.
+*/
+// %%EXPORT px
+int32_t mm_op_t_A(uint32_t p, uint_mmv_t *v_in,  uint32_t e, uint_mmv_t *v_out)
+{
+  // %%DISPATCH_P int32_t, mm_op_t_A, p, v_in, e, v_out
+}
+
+
+
+/** 
+  @brief Compute operation of the monster group on a vector
+
+  Let \f$v\f$ be a vector of the representation \f$\rho_p\f$
+  of the monster group stored in the array referred by ``v``.
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array of length ``len_g`` referred by the pointer ``g``.
+
+  Then the function computes the vector \f$v \cdot g^e\f$  and 
+  overwrites the vector in the array ``v`` with that vector.
+  Here \f$e\f$ is the exponent given by the integer ``e``.
+
+  The function requires a work buffer (referrd by ``work``), which is
+  an array of ``mm_aux_mmv_size(p)`` entries of type ``uint_mmv_t``.
+  So the work buffer has the same size as the vector ``v``.
+
+  The function returns 0 in case of success and a nonzero
+  value in case of failure.
+
+  Internally, the function simplifies all substrings of the string 
+  representing the word \f$g^e\f$, except for atoms corresponding
+  to nonzero powers of the generator \f$\xi\f$. So the user need 
+  not 'optimize' the input \f$g\f$. Of course, this simplification
+  does not change the input array ``g``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_word}.
+*/ 
+// %%EXPORT px
+int32_t mm_op_word(uint32_t p, uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e, uint_mmv_t *work)
+{
+  // %%DISPATCH_P int32_t, mm_op_word, p, v, g, len_g, e, work
+}
+
+
+
+
+/** 
+  @brief Restriction of function ``mm_op_word`` to tag ``A``
+
+  Function ``mm_op_word`` computes the operation of an element
+  \f$h = g^e\f$ of the monster  group a vector ``v`` and
+  overwrites ``v`` with the result of that operation. \f$h\f$
+  depends on parameters ``g, len_g,``  and ``e`` of this function.
+
+  Function ``mm_op_word_tag_A`` computes the same automorphism
+  on the entries of the vector ``v`` with tag ``A`` only, and
+  ignores the other entries of ``v``.
+  See section **The representation of the monster group**
+  in the **API reference** for tags of entries of a vector in
+  the representation of the monster.
+
+  The function overwrites the vector ``v`` with the result.
+  Here only entries of ``v`` with tag ``A`` are changed.
+
+  Parameters and return value are the same as in function
+  ``mm_op_word``, except that a work buffer is not required
+  here. Also, the function fails and returns a nonzero value,
+  if the word that makes up the group element \f$h\f$ contains
+  any nonzero powers of the generator \f$\tau\f$ of the
+  monster group. Note that such a power of \f$\tau\f$ does
+  not fix the the part of the vector ``v`` with tag ``A``.
+  Powers of the generator \f$\tau\f$ correspond to atoms with
+  tag ``t``.
+
+  This function is much faster than function ``mm_op_word``.
+  Array ``v`` must  have ``24 * mm_aux_v24_ints(p)`` entries
+  of type ``uint_mmv_t``.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_word_tag_A}.
+*/ 
+// %%EXPORT px
+int32_t mm_op_word_tag_A(uint32_t p, uint_mmv_t *v, uint32_t *g, int32_t len_g, int32_t e)
+{
+  // %%DISPATCH_P int32_t, mm_op_word_tag_A, p, v, g, len_g, e
+}
+
+
+
+
+/** 
+  @brief Compute ABC part of the operation of the monster group on a vector
+
+  Let \f$v\f$ be a vector of the representation \f$\rho_p\f$
+  of the monster group stored in the array referred by ``v``.
+
+  Let \f$g\f$ be the element of the monster group stored in the
+  array of length ``len_g`` referred by the pointer ``g``. Here
+  \f$g\f$, and also all prefixes of the word representing \f$g\f$,
+  must be in the set \f$G_{x0} \cdot N_0\f$.
+
+  The function computes the parts with tags ``A``, ``B``, and ``C``
+  of the vector \f$v \cdot g\f$  and stores the result in the
+  array ``v_out``. The other parts of the vector \f$v \cdot g\f$
+  are not computed. Here the array ``v_out`` must
+  have  ``72 * mm_aux_v24_ints(p)`` entries of type ``uint_mmv_t``.
+
+  This function is much faster than function ``mm_op_word``.
+  It is mainly used for dealing with a 2A axis \f$v\f$.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_word_ABC}.
+*/
+// %%EXPORT px
+int32_t mm_op_word_ABC(uint32_t p, uint_mmv_t *v, uint32_t *g, int32_t len_g, uint_mmv_t *v_out)
+{
+  // %%DISPATCH_P int32_t, mm_op_word_ABC, p, v, g, len_g, v_out
+}
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+
+
+
