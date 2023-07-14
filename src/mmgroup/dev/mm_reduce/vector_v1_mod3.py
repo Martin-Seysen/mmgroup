@@ -314,7 +314,7 @@ class V1_Mod3_Table:
             "V1_MOD3_TAG_DATA": make_v1_mod3_tags(v1_data)
         }
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwds):
         self.compute_data()
 
 
@@ -325,7 +325,7 @@ class Mockup_V1_Mod3_Table:
         "V1_MOD3_DATA": a_ov,
         "V1_MOD3_TAG_DATA": a_ov
     }
-    def __init__(self, *args):
+    def __init__(self, *args, **kwds):
         pass
 
 

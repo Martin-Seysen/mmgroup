@@ -112,7 +112,7 @@ class Perm24_Benes(MM_Op):
         a Benes network is an obvious advantage compared to using
         the methods of class Perm24_Standard.
         """
-        super(Perm24_Benes, self).__init__(p)
+        super(Perm24_Benes, self).__init__(p = p)
         self.prep_table = []
         self.use_benes_net = (
             self.V24_INTS_USED <=  2 + bool(prefer_benes_net) )
@@ -396,7 +396,7 @@ uint_fast8_t i;
 class ScalarProd2048(MM_Op):
 
     def __init__(self, p):
-        super(ScalarProd2048, self).__init__(p)
+        super(ScalarProd2048, self).__init__(p = p)
         self.tables.update(self.make_tables())
         self.directives.update(self.make_directives())
 
@@ -457,7 +457,7 @@ class SmallPerm64(MM_Op):
     v2 = v2_list(6)
 
     def __init__(self, p, shift = True):
-        super(SmallPerm64, self).__init__(p)
+        super(SmallPerm64, self).__init__(p = p)
         self.directives.update(self.make_directives())
 
 
@@ -548,6 +548,26 @@ class SmallPerm64(MM_Op):
         }
 
 
+######################################################################
+# Summarizing the tables given above
+######################################################################
+
+class Tables:
+    def __init__(self, **kwds):
+        self.p = p = kwds.get('p', 3)
+        self.tables = {}
+        self.directives = {}
+        table_classes = [Perm24_Benes(p), ScalarProd2048(p),
+                         SmallPerm64(p)]
+        for t in table_classes:
+            self.tables.update(t.tables)
+            self.directives.update(t.directives)
+
+class MockupTables:
+    tables = {}
+    directives = {}
+    def __init__(self, **kwds):
+        pass
 
 ######################################################################
 # Test functions

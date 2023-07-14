@@ -92,9 +92,9 @@ class MM_Op(MM_Basics):
     """
     m_psum = re.compile(r"\s*(\w+)\s*([+-].*)?$")
 
-    def __init__(self, p):
+    def __init__(self, **kwds):
         """Create instance for modulus p with p + 1 a power of two"""
-        self.p = p
+        self.p = p = kwds.get('p', 3)
         self.directives =  {
             "MMV_ROTL" : UserDirective(self.gen_mmv_rotl, "sis"),
             "MMV_UINT_SPREAD": UserDirective(self.gen_mmv_uint_spread, "ss"),
@@ -173,8 +173,9 @@ class MM_Op(MM_Basics):
 
 
 class Mockup_MM_Op(MM_Op):
-    def __init__(self, p):
-        super(Mockup_MM_Op, self).__init__(p)
+    def __init__(self, **kwds):
+        self.p = p = kwds.get('p', 3)
+        super(Mockup_MM_Op, self).__init__(p = p)
         old_tables = self.tables
         self.tables = {}
         self.tables.update(old_tables)
@@ -182,6 +183,6 @@ class Mockup_MM_Op(MM_Op):
 
 
 
-
-
+Tables = MM_Op
+MockupTables = Mockup_MM_Op
 

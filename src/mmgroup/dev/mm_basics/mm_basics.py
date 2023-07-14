@@ -399,7 +399,7 @@ class MM_Const(MM_Basics):
     
 
  
-    def __init__(self):
+    def __init__(self, *kwds):
         new_tables = {
            self.T_NAME : self.table,
            "MMV_CONST" : UserFormat(self.f, "ss"),
@@ -485,7 +485,7 @@ class MM_Const(MM_Basics):
 
 
 class Mockup_MM_Const(MM_Const):
-    def __init__(self):
+    def __init__(self, **kwds):
         super(Mockup_MM_Const, self).__init__()
         old_tables = self.tables
         self.tables = {}
@@ -493,26 +493,6 @@ class Mockup_MM_Const(MM_Const):
         self.tables["GENERATE_CODE"] = False
 
 
-class Tables():
-    def __init__(self, *args, **kwds):
-        self.MM_Const = MM_Const()
-
-    @property
-    def tables(self):
-        tables = {}
-        tables.update(MM_Basics.tables)
-        tables.update(self.MM_Const.tables)
-        return tables
-
-    @property
-    def directives(self):
-        return self.MM_Const.directives
-
-    @property
-    def mockup_tables(self):
-        tables = {}
-        tables.update(MM_Basics.tables)
-        tables.update(self.MM_Const.tables)
-        tables["GENERATE_CODE"] = False
-        return tables
+Tables = MM_Const
+MockupTables = Mockup_MM_Const
 

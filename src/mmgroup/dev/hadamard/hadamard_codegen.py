@@ -502,7 +502,7 @@ class HadamardMatrixCode(MM_Op):
         the cases 'log_vlength' = 2, 4, 6 corresponding to
         vectors of size 4, 16, 64 only.
         """
-        super(HadamardMatrixCode, self).__init__(p)
+        super(HadamardMatrixCode, self).__init__(p = p)
         self.LOG_VLEN = log_vlength   
         self.NO_CARRY = self.FIELD_BITS == self.P_BITS
         self.FAST_MOD3 = FAST_MOD3 and self.P == 3

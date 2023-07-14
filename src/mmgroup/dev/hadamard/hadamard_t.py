@@ -571,6 +571,28 @@ for each tag.
         }
         
 
+########################################################################################
+# Summarizing the table classes given above
+########################################################################################
+
+
+class Tables:
+    def __init__(self, **kwds):
+        p = kwds.get('p', 3)
+        self.tables = {}
+        self.directives = {}
+        table_classes = [HadamardOpT64(p), HadamardOpT3(p),
+                         HadamardOpT3A(p)]
+        for t in table_classes:
+            self.tables.update(t.tables)
+            self.directives.update(t.directives)
+
+class MockupTables:
+    tables = {}
+    directives = {}
+    def __init__(self, **kwds):
+        pass
+
 
 
 

@@ -23,13 +23,14 @@ class Perm64_xy(MM_Op):
     hi_list = [ 0, mask, weights, weights ^ mask ]
     directives = {}
 
-    def __init__(self, p):
+    def __init__(self, **kwds):
         """Initialise for calulations with small integers modulo p
 
         p+1 must be a power of two. Calculations modulo p are described 
         in more detail in the base classes of this class.
         """
-        super(Perm64_xy, self).__init__(p)
+        p = kwds.get('p', 3)
+        super(Perm64_xy, self).__init__(p = p)
         self.t_hi = self.hi_table()
         self.t_lo = self.lo_table()
         self.tables.update(self.make_tables())
@@ -57,3 +58,10 @@ class Perm64_xy(MM_Op):
         }
  
 
+
+Tables = Perm64_xy
+
+class MockupTables:
+    tables, directives = {}, {}
+    def __init__(self, **kwds):
+        pass

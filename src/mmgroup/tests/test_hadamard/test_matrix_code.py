@@ -88,7 +88,7 @@ def matrix_function(name, p, *data, **kwds):
         verbose = int(kwds["verbose"])
     except:
         verbose = 0
-    basics = MM_Op(p)
+    basics = MM_Op(p = p)
     vlen = len(data[0])
     if name[-1:].isdigit():
         function_name = "mod%d_%s_test" % (p, name)
@@ -322,10 +322,10 @@ def test_op_p64_function(n_cases = 5, verbose = 0):
 
 
 def v24_ints(p):
-    return MM_Op(p).V24_INTS
+    return MM_Op(p = p).V24_INTS
 
 def int_fields(p):
-    return MM_Op(p).INT_FIELDS
+    return MM_Op(p = p).INT_FIELDS
 
 
 def op_t3_function(p, vector, exp, verbose = 0):

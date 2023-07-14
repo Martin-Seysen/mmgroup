@@ -236,7 +236,7 @@ def make_reduce():
     directives = {}
     global generated_tables
     for table_class in table_classes():
-        table_instance = table_class(15)
+        table_instance = table_class(p=15)
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
     # print("Basic functions:\n",  directives.keys())

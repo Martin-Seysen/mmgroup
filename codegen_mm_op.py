@@ -276,6 +276,8 @@ from libc.stdint cimport uint{INT_BITS}_t as uint_mmv_t
 
 TABLE_CLASSES = None
 
+"""
+
 def table_classes():
     global TABLE_CLASSES
     if not TABLE_CLASSES is None:
@@ -306,7 +308,21 @@ def table_classes():
             hadamard_xi.HadamardOpXi16,
         ]  
     return TABLE_CLASSES
+"""
 
+def table_classes():
+    from mmgroup.generate_c.generate_code import import_tables
+    tables = """
+        mmgroup.dev.mm_op.mm_op
+        mmgroup.dev.mm_op.mm_op_xi
+        mmgroup.dev.mm_op.mm_op_pi
+        mmgroup.dev.mm_op.mm_op_xy
+        mmgroup.dev.hadamard.hadamard_t
+        mmgroup.dev.hadamard.hadamard_xi
+    """.split()
+    mockup = "mockup" in sys.argv[1:]
+    table_classes = import_tables(tables, mockup)
+    return table_classes   
     
 ##########################################################################
 # Generating the .pxd file
@@ -344,7 +360,7 @@ def make_c_h_pxd(p):
     directives = {}
     global generated_tables
     for table_class in table_classes():
-        table_instance = table_class(p)
+        table_instance = table_class(p = p)
         tables.update(table_instance.tables)
         directives.update(table_instance.directives)
     tg = TableGeneratorStream(tables, directives, verbose = VERBOSE)

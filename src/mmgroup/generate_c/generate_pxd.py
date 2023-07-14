@@ -270,8 +270,9 @@ class pxdGenerator:
         finalize_parse_args(self.s)
         if getattr(self.s, "table_classes", None) is None:
             table_modules = self.s.tables
+            mockup = self.s.mockup
             verbose = self.s.verbose
-            table_classes = import_tables(table_modules, verbose)
+            table_classes = import_tables(table_modules, mockup, verbose)
             self.s.table_classes = table_classes    
 
     def load_table_generator(self, table_generator, params = {}):
@@ -279,8 +280,7 @@ class pxdGenerator:
         #tables = {}
         #directives = {}
         tables = self.s.table_classes
-        mockup = self.s.mockup
-        load_tables(table_generator, tables, params, mockup, False)
+        load_tables(table_generator, tables, params, False)
 
  
 ###############################################################################

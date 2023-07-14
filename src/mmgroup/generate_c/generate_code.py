@@ -284,13 +284,18 @@ def finalize_parse_args(s):
     s.finalized = True
  
 
-def import_tables(table_modules, verbose = False):
+def import_tables(table_modules, mockup = False, verbose = False):
     """Import tables from python modules
     
     Here ``table_modules`` is a list of names of python modules in
     the usual python syntax. This function tries to import a class 
-    with name ``Tables``` fro ech of these modules. 
-    It returns the ist of imported classes.
+    with name ``Tables`` from each of these modules. 
+    It returns the list of imported classes.
+
+    If ``mockup`` is True then the function tries to import a class 
+    with name ``MockupTables`` instead of class ``Tables``. If this
+    fails then it tries to import class  ``Tables``. 
+
     """
     table_classes =  []
     if table_modules:
@@ -298,14 +303,20 @@ def import_tables(table_modules, verbose = False):
             if verbose:
                 print("Importing Tables from module", module)
             m = import_module(module)
-            table_class = m.Tables
+            if mockup:
+                try:
+                    table_class = m.MockupTables
+                except:
+                    table_class = m.Tables
+            else:
+                table_class = m.Tables
             table_classes.append(table_class)
     return table_classes    
 
 
  
 
-def load_tables(tg, tables, params, mockup=False, directives=True):
+def load_tables(tg, tables, params, directives=True):
     """Load tables into instance ``tg`` of class ``TableGenerator``
 
     The  argument  ``tables`` must be a list of table_classes.
@@ -330,11 +341,6 @@ def load_tables(tg, tables, params, mockup=False, directives=True):
     corresponding dictionaries. Afterwards ``tg`` may be used for code
     generation
 
-    If ``mockup`` is True the attributes ``tables`` and ``directives``
-    of the  instances of  ``table_class`` are replaced by the
-    attributes ``mockup_tables`` and ``mockup_directives``, if
-    present.
-
     If the arguments ``directives`` is False then the table
     generator ``tg`` will support no directives at all.  
     """
@@ -343,24 +349,11 @@ def load_tables(tg, tables, params, mockup=False, directives=True):
     _tables = {}
     _directives = {} if directives else NoDirectives
     for table_class in tables:
-        new_tables, new_directives = {}, {} 
         m_tables = table_class(**params)
-        if mockup:
-            try: 
-                new_tables = m_tables.mockup_tables
-            except AttributeError:
-                pass
-        if not new_tables:
-            new_tables = m_tables.tables
+        new_tables = m_tables.tables
         _tables.update(new_tables)
         if directives:
-            if mockup:
-                try: 
-                    new_directives = m_tables.mockup_directives
-                except AttributeError:
-                    pass
-            if not new_directives:
-                new_directives = m_tables.directives
+            new_directives = m_tables.directives
             _directives.update(new_directives)
     tg.set_tables(_tables, _directives)
 
@@ -488,7 +481,8 @@ class CodeGenerator:
         if getattr(self.s, "table_classes", None) is None:
             table_modules = self.s.tables
             verbose = self.s.verbose
-            table_classes = import_tables(table_modules, verbose)
+            mockup = self.s.verbose
+            table_classes = import_tables(table_modules, mockup, verbose)
             self.s.table_classes = table_classes    
         
         """     
@@ -505,8 +499,7 @@ class CodeGenerator:
         #tables = {}
         #directives = {}
         tables = self.s.table_classes
-        mockup = self.s.mockup
-        load_tables(table_generator, tables, params, mockup)
+        load_tables(table_generator, tables, params)
 
  
     def generate(self):

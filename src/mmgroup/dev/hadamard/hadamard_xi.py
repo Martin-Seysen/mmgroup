@@ -580,6 +580,34 @@ class HadamardOpXi16(HadamardMatrixCode):
   
 
 
+
+########################################################################################
+# Summarizing the table classes given above
+########################################################################################
+
+
+class Tables:
+    def __init__(self, **kwds):
+        p = kwds.get('p', 3)
+        self.tables = {}
+        self.directives = {}
+        table_classes = [HadamardOpXi64(p), HadamardOpXi16(p)]
+        for t in table_classes:
+            self.tables.update(t.tables)
+            self.directives.update(t.directives)
+
+class MockupTables:
+    tables = {}
+    directives = {}
+    def __init__(self, **kwds):
+        pass
+
+
+
+
+
+
+
 if __name__ == "__main__":
     for p in (3,7, 15, 127):
         print( """typedef unsigned int uint_fast32_t;
