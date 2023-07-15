@@ -55,8 +55,6 @@ from config import REAL_SRC_DIR
 from config import C_DIR, PXD_DIR
 from config import PRIMES
 
-from codegen_mm_reduce import mm_reduce_sources
-
 
 ####################################################################
 # Print command line arguments (if desired)
@@ -813,7 +811,6 @@ MM_REDUCE_GENERATE_PXD = """
 
 
 reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
-  # [sys.executable, "codegen_mm_reduce.py"] + codegen_args,
    [sys.executable, "generate_code.py"] + MM_REDUCE_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_REDUCE_GENERATE_PXD.split(),
 )
@@ -826,7 +823,6 @@ shared_libs_stage2_augmented = shared_libs_stage2 + [
 
 mm_reduce =  SharedExtension(
     name = "mmgroup.mmgroup_mm_reduce", 
-    #sources=[os.path.join(C_DIR, f) + ".c" for f in mm_reduce_sources()], 
     sources = mm_reduce_paths,   
     libraries = shared_libs_stage2_augmented, 
     include_dirs = [PACKAGE_DIR, C_DIR],
