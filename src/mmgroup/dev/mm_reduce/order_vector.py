@@ -26,14 +26,9 @@ from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_power_word
-from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
-
-from mmgroup.mm15 import op_copy as mm_op15_copy
-from mmgroup.mm15 import op_compare as mm_op15_compare
-from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
-from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
-from mmgroup.mm3 import op_watermark_A as mm_op3_watermark_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
+from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_watermark_A
 
 from mmgroup.dev.mm_reduce import find_order_vector
 from mmgroup.dev.mm_reduce.find_order_vector import stabilizer_vector
@@ -121,7 +116,7 @@ def make_order_vector_mod3(s_g71, s_v71, s_gA, diag):
     if not isinstance(diag, int): diag = diag[0]
     w71 += identity_vector(5 * diag % 15)
     diag = 0
-    v3 = mm_op15_eval_A_rank_mod3(w71.data, diag) & 0xffffffffffff
+    v3 = mm_op_eval_A_rank_mod3(15, w71.data, diag) & 0xffffffffffff
     assert v3 != 0
     v_type4 = gen_leech3to2_type4(v3)
     assert v_type4 == 0x800000
@@ -166,7 +161,7 @@ def make_order_tags(order_vector, tags_y, tags_x, tag_sign):
     tags_x = np.array(tags_x, dtype = np.uint32)
     tag_sign =  np.array(tag_sign, dtype = np.uint32) 
     watermark_perm = np.zeros(24, dtype = np.uint32)
-    ok = mm_op15_watermark_A(ov, watermark_perm)
+    ok = mm_op_watermark_A(15, ov, watermark_perm)
     assert ok >= 0
 
     solve_yt = np.zeros(11, dtype = np.uint64)
@@ -191,7 +186,7 @@ def make_order_tags(order_vector, tags_y, tags_x, tag_sign):
     
     # Concatenate computed lists to the global numpy array 'ORDER_TAGS'
     order_tags = np.array(sum(map(list, [
-        [mm_op15_norm_A(ov), 0], 
+        [mm_op_norm_A(15, ov), 0], 
         watermark_perm, tags_y, solve_y, tags_x, solve_x, tag_sign
     ]), []), dtype = np.uint32)
     assert len(order_tags) == 97, len(order_tags)
@@ -285,7 +280,7 @@ def check_v(v, verbose = 0):
                 if verbose:
                     print("Vector may be zero (mod %d)" % p)
                 return None
-        if mm_op15_watermark_A(v.data, mark) < 0:
+        if mm_op_watermark_A(15, v.data, mark) < 0:
             if verbose:
                 print("Permutation watermarking failed")
             return None
@@ -294,7 +289,7 @@ def check_v(v, verbose = 0):
             if verbose:
                print("Vector may be zero (mod 3)")
             return None
-        if mm_op3_watermark_A(v.data, mark) < 0:
+        if mm_op_watermark_A(3, v.data, mark) < 0:
             if verbose:
                 print("Permutation watermarking failed")
             return None

@@ -37,8 +37,7 @@ from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_mmv_extract_sparse
-from mmgroup.mm3 import op_eval_A_rank_mod3 as mm_op3_eval_A_rank_mod3 
-from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
 
 
 
@@ -320,7 +319,7 @@ def make_v71_sample(g71):
     if not w71:
         return None
     for diag in range(3):
-        v3 = mm_op3_eval_A_rank_mod3(w71.data, diag) & 0xffffffffffff
+        v3 = mm_op_eval_A_rank_mod3(3, w71.data, diag) & 0xffffffffffff
         if v3:
             v_type4 = gen_leech3to2_type4(v3)
             if v_type4:

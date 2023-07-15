@@ -14,8 +14,8 @@ from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_sparse_to_leech
-from mmgroup.mm15 import op_eval_A_aux as mm_op15_eval_A_aux
-from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
+from mmgroup.mm_op import mm_op_eval_A_aux
+from mmgroup.mm_op import mm_op_eval_A
 
 V = MMV(15)
 
@@ -24,16 +24,9 @@ V = MMV(15)
 ##################################################################
 
 def eval_a_aux(v, masks, signs, row = 24):
-    x = mm_op15_eval_A_aux(v.data, masks, signs, row)
+    x = mm_op_eval_A_aux(15, v.data, masks, signs, row)
     res, row = x & 0xffff, x >> 16
     return res % 15,  row % 15
-    """
-    a = np.zeros(2, dtype = np.uint64)
-    x = mm_op15_eval_A_odd_mod15_aux(v.data, signs, a)
-    v1 = [((int(a[i >> 4]) >> (4 * (i & 15)))) & 15 for i in range(24)]
-    w = np.array(v1, dtype = np.int32) % 15
-    return x, w
-    """
 
 
 def eval_a_aux_ref(v, masks, signs, row = 24):
@@ -128,7 +121,7 @@ def test_eval_a(verbose = 0):
         m_ref =  eval_a_ref(v, v2, e)  
         assert m == m_ref, (hex(v2), e, m, m_ref)
         if e == 0:
-            m_orig = mm_op15_eval_A(v.data, v2)
+            m_orig = mm_op_eval_A(15, v.data, v2)
             assert m == m_orig
 
 

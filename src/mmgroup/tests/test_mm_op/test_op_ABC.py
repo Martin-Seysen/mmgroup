@@ -127,12 +127,12 @@ def benchmark_mm_op15_word_ABC(a):
     return t / len(a)
     
 def benchmark_mm_op15_word(a):
-    from mmgroup.mm15 import op_word as f
+    from mmgroup.mm_op import mm_op_word as f
     v = MMV(15)('R').data
     w = MMV(15)().data
     t_start = time.process_time()
     for g in a:
-        f(v, g, 6, 1, w)
+        f(15, v, g, 6, 1, w)
     t = time.process_time() - t_start
     return t / len(a)
 
@@ -161,7 +161,6 @@ def benchmark_mm_op15_map_t(a):
 
 
 def benchmark_empty(a):
-    from mmgroup.mm15 import op_word as f
     v = MMV(15)().data
     w = MMV(15)().data
     t_start = time.process_time()

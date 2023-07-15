@@ -27,9 +27,9 @@ from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
 from mmgroup.tests.test_axes.beautify_axes import adjacent_blocks
 from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
-from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
-from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
-from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3
+from mmgroup.mm_op import mm_op_eval_A
+from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
 
 baby_sample_axes = import_baby_sample_axes()
@@ -83,7 +83,7 @@ def norm_A_mod15(i):
         v_start = V15(sample_axes.v_start)
         for g in sample_axes.g_strings:
              v = v_start * MM0(g)
-             norms_A_mod15.append(mm_op15_norm_A(v.data))
+             norms_A_mod15.append(mm_op_norm_A(15, v.data))
         return norms_A_mod15[i]
 
 
@@ -107,7 +107,7 @@ def display_norm_A(i):
     d = 2 if norm_A == 4 else 0
     V15 = MMV(15)
     v = V15(sample_axes.v_start) * MM0(sample_axes.g_strings[i])
-    r = mm_op15_eval_A_rank_mod3(v.data, d)    
+    r = mm_op_eval_A_rank_mod3(15, v.data, d)    
     rank = r >> 48
     v3 = r & 0xffffffffffff
     s_A = "(A - %d * 1)" % d if d else "A"
@@ -117,7 +117,7 @@ def display_norm_A(i):
     v2 = gen_leech3to2_short(v3)
     if v2:
          f = "Kernel of U is spanned by a short vector v with A(v) ="
-         a2 = mm_op15_eval_A(v.data, v2)
+         a2 = mm_op_eval_A(15, v.data, v2)
          s += "\n%s %d (mod 15)" % (f, a2)
     if gen_leech3to2_type4(v3):
          f = "Kernel of U is spanned by a vector of type 4"

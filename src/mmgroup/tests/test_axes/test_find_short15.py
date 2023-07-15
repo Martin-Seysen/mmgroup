@@ -12,7 +12,7 @@ from mmgroup import MM0, MMSpace, MMV
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_index_leech2_to_sparse
-from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
+from mmgroup.mm_op import mm_op_eval_X_find_abs
 
 LEECH_SHORT = np.zeros(98280, dtype = np.int32)
 for i in range(98280):
@@ -42,7 +42,7 @@ def do_test_eval_X_find_abs(v, value, value1= 0, verbose = 0):
     v_abs = np.where(v_mon > 7, 15 - v_mon, v_mon)
     a_ref = from_v(v_abs, value, value1)
     a = np.zeros(98280, dtype = np.uint32)
-    n = mm_op15_eval_X_find_abs(v.data, a, 98280, value, value1)
+    n = mm_op_eval_X_find_abs(15, v.data, a, 98280, value, value1)
     a = a[:n]
     if verbose:
         print("\nlen(a)=", len(a), ", len(a_ref)=", len(a_ref))

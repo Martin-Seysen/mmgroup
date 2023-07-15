@@ -10,9 +10,9 @@ import pytest
 
 from mmgroup import MM0, MMV
 from mmgroup.mat24 import MAT24_ORDER
-from mmgroup.mm15 import op_word_tag_A
-from mmgroup.mm15 import op_watermark_A
-from mmgroup.mm15 import op_watermark_A_perm_num
+from mmgroup.mm_op import mm_op_word_tag_A
+from mmgroup.mm_op import mm_op_watermark_A
+from mmgroup.mm_op import mm_op_watermark_A_perm_num
 
 
 
@@ -29,7 +29,7 @@ def one_test_watermark(verbose = 0):
     v0 = MMV15('R')
     v = v0.data[:48]
     w0 = np.zeros(24, dtype = np.uint32)
-    result = op_watermark_A(v, w0)
+    result = mm_op_watermark_A(15, v, w0)
     if result < 0:
         return 0
     pi_num = randint(0, MAT24_ORDER-1)
@@ -37,8 +37,8 @@ def one_test_watermark(verbose = 0):
     y1, y2 = randint(0, 0xfff), randint(0, 0xfff)
     op = np.array([TAG_y + y1, TAG_p + pi_num, TAG_y + y2], 
          dtype = np.uint32)
-    op_word_tag_A(v, op, len(op), 1)
-    pi_num_obt = op_watermark_A_perm_num(w0, v)   
+    mm_op_word_tag_A(15, v, op, len(op), 1)
+    pi_num_obt = mm_op_watermark_A_perm_num(15, w0, v)   
     assert pi_num_obt == pi_num 
     return 1
 

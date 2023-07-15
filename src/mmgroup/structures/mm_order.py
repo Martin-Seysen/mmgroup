@@ -23,13 +23,8 @@ from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_power_word
-from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3 
-
-from mmgroup.mm15 import op_copy as mm_op15_copy
-from mmgroup.mm15 import op_compare as mm_op15_compare
-from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
-from mmgroup.mm15 import op_watermark_A as mm_op15_watermark_A
+from mmgroup.mm_op import mm_op_compare
+from mmgroup.mm_op import mm_op_word
 from mmgroup.mm_reduce import mm_order_element_M
 from mmgroup.mm_reduce import mm_order_element_Gx0
 from mmgroup.mm_reduce import mm_order_load_vector
@@ -85,9 +80,9 @@ def check_mm_equal(g1, g2, mode = 0):
     v = mm_vector(15)
     mm_order_load_vector(v.data)
     work = mm_vector(15)
-    mm_op15_word(v, g3, status - 2, 1, work)
+    mm_op_word(15, v, g3, status - 2, 1, work)
     mm_order_load_vector(work.data)
-    return not mm_op15_compare(v, work)
+    return not mm_op_compare(15, v, work)
 
 
 

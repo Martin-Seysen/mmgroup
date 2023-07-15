@@ -38,11 +38,11 @@ def import_all():
     global  mm_aux_mmv_extract_sparse_signs
     global  mm_aux_mmv_extract_x_signs
     global  mm_aux_mmv_add_sparse
-    global  mm_op3_eval_A_rank_mod3 
-    global  mm_op3_watermark_A
-    global  mm_op3_watermark_A_perm_num
-    global  mm_op3_word_tag_A
-    global  mm_op3_checkzero
+    global  mm_op_eval_A_rank_mod3 
+    global  mm_op_watermark_A
+    global  mm_op_watermark_A_perm_num
+    global  mm_op_word_tag_A
+    global  mm_op_checkzero
 
     from mmgroup import MMV, MMVector, Xsp2_Co1
     from mmgroup.mat24 import vect_to_cocode
@@ -62,11 +62,11 @@ def import_all():
     from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
     from mmgroup.mm import mm_aux_mmv_extract_x_signs
     from mmgroup.mm import mm_aux_mmv_add_sparse
-    from mmgroup.mm3 import op_eval_A_rank_mod3 as mm_op3_eval_A_rank_mod3 
-    from mmgroup.mm3 import op_watermark_A as mm_op3_watermark_A
-    from mmgroup.mm3 import op_watermark_A_perm_num as mm_op3_watermark_A_perm_num
-    from mmgroup.mm3 import op_word_tag_A as  mm_op3_word_tag_A
-    from mmgroup.mm3 import op_checkzero as  mm_op3_checkzero
+    from mmgroup.mm_op import mm_op_eval_A_rank_mod3
+    from mmgroup.mm_op import mm_op_watermark_A
+    from mmgroup.mm_op import mm_op_watermark_A_perm_num
+    from mmgroup.mm_op import mm_op_word_tag_A
+    from mmgroup.mm_op import mm_op_checkzero
 
     MMV3 = MMV(3)
 
@@ -137,7 +137,7 @@ def str_watermark(v):
     if isinstance(v, MMVector):
         v = v.data
     wmark = np.zeros(24, dtype = np.uint32)
-    if mm_op3_watermark_A(v.data, wmark) < 0:
+    if mm_op_watermark_A(3, v.data, wmark) < 0:
         return "Watermarking of vector mod 3 failed"
     else:
         return "Watermark: "+ ",".join(
@@ -147,10 +147,10 @@ def str_watermark(v):
 
 def check_v1_mod3(v3):
     wmark = np.zeros(24, dtype = np.uint32)
-    rank = mm_op3_eval_A_rank_mod3(v3.data, 0) >> 48
+    rank = mm_op_eval_A_rank_mod3(3, v3.data, 0) >> 48
     if rank != 23:
         return False
-    if mm_op3_watermark_A(v3.data, wmark) < 0:
+    if mm_op_watermark_A(3, v3.data, wmark) < 0:
         return False
     eqn_indices, x_indices = A_indices()[0], X_indices()
     for _, t, i, j in eqn_indices + x_indices[:-1]:
@@ -175,7 +175,7 @@ def make_v1_mod3(verbose = 0):
            continue
        if verbose:
            print("Compute vector v1 mod 3; No of trials:", i+1)
-           rank = mm_op3_eval_A_rank_mod3(v3.data, 0) >> 48
+           rank = mm_op_eval_A_rank_mod3(3, v3.data, 0) >> 48
            print("Rank of part 'A' is", rank)
            print(str_watermark(v3))
        sparse_indices = np.concatenate(
@@ -255,7 +255,7 @@ def make_v1_mod3_tags(V1_MOD3):
     tags_y = np.array(V1_MOD3[:11], dtype = np.uint32) 
     tags_x = np.array(V1_MOD3[11:11+24], dtype = np.uint32)
     watermark_perm = np.zeros(9, dtype = np.uint32)
-    ok = mm_op3_watermark_A(ov, watermark_perm)
+    ok = mm_op_watermark_A(3, ov, watermark_perm)
     assert ok >= 0, ok
 
     solve_yt = np.zeros(11, dtype = np.uint64)
@@ -383,16 +383,16 @@ def do_check_sample(V1_MOD3, v):
     for i in range(len(v1_neg)):
         v1_neg[i] ^= 3 
     mm_aux_mmv_add_sparse(3, v1_neg, len(v1_neg), v.data)
-    assert mm_op3_checkzero(v.data) == 0
+    assert mm_op_checkzero(3, v.data) == 0
 
 
 def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
-    w03 = mm_op3_eval_A_rank_mod3(v1.data, 0)
+    w03 = mm_op_eval_A_rank_mod3(3, v1.data, 0)
     assert w03 >> 48 == 23 and w03 & 0xffffffffffff != 0, hex(w03)
     g1 = np.zeros(11, dtype = np.uint32)
     len_g1 = 0
     v = v1.copy() * g
-    w3 = mm_op3_eval_A_rank_mod3(v.data, 0)
+    w3 = mm_op_eval_A_rank_mod3(3, v.data, 0)
     assert w3 >> 48 == 23 and w3 & 0xffffffffffff != 0, hex(w3)
     w_type4 = gen_leech3to2_type4(w3)
     assert w_type4 > 0, w_type4 
@@ -401,18 +401,18 @@ def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
         err = "gen_leech2_reduce_type4 failed with error %d"
         raise ValueError(err % len_g1)
     work_A = v.data[:24].copy()
-    res = mm_op3_word_tag_A(work_A, g1, len_g1, 1)
+    res = mm_op_word_tag_A(3, work_A, g1, len_g1, 1)
     if verbose:
         print("g1 =", MM0('a', g1[:len_g1]))
         print(str_watermark(work_A))
     assert res >= 0, res
-    perm_num = mm_op3_watermark_A_perm_num( 
-        v1_mod3_tags[OFS3_WATERMARK_PERM:], work_A
+    perm_num = mm_op_watermark_A_perm_num( 
+        3, v1_mod3_tags[OFS3_WATERMARK_PERM:], work_A
     )
     assert perm_num >= 0, perm_num
     if (perm_num):
         g1[len_g1] = 0xA0000000 + perm_num;
-        res = mm_op3_word_tag_A(work_A, g1[len_g1:], 1, 1);
+        res = mm_op_word_tag_A(3, work_A, g1[len_g1:], 1, 1);
         assert res >= 0,  res;
         len_g1 += 1;
     if verbose:
@@ -425,7 +425,7 @@ def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
     y = leech2matrix_solve_eqn(v1_mod3_tags[OFS3_SOLVE_Y:], 11, v_y);
     if (y > 0):
         g1[len_g1] = 0xC0000000 + y;
-        res = mm_op3_word_tag_A(work_A, g1[len_g1:], 1, 1);
+        res = mm_op_word_tag_A(3, work_A, g1[len_g1:], 1, 1);
         assert res >= 0, res;
         len_g1 += 1;
     g_x = Xsp2_Co1(g * MM0('a',g1[:len_g1]))

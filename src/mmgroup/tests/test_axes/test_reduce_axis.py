@@ -19,15 +19,14 @@ from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
 from mmgroup.mm import mm_vector
 from mmgroup.mm import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
-from mmgroup.mm15 import op_word as mm_op15_word
-from mmgroup.mm15 import op_eval_X_find_abs as mm_op15_eval_X_find_abs
-from mmgroup.mm15 import op_t_A as mm_op15_t_A
-from mmgroup.mm15 import op_compare as mm_op15_compare
-from mmgroup.mm15 import op_copy as mm_op15_copy
+from mmgroup.mm_op import mm_op_word
+from mmgroup.mm_op import mm_op_eval_X_find_abs
+from mmgroup.mm_op import mm_op_t_A 
+from mmgroup.mm_op import mm_op_compare
+from mmgroup.mm_op import mm_op_copy
+from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_reduce import mm_reduce_find_type4
-from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
 from mmgroup.mm_reduce import mm_reduce_2A_axis_type
-
 from mmgroup.mm_reduce import mm_reduce_load_axis
 from mmgroup.mm_reduce import mm_reduce_vector_vp
 from mmgroup.mm_reduce import mm_reduce_vector_vm
@@ -67,7 +66,7 @@ def short(v, value, verbose = 0):
     ``value``. That list is returned as a numpy array.
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_eval_X_find_abs(v.data, short, len(short),  value, 0) 
+    l = mm_op_eval_X_find_abs(15, v.data, short, len(short),  value, 0) 
     if verbose:
         print(S_AXIS % (l, value))
     return short[:l]
@@ -83,7 +82,7 @@ def span(v, value, verbose = 0):
     as a list of vectors in a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_eval_X_find_abs(v.data, short, len(short), value, 0)  
+    l = mm_op_eval_X_find_abs(15, v.data, short, len(short), value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_basis(short, l, basis, 24)
@@ -108,7 +107,7 @@ def radical(v, value, verbose = 0):
     a numpy array. 
     """
     short = np.zeros(100000, dtype = np.uint32)
-    l = mm_op15_eval_X_find_abs(v.data, short, len(short),  value, 0)  
+    l = mm_op_eval_X_find_abs(15, v.data, short, len(short),  value, 0)  
     short = short[:l]
     basis = np.zeros(24, dtype = np.uint64)
     dim = leech2_matrix_radical(short, l, basis, 24)
@@ -164,7 +163,7 @@ def v_leech2_adjust_sign(v, v2):
 
 
 def eval_A_vstart(v, v_start = 0x200):
-    return mm_op15_eval_A(v, v_start)
+    return mm_op_eval_A(15, v, v_start)
 
 ##########################################################################
 # Reducing a 2A axis to V_START
@@ -241,14 +240,14 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
                 return r[:len_r], vt
             r1 = gen_leech2_reduce_type2(vt, r[len_r:])
             assert r1 >= 0
-            mm_op15_word(v, r[len_r:], r1, 1, work.data)
+            mm_op_word(15, v, r[len_r:], r1, 1, work.data)
             len_r += r1
             ind = mm_aux_get_mmv1(15, v, (24+3)*32 + 2)
             if (ind != 15-2):
                 r[len_r] = 0xB0000200
-                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                mm_op_word(15, v, r[len_r:], 1, 1, work.data)
                 len_r += 1
-            assert mm_op15_compare(v, V_START.data) == 0
+            assert mm_op_compare(15, v, V_START.data) == 0
             if verbose: 
                 print("Function reduce_axis terminated successfullly")
             return r[:len_r], 0x200
@@ -257,16 +256,16 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
 
         r1 = gen_leech2_reduce_type4(v4, r[len_r:])
         assert r1 >= 0
-        mm_op15_word(v, r[len_r:], r1, 1, work.data)
+        mm_op_word(15, v, r[len_r:], r1, 1, work.data)
         len_r += r1
         ok = False
         for e in (1,2):
-            mm_op15_t_A(v, e, vA)                    
+            mm_op_t_A(15, v, e, vA)                    
             t = mm_reduce_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
-                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                mm_op_word(15, v, r[len_r:], 1, 1, work.data)
                 len_r += 1
                 ok = True
                 break
@@ -306,7 +305,7 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
         vt &= 0xffffff
         if verbose:
             print("type =", hex(type), ", vt =", hex(vt), 
-                 ", A(v0) =",  mm_op15_eval_A(v, axis), 
+                 ", A(v0) =",  mm_op_eval_A(15, v, axis), 
                  ", axis =", hex(axis))
         if type == 0xA1:  # case 10A
             v0 = short(v, 3)[0]
@@ -336,7 +335,7 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
             assert leech_type(v4) == 4
             t_types = [0x21]
         elif type == 0x22:  # case 2B
-            if mm_op15_eval_A(v, axis) in [0, 8]:
+            if mm_op_eval_A(15, v, axis) in [0, 8]:
                 v2all = span(v, 4, verbose)  
                 v4 = find_ortho_short(v2all, axis)
                 t_types = [0x21]
@@ -345,12 +344,12 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
         elif type == 0x21:  # case 2A
             if verbose: 
                 print("v has type 0x21, axis = %s, eval_A = %d" %
-                     (hex(axis),  mm_op15_eval_A(v, axis)) )
-            if mm_op15_eval_A(v, axis) == 0:
+                     (hex(axis),  mm_op_eval_A(15, v, axis)) )
+            if mm_op_eval_A(15, v, axis) == 0:
                 vt ^= axis
                 r1 = gen_leech2_reduce_type4(vt, r[len_r:])
                 assert r1 >= 0
-                mm_op15_word(v, r[len_r:], r1, 1, work.data)
+                mm_op_word(15, v, r[len_r:], r1, 1, work.data)
                 axis = op_axis(axis,  r[len_r: len_r + r1])
                 len_r += r1
                 vt = mm_reduce_2A_axis_type(v) & 0xffffff
@@ -360,11 +359,11 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
                 e = 1 + (vt >> 24);
                 if verbose: print("e",  e)
                 r[len_r] = 0xD0000003 - e
-                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                mm_op_word(15, v, r[len_r:], 1, 1, work.data)
                 axis = op_axis(axis,  r[len_r: len_r + 1])
                 len_r += 1
             else:
-                assert mm_op15_eval_A(v, axis) == 4
+                assert mm_op_eval_A(15, v, axis) == 4
             vt = mm_reduce_2A_axis_type(v) & 0xffffff
             vt = v_leech2_adjust_sign(v, vt)
             assert (vt ^ axis) & 0x1ffffff == 0x1000000, (hex(vt), hex(axis))
@@ -376,17 +375,17 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
 
         r1 = gen_leech2_reduce_type4(v4, r[len_r:])
         assert r1 >= 0, (hex(v4), )
-        mm_op15_word(v, r[len_r:], r1, 1, work.data)
+        mm_op_word(15, v, r[len_r:], r1, 1, work.data)
         axis = op_axis(axis,  r[len_r: len_r + r1])
         len_r += r1
         ok = False
         for e in (1,2):
-            mm_op15_t_A(v, e, vA)                    
+            mm_op_t_A(15, v, e, vA)                    
             t = mm_reduce_2A_axis_type(vA) >> 24
             if verbose: print("e", e, hex(t))
             if t in t_types:
                 r[len_r] = 0xD0000003 - e
-                mm_op15_word(v, r[len_r:], 1, 1, work.data)
+                mm_op_word(15, v, r[len_r:], 1, 1, work.data)
                 axis = op_axis(axis,  r[len_r: len_r + 1])
                 len_r += 1
                 ok = True
@@ -477,7 +476,7 @@ ZERO = np.zeros(1, dtype = np.uint32)
 def reduce_v_axis_C(v, std_axis):
     va = mm_vector(15, 2)
     vc, work = va[0].data, va[1].data
-    mm_op15_copy(v.data, vc)    
+    mm_op_copy(15, v.data, vc)    
     r = np.zeros(200, dtype = np.uint32)
     res = mm_reduce_vector_vp(ZERO, vc, std_axis, r, work)
     if not 0 < res <= 200:
@@ -543,7 +542,7 @@ ERR_REDUCE_MM_V_BABY_AXIS = ("Error in function mm_reduce_v_baby_axis"
 def mm_reduce_v_baby_axis_C(v, axis = V_START, mode = 0):
     va = mm_vector(15, 2)
     vc, work = va[0].data, va[1].data
-    mm_op15_copy(v.data, vc)    
+    mm_op_copy(15, v.data, vc)    
     r = np.zeros(200, dtype = np.uint32)
     res = mm_reduce_vector_shortcut(1, mode, axis, r)
     if res < 0:
@@ -641,13 +640,13 @@ def reduce_G_x0(g, mode = 0):
 
     t_start = time.perf_counter()
     mm_reduce_load_axis(v, 0);
-    res = mm_op15_word(v, g1, n, 1, work)
+    res = mm_op_word(15, v, g1, n, 1, work)
     if res < 0: raise ValueError(ERR_GX0 % res)
     res = mm_reduce_vector_vp(ZERO, v, mode, r, work)    
     if res < 0: raise ValueError(ERR_GX0 % res)
 
     mm_reduce_load_axis(v, 1);
-    res = mm_op15_word(v, g1, n, 1, work)
+    res = mm_op_word(15, v, g1, n, 1, work)
     if res < 0: raise ValueError(ERR_GX0 % res)
     res = mm_reduce_vector_vm(ZERO, v, r, work)  
     if res < 0: raise ValueError(ERR_GX0 % res)

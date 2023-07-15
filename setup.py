@@ -55,7 +55,6 @@ from config import REAL_SRC_DIR
 from config import C_DIR, PXD_DIR
 from config import PRIMES
 
-from codegen_mm_op import mm_op_p_sources
 from codegen_mm_reduce import mm_reduce_sources
 
 

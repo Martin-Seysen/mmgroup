@@ -20,8 +20,6 @@ from mmgroup.clifford12 import leech3matrix_rank
 from mmgroup.mat24 import MAT24_ORDER
 from mmgroup.mm_op import mm_op_word_tag_A, mm_op_load_leech3matrix
 
-#from mmgroup.mm15 import op_load_leech3matrix as mm_op15_load_leech3matrix
-#from mmgroup.mm3 import op_load_leech3matrix as mm_op3_load_leech3matrix
 
 def rand_matrix_mod_n(n, dtype = np.int64):
     """Create random 24 x 24 matrix of intgers modulo n"""

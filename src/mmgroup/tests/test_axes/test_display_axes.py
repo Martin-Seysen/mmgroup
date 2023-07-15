@@ -19,9 +19,9 @@ from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import bitmatrix64_solve_equation
 from mmgroup import mat24
 from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
-from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
-from mmgroup.mm15 import op_norm_A as mm_op15_norm_A
-from mmgroup.mm15 import op_eval_A_rank_mod3 as mm_op15_eval_A_rank_mod3
+from mmgroup.mm_op import mm_op_eval_A
+from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
 from mmgroup.tests.test_axes.get_sample_axes import G, V15
 from mmgroup.tests.test_axes.get_sample_axes import g_central
@@ -195,7 +195,7 @@ def get_axes():
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
         axis.v15 =  v_axis15 * MM0(sample_axes.g_strings[i])
-        axis.norm15 = mm_op15_norm_A(axis.v15.data)
+        axis.norm15 = mm_op_norm_A(15, axis.v15.data)
         AXES[g_class] = axis
     return AXES
 
@@ -222,7 +222,7 @@ def norm_A_mod15(i):
         V15 = MMV(15)
         for g in sample_axes.g_strings:
              v = v_axis * MM0(g)
-             norms_A_mod15.append(mm_op15_norm_A(v.data))
+             norms_A_mod15.append(mm_op_norm_A(15, v.data))
         return norms_A_mod15[i]
 
 
@@ -245,7 +245,7 @@ def display_norm_A(axis):
     d = 2 if norm_A == 4 else 0
     V15 = MMV(15)
     v = axis.v15
-    r = mm_op15_eval_A_rank_mod3(v.data, d)    
+    r = mm_op_eval_A_rank_mod3(15, v.data, d)    
     rank = r >> 48
     v3 = r & 0xffffffffffff
     s_A = "(A - %d * 1)" % d if d else "A"
@@ -255,7 +255,7 @@ def display_norm_A(axis):
     v2 = gen_leech3to2_short(v3)
     if v2:
          f = "Kernel of U is spanned by a short vector v with A(v) ="
-         a2 = mm_op15_eval_A(v.data, v2)
+         a2 = mm_op_eval_A(15, v.data, v2)
          s += "\n%s %d (mod 15)" % (f, a2)
     if gen_leech3to2_type4(v3):
          f = "Kernel of U is spanned by a vector of type 4"
