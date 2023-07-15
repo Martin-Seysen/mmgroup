@@ -648,7 +648,6 @@ MM_OP_P_GENERATE_PXD = """
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
    [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
-  # [sys.executable, "codegen_mm_op.py"] + codegen_args,
    [sys.executable, "generate_code.py"] + MM_OP_SUB_GENERATE.split(),
    [sys.executable, "generate_code.py"] + MM_OP_P_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_OP_P_GENERATE_PXD.split(),
@@ -757,74 +756,6 @@ if STAGE >= 2:
 
 
 ####################################################################
-# Adding the extension for operation modulo p.
-#
-# Here we build the representation of the monster modulo
-# all small primes P in the set PRIMES. 
-####################################################################
-
-PYX_SOURCE_P = "mm_op{P}.pyx"
-
-
-def list_source_files(p):
-    """Return list of fully-qualified names of C sources for modulus p
-
-    This list of C source files is required for building the Cython
-    extension "mmgroup_mm_op{P}", where {P} is to be replaced by the
-    modulus p.
-
-    This function calls function ``mm_op_p_sources(p)`` in module
-    ``codegen_mm_op``. Function ``mm_op_p_sources(p)`` returns a list
-    of strings of shape "mm{P}_op_word". In case p = 7 this string
-    means the C file "mm7_op_word.c".
-    """
-    sources = []
-    for f in mm_op_p_sources(p):
-         sources.append(os.path.join(C_DIR, f.format(P = p) + ".c"))
-    return sources
-
-
-mm_op_shared = {}
-
-    
-for p in PRIMES:
-    """
-    mm_op_shared[p] = shared = SharedExtension(
-        name = "mmgroup.mmgroup_mm_op%d" % p, 
-        sources =  list_source_files(p),
-        libraries = shared_libs_stage2, 
-        include_dirs = [PACKAGE_DIR, C_DIR],
-        library_dirs = [PACKAGE_DIR, C_DIR],
-        extra_compile_args = EXTRA_COMPILE_ARGS,
-        implib_dir = C_DIR,
-        define_macros = [ ("MM_OP%s_DLL_EXPORTS" % p, None)],
-    )
-    ext_modules.append(shared)
-
-    sources = [os.path.join(PXD_DIR, PYX_SOURCE_P.format(P = p))]
-    ext_modules.append(
-        Extension("mmgroup.mm%d" % p,
-            sources = sources,
-            #libraries=["m"] # Unix-like specific
-            include_dirs = [ C_DIR ] , 
-            library_dirs = [PACKAGE_DIR, C_DIR ],
-            libraries = shared_libs_stage2 + [shared.lib_name], 
-                # for openmp add "libgomp" 
-            #runtime_library_dirs = ["."],
-            extra_compile_args = EXTRA_COMPILE_ARGS, 
-                # for openmp add "-fopenmp" 
-            extra_link_args = EXTRA_LINK_ARGS, 
-                # for openmp add "-fopenmp" 
-        )
-    )
-    """
-
-####################################################################
-# Merging extensions for operations modulo p.
-####################################################################
-
-
-####################################################################
 # Building the extenstions at stage 3
 ####################################################################
 
@@ -833,9 +764,58 @@ if STAGE >= 3:
     ext_modules = ext_modules[:1]
 
 
+MM_REDUCE_GENERATE = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
+ --out-dir {C_DIR}
+ --set p=15
+ --tables mmgroup.dev.mm_op.mm_op
+          mmgroup.dev.mm_reduce.order_vector_tables
+          mmgroup.dev.mm_reduce.vector_v1_mod3
+ --sources mm_reduce.h
+ --out-header mm_reduce.h
+ --sources  mm_order_vector.ske
+            mm_order.ske
+            mm_compress.ske
+            mm_reduce.ske
+            mm_suborbit.ske
+            mm_shorten.ske
+            mm_vector_v1_mod3.ske
+""".format(**DIR_DICT)
+
+
+mm_reduce_files = get_c_names(MM_REDUCE_GENERATE)
+mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
+
+
+
+
+
+
+MM_REDUCE_GENERATE_PXD = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --pxd-path {SRC_DIR}/mmgroup/dev/mm_reduce
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --tables mmgroup.dev.mm_op.mm_op
+ --h-in  mm_reduce.h
+ --pxd-in  mm_reduce.pxd
+ --pxd-out mm_reduce.pxd
+ --pxi-in  mm_reduce.pxd
+""".format(**DIR_DICT)
+
+
+
+
 
 reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
-  [sys.executable, "codegen_mm_reduce.py"] + codegen_args,
+  # [sys.executable, "codegen_mm_reduce.py"] + codegen_args,
+   [sys.executable, "generate_code.py"] + MM_REDUCE_GENERATE.split(),
+   [sys.executable, "generate_pxd.py"] + MM_REDUCE_GENERATE_PXD.split(),
 )
 
 
@@ -846,7 +826,8 @@ shared_libs_stage2_augmented = shared_libs_stage2 + [
 
 mm_reduce =  SharedExtension(
     name = "mmgroup.mmgroup_mm_reduce", 
-    sources=[os.path.join(C_DIR, f) + ".c" for f in mm_reduce_sources()],    
+    #sources=[os.path.join(C_DIR, f) + ".c" for f in mm_reduce_sources()], 
+    sources = mm_reduce_paths,   
     libraries = shared_libs_stage2_augmented, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],

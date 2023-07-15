@@ -329,29 +329,10 @@ class Mockup_V1_Mod3_Table:
         pass
 
 
-class Tables:
-    directives = {}
-    _a_ov = np.array([0], dtype = np.uint32)
-    mockup_tables = {
-        "V1_MOD3_DATA": _a_ov,
-        "V1_MOD3_TAG_DATA": _a_ov
-    }
+Tables = V1_Mod3_Table
+MockupTables = Mockup_V1_Mod3_Table
 
-    def __init__(self, *args, **kwds):
-        self._tables = None
 
-    @property
-    def tables(self):
-        if self._tables is None:
-            if import_pending:
-                import_all()
-            v1_data =  get_v1_mod3_data()
-            self._tables = {
-                "V1_MOD3_DATA": v1_data,
-                "V1_MOD3_TAG_DATA": make_v1_mod3_tags(v1_data)
-            }
-        return self._tables
-    
 
 
 #######################################################################

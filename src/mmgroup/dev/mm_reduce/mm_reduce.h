@@ -1,3 +1,13 @@
+
+// %%EXPORT_KWD MM_REDUCE_API
+
+
+// %%GEN h
+#ifndef MM_REDUCE_H
+#define MM_REDUCE_H
+
+
+
 // %%GEN h
 
 /** @file mm_reduce.h
@@ -65,4 +75,11 @@
 
 /// @endcond  
 
+
+// %%INCLUDE_HEADERS
+
+
+// %%GEN h
+
+#endif  // #ifndef MM_REDUCE_H
 

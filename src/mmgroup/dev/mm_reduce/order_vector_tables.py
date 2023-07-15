@@ -187,16 +187,8 @@ class Mockup_OrderVectorTable:
     
 
 
-class Tables:
-    directives = {}
-    mockup_tables = Mockup_OrderVectorTable.tables
- 
-    def ___init__(self, *args, **kwds):
-        pass
-
-    @property
-    def tables(self):
-        return OrderVectorTable().tables
+Tables = OrderVectorTable
+MockupTables = Mockup_OrderVectorTable
 
 
 
