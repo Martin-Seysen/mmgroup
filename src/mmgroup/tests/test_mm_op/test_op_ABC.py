@@ -8,18 +8,16 @@ import numpy as np
 from random import randint
 from importlib import import_module
 import time
+from functools import partial
 
 from mmgroup import MM0, MMV, AutPL
 from mmgroup.mm_space import characteristics 
 from mmgroup.mm import mm_group_prepare_op_ABC
+from mmgroup.mm_op import mm_op_word_ABC
 
 
 import pytest
 
-OP_ABC = {}
-for p in characteristics():
-    mm = import_module('mmgroup.mm%d' % p)
-    OP_ABC[p] = mm.op_word_ABC
 
 
 
@@ -77,7 +75,7 @@ def one_test_op_word_ABC(v, g, verbose = 0):
         print(" ", g)
     w_ref = v * g
     w = MMV(p)()
-    res = OP_ABC[p](v.data, g.mmdata, len(g.mmdata), w.data)
+    res = mm_op_word_ABC(p, v.data, g.mmdata, len(g.mmdata), w.data)
     ok = res >= 0
     for tag in "ABC":
         ok = ok and not (w[tag] != w_ref[tag]).any()
@@ -117,7 +115,7 @@ def make_benchmark_sample(n):
     return a
 
 def benchmark_mm_op15_word_ABC(a):
-    f = OP_ABC[15]
+    f = partial(mm_op_word_ABC, 15)
     v = MMV(15)('R').data
     w = MMV(15)().data
     t_start = time.process_time()
