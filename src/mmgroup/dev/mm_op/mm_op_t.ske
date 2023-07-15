@@ -35,9 +35,9 @@
 
 #include <string.h>
 #include "mat24_functions.h"
-#include "mm_op%{P}.h"   
+#include "mm_op_sub.h"   
 
-// %%EXPORT_KWD MM_OP%{P}_API
+// %%EXPORT_KWD MM_OP_API
 
 
 //  %%GEN h

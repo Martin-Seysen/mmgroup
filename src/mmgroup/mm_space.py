@@ -505,6 +505,18 @@ from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup.mm import mm_aux_hash
 from mmgroup.mm import mm_aux_mmv_size
 
+from mmgroup import mm_op
+from mmgroup.mm_op import mm_op_copy, mm_op_compare
+from mmgroup.mm_op import mm_op_checkzero, mm_op_vector_add
+from mmgroup.mm_op import mm_op_scalar_mul, mm_op_compare_mod_q
+from mmgroup.mm_op import mm_op_store_axis
+from mmgroup.mm_op import mm_op_pi, mm_op_xy, mm_op_omega
+from mmgroup.mm_op import mm_op_t_A, mm_op_word
+from mmgroup.mm_op import mm_op_word_tag_A, mm_op_word_ABC
+from mmgroup.mm_op import mm_op_eval_A
+from mmgroup.mm_op import mm_op_eval_X_count_abs
+
+
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 #standard_seed = mm_rng_make_seed()
 standard_mm_group = MM0
@@ -513,69 +525,15 @@ standard_mm_group = MM0
 TAGS = " ABCTXZY"
 
 
-######################################################################
-# Importing a C wrapper for a specific characteristic 'p'
-######################################################################
-
-class MMVectorOps:
-    def __init__(self, p):
-        self.p = p
-        mm = mm_op_modules[p]  # fetch mm_op_modules[p]
-        #self.mm = mm_op_modules[p]
-                            # if we do this, we cannot pickle vectors
-        self.MMV_INTS = mm_aux_mmv_size(p) 
-        self.op_vector_add = mm.op_vector_add
-        self.op_scalar_mul = mm.op_scalar_mul
-        self.op_word = mm.op_word
-        self.op_compare = mm.op_compare
-        self.op_t_A = mm.op_t_A
-        self.op_pi = mm.op_pi
-        #self.op_t = mm.op_t
-        #self.op_xi = mm.op_xi
-        self.op_xy = mm.op_xy
-        self.op_omega = mm.op_omega
-        self.op_word_tag_A = mm.op_word_tag_A
-        self.op_store_axis = mm.op_store_axis
-        self.mm_vector = partial(mm_vector, p)
-        del mm
-
-
-
-mm_op_modules = {}
-mm_ops = {}
-all_characteristics_found = None
-
+_characteristics = None
 
 def characteristics():
     """Return list of all *characteristics* ``p`` supported"""
-    global all_characteristics_found, mm_op_modules, mm_ops
-    if all_characteristics_found is None:
-        for k in range(2,9):
-            p = (1 << k) - 1
-            if not p in mm_op_modules:
-                try:
-                    mm_op_modules[p] = import_module('mmgroup.mm%d' % p)
-                except ModuleNotFoundError:
-                    pass
-            if p in mm_op_modules:
-                mm_ops[p] = MMVectorOps(p)
-        all_characteristics_found = sorted(mm_op_modules.keys())
-    return all_characteristics_found
-
-def get_mm_ops(p):
-    try:
-        return mm_ops[p]
-    except KeyError:
-        characteristics()
-        if p in mm_ops:
-            return mm_ops[p]
-        if isinstance(p, Integral):
-            err = "Operation mod %s supported in class MMVector"
-            raise ValueError(err % p)
-        else:
-            err = "Modulus for class MMVector must be an integer"
-            raise TypeError(err)
-
+    global _characteristics
+    if _characteristics is not None:
+        return _characteristics
+    _characteristics = mm_op.characteristics()
+    return _characteristics
 
 ######################################################################
 # Imports on demand
@@ -584,12 +542,10 @@ def get_mm_ops(p):
 import_pending = True
 
 def complete_import():
-    global mm_op15_eval_A, mm_reduce_2A_axis_type
-    global XLeech2, mm_op15_eval_X_count_abs 
+    global mm_reduce_2A_axis_type
+    global XLeech2 
     global std_q_element
-    from mmgroup.mm15 import op_eval_A as mm_op15_eval_A
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type 
-    from mmgroup.mm15 import op_eval_X_count_abs as mm_op15_eval_X_count_abs
     from mmgroup import XLeech2
     from mmgroup.structures.construct_mm import std_q_element
     import_pending = False    
@@ -661,10 +617,16 @@ class MMVector(AbstractMmRepVector):
     convert ``v`` to an one-dimensional array of ``8``-bit 
     integers of length 196884.
     """
-    __slots__ = "p", "data", "ops"
+    __slots__ = "p", "data"
     #group = MM
     def __init__(self, p, tag = 0, i0 = None, i1 = None):
-        self.ops = get_mm_ops(p)
+        if p not in characteristics():
+             if isinstance(p, Integral):
+                 err = "Bad characteristic p = %d for class MMVector"
+                 raise ValueError(err % p)
+             else:
+                 err = "Characteristic p for class MMVector must be integer"
+                 raise TypeError(err)
         self.p = p
         self.data = mm_vector(p)
         add_vector(self, tag, i0, i1)
@@ -729,11 +691,11 @@ class MMVector(AbstractMmRepVector):
         if isinstance(v2, XLeech2):
             v2 = v2.value
         v1 = np.zeros(24*4, dtype = np.uint64)
-        self.ops.op_t_A(self.data, e % 3, v1)
+        mm_op_t_A(self.p, self.data, e % 3, v1)
         if self.p != 15:
             err = "Method eval_A is implemented for vectors mod 15 only"
             raise ValueError(err)
-        res = mm_op15_eval_A(v1, v2)
+        res = mm_op_eval_A(self.p, v1, v2)
         if res < 0:
             err = "Method eval_A failed on vector in rep of monster"
             raise ValueError(err)
@@ -767,7 +729,7 @@ class MMVector(AbstractMmRepVector):
             err = "Method supported for characteristic p = 15 only"
             raise ValueError(err)
         a = np.zeros(8, dtype = np.uint32)
-        mm_op15_eval_X_count_abs(self.data, a)
+        mm_op_eval_X_count_abs(self.p, self.data, a)
         return tuple(a)
 
     def axis_type(self, e = 0):
@@ -803,7 +765,7 @@ class MMVector(AbstractMmRepVector):
         e, v = e % 3, self.data
         if e:
             v = np.zeros(24*4, dtype = np.uint64)
-            self.ops.op_t_A(self.data, e, v)     
+            mm_op_t_A(self.p, self.data, e, v)     
         if import_pending:
             complete_import()
         t = mm_reduce_2A_axis_type(v)
@@ -983,14 +945,14 @@ class MMSpace(AbstractMmRepSpace):
 
     def iadd(self, v1, v2):
         if v1.p == v2.p:
-            v1.ops.op_vector_add(v1.data, v2.data)
+            mm_op_vector_add(v1.p, v1.data, v2.data)
             return v1
         else:
             err = "Cannot add vectors modulo differnt numbers"
             raise ValueError(err)
  
     def imul_scalar(self, v1, a):
-        v1.ops.op_scalar_mul(a % v1.p, v1.data)
+        mm_op_scalar_mul(v1.p, a % v1.p, v1.data)
         return v1
  
 
@@ -1029,7 +991,7 @@ class MMSpace(AbstractMmRepSpace):
             i0 = i0.ord
         if isinstance(i0, Integral):
             v = cls.vector_type(p, 0)
-            v.ops.op_store_axis(i0, v.data)
+            mm_op_store_axis(p, i0, v.data)
             return v
         elif isinstance(i0, AbstractMMGroupWord):
             std_axis, g = cls._mm_element_to_axis(i0)
@@ -1055,7 +1017,7 @@ class MMSpace(AbstractMmRepSpace):
         work =  mm_vector(v1.p)
         if isinstance(g, AbstractMMGroupWord):
             a = g.mmdata
-            v1.ops.op_word(v1.data, a, len(a), 1, work)
+            mm_op_word(v1.p, v1.data, a, len(a), 1, work)
             return v1
         err = "Multiplicator for MM vector must be int or in MM group"   
         raise TypeError(err) 
@@ -1089,7 +1051,7 @@ class MMSpace(AbstractMmRepSpace):
             length += 1
         t_start = time.perf_counter()
         #t_start = default_timer()
-        v1.ops.op_word(v1.data, g._data, length, e, work)
+        mm_op_word(v1.p, v1.data, g._data, length, e, work)
         v1.last_timing = time.perf_counter() - t_start
         #v1.last_timing = default_timer() - t_start
         return v1  
@@ -1106,7 +1068,7 @@ class MMSpace(AbstractMmRepSpace):
         'self' only.
         """
         if v1.p == v2.p:
-            return not v1.ops.op_compare(v1.data, v2.data) 
+            return not mm_op_compare(v1.p, v1.data, v2.data) 
         return False
 
     #######################################################################
@@ -1158,7 +1120,7 @@ class MMSpace(AbstractMmRepSpace):
 
         Raise ValueError if an error is found in vector 'self'.
         """
-        if len(v1.data) != v1.ops.MMV_INTS + 1:
+        if len(v1.data) != mm_aux_mmv_size(v1.p) + 1:
             err = "MM vector has wrong length"
             raise MemoryError(err)   
         if v1.data[-1] != PROTECT_OVERFLOW:

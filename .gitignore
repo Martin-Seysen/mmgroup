@@ -22,6 +22,13 @@ make_all_doc.bat
 applications/Hurwitz/*.txt
 applications/Hurwitz/*.bat
 
+src/mmgroup/mm3.py
+src/mmgroup/mm7.py
+src/mmgroup/mm15.py
+src/mmgroup/mm31.py
+src/mmgroup/mm63.py
+src/mmgroup/mm127.py
+src/mmgroup/mm255.py
 
 __pycache__
 .cache

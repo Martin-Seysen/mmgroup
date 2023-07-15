@@ -13,6 +13,9 @@ from mmgroup.tests.test_mm_op.test_group_op import one_test_rand_op
 from mmgroup.mm_space import characteristics
 from mmgroup.tests.spaces.spaces import MMTestSpace
 from mmgroup.structures.mm0_group import MM0
+from mmgroup.mm_op import mm_op_pi, mm_op_word, mm_op_xy
+from mmgroup.mm_op import mm_op_omega
+
 
 
 PRIMES = characteristics()
@@ -35,21 +38,20 @@ lower level than the test in module test_group_op.
 def mul_atom(v1, tag, i, v2):
     data1 = v1.data
     data2 = v2.data
-    mm = v1.ops
     if tag == 'd':
-        mm.op_pi(data1, i, 0, data2) 
+        mm_op_pi(v1.p, data1, i, 0, data2) 
     elif tag == 'p':
-        mm.op_pi(data1, 0, i, data2)
+        mm_op_pi(v1.p, data1, 0, i, data2)
     elif tag == 't':
         a = np.array([0x50000000 + i % 3], dtype = np.uint32) 
-        mm.op_word(data1, a, 1, 1, data2)
+        mm_op_word(v1.p, data1, a, 1, 1, data2)
     elif tag == 'l':
         a = np.array([0x60000000 + i % 3], dtype = np.uint32) 
-        mm.op_word(data1, a, 1, 1, data2)
+        mm_op_word(v1.p, data1, a, 1, 1, data2)
     elif tag == 'x':
-        mm.op_xy(data1, 0, i, 0, data2)
+        mm_op_xy(v1.p, data1, 0, i, 0, data2)
     elif tag == 'y':
-        mm.op_xy(data1, i, 0, 0, data2)
+        mm_op_xy(v1.p, data1, i, 0, 0, data2)
     else:
         raise TypeError("Bad tag %s in monster operation" % str(t))
  
@@ -85,7 +87,7 @@ def f_mul_delta_pi(v, g):
     d = defaultdict(int)
     d.update(t)
     v1  = v.copy()  # empty vector of same shape as v
-    v.ops.op_pi(v.data, d['d'], d['p'], v1.data)
+    mm_op_pi(v.p, v.data, d['d'], d['p'], v1.data)
     return v1
 
 
@@ -118,7 +120,7 @@ def f_mul_yx(v, g):
     d = defaultdict(int)
     d.update(t)
     v1  = v.copy()  # empty vector of same shape as v
-    v.ops.op_xy(v.data, d['y'], d['x'], d['d'], v1.data)
+    mm_op_xy(v.p, v.data, d['y'], d['x'], d['d'], v1.data)
     return v1
 
 
@@ -145,7 +147,7 @@ def f_mul_omega(v, g):
     else:
         x = 0
     v1 = v.copy()
-    v.ops.op_omega(v1.data, x)
+    mm_op_omega(v1.p, v1.data, x)
     return v1
 
 @pytest.mark.mm_op

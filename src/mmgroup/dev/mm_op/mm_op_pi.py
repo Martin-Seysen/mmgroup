@@ -554,7 +554,7 @@ class SmallPerm64(MM_Op):
 
 class Tables:
     def __init__(self, **kwds):
-        self.p = p = kwds.get('p', 3)
+        self.p = p = int(kwds.get('p', 3))
         self.tables = {}
         self.directives = {}
         table_classes = [Perm24_Benes(p), ScalarProd2048(p),

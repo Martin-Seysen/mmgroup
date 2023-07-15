@@ -306,7 +306,7 @@ class MonomialOp_xi_alternative(MM_Op):
 
 class Tables(MonomialOp_xi_uint8_t):
     def __init__(self, *args, **kwds):
-        p = kwds.get('p', 3)
+        p = int(kwds.get('p', 3))
         super().__init__(p)
      
 

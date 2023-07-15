@@ -14,6 +14,7 @@ from mmgroup.mm_space import characteristics
 from mmgroup.mm import mm_aux_index_sparse_to_extern
 from mmgroup.mm import mm_aux_index_extern_to_sparse
 from mmgroup.mm import mm_aux_mmv_extract_sparse
+from mmgroup.mm import mm_aux_mmv_size
 
 from mmgroup.tests.spaces.spaces import MMTestSpace
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace
@@ -138,7 +139,7 @@ def do_test_random_io(p, verbose = False, to_sparse = 1):
     for i in range(5):
         space = MMTestSpace(p)
         v = space(0)
-        assert np.count_nonzero(v.data[:v.ops.MMV_INTS]) == 0
+        assert np.count_nonzero(v.data[:mm_aux_mmv_size(v.p)]) == 0
         v.check()
         v = space('R')
         v.check()

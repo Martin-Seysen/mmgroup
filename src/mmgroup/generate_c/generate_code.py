@@ -223,7 +223,7 @@ EmptyImmutableDict = ImmutableDict({})
 ERR_SET = "Arguments following option --set must have shape VAR=VALUE" 
 ERR_SUBST = "Two arguments PATTERN, SUBSTITUTION must follow option --subst" 
 
-m_set = re.compile(r"([A-Za-z][A-Za-z0-9_]+)=(.*)")
+m_set = re.compile(r"([A-Za-z][A-Za-z0-9_]*)=(.*)")
 
 def subst_C_name(name, subst, param, extension):
     dir, filename = os.path.split(name)
@@ -255,7 +255,10 @@ def make_actions(s):
                 else:
                     del param[var]
         if action == 'sources':
-            file_list = s.c_files.setdefault(ImmutableDict(param), [])
+            param_dict = ImmutableDict(param)
+            if param_dict not in s.c_files:
+                 s.c_files[param_dict] = []
+            file_list = s.c_files[param_dict]
             for name in data:
                 src_name = os.path.normpath(name)
                 dest_name = subst_C_name(name, subst, param, 'c') 
@@ -350,6 +353,7 @@ def load_tables(tg, tables, params, directives=True):
     _directives = {} if directives else NoDirectives
     for table_class in tables:
         m_tables = table_class(**params)
+        #print("Loading", table_class, params)
         new_tables = m_tables.tables
         _tables.update(new_tables)
         if directives:
@@ -481,18 +485,10 @@ class CodeGenerator:
         if getattr(self.s, "table_classes", None) is None:
             table_modules = self.s.tables
             verbose = self.s.verbose
-            mockup = self.s.verbose
+            mockup = self.s.mockup
             table_classes = import_tables(table_modules, mockup, verbose)
             self.s.table_classes = table_classes    
         
-        """     
-        table_classes = self.s.table_classes = []
-        for module in self.s.tables:
-             m = import_module(module)
-             table_class = m.Tables
-             table_classes.append(table_class)
-        """     
-
     def load_table_generator(self, table_generator, params):
         assert isinstance(params, ImmutableDict)
         assert isinstance(table_generator, TableGenerator)
@@ -501,7 +497,6 @@ class CodeGenerator:
         tables = self.s.table_classes
         load_tables(table_generator, tables, params)
 
- 
     def generate(self):
         BIGINT = 0x7fffffff
         finalize_parse_args(self.s)
@@ -511,7 +506,6 @@ class CodeGenerator:
         tg = TableGenerator()
         if s.export_kwd:
             tg.export_kwd = s.export_kwd
-        self.load_table_generator(tg, EmptyImmutableDict)
         if s.verbose:
             print("Generating header %s" % s.out_header)
         for param, c_files in s.c_files.items():

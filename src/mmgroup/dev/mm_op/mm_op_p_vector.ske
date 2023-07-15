@@ -26,6 +26,7 @@
 */
 
 #include "mm_basics.h"
+#include "mm_op_sub.h"
 #include "mm_op_p.h"
 
 
@@ -37,9 +38,19 @@
 //  %%GEN c
 
 
+/** 
+  @brief Table of legal moduli ``p``, terminted by zero
+
+*/
+// %%EXPORT_TABLE p
+const uint8_t MM_OP_P_TABLE[] = {
+// %%TABLE P_LIST, uint8
+};
+
+
 
 /** 
-  @brief Copy vector ``mv1`` in \f$\rho_p}\f$ to ``mv2``
+  @brief Copy vector ``mv1`` in \f$\rho_p\f$ to ``mv2``
 
   Here modulus ``p`` must be one of the
   values %{LEGAL_P:mm_op_copy}.
@@ -167,7 +178,7 @@ int32_t mm_op_compare_mod_q(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2, uint32
 }
 
 /** 
-  @brief Set a vector in \f$\rho_\f$ to an axis.
+  @brief Set a vector in \f$\rho_p\f$ to an axis.
 
   Let ``x`` be an element of the subgroup  \f$Q_{x0}\f$ 
   if the Monster that maps to a short Leech lattice vector.

@@ -239,6 +239,7 @@ pyx_sources = [
     os.path.join(DEV_DIR, "mat24", "mat24fast.pyx"),
     os.path.join(DEV_DIR, "generators", "generators.pyx"),
     os.path.join(DEV_DIR, "mm_basics", "mm_basics.pyx"),
+    os.path.join(DEV_DIR, "mm_op", "mm_op.pyx"),
     os.path.join(DEV_DIR, "clifford12", "clifford12.pyx"),
     os.path.join(DEV_DIR, "mm_reduce", "mm_reduce.pyx"),
 ]
@@ -552,19 +553,106 @@ mm_c_files = get_c_names(MM_GENERATE)
 mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
 
-### Yet to be done!!!!!!!!!!!!!!
 
 
-####################################################################
-# Building old extenstions at stage 2
-####################################################################
+MM_OP_SUB_GENERATE = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mm_op
+ --out-dir {C_DIR}
+ --subst mm_op mm{{p}}_op
+ --tables mmgroup.dev.mm_op.mm_op
+          mmgroup.dev.mm_op.mm_op_xi
+          mmgroup.dev.mm_op.mm_op_pi
+          mmgroup.dev.mm_op.mm_op_xy
+          mmgroup.dev.hadamard.hadamard_t
+          mmgroup.dev.hadamard.hadamard_xi
+ --sources mm_op_sub.h
+ --out-header mm_op_sub.h
+""".format(**DIR_DICT)
+
+for p in [3, 7, 15, 31, 127, 255]:
+   MM_OP_SUB_GENERATE += """
+      --set p={p}
+      --sources mm_op_defines.h
+                mm_op_pi.ske
+                mm_op_misc.ske
+                mm_op_xy.ske
+                mm_op_t.ske
+                mm_op_xi.ske
+                mm_op_word.ske
+      """.format(p=p)
+
+
+for p in [3, 15]:
+   MM_OP_SUB_GENERATE += """
+      --set p={p}
+      --sources mm_op_rank_A.ske
+                mm_op_eval_A.ske
+      """.format(p=p)
+
+for p in [15]:
+   MM_OP_SUB_GENERATE += """
+      --set p={p}
+      --sources mm_op_eval_X.ske
+      """.format(p=p)
+
+
+
+
+MM_OP_P_GENERATE = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --source-path {SRC_DIR}/mmgroup/dev/mm_op
+ --out-dir {C_DIR}
+ --set C_DIR={C_DIR}
+ --tables mmgroup.dev.mm_op.dispatch_p
+ --sources mm_op_p.h
+ --out-header mm_op_p.h
+ --sources  mm_op_p_vector.ske mm_op_p_axis.ske
+""".format(**DIR_DICT)
+
+
+mm_op_c_files = get_c_names(MM_OP_SUB_GENERATE)
+mm_op_c_files += get_c_names(MM_OP_P_GENERATE)
+mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
+
+
+
+
+
+
+MM_OP_P_GENERATE_PXD = """
+ -v
+ {MOCKUP}
+ --py-path {SRC_DIR}
+ --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
+ --h-path {C_DIR}
+ --out-dir {PXD_DIR}
+ --tables mmgroup.dev.mm_basics.mm_basics
+ --h-in  mm_op_p.h
+ --pxd-in  mm_op.pxd
+ --pxd-out mm_op_p.pxd
+ --pxi-in  mm_op.pxd
+""".format(**DIR_DICT)
+
+
+
+
+
+
 
 
 
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
    [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
-   [sys.executable, "codegen_mm_op.py"] + codegen_args,
+  # [sys.executable, "codegen_mm_op.py"] + codegen_args,
+   [sys.executable, "generate_code.py"] + MM_OP_SUB_GENERATE.split(),
+   [sys.executable, "generate_code.py"] + MM_OP_P_GENERATE.split(),
+   [sys.executable, "generate_pxd.py"] + MM_OP_P_GENERATE_PXD.split(),
 )
 
 
@@ -579,8 +667,22 @@ mm_shared =  SharedExtension(
     define_macros = [ ("MM_BASICS_DLL_EXPORTS", None)],
 )
 
+
+
+mm_op_shared =  SharedExtension(
+    name = "mmgroup.mmgroup_mm_op", 
+    sources = mm_op_c_paths,
+    libraries = shared_libs_stage1 + [mm_shared.lib_name], 
+    include_dirs = [PACKAGE_DIR, C_DIR],
+    library_dirs = [PACKAGE_DIR, C_DIR],
+    extra_compile_args = EXTRA_COMPILE_ARGS,
+    implib_dir = C_DIR,
+    define_macros = [ ("MM_OP_DLL_EXPORTS", None)],
+)
+
+
 shared_libs_stage2 = shared_libs_stage1 + [
-       mm_shared.lib_name
+       mm_shared.lib_name, mm_op_shared.lib_name
 ] if not on_readthedocs else []
 
 
@@ -604,6 +706,34 @@ mm_extension = Extension("mmgroup.mm",
 
 
 
+
+
+mm_op_extension = Extension("mmgroup.mm_op",
+    sources=[
+            os.path.join(PXD_DIR, "mm_op.pyx"),
+    ],
+    #libraries=["m"] # Unix-like specific
+    include_dirs = [ C_DIR ],
+    library_dirs = [ PACKAGE_DIR, C_DIR ],
+    libraries = shared_libs_stage2, 
+            # for openmp add "libgomp" 
+    #runtime_library_dirs = ["."],
+    extra_compile_args = EXTRA_COMPILE_ARGS, 
+            # for openmp add "-fopenmp" 
+    extra_link_args = EXTRA_LINK_ARGS, 
+            # for openmp add "-fopenmp" 
+)
+
+
+mm_poststeps =  CustomBuildStep("Create substituts for legacy extensions",
+   [sys.executable, "make_legacy_extensions.py", "--out-dir",
+       os.path.join(SRC_DIR, "mmgroup")
+   ] 
+)
+
+
+
+
 ext_modules = [
     general_presteps,
     mat24_presteps,
@@ -614,7 +744,10 @@ ext_modules = [
     clifford12_extension,
     mm_presteps,
     mm_shared, 
+    mm_op_shared, 
     mm_extension, 
+    mm_op_extension, 
+    mm_poststeps, 
 ]
 
 
@@ -656,6 +789,7 @@ mm_op_shared = {}
 
     
 for p in PRIMES:
+    """
     mm_op_shared[p] = shared = SharedExtension(
         name = "mmgroup.mmgroup_mm_op%d" % p, 
         sources =  list_source_files(p),
@@ -684,49 +818,11 @@ for p in PRIMES:
                 # for openmp add "-fopenmp" 
         )
     )
-
+    """
 
 ####################################################################
 # Merging extensions for operations modulo p.
 ####################################################################
-
-MM_OP_P = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
- --source-path {SRC_DIR}/mmgroup/dev/mm_op
- --out-dir {C_DIR}
- --set C_DIR={C_DIR}
- --tables mmgroup.dev.mm_op.dispatch_p
- --sources mm_op_p.h
- --out-header mm_op_p.h
- --sources  mm_op_p_vector.ske mm_op_p_axis.ske
-""".format(**DIR_DICT)
-
-
-
-MM_OP_P_PXD = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
- --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
- --tables mmgroup.dev.mm_basics.mm_basics
- --h-in  mm_op_p.h
- --pxd-in  mm_op.pxd
- --pxd-out mm_op_p.pxd
- --pxi-in  mm_op.pxd
-""".format(**DIR_DICT)
-
-
-mm_op_p_steps =  CustomBuildStep("Code generation for module mm_op_p",
-   [sys.executable, "generate_code.py"] + MM_OP_P.split(),
-   [sys.executable, "generate_pxd.py"] + MM_OP_P_PXD.split(),
-)
-
-
-ext_modules.append(mm_op_p_steps)
 
 
 ####################################################################
@@ -745,7 +841,7 @@ reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
 
 
 shared_libs_stage2_augmented = shared_libs_stage2 + [
-       mm_op_shared[15].lib_name,  mm_op_shared[3].lib_name
+    #   mm_op_shared[15].lib_name,  mm_op_shared[3].lib_name
 ] if not on_readthedocs else []
 
 

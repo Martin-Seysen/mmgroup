@@ -94,12 +94,13 @@ class MM_Op(MM_Basics):
 
     def __init__(self, **kwds):
         """Create instance for modulus p with p + 1 a power of two"""
-        self.p = p = kwds.get('p', 3)
+        self.p = p = int(kwds.get('p', 3))
         self.directives =  {
             "MMV_ROTL" : UserDirective(self.gen_mmv_rotl, "sis"),
             "MMV_UINT_SPREAD": UserDirective(self.gen_mmv_uint_spread, "ss"),
         }
         self.tables = self.sizes(p).copy()
+        self.tables["GENERATE_CODE"] = True
  
     def __getattr__(self, attrib):
         return self.tables[attrib]
@@ -174,7 +175,7 @@ class MM_Op(MM_Basics):
 
 class Mockup_MM_Op(MM_Op):
     def __init__(self, **kwds):
-        self.p = p = kwds.get('p', 3)
+        self.p = p = int(kwds.get('p', 3))
         super(Mockup_MM_Op, self).__init__(p = p)
         old_tables = self.tables
         self.tables = {}

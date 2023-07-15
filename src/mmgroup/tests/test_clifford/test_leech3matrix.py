@@ -18,9 +18,10 @@ from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import leech3matrix_rank
 from mmgroup.mat24 import MAT24_ORDER
-from mmgroup.mm15 import op_word_tag_A
-from mmgroup.mm15 import op_load_leech3matrix as mm_op15_load_leech3matrix
-from mmgroup.mm3 import op_load_leech3matrix as mm_op3_load_leech3matrix
+from mmgroup.mm_op import mm_op_word_tag_A, mm_op_load_leech3matrix
+
+#from mmgroup.mm15 import op_load_leech3matrix as mm_op15_load_leech3matrix
+#from mmgroup.mm3 import op_load_leech3matrix as mm_op3_load_leech3matrix
 
 def rand_matrix_mod_n(n, dtype = np.int64):
     """Create random 24 x 24 matrix of intgers modulo n"""
@@ -81,10 +82,10 @@ def from_array(m, load_mode = None):
     a = np.zeros(72, dtype = np.uint64)
     if load_mode == 15:
         b = matrix_to_rep_modp(m, load_mode)
-        mm_op15_load_leech3matrix(b, a)
+        mm_op_load_leech3matrix(15, b, a)
     elif load_mode == 3:
         b = matrix_to_rep_modp(m, load_mode)
-        mm_op3_load_leech3matrix(b, a)
+        mm_op_load_leech3matrix(3, b, a)
     elif not load_mode:
         for i in range(24):
             s = int(sum(int(m[i,j]) % 3 << 4*j for j in range(24)))
@@ -156,7 +157,7 @@ def kernel_testmatrix(p, tags = "dxypt"*3, diag = 0):
     # It encodes a symmetric matrix with kernel :math:`\Omega`.
     v3 = 1  # \Omega in Leech lattice mod 3 encoding
     g = MM0([(t,'r') for t in tags])
-    a.ops.op_word_tag_A(a.data, g.mmdata, len(g.mmdata), 1)
+    mm_op_word_tag_A(p, a.data, g.mmdata, len(g.mmdata), 1)
     v3_kernel = gen_leech3_op_vector_word(v3, g.mmdata, len(g.mmdata))
     return a, v3_kernel
 
@@ -172,10 +173,8 @@ def str_v3(v3):
 
 def load_leech3matrix(p, v):
     a = np.zeros(3*24, dtype = np.uint64)
-    if p == 3:
-        mm_op3_load_leech3matrix(v, a)
-    elif p == 15:
-        mm_op15_load_leech3matrix(v, a)
+    if p in [3, 15]:
+        mm_op_load_leech3matrix(p, v, a)
     else:
         err = "Computation of kernel vector not supporte for modulus %s"
         raise ValueError(err % p)

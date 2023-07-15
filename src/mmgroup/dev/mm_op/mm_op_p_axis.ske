@@ -28,6 +28,7 @@
 */
 
 #include "mm_basics.h"
+#include "mm_op_sub.h"
 #include "mm_op_p.h"
 
 
@@ -141,13 +142,34 @@ int32_t mm_op_eval_A_aux(uint32_t p, uint_mmv_t *v, uint32_t m_and, uint32_t m_x
    The short Leech lattice vector \f$v_2\f$ (of norm 4) is scaled to
    norm 32 as usual, when \f$v_2\f$ is given in integer coordinates.
 
-   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_A_aux}.
+   Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_A}.
 */
 // %%EXPORT px
 int32_t mm_op_eval_A(uint32_t p, uint_mmv_t *v, uint32_t v2)
 {
   // %%DISPATCH_P int32_t, mm_op_eval_A, p, v, v2
 }
+
+
+/**
+  @brief Compute norm of the 'A' part of a vector in the rep of the monster
+
+  Assume that ``v`` is a vector in the representation of the monster
+  modulo ``p``. Then the part of  ``v`` with tag 'A' is considered as
+  a symmetric 24 times 24 matrix. The function returns the norm (i.e.
+  the sum of the squares of the entries) of that matrix.
+
+  Here modulus ``p`` must be %{LEGAL_P:mm_op_norm_A}.
+*/
+// %%EXPORT px
+int32_t mm_op_norm_A(uint32_t p, uint_mmv_t *v)
+{
+  // %%DISPATCH_P int32_t, mm_op_norm_A, p, v
+}
+
+
+
+
 
 
 
@@ -279,6 +301,28 @@ int32_t mm_op_eval_X_find_abs(uint32_t p, uint_mmv_t *v, uint32_t *p_out, uint32
 
 
 
+/**
+  @brief Count certain entries of a vector of the monster rep modulo ``p``
+
+  Let ``v`` be a vector of the monster group representation modulo ``p``.
+  The function counts the absolute values of all entries of the monomial 
+  part of ``v``.
+   
+  Here the monomial part of ``v`` consists of the entries with
+  tags 'B', 'C', 'T', 'X'. The coordinates of these entries
+  correspond to the short vectors of the Leech lattice.
+
+  Output is written into the array ``p_out`` of length  ``p/2 + 1``.
+  Entry ``p_out[i]`` contains the number if entries of the monomial 
+  part of ``v`` with absolute value ``i`` for ``0 <= i <= p/2 + 1``. 
+
+  The function retuzrns 0.
+*/
+// %%EXPORT px
+int32_t mm_op_eval_X_count_abs(uint32_t p, uint_mmv_t *v, uint32_t *p_out)
+{
+    // %%DISPATCH_P int32_t, mm_op_eval_X_count_abs, p, v, p_out
+}
 
 
 

@@ -21,7 +21,9 @@ from config import C_DIR
 # Extract declarations from .h files
 #####################################################################
 
-H_FILES = ["mm_op%d.h" % p for p in (3, 7, 15, 31, 127, 255)]
+#H_FILES = ["mm_op%d.h" % p for p in (3, 7, 15, 31, 127, 255)]
+
+H_FILES = ["mm_op_sub.h"]
 
 
 m_declaration = re.compile(
@@ -123,11 +125,15 @@ class DispatchP:
         if len(p_list) > 1:
             p_list[-1] = 'or ' + p_list[-1] 
         return ", ".join(p_list)
+
+    def p_table(self):
+        return self.c_functions['mm_op_word'][1] + [0]
        
     @property
     def tables(self):
         return {
-            'LEGAL_P': UserFormat(self.legal_p_text, 's')
+            'LEGAL_P': UserFormat(self.legal_p_text, 's'),
+            'P_LIST': self.p_table(),
         }
        
     @property
@@ -136,7 +142,6 @@ class DispatchP:
             'DISPATCH_P': UserDirective(self.dispatch_p, '.')
         }
       
-    mockup_directives = {'DISPATCH_P': EmptyUserDirective}
 
 
 Tables = DispatchP
@@ -198,8 +203,8 @@ def make_one_legacy_script(out_dir, p):
 import warnings
 from mmgroup import mm_op
 
-warnings.warn("\nModule mmgroup.mm{0} is deprecated! " 
-    "\nReplace function 'op_<xxx>(*args)' in this module by function "
+warnings.warn("Module mmgroup.mm{0} is deprecated! " 
+    "Replace function 'op_<xxx>(*args)' in this module by function "
     "'mm_op_<xxx>({0}, *args)' in module mmgroup.mm_op!",
     UserWarning)
 
@@ -219,6 +224,6 @@ def make_all_legacy_scripts(out_dir):
         make_one_legacy_script(out_dir, p)
 
 
-
-#make_all_legacy_scripts('tmp')
+if __name__ == "__main__":
+    make_all_legacy_scripts(sys.argv[1])
 

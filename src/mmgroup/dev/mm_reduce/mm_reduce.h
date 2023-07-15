@@ -11,8 +11,8 @@
 #include "mmgroup_generators.h"
 #include "clifford12.h"   
 #include "mm_basics.h"   
-#include "mm_op3.h"   
-#include "mm_op15.h"   
+#include "mm_op_sub.h"   
+#include "mm_op_p.h"   
 #include "mm_reduce.h"   
 
 

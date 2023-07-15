@@ -18,7 +18,6 @@
 /// @cond DO_NOT_DOCUMENT 
 #include "mat24_functions.h"
 #include "clifford12.h"
-#include "mm_op3.h"   
 #include "mm_reduce.h"   
 /// @endcond
 

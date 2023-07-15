@@ -29,7 +29,7 @@ class Perm64_xy(MM_Op):
         p+1 must be a power of two. Calculations modulo p are described 
         in more detail in the base classes of this class.
         """
-        p = kwds.get('p', 3)
+        p = int(kwds.get('p', 3))
         super(Perm64_xy, self).__init__(p = p)
         self.t_hi = self.hi_table()
         self.t_lo = self.lo_table()

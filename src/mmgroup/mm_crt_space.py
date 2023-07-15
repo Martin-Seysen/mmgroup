@@ -35,11 +35,12 @@ from mmgroup.structures.mm_space_indices import numeric_index_to_sparse
 from mmgroup.structures.mm_space_indices import sparse_from_indices
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
-from mmgroup.mm_space  import MMSpace, MMVector, mm_ops
+from mmgroup.mm_space  import MMSpace, MMVector
 from mmgroup.mm_space  import standard_mm_group
 from mmgroup.structures.parse_atoms import AtomDict 
 from mmgroup.structures.parse_atoms import eval_atom_expression, ihex 
 
+from mmgroup.mm import mm_aux_mmv_size
 from mmgroup.mm import mm_vector, mm_aux_random_mmv
 from mmgroup.mm import mm_aux_zero_mmv, mm_aux_reduce_mmv
 from mmgroup.mm import mm_aux_mmv_to_sparse
@@ -51,14 +52,10 @@ from mmgroup.mm import mm_crt_norm_int32
 from mmgroup.generators import mm_group_n_clear
 from mmgroup.generators import mm_group_n_mul_word_scan
 from mmgroup.generators import mm_group_n_to_word
+from mmgroup.mm_op import mm_op_word
+from mmgroup.mm_op import mm_op_compare
 
 
-
-
-_mm_op, _mm_compare = {},  {}
-for p in (7, 31, 127, 255):
-    _mm_op[p] = mm_ops[p].op_word
-    _mm_compare[p] = mm_ops[p].op_compare
 
 PRECISION = math.log(7 * 31 * 127 * 255) / math.log(2.0) - 4
 
@@ -641,7 +638,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
                         (v1.shift, v1.v2, ((g_word[0] >> 28) & 7)))
                     raise ValueError(ERR_UNDERFLOW_G)
             for v in vectors:
-                v.ops.op_word(v.data, g_word, len(g_word), 1, buf)
+                mm_op_word(v.p, v.data, g_word, len(g_word), 1, buf)
         
 
     def imul_group_word(self, v1, g):
@@ -656,7 +653,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
         a = g.mmdata
         nn = np.zeros(5, dtype = np.uint32)
         nnw = np.zeros(5, dtype = np.uint32)
-        buf = np.zeros(v1.data[255].ops.MMV_INTS, dtype = np.uint64)
+        buf = np.zeros(mm_aux_mmv_size(255), dtype = np.uint64)
         while len(a):
             mm_group_n_clear(nn)
             i = mm_group_n_mul_word_scan(nn, a, len(a))
