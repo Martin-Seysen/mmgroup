@@ -54,6 +54,8 @@ from config import ROOT_DIR, SRC_DIR, PACKAGE_DIR, DEV_DIR
 from config import REAL_SRC_DIR
 from config import C_DIR, PXD_DIR
 
+from linuxpatch import copy_shared_libs
+
 
 ####################################################################
 # Print command line arguments (if desired)
@@ -869,7 +871,8 @@ if not on_readthedocs:
         "Patching and copying shared libraries",
         [sys.executable, "linuxpatch.py", "-v", "--dir",
         os.path.join(SRC_DIR, "mmgroup")
-        ] 
+        ],
+        [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
 

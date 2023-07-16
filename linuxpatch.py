@@ -3,6 +3,7 @@ import os
 import subprocess
 import re
 import argparse
+from shutil import copyfile
 
 
 class MyArgumentParser(argparse.ArgumentParser):
@@ -38,7 +39,9 @@ def generate_linuxpatch_parser():
 
 
 
-
+############################################################################
+# Patch posix shared libraries
+############################################################################
 
 
 def patch_shared(dir, verbose = 1):
@@ -85,6 +88,51 @@ def patch_shared_posix(dir, verbose = 1):
             print('failed')
             print(POSIX_MSG)
             raise
+
+
+#############################################################################
+# Copy shared libraries to build directory using BuildExtCmdObj object
+#############################################################################
+
+
+def has_extension(filename, extension_list):
+    return any(filename.endswith(ext) for ext in extension_list)
+
+
+def copy_shared_libs(build_ext_cmd = None, verbose = 1):
+    """This is necessary for setuptools/distutils"""
+
+    DIR = 'src/mmgroup'
+    ABSDIR = os.path.abspath(DIR)
+    if os.name in ["nt"]:
+        extensions =  [".pyd", ".dll"]
+    elif os.name in ["posix"]:
+        extensions = [".so"]
+    else:
+        W = "don't know how do process shared libraries in a %s system"
+        print("Warning:", W % os.name)  
+        extensions =  []
+
+    files = os.listdir(ABSDIR)
+    shared = [x for x in files if has_extension(x, extensions)] 
+
+    if (not build_ext_cmd) or build_ext_cmd.inplace:
+        return
+
+    build_lib = build_ext_cmd.build_lib
+    print("*** build_lib in setup.py =", build_lib)
+    OUTDIR = os.path.abspath(DIR.replace('src', build_lib))
+
+
+    for filename in shared:
+        path = os.path.abspath(os.path.join(ABSDIR, filename))
+        dest = os.path.join(OUTDIR, filename)
+        if verbose:
+            print("Copying %s to %s" % (path, dest))
+        copyfile(path, dest)
+
+
+
 
 
 if __name__ == "__main__":
