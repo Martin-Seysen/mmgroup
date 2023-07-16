@@ -15,7 +15,8 @@ import shutil
 
 import pytest
  
-from mmgroup.dev.config import INT_BITS
+
+from mmgroup.dev.mm_basics.mm_basics import INT_BITS
 from mmgroup.dev.hadamard.hadamard_codegen import HadamardMatrixCode
 from mmgroup.dev.hadamard.hadamard_t import HadamardOpT64
 from mmgroup.dev.hadamard.hadamard_t import HadamardOpT3

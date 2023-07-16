@@ -53,7 +53,6 @@ from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
 from config import ROOT_DIR, SRC_DIR, PACKAGE_DIR, DEV_DIR
 from config import REAL_SRC_DIR
 from config import C_DIR, PXD_DIR
-from config import PRIMES
 
 
 ####################################################################
@@ -92,24 +91,17 @@ def get_output_directory_from_args():
 
 
 STAGE = 1
-PRIMES = PRIMES[:]
 # Parse a global option '--stage=i" and set variable ``STAGE``
 # to the integer value i if such an option is present.
-# Parse a global option "--p=p1,p2,..." to a list PRIMES=[p1,p2,...]
 for i, s in enumerate(sys.argv[1:]):
     if s.startswith("--stage="):
         STAGE = int(s[8:])
-        sys.argv[i+1] = None
-    if s.startswith("--p="):
-        PRIMES = list(set(map(int, s[4:].split(","))) | set([3,15]))
-        PRIMES.sort()
         sys.argv[i+1] = None
     elif s[:1].isalpha:
         break
 while None in sys.argv: 
     sys.argv.remove(None)
 
-#print(STAGE, PRIMES, sys.argv); 
 
 ####################################################################
 # Delete files
@@ -246,18 +238,7 @@ def copy_pyx_sources():
         shutil.copy(filename, PXD_DIR)
 
 
-def copy_config_py():
-    from config import INT_BITS, PRIMES
-    s = """# This an automatically generated file, do not edit!
-#
-# It contains configuration data that are relevant at run time.
-INT_BITS = %d  # Bit length of an integer used in the rep of the Monster
-PRIMES = %s    # Supported moduli for the rep of the Monster
-"""
-    f = open(os.path.join(DEV_DIR, "config.py"), "wt")
-    f.write(s % (INT_BITS, PRIMES))
-    f.close()
-    
+
 
 general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "c_files"],
@@ -266,8 +247,8 @@ general_presteps = CustomBuildStep("Starting code generation",
   [force_delete],
   [copy_pyx_sources],
   [extend_path],
-  [copy_config_py],
 )
+
 if STAGE > 1:
     general_presteps = CustomBuildStep("Starting code generation",
        [copy_pyx_sources],

@@ -9,16 +9,6 @@ from collections import defaultdict
 # Set NATIVE = False for a generic version
 NATIVE = False
 
-###############################################################################
-# Bit length of an integer used in the representation of the monster 
-# This should be 32 for a 32-bit and 64 for a 64-bit system.
-INT_BITS = 64
-
-###############################################################################
-# Representations of the monster are built modulo the following numbers
-PRIMES = [3, 7, 15, 31, 127, 255]
-
-
 
 ###############################################################################
 # Extra compile arguments for .c files to be used in setup.py

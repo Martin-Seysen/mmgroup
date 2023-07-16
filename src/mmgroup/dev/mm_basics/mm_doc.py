@@ -57,11 +57,11 @@ Remarks
 The entries of a vector in internal representation are stored
 a one-dimensional array of integers of type ``uint_mmv_t``. Here
 type ``uint_mmv_t`` may be one of the C integer types
-``uint64_t`` or ``uint32_t``, depending on the value ``INT_BITS``
-in the configuration file ``config.py``. There ``INT_BITS`` must
-be ``64`` or ``32``. Several adjacent entries of a vector are
-stored as bit fields in a single integer of type ``uint_mmv_t``.
-Entries with a lower index are stored at bits with lower valence.
+``uint64_t`` or ``uint32_t``, depending on the value ``INT_BITS``.
+At present ``INT_BITS`` is set to the value 64. Several adjacent
+entries of a vector are stored as bit fields in a single integer
+of type ``uint_mmv_t``. Entries with a lower index are stored at
+bits with lower valence.
 
 
 The number of bits in a bit field is always a power of two. So e.g. 

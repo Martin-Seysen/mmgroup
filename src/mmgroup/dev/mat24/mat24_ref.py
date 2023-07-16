@@ -56,7 +56,6 @@ from mmgroup.dev.mat24.mat24_doc import __doc__ as Mat24__doc__
 
 from mmgroup.generate_c import UserDirective, UserFormat
 
-from mmgroup.dev import config
 
 
 TABLE_NAMES = None
@@ -129,7 +128,6 @@ class Mat24(Mat24Tables):
            "Mat24_autpl_qf_table"    : autpl_qf_table,
            "Mat24_autpl_qf_table64"  : autpl_qf_table64,
            "Mat24_doc"               : Mat24__doc__, 
-           "INT_BITS"                : config.INT_BITS,
            "Mat24_basis_weights_8"   : basis_weights_8,
     }
 

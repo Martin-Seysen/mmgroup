@@ -12,8 +12,6 @@ from mmgroup.generate_c import UserFormat, ZeroUserFormat
 from mmgroup.generate_c import iter_exports_from_header
 
 
-from config import C_DIR
-
 
 
 
@@ -48,8 +46,6 @@ def iter_find_export(c_dir):
                     raw_name = re.sub(r"mm_op([0-9]+)", "mm_op", name)
                     yield ret_type, raw_name, p
        
-for ret_type, name, p in iter_find_export(C_DIR):
-    print(ret_type, name, p)
 
 
 
@@ -65,7 +61,6 @@ def function_names(c_dir):
         d[key][1].sort()
     return d
 
-print(function_names(C_DIR))
 
 
 #####################################################################

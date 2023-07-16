@@ -6,18 +6,13 @@ several constants that describe the organization of vectors of integers
 modulo :math:`p` used in the representation modulo :math:`\rho_p`. Here
 several integers modulo  :math:`p` are stored in a single unsigned
 integer of type ``uint_mmv_t``. Type  ``uint_mmv_t`` is equal to the
-standard C integer type ``uint64_t`` on a 64-bit system. (For a 32-bit
-system that type may be changed to ``uint32_t`` by adjusting the
-variable ``INT_BITS`` in file ``config.py`` of the root directory).
+standard C integer type ``uint64_t`` on a 64-bit system. 
+
+For a 32-bit system that type may be changed to ``uint32_t`` by adjusting
+the variable ``INT_BITS`` in this module, but this has no longer been 
+tested for several years.
 
 
-    .. warning::
-       The 32-bit version of the project (i.e. setting ``INT_BITS = 32``) 
-       is deprecated and probably no longer functional!
-
-       If the C compiler used on a 32-bit platform supports
-       integers of type ``uint64_t`` then the project may be
-       compiled with setting ``INT_BITS = 64``.
 
     .. table:: Constants used for generating representations of the monster
       :widths: 25 75
@@ -29,8 +24,7 @@ variable ``INT_BITS`` in file ``config.py`` of the root directory).
                            This is the smallest power of two greater than or
                            equal to ``P_BITS``.
       ``INT_BITS``         Number of bits available in an unsigned integer of
-                           type ``uint_mmv_t``. Depending on the value
-                           ``INT_BITS`` in file ``config.py`` this is 32 or 64.
+                           type ``uint_mmv_t``. This is equal to 64.
       ``INT_FIELDS``       Number of integers modulo ``P`` that is stored in a
                            variable of type ``uint_mmv_t``. ``INT_FIELDS`` is 
                            a power of two and equal to ``INT_BITS/FIELD_BITS``.
@@ -113,11 +107,10 @@ from operator import __or__
 
 
 from mmgroup.bitfunctions import bitlen, hibit, lmap
-from mmgroup.dev import config
 from mmgroup.generate_c import format_item, c_snippet
 from mmgroup.generate_c import UserDirective, UserFormat
 
-INT_BITS = config.INT_BITS
+INT_BITS = 64  # Once and for all
 
 
 ########################################################################

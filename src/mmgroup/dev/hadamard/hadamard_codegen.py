@@ -20,11 +20,11 @@ a fixed (not necessarily prime) number p = 2**k-1, 2 <= k <= 8.
  
 Vector v is coded as an array of integers of type uint_mmv_t,
 where uint_mmv_t is uint32_t or uint64_t, depending on the
-settings in module config.py. Here an single integer of type 
-uint_mmv_t may store several components of vector v as described
-in module mm/mm_aux.py. Class HadamardMatrixCode is a subclass
-of class mm/mm_basics.MM_Op, which contains basic operations for
-dealing with such a vector.
+settings in module mmgroup.dev.mm_op.mm_op. Here an single integer
+of type uint_mmv_t may store several components of vector v as 
+described in module mm/mm_aux.py. Class HadamardMatrixCode is a 
+subclass of class mm/mm_basics.MM_Op, which contains basic 
+operations for dealing with such a vector.
 
 Our hope is that an optimzing C compiler completely performs the 
 relevant operations in registers, if sufficiently many of them 
@@ -54,7 +54,7 @@ import os
 from numbers import Integral
 
 from mmgroup.bitfunctions import bitparity, bitweight
-from mmgroup.dev.mm_op.mm_op import MM_Op, INT_BITS, c_hex
+from mmgroup.dev.mm_op.mm_op import MM_Op, c_hex
 
 ####################################################################
 FAST_MOD3 = True # Use new fast code for P = 3 when set
