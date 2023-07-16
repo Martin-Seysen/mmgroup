@@ -797,15 +797,12 @@ reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
 )
 
 
-shared_libs_stage2_augmented = shared_libs_stage2 + [
-    #   mm_op_shared[15].lib_name,  mm_op_shared[3].lib_name
-] if not on_readthedocs else []
 
 
 mm_reduce =  SharedExtension(
     name = "mmgroup.mmgroup_mm_reduce", 
     sources = mm_reduce_paths,   
-    libraries = shared_libs_stage2_augmented, 
+    libraries = shared_libs_stage2, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
@@ -814,7 +811,7 @@ mm_reduce =  SharedExtension(
 )
 
 
-shared_libs_stage3 = shared_libs_stage2_augmented + [
+shared_libs_stage3 = shared_libs_stage2 + [
        mm_reduce.lib_name
 ] if not on_readthedocs else []
 
@@ -868,10 +865,12 @@ def build_posix_wheel():
 
 
 if not on_readthedocs:
-    from linuxpatch import  patch_and_copy_shared
     patch_step =  CustomBuildStep(
         "Patching and copying shared libraries",
-        [patch_and_copy_shared, BuildExtCmdObj, 1])
+        [sys.executable, "linuxpatch.py", "-v", "--dir",
+        os.path.join(SRC_DIR, "mmgroup")
+        ] 
+    )
     ext_modules.append(patch_step)
 
 
