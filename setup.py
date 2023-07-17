@@ -866,12 +866,11 @@ def build_posix_wheel():
 
 
 
-if not on_readthedocs:
+if  not on_readthedocs:
+    MMGROUP_DIR = os.path.join(SRC_DIR, "mmgroup")
     patch_step =  CustomBuildStep(
         "Patching and copying shared libraries",
-        [sys.executable, "linuxpatch.py", "-v", "--dir",
-        os.path.join(SRC_DIR, "mmgroup")
-        ],
+       # [sys.executable, "linuxpatch.py", "-v", "--dir", MMGROUP_DIR],
         [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
