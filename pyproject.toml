@@ -8,7 +8,7 @@ requires = [
    "regex", 
    "pytest",
    "auditwheel; sys_platform == 'linux' or sys_platform == 'darwin' ", 
-   "patchelf; sys_platform == 'linux' or sys_platform == 'darwin' ", 
+  # "patchelf; sys_platform == 'linux' or sys_platform == 'darwin' ", 
 ]
 build-backend = "setuptools.build_meta"
 
