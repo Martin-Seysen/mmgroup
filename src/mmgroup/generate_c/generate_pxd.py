@@ -20,6 +20,7 @@ from mmgroup.generate_c.generate_code import set_real_path
 from mmgroup.generate_c.generate_code import load_tables
 from mmgroup.generate_c.generate_code import import_tables
 from mmgroup.generate_c.generate_code import StringOutputFile
+from mmgroup.generate_c.generate_code import ActivatedPythonPath
 from mmgroup.generate_c.make_pxd import pxd_from_h
 from mmgroup.generate_c.make_pxi import pxd_to_pxi
 
@@ -95,9 +96,15 @@ def generate_pxd_parser():
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding input .h files')
 
+
     parser.add_argument('--py-path', nargs = '*', action='extend',
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding python scripts')
+
+    parser.add_argument('--library-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding shared libraries '
+               'used by python scripts')
 
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
@@ -245,26 +252,13 @@ class pxdGenerator:
 
     def activate_py_path(self):
         finalize_parse_args(self.s)
-        s = self.s
-        if not s.py_path:
-            return
-        if self.old_path:
-            ERR = "Python path for class CodeGenerator object already active" 
-            raise ValueError(ERR)
-        self.old_path = [x for x in sys.path]
-        for i, path in enumerate(s.py_path):
-            sys.path.insert(i, path)
+        py_path, lib_path = self.s.py_path, self.s.library_path
+        self.activated_python_path = ActivatedPythonPath(py_path, lib_path)
 
     def deactivate_py_path(self):
-        finalize_parse_args(self.s)
-        if not self.s.py_path or not self.old_path:
-            return
-        if sys.path != self.s.py_path + self.old_path:
-            W = ("Could not deactivate python path for " 
-                 "class CodeGenerator object")
-            warnings.warn(W, UserWarning)
-        else:
-            del sys.path[:len(self.s.py_path)]
+        if self.activated_python_path is not None:
+            self.activated_python_path.close()
+            self.activated_python_path = None
 
     def import_tables(self):
         finalize_parse_args(self.s)

@@ -110,6 +110,11 @@ def generate_code_parser():
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding python scripts')
 
+    parser.add_argument('--library-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding shared libraries '
+               'used by python scripts')
+
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
         help = 'Set directory DIR for output files')
@@ -184,7 +189,102 @@ def set_out_header(instance):
     setattr(instance, 'out_header', real_header) 
      
 
- 
+
+
+class ActivatedPythonPath:
+    """Add a list of paths to the path where python finds scripts
+
+    The constructor of this class takes a list of names of paths
+    to be added to the python path given by ``sys.path``. Calling
+
+    ``pth = ActivatedPythonPath(paths, library_paths)``
+
+    adds the paths in the list ``path`` to ``sys.path``. In
+    Windows, Linux, or macOS we also make sure that DLLs or 
+    shared libraries an be found in any path given in the
+    list ``library_paths``.
+
+    You may call ``pth.close()`` for reversing this operation.
+    """
+    LD_LIB_PATH = {
+        'linux': 'LD_LIBRARY_PATH',
+        'darwin': 'DYLD_LIBRARY_PATH',
+    }
+    old_ld_library_path = None
+    dll_directories = []
+    old_py_path = []
+    new_py_path = []
+
+    def __init__(self, paths = None, library_paths = None):
+        def purge_paths(paths):
+            if not paths:
+                return []
+            if isinstance(paths, str):
+                return [paths]
+            for s in paths:
+                assert isinstance(s, str)
+            return paths
+        self.set_platform()
+        self.activate_py_path(purge_paths(paths))
+        self.set_dll_path(purge_paths(library_paths))
+
+    def set_platform(self):
+        if sys.platform.startswith('linux'):
+            self.platform = 'linux'
+        elif sys.platform.startswith('win'):
+            self.platform = 'win'
+        elif sys.platform.startswith('darwin'):
+            self.platform = 'darwin'
+        else:
+            W = ("Don't know how to deal with shared libraries " 
+                 "in the %s perating system")
+            warnings.warn(W % sys.platform, UserWarning)
+            self.platform = 'unknown'        
+
+    def set_dll_path(self, directories):
+        if self.platform in self.LD_LIB_PATH:
+            self.lib_path = self.LD_LIB_PATH[self.platform] 
+            # Get the old value of LD_LIBRARY_PATH (from chatgpt)
+            self.old_ld_library_path = os.getenv(self.lib_path)
+            # set list of old + new directories
+            dirs = [self.old_ld_library_path] + directories
+            # Extend LD_LIBRARY_PATH by appending the additional directories
+            os.environ[self.lib_path] = ':'.join(dirs)
+        elif self.platform == "win":
+            version = sys.version_info
+            self.dll_directories = []
+            for path in directories:
+                self.dll_directories.append(os.add_dll_directory(path))
+
+    def close_dll_path(self):
+        if self.old_ld_library_path is not None: 
+            os.environ[self.lib_path] = self.old_ld_library_path
+        for dll_directory in dll_directories:
+            dll_directory.close()
+
+    def activate_py_path(self, directories):
+        self.old_py_path = [x for x in sys.path]
+        self.new_py_path = []
+        for i, path in enumerate(directories):
+            sys.path.insert(i, path)
+            self.new_py_path.append(path)
+
+    def deactivate_py_path(self):
+        if len(self.new_py_path) == 0:
+            return
+        if sys.path != self.new_py_path + self.old_path:
+            W = ("Could not deactivate python path activated " 
+                 "by class ActivatedPythonPath object")
+            warnings.warn(W, UserWarning)
+        else:
+            del sys.path[:len(self.s.py_path)]
+
+    def close(self):
+        self.close_dll_path()
+        self.de_activate_py_path()
+
+
+
 
 
 
@@ -280,6 +380,7 @@ def finalize_parse_args(s):
         return
     set_real_pathlist(s, 'source_path')
     set_real_pathlist(s, 'py_path')
+    set_real_pathlist(s, 'library_path')
     set_real_path(s, 'out_dir')
     set_out_header(s)
     make_actions(s)
@@ -411,7 +512,11 @@ def open_for_write(dir, filename):
     """Open file ``dir\filename`` for output""" 
     if not filename:
         return NullOutputFile
-    return open(os.path.join(dir, filename), "wt")
+    pathname = os.path.join(dir, filename)
+    dir_name = os.path.split(pathname)[0]
+    if len(dir_name):
+        os.makedirs(dir_name, exist_ok=True)
+    return open(pathname, "wt")
 
 def write_warning_generated(stream):
     stream.write(
@@ -435,6 +540,7 @@ def check_arg_parser(parser_namespace):
 
 class CodeGenerator:
     """Yet to be documented"""
+    activated_python_path = None
     def __init__(self, args):
         if isinstance(args, str):
             parser = generate_code_parser()
@@ -459,26 +565,13 @@ class CodeGenerator:
 
     def activate_py_path(self):
         finalize_parse_args(self.s)
-        s = self.s
-        if not s.py_path:
-            return
-        if self.old_path:
-            ERR = "Python path for class CodeGenerator object already active" 
-            raise ValueError(ERR)
-        self.old_path = [x for x in sys.path]
-        for i, path in enumerate(s.py_path):
-            sys.path.insert(i, path)
+        py_path, lib_path = self.s.py_path, self.s.library_path
+        self.activated_python_path = ActivatedPythonPath(py_path, lib_path)
 
     def deactivate_py_path(self):
-        finalize_parse_args(self.s)
-        if not self.s.py_path or not self.old_path:
-            return
-        if sys.path != self.s.py_path + self.old_path:
-            W = ("Could not deactivate python path for " 
-                 "class CodeGenerator object")
-            warnings.warn(W, UserWarning)
-        else:
-            del sys.path[:len(self.s.py_path)]
+        if self.activated_python_path is not None:
+            self.activated_python_path.close()
+            self.activated_python_path = None
 
     def import_tables(self):
         finalize_parse_args(self.s)

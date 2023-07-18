@@ -277,6 +277,7 @@ DIR_DICT = {
    "C_DIR" : C_DIR,
    "DEV_DIR" : DEV_DIR,
    "PXD_DIR" : PXD_DIR,
+   "PACKAGE_DIR": PACKAGE_DIR
 }
 
 DIR_DICT["MOCKUP"] = "--mockup\n" if on_readthedocs else ""
@@ -298,22 +299,34 @@ def get_c_names(s):
     return(ls.stdout).split()
     
 
-MAT24_GENERATE = """
+GENERATE_START = """
  -v
  --py-path {SRC_DIR}
- --source-path {SRC_DIR}/mmgroup/dev/mat24
+ --library-path {PACKAGE_DIR}
  --out-dir {C_DIR}
+""".format(**DIR_DICT)
+
+
+GENERATE_START_PXD = """
+ -v
+ --py-path {SRC_DIR}
+ --library-path {PACKAGE_DIR}
+ --out-dir {PXD_DIR}
+ --h-path {C_DIR}
+""".format(**DIR_DICT)
+
+
+
+MAT24_GENERATE = GENERATE_START + """
+ --source-path {SRC_DIR}/mmgroup/dev/mat24
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
  --out-header mat24_functions.h
  --sources mat24_functions.ske mat24_random.ske
 """.format(**DIR_DICT)
 
-MAT24_GENERATE_PXD = """
- -v
+MAT24_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mat24
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --h-in  mat24_functions.h
  --pxd-in  mat24_functions.pxd
  --pxd-out mat24_functions.pxd
@@ -324,11 +337,8 @@ MAT24_GENERATE_PXD = """
 # print(get_c_names(MAT24_GENERATE))
 
 
-GENERATORS_GENERATE = """
- -v
- --py-path {SRC_DIR}
+GENERATORS_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/generators
- --out-dir {C_DIR}
  --tables mmgroup.dev.generators.gen_cocode_short
           mmgroup.dev.generators.gen_leech_reduce_n 
           mmgroup.dev.generators.gen_xi_ref
@@ -340,11 +350,8 @@ GENERATORS_GENERATE = """
 """.format(**DIR_DICT)
 
 
-GENERATORS_GENERATE_PXD = """
- -v
+GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/generators
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --h-in  mmgroup_generators.h
  --pxd-in  generators.pxd
  --pxd-out generators.pxd
@@ -361,11 +368,8 @@ mat24_c_files += get_c_names(GENERATORS_GENERATE)
 mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
 
 
-CLIFFORD12_GENERATE = """
- -v
- --py-path {SRC_DIR}
+CLIFFORD12_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
- --out-dir {C_DIR}
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
  --out-header clifford12.h
@@ -378,11 +382,8 @@ CLIFFORD12_GENERATE = """
 
 
 
-CLIFFORD12_GENERATE_PXD = """
- -v
+CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/clifford12
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --h-in  clifford12.h
  --pxd-in  clifford12.pxd
  --pxd-out clifford12.pxd
@@ -493,13 +494,9 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 ####################################################################
 
 
-MM_GENERATE = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
                {SRC_DIR}/mmgroup/dev/mm_op
- --out-dir {C_DIR}
  --tables mmgroup.dev.mm_basics.mm_basics
           mmgroup.dev.mm_basics.mm_tables_xi
           mmgroup.dev.mm_basics.mm_aux
@@ -513,13 +510,8 @@ MM_GENERATE = """
 
 
 
-MM_GENERATE_PXD = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --tables mmgroup.dev.mm_basics.mm_basics
  --h-in  mm_basics.h
  --pxd-in  mm_basics.pxd
@@ -535,12 +527,8 @@ mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
 
 
-MM_OP_SUB_GENERATE = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_OP_SUB_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
- --out-dir {C_DIR}
  --subst mm_op mm{{p}}_op
  --tables mmgroup.dev.mm_op.mm_op
           mmgroup.dev.mm_op.mm_op_xi
@@ -581,12 +569,8 @@ for p in [15]:
 
 
 
-MM_OP_P_GENERATE = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_OP_P_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
- --out-dir {C_DIR}
  --set C_DIR={C_DIR}
  --tables mmgroup.dev.mm_op.dispatch_p
  --sources mm_op_p.h
@@ -604,13 +588,8 @@ mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
 
 
-MM_OP_P_GENERATE_PXD = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --tables mmgroup.dev.mm_basics.mm_basics
  --h-in  mm_op_p.h
  --pxd-in  mm_op.pxd
