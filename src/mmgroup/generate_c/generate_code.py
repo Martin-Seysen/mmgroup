@@ -247,9 +247,10 @@ class ActivatedPythonPath:
             # Get the old value of LD_LIBRARY_PATH (from chatgpt)
             self.old_ld_library_path = os.getenv(self.lib_path)
             # set list of old + new directories
-            dirs = [self.old_ld_library_path] + directories
+            if self.old_ld_library_path:
+                 directories = [self.old_ld_library_path] + directories[:]
             # Extend LD_LIBRARY_PATH by appending the additional directories
-            os.environ[self.lib_path] = ':'.join(dirs)
+            os.environ[self.lib_path] = ':'.join(directories)
         elif self.platform == "win":
             version = sys.version_info
             self.dll_directories = []
