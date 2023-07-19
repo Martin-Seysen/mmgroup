@@ -5,8 +5,6 @@
 
 #include "mm_basics.h"
 
-// %%EXPORT_KWD MM_BASICS_API
-
 
 // %%GEN h
 /// @cond DO_NOT_DOCUMENT 

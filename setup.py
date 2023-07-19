@@ -371,6 +371,7 @@ mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
 
 
 CLIFFORD12_GENERATE = GENERATE_START + """
+ --dll CLIFFORD12
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
@@ -439,7 +440,7 @@ clifford12_shared = SharedExtension(
     libraries = shared_libs_before_stage1, 
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
-    define_macros = [ ("CLIFFORD12_DLL_EXPORTS", None)],
+    define_macros = [],
 )
 
 
@@ -497,6 +498,7 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 
 
 MM_GENERATE = GENERATE_START + """
+ --dll MM_BASICS
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
                {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics

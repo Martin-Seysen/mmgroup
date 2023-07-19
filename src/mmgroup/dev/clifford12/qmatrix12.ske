@@ -41,7 +41,6 @@
 /// @endcond  
 #include "clifford12.h"
 
-// %%EXPORT_KWD CLIFFORD12_API
 
 
 // %%GEN ch

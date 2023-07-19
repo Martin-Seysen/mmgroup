@@ -4,7 +4,6 @@
 #include "mm_basics.h"
 /// @endcond 
 
-// %%EXPORT_KWD MM_BASICS_API
 
 
 // %%GEN h

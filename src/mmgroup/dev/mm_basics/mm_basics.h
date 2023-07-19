@@ -28,53 +28,6 @@
 #include "mat24_functions.h"
 #include "mmgroup_generators.h"
 
-/// @cond DO_NOT_DOCUMENT 
-
-
-#define MM_BASICS_DLL  // We want a DLL!!
-
-
-// Generic helper definitions for shared library support
-#if defined _WIN32 || defined __CYGWIN__
-  #define MM_BASICS_HELPER_DLL_IMPORT __declspec(dllimport)
-  #define MM_BASICS_HELPER_DLL_EXPORT __declspec(dllexport)
-  #define MM_BASICS_HELPER_DLL_LOCAL
-#else
-  #if __GNUC__ >= 4
-    #define MM_BASICS_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
-    #define MM_BASICS_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-    #define MM_BASICS_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
-  #else
-    #define MM_BASICS_HELPER_DLL_IMPORT
-    #define MM_BASICS_HELPER_DLL_EXPORT
-    #define MM_BASICS_HELPER_DLL_LOCAL
-  #endif
-#endif
-
-
-// Now we use the generic helper definitions above to define MM_BASICS_API 
-// and MM_BASICS_LOCAL.
-// MM_BASICS_API is used for the public API symbols. It either DLL imports 
-// or DLL exports (or does nothing for static build). 
-// MM_BASICS_LOCAL is used for non-api symbols.
-
-#ifdef MM_BASICS_DLL // defined if MM_BASICS is compiled as a DLL
-  #ifdef MM_BASICS_DLL_EXPORTS // defined if we are building the MM_BASICS DLL 
-                           // (instead of using it)
-    #define MM_BASICS_API MM_BASICS_HELPER_DLL_EXPORT
-  #else
-    #define MM_BASICS_API MM_BASICS_HELPER_DLL_IMPORT
-  #endif // MM_BASICS_DLL_EXPORTS
-  #define MM_BASICS_LOCAL MM_BASICS_HELPER_DLL_LOCAL
-#else // MM_BASICS_DLL is not defined: this means MM_BASICS is a static lib.
-  #define MM_BASICS_API
-  #define MM_BASICS_LOCAL
-#endif // MM_BASICS_DLL
-
-
-
-
-/// @endcond  
 
 /** @var typedef uint%{INT_BITS}_t uint_mmv_t
     @brief Used for the representation of the monster group

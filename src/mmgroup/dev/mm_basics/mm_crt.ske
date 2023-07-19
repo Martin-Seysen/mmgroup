@@ -3,7 +3,6 @@
 #include "mat24_functions.h"
 #include "mm_basics.h"
 
-// %%EXPORT_KWD MM_BASICS_API
 
 // %%GEN ch
 #ifdef __cplusplus

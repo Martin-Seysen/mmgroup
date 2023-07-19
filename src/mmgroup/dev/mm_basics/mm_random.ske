@@ -47,7 +47,6 @@ shifted by 32 bytes in each step.
 
 #include "mm_basics.h"
 
-// %%EXPORT_KWD MM_BASICS_API
 
 // %%GEN ch
 #ifdef __cplusplus
