@@ -11,10 +11,10 @@ import pytest
 
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.mm_space import characteristics
-from mmgroup.mm import mm_aux_index_sparse_to_extern
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_mmv_extract_sparse
-from mmgroup.mm import mm_aux_mmv_size
+from mmgroup.mm_op import mm_aux_index_sparse_to_extern
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_mmv_extract_sparse
+from mmgroup.mm_op import mm_aux_mmv_size
 
 from mmgroup.tests.spaces.spaces import MMTestSpace
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmSpace

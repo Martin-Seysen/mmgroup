@@ -40,15 +40,15 @@ from mmgroup.mm_space  import standard_mm_group
 from mmgroup.structures.parse_atoms import AtomDict 
 from mmgroup.structures.parse_atoms import eval_atom_expression, ihex 
 
-from mmgroup.mm import mm_aux_mmv_size
-from mmgroup.mm import mm_vector, mm_aux_random_mmv
-from mmgroup.mm import mm_aux_zero_mmv, mm_aux_reduce_mmv
-from mmgroup.mm import mm_aux_mmv_to_sparse
-from mmgroup.mm import mm_aux_mmv_set_sparse
-from mmgroup.mm import mm_crt_combine, mm_crt_check_v2
-from mmgroup.mm import mm_crt_combine_bytes
-from mmgroup.mm import mm_crt_check_g
-from mmgroup.mm import mm_crt_norm_int32
+from mmgroup.mm_op import mm_aux_mmv_size
+from mmgroup.mm_op import mm_vector, mm_aux_random_mmv
+from mmgroup.mm_op import mm_aux_zero_mmv, mm_aux_reduce_mmv
+from mmgroup.mm_op import mm_aux_mmv_to_sparse
+from mmgroup.mm_op import mm_aux_mmv_set_sparse
+from mmgroup.mm_op import mm_crt_combine, mm_crt_check_v2
+from mmgroup.mm_op import mm_crt_combine_bytes
+from mmgroup.mm_op import mm_crt_check_g
+from mmgroup.mm_op import mm_crt_norm_int32
 from mmgroup.generators import mm_group_n_clear
 from mmgroup.generators import mm_group_n_mul_word_scan
 from mmgroup.generators import mm_group_n_to_word

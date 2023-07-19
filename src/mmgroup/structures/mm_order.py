@@ -4,9 +4,9 @@ import numpy as np
 from mmgroup import structures
 from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mat24 import ploop_theta
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm import mm_vector
-from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_vector
+from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
 from mmgroup.structures.mm0_group import MM0Group, MM0
 from mmgroup.mm_group import MMGroup, MM
 from mmgroup.mm_space import MMSpace, MMV

@@ -14,7 +14,7 @@ from numbers import Integral
 #from mmgroup.mm import mm_aux_index_sparse_to_leech2
 from mmgroup import MM0
 from mmgroup.mm_space import MMSpace, MMV
-from mmgroup.mm import INT_BITS, PROTECT_OVERFLOW
+from mmgroup.mm_op import INT_BITS, PROTECT_OVERFLOW
 
 from mmgroup.generators import gen_leech2to3_short
 from mmgroup.clifford12 import xsp2co1_elem_to_qs, xsp2co1_qs_to_elem_i 

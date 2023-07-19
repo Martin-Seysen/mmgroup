@@ -10,10 +10,10 @@ import numpy as np
 import pytest
 
 from mmgroup import MM0, MMSpace, Cocode, MMV
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_index_leech2_to_sparse
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm import mm_aux_index_sparse_to_leech
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech
 V = MMV(15)
 
 

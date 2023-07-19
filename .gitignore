@@ -22,6 +22,7 @@ make_all_doc.bat
 applications/Hurwitz/*.txt
 applications/Hurwitz/*.bat
 
+src/mmgroup/mm.py
 src/mmgroup/mm3.py
 src/mmgroup/mm7.py
 src/mmgroup/mm15.py

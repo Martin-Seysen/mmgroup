@@ -23,9 +23,6 @@ extern "C" {
  section *Description of the mmgroup.mm extension*.
 */
 
-/// @cond DO_NOT_DOCUMENT 
-
-
 
 
 // %%INCLUDE_HEADERS

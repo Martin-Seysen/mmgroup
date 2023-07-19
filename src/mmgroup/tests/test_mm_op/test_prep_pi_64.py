@@ -7,7 +7,7 @@ from random import randint
 
 import pytest
 
-from mmgroup.mm import mm_sub_test_prep_pi_64
+from mmgroup.mm_op import mm_sub_test_prep_pi_64
 from mmgroup import mat24
 
 

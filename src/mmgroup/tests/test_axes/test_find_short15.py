@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 from mmgroup import MM0, MMSpace, MMV
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm import mm_aux_index_leech2_to_sparse
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 
 LEECH_SHORT = np.zeros(98280, dtype = np.int32)

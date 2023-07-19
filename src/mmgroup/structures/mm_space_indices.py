@@ -53,7 +53,7 @@ from mmgroup.structures.suboctad import Octad
 ERR_MM_LIN = "Linear access to MM vectors not supported"
 
 try:
-    from mmgroup.mm import mm_aux_array_extern_to_sparse
+    from mmgroup.mm_op import mm_aux_array_extern_to_sparse
 except (ImportError, ModuleNotFoundError):
     warnings.warn(ERR_MM_LIN, UserWarning)   
 
@@ -61,7 +61,7 @@ except (ImportError, ModuleNotFoundError):
 ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
 
 try:
-    from mmgroup.mm import mm_aux_mul_sparse
+    from mmgroup.mm_op import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
     warnings.warn(ERR_MM_SPARSE, UserWarning)   
 

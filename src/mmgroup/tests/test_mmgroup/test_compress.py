@@ -25,7 +25,7 @@ from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup import mat24
 from mmgroup.mat24 import MAT24_ORDER
-from mmgroup import mm
+from mmgroup import mm_op
 from mmgroup.bitfunctions import bitparity
 
 
@@ -81,9 +81,9 @@ def expand_23bit_type4(i):
         
 def expand_17bit_type2(i):
     i &= 0x1ffff
-    i = mm.mm_aux_index_extern_to_sparse(i);
+    i = mm_op.mm_aux_index_extern_to_sparse(i);
     assert i > 0, ERR_DECODE_TYPE2 % hex(i)
-    i = mm.mm_aux_index_sparse_to_leech2(i);
+    i = mm_op.mm_aux_index_sparse_to_leech2(i);
     assert i > 0, ERR_DECODE_TYPE2 % hex(i)
     return i;
 

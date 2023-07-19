@@ -14,7 +14,7 @@ from collections import defaultdict
 
 from mmgroup import MM0, MMV
 from mmgroup.mm_space import MMSpace
-from mmgroup.mm import INT_BITS
+from mmgroup.mm_op import INT_BITS
 from mmgroup.tests.chisquare import chisquare
 
 ################################################################

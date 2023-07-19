@@ -210,7 +210,7 @@ from mmgroup.generators import mm_group_invert_word
 from mmgroup.generators import mm_group_mul_words
 from mmgroup.clifford12 import xsp2co1_traces_fast      
 from mmgroup.clifford12 import chk_qstate12
-from mmgroup.mm import mm_vector
+from mmgroup.mm_op import mm_vector
 
 
 

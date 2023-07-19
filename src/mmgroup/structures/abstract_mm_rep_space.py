@@ -194,7 +194,7 @@ ERR_MM_CONV = "Sparse representation of MM vectors not fully supported"
 
 
 try:
-    from mmgroup.mm import mm_aux_mul_sparse
+    from mmgroup.mm_op import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
     warnings.warn(ERR_MM_CONV, UserWarning)   
 
@@ -214,7 +214,7 @@ def complete_import():
         complete_import()
     """
     global import_pending, XLeech2, mm_aux_index_leech2_to_sparse
-    from mmgroup.mm import mm_aux_index_leech2_to_sparse 
+    from mmgroup.mm_op import mm_aux_index_leech2_to_sparse 
     from mmgroup.structures.xleech2 import XLeech2
     import_pending = False
 

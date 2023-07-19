@@ -7,7 +7,7 @@ from random import randint
 
 import pytest
 
-from mmgroup.mm import mm_sub_test_prep_xy
+from mmgroup.mm_op import mm_sub_test_prep_xy
 from mmgroup import mat24 as m24
 
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmV

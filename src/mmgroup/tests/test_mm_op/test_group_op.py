@@ -13,9 +13,9 @@ import pytest
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 from mmgroup.structures.abstract_mm_rep_space import sparse_subspace
 from mmgroup.mm_space import characteristics
-from mmgroup.mm import mm_aux_index_sparse_to_extern
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_mmv_extract_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_extern
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_op_word_tag_A
 
 from mmgroup.tests.spaces.spaces import MMTestSpace

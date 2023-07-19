@@ -498,7 +498,7 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 
 
 MM_GENERATE = GENERATE_START + """
- --dll MM_BASICS
+ --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
                {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics
@@ -525,8 +525,8 @@ MM_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
-mm_c_files = get_c_names(MM_GENERATE)
-mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
+mm_op_c_files = get_c_names(MM_GENERATE)
+#mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
 
 
@@ -585,7 +585,7 @@ MM_OP_P_GENERATE = GENERATE_START + """
 """.format(**DIR_DICT)
 
 
-mm_op_c_files = get_c_names(MM_OP_SUB_GENERATE)
+mm_op_c_files += get_c_names(MM_OP_SUB_GENERATE)
 mm_op_c_files += get_c_names(MM_OP_P_GENERATE)
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
@@ -620,6 +620,7 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
 )
 
 
+"""
 mm_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_basics", 
     sources = mm_c_paths,
@@ -630,13 +631,13 @@ mm_shared =  SharedExtension(
     implib_dir = C_DIR,
     define_macros = [],
 )
-
+"""
 
 
 mm_op_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_op", 
     sources = mm_op_c_paths,
-    libraries = shared_libs_stage1 + [mm_shared.lib_name], 
+    libraries = shared_libs_stage1,    # + [mm_shared.lib_name], 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
@@ -646,12 +647,13 @@ mm_op_shared =  SharedExtension(
 
 
 shared_libs_stage2 = shared_libs_stage1 + [
-       mm_shared.lib_name, mm_op_shared.lib_name
+     #  mm_shared.lib_name, mm_op_shared.lib_name
+     mm_op_shared.lib_name
 ] if not on_readthedocs else []
 
 
 
-
+"""
 mm_extension = Extension("mmgroup.mm",
     sources=[
             os.path.join(PXD_DIR, "mm_basics.pyx"),
@@ -667,7 +669,7 @@ mm_extension = Extension("mmgroup.mm",
     extra_link_args = EXTRA_LINK_ARGS, 
             # for openmp add "-fopenmp" 
 )
-
+"""
 
 
 
@@ -707,9 +709,9 @@ ext_modules = [
     generators_extension,
     clifford12_extension,
     mm_presteps,
-    mm_shared, 
+  #  mm_shared, 
     mm_op_shared, 
-    mm_extension, 
+  #  mm_extension, 
     mm_op_extension, 
     mm_poststeps, 
 ]

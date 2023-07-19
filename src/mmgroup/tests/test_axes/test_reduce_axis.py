@@ -17,8 +17,8 @@ from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
-from mmgroup.mm import mm_vector
-from mmgroup.mm import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
+from mmgroup.mm_op import mm_vector
+from mmgroup.mm_op import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
 from mmgroup.mm_op import mm_op_word
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 from mmgroup.mm_op import mm_op_t_A 

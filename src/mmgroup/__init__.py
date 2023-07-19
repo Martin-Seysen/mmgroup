@@ -68,10 +68,10 @@ del _m
 
 
 try:
-    import mmgroup.mm
-    from mmgroup.mm import INT_BITS
+    import mmgroup.mm_op
+    from mmgroup.mm_op import INT_BITS
 except:
-    w = "Extension mmgroup.mm not found, package not functional!"
+    w = "Extension mmgroup.mm_op not found, package not functional!"
     warnings.warn(w, UserWarning)
     
 

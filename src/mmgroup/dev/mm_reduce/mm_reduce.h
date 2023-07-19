@@ -1,5 +1,4 @@
 
-// %%EXPORT_KWD MM_REDUCE_API
 
 
 // %%GEN h

@@ -35,8 +35,8 @@ from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_subtype
 from mmgroup.generators import gen_leech2_type2
 
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
  
 
 from mmgroup.tests.test_gen_xi.test_gen_type4 import str_v3

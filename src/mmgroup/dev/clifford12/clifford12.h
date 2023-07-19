@@ -1,4 +1,3 @@
-// %%EXPORT_KWD CLIFFORD12_API
 
 // %%GEN h
 

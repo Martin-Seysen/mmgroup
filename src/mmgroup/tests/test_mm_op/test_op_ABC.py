@@ -12,7 +12,7 @@ from functools import partial
 
 from mmgroup import MM0, MMV, AutPL
 from mmgroup.mm_space import characteristics 
-from mmgroup.mm import mm_group_prepare_op_ABC
+from mmgroup.mm_op import mm_group_prepare_op_ABC
 from mmgroup.mm_op import mm_op_word_ABC
 
 

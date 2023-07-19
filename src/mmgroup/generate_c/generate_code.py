@@ -693,39 +693,4 @@ class CodeGenerator:
            
 
 
-def example():
-    SAMPLE_ARGS = """ 
-    --tables tt
-    --source-header generate_code.py
-    --source-path foo bar .
-    --param p q 
-    --tables t1 t2  
-    --out-dir blah
-    --set p 3
-    --subst code code{p}
-    --sources generate_code.py
-    --set p 5
-    --sources generate_code.py
-    --out-dir source
-    --out-header hhh
-    --subst code code_again{p}
-    --set p 3
-    --sources generate_code.py
-    --source-header generate_code.py
-    --py-path shit
-    """
-    parser = generate_code_parser()
-    s = parser.parse_args(SAMPLE_ARGS.split())
-    print(s)
-    print("\n")
-    cg = CodeGenerator(s)
-    cg.activate_py_path()
-    sys.path.append("wtf")
-    cg.deactivate_py_path()
-    print("")
-    parser.print_help()
-
-
-if __name__ == "__main__":
-    example()
 

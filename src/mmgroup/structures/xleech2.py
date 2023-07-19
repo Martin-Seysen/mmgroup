@@ -70,9 +70,9 @@ import numpy as np
 
 
 
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm import mm_aux_index_extern_to_sparse
-from mmgroup.mm import mm_aux_index_leech2_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup

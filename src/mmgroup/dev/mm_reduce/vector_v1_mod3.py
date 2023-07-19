@@ -57,11 +57,11 @@ def import_all():
     from mmgroup.clifford12 import xsp2co1_elem_read_mod3
     from mmgroup.clifford12 import uint64_parity
     from mmgroup.generators import gen_leech2_reduce_type4
-    from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
-    from mmgroup.mm import mm_aux_index_sparse_to_leech2
-    from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
-    from mmgroup.mm import mm_aux_mmv_extract_x_signs
-    from mmgroup.mm import mm_aux_mmv_add_sparse
+    from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
+    from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+    from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
+    from mmgroup.mm_op import mm_aux_mmv_extract_x_signs
+    from mmgroup.mm_op import mm_aux_mmv_add_sparse
     from mmgroup.mm_op import mm_op_eval_A_rank_mod3
     from mmgroup.mm_op import mm_op_watermark_A
     from mmgroup.mm_op import mm_op_watermark_A_perm_num

@@ -35,8 +35,8 @@ from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
 from mmgroup.clifford12 import leech2matrix_add_eqn
-from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup.mm import mm_aux_mmv_extract_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
 
 

@@ -14,10 +14,10 @@ from mmgroup.clifford12 import leech2matrix_solve_eqn
 
 from mmgroup.structures.mm_order import get_order_vector
 from mmgroup import MM0Group, MM0, MM
-from mmgroup.mm import mm_vector
+from mmgroup.mm_op import mm_vector
 
-from mmgroup.mm import mm_aux_mmv_extract_sparse_signs
-from mmgroup.mm import mm_vector
+from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
+from mmgroup.mm_op import mm_vector
 
 from mmgroup.mm_op import mm_op_copy
 from mmgroup.mm_op import mm_op_compare

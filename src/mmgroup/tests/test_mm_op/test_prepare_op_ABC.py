@@ -11,7 +11,7 @@ from mmgroup import MM0, Xsp2_Co1, AutPL, MM
 import pytest
 
 
-from mmgroup.mm import mm_group_prepare_op_ABC
+from mmgroup.mm_op import mm_group_prepare_op_ABC
 from mmgroup.generators import mm_group_n_clear
 from mmgroup.generators import mm_group_n_mul_element
 from mmgroup.generators import mm_group_n_mul_word_scan

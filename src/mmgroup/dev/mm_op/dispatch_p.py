@@ -143,7 +143,7 @@ Tables = DispatchP
 
 
 #################################################################
-# Creating legacy python modules
+# Creating legacy python modules mm_<p>.py
 #################################################################
 
 
@@ -214,9 +214,73 @@ warnings.warn("Module mmgroup.mm{0} is deprecated! "
     f.close() 
 
      
-def make_all_legacy_scripts(out_dir):
+def make_legacy_scripts_mod_p(out_dir):
     for p in ALL_PRIMES:
         make_one_legacy_script(out_dir, p)
+
+
+#################################################################
+# Creating legacy python module mm.py
+#################################################################
+
+
+MM_VARS = [
+ 'PROTECT_OVERFLOW', 'INT_BITS',
+ 'mm_aux_read_mmv1', 'mm_aux_read_direct_mmv1',
+ 'mm_aux_write_mmv1', 'mm_aux_read_mmv24', 'mm_aux_write_mmv24',
+ 'mm_aux_get_mmv1', 'mm_aux_put_mmv1', 'mm_aux_mmv_size',
+ 'mm_aux_zero_mmv', 'mm_aux_get_mmv', 'mm_aux_put_mmv',
+ 'mm_aux_random_mmv', 'mm_aux_reduce_mmv', 'mm_aux_reduce_mmv_fields',
+ 'mm_aux_check_mmv', 'mm_aux_small24_expand', 'mm_aux_small24_compress',
+ 'mm_aux_mmv_to_bytes', 'mm_aux_bytes_to_mmv', 'mm_aux_mmv_to_sparse', 
+ 'mm_aux_mmv_extract_sparse', 'mm_aux_mmv_get_sparse',
+ 'mm_aux_mmv_add_sparse', 'mm_aux_mmv_set_sparse',
+ 'mm_aux_mmv_extract_sparse_signs', 'mm_aux_mmv_extract_x_signs',
+ 'mm_aux_mul_sparse', 'mm_aux_index_extern_to_sparse',
+ 'mm_aux_array_extern_to_sparse', 'mm_aux_index_sparse_to_extern',
+ 'mm_aux_index_sparse_to_leech', 'mm_aux_index_sparse_to_leech2',
+ 'mm_aux_index_leech2_to_sparse', 'mm_aux_index_intern_to_sparse',
+ 'mm_aux_get_mmv_leech2', 'mm_aux_hash', 'mm_sub_test_prep_pi_64',
+ 'mm_sub_test_prep_xy', 'mm_group_prepare_op_ABC',
+ 'mm_sub_get_table_xi', 'mm_crt_combine', 'mm_crt_combine_bytes',
+ 'mm_crt_check_v2', 'mm_crt_check_g', 'mm_crt_norm_int32_32',
+ 'mm_crt_norm_int32', 'mm_crt_v2_int32_32', 'mm_crt_v2_int32',
+ 'mmv_array', 'mm_vector'
+]
+
+
+def make_mm_legacy_script(out_dir):
+    f_name = os.path.join(out_dir, "mm.py")
+    print(f_name)
+    f = open(f_name, "wt")
+    s = '''"""This module is deprecated; do not use in new projects!"""
+
+import warnings
+from mmgroup import mm_op
+
+warnings.warn("Module mmgroup.mm is deprecated! " 
+    "Replace a function in this module by the "
+    "corresponding function in module mmgroup.mm_op!",
+    UserWarning)
+
+'''
+    f.write(s)
+    for name in MM_VARS:
+        f.write("{0} = mm_op.{0}\n".format(name))
+    f.close() 
+
+
+#################################################################
+# Main program
+#################################################################
+
+
+
+def make_all_legacy_scripts(out_dir):
+    make_mm_legacy_script(out_dir)
+    make_legacy_scripts_mod_p(out_dir)
+
+
 
 
 if __name__ == "__main__":
