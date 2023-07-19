@@ -51,7 +51,6 @@ round function of the MD5 hash algorithm.
 
 #include "mmgroup_generators.h"
 
-// %%EXPORT_KWD  MAT24_API
 
 // %%GEN ch
 #ifdef __cplusplus

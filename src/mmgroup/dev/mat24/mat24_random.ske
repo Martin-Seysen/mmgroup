@@ -16,7 +16,6 @@
 #include <string.h>
 #include "mat24_functions.h"
 
-// %%EXPORT_KWD MAT24_API
 
 
 // %%GEN ch

@@ -20,7 +20,6 @@
 #include "mm_op_sub.h"   
 #include "clifford12.h"
  
-// %%EXPORT_KWD MM_OP_API
   
 
 

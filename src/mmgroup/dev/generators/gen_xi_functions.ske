@@ -19,7 +19,6 @@ of the generator \f$\xi\f$ on the group \f$Q_{x0}\f$.
 #include "mmgroup_generators.h"
 
 
-// %%EXPORT_KWD MAT24_API
 
 
 

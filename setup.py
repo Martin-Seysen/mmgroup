@@ -532,6 +532,7 @@ mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
 
 MM_OP_SUB_GENERATE = GENERATE_START + """
+ --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --subst mm_op mm{{p}}_op
  --tables mmgroup.dev.mm_op.mm_op
@@ -574,6 +575,7 @@ for p in [15]:
 
 
 MM_OP_P_GENERATE = GENERATE_START + """
+ --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --set C_DIR={C_DIR}
  --tables mmgroup.dev.mm_op.dispatch_p
@@ -626,7 +628,7 @@ mm_shared =  SharedExtension(
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
-    define_macros = [ ("MM_BASICS_DLL_EXPORTS", None)],
+    define_macros = [],
 )
 
 
@@ -639,7 +641,7 @@ mm_op_shared =  SharedExtension(
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
-    define_macros = [ ("MM_OP_DLL_EXPORTS", None)],
+    define_macros = [],
 )
 
 
@@ -729,6 +731,7 @@ if STAGE >= 3:
 
 
 MM_REDUCE_GENERATE = GENERATE_START + """
+ --dll MM_REDUCE
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --set p=15
  --tables mmgroup.dev.mm_op.mm_op
@@ -783,7 +786,7 @@ mm_reduce =  SharedExtension(
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
-    define_macros = [ ("MM_REDUCE_DLL_EXPORTS", None)],
+    define_macros = [],
 )
 
 

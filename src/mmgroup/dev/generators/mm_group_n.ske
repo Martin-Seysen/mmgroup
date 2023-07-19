@@ -15,8 +15,6 @@ the document *The C interface of the mmgroup project*.
 /// @endcond 
 
 
-// %%EXPORT_KWD MAT24_API
-
 /// @cond DO_NOT_DOCUMENT 
 
 #define I_t 0
