@@ -230,7 +230,7 @@ class TableGenerator(object):
         self.C_table_export = False         # export C name of table pending if set
         self.exported_table_names.clear() 
         self.export_args = ""
-        self.export_kwd = ""
+        #self.export_kwd = ""
         self.current_line = ""
         self.gen_c = True
         self.gen_h = False

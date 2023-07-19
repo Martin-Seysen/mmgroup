@@ -10,6 +10,7 @@
 
 /// @cond DO_NOT_DOCUMENT 
 
+/**************************************************************
 #define MAT24_DLL  // We want a DLL!!
 
 // Generic helper definitions for shared library support
@@ -47,6 +48,7 @@
   #define MAT24_API
   #define MAT24_LOCAL
 #endif // MAT24_DLL
+****************************************************************/
 
 /// @endcond
 

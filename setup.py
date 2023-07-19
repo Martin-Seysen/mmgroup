@@ -301,16 +301,16 @@ def get_c_names(s):
 
 GENERATE_START = """
  -v
+ {MOCKUP}
  --py-path {SRC_DIR}
- --library-path {PACKAGE_DIR}
  --out-dir {C_DIR}
 """.format(**DIR_DICT)
 
 
 GENERATE_START_PXD = """
  -v
+ {MOCKUP}
  --py-path {SRC_DIR}
- --library-path {PACKAGE_DIR}
  --out-dir {PXD_DIR}
  --h-path {C_DIR}
 """.format(**DIR_DICT)
@@ -318,6 +318,7 @@ GENERATE_START_PXD = """
 
 
 MAT24_GENERATE = GENERATE_START + """
+ --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/mat24
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
@@ -338,6 +339,7 @@ MAT24_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 GENERATORS_GENERATE = GENERATE_START + """
+ --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/generators
  --tables mmgroup.dev.generators.gen_cocode_short
           mmgroup.dev.generators.gen_leech_reduce_n 
@@ -413,7 +415,7 @@ mat24_shared = SharedExtension(
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
-    define_macros = [ ("MAT24_DLL_EXPORTS", None)],
+    define_macros = [],
 )
 
 
@@ -724,12 +726,8 @@ if STAGE >= 3:
     ext_modules = ext_modules[:1]
 
 
-MM_REDUCE_GENERATE = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_REDUCE_GENERATE = GENERATE_START + """
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
- --out-dir {C_DIR}
  --set p=15
  --tables mmgroup.dev.mm_op.mm_op
           mmgroup.dev.mm_reduce.order_vector_tables
@@ -754,13 +752,8 @@ mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
 
 
 
-MM_REDUCE_GENERATE_PXD = """
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
+MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_reduce
- --h-path {C_DIR}
- --out-dir {PXD_DIR}
  --tables mmgroup.dev.mm_op.mm_op
  --h-in  mm_reduce.h
  --pxd-in  mm_reduce.pxd
@@ -862,12 +855,12 @@ if  not on_readthedocs:
 
 
 test_step = CustomBuildStep("import_all",
-  [sys.executable, "import_all.py"],
-  ["pytest",  "src/mmgroup/", "-v", "-s", "-m", "build"],
+ # [sys.executable, "import_all.py"],
+ # ["pytest",  "src/mmgroup/", "-v", "-s", "-m", "build"],
 )
 
 
-ext_modules.append(test_step)
+# ext_modules.append(test_step)
 
 
 

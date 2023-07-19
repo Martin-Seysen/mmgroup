@@ -110,11 +110,6 @@ def generate_code_parser():
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding python scripts')
 
-    parser.add_argument('--library-path', nargs = '*', action='extend',
-        metavar = 'PATHS', default = [],
-        help = 'Set list of PATHS for finding shared libraries '
-               'used by python scripts')
-
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
         help = 'Set directory DIR for output files')
@@ -123,7 +118,15 @@ def generate_code_parser():
         default = None,
         action = 'store',
         metavar = 'EXPORT_KWD',
-        help = 'Set export keyword for code generator to EXPORT_KWD')
+        help = 'Set export keyword for code generator to EXPORT_KWD, deprecated!')
+
+
+    parser.add_argument('--dll', 
+        default = None,
+        action = 'store',
+        metavar = 'DLL_NAME',
+        help = 'Generate code for exporting C functions to a DLL '
+               'or to a shared library with name DLL_NAME')
 
     parser.add_argument('--mockup', 
         default = False,
@@ -197,25 +200,16 @@ class ActivatedPythonPath:
     The constructor of this class takes a list of names of paths
     to be added to the python path given by ``sys.path``. Calling
 
-    ``pth = ActivatedPythonPath(paths, library_paths)``
+    ``pth = ActivatedPythonPath(paths)``
 
-    adds the paths in the list ``path`` to ``sys.path``. In
-    Windows, Linux, or macOS we also make sure that DLLs or 
-    shared libraries an be found in any path given in the
-    list ``library_paths``.
+    adds the paths in the list ``path`` to ``sys.path``.
 
     You may call ``pth.close()`` for reversing this operation.
     """
-    LD_LIB_PATH = {
-        'linux': 'LD_LIBRARY_PATH',
-        'darwin': 'DYLD_LIBRARY_PATH',
-    }
-    old_ld_library_path = None
-    dll_directories = []
     old_py_path = []
     new_py_path = []
 
-    def __init__(self, paths = None, library_paths = None):
+    def __init__(self, paths = None):
         def purge_paths(paths):
             if not paths:
                 return []
@@ -224,44 +218,8 @@ class ActivatedPythonPath:
             for s in paths:
                 assert isinstance(s, str)
             return paths
-        self.set_platform()
         self.activate_py_path(purge_paths(paths))
-        self.set_dll_path(purge_paths(library_paths))
 
-    def set_platform(self):
-        if sys.platform.startswith('linux'):
-            self.platform = 'linux'
-        elif sys.platform.startswith('win'):
-            self.platform = 'win'
-        elif sys.platform.startswith('darwin'):
-            self.platform = 'darwin'
-        else:
-            W = ("Don't know how to deal with shared libraries " 
-                 "in the %s perating system")
-            warnings.warn(W % sys.platform, UserWarning)
-            self.platform = 'unknown'        
-
-    def set_dll_path(self, directories):
-        if self.platform in self.LD_LIB_PATH:
-            self.lib_path = self.LD_LIB_PATH[self.platform] 
-            # Get the old value of LD_LIBRARY_PATH (from chatgpt)
-            self.old_ld_library_path = os.getenv(self.lib_path)
-            # set list of old + new directories
-            if self.old_ld_library_path:
-                 directories = [self.old_ld_library_path] + directories[:]
-            # Extend LD_LIBRARY_PATH by appending the additional directories
-            os.environ[self.lib_path] = ':'.join(directories)
-        elif self.platform == "win":
-            version = sys.version_info
-            self.dll_directories = []
-            for path in directories:
-                self.dll_directories.append(os.add_dll_directory(path))
-
-    def close_dll_path(self):
-        if self.old_ld_library_path is not None: 
-            os.environ[self.lib_path] = self.old_ld_library_path
-        for dll_directory in dll_directories:
-            dll_directory.close()
 
     def activate_py_path(self, directories):
         self.old_py_path = [x for x in sys.path]
@@ -281,7 +239,6 @@ class ActivatedPythonPath:
             del sys.path[:len(self.s.py_path)]
 
     def close(self):
-        self.close_dll_path()
         self.de_activate_py_path()
 
 
@@ -381,7 +338,6 @@ def finalize_parse_args(s):
         return
     set_real_pathlist(s, 'source_path')
     set_real_pathlist(s, 'py_path')
-    set_real_pathlist(s, 'library_path')
     set_real_path(s, 'out_dir')
     set_out_header(s)
     make_actions(s)
@@ -539,6 +495,54 @@ def check_arg_parser(parser_namespace):
         ERR = "Error in argument parser for code generation" 
         raise ValueError(ERR)
 
+
+############################################################################
+# Dealing with DLLs
+############################################################################
+
+DLL_HEADER_PREFIX = """
+
+/// @cond DO_NOT_DOCUMENT 
+//  Definitions for using this header in a a DLL (or a shared library)
+
+// Generic helper definitions for DLL (or shared library) support
+#if defined _WIN32 || defined __CYGWIN__
+  #define {0}_DLL_IMPORT __declspec(dllimport)
+  #define {0}_DLL_EXPORT __declspec(dllexport)
+#else
+  #define {0}_DLL_IMPORT
+  #define {0}_DLL_EXPORT
+#endif
+
+// Now we use the generic helper definitions above to define {0}_API 
+// {0}_API is used for the public API symbols. It either DLL imports 
+// or DLL exports 
+
+#ifdef {0}_DLL_EXPORTS // defined if we are building the {0} DLL 
+  #define {0}_API {0}_DLL_EXPORT
+#else                  // not defined if we are using the {0} DLL 
+  #define {0}_API  {0}_DLL_IMPORT
+#endif // {0}_DLL_EXPORTS
+
+/// @endcond
+"""
+
+
+
+DLL_C_FILE_PREFIX = """
+/// @cond DO_NOT_DOCUMENT 
+#define {0}_DLL_EXPORTS 
+/// @endcond
+
+"""
+
+EXPORT_KWD = "{0}_API" 
+
+############################################################################
+# class CodeGenerator
+############################################################################
+
+
 class CodeGenerator:
     """Yet to be documented"""
     activated_python_path = None
@@ -566,8 +570,7 @@ class CodeGenerator:
 
     def activate_py_path(self):
         finalize_parse_args(self.s)
-        py_path, lib_path = self.s.py_path, self.s.library_path
-        self.activated_python_path = ActivatedPythonPath(py_path, lib_path)
+        self.activated_python_path = ActivatedPythonPath(self.s.py_path)
 
     def deactivate_py_path(self):
         if self.activated_python_path is not None:
@@ -591,6 +594,15 @@ class CodeGenerator:
         tables = self.s.table_classes
         load_tables(table_generator, tables, params)
 
+    def set_dll_prefixes(self, table_generator):
+        if self.s.dll and not self.s.mockup:
+            self.c_prefix = DLL_C_FILE_PREFIX.format(self.s.dll)
+            self.h_prefix = DLL_HEADER_PREFIX.format(self.s.dll)
+            table_generator.export_kwd = EXPORT_KWD.format(self.s.dll)
+        else:
+            self.c_prefix = ""
+            self.h_prefix = ""
+
     def generate(self):
         BIGINT = 0x7fffffff
         finalize_parse_args(self.s)
@@ -598,8 +610,10 @@ class CodeGenerator:
         s = self.s
         out_dir = s.out_dir
         tg = TableGenerator()
+        self.set_dll_prefixes(tg)
         if s.export_kwd:
-            tg.export_kwd = s.export_kwd
+            #tg.export_kwd = s.export_kwd
+            pass
         if s.verbose:
             print("Generating header %s" % s.out_header)
         for param, c_files in s.c_files.items():
@@ -613,7 +627,10 @@ class CodeGenerator:
                         print("Generating file %s" % dest_name)
                     write_warning_generated(dest)
                     out_h = out_headers[n] = StringOutputFile()
+                    out_h.write(self.h_prefix)
+                    self.h_prefix = ""
                     out_h.write("// %%%%FROM %s\n" % dest_name)
+                    dest.write(self.c_prefix)
                     tg.generate(src, dest, out_h)
                     out_h.write("\n")
                     dest.close()
@@ -667,8 +684,8 @@ class CodeGenerator:
                 print(" ", table)
 
         attribs = [
-            'source_header', 'out_header', 'py_path',
-            'out_dir', 'export_kwd', 'verbose'
+            'source_header', 'out_header', 'py_path', 'library_path',
+            'out_dir', 'export_kwd', 'verbose', 'dll'
         ]
         for attr in attribs:
             print(attr + ':', getattr(s, attr, '<undefined>'))

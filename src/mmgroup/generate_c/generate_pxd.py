@@ -101,11 +101,6 @@ def generate_pxd_parser():
         metavar = 'PATHS', default = [],
         help = 'Set list of PATHS for finding python scripts')
 
-    parser.add_argument('--library-path', nargs = '*', action='extend',
-        metavar = 'PATHS', default = [],
-        help = 'Set list of PATHS for finding shared libraries '
-               'used by python scripts')
-
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,
         help = 'Set directory DIR for output file') 
@@ -252,8 +247,7 @@ class pxdGenerator:
 
     def activate_py_path(self):
         finalize_parse_args(self.s)
-        py_path, lib_path = self.s.py_path, self.s.library_path
-        self.activated_python_path = ActivatedPythonPath(py_path, lib_path)
+        self.activated_python_path = ActivatedPythonPath(self.s.py_path)
 
     def deactivate_py_path(self):
         if self.activated_python_path is not None:
