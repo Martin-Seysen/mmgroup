@@ -4,7 +4,7 @@ from __future__ import  unicode_literals
 import pytest
 
 from mmgroup.dev.mm_basics.mm_basics import MM_Basics
-from mmgroup import mm
+from mmgroup import mm_op
 from mmgroup.mm_space import characteristics
 from mmgroup.mm_space import MMSpace, MMVector
 from random import randint
@@ -15,10 +15,10 @@ from random import randint
 def test_mm_aux_mmv_size():
     for i in range(2,9):
         p = 2**i - 1
-        res = mm.mm_aux_mmv_size(p)
+        res = mm_op.mm_aux_mmv_size(p)
         ref = MM_Basics.sizes(p)["MMV_INTS"]
         assert res == ref, (res, ref, p)
-    print("Test of function mm.mm_aux_mmv_size() passed")
+    print("Test of function mm_op.mm_aux_mmv_size() passed")
 
 
 
@@ -58,8 +58,8 @@ def hash_testdata(ntests=3):
             for j in range(100):
                 x = randint(1, p-1)
                 index = randint(0, MMV_INTS)
-                mm.mm_aux_put_mmv1(p, x, d1, index)
-                mm.mm_aux_put_mmv1(p, x, d2, index)
+                mm_op.mm_aux_put_mmv1(p, x, d1, index)
+                mm_op.mm_aux_put_mmv1(p, x, d2, index)
             yield p, v1, v2
 
 
