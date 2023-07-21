@@ -14,9 +14,9 @@ Unless otherwise stated, each documented C function is wrapped by a
 Cython function with the same name and signature. 
 
 Note that almost all parameters of such a C function are declared as
-(signed or unsigend) integers, or as pointers to such integers. A
-``numpy`` array of appropriate ``dtype`` may be passed as an argument
-to a parameter delared as a pointer to an integer.
+(signed or unsigend) integers, or as pointers to such integers. In
+python, a ``numpy`` array of appropriate ``dtype`` may be passed as
+an argument to a parameter delared as a pointer to an integer.
   
 
 
@@ -189,8 +189,8 @@ C interface for file gen_random.c
 
 
 
-Description of the  ``clifford12`` extension
-==================================================
+Description of the  ``mmgroup.clifford12`` extension
+=====================================================
 
 Quadratic state vectors
 -------------------------
@@ -465,8 +465,8 @@ are considerably more complicated.
 
 
 
-Description of the ``mm_reduce`` extension
-==========================================
+Description of the ``mmgroup.mm_reduce`` extension
+======================================================
 
 The functions in this module implement the fast reduction of an
 element of the monster group described in :cite:`Seysen22`. There
@@ -554,7 +554,6 @@ table:
     ====================== =======================================
     ``mm_reduce``          ``mmgroup_reduce``
     ``mm_op``              ``mmgroup_mm_op``
-    ``mm``                 ``mmgroup_mm_basics``
     ``clifford12``         ``mmgroup_clifford12``
     ``generators, mat24``  ``mmgroup_mat24``
     ====================== =======================================
@@ -565,18 +564,17 @@ corresponds to the Linux shared library ``libmmgroup_mm_op.so.``
 
 
 
-The Cython extension ``mm_<p>`` depends on other Cython extensions
-as shown in the following paragraph:
+Cython extensions depend on each other as shown in the following
+paragraph:
 
 
 .. code-block:: none
     
     mm_reduce
        + mm_op
-          + mm
-             + clifford12
-                + generators
-                    + mat24
+          + clifford12
+             + generators
+                 + mat24
  
 
 

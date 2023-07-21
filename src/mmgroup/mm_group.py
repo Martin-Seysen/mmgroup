@@ -527,7 +527,7 @@ class MM(MM0):
         The numbering used here is not contiguous and not portable
         between difffernt versions of the ``mmgroup`` package!
 
-        For writing a  element to a file, you should convert
+        For writing a element to a file, you should convert
         it to a string instead!
         """
         if GtWord is None:
@@ -536,9 +536,42 @@ class MM(MM0):
         w = GtWord(self.mmdata)
         return w.as_int()
 
-    def __hash__(self):
-        self.reduce()
-        return hash(tuple(self.mmdata))
+
+    def reduce(self):
+        """Reduce a group element
+
+        This method reduces the group element in place. The reduced
+        form of an element of the Monster is unique; i.e. it depends
+        on the value of the element only, and not on its
+        representation as a word of generators.
+
+        The following methods of this class reduce an instance of this
+        class: ``as_int()``. Converting an instance of this class to a
+        string, by using method ``__str__()`` or the  built-in function
+        ``str()``, also performs a reduction prior to the conversion.
+
+        Other methods designed for internal purposes, e.g.
+        ``as_tuples()`` or ``mmdata``, may or may not reduce an
+        instance of this class. The result of a group operation may
+        or may not be reduced.
+
+        Note that the reduction of an element of the Monster is a
+        time-comsuming operation, so that we'd better do it in a lazy
+        way.
+
+        Finding an *optimal* or *shortest* representation of an
+        element as a word of generators is beyond our current
+        capabilties. Also, the reduction process depends on many
+        internal details. Thus a future version of this package may
+        return a different *reduced* form of an element of the Monster.
+        """
+        return self.group.reduce(self)
+
+
+
+    #def __hash__(self):
+    #    self.reduce()
+    #    return hash(tuple(self.mmdata))
        
 
 
