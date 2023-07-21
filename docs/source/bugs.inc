@@ -92,10 +92,30 @@ are given e.g. in modules ``mmgroup.mm_group`` and
 ``mmgroup.structures.autpl``. 
   
 One way to debug such a problem on the local host (and not on the
-*readthedocs* server) is as follows. We temporarily remove the shared
-library containing the implementation of the ``mat24`` extension. Then
-we try to import the ``mmgroup`` module and also other modules that
-could not be imported by the process running on the *readthedocs* 
-server. If we are lucky then the errors occuring on the *readthedocs* 
-server will now also occur on the local host.
+*readthedocs* server) is as follows. Use ``pip uninstall mmgroup``
+(or similar) to uninstall the ``mmgroup package`` Then execute the 
+following commands in your shell: 
 
+ .. code-block:: none
+
+     python cleanup.py -a
+     git checkout .
+     set readthedocs=True
+     python setup.py  build_ext --inplace     
+     cd docs
+     sphinx-build -M html source build  -E -a
+     sphinx-build -M latexpdf source build  -E -a
+     cd ..
+     # Here you should inspect the output of the sphinx-build
+     # commands for debugging
+     unset readthedocs  # in Windows use 'set readthedocs=' instead  
+     # Reverse the effect of  'set readthedocs=True' 
+     
+If you are lucky then the errors occuring on the *readthedocs* 
+server will now also occur on your local host.
+
+.. warning:: 
+
+    After typing that sequence into your shell, your environment
+    is probably corrupted; and you should proceed as in subsection
+    **Cleaning up a corrupted local git repository**.

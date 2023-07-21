@@ -315,7 +315,9 @@ int32_t mm_op_eval_X_find_abs(uint32_t p, uint_mmv_t *v, uint32_t *p_out, uint32
   Entry ``p_out[i]`` contains the number if entries of the monomial 
   part of ``v`` with absolute value ``i`` for ``0 <= i <= p/2 + 1``. 
 
-  The function retuzrns 0.
+  Here modulus ``p`` must be %{LEGAL_P:mm_op_eval_X_count_abs}.
+
+  The function returns 0.
 */
 // %%EXPORT px
 int32_t mm_op_eval_X_count_abs(uint32_t p, uint_mmv_t *v, uint32_t *p_out)

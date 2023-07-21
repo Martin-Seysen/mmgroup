@@ -10,6 +10,14 @@ Introduction
 
 This *document* describes the functionality of the C modules in this
 project. For most of these C modules there is also a python extension.
+Unless otherwise stated, each documented C function is wrapped by a
+Cython function with the same name and signature. 
+
+Note that almost all parameters of such a C function are declared as
+(signed or unsigend) integers, or as pointers to such integers. A
+``numpy`` array of appropriate ``dtype`` may be passed as an argument
+to a parameter delared as a pointer to an integer.
+  
 
 
 .. highlight:: none
@@ -181,8 +189,8 @@ C interface for file gen_random.c
 
 
 
-Description of the ``qstate12`` and ``clifford12`` extensions
-=============================================================
+Description of the  ``clifford12`` extension
+==================================================
 
 Quadratic state vectors
 -------------------------
@@ -293,34 +301,30 @@ C functions in ``xsp2co1_map.c``
 
 
 
-Description of the ``mmgroup.mm`` extension
-===========================================
+Description of the ``mmgroup.mm_op`` extension
+===============================================
 
 
-Module ``mmgroup.mm`` provides basic functions for the representations
-of the monster modulo small numbers ``p``.  For each supported
-modulus ``p`` there is also a specific module ``mmgroup.mm_op`` 
-containing highly optimized C programs dealing with the
-representations modulo ``p``.
 
-Module ``mmgroup.mm`` is implemented as an extension with ``Cython``.
-The main source file for that extension is ``mm_basics.pyx`` in
-directory ``src.mmgroup.dev.mm_basics``. Most functions exported by
-this extension are in one-to-one correspondence with certain C
-functions exported from several automatically generated .c files. 
+Module ``mmgroup.mm_op`` is implemented as an extension 
+in the ``mmgroup`` package implemented in ``Cython``.
+The main source file for that extension is ``mm_op.pyx`` in
+directory ``src.mmgroup.dev.mm_op``. Each documented ``.c``
+in this module function has been wrapped by a ``Cython``
+function with the same name and the same signature.
+
+Module ``mmgroup.mm_op`` implements the 196884-dimensional rational
+representation :math:`\rho_p` of the monster group modulo several
+fixed odd moduli :math:`p = 2^k-1`.
+
+
+
+
 
 Representation of a vector in :math:`\rho_p`
 --------------------------------------------
 
 .. automodule:: mmgroup.dev.mm_basics.mm_doc
-
-Basic table-providing classes for module ``mmgroup.mm``
--------------------------------------------------------
-
-.. automodule:: mmgroup.dev.mm_basics.mm_basics
-
-.. autoclass:: mmgroup.dev.mm_basics.mm_basics.MM_Const
-   :members: snippet
 
 
 
@@ -329,6 +333,13 @@ Header file mm_basics.h
 
 .. doxygenfile::  mm_basics.h
  
+
+Header file mm_op_p.h
+--------------------------------
+
+.. doxygenfile::  mm_op_p.h
+
+
 
 C interface for file mm_aux.c
 ---------------------------------------
@@ -341,83 +352,6 @@ C interface for file mm_tables.c
 
 .. doxygenfile:: mm_tables.c
 
-C interface for file mm_random.c
----------------------------------------
-
-Module ``mm_random.c`` is deprecated an no longer in use.
-
-
-Description of the ``mmgroup.mm_op`` extensions
-===============================================
-
-
-Module ``mmgroup.mm_op`` implements the 196884-dimensional rational
-representation :math:`\rho_p` of the monster group modulo several
-fixed odd moduli :math:`p = 2^k-1`.
-
-Module ``mmgroup.mm_op`` is implemented as an extension with 
-``Cython``. The main source file for the ``mmgroup.mm_op`` extension
-is the automatically generated file ``mm_op.pyx`` in directory 
-``src.mmgroup.dev.pxd_files``. Each function exported by such an 
-extension corresponds to a certain C function  exported from an 
-automatically generated .c file.
-
-For reasons of efficiency a dedicated set of C files is generated for 
-each modulus ``p``. Corresponding C files for different moduli are 
-generated from the same source file with extension ``.ske``. 
-
-
-Internal operation
-------------------
-
-The user of this module should call functions from files
-``mm_op_p_vector.c`` and ``mm_op_p_axis.c`` only. Each function
-in this module takes the modulus ``p`` as its first argument.
-
-For reasons of efficiency a dedicated set of C files is generated for 
-each modulus ``p``. Corresponding C files for different moduli are 
-generated from the same source file with extension ``.ske``. 
-The C functions in module ``mm_op_p_vector.c`` and ``mm_op_p_axis.c``
-contain automatically-generated ``case`` statements that call the
-working functions for the appropriate modulus ``p``.
-
-E.g. the function ``mm_op_pi`` in module ``mm_op_p_vector.c` calls
-working functions ``mm3_op_pi``, ``mm7_op_pi``, etc.  in 
-case ``p = 3``, ``p = 7``, etc. for doing the actual work in the 
-representation of the Monster modulo ``p``. Such working functions
-are implemented in different C files, with one C file for each 
-modulus. So functions ``mm3_op_pi`` and ``mm7_op_pi`` are implemented
-in the C files ``mm3_op_pi.c`` and `mm7_op_pi.c``, respecively.
-Here such a C file may implement several working functions for the
-same modules ``p``.
-
-All functions exported from file ``mm_op_p_vector.c`` support the
-same set of moduli ``p``. Functions exported from file
-``mm_op_p_axis.c`` deal with 2A axes; the usually support moduli
-3 and 15 (or just one of these two values) only
-
-The process of switching to the appropriate function for a given
-modulus is completely invisible for Python and Cython. In older
-versions of the *mmgroup* package this was not the case. In the
-main directory of the package there are some legacy python
-modules in the main emulating the old behaviour. 
-
-
-
-
-The basic table-providing class for ``mmgroup.mm_op``
------------------------------------------------------
-
-.. automodule:: mmgroup.dev.mm_op.mm_op
-
-.. autoclass:: mmgroup.dev.mm_op.mm_op.MM_Op
-
-
-
-Header file mm_op_p.h
---------------------------------
-
-.. doxygenfile::  mm_op_p.h
 
 
 C interface for file mm_op_p_vector.c
@@ -431,6 +365,103 @@ C interface for file mm_op_p_axis.c
 
 .. doxygenfile:: mm_op_p_axis.c
 
+
+
+
+Internal operation
+------------------
+
+The source code for the functions in modules ``mm_aux.c``
+and ``mm_tables.c`` is located in subdirectory 
+``src/mmgroup/dev/mm_basics``. The code generation process
+genrates ``.c`` files from the source files with extension
+``.ske`` in that subdirectory. Protoypes for the functions in 
+these ``.c`` files can be found in file  ``mm_basics.h``.
+
+The source code for the functions in modules ``mm_op_p_vector.c``
+and ``mm_op_p_axis.c`` is located in subdirectory 
+``src/mmgroup/dev/mm_op``. The code generation process
+genrates ``.c`` files from the source files with extension
+``.ske`` in that subdirectory. Protoypes for the functions in 
+these files can be found in file  ``mm_o_p.h``.
+
+The code gerneration process for C files derived from the source
+files in the ``src/mmgroup/dev/mm_basics`` directory is
+straightforward. In the remainder of this subsection we describe
+the code gerneration process for files derived form sources
+in the ``src/mmgroup/dev/mm_op`` directory.
+
+For reasons of efficiency a dedicated set of ``.c`` files is 
+generated from the ``.ske```files in the ``src/mmgroup/dev/mm_op``
+directory for each modulus ``p`` supported. Here corresponding
+``.c`` files for different moduli are generated from the same 
+source file with extension ``.ske``. The ``.c`` functions in 
+modulea ``mm_op_p_vector.c`` and ``mm_op_p_axis.c``contain 
+automatically-generated ``case`` statements that call the working
+functions for the appropriate modulus ``p``. Any of these ``.c``
+functions takes the modulus ``p`` as its first argument, and 
+dispatches the work to the subfunction dedicated to the 
+appropriate modulus ``p``.
+
+E.g. the function ``mm_op_pi`` in module ``mm_op_p_vector.c` calls
+working functions ``mm3_op_pi``, ``mm7_op_pi``, etc.  in 
+case ``p = 3``, ``p = 7``, etc., for doing the actual work in the 
+representation of the Monster modulo ``p``. Such working functions
+are implemented in different ``.c`` files, with one ``.c`` file for
+each modulus. So the functions ``mm3_op_pi`` and ``mm7_op_pi`` are
+implemented in the ``.c`` files ``mm3_op_pi.c`` and `mm7_op_pi.c``,
+respectively. Here such a ``.c`` file may implement several working
+functions for the same modules ``p``.
+
+All functions exported from file ``mm_op_p_vector.c`` support the
+same set of moduli ``p``. Functions exported from file
+``mm_op_p_axis.c`` deal with 2A axes; the usually support moduli
+3 and 15 (or just one of these two values) only; see documentation
+of the corresponding functions.
+
+So the process of switching to the appropriate function for a given
+modulus is completely invisible for Python and Cython.
+
+
+
+Basic table-providing classes for module ``mmgroup.mm_op``
+-----------------------------------------------------------
+
+.. automodule:: mmgroup.dev.mm_basics.mm_basics
+
+.. autoclass:: mmgroup.dev.mm_basics.mm_basics.MM_Const
+   :members: snippet
+
+
+
+.. automodule:: mmgroup.dev.mm_op.mm_op
+
+.. autoclass:: mmgroup.dev.mm_op.mm_op.MM_Op
+
+
+Deprecated stuff
+----------------
+
+In older versions of the ``mmgroup`` project the functionality of 
+the ``mm_op`` extension was spread over several ``Cython`` extensions
+with names ``mm``, ``mm3``, ``mm7``, ``mm15``, etc. There are now
+python modules emulating the functionality of these deprecated
+extensions, which appear to work in Windows and Linux, but
+possibly not in macOS. 
+
+Note that the modules ``mmgroup.mm``, ``mmgroup.mm3``, ``mmgroup.mm7``,
+etc., which emulate the old functionality, are also deprecated. So the
+user is **strongly** discouraged from using these deprecated modules. 
+He or she should use the ``mm_op`` extension instead!
+
+In older versions some python functions had to select the C function
+for the requested modulus, which has caused rather nasty problemes
+in some cases.
+
+In the ``mm_op`` extension each documented ``.c`` function has
+been wrapped by a ``Cython`` function with the same name and
+the same signature. In the depreceated modules naming conventions
+are considerably more complicated.
 
 
 
