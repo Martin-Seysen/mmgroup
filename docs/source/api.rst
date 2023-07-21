@@ -205,8 +205,8 @@ Python classes implementing the Monster group
 
 
 
-Function dealing with elements of the Monster group
-----------------------------------------------------
+Functions dealing with elements of the Monster group
+------------------------------------------------------
 
 .. autofunction:: mmgroup.MM_from_int
 
