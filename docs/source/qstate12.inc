@@ -208,7 +208,7 @@ Let :math:`v \in \ker A \setminus  \{0\}` and :math:`W`
 be a subspace of :math:`\mathbb{F}_2^m` with   
 :math:`\left<v \right> \oplus W = \mathbb{F}_2^m`. Then for 
 :math:`w \in W` we have 
-:math:`q(w+v) = q(v) \cdot (-1)^{h(w)} \cdot r`, 
+:math:`q(w+v) = q(w) \cdot (-1)^{h(w)} \cdot r`, 
 with :math:`h` a linear form on :math:`W` given by
 :math:`h(w) = \beta(q)(v, w)` and :math:`r = q(v)/q(0)`
 a fourth root of unity. Since :math:`v \in \ker A`, we have
@@ -247,6 +247,12 @@ If :math:`r = \pm 1, h \neq 0`, then the function
 
 q.e.d.
 
+
+One of the basic challenges in this section is the effective
+computation of an injective representation of a quadratic mapping
+from an arbitrary representation of that mapping. The proof of
+Lemma 2 suggests that this job can be done by using standard
+methods of linear algebra, mainly over :math:`\mathbb{F}_2`.
 
 
 The complex Clifford group :math:`\mathcal{X}_n` is a group which 
