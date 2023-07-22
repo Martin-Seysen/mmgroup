@@ -363,15 +363,8 @@ GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
-
-
-mat24_c_files = get_c_names(MAT24_GENERATE)
-mat24_c_files += get_c_names(GENERATORS_GENERATE)
-mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
-
-
 CLIFFORD12_GENERATE = GENERATE_START + """
- --dll CLIFFORD12
+ --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
@@ -394,9 +387,6 @@ CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
 """.format(**DIR_DICT)
 
 
-clifford12_c_files = get_c_names(CLIFFORD12_GENERATE)
-clifford12_c_paths = [os.path.join(C_DIR, s) for s in clifford12_c_files]
-
 
 mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
   [sys.executable, "generate_code.py"] + MAT24_GENERATE.split(),
@@ -406,6 +396,13 @@ mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
   [sys.executable, "generate_code.py"] + CLIFFORD12_GENERATE.split(),
   [sys.executable, "generate_pxd.py"] + CLIFFORD12_GENERATE_PXD.split(),
 )
+
+
+mat24_c_files = get_c_names(MAT24_GENERATE)
+mat24_c_files += get_c_names(GENERATORS_GENERATE)
+mat24_c_files += get_c_names(CLIFFORD12_GENERATE)
+mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
+
 
 
 mat24_shared = SharedExtension(
@@ -420,34 +417,9 @@ mat24_shared = SharedExtension(
 )
 
 
-shared_libs_before_stage1 = [
-   mat24_shared.lib_name
+shared_libs_stage1 =  [
+    mat24_shared.lib_name
 ] if not on_readthedocs else []
-# Attribute ``lib_name`` of a instance of clsss ``SharedExtension``
-# contains name of the library (or of the import library in Windows) 
-# that has to be linked to a program using the shared library.
-
-
-
-
-
-
-clifford12_shared = SharedExtension(
-    name = "mmgroup.mmgroup_clifford12", 
-    sources = clifford12_c_paths,
-    include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, C_DIR],
-    libraries = shared_libs_before_stage1, 
-    extra_compile_args = EXTRA_COMPILE_ARGS,
-    implib_dir = C_DIR,
-    define_macros = [],
-)
-
-
-shared_libs_stage1 = shared_libs_before_stage1 + [
-       clifford12_shared.lib_name
-] if not on_readthedocs else []
-
 
 
 
@@ -493,7 +465,7 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 
 
 ####################################################################
-# Building new extenstions at stage 2
+# Building the extensions at stage 2
 ####################################################################
 
 
@@ -704,7 +676,7 @@ ext_modules = [
     general_presteps,
     mat24_presteps,
     mat24_shared,
-    clifford12_shared, 
+ #   clifford12_shared, 
     mat24_extension,
     generators_extension,
     clifford12_extension,
@@ -724,7 +696,7 @@ if STAGE >= 2:
 
 
 ####################################################################
-# Building the extenstions at stage 3
+# Building the extensions at stage 3
 ####################################################################
 
 

@@ -93,9 +93,18 @@
 
 /// @cond DO_NOT_DOCUMENT 
 
-// In the following function we make an extra axis check if CHECK_AXIS is #defined
+// In the following functions we make an extra axis check if CHECK_AXIS
+// is #defined. Defining CHECK_AXIS is mainly for debugging.
 // #define CHECK_AXIS
 
+// We always use the order vector mod 15 as defined in [Sey22] if
+// ORDER_VECTOR_MOD15 is defined. Otherwise we use an order vector
+// mod 3, which also can find the word corresponding to an element 
+// of G_x0. Dealing with an order vector mod 3 is faster. But dealing
+// with an order vector mod 15 gives a proof that an element of the 
+// Monster is in G_x0, independent of the operation of that element 
+// on 2A axes.
+#define ORDER_VECTOR_MOD15
 
 #define MAX_SHORT_ARRAY 892
 
@@ -1402,7 +1411,7 @@ int32_t mm_reduce_vector_incomplete(uint32_t *r)
 
 
 /////////////////////////////////////////////////////////////////////////
-// Work buffer tyoe for main reduction function
+// Work buffer type for main reduction function
 /////////////////////////////////////////////////////////////////////////
 
 
@@ -1591,7 +1600,7 @@ int32_t reduce_M(
         if (res >= 0) return res;
     }
 
-  #ifdef CHECK_AXIS
+  #if defined(ORDER_VECTOR_MOD15) || defined(CHECK_AXIS)
     mm_order_load_vector(v); 
     if ((res = mm_op15_word(v, a, n, 1, work)) < 0) return res;
     res = mm_reduce_vector_v1(v, r, work);   
