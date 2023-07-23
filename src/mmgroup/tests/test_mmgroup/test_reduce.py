@@ -15,7 +15,8 @@ import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
 from mmgroup.mm_reduce import mm_reduce_M
-from mmgroup import MM0, MM, MMV,  Xsp2_Co1
+from mmgroup.mm_reduce import mm_reduce_set_order_vector_mod15
+from mmgroup import MM0, MM, MMV, Xsp2_Co1
 from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
 
 #####################################################################################
@@ -232,13 +233,14 @@ class MM_Pattern():
         return ", ".join(freq)  
 
 
-def benchmark_mul(ncases = 20, verbose = 0):
+def benchmark_mul(ncases = 20, verbose = 0, order_vector_mod15 = 0):
     indices, glist = get_mul_samples()
     index_pairs = [sample(indices, 2) for i in range(ncases)]
     glist[0] *= glist[1]
     glist[0].reduce()
     stat = MM_Pattern()
     t = []
+    mm_reduce_set_order_vector_mod15(order_vector_mod15)
     for i, j in index_pairs:
         t_start = time.process_time()
         glist[i] *= glist[j]
@@ -248,6 +250,7 @@ def benchmark_mul(ncases = 20, verbose = 0):
         stat.add_pattern(pattern)
         if verbose:
             print(pattern)
+    mm_reduce_set_order_vector_mod15(0)
     n = len(index_pairs) + 0.0
     mu = sum(t) / n
     var = sum([(x - mu)**2 for x in t]) / (n-1)
@@ -256,10 +259,11 @@ def benchmark_mul(ncases = 20, verbose = 0):
 
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
-def test_benchmark_mul(ncases = 100, verbose = 0):
+def test_benchmark_mul(ncases = 100, verbose = 0, order_vector_mod15 = 0):
     print("")
     for i in range(1):
-        n, mu, sigma, stat = benchmark_mul(ncases, verbose = verbose) 
+        n, mu, sigma, stat = benchmark_mul(ncases, verbose = verbose,
+                               order_vector_mod15 = order_vector_mod15) 
         s = "Runtime of multiplication in class MM, %d tests: %.3f+-%.3f ms" 
         print(s % (n, 1000*mu, 1000*sigma))
         print("Average number of tags per reduced group element:")

@@ -1557,6 +1557,10 @@ int32_t prereduce(uint32_t *a,  uint32_t n, t_work *p_work)
 /////////////////////////////////////////////////////////////////////////
 
 
+/// @cond DO_NOT_DOCUMENT
+static uint32_t USE_ORDER_VECTOR_MOD15 = 0;
+/// @endcond
+
 
 /// @cond DO_NOT_DOCUMENT
 
@@ -1595,20 +1599,20 @@ int32_t reduce_M(
     easy &= vm > 0;
     if ((res = mm_reduce_vector_vm(&vm, v, r, work)) < 0) return res;  
 
-    if (easy) {
+    if (easy & !USE_ORDER_VECTOR_MOD15) {
         res = mm_reduce_vector_shorten(a, n, r, work);
         if (res >= 0) return res;
     }
 
-  #if defined(ORDER_VECTOR_MOD15) || defined(CHECK_AXIS)
+  if (USE_ORDER_VECTOR_MOD15) {
     mm_order_load_vector(v); 
     if ((res = mm_op15_word(v, a, n, 1, work)) < 0) return res;
     res = mm_reduce_vector_v1(v, r, work);   
-  #else
+  } else {
     mm_order_load_vector_v1_mod3(v);
     if ((res = mm_op3_word(v, a, n, 1, work)) < 0) return res;
     res = mm_reduce_vector_v1_mod3(v, r, work);
-  #endif
+  }
     return res;
 }
 /// @endcond
@@ -1660,7 +1664,9 @@ int32_t mm_reduce_M(uint32_t *a, uint32_t n, uint32_t mode, uint32_t *r)
     int32_t res, status = 2, i;
     t_work *p_work = malloc(sizeof(t_work));
     if (p_work == 0) return -1;
-    if ((mode & 2) == 0) status = prereduce(a, n, p_work);
+    if ((mode & 2) == 0 && !USE_ORDER_VECTOR_MOD15) {
+        status = prereduce(a, n, p_work);
+    }
     if (status == 0) {
         res = p_work->len_buf;
         for(i = 0; i < res; ++i) r[i] = p_work->buf[i];
@@ -1676,8 +1682,64 @@ int32_t mm_reduce_M(uint32_t *a, uint32_t n, uint32_t mode, uint32_t *r)
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// Switching to a special reduction process for testing
+/////////////////////////////////////////////////////////////////////////
 
 
+
+/**
+  @brief Set a special reduction mode for tests.
+
+  The end user need not call this function.
+
+  In [Sey22] we show how to compute an 'order vector' \f$v_1\f$
+  in the representation \f$\rho_{15}\f$ of the Monster satisfying
+  the following property:
+
+  The only element of the Monster fixing \f$v_1\f$ is the neutral
+  element of the Monster.
+
+  For verifying this property of \f$v_1\f$ is suffices to use the
+  methods in [LPWW98]. Thus by tracing the an image of \f$v_1\f$
+  under an element \f$g\f$ back to its preimage \f$v_1\f$ we
+  obtain a verification of a reduction process which depends
+  on classical results only.
+
+  By default, the main reduction function ``mm_reduce_M`` in this
+  module uses an 'order vector' in \f$\rho_3\f$ which leads to a
+  faster reduction process than obtained by using \f$v_1\f$.
+
+  When calling function ``mm_reduce_set_order_vector_mod15``
+  with parameter ``mode = 1`` then in all subsequent calls to
+  function ``mm_reduce_M`` we will use an 'order vector' \f$v_1\f$
+  in \f$\rho_{15}\f$ as desrcibed above; and we will verify
+  that the 'reduced' form of an element \f$g\f$ of the Monster
+  maps \f$v_1\f$ to the same vector as the original
+  element \f$g\f$ does.
+
+  This gives a tester the capability to do long calcuations in the
+  Monster group that will be verified by using classical results
+  without referring to the theory developed in [Sey22].
+
+  The user may switch back to the default behaviour by calling
+  function ``mm_reduce_set_order_vector_mod15`` with
+  parameter ``mode = 0``. The function returns the value of
+  parameter ``mode`` passed in the previous call (or the default
+  value 0 at first call).
+*/
+// %%EXPORT px
+uint32_t mm_reduce_set_order_vector_mod15(uint32_t mode)
+{
+    uint32_t result = USE_ORDER_VECTOR_MOD15 != 0;
+    USE_ORDER_VECTOR_MOD15 = mode != 0;
+    return result;
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+// Reducing an element of the monster group
+/////////////////////////////////////////////////////////////////////////
 
 
 //  %%GEN h
