@@ -554,8 +554,9 @@ table:
     ====================== =======================================
     ``mm_reduce``          ``mmgroup_reduce``
     ``mm_op``              ``mmgroup_mm_op``
-    ``clifford12``         ``mmgroup_clifford12``
-    ``generators, mat24``  ``mmgroup_mat24``
+    ``clifford12``         ``mmgroup_mat24``
+    ``generators``         ``mmgroup_mat24``
+    ``mat24``              ``mmgroup_mat24``
     ====================== =======================================
 
 In Linux, the name of each shared library is prefixed by the
