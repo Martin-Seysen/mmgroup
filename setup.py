@@ -32,7 +32,6 @@ import re
 import subprocess
 import numpy as np
 from glob import glob
-import shutil
 
 import setuptools
 from setuptools import setup, find_namespace_packages
@@ -226,18 +225,6 @@ package_data = {
 
 
 
-pyx_sources = [
-    os.path.join(DEV_DIR, "mat24", "mat24fast.pyx"),
-    os.path.join(DEV_DIR, "generators", "generators.pyx"),
-    os.path.join(DEV_DIR, "mm_basics", "mm_basics.pyx"),
-    os.path.join(DEV_DIR, "mm_op", "mm_op.pyx"),
-    os.path.join(DEV_DIR, "clifford12", "clifford12.pyx"),
-    os.path.join(DEV_DIR, "mm_reduce", "mm_reduce.pyx"),
-]
-
-def copy_pyx_sources():
-    for filename in pyx_sources:
-        shutil.copy(filename, PXD_DIR)
 
 
 
@@ -247,13 +234,11 @@ general_presteps = CustomBuildStep("Starting code generation",
   [make_dir, "src", "mmgroup", "dev", "pxd_files"],
   [sys.executable, "cleanup.py", "-cx"],
   [force_delete],
-  [copy_pyx_sources],
   [extend_path],
 )
 
 if STAGE > 1:
     general_presteps = CustomBuildStep("Starting code generation",
-       [copy_pyx_sources],
        [extend_path],
     )
 
@@ -263,6 +248,9 @@ if STAGE > 1:
 # for generating the code used in a subsequent stage.
 ####################################################################
 
+ext_modules = [
+    general_presteps,
+]
 
 
 
@@ -331,6 +319,7 @@ MAT24_GENERATE_PXD = GENERATE_START_PXD + """
  --h-in  mat24_functions.h
  --pxd-in  mat24_functions.pxd
  --pxd-out mat24_functions.pxd
+ --pyx-in  mat24fast.pyx
 """.format(**DIR_DICT)
 
 
@@ -358,7 +347,9 @@ GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-in  generators.pxd
  --pxd-out generators.pxd
  --pxi-in  generators.pxi
+ --pyx-in  generators.pyx
 """.format(**DIR_DICT)
+
 
 
 
@@ -384,6 +375,7 @@ CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-in  clifford12.pxd
  --pxd-out clifford12.pxd
  --pxi-in  clifford12.pxd
+ --pyx-in  clifford12.pyx
 """.format(**DIR_DICT)
 
 
@@ -464,6 +456,18 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 )
 
 
+
+if STAGE < 2:
+    ext_modules += [
+        mat24_presteps,
+        mat24_shared,
+        mat24_extension,
+        generators_extension,
+        clifford12_extension,
+    ]
+
+
+
 ####################################################################
 # Building the extensions at stage 2
 ####################################################################
@@ -497,6 +501,8 @@ MM_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
+
+
 mm_op_c_files = get_c_names(MM_GENERATE)
 #mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
@@ -520,9 +526,8 @@ MM_OP_SUB_GENERATE = GENERATE_START + """
 for p in [3, 7, 15, 31, 127, 255]:
    MM_OP_SUB_GENERATE += """
       --set p={p}
-      --sources mm_op_defines.h
-                mm_op_pi.ske
-                mm_op_misc.ske
+      --sources mm_op_misc.ske
+                mm_op_pi.ske                
                 mm_op_xy.ske
                 mm_op_t.ske
                 mm_op_xi.ske
@@ -573,6 +578,7 @@ MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-in  mm_op.pxd
  --pxd-out mm_op_p.pxd
  --pxi-in  mm_op.pxd
+ --pyx-in  mm_op.pyx
 """.format(**DIR_DICT)
 
 
@@ -592,19 +598,6 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
 )
 
 
-"""
-mm_shared =  SharedExtension(
-    name = "mmgroup.mmgroup_mm_basics", 
-    sources = mm_c_paths,
-    libraries = shared_libs_stage1, 
-    include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, C_DIR],
-    extra_compile_args = EXTRA_COMPILE_ARGS,
-    implib_dir = C_DIR,
-    define_macros = [],
-)
-"""
-
 
 mm_op_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_op", 
@@ -619,29 +612,9 @@ mm_op_shared =  SharedExtension(
 
 
 shared_libs_stage2 = shared_libs_stage1 + [
-     #  mm_shared.lib_name, mm_op_shared.lib_name
      mm_op_shared.lib_name
 ] if not on_readthedocs else []
 
-
-
-"""
-mm_extension = Extension("mmgroup.mm",
-    sources=[
-            os.path.join(PXD_DIR, "mm_basics.pyx"),
-    ],
-    #libraries=["m"] # Unix-like specific
-    include_dirs = [ C_DIR ],
-    library_dirs = [ PACKAGE_DIR, C_DIR ],
-    libraries = shared_libs_stage2, 
-            # for openmp add "libgomp" 
-    #runtime_library_dirs = ["."],
-    extra_compile_args = EXTRA_COMPILE_ARGS, 
-            # for openmp add "-fopenmp" 
-    extra_link_args = EXTRA_LINK_ARGS, 
-            # for openmp add "-fopenmp" 
-)
-"""
 
 
 
@@ -672,25 +645,14 @@ mm_poststeps =  CustomBuildStep("Create substituts for legacy extensions",
 
 
 
-ext_modules = [
-    general_presteps,
-    mat24_presteps,
-    mat24_shared,
- #   clifford12_shared, 
-    mat24_extension,
-    generators_extension,
-    clifford12_extension,
-    mm_presteps,
-  #  mm_shared, 
-    mm_op_shared, 
-  #  mm_extension, 
-    mm_op_extension, 
-    mm_poststeps, 
-]
+if STAGE < 3:
+    ext_modules += [
+        mm_presteps,
+        mm_op_shared, 
+        mm_op_extension,
+        mm_poststeps, 
+    ] 
 
-
-if STAGE >= 2:
-    ext_modules = ext_modules[:1] + ext_modules[-3:]
 
 
 
@@ -738,6 +700,7 @@ MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-in  mm_reduce.pxd
  --pxd-out mm_reduce.pxd
  --pxi-in  mm_reduce.pxd
+ --pyx-in  mm_reduce.pyx
 """.format(**DIR_DICT)
 
 
@@ -788,11 +751,12 @@ mm_reduce_extension = Extension("mmgroup.mm_reduce",
 
 
 
-ext_modules += [
-    reduce_presteps,
-    mm_reduce,
-    mm_reduce_extension,
-]
+if STAGE < 4:
+    ext_modules += [
+        reduce_presteps,
+        mm_reduce,
+        mm_reduce_extension,
+    ]
 
 
 ####################################################################
@@ -800,28 +764,11 @@ ext_modules += [
 ####################################################################
 
 
-def build_posix_wheel():
-    """This does not work!!!"""
-    assert  os.name == "posix"
-    if not on_readthedocs and "bdist_wheel" in sys.argv:
-        PROJECT_NAME = r"mmgroup"
-        SUFFIX_MATCH = r"[-0-9A-Za-z._]+linux[-0-9A-Za-z._]+\.whl"
-        DIST_DIR = "dist"
-        w_match = re.compile(PROJECT_NAME + SUFFIX_MATCH)
-        wheels = [s for s in os.listdir(DIST_DIR) if w_match.match(s)]
-        for wheel in wheels:
-            wheel_path = os.path.join(DIST_DIR, wheel)
-            args = ["auditwheel", "-v", "repair", wheel_path]
-            print(" ".join(args))
-            subprocess.check_call(args)
-
-
 
 if  not on_readthedocs:
     MMGROUP_DIR = os.path.join(SRC_DIR, "mmgroup")
     patch_step =  CustomBuildStep(
         "Patching and copying shared libraries",
-       # [sys.executable, "linuxpatch.py", "-v", "--dir", MMGROUP_DIR],
         [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
@@ -832,15 +779,14 @@ if  not on_readthedocs:
 ####################################################################
 
 
-
+"""
 test_step = CustomBuildStep("import_all",
- # [sys.executable, "import_all.py"],
- # ["pytest",  "src/mmgroup/", "-v", "-s", "-m", "build"],
+  [sys.executable, "import_all.py"],
+  ["pytest",  "src/mmgroup/", "-v", "-s", "-m", "build"],
 )
 
-
-# ext_modules.append(test_step)
-
+ext_modules.append(test_step)
+"""
 
 
 ####################################################################
@@ -868,14 +814,6 @@ def read(fname):
 ####################################################################
 
 
-### Prelimiary!!!
-"""
-ext_modules = [
-    mat24_presteps,
-    clifford12_shared, 
-    clifford12_extension,
-]
-"""
 
 if os.name ==  "posix": 
    EXCLUDE = ['*.dll', '*.pyd', '*.*.dll', '*.*.pyd'] 

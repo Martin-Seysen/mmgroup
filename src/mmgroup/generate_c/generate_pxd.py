@@ -64,8 +64,16 @@ def generate_pxd_parser():
     parser.add_argument('--pxi-in', 
         metavar='PXI',
         action='store', default = None,
-        help="Set input .px file PXI for generating .pxi file."
+        help="Set input .pxi file PXI for generating .pxi file."
     )
+
+
+    parser.add_argument('--pyx-in', 
+        metavar='PYX',
+        action='store', default = None,
+        help="Copy input .pyx file PYX from source path to pxd directory."
+    )
+
 
     parser.add_argument('--h-name', 
         metavar='HEADER',
@@ -85,7 +93,7 @@ def generate_pxd_parser():
         nargs = '*',  metavar='TABLES',
         action = 'extend', default = [], 
         help="Add list TABLES of table classes "
-        "to the tables to be used for generating .pxd and .pxi files."
+        "to the tables to be used for generating .pxd, .pxi, and .pyx files."
     )
   
     parser.add_argument('--pxd-path', nargs = '*', action='extend',
@@ -187,6 +195,16 @@ class pxdGenerator:
         string_file.write("\n")
         return string_file.as_string()
 
+
+    def copy_pyx_file(self):
+        pyx_in = self.s.pyx_in
+        pyx_path = find_file(self.s.pxd_path, pyx_in) if pyx_in else None
+        out_dir = getattr(self.s, "out_dir", None)
+        if pyx_path and out_dir:
+            import shutil
+            pyx_out = os.path.normpath(os.path.join(out_dir, pyx_in))
+            shutil.copy(pyx_path, pyx_out)
+
     def generate_pxd_file(self):
         finalize_parse_args(self.s)
         s = self.s
@@ -206,6 +224,7 @@ class pxdGenerator:
         nogil = getattr(s, "no_gil", False)
         pxd_from_h(pxd_out, h_in, pxd_in, h_name, nogil)
         pxd_out.close()
+        self.copy_pyx_file()
  
 
     def generate_pxi_file(self):

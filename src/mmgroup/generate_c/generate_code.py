@@ -114,13 +114,6 @@ def generate_code_parser():
         metavar = 'DIR', default = None,
         help = 'Set directory DIR for output files')
 
-    parser.add_argument('--export-kwd', 
-        default = None,
-        action = 'store',
-        metavar = 'EXPORT_KWD',
-        help = 'Set export keyword for code generator to EXPORT_KWD, deprecated!')
-
-
     parser.add_argument('--dll', 
         default = None,
         action = 'store',
@@ -422,9 +415,57 @@ def load_tables(tg, tables, params, directives=True):
 
 m_split_kwd =  re.compile(r"\s*//\s*\%\%INCLUDE_HEADERS")
 
+
+class StringOutputFile():
+    """Simulate a text stream open for output.
+
+    Suports method ``write`` for text streams only, writing
+    data to a internal buffer.
+
+    After writing, the stream can be read by standard iterator
+    methods in the same way as a file being opened for reading.
+    """
+    def __init__(self):
+        self.s = []
+        self.output_closed = False
+        self.pos = 0
+    def write(self, data):
+        if self.output_closed:
+           ERR = "Attempt to write to StringOutputFile after reading"
+           raise IOError(ERR)
+        if data:
+            for line in data.splitlines(keepends=True):
+                 self.s.append(line)
+    def copy_to(self, ostream):
+        """Copy internal data to test_stream ``iostream``"""
+        self.output_closed = True
+        for s in self.s:
+             ostream.write(s)
+    def as_string(self):
+        self.output_closed = True
+        return "".join(self.s)    
+    def close(self):
+        self.output_closed = True
+    def __iter__(self):
+        self.output_closed = True
+        return self
+    def __next__(self):
+        assert self.output_closed
+        if self.pos >= len(self.s):
+           raise StopIteration
+        self.pos += 1
+        return self.s[self.pos - 1]
+
+class NullOutputFile:
+    """Simulate a forgetful text stream open for output."""
+    def write(self, *args, **kwds):
+        return
+    close = write
+
+
 def split_header(file):
-    head = []
-    tail = []
+    head = StringOutputFile()
+    tail = StringOutputFile()
     split_comment = ""
     if not file:
          return head, split_comment, tail
@@ -433,37 +474,16 @@ def split_header(file):
              split_comment = line
              break
         else:
-             head.append(line)
+             head.write(line)
     for line in file:
-        tail.append(line)
-    return head, split_comment, tail  
+        tail.write(line)
+    head.close()
+    tail.close()
+    return head, split_comment, tail
 
 
-class StringOutputFile():
-    """Simulate a text stream open for output.
 
-    Suports method ``write`` for text streams only, writing
-    data to a internal buffer. 
-    """
-    def __init__(self):
-        self.s = []
-    def write(self, data):
-        if data:
-            self.s.append(data)
-    def copy_to(self, ostream):
-        """Copy internal data to test_stream ``iostream``"""
-        for s in self.s:
-             ostream.write(s)
-    def as_string(self):
-        return "".join(self.s)    
-    def close(self):
-        self.s = []
 
-class NullOutputFile:
-    """Simulate a forgetful text stream open for output."""
-    def write(self, *args, **kwds):
-        return
-    close = write
 
 def open_for_write(dir, filename):
     """Open file ``dir\filename`` for output""" 
@@ -611,9 +631,6 @@ class CodeGenerator:
         out_dir = s.out_dir
         tg = TableGenerator()
         self.set_dll_prefixes(tg)
-        if s.export_kwd:
-            #tg.export_kwd = s.export_kwd
-            pass
         if s.verbose:
             print("Generating header %s" % s.out_header)
         for param, c_files in s.c_files.items():
@@ -638,7 +655,9 @@ class CodeGenerator:
                      out_h = out_headers[n] = StringOutputFile()
                      end_h = out_headers[BIGINT-n] = StringOutputFile()
                      h_head, h_split, h_tail = split_header(src)
+                     print("GENNNN from", src_name)
                      tg.generate(h_head, None, out_h, 'h')
+                     print("GENNNN END from", src_name)
                      out_h.write("\n")
                      end_h.write(h_split)
                      tg.generate(h_tail, None, end_h, 'h')
@@ -685,7 +704,7 @@ class CodeGenerator:
 
         attribs = [
             'source_header', 'out_header', 'py_path', 'library_path',
-            'out_dir', 'export_kwd', 'verbose', 'dll'
+            'out_dir', 'verbose', 'dll'
         ]
         for attr in attribs:
             print(attr + ':', getattr(s, attr, '<undefined>'))

@@ -410,7 +410,7 @@ class TableGenerator(object):
                         raise TypeError(s % kw) 
                     if len(kwd_stack) == 0:
                         return [], out_source[:-1], out_source[-1:]
-        raise TypeError("Missing END %d directive in codegen" % kwd)
+        raise TypeError("Missing END %s directive in codegen" % kwd)
         
       
 
