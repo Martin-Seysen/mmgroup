@@ -1,6 +1,7 @@
 import os
 import subprocess
 from optparse import OptionParser
+import shutil
 
 parser = OptionParser()
 
@@ -43,20 +44,11 @@ def del_c(verbose = False):
     for dir_list in C_DIRS:
         try:
             dir = os.path.join(ROOT_DIR, *dir_list)
+            shutil.rmtree(dir)
         except:
-            continue
-        files = os.listdir(dir)
-        for name in files:
-            if name == "readme.txt":
-                continue
-            path = os.path.join(dir, name)
-            try:
-                if verbose:
-                   print("Delete %s" % path)
-                os.remove(path)
-            except:
-                if verbose:
-                   print("failed")
+            print("Failed to delete directory", '/'.join(dir_list))
+
+    
 
 
 DATA_FILE_DICT = {
@@ -98,7 +90,10 @@ def del_ext(verbose = False):
     if len(EXTENSIONS):
         for ext_dir in EXT_DIRS:
             dir = os.path.join(ROOT_DIR, *ext_dir)
-            files = os.listdir(dir)
+            try:
+                files = os.listdir(dir)
+            except FileNotFoundError:
+                continue
             for name in files:
                 if os.path.splitext(name)[1] in EXTENSIONS:
                     path = os.path.join(dir, name)

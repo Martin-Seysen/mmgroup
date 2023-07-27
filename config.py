@@ -43,20 +43,6 @@ EXTRA_LINK_ARGS = defaultdict(list)
 #     compiler : <list of options> .
 
 
-###############################################################################
-# Directories
-
-ROOT_DIR = os.path.realpath(os.path.dirname(__file__))
-SRC_DIR = os.path.join(ROOT_DIR, "src")
-PACKAGE_DIR = os.path.join(SRC_DIR, "mmgroup")
-DEV_DIR = os.path.join(PACKAGE_DIR, "dev")
-
-REAL_SRC_DIR = os.path.realpath(SRC_DIR)
-
-
-C_DIR = os.path.join(DEV_DIR, "c_files")
-PXD_DIR = os.path.join(DEV_DIR, "pxd_files")
-
 
 
 

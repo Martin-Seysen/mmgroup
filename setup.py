@@ -1,6 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
-
 ####################################################################
 # History
 ####################################################################
@@ -38,21 +35,25 @@ from setuptools import setup, find_namespace_packages
 from collections import defaultdict
 
 
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(ROOTDIR)
+######################################################################
+# Directories and inports relative to these driectories
+######################################################################
 
+ROOT_DIR = os.path.realpath(os.path.dirname(__file__))
+SRC_DIR =  os.path.realpath(os.path.join(ROOT_DIR, "src"))
+PACKAGE_DIR = os.path.join(SRC_DIR, "mmgroup")
+DEV_DIR = os.path.join(PACKAGE_DIR, "dev")
+C_DIR = os.path.join(DEV_DIR, "c_files")
+PXD_DIR = os.path.join(DEV_DIR, "pxd_files")
+
+sys.path.append(ROOT_DIR)
+sys.path.append(SRC_DIR)
 
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
 from build_ext_steps import BuildExtCmd, BuildExtCmdObj
-from build_ext_steps import DistutilsPlatformError, DistutilsSetupError
    
 
-import config
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
-from config import ROOT_DIR, SRC_DIR, PACKAGE_DIR, DEV_DIR
-from config import REAL_SRC_DIR
-from config import C_DIR, PXD_DIR
-
 from linuxpatch import copy_shared_libs
 
 
@@ -71,25 +72,11 @@ def print_commandline_args():
     print(" " + os.path.abspath(__file__))
     print("")
 
-
 print_commandline_args()
-
-
-####################################################################
-# Get output directory from command line arguments 
-####################################################################
-
-def get_output_directory_from_args():
-    for i in range(len(sys.argv) - 1):
-        if sys.argv[i] == "--dist-dir":
-            return sys.argv[i + 1]
-    return None
-
 
 ####################################################################
 # Global options
 ####################################################################
-
 
 STAGE = 1
 # Parse a global option '--stage=i" and set variable ``STAGE``
@@ -105,72 +92,10 @@ while None in sys.argv:
 
 
 ####################################################################
-# Delete files
-####################################################################
-
-
-# The following files are before building the extension
-# if the command line option -f or --force has been set
-ext_delete = [
-    os.path.join("C_DIR", "*.*"),
-    os.path.join("PXD_DIR", "*.*"),
-    os.path.join(PACKAGE_DIR, "*.dll"), 
-    os.path.join(PACKAGE_DIR, "*.pyd"),
-]
-
-
-def force_delete():
-    """Delete some files before command 'build_ext'"""
-    if not "-f" in sys.argv and not  "--force" in sys.argv:
-        return
-    for file_pattern in ext_delete:
-        for file in glob(file_pattern):
-            try:
-                #print(file)
-                os.remove(file)
-            except:
-                pass
-   
-
-
-####################################################################
-# create directories
-####################################################################
-
-def make_dir(*args):
-    """Create subdirectory if it does not exist
-
-    The path is given by the arguments
-    """
-    directory = os.path.realpath(os.path.join(*args))
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    fname = os.path.join(directory, "readme.txt")
-    with open(fname, "wt") as f:
-        f.write(
-"""The files in this directory have been created automatically
-or copied from some other place.
-So it is safe to delete all files in this directory.
-"""
-        )   
-
-####################################################################
-# extend path
-####################################################################
-
-def extend_path():
-    sys.path.append(REAL_SRC_DIR)
-
-####################################################################
 # Check if we are in a 'readthedocs' environment
 ####################################################################
 
-
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
-
-
-
-codegen_args = ["mockup"] if on_readthedocs else []
 
 ####################################################################
 # Set path for shared libraries in linux
@@ -182,11 +107,9 @@ if not on_readthedocs and os.name == "posix":
     new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
     os.environ["LD_LIBRARY_PATH"] =  old_ld_path + new_LD_LIBRARY_PATH 
 
-
 ####################################################################
 # Add extensions and shared libraries to package data
 ####################################################################
-
 
 if os.name in ["nt"]:
     extension_wildcards =  ["*.pyd", "*.dll"]     
@@ -202,14 +125,12 @@ package_data = {
 }
 
 
-
-
 ####################################################################
 # Desription of the list 'general_presteps'.
 #
 # This is a list of programs to be run before executing the 'build_ext' 
 # command. Each entry of list 'custom_presteps' is a list which we call 
-# a program list. A program list ia a list of strings corresponding to 
+# a program list. A program list is a list of strings corresponding to 
 # a program to be executed with:
 #     subprocess.check_call(program_list) . 
 # The first entry of a program list is the name of the program to be 
@@ -222,39 +143,20 @@ package_data = {
 ####################################################################
 
 
-
-
-
-
-
-
-
 general_presteps = CustomBuildStep("Starting code generation",
-  [make_dir, "src", "mmgroup", "dev", "c_files"],
-  [make_dir, "src", "mmgroup", "dev", "pxd_files"],
-  [sys.executable, "cleanup.py", "-cx"],
-  [force_delete],
-  [extend_path],
+  [sys.executable, "cleanup.py", "-pcx"],
 )
 
-if STAGE > 1:
-    general_presteps = CustomBuildStep("Starting code generation",
-       [extend_path],
-    )
+ext_modules = []
 
-ext_modules = [
-    general_presteps,
-]
-
-
-
+if STAGE <= 1:
+    ext_modules.append(general_presteps)
 
 ####################################################################
 # We have to divide the code generation process 
 # into stages, since a library built in a certain stage may be 
 # for generating the code used in a subsequent stage.
 ####################################################################
-
 
 DIR_DICT = {
    "SRC_DIR" : SRC_DIR,
@@ -266,14 +168,12 @@ DIR_DICT = {
 
 DIR_DICT["MOCKUP"] = "--mockup\n" if on_readthedocs else ""
 
-
 GENERATE_START = """
  -v
  {MOCKUP}
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
 """.format(**DIR_DICT)
-
 
 GENERATE_START_PXD = """
  -v
@@ -283,13 +183,9 @@ GENERATE_START_PXD = """
  --h-path {C_DIR}
 """.format(**DIR_DICT)
 
-
 ####################################################################
 # Building the extenstions at stage 1
 ####################################################################
-
-
-
 
 MAT24_SOURCES = """
    mat24_functions.c
@@ -304,7 +200,6 @@ MAT24_GENERATE = GENERATE_START + """
  --out-header mat24_functions.h
  --sources
 """.format(**DIR_DICT) + MAT24_SOURCES
-
 
 MAT24_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mat24
@@ -353,7 +248,6 @@ CLIFFORD12_SOURCES = """
   xsp2co1_map.c
 """
 
-
 CLIFFORD12_GENERATE = GENERATE_START + """
  --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
@@ -363,8 +257,6 @@ CLIFFORD12_GENERATE = GENERATE_START + """
  --sources  
 """.format(**DIR_DICT) + CLIFFORD12_SOURCES 
 
-
-
 CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/clifford12
  --h-in  clifford12.h
@@ -373,7 +265,6 @@ CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
  --pxi-in  clifford12.pxd
  --pyx-in  clifford12.pyx
 """.format(**DIR_DICT)
-
 
 
 mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
@@ -391,7 +282,6 @@ mat24_c_files = (MAT24_SOURCES + GENERATORS_SOURCES
 mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
 
 
-
 mat24_shared = SharedExtension(
     name = "mmgroup.mmgroup_mat24", 
     sources = mat24_c_paths,
@@ -407,7 +297,6 @@ mat24_shared = SharedExtension(
 shared_libs_stage1 =  [
     mat24_shared.lib_name
 ] if not on_readthedocs else []
-
 
 
 mat24_extension = Extension("mmgroup.mat24",
@@ -436,7 +325,6 @@ generators_extension = Extension("mmgroup.generators",
         extra_link_args = EXTRA_LINK_ARGS, 
 )
 
-
 clifford12_extension =  Extension("mmgroup.clifford12",
         sources=[
             os.path.join(PXD_DIR, "clifford12.pyx"),
@@ -451,7 +339,6 @@ clifford12_extension =  Extension("mmgroup.clifford12",
 )
 
 
-
 if STAGE < 2:
     ext_modules += [
         mat24_presteps,
@@ -461,12 +348,9 @@ if STAGE < 2:
         clifford12_extension,
     ]
 
-
-
 ####################################################################
 # Building the extensions at stage 2
 ####################################################################
-
 
 MM_SOURCES = """
     mm_aux.c mm_tables.c mm_group_word.c
@@ -487,8 +371,6 @@ MM_GENERATE = GENERATE_START + """
  --sources
 """.format(**DIR_DICT) + MM_SOURCES
 
-
-
 MM_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
  --tables mmgroup.dev.mm_basics.mm_basics
@@ -497,9 +379,6 @@ MM_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-out mm_basics.pxd
  --pxi-in  mm_basics.pxd
 """.format(**DIR_DICT)
-
-
-
 
 
 
@@ -515,7 +394,6 @@ for p in [3, 7, 15, 31, 127, 255]:
       mm{p}_op_word.c
       """.format(p=p)
 
-
 for p in [3, 15]:
    MM_OP_SUB_SOURCES += """
       mm{p}_op_rank_A.c
@@ -526,8 +404,6 @@ for p in [15]:
    MM_OP_SUB_SOURCES += """
       mm{p}_op_eval_X.c
       """.format(p=p)
-
-
 
 MM_OP_SUB_GENERATE = GENERATE_START + """
  --dll MM_OP
@@ -545,10 +421,10 @@ MM_OP_SUB_GENERATE = GENERATE_START + """
 """.format(**DIR_DICT) + MM_OP_SUB_SOURCES
 
 
+
 MM_OP_P_SOURCES = """
     mm_op_p_vector.c mm_op_p_axis.c
 """
-
 
 MM_OP_P_GENERATE = GENERATE_START + """
  --dll MM_OP
@@ -567,7 +443,6 @@ mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
 
-
 MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics
@@ -579,7 +454,6 @@ MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
 """.format(**DIR_DICT)
 
 
-
 mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
    [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
@@ -587,7 +461,6 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
    [sys.executable, "generate_code.py"] + MM_OP_P_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_OP_P_GENERATE_PXD.split(),
 )
-
 
 
 mm_op_shared =  SharedExtension(
@@ -605,9 +478,6 @@ mm_op_shared =  SharedExtension(
 shared_libs_stage2 = shared_libs_stage1 + [
      mm_op_shared.lib_name
 ] if not on_readthedocs else []
-
-
-
 
 
 mm_op_extension = Extension("mmgroup.mm_op",
@@ -634,8 +504,6 @@ mm_poststeps =  CustomBuildStep("Create substituts for legacy extensions",
 )
 
 
-
-
 if STAGE < 3:
     ext_modules += [
         mm_presteps,
@@ -645,16 +513,9 @@ if STAGE < 3:
     ] 
 
 
-
-
-
 ####################################################################
 # Building the extensions at stage 3
 ####################################################################
-
-
-if STAGE >= 3:
-    ext_modules = ext_modules[:1]
 
 
 MM_REDUCE_SOURCES = """
@@ -684,10 +545,6 @@ mm_reduce_files = MM_REDUCE_SOURCES.split()
 mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
 
 
-
-
-
-
 MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --tables mmgroup.dev.mm_op.mm_op
@@ -699,15 +556,10 @@ MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
 """.format(**DIR_DICT)
 
 
-
-
-
 reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
    [sys.executable, "generate_code.py"] + MM_REDUCE_GENERATE.split(),
    [sys.executable, "generate_pxd.py"] + MM_REDUCE_GENERATE_PXD.split(),
 )
-
-
 
 
 mm_reduce =  SharedExtension(
@@ -743,9 +595,6 @@ mm_reduce_extension = Extension("mmgroup.mm_reduce",
             # for openmp add "-fopenmp" 
 )
 
-
-
-
 if STAGE < 4:
     ext_modules += [
         reduce_presteps,
@@ -753,12 +602,15 @@ if STAGE < 4:
         mm_reduce_extension,
     ]
 
-
 ####################################################################
 # Patching shared libraries for Linux version
 ####################################################################
 
-
+# This is the only 'dirty' custom build step. By passing parameter
+# 'BuildExtCmdObj' we do actually pass the current object of that
+# class (which is an extension of class Extension) used for building
+# the extension. This object is required for obtaining the directory
+# where the build process writes its output.
 
 if  not on_readthedocs:
     MMGROUP_DIR = os.path.join(SRC_DIR, "mmgroup")
@@ -767,22 +619,6 @@ if  not on_readthedocs:
         [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
-
-
-####################################################################
-# After building the externals we add a tiny little test step.
-####################################################################
-
-
-"""
-test_step = CustomBuildStep("import_all",
-  [sys.executable, "import_all.py"],
-  ["pytest",  "src/mmgroup/", "-v", "-s", "-m", "build"],
-)
-
-ext_modules.append(test_step)
-"""
-
 
 ####################################################################
 # Don't build any externals when building the documentation.
@@ -797,18 +633,13 @@ if on_readthedocs:
         reduce_presteps,
     ]
 
-   
-
 def read(fname):
     """Return the text in the file with name 'fname'""" 
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-
 ####################################################################
 # The main setup program.
 ####################################################################
-
-
 
 if os.name ==  "posix": 
    EXCLUDE = ['*.dll', '*.pyd', '*.*.dll', '*.*.pyd'] 
@@ -816,7 +647,6 @@ elif os.name ==  "nt":
    EXCLUDE = ['*.so', '*.*.so'] 
 else:
    EXCLUDE = [] 
-
 
 
 setup(
