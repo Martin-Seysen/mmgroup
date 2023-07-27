@@ -59,11 +59,11 @@ def generate_code_parser():
     )
 
     parser.add_argument('--sources', 
-        dest='actions', nargs = '*',  metavar='SOURCES',
+        dest='actions', nargs = '*',  metavar='FILES',
         action=GenerateAction,
-        help="Add list of SOURCES to actions for generating code. "
-             "If one of these SOURCES in the list has extension '.h' "
-             "then no corresponding C fle is generated."
+        help="List of source FILES to be generated. For a source with "
+             "extension '.c' a .c file is generated. A source with "
+             "extension '.h' is copied into the common header file."
     )
 
     parser.add_argument('--out-header', 
@@ -92,19 +92,25 @@ def generate_code_parser():
         nargs = '*',  metavar='PATTERN SUBSTITUTION',
         action=GenerateAction,
         help=textwrap.dedent(
-        "Example: \"--set P 3  --subst op op{P}\"   maps e.g."
-        "'mm_op.c' to 'mm_op3.c'. "
-        "Here we substitute PATTERN in the name of a source file by "
-        "SUBSTITUTION for obtaining a template for the name of the "
-        "corresponding C file. Then we format that template with "
-        "Python's .format method (using the values of the current "
-        "variables) for obtaining the name of the C file."
+        "Map the name of a .c or .h file to be generated to the "
+        "name of a file used as a source for the generation process. "
+        "Example: \"--subst mm(?P<p>[0-9]+)_op mm_op\"   maps e.g."
+        "'mm3_op' to 'mm_op'. "
+        "We substitute PATTERN in the name of a genrated file by "
+        "SUBSTITUTION for obtaining the name of that source. "
+        "The part \"(?P<p>[0-9]+)\" "
+        "creates a variable 'p' that takes the decimal string "
+        "following the intial letters 'mm' in the file name. "
+        "variable 'p' will be passed to the table classes "
+        "used for code generation. "
+        "PATTERN must be given in regular expression syntax. "
         )
     )
    
     parser.add_argument('--source-path', nargs = '*', action='extend',
         metavar = 'PATHS', default = [],
-        help = 'Set list of PATHS for finding source files')
+        help = 'Set list of PATHS for finding source files to be used '
+               'for generation process.')
 
     parser.add_argument('--py-path', nargs = '*', action='extend',
         metavar = 'PATHS', default = [],
@@ -243,11 +249,14 @@ class ImmutableDict(Mapping):
     """Create an immutable and hashable snapshot of a dictionary
 
     """
-    def __init__(self, dictionary):
-        keys = sorted(dictionary.keys())
+    def __init__(self, *dictionaries):
+        d = {}
+        for dictionary in dictionaries:
+            if dictionary:
+                d.update(dictionary)
         self.d = OrderedDict()
-        for key in keys:
-            self.d[key] = dictionary[key] 
+        for key in sorted(d.keys()):
+            self.d[key] = d[key] 
         self._hash =  hash(tuple(self.d.items()))
     def __hash__(self):
         return self._hash  
@@ -257,13 +266,6 @@ class ImmutableDict(Mapping):
         yield from self.d
     def __len__(self):
         return len(self.d)
-    def restrict(self, keys):
-        """Return retriction of this dictionary to a given set of keys""" 
-        d = {}
-        for key in keys:
-            if key in self.d:
-                d[key] = self.d[key]
-        return d
     def str(self):
         return "Immutable" + str(dict(self.d))
     __repr__ = str
@@ -276,6 +278,9 @@ ERR_SUBST = "Two arguments PATTERN, SUBSTITUTION must follow option --subst"
 
 m_set = re.compile(r"([A-Za-z][A-Za-z0-9_]*)=(.*)")
 
+
+
+"""
 def subst_C_name(name, subst, param, extension):
     dir, filename = os.path.split(name)
     name, _extension = os.path.splitext(filename)
@@ -287,6 +292,41 @@ def subst_C_name(name, subst, param, extension):
         if param:
             name = name.format(**param)
     return os.path.join(dir, name + '.' + extension)    
+"""
+
+def subst_source_name(input_name, subst):
+    dir, filename = os.path.split(os.path.normpath(input_name))
+    name, ext = os.path.splitext(filename)
+    #print(dir, name, ext)
+    if ext == '.c':
+        source_ext = '.ske'
+        target_name = name
+    elif ext == '.h':
+        source_ext = '.h'
+        target_name = None
+    else:
+        ERR = "Dont know how to generate source "
+        raise ValueError(ERR + source_name)
+    mm = re.compile(subst[0]) if subst and len(subst) else None
+    if mm and len(subst) > 1:
+        source_name = mm.sub(subst[1], name)
+    else:
+        source_name = name
+    m = mm.match(name) if mm else None
+    vars = m.groupdict() if m else {}
+    source = os.path.join(dir, source_name + source_ext)
+    source = os.path.normpath(source)
+    if target_name:
+        target = os.path.join(dir, target_name + ext)
+        target = os.path.normpath(target)
+    else:
+        target = None
+    return source, target, vars    
+
+
+
+
+
 
 def make_actions(s):
     n = 1
@@ -306,14 +346,12 @@ def make_actions(s):
                 else:
                     del param[var]
         if action == 'sources':
-            param_dict = ImmutableDict(param)
-            if param_dict not in s.c_files:
-                 s.c_files[param_dict] = []
-            file_list = s.c_files[param_dict]
             for name in data:
-                src_name = os.path.normpath(name)
-                dest_name = subst_C_name(name, subst, param, 'c') 
-                file_list.append((src_name, dest_name, n))
+                src, target, vars = subst_source_name(name, subst)
+                param_dict = ImmutableDict(param, vars)
+                if param_dict not in s.c_files:
+                    s.c_files[param_dict] = []
+                s.c_files[param_dict].append((src, target, n))
                 n += 1
         if action == 'subst':
             if len(data) == 0:
@@ -655,9 +693,7 @@ class CodeGenerator:
                      out_h = out_headers[n] = StringOutputFile()
                      end_h = out_headers[BIGINT-n] = StringOutputFile()
                      h_head, h_split, h_tail = split_header(src)
-                     print("GENNNN from", src_name)
                      tg.generate(h_head, None, out_h, 'h')
-                     print("GENNNN END from", src_name)
                      out_h.write("\n")
                      end_h.write(h_split)
                      tg.generate(h_tail, None, end_h, 'h')

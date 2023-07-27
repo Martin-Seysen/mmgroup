@@ -311,7 +311,7 @@ MAT24_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
  --out-header mat24_functions.h
- --sources mat24_functions.ske mat24_random.ske
+ --sources mat24_functions.c mat24_random.c
 """.format(**DIR_DICT)
 
 MAT24_GENERATE_PXD = GENERATE_START_PXD + """
@@ -335,9 +335,9 @@ GENERATORS_GENERATE = GENERATE_START + """
           mmgroup.dev.generators.gen_xi_ref
  --sources mmgroup_generators.h
  --out-header mmgroup_generators.h
- --sources gen_xi_functions.ske mm_group_n.ske gen_leech.ske 
-           gen_leech_type.ske gen_leech3.ske gen_leech_reduce.ske
-           gen_leech_reduce_n.ske gen_random.ske
+ --sources gen_xi_functions.c mm_group_n.c gen_leech.c 
+           gen_leech_type.c gen_leech3.c gen_leech_reduce.c
+           gen_leech_reduce_n.c gen_random.c
 """.format(**DIR_DICT)
 
 
@@ -360,11 +360,11 @@ CLIFFORD12_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
  --out-header clifford12.h
- --sources  qstate12.ske qstate12io.ske qmatrix12.ske
-            bitmatrix64.ske uint_sort.ske xsp2co1.ske 
-            leech3matrix.ske xsp2co1_elem.ske
-            involutions.ske xsp2co1_traces.ske
-            xsp2co1_map.ske
+ --sources  qstate12.c qstate12io.c qmatrix12.c
+            bitmatrix64.c uint_sort.c xsp2co1.c 
+            leech3matrix.c xsp2co1_elem.c
+            involutions.c xsp2co1_traces.c
+            xsp2co1_map.c
 """.format(**DIR_DICT)
 
 
@@ -484,8 +484,8 @@ MM_GENERATE = GENERATE_START + """
           mmgroup.dev.mm_basics.mm_crt
  --sources mm_basics.h
  --out-header mm_basics.h
- --sources  mm_aux.ske mm_tables.ske mm_group_word.ske
-            mm_tables_xi.ske mm_crt.ske
+ --sources  mm_aux.c mm_tables.c mm_group_word.c
+            mm_tables_xi.c mm_crt.c
 """.format(**DIR_DICT)
 
 
@@ -512,7 +512,7 @@ mm_op_c_files = get_c_names(MM_GENERATE)
 MM_OP_SUB_GENERATE = GENERATE_START + """
  --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
- --subst mm_op mm{{p}}_op
+ --subst mm(?P<p>[0-9]+)_op mm_op
  --tables mmgroup.dev.mm_op.mm_op
           mmgroup.dev.mm_op.mm_op_xi
           mmgroup.dev.mm_op.mm_op_pi
@@ -525,27 +525,24 @@ MM_OP_SUB_GENERATE = GENERATE_START + """
 
 for p in [3, 7, 15, 31, 127, 255]:
    MM_OP_SUB_GENERATE += """
-      --set p={p}
-      --sources mm_op_misc.ske
-                mm_op_pi.ske                
-                mm_op_xy.ske
-                mm_op_t.ske
-                mm_op_xi.ske
-                mm_op_word.ske
+      --sources mm{p}_op_misc.c
+                mm{p}_op_pi.c                
+                mm{p}_op_xy.c
+                mm{p}_op_t.c
+                mm{p}_op_xi.c
+                mm{p}_op_word.c
       """.format(p=p)
 
 
 for p in [3, 15]:
    MM_OP_SUB_GENERATE += """
-      --set p={p}
-      --sources mm_op_rank_A.ske
-                mm_op_eval_A.ske
+      --sources mm{p}_op_rank_A.c
+                mm{p}_op_eval_A.c
       """.format(p=p)
 
 for p in [15]:
    MM_OP_SUB_GENERATE += """
-      --set p={p}
-      --sources mm_op_eval_X.ske
+      --sources mm{p}_op_eval_X.c
       """.format(p=p)
 
 
@@ -558,7 +555,7 @@ MM_OP_P_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.mm_op.dispatch_p
  --sources mm_op_p.h
  --out-header mm_op_p.h
- --sources  mm_op_p_vector.ske mm_op_p_axis.ske
+ --sources  mm_op_p_vector.c mm_op_p_axis.c
 """.format(**DIR_DICT)
 
 
@@ -602,7 +599,7 @@ mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
 mm_op_shared =  SharedExtension(
     name = "mmgroup.mmgroup_mm_op", 
     sources = mm_op_c_paths,
-    libraries = shared_libs_stage1,    # + [mm_shared.lib_name], 
+    libraries = shared_libs_stage1, 
     include_dirs = [PACKAGE_DIR, C_DIR],
     library_dirs = [PACKAGE_DIR, C_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
@@ -675,13 +672,13 @@ MM_REDUCE_GENERATE = GENERATE_START + """
           mmgroup.dev.mm_reduce.vector_v1_mod3
  --sources mm_reduce.h
  --out-header mm_reduce.h
- --sources  mm_order_vector.ske
-            mm_order.ske
-            mm_compress.ske
-            mm_reduce.ske
-            mm_suborbit.ske
-            mm_shorten.ske
-            mm_vector_v1_mod3.ske
+ --sources  mm_order_vector.c
+            mm_order.c
+            mm_compress.c
+            mm_reduce.c
+            mm_suborbit.c
+            mm_shorten.c
+            mm_vector_v1_mod3.c
 """.format(**DIR_DICT)
 
 
