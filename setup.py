@@ -242,12 +242,6 @@ if STAGE > 1:
        [extend_path],
     )
 
-####################################################################
-# We have to divide the code generation process 
-# into stages, since a library built in a certain stage may be 
-# for generating the code used in a subsequent stage.
-####################################################################
-
 ext_modules = [
     general_presteps,
 ]
@@ -256,7 +250,9 @@ ext_modules = [
 
 
 ####################################################################
-# Building the extenstions at stage 1
+# We have to divide the code generation process 
+# into stages, since a library built in a certain stage may be 
+# for generating the code used in a subsequent stage.
 ####################################################################
 
 
@@ -270,22 +266,6 @@ DIR_DICT = {
 
 DIR_DICT["MOCKUP"] = "--mockup\n" if on_readthedocs else ""
 
-def get_c_names(s):
-    process = [sys.executable, "generate_code.py", "--output-c-names"
-           ] + s.split()
-    try:
-        ls = subprocess.run(process, text = True,
-               stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        ls.check_returncode()
-    except subprocess.CalledProcessError as e:
-        print("Error:\nreturn code: ", e.returncode, 
-              "\nOutput:" )
-        print(e.stdout)
-        print(e.stderr)
-        raise
-    return(ls.stdout).split()
-    
 
 GENERATE_START = """
  -v
@@ -304,6 +284,17 @@ GENERATE_START_PXD = """
 """.format(**DIR_DICT)
 
 
+####################################################################
+# Building the extenstions at stage 1
+####################################################################
+
+
+
+
+MAT24_SOURCES = """
+   mat24_functions.c
+   mat24_random.c
+"""
 
 MAT24_GENERATE = GENERATE_START + """
  --dll MAT24
@@ -311,8 +302,9 @@ MAT24_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
  --out-header mat24_functions.h
- --sources mat24_functions.c mat24_random.c
-""".format(**DIR_DICT)
+ --sources
+""".format(**DIR_DICT) + MAT24_SOURCES
+
 
 MAT24_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-path {SRC_DIR}/mmgroup/dev/mat24
@@ -324,8 +316,11 @@ MAT24_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
-# print(get_c_names(MAT24_GENERATE))
-
+GENERATORS_SOURCES = """
+   gen_xi_functions.c mm_group_n.c gen_leech.c 
+   gen_leech_type.c gen_leech3.c gen_leech_reduce.c
+   gen_leech_reduce_n.c gen_random.c
+"""
 
 GENERATORS_GENERATE = GENERATE_START + """
  --dll MAT24
@@ -335,10 +330,8 @@ GENERATORS_GENERATE = GENERATE_START + """
           mmgroup.dev.generators.gen_xi_ref
  --sources mmgroup_generators.h
  --out-header mmgroup_generators.h
- --sources gen_xi_functions.c mm_group_n.c gen_leech.c 
-           gen_leech_type.c gen_leech3.c gen_leech_reduce.c
-           gen_leech_reduce_n.c gen_random.c
-""".format(**DIR_DICT)
+ --sources 
+""".format(**DIR_DICT) + GENERATORS_SOURCES
 
 
 GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
@@ -352,6 +345,13 @@ GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
+CLIFFORD12_SOURCES = """
+  qstate12.c qstate12io.c qmatrix12.c
+  bitmatrix64.c uint_sort.c xsp2co1.c 
+  leech3matrix.c xsp2co1_elem.c
+  involutions.c xsp2co1_traces.c
+  xsp2co1_map.c
+"""
 
 
 CLIFFORD12_GENERATE = GENERATE_START + """
@@ -360,12 +360,8 @@ CLIFFORD12_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
  --out-header clifford12.h
- --sources  qstate12.c qstate12io.c qmatrix12.c
-            bitmatrix64.c uint_sort.c xsp2co1.c 
-            leech3matrix.c xsp2co1_elem.c
-            involutions.c xsp2co1_traces.c
-            xsp2co1_map.c
-""".format(**DIR_DICT)
+ --sources  
+""".format(**DIR_DICT) + CLIFFORD12_SOURCES 
 
 
 
@@ -390,9 +386,8 @@ mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
 )
 
 
-mat24_c_files = get_c_names(MAT24_GENERATE)
-mat24_c_files += get_c_names(GENERATORS_GENERATE)
-mat24_c_files += get_c_names(CLIFFORD12_GENERATE)
+mat24_c_files = (MAT24_SOURCES + GENERATORS_SOURCES 
+                + CLIFFORD12_SOURCES).split() 
 mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
 
 
@@ -473,6 +468,11 @@ if STAGE < 2:
 ####################################################################
 
 
+MM_SOURCES = """
+    mm_aux.c mm_tables.c mm_group_word.c
+    mm_tables_xi.c mm_crt.c
+"""
+
 MM_GENERATE = GENERATE_START + """
  --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
@@ -484,9 +484,8 @@ MM_GENERATE = GENERATE_START + """
           mmgroup.dev.mm_basics.mm_crt
  --sources mm_basics.h
  --out-header mm_basics.h
- --sources  mm_aux.c mm_tables.c mm_group_word.c
-            mm_tables_xi.c mm_crt.c
-""".format(**DIR_DICT)
+ --sources
+""".format(**DIR_DICT) + MM_SOURCES
 
 
 
@@ -503,9 +502,30 @@ MM_GENERATE_PXD = GENERATE_START_PXD + """
 
 
 
-mm_op_c_files = get_c_names(MM_GENERATE)
-#mm_c_paths = [os.path.join(C_DIR, s) for s in mm_c_files]
 
+MM_OP_SUB_SOURCES = ""
+
+for p in [3, 7, 15, 31, 127, 255]:
+   MM_OP_SUB_SOURCES += """
+      mm{p}_op_misc.c
+      mm{p}_op_pi.c                
+      mm{p}_op_xy.c
+      mm{p}_op_t.c
+      mm{p}_op_xi.c
+      mm{p}_op_word.c
+      """.format(p=p)
+
+
+for p in [3, 15]:
+   MM_OP_SUB_SOURCES += """
+      mm{p}_op_rank_A.c
+      mm{p}_op_eval_A.c
+      """.format(p=p)
+
+for p in [15]:
+   MM_OP_SUB_SOURCES += """
+      mm{p}_op_eval_X.c
+      """.format(p=p)
 
 
 
@@ -521,31 +541,13 @@ MM_OP_SUB_GENERATE = GENERATE_START + """
           mmgroup.dev.hadamard.hadamard_xi
  --sources mm_op_sub.h
  --out-header mm_op_sub.h
-""".format(**DIR_DICT)
-
-for p in [3, 7, 15, 31, 127, 255]:
-   MM_OP_SUB_GENERATE += """
-      --sources mm{p}_op_misc.c
-                mm{p}_op_pi.c                
-                mm{p}_op_xy.c
-                mm{p}_op_t.c
-                mm{p}_op_xi.c
-                mm{p}_op_word.c
-      """.format(p=p)
+ --sources
+""".format(**DIR_DICT) + MM_OP_SUB_SOURCES
 
 
-for p in [3, 15]:
-   MM_OP_SUB_GENERATE += """
-      --sources mm{p}_op_rank_A.c
-                mm{p}_op_eval_A.c
-      """.format(p=p)
-
-for p in [15]:
-   MM_OP_SUB_GENERATE += """
-      --sources mm{p}_op_eval_X.c
-      """.format(p=p)
-
-
+MM_OP_P_SOURCES = """
+    mm_op_p_vector.c mm_op_p_axis.c
+"""
 
 
 MM_OP_P_GENERATE = GENERATE_START + """
@@ -555,16 +557,14 @@ MM_OP_P_GENERATE = GENERATE_START + """
  --tables mmgroup.dev.mm_op.dispatch_p
  --sources mm_op_p.h
  --out-header mm_op_p.h
- --sources  mm_op_p_vector.c mm_op_p_axis.c
-""".format(**DIR_DICT)
+ --sources  
+""".format(**DIR_DICT) + MM_OP_P_SOURCES
 
 
-mm_op_c_files += get_c_names(MM_OP_SUB_GENERATE)
-mm_op_c_files += get_c_names(MM_OP_P_GENERATE)
+
+
+mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
-
-
-
 
 
 
@@ -577,12 +577,6 @@ MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
  --pxi-in  mm_op.pxd
  --pyx-in  mm_op.pyx
 """.format(**DIR_DICT)
-
-
-
-
-
-
 
 
 
@@ -663,6 +657,16 @@ if STAGE >= 3:
     ext_modules = ext_modules[:1]
 
 
+MM_REDUCE_SOURCES = """
+   mm_order_vector.c
+   mm_order.c
+   mm_compress.c
+   mm_reduce.c
+   mm_suborbit.c
+   mm_shorten.c
+   mm_vector_v1_mod3.c
+"""
+
 MM_REDUCE_GENERATE = GENERATE_START + """
  --dll MM_REDUCE
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
@@ -672,17 +676,11 @@ MM_REDUCE_GENERATE = GENERATE_START + """
           mmgroup.dev.mm_reduce.vector_v1_mod3
  --sources mm_reduce.h
  --out-header mm_reduce.h
- --sources  mm_order_vector.c
-            mm_order.c
-            mm_compress.c
-            mm_reduce.c
-            mm_suborbit.c
-            mm_shorten.c
-            mm_vector_v1_mod3.c
-""".format(**DIR_DICT)
+ --sources  
+""".format(**DIR_DICT) + MM_REDUCE_SOURCES
 
 
-mm_reduce_files = get_c_names(MM_REDUCE_GENERATE)
+mm_reduce_files = MM_REDUCE_SOURCES.split()
 mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
 
 
