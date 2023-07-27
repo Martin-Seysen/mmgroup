@@ -40,11 +40,11 @@ from collections import defaultdict
 ######################################################################
 
 ROOT_DIR = os.path.realpath(os.path.dirname(__file__))
-SRC_DIR =  os.path.realpath(os.path.join(ROOT_DIR, "src"))
-PACKAGE_DIR = os.path.join(SRC_DIR, "mmgroup")
-DEV_DIR = os.path.join(PACKAGE_DIR, "dev")
-C_DIR = os.path.join(DEV_DIR, "c_files")
-PXD_DIR = os.path.join(DEV_DIR, "pxd_files")
+SRC_DIR =  os.path.realpath(os.path.join(ROOT_DIR, 'src'))
+PACKAGE_DIR = os.path.join(SRC_DIR, 'mmgroup')
+DEV_DIR = os.path.join(PACKAGE_DIR, 'dev')
+C_DIR = os.path.join(DEV_DIR, 'c_files')
+PXD_DIR = os.path.join(DEV_DIR, 'pxd_files')
 
 sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
@@ -63,14 +63,14 @@ from linuxpatch import copy_shared_libs
 
 
 def print_commandline_args():
-    print("Command line arguments of setup.py (in mmgroup project):")
+    print('Command line arguments of setup.py (in mmgroup project):')
     for arg in sys.argv:
-        print(" " + arg)
-    print("Current working directory os.path.getcwd():")
-    print(" " + os.getcwd())
-    print("Absolute path of file setup.py:")
-    print(" " + os.path.abspath(__file__))
-    print("")
+        print(' ' + arg)
+    print('Current working directory os.path.getcwd():')
+    print(' ' + os.getcwd())
+    print('Absolute path of file setup.py:')
+    print(' ' + os.path.abspath(__file__))
+    print('')
 
 print_commandline_args()
 
@@ -79,10 +79,10 @@ print_commandline_args()
 ####################################################################
 
 STAGE = 1
-# Parse a global option '--stage=i" and set variable ``STAGE``
+# Parse a global option '--stage=i' and set variable ``STAGE``
 # to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
-    if s.startswith("--stage="):
+    if s.startswith('--stage='):
         STAGE = int(s[8:])
         sys.argv[i+1] = None
     elif s[:1].isalpha:
@@ -101,27 +101,27 @@ on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 # Set path for shared libraries in linux
 ####################################################################
 
-if not on_readthedocs and os.name == "posix":    
-    old_ld_path = os.getenv("LD_LIBRARY_PATH")
-    old_ld_path = old_ld_path + ";" if old_ld_path else ""
+if not on_readthedocs and os.name == 'posix':    
+    old_ld_path = os.getenv('LD_LIBRARY_PATH')
+    old_ld_path = old_ld_path + ';' if old_ld_path else ''
     new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
-    os.environ["LD_LIBRARY_PATH"] =  old_ld_path + new_LD_LIBRARY_PATH 
+    os.environ['LD_LIBRARY_PATH'] =  old_ld_path + new_LD_LIBRARY_PATH 
 
 ####################################################################
 # Add extensions and shared libraries to package data
 ####################################################################
 
-if os.name in ["nt"]:
-    extension_wildcards =  ["*.pyd", "*.dll"]     
-elif os.name in ["posix"]:
-    extension_wildcards =  ["*.so"]  
+if os.name in ['nt']:
+    extension_wildcards =  ['*.pyd', '*.dll']     
+elif os.name in ['posix']:
+    extension_wildcards =  ['*.so']  
 else:   
     extension_wildcards =  []  
 
 
 package_data = {
         # If any package contains *.txt or *.rst files, include them:
-        "mmgroup": extension_wildcards
+        'mmgroup': extension_wildcards
 }
 
 
@@ -143,8 +143,8 @@ package_data = {
 ####################################################################
 
 
-general_presteps = CustomBuildStep("Starting code generation",
-  [sys.executable, "cleanup.py", "-pcx"],
+general_presteps = CustomBuildStep('Starting code generation',
+  [sys.executable, 'cleanup.py', '-pcx'],
 )
 
 ext_modules = []
@@ -159,65 +159,65 @@ if STAGE <= 1:
 ####################################################################
 
 DIR_DICT = {
-   "SRC_DIR" : SRC_DIR,
-   "C_DIR" : C_DIR,
-   "DEV_DIR" : DEV_DIR,
-   "PXD_DIR" : PXD_DIR,
-   "PACKAGE_DIR": PACKAGE_DIR
+   'SRC_DIR' : SRC_DIR,
+   'C_DIR' : C_DIR,
+   'DEV_DIR' : DEV_DIR,
+   'PXD_DIR' : PXD_DIR,
+   'PACKAGE_DIR': PACKAGE_DIR
 }
 
-DIR_DICT["MOCKUP"] = "--mockup\n" if on_readthedocs else ""
+DIR_DICT['MOCKUP'] = '--mockup\n' if on_readthedocs else ''
 
-GENERATE_START = """
+GENERATE_START = '''
  -v
  {MOCKUP}
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
-GENERATE_START_PXD = """
+GENERATE_START_PXD = '''
  -v
  {MOCKUP}
  --py-path {SRC_DIR}
  --out-dir {PXD_DIR}
  --h-path {C_DIR}
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 ####################################################################
 # Building the extenstions at stage 1
 ####################################################################
 
-MAT24_SOURCES = """
+MAT24_SOURCES = '''
    mat24_functions.c
    mat24_random.c
-"""
+'''
 
-MAT24_GENERATE = GENERATE_START + """
+MAT24_GENERATE = GENERATE_START + '''
  --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/mat24
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
  --out-header mat24_functions.h
  --sources
-""".format(**DIR_DICT) + MAT24_SOURCES
+'''.format(**DIR_DICT) + MAT24_SOURCES
 
-MAT24_GENERATE_PXD = GENERATE_START_PXD + """
+MAT24_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/mat24
  --h-in  mat24_functions.h
  --pxd-in  mat24_functions.pxd
  --pxd-out mat24_functions.pxd
  --pyx-in  mat24fast.pyx
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
 
-GENERATORS_SOURCES = """
+GENERATORS_SOURCES = '''
    gen_xi_functions.c mm_group_n.c gen_leech.c 
    gen_leech_type.c gen_leech3.c gen_leech_reduce.c
    gen_leech_reduce_n.c gen_random.c
-"""
+'''
 
-GENERATORS_GENERATE = GENERATE_START + """
+GENERATORS_GENERATE = GENERATE_START + '''
  --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/generators
  --tables mmgroup.dev.generators.gen_cocode_short
@@ -226,54 +226,54 @@ GENERATORS_GENERATE = GENERATE_START + """
  --sources mmgroup_generators.h
  --out-header mmgroup_generators.h
  --sources 
-""".format(**DIR_DICT) + GENERATORS_SOURCES
+'''.format(**DIR_DICT) + GENERATORS_SOURCES
 
 
-GENERATORS_GENERATE_PXD = GENERATE_START_PXD + """
+GENERATORS_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/generators
  --h-in  mmgroup_generators.h
  --pxd-in  generators.pxd
  --pxd-out generators.pxd
  --pxi-in  generators.pxi
  --pyx-in  generators.pyx
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
 
-CLIFFORD12_SOURCES = """
+CLIFFORD12_SOURCES = '''
   qstate12.c qstate12io.c qmatrix12.c
   bitmatrix64.c uint_sort.c xsp2co1.c 
   leech3matrix.c xsp2co1_elem.c
   involutions.c xsp2co1_traces.c
   xsp2co1_map.c
-"""
+'''
 
-CLIFFORD12_GENERATE = GENERATE_START + """
+CLIFFORD12_GENERATE = GENERATE_START + '''
  --dll MAT24
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
  --out-header clifford12.h
  --sources  
-""".format(**DIR_DICT) + CLIFFORD12_SOURCES 
+'''.format(**DIR_DICT) + CLIFFORD12_SOURCES 
 
-CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + """
+CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/clifford12
  --h-in  clifford12.h
  --pxd-in  clifford12.pxd
  --pxd-out clifford12.pxd
  --pxi-in  clifford12.pxd
  --pyx-in  clifford12.pyx
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
-mat24_presteps = CustomBuildStep("Generating code for extension 'mat24'",
-  [sys.executable, "generate_code.py"] + MAT24_GENERATE.split(),
-  [sys.executable, "generate_pxd.py"] + MAT24_GENERATE_PXD.split(),
-  [sys.executable, "generate_code.py"] + GENERATORS_GENERATE.split(),
-  [sys.executable, "generate_pxd.py"] + GENERATORS_GENERATE_PXD.split(),
-  [sys.executable, "generate_code.py"] + CLIFFORD12_GENERATE.split(),
-  [sys.executable, "generate_pxd.py"] + CLIFFORD12_GENERATE_PXD.split(),
+mat24_presteps = CustomBuildStep('Generating code for extension mat24',
+  [sys.executable, 'generate_code.py'] + MAT24_GENERATE.split(),
+  [sys.executable, 'generate_pxd.py'] + MAT24_GENERATE_PXD.split(),
+  [sys.executable, 'generate_code.py'] + GENERATORS_GENERATE.split(),
+  [sys.executable, 'generate_pxd.py'] + GENERATORS_GENERATE_PXD.split(),
+  [sys.executable, 'generate_code.py'] + CLIFFORD12_GENERATE.split(),
+  [sys.executable, 'generate_pxd.py'] + CLIFFORD12_GENERATE_PXD.split(),
 )
 
 
@@ -283,7 +283,7 @@ mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
 
 
 mat24_shared = SharedExtension(
-    name = "mmgroup.mmgroup_mat24", 
+    name = 'mmgroup.mmgroup_mat24', 
     sources = mat24_c_paths,
     libraries = [], 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -299,41 +299,41 @@ shared_libs_stage1 =  [
 ] if not on_readthedocs else []
 
 
-mat24_extension = Extension("mmgroup.mat24",
+mat24_extension = Extension('mmgroup.mat24',
         sources=[
-            os.path.join(PXD_DIR, "mat24fast.pyx"),
+            os.path.join(PXD_DIR, 'mat24fast.pyx'),
         ],
-        #libraries=["m"] # Unix-like specific
+        #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, C_DIR ],
         libraries = shared_libs_stage1, 
-        #runtime_library_dirs = ["."],
+        #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
 )
 
-generators_extension = Extension("mmgroup.generators",
+generators_extension = Extension('mmgroup.generators',
         sources=[
-            os.path.join(PXD_DIR, "generators.pyx"),
+            os.path.join(PXD_DIR, 'generators.pyx'),
         ],
-        #libraries=["m"] # Unix-like specific
+        #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, C_DIR ],
         libraries = shared_libs_stage1, 
-        #runtime_library_dirs = ["."],
+        #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
 )
 
-clifford12_extension =  Extension("mmgroup.clifford12",
+clifford12_extension =  Extension('mmgroup.clifford12',
         sources=[
-            os.path.join(PXD_DIR, "clifford12.pyx"),
+            os.path.join(PXD_DIR, 'clifford12.pyx'),
         ],
-        #libraries=["m"] # Unix-like specific
+        #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, C_DIR ],
         libraries = shared_libs_stage1, 
-        #runtime_library_dirs = ["."],
+        #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
 )
@@ -352,12 +352,12 @@ if STAGE < 2:
 # Building the extensions at stage 2
 ####################################################################
 
-MM_SOURCES = """
+MM_SOURCES = '''
     mm_aux.c mm_tables.c mm_group_word.c
     mm_tables_xi.c mm_crt.c
-"""
+'''
 
-MM_GENERATE = GENERATE_START + """
+MM_GENERATE = GENERATE_START + '''
  --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
                {SRC_DIR}/mmgroup/dev/mm_op
@@ -369,43 +369,43 @@ MM_GENERATE = GENERATE_START + """
  --sources mm_basics.h
  --out-header mm_basics.h
  --sources
-""".format(**DIR_DICT) + MM_SOURCES
+'''.format(**DIR_DICT) + MM_SOURCES
 
-MM_GENERATE_PXD = GENERATE_START_PXD + """
+MM_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
  --tables mmgroup.dev.mm_basics.mm_basics
  --h-in  mm_basics.h
  --pxd-in  mm_basics.pxd
  --pxd-out mm_basics.pxd
  --pxi-in  mm_basics.pxd
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
 
-MM_OP_SUB_SOURCES = ""
+MM_OP_SUB_SOURCES = ''
 
 for p in [3, 7, 15, 31, 127, 255]:
-   MM_OP_SUB_SOURCES += """
+   MM_OP_SUB_SOURCES += '''
       mm{p}_op_misc.c
       mm{p}_op_pi.c                
       mm{p}_op_xy.c
       mm{p}_op_t.c
       mm{p}_op_xi.c
       mm{p}_op_word.c
-      """.format(p=p)
+      '''.format(p=p)
 
 for p in [3, 15]:
-   MM_OP_SUB_SOURCES += """
+   MM_OP_SUB_SOURCES += '''
       mm{p}_op_rank_A.c
       mm{p}_op_eval_A.c
-      """.format(p=p)
+      '''.format(p=p)
 
 for p in [15]:
-   MM_OP_SUB_SOURCES += """
+   MM_OP_SUB_SOURCES += '''
       mm{p}_op_eval_X.c
-      """.format(p=p)
+      '''.format(p=p)
 
-MM_OP_SUB_GENERATE = GENERATE_START + """
+MM_OP_SUB_GENERATE = GENERATE_START + '''
  --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --subst mm(?P<p>[0-9]+)_op mm_op
@@ -418,15 +418,15 @@ MM_OP_SUB_GENERATE = GENERATE_START + """
  --sources mm_op_sub.h
  --out-header mm_op_sub.h
  --sources
-""".format(**DIR_DICT) + MM_OP_SUB_SOURCES
+'''.format(**DIR_DICT) + MM_OP_SUB_SOURCES
 
 
 
-MM_OP_P_SOURCES = """
+MM_OP_P_SOURCES = '''
     mm_op_p_vector.c mm_op_p_axis.c
-"""
+'''
 
-MM_OP_P_GENERATE = GENERATE_START + """
+MM_OP_P_GENERATE = GENERATE_START + '''
  --dll MM_OP
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --set C_DIR={C_DIR}
@@ -434,7 +434,7 @@ MM_OP_P_GENERATE = GENERATE_START + """
  --sources mm_op_p.h
  --out-header mm_op_p.h
  --sources  
-""".format(**DIR_DICT) + MM_OP_P_SOURCES
+'''.format(**DIR_DICT) + MM_OP_P_SOURCES
 
 
 
@@ -443,7 +443,7 @@ mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
 
-MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
+MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics
  --h-in  mm_op_p.h
@@ -451,20 +451,20 @@ MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-out mm_op_p.pxd
  --pxi-in  mm_op.pxd
  --pyx-in  mm_op.pyx
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
-mm_presteps =  CustomBuildStep("Code generation for modules mm and mm_op",
-   [sys.executable, "generate_code.py"] + MM_GENERATE.split(),
-   [sys.executable, "generate_pxd.py"] + MM_GENERATE_PXD.split(),
-   [sys.executable, "generate_code.py"] + MM_OP_SUB_GENERATE.split(),
-   [sys.executable, "generate_code.py"] + MM_OP_P_GENERATE.split(),
-   [sys.executable, "generate_pxd.py"] + MM_OP_P_GENERATE_PXD.split(),
+mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
+   [sys.executable, 'generate_code.py'] + MM_GENERATE.split(),
+   [sys.executable, 'generate_pxd.py'] + MM_GENERATE_PXD.split(),
+   [sys.executable, 'generate_code.py'] + MM_OP_SUB_GENERATE.split(),
+   [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
+   [sys.executable, 'generate_pxd.py'] + MM_OP_P_GENERATE_PXD.split(),
 )
 
 
 mm_op_shared =  SharedExtension(
-    name = "mmgroup.mmgroup_mm_op", 
+    name = 'mmgroup.mmgroup_mm_op', 
     sources = mm_op_c_paths,
     libraries = shared_libs_stage1, 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -480,26 +480,26 @@ shared_libs_stage2 = shared_libs_stage1 + [
 ] if not on_readthedocs else []
 
 
-mm_op_extension = Extension("mmgroup.mm_op",
+mm_op_extension = Extension('mmgroup.mm_op',
     sources=[
-            os.path.join(PXD_DIR, "mm_op.pyx"),
+            os.path.join(PXD_DIR, 'mm_op.pyx'),
     ],
-    #libraries=["m"] # Unix-like specific
+    #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
     library_dirs = [ PACKAGE_DIR, C_DIR ],
     libraries = shared_libs_stage2, 
-            # for openmp add "libgomp" 
-    #runtime_library_dirs = ["."],
+            # for openmp add 'libgomp' 
+    #runtime_library_dirs = ['.'],
     extra_compile_args = EXTRA_COMPILE_ARGS, 
-            # for openmp add "-fopenmp" 
+            # for openmp add '-fopenmp' 
     extra_link_args = EXTRA_LINK_ARGS, 
-            # for openmp add "-fopenmp" 
+            # for openmp add '-fopenmp' 
 )
 
 
-mm_poststeps =  CustomBuildStep("Create substituts for legacy extensions",
-   [sys.executable, "make_legacy_extensions.py", "--out-dir",
-       os.path.join(SRC_DIR, "mmgroup")
+mm_poststeps =  CustomBuildStep('Create substituts for legacy extensions',
+   [sys.executable, 'make_legacy_extensions.py', '--out-dir',
+       os.path.join(SRC_DIR, 'mmgroup')
    ] 
 )
 
@@ -518,7 +518,7 @@ if STAGE < 3:
 ####################################################################
 
 
-MM_REDUCE_SOURCES = """
+MM_REDUCE_SOURCES = '''
    mm_order_vector.c
    mm_order.c
    mm_compress.c
@@ -526,9 +526,9 @@ MM_REDUCE_SOURCES = """
    mm_suborbit.c
    mm_shorten.c
    mm_vector_v1_mod3.c
-"""
+'''
 
-MM_REDUCE_GENERATE = GENERATE_START + """
+MM_REDUCE_GENERATE = GENERATE_START + '''
  --dll MM_REDUCE
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --set p=15
@@ -538,14 +538,14 @@ MM_REDUCE_GENERATE = GENERATE_START + """
  --sources mm_reduce.h
  --out-header mm_reduce.h
  --sources  
-""".format(**DIR_DICT) + MM_REDUCE_SOURCES
+'''.format(**DIR_DICT) + MM_REDUCE_SOURCES
 
 
 mm_reduce_files = MM_REDUCE_SOURCES.split()
 mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
 
 
-MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
+MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --tables mmgroup.dev.mm_op.mm_op
  --h-in  mm_reduce.h
@@ -553,17 +553,17 @@ MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + """
  --pxd-out mm_reduce.pxd
  --pxi-in  mm_reduce.pxd
  --pyx-in  mm_reduce.pyx
-""".format(**DIR_DICT)
+'''.format(**DIR_DICT)
 
 
-reduce_presteps =  CustomBuildStep("Code generation for modules mm_reduce",
-   [sys.executable, "generate_code.py"] + MM_REDUCE_GENERATE.split(),
-   [sys.executable, "generate_pxd.py"] + MM_REDUCE_GENERATE_PXD.split(),
+reduce_presteps =  CustomBuildStep('Code generation for modules mm_reduce',
+   [sys.executable, 'generate_code.py'] + MM_REDUCE_GENERATE.split(),
+   [sys.executable, 'generate_pxd.py'] + MM_REDUCE_GENERATE_PXD.split(),
 )
 
 
 mm_reduce =  SharedExtension(
-    name = "mmgroup.mmgroup_mm_reduce", 
+    name = 'mmgroup.mmgroup_mm_reduce', 
     sources = mm_reduce_paths,   
     libraries = shared_libs_stage2, 
     include_dirs = [PACKAGE_DIR, C_DIR],
@@ -579,20 +579,20 @@ shared_libs_stage3 = shared_libs_stage2 + [
 ] if not on_readthedocs else []
 
 
-mm_reduce_extension = Extension("mmgroup.mm_reduce",
+mm_reduce_extension = Extension('mmgroup.mm_reduce',
     sources=[
-            os.path.join(PXD_DIR, "mm_reduce.pyx"),
+            os.path.join(PXD_DIR, 'mm_reduce.pyx'),
     ],
-    #libraries=["m"] # Unix-like specific
+    #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
     library_dirs = [ PACKAGE_DIR, C_DIR ],
     libraries = shared_libs_stage3, 
-            # for openmp add "libgomp" 
-    #runtime_library_dirs = ["."],
+            # for openmp add 'libgomp' 
+    #runtime_library_dirs = ['.'],
     extra_compile_args = EXTRA_COMPILE_ARGS, 
-            # for openmp add "-fopenmp" 
+            # for openmp add '-fopenmp' 
     extra_link_args = EXTRA_LINK_ARGS, 
-            # for openmp add "-fopenmp" 
+            # for openmp add '-fopenmp' 
 )
 
 if STAGE < 4:
@@ -613,9 +613,9 @@ if STAGE < 4:
 # where the build process writes its output.
 
 if  not on_readthedocs:
-    MMGROUP_DIR = os.path.join(SRC_DIR, "mmgroup")
+    MMGROUP_DIR = os.path.join(SRC_DIR, 'mmgroup')
     patch_step =  CustomBuildStep(
-        "Patching and copying shared libraries",
+        'Patching and copying shared libraries',
         [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
@@ -634,16 +634,16 @@ if on_readthedocs:
     ]
 
 def read(fname):
-    """Return the text in the file with name 'fname'""" 
+    '''Return the text in the file with name 'fname' ''' 
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 ####################################################################
 # The main setup program.
 ####################################################################
 
-if os.name ==  "posix": 
+if os.name ==  'posix': 
    EXCLUDE = ['*.dll', '*.pyd', '*.*.dll', '*.*.pyd'] 
-elif os.name ==  "nt": 
+elif os.name ==  'nt': 
    EXCLUDE = ['*.so', '*.*.so'] 
 else:
    EXCLUDE = [] 
