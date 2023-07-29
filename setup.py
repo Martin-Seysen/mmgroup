@@ -103,7 +103,7 @@ on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
 if not on_readthedocs and os.name == 'posix':    
     old_ld_path = os.getenv('LD_LIBRARY_PATH')
-    old_ld_path = old_ld_path + ';' if old_ld_path else ''
+    old_ld_path = old_ld_path + ':' if old_ld_path else ''
     new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
     os.environ['LD_LIBRARY_PATH'] =  old_ld_path + new_LD_LIBRARY_PATH 
 
@@ -173,6 +173,7 @@ GENERATE_START = '''
  {MOCKUP}
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
+ --out-pxd-dir {PXD_DIR}
 '''.format(**DIR_DICT)
 
 GENERATE_START_PXD = '''
@@ -197,18 +198,11 @@ MAT24_GENERATE = GENERATE_START + '''
  --source-path {SRC_DIR}/mmgroup/dev/mat24
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
- --out-header mat24_functions.h
  --sources
-'''.format(**DIR_DICT) + MAT24_SOURCES
-
-MAT24_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/mat24
- --h-in  mat24_functions.h
- --pxd-in  mat24_functions.pxd
- --pxd-out mat24_functions.pxd
- --pyx-in  mat24fast.pyx
-'''.format(**DIR_DICT)
-
+'''.format(**DIR_DICT) + MAT24_SOURCES + '''
+ --pxd  mat24_functions.pxd
+ --pyx  mat24fast.pyx
+'''
 
 
 GENERATORS_SOURCES = '''
@@ -224,20 +218,12 @@ GENERATORS_GENERATE = GENERATE_START + '''
           mmgroup.dev.generators.gen_leech_reduce_n 
           mmgroup.dev.generators.gen_xi_ref
  --sources mmgroup_generators.h
- --out-header mmgroup_generators.h
  --sources 
-'''.format(**DIR_DICT) + GENERATORS_SOURCES
-
-
-GENERATORS_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/generators
- --h-in  mmgroup_generators.h
- --pxd-in  generators.pxd
- --pxd-out generators.pxd
- --pxi-in  generators.pxi
- --pyx-in  generators.pyx
-'''.format(**DIR_DICT)
-
+'''.format(**DIR_DICT) + GENERATORS_SOURCES + '''
+ --pxd  generators.pxd
+ --pxi
+ --pyx generators.pyx
+'''
 
 
 CLIFFORD12_SOURCES = '''
@@ -253,27 +239,18 @@ CLIFFORD12_GENERATE = GENERATE_START + '''
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
- --out-header clifford12.h
  --sources  
-'''.format(**DIR_DICT) + CLIFFORD12_SOURCES 
-
-CLIFFORD12_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/clifford12
- --h-in  clifford12.h
- --pxd-in  clifford12.pxd
- --pxd-out clifford12.pxd
- --pxi-in  clifford12.pxd
- --pyx-in  clifford12.pyx
-'''.format(**DIR_DICT)
+'''.format(**DIR_DICT) + CLIFFORD12_SOURCES + '''
+ --pxd  clifford12.pxd
+ --pxi 
+ --pyx  clifford12.pyx
+'''
 
 
 mat24_presteps = CustomBuildStep('Generating code for extension mat24',
   [sys.executable, 'generate_code.py'] + MAT24_GENERATE.split(),
-  [sys.executable, 'generate_pxd.py'] + MAT24_GENERATE_PXD.split(),
   [sys.executable, 'generate_code.py'] + GENERATORS_GENERATE.split(),
-  [sys.executable, 'generate_pxd.py'] + GENERATORS_GENERATE_PXD.split(),
   [sys.executable, 'generate_code.py'] + CLIFFORD12_GENERATE.split(),
-  [sys.executable, 'generate_pxd.py'] + CLIFFORD12_GENERATE_PXD.split(),
 )
 
 
@@ -367,7 +344,6 @@ MM_GENERATE = GENERATE_START + '''
           mmgroup.dev.mm_basics.mm_tables
           mmgroup.dev.mm_basics.mm_crt
  --sources mm_basics.h
- --out-header mm_basics.h
  --sources
 '''.format(**DIR_DICT) + MM_SOURCES
 
@@ -416,7 +392,6 @@ MM_OP_SUB_GENERATE = GENERATE_START + '''
           mmgroup.dev.hadamard.hadamard_t
           mmgroup.dev.hadamard.hadamard_xi
  --sources mm_op_sub.h
- --out-header mm_op_sub.h
  --sources
 '''.format(**DIR_DICT) + MM_OP_SUB_SOURCES
 
@@ -427,15 +402,18 @@ MM_OP_P_SOURCES = '''
 '''
 
 MM_OP_P_GENERATE = GENERATE_START + '''
- --dll MM_OP
+ --dll MM_OP -v
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --set C_DIR={C_DIR}
- --tables mmgroup.dev.mm_op.dispatch_p
+ --tables mmgroup.dev.mm_basics.mm_basics
+          mmgroup.dev.mm_op.dispatch_p
  --sources mm_op_p.h
- --out-header mm_op_p.h
  --sources  
-'''.format(**DIR_DICT) + MM_OP_P_SOURCES
-
+'''.format(**DIR_DICT) + MM_OP_P_SOURCES + '''
+ --pxd  mm_op_p.pxd
+ --pxi
+ --pyx  mm_op_p.pyx
+'''
 
 
 
@@ -447,11 +425,12 @@ MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + '''
  --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics
  --h-in  mm_op_p.h
- --pxd-in  mm_op.pxd
+ --pxd-in  mm_op_p.pxd
  --pxd-out mm_op_p.pxd
- --pxi-in  mm_op.pxd
- --pyx-in  mm_op.pyx
+ --pxi-in  mm_op_p.pxd
+ --pyx-in  mm_op_p.pyx
 '''.format(**DIR_DICT)
+
 
 
 mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
@@ -459,7 +438,7 @@ mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
    [sys.executable, 'generate_pxd.py'] + MM_GENERATE_PXD.split(),
    [sys.executable, 'generate_code.py'] + MM_OP_SUB_GENERATE.split(),
    [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
-   [sys.executable, 'generate_pxd.py'] + MM_OP_P_GENERATE_PXD.split(),
+ #  [sys.executable, 'generate_pxd.py'] + MM_OP_P_GENERATE_PXD.split(),
 )
 
 
@@ -482,7 +461,7 @@ shared_libs_stage2 = shared_libs_stage1 + [
 
 mm_op_extension = Extension('mmgroup.mm_op',
     sources=[
-            os.path.join(PXD_DIR, 'mm_op.pyx'),
+            os.path.join(PXD_DIR, 'mm_op_p.pyx'),
     ],
     #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
@@ -529,14 +508,13 @@ MM_REDUCE_SOURCES = '''
 '''
 
 MM_REDUCE_GENERATE = GENERATE_START + '''
- --dll MM_REDUCE
+ --dll MM_REDUCE -v
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --set p=15
  --tables mmgroup.dev.mm_op.mm_op
           mmgroup.dev.mm_reduce.order_vector_tables
           mmgroup.dev.mm_reduce.vector_v1_mod3
  --sources mm_reduce.h
- --out-header mm_reduce.h
  --sources  
 '''.format(**DIR_DICT) + MM_REDUCE_SOURCES
 
