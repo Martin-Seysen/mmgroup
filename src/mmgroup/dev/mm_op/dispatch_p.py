@@ -103,6 +103,7 @@ def make_C_switch(c_functions, return_type, function_name, p_var, *args):
 
 
 class DispatchP:
+    c_functions = None
     def  __init__(self, **kwds):
         c_dir = kwds.get('C_DIR', None)
         if c_dir:
@@ -122,7 +123,8 @@ class DispatchP:
         return ", ".join(p_list)
 
     def p_table(self):
-        return self.c_functions['mm_op_word'][1] + [0]
+        pl = self.c_functions['mm_op_word'][1] if self.c_functions else [] 
+        return pl + [0]
        
     @property
     def tables(self):

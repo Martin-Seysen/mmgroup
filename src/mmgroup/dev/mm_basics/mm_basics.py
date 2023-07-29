@@ -392,7 +392,7 @@ class MM_Const(MM_Basics):
     
 
  
-    def __init__(self, *kwds):
+    def __init__(self, **kwds):
         new_tables = {
            self.T_NAME : self.table,
            "MMV_CONST" : UserFormat(self.f, "ss"),

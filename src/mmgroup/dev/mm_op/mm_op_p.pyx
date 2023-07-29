@@ -58,7 +58,7 @@ def mm_vector(p, *args):
 
     The most convenient way to use this function is e.g.:
 
-    from mm_op import MM
+    from op_p import MM
     mm3 = MM[3]        # Class containing monster functions for p=3
     v = mm3.vector()   # Create one monster rep vector v for p=3
     mm3.random_mmv(v)  # randomize the vector v

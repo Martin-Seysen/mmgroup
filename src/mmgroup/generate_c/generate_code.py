@@ -68,7 +68,29 @@ def generate_code_parser():
 
     parser.add_argument('--out-header', 
         metavar = 'HEADER', default = None,
-        help = 'Set name of output header file to HEADER.')
+        help = 'Set name of output header file to HEADER. By defalt we take '
+               'the first file with extension .h in the list given in the '
+               'argument --sources.' )
+
+
+    parser.add_argument('--pxd', 
+        metavar='PXD',
+        action='store', default = None,
+        help='Set input .pxd file PXD for generating .pxd file with '
+        'same name from that input file and from the genereaded header.'
+    )
+
+    parser.add_argument('--pxi', 
+        action='store_true', 
+        help="Generate .pxi file from .pxd file if this option is set."
+    )
+
+    parser.add_argument('--pyx', 
+        metavar='PYX',
+        action='store', default = None,
+        help='Copy input .pyx file PYX from source path to output directory.'
+    )
+
  
     parser.add_argument('--tables', 
         nargs = '*',  metavar='TABLES',
@@ -117,8 +139,14 @@ def generate_code_parser():
         help = 'Set list of PATHS for finding python scripts')
 
     parser.add_argument('--out-dir', 
-        metavar = 'DIR', default = None,
-        help = 'Set directory DIR for output files')
+        metavar = 'DIR', default = None,  action = 'store',
+        help = 'Store output files with extensions .c and .h '
+       'in directory DIR')
+
+    parser.add_argument('--out-pxd-dir', 
+        metavar = 'DIR', action='store', default = None,
+        help = 'Store output files with extensions .pxd, .pxi, and .pyx '
+       'in directory DIR')
 
     parser.add_argument('--dll', 
         default = None,
@@ -126,6 +154,13 @@ def generate_code_parser():
         metavar = 'DLL_NAME',
         help = 'Generate code for exporting C functions to a DLL '
                'or to a shared library with name DLL_NAME')
+
+    parser.add_argument('--nogil', 
+        action='store_true', default = False,
+        help = "Optional, declare functions from .pxi file as 'nogil' "
+        "when set."
+    )
+
 
     parser.add_argument('--mockup', 
         default = False,
@@ -182,13 +217,13 @@ def find_file(pathlist, filename, verbose = 0):
     raise IOError(ERR % filename)
 
      
-def set_out_header(instance):   
+def set_real_out_header(instance):   
     dir = getattr(instance,'out_dir')
     header =  getattr(instance,'out_header')
     if header is None:
         return
     real_header = os.path.join(dir, os.path.normpath(header))
-    setattr(instance, 'out_header', real_header) 
+    setattr(instance, 'real_out_header', real_header) 
      
 
 
@@ -321,7 +356,7 @@ def subst_source_name(input_name, subst):
         target = os.path.normpath(target)
     else:
         target = None
-    return source, target, vars    
+    return source, target, ext, vars    
 
 
 
@@ -347,7 +382,9 @@ def make_actions(s):
                     del param[var]
         if action == 'sources':
             for name in data:
-                src, target, vars = subst_source_name(name, subst)
+                src, target, ext, vars = subst_source_name(name, subst)
+                if not s.out_header and ext == '.h':
+                    s.out_header = name 
                 param_dict = ImmutableDict(param, vars)
                 if param_dict not in s.c_files:
                     s.c_files[param_dict] = []
@@ -370,8 +407,8 @@ def finalize_parse_args(s):
     set_real_pathlist(s, 'source_path')
     set_real_pathlist(s, 'py_path')
     set_real_path(s, 'out_dir')
-    set_out_header(s)
     make_actions(s)
+    set_real_out_header(s)
     #print("\nFinalized\n", s)
     s.finalized = True
  
@@ -690,21 +727,25 @@ class CodeGenerator:
                     out_h.write("\n")
                     dest.close()
                 else:
-                     out_h = out_headers[n] = StringOutputFile()
-                     end_h = out_headers[BIGINT-n] = StringOutputFile()
-                     h_head, h_split, h_tail = split_header(src)
-                     tg.generate(h_head, None, out_h, 'h')
-                     out_h.write("\n")
-                     end_h.write(h_split)
-                     tg.generate(h_tail, None, end_h, 'h')
-                     end_h.write("\n")
+                    out_h = out_headers[n] = StringOutputFile()
+                    end_h = out_headers[BIGINT-n] = StringOutputFile()
+                    h_head, h_split, h_tail = split_header(src)
+                    tg.generate(h_head, None, out_h, 'h')
+                    out_h.write("\n")
+                    end_h.write(h_split)
+                    tg.generate(h_tail, None, end_h, 'h')
+                    end_h.write("\n")
 
-
-        out_header = open_for_write(out_dir, s.out_header)
+        out_header = open_for_write(out_dir, s.real_out_header)
         write_warning_generated(out_header)
         for key in sorted(out_headers):
             out_headers[key].copy_to(out_header)
         out_header.close()
+ 
+        if not s.mockup:
+            from mmgroup.generate_c.generate_pxd import make_pxd
+            self.load_table_generator(tg, ImmutableDict())
+            make_pxd(s, tg)
 
     def c_files(self):
         finalize_parse_args(self.s)

@@ -8,6 +8,7 @@ import sys
 import re
 import os
 import argparse
+import shutil
 
 from mmgroup.generate_c.make_c_tables import TableGenerator
 
@@ -21,9 +22,66 @@ from mmgroup.generate_c.generate_code import load_tables
 from mmgroup.generate_c.generate_code import import_tables
 from mmgroup.generate_c.generate_code import StringOutputFile
 from mmgroup.generate_c.generate_code import ActivatedPythonPath
+from mmgroup.generate_c.generate_code import open_for_write
 from mmgroup.generate_c.make_pxd import pxd_from_h
 from mmgroup.generate_c.make_pxi import pxd_to_pxi
 
+
+
+
+
+
+PXI_HEADER = """{0}
+### Wrappers for C functions from file %s
+###
+### File has been generated automatically. Do not change!
+{0}
+
+""".format("#" * 70)
+
+PXD_ERR = "Generating a .pxd file also requires generating a header"
+
+
+def make_pxd(s, table_generator):
+    print("This is make_pxd")
+
+    pxd = getattr(s, "pxd", None)
+    pxd_dir = getattr(s, "out_pxd_dir", "")
+    if pxd:
+        if not s.out_header:
+            raise ValueError(PXD_ERR)
+        
+        pxd_in = find_file(s.source_path, pxd)
+        f = open(pxd_in, "rt")
+        pxd_temp = StringOutputFile()
+        table_generator.generate(f, pxd_temp) 
+        pxd_string = pxd_temp.as_string() + "\n"
+
+        h_in = s.real_out_header
+        nogil = getattr(s, "no_gil", False)
+        
+        pxd_out = open_for_write(pxd_dir, pxd)
+        pxd_from_h(pxd_out, h_in, pxd_string, s.out_header, nogil)
+        pxd_out.close()
+        if getattr(s, "pxi", None):
+            pxi_name = re.sub(".pxd", ".pxi", pxd)
+            if not pxi_name.endswith(".pxi"):
+                err = "pxd file must have extension .pxd"
+                raise ValueError(err)
+            pxi_file = open_for_write(pxd_dir, pxi_name)
+            pxi_file.write(PXI_HEADER % pxd)
+            pxi_file.write(pxd_string)
+            pxd_name = os.path.realpath(os.path.join(pxd_dir, pxd))  
+            pxi_content = pxd_to_pxi(pxd_name, nogil = s.nogil)
+            pxi_file.write(pxi_content)
+            pxi_file.close()
+
+    pyx = getattr(s, "pyx", None)
+    if pyx:
+       pyx_in = find_file(s.source_path, pyx)
+       pyx_out = os.path.normpath(os.path.join(pxd_dir, pyx))
+       shutil.copy(pyx_in, pyx_out)
+         
 
 
 
@@ -236,14 +294,7 @@ class pxdGenerator:
            return
         out_dir = os.path.normpath(getattr(s, "out_dir", None))
         pxi_out = open_for_write(out_dir, s.pxi_out)
-        pxi_out.write("""{0}
-### Wrappers for C functions from file {1}
-###
-### File has been generated automatically. Do not change!
-{0}
-
-""".format("#" * 70, s.pxd_out)
-        )
+        pxi_out.write(PXI_HEADER % s.pxd_out)
         """
         pxi_source_name = find_file(self.s.pxd_path, s.pxi_in)
         pxi_source_text = open(pxi_source_name).read()
