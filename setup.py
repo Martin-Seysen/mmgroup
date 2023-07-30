@@ -176,13 +176,6 @@ GENERATE_START = '''
  --out-pxd-dir {PXD_DIR}
 '''.format(**DIR_DICT)
 
-GENERATE_START_PXD = '''
- -v
- {MOCKUP}
- --py-path {SRC_DIR}
- --out-dir {PXD_DIR}
- --h-path {C_DIR}
-'''.format(**DIR_DICT)
 
 ####################################################################
 # Building the extenstions at stage 1
@@ -345,16 +338,10 @@ MM_GENERATE = GENERATE_START + '''
           mmgroup.dev.mm_basics.mm_crt
  --sources mm_basics.h
  --sources
-'''.format(**DIR_DICT) + MM_SOURCES
-
-MM_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/mm_basics
- --tables mmgroup.dev.mm_basics.mm_basics
- --h-in  mm_basics.h
- --pxd-in  mm_basics.pxd
- --pxd-out mm_basics.pxd
- --pxi-in  mm_basics.pxd
-'''.format(**DIR_DICT)
+'''.format(**DIR_DICT) + MM_SOURCES + '''
+ --pxd mm_basics.pxd
+ --pxi
+'''
 
 
 
@@ -421,24 +408,10 @@ mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
 
-MM_OP_P_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/mm_op
- --tables mmgroup.dev.mm_basics.mm_basics
- --h-in  mm_op_p.h
- --pxd-in  mm_op_p.pxd
- --pxd-out mm_op_p.pxd
- --pxi-in  mm_op_p.pxd
- --pyx-in  mm_op_p.pyx
-'''.format(**DIR_DICT)
-
-
-
 mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
    [sys.executable, 'generate_code.py'] + MM_GENERATE.split(),
-   [sys.executable, 'generate_pxd.py'] + MM_GENERATE_PXD.split(),
    [sys.executable, 'generate_code.py'] + MM_OP_SUB_GENERATE.split(),
    [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
- #  [sys.executable, 'generate_pxd.py'] + MM_OP_P_GENERATE_PXD.split(),
 )
 
 
@@ -516,27 +489,18 @@ MM_REDUCE_GENERATE = GENERATE_START + '''
           mmgroup.dev.mm_reduce.vector_v1_mod3
  --sources mm_reduce.h
  --sources  
-'''.format(**DIR_DICT) + MM_REDUCE_SOURCES
-
+'''.format(**DIR_DICT) + MM_REDUCE_SOURCES + '''
+ --pxd   mm_reduce.pxd
+ --pxi
+ --pyx   mm_reduce.pyx
+'''
 
 mm_reduce_files = MM_REDUCE_SOURCES.split()
 mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
 
 
-MM_REDUCE_GENERATE_PXD = GENERATE_START_PXD + '''
- --pxd-path {SRC_DIR}/mmgroup/dev/mm_reduce
- --tables mmgroup.dev.mm_op.mm_op
- --h-in  mm_reduce.h
- --pxd-in  mm_reduce.pxd
- --pxd-out mm_reduce.pxd
- --pxi-in  mm_reduce.pxd
- --pyx-in  mm_reduce.pyx
-'''.format(**DIR_DICT)
-
-
 reduce_presteps =  CustomBuildStep('Code generation for modules mm_reduce',
    [sys.executable, 'generate_code.py'] + MM_REDUCE_GENERATE.split(),
-   [sys.executable, 'generate_pxd.py'] + MM_REDUCE_GENERATE_PXD.split(),
 )
 
 
