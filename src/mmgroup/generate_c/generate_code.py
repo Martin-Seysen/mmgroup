@@ -46,49 +46,56 @@ class MyArgumentParser(argparse.ArgumentParser):
 
 
 def generate_code_parser():
-    description = ("Generate C code and header files for the mmgroup project "
-    "from source files using certain tables and directives in the source file."
+    description = ('Generate C files and a header file for the mmgroup project '
+    'from source files using certain tables and directives in the source file. '
+    'Optionally, a .pxd, and a .pxi file may be generated from that header. ' 
     )
 
-    epilog = ("Some more documentation will follow here later."
-    )
+    # epilog = ("Some more documentation will follow here later."
+    #)
 
     parser = MyArgumentParser(
-        description=description, epilog=epilog,
+        prog = 'generate_code',
+        description=description,  
+        # epilog=epilog,
         fromfile_prefix_chars='+',
     )
 
     parser.add_argument('--sources', 
-        dest='actions', nargs = '*',  metavar='FILES',
+        dest='actions', nargs = '*',  metavar='SOURCE',
         action=GenerateAction,
-        help="List of source FILES to be generated. For a source with "
-             "extension '.c' a .c file is generated. A source with "
-             "extension '.h' is copied into the common header file."
+        help="List of SOURCE files to be generated. For each SOURCE with "
+             "extension '.c' a '.c' file is generated from a file with "
+             "the same name and extension '.ske'. A SOURCE with "
+             "extension '.h' is copied into the common header file. "
+             "Each SOURCE is seached in the path set by parameter "
+             "'--source-path'. Output is written to the directory set "
+             "by parameter '--out-dir'."
     )
 
     parser.add_argument('--out-header', 
         metavar = 'HEADER', default = None,
-        help = 'Set name of output header file to HEADER. By defalt we take '
-               'the first file with extension .h in the list given in the '
-               'argument --sources.' )
+        help = "Set name of output header file to HEADER. By default we take "
+               "the first file with extension .h in the list given in the "
+               "argument '--sources'." )
 
 
     parser.add_argument('--pxd', 
         metavar='PXD',
         action='store', default = None,
-        help='Set input .pxd file PXD for generating .pxd file with '
-        'same name from that input file and from the genereaded header.'
+        help="Set input '.pxd' file PXD for generating '.pxd' file with "
+        "same name from that input file and from the generated header."
     )
 
     parser.add_argument('--pxi', 
         action='store_true', 
-        help="Generate .pxi file from .pxd file if this option is set."
+        help="Generate '.pxi' file from '.pxd' file if this option is set."
     )
 
     parser.add_argument('--pyx', 
         metavar='PYX',
         action='store', default = None,
-        help='Copy input .pyx file PYX from source path to output directory.'
+        help="Copy input '.pyx' file PYX from source path to output directory."
     )
 
  
@@ -114,18 +121,19 @@ def generate_code_parser():
         nargs = '*',  metavar='PATTERN SUBSTITUTION',
         action=GenerateAction,
         help=textwrap.dedent(
-        "Map the name of a .c or .h file to be generated to the "
+        "Map the name of a '.c' or '.h' file to be generated to the "
         "name of a file used as a source for the generation process. "
+        "\n"
         "Example: \"--subst mm(?P<p>[0-9]+)_op mm_op\"   maps e.g."
         "'mm3_op' to 'mm_op'. "
-        "We substitute PATTERN in the name of a genrated file by "
+        "We substitute PATTERN in the name of a generated file by "
         "SUBSTITUTION for obtaining the name of that source. "
         "The part \"(?P<p>[0-9]+)\" "
         "creates a variable 'p' that takes the decimal string "
         "following the intial letters 'mm' in the file name. "
-        "variable 'p' will be passed to the table classes "
+        "Then variable 'p' will be passed to the table classes "
         "used for code generation. "
-        "PATTERN must be given in regular expression syntax. "
+        "PATTERN must be given in python regular expression syntax. "
         )
     )
    
@@ -141,19 +149,22 @@ def generate_code_parser():
     parser.add_argument('--out-dir', 
         metavar = 'DIR', default = None,  action = 'store',
         help = 'Store output files with extensions .c and .h '
-       'in directory DIR')
+       'in directory DIR.')
 
     parser.add_argument('--out-pxd-dir', 
         metavar = 'DIR', action='store', default = None,
         help = 'Store output files with extensions .pxd, .pxi, and .pyx '
-       'in directory DIR')
+       'in directory DIR.')
 
     parser.add_argument('--dll', 
         default = None,
         action = 'store',
         metavar = 'DLL_NAME',
         help = 'Generate code for exporting C functions to a DLL '
-               'or to a shared library with name DLL_NAME')
+               'or to a shared library with name DLL_NAME. Parameter '
+               'DLL_NAME must be the same for all generated C files '
+               'to be placed into the same DLL. '
+               'This parameter is not used for any other purposes.')
 
     parser.add_argument('--nogil', 
         action='store_true', default = False,

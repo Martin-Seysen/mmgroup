@@ -1,13 +1,22 @@
 
 
-The current version of the ``mmgroup`` package is a source distribution that has 
-been tested on a 64-bit Windows, Linux and macOS. It runs with python 3.7 or 
-higher. The sources of the project can be downloaded from
+The current version of the ``mmgroup`` package is a source distribution 
+that has been tested on a 64-bit Windows, Linux and macOS. It runs with 
+python 3.8 or higher. The sources of the project can be downloaded from
 
 https://github.com/Martin-Seysen/mmgroup . 
 
-The distribution contains a number of extensions written
-in ``C`` which have to be built before use. 
+
+We use the python package ``cibuildwheel`` to build several wheels on
+these operating systems. The GitHub repository of the project contains
+actions to build the corrsponding python wheels. The program code for 
+the GitHub actions is stored in subdirectory ``.github/workflows``.
+More details about the build process are given in
+section :ref:`build-process-label`.
+
+The *mmmgroup* package contains a number of extensions written
+in ``C`` which have to be built before use. This will be discussed
+in section :ref:`code-generation-label`.
 
 Dependencies
 ------------
@@ -31,7 +40,7 @@ should install the following python packages:
   ``regex``                Development: parsing balanced curly braces
   ``setuptools``           Development: basic package used for setup and building
                            extensions
-  ``patchelf``             Development (Linux and macOS only): patching shared
+  ``auditwheel``           Development (Linux and macOS only): patching shared
                            libraries
   ``sphinx``               Documentation: basic package used for documentation
   ``sphinx-rtd-theme``     Documentation: 'theme' to be used by sphinx 
@@ -92,7 +101,6 @@ package, see e.g.
 
 https://packaging.python.org/guides/distributing-packages-using-setuptools/#wheels
 
-The current version supports building wheels for 64-bit Windows, Linux and maccOS.
 
 Remarks
 .......
@@ -101,14 +109,6 @@ If you have installed any version of the ``mmgroup`` package (e.g. with
 the ``pip`` tool) then you **must** uninstall that package before you can 
 build a new version of the ``mmgroup`` package from the source files.
 
-We recommend to run
-
-.. code-block::
-
-   python cleanup.py -pcx
-
-in the root directory of the distribution for cleaning up intermediate
-files before building the package from the source files.
 
 
 Installing a C compiler for cython in Windows 
@@ -116,12 +116,8 @@ Installing a C compiler for cython in Windows
 
 The bad news for Windows developers is that there is no pre-installed 
 ``C`` compiler on a standard Windows system. However, the ``cython`` 
-package requires a ``C`` compiler. Here in principle, the user has the 
-choice between the following two compilers:
+package requires the ``C`` compiler ``MSVC``.   
 
-   *  ``MSVC``   
-
-   *  ``MinGW-w64``
 
 The user has to install a ``C`` compiler so that it cooperates with 
 ``cython``. 
@@ -129,13 +125,6 @@ That installation process is out of the scope of this document.
 
 For installing ``MSVC``, one might start looking at 
 https://wiki.python.org/moin/WindowsCompilers
-
-For installing ``MinGW``, one might start looking at
-https://cython.readthedocs.io/en/latest/src/tutorial/appendix.html.
-
-The current ``setup.py`` supports ``MSVC`` and ``MinGW`` for 64-bit 
-Windows. According to the last URL the ``MinGW`` compiler works with 
-Python versions up to 3.4 only, so that it can no longer be recommended. 
 
 The author has installed the ``MSVC`` compiler with the Microsoft
 *Build Tools for Visual Studio* from:
@@ -149,7 +138,6 @@ https://www.scivision.dev/python-windows-visual-c-14-required/  .
 Before typing ``python setup.py bdist_wheel`` in a Windows command 
 line the author had to type::
 
-
   "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 Here the path my be different on the user's Windows system.
@@ -157,10 +145,4 @@ Here the path my be different on the user's Windows system.
 
 
     
-Remarks
-....... 
-
-You may also use the python package ``cibuildwheel`` to build several wheels on
-differnt operating systems. The GitHub repository of the project contains
-actions to build several wheelson differnt opating systems. 
 
