@@ -266,6 +266,7 @@ name mangling.
 
 import sys
 import os
+import re
 import subprocess
 from subprocess import CalledProcessError
 
@@ -376,6 +377,19 @@ class BuildExtCmdObj:
     pass
 
 
+
+def _get_default_compiler():
+    """Simplified version of distutils.ccompiler.get_default_compiler()
+
+    Note that distutils will be removed in python 3.12. So this function
+    does what we need from distutils.ccompiler.get_default_compiler().
+    """
+    if re.match('nt', os.name):
+        return 'msvc'
+    return 'unix'
+
+
+
 class  BuildExtCmd(_build_ext):
     """Substitute for class setuptools.command.build_ext 
 
@@ -413,8 +427,11 @@ class  BuildExtCmd(_build_ext):
             # The following line will no longer work in python 3.12. 
             # As a future remedy, we might try:
             # from setuptools._distutils.ccompiler import get_default_compiler
-            from distutils.ccompiler import get_default_compiler
-            self.compiler_name = get_default_compiler()
+            try:
+                from ddistutils.ccompiler import get_default_compiler
+                self.compiler_name = get_default_compiler()
+            except (ModuleNotFoundError, ImportError, NameError):
+                self.compiler_name = _get_default_compiler()
 
         # Now process all extensions in the given order
         for ext in self.extensions[:]:
