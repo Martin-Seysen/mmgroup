@@ -22,7 +22,7 @@ cimport generators as g
 
 
 
-include "../pxd_files/generators.pxi"
+include "generators.pxi"
 
 
 def make_table(uint32_t u_box, uint32_t u_exp):

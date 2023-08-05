@@ -16,7 +16,7 @@ from mmgroup.structures.construct_mm import iter_strings_from_atoms
 
 
 cimport cython
-include "../pxd_files/mm_reduce.pxi"
+include "mm_reduce.pxi"
 cimport generators as gen
 cimport mm_reduce as mr
 

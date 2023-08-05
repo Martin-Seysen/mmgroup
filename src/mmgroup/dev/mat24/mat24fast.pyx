@@ -8,7 +8,7 @@ from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t;
 
 
 
-include "../pxd_files/mat24_functions.pxd"
+include "mat24_functions.pxd"
 
 
 

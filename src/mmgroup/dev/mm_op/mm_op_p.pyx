@@ -22,7 +22,7 @@ def characteristics():
     return [op_p.MM_OP_P_TABLE[j] for j in range(i)] 
 
 
-include "../pxd_files/mm_basics.pxi"
+include "mm_basics.pxi"
 
 
 

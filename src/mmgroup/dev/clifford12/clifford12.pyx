@@ -16,7 +16,7 @@ from libc.stdlib cimport malloc, free
 
 
 cimport cython
-include "../pxd_files/clifford12.pxi"
+include "clifford12.pxi"
 cimport clifford12 as cl
 ctypedef qstate12_type *p_qstate12_type
  
