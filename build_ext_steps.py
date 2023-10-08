@@ -350,17 +350,57 @@ class SharedExtension(_Extension):
     """
     def __init__(self,  *args, **kwds):
         self.implib_dir = None
+        self.static_lib = False
         # If keyword argument "implib_dir" is given, set self.implib_dir
         # to the corresponding value
         if "implib_dir" in kwds:
             self.implib_dir = kwds["implib_dir"]
             del kwds["implib_dir"]
+        if "static_lib" in kwds:
+            self.static_lib = bool(kwds["static_lib"])
+            del kwds["static_lib"]
         # Treat all other arguments as in the base class 'Extension'.
         super(SharedExtension, self).__init__(*args, **kwds)
         self.is_non_standard = True
         self.lib_name = self.name.split(".")[-1]
+        if self.static_lib:
+            self.lib_name = "static_" + self.lib_name            
         if os.name == "nt":
             self.lib_name = "lib" + self.lib_name
+
+
+    def get_implib_dir(self):    
+        if not self.implib_dir:
+            if self.static_lib:
+                s = " static library"
+            elif os.name == "nt": 
+                s = " Windows DLL"
+            else:
+                s = ""
+            raise DistutilsSetupError(
+                  "Class SharedExtension requires keyword "
+                  "argument 'implib_dir' for building%s" )
+        return self.implib_dir
+
+
+    def linker_library_options(self, compiler):
+        if compiler in ['mingw32', 'unix']:
+            inc, lib = "-L", "-l"
+        elif compiler in ['msvc']:
+            inc, lib = "/LIBPATH:", "/DEFAULTLIB:"
+        else:
+            raise DistutilsSetupError(
+                  "Don't know how to deal with %s compiler" % compiler )
+        largs = []
+        for inc_dir in self.library_dirs:
+            # same search path for include files an libraries
+            largs.append(inc + inc_dir)
+        for library in self.libraries: 
+            largs.append(lib + library )
+        return largs
+
+
+
 
 
 class BuildExtCmdObj:
@@ -596,7 +636,7 @@ class  BuildExtCmd(_build_ext):
         """
         outputs = []
         for ext in self.extensions[:]:
-            if isinstance(ext, SharedExtension):
+            if isinstance(ext, SharedExtension) and not ext.static_lib:
                 outputs.append(self.get_shared_ext_filename(ext.name))
         return outputs
 
@@ -622,7 +662,6 @@ def make_dll_nt_msvc(cmd, ext):
     compile_args = [ "/c",  "/W4", "/DMS_WIN64"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("/I " + os.path.realpath(ipath))
-    link_args = ["/DLL"] + ext.extra_link_args 
     objects = []
 
     # add define macros
@@ -647,33 +686,25 @@ def make_dll_nt_msvc(cmd, ext):
         subprocess.check_call("cl " + " ".join(args)) 
 
     # Link
-    largs = link_args[:] + objects 
-    for inc_dir in ext.library_dirs:
-        # same search path for include files an libraries
-        largs.append("/LIBPATH:" + inc_dir)
-    for library in ext.libraries: 
-        largs.append( "/DEFAULTLIB:" + library )  
-    dll_name = cmd.get_shared_ext_filename(ext.name)  
-    dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
-    largs +=  ["/OUT:" + dll_path ]
-    if not ext.implib_dir:
-        raise DistutilsSetupError(
-                  "Class SharedExtension requires keyword "
-                  "argument 'implib_dir' for building Windows DLL" )
-    pure_dll_name = ext.name.split(".")[-1]
-    #def_path =   os.path.join(ext.implib_dir, "%s.def" % pure_dll_name)
-    #largs += [ "-Wl,--output-def," + def_path ]
-    implib_path = os.path.join(ext.implib_dir, "lib%s.lib" % pure_dll_name)
-    largs += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
-    print("link " + " ".join(largs))
-    subprocess.check_call("link " + " ".join(largs)) 
-
-    #print("removing object files...")
-    #for obj in objects:
-    #    os.remove(obj)
+    implib_dir = ext.get_implib_dir()
+    if ext.static_lib:
+        dll_path =  os.path.join(implib_dir, ext.lib_name) + '.lib'
+        lcmd =  ["lib"] + objects + ["/OUT:" + dll_path ]
+    else:
+        lcmd = ["link", "/DLL"] + ext.extra_link_args + objects
+        lcmd += ext.linker_library_options('msvc')
+        dll_name = cmd.get_shared_ext_filename(ext.name)  
+        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
+        lcmd +=  ["/OUT:" + dll_path ]
+        pure_dll_name = ext.name.split(".")[-1]
+        implib_path = os.path.join(implib_dir, "lib%s.lib" % pure_dll_name)
+        #def_path =   os.path.join(ext.implib_dir, "%s.def" % pure_dll_name)
+        #lcmd += [ "-Wl,--output-def," + def_path ]
+        lcmd += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
+    print(" ".join(lcmd))
+    subprocess.check_call(" ".join(lcmd)) 
     print(dll_path + "\nhas been generated.\n")
 
-    #Todo: copy dll to build path if requested
     
 
 
@@ -685,7 +716,6 @@ def make_dll_nt_mingw32(cmd, ext):
     compile_args = [ "-c", "-Wall", "-DMS_WIN64"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("-I" + os.path.realpath(ipath))
-    link_args = ["-shared",  "-Wall", "-DMS_WIN64"] + ext.extra_link_args 
     objects = []
 
     # add define macros
@@ -711,33 +741,25 @@ def make_dll_nt_mingw32(cmd, ext):
         subprocess.check_call("gcc " + " ".join(args)) 
 
     # Link
-    largs = link_args[:] + objects 
-    for inc_dir in ext.library_dirs:
-        # same search path for include files an libraries
-        largs.append("-L" + inc_dir)
-    for library in ext.libraries: 
-        largs.append("-l" + library )
-    dll_name = cmd.get_shared_ext_filename(ext.name)  
-    dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
-    largs +=  ["-o",  dll_path ]
-    if not ext.implib_dir:
-        raise DistutilsSetupError(
-                  "Class SharedExtension requires keyword "
-                  "argument 'implib_dir' for building Windows DLL" )
-    pure_dll_name = ext.name.split(".")[-1]
-    def_path =   os.path.join(ext.implib_dir, "%s.def" % pure_dll_name)
-    largs += [ "-Wl,--output-def," + def_path ]
-    implib_path = os.path.join(ext.implib_dir, "lib%s.lib" % pure_dll_name)
-    largs += [ "-Wl,--out-implib," + implib_path ]
-    print("gcc " + " ".join(largs))
-    subprocess.check_call("gcc " + " ".join(largs)) 
+    largs = objects + ext.linker_library_options('mingw32')
+    if ext.static_lib:
+        raise DistutilsSetupError("Cannot build static library")
+    else:
+        largs = ["-shared",  "-Wall", "-DMS_WIN64"
+                    ] + ext.extra_link_args + largs
+        dll_name = cmd.get_shared_ext_filename(ext.name)  
+        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
+        largs +=  ["-o",  dll_path ]
+        pure_dll_name = ext.name.split(".")[-1]
+        implib_dir = ext.get_implib_dir()
+        def_path =   os.path.join(implib_dir, "%s.def" % pure_dll_name)
+        largs += [ "-Wl,--output-def," + def_path ]
+        implib_path = os.path.join(implib_dir, "lib%s.lib" % pure_dll_name)
+        largs += [ "-Wl,--out-implib," + implib_path ]
+        print("gcc " + " ".join(largs))
+        subprocess.check_call("gcc " + " ".join(largs)) 
+        print(dll_path + "\nhas been generated.\n")
 
-    print("removing object files...")
-    for obj in objects:
-        os.remove(obj)
-    print(dll_path + "\nhas been generated.\n")
-
-    #Todo: copy dll to build path if requested
     
 
 
@@ -746,7 +768,6 @@ def make_so_posix_gcc(cmd, ext):
     compile_args = [ "-c", "-Wall"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("-I" + os.path.realpath(ipath))
-    link_args = ["-shared",  "-Wall"] + ext.extra_link_args 
     objects = []
 
     # add define macros
@@ -772,25 +793,21 @@ def make_so_posix_gcc(cmd, ext):
         subprocess.check_call(["cc"] + args) 
 
     # Link
-    largs = link_args[:] + objects 
-    for inc_dir in ext.library_dirs:
-        # same search path for include files an libraries
-        largs.append("-L" + inc_dir)
-    for library in ext.libraries: 
-        largs.append("-l" + library )
-    dll_name = cmd.get_shared_ext_filename(ext.name).split("/")
-    dll_name[-1] =  "lib" + dll_name[-1]  
-    dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
-    largs +=  ["-o",  dll_path ]
-    print("cc " + " ".join(largs))
-    subprocess.check_call(["cc"] + largs) 
-
-    print("removing object files...")
-    for obj in objects:
-        os.remove(obj)
+    if ext.static_lib:
+        implib_dir = ext.get_implib_dir()
+        dll_path = os.path.join(implib_dir, 'lib' + ext.lib_name) + '.a'
+        lcmd =  ["ar", "rcs", dll_path ] + objects
+    else:
+        lcmd = ["cc", "-shared",  "-Wall"] + ext.extra_link_args
+        lcmd += objects + ext.linker_library_options('unix')
+        dll_name = cmd.get_shared_ext_filename(ext.name).split("/")
+        dll_name[-1] =  "lib" + dll_name[-1]  
+        dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
+        lcmd +=  ["-o",  dll_path ]
+    print(" ".join(lcmd))
+    subprocess.check_call(lcmd) 
     print(dll_path + "\nhas been generated.\n")
 
-    #Todo: copy dll to build path if requested
     
 
 

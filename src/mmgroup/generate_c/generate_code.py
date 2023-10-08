@@ -130,7 +130,7 @@ def generate_code_parser():
         "SUBSTITUTION for obtaining the name of that source. "
         "The part \"(?P<p>[0-9]+)\" "
         "creates a variable 'p' that takes the decimal string "
-        "following the intial letters 'mm' in the file name. "
+        "following the initial letters 'mm' in the file name. "
         "Then variable 'p' will be passed to the table classes "
         "used for code generation. "
         "PATTERN must be given in python regular expression syntax. "
@@ -164,7 +164,8 @@ def generate_code_parser():
                'or to a shared library with name DLL_NAME. Parameter '
                'DLL_NAME must be the same for all generated C files '
                'to be placed into the same DLL. '
-               'This parameter is not used for any other purposes.')
+               'This parameter is not used for any other purposes.'
+               '\'--dll None\' generates code for static linking.' )
 
     parser.add_argument('--nogil', 
         action='store_true', default = False,
@@ -701,7 +702,7 @@ class CodeGenerator:
         load_tables(table_generator, tables, params)
 
     def set_dll_prefixes(self, table_generator):
-        if self.s.dll and not self.s.mockup:
+        if self.s.dll and self.s.dll != "None" and not self.s.mockup:
             self.c_prefix = DLL_C_FILE_PREFIX.format(self.s.dll)
             self.h_prefix = DLL_HEADER_PREFIX.format(self.s.dll)
             table_generator.export_kwd = EXPORT_KWD.format(self.s.dll)

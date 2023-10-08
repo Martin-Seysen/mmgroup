@@ -79,11 +79,15 @@ print_commandline_args()
 ####################################################################
 
 STAGE = 1
+STATIC_LIB = False
 # Parse a global option '--stage=i' and set variable ``STAGE``
 # to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
     if s.startswith('--stage='):
         STAGE = int(s[8:])
+        sys.argv[i+1] = None
+    if s.startswith('--static_lib'):
+        STATIC_LIB = True
         sys.argv[i+1] = None
     elif s[:1].isalpha:
         break
@@ -181,13 +185,16 @@ GENERATE_START = '''
 # Building the extenstions at stage 1
 ####################################################################
 
+DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MAT24"
+
+
 MAT24_SOURCES = '''
    mat24_functions.c
    mat24_random.c
 '''
 
 MAT24_GENERATE = GENERATE_START + '''
- --dll MAT24
+ --dll {DLL_NAME}
  --source-path {SRC_DIR}/mmgroup/dev/mat24
  --tables mmgroup.dev.mat24.mat24_ref 
  --sources mat24_functions.h
@@ -197,15 +204,15 @@ MAT24_GENERATE = GENERATE_START + '''
  --pyx  mat24fast.pyx
 '''
 
-
 GENERATORS_SOURCES = '''
    gen_xi_functions.c mm_group_n.c gen_leech.c 
    gen_leech_type.c gen_leech3.c gen_leech_reduce.c
    gen_leech_reduce_n.c gen_random.c
 '''
 
+
 GENERATORS_GENERATE = GENERATE_START + '''
- --dll MAT24
+ --dll {DLL_NAME}
  --source-path {SRC_DIR}/mmgroup/dev/generators
  --tables mmgroup.dev.generators.gen_cocode_short
           mmgroup.dev.generators.gen_leech_reduce_n 
@@ -227,8 +234,9 @@ CLIFFORD12_SOURCES = '''
   xsp2co1_map.c
 '''
 
+
 CLIFFORD12_GENERATE = GENERATE_START + '''
- --dll MAT24
+ --dll {DLL_NAME}
  --source-path {SRC_DIR}/mmgroup/dev/clifford12
  --tables mmgroup.dev.clifford12.bit64_tables
  --sources clifford12.h
@@ -261,6 +269,7 @@ mat24_shared = SharedExtension(
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
     define_macros = [],
+    static_lib = STATIC_LIB,
 )
 
 
@@ -322,13 +331,16 @@ if STAGE < 2:
 # Building the extensions at stage 2
 ####################################################################
 
+DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MM_OP"
+
+
 MM_SOURCES = '''
     mm_aux.c mm_tables.c mm_group_word.c
     mm_tables_xi.c mm_crt.c
 '''
 
 MM_GENERATE = GENERATE_START + '''
- --dll MM_OP
+ --dll {DLL_NAME}
  --source-path {SRC_DIR}/mmgroup/dev/mm_basics
                {SRC_DIR}/mmgroup/dev/mm_op
  --tables mmgroup.dev.mm_basics.mm_basics
@@ -369,7 +381,7 @@ for p in [15]:
       '''.format(p=p)
 
 MM_OP_SUB_GENERATE = GENERATE_START + '''
- --dll MM_OP
+ --dll {DLL_NAME}
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --subst mm(?P<p>[0-9]+)_op mm_op
  --tables mmgroup.dev.mm_op.mm_op
@@ -389,7 +401,7 @@ MM_OP_P_SOURCES = '''
 '''
 
 MM_OP_P_GENERATE = GENERATE_START + '''
- --dll MM_OP -v
+ --dll {DLL_NAME} -v
  --source-path {SRC_DIR}/mmgroup/dev/mm_op
  --set C_DIR={C_DIR}
  --tables mmgroup.dev.mm_basics.mm_basics
@@ -424,6 +436,7 @@ mm_op_shared =  SharedExtension(
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
     define_macros = [],
+    static_lib = STATIC_LIB,
 )
 
 
@@ -469,6 +482,8 @@ if STAGE < 3:
 # Building the extensions at stage 3
 ####################################################################
 
+DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MM_REDUCE"
+
 
 MM_REDUCE_SOURCES = '''
    mm_order_vector.c
@@ -481,7 +496,7 @@ MM_REDUCE_SOURCES = '''
 '''
 
 MM_REDUCE_GENERATE = GENERATE_START + '''
- --dll MM_REDUCE -v
+ --dll {DLL_NAME} -v
  --source-path {SRC_DIR}/mmgroup/dev/mm_reduce
  --set p=15
  --tables mmgroup.dev.mm_op.mm_op
@@ -513,6 +528,7 @@ mm_reduce =  SharedExtension(
     extra_compile_args = EXTRA_COMPILE_ARGS,
     implib_dir = C_DIR,
     define_macros = [],
+    static_lib = STATIC_LIB,
 )
 
 
