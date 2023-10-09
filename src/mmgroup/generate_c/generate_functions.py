@@ -450,7 +450,7 @@ for name, f in safe_locals.items():
 # See  https://greentreesnakes.readthedocs.io/en/latest/nodes.html
 good_ast_nodes = set([
    ast.Expression,
-   ast.Num, ast.Str, ast.List, ast.Ellipsis, ast.Expr,
+   ast.List, ast.Expr,
    ast.Load,
    ast.Constant,
    ast.Tuple,
@@ -476,11 +476,16 @@ good_ast_nodes = set([
 ])
 
 
+with warnings.catch_warnings():
+    warnings.filterwarnings('error')
+    # Some deprecated ast classes
+    AST_CLASSES = ['Num', 'Str', 'Ellipsis', 'NameConstant']
+    for attr in AST_CLASSES:
+        try:
+            good_ast_nodes.add(getattr(ast, attr))
+        except:
+            pass
 
-try:
-    good_ast_nodes.add(ast.NameConstant) # New in version 3.4
-except:
-    pass 
 
 
 class EvalNodeVisitor(ast.NodeVisitor):
