@@ -1,5 +1,6 @@
 recursive-include . *.ske *.pyx *.ini *.rst *.bat
 recursive-include src/mmgroup *.py
+recursive-include applications *.py
 include .gitignore
 include *.py
 include src/*.py
@@ -14,7 +15,6 @@ include src/mmgroup/dev/mat24/*.h
 include src/mmgroup/dev/mm_basics/*.h
 include src/mmgroup/dev/mm_op/*.h
 include src/mmgroup/dev/mm_reduce/*.h
-include applications/Hurwitz/*.py
 include pytest.ini
 include README.rst
 include requirements.txt
