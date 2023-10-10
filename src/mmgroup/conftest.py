@@ -1,5 +1,29 @@
-[pytest]
-markers =
+"""Register custom markers for pytest.
+
+This module registers the custom markers for pytest so 
+that we may invoke:
+
+pytest --pyargs mmgroup [options]
+
+without 'PytestUnknownMarkWarning' warnings. 
+This tests the **installed** mmgroup package.
+
+This registering is usually done in the configuration 
+file pytest.ini in the root directory, see:
+
+https://pytest.org/en/7.4.x/reference/customize.html#pytest-ini
+
+Alternatively, we may register these markers in file conftest.py.
+Here file conftest.py may be loacated in the  installed
+python package mmgroup, see:
+
+https://pytest.org/en/7.4.x/how-to/writing_plugins.html#registering-custom-markers
+
+"""
+
+
+# Registration of markers in the style used by file pytest.ini 
+markers = r"""
    auto_group: test groups derived from mmgroup.structures.auto_group
    axes:       test modules dealing with operations on 2A axes
    bench:      benchmark
@@ -24,5 +48,10 @@ markers =
    user:       interaction tests that should be done by the user
    very_slow:  marks tests as very slow 
    xsp2co1:    test modules xsp2co1.c and xsp2co1_elem.c
+"""
 
-
+# Hook for extending pytest configuration
+def pytest_configure(config):
+    for line in markers.split("\n"):
+        if len(line) and not line.isspace():
+            config.addinivalue_line("markers", line.strip())

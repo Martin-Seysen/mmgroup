@@ -16,7 +16,40 @@ EXTENSIONS = [".pyd", ".dll", ".lib", ".so"]
 
 EXTENSION_STR = ", ".join(EXTENSIONS) if len(EXTENSIONS) else "?"
 
+TEMP_SUBDIRS = [
+    ".eggs",  ".pytest_cache", "build", "builddir", "dist",
+    "src/mmgroup.egg-info"
+]
 
+RECURSIVE_TEMP_SUBDIRS = [
+    "__pycache__", "mmgroup.egg-info"
+]
+
+
+def delete_recursive_subdirs(root_dir, target_name, verbose = False):
+    for dirpath, dirnames, filenames in os.walk(root_dir, topdown=False):
+        for dirname in dirnames:
+            if dirname == target_name:
+                dir_to_delete = os.path.join(dirpath, dirname)
+                try:
+                    shutil.rmtree(dir_to_delete)
+                    if verbose:
+                         s = 'Directory %s and its content removed'
+                         print(s % dir_to_delete)
+                except Exception as e:
+                    pass
+
+
+def del_subdirs(verbose = False):
+    for dir in TEMP_SUBDIRS:
+        try:
+            shutil.rmtree(dir)
+            if verbose:
+                print('Directory %s and its content removed' % dir)
+        except:
+            pass
+    for target_name in RECURSIVE_TEMP_SUBDIRS:
+        delete_recursive_subdirs('.', target_name, verbose)
 
 def del_pyc(verbose = False):
     if verbose:
@@ -142,6 +175,8 @@ def main():
     parser.add_option("-x",  dest="del_ext", action="store_true",
         help="Delete automatically generated extensions (%s)" %
         EXTENSION_STR)
+    parser.add_option("-s",  dest="del_subdirs", action="store_true",
+        help="Delete temporary subdirectories" )
     parser.add_option("-a",  dest="del_all", action="store_true",
         help="Delete all automatically generated files" )
     parser.add_option("-g",  dest="git_checkout", action="store_true",
@@ -156,6 +191,8 @@ def main():
         del_pyc(verbose)
     if options.del_c or options.del_all:
         del_c(verbose)
+    if options.del_subdirs:
+        del_subdirs(verbose)
     if options.del_data or options.del_all:
         del_data(verbose)
     if options.del_ext or options.del_all:

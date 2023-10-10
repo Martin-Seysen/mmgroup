@@ -96,6 +96,7 @@ mechanism for generating atoms of an algebra.
 
 import re
 import ast
+import warnings
 
 
 #######################################################################
@@ -197,7 +198,7 @@ class AtomDict(object):
 # See  https://greentreesnakes.readthedocs.io/en/latest/nodes.html
 good_ast_nodes = set([
    ast.Expression,
-   ast.Num, ast.Str, ast.Expr,
+   ast.Expr,
    ast.Load,
    ast.Constant,
 
@@ -214,11 +215,15 @@ good_ast_nodes = set([
 ])
 
 
-
-try:
-    good_ast_nodes.add(ast.NameConstant) # New in version 3.4
-except:
-    pass
+with warnings.catch_warnings():
+    warnings.filterwarnings('error')
+    # Some deprecated ast classes
+    AST_CLASSES = ['Num', 'Str', 'NameConstant']
+    for attr in AST_CLASSES:
+        try:
+            good_ast_nodes.add(getattr(ast, attr))
+        except:
+            pass
 
 
 
