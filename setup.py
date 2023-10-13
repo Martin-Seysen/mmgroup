@@ -44,6 +44,7 @@ SRC_DIR =  os.path.realpath(os.path.join(ROOT_DIR, 'src'))
 PACKAGE_DIR = os.path.join(SRC_DIR, 'mmgroup')
 DEV_DIR = os.path.join(PACKAGE_DIR, 'dev')
 C_DIR = os.path.join(DEV_DIR, 'c_files')
+LIB_DIR = os.path.join(DEV_DIR, 'lib_files')
 PXD_DIR = os.path.join(DEV_DIR, 'pxd_files')
 
 sys.path.append(ROOT_DIR)
@@ -264,10 +265,10 @@ mat24_shared = SharedExtension(
     name = 'mmgroup.mmgroup_mat24', 
     sources = mat24_c_paths,
     libraries = [], 
-    include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, C_DIR],
+    include_dirs = [PACKAGE_DIR, LIB_DIR],
+    library_dirs = [PACKAGE_DIR, LIB_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
-    implib_dir = C_DIR,
+    lib_dir = LIB_DIR,
     define_macros = [],
     static_lib = STATIC_LIB,
 )
@@ -284,7 +285,7 @@ mat24_extension = Extension('mmgroup.mat24',
         ],
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
-        library_dirs = [PACKAGE_DIR, C_DIR ],
+        library_dirs = [PACKAGE_DIR, LIB_DIR ],
         libraries = shared_libs_stage1, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -297,7 +298,7 @@ generators_extension = Extension('mmgroup.generators',
         ],
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
-        library_dirs = [PACKAGE_DIR, C_DIR ],
+        library_dirs = [PACKAGE_DIR, LIB_DIR ],
         libraries = shared_libs_stage1, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -310,7 +311,7 @@ clifford12_extension =  Extension('mmgroup.clifford12',
         ],
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
-        library_dirs = [PACKAGE_DIR, C_DIR ],
+        library_dirs = [PACKAGE_DIR, LIB_DIR ],
         libraries = shared_libs_stage1, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -432,9 +433,9 @@ mm_op_shared =  SharedExtension(
     sources = mm_op_c_paths,
     libraries = shared_libs_stage1, 
     include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, C_DIR],
+    library_dirs = [PACKAGE_DIR, LIB_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
-    implib_dir = C_DIR,
+    lib_dir = LIB_DIR,
     define_macros = [],
     static_lib = STATIC_LIB,
 )
@@ -451,7 +452,7 @@ mm_op_extension = Extension('mmgroup.mm_op',
     ],
     #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
-    library_dirs = [ PACKAGE_DIR, C_DIR ],
+    library_dirs = [ PACKAGE_DIR, LIB_DIR ],
     libraries = shared_libs_stage2, 
             # for openmp add 'libgomp' 
     #runtime_library_dirs = ['.'],
@@ -524,9 +525,9 @@ mm_reduce =  SharedExtension(
     sources = mm_reduce_paths,   
     libraries = shared_libs_stage2, 
     include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, C_DIR],
+    library_dirs = [PACKAGE_DIR, LIB_DIR],
     extra_compile_args = EXTRA_COMPILE_ARGS,
-    implib_dir = C_DIR,
+    lib_dir = LIB_DIR,
     define_macros = [],
     static_lib = STATIC_LIB,
 )
@@ -543,7 +544,7 @@ mm_reduce_extension = Extension('mmgroup.mm_reduce',
     ],
     #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
-    library_dirs = [ PACKAGE_DIR, C_DIR ],
+    library_dirs = [ PACKAGE_DIR, LIB_DIR],
     libraries = shared_libs_stage3, 
             # for openmp add 'libgomp' 
     #runtime_library_dirs = ['.'],
@@ -635,7 +636,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         #'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        #'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
@@ -669,7 +670,7 @@ setup(
         # 'sphinx',  'sphinxcontrib-bibtex',
     ],
     tests_require=[
-        'pytest', 'numpy', 'regex',
+        'pytest', 'numpy', 'regex', 'pytest-xdist'
     ],
     cmdclass={
         'build_ext': BuildExtCmd,

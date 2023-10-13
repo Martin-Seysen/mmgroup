@@ -187,12 +187,13 @@ in the same way as a python extension is built. The appropriate
 extension (e.g. '.so' for unix and '.dll' for Windows) is 
 automatically appended to the file name of the shared library.
 
-The user should provide an additional keyword argument ``implib_dir`` 
-specifying a directory where to store the import library for a Windows 
-DLL. In Windows, the import library for ``foo.dll`` has the name 
-``libfoo.lib``. If a program uses a Windows DLL then it should be 
-linked to that import library. In unix operating systems there is no 
-concept similar to an import library.
+The user should provide an additional keyword argument ``lib_dir`` 
+specifying a directory where to store any static libraries, object
+files or import library for a Windows DLL. In Windows, the import 
+library for ``foo.dll`` has the name ``libfoo.lib``. If a program 
+uses a Windows DLL then it should be linked to that import library. 
+In unix operating systems there is no concept similar to an 
+import library.
 
 Caution!!
 
@@ -278,6 +279,7 @@ from setuptools.extension import Extension as _Extension
 
 from Cython.Distutils import build_ext as _build_ext
 
+from parallel_processes import SimpleProcessWorkers
 
 class DistutilsError (Exception):
     """The root of all Distutils exceptions.
@@ -349,13 +351,13 @@ class SharedExtension(_Extension):
     """Model a shared library as described in the header of this module 
     """
     def __init__(self,  *args, **kwds):
-        self.implib_dir = None
+        self.lib_dir = None
         self.static_lib = False
-        # If keyword argument "implib_dir" is given, set self.implib_dir
+        # If keyword argument "lib_dir" is given, set self.lib_dir
         # to the corresponding value
-        if "implib_dir" in kwds:
-            self.implib_dir = kwds["implib_dir"]
-            del kwds["implib_dir"]
+        if "lib_dir" in kwds:
+            self.lib_dir = kwds["lib_dir"]
+            del kwds["lib_dir"]
         if "static_lib" in kwds:
             self.static_lib = bool(kwds["static_lib"])
             del kwds["static_lib"]
@@ -369,18 +371,12 @@ class SharedExtension(_Extension):
             self.lib_name = "lib" + self.lib_name
 
 
-    def get_implib_dir(self):    
-        if not self.implib_dir:
-            if self.static_lib:
-                s = " static library"
-            elif os.name == "nt": 
-                s = " Windows DLL"
-            else:
-                s = ""
+    def get_lib_dir(self):    
+        if not self.lib_dir:
             raise DistutilsSetupError(
                   "Class SharedExtension requires keyword "
-                  "argument 'implib_dir' for building%s" )
-        return self.implib_dir
+                  "argument 'lib_dir' for building libary" )
+        return self.lib_dir
 
 
     def linker_library_options(self, compiler):
@@ -571,6 +567,7 @@ class  BuildExtCmd(_build_ext):
         The shared libarary is described by the instance ``ext``
         of class SharedExtension.
         """ 
+        os.makedirs(ext.get_lib_dir(), exist_ok=True)
         compiler = self.compiler_name
         if os.name == "posix":
             if compiler == 'unix':
@@ -657,12 +654,15 @@ class  BuildExtCmd(_build_ext):
 
 
 
+
+
 def make_dll_nt_msvc(cmd, ext):
     """Create a Windows DLL with the mingw compiler"""
     compile_args = [ "/c",  "/W4", "/DMS_WIN64"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("/I " + os.path.realpath(ipath))
     objects = []
+    lib_dir = ext.get_lib_dir()
 
     # add define macros
     for name, value in ext.define_macros:
@@ -676,19 +676,21 @@ def make_dll_nt_msvc(cmd, ext):
         compile_args.append("-U" + name)
 
     # Compile sources and add objects to list 'objects'
+    arglist = []
     for source in ext.sources:
-        args = compile_args[:]
+        args = ["cl"] + compile_args[:]
         args.append(os.path.realpath(source))
-        obj = os.path.realpath(os.path.splitext(source)[0] + ".obj")
-        args.append('/Fo"%s"' % obj)
+        objname = os.path.splitext(os.path.split(source)[-1])[0]
+        obj = os.path.realpath(os.path.join(lib_dir, objname + ".obj"))
+        args.append('/Fo%s' % obj)
         objects.append(obj)
-        print("cl " + " ".join(args))
-        subprocess.check_call("cl " + " ".join(args)) 
+        arglist.append(args)
+    workers = SimpleProcessWorkers(cmd.nprocesses)
+    workers.run(arglist)
 
     # Link
-    implib_dir = ext.get_implib_dir()
     if ext.static_lib:
-        dll_path =  os.path.join(implib_dir, ext.lib_name) + '.lib'
+        dll_path =  os.path.join(lib_dir, ext.lib_name) + '.lib'
         lcmd =  ["lib"] + objects + ["/OUT:" + dll_path ]
     else:
         lcmd = ["link", "/DLL"] + ext.extra_link_args + objects
@@ -697,8 +699,8 @@ def make_dll_nt_msvc(cmd, ext):
         dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
         lcmd +=  ["/OUT:" + dll_path ]
         pure_dll_name = ext.name.split(".")[-1]
-        implib_path = os.path.join(implib_dir, "lib%s.lib" % pure_dll_name)
-        #def_path =   os.path.join(ext.implib_dir, "%s.def" % pure_dll_name)
+        implib_path = os.path.join(lib_dir, "lib%s.lib" % pure_dll_name)
+        #def_path =   os.path.join(ext.lib_dir, "%s.def" % pure_dll_name)
         #lcmd += [ "-Wl,--output-def," + def_path ]
         lcmd += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
     print(" ".join(lcmd))
@@ -708,15 +710,13 @@ def make_dll_nt_msvc(cmd, ext):
     
 
 
-
-
-
 def make_dll_nt_mingw32(cmd, ext):
     """Create a Windows DLL with the mingw compiler"""
     compile_args = [ "-c", "-Wall", "-DMS_WIN64"] + ext.extra_compile_args 
     for ipath in ext.include_dirs:
         compile_args.append("-I" + os.path.realpath(ipath))
     objects = []
+    lib_dir = ext.get_lib_dir()
 
     # add define macros
     for name, value in ext.define_macros:
@@ -734,7 +734,8 @@ def make_dll_nt_mingw32(cmd, ext):
         args = compile_args[:]
         args.append(os.path.realpath(source))
         args.append("-o")
-        obj = os.path.realpath(os.path.splitext(source)[0] + ".o")
+        objname = os.path.splitext(os.path.split(source)[-1])[0]
+        obj = os.path.realpath(os.path.join(lib_dir, objname + ".o"))
         args.append(obj)
         objects.append(obj)
         print("gcc " + " ".join(args))
@@ -751,10 +752,9 @@ def make_dll_nt_mingw32(cmd, ext):
         dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
         largs +=  ["-o",  dll_path ]
         pure_dll_name = ext.name.split(".")[-1]
-        implib_dir = ext.get_implib_dir()
-        def_path =   os.path.join(implib_dir, "%s.def" % pure_dll_name)
+        def_path =   os.path.join(lib_dir, "%s.def" % pure_dll_name)
         largs += [ "-Wl,--output-def," + def_path ]
-        implib_path = os.path.join(implib_dir, "lib%s.lib" % pure_dll_name)
+        implib_path = os.path.join(lib_dir, "lib%s.lib" % pure_dll_name)
         largs += [ "-Wl,--out-implib," + implib_path ]
         print("gcc " + " ".join(largs))
         subprocess.check_call("gcc " + " ".join(largs)) 
@@ -769,6 +769,7 @@ def make_so_posix_gcc(cmd, ext):
     for ipath in ext.include_dirs:
         compile_args.append("-I" + os.path.realpath(ipath))
     objects = []
+    lib_dir = ext.get_lib_dir()
 
     # add define macros
     for name, value in ext.define_macros:
@@ -786,7 +787,8 @@ def make_so_posix_gcc(cmd, ext):
         args = compile_args[:] + ["-fPIC"]
         args.append(os.path.realpath(source))
         args.append("-o")
-        obj = os.path.realpath(os.path.splitext(source)[0] + ".o")
+        objname = os.path.splitext(os.path.split(source)[-1])[0]
+        obj = os.path.realpath(os.path.join(lib_dir, objname + ".o"))
         args.append(obj)
         objects.append(obj)
         print("cc " + " ".join(args))
@@ -794,8 +796,8 @@ def make_so_posix_gcc(cmd, ext):
 
     # Link
     if ext.static_lib:
-        implib_dir = ext.get_implib_dir()
-        dll_path = os.path.join(implib_dir, 'lib' + ext.lib_name) + '.a'
+        lib_dir = ext.get_lib_dir()
+        dll_path = os.path.join(lib_dir, 'lib' + ext.lib_name) + '.a'
         lcmd =  ["ar", "rcs", dll_path ] + objects
     else:
         lcmd = ["cc", "-shared",  "-Wall"] + ext.extra_link_args

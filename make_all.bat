@@ -2,7 +2,7 @@ rem *******************************************************
 rem Create external modules and documentation
 rem *******************************************************
 
-python setup.py  build_ext --inplace -f -cmsvc
+python setup.py   build_ext --nprocesses 16 --inplace -f -cmsvc
 if errorlevel 1 goto :abort
 
 @echo off

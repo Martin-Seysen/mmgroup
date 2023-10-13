@@ -15,7 +15,6 @@ include src/mmgroup/dev/mat24/*.h
 include src/mmgroup/dev/mm_basics/*.h
 include src/mmgroup/dev/mm_op/*.h
 include src/mmgroup/dev/mm_reduce/*.h
-include pytest.ini
 include README.rst
 include requirements.txt
 include pyproject.toml

@@ -9,7 +9,7 @@ python 3 must be installed. Then type:
 
    pip install mmgroup
    pip install pytest
-   python -m pytest --pyargs -Wignore mmgroup -m "not slow"
+   python -m pytest --pyargs mmgroup -m "not slow"
 
 
 The last command tests the installation.
@@ -26,7 +26,7 @@ python 3 must be installed. Then type:
 
    pip3 install mmgroup
    pip3 install pytest
-   python3 -m pytest --pyargs -Wignore mmgroup -m "not slow"
+   python3 -m pytest --pyargs mmgroup -m "not slow"
 
 
 The last command tests the installation.

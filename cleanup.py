@@ -18,7 +18,10 @@ EXTENSION_STR = ", ".join(EXTENSIONS) if len(EXTENSIONS) else "?"
 
 TEMP_SUBDIRS = [
     ".eggs",  ".pytest_cache", "build", "builddir", "dist",
-    "src/mmgroup.egg-info"
+    "src/mmgroup.egg-info",
+    "src/mmgroup/dev/c_files",
+    "src/mmgroup/dev/lib_files",
+    "src/mmgroup/dev/pxd_files",
 ]
 
 RECURSIVE_TEMP_SUBDIRS = [
@@ -70,6 +73,7 @@ def del_pyc(verbose = False):
 def del_c(verbose = False):
     C_DIRS = [
         ["src", "mmgroup", "dev", "c_files"],
+        ["src", "mmgroup", "dev", "lib_files"],
         ["src", "mmgroup", "dev", "pxd_files"],
     ]
     if verbose:

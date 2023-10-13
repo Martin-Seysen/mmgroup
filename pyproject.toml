@@ -18,11 +18,12 @@ skip = "*-win32 *-manylinux_i686 cp37-* cp36-*  pp* *-musllinux*"
 build-verbosity = 3
 test-requires = [
    "pytest",
+   "pytest-xdist",
    "numpy", 
    "regex", 
 ]
 # Run the package tests using `pytest`
-test-command = "pytest --pyargs mmgroup -v -s -m \"not slow\""
+test-command = "pytest --pyargs mmgroup  -m \"not slow\" -n 10"
 
 
 
