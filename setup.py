@@ -106,7 +106,7 @@ on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 # Set path for shared libraries in linux
 ####################################################################
 
-if not on_readthedocs and os.name == 'posix':    
+if 0 and not on_readthedocs and os.name == 'posix':
     old_ld_path = os.getenv('LD_LIBRARY_PATH')
     old_ld_path = old_ld_path + ':' if old_ld_path else ''
     new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
@@ -179,6 +179,7 @@ GENERATE_START = '''
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
  --out-pxd-dir {PXD_DIR}
+ --library-path {PACKAGE_DIR}
 '''.format(**DIR_DICT)
 
 

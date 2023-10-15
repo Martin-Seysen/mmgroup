@@ -179,6 +179,14 @@ def generate_code_parser():
         action = 'store_true',
         help = 'Use tables and directives for Sphinx mockup if present')
  
+
+    parser.add_argument('--library-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding shared libraries')
+
+    parser.add_argument('--no-library-path', action = 'store_true',
+        help=argparse.SUPPRESS)
+
     parser.add_argument('-v', '--verbose', action = 'store_true',
         help = 'Verbose operation')
 
@@ -798,7 +806,45 @@ class CodeGenerator:
         for attr in attribs:
             print(attr + ':', getattr(s, attr, '<undefined>'))
 
+############################################################################
+# Auxiliary functions
+############################################################################
            
 
+def set_shared_libraries(parsed_args):
+    """Set path for finding shared libraries
+
+    Parameter 'parsed_args' should be an object returned by method
+
+         generate_code_parser().parse_args(args)
+
+    where 'args' is an string containing an argument list.
+
+    The function extends environment variable 'LD_IBRARY_PATH' (in a
+    posix system) or 'path' (in a Windows system) according to that
+    argument list, so that shared or dynamic libraries given in that
+    list can be found.
+
+    The function returns ``True`` if it has changed the environment.
+    If this is the case then the calling function should launch a
+    subprocess for further actions, since changing the enviroment
+    affects subprocesses of the calling process only.
+    """
+    ld_args = getattr(parsed_args, 'library_path', [])
+    if getattr(parsed_args, 'no_library_path', 0) or len(ld_args) == 0:
+        return False;
+    if os.name == 'posix':
+        ld_path = os.getenv('LD_LIBRARY_PATH')
+        ld_path = [] if ld_path is None else [ld_path]
+        os.environ['LD_LIBRARY_PATH'] = ':'.join(ld_path + ld_args)
+        return True
+    elif os.name == 'nt':
+        ld_path = os.getenv('path')
+        ld_path = [] if ld_path is None else [ld_path]
+        os.environ['path'] = ';'.join(ld_path + ld_args)
+        return True
+    else:
+        ERR = "Don't now how to set library path in %s operating system"
+        raise ValueError(ERR % os.name)
 
 
