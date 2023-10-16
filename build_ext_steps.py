@@ -277,6 +277,98 @@ import setuptools
 from setuptools.extension import Extension as _Extension
 
 
+
+def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, dir=True):
+    """Adjust name of a (shared) library
+
+    Here parameter ``name`` is a name of a (shared) library to be
+    adjusted to various situations in the build process. This name
+    may be prefixed by some path information, but the name itself
+    should not contain any suffixes, e.g. '.a', '.so', '.lib', '.dll'.
+    The part of parameter ``name`` indicating the library name
+    should not contain any prefix strings, e.g. 'lib'.
+
+    The function adjusts the name of the library as configured by the
+    other parameters of the function and returns adjusted name as a
+    string. If ``name`` is a list of strings then the function returns
+    the list of adjusted strings.
+
+    Parameter ``mode`` describes the part of the build process
+    where the adjusted name is to be used:
+
+    mode = 'load':      The file name name of the (shared) library
+                        including all prefexes and extensions.
+
+    mode = 'build':     The name of the library to be linked to
+                        a program using that library. In Unix-like
+                        systems this is the (shared) library itsalf.
+                        In case of a Windows DLL this is an import
+                        library generated together with the DLL.
+
+    mode = 'build_ext'  Similar to mode 'build'; to be used in
+                        ``setuptools`` instead of mode 'build'.
+
+    Parameter ``static`` should be True in case of a static library
+    and False (default) in case of a shared library.
+
+    Parameter ``os_name`` defaults to the string returned by function
+    ``os.name`` in the ``os`` package. It may be set to model the
+    behaviour of a different os.
+
+    If parameter ``pymod`` is True then ``name`` is parsed as a python
+    module separated by '.' characters. Default is False.
+
+    If parameter ``dir`` is False then any information in parameter
+    ``name`` refering to a directory is removed. Default is True.
+    """
+    if not os_name:
+        os_name = os.name
+    if isinstance(name, list):
+        return [shared_lib_name(x, mode, static, os_name, pymod, dir)
+                 for x in name]
+    if pymod:
+        name = re.sub('\.', '/', name)
+    path = os.path.split(name)
+    if len(path) == 0:
+        raise ValueError("No library name specified")
+    path, name = list(path[:-1]), path[-1]
+    if not dir:
+        path = []
+    platform_found = new_name = False
+    if os.name == "posix":
+        platform_found = True
+        if mode == "build_ext":
+            new_name = name
+        elif mode in ["build", "load"]:
+            suffix = ".a" if static else ".so"
+            new_name =  "lib" + name + suffix
+    elif os.name == "nt":
+        platform_found = True
+        if static:
+            if mode == "build_ext":
+                new_name = name
+            elif mode in ["build", "load"]:
+                new_name = name + ".lib"
+        else:
+           if mode == "build_ext":
+               new_name = "lib" + name
+           if mode == "build":
+               new_name =  "lib" + name + ".lib"
+           if mode == "load":
+               new_name =  "lib" + name + ".dll"
+
+    if not platform_found:
+        err = "Don't know the suffix for a %slibrary on platform %s"
+        sh = '' if static else 'shared '
+        raise ValueError(err % (sh, os_name))
+    if not new_name:
+        err = "Illegal mode %d in function shared_lib_name"
+        raise ValueError(err % mode)
+    new_name = os.path.normpath(os.path.join(*(path + [new_name])))
+    #print('%s' % new_name)
+    return new_name
+
+
 from Cython.Distutils import build_ext as _build_ext
 
 from parallel_processes import SimpleProcessWorkers
@@ -364,12 +456,8 @@ class SharedExtension(_Extension):
         # Treat all other arguments as in the base class 'Extension'.
         super(SharedExtension, self).__init__(*args, **kwds)
         self.is_non_standard = True
-        self.lib_name = self.name.split(".")[-1]
-        if self.static_lib:
-            self.lib_name = "static_" + self.lib_name            
-        if os.name == "nt":
-            self.lib_name = "lib" + self.lib_name
-
+        self.lib_name = shared_lib_name(self.name, 'build_ext',
+               static=self.static_lib,  pymod=True, dir=False)
 
     def get_lib_dir(self):    
         if not self.lib_dir:
@@ -590,26 +678,6 @@ class  BuildExtCmd(_build_ext):
                   "I don't know how to build a shared library "
                   "on platform '%s'" % os.name)
 
-    @classmethod
-    def get_shared_ext_filename(cls, ext_name):
-        """Convert a python module to the name of a shared library
-
-        Here ``ext_name`` is the   Python dotted  name without any 
-        extension as in class ``Extension``.
-
-        The function returns the full path name of the corresponding
-        shared library.
-        """
-        if os.name == "posix":
-            suffix = ".so"
-        elif os.name == "nt":
-            suffix = ".dll"
-        else:
-            raise DistutilsPlatformError(
-                  "I don't know the suffix for a shared library "
-                  "on platform '%s'" % os.name)
-        ext_path = ext_name.split('.')
-        return os.path.join(*ext_path) + suffix
 
     def get_outputs(self):
         """This extends the corresponding method of class Extension
@@ -634,7 +702,10 @@ class  BuildExtCmd(_build_ext):
         outputs = []
         for ext in self.extensions[:]:
             if isinstance(ext, SharedExtension) and not ext.static_lib:
-                outputs.append(self.get_shared_ext_filename(ext.name))
+                #outputs.append(self.get_shared_ext_filename(ext.name))
+                name = shared_lib_name(self.name, 'load', pymod=True)
+                outputs.append(name)
+
         return outputs
 
     def get_build_directory(self):
@@ -690,18 +761,18 @@ def make_dll_nt_msvc(cmd, ext):
 
     # Link
     if ext.static_lib:
-        dll_path =  os.path.join(lib_dir, ext.lib_name) + '.lib'
+        lib_name = shared_lib_name(ext.name, 'load',
+           static=True, pymod=True, dir=False)
+        dll_path =   os.path.join(lib_dir, lib_name)
         lcmd =  ["lib"] + objects + ["/OUT:" + dll_path ]
     else:
         lcmd = ["link", "/DLL"] + ext.extra_link_args + objects
         lcmd += ext.linker_library_options('msvc')
-        dll_name = cmd.get_shared_ext_filename(ext.name)  
+        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
         dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
         lcmd +=  ["/OUT:" + dll_path ]
-        pure_dll_name = ext.name.split(".")[-1]
-        implib_path = os.path.join(lib_dir, "lib%s.lib" % pure_dll_name)
-        #def_path =   os.path.join(ext.lib_dir, "%s.def" % pure_dll_name)
-        #lcmd += [ "-Wl,--output-def," + def_path ]
+        implib_name = shared_lib_name(ext.name, 'build', pymod=True, dir=False)
+        implib_path = os.path.join(lib_dir, implib_name)
         lcmd += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
     print(" ".join(lcmd))
     subprocess.check_call(" ".join(lcmd)) 
@@ -746,15 +817,11 @@ def make_dll_nt_mingw32(cmd, ext):
     if ext.static_lib:
         raise DistutilsSetupError("Cannot build static library")
     else:
-        largs = ["-shared",  "-Wall", "-DMS_WIN64"
-                    ] + ext.extra_link_args + largs
-        dll_name = cmd.get_shared_ext_filename(ext.name)  
+        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
         dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
         largs +=  ["-o",  dll_path ]
-        pure_dll_name = ext.name.split(".")[-1]
-        def_path =   os.path.join(lib_dir, "%s.def" % pure_dll_name)
-        largs += [ "-Wl,--output-def," + def_path ]
-        implib_path = os.path.join(lib_dir, "lib%s.lib" % pure_dll_name)
+        implib_name = shared_lib_name(ext.name, 'build', pymod=True, dir=False)
+        implib_path = os.path.join(lib_dir, implib_name)
         largs += [ "-Wl,--out-implib," + implib_path ]
         print("gcc " + " ".join(largs))
         subprocess.check_call("gcc " + " ".join(largs)) 
@@ -796,15 +863,15 @@ def make_so_posix_gcc(cmd, ext):
 
     # Link
     if ext.static_lib:
-        lib_dir = ext.get_lib_dir()
-        dll_path = os.path.join(lib_dir, 'lib' + ext.lib_name) + '.a'
+        lib_name = shared_lib_name(ext.name, 'load',
+           static=True, pymod=True, dir=False)
+        dll_path =   os.path.join(lib_dir, lib_name)
         lcmd =  ["ar", "rcs", dll_path ] + objects
     else:
         lcmd = ["cc", "-shared",  "-Wall"] + ext.extra_link_args
         lcmd += objects + ext.linker_library_options('unix')
-        dll_name = cmd.get_shared_ext_filename(ext.name).split("/")
-        dll_name[-1] =  "lib" + dll_name[-1]  
-        dll_path =   os.path.join(cmd.get_package_dir(), *dll_name)
+        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
+        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
         lcmd +=  ["-o",  dll_path ]
     print(" ".join(lcmd))
     subprocess.check_call(lcmd) 

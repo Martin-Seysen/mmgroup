@@ -102,15 +102,6 @@ while None in sys.argv:
 
 on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
 
-####################################################################
-# Set path for shared libraries in linux
-####################################################################
-
-if 0 and not on_readthedocs and os.name == 'posix':
-    old_ld_path = os.getenv('LD_LIBRARY_PATH')
-    old_ld_path = old_ld_path + ':' if old_ld_path else ''
-    new_LD_LIBRARY_PATH = os.path.abspath(PACKAGE_DIR)
-    os.environ['LD_LIBRARY_PATH'] =  old_ld_path + new_LD_LIBRARY_PATH 
 
 ####################################################################
 # Add extensions and shared libraries to package data
