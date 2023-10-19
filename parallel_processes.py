@@ -38,11 +38,21 @@ class SimpleSubProcess:
 
         Subprocesses should be started with a ``number``.
         Numbers should be consecutive, starting with 0.
-        """ 
-        self.process = subprocess.Popen(args, 
-             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        """
         self.returncode = None
         self.args = arg_list_to_str(args)
+        try: 
+            self.process = subprocess.Popen(args, 
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        except:
+            sys.stdout.flush()
+            sys.stderr.flush()
+            ERR= """
+Error: Could not launch the following subprocess!
+ %s
+"""
+            print(ERR % self.args)
+            raise
         assert number >= 0
         self.number = number
 
@@ -81,6 +91,10 @@ class SimpleSubProcess:
         as if it had been started with the ``subprocess`` package.
         """
         self.wait()
+        sys.stdout.flush()
+        sys.stderr.flush()
+        if self.returncode != 0:
+             print("\nError: The following subprocess has failed!")
         print(self.args) 
         output = self.process.stdout.read()
         try: 
@@ -88,6 +102,8 @@ class SimpleSubProcess:
                 print(output.decode(os_encoding, errors='backslashreplace'))
         except:
             print(output)
+        sys.stdout.flush()
+        sys.stderr.flush()
 
 
 class SimpleQutputQueue:
@@ -186,7 +202,7 @@ class SimpleProcessWorkers:
                 self.processes[self.index] = None
                 return self.index
             else:
-                process.display()
+                process.display_output()
                 self.processes[self.index] = None
                 self.kill_processes()
                 return -1
@@ -206,7 +222,7 @@ class SimpleProcessWorkers:
                     self.output_queue.enter_process(process)
                     self.processes[self.index] = None
                 else:
-                    process.display()
+                    process.display_output()
                     self.processes[self.index] = None
                     self.kill_processes()
                     return -1
@@ -241,6 +257,7 @@ class SimpleProcessWorkers:
                 index = self._wait_input()
                 if index < 0:
                     break
+                #print("Launching", " ".join(args))
                 self.processes[index] = SimpleSubProcess(args, i)
             if index >= 0:
                 index =  self._wait_ready()

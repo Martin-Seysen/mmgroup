@@ -35,6 +35,7 @@ from setuptools import setup, find_namespace_packages
 from collections import defaultdict
 
 
+
 ######################################################################
 # Directories and inports relative to these driectories
 ######################################################################
@@ -46,14 +47,16 @@ DEV_DIR = os.path.join(PACKAGE_DIR, 'dev')
 C_DIR = os.path.join(DEV_DIR, 'c_files')
 LIB_DIR = os.path.join(DEV_DIR, 'lib_files')
 PXD_DIR = os.path.join(DEV_DIR, 'pxd_files')
+SHARED_DIR = os.path.join(DEV_DIR, 'shared_files')
 
 sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
 
 from build_ext_steps import Extension, CustomBuildStep, SharedExtension
+from build_ext_steps import AddSharedExtension
 from build_ext_steps import BuildExtCmd, BuildExtCmdObj
+from build_shared import shared_lib_name
    
-
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
 from linuxpatch import copy_shared_libs
 
@@ -81,6 +84,7 @@ print_commandline_args()
 
 STAGE = 1
 STATIC_LIB = False
+NPROCESSES = 16
 # Parse a global option '--stage=i' and set variable ``STAGE``
 # to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
@@ -122,24 +126,12 @@ package_data = {
 
 
 ####################################################################
-# Desription of the list 'general_presteps'.
-#
-# This is a list of programs to be run before executing the 'build_ext' 
-# command. Each entry of list 'custom_presteps' is a list which we call 
-# a program list. A program list is a list of strings corresponding to 
-# a program to be executed with:
-#     subprocess.check_call(program_list) . 
-# The first entry of a program list is the name of the program to be 
-# executed; here sys.executable means the current python version. 
-# Subsequents entries correspond to command line arguments.
-#
-# If the first entry in that list is not a string then it is 
-# interpreted as a function to be called with the arguments
-# given by the subsequent entries of that list.
+# Cleaning up before code generation
 ####################################################################
 
 
-general_presteps = CustomBuildStep('Starting code generation',
+general_presteps = CustomBuildStep(
+  'Cleaning up before code generation',
   [sys.executable, 'cleanup.py', '-pcx'],
 )
 
@@ -157,9 +149,13 @@ if STAGE <= 1:
 DIR_DICT = {
    'SRC_DIR' : SRC_DIR,
    'C_DIR' : C_DIR,
+   'LIB_DIR' : LIB_DIR,
+   'SHARED_DIR' : SHARED_DIR,
    'DEV_DIR' : DEV_DIR,
    'PXD_DIR' : PXD_DIR,
-   'PACKAGE_DIR': PACKAGE_DIR
+   'PACKAGE_DIR': PACKAGE_DIR,
+   'STATIC_LIB' : int(STATIC_LIB),
+   'NPROCESSES' : str(NPROCESSES),
 }
 
 DIR_DICT['MOCKUP'] = '--mockup\n' if on_readthedocs else ''
@@ -170,8 +166,22 @@ GENERATE_START = '''
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
  --out-pxd-dir {PXD_DIR}
- --library-path {PACKAGE_DIR}
+ --library-path  {SHARED_DIR} {PACKAGE_DIR}
 '''.format(**DIR_DICT)
+
+SHARED_START = '''
+    --source-dir {C_DIR}
+    --include-path {PACKAGE_DIR} {LIB_DIR}  
+    --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
+    --define _FOOO_=_BAAAR_
+    --library-dir {LIB_DIR}
+    --shared-dir {SHARED_DIR}
+    --compile-args 
+    --define
+    --static {STATIC_LIB}
+    --n {NPROCESSES}
+'''.format(**DIR_DICT)
+
 
 
 ####################################################################
@@ -240,12 +250,33 @@ CLIFFORD12_GENERATE = GENERATE_START + '''
  --pyx  clifford12.pyx
 '''
 
-
-mat24_presteps = CustomBuildStep('Generating code for extension mat24',
+mat24_pre_steps = CustomBuildStep(
+  'Generating code for extension mat24',
   [sys.executable, 'generate_code.py'] + MAT24_GENERATE.split(),
   [sys.executable, 'generate_code.py'] + GENERATORS_GENERATE.split(),
   [sys.executable, 'generate_code.py'] + CLIFFORD12_GENERATE.split(),
 )
+
+
+
+STAGE1_SOURCES = MAT24_SOURCES + GENERATORS_SOURCES + CLIFFORD12_SOURCES
+STAGE1_LIBS = []
+
+
+MAT24_SHARED_NEW = SHARED_START + '''
+    --name mmgroup_mat24 
+    --sources 
+''' + STAGE1_SOURCES + '''
+    --libraries 
+''' + " ".join(
+      [shared_lib_name(x, 'build') for x in STAGE1_LIBS]
+)
+    
+mat24_build_steps = CustomBuildStep(
+  'Build libraries for extension mat24',
+   [sys.executable, 'build_shared.py'] + MAT24_SHARED_NEW.split(),
+)
+
 
 
 mat24_c_files = (MAT24_SOURCES + GENERATORS_SOURCES 
@@ -265,9 +296,17 @@ mat24_shared = SharedExtension(
     static_lib = STATIC_LIB,
 )
 
+add_mat24_shared = AddSharedExtension(
+    name = 'mmgroup.mmgroup_mat24', 
+    library_dirs = [SHARED_DIR],
+    static_lib = STATIC_LIB,
+)
+
+
+
 
 shared_libs_stage1 =  [
-    mat24_shared.lib_name
+    add_mat24_shared.lib_name
 ] if not on_readthedocs else []
 
 
@@ -313,12 +352,16 @@ clifford12_extension =  Extension('mmgroup.clifford12',
 
 if STAGE < 2:
     ext_modules += [
-        mat24_presteps,
-        mat24_shared,
-        mat24_extension,
-        generators_extension,
-        clifford12_extension,
+        mat24_pre_steps,
     ]
+    if not on_readthedocs:
+        ext_modules += [
+            mat24_build_steps,
+            add_mat24_shared,
+            mat24_extension,
+            generators_extension,
+            clifford12_extension,
+        ]
 
 ####################################################################
 # Building the extensions at stage 2
@@ -408,9 +451,21 @@ MM_OP_P_GENERATE = GENERATE_START + '''
 '''
 
 
-
 mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
 mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
+
+STAGE2_LIBS = STAGE1_LIBS + ['mmgroup_mm_op']
+
+
+MM_OP_SHARED_NEW = SHARED_START + '''
+    --name mmgroup_mm_op 
+    --sources 
+''' + MM_OP_SUB_SOURCES + '''
+    --libraries 
+''' + " ".join(
+      [shared_lib_name(x, 'build') for x in STAGE2_LIBS]
+)
+    
 
 
 mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
@@ -419,6 +474,11 @@ mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
    [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
 )
 
+add_mm_op_shared = AddSharedExtension(
+    name = 'mmgroup.mmgroup_mm_op', 
+    library_dirs = [SHARED_DIR],
+    static_lib = STATIC_LIB,
+)
 
 mm_op_shared =  SharedExtension(
     name = 'mmgroup.mmgroup_mm_op', 
@@ -465,10 +525,13 @@ mm_poststeps =  CustomBuildStep('Create substituts for legacy extensions',
 if STAGE < 3:
     ext_modules += [
         mm_presteps,
-        mm_op_shared, 
-        mm_op_extension,
-        mm_poststeps, 
-    ] 
+    ]
+    if not on_readthedocs:
+        ext_modules += [
+            mm_op_shared, 
+            mm_op_extension,
+            mm_poststeps, 
+        ]
 
 
 ####################################################################
@@ -549,9 +612,12 @@ mm_reduce_extension = Extension('mmgroup.mm_reduce',
 if STAGE < 4:
     ext_modules += [
         reduce_presteps,
-        mm_reduce,
-        mm_reduce_extension,
     ]
+    if not on_readthedocs:
+        ext_modules += [
+            mm_reduce,
+            mm_reduce_extension,
+        ]
 
 ####################################################################
 # Patching shared libraries for Linux version
@@ -563,6 +629,7 @@ if STAGE < 4:
 # the extension. This object is required for obtaining the directory
 # where the build process writes its output.
 
+
 if  not on_readthedocs:
     MMGROUP_DIR = os.path.join(SRC_DIR, 'mmgroup')
     patch_step =  CustomBuildStep(
@@ -571,18 +638,15 @@ if  not on_readthedocs:
     )
     ext_modules.append(patch_step)
 
+    LIBS = ['mmgroup_mat24'] # preliminary!!!
+
+
+
 ####################################################################
 # Don't build any externals when building the documentation.
 ####################################################################
 
 
-if on_readthedocs:
-    ext_modules = [ 
-        general_presteps,
-        mat24_presteps,
-        mm_presteps,
-        reduce_presteps,
-    ]
 
 def read(fname):
     '''Return the text in the file with name 'fname' ''' 

@@ -21,6 +21,7 @@ TEMP_SUBDIRS = [
     "src/mmgroup.egg-info",
     "src/mmgroup/dev/c_files",
     "src/mmgroup/dev/lib_files",
+    "src/mmgroup/dev/shared_files",
     "src/mmgroup/dev/pxd_files",
 ]
 
@@ -122,6 +123,7 @@ def del_ext(verbose = False):
         print("\nDeleting automatically generated python extensions") 
     EXT_DIRS = [
         ["src", "mmgroup", "dev", "c_files"],
+        ["src", "mmgroup", "dev", "lib_files"],
         ["src", "mmgroup"],
     ]
     if len(EXTENSIONS):
