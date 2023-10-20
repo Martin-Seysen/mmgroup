@@ -83,7 +83,7 @@ print_commandline_args()
 ####################################################################
 
 STAGE = 1
-STATIC_LIB = True
+STATIC_LIB = False
 NPROCESSES = 16
 # Parse a global option '--stage=i' and set variable ``STAGE``
 # to the integer value i if such an option is present.
