@@ -376,6 +376,38 @@ def make_so_posix_gcc(cmdline_args):
     print(lib + "\nhas been generated.\n")
 
 
+def make_dll_nt_mingw32(cmdline_args):
+    """Create a Windows DLL with the mingw compiler"""
+    compile_args = ["gcc", "-c", "-Wall", "-DMS_WIN64"] 
+    compile_args += cmdline_args.compile_args 
+    for ipath in cmdline_args.include_path:
+        compile_args.append("-I " + os.path.realpath(ipath))
+    compile_args += c_define_args(cmdline_args)
+    objects = []
+    arglist = []
+    # Compile sources and add objects to list 'objects'
+    for source, obj in make_source_object_pairs(cmdline_args):
+        args = compile_args + [source, '-o', obj]
+        arglist.append(args)
+        objects.append(obj)
+    workers = SimpleProcessWorkers(cmdline_args.n)
+    workers.run(arglist)
+
+    # Link
+    lib, implib = output_names(cmdline_args)
+    if cmdline_args.static:
+        err = "Don't know how to build a static Windows library with mingw32"
+        raise ValueError(err)
+    else:
+        lcmd = ["gcc"] + cmdline_args.link_args + objects
+        lcmd += linker_library_args(cmdline_args)
+        lcmd +=  ["-o",  lib]
+        lcmd += ["-Wl,--out-implib," + implib]
+    print(" ".join(lcmd))
+    subprocess.check_call(lcmd) 
+    print(lib + "\nhas been generated.\n")
+
+
 
 
 

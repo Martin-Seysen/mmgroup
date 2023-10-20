@@ -49,8 +49,8 @@ process. For background, we refer to
 https://setuptools.readthedocs.io/en/latest/
 
 
-A new paradigm for building python packages
-...........................................
+Added functionality for building python packages
+...................................................
 
 
 This ``build_ext_steps`` module supports a new paradigm for building a 
@@ -109,16 +109,6 @@ This change has a few consequences:
   * The building of all extensions is now forced 
     (option ``build_ext --f``), regardless of any time stamps.
 
-  * A keyword argument ``extra_compile_args`` and ``extra_link_args`` 
-    for  an instance of class ``Extension`` may be a dictionary
-
-       'compiler' : <List if arguments>
-
-    instead of a list of arguments. Here 'compiler' is a string
-    describing a compiler. For a list of compilers, run
-
-      ``python setup.py build_ext --help-compiler`` .
-
 
 Apart from these changes, an extension is created in the same way 
 as with ``setuptools``.
@@ -163,107 +153,49 @@ by the ``sys`` package) instead of the string ``'python'`` for
 starting a python subprocess.
 
 
-Building shared libraries
-.........................
+Adding shared libraries
+........................
 
-Module ``build_ext_steps`` provides another class ``SharedExtension``
-for building  a shared library (or a DLL in Windows).
+Module ``build_ext_steps`` provides another class ``AddSharedExtension``
+for adding  a shared library (or a DLL in Windows) to the python
+distrubution.
 
 In the list ``ext_modules`` of extensions, instances of class 
-``SharedExtension`` may be mixed with instances of other  classes.
+``AddSharedExtension`` may be mixed with instances of other  classes.
 
-Arguments for the constructor of class ``SharedExtension`` are the
-same as for class ``Extension``. Especially, the following keyword 
-arguments are recognized:
+For the constructor of class ``AddSharedExtension``  the following 
+keyword  arguments are recognized:
 
 
-  * ``name``, ``sources``, ``include_dirs``, ``libraries``,
-    ``define_macros``, ``undef_macros``
+  * ``name``: The name of a sharded library in python module syntax.
+              E.g. 'mypackage.mystuff' will store 'libmystuff.so'
+              (in unix) or 'mystuff.dll' into directory 'mypackage'
+              of the distribution.
+                
+  * ``library_dirs``: list of directories where to search for the
+                      library to be added.
 
-Here ``name`` is a Python dotted  name without any extension as in
-class ``Extension``. The command uses the C compiler to build
-the shared library and stores it at the location given by ``name``
-in the same way as a python extension is built. The appropriate
-extension (e.g. '.so' for unix and '.dll' for Windows) is 
-automatically appended to the file name of the shared library.
-
-The user should provide an additional keyword argument ``lib_dir`` 
-specifying a directory where to store any static libraries, object
-files or import library for a Windows DLL. In Windows, the import 
-library for ``foo.dll`` has the name ``libfoo.lib``. If a program 
-uses a Windows DLL then it should be linked to that import library. 
-In unix operating systems there is no concept similar to an 
-import library.
-
-Caution!!
-
-The current class ``SharedExtension`` supports Windows DLLs containing
-C programs (no C++) compiled with the ``mingw32`` or the ``msvc``
-compiler only.
+  * ``static_lib``: Ignore this step if  static_lib`` is true.                     
 
 
 Using a shared library in an extension
 ......................................
 
-The reason for building a shared library is that several python
-extensions may use the same shared library.
-
-The way how a shared library (or a Windows DLL) is linked to a program
-using that library depends on the operating system.
-
-After creation, an object of class  ``SharedExtension`` contains an
-attribute ``lib_name``. Attribute ``lib_name`` contains name of the 
-library (or of the import library in Windows) that has to be linked
-to a program using the shared library.
 
 The user may have to perform some os-specific steps for making the 
-library available for python extension. Therefore he may read
-the variable ``os.name`` (which has value ``'nt'`` for Windows and
-``'posix'`` for unix) and use class ``CustomBuildStep`` for performing
-the appropriate steps.
-
-For Windows one has to add the directory of the import library
-(discussed in the previous section) to the search path for the library
-by specifying that directory in the ``'library_dirs'`` keyword 
-argument for class Extension. Also, one has to specify the name
-of the import library in the  ``'libraries'`` keyword argument for 
-class Extension. This is sufficient if the python extension and
-the DLLs used by that extension are in the same directory.
-
-More involved cases of shared libraries and the procedures required
-for other operating systems are out of the scope of this documentation.
+library available for python extension. Details are out of the scope 
+of this documentation.
 
 Using an extension in a subsequent build step
 .............................................
 
 Once a python extension has been built, it can also be used in
 a subsequent step of the build process, e.g. for calculating large
-arrays of constants for C programs.
+arrays of constants for C programs. Details are out of the scope 
+of this documentation..
 
-This approach works well on a Windows system, but it might not work
-on other operating systems. Here it is a good idea to write a
-pure-python substitute for any C extension to be used in a subsequent
-build step. This may slow down the build process considerably. But it 
-is better to have a slow build process than no build process at all.
-
-
-Technical remarks about shared libraries
-........................................
-
-The functionality for building a Windows DLL with the ``migw32`` 
-compiler in coded in function ``make_dll_win32_gcc``. One could have 
-used the functionality of class  ``distutils.ccompiler`` instead, 
-but the author has decided not to dive any deeper into the source 
-code of the ``distutils`` package. It may be worth using class  
-``distutils.ccompiler`` for porting the functionality of classes 
-``BuildExtCmd`` and  ``SharedExtension`` to other compilers and 
-operating systems.
-
-The ``mingw32`` compiler is not the standard compiler for python on
-Windows. C++ files should be compiled with the standard compiler
-(which is ``msvc`` for Windows) in order to avoid trouble with 
-name mangling.
 """
+
 
 import sys
 import os
@@ -279,30 +211,6 @@ from Cython.Distutils import build_ext as _build_ext
 
 from parallel_processes import SimpleProcessWorkers
 from build_shared import shared_lib_name
-
-class DistutilsError (Exception):
-    """The root of all Distutils exceptions.
-
-    Specifically, I do not know how and when exactly 'distutils'
-    will eventually become deprecated.
-
-    Since the autor is not willing to dig any deeper into the details
-    of setuptools/distutils, I simply copy the relevant exceptions
-    here. 
-    """
-    pass
-
-class DistutilsPlatformError (DistutilsError):
-    """We don't know how to do something on the current platform (but
-    we do know how to do it on some platform) -- eg. trying to compile
-    C files on a platform not supported by a CCompiler subclass."""
-    pass
-
-
-class DistutilsSetupError (DistutilsError):
-    """For errors that can be definitely blamed on the setup script,
-    such as invalid keyword arguments to 'setup()'."""
-    pass
 
 
 
@@ -346,49 +254,6 @@ class CustomBuildStep(_Extension):
           
 
 
-class SharedExtension(_Extension):
-    """Model a shared library as described in the header of this module 
-    """
-    def __init__(self,  *args, **kwds):
-        self.lib_dir = None
-        self.static_lib = False
-        # If keyword argument "lib_dir" is given, set self.lib_dir
-        # to the corresponding value
-        if "lib_dir" in kwds:
-            self.lib_dir = kwds["lib_dir"]
-            del kwds["lib_dir"]
-        if "static_lib" in kwds:
-            self.static_lib = bool(kwds["static_lib"])
-            del kwds["static_lib"]
-        # Treat all other arguments as in the base class 'Extension'.
-        super(SharedExtension, self).__init__(*args, **kwds)
-        self.is_non_standard = True
-        self.lib_name = shared_lib_name(self.name, 'build_ext',
-               static=self.static_lib,  pymod=True, flat=True)
-
-    def get_lib_dir(self):    
-        if not self.lib_dir:
-            raise DistutilsSetupError(
-                  "Class SharedExtension requires keyword "
-                  "argument 'lib_dir' for building libary" )
-        return self.lib_dir
-
-
-    def linker_library_options(self, compiler):
-        if compiler in ['mingw32', 'unix']:
-            inc, lib = "-L", "-l"
-        elif compiler in ['msvc']:
-            inc, lib = "/LIBPATH:", "/DEFAULTLIB:"
-        else:
-            raise DistutilsSetupError(
-                  "Don't know how to deal with %s compiler" % compiler )
-        largs = []
-        for inc_dir in self.library_dirs:
-            # same search path for include files an libraries
-            largs.append(inc + inc_dir)
-        for library in self.libraries: 
-            largs.append(lib + library )
-        return largs
 
 
 
@@ -443,7 +308,7 @@ class  BuildExtCmd(_build_ext):
     The ``run`` function of this class treats an instance  of class
     Extension in the usual way, i.e. it builds a python extension. 
 
-    Instances of class ``CustomBuildStep`` or ``SharedExtension``
+    Instances of class ``CustomBuildStep`` or ``AddSharedExtension``
     are treated as in the description of this module.
     """
     user_options = _build_ext.user_options + [
@@ -508,17 +373,6 @@ class  BuildExtCmd(_build_ext):
                         f(*f_args) 
                 sys.stdout.flush()
                 sys.stderr.flush()
-            elif isinstance(ext, SharedExtension):
-                # Then we build a shared librry using method
-                # self.build_shared_extension()
-
-                # Evaluate extra_compile_args and extra_link_args to a string
-                ext.extra_compile_args = self.eval_extra_args(
-                    ext.extra_compile_args)
-                ext.extra_link_args = self.eval_extra_args(
-                    ext.extra_link_args)
-                print("\nBuilding shared library '%s'" %  ext.name)
-                self.build_shared_extension(ext)
             elif isinstance(ext, AddSharedExtension):
                 if not ext.static_lib:
                     package_dir = self.get_package_dir()
@@ -595,34 +449,6 @@ class  BuildExtCmd(_build_ext):
             return extra_args[self.compiler_name]
         return extra_args
  
-    def build_shared_extension(self, ext):
-        """Build a shared library
-
-        The shared libarary is described by the instance ``ext``
-        of class SharedExtension.
-        """ 
-        os.makedirs(ext.get_lib_dir(), exist_ok=True)
-        compiler = self.compiler_name
-        if os.name == "posix":
-            if compiler == 'unix':
-                make_so_posix_gcc(self, ext)
-            else:
-                raise DistutilsPlatformError(
-                  "I don't know how to build a posix shared library "
-                  "with the '%s' compiler" % compiler)
-        elif os.name == "nt":
-            if compiler == 'mingw32':
-                make_dll_nt_mingw32(self, ext)
-            elif compiler == 'msvc':
-                make_dll_nt_msvc(self, ext)
-            else:
-                raise DistutilsPlatformError(
-                  "I don't know how to build a Windows DLL "
-                  "with the '%s' compiler" % compiler)
-        else:
-            raise DistutilsPlatformError(
-                  "I don't know how to build a shared library "
-                  "on platform '%s'" % os.name)
 
 
     def get_outputs(self):
@@ -647,10 +473,6 @@ class  BuildExtCmd(_build_ext):
         """
         outputs = []
         for ext in self.extensions[:]:
-            if isinstance(ext, SharedExtension) and not ext.static_lib:
-                #outputs.append(self.get_shared_ext_filename(ext.name))
-                name = shared_lib_name(ext.name, 'load', pymod=True)
-                outputs.append(name)
             if isinstance(ext, AddSharedExtension) and not ext.static_lib:
                 #outputs.append(self.get_shared_ext_filename(ext.name))
                 name = shared_lib_name(ext.name, 'load', pymod=True)
@@ -672,167 +494,6 @@ class  BuildExtCmd(_build_ext):
         return package_dir
 
 ###########################################################################################
-
-
-
-
-
-def make_dll_nt_msvc(cmd, ext):
-    """Create a Windows DLL with the mingw compiler"""
-    compile_args = [ "/c",  "/W4", "/DMS_WIN64"] + ext.extra_compile_args 
-    for ipath in ext.include_dirs:
-        compile_args.append("/I " + os.path.realpath(ipath))
-    objects = []
-    lib_dir = ext.get_lib_dir()
-
-    # add define macros
-    for name, value in ext.define_macros:
-        if value is None:
-            compile_args.append("-D" + name)
-        else:
-            compile_args.append("-D" + name + "#" + value)
-
-    # add undef macros
-    for name in ext.undef_macros:
-        compile_args.append("-U" + name)
-
-    # Compile sources and add objects to list 'objects'
-    arglist = []
-    for source in ext.sources:
-        args = ["cl"] + compile_args[:]
-        args.append(os.path.realpath(source))
-        objname = os.path.splitext(os.path.split(source)[-1])[0]
-        obj = os.path.realpath(os.path.join(lib_dir, objname + ".obj"))
-        args.append('/Fo%s' % obj)
-        objects.append(obj)
-        arglist.append(args)
-    workers = SimpleProcessWorkers(cmd.nprocesses)
-    workers.run(arglist)
-
-    # Link
-    if ext.static_lib:
-        lib_name = shared_lib_name(ext.name, 'load',
-           static=True, pymod=True, flat=True)
-        dll_path =   os.path.join(lib_dir, lib_name)
-        lcmd =  ["lib"] + objects + ["/OUT:" + dll_path ]
-    else:
-        lcmd = ["link", "/DLL"] + ext.extra_link_args + objects
-        lcmd += ext.linker_library_options('msvc')
-        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
-        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
-        lcmd +=  ["/OUT:" + dll_path ]
-        implib_name = shared_lib_name(ext.name, 'build', pymod=True, flat=True)
-        implib_path = os.path.join(lib_dir, implib_name)
-        print(implib_path)
-        lcmd += [ "/IMPLIB:%s" % os.path.abspath(implib_path) ]
-    print(" ".join(lcmd))
-    subprocess.check_call(" ".join(lcmd)) 
-    print(dll_path + "\nhas been generated.\n")
-
-    
-
-
-def make_dll_nt_mingw32(cmd, ext):
-    """Create a Windows DLL with the mingw compiler"""
-    compile_args = [ "-c", "-Wall", "-DMS_WIN64"] + ext.extra_compile_args 
-    for ipath in ext.include_dirs:
-        compile_args.append("-I" + os.path.realpath(ipath))
-    objects = []
-    lib_dir = ext.get_lib_dir()
-
-    # add define macros
-    for name, value in ext.define_macros:
-        if value is None:
-            compile_args.append("-D" + name)
-        else:
-            compile_args.append("-D" + name + "=" + value)
-
-    # add undef macros
-    for name in ext.undef_macros:
-        compile_args.append("-U" + name)
-
-    # Compile sources and add objects to list 'objects'
-    for source in ext.sources:
-        args = compile_args[:]
-        args.append(os.path.realpath(source))
-        args.append("-o")
-        objname = os.path.splitext(os.path.split(source)[-1])[0]
-        obj = os.path.realpath(os.path.join(lib_dir, objname + ".o"))
-        args.append(obj)
-        objects.append(obj)
-        print("gcc " + " ".join(args))
-        subprocess.check_call("gcc " + " ".join(args)) 
-
-    # Link
-    largs = objects + ext.linker_library_options('mingw32')
-    if ext.static_lib:
-        raise DistutilsSetupError("Cannot build static library")
-    else:
-        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
-        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
-        largs +=  ["-o",  dll_path ]
-        implib_name = shared_lib_name(ext.name, 'build', pymod=True, flat=True)
-        implib_path = os.path.join(lib_dir, implib_name)
-        largs += [ "-Wl,--out-implib," + implib_path ]
-        print("gcc " + " ".join(largs))
-        subprocess.check_call("gcc " + " ".join(largs)) 
-        print(dll_path + "\nhas been generated.\n")
-
-    
-
-
-def make_so_posix_gcc(cmd, ext):
-    """Create a posix shared library with gcc"""
-    compile_args = [ "-c", "-Wall"] + ext.extra_compile_args 
-    for ipath in ext.include_dirs:
-        compile_args.append("-I" + os.path.realpath(ipath))
-    objects = []
-    lib_dir = ext.get_lib_dir()
-
-    # add define macros
-    for name, value in ext.define_macros:
-        if value is None:
-            compile_args.append("-D" + name)
-        else:
-            compile_args.append("-D" + name + "=" + value)
-
-    # add undef macros
-    for name in ext.undef_macros:
-        compile_args.append("-U" + name)
-
-    # Compile sources and add objects to list 'objects'
-    for source in ext.sources:
-        args = compile_args[:] + ["-fPIC"]
-        args.append(os.path.realpath(source))
-        args.append("-o")
-        objname = os.path.splitext(os.path.split(source)[-1])[0]
-        obj = os.path.realpath(os.path.join(lib_dir, objname + ".o"))
-        args.append(obj)
-        objects.append(obj)
-        print("cc " + " ".join(args))
-        subprocess.check_call(["cc"] + args) 
-
-    # Link
-    if ext.static_lib:
-        lib_name = shared_lib_name(ext.name, 'load',
-           static=True, pymod=True, flat=True)
-        dll_path =   os.path.join(lib_dir, lib_name)
-        lcmd =  ["ar", "rcs", dll_path ] + objects
-    else:
-        lcmd = ["cc", "-shared",  "-Wall"] + ext.extra_link_args
-        lcmd += objects + ext.linker_library_options('unix')
-        dll_name = shared_lib_name(ext.name, 'load', pymod=True)
-        dll_path =   os.path.join(cmd.get_package_dir(), dll_name)
-        lcmd +=  ["-o",  dll_path ]
-    print(" ".join(lcmd))
-    subprocess.check_call(lcmd) 
-    print(dll_path + "\nhas been generated.\n")
-
-    
-
-
-
-
 
 
 
