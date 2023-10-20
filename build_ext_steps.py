@@ -521,7 +521,6 @@ class  BuildExtCmd(_build_ext):
                 self.build_shared_extension(ext)
             elif isinstance(ext, AddSharedExtension):
                 if not ext.static_lib:
-                    print("Copying shared library to", ext.name)
                     package_dir = self.get_package_dir()
                     lib = os.path.split(shared_lib_name(
                               ext.name, 'load', pymod=True))
@@ -531,6 +530,8 @@ class  BuildExtCmd(_build_ext):
                     for dir_ in ext.library_dirs:
                         src_path = os.path.join(dir_, lib_name)
                         if os.path.isfile(src_path):
+                            print("Copying shared library %s" % src_path)
+                            print("to %s" % dest_path)
                             shutil.copy(src_path, dest_path) 
                             print("Shared has been copied")
                             ok = True

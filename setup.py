@@ -173,7 +173,6 @@ SHARED_START = '''
     --source-dir {C_DIR}
     --include-path {PACKAGE_DIR} {LIB_DIR}  
     --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
-    --define _FOOO_=_BAAAR_
     --library-dir {LIB_DIR}
     --shared-dir {SHARED_DIR}
     --compile-args 

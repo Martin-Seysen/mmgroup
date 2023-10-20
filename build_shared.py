@@ -66,9 +66,9 @@ def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, flat=Fa
     platform_found = new_name = False
     if os.name == "posix":
         platform_found = True
-        if mode == "build_ext":
+        if mode in ["build", "build_ext"]:
             new_name = name
-        elif mode in ["build", "load"]:
+        elif mode in ["load"]:
             suffix = ".a" if static else ".so"
             new_name =  "lib" + name + suffix
     elif os.name == "nt":
@@ -91,7 +91,7 @@ def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, flat=Fa
         sh = '' if static else 'shared '
         raise ValueError(err % (sh, os_name))
     if not new_name:
-        err = "Illegal mode %d in function shared_lib_name"
+        err = "Illegal mode %s in function shared_lib_name"
         raise ValueError(err % mode)
     new_name = os.path.normpath(os.path.join(*(path + [new_name])))
     #print('%s' % new_name)
