@@ -52,7 +52,7 @@ SHARED_DIR = os.path.join(DEV_DIR, 'shared_files')
 sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
 
-from build_ext_steps import Extension, CustomBuildStep, SharedExtension
+from build_ext_steps import Extension, CustomBuildStep
 from build_ext_steps import AddSharedExtension
 from build_ext_steps import BuildExtCmd, BuildExtCmdObj
 from build_shared import shared_lib_name
@@ -83,7 +83,7 @@ print_commandline_args()
 ####################################################################
 
 STAGE = 1
-STATIC_LIB = False
+STATIC_LIB = True
 NPROCESSES = 16
 # Parse a global option '--stage=i' and set variable ``STAGE``
 # to the integer value i if such an option is present.
@@ -260,7 +260,11 @@ mat24_pre_steps = CustomBuildStep(
 
 
 STAGE1_SOURCES = MAT24_SOURCES + GENERATORS_SOURCES + CLIFFORD12_SOURCES
-STAGE1_LIBS = []
+STAGE1_LIBS = ['mmgroup_mat24']
+STAGE1_BUILD_LIBS = shared_lib_name(STAGE1_LIBS, 'build', 
+                   static=STATIC_LIB)
+STAGE1_BUILD_EXT = shared_lib_name(STAGE1_LIBS, 'build_ext', 
+                   static=STATIC_LIB)
 
 
 MAT24_SHARED_NEW = SHARED_START + '''
@@ -268,33 +272,17 @@ MAT24_SHARED_NEW = SHARED_START + '''
     --sources 
 ''' + STAGE1_SOURCES + '''
     --libraries 
-''' + " ".join(
-      [shared_lib_name(x, 'build') for x in STAGE1_LIBS]
-)
-    
+''' + " ".join([])
+
+ 
+  
+
 mat24_build_steps = CustomBuildStep(
-  'Build libraries for extension mat24',
+   'Build libraries for extension mat24',
    [sys.executable, 'build_shared.py'] + MAT24_SHARED_NEW.split(),
 )
 
 
-
-mat24_c_files = (MAT24_SOURCES + GENERATORS_SOURCES 
-                + CLIFFORD12_SOURCES).split() 
-mat24_c_paths = [os.path.join(C_DIR, s) for s in mat24_c_files]
-
-
-mat24_shared = SharedExtension(
-    name = 'mmgroup.mmgroup_mat24', 
-    sources = mat24_c_paths,
-    libraries = [], 
-    include_dirs = [PACKAGE_DIR, LIB_DIR],
-    library_dirs = [PACKAGE_DIR, LIB_DIR],
-    extra_compile_args = EXTRA_COMPILE_ARGS,
-    lib_dir = LIB_DIR,
-    define_macros = [],
-    static_lib = STATIC_LIB,
-)
 
 add_mat24_shared = AddSharedExtension(
     name = 'mmgroup.mmgroup_mat24', 
@@ -304,12 +292,6 @@ add_mat24_shared = AddSharedExtension(
 
 
 
-
-shared_libs_stage1 =  [
-    add_mat24_shared.lib_name
-] if not on_readthedocs else []
-
-
 mat24_extension = Extension('mmgroup.mat24',
         sources=[
             os.path.join(PXD_DIR, 'mat24fast.pyx'),
@@ -317,7 +299,7 @@ mat24_extension = Extension('mmgroup.mat24',
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, LIB_DIR ],
-        libraries = shared_libs_stage1, 
+        libraries = STAGE1_BUILD_EXT, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
@@ -330,7 +312,7 @@ generators_extension = Extension('mmgroup.generators',
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, LIB_DIR ],
-        libraries = shared_libs_stage1, 
+        libraries = STAGE1_BUILD_EXT, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
@@ -343,7 +325,7 @@ clifford12_extension =  Extension('mmgroup.clifford12',
         #libraries=['m'] # Unix-like specific
         include_dirs = [ C_DIR ],
         library_dirs = [PACKAGE_DIR, LIB_DIR ],
-        libraries = shared_libs_stage1, 
+        libraries = STAGE1_BUILD_EXT, 
         #runtime_library_dirs = ['.'],
         extra_compile_args = EXTRA_COMPILE_ARGS, 
         extra_link_args = EXTRA_LINK_ARGS, 
@@ -450,29 +432,36 @@ MM_OP_P_GENERATE = GENERATE_START + '''
  --pyx  mm_op_p.pyx
 '''
 
+mm_op_presteps =  CustomBuildStep(
+  'Code generation for modules mm and mm_op',
+   [sys.executable, 'generate_code.py'] + MM_GENERATE.split(),
+   [sys.executable, 'generate_code.py'] + MM_OP_SUB_GENERATE.split(),
+   [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
+)
 
-mm_op_c_files = (MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES).split()
-mm_op_c_paths = [os.path.join(C_DIR, s) for s in mm_op_c_files]
 
+STAGE2_SOURCES = MM_SOURCES + MM_OP_SUB_SOURCES + MM_OP_P_SOURCES
 STAGE2_LIBS = STAGE1_LIBS + ['mmgroup_mm_op']
+STAGE2_BUILD_LIBS = shared_lib_name(STAGE2_LIBS, 'build', 
+                    static=STATIC_LIB)
+STAGE2_BUILD_EXT = shared_lib_name(STAGE2_LIBS, 'build_ext', 
+                   static=STATIC_LIB)
 
 
 MM_OP_SHARED_NEW = SHARED_START + '''
     --name mmgroup_mm_op 
     --sources 
-''' + MM_OP_SUB_SOURCES + '''
+''' + STAGE2_SOURCES + '''
     --libraries 
-''' + " ".join(
-      [shared_lib_name(x, 'build') for x in STAGE2_LIBS]
-)
+''' + " ".join(STAGE1_BUILD_LIBS)
+
     
 
-
-mm_presteps =  CustomBuildStep('Code generation for modules mm and mm_op',
-   [sys.executable, 'generate_code.py'] + MM_GENERATE.split(),
-   [sys.executable, 'generate_code.py'] + MM_OP_SUB_GENERATE.split(),
-   [sys.executable, 'generate_code.py'] + MM_OP_P_GENERATE.split(),
+mm_op_build_steps = CustomBuildStep(
+  'Build libraries for extension mmm_op',
+   [sys.executable, 'build_shared.py'] + MM_OP_SHARED_NEW.split(),
 )
+
 
 add_mm_op_shared = AddSharedExtension(
     name = 'mmgroup.mmgroup_mm_op', 
@@ -480,22 +469,6 @@ add_mm_op_shared = AddSharedExtension(
     static_lib = STATIC_LIB,
 )
 
-mm_op_shared =  SharedExtension(
-    name = 'mmgroup.mmgroup_mm_op', 
-    sources = mm_op_c_paths,
-    libraries = shared_libs_stage1, 
-    include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, LIB_DIR],
-    extra_compile_args = EXTRA_COMPILE_ARGS,
-    lib_dir = LIB_DIR,
-    define_macros = [],
-    static_lib = STATIC_LIB,
-)
-
-
-shared_libs_stage2 = shared_libs_stage1 + [
-     mm_op_shared.lib_name
-] if not on_readthedocs else []
 
 
 mm_op_extension = Extension('mmgroup.mm_op',
@@ -505,7 +478,7 @@ mm_op_extension = Extension('mmgroup.mm_op',
     #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
     library_dirs = [ PACKAGE_DIR, LIB_DIR ],
-    libraries = shared_libs_stage2, 
+    libraries = STAGE2_BUILD_EXT, 
             # for openmp add 'libgomp' 
     #runtime_library_dirs = ['.'],
     extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -515,7 +488,8 @@ mm_op_extension = Extension('mmgroup.mm_op',
 )
 
 
-mm_poststeps =  CustomBuildStep('Create substituts for legacy extensions',
+mm_op_poststeps =  CustomBuildStep(
+   'Create substituts for legacy extensions',
    [sys.executable, 'make_legacy_extensions.py', '--out-dir',
        os.path.join(SRC_DIR, 'mmgroup')
    ] 
@@ -524,13 +498,14 @@ mm_poststeps =  CustomBuildStep('Create substituts for legacy extensions',
 
 if STAGE < 3:
     ext_modules += [
-        mm_presteps,
+        mm_op_presteps,
     ]
     if not on_readthedocs:
         ext_modules += [
-            mm_op_shared, 
+            mm_op_build_steps,
+            add_mm_op_shared, 
             mm_op_extension,
-            mm_poststeps, 
+            mm_op_poststeps, 
         ]
 
 
@@ -566,32 +541,37 @@ MM_REDUCE_GENERATE = GENERATE_START + '''
  --pyx   mm_reduce.pyx
 '''
 
-mm_reduce_files = MM_REDUCE_SOURCES.split()
-mm_reduce_paths = [os.path.join(C_DIR, s) for s in mm_reduce_files]
-
-
-reduce_presteps =  CustomBuildStep('Code generation for modules mm_reduce',
+mm_reduce_presteps =  CustomBuildStep('Code generation for modules mm_reduce',
    [sys.executable, 'generate_code.py'] + MM_REDUCE_GENERATE.split(),
 )
 
 
-mm_reduce =  SharedExtension(
-    name = 'mmgroup.mmgroup_mm_reduce', 
-    sources = mm_reduce_paths,   
-    libraries = shared_libs_stage2, 
-    include_dirs = [PACKAGE_DIR, C_DIR],
-    library_dirs = [PACKAGE_DIR, LIB_DIR],
-    extra_compile_args = EXTRA_COMPILE_ARGS,
-    lib_dir = LIB_DIR,
-    define_macros = [],
-    static_lib = STATIC_LIB,
+STAGE3_SOURCES = MM_REDUCE_SOURCES
+STAGE3_LIBS = STAGE2_LIBS + ['mmgroup_mm_reduce']
+STAGE3_BUILD_LIBS = shared_lib_name(STAGE3_LIBS, 'build', 
+                   static=STATIC_LIB)
+STAGE3_BUILD_EXT = shared_lib_name(STAGE3_LIBS, 'build_ext', 
+                   static=STATIC_LIB)
+
+MM_REDUCE_NEW = SHARED_START + '''
+    --name mmgroup_mm_reduce
+    --sources 
+''' + STAGE3_SOURCES + '''
+    --libraries 
+''' + " ".join(STAGE2_BUILD_LIBS)
+
+
+mm_reduce_steps = CustomBuildStep(
+  'Build libraries for extension mm_reduce',
+   [sys.executable, 'build_shared.py'] + MM_REDUCE_NEW.split(),
 )
 
 
-shared_libs_stage3 = shared_libs_stage2 + [
-       mm_reduce.lib_name
-] if not on_readthedocs else []
-
+add_mm_reduce = AddSharedExtension(
+    name = 'mmgroup.mmgroup_mm_reduce', 
+    library_dirs = [SHARED_DIR],
+    static_lib = STATIC_LIB,
+)
 
 mm_reduce_extension = Extension('mmgroup.mm_reduce',
     sources=[
@@ -600,7 +580,7 @@ mm_reduce_extension = Extension('mmgroup.mm_reduce',
     #libraries=['m'] # Unix-like specific
     include_dirs = [ C_DIR ],
     library_dirs = [ PACKAGE_DIR, LIB_DIR],
-    libraries = shared_libs_stage3, 
+    libraries = STAGE3_BUILD_EXT, 
             # for openmp add 'libgomp' 
     #runtime_library_dirs = ['.'],
     extra_compile_args = EXTRA_COMPILE_ARGS, 
@@ -609,13 +589,19 @@ mm_reduce_extension = Extension('mmgroup.mm_reduce',
             # for openmp add '-fopenmp' 
 )
 
+
+
+
+
+
 if STAGE < 4:
     ext_modules += [
-        reduce_presteps,
+        mm_reduce_presteps,
     ]
     if not on_readthedocs:
         ext_modules += [
-            mm_reduce,
+            mm_reduce_steps,
+            add_mm_reduce,
             mm_reduce_extension,
         ]
 
