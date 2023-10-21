@@ -1,13 +1,12 @@
 The standard build process for python packages is based on the
 ``setuptools`` package. We use ``setuptools`` to build the ``mmgroup`` 
-package,  especially, for building extensions coded in the C language 
-with the ``Cython`` package. We have added the following functionality 
+package. We have added the following functionality 
 to the standard build process:
 
   * The user may call arbitrary functions or processes, e.g.
     for the automatic generation of C code.
 
-  * The user may generate a shared library that may be used by
+  * The user may add a shared library that may be used by
     several extensions.
 
 Module ``build_ext_steps`` in the root directory contains the
@@ -22,20 +21,13 @@ lists some important modules in the root directory.
     File name                 Purpose
     ========================= ============================================
     ``build_ext_steps.py``    Extension for the ``setuptools`` package
-    ``codegen_clifford12.py`` Generates C code for extension
-                              ``clifford12``
-    ``codegen_mat24.py``      Generates C code for extensions ``mat24``
-                              and ``generators``
-    ``codegen_mm.py``         Generates C code for extension ``mm``
-    ``codegen_mm_op.py``      Generates C code for extensions ``mm<p>``,
-                              where ``p`` is a modulus of a representation
-                              of the monster
-    ``config.py``             Main configuration file of the project
-    ``import_all.py``         Imports all extensions (after building them)
+    ``build_shared.py``       Tool for building a shared library
+    ``cleanup.py``            Clean up intermediate files
+    ``config.py``             A configuration file of the project
+    ``generate_code.py``      Tool for generating C code
     ``MANIFEST.in``           List of files to be added to the source
                               distribution
-    ``pytest.ini``            Main configuration file for testing 
-                              with ``pytest``
+    ``pyproject.toml``        Main configuration file for the project
     ``README.rst``            Main documentation file for GitHub
     ``setup.py``              Main file for the build process with
                               ``setuptools``
@@ -45,29 +37,50 @@ lists some important modules in the root directory.
 
 
 
-Porting the project
--------------------
+The tool build_shared.py
+------------------------
 
-Porting a larger project to a different operating system or compiler
-toolchain requires a thorough knowledge of the target system. 
-Here the ``setuptools`` package comes handy, since it supports
-several operating systems and compilers. 
+The tool ``build_shared.py`` is a simple stand-alone tool for
+generating a shared library with a standard C compiler. It supports
+Windows, Linux and macOS. This job could also be done with a tool 
+like ``CMake`` or ``Meson``; but for the time being it has been 
+easier to extract this functionality from an older tool with a 
+similar functionality.
 
-However, we use some specific extensions for ``setuptools`` coded
-in file ``build_ext_steps.py``; and the build process for the 
-``mmgroup`` project may take a long time.
+Here are the options of the tool ``build_shared.py``:
 
-There is a much simpler demonstration project (with name ``miniproject``)
-using exactly the same extensions for its build process with 
-``setuptools``, see: 
+.. code-block:: text
 
-https://github.com/Martin-Seysen/mmgroup_miniproject .
-
-The files ``build_ext_steps.py`` are exactly the same in both projects.
-For porting the ``mmgroup`` project we recommend to port the 
-``miniproject`` first. This will almost surely require modifications
-in file ``build_ext_steps.py``. These modifications can then be 
-copied to the  ``mmgroup`` project. 
+  -h, --help            show this help message and exit
+  --name MAME           Set NAME of library to be generated. NAME should
+                        have no extension and no prefix such as 'lib'.
+  --sources [SOURCES ...]
+                        Add list SOURCES of to list of source files. Each
+                        source file should be a .c file with extension '.c'.
+  --source-dir DIR      Set root directory DIR for all source files.
+  --include-path [PATHS ...]
+                        Set list of PATHS for finding .h files to be used.
+  --library-path [PATHS ...]
+                        Set list of PATHS for finding libraries to be used.
+  --define [VARS ...]   Define variables given by the list VARS for the
+                        compiler. Each variable must be a string VAR or
+                        VAR=VALUE.
+  --undef [VARS ...]    Undefine variables given by the list VARS for the
+                        compiler.
+  --libraries [LIBS ...]
+                        Search libraries in the list LIBS.
+  --library-dir DIR     Set directory DIR for storing object files and
+                        static libraries.
+  --shared-dir DIR      Set directory DIR for storing shared libraries.
+  --compile-args [ARGS ...]
+                        Add extra arguments given by the list ARGS for the
+                        compiler.
+  --link-args [ARGS ...]
+                        Add extra arguments given by the list ARGS for the
+                        linker.
+  --static [STATIC]     Create static instead of shared library. Optional
+                        argument STATIC may be 0 (=shared) or 1 (=static).
+  --n N                 Use N parallel processes for compiling.
 
 
 

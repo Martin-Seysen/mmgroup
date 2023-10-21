@@ -51,8 +51,11 @@ The build process
 
 Warning! At present the build process is under construction.
 
-We plan to switch to the ``Meson`` build system. Therefore a much more
-declarative style is required for describing the build operations.
+
+We plan to switch to the ``Meson`` build system. The reason for this
+is that invoking ``setup.py`` from the command line is deprecated.
+``Meson`` requires a much more declarative style for describing the 
+build operations.
 Thus the description here is pretty much outdated!
 
 

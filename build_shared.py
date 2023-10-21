@@ -169,7 +169,7 @@ def build_shared_lib_parser():
     parser.add_argument('--libraries',
         nargs = '*',  metavar='LIBS',
         action = 'extend', default = [], 
-        help = 'Search libraries in the list LIBS.'
+        help = 'Search libraries in the paths given by LIBS.'
         )
 
 
@@ -203,12 +203,12 @@ def build_shared_lib_parser():
 
     parser.add_argument('--n',
         type=int,  default = 1, metavar = 'N',
-        help = 'Use N parallel processes for compiling'
+        help = 'Use N parallel processes for compiling.'
         )
  
     parser.add_argument('--compiler',
         action = 'store', default = default_compiler(), metavar = 'C',
-        help = "Specify name of default compiler"
+        help = "Specify name of default compiler."
         )
 
     parser.add_argument('--display',
