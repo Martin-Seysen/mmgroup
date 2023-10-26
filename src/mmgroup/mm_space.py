@@ -515,7 +515,7 @@ from mmgroup.mm_op import mm_op_t_A, mm_op_word
 from mmgroup.mm_op import mm_op_word_tag_A, mm_op_word_ABC
 from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_eval_X_count_abs
-
+from mmgroup.mm_op import mm_op_scalprod
 
 uint_mmv = np.uint32 if INT_BITS == 32 else np.uint64
 #standard_seed = mm_rng_make_seed()
@@ -1317,46 +1317,62 @@ MMVector.space = StdMMSpace
 
 
 def MMV(p):
-   r"""Return an object corresponding to the space :math:`\rho_p`
+    r"""Return an object corresponding to the space :math:`\rho_p`
 
-   Here characteristic ``p`` is as in the constructor of
-   class |MM|. Thus the sequence
+    Here characteristic ``p`` is as in the constructor of
+    class |MM|. Thus the sequence
 
-   .. code-block:: python
+    .. code-block:: python
 
-     >>> V = MMV(p)  
-     >>> v = V(tag, i0, i1)
+       >>> V = MMV(p)  
+       >>> v = V(tag, i0, i1)
 
-   returns the same vector in :math:`\rho_p` as the 
-   statement ``MMVector(p, tag, i0, i1)``. 
+    returns the same vector in :math:`\rho_p` as the 
+    statement ``MMVector(p, tag, i0, i1)``. 
 
-   Function ``characteristics`` in module ``mmgroup`` returns
-   the list of legal values for the characteristic ``p``.
+    Function ``characteristics`` in module ``mmgroup`` returns
+    the list of legal values for the characteristic ``p``.
 
-   Technically, ``MMV(p)`` is the partial application of
-   the constructor of class |MMVector| to the number ``p``. 
-   """
-   return partial(MMVector, p)
+    Technically, ``MMV(p)`` is the partial application of
+    the constructor of class |MMVector| to the number ``p``. 
+    """
+    return partial(MMVector, p)
 
 
+def mmv_scalprod(v1, v2):
+    r"""Return scalar product of two vectors
+
+    The function returns the scalar product of the vectors :math:`v_1`
+    and :math:`v_2`. These two vectors must be instances of
+    class |MMVector|; and they must be vectors in the same
+    representation :math:`\rho_p`.
+    """
+    if not (isinstance(v1, MMVector) and isinstance(v2, MMVector)):
+        err = "Arguments of mmv_scalprod() must be of type MMVector"
+        raise TypeError(err)
+    p = v1.p
+    if (p != v2.p):
+        err = "Arguments of mmv_scalprod() must have same modulus p"
+        raise ValueError(err)
+    res = mm_op_scalprod(p, v1.data, v2.data)
+    assert res >= 0, "Error in function mm_op_scalprod()"
+    return res
+    
 
 def order_vector():
-   r"""Return the precomputed order vector
+    r"""Return the precomputed order vector
 
-   The function returns the precomputed order vector :math:`v_1`
-   (which is an element of the representation  :math:`\rho_{15}`
-   of the monster) as an instance of class |MMVector|.
+    The function returns the precomputed order vector :math:`v_1`
+    (which is an element of the representation  :math:`\rho_{15}`
+    of the monster) as an instance of class |MMVector|.
 
-   The properties required for such a vector :math:`v_1`
-   are defined in :cite:`Seysen22`.
-   """
-   from mmgroup.mm_reduce import mm_order_load_vector
-   v = MMVector(15)
-   mm_order_load_vector(v.data)
-   return v
-
-
-
+    The properties required for such a vector :math:`v_1`
+    are defined in :cite:`Seysen22`.
+    """
+    from mmgroup.mm_reduce import mm_order_load_vector
+    v = MMVector(15)
+    mm_order_load_vector(v.data)
+    return v
          
     
 

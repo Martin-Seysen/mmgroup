@@ -1,0 +1,92 @@
+/** @file mm%{P}_op_scalprod.c
+
+ 
+
+ File ``mm_op_p_vector.c`` implements scalar product in the 
+ representation \f$\rho_%{P}\f$ of the Monster modulo \f$%{P}\f$.
+
+ The representation \f$\rho_%{P}\f$ is equal to the
+ 196884-dimensional representation  \f$\rho\f$ of the monster,
+ with coefficients taken modulo\f$%{P}\f$, as defined in
+ section **The representation of the monster group**
+ in the **API reference**.
+
+ An element of \f$\rho_%{P}\f$ is implemented as an array of
+ integers of type ``uint_mmv_t`` as described in
+ section **Description of the mmgroup.mm extension**
+ in this document.
+
+ The number of entries of a vector of type ``uint_mmv_t[]``
+ for modulus \f$%{P}\f$  is equal to ``mm_aux_mmv_size(%{P})``.
+*/
+
+#include "mm_basics.h"
+#include "mm_op_sub.h"
+#include "mm_op_p.h"
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline int32_t scalprod32(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t length)
+{
+  // %%IF* GENERATE_CODE
+  // %%SCALPROD_MOD_P_32 mv1, mv2, length
+  // %%END IF # GENERATE_CODE
+}
+
+
+// %%IF* HAS_SCALPROD_MOD_P_24
+static inline int32_t scalprod24(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t length)
+{
+  // %%IF* GENERATE_CODE
+  // %%SCALPROD_MOD_P_32 mv1, mv2, length
+  // %%END IF # GENERATE_CODE
+}
+// %%ELSE
+#define scalprod24 scalprod32
+// %%END IF
+
+
+
+
+/// @endcond 
+
+
+
+/** 
+  @brief Return scalar product of vectors ``mv1, mv2`` in \f$\rho_%{P}\f$
+
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_scalprod(uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+    int32_t res;
+    res = scalprod32(mv1 + MM_OP%{P}_OFS_T, mv2 + MM_OP%{P}_OFS_T, 2*759);
+    res += scalprod24(mv1 + MM_OP%{P}_OFS_A, mv2 + MM_OP%{P}_OFS_A, 24);
+    res += %{int:(P+1) >> 1} *
+           scalprod24(mv1 + MM_OP%{P}_OFS_B, mv2 + MM_OP%{P}_OFS_B, 48);
+    res += scalprod24(mv1 + MM_OP%{P}_OFS_X, mv2 + MM_OP%{P}_OFS_X, 6144);
+    return res % %{P};
+}
+
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+
+
+

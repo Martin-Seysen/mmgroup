@@ -5,7 +5,8 @@ build
 breathe
 regex
 pytest
-sphinx>=2.0
+pytest-xdist # for parallel testing
+sphinx<7.0  # see https://github.com/readthedocs/readthedocs.org/issues/10279
 sphinxcontrib.bibtex
 sphinxcontrib-tikz
 sphinx-rtd-theme

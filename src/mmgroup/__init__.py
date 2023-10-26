@@ -100,6 +100,7 @@ try:
     from mmgroup.mm_space import characteristics
     #assert 3 in characteristics()
     from mmgroup.mm_space import MMSpace, MMVector, MMV, order_vector
+    from mmgroup.mm_space import mmv_scalprod
 except:
     w = "Extension mmgroup.mm_op not found, package not functional!"
     warnings.warn(w, UserWarning)

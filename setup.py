@@ -384,6 +384,7 @@ for p in [3, 7, 15, 31, 127, 255]:
       mm{p}_op_t.c
       mm{p}_op_xi.c
       mm{p}_op_word.c
+      mm{p}_op_scalprod.c
       '''.format(p=p)
 
 for p in [3, 15]:
@@ -407,6 +408,7 @@ MM_OP_SUB_GENERATE = GENERATE_START + '''
           mmgroup.dev.mm_op.mm_op_xy
           mmgroup.dev.hadamard.hadamard_t
           mmgroup.dev.hadamard.hadamard_xi
+          mmgroup.dev.mm_op.mm_op_scalprod
  --sources mm_op_sub.h
  --sources
 '''.format(**DIR_DICT) + MM_OP_SUB_SOURCES

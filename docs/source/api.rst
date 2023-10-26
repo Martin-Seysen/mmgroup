@@ -241,6 +241,8 @@ Auxiliary functions for the representation of the Monster group
 
 .. autofunction:: mmgroup.MMV
 
+.. autofunction:: mmgroup.mmv_scalprod
+
 .. autofunction:: mmgroup.order_vector
 
 .. _clifford-group-label:

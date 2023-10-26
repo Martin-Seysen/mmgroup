@@ -449,6 +449,28 @@ int32_t mm_op_word_ABC(uint32_t p, uint_mmv_t *v, uint32_t *g, int32_t len_g, ui
 
 
 
+/** 
+  @brief Compute the scalar product of two vectors
+
+  Let \f$v_1, v_2\f$ be vectors of the representation \f$\rho_p\f$
+  of the monster group stored in the array referred by ``v1, v2``.
+
+  The function returns the scalar product \f$(v_1, v_2)\f$
+  (reduced modulo  \f$p\f$) in case of success and a negative
+  value in case of failure.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_scalprod}.
+*/ 
+// %%EXPORT px
+int32_t mm_op_scalprod(uint32_t p, uint_mmv_t *v1, uint_mmv_t *v2)
+{
+  // %%DISPATCH_P int32_t, mm_op_scalprod, p, v1, v2
+}
+
+
+
+
 
 
 //  %%GEN h
