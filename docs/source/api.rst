@@ -411,19 +411,66 @@ Construction of the mapping from the Coxeter group into the Bimonster
 Version history
 ===============
 
-| Version 0.0.1, 2020-05-20. First release
-| Version 0.0.2, 2020-06-04. Order oracle added; bugfixes
-| Version 0.0.3, 2020-06-10. Bugfixes in code generator
-| Version 0.0.4, 2020-06-15. MSVC compiler is now supported
-| Version 0.0.5, 2021-08-02. Word shortening in monster implemented
-| Version 0.0.6, 2021-12-01. Group operation accelerated
-| Version 0.0.7, 2021-12-01. Bugfix in version generation
-| Version 0.0.8, 2022-07-12. Performance improved
-| Version 0.0.9, 2022-09-01. Performance improved
-| Version 0.0.10, 2022-10-11. Support for cibuildwheel added
-| Version 0.0.11, 2022-10-19. Bugfixes and macOS version added
-| Version 0.0.12, 2023-01-09. Support for the group Y_555 and the Bimonster
 
+.. list-table:: List of releases
+   :widths: 11 17 72
+   :header-rows: 1
+
+   * - Version
+     - Date
+     - Description
+
+   * - 0.0.1 
+     - 2020-05-20 
+     - First release
+
+   * - 0.0.2
+     - 2020-06-04
+     - Order oracle added; bugfixes
+
+   * - 0.0.3
+     - 2020-06-10
+     - Bugfixes in code generator
+
+   * - 0.0.4     
+     - 2020-06-15
+     - MSVC compiler is now supported
+
+   * - 0.0.5
+     - 2021-08-02
+     - Word shortening in monster implemented
+
+   * - 0.0.6
+     - 2021-12-01
+     - Group operation accelerated
+
+   * - 0.0.7
+     - 2021-12-01
+     - Bugfix in version generation
+
+   * - 0.0.8
+     - 2022-07-12
+     - Performance improved
+
+   * - 0.0.9
+     - 2022-09-01
+     - Performance improved
+
+   * - 0.0.10
+     - 2022-10-11
+     - Support for cibuildwheel added
+
+   * - 0.0.11
+     - 2022-10-19
+     - Bugfixes and macOS version added
+
+   * - 0.0.12
+     - 2023-01-09
+     - Support for the group Y_555 and the Bimonster
+
+   * - 0.0.13
+     - 2023-10-27
+     - Supports numbering elements of the Monster, and Python 3.12
 
 
 
