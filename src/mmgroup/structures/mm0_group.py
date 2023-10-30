@@ -465,7 +465,7 @@ class MM0(AbstractMMGroupWord):
                  raise ValueError(err)
         else:
              g = self
-             if g.in_G_x0() is None:
+             if not g.in_G_x0():
                  err = "Element is not in the subgroup G_x0 of the monster"
                  raise ValueError(err)
 

@@ -79,7 +79,7 @@ extern "C" {
 
         bits  7 .. 0: class of element  g  in the Monster group, e.g
                       0x21 means class 2A,
-                      0x41 means class 2A, 0x42 means class 4B, etc.
+                      0x41 means class 4A, 0x42 means class 4B, etc.
 
         bits 11 .. 8: Class of element  g  in the factor group Co_1
                       0 means class 1A in Co_1

@@ -106,6 +106,7 @@ import time
 from math import floor
 from random import randint, shuffle, sample
 from collections import defaultdict
+from time import sleep
 import numpy as np
 
 if __name__ == "__main__":
@@ -322,6 +323,25 @@ def characters(g):
 
 STD_FOURVOLUTION = None
 
+
+def find_a_fourvolution(n_trials):
+    """Try to find a fourvolution 
+
+    See function ``find_fourvolution`` for the definition of a
+    fourvolution. The function ties ``n_trials`` times.
+    """
+    for i in range(n_trials):
+        e = y12 *  G('p', 'r') # G([("y",y12), ("p","r")])
+        order = e.order()
+        if  order % 4 == 0:
+            v = (e ** (order//4))
+            if v * v == neg:
+                chi = characters(v)
+                if chi[0] == -13 and is_nice_permutation(get_perm(v)):
+                    return v
+    return None
+
+
 def find_fourvolution(verbose = 0):
     r"""Return a certain 'fourvolution' in G_x0 as an element of MM
 
@@ -342,26 +362,33 @@ def find_fourvolution(verbose = 0):
     if STD_FOURVOLUTION is not None:
         return STD_FOURVOLUTION  
     print("Searching for a 'fourvolution' in G_x0...")
-    for i in range(1000000):
-        e = y12 *  G('p', 'r') # G([("y",y12), ("p","r")])
-        order = e.order()
-        if  order % 4 == 0:
-            v = (e ** (order//4))
-            if v * v != neg:
-                continue
-            chi = characters(v)
-            if chi[0] == -13:
-                if is_nice_permutation(get_perm(v)):
-                    #print(chi, get_perm(v))
-                    print("found", v)
-                    if verbose:
-                        print("y part")
-                        print(GCode(v.mmdata[0]).bit_list)
-                        print("permutation part")
-                        print(AutPL(0, v.mmdata[2] & 0xfffffff).perm)
-                    STD_FOURVOLUTION  = v
-                    return v
-    raise ValueError("No suitable fourvolution found")
+    N_TRIALS, N_SINGLE = 1000000, 1000
+    try:
+        from multiprocessing import Pool, cpu_count
+        n_cpus = max(1, min(32, cpu_count()))
+        n_list = [N_SINGLE] * n_cpus
+        for i in range(N_TRIALS // N_SINGLE + 1): 
+            with Pool(processes = n_cpus) as pool:
+                results = pool.map(find_a_fourvolution, n_list)
+            pool.join()
+            results = [x for x in results if x is not None]
+            if len(results):
+                v = results[0]
+                #print("Found %s after %d rounds", v, i)
+                break
+    except:
+        print("Parallel computation of fourvolution failed!")
+        v = find_a_fourvolution(N_TRIALS)
+        if v is None:
+            raise ValueError("No suitable fourvolution found")
+    print("found" , v)
+    if verbose:
+         print("y part")
+         print(GCode(v.mmdata[0]).bit_list)
+         print("permutation part")
+         print(AutPL(0, v.mmdata[2] & 0xfffffff).perm)
+    STD_FOURVOLUTION  = v
+    return v
 
 
 #find_fourvolution()
@@ -371,6 +398,8 @@ def invariant_count_type2(iv):
     v0  =  (int(iv[0]) >> 24) & 7 if len(iv) else 0
     while len(iv) and int(iv[-1]) == 0:
         iv = iv[:-1] 
+    if len(iv) == 1:
+        return gen_leech2_type(iv[0])
     if (v0 & 4 == 4):
          return xsp2co1_leech2_count_type2(np.copy(iv), len(iv))
     if len(iv) == 12:
@@ -412,7 +441,8 @@ def display_involution_invariants(g):
 
    
 
-def show_characters(g0, file):
+def show_characters(g0, class_name):
+    output = ["# Characters for Co_1 class %s" % class_name]
     if g0 == G():
         transversal = iter_Q_x0()
     else:
@@ -425,8 +455,9 @@ def show_characters(g0, file):
             all_characters.append(o_chi)
             chi = o_chi[1] 
             x = chi[0] - chi[1] - chi[2] * chi[3]
-            print([list(o_chi), str(MM0(g))], ",", file = file)
+            output.append(str([list(o_chi), str(MM0(g))]) + ",")
         #if nn & 0xffff == 0: print(".")
+    return "\n".join(output) + "\n"
 
 
 
@@ -485,6 +516,8 @@ Tuple 3:
    - Row 1, column bits 26, 25, 24  of invariant matrix ``invar``
    - Type of s^\perp in Leech lattice mod 2
    - Related to the number of type-2 vectors in \im (A - 1)
+     For class 1A  in Co_1
+         Type of vector in (\im (A - 1))^- if present, otherwise 0
      For class 2A  in Co_1
          Number of type-2 vectors in (\im (A - 1))^-
      For class 2C  in Co_1
@@ -525,9 +558,27 @@ Tuple 3:
 """
 
 
+def get_character_data():
+    t_start = time.time()
+    g4 = find_fourvolution()
+    char_samples = [
+            (G(), "1A"), (y8, "2A"), (y12, "2C"), (g4, "2B")
+    ]
+    print("Searching for samples of involutions in subgroup G_x0")
+    try:
+        from multiprocessing import Pool
+        with Pool(processes = 4) as pool:
+            data = pool.starmap(show_characters, char_samples)
+        pool.join()
+    except:
+        print("Parallel computation of data has failed!")
+        data = [show_characters(g, name) for g, name in char_samples]
+    t = time.time() - t_start
+    print("Involution data computed in %.2f seconds" % t)
+    return data
 
 def print_invariants(file = None):
-    print("Searching for samples of involutions in subgroup G_x0")
+    data = get_character_data()
     is_py = not file is None
     if file is None:
         file = sys.stdout
@@ -541,23 +592,13 @@ def print_invariants(file = None):
     print(DOC, file = file)
     if is_py:
         print('"""\n\nINVOLUTION_SAMPLES = [',file = file)
-    print("#Characters for Co_1 class 1A", file = file)
-    show_characters(G(), file = file)
-    print(".", end = "", flush = True)
-    print("\n#Characters for Co_1 class 2A", file = file)
-    show_characters(y8, file = file)
-    print(".", end = "", flush = True)
-    print("\n#Characters for Co_1 class 2C", file = file)
-    show_characters(y12, file = file)
-    print(".", end = "", flush = True)
-    print("\n#Characters for Co_1 class 2B", file = file)
-    g4 = find_fourvolution()
-    show_characters(g4, file = file)
+    for record in data:
+        print(record,  file = file)
     if is_py:
         print(']', file = file)
     if do_open:
         file.close()
-    print("Samples of involutions found")
+        sleep(0.01)
 
 
 

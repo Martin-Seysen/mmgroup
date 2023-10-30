@@ -188,9 +188,9 @@ def display_involution_characters():
              else:
                  d[k] = im
     comments = [
-        "Table f0r character chi_98280",
+        "Table for character chi_98280",
         "Table for characters chi_24 and chi_299",
-        "Table f0r character chi_196883",
+        "Table for character chi_196883",
         "Table for character chi_4096",
     ]
     tables = dicts

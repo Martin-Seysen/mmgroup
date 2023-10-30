@@ -185,6 +185,35 @@ def test_equality(verbose = 0):
    
 
 
+@pytest.mark.mmm
+@pytest.mark.orders
+def test_half_order_chi_pwr_2A():
+    """Test samples that power up to a 2A element"""
+    group = MM0
+    STD_2A = group('d', [2,3])
+    g_samples = [
+        # Sample found by Gerald Hoehn
+        "M<y_754h*x_11fah*d_4c1h*p_167735899*l_1*p_1499520*l_1*p_33398856*l_2*t_2*l_1*p_24000*l_2*p_32018160*l_1*t_2*l_2*p_1394880*l_1*p_10668720*l_1*p_520320*t_2*l_2*p_3569280*l_1*t_1*l_2*p_2386560*l_2*p_21338083*t_2*l_1*p_1499520*l_2*p_96465200*t_1*l_2*p_48829440*l_2*p_85198272*t_1*l_2*p_2787840*l_2*p_64736>",
+        # Basis of following sample in class 4B, see file involution_samples.py
+        group("M<y_2e0h*x_1020h*d_0fh>") ** group('r', 2),
+        STD_2A ** group('r', 2),
+    ]
+    print("")
+    for g_str in g_samples:
+        g = group(g_str)
+        order, chi, h = g.half_order_chi() 
+        assert order == g.order()
+        assert order & 1 == 0
+        invol = g**(order // 2)
+        assert invol**h == STD_2A
+        if chi is not None:
+            from mmgroup import MM
+            print(MM(g**h))
+
+
+
+
+
 
 
 
