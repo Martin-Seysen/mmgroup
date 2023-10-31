@@ -644,73 +644,71 @@ class MM0(AbstractMMGroupWord):
 
 
 
-    def chi_powers(self,  max_e=1, ntrials=100, mp=1):
+    def chi_powers(self,  max_e=None, ntrials=100, mp=1):
         r"""Return order and some character information of the element
 
         Let :math:`g` be the element of the Monster given by ``self``;
         and let :math:`\chi_M` be the character given by the
         196833-dimensional rep :math:`198883_x` of the monster.
-        The method tries to compute the character :math:`\chi_M(g)`,
-        and also some characters :math:`\chi_M(g^e)`. This method is
-        very fast; but it may fail, as discusssed below.
+        The method tries to compute characters :math:`\chi_M(g^e)`
+        for values :math:`e` dividing the order of :math:`g`. This 
+        method is very fast; but it may fail, as discusssed below.
 
         The function returns a triple ``(o, chi, h)``, where ``o`` is
         the order of the element :math:`g`.
 
         Short description: 
  
-        ``chi[1]`` is equal to the character value :math:`\chi_M(g)`
-        if the computation of the character has been successful, and
-        to ``None`` otherwise. If ``o`` is even then ``chi[o//2][0]`` 
-        is equal to :math:`\chi_M(g^{o/2})` (with a very high
-        probability), or to ``None``. So we can check if :math:`g` 
-        powers up to a 2A or to a 2B involution. In the second case 
-        :math:`\chi_M(g)` is computed with a very high probability. 
+        Part ``chi`` of the return value is a dictionary that maps the
+        divisors ``e`` of the order ``o`` to the character values
+        :math:`\chi_M(g^e)`. We put ``chi[e] = None`` if
+        :math:`\chi_M(g^e)` has not been computed.
+
+        If ``o`` is even then :math:`\chi_M(g^{o/2})` is computed with
+        a very high probability. So we can check if :math:`g` powers
+        up to a 2A or to a 2B involution. If :math:`g` powers up to a
+        a 2B involution then all characters are computed with high
+        pobability.
          
         Exact description:
     
-        Part ``chi`` of the return value is a dictionary that maps
-        certain exponents :math:`e` to the character values.
-        :math:`\chi_M(g^e)`. If such a character value could not be
-        computed then :math:`\chi_M(g^e)` is set to ``None``.
-         
-        Dictionary ``chi`` contains values for all exponents  
-        :math:`e` dividing the order :math:`o` of :math:`g`, if
-        :math:`e` is less than or equal to parameter ``max_e``. If 
-        :math:`o` is even then that dictionary also contains a
-        value for the exponent :math:`e = o/2`.
-
         The method succeeds with high probability if :math:`g` powers
-        up to a 2B involution, and also if :math:`g \in G_{x0}`. In 
+        up to a 2B involution, and also if :math:`g \in G_{x0}`. In
         other cases the method usually fails. If the character of an 
-        element is computed then the characters of the powers of that 
+        element is computed then the characters of the powers of that
         element are also computed.
 
         The method tries to find an element :math:`h` of the Monster
         such that computing the character of :math:`h^{-1} g h` is
         easier than computing the character of :math:`g`. Here
         :math:`h = 1` is possible. The function returns :math:`h`
-        in part ``h`` of the return value.
+        in part ``h`` of the return value. We use a probabilistic
+        algorithm to compute :math:`h`. 
  
-        If :math:`o` is even and ``chi[o//2]`` is not ``None`` then
-        we asssert that :math:`h^{-1} g^{o/2} h` is equal to the
-        standard  2A or 2B involution. The standard 2A involution 
-        is :math:`x_\delta`, where :math:`\delta` is the Golay cocode 
-        element :math:`(2,3)`. The standard 2B involution is the 
-        central involution :math:`x_{-1}` of :math:`G_{x0}`.
-        
-        If appropriate, we use a probabilistic algorithm to conjugate 
-        the involution ``self**(o/2)`` to the standard 2A or 2B
-        involution. This conjugation may fail with a very small 
-        probability, depending on the number of trials, as given by 
-        parameter ``ntrials``. If parameter ``mp`` is greater than 1 
-        then we may use up to ``mp`` parallel processes.
+        If :math:`o` is even and ``chi[o//2]`` is not ``None`` then we
+        asssert that :math:`h^{-1} g^{o/2} h` is equal to the standard
+        2A or 2B involution. The standard 2A involution is 
+        :math:`x_\delta`, where :math:`\delta` is the Golay cocode
+        element :math:`(2,3)`. The standard 2B involution is the
+        central involution :math:`x_{-1}` of :math:`G_{x0}`. Here the
+        computation of ``chi[o//2]`` may fail with a very small
+        probability, depending on the number of  trials, as given by
+        parameter ``ntrials``.
+
+        If parameter ``max_e`` is an integer (i.e. not ``None``), we 
+        may omit some computations of ``chi[e]`` for ``e > max_e``.
+        We always try to compute ``chi[o//2]`` if ``o`` is even.
+
+        If parameter ``mp`` is greater than 1 then we may use up 
+        to ``mp`` parallel processes.
         """
         o, sqrt_1 = self.half_order()
-        max_e = max(1, min(int(max_e), o >> 1))
-        exponents = [e for e in range(1, max_e + 1) if o % e == 0]
-        chi = {o : 196883}
-        chi.update((i, None) for i in exponents)
+        chi = {}
+        for i in range(1,11):
+            if o % i == 0:
+                chi[i] = chi[o//i] = None
+        chi[o] : 196883
+        max_e = max(1, int(max_e) if max_e else 60)
         h = self.__class__() # h is the neutral element of the Monster
         g = self             # we'll have   g = self**h   
         iclass = 0           # o is odd, or odd g**(o/2) is unknown
@@ -721,14 +719,13 @@ class MM0(AbstractMMGroupWord):
             except:
                 iclass, g, h = 0, self, self.__class__()
         if iclass == 2:
-            chi[o] = 196883 
             chi[o >> 1] = 275
         elif iclass == 1:
             chi[o >> 1] = 4371
         if g.in_G_x0():
              g = Xsp2_Co1(g) # Computation in G_x0 is faster than in M
-             for i in exponents:
-                 if chi[i] is None: 
+             for i in chi:
+                 if chi[i] is None and i <= max_e: 
                      chi[i] = (g**i).chi_G_x0()[0]
         return o, chi, h
 
