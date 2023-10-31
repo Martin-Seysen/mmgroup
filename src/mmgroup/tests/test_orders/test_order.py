@@ -5,7 +5,7 @@ from __future__ import  unicode_literals
 import numpy as np
 from numbers import Integral
 from random import randint, sample
-
+import math
 
 import pytest
 
@@ -184,33 +184,87 @@ def test_equality(verbose = 0):
     print("Test passed")
    
 
+################################################################################
+# Testing method chi_powers() of class MM
+################################################################################
 
-@pytest.mark.mmm
-@pytest.mark.orders
-def test_half_order_chi_pwr_2A():
-    """Test samples that power up to a 2A element"""
-    group = MM0
-    STD_2A = group('d', [2,3])
+
+MMGROUP = MM0                   # We compute in this base class of class MM
+STD_2A = MMGROUP('d', [2,3])    # The standard 2A involution
+STD_2B = MMGROUP('x', 0x1000)   # The standard 2B involution
+
+
+def chi_power_samples():
+    """Samples for testing method chi_powers() of class MMGROUP"""
     g_samples = [
-        # Sample found by Gerald Hoehn
+        # Erroneous sample (in old version) found by Gerald Hoehn
         "M<y_754h*x_11fah*d_4c1h*p_167735899*l_1*p_1499520*l_1*p_33398856*l_2*t_2*l_1*p_24000*l_2*p_32018160*l_1*t_2*l_2*p_1394880*l_1*p_10668720*l_1*p_520320*t_2*l_2*p_3569280*l_1*t_1*l_2*p_2386560*l_2*p_21338083*t_2*l_1*p_1499520*l_2*p_96465200*t_1*l_2*p_48829440*l_2*p_85198272*t_1*l_2*p_2787840*l_2*p_64736>",
         # Basis of following sample in class 4B, see file involution_samples.py
-        group("M<y_2e0h*x_1020h*d_0fh>") ** group('r', 2),
-        STD_2A ** group('r', 2),
+        MMGROUP("M<y_2e0h*x_1020h*d_0fh>") ** MMGROUP('r', 2),
+        # Conjugates of standard involutions
+        STD_2A ** MMGROUP('r', 2),
+        STD_2B ** MMGROUP('r', 2),
     ]
+    for g in g_samples:
+        yield MMGROUP(g)
+    for i in range(3):
+        yield MMGROUP('r', 'G_x0')
+"""
+CHAR_M is the set of possible values of the character of the Monster.
+Values of this character have been computed with the following GAP program:
+
+LoadPackage( "AtlasRep", false );
+tbl:= CharacterTable( "M" );;
+Irr(tbl)[2];
+"""
+CHAR_M = set([
+  196883, 4371, 275, 782, 53, -1, 275, 51, 19, -13, 133, 8, 78, 77, 14, -3, 5, -1,
+  50, 1, 35, 11, -1, -5, 3, -1, 26, -1, 21, 5, -4, 20, 0, 16, 14, 5, 6, -1, -2, 5, -3, 13, 1, -1, 11, -2, 10, 2, 9,
+  7, -2, 8, -1, 3, -1, 7, 6, -3, 6, 2, -1, 5, 5, 5, 1, 0, -3, 2, 4, 5, -2, -1, 4, 4, 0, 3, 3, 2, 2, -1, -2, -1, -1,
+  -1, 1, 3, -1, 3, 3, 2, 2, 2, 2, 2, -2, 1, 2, 2, 3, -1, 2, -1, 2, 0, 2, 2, 1, 1, -2, 1, 2, 0, 1, 2, -1, 0, 1,
+  1, 2, -1, 1, 1, -1, 1, 0, 0, 1, 1, 0, -1, 0, 0, 0, 1, -1, -1, 1, 1, 0, 0, 0, 1, 0, -1, 0, 0, 1, 0, -1, -1, -1, 0,
+  0, 1, -1, 0, -2, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, -1, -1, -1, -2, -1, -1, -1, 0, 0, -1, -1, -1, -1, 0,
+  0, 0, 0, -1, -1, 0, -1, -1, -1 
+])
+
+# Add None to the set CHAR_M, for the case that method chi_powers() fails
+CHAR_M.add(None)
+
+def set_of_divisors(order):
+    divisors = set([1, order])
+    for i in range(2, int(math.sqrt(order) + 1.01)):
+        if order % i == 0:
+            divisors |=  set([i, order // i])
+    return divisors
+    
+@pytest.mark.orders
+def test_chi_powers():
+    """Test method g.chi_powers() of class MMGROUP"""
     print("")
-    for g_str in g_samples:
-        g = group(g_str)
-        order, chi, h = g.half_order_chi() 
+    found_2A = found_2B = False
+    for g in chi_power_samples():
+        assert isinstance(g, MMGROUP)
+        order, chi, h = g.chi_powers(60)
         assert order == g.order()
-        assert order & 1 == 0
-        invol = g**(order // 2)
-        assert invol**h == STD_2A
-        if chi is not None:
-            from mmgroup import MM
-            print(MM(g**h))
+        assert chi.keys() == set_of_divisors(order)     
+        for chi_e in chi.values():
+            assert chi_e in CHAR_M
+        assert isinstance(h, MMGROUP)
+        if order & 1 == 0:
+            chi_sqrt_1 = chi[order//2]
+            assert chi_sqrt_1 in [None, 275, 4371]
+            g1 = g**h
+            if chi_sqrt_1 == 275:  # g is in class 2B
+                found_2B = True
+                assert g1.in_G_x0()
+                assert 1 in chi and 2 in chi
+                for e, chi_e in chi.items():
+                    assert chi_e == (g1**e).chi_G_x0()[0]
+            if chi_sqrt_1 == 4371:  # g is in class 2A
+                found_2A = True
+                assert  STD_2A ** g1 == STD_2A
 
-
+    assert found_2A and found_2B
 
 
 
