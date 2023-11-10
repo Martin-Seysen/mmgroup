@@ -142,6 +142,8 @@ enum tag_offsets {
   as in function ``mm_order_check_in_Gx0``.
   
   The function does not change the input \f$v\f$ referred by ``v``.
+  It requires a work buffer for storing 24 * %{V24_INTS} integers
+  of type ``uint_mmv_t``.
 */
 static inline int32_t 
 find_in_Gx0(uint_mmv_t *v, uint32_t *g, uint32_t mode, uint_mmv_t *work)
@@ -263,7 +265,7 @@ find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
     }    
     res = mm_order_compare_vector(v);
     if (res)  return  0x209;
-    return len1;   
+    return len1;
 }
 
 
@@ -272,6 +274,32 @@ find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 /************************************************************************
 ** Check if element of monster group is in subgroup G_x0
 ************************************************************************/
+
+
+/**
+  @brief Quick check if a vector is an image under an element of \f$G_{x0}\f$
+
+  Assume that the vector \f$v\f$ in \f$\rho_{15}\f$ referred by ``v``
+  is the image of the  precomputed order vector \f$v_1\f$ under an
+  (unknown) element \f$g\f$ of the monster. The function checks if that
+  element \f$g\f$ is in the subgroup \f$G_{x0}\f$ of the monster.
+
+  The function may return 0, 1, or a negative value. If it returns 0
+  then \f$g\f$ is not in \f$G_{x0}\f$. If it returns 1 then \f$g\f$ is
+  in \f$G_{x0}\f$ with an error probability that is negligible for
+  all practial purposes. A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t mm_order_check_in_Gx0_fast(uint_mmv_t *v)
+{
+    uint_mmv_t work[24 * %{V24_INTS}];
+    int32_t g[12], res;
+    res = find_in_Gx0(v, g, 0, work);
+    if (res < 0) return res;
+    if (res >= 100) return 0;
+    return 1;
+}
+
 
 
 /**

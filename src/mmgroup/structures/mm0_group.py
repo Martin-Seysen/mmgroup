@@ -469,7 +469,7 @@ class MM0(AbstractMMGroupWord):
                  err = "Element is not in the subgroup G_x0 of the monster"
                  raise ValueError(err)
 
-        if Xsp2_Co1 is None: 
+        if Xsp2_Co1 is None:
             import_Xsp2_Co1()
         elem = Xsp2_Co1(g)
 
@@ -571,7 +571,7 @@ class MM0(AbstractMMGroupWord):
         In future versions support for multiprocessing may be added.
         """
         self.reduce()
-        if mm_conjugate_involution is None: 
+        if mm_conjugate_involution is None:
             import_Xsp2_Co1()
         return mm_conjugate_involution(self, check, ntrials, verbose)
 
@@ -593,9 +593,10 @@ class MM0(AbstractMMGroupWord):
         of the same class as ``g``.
         """ 
         self.reduce()
-        if mm_conjugate_involution is None: 
+        if mm_conjugate_involution is None:
             import_Xsp2_Co1()
-        if group is None: group = self.__class__
+        if group is None:
+            group = self.__class__
         elem = Xsp2_Co1('a', self.mmdata)
         return elem.conjugate_involution_G_x0(guide, group)
 
@@ -702,6 +703,8 @@ class MM0(AbstractMMGroupWord):
         If parameter ``mp`` is greater than 1 then we may use up 
         to ``mp`` parallel processes.
         """
+        if Xsp2_Co1 is None:
+            import_Xsp2_Co1()
         o, sqrt_1 = self.half_order()
         chi = {}
         for i in range(1,11):
