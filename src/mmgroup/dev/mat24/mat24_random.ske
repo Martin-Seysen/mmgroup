@@ -7,6 +7,16 @@
 
  Equivalent python function are coded in
  module ``mmgroup.tests.test_mat24.test_mat24_rand``.
+
+ A subgroup of \f$M_{24}\f$ is decribed by an integer of
+ type ``uint_32_t`` encoding a bit mask. Each bit in that mask
+ encodes a certain subgroup of  \f$M_{24}\f$. By combining several
+ bits with bitwise pr we may evcode the intersection of the
+ subgroups corresponding to the bits being set.
+
+ The mapping of the bits to the subgroups is given in the
+ description of the ``enum`` type ``mat24_rand_flags`` in
+ file ``mat24_functions.h``.
 */
 
 
@@ -41,12 +51,12 @@ extern "C" {
 
 */
 enum mat24_rand_flags {
-  MAT24_RAND_2 =  1, ///< fixes \f$\{2, 3\} \f$ 
-  MAT24_RAND_o =  2, ///< fixes \f$\{0, \ldots,7 \}\f$
-  MAT24_RAND_t =  4, ///< fixes \f$\{\{8i,\ldots,8i+7\} \mid i < 3 \}\f$
-  MAT24_RAND_s =  8, ///< fixes \f$\{\{4i,\ldots,4i+3\} \mid i < 6 \}\f$
-  MAT24_RAND_l = 16, ///< fixes \f$\{\{2i, 2i+1\} \mid  4 \leq i < 12 \}\f$
-  MAT24_RAND_3 = 32, ///< fixes \f$\{1, 2, 3\} \f$ 
+  MAT24_RAND_2 = 0x01, ///< fixes \f$\{2, 3\} \f$ 
+  MAT24_RAND_o = 0x02, ///< fixes \f$\{0, \ldots,7 \}\f$
+  MAT24_RAND_t = 0x04, ///< fixes \f$\{\{8i,\ldots,8i+7\} \mid i < 3 \}\f$
+  MAT24_RAND_s = 0x08, ///< fixes \f$\{\{4i,\ldots,4i+3\} \mid i < 6 \}\f$
+  MAT24_RAND_l = 0x10, ///< fixes \f$\{\{2i, 2i+1\} \mid  4 \leq i < 12 \}\f$
+  MAT24_RAND_3 = 0x20, ///< fixes \f$\{1, 2, 3\} \f$ 
 };
 
 // %%GEN c
@@ -427,6 +437,40 @@ int32_t mat24_m24num_rand_local(uint32_t u_mode, uint32_t u_rand)
     if ((u_mode & RAND_ALL) == 0) return u_rand % MAT24_ORDER;
     if (mat24_perm_rand_local(u_mode, u_rand, pi) < 0) return -1;
     return mat24_perm_to_m24num(pi);
+}
+
+
+
+/***********************************************************************
+** Function  mat24_m24num_rand_adjust_xy
+***********************************************************************/
+
+
+/**
+ @brief Make an element of the Parker loop compatible with a subgroup
+
+ Here parameter ``v`` is an element \f$d\f$ of the Parker loop
+ encoded as in file ``mat24.c``. Parameter ``u_mode`` describes
+ a subgroup of the Mathieu group \f$M_{24}\f$  as in
+ function ``mat24_perm_rand_local``.
+
+ Eventually, we want to construct random elements in a larger group
+ then \f$M_{24}\f$. For some values of ``u_mode`` we want to use
+ additional generators corresponding to a subloop of the Parker loop.
+ Here the details are dictated by the 2-local structure of the Monster.
+ 
+ If ``u_mode`` is set so that one or more Golay cocode vectors of
+ weight 2 are fixed pointwise then we require the scalar product
+ of \f$d\f$ with all these fixed weight-2 vectors to be zero. The
+ function modifies the Parker loop element \f$d\f$
+ appropriately and returns the modified element.
+*/
+// %%EXPORT p
+int32_t mat24_m24num_rand_adjust_xy(uint32_t u_mode, uint32_t v)
+{
+    if (u_mode & RAND_3) v &= ~0x300UL;
+    if (u_mode & RAND_2) v &= ~0x200UL;
+    return v;
 }
 
 

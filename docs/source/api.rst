@@ -194,6 +194,7 @@ The Monster group
 Python classes implementing the Monster group
 --------------------------------------------- 
 
+.. _monster-classes-label:
 
 .. autoclass:: mmgroup.MM
    :members:  as_tuples, copy,  is_reduced, reduce, order, mmdata,
@@ -203,12 +204,16 @@ Python classes implementing the Monster group
               as_Co1_bitmatrix
 
 
-
-
 Functions dealing with elements of the Monster group
 ------------------------------------------------------
 
 .. autofunction:: mmgroup.MM_from_int
+
+
+Generating random elements of certain subgroups of the Monster
+--------------------------------------------------------------
+
+.. include:: random_MM.inc
 
 
 .. _mmrep-label:
