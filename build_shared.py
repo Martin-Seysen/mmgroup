@@ -316,7 +316,7 @@ def output_names(cmdline_args):
       
 def make_dll_nt_msvc(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = ["cl", "/c",  "/W4", "/DMS_WIN64"]
+    compile_args = ["cl", "/c", "/O2",  "/W4", "/DMS_WIN64"]
     compile_args += cmdline_args.compile_args 
     for ipath in cmdline_args.include_path:
         compile_args.append("/I " + os.path.realpath(ipath))
@@ -348,7 +348,7 @@ def make_dll_nt_msvc(cmdline_args):
 
 def make_so_posix_gcc(cmdline_args):
     """Create a posix shared library with gcc"""
-    compile_args = ["cc", "-c", "-Wall"] 
+    compile_args = ["cc", "-c", "-O3", "-Wall"]
     compile_args += cmdline_args.compile_args 
     for ipath in cmdline_args.include_path:
         compile_args.append("-I " + os.path.realpath(ipath))
@@ -378,7 +378,7 @@ def make_so_posix_gcc(cmdline_args):
 
 def make_dll_nt_mingw32(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = ["gcc", "-c", "-Wall", "-DMS_WIN64"] 
+    compile_args = ["gcc", "-c", "-O3", "-Wall", "-DMS_WIN64"]
     compile_args += cmdline_args.compile_args 
     for ipath in cmdline_args.include_path:
         compile_args.append("-I " + os.path.realpath(ipath))

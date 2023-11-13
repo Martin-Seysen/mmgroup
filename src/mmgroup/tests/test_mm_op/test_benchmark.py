@@ -41,13 +41,14 @@ def quot_ms(f, *args):
 
 
 
-def benchmark():
+def benchmark(few = True):
     print("""
 Benchmarking monster operations a %d-bit system.
 All times are given in milliseconds.
 """ % (INT_BITS)
-    )    
-    for p in characteristics():    
+    )
+    p_values = [3, 15] if few else characteristics()
+    for p in p_values:
         print("Operation modulo", p)
         op = [('p', 22), ('d', 127)]
         print ("p    ", quot_ms(bench_nobreak, p, op), " local optimization")
@@ -64,7 +65,8 @@ All times are given in milliseconds.
 
         op = [('t', 2)]
         print ("t    ", quot_ms(bench, p, op))
-
+        if few:
+           continue
         op = [('t', 2), ('p', 23), ('d', 12745645),
             ('x', 1237), ('y', 567),
             ('l', 1),  ('p', 442),

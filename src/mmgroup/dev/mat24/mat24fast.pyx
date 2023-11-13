@@ -765,6 +765,13 @@ def m24num_rand_local(uint32_t u_mode, uint32_t u_rand):
         raise ValueError(ERR_MAT24_RANDOM)
     return res
 
+def m24num_rand_adjust_xy(uint32_t u_mode, uint32_t v):
+    cdef int32_t res = mat24_m24num_rand_adjust_xy(u_mode, v)
+    if res < 0:
+        raise ValueError(ERR_MAT24_RANDOM)
+    return res
+
+
 
 
 ########################################################################
