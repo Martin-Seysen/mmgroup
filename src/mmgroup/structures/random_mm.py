@@ -23,7 +23,6 @@ try:
 except:
     w = "Extension mmgroup.mat24 not found, package not functional!"
     warnings.warn(w, UserWarning)
-    raise
 
 
 from mmgroup.generators import rand_get_seed, gen_leech2_type
