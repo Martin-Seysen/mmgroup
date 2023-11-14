@@ -188,6 +188,8 @@ The Monster group
 =================
 
 
+.. _mmgroup-module-label:
+
 .. automodule:: mmgroup.mm_group
 
 
@@ -209,6 +211,8 @@ Functions dealing with elements of the Monster group
 
 .. autofunction:: mmgroup.MM_from_int
 
+
+.. _random_MM_label:
 
 Generating random elements of certain subgroups of the Monster
 --------------------------------------------------------------

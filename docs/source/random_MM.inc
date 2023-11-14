@@ -3,76 +3,123 @@
    This ist the content of the following chapter in the API refernece:
    Generating random elements of the Monster and of some of its subgroups
 
+In this section we present various subgroups of the Monster known by 
+the ``mmgroup`` package. Each of these groups is labelled ba a string.
+In the documentation of class |MM| we have already seen the basic 
+way how to generate a random element of a subgroup of the Monster.
+E.g. calling method ``MM('r', 'G_x0')`` generates an element of the
+subgroup :math:`G_{x0}` of structure  :math:`2^{1+24}.\mbox{Co}_1`.
+We may use some other names instead of ``'G_x0'`` for generating
+random elements in other subgroups of the Monster. Details will be
+given in the following subsections.
 
-Caution:
+At present, these names are used to generate random elements of
+the corresponding subgroup. In future versions of ``mmgroup``
+we may also deal with constructive membership testing in these 
+groups, and with intersections of these groups. So we will only
+label groups, where the embedding of this group in the Monster is
+sufficiently well understood.  
 
-This section describes a future extension of the ``mmgroup`` package
-that is not yet implemented!
 
 
 Describing a random subgroup of the Monster
 .............................................
 
 
+The subgroups of the Monster recognized by the ``mmgroup`` package
+fall in two (not necessarily disjoint) categories. There are small 
+subgroups that are given by the sets of their generators; and there 
+are large 2-local subgroups which are given by their centralizers. 
+Each subgroup has one or more names; and it is described in the 
+following two sections.  
 
-In the documentation of class |MM| we have already seen the basic 
-way how to generate a random element of a subgroup of the Monster.
-E.g. calling method ``MM('r', 'G_x0')`` generates an element of the
-subgroup :math:`G_{x0}` of structure  :math:`2^{1+24}.\mbox{Co}_1`. 
+The intersection of two groups is obtained by joining their names
+with an ``'&'`` character. E.g, ``'G_x0 & N_0'`` means the
+intersection of the two groups with names  ``'G_x0'`` and ``'N_0'``.
+We have chosen the definition of the subgroups carefully, so that 
+at least in principle their intersections can be computed. 
 
+But not all possible computations have been implemented. For each
+group there is a column 'Supported' in the following tables, with
+an entry 'full', 'yes', or 'no'. If all groups in a tuple are
+supported 'full' then we may compute intersections of these groups.
+If a group has an entry 'yes' then we may use that group. Otherwise
+using that group might lead to an error. 
+
+A function dealing with the name of a subgroup  may raise 
+``NotImplementedError`` if that subgroup is not supported. 
+
+
+Caution:
+
+The user should check the corresponding entry 'Supported' in the tables
+in the follwing two subsections before using the name of a group!
+Using a name of a group that is not supported might fail without notice!
+  
+
+
+
+Some small subgroups of the Monster
+.............................................
+
+
+The following small subgroups of the Monster are recognized:
+
+.. table:: Some small subgroups of the Monster
+    :widths: 15 30 40 15 
+
+    ============== ============================================ ========================================================================== =========
+    Name           Structure                                    Generators                                                                 Supported
+    ============== ============================================ ========================================================================== =========
+    N_0            :math:`2^{2+11+22}.(S_3 \times M_{24})`      :math:`x_d, y_d, x_\delta, x_\pi, \tau`                                      full
+    N_0_e          :math:`2^{2+11+22}.(3 \times M_{24})`        :math:`x_d, y_d, x_\delta, x_\pi, \tau, \delta \;  \mbox{even}`              full 
+    N_x0           :math:`2^{1+24+11}.M_{24}`                   :math:`x_d, y_d, x_\delta, x_\pi`;  equal to :math:`G_{x0} \cap N_0`         full
+    N_x0_e         :math:`2^{2+11+22}.M_{24}`                   :math:`x_d, y_d, x_\delta, x_\pi, \delta \; \mbox{even}`                     full
+    Q_x0           :math:`2^{1+24}`                             :math:`x_d, x_\delta`                                                        no
+    AutPL          :math:`2^{11}.M_{24}`                        :math:`x_\delta, x_\pi`                                                      no
+    ============== ============================================ ========================================================================== =========
+
+
+Notation for the generators is as in  :py:mod:`~mmgroup.mm_group`.
+ 
 
 
 Large 2-local subgroups of the Monster
 .............................................
 
-We will implement the capability to generate random elements of
-the following 2-local subgroups:
+We have implemented (or will implement) the following 2-local subgroups
+of the Monster:
 
 .. table:: Large 2-local subgroups of the Monster
-    :widths: 15 30 55 
+    :widths: 15 30 35 15 
 
-    ============== ============================================ ==========================================================================
-    Name           Structure                                    Normalizer of group generated by
-    ============== ============================================ ==========================================================================
-    G_x0,  G_1     :math:`2^{1+24}.\mbox{Co}_1`                 :math:`x_{-1}`
-    N_0,   G_2     :math:`2^{2+11+22}.(S_3 \times M_{24})`      :math:`x_{-1}, x_{\pm \Omega}`
-    G_3            :math:`2^{3+6+12+18}.(L_3(2) \times 3S_6)`   :math:`x_{-1}, x_{\pm \Omega}, x_\omega`
-    G_5t           :math:`2^{5+10+20}.(S_3 \times L_5(2))`      :math:`x_{-1}, x_{\pm \Omega}, x_\omega, x_{\{0,1,4,5\}}, x_{\{0,2,4,6\}}`
-    G_5l           ?                                            :math:`x_{-1}, x_{\pm \Omega}, x_\omega, x_{\{0,1,4,5\}}, x_{\{0,2,4,7\}}`
-    G_10           :math:`2^{10+16}.\Omega_{10}^+(2)`           :math:`x_d, y_d, x_{ij}, 0 \leq i < j < 8,  d \in \{-1, \pm \Omega, d_8\}`
-    B              :math:`2.B`                                  :math:`x_{\{2,3\}}`
-    2E_6           :math:`2^2.{}^2E_6(2):S_3`                   :math:`x_{\{2,3\}}, x_{\{2,4\}}, x_{\{3,4\}}`
-    ============== ============================================ ==========================================================================
+    ============== ============================================ ========================================================================== =========
+    Name           Structure                                    Normalizer of group generated by                                           Supported
+    ============== ============================================ ========================================================================== =========
+    G_x0,  G_1     :math:`2^{1+24}.\mbox{Co}_1`                 :math:`x_{-1}`                                                               full
+    N_0,   G_2     :math:`2^{2+11+22}.(S_3 \times M_{24})`      :math:`x_{-1}, x_{\pm \Omega}`                                               full
+    G_3            :math:`2^{3+6+12+18}.(L_3(2) \times 3S_6)`   :math:`x_{-1}, x_{\pm \Omega}, x_\omega`                                     no
+    G_5t           :math:`2^{5+10+20}.(S_3 \times L_5(2))`      :math:`x_{-1}, x_{\pm \Omega}, x_\omega, x_{\{0,1,4,5\}}, x_{\{0,2,4,6\}}`   no
+    G_5l           ?                                            :math:`x_{-1}, x_{\pm \Omega}, x_\omega, x_{\{0,1,4,5\}}, x_{\{0,2,4,7\}}`   no
+    G_10           :math:`2^{10+16}.\Omega_{10}^+(2)`           :math:`x_d, y_d, x_{ij}, \quad 0 \leq i < j < 8,`  
+                                                                                          :math:`d \in \{-1, \pm \Omega, d_8\}`              no
+    B              :math:`2.B`                                  :math:`x_{\{2,3\}}`                                                          yes
+    2E_6           :math:`2^2.{}^2E_6(2):S_3`                   :math:`x_{\{2,3\}}, x_{\{2,4\}}, x_{\{3,4\}}`                                no
+    ============== ============================================ ========================================================================== =========
 
 
-Here :math:`d_8` is the standard octad :math:`\{0,1,2,3,4,5,6,7\}`.
+Notation is as in the previous section. Furthermore,
+:math:`d_8` is the standard octad :math:`\{0,1,2,3,4,5,6,7\}`.
 :math:`\omega` is the element of the Golay cocode given by 
-the tetrad :math:`\{0,1,2,3\}` as in :cite:`Seysen20`. The names
-*G_x0* and *N_0* are adopted from :cite:`Con85`. The names and
-strcutrues of *G_1, G_2, G_3, G_5t, G_5l* and *G_10* are taken from
+the tetrad :math:`\{0,1,2,3\}` as in :cite:`Seysen20`. 
+
+
+The names *G_x0* and *N_0* are adopted from :cite:`Con85`. The names and
+structures of *G_1, G_2, G_3, G_5t, G_5l* and *G_10* are taken from
 :cite:`Iva09`, Chapter 4.1 et seq. We have *G_1 = G_x0* and
 *G_2 = N_0*. The other names indicate the large simple subgroups
 involved in that group. Note that all these subgroups are
 maximal in the Monster, except for *G_5l*. 
 
 
-Some smaller subgroups of the Monster
-.............................................
-
-
-We will implement the capability to generate random elements of
-the following smaller subgroups of the Monster:
-
-.. table:: Smaller subgroups of the Monster
-    :widths: 15 30 55 
-
-    ============== ============================================ ==========================================================================
-    Name           Structure                                    Generators
-    ============== ============================================ ==========================================================================
-    N_0_e          :math:`2^{2+11+22}.(3 \times M_{24})`        :math:`x_d, y_d, x_\delta, x_\pi, \tau, \delta \;  \mbox{even}`
-    N_x0           :math:`2^{1+24+11}.M_{24}`                   :math:`x_d, y_d, x_\delta, x_\pi`;  equal to :math:`G_{x0} \cap N_0`
-    N_x0_e         :math:`2^{2+11+22}.M_{24}`                   :math:`x_d, y_d, x_\delta, x_\pi, \delta \; \mbox{even}`
-    Q_x0           :math:`2^{1+24}`                             :math:`x_d, x_\delta`
-    AutPL          :math:`2^{11}.M_{24}`                        :math:`x_\delta, x_\pi`
-    ============== ============================================ ==========================================================================
 

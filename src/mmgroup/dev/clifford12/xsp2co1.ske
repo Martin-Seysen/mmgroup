@@ -1091,7 +1091,7 @@ function ``mat24_perm_to_autpl`` in file ``mat24_functions.c``.
 
 Essentially, the array ``aut`` obtained by function 
 ``mat24_perm_to_autpl`` already encodes  \f$x_\pi\f$ as
-a monomial matrix acting on the basis vectors \f$(d')f$ of
+a monomial matrix acting on the basis vectors \f$(d')\f$ of
 the representation \f$4906_x\f$ of \f$G(4906_x)\f$.
 So we may use fucntion ``qstate12_monomial_column_matrix``
 to convert that monomial matrix to a quadratic state matrix

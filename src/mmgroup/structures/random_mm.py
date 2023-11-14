@@ -59,35 +59,47 @@ Bit  9 : # Subgroup AutPL
 Bit 10 : # Subgroup Q_x0
 """
 
+_NO       = 0x20000000
+_NOT_FULL = 0x40000000
+
+
 SUBGOUP_MAP = {
    'M':      0,   
    'G_x0':   0x40,  'G_1': 0x40,
    'N_0':    0x80,  'G_2': 0x80,
-   'G_3':    0x8,
-   'G_5t':   0x4,
-   'G_5l':   0x10,
-   'G_10':   0x2,
-   'B':      0x1,
-   '2E_6':   0x20,
+   'G_3':    0x8      | _NO,
+   'G_5t':   0x4      | _NO,
+   'G_5l':   0x10     | _NO,
+   'G_10':   0x2      | _NO,
+   'B':      0x1      | _NOT_FULL,
+   '2E_6':   0x20     | _NO,
    'N_0_e':  0x180,
    'N_x0':   0xc0,
    'N_x0_e': 0x1c0,
-   'Q_x0':   0x440,
-   'AutPL':  0x2C0,
+   'Q_x0':   0x440    | _NO,
+   'AutPL':  0x2C0    | _NO,
    'quick':  0     # for future optimizations
 }
 
 
 
-def _parse_group_description(s):
-    parts = [t.strip() for t in s.split('&')]
+def _parse_group_description(s_in):
+    parts = [t.strip() for t in s_in.split('&')]
+    count = 0
     flags = 0
     for s in parts:
         try:
             flags |= SUBGOUP_MAP[s]
+            count += 1
         except KeyError:
             err = "Unknown subgroup description '%s'"
             raise ValueError(err % s)
+        if flags & _NO:
+            err = "Subgroup '%s' of the Monster not supported"
+            raise ValueError(err % s) 
+    if (flags & _NOT_FULL) and (count > 1):
+        err = "Subgroup '%s' not supported"
+        raise ValueError(err % s_in) 
     return flags
 
 def _random_tag_pi(flags):
@@ -135,7 +147,7 @@ def _rand_Co_2_coset_No():
         v2 = mm_aux_index_sparse_to_leech2(vs) 
         # Check if v2 is orthogonal to BETA in the real Leech lattice
         v4 = v2 ^ BETA
-        if v4.type == 4:
+        if gen_leech2_type(v4) == 4:
             # Return v2 + BETA if this is the case
             return v4 
 
