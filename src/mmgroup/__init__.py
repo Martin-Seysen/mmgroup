@@ -20,6 +20,14 @@ https://mmgroup.readthedocs.io/en/latest/
 import warnings 
 
 
+_user_has_been_warned = False
+def _warn(message):
+    global _user_has_been_warned
+    if not _user_has_been_warned:
+        warnings.warn(message, UserWarning, stacklevel=2)
+        _user_has_been_warned = True
+
+
 try:
     # Try importing the fast C function
     from mmgroup import mat24
@@ -39,7 +47,7 @@ except (ImportError, ModuleNotFoundError, AssertionError):
     COCODE_BASIS = mat24.basis[:12]
     del Mat24
     w = "Extension mmgroup.mat24 not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
 
 
 try:
@@ -62,7 +70,7 @@ except:
     #import traceback
     #traceback.print_stack()
     w = "The %s package is not functional!"
-    warnings.warn(w % _m, UserWarning)
+    _warn(w % _m)
 del _m
 
 
@@ -72,14 +80,14 @@ try:
     from mmgroup.mm_op import INT_BITS
 except:
     w = "Extension mmgroup.mm_op not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
     
 
 try:
     from mmgroup.structures.mm0_group import MM0Group,  MM0
 except:
     w = "Class mmgroup.structures.MM0 not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
 
 
 
@@ -88,7 +96,7 @@ try:
     from mmgroup.mm_group import MMGroup, MM, MM_from_int
 except:
     w = "Class mmgroup.MM not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
 
 
 
@@ -103,18 +111,19 @@ try:
     from mmgroup.mm_space import mmv_scalprod
 except:
     w = "Extension mmgroup.mm_op not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
 
 try:
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 except:
     w = "Module 'mmgroup.structures.xsp2_co1' not found!"
-    warnings.warn(w, UserWarning)
+    _warn(w)
     
     
 try:
     from mmgroup.mm_crt_space import  MMVectorCRT
 except:
-    pass
+    w = "Module 'mmgroup.mm_crt_space' not found!"
+    _warn(w)
 
 

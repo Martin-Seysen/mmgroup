@@ -88,8 +88,9 @@ def _parse_group_description(s_in):
     flags = 0
     for s in parts:
         try:
-            flags |= SUBGOUP_MAP[s]
-            count += 1
+            mask = SUBGOUP_MAP[s]
+            flags |= mask
+            count += bool(mask)
         except KeyError:
             err = "Unknown subgroup description '%s'"
             raise ValueError(err % s)
@@ -120,7 +121,7 @@ def _iter_tags_yxdp(flags):
         yield 0x30000000 + x
     # tag d
     d = randint(0, 0xfff)
-    if flags & 0x00 == 0:
+    if flags & 0x180 == 0x180:
         d &= 0x7ff
     yield 0x10000000 + d
     # tag p

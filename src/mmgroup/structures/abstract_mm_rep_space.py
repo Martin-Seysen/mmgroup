@@ -194,9 +194,10 @@ ERR_MM_CONV = "Sparse representation of MM vectors not fully supported"
 
 
 try:
+    import mmgroup
     from mmgroup.mm_op import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
-    warnings.warn(ERR_MM_CONV, UserWarning)   
+    mmgroup._warn(ERR_MM_CONV)
 
 
 #######################################################################

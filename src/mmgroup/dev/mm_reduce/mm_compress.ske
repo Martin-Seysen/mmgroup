@@ -207,7 +207,7 @@ static inline int32_t compress_type4_23(uint32_t i)
 
 static inline int32_t expand_23_type4(uint32_t i)
 {
-    int32_t j, coc, i1 = i;
+    int32_t j, coc;
     if ((i = expand_23_24(i)) & 0xff000000) return -11; 
     switch (gen_leech2_type(i)) {
         case 2:

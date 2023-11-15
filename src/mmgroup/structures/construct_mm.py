@@ -19,11 +19,12 @@ from random import randint
 from functools import partial
 
 try:
+    import mmgroup
     from mmgroup import mat24
     from mmgroup.mat24 import ploop_theta, pow_ploop, MAT24_ORDER
 except:
     w = "Extension mmgroup.mat24 not found, package not functional!"
-    warnings.warn(w, UserWarning)
+    mmgroup._warn(w)
 
 
 from mmgroup.generators import rand_get_seed, gen_leech2_type

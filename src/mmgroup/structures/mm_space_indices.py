@@ -39,7 +39,8 @@ from importlib import import_module
 
 import numpy as np
 
-    
+
+import mmgroup
 from mmgroup import mat24 
 from mmgroup.structures.abstract_rep_space import mod_rand_invertible
 from mmgroup.structures.abstract_rep_space import mod_rand_unit
@@ -55,7 +56,7 @@ ERR_MM_LIN = "Linear access to MM vectors not supported"
 try:
     from mmgroup.mm_op import mm_aux_array_extern_to_sparse
 except (ImportError, ModuleNotFoundError):
-    warnings.warn(ERR_MM_LIN, UserWarning)   
+    mmgroup._warn(ERR_MM_LIN)
 
 
 ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
@@ -63,7 +64,7 @@ ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
 try:
     from mmgroup.mm_op import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
-    warnings.warn(ERR_MM_SPARSE, UserWarning)   
+    mmgroup._warn(ERR_MM_SPARSE, UserWarning)
 
 
 
