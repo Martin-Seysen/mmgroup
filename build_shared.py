@@ -185,17 +185,11 @@ def build_shared_lib_parser():
         help = 'Set directory DIR for storing shared libraries.'
     )
 
-    parser.add_argument('--compile-args',
-        nargs = '*',  metavar='ARGS',
-        action = 'extend', default = [], 
-        help = 'Add extra arguments given by the list ARGS for the compiler.'
-        )
-
-    parser.add_argument('--link-args',
-        nargs = '*',  metavar='ARGS',
-        action = 'extend', default = [], 
-        help = 'Add extra arguments given by the list ARGS for the linker.'
-        )
+    #parser.add_argument('--lflags',
+    #    nargs = '*',  metavar='ARGS',
+    #    action = 'extend', default = [],
+    #    help = 'Add extra arguments given by the list ARGS for the linker.'
+    #    )
 
     parser.add_argument('--static', nargs='?', const=1, default=0, type=int,
          help = 'Create static instead of shared library. '
@@ -211,6 +205,12 @@ def build_shared_lib_parser():
         action = 'store', default = default_compiler(), metavar = 'C',
         help = "Specify name of default compiler. "
                "C must be 'unix', 'msvc', or 'mingw32'."
+        )
+
+    parser.add_argument('--cflags',
+        metavar='FLAGS', action = 'store', default = '',
+        help = "Add extra arguments FLAGS for the compiler. E.g. "
+               "'--cflags=-c,foo=bar' adds arguments '-c' and 'foo=bar'."
         )
 
     parser.add_argument('--display',
@@ -309,6 +309,11 @@ def make_source_object_pairs(cmdline_args):
     return output
 
 
+def process_flags(arg):
+    args =  [x.strip() for x in arg.split(',')]
+    return [x for x in args if len(x)]
+
+
 def output_names(cmdline_args):
     name, static = cmdline_args.name, cmdline_args.static
     path_arg = 'library_dir' if static else 'shared_dir'
@@ -328,7 +333,7 @@ def output_names(cmdline_args):
 def make_dll_nt_msvc(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
     compile_args = ["cl", "/c", "/O2",  "/W4", "/DMS_WIN64"]
-    compile_args += cmdline_args.compile_args 
+    compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
         compile_args.append("/I " + os.path.realpath(ipath))
     compile_args += c_define_args(cmdline_args)
@@ -347,7 +352,7 @@ def make_dll_nt_msvc(cmdline_args):
     if cmdline_args.static:
         lcmd =  ["lib"] + objects + ["/OUT:" + lib ]
     else:
-        lcmd = ["link", "/DLL"] + cmdline_args.link_args + objects
+        lcmd = ["link", "/DLL"] + objects
         lcmd += linker_library_args(cmdline_args)
         lcmd += ["/OUT:" + lib ]
         lcmd += [ "/IMPLIB:" + implib]
@@ -360,7 +365,7 @@ def make_dll_nt_msvc(cmdline_args):
 def make_so_posix_gcc(cmdline_args):
     """Create a posix shared library with gcc"""
     compile_args = ["cc", "-c", "-O3", "-Wall"]
-    compile_args += cmdline_args.compile_args 
+    compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
         compile_args.append("-I " + os.path.realpath(ipath))
     compile_args += c_define_args(cmdline_args)
@@ -379,7 +384,7 @@ def make_so_posix_gcc(cmdline_args):
     if cmdline_args.static:
         lcmd =  ["ar", "rcs", lib ] + objects
     else:
-        lcmd = ["cc", "-shared",  "-Wall"] + cmdline_args.link_args
+        lcmd = ["cc", "-shared",  "-Wall"]
         lcmd += objects + linker_library_args(cmdline_args)
         lcmd += ["-o", lib ]
     print(" ".join(lcmd))
@@ -389,11 +394,12 @@ def make_so_posix_gcc(cmdline_args):
 
 def make_dll_nt_mingw32(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = ["gcc", "-c", "-O3", "-Wall",
-                "-mno-stack-arg-probe", "-DMS_WIN64"]
+    compile_args = ["gcc", "-c", "-O3", "-Wall", "-DMS_WIN64"]
+    if cmdline_args.static:
+         compile_args.append("-mno-stack-arg-probe")
     # Option  "-mno-stack-arg-probe" prevents the linker error
     # that the symbol ___chkstk_ms  cannot be found.
-    compile_args += cmdline_args.compile_args 
+    compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
         compile_args.append("-I " + os.path.realpath(ipath))
     compile_args += c_define_args(cmdline_args)
@@ -412,7 +418,7 @@ def make_dll_nt_mingw32(cmdline_args):
     if cmdline_args.static:
         lcmd =  ["ar", "rcs", lib ] + objects
     else:
-        lcmd = ["gcc"] + cmdline_args.link_args + objects
+        lcmd = ["gcc"] +  objects
         lcmd += linker_library_args(cmdline_args)
         lcmd +=  ["-o",  lib, "-s", "-shared"]
         lcmd += ["-Wl,--subsystem,windows,--out-implib," + implib]

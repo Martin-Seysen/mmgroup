@@ -56,15 +56,12 @@ Here are the options of the tool ``build_shared.py``:
                         have no extension and no prefix such as 'lib'.
   --sources [SOURCES ...]
                         Add list SOURCES of to list of source files. Each
-                        source file should be a .c file with extension
-                        '.c'.
+                        source file should be a .c file with extension '.c'.
   --source-dir DIR      Set root directory DIR for all source files.
   --include-path [PATHS ...]
-                        Set list of PATHS for finding .h files to be
-                        used.
+                        Set list of PATHS for finding .h files to be used.
   --library-path [PATHS ...]
-                        Set list of PATHS for finding libraries to be
-                        used.
+                        Set list of PATHS for finding libraries to be used.
   --define [VARS ...]   Define variables given by the list VARS for the
                         compiler. Each variable must be a string VAR or
                         VAR=VALUE.
@@ -76,23 +73,19 @@ Here are the options of the tool ``build_shared.py``:
   --library-dir DIR     Set directory DIR for storing object files and
                         static libraries.
   --shared-dir DIR      Set directory DIR for storing shared libraries.
-  --compile-args [ARGS ...]
-                        Add extra arguments given by the list ARGS for
-                        the compiler.
-  --link-args [ARGS ...]
-                        Add extra arguments given by the list ARGS for
-                        the linker.
   --static [STATIC]     Create static instead of shared library. Optional
-                        argument STATIC may be 0 (=shared) or 1
-                        (=static).
+                        argument STATIC may be 0 (=shared) or 1 (=static).
   --n N                 Use N parallel processes for compiling.
-  --compiler C          Specify name of default compiler. C must be
-                        'unix', 'msvc', or 'mingw32'.
-  --display MODE        display (full) name of generated library and
-                        exit. MODE = 'load' displays the full file name
-                        of the library. MODE = 'build' displays the name
-                        of the library to be linked to a program using
-                        that library.
+  --compiler C          Specify name of default compiler. C must be 'unix',
+                        'msvc', or 'mingw32'.
+  --cflags FLAGS        Add extra arguments FLAGS for the compiler. E.g. 
+                        '--cflags=-c,foo=bar' adds arguments '-c' and
+                        'foo=bar'.
+  --display MODE        display (full) name of generated library and exit.
+                        MODE = 'load' displays the full file name of the
+                        library. MODE = 'build' displays the name of the
+                        library to be linked to a program using that
+                        library.
 
 
 

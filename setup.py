@@ -88,21 +88,29 @@ STAGE = 1
 STATIC_LIB = False
 NPROCESSES = 16
 COMPILER = None
-COMPILER_ARGS = None
-# Parse a global option '--stage=i', '--compiler,c', and set variable 
+CFLAGS = None
+MOCKUP = False
+VERBOSE = False
+# Parse a global option '--stage=i', '--compiler=c', and set variable 
 # ``STAGE`` to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
     if s.startswith('--stage='):
         STAGE = int(s[8:])
         sys.argv[i+1] = None
-    elif s.startswith('--compiler,'):
+    elif s.startswith('--compiler='):
         COMPILER = s[11:]
         sys.argv[i+1] = None
-    elif s.startswith('--compiler-args,'):
-        COMPILER_ARGS = s[16:].split(',')
+    elif s.startswith('--cflags='):
+        CFLAGS = s[9:]
         sys.argv[i+1] = None
     elif s.startswith('--static'):
         STATIC_LIB = True
+        sys.argv[i+1] = None
+    elif s == '--mockup':
+        MOCKUP = True
+        sys.argv[i+1] = None
+    elif s == '-v':
+        VERBOSE = True
         sys.argv[i+1] = None
     elif s[:1].isalpha:
         break
@@ -117,7 +125,7 @@ if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
 # Check if we are in a 'readthedocs' environment
 ####################################################################
 
-on_readthedocs = os.environ.get('READTHEDOCS') == 'True'
+on_readthedocs = MOCKUP or os.environ.get('READTHEDOCS') == 'True'
 
 
 ####################################################################
@@ -173,13 +181,11 @@ DIR_DICT = {
 
 DIR_DICT['MOCKUP'] = '--mockup\n' if on_readthedocs else ''
 DIR_DICT['COMPILER'] = '--compiler %s\n' % COMPILER if COMPILER else ''
-DIR_DICT['COMPILER_ARGS'] =  ''
-if COMPILER_ARGS:
-    DIR_DICT['COMPILER_ARGS'] =  '--comiler-args ' + ' '.join(COMPILER_ARGS)
-
+DIR_DICT['CFLAGS'] = '--cflags=' + CFLAGS + "\n" if CFLAGS else ''
+DIR_DICT['VERBOSE'] = '-v\n' if VERBOSE else ""
 
 GENERATE_START = '''
- -v
+ {VERBOSE}
  {MOCKUP}
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
@@ -189,12 +195,12 @@ GENERATE_START = '''
 
 SHARED_START = '''
     {COMPILER}
+    {CFLAGS}
     --source-dir {C_DIR}
     --include-path {PACKAGE_DIR} {LIB_DIR}  
     --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
     --library-dir {LIB_DIR}
     --shared-dir {SHARED_DIR}
-    --compile-args 
     --define
     --static {STATIC_LIB}
     --n {NPROCESSES}
