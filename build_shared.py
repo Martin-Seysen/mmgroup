@@ -169,7 +169,8 @@ def build_shared_lib_parser():
     parser.add_argument('--libraries',
         nargs = '*',  metavar='LIBS',
         action = 'extend', default = [], 
-        help = 'Search libraries in the paths given by LIBS.'
+        help = "Search libraries with names in the list given by LIBS. "
+               "This corresponds to the gcc option '-l'."
         )
 
 
@@ -208,12 +209,13 @@ def build_shared_lib_parser():
  
     parser.add_argument('--compiler',
         action = 'store', default = default_compiler(), metavar = 'C',
-        help = "Specify name of default compiler."
+        help = "Specify name of default compiler. "
+               "C must be 'unix', 'msvc', or 'mingw32'."
         )
 
     parser.add_argument('--display',
         action = 'store',  metavar = 'MODE',  default = None,
-        help = "display (full) name of genered library and exit. "
+        help = "display (full) name of generated library and exit. "
             "MODE = 'load' displays the full file name of the library. "
             "MODE = 'build' displays the name of the library to be "
             "linked to a program using that library. "
@@ -244,7 +246,7 @@ def c_define_args(cmdline_args):
 
 def linker_library_args(cmdline_args):
     compiler = cmdline_args.compiler
-    if compiler in ['mingw32', 'unix']:
+    if compiler in ['unix', 'mingw32']:
         path, lib = "-L", "-l"
     elif compiler in ['msvc']:
         path, lib = "/LIBPATH:", "/DEFAULTLIB:"
@@ -253,8 +255,17 @@ def linker_library_args(cmdline_args):
     largs = []
     for dir in cmdline_args.library_path:
         largs.append(path + dir)
-    for library in cmdline_args.libraries: 
-        largs.append(lib + library )
+    if compiler in ['mingw32']:
+        # special hack between unix and windows world
+        for library in cmdline_args.libraries:
+            if library.startswith('lib'):
+                library = library[3:]
+            if library.endswith('.lib'):
+                library = library[:-4]
+            largs.append(lib + library )
+    else:
+        for library in cmdline_args.libraries: 
+            largs.append(lib + library )
     return largs
 
 
@@ -378,7 +389,10 @@ def make_so_posix_gcc(cmdline_args):
 
 def make_dll_nt_mingw32(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = ["gcc", "-c", "-O3", "-Wall", "-DMS_WIN64"]
+    compile_args = ["gcc", "-c", "-O3", "-Wall",
+                "-mno-stack-arg-probe", "-DMS_WIN64"]
+    # Option  "-mno-stack-arg-probe" prevents the linker error
+    # that the symbol ___chkstk_ms  cannot be found.
     compile_args += cmdline_args.compile_args 
     for ipath in cmdline_args.include_path:
         compile_args.append("-I " + os.path.realpath(ipath))
@@ -396,13 +410,12 @@ def make_dll_nt_mingw32(cmdline_args):
     # Link
     lib, implib = output_names(cmdline_args)
     if cmdline_args.static:
-        err = "Don't know how to build a static Windows library with mingw32"
-        raise ValueError(err)
+        lcmd =  ["ar", "rcs", lib ] + objects
     else:
         lcmd = ["gcc"] + cmdline_args.link_args + objects
         lcmd += linker_library_args(cmdline_args)
-        lcmd +=  ["-o",  lib]
-        lcmd += ["-Wl,--out-implib," + implib]
+        lcmd +=  ["-o",  lib, "-s", "-shared"]
+        lcmd += ["-Wl,--subsystem,windows,--out-implib," + implib]
     print(" ".join(lcmd))
     subprocess.check_call(lcmd) 
     print(lib + "\nhas been generated.\n")

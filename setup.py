@@ -87,19 +87,30 @@ print_commandline_args()
 STAGE = 1
 STATIC_LIB = False
 NPROCESSES = 16
-# Parse a global option '--stage=i' and set variable ``STAGE``
-# to the integer value i if such an option is present.
+COMPILER = None
+COMPILER_ARGS = None
+# Parse a global option '--stage=i', '--compiler,c', and set variable 
+# ``STAGE`` to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
     if s.startswith('--stage='):
         STAGE = int(s[8:])
         sys.argv[i+1] = None
-    if s.startswith('--static_lib'):
+    elif s.startswith('--compiler,'):
+        COMPILER = s[11:]
+        sys.argv[i+1] = None
+    elif s.startswith('--compiler-args,'):
+        COMPILER_ARGS = s[16:].split(',')
+        sys.argv[i+1] = None
+    elif s.startswith('--static'):
         STATIC_LIB = True
         sys.argv[i+1] = None
     elif s[:1].isalpha:
         break
 while None in sys.argv: 
     sys.argv.remove(None)
+
+if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
+    raise ValueError("Unknown compiler '%s'" % COMPILER)
 
 
 ####################################################################
@@ -161,6 +172,11 @@ DIR_DICT = {
 }
 
 DIR_DICT['MOCKUP'] = '--mockup\n' if on_readthedocs else ''
+DIR_DICT['COMPILER'] = '--compiler %s\n' % COMPILER if COMPILER else ''
+DIR_DICT['COMPILER_ARGS'] =  ''
+if COMPILER_ARGS:
+    DIR_DICT['COMPILER_ARGS'] =  '--comiler-args ' + ' '.join(COMPILER_ARGS)
+
 
 GENERATE_START = '''
  -v
@@ -172,6 +188,7 @@ GENERATE_START = '''
 '''.format(**DIR_DICT)
 
 SHARED_START = '''
+    {COMPILER}
     --source-dir {C_DIR}
     --include-path {PACKAGE_DIR} {LIB_DIR}  
     --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
