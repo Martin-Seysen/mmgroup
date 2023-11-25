@@ -2,10 +2,10 @@
 
  
 
- File ``mm_op_p_vector.c`` implements the operation of the
+ File ``mm_op_p_axis.c`` implements the operation of the
  Monster group on a vector in the representation \f$\rho_p\f$
  of the Monster modulo \f$p\f$. In this module such a vector
- is usually a 2A ais.
+ is usually a 2A axis.
 
 
  The representation \f$\rho_p\f$ is equal to the

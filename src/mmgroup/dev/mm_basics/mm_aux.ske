@@ -127,31 +127,6 @@ void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 }
 
 
-/**
-  @brief Read entries from vector in internal representation
-
-  Same operation as in function ``mm_aux_read_mmv1()``, but the
-  output vector ``b`` is not reduced. This is for debugging and less 
-  optimized than ``mm_aux_read_mmv1()``. 
-
-  Here ``p`` must be a legal modulus.
-*/
-// %%EXPORT px
-void mm_aux_read_direct_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
-{
-    uint_fast32_t i, j;  
-    uint_mmv_t source;
-    // %%MMV_LOAD_CONST  p, i
-    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
-    len >>= %{LOG_INT_BITS} - i;
-    i = 1 << i;                       // This is FIELD_BITS
-
-    while (len--) {
-        source = *mv++;
-        for (j = 0; j < %{INT_BITS}; j += i) 
-            *b++ = (uint8_t)((source >> j) & p);
-    }
-}
 
 
 /**
@@ -692,7 +667,7 @@ static int32_t check_sym(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
 {
     uint_fast32_t i, acc = 0;
     uint8_t  *p_row, *p_col;
-    mm_aux_read_direct_mmv1(p, mv, buffer, 72*32);
+    mm_aux_read_mmv1(p, mv, buffer, 72*32);
     for(i = 768; i < 1536; i += 33)  
         acc |= buffer[i] | buffer[i + 768];
     if (acc) return -4;

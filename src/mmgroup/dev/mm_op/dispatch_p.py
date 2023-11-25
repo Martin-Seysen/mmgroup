@@ -228,7 +228,7 @@ def make_legacy_scripts_mod_p(out_dir):
 
 MM_VARS = [
  'PROTECT_OVERFLOW', 'INT_BITS',
- 'mm_aux_read_mmv1', 'mm_aux_read_direct_mmv1',
+ 'mm_aux_read_mmv1',
  'mm_aux_write_mmv1', 'mm_aux_read_mmv24', 'mm_aux_write_mmv24',
  'mm_aux_get_mmv1', 'mm_aux_put_mmv1', 'mm_aux_mmv_size',
  'mm_aux_zero_mmv', 'mm_aux_get_mmv', 'mm_aux_put_mmv',
@@ -264,6 +264,10 @@ warnings.warn("Module mmgroup.mm is deprecated! "
     "Replace a function in this module by the "
     "corresponding function in module mmgroup.mm_op!",
     UserWarning)
+
+
+def mm_aux_read_direct_mmv1(*args, **kwds):
+    return mm_op.mm_aux_read_mmv1(*args, **kwds) 
 
 '''
     f.write(s)
