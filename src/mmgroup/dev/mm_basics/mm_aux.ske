@@ -56,11 +56,6 @@ static const uint32_t MMV_CONST_TABLE[] = {
 // %%TABLE MMV_CONST_TAB, uint32
 };
 
-// Duplicate from file mm_index.ske. Check and change!!! 
-static const uint16_t MM_AUX_TBL_ABC[] = {
-// %%TABLE MM_AUX_TBL_ABC, uint16
-};
-
 
 static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 // %%TABLE MM_AUX_TBL_REDUCE, uint%{INT_BITS}
@@ -416,31 +411,20 @@ void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 // Return the entry of the vector mv in R_p at  index  i.
 {
-    uint_fast32_t  j, c, res;
+    uint_fast32_t  j, sh, res, c;
+    int_fast32_t i_intern;
     if (mm_aux_bad_p(p)) return 0;
-    if (i <  MM_AUX_XOFS_X) {
-        if (i <  MM_AUX_XOFS_T) {
-            // Tags A, B, C
-            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
-        } else {
-            // Tag T
-            i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
-        } 
-    } else {
-        if (i >=  MM_AUX_XLEN_V) return 0;
-        // Tags X, Z, Y
-        i -=  MM_AUX_XOFS_X;
-        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
-        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
-        i += MM_AUX_OFS_X;
-    }
 
+    // Store constant table for p to c
     // %%MMV_LOAD_CONST  p, c
     j = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
-    mv += i >> j;
-    i = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
-    res = (mv[0] >> i) & p;             // This is the result
-    //Reduce reult modulo p
+
+    i_intern = mm_aux_index_extern_to_intern(i);
+    if (i_intern < 0) return 0; 
+
+    sh = (i_intern & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+    res = (uint_fast32_t)((mv[i_intern >> j] >> sh) & p); // The result
+    // Reduce result modulo p
     c = %{MMV_CONST:P_BITS,c}; // This is P_BITS
     return (uint8_t)((res + ((res + 1) >> c)) & p);
 }
@@ -468,39 +452,25 @@ uint8_t mm_aux_get_mmv(uint32_t p, uint_mmv_t *mv, uint32_t i)
 void mm_aux_put_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 {
 
-    uint_fast32_t  j, sh, diff;
+    uint_fast32_t  j, sh;
+    int_fast32_t i_intern, i_twin;
+    uint_mmv_t value1 = value & p, mask = p;
     if (mm_aux_bad_p(p)) return;
-    value &= p;
 
     // %%MMV_LOAD_CONST  p, j
     j = %{MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
 
-    if (i <  MM_AUX_XOFS_X) {
-        if (i <  MM_AUX_XOFS_T) {
-            // Tags A, B, C
-            diff = 31 * (MM_AUX_TBL_ABC[i] >> 11);
-            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
-            sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
-            mv[i >> j] = (mv[i >> j] &  ~(((uint_mmv_t)p) << sh))
-                  |   ((uint_mmv_t)(value)) << sh;
-            i -= diff;
-        } else {
-            // Tag T
-            i += MM_AUX_OFS_T - MM_AUX_XOFS_T;
-        } 
-    } else {
-        if (i >=  MM_AUX_XLEN_V) return;
-        // Tags X, Z, Y
-        i -=  MM_AUX_XOFS_X;
-        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
-        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
-        i += MM_AUX_OFS_X;
-    }
+    i_intern = mm_aux_index_extern_to_intern(i);
+    i_twin = mm_aux_index_check_intern(i_intern);
+    if (i_intern < 0  || i_twin < 0) return; 
 
-    mv += i >> j;
-    sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
-    mv[0] = (mv[0] &  ~(((uint_mmv_t)p) << sh))
-              |   ((uint_mmv_t)(value)) << sh;
+    sh = (i_intern & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+    mv[i_intern >> j] = (mv[i_intern >> j] & ~(mask << sh))
+              |   (value1 << sh);
+    if (i_twin == 0) return;
+    sh = (i_twin & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+    mv[i_twin >> j] = (mv[i_twin >> j] & ~(mask << sh))
+              |   (value1 << sh);
 }
 
 

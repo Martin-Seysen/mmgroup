@@ -22,8 +22,15 @@
 /// @cond DO_NOT_DOCUMENT 
 
 
+/**************************************************************
+Table for expanding entries for tags 'A', 'B', 'C'.
 
-// // %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
+Entry k0 of the external representation of the monster is
+mapped to location k1 in the internal representation with
+k1 = (Table[k0] & 0x7ff) + k0 - 24. Entry k0 is also copied 
+to location k1 - 31 * (Table[k0] >> 11) of the internal rep.
+**************************************************************/
+
 static const uint16_t MM_AUX_TBL_ABC[] = {
 // %%TABLE MM_AUX_TBL_ABC, uint16
 };
@@ -426,6 +433,115 @@ uint32_t mm_aux_index_intern_to_sparse(uint32_t i)
     } else return 0;
 }
 
+
+
+/**
+  @brief Convert an index from sparse to internal representation
+
+  The function converts an index ``i`` for the sparse representation
+  of a vector to an index for the internal representation of a vector
+  and returns the converted index. The function returns -1 if the
+  input ``i`` denotes an illegal index. The coordinate value encoded
+  in the input ``i`` is ignored.
+
+  Indices for the sparse representation are defined as
+  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
+*/
+// %%EXPORT px
+int32_t mm_aux_index_sparse_to_intern(uint32_t i)
+{
+    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f;
+    i = (i >> 14) & 0x7ff;
+    switch (tag) {
+        case 2:  // tag B
+        case 3:  // tag C
+            if (i == j) return -1;
+            // Fall trough to case tag A
+        case 1:  // tag A
+            if (i >= 24 || j >= 24) return -1;
+            return ((tag - 1) * 24 + i) * 32 + j;
+        case 4:  // tag T
+            if (i >= 759) return -1;
+            return MM_AUX_OFS_T + (i << 6) + j;
+        case 5:  // tag X
+        case 6:  // tag Z
+        case 7:  // tag Y
+            if (j >= 24) return -1;
+            return MM_AUX_OFS_X + 32 * (((tag - 5) << 11) + i) + j;
+        default:
+            return -1;
+    }
+}
+
+
+/************************************************************************
+*** Index conversion between internal and external rep of vectors in R_p
+************************************************************************/
+
+
+/**
+  @brief Convert an index from external to internal representation
+
+  The function converts an index ``i`` for the external representation
+  of a vector to an index for the internal representation of a vector
+  and returns the converted index. The function returns -1 in case
+  ``i >= 196884``.
+*/
+// %%EXPORT px
+int32_t mm_aux_index_extern_to_intern(uint32_t i)
+{
+    if (i <  MM_AUX_XOFS_X) {
+        if (i <  MM_AUX_XOFS_T) {
+            // Tags A, B, C
+            return (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
+        } else {
+            // Tag T
+            return i + MM_AUX_OFS_T - MM_AUX_XOFS_T;
+        }
+    } else if (i <  MM_AUX_XLEN_V) {
+        // Tags X, Z, Y
+        i -=  MM_AUX_XOFS_X;
+        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
+        i += (((i >> 3) * 0xaaab) >> 17) << 3;
+        // return result
+        return i + MM_AUX_OFS_X;
+    } else return -1;
+}
+
+
+
+/************************************************************************
+*** Check index in internal rep of vectors in R_p
+************************************************************************/
+
+
+/**
+  @brief Check an index in internal representation
+
+  The function checks an index ``i`` in the internal representation
+  of a vector. Some entries of the vectors are stored at two different
+  locations, e.g  entries ``A[i,j], B[i,j], C[i,j]`` for ``i != j``.
+
+  The function returns the other location of the same entry (as an
+  index in internal representation) if there is any. It returns 0 if
+  that entry is stored at exactly one location, and -1 if index ``i``
+  is illegal.
+*/
+// %%EXPORT px
+int32_t mm_aux_index_check_intern(uint32_t i)
+{
+    uint32_t t, i1, i2 = i & 31;
+    if (i < MM_AUX_OFS_T) {
+        if (i2 >= 24) return -1;
+        // put t = (i / (24 * 32)) * 24 * 32 for i < 72 * 32
+        t = (((i & 0xf00) * 0x55556) >> 20) * 3;
+        i1 = (i - t) >> 5;  // row index of U[i1,i2] for U = A, B, C
+        if (i1 == i2) return 0 - (int32_t)(t > 0);
+        return t + (i2 << 5) + i1;
+    }
+    if (i < MM_AUX_OFS_X || (i < MM_AUX_LEN_V && i2 < 24)) return 0;
+    return -1;
+}
 
 
 

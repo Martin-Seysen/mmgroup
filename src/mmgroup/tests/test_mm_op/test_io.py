@@ -12,7 +12,10 @@ import pytest
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.mm_space import characteristics
 from mmgroup.mm_op import mm_aux_index_sparse_to_extern
+from mmgroup.mm_op import mm_aux_index_sparse_to_intern
 from mmgroup.mm_op import mm_aux_index_extern_to_sparse
+from mmgroup.mm_op import mm_aux_index_intern_to_sparse
+from mmgroup.mm_op import mm_aux_index_extern_to_intern
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_aux_mmv_size
 
@@ -101,6 +104,11 @@ def do_test_rep_conversion(v):
             a[i] =  mm_aux_index_extern_to_sparse(index)             
             i_ext =  mm_aux_index_sparse_to_extern(a[i]) 
             assert i_ext == index, (hex(index), hex(a[i]), hex(i_ext))
+            i_int1 =  mm_aux_index_extern_to_intern(index) 
+            i_int2 =  mm_aux_index_sparse_to_intern(a[i]) 
+            assert i_int1 == i_int1, (hex(index), hex(i_int1), hex(i_int2))
+            i_sp1 =  mm_aux_index_intern_to_sparse(i_int1)
+            assert i_sp1 == a[i], (hex(index), hex(i_sp1), hex(a[i]))
         mm_aux_mmv_extract_sparse(p, v.data, a, len(a))
         assert (a & 0xff == data).all(), (a & 0xff, data)
 
