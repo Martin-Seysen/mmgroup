@@ -30,6 +30,9 @@
        5. Parameters (e.g. lengths, indices) that affect the positions of the 
           data being modified in the output array
 
+ Among others, functions in this file use functions from
+ file ``mm_index.c`` for converting indices of vectors to different
+ representations.
 */
 
 
@@ -46,20 +49,19 @@
 
 /// @cond DO_NOT_DOCUMENT 
 
+
+
 // %%USE_TABLE
 static const uint32_t MMV_CONST_TABLE[] = {
 // %%TABLE MMV_CONST_TAB, uint32
 };
 
-
-// // %%PY_DOCSTR MM_AUX_IO24.abc_table, 1
+// Duplicate from file mm_index.ske. Check and change!!! 
 static const uint16_t MM_AUX_TBL_ABC[] = {
 // %%TABLE MM_AUX_TBL_ABC, uint16
 };
 
 
-
-// // %%PY_DOCSTR MM_AUX_IO24.reduce_table, 1
 static const uint_mmv_t MM_AUX_TBL_REDUCE[] = {
 // %%TABLE MM_AUX_TBL_REDUCE, uint%{INT_BITS}
 };
@@ -1372,378 +1374,11 @@ int32_t mm_aux_mul_sparse(uint32_t p, uint32_t *sp, uint32_t length, int64_t f, 
     return is_bad ? -1 : length;
 }
 
-/**********************************************************************
-*** Index conversion between external and sparse rep of vectors in R_p
-**********************************************************************/
-
-
-/**
-  @brief Convert an index from external to sparse representation
-
-  The function converts an index ``i`` for the external representation 
-  of a vector to an index for the sparse representation of a vector
-  and returns the converted index. The function returns 0 in case
-  ``i >= 196884```. 
-
-  Indices for the sparse representation are defined as 
-  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
-*/
-// %%EXPORT px
-uint32_t mm_aux_index_extern_to_sparse(uint32_t i)
-// Convert external index i to sparse index.
-// Return 0 if index i is bad
-{
-    if (i <  MM_AUX_XOFS_X) {
-        if (i <  MM_AUX_XOFS_T) {
-            // Tags A, B, C
-            i = (MM_AUX_TBL_ABC[i] & 0x7ff) + i - 24;
-            // put i += (i / 0x300) * 0x100; assuming 0 <= i < 0x900 
-            i += (0x2A54000 >> ((i >> 8) << 1)) & 0x300;
-            // now 0 <= i < 0xc00. output bits of old i as 
-            // (tag - 1) = bits 11..10, i = bits 9..5, j = bits 4..0
-            return 0x2000000 + ((i & 0xc00) << 15) +
-                   ((i & 0x3e0) << 9) + ((i & 0x1f) << 8);
-        } else {
-            // Tag T
-            i += 0x80000 - MM_AUX_XOFS_T;
-            return i << 8;
-        } 
-    } else if (i <  MM_AUX_XLEN_V) {
-        // Tags X, Z, Y
-        i -=  MM_AUX_XOFS_X;
-        // Put i += 8 * floor(i/24), for i <  3 * 2048 * 24
-        i += (((i >> 3) * 0xaaab) >> 17) << 3; 
-        // shift bits 17..5 of i to bit positions 18...6
-        i += i & 0x3ffe0;
-        i += 0xA0000;
-        return i << 8;
-    } else return 0;
-}
-
-
-/**
-  @brief Convert index array from external to sparse representation
-
-  The function converts an array ``a`` of indices for the external 
-  representation to an array of indices for the sparse representation 
-  of a vector. All indices in the array ``a`` of length ``len`` are
-  converted in place, using function ``mm_aux_index_extern_to_sparse``.
-*/
-// %%EXPORT px
-void mm_aux_array_extern_to_sparse(uint32_t *a, uint32_t len)
-{
-    for(; len--; ++a) *a = mm_aux_index_extern_to_sparse(*a); 
-}
-
-
-/**
-  @brief Convert an index from sparse to external representation
-
-  The function converts an index ``i`` for the sparse representation 
-  of a vector to an index for the external representation of a vector
-  and returns the converted index. The function returns -1 if the
-  input ``i`` denotes an illegal index. The coordinate value encoded
-  in the input ``i`` is ignored.
- 
-  Indices for the sparse representation are defined as 
-  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
-*/
-// %%EXPORT px
-int32_t mm_aux_index_sparse_to_extern(uint32_t i)
-{
-    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f;
-    i = (i >> 14) & 0x7ff;
-    switch (tag) {
-        case 2:  // tag B
-        case 3:  // tag C
-            if (i == j) return -1;
-            // Fall trough to case tag A
-        case 1:  // tag A
-            if (i >= 24 || j >= 24) return -1;
-            if (i == j) return i;
-            return  MM_AUX_XOFS_A - 276 + tag * 276 
-                  + ((i * i - i) >> 1) + j;
-        case 4:  // tag T
-            if (i >= 759) return -1;
-            return MM_AUX_XOFS_T + (i << 6) + j;
-        case 5:  // tag X
-        case 6:  // tag Z
-        case 7:  // tag Y
-            if (j >= 24) return -1;
-            return  MM_AUX_XOFS_X - 0x3c000
-                + 24 * ((tag << 11) + i) + j; 
-        default:
-            return -1;
-    }
-}
-
-/**
-  @brief Convert sparse index to a short vector in the Leech lattice
-
-  The function converts an index ``i`` for the sparse representation
-  of a vector to a vector ``v`` in the Leech lattice. This conversion 
-  is successful if ``i`` denotes a legal index for one of the tags
-  tags ``B, C, T, X``. Then the function computes a short Leech 
-  lattice vector  (scaled to norm 32)  in the array ``v``. 
-  Output ``v`` is determined up to sign only; that sign is 
-  implementation dependent.
-
-  The function returns 0 in case of a successful conversion and -1
-  in case of failure.
-*/
-// %%EXPORT px
-int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
-// Convert sparse index i to a short vector v in the Leech lattice.
-// Vector v has norm 32. The sign of v is implementation dependent.
-// Return -1 if index i is bad or does not map to a short vector
-{
-    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f, k, w, u_sub;
-    i = (i >> 14) & 0x7ff;
-    switch (tag) {
-        case 2:  // tag B
-        case 3:  // tag C
-            if (i == j || i >= 24 || j >= 24) return -1;
-            for (k = 0; k < 24; ++k) v[k] = 0;
-            v[i] = v[j] = 4;
-            if (i < j) i = j;
-            if ((tag & 1) == 0) v[i] = -4;
-            return 0;
-        case 4:  // tag T
-            if (i >= 759) return -1;
-            w = mat24_octad_to_vect(i);
-            // Put k = parity of j
-            k = (0x96 >> ((j ^ (j >> 3)) & 7)) & 1;  
-            // Let u_sub be a vector representing suboctad j of w 
-            j = k + (j << 1);  // even-parity adjusted j
-            u_sub = mat24_spread_b24(j, w);
-            for (k = 0; k < 24; ++k) v[k] = 
-                 2 * ((w >> k) & 1) - 4 * ((u_sub >> k) & 1);
-            return 0;
-        case 5:  // tag X
-            if (j >= 24) return -1;
-            w = mat24_gcode_to_vect(i);
-            for (k = 0; k < 24; ++k) v[k] = 1 - 2 * ((w >> k) & 1);
-            v[j] = v[j] < 0 ? 3 : -3;
-            return  0; 
-        default:
-            return -1;
-    }
-}
-
-
-/**
-  @brief Convert sparse index to a short vector in the Leech lattice mod 2
-
-  The function converts an index ``i`` for the sparse representation
-  of a vector to a vector ``v`` in the Leech lattice mod 2. This 
-  conversion  is successful if ``i`` denotes a legal index for one of 
-  the tags tags ``B, C, T, X``. The function returns a short Leech 
-  lattice vector modulo 2, encoded in **Leech lattice encoding**, as
-  described in 
-  section **Description of the mmgroup.generators extension**. 
-
-  The function returns 0 in case of failure.
-*/
-// %%EXPORT px
-uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
-{
-    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f,  res = 0;
-    i = (i >> 14) & 0x7ff;
-    switch (tag) {
-        case 3:  // tag C
-            res = 0x800000;
-        case 2:  // tag B
-            if (i == j || i >= 24 || j >= 24) return 0;
-            return res + mat24_vect_to_cocode((1 << i) ^ (1 << j));
-        case 4:  // tag T
-            if (i >= 759) return 0;
-            {
-                uint_fast32_t w, gcode, cocode, v;
-                // Put w = bitweight(j)  (mod 4)
-                w = (j & 0x15) + ((j >> 1) & 0x15);
-                w = w + (w >> 2) + (w >> 4);
-                // Double j and adjust parity of j to even
-                j = (j << 1) + (w & 1);
-                gcode = MAT24_OCT_DEC_TABLE[i] & 0xfff;
-                v = mat24_gcode_to_vect(gcode);
-                cocode = mat24_vect_to_cocode(mat24_spread_b24(j, v));
-                // Put w = bitweight(adjusted j)   (mod 4)
-                w += w & 1;
-                gcode ^= ((w >> 1) & 1) << 11;
-                cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff;
-                res = (gcode << 12) + cocode;
-            }
-            return res;
-        case 5:  // tag X
-            if (j >= 24) return 0;
-            {
-                uint_fast32_t w, gcode, cocode, theta;
-                cocode = mat24_vect_to_cocode(1 << j);
-                theta = MAT24_THETA_TABLE[i & 0x7ff];
-                w = ((theta >> 12) & 1) ^ (i & cocode);
-                mat24_def_parity12(w);
-                gcode = i ^ (w << 11); 
-                cocode ^= theta & 0xfff;
-                res = (gcode << 12) + cocode;
-            }
-            return res;
-        default:
-            return 0;
-    }
-}
-
-
-
-
-
-/**
-  @brief Convert short vector in the Leech lattice mod 2 to sparse rep
-
-  The function converts an value ``v2`` representing a vector in
-  the Leech lattice mod 2 to a sparse index and returns that sparse
-  index. It returns 0 if ``v2`` is not a short Leech lattice vector.
-*/
-// %%EXPORT px
-uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
-{
-    uint_fast32_t theta, syn, scalar, w, coc, octad, cw, lsb, cocodev, sub;
-
-    // in the sequel we cut and paste the code for the detection of 
-    // a short vector v2 in the Leech lattice mod 2 from 
-    // function ``gen_leech2_type2`` in file ``gen_leech.c``.
-    // After detecting such a short vector we convert that
-    // vector to a sparse index.
-
-    // Deal with odd cocode words
-    if (v2 & 0x800) {   // Deal with odd cocode words
-         // Let syn be the syndrome table entry for the cocode part
-         theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
-         syn = MAT24_SYNDROME_TABLE[(theta ^ v2) & 0x7ff];
-         // Return 0 if syn does not encode a cocode word of length 1
-         if ((syn & 0x3ff) < (24 << 5)) return 0;
-         // Return  0 if scalar product <code, cocode> == 1  (mod 2)
-         scalar = (v2 >> 12) &  v2 & 0xfff;
-         mat24_def_parity12(scalar);
-         if (scalar) return 0;
-         // Here v2 is a short vector of shape (3^1,^1^23)
-         // Return sparse vector with tag X
-         return 0xA000000 + ((v2 & 0x7ff000) << 2) + ((syn & 0x1f) << 8);
-    }
-    // Deal with Golay code word 0
-    if ((v2 & 0x7ff000L) == 0) {
-         // Let syn be the syndrome table entry for the cocode part 
-         syn = MAT24_SYNDROME_TABLE[v2 & 0x7ff];
-         // Return 1 iff tab does not encode a cocode word of length 2
-         if ((syn & 0x8000) == 0) return 0;
-
-         // Compute cocode entries of v2
-         syn = MAT24_SYNDROME_TABLE[(v2 ^ MAT24_RECIP_BASIS[23]) & 0x7ff];
-         syn &= 0x3ff;
-         // Bits 9..5 and bits 4..0 contain high and low cocode bit index.
-         // Change a high cocode bit index 24 to 23.
-         syn -= ((syn + 0x100) & 0x400) >> 5;
-
-         // Return sparse vector with tag B is bit 23 of v2 is 0
-         // and with tag C otherwise.
-         return  ((syn >> 5) << 14) + ((syn & 0x1f) << 8) + 0x4000000 
-                 + ((0x800000 & v2) << 2);
-    }
-
-    theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
-
-    // Here (theta >> 12) & 7 is the bit weight of 
-    // v2 + Omega * b23, where b23 is bit 23 of v2.
-    // If bit 12 of theta is odd then v2 is a dodecad
-    // and hence never short.
-    if (theta & 0x1000) return 0;
-    // Now v2 is a (possibly complemented) octad.
-    // Put w = 1 if v2 is an octad and w = 0 otherwise.
-    w = ((theta >> 13) ^ (v2 >> 23)) & 1;
-    // XOR v2 with Omega if it has weight 16
-    v2 ^= (1 - w) << 23;
-    // Let coc be the cocode part of v2 (this is even)
-    coc = (v2 ^ theta) & 0x7ff;
-    // Let octad be the octad in vector representaition
-    octad = mat24_def_gcode_to_vect(v2 >> 12); 
-
-    // Now we proceed as in function suboctad_type(octad, w, coc)
-
-    // Let cw be the halved bit weight of coc
-    cw = MAT24_SYNDROME_TABLE[coc & 0x7ff] >> 15;
-    // Put cocodev = cocode word of v (in vector rep), such 
-    // that the cocode word is a suboctad of octad if possible.
-    lsb = mat24_def_lsbit24(octad);
-    coc ^= MAT24_RECIP_BASIS[lsb];
-    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
-    cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
-    // Set sub = 0 iff cocodev is a subset of octad.
-    sub = (octad & cocodev) != cocodev;
-    // Check if v2 is short as in function suboctad_type().
-    // Return 0 if this is not the case
-    if (((~w ^ cw) & 1) | sub) return 0;
-
-    // Here v2 is of type 2 and 'cocodev' is the cocode vector. 
-    // Now we compute the number of the octad and the suboctad.
-    v2 = mat24_def_gcode_to_octad(v2 >> 12); // Number of octad
-    // Compute the suboctad in w
-    w = mat24_extract_b24(cocodev, octad);   // This is the suboctad
-    // Compute the number of the suboctad in w
-    if (w & 0x80) w ^= 0xff;                 // Clear MSBit of suboctad
-    w = (w >> 1) & 63;                       // Number of suboctad
-    // Return sparse vector with tag 'T', octad, and suboctad
-    return 0x8000000 + (v2 << 14) + (w << 8);
-}
-
 
 
 /**********************************************************************
-*** Index conversion between internal and sparse rep of vectors in R_p
+***  Read entry from vector indexed by Leech lattice
 **********************************************************************/
-
-/**
-  @brief Convert an index from internal to sparse representation
-
-  The function converts an index ``i`` for the internal representation 
-  of a vector to an index for the sparse representation of a vector
-  and returns the converted index. The function returns 0 in case
-  of a bad index. 
-
-  Indices for the sparse representation are defined as 
-  in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.
-*/
-// %%EXPORT px
-uint32_t mm_aux_index_intern_to_sparse(uint32_t i)
-// Convert internal index i to sparse index.
-// Return 0 if index i is bad
-{
-    uint32_t t, i0, i1, tmp;
-    if (i <  MM_AUX_OFS_X) {
-        if (i <  MM_AUX_OFS_T) {
-            // put t =  (i / 0x300); assuming 0 <= i < 0x900 
-            t = (0x2A540 >> ((i >> 8) << 1)) & 3;
-            i0 = i - t * 0x300;
-            i1 = i0 & 31;
-            i0 >>= 5;
-            if (i0 < i1) {
-                tmp = i0; i0 = i1; i1 = tmp;
-            }
-            if (i0 >= 24) return 0;
-            if (t && i0 == i1) return 0;
-            return ((t + 1) << 25) + (i0 << 14) + (i1 << 8);
-        } else {
-            // Tag T
-            i += 0x80000 - MM_AUX_OFS_T;
-            return i << 8;
-        } 
-    } else if (i < MM_AUX_LEN_V) {
-        // Tags X, Z, Y
-        i -=  MM_AUX_OFS_X;
-        i0 = i >> 5;
-        i1 = i & 31;
-        if (i1 >= 24) return 0;
-        return  MM_SPACE_TAG_X + (i0 << 14) + (i1 << 8);
-    } else return 0;
-}
 
 
 

@@ -340,6 +340,11 @@ Header file mm_op_p.h
 .. doxygenfile::  mm_op_p.h
 
 
+C interface for file mm_index.c
+---------------------------------------
+
+.. doxygenfile:: mm_index.c
+
 
 C interface for file mm_aux.c
 ---------------------------------------

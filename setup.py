@@ -377,7 +377,7 @@ DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MM_OP"
 
 
 MM_SOURCES = '''
-    mm_aux.c mm_tables.c mm_group_word.c
+    mm_index.c mm_aux.c mm_tables.c mm_group_word.c
     mm_tables_xi.c mm_crt.c
 '''
 
