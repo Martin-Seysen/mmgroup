@@ -16,6 +16,7 @@ from mmgroup.mm_op import mm_aux_index_sparse_to_intern
 from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_intern_to_sparse
 from mmgroup.mm_op import mm_aux_index_extern_to_intern
+from mmgroup.mm_op import mm_aux_index_check_intern
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_aux_mmv_size
 
@@ -84,6 +85,23 @@ def do_test_sparse_rep(v):
     v2 = space(p, 'V', v.as_bytes())
     assert (v == v2)
 
+
+def check_twin_ABC(a1, a2):
+    assert 0 <= a1 <= 72*32, hex(a1)
+    t1, a10 = divmod(a1, 24*32)
+    t2, a20 = divmod(a2, 24*32)
+    a1i, a1j = divmod(a10, 32)
+    a2i, a2j = divmod(a20, 32)
+    assert a1j < 24
+    if a1i == a1j:
+        assert t1 == 0, (hex(a1), hex(a2), hex(a1i), hex(a1j),  hex(t1))
+        assert a2 == 0, (hex(a1), hex(a2), hex(a1i), hex(a1j), hex(a2))
+    else:
+        assert t1 == t2, (hex(a1), hex(a2), hex(a1i), hex(a1j), hex(t1), hex(t2))
+        assert a1i == a2j, (hex(a1), hex(a2), hex(a1i), hex(a1j))
+        assert a1j == a2i, (hex(a1), hex(a2), hex(a1i), hex(a1j))
+
+
 def do_test_rep_conversion(v):
     p = v.p
     space = MMVector
@@ -109,6 +127,11 @@ def do_test_rep_conversion(v):
             assert i_int1 == i_int1, (hex(index), hex(i_int1), hex(i_int2))
             i_sp1 =  mm_aux_index_intern_to_sparse(i_int1)
             assert i_sp1 == a[i], (hex(index), hex(i_sp1), hex(a[i]))
+            twin = mm_aux_index_check_intern(i_int1)
+            if i_int1 >= 72*32:
+                assert twin == 0
+            else:
+                check_twin_ABC(i_int1, twin)
         mm_aux_mmv_extract_sparse(p, v.data, a, len(a))
         assert (a & 0xff == data).all(), (a & 0xff, data)
 

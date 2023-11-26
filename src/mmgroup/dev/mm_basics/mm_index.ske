@@ -534,7 +534,7 @@ int32_t mm_aux_index_check_intern(uint32_t i)
     if (i < MM_AUX_OFS_T) {
         if (i2 >= 24) return -1;
         // put t = (i / (24 * 32)) * 24 * 32 for i < 72 * 32
-        t = (((i & 0xf00) * 0x55556) >> 20) * 3;
+        t = (((i & 0xf00) * 0x55556) >> 28) * 0x300;
         i1 = (i - t) >> 5;  // row index of U[i1,i2] for U = A, B, C
         if (i1 == i2) return 0 - (int32_t)(t > 0);
         return t + (i2 << 5) + i1;
