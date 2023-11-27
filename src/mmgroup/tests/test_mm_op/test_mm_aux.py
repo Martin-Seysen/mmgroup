@@ -58,8 +58,8 @@ def hash_testdata(ntests=3):
             for j in range(100):
                 x = randint(1, p-1)
                 index = randint(0, MMV_INTS)
-                mm_op.mm_aux_put_mmv1(p, x, d1, index)
-                mm_op.mm_aux_put_mmv1(p, x, d2, index)
+                mm_op.mm_aux_put_mmv(p, x, d1, index)
+                mm_op.mm_aux_put_mmv(p, x, d2, index)
             yield p, v1, v2
 
 

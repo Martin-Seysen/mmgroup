@@ -493,11 +493,8 @@ from mmgroup.mm_op import mm_aux_mmv_to_sparse, mm_aux_mmv_add_sparse
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_aux_mmv_set_sparse, mm_aux_mmv_add_sparse
 from mmgroup.mm_op import mm_aux_bytes_to_mmv, mm_aux_mmv_to_bytes
-from mmgroup.mm_op import mm_aux_get_mmv, mm_aux_put_mmv
-#from mmgroup.mm import mm_rng_make_seed
 from mmgroup.mm_op import INT_BITS, PROTECT_OVERFLOW
 from mmgroup.mm_op import mm_aux_check_mmv
-from mmgroup.mm_op import mm_aux_get_mmv1
 from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_extern
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech

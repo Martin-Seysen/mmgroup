@@ -95,14 +95,6 @@ value. These functions also make sure that unused bits in a bit
 field and unused bit fields are set to zero. Note that a bit field 
 with value zero may contain the value ``p`` instead.
 
-Direct access to an entry of a vector ``mv`` of integers modulo
-``p`` in internal representation is difficult. Function 
-``mm_aux_get_mmv(p, mv, i)`` returns the entry with index ``i`` of 
-the  vector ``mv``. Function ``mm_aux_put_mmv(p, value, mv, i)`` 
-sets the entry with index ``i`` to the given ``value``. Here valid 
-indices are ``0 <= i < 196884``. The order of the indices ``i`` is 
-the order given by the *external representation* of a vector
-in :math:`\rho_p`.
 
 
 The *external* representation of a vector in :math:`\rho_p`

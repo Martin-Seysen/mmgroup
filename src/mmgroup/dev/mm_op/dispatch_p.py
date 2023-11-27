@@ -228,10 +228,8 @@ def make_legacy_scripts_mod_p(out_dir):
 
 MM_VARS = [
  'PROTECT_OVERFLOW', 'INT_BITS',
- 'mm_aux_read_mmv1',
- 'mm_aux_write_mmv1', 'mm_aux_read_mmv24', 'mm_aux_write_mmv24',
- 'mm_aux_get_mmv1', 'mm_aux_put_mmv1', 'mm_aux_mmv_size',
- 'mm_aux_zero_mmv', 'mm_aux_get_mmv', 'mm_aux_put_mmv',
+ 'mm_aux_mmv_size',
+ 'mm_aux_zero_mmv',
  'mm_aux_random_mmv', 'mm_aux_reduce_mmv', 'mm_aux_reduce_mmv_fields',
  'mm_aux_check_mmv', 'mm_aux_small24_expand', 'mm_aux_small24_compress',
  'mm_aux_mmv_to_bytes', 'mm_aux_bytes_to_mmv', 'mm_aux_mmv_to_sparse', 
@@ -242,7 +240,7 @@ MM_VARS = [
  'mm_aux_array_extern_to_sparse', 'mm_aux_index_sparse_to_extern',
  'mm_aux_index_sparse_to_leech', 'mm_aux_index_sparse_to_leech2',
  'mm_aux_index_leech2_to_sparse', 'mm_aux_index_intern_to_sparse',
- 'mm_aux_get_mmv_leech2', 'mm_aux_hash', 'mm_sub_test_prep_pi_64',
+ 'mm_aux_hash', 'mm_sub_test_prep_pi_64',
  'mm_sub_test_prep_xy', 'mm_group_prepare_op_ABC',
  'mm_sub_get_table_xi', 'mm_crt_combine', 'mm_crt_combine_bytes',
  'mm_crt_check_v2', 'mm_crt_check_g', 'mm_crt_norm_int32_32',

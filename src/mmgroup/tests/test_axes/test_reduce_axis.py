@@ -18,7 +18,7 @@ from mmgroup.clifford12 import leech2_matrix_basis
 from mmgroup.clifford12 import leech2_matrix_radical
 from mmgroup.clifford12 import leech2_matrix_expand
 from mmgroup.mm_op import mm_vector
-from mmgroup.mm_op import mm_aux_get_mmv1, mm_aux_get_mmv_leech2
+from mmgroup.mm_op import mm_aux_get_mmv, mm_aux_get_mmv_leech2
 from mmgroup.mm_op import mm_op_word
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 from mmgroup.mm_op import mm_op_t_A 
@@ -242,7 +242,7 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
             assert r1 >= 0
             mm_op_word(15, v, r[len_r:], r1, 1, work.data)
             len_r += r1
-            ind = mm_aux_get_mmv1(15, v, (24+3)*32 + 2)
+            ind = mm_aux_get_mmv(15, v, (24+3)*32 + 2)
             if (ind != 15-2):
                 r[len_r] = 0xB0000200
                 mm_op_word(15, v, r[len_r:], 1, 1, work.data)
