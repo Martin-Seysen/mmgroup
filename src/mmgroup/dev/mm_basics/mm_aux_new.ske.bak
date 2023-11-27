@@ -33,10 +33,6 @@
  Among others, functions in this file use functions from
  file ``mm_index.c`` for converting indices of vectors to different
  representations.
-
- A vector modulo ``p`` is organized in rows of 32 entries. In many rows
- only 24 of the 32 bits are used; but in some all 32 bit are used. 
- Dtails are given in the *API reference* of the project. 
 */
 
 
@@ -84,7 +80,7 @@ extern "C" {
 
 
 /**********************************************************************
-*** Reading and writing entries of vectors of type uint_mmv_t[]
+*** Low-level functions supporting vectors of type uint_mmv_t[]
 **********************************************************************/
 
 
@@ -199,10 +195,79 @@ void mm_aux_add_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 }
 
 
+/**
+  @brief Read data from vector in internal representation
 
-/**********************************************************************
-*** Reading and writing rows of vectors of type uint_mmv_t[]
-**********************************************************************/
+  Read data from the vector ``mv`` (stored in internal representation
+  with modulus ``p``) to byte array ``b`` , starting at offset ``i``, 
+  with index ``i`` given in internal representation.
+  Here ``len`` is the number of entries to be read.
+
+  Entries in array ``b`` corresponding to illegal or slack indices
+  will contain garbage.
+*/
+// %%EXPORT px
+void  mm_aux_read_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint32_t len)
+{
+    uint_fast32_t  j, sh, res, c;
+    if (mm_aux_bad_p(p)) return;
+
+    // Store constant table for p to c
+    // %%MMV_LOAD_CONST  p, c
+    j = %{MMV_CONST:LOG_INT_FIELDS,c}; // This is LOG_INT_FIELDS
+    c = %{MMV_CONST:P_BITS,c}; // This is P_BITS
+
+    if (i >= MM_AUX_LEN_V) return; 
+    if (i + len > MM_AUX_LEN_V) len = MM_AUX_LEN_V - i;
+
+    for (; len-- > 0; ++i, ++b) {
+        sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+        res = (uint_fast32_t)((mv[i >> j] >> sh) & p); // The result
+        // Reduce result modulo p
+        *b = (uint8_t)((res + ((res + 1) >> c)) & p);
+    }
+}
+
+
+
+
+/**
+  @brief Write data to a vector in internal representation
+
+  Write data from the array ``b`` to the vector ``mv`` (stored
+  in internal representation with modulus ``p``), starting at
+  offset ``i``, with index ``i`` given in internal representation.
+  Here ``len`` is the number of entries to be written.
+
+  Entries in array ``b`` corresponding to illegal or slack indices
+  are ignored, but counted.
+
+  Here ``p`` must be a legal modulus.
+*/
+// %%EXPORT px
+void mm_aux_write_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint32_t len)
+{
+
+    uint_fast32_t  j, sh;
+    int_fast32_t i_twin;
+    uint_mmv_t value1, mask = p;
+    if (mm_aux_bad_p(p)) return;
+
+    // %%MMV_LOAD_CONST  p, j
+    j = %{MMV_CONST:LOG_INT_FIELDS,j}; // This is LOG_INT_FIELDS
+
+    for (; len-- > 0; ++i, ++b) {
+        i_twin = mm_aux_index_check_intern(i);
+        if (i_twin < 0) continue; 
+
+        value1 = *b & p;
+        sh = (i & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+        mv[i >> j] = (mv[i >> j] & ~(mask << sh)) | (value1 << sh);
+        if (i_twin == 0) continue;
+        sh = (i_twin & ((1 << j) - 1)) << (%{LOG_INT_BITS} - j);
+        mv[i_twin >> j] = (mv[i_twin >> j] & ~(mask << sh)) | (value1 << sh);
+    }
+}
 
 
 
@@ -213,23 +278,24 @@ void mm_aux_add_mmv(uint32_t p, uint8_t value, uint_mmv_t *mv, uint32_t i)
 
   Read entries of vector ``mv`` (stored in internal representation
   with modulus ``p``) and store these entries  in the array ``b``.
-  Here ``len`` is the number of rows to be read starting at
-  row ``i``. Each row consists of 32 entries.
+  Here ``len`` is the number of entries to be read. ``len`` must 
+  be a multiple of the number of entries in an integer
+  of ``type uint_mmv_t``. It is ok if ``len`` is a multiple of 32. 
+  Output vector ``b`` is reduced modulo ``p``.
 
   Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
-void mm_aux_read_mmv32(uint32_t p, uint_mmv_t *mv, uint32_t i, uint8_t *b, uint32_t len)
+void mm_aux_read_mmv1(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 {
-    uint_fast32_t log_f, sh, tmp;  
+    uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
-    // %%MMV_LOAD_CONST  p, log_f
-    sh = %{MMV_CONST:P_BITS,log_f};        // This is P_BITS
-    log_f = %{MMV_CONST:LOG_FIELD_BITS,log_f}; // This is LOG_FIELD_BITS
-    len = (len << 5) >> (%{LOG_INT_BITS} - log_f);
-    mv += (i << 5) >> (%{LOG_INT_BITS} - log_f);
+    // %%MMV_LOAD_CONST  p, i
+    sh = %{MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= %{LOG_INT_BITS} - i;
 
-    switch (log_f) {
+    switch (i) {
         // %%FOR LOG_F in [1, 2, 3]
         case %{LOG_F}:
             while (len--) {
@@ -248,27 +314,32 @@ void mm_aux_read_mmv32(uint32_t p, uint_mmv_t *mv, uint32_t i, uint8_t *b, uint3
 
 
 
+
+
+
+
+
 /**
   @brief Write data to a vector in internal representation
 
-  Write data from the array ``b`` to the vector ``mv`` (stored
-  in internal representation with modulus ``p``). Here ``len``
-  is the number of rows to be read starting at row ``i``. Each
-  row consists of 32 entries.
+  Write data from the array ``b`` to the vector ``mv`` (stored 
+  in internal representation with modulus ``p``). Here ``len`` is 
+  the number of entries to be written. ``len`` must be a multiple 
+  of the number of entries in an integer of type ``uint_mmv_t``. 
+  It is ok if len is a multiple of 32. 
 
   Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
-void mm_aux_write_mmv32(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint32_t len)
+void mm_aux_write_mmv1(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 {
-    uint_fast32_t log_f;  
+    uint_fast32_t i;  
     uint_mmv_t dest;
-    // %%MMV_LOAD_CONST  p, log_f
-    log_f = %{MMV_CONST:LOG_FIELD_BITS,log_f}; // This is LOG_FIELD_BITS
-    len = (len << 5) >> (%{LOG_INT_BITS} - log_f);
-    mv += (i << 5) >> (%{LOG_INT_BITS} - log_f);
+    // %%MMV_LOAD_CONST  p, i
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
+    len >>= %{LOG_INT_BITS} - i;
     
-    switch(log_f) {
+    switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
         case %{LOG_F}:
             while (len--) {
@@ -285,29 +356,28 @@ void mm_aux_write_mmv32(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint
 }
 
 /**
-  @brief Read rows of length 24 from vector in internal representation
+  @brief Read blocks of length 24 from vector in internal representation
 
   Read entries of vector ``mv`` with modulus ``p`` and store these 
-  entries in the array ``b``, , starting at row ``i``. Here ``mv`` 
-  is a vector of rows of 24  entries, with 8 entries slack after each 
-  row. ``len`` is the number of such rows to be read. So altogether 
-  24 * ``len`` entries are read from ``mv`` and written to 
-  array ``b``; the 8 bytes slack after each 24-byte row are dropped.
+  entries in the array ``b``. Here ``mv`` is a vector of blocks
+  of 24  entries, with 8 entries slack after each block. ``len``
+  is the number of such blocks to be read. So  altogether 24 * ``len``
+  entries are read from ``mv`` and written to array ``b``; the 8
+  bytes slack after each 24-byte block are dropped.
   Vector ``b`` is reduced modulo ``p``.
 
   Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
-void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint32_t i, uint8_t *b, uint32_t len)
+void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint8_t *b, uint32_t len)
 {
-    uint_fast32_t log_f, sh, tmp;  
+    uint_fast32_t i, sh, tmp;  
     uint_mmv_t source;
-    // %%MMV_LOAD_CONST  p, log_f
-    sh = %{MMV_CONST:P_BITS,log_f};        // This is P_BITS
-    log_f = %{MMV_CONST:LOG_FIELD_BITS,log_f}; // This is LOG_FIELD_BITS
-    mv += (i << 5) >> (%{LOG_INT_BITS} - log_f);
+    // %%MMV_LOAD_CONST  p, i
+    sh = %{MMV_CONST:P_BITS,i};        // This is P_BITS
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
 
-    switch(log_f) {
+    switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
         case %{LOG_F}:
             while (len--) {
@@ -330,28 +400,28 @@ void mm_aux_read_mmv24(uint32_t p, uint_mmv_t *mv, uint32_t i, uint8_t *b, uint3
 
 
 /**
-  @brief Write rows of length 24 to vector in internal representation
+  @brief Write blocks of length 24 to vector in internal representation
 
-  Write data from the array ``b`` to the vector ``mv`` with
-  modulus ``p``. We take ``24 * len`` bytes from the array ``b``
-  and write them to the vector ``mv``, starting at row ``i``.
-  Here ``mv`` is considered as a vector of rows of 24 entries,
-  with 8 entries slack after each row; so ``len`` is the number
-  of such 24-byte rows to be written. The entries in the slack
-  after each row written to ``mv`` are set to zero.
+  Write data from the array ``b`` to the vector ``mv`` with 
+  modulus ``p``. We take ``24 * len`` bytes from the array b
+  and write them to the vector ``mv``. Here ``mv`` is considered
+  as a vector of blocks of 24 entries, with 8 entries slack 
+  after each block; so ``len`` is the number of such 24-byte
+  blocks to be written. The entries in the slack after each 
+  block written to ``mv`` are set to zero.
 
   Here ``p`` must be a legal modulus.
 */
 // %%EXPORT px
-void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint32_t len)
+void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t len)
 {
-    uint_fast32_t log_f;
+    uint_fast32_t i;  
     uint_mmv_t dest;
-    // %%MMV_LOAD_CONST  p, log_f
-    log_f = %{MMV_CONST:LOG_FIELD_BITS,log_f}; // This is LOG_FIELD_BITS
-    mv += (i << 5) >> (%{LOG_INT_BITS} - log_f);
+    // %%MMV_LOAD_CONST  p, i
+    i = %{MMV_CONST:LOG_FIELD_BITS,i}; // This is LOG_FIELD_BITS
 
-    switch(log_f) {
+
+    switch(i) {
         // %%FOR LOG_F in [1, 2, 3]
         case %{LOG_F}:
             while (len--) {
@@ -373,6 +443,7 @@ void mm_aux_write_mmv24(uint32_t p, uint8_t *b, uint_mmv_t *mv, uint32_t i, uint
             break;
         // %%END FOR
     }
+
 } 
 
 
@@ -478,25 +549,29 @@ void mm_aux_zero_mmv(uint32_t p, uint_mmv_t *mv)
 void mm_aux_random_mmv(uint32_t p, uint_mmv_t *mv, uint64_t *seed)
 {
     uint8_t b1[3072];
-    uint_fast32_t i;
+    uint_fast32_t i, j;
 
     if (mm_aux_bad_p(p)) return;
 
     // Do the small part
     gen_rng_bytes_modp(p,  (uint8_t *)(mv), 24 + 3 * 276, seed);
     mm_aux_small24_expand((uint8_t *)(mv), b1);
-    mm_aux_write_mmv24(p, b1, mv, 0, 72);
+    for (i = 0; i < 72; ++i) {
+        mm_aux_write_mmv(p, b1 + 24*i, mv, 32*i, 24);
+    }
 
     // Do the 759 * 64 vector; note that 759 = 11 * 69
-    for (i = 0; i < 22; ++i) {
+    for (i = 0; i < 759 * 64; i += 69 * 32) {
         gen_rng_bytes_modp(p, b1, 69 * 32, seed);
-        mm_aux_write_mmv32(p, b1, mv, MM_AUX_OFS_T/32 + i*69, 69);
+        mm_aux_write_mmv(p, b1, mv, MM_AUX_OFS_T + i, 69 * 32);
     } 
 
     // Do the 6144 * 24 vector
-    for (i = 0; i < 48; ++i) {  
-        gen_rng_bytes_modp(p, b1, 3072, seed);
-        mm_aux_write_mmv24(p, b1, mv, MM_AUX_OFS_X/32 + i*128, 128);
+    for (i = 0; i < 6144 * 32; i += 128 * 32) {
+        gen_rng_bytes_modp(p, b1, 128*24, seed);
+        for (j = 0; j < 128; ++j) {
+            mm_aux_write_mmv(p, b1 + 24*j, mv, MM_AUX_OFS_X + i + 32*j, 24);
+        }
     } 
 }
 
@@ -625,7 +700,7 @@ static int32_t check_sym(uint32_t p, uint_mmv_t *mv, uint8_t * buffer)
 {
     uint_fast32_t i, acc = 0;
     uint8_t  *p_row, *p_col;
-    mm_aux_read_mmv32(p, mv, 0, buffer, 72);
+    mm_aux_read_mmv(p, mv, buffer, 0, 72*32);
     for(i = 768; i < 1536; i += 33)  
         acc |= buffer[i] | buffer[i + 768];
     if (acc) return -4;
@@ -751,7 +826,7 @@ void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)
   tags ``A, B, C`` in external representation).
 
   This reverses the effect of function ``mm_aux_small24_expand``.
-  Function ``mm_aux_read_mmv24`` can be used to read the data
+  Function ``mm_aux_read_mmv`` can be used to read the data
   from the initial segment of the internal representation of a 
   vector to the array ``b_src``, before calling this function. 
 */
@@ -802,15 +877,20 @@ void mm_aux_small24_compress(uint8_t *b_src, uint8_t *b_dest)
 void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 {
     uint8_t b1[3*576]; 
+    uint_fast32_t i;
 
     if (mm_aux_bad_p(p)) return;
     
-    mm_aux_read_mmv24(p, mv, 0, b1, 72);
+    for (i = 0; i < 72;++i) {
+        mm_aux_read_mmv(p, b + 24*i, mv, 32*i, 24);
+    }
     mm_aux_small24_compress(b1, b);
     b +=  MM_AUX_XOFS_T;
-    mm_aux_read_mmv32(p, mv, MM_AUX_OFS_T/32, b,  2*759);
+    mm_aux_read_mmv(p, b, mv, MM_AUX_OFS_T,  759*64);
     b +=  (MM_AUX_XOFS_X - MM_AUX_XOFS_T);
-    mm_aux_read_mmv24(p, mv, MM_AUX_OFS_X/32, b, 6144);
+    for (i = 0; i < 6144; ++i) {
+        mm_aux_read_mmv(p, b + 24*i, mv, MM_AUX_OFS_X + 32*i, 24);
+    }
 }
 
 
@@ -830,16 +910,20 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 {
     uint8_t b1[3*576];
-    uint_fast32_t  c;
+    uint_fast32_t  i;
 
     if (mm_aux_bad_p(p)) return;
 
     mm_aux_small24_expand(b, b1);   
-    mm_aux_write_mmv24(p, b1, mv, 0, 72);
+    for (i = 0; i < 72;++i) {
+        mm_aux_write_mmv(p, b1 + 24*i, mv, 32*i, 24);
+    }
     b +=  MM_AUX_XOFS_T;
-    mm_aux_write_mmv32(p, b, mv, MM_AUX_OFS_T/32, 759*2);
+    mm_aux_write_mmv(p, b, mv, MM_AUX_OFS_T, 759*64);
     b +=  (MM_AUX_XOFS_X - MM_AUX_XOFS_T);
-    mm_aux_write_mmv24(p, b, mv, MM_AUX_OFS_X/32, 6144);
+    for (i = 0; i < 6144; ++i) {
+        mm_aux_write_mmv(p, b + 24*i, mv, MM_AUX_OFS_X + 32*i, 24);
+    }
 }
 
 
@@ -975,6 +1059,7 @@ uint32_t mm_aux_mmv_get_sparse(uint32_t p, uint_mmv_t *mv, uint32_t sp)
 
 
 
+       
 
 /**
   @brief Add vector in sparse rep to vector in internal representation
@@ -995,6 +1080,8 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
         mm_aux_add_mmv(p, *sp, mv, i_intern);
     }
 }
+
+
 
 
 

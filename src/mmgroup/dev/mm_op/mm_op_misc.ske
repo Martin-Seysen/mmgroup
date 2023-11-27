@@ -315,7 +315,7 @@ int32_t mm_op%{P}_store_axis(uint32_t x, uint_mmv_t *mv)
        for (j = 0; j < 24; ++j) {
            b[j] = (uint8_t)(ua_i * ua[j] % %{P});
        }
-       mm_aux_write_mmv24(%{P}, b, mv + %{V24_INTS} * i, 1);
+       mm_aux_write_mmv24(%{P}, b, mv + %{V24_INTS} * i, 0, 1);
    }
    ind = mm_aux_index_leech2_to_sparse(x) + 2;
    if ((x & 0x1000000) == 0) ind ^= %{P};
