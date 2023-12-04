@@ -1,0 +1,821 @@
+/** @file xsp2co1_word.c
+  File ``xsp2co1_word.c`` contains additional functions for computing
+  in the subgroup \f$G_{x0}\f$ (of structure \f$2^{1+24}.\mbox{Co}_1\f$)
+  of the monster. This file can be considered as a supplement to
+  file ``xsp2co1.c``.
+*/
+
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+#define CLIFFORD12_INTERN
+#include "clifford12.h"
+/// @endcond  
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+/*************************************************************************
+*** Obtain Leech lattice transformation from an element of G_{x0}
+*************************************************************************/
+
+
+/**
+@brief Auxiliary function for function ``xsp2co1_add_short_3_leech``
+
+The function converts a vector in \f$\Lambda / 3\Lambda\f$ 
+from **Leech lattice mod 3** encoding to the encoding to the 
+encoding of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ 
+used in the ``mmgroup.mm3`` extension. 
+*/
+// %%EXPORT px
+uint64_t xsp2co1_to_vect_mod3(uint64_t x)
+{
+    uint64_t y;
+    x = short_3_reduce(x);
+    x = (x & 0xffffffULL) + ((x & 0xffffff000000ULL) << 8);
+    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
+    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
+    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
+    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
+    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
+    return x;
+}
+
+
+/**
+@brief Inverse of function ``xsp2co1_to_vect_mod3``
+
+The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
+the encoding of a vector in 
+\f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in the ``mmgroup.mm3`` 
+extension to the **Leech lattice mod 3** encoding.
+*/
+// %%EXPORT px
+uint64_t xsp2co1_from_vect_mod3(uint64_t x)
+{
+    uint64_t y;
+    SHIFT_MASKED(x, y, 0x2222222222222222ULL, 1);
+    SHIFT_MASKED(x, y, 0x0C0C0C0C0C0C0C0CULL, 2);
+    SHIFT_MASKED(x, y, 0x00F000F000F000F0ULL, 4);
+    SHIFT_MASKED(x, y, 0x0000FF000000FF00ULL, 8);
+    SHIFT_MASKED(x, y, 0x00000000FFFF0000ULL, 16);
+    x = (x & 0xffffffULL) + ((x & 0xffffff00000000ULL) >> 8);
+    return short_3_reduce(x);
+}
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+@brief add short Leech lattice vector (given mod 3) to Leech lattice vector
+
+Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
+lattice mod 3** encoding, and short Leech lattice vectors 
+``src`` and ``dest``, referred by ``psrc`` and ``pdest``, the 
+function computes  ``dest = src + factor * x``. Here ``src`` and 
+``dest`` are given in the standard basis, so that a unit vector of 
+length ``sqrt(8)`` has one entry with absolute value ``8``.
+ 
+*/
+static
+int32_t xsp2co1_add_short_3_leech(uint64_t x, int32_t factor, int8_t *psrc, int8_t *pdest)
+{
+    uint_fast32_t  gcodev, cocodev, w1, w2;
+    int_fast8_t f[4], i;
+    f[0] = f[3] = 0;
+    x = short_3_reduce(x);
+    w1 = mat24_bw24((uint32_t)x); 
+    w2 = mat24_bw24((uint32_t)(x >> 24));
+    switch (w1 + w2) {
+        case 23:
+            cocodev = ~(uint32_t)(x | (x >> 24)) & 0xffffffUL;
+            if ((cocodev == 0) || (cocodev & (cocodev - 1))) 
+                return ERR_QSTATE12_LEECH_OP;
+            f[0] = (int8_t)factor * ((w1 & 1) ? -3 : 3); 
+            f[1] = (int8_t)factor;
+            gcodev = (uint32_t)(x >> ((0-(w1 & 1)) & 24)) & 0xffffffUL;
+            break;              
+        case 8:
+            if (w1 & 1) return ERR_QSTATE12_LEECH_OP;
+            gcodev = (x | (x >> 24)) & 0xffffffUL;
+            f[1] = -2 * (int8_t)factor;
+            break;
+        case 2:
+            gcodev = 0;
+            f[1] = 4 * (int8_t)factor;
+            break;
+        default:
+            return ERR_QSTATE12_LEECH_OP;        
+    }
+    f[2] = -f[1];
+    gcodev = mat24_vect_to_gcode(gcodev);
+    if (gcodev & 0xfffff000UL) return ERR_QSTATE12_LEECH_OP;
+    x = xsp2co1_to_vect_mod3(x);
+
+    for (i = 0; i < 24; ++i) {
+        pdest[i] =  psrc[i] + f[(x >> (i << 1)) & 3];
+    }
+    return 0;
+}
+
+/// @endcond 
+
+/**
+@brief Get Leech lattice matrix from \f$g \in G_{x0}\f$ 
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``,
+in **G_x0 representation**. 
+\f$G_{x0}\f$ operates faithfully on the space
+\f$4096_x \otimes_\mathbb{Z} \Lambda\f$. This function 
+constructs a \f$24 \times 24\f$ integer matrix
+\f$L_g\f$ such that  \f$\frac{1}{8} L_g\f$ corresponds 
+to the operation of \f$g\f$ on \f$\Lambda\f$. It stores
+entry  \f$L_g[i,j]\f$ in ``dest[24*i+j]``.  Matrix \f$L_g\f$ 
+is unique up to sign.
+
+Function ``xsp2co1_elem_to_qs(elem,...)`` computes a
+(representation of) an orthogonal \f$4096 \times 4096\f$
+matrix \f$x_g\f$ such that right multiplication with the 
+Kronecker product  
+\f$\frac{1}{8} x_g \otimes L_g\f$ is equal to the 
+action of \f$g\f$ on \f$4096_x \otimes \Lambda\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_to_leech_op(uint64_t *elem, int8_t *pdest)
+{
+    uint64_t src3[25], dest3[25];
+    int_fast32_t res, i;
+    qstate12_type qs;
+    
+    // We let ``elem`` act on a sequence of short vectors
+    // ``4*e_{i} -  4*e_{i+1}``, with ``e_i`` the ``i-``th
+    // unit vector of the Leech lattice, and indices 
+    // ``i = 2,...,25 `` taken modulo ``24``. We append the
+    // unit vector ``4*e_{2} +  4*e_{3}`` to that sequence.
+    // Adjacent vectors have nonzero scalar product modulo ``3``,
+    // so we may use function ``xsp2co1_chain_short_3`` to compute
+    // the images of the vectors in that sequence under the group
+    // element ``elem``. Form these images we may compute the
+    // images of the unit vectors ``8 * e_i``, which form the
+    // matrix ``8 * L``.
+
+    for (i = 0; i <= 20; ++i) src3[i] = STD_V3 << i;
+    src3[21] =  0x1800000ULL;
+    src3[22] =  STD_V3 >> 2;
+    src3[23] =  STD_V3 >> 1;
+    src3[24] =  0xc;
+    dest3[0] =  elem[0];
+
+    res =  xsp2co1_elem_to_qs_i(elem, &qs);
+    if (res < 0) return res;
+    res = xsp2co1_chain_short_3(&qs, 25, src3, dest3);
+    if (res < 0) return res;
+
+    memset(pdest + 2*24, 0, 24);
+    res = xsp2co1_add_short_3_leech(dest3[24], 1, pdest + 2*24, pdest + 2*24);
+    memcpy(pdest + 3*24, pdest + 2*24, 24);
+    res |= xsp2co1_add_short_3_leech(dest3[0], 1, pdest + 2*24, pdest + 2*24);
+    res |= xsp2co1_add_short_3_leech(dest3[0], -1, pdest + 3*24, pdest + 3*24);
+    res |= xsp2co1_add_short_3_leech(dest3[23], 2, pdest + 2*24, pdest + 1*24);
+    res |= xsp2co1_add_short_3_leech(dest3[22], 2, pdest + 1*24, pdest + 0*24);
+    res |= xsp2co1_add_short_3_leech(dest3[21], 2, pdest + 0*24, 
+              pdest + 23*24);
+    for (i = 20; i >= 2; --i) {
+       res |= xsp2co1_add_short_3_leech(dest3[i], 2, pdest + (i+3)*24, 
+           pdest + (i+2)*24);
+    }
+    return res;
+}
+
+
+
+/*************************************************************************
+*** Convert short element of Leech lattice mod 2 or 3 to vector
+*************************************************************************/
+
+
+/**
+@brief Compute integral short Leech lattice vector from vector mod 3
+
+Given a short Leech lattice vector ``x`` (modulo 3) in **Leech
+lattice mod 3** encoding, the function computes the real coordinates
+of vector ``x`` in the array referred by ``pdest``. ``pdest``
+must have length 24. As usual, the norm (i.e. the squared sum of the
+coordinates) of the computed short vector is normalized to 32.
+
+The function returns 0 if ``x`` encodes a short Leech lattice vector
+mod 3 and a negative value otherwise.
+*/
+// %%EXPORT px
+int32_t xsp2co1_short_3_to_leech(uint64_t x, int8_t *pdest)
+{
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) pdest[i] = 0;
+    return xsp2co1_add_short_3_leech(x, 1, pdest, pdest);
+}
+
+
+/**
+@brief Compute integral short Leech lattice vector from vector mod 2
+
+Given a short Leech lattice vector ``x`` (modulo 2) in **Leech
+lattice** encoding, the function computes the real coordinates
+of vector ``x`` in the array referred by ``pdest``. ``pdest``
+must have length 24. As usual, the norm (i.e. the squared sum of the
+coordinates) of the computed short vector is normalized to 32.
+Note that the result is defined up to sign only. Here the function
+chooses an arbitrary sign.
+
+The function returns 0 if ``x`` encodes a short Leech lattice vector
+mod 2 and a negative value otherwise.
+*/
+// %%EXPORT px
+int32_t xsp2co1_short_2_to_leech(uint64_t x, int8_t *pdest)
+{
+    uint64_t x3;
+    if ((x3 = gen_leech2to3_short(x & 0xffffff)) == 0) return -1;
+    return xsp2co1_short_3_to_leech(x3, pdest);
+}
+
+
+
+/*************************************************************************
+*** Convert element of G_{x0} to a word in its generators
+*************************************************************************/
+
+/**
+@brief Map monomial element of \f$G_{x0}\f$ to element of \f$Q_{x0}\f$
+
+Let \f$g \in G_{x0}\f$ stored in the array ``elem``. The matrix
+corresponding to \f$g\f$ in the representation \f$4096_x\f$ must be 
+monomial. The function computes a word \f$w\f$ of in the generators 
+of \f$G_{x0}\f$ such that  \f$g w \in Q_{x0}\f$. The word  
+\f$w\f$ has length at most 2 and is stored in the array ``a``. Each 
+entry of ``a`` encodes a generator of \f$G_{x0}\f$ as described 
+in file ``mmgroup_generators.h``. The function returns the length 
+of that word.
+
+The atoms in the word have tags ``p, y`` in that order. Each word 
+is stored as the inverse of a generator.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_monomial_to_xsp(uint64_t *elem, uint32_t *a)
+{
+    int32_t res, len_a = 0;
+    qstate12_type qs_i;
+    uint32_t monomial[13];
+    uint8_t perm[24];
+    uint32_t pi, y;
+    
+    res = xsp2co1_elem_to_qs_i(elem, &qs_i);
+    if (res < 0) return res;
+    res = qstate12_monomial_matrix_row_op(&qs_i, monomial); 
+    if (res < 0) return res;
+    y = (monomial[12] & 0x7ff); 
+    mat24_matrix_from_mod_omega(monomial + 1);
+    mat24_autpl_to_perm(monomial + 1, perm);
+    mat24_inv_perm(perm, perm);
+    pi = mat24_perm_to_m24num(perm);
+    if (pi) a[len_a++] = 0xA0000000 + pi; 
+    if (y) a[len_a++] = 0xC0000000 + y;  
+    return len_a;    
+}
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+/**
+@brief Auxiliary function for function ``xsp2co1_elem_to_word``
+
+
+This function is the workhorse for function ``xsp2co1_elem_to_word``.
+Parameters ``elem`` and ``w``, and the return value  are as in
+function ``xsp2co1_elem_to_word``.  Parameter ``img_omega`` should
+usually be zero.
+
+In contrast to function ``xsp2co1_elem_to_word``, this function
+destroys the element ``elem``, and is stores the inverse of the
+reduced word in buffer ``a``.
+
+There are cases where the image \f$g^{-1} x_\Omega g\f$ of the
+generator \f$x_\Omega\f$  is known in advance. Then run time can
+be saved encoding that image in parameter ``img_omega``
+in **Leech lattice encoding**.
+*/
+static inline
+int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
+{
+    int32_t res, res1, len_a = 0, x;
+    
+    // Compute image of \Omega under conjugation and store
+    // the result in img_omega, if ``img_omega`` is zero.
+    // If ``img_omega`` != 0 just take the image from there.
+    img_omega &= 0xffffffUL;
+    if (img_omega == 0) {
+        img_omega = res = xsp2co1_xspecial_img_omega(elem);
+        if (res < 0) return res;
+    } 
+    // Compute a word w0 of generators of G_{x0} that maps
+    // img_omega to Omega (by conjugation) and store the result 
+    // in a. We store the length of the word w0 in len_a.
+    if (img_omega != 0x800000UL) {
+        res = gen_leech2_reduce_type4((uint32_t)img_omega, a);
+        if (res < 0) return res;
+        len_a = res;
+        // Compute g * w0 in ``elem``. Then ``elem``
+        // stabilizes \Omega. Hence ``elem`` is monomial
+        // in the rep ``4096_x``.
+        res = xsp2co1_mul_elem_word(elem, a, len_a);
+        if (res < 0) return res;
+    }
+    // Compute a word ``w1`` of generators of G_{x0} such that
+    // ``elem * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
+    res = xsp2co1_elem_monomial_to_xsp(elem, a + len_a);
+    if (res < 0) return res;
+    // Multiply ``elem`` with the word ``w1``
+    res1 =  xsp2co1_mul_elem_word(elem, a + len_a, res);
+    if (res1 < 0) return res1;
+    len_a += res;
+    // Now ``elem`` is in Q_{x0}, Store the value of
+    // ``elem`` in ``x`` in ``Leech lattice encoding``.
+    x = xsp2co1_xspecial_vector(elem);
+    if (x < 0) return x;
+    
+    // Now the result is ``x * w0**(-1)``. We will store a word
+    // representing the result in the array ``a``. We will use   
+    // ``len_a`` for recording the length of the stored word.
+    x ^= mat24_ploop_theta(x >> 12);  // apply cocycle to get x_delta
+    // First store invers of the  word representing ``x`` in ``a``.
+    if (x & 0xfff) a[len_a++] = 0x90000000 + (x & 0xfff); // x_delta
+    if (x & 0x1fff000) a[len_a++] = 0xB0000000 + (x >> 12); // x_d
+    // Return length of the final word a
+    return len_a;
+}
+
+
+
+
+
+/// @endcond
+
+
+/**
+@brief Convert element of \f$G_{x0}\f$ to a word in its generators
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
+converts \f$g\f$ to a **reduced** word in the generators of \f$g\f$
+and stores that word in the array ``a``. Then  each entry of ``a``
+encodes a generator of \f$G_{x0}\f$ as described in file
+``mmgroup_generators.h``. The function returns the length of that
+word.
+
+The **reduced** word stored in the array ``a`` may have up to 10
+entries. The tags of the entries in that word are ``xdyplplplp``
+in that order. See documentation of class ``mmgroup.MMGroup`` for
+the meaning of these tags. Each entry of a word may encode the
+neutral element as a generator; then that entry is dropped. We
+assert that the number of entries with tag ``l`` is minimal.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
+{
+    uint32_t res;
+    uint64_t elem_reduced[26];
+    xsp2co1_copy_elem(elem, elem_reduced);
+    res = elem_to_word(elem_reduced, a, 0);
+    if (res < 0) return res;
+    mm_group_invert_word(a, res);
+    return res;
+}
+
+
+/// @cond DO_NOT_DOCUMENT 
+#define REDUCE_WORD_TRESHOLD 64
+
+
+static inline 
+uint32_t reduce_state(uint32_t *a, uint32_t n)
+// Make an educated guess if the word ``a`` of length ``n``
+// looks like a reduced word in G_x0. Returns
+// 0 if element is known to be in subgroup N_x0
+// 1 is this is not known and element may be reduced
+// 2 is this is not known and element is not reduced
+{
+    uint32_t i, state = 0;
+    // state = 0: tags d, x, y, p  yet found only
+    // state = 1: p found after l
+    // state = 2: l found before
+    uint32_t num_l = 0;  // number of tags l found
+    for (i = 0; i < n; ++i) switch (a[i] >> 28) {
+        case 0: // comment
+        case 8: // comment
+            continue;
+        case 1: // tag d
+        case 3: // tag x
+        case 4: // tag y
+        case 9: // tag d^-1
+        case 10: // tag p^-1
+        case 11: // tag x^-1
+        case 12: // tag y^-1
+            if (state) return 2;
+            continue;
+        case 2: // tag p
+            if (state & 1) return 2;  
+            if (state) state = 1;
+            continue;
+        case 6: // tag l
+            if (++num_l > 3 || state > 1) return 2;  
+            state = 2;
+            continue;
+        default:
+            return 2;
+    }
+    return state ? 1 : 0;
+}
+
+
+// Reduce a word ``a`` of length ``n`` in N_x0. Output is same as
+// in function ``elem_to_word``. So we output the inverse of the 
+// input word if it is in N_x0 and return a negative avlaue 
+// otherwise.
+// Note that the output order of the generators in function
+// ``elem_to_word`` differs form the internal order of the
+// generators of N_x0 used in module ``mm_group_n.c.
+// We are a bit sloppy here, tolerating atoms with tag `t`,
+// provided that the will cancel in the word ``a``.
+static inline
+int32_t reduce_N_x0_word(uint32_t *a, uint32_t n, uint32_t *a1)
+{
+    uint32_t g[5], len_a1 = 0;
+
+    mm_group_n_clear(g);
+    if (mm_group_n_mul_word_scan(g, a, n) < n) return -1;
+    if (g[0] % 3) return -1; // Abort if tag 't' is present
+    len_a1 = mm_group_n_to_word_std(g, a1);
+    mm_group_invert_word(a1, len_a1);
+    return len_a1;   
+}
+
+
+
+
+/// @endcond
+
+
+/**
+@brief Reduce a word of generators  of \f$G_{x0}\f$ 
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``a`` as a word
+\f$w\f$ of length \f$n\f$. The function computes the **reduced**
+word \f$w_1\f$ equal to \f$w\f$ in the array ``a1`` and returns
+the length of the reduced word. Legal tags for the word \f$w\f$
+are ``d``, ``x``, ``y``, ``p``, and  ``l``. See documentation of
+class ``mmgroup.MMGroup`` for the meaning of these tags.
+
+It uses function ``xsp2co1_elem_to_word`` for computing \f$w_1\f$.
+The word \f$w_1\f$ stored in the array ``a1`` may have up
+to 10 entries. Arrays ``a`` and ``a1`` may overlap.
+*/
+// %%EXPORT px
+int32_t xsp2co1_reduce_word(uint32_t *a, uint32_t n, uint32_t *a1)
+{
+    uint64_t elem[26];
+    int32_t res;
+    uint32_t abuf[2*REDUCE_WORD_TRESHOLD + 20];
+    uint32_t len_abuf, len_a1;
+    uint32_t state = reduce_state(a, n);
+    uint32_t img_omega = state ? 0 : 0x800000;
+
+    // The method used in the first 'else' statement is the fastest
+    // and simplest way so solve the problem.
+    // Here we make some effort to accelerate the re-reduction of an
+    // already reduced word.
+ 
+    if (state == 0) {
+        // Work in subgroup N_x0
+        len_a1 = res = reduce_N_x0_word(a, n, a1);
+        if (res < 0) return res;
+    } else if (n > REDUCE_WORD_TRESHOLD || state > 1) {
+        // The method used here is easy and works always fine; but it
+        // is a bit slow if the word in ``a`` is already reduced. For
+        // a very long word ``a`` we do it that way to save memory.
+        res = xsp2co1_set_elem_word(elem, a, n);
+        if (res < 0) return res;
+        len_a1 = res = elem_to_word(elem, a1, img_omega);
+        if (res < 0) return res;
+    } else {
+        // Copy ``a`` to ``abuf`` and do a simple reduction on the fly
+        len_abuf = mm_group_mul_words(abuf, 0, a, n, 1);
+        // Compute image of vector Omega
+        if (img_omega == 0) {
+            img_omega = gen_leech2_op_word(0x800000, abuf, len_abuf);
+        }
+        if (img_omega & 0xfe000000UL) return -1;   // abort on error
+        // Store a word reducing ``img_omega`` in buffer ``a1``
+        res = gen_leech2_reduce_type4(img_omega, a1);
+        if (res < 0) return res;  // abort if error
+        len_a1 = res;
+        // multiply ``a`` with ``a1`` and do a simple reduction
+        len_abuf = mm_group_mul_words(abuf, len_abuf, a1, len_a1, 1);
+        // Now ``abuf`` should be in the subgroup ``N_x0`` of ``G_x0``
+        state = reduce_state(abuf, len_abuf);
+        if (state) {
+            res = xsp2co1_set_elem_word(elem, abuf, len_abuf);
+            if (res < 0) return res;  // abort if error
+            res = elem_to_word(elem, a1 + len_a1, 0x800000);
+        } else {
+            res = reduce_N_x0_word(abuf, len_abuf, a1 + len_a1);
+        }
+        if (res < 0) return res;
+        len_a1 += res;
+    }
+    mm_group_invert_word(a1, len_a1);
+    return len_a1;   
+}
+
+
+
+/**
+@brief Return the subtype of an element of \f$G_{x0}\f$
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. The function
+returns the subtype of \f$g\f$. If \f$g\f$ maps the standard 
+frame \f$\Omega\f$ of the Leech lattice modulo 2 to a frame of
+subtype \f$t\f$ then \f$g\f$ has subtype \f$t\f$.
+
+The subtype is returned as an integer as in 
+function ``gen_leech2_subtype`` in module ``gen_leech.c``.
+
+Since the subtype is determined by the size of the denominators
+of the representation \f$4096_x\f$, it can be computed very fast.
+
+The function returns -1 in case of an error.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_subtype(uint64_t *elem)
+{
+    // Entry i in the following table is the subtype of a
+    // matrix in the rep 4096_x with denominators 2 ** (-i).
+    static int8_t SUBTYPES[8] = {
+        0x48, -1, 0x40, 0x42, 0x44, 0x43, 0x46, -1
+    };
+    uint_fast32_t i = 26;
+    while (i && elem[i-1] == 0) --i;
+    i -= 14;
+    return  (i & 0xfffffff1L) ? -1 : SUBTYPES[i >> 1];
+}
+
+
+
+/*************************************************************************
+*** Check if a words of generators of the monster is in G_{x0}
+*************************************************************************/
+
+
+
+/**
+ @brief Check if a word of generators of the monster is in \f$G_{x0}\f$.
+
+ We check if the word ``w`` of length ``n`` of generators of the
+ monster group is in the subgroup  \f$G_{x0}\f$. 
+ The function returns the following status information:
+
+ 0: ``w`` is in \f$G_{x0}\f$
+
+ 1: ``w`` is not in \f$G_{x0}\f$
+
+ 2: Nothing is known about ``w``
+
+ Words of generators of the monster are implemented as described
+ in file ``mmgroup_generators.h``.
+*/
+// %%EXPORT px
+uint32_t xsp2co1_check_word_g_x0(uint32_t *w, uint32_t n)
+{
+    uint_fast32_t  i, v, tag, num_t = 0;
+    for (i = 0; i < n; ++i) {
+        v = w[i];
+        tag = (v >> 28) & 7;
+        switch(tag) {
+            case 7:
+                return 2;
+            case 5:
+                if ((v & 0xfffffffUL) % 3) ++num_t;
+                break;
+            default:
+                break;
+        }
+    }
+    return num_t > 1 ? 2 : num_t;
+}
+
+/*************************************************************************
+*** Convert element of G_{x0} to a vector of the monster rep modulo 3
+*************************************************************************/
+
+
+
+
+/**
+@brief A low-level function to be used for testing
+
+A projection matrix \f$\Pi\f$ is a symmetric matrix with
+one eigenvalue 1 and the other eigenvalues equal to zero
+operating on an Euclidean vector space.
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem`` 
+in **G_x0 representation**.  This function left multiplies 
+\f$g\f$ by a certain projection matrix \f$\Pi\f$. The 
+result \f$y = \Pi \cdot g\f$ is an element of the vector 
+space \f$4096_x \otimes 24_x\f$.
+The function reduces the coordinates of \f$y\f$ modulo
+3 and stores the result in the array ``v`` in a format
+compatible the format used in the ``mmgroup.mm3`` extension.
+
+Right multiplcation of \f$g\f$ by \f$G_{x0}\f$ commutes
+with left multiplication of \f$g\f$ by \f$\Pi\f$, so that we
+can test the right multiplication by \f$G_{x0}\f$
+implemented in this module against the corresponding
+multiplication implemented in the ``mmgroup.mm3`` extension.
+This leads to the important interoperability test in the
+python function
+``mmgroup.tests.test_clifford.test_xs1_vector.test_vector``.
+
+
+We specify the projection matrix  \f$\Pi\f$ as a tensor
+product \f$\Pi_{4096} \otimes \Pi_{24}\f$. Here
+\f$\Pi_{24}\f$ projects onto the fixed short Leech 
+lattice vector
+\f$(0,0,1,-1,0, \ldots,0)\f$. \f$\Pi_{4096}\f$ is the
+projection onto the coordinate with number ``column``
+of the space  \f$4096_x\f$.
+
+Remark:
+
+The result is an array with 4096 entries corresponding
+to the entries with tags ``Z`` and ``Y`` of a vector
+in the represention \f$\rho_3\f$,  as described in
+section **The Representation of the Monster Group**
+of the **API reference**.
+
+Warning:
+
+This function works only if the data type ``uint_mmv_t`` used
+in the ``mmgroup.mm3`` extension is equal to the data type
+``uint64_t``.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
+{
+    int32_t res;
+    qstate12_type qs1, qs2;
+    uint64_t data2[MAXROWS_ELEM], x;
+ 
+    uint64_t n_iterations, i;
+    uint64_t assoc, sign; 
+    uint64_t *m, x_data[2];
+    uint64_t qf = 0;
+    uint64_t ncols, mask; 
+
+    res = xsp2co1_elem_to_qs_i(elem, &qs1);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_gate_not(&qs2, column & 0xfff);
+    if (res < 0) return res;
+    res = qstate12_restrict(&qs2, 0, 12);
+    if (res < 0) return res;
+    res = qstate12_reduce(&qs2);
+    if (res < 0) return res;
+    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX0;
+    sign = ((qs2.factor >> 5) ^ (qs2.factor >> 2)) & 1;
+    x = elem[0] ^ (0 - sign);
+    x_data[0] = xsp2co1_to_vect_mod3(x);
+    x_data[1] = xsp2co1_to_vect_mod3(~x);
+
+    ncols = qs2.ncols; 
+    if (ncols != 12 || qs2.nrows > 13) return ERR_QSTATE12_REP_GX0;
+    for (i = 0; i < ONE << ncols; ++i) v[i] = 0;
+    if (qs2.nrows == 0) return 0; // Vector is zero
+    n_iterations = ONE << (qs2.nrows - 1);
+    m = qs2.data;
+    assoc = m[0]; 
+    mask = (ONE << ncols) - 1;
+
+    for (i = 1; i <= n_iterations; ++i) {
+        uint64_t i1, d, d1, index;
+        index = assoc & mask;
+        v[index] = x_data[qf & 1];
+        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
+        while (d1 == 6) {
+            i1 >>= 6;
+            d1 = qstate12_lsbtab[i1 & 63];
+            d += d1;
+        } 
+        qf += assoc >> (ncols + d + 1);
+        assoc ^= m[d+1];
+    } 
+    return 0;   
+}
+
+
+
+
+
+
+/*************************************************************************
+*** Read entry of a transformed vector of the monster rep modulo 3
+*************************************************************************/
+
+/**
+@brief Read entry of a transfromed vector of the monster rep modulo 3
+
+Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. Let \f$v\f$
+be the vector of the representation  \f$4096_x \otimes 24_x\f$
+modulo 3 stored in the array  ``v`` in a format compatible to the 
+format used in the ``mmgroup.mm3`` extension. Then the function
+returns the entry of the vector  \f$v' = v \cdot g^{-1}\f$ in 
+row ``0 <= row < 4096`` and column ``0 <= column < 24`` of \f$v'\f$.
+
+This function is considerably faster than the computation 
+of \f$v' = v \cdot g^{-1}\f$ using the functions in 
+the  ``mmgroup.mm3`` extension.
+
+In case ``column = 24`` the function returns the
+value ``(v'[row,2] - v'[row,3]) mod 3``.  In case of success the 
+return value is a nonnegative integer less than 3. A negative return
+value indicates failure.
+*/
+// %%EXPORT px
+int32_t xsp2co1_elem_read_mod3(uint64_t *v, uint64_t *elem, uint32_t row, uint32_t column)
+{
+    int32_t res;
+    qstate12_type qs1, qs2;
+    uint64_t data2[MAXROWS_ELEM], w, v3_1[4], v3_2[4], j;
+
+    res = xsp2co1_elem_to_qs_i(elem, &qs1);
+    if (res < 0) return res;
+    res = qstate12_copy_alloc(&qs1, &qs2, data2, MAXROWS_ELEM);
+    if (res < 0) return res;
+    res = qstate12_gate_not(&qs2, (row & 0xfff));
+    if (res < 0) return res;
+    res = qstate12_restrict(&qs2, 0, 12);
+    if (res < 0) return res;
+    res = qstate12_reduce(&qs2);
+    if (res < 0) return res;
+    if (qs2.factor & 0x13) return ERR_QSTATE12_REP_GX0;
+    if (qs2.ncols != 12 || qs2.nrows > 13) return ERR_QSTATE12_REP_GX0;
+
+    if (column < 24) {
+        j = column == 2 ? 3: 2;
+        v3_1[0] = STD_V3;
+        v3_1[1] = (ONE << (column + 24)) + (ONE << j);
+        v3_1[3] = (ONE << (column + 24)) + (ONE << (j + 24));
+        v3_1[2] = xsp2co1_find_chain_short_3(v3_1[1], v3_1[3]);
+        v3_2[0] = elem[0];
+        res = xsp2co1_chain_short_3(&qs1, 4, v3_1, v3_2);
+        if (res < 0) return res;
+        w = compute_3_sum(v3_2[1], v3_2[3]);
+    } else w = elem[0];
+    w = xsp2co1_to_vect_mod3(w);
+    return qstate12_mul_matrix_mod3(&qs2, v, w);
+}
+
+
+//  %%GEN h
+/// @endcond  
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

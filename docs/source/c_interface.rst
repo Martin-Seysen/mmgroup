@@ -269,6 +269,12 @@ C functions in ``xsp2co1.c``
    .. doxygenfile:: xsp2co1.c
 
 
+C functions in ``xsp2co1_word.c``
+----------------------------------
+
+   .. doxygenfile:: xsp2co1_word.c
+
+
 C functions in ``xsp2co1_elem.c``
 ----------------------------------
 
