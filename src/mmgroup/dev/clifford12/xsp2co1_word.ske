@@ -49,7 +49,7 @@ extern "C" {
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ 
 from **Leech lattice mod 3** encoding to the encoding to the 
 encoding of a vector in \f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ 
-used in the ``mmgroup.mm3`` extension. 
+used in the ``mmgroup.mm_op`` extension. 
 */
 // %%EXPORT px
 uint64_t xsp2co1_to_vect_mod3(uint64_t x)
@@ -71,7 +71,7 @@ uint64_t xsp2co1_to_vect_mod3(uint64_t x)
 
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ from
 the encoding of a vector in 
-\f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in the ``mmgroup.mm3`` 
+\f$(\mathbb{Z} / 3\mathbb{Z})^{24}\f$ used in the ``mmgroup.mm_op`` 
 extension to the **Leech lattice mod 3** encoding.
 */
 // %%EXPORT px
@@ -634,6 +634,76 @@ uint32_t xsp2co1_check_word_g_x0(uint32_t *w, uint32_t n)
 }
 
 /*************************************************************************
+*** Compute maximal isotropic space corresponding to a type-4 vector
+*************************************************************************/
+
+/**
+@brief Compute maximal isotropic space corresponding to a type-4 vector
+
+Any type-4 vector in the Leech lattice mod 2 corrsponds to a unique
+maximal isotropic space (of dimension 12) in the Leech lattice mod 2.
+E.g. the standard type-4 vector \f$\Omega\f$ corresponds to the
+space spanned by \f$\Omega\f$ and (the images in the Leech lattice
+mod 2 of) all even Golay cocode words.
+
+Given a type-4 vector \f$v\f$ in *Leech lattice encoding*, we usually
+want to find the intersection of the isotropic space \f$v^{(\perp)}\f$
+corresponding to \f$v\f$ with a given linear subspace \f$X\f$ of the
+Leech lattice mod 2. Let \f$X\f$ be the space spanned by the
+vectors \f$b_0,...,b_{n-1}\f$ in the array ``B`` referred by ``pB``
+of size ``n``.
+
+The function modifies the basis in the array ``B``, so that it
+will be the a basis of the space  \f$v^{(\perp)} \cup X\f$ of
+dimension ``m`` in reduced echelon form. The function returns ``m``
+in case of success and a negative value in case of failure.
+The function fails if \f$v\f$ is not of type 4.
+
+In case \f$n < 0\f$ we assume that ``B`` is a basis of the whole
+Leech lattice mod 2 and return a basis of \f$v^{(\perp)}\f$ in ``B``.
+Array ``B`` must have size at least \f$\max(n, 12)\f$.
+*/
+// %%EXPORT px
+int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
+{
+    int32_t m, res;
+    uint64_t iso[12];
+    uint32_t a[6], q[11], len_a, i;
+    len_a = res =  gen_leech2_reduce_type4(v, a);
+    if (res < 0) return len_a; // v is not of type 4
+	if (res > 6) return -11;
+    if (n == 0) return 0;        // Nothing to do
+    // Now the word in A of length len_A maps v to Omega.
+    // Next we'll invert that word
+    mm_group_invert_word(a, len_a);
+    // Compute the images of the first 11 basis vectors of
+    // the Leech lattice mod 2 under (the inverted) word A
+    for (i = 0; i < 11; ++i) q[i] = 0x400 >> i;
+    if (gen_leech2_op_word_many(q, 11, a, len_a) != len_a) return -2;
+    // Copy these images and v to array iso
+    for (i = 0; i < 11; ++i) iso[i] = q[i];
+    iso[11] = v;
+    // Echelonize array iso
+    if (bitmatrix64_echelon_h(iso, 12, 24, 24) != 12) return -3;
+    if (n >= 0) {
+        // echelonize array iso
+        n = bitmatrix64_echelon_h(pB, n, 24, 24);
+        // Compute intersection of spaces spanned by B and iso
+        m = bitmatrix64_cap_h(pB, iso, n, 12, 24, 24);
+        if (m < 0) return m;
+		if (m > n) return -4;
+        // Intersection is now in the upper m rows of array B
+        // Copy upper rows of B to lower m rows of B.
+        for (i = 0; i < m; ++i) pB[i] = pB[i + n - m];
+        return m;
+    } else {
+        for (i = 0; i < 12; ++i) pB[i] = iso[i];
+        return 12;
+    }
+}
+
+
+/*************************************************************************
 *** Convert element of G_{x0} to a vector of the monster rep modulo 3
 *************************************************************************/
 
@@ -653,13 +723,13 @@ result \f$y = \Pi \cdot g\f$ is an element of the vector
 space \f$4096_x \otimes 24_x\f$.
 The function reduces the coordinates of \f$y\f$ modulo
 3 and stores the result in the array ``v`` in a format
-compatible the format used in the ``mmgroup.mm3`` extension.
+compatible the format used in the ``mmgroup.mm_op`` extension.
 
 Right multiplcation of \f$g\f$ by \f$G_{x0}\f$ commutes
 with left multiplication of \f$g\f$ by \f$\Pi\f$, so that we
 can test the right multiplication by \f$G_{x0}\f$
 implemented in this module against the corresponding
-multiplication implemented in the ``mmgroup.mm3`` extension.
+multiplication implemented in the ``mmgroup.mm_op`` extension.
 This leads to the important interoperability test in the
 python function
 ``mmgroup.tests.test_clifford.test_xs1_vector.test_vector``.
@@ -684,7 +754,7 @@ of the **API reference**.
 Warning:
 
 This function works only if the data type ``uint_mmv_t`` used
-in the ``mmgroup.mm3`` extension is equal to the data type
+in the ``mmgroup.mm_op`` extension is equal to the data type
 ``uint64_t``.
 */
 // %%EXPORT px
@@ -756,13 +826,13 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. Let \f$v\f$
 be the vector of the representation  \f$4096_x \otimes 24_x\f$
 modulo 3 stored in the array  ``v`` in a format compatible to the 
-format used in the ``mmgroup.mm3`` extension. Then the function
+format used in the ``mmgroup.mm_op`` extension. Then the function
 returns the entry of the vector  \f$v' = v \cdot g^{-1}\f$ in 
 row ``0 <= row < 4096`` and column ``0 <= column < 24`` of \f$v'\f$.
 
 This function is considerably faster than the computation 
 of \f$v' = v \cdot g^{-1}\f$ using the functions in 
-the  ``mmgroup.mm3`` extension.
+the  ``mmgroup.mm_op`` extension.
 
 In case ``column = 24`` the function returns the
 value ``(v'[row,2] - v'[row,3]) mod 3``.  In case of success the 

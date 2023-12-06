@@ -15,7 +15,9 @@ import pytest
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_op_word_leech2
-#from mmgroup.clifford12 import xsp2co1_leech2_count_leech2
+from mmgroup.generators import gen_leech2_type
+from mmgroup.clifford12 import xsp2co1_isotropic_type4
+from mmgroup.clifford12 import bitmatrix64_vmul
 
 
 ###################################################################
@@ -190,3 +192,67 @@ def test_gen_leech2_op_word_leech2(verbose = 0):
                     raise ValueError(err)
 
     
+
+
+
+###################################################################
+###################################################################
+# xsp2co1_isotropic_type4
+###################################################################
+###################################################################
+
+def xsp2co1_isotropic_type4_testdata():
+    """Testdata for function xsp2co1_isotropic_type4
+
+    Yield pairs (L, n), where L is a list list of type-4 vectors,
+    and `n` is the dimension of the result of function
+    ``xsp2co1_isotropic_type4`` applied to that list.
+    """
+    Omega = XLeech2(0x800000, 0)
+    omega =  XLeech2(0, [0,1,2,3])
+    octad = XLeech2(PLoop(range(8))) * Omega
+    print(Omega, omega)
+    for i in range(30):
+        g = Xsp2_Co1('r', 'G_x0')
+        yield [Omega*g, omega*g], 8
+    for i in range(30):
+        g = Xsp2_Co1('r', 'G_x0')
+        yield [Omega*g, octad*g], 6
+
+
+
+
+def check_isotropic_type4(v, a):
+    for w in v:
+        v_data = v[0].ord
+        for i in range(30):
+            r = randint(0, (1 << len(v)) - 1)
+            x = bitmatrix64_vmul(r, a, len(a))
+            x_data = x
+            w_data = w.ord
+            t_x = gen_leech2_type(w_data)
+            assert t_x & 1 == 0
+            t_wx = gen_leech2_type(w_data ^ x_data)
+            mask = 3 if len(v) >= 8 else 1
+            assert (t_x ^ t_wx) & mask == 0
+
+@pytest.mark.xsp2co1
+def test_xsp2co1_isotropic_type4(verbose = 0):
+    if verbose:
+        print("Testing function xsp2co1_isotropic_type4")
+    a = np.zeros(24, dtype = np.uint64)
+    for v, n in xsp2co1_isotropic_type4_testdata():
+        dim = -1
+        if verbose:
+            print("v=", v, "n =", n)
+        assert  gen_leech2_type(v[0].ord) == 4
+        dim = xsp2co1_isotropic_type4(v[0].ord, a, -1)
+        assert dim == 12, dim
+        check_isotropic_type4(v[:1], a[:dim])
+        for w in v[1:]:
+             assert  gen_leech2_type(w.ord) == 4
+             dim = xsp2co1_isotropic_type4(v[1].ord, a, dim)
+             pass
+        assert dim == n
+        check_isotropic_type4(v, a[:dim])
+

@@ -188,7 +188,6 @@ The Monster group
 =================
 
 
-.. _mmgroup-module-label:
 
 .. automodule:: mmgroup.mm_group
 

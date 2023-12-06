@@ -347,10 +347,59 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
     return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[2*23 + 1]);
 }
 
-
-
-
 // %%END WITH   # N_COL = 3
+
+
+/*************************************************************************
+*** Multiply a vector with a matrix modulo 3
+*************************************************************************/
+
+
+
+
+/** @brief Multiply vector with a ``24 times 24`` matrix modulo 3
+
+   Input ``a`` is a compressed pair of 24 times 24 matrices encoded as
+   returned by function ``leech3matrix_compress``. Input ``v`` is a
+   vector of 24 integers  modulo 3 encoded in **Leech lattice mod 3**
+   encoding. The Function computes the product \f$v \cdot a\f$ of
+   the vector \f$v\f$ and the matrix \f$a\f$ and returns the result
+   in **Leech lattice mod 3** encoding.
+
+   Vector \f$v\f$ has 24 entries. If the upper \f$k\f$ entries of
+   \f$v\f$ are zero then we access the first \f$24-k\f$ rows of
+   matrix \f$a\f$ only. So the buffer referred by ``a`` must have
+   length 2 * (24 - k) in this case.
+
+   Caution! This function has not yet beem tested!
+*/
+// %%EXPORT px
+uint64_t leech3matrix_vmul(uint64_t *a, uint64_t v)
+{
+    uint64_t ac = 0, m_and, m_xor, r, t;
+
+    v ^= (v >> 24) & 0xffffffULL;
+    v &= 0xffffffffffffULL;
+    while (v) {
+        r = a[0];
+        m_and = 0ULL - (v & 1ULL);
+        m_xor = 0ULL - ((v >> 24) & 1ULL);
+        r = (r ^ m_xor) & m_and;
+        // compute carries for mod-3 addition of r and ac in t
+        t = ac & r;
+        t |= ((t << 1) & (ac ^ r));
+        t &= 0xaaaaaaaaaaaaaaaaULL;
+        // ac += r; subtract 3 from entries where a carry occurs 
+        ac = ac + r - t - (t >> 1);
+        a += 2;
+        v = (v >> 1) & 0x7fffff7fffffULL;
+    }
+    return xsp2co1_from_vect_mod3(ac);
+}
+
+
+
+
 
 
 /*************************************************************************
@@ -708,7 +757,7 @@ uint32_t leech2_matrix_expand(uint64_t *basis, uint32_t dim, uint32_t *v2)
 Let ``v`` be a part of a vector of the 198884-dimensional
 representation of the monster group modulo 3, which is organized
 as a ``n`` times ``24`` matrix of integers mod 3. Here ``v`` is
-the relevant part of a vector encoded as in the ``mmgroup.mm3``
+the relevant part of a vector encoded as in the ``mmgroup.mm_op``
 extension; see *The C interface of the mmgroup project*,
 section *Description of the mmgroup.mm extension* for details.
 

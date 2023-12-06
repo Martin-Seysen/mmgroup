@@ -417,6 +417,27 @@ void bitmatrix64_mul(uint64_t *m1,  uint64_t *m2, uint32_t i1, uint32_t i2, uint
 
 
 
+/**
+  @brief Multiplication of a vector with a bit matrix
+
+  Here  matrix ``m``  has ``i`` rows; and ``v`` is a bit vector.
+  The function returns the product of the bit vector ``v`` with
+  the bit matrix ``m``. If bit vector ``v`` has ``k`` leading zero
+  bits then only the lowest ``64 - k`` rows of matrix ``m`` are
+  inspected.
+*/
+// %%EXPORT px
+uint64_t bitmatrix64_vmul(uint64_t v,  uint64_t *m, uint32_t i)
+{
+    uint64_t ac = 0;
+    if (i < 64) v &= (((uint64_t)1) << (uint64_t)i) - ((uint64_t)1);
+    while(v) {
+        ac ^= (0 - ((uint64_t)(v & 1))) & *m++;
+        v >>= 1;
+    }
+	return ac;
+}
+
 
 
 

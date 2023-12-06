@@ -830,7 +830,6 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 void mm_aux_bytes_to_mmv(uint32_t p, uint8_t *b, uint_mmv_t *mv)
 {
     uint8_t b1[3*576];
-    uint_fast32_t  c;
 
     if (mm_aux_bad_p(p)) return;
 
@@ -992,7 +991,7 @@ void mm_aux_mmv_add_sparse(uint32_t p, uint32_t *sp, uint32_t length, uint_mmv_t
 
     for ( ;length--; ++sp) {
         uint32_t i_intern = mm_aux_index_sparse_to_intern(*sp);
-        mm_aux_add_mmv(p, *sp, mv, i_intern);
+        mm_aux_add_mmv(p, (uint8_t)(*sp), mv, i_intern);
     }
 }
 
@@ -1019,7 +1018,7 @@ void mm_aux_mmv_set_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_t le
 
     for ( ;length--; ++sp) {
         uint32_t i_intern = mm_aux_index_sparse_to_intern(*sp);
-        mm_aux_put_mmv(p, *sp, mv, i_intern);
+        mm_aux_put_mmv(p, (uint8_t)(*sp), mv, i_intern);
     }
 }
 
