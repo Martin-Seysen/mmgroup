@@ -227,12 +227,16 @@ void leech3matrix_echelon(uint64_t *a)
    with``Al`` in columns 0,...,23 and ``Ah`` in columns 24,...,47
    of ``a``.
 
-   We store ``Ah`` in the entries of ``v`` with odd indices
-   and ``Al`` in the entries of ``a`` with even indices.
+   We store matrix ``Al`` in the entries``v[0], ..., v[23]``, and
+   matrix ``Ah`` in the entries``v[24], ..., v[47]``.
    Here column ``j`` of a row of ``Ah`` or ``Al`` is reduced
    modulo 3 (so it has value 0, 1, or 2) and that value
    is stored in bits ``2*j+1`` and ``2*j`` of the corresponding
    entry of ``v``.
+
+   So each of the matrices ``Al`` and ``Ah`` will be  encoded as the
+   part with tag 'A' of a vector in the representation \f$\rho_3\f$
+   of the monster modulo 3.
 
    The overlapping ``v == a`` is legal; any other kind of
    overlappig between ``v`` and ``a`` is illegal.
@@ -241,10 +245,10 @@ void leech3matrix_echelon(uint64_t *a)
 // %%EXPORT px
 void leech3matrix_compress(uint64_t *a, uint64_t *v)
 {
-    uint64_t v0, v1, tmp;
+    uint64_t v0, v1, tmp, w[24];
     uint_fast32_t i, j = 0;
 
-    for (i = 0; i < 48; i += 2) {
+    for (i = 0; i < 24; ++i) {
         v0 = a[j]; tmp = a[j+1]; v1 = a[j+2];
         COMPRESS_15_3(v0);
         COMPRESS_15_3(tmp);
@@ -253,9 +257,10 @@ void leech3matrix_compress(uint64_t *a, uint64_t *v)
         v1 = (v1 << 16) + (tmp >> 16);
         REDUCE_FINAL_MOD3(v0, tmp);
         REDUCE_FINAL_MOD3(v1, tmp);
-        v[i] = v0; v[i+1] = v1;
+        v[i] = v0; w[i] = v1;
         j += %{N_COL};
     }
+    for (i = 0; i < 24; ++i) v[i+24] = w[i];
 }
 
 
@@ -332,19 +337,18 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
     // Al is in (non-reduced) echelon form. Then the ``24-r``
     // rows with highest indices of Ah contain the kernel of A'.
     leech3matrix_echelon(a);
-    // Store Ah in the entries of ``a`` with odd indices and
-    // Al in the entries of ``a`` with even indices.
+    // Store Ah in the entries of ``a[24,...,27]`` and
+    // Al in the entries of ``a[0,...,23]``.
     leech3matrix_compress(a, a);
     // Compute the rank of Al in i
-    for (i = 2 * 24; i > 0; i -= 2) if (a[i-2]) goto rank_computed;
+    for (i = 24; i > 0; i -= 1) if (a[i-1]) goto rank_computed;
     i = 0;
   rank_computed:
-    i >>= 1; 
     // Return i << 48 if i != 23
     if (i != 23) return i << 48;
     // Return (24 << 48) + w  if  i == 23. Here w is row 23 of 
     // matrix Ah converted to *Leech lattice mod 3 encoding*.
-    return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[2*23 + 1]);
+    return (23ULL << 48ULL) + xsp2co1_from_vect_mod3(a[24+23]);
 }
 
 // %%END WITH   # N_COL = 3
@@ -359,17 +363,17 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
 
 /** @brief Multiply vector with a ``24 times 24`` matrix modulo 3
 
-   Input ``a`` is a compressed pair of 24 times 24 matrices encoded as
-   returned by function ``leech3matrix_compress``. Input ``v`` is a
-   vector of 24 integers  modulo 3 encoded in **Leech lattice mod 3**
-   encoding. The Function computes the product \f$v \cdot a\f$ of
-   the vector \f$v\f$ and the matrix \f$a\f$ and returns the result
-   in **Leech lattice mod 3** encoding.
+   Input ``a`` is a 24 times 24 matrix encoded as the part with tag
+   'A' of a vector in the representation \f$\rho_3\f$ of the monster
+   modulo 3. Input ``v`` is a vector of 24 integers  modulo 3 encoded
+   in **Leech lattice mod 3** encoding. The function computes the
+   product \f$v \cdot a\f$ of the vector \f$v\f$ and the matrix \f$a\f$
+   and returns the result in **Leech lattice mod 3** encoding.
 
    Vector \f$v\f$ has 24 entries. If the upper \f$k\f$ entries of
    \f$v\f$ are zero then we access the first \f$24-k\f$ rows of
    matrix \f$a\f$ only. So the buffer referred by ``a`` must have
-   length 2 * (24 - k) in this case.
+   length (24 - k) in this case.
 
    Caution! This function has not yet beem tested!
 */
@@ -391,7 +395,7 @@ uint64_t leech3matrix_vmul(uint64_t *a, uint64_t v)
         t &= 0xaaaaaaaaaaaaaaaaULL;
         // ac += r; subtract 3 from entries where a carry occurs 
         ac = ac + r - t - (t >> 1);
-        a += 2;
+        a += 1;
         v = (v >> 1) & 0x7fffff7fffffULL;
     }
     return xsp2co1_from_vect_mod3(ac);
