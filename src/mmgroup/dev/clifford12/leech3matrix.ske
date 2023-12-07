@@ -374,11 +374,9 @@ uint64_t leech3matrix_rank(uint64_t *a, uint32_t d)
    \f$v\f$ are zero then we access the first \f$24-k\f$ rows of
    matrix \f$a\f$ only. So the buffer referred by ``a`` must have
    length (24 - k) in this case.
-
-   Caution! This function has not yet beem tested!
 */
 // %%EXPORT px
-uint64_t leech3matrix_vmul(uint64_t *a, uint64_t v)
+uint64_t leech3matrix_vmul(uint64_t v, uint64_t *a)
 {
     uint64_t ac = 0, m_and, m_xor, r, t;
 

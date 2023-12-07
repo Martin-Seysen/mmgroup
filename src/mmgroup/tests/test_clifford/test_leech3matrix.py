@@ -17,6 +17,7 @@ from mmgroup.clifford12 import leech3matrix_sub_diag
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import leech3matrix_rank
+from mmgroup.clifford12 import leech3matrix_vmul
 from mmgroup.mat24 import MAT24_ORDER
 from mmgroup.mm_op import mm_op_word_tag_A, mm_op_load_leech3matrix
 
@@ -207,8 +208,7 @@ def test_leech3matrix_kernel_vector(verbose = 0):
             leech3matrix_sub_diag(a1, 2, 24);
             leech3matrix_echelon(a1);
             leech3matrix_compress(a1, a2)
-            #for i in range(24): print(i, hex(a2[2*i]))
-            #for i in range(24): print(i, hex(a2[2*i+1]))
+            #for i in range(48): print(i, hex(a2[i]))
             v3_obt1 = xsp2co1_from_vect_mod3(a2[47])
             hh = xsp2co1_from_vect_mod3
             #print(hex(v3_obt), hex(v3_obt1) ) 
@@ -264,4 +264,65 @@ def test_leech2matrix_eqn():
 
 
        
+#######################################################################
+# Test function leech3matrix_vmul
+#######################################################################
+
+
+TBL = [0, 1, 0x1000000,  0x1000001]
+I_TBL_DICT = {0:0, 1:1,  0x1000000:2,  0x1000001:0}
+
+def vector24_to_mod3(v):
+    r = 3 * randint(0,1)
+    w = 0
+    for i in range(min(24, len(v))):
+        x = v[i] % 3
+        if x == 0:
+            x = r
+            r ^= 3
+        w ^= TBL[x] << i
+    return w
+
+def vector_mod_3_to_24(v):
+    l = []
+    for i in range(24):
+        l.append(I_TBL_DICT[(v >> i) & 0x1000001])
+    return np.array(l, dtype = np.uint8)
+
+
+def rand_v24():
+    return np.random.randint(3, size=24, dtype=np.uint8)
+
+def leech3matrix_vmul_testdata():
+    """Yield test data for function leech3matrix_vmul()
+
+    The function yields pairs (v, m), where v is a numpy array of
+    24 integers between 0 and 23. m is a random vector in the rep
+    :math:`\rho_3` of the Monster; so that m['A'] is a 24 times 24
+    numpy matrix. One can use function vector24_to_mod3() to convert
+    vector v to  **Leech lattice mod 3** encoding, as expected for
+    the input of function leech3matrix_vmul(). function
+    vector_mod_3_to_24() reverses the effect of function
+    vector24_to_mod3(), to that the output of function
+    leech3matrix_vmul() can be converted to a numpy vector again.
+    """
+    V3 = MMV(3)
+    v3 = V3('R')
+    for i in range(20):
+        yield rand_v24(), v3
+        v3 *= MM0(
+            [('p', 'r'), ('t', 'n'), ('l', 'n'), ('p', 'r'), ('l', 'n')]
+        )
+
+
+
+@pytest.mark.qstate
+def test_leech3matrix_vmul():
+    for v, m in leech3matrix_vmul_testdata():
+        v3 = vector24_to_mod3(v)
+        v3prod = leech3matrix_vmul(v3, m.data)
+        v3prod_vector = vector_mod_3_to_24(v3prod)
+        v3_ref = (v @ m['A']) % 3
+        assert (v3prod_vector == v3_ref).all()
+
 
