@@ -725,7 +725,7 @@ uint32_t mm_group_n_right_coset_N_x0(uint32_t *g)
 // %%EXPORT px
 uint32_t mm_group_n_to_word_std(uint32_t *g, uint32_t *w)
 {
-   uint_fast32_t e, y, len = 0;
+   uint_fast32_t y, len = 0;
    uint32_t h[5], out[5];
    // Copy reduced element g to h.
    mm_group_n_reduce_element(g);

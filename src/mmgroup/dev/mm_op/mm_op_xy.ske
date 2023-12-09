@@ -127,6 +127,9 @@ op%{P}_do_ABC(uint_mmv_t *v_in, mm_sub_op_xy_type *p_op, uint32_t mode, uint_mmv
     neg_mask[%{i}] = %{smask: P, range(24 % INT_FIELDS)};
     // %%END IF
     // %%END FOR
+    // %%FOR* i in range(V24_INTS_USED, V24_INTS)
+    neg_mask[%{i}] = mask[%{i}] =  mask[%{int:i + V24_INTS}] = 0;
+    // %%END FOR
     for (i = 0; i < %{int:V24_INTS + V24_INTS_USED}; ++i) {
         uint_mmv_t x = mask[i];
         // %%MMV_UINT_SPREAD x, x

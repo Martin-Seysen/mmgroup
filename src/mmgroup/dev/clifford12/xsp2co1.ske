@@ -69,7 +69,7 @@ extern "C" {
 #define MAXROWS_ELEM 30
 
 
-#endif CLIFFORD12_INTERN
+#endif // #ifdef CLIFFORD12_INTERN
 
 
 /// @endcond 

@@ -666,9 +666,9 @@ Array ``B`` must have size at least \f$\max(n, 12)\f$.
 // %%EXPORT px
 int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
 {
-    int32_t m, res;
+    int32_t m, res, i;
     uint64_t iso[12];
-    uint32_t a[6], q[11], len_a, i;
+    uint32_t a[6], q[11], len_a;
     len_a = res =  gen_leech2_reduce_type4(v, a);
     if (res < 0) return len_a; // v is not of type 4
 	if (res > 6) return -11;

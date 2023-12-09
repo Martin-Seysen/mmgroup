@@ -293,7 +293,7 @@ find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
 int32_t mm_order_check_in_Gx0_fast(uint_mmv_t *v)
 {
     uint_mmv_t work[24 * %{V24_INTS}];
-    int32_t g[12], res;
+    uint32_t g[12], res;
     res = find_in_Gx0(v, g, 0, work);
     if (res < 0) return res;
     if (res >= 100) return 0;

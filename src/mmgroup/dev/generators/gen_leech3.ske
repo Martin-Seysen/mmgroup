@@ -343,7 +343,7 @@ uint64_t gen_leech2to3_abs(uint64_t v2)
         // Put result = 1...1; then negate entries given by gcodev
         result = gcodev ^ ((~gcodev & 0xffffff) << 24);
         // Put j = 0 iff cocodev has bit weight 1 
-        j = cocodev & (cocodev - 1);
+        j = (uint32_t)(cocodev & (cocodev - 1));
         // Expand cocodev to high part of vector mod 3
         cocodev ^= (cocodev << 24);
         result =  j ? result & ~cocodev : result ^ cocodev;
