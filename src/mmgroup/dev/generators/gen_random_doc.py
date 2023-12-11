@@ -20,12 +20,11 @@ The default seed is (hopefully) thread save, and it is
 initialized from volatile sources such as the time, the process
 and the thread id, etc.
 
-If hundreds of threads use the default seed, it may be useful
-to call function ``rand_set_seed(None)`` from time to time.
+A seed created by function ``rand_make_seed`` is initalized
+from a fixed source (which is a 64-bit integer). 
 
-A seed created by function ``rand_make_seed`` may be initalized
-from a volatile source or from a fixed source (which is a 
-64-bit integer). Such a seed may be used by one thread only.
+Each seed may be used by one thread only. In python a seed is
+crreated for each thread whenever needed.
 
 
 Python functions in module ``mmgroup.generators``
@@ -36,55 +35,25 @@ The following functions should be imported from
 module ``mmgroup.generators``.
 
 
-.. py:function:: .rand_get_seed(seed = None)
+.. py:function:: .rand_get_seed()
     :noindex:
  
-    Return seed associated with parameter ``seed`` 
+    Return the seed associated with the current thread 
 
     This function is used for obtaining a suitable python
     object for calling a C function that deals with the 
-    random generator. In case ``seed = None`` (default) it 
-    returns the default seed object.
+    random generator. The user must not modify that seed!
 
-.. py:function:: .rand_make_seed(value = None)
+
+.. py:function:: .rand_make_seed(valu )
     :noindex:
 
-    Create a seed object for the random generator
+    Create a deterministic seed object for the random generator
 
     The function creates a seed object and returns that object.
     It is intialized with parameter ``value``, which must be
-    ``None`` (default) or an unsigned 64-bit integer.
-
-    By default, the seed is initilized from a volatile source. 
-
-    The returned seed object is not thread safe.
+    an unsigned 64-bit integer.
  
-
-.. py:function:: .rand_set_seed(seed = None, value = None)
-    :noindex:
-
-    Reseed an existing seed object
-
-    The function reseeds an existing seed object ``seed``
-    with a ``value``.
-
-    Parameter ``seed`` may be ``None`` (default, referring to 
-    the default seed) or an existing seed object created
-    by function ``rand_make_seed``.
-
-    Parameter ``value`` is a value for reseeding a seed object
-    as in function ``rand_make_seed``. 
-
-    In case ``seed = None`` (default) parameter ``value``
-    must also be ``None`` (default).
-
-    If many threads use the default seed then one default
-    seed object is created per thread. There is no easy way to 
-    determine when a thread has terminated. Here calling
-    ``rand_set_seed(None)`` gives all these seed objects
-    to the garbage collector, and new default seed objects 
-    will be created on demand.
-
 
 .. py:function:: .rand_bytes_modp(p, num_bytes, seed = None)
     :noindex:

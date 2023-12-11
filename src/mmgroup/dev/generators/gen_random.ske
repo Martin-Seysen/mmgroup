@@ -11,11 +11,13 @@ The seed for such a random generator is given by an array of type
 ``uint64_t seed[MM_GEN_RNG_SIZE]``. In this version we have
 ``MM_GEN_RNG_SIZE = 4``.
 
-The function ``gen_rng_seed_rnd(uint64_t *seed, ...)`` fills an
-existing array ``seed`` of that type with random seed data. See
-description of that function for details. There is also a
-function ``gen_rng_seed_no`` for a determistic intialization of
-the ``seed``.
+The function ``gen_rng_seed(uint64_t *seed)`` fills an existing
+array ``seed`` of that type with random seed data. See description
+of that function for details. The idea is that in a mulithreading
+environment every thread has its own random generator.
+There is also a function ``gen_rng_seed_no`` for a determistic
+intialization of the ``seed``. The user should call
+function ``gen_rng_seed_init`` for initialization.
 
 The function
 ``gen_rng_bytes_modp(uint32_t p, uint8_t *out, uint32_t len, uint64_t *seed)``
@@ -36,11 +38,10 @@ We use the  xoshiro256** pseudo random number generator, see
 
 https://bashtage.github.io/randomgen/bit_generators/xoshiro256.html
 
-For seeding the random generator with random data, we take
-information from various sources, e.g. the system time, and the
-process id. Then we mix that information using the
-round function of the MD5 hash algorithm.
-
+We seed a master generator from various external random sources, 
+e.g. the system time, the process id, etc. We use xoshiro256** for
+both, the master and the user generator. We shift the master
+generator by 2**128 steps for seeding a user generator.
 */
 
 

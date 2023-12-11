@@ -120,7 +120,7 @@ def rand_get_seed():
 
 
 
-def rand_make_seed(value = None):
+def rand_make_seed(value):
     a = np.zeros(4, dtype = np.uint64)
     cdef uint64_t[::1] a1 = a
     g.gen_rng_seed_no(&a1[0], value)
