@@ -18,6 +18,9 @@ from io import IOBase
 
 m_kwd =  re.compile(r"\s*//\s*\%\%(\w+)\s+(.*)")
 m_function = re.compile(r"[^()]+\([^()]*\)")
+m_voidargs_function = re.compile(r"[^()]+\(\s*void\s*\)")
+
+
 
 
 def iter_exports_from_header(file):
@@ -26,11 +29,11 @@ def iter_exports_from_header(file):
     Here ``file`` is the name of the heder file to be read.
 
     The function yields triples ``(directive, args, prototype)``
-    describing function to be exported, e.g. via a .pde file.
+    describing function to be exported, e.g. via a .pxd file.
     Here ``directive`` is the the directive read from the header
     file. At present ``directive`` will be one of the strings
     'EXPORT',  'EXPORT_TABLE', or 'FROM'. Component ``args``
-    is a single string containing the arguments red from the
+    is a single string containing the arguments read from the
     directive. Component ``prototype`` is the prototype for the
     exported function or table, such that it can be entered into
     a .pxd file to be generated. For a 'FROM' directive, component
@@ -42,7 +45,9 @@ def iter_exports_from_header(file):
     export_pending = None
     def prototype(line):
         if line.endswith(';'):
-            line = line[:-1]
+            line = line[:-1].rstrip()
+        if m_voidargs_function.match(line):
+            line = line[:line.index('(')] + "()"
         return line
 
     for line in f:

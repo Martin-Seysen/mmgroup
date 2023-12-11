@@ -63,6 +63,9 @@ import numpy as np
 
 ctypedef uint64_t* p_uint64_t
 
+
+g.gen_rng_seed_init()
+
 try:
     # The following statement requires python version >= 3.8
     from threading import get_native_id
@@ -85,7 +88,7 @@ cdef _make_std_rand_gen():
     cdef uint64_t thread_id = get_native_id()
     a = np.zeros(4, dtype = np.uint64)
     cdef uint64_t[::1] a1 = a
-    g.gen_rng_seed_rnd(&a1[0], thread_id)
+    g.gen_rng_seed(&a1[0])
     _seed_dict[thread_id] = a
     return a
 
@@ -107,47 +110,22 @@ cdef p_uint64_t c_rng_get_seed(seed):
         assert len(seed) >= 4
         return &a1[0]
        
-
-def rand_get_seed(seed = None):
+def rand_get_seed():
     cdef uint64_t[::1] a1
-    if seed is None:
-        try:
-            return _seed_dict[get_native_id()]
-        except KeyError:
-            return _make_std_rand_gen()
-    else:
-        a1 = seed
-        assert len(seed) >= 4
-        return seed
+    try:
+        return _seed_dict[get_native_id()]
+    except KeyError:
+        return _make_std_rand_gen()
+
+
 
 
 def rand_make_seed(value = None):
     a = np.zeros(4, dtype = np.uint64)
-    rand_set_seed(a, value)
+    cdef uint64_t[::1] a1 = a
+    g.gen_rng_seed_no(&a1[0], value)
     return a
         
-
-def rand_set_seed(seed = None, value = None):
-    cdef uint64_t[::1] a1
-    cdef uint64_t thread_id
-    cdef uint64_t seed_value
-    global _seed_dict
-    if seed is None:
-        if value is None:
-           _seed_dict.clear()
-        else:
-             err = "Illegal value for seeding the default random generator."
-             raise TypeError, err
-        _seed_dict.clear()
-    else:
-        a1 = seed
-        assert len(seed) >= 4
-        if value is None:
-            thread_id = get_native_id()
-            g.gen_rng_seed_rnd(&a1[0], thread_id)
-        else:
-            seed_value = value
-            g.gen_rng_seed_no(&a1[0], seed_value)
 
 
 @cython.wraparound(False)

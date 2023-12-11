@@ -864,7 +864,7 @@ class MMSpace(AbstractMmRepSpace):
         supports the default seed only. Here some random data taken from 
         the operating system and from the clock are entered into the seed.
         """
-        seed = rand_get_seed(seed)
+        seed = rand_get_seed() if seed is None else seed
         mm_aux_random_mmv(v1.p, v1.data, seed) 
         return v1
 
