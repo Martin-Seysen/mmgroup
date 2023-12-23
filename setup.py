@@ -234,6 +234,7 @@ MAT24_GENERATE = GENERATE_START + '''
 GENERATORS_SOURCES = '''
    gen_xi_functions.c mm_group_n.c gen_leech.c 
    gen_leech_type.c gen_leech3.c gen_leech_reduce.c
+   gen_leech_reduce_22.c
    gen_leech_reduce_n.c gen_random.c
 '''
 
@@ -244,6 +245,7 @@ GENERATORS_GENERATE = GENERATE_START + '''
  --tables mmgroup.dev.generators.gen_cocode_short
           mmgroup.dev.generators.gen_leech_reduce_n 
           mmgroup.dev.generators.gen_xi_ref
+          mmgroup.dev.generators.gen_leech_22
  --sources mmgroup_generators.h
  --sources 
 '''.format(**DIR_DICT) + GENERATORS_SOURCES + '''

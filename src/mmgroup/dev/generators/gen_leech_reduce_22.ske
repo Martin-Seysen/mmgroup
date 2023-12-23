@@ -1,0 +1,196 @@
+/** @file gen_leech_reduce_22.c
+The functions in file ``gen_leech_reduce_22.c`` implement some
+special transformations of vectors in the Leech lattice modulo 2.
+Given a two-dimensional subspace of Leech lattice (mod 2) spanned 
+by vector of type 2 and two vectors of type 2 or 3, we want to find
+a transformation in the group \f$\mbox{Co}_1\f$ that transforms
+that space into a standard space.
+
+
+We use the terminology defined in
+the document *The C interface of the mmgroup project*, 
+section *Description of the mmgroup.generators extension*.
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+/// @endcond 
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static const uint64_t TABLE_OCTAD_22[77] = {
+  // %%TABLE GenLeech_v22_table, uint64
+};
+
+
+#define COCODE_STD 0x200
+
+#define COCODE_2 0xd00
+
+static uint8_t COC_LIST[2] = {2,3};
+
+
+/// @endcond
+
+
+
+/** @brief Generate certain type-2 vectors in the Leech lattice
+
+The function maps the integers \f$ 0 \leq n < 4600\f$ to the
+4600 type-2 vectors \f$v\f$ in the Leech lattice mod 2, such that
+that  \f$v+w\f$ is also of type 2 in the Leech lattice mod 2.
+Here \f$w\f$ is the standard type-2 
+vector \f$(0, 0, 4, -4, 0, \ldots, 0)\f$. Such a vector \f$v\f$
+is returned in *Leech lattice encoding*.
+
+The function returns a negative value in case of failure; e.g.
+if \f$n \geq 4600\f$.
+
+*/
+// %%EXPORT px
+int32_t gen_leech2_n_type_22(uint32_t n)
+{
+    uint32_t d = 0, om;
+    if (n >= 4600) return -1;
+    if (n >= 2300) {
+        n -= 2300;
+        d = 0x200;
+    }
+    if (n >= 44 + 77*16) {
+        uint32_t res, sc, theta;
+        res = n - 44 - 77*16;
+        res = (res & 0x1ff) + 2 * (res & 0x200);
+        theta =  MAT24_THETA_TABLE[res & 0x7ff] & 0xfff;
+        res = (res << 12) ^ theta ^ COCODE_2;
+        sc =  mat24_scalar_prod(res >> 12, res);
+        res = (res ^ (sc << 23)) & ~0x200UL;
+        return res ^ d; 
+    }
+    if (n >= 44) {
+        uint32_t res, c, i;
+        uint64_t o, v;
+        res = n - 44 ;
+        o = TABLE_OCTAD_22[res >> 4]; c = res & 0xf;
+        v = o >> 40;
+        for (i = 0; i < 4; ++i) if ((c >> i) & 1) v ^= (o >> (10*i)) & 0x3ff;
+        v = (v & 0x1ff) | ((v << 1) & 0x400) | ((v << 2) & 0xfff000);
+        v ^= ((%{hex:GenLeech_v22_weights} >> c) & 1) << 23;
+        return (int32_t)v ^ d; 
+    }
+    om = 0;
+    if (n >= 22) {
+        n -= 22; om = 0x800000;
+    }
+    if (n >= 2) n += 2;
+    om ^= mat24_vect_to_cocode((1 << 2) ^ (1 << n));
+    return om ^ d;
+}
+
+
+
+
+/** @brief Reduce a certain pair of vectors in the Leech lattice
+
+Yet to be documented!
+*/
+// %%EXPORT px
+int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_t *seed, uint32_t *a)
+{
+     uint32_t len_a=0, v3tf, i, v100, r, v4, syn_v3, syn_v2, atom, y;
+     int32_t res;
+     uint8_t img_pi[2], pi[32];
+     if (gen_leech2_type(v3) != 3) return -8;
+     len_a = res = gen_leech2_reduce_type2(v2, a);
+     if (res < 0) return res;
+     
+     v3tf = gen_leech2_op_word(v3, a, len_a);
+     if (v3tf & ~0x1ffffffUL) return -9;
+     for (i = 0; i < trials; ++i) {
+         r =  gen_rng_modp(4600, seed);
+         if (r >= 4600) return -99;
+         v100 = gen_leech2_n_type_22(r);
+         if (gen_leech2_type2(v100 ^ v3tf)) goto found;
+     }
+     return -10;
+
+found:
+    v4 = v100 ^ v3tf ^ COCODE_STD;
+    if (gen_leech2_type(v4) != 4) return -11;
+    mm_group_invert_word(a, len_a);
+    v4 = gen_leech2_op_word(v4, a, len_a);
+    len_a = res = gen_leech2_reduce_type4(v4, a);
+    if (res < 0) return res;
+    v2 = gen_leech2_op_word(v2, a, len_a);
+    v3 = gen_leech2_op_word(v3, a, len_a);
+
+    syn_v3 = mat24_cocode_syndrome(v3 ^ mat24_ploop_theta(v3 >> 12), 24);
+    if (syn_v3 == 0 ||  syn_v3 & (syn_v3 - 1)) return -12;
+    syn_v2 = mat24_cocode_syndrome(v2 & 0xfff, 24) & ~syn_v3;
+    if (syn_v2 == 0 ||  syn_v2 & (syn_v2 - 1)) return -13;
+    img_pi[0] = mat24_def_lsbit24(syn_v3);
+    img_pi[1] = mat24_def_lsbit24(syn_v2);
+    res = mat24_perm_from_map(COC_LIST, img_pi, 2, pi);
+    if (res < 1 || res > 3) return -14;
+    atom =  mat24_perm_to_m24num(pi) + 0xa0000000;
+    v2 =  gen_leech2_op_atom(v2, atom);
+    v3 =  gen_leech2_op_atom(v3, atom);
+    a[len_a++] = atom;
+
+    y = (v3 >> 12) & 0x7ff;
+    atom = 0xc0000000 + y;
+    v2 =  gen_leech2_op_atom(v2, atom) & 0xffffff;
+    v3 =  gen_leech2_op_atom(v3, atom) & 0xffffff;
+    if (v2 != 0x200) return -15;
+    if (v3 != 0x800d00) return -16;
+    a[len_a++] = atom;
+
+    if (++i > 0x7fffff) i = 0x7fffff;
+    return (i << 8) + len_a;
+}
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

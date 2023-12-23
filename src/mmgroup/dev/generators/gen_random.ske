@@ -705,8 +705,8 @@ uint32_t gen_rng_modp(uint32_t p, uint64_t *seed)
 {
     uint64_t r = xoro_next(seed);
 
-    if ((p & (p-1)) == 0) return (uint32_t)(r & (p - 1));
-    r = (r >> 32) * p + ((r * (p & 0xffffffffUL)) >> 32);
+    if ((p & (p - 1)) == 0) return (uint32_t)((r >> 32) & (p - 1));
+    r = (r >> 32) * p + (((r & 0xffffffffUL) * p) >> 32);
     return (uint32_t)(r >> 32);
 }
 
