@@ -33,7 +33,7 @@ of quantum computation, but we do not hide the fact that
 the main ideas are strongly influenced by that theory.
 
 We present an algorithm that performs matrix multiplication
-in  :math:`\mathcal{X}_{n}` in :math:`O(n)^3` bit operation.
+in  :math:`\mathcal{X}_{n}` in :math:`O(n)^3` bit operations.
 Therefore we store an element of  :math:`\mathcal{X}_{n}` 
 in :math:`O(n)^2` bits.  In case  :math:`n=12`
 this is considerably more efficient than dealing with

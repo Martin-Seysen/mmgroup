@@ -53,6 +53,8 @@ static const uint64_t TABLE_OCTAD_22[77] = {
 };
 
 
+
+
 #define COCODE_STD 0x200
 
 #define COCODE_2 0xd00
@@ -82,21 +84,34 @@ int32_t gen_leech2_n_type_22(uint32_t n)
 {
     uint32_t d = 0, om;
     if (n >= 4600) return -1;
+
+    // if n >= 2300 return  gen_leech2_n_type_22(n - 2300) ^ 0x200
     if (n >= 2300) {
         n -= 2300;
         d = 0x200;
     }
+
     if (n >= 44 + 77*16) {
+        // Then return an type-2 vector constructed from ``res`` that
+        // has scalar product 1 with the standard type-4 vector Omega.
+        // Put res = n - 44 - 77*16, i.e. 0 <= res < 1024.
         uint32_t res, sc, theta;
         res = n - 44 - 77*16;
+        // Let ``res`` be a Golay code vector (mod Omega) that has
+        // scalar product 1 with the standard type-2 vector.
         res = (res & 0x1ff) + 2 * (res & 0x200);
+        // Let ``res`` be the vector x_res + x_delta, where delta
+        // is the cocode word [2].
         theta =  MAT24_THETA_TABLE[res & 0x7ff] & 0xfff;
         res = (res << 12) ^ theta ^ COCODE_2;
+        // Add x_Omega to res, if the type of res is odd
         sc =  mat24_scalar_prod(res >> 12, res);
         res = (res ^ (sc << 23)) & ~0x200UL;
+        // Add 0x200 to the result ``res`` in case n >= 2300.
         return res ^ d; 
     }
     if (n >= 44) {
+        // yet to be documented!!!
         uint32_t res, c, i;
         uint64_t o, v;
         res = n - 44 ;
@@ -107,12 +122,17 @@ int32_t gen_leech2_n_type_22(uint32_t n)
         v ^= ((%{hex:GenLeech_v22_weights} >> c) & 1) << 23;
         return (int32_t)v ^ d; 
     }
+    // Otherwise we return a vector corresponding to a cocode word [2,i]
+    // (if n < 22) or  [2,i] + Omega (if n >= 22). Here we make sure that
+    // i  is different from 2 and 3.
     om = 0;
     if (n >= 22) {
         n -= 22; om = 0x800000;
     }
     if (n >= 2) n += 2;
     om ^= mat24_vect_to_cocode((1 << 2) ^ (1 << n));
+    // Add 0x200 to the result ``res`` in case n >= 2300.
+    // This changes the cocode word [2,i] to [3,i].
     return om ^ d;
 }
 
