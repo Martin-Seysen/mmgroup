@@ -3,16 +3,24 @@
 """
 
 import pytest
+import numpy as np
 
-from mmgroup.generators import gen_leech2_n_type_22
+from mmgroup import Cocode, XLeech2, PLoop, Xsp2_Co1
+
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_op_word
+from mmgroup.generators import gen_leech2_n_type_22
+from mmgroup.generators import gen_leech2_reduce_233
+from mmgroup.generators import rand_get_seed
 
-STD_V2 = 0x200
+OMEGA = XLeech2(0x800000)
+STD_V2 = XLeech2(Cocode([2,3])).ord & 0xffffff
+STD_V3 = (XLeech2(Cocode([2])) * OMEGA).ord & 0xffffff
 
 
 @pytest.mark.gen_xi
 def test_type22(verbose = 0):
-    r"""Test genration of some type-2 vectors
+    r"""Test generation of some type-2 vectors
 
     """
     data = set()
@@ -25,3 +33,24 @@ def test_type22(verbose = 0):
     assert len(data) == 4600
     
     
+
+
+@pytest.mark.gen_xi
+def test_reduce_233(verbose = 0):
+    tf_c = np.zeros(8, dtype = np.uint32)
+    seed = rand_get_seed()
+    for i in range(1000):
+        tf = Xsp2_Co1('r', 'G_x0')
+        v2 = (XLeech2(STD_V2) * tf).ord & 0xffffff 
+        v3 = (XLeech2(STD_V3) * tf).ord & 0xffffff 
+        len_ = gen_leech2_reduce_233(v2, v3, 5000, seed, tf_c)
+        tf = tf_c[:len_ & 0xff] 
+        v2_tf = gen_leech2_op_word(v2, tf, len(tf)) & 0xffffff    
+        v3_tf = gen_leech2_op_word(v3, tf, len(tf)) & 0xffffff
+        if verbose:
+            print("Testing v2 = %s, v3 = %s" % (hex(v2), hex(v3)))
+        assert v2_tf == STD_V2   
+        assert v3_tf == STD_V3 
+        
+    pass  
+

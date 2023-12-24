@@ -121,61 +121,135 @@ int32_t gen_leech2_n_type_22(uint32_t n)
 
 /** @brief Reduce a certain pair of vectors in the Leech lattice
 
-Yet to be documented!
+Let ``v2`` be a vector of type 2 in the Leech lattice mod 2, 
+and let ``v3`` be a vector of type 3 in the Leech lattice mod 2,
+such that ``v2 + v3`` is also of type 3. Here ``v2`` and ``v3``
+must be given in *Leech lattice encoding*.
+
+The function computes an element ``g`` of the Conway group
+\f$\mbox{Co}_1\f$ such that ``v2 * g = w2`` and ``v3 * g = w3``
+with ``w2 = (0, 0, 4, -4, 0, ..., 0)``
+and ``w3 = (1, 1, 5, 1, ..., 1)``.
+
+The function stores ``g`` in the array ``a`` as a word of
+length ``k`` of generators of the subgroup ``G_x0`` of the
+Monster. These generators are encoded as described in 
+file ``mmgroup_generators.h``. We have ``k <= 8``; so the 
+array ``a`` must have size at least 8.
+
+The function returns the value ``t * 0x100 + k`` in case of
+succcess, where ``t`` is the number of trials is a random 
+process described below. Input ``ntrials`` is the maximum
+number of trials; here ``ntrials = 5000`` appears to be
+adequate. Parameter ``seed`` is a seed for a random generator 
+as described in module ``gen_random.c``. The function returns
+a negative value in case of failure.
+
+The function tries to find random vectors ``v100`` of type 2
+in the Leech lattice mod 2 such that both, ``v100 + v2 * g'``,
+and ``v100 + v3 * g'`` are of type 2. Here ``g'`` is some kind
+of approximation of ``g`` mapping ``v2`` to ``w2``; and 
+altogether, there are 100 such vectors ``v100``. Therefore the
+function generates random type-2 vectors ``v100`` 
+with ``v100 + v2 * g' = v100 + w2`` of type 2 and checks the
+type of ``v100 + v3 * g'``. After finding a suitable random 
+vector ``v100``, the calculation of ``g`` is straightforward.
+Then the vector ``v4 = v100 +  v3*g' + w2`` must be of type 4;
+and we may use function ``gen_leech2_reduce_type4`` to find
+an element ``g_0`` of \f$\mbox{Co}_1\f$ that maps ``v4``
+to the standard type-4 vector ``Omega``. To finish up, we just
+have to calculate an element ``g_1`` of the subgroup
+\f$2^{11}.M_{24}\f$ of \f$\mbox{Co}_1\f$ such that
+``g = g_0 * g_1`` satisfies the required conditions.
 */
 // %%EXPORT px
 int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_t *seed, uint32_t *a)
 {
-     uint32_t len_a=0, v3tf, i, v100, r, v4, syn_v3, syn_v2, atom, y;
-     int32_t res;
-     uint8_t img_pi[2], pi[32];
-     if (gen_leech2_type(v3) != 3) return -8;
-     len_a = res = gen_leech2_reduce_type2(v2, a);
-     if (res < 0) return res;
-     
-     v3tf = gen_leech2_op_word(v3, a, len_a);
-     if (v3tf & ~0x1ffffffUL) return -9;
-     for (i = 0; i < trials; ++i) {
-         r =  gen_rng_modp(4600, seed);
-         if (r >= 4600) return -99;
-         v100 = gen_leech2_n_type_22(r);
-         if (gen_leech2_type2(v100 ^ v3tf)) goto found;
-     }
-     return -10;
+    uint32_t k=0,  v3tf, t, v100, r, v4, syn_v3, syn_v2, atom, y;
+    int32_t res;
+    uint8_t img_pi[2], pi[32];
+    if (gen_leech2_type(v3) != 3 || gen_leech2_type(v2 ^ v3) != 3) 
+        return -8;
+
+    // Set a[:k] to a word g' of generators of Co_1 such
+    // that v2 * g' = w2.
+    k = res = gen_leech2_reduce_type2(v2, a);
+    if (res < 0) return res;
+    // Put  v3tf = v3 * g' .
+    v3tf = gen_leech2_op_word(v3, a, k);
+    if ( v3tf & ~0x1ffffffUL) return -9;
+    // Find a random type-2 vector v100 with 
+    // type(v100 + v2) = type(v100 + v3tf) = 2.
+    // Here we use function gen_leech2_n_type_22(r) for obtaining
+    // vectors v100 with type(v100) = type(v100 + v2) = 2.
+    for (t = 0; t < trials; ++t) {
+        r =  gen_rng_modp(4600, seed);
+        v100 = gen_leech2_n_type_22(r);
+        if (gen_leech2_type2(v100 ^  v3tf)) goto found;
+    }
+    return -10;
+
 
 found:
-    v4 = v100 ^ v3tf ^ COCODE_STD;
+    // Here a suitable vector v100 has been foung. Put
+    // v4 = v100 ^  v3tf ^ w2. The v4 must be of type 4.
+    v4 = v100 ^  v3tf ^ COCODE_STD;  // Note that COCODE_STD = w2
     if (gen_leech2_type(v4) != 4) return -11;
-    mm_group_invert_word(a, len_a);
-    v4 = gen_leech2_op_word(v4, a, len_a);
-    len_a = res = gen_leech2_reduce_type4(v4, a);
+    // Invert the group element g'
+    mm_group_invert_word(a, k);
+    // Put v4 = v4 * g'**-1
+    v4 = gen_leech2_op_word(v4, a, k);
+    // Set a[:k] to a word g_0 of generators of Co_1 such that
+    // that v4 * g_0 is the standard type-4 element OMEGA.
+    k = res = gen_leech2_reduce_type4(v4, a);
     if (res < 0) return res;
-    v2 = gen_leech2_op_word(v2, a, len_a);
-    v3 = gen_leech2_op_word(v3, a, len_a);
+    // Put v2 = v2 * g_0, v3 = v3 * g0.
+    v2 = gen_leech2_op_word(v2, a, k);
+    v3 = gen_leech2_op_word(v3, a, k);
 
+    // Let syn_v3 be the syndrome of the Golay code part of vector v3.
+    // Then syn_v3 must be a singleton. 
     syn_v3 = mat24_cocode_syndrome(v3 ^ mat24_ploop_theta(v3 >> 12), 24);
     if (syn_v3 == 0 ||  syn_v3 & (syn_v3 - 1)) return -12;
+    // Let syn_v2 be the sydrome corresponding to vector v2. Next put
+    // syn_v2 = syn_v2  & ~syn_v3. Then syn_v2 must be a singleton.
     syn_v2 = mat24_cocode_syndrome(v2 & 0xfff, 24) & ~syn_v3;
     if (syn_v2 == 0 ||  syn_v2 & (syn_v2 - 1)) return -13;
+    // Let img_pi[0] be the index corresponding to the singleton v3
     img_pi[0] = mat24_def_lsbit24(syn_v3);
+    // Let img_pi[1] be the index corresponding to the singleton v2
     img_pi[1] = mat24_def_lsbit24(syn_v2);
+    // Compute a permutation pi that maps [2,3] to img_pi[0], img_pi[1] 
     res = mat24_perm_from_map(COC_LIST, img_pi, 2, pi);
     if (res < 1 || res > 3) return -14;
+    // Let ``atom`` be a generator corrsponding to pi**-1
     atom =  mat24_perm_to_m24num(pi) + 0xa0000000;
+    // put v2 = v2 * pi**-1, v3 = v3 * pi**-1
     v2 =  gen_leech2_op_atom(v2, atom);
     v3 =  gen_leech2_op_atom(v3, atom);
-    a[len_a++] = atom;
+    // Multiply g_0 with generator ``atom``.
+    a[k++] = atom;
 
+    // In the real Leech lattice we have now v2 = w2 and v3 = w3, up to
+    // sign. We compute a mapping y (in ``gcode`` representation) such
+    // that reflection with y corrects the sign of v3. Let ``atom``
+    // be a generator of G_x0 corrsponding to that reflection.
     y = (v3 >> 12) & 0x7ff;
     atom = 0xc0000000 + y;
+    // Put v2 = v2 * ``atom``, v3 = v3 * ``atom``.
     v2 =  gen_leech2_op_atom(v2, atom) & 0xffffff;
     v3 =  gen_leech2_op_atom(v3, atom) & 0xffffff;
+    // Check that we now have v2 = w2 and v3 = w3.
     if (v2 != 0x200) return -15;
     if (v3 != 0x800d00) return -16;
-    a[len_a++] = atom;
+    // Multiply g_0 with generator ``atom``, so that this will be equal
+    // to the result g. The result g will be sored in a[0:k] as a word
+    // of generators.
+    a[k++] = atom;
 
-    if (++i > 0x7fffff) i = 0x7fffff;
-    return (i << 8) + len_a;
+    // Return 0x100 * t + k-
+    if (++t > 0x7fffff) t = 0x7fffff;
+    return (t << 8) + k;
 }
 
 
