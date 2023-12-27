@@ -48,15 +48,51 @@ extern "C" {
 /// @cond DO_NOT_DOCUMENT 
 
 
+/*****************************************************************
+The following table contains the type-2 vectors v of subtype 22,
+such that  v + w is also of type 2. Here w is image of the
+standard cocode vector [2,3] in the Leech lattice mod 2.
+
+There are 77 octads containing the entries [2,3]; and for each
+of these octads o there are 2*16 such vectors v as above. If v
+is such a vector then v+w is also such a vector.
+
+The following table lists all such vectors v such that bit 9 of
+the Leech lattice encoding of v is cleared. Note that w is 0x200
+in Leech lattice encoding.
+
+Any of the 77 entries of the table corresponds to an octad o as
+above. Such an entry encodes a quintuple  (x1, x2, x3, x4, ov)
+of vectors in the Leech lattice mod 2, such that there are 16
+vectors v as described above:
+
+ ov + u1*x1 + u2*x2 + u3*x3 + u4*x4 + u5*Omega ,
+
+for u1, u2, u3, u4 in [0, 1]. The bit u5 depends on  u1, u2, u3,
+and  u4 as follows: u5 is 1 if u1 + u2 + u3 + u4 in [0, 1, 4];
+and u5 = 0  otherwise. 
+
+Here x1,...,x4 are even cocode vectors; and vector ov may be any
+vector in the leech lattice mod 2. Vector x_i is stored in
+bits 10*i+9,...,10*i of an entry of the table; and ov is stored
+in bits 61,...,40 of an entry. These entries are compressed, so
+that they altogether fit into a 64-bit integer. All entries must
+be expanded with the function ``expand_22``  #defined below.
+
+*****************************************************************/
+
 static const uint64_t TABLE_OCTAD_22[77] = {
   // %%TABLE GenLeech_v22_table, uint64
 };
 
+#define expand_22(v) \
+(((v) & 0x1ff) | (((v) << 1) & 0x400) | (((v) << 2) & 0xfff000))
 
 
-
+// The standard cocode vector [2,3] in Leech lattice encoding
 #define COCODE_STD 0x200
 
+// The standard cocode vector [2] in Leech lattice encoding
 #define COCODE_2 0xd00
 
 static uint8_t COC_LIST[2] = {2,3};
@@ -111,15 +147,22 @@ int32_t gen_leech2_n_type_22(uint32_t n)
         return res ^ d; 
     }
     if (n >= 44) {
-        // yet to be documented!!!
+        // In case 44 <= n < 77*16 + 44 we put res = n - 44; and we
+        // read one of the 77*16 vectors v of subtype 22 from table
+        // TABLE_OCTAD_22 as described in the documentation of that 
+        // table.
         uint32_t res, c, i;
         uint64_t o, v;
         res = n - 44 ;
         o = TABLE_OCTAD_22[res >> 4]; c = res & 0xf;
         v = o >> 40;
         for (i = 0; i < 4; ++i) if ((c >> i) & 1) v ^= (o >> (10*i)) & 0x3ff;
-        v = (v & 0x1ff) | ((v << 1) & 0x400) | ((v << 2) & 0xfff000);
+        v = expand_22(v);
+        // Now v = ov + u1*x1 + u2*x2 + u3*x3 + u4*x4 has been read 
+        // from table TABLE_OCTAD_22. Next we add Omega to v if 
+        // u1 + u2 + u3 + u3 in [0,1,4].
         v ^= ((%{hex:GenLeech_v22_weights} >> c) & 1) << 23;
+        // Add 0x200 to the result ``v`` in case n >= 2300.
         return (int32_t)v ^ d; 
     }
     // Otherwise we return a vector corresponding to a cocode word [2,i]
