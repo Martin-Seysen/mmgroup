@@ -182,55 +182,46 @@ int32_t gen_leech2_n_type_22(uint32_t n)
 
 
 
-/** @brief Reduce a certain pair of vectors in the Leech lattice
+/** @brief Support for reducing a certain pair of vectors in the Leech lattice
 
-Let ``v2`` be a vector of type 2 in the Leech lattice mod 2, 
+Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
 and let ``v3`` be a vector of type 3 in the Leech lattice mod 2,
 such that ``v2 + v3`` is also of type 3. Here ``v2`` and ``v3``
-must be given in *Leech lattice encoding*.
+must be given in *Leech lattice encoding*. It is known that
+the group fixing ``v2`` and ``v3`` is the Highman-Sims group,
+see [CS99], Ch. 10.3.5.
 
-The function computes an element ``g`` of the Conway group
-\f$\mbox{Co}_1\f$ such that ``v2 * g = w2`` and ``v3 * g = w3``
-with ``w2 = (0, 0, 4, -4, 0, ..., 0)``
-and ``w3 = (1, 1, 5, 1, ..., 1)``.
+The function computes a vector ``v4`` of type 4 such
+that ``v2 + v4, v3 + v4``, and ``v2 + v3 + v4`` are all of type 2.
+Vector ``v4`` can be used in function ``gen_leech2_find_v4_233``
+for reducing the pair ``(v2, v3)`` to a standard pair of vectors.
 
-The function stores ``g`` in the array ``a`` as a word of
-length ``k`` of generators of the subgroup ``G_x0`` of the
-Monster. These generators are encoded as described in 
-file ``mmgroup_generators.h``. We have ``k <= 8``; so the 
-array ``a`` must have size at least 8.
-
-The function returns the value ``t * 0x100 + k`` in case of
-succcess, where ``t`` is the number of trials is a random 
-process described below. Input ``ntrials`` is the maximum
-number of trials; here ``ntrials = 5000`` appears to be
-adequate. Parameter ``seed`` is a seed for a random generator 
-as described in module ``gen_random.c``. The function returns
-a negative value in case of failure.
+The function returns the value ``t * 0x1000000 + v4`` in case of
+succcess, where ``t`` is the number of trials is a random process
+described below. In case ``t > 127`` we put ``t = 127``.
+Input ``trials`` is the maximum number of trials;
+here ``trials = 5000`` appears to be adequate. Parameter ``seed``
+is a seed for a random generator as described in
+module ``gen_random.c``. The function returns a negative value
+in case of failure.
 
 The function tries to find random vectors ``v100`` of type 2
-in the Leech lattice mod 2 such that both, ``v100 + v2 * g'``,
-and ``v100 + v3 * g'`` are of type 2. Here ``g'`` is some kind
-of approximation of ``g`` mapping ``v2`` to ``w2``; and 
-altogether, there are 100 such vectors ``v100``. Therefore the
-function generates random type-2 vectors ``v100`` 
-with ``v100 + v2 * g' = v100 + w2`` of type 2 and checks the
-type of ``v100 + v3 * g'``. After finding a suitable random 
-vector ``v100``, the calculation of ``g`` is straightforward.
-Then the vector ``v4 = v100 +  v3*g' + w2`` must be of type 4;
-and we may use function ``gen_leech2_reduce_type4`` to find
-an element ``g_0`` of \f$\mbox{Co}_1\f$ that maps ``v4``
-to the standard type-4 vector ``Omega``. To finish up, we just
-have to calculate an element ``g_1`` of the subgroup
-\f$2^{11}.M_{24}\f$ of \f$\mbox{Co}_1\f$ such that
-``g = g_0 * g_1`` satisfies the required conditions.
+in the Leech lattice mod 2 such that both, ``v100 + v2``,
+and ``v100 + v3`` are of type 2. Then the
+vector ``v4 = v2 + v3 + v100`` satifies the required conditions,
+see [CS99], Ch. 10.3.5. For finding ``v100`` we transform ``v2``
+to the standard type-2 vector with a transformation ``tf``.
+Then we generate random type-2 vectors with
+function ``gen_leech2_n_type_22``. These random type-2 vectors
+are interpreted as transformed vectors ``tf(v100)``; an we will
+check check the required conditions on the transformed
+vectors ``tf(v2)``, ``tf(v3)``, and ``tf(v100)``.
 */
 // %%EXPORT px
-int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_t *seed, uint32_t *a)
+int32_t gen_leech2_find_v4_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_t *seed)
 {
-    uint32_t k=0,  v3tf, t, v100, r, v4, syn_v3, syn_v2, atom, y;
+    uint32_t k=0,  v3tf, t, v100, r, v4, a[8];
     int32_t res;
-    uint8_t img_pi[2], pi[32];
     if (gen_leech2_type(v3) != 3 || gen_leech2_type(v2 ^ v3) != 3) 
         return -8;
 
@@ -254,7 +245,7 @@ int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_
 
 
 found:
-    // Here a suitable vector v100 has been foung. Put
+    // Here a suitable vector v100 has been found. Put
     // v4 = v100 ^  v3tf ^ w2. The v4 must be of type 4.
     v4 = v100 ^  v3tf ^ COCODE_STD;  // Note that COCODE_STD = w2
     if (gen_leech2_type(v4) != 4) return -11;
@@ -262,8 +253,63 @@ found:
     mm_group_invert_word(a, k);
     // Put v4 = v4 * g'**-1
     v4 = gen_leech2_op_word(v4, a, k);
+    t = t < 127 ? t + 1 : 127;
+    return (t << 24) + (v4 & 0xffffff);
+}
+
+
+
+/** @brief Reduce a certain pair of vectors in the Leech lattice
+
+Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
+and let ``v3`` be a vector of type 3 in the Leech lattice mod 2,
+such that ``v2 + v3`` is also of type 3. Here ``v2`` and ``v3``
+must be given in *Leech lattice encoding*.  It is known that
+the group fixing ``v2`` and ``v3`` is the Highman-Sims group,
+see [CS99], Ch. 10.3.5.
+
+The function computes an element ``g`` of the Conway group
+\f$\mbox{Co}_1\f$ such that ``v2 * g = w2`` and ``v3 * g = w3``
+with ``w2 = (0, 0, 4, -4, 0, ..., 0)``
+and ``w3 = (1, 1, 5, 1, ..., 1)``.
+
+The function stores ``g`` in the array ``a`` as a word of
+length ``k`` of generators of the subgroup ``G_x0`` of the
+Monster. These generators are encoded as described in
+file ``mmgroup_generators.h``. We have ``k <= 8``; so the
+array ``a`` must have size at least 8.
+
+The function returns the value ``k >= 0`` in case of
+succcess, and a negative value in case of failure.
+
+Parameter ``v4`` must be a type-4 vector satisfying certain
+conditions as described in de documentation of
+function ``gen_leech2_find_v4_233``. That function computes
+a suitable random vector ``v4``.
+
+Internally, we use function ``gen_leech2_reduce_type4`` to
+find an element ``g_0`` of \f$\mbox{Co}_1\f$ that maps ``v4``
+to the standard type-4 vector ``Omega``. To finish up, we just
+have to calculate an element ``g_1`` of the subgroup
+\f$2^{11}.M_{24}\f$ of \f$\mbox{Co}_1\f$ such that
+``g = g_0 * g_1`` satisfies the required conditions.
+*/
+// %%EXPORT px
+int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a)
+{
+    uint32_t k=0, r, syn_v3, syn_v2, atom, y;
+    int32_t res;
+    uint8_t img_pi[2], pi[32];
+
     // Set a[:k] to a word g_0 of generators of Co_1 such that
     // that v4 * g_0 is the standard type-4 element OMEGA.
+    if (gen_leech2_type(v2) != 2) return -7;
+    if (gen_leech2_type(v3) != 3 || gen_leech2_type(v2 ^ v3) != 3)
+        return -8;
+    if (gen_leech2_type(v4) != 4) return -9;
+    if (gen_leech2_type(v2 ^ v4) != 2 ||
+          gen_leech2_type(v2 ^ v3 ^ v4 ) != 2)   return -10;
+
     k = res = gen_leech2_reduce_type4(v4, a);
     if (res < 0) return res;
     // Put v2 = v2 * g_0, v3 = v3 * g0.
@@ -309,10 +355,7 @@ found:
     // to the result g. The result g will be sored in a[0:k] as a word
     // of generators.
     a[k++] = atom;
-
-    // Return 0x100 * t + k-
-    if (++t > 0x7fffff) t = 0x7fffff;
-    return (t << 8) + k;
+    return  k;
 }
 
 

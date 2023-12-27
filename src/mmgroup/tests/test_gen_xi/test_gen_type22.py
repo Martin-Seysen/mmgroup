@@ -10,6 +10,7 @@ from mmgroup import Cocode, XLeech2, PLoop, Xsp2_Co1
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.generators import gen_leech2_n_type_22
+from mmgroup.generators import gen_leech2_find_v4_233
 from mmgroup.generators import gen_leech2_reduce_233
 from mmgroup.generators import rand_get_seed
 
@@ -43,7 +44,14 @@ def test_reduce_233(verbose = 0):
         tf = Xsp2_Co1('r', 'G_x0')
         v2 = (XLeech2(STD_V2) * tf).ord & 0xffffff 
         v3 = (XLeech2(STD_V3) * tf).ord & 0xffffff 
-        len_ = gen_leech2_reduce_233(v2, v3, 5000, seed, tf_c)
+        v4 = gen_leech2_find_v4_233(v2, v3, 5000, seed)
+        assert v4 >= 0
+        trials, v4 = divmod(v4, 0x1000000)
+        if verbose:
+            print("%d trials" % trials)
+        assert gen_leech2_type(v4) == 4
+        len_ = gen_leech2_reduce_233(v2, v3, v4, tf_c)
+        assert len_ >= 0, hex(len_)
         tf = tf_c[:len_ & 0xff] 
         v2_tf = gen_leech2_op_word(v2, tf, len(tf)) & 0xffffff    
         v3_tf = gen_leech2_op_word(v3, tf, len(tf)) & 0xffffff
