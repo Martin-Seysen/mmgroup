@@ -611,7 +611,7 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
 
   Let \f$g_0 \in G_{x0}\f$ be stored in the array referred
   by ``g``` as a word of generators of the subgroup \f$G_{x0}\f$
-  of the  monster. Here \f$g_0\f$ is given as a word of genenators
+  of the  monster. Here \f$g_0\f$ is given as a word of generators
   of length \f$n\f$ in the array ``g``. Each atom of the
   word \f$g\f$ is encoded as defined in the header
   file ``mmgroup_generators.h``. Put \f$g = g_0\f$
@@ -677,7 +677,117 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
     }
     return q0 & 0xffffff;
 }
+
+
+
+/*************************************************************************
+*** Convert operation of group G_x0 to 24 times 24 bit matrix
+*************************************************************************/
+
+
+
+
+/**
+  @brief Convert operation of group \f$G_{x0}\f$ to 24 times 24 bit matrix
+
+  Let \f$g_0 \in G_{x0}\f$ be stored in the array referred
+  by ``g``` as a word of generators of the subgroup \f$G_{x0}\f$
+  of the  monster. Here \f$g_0\f$ is given as a word of generators
+  of length \f$n\f$ in the array ``g``. Each atom of the
+  word \f$g\f$ is encoded as defined in the header
+  file ``mmgroup_generators.h``. Put \f$g = g_0\f$
+  if ``back == 0`` and \f$g = g_0^{-1}\f$ otherwise.
+
+  The function converts \f$g\f$  to a \f$24 \times 24\f$ bit
+  matrix  \f$a\f$ acting on the vectors of the Leech lattice
+  mod 2 (encoded in Leech lattice encoding) by right
+  multiplication. Such matrices form a natural representation
+  of the Conway group \f$\mbox{Co}_1\f$.
+
+  The function returns 0 in case of success and a negative
+  value in case of error.
+*/
+// %%EXPORT px
+int32_t gen_leech2_op_word_matrix24(uint32_t *g, uint32_t n, uint32_t back, uint32_t *a)
+{
+    uint_fast32_t tag, v, y, imask = 0, i;
+    int_fast32_t d = 1;
+    static uint8_t perm[24];
+
+    if (back) {
+        d = -1; g += n - 1; imask = 0x80000000UL;
+    }
+
+    for (i = 0; i < 24; ++i) a[i] = 1 << i;
+
+    while (n--) {
+        v = g[0] ^ imask;
+        g += d;
+        tag = v & MMGROUP_ATOM_TAG_ALL;
+        v  &= MMGROUP_ATOM_DATA;
+        y = 0;
+        switch(tag) {
+            case MMGROUP_ATOM_TAG_IP:
+               if (mat24_m24num_to_perm(v,perm)) return -1;
+               mat24_inv_perm(perm, perm);
+               goto _perm;
+               break;
+            case MMGROUP_ATOM_TAG_P:
+               if (mat24_m24num_to_perm(v,perm)) return -1;
+            _perm:
+               for (i = 0; i < 24; ++i) a[i] = op_perm_nosign(a[i], perm);
+               break;
+            case MMGROUP_ATOM_TAG_IY:
+               y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
+            case MMGROUP_ATOM_TAG_Y:
+               y ^= v & 0x1fffUL;
+               for (i = 0; i < 24; ++i) a[i] = op_y_nosign(a[i], y & 0x1fff);
+               break;
+            case MMGROUP_ATOM_TAG_IL:
+               v ^= 0xfffffff;
+            case MMGROUP_ATOM_TAG_L:
+               for (i = 0; i < 24; ++i) a[i] = gen_xi_op_xi_nosign(a[i], v);
+               break;
+            case MMGROUP_ATOM_TAG_IT:
+            case MMGROUP_ATOM_TAG_T:
+               if (v % 3 == 0) break;
+               return -1;
+            case 0x70000000UL:
+            case 0xF0000000UL:
+               if (v) return -1;
+            default:
+               break;
+        }
+    }
+    return 0;
+}
  
+
+/*************************************************************************
+*** Multiply a bit matrix with a 24 times 24 bit matrix
+*************************************************************************/
+
+/**
+  @brief Multiply an n times 24 bit matrix with a 24 times 24 bit matrix
+
+  The function multiplies the ``n`` times 24 bit matrix ``a1``
+  with the 24 times 24 bit matrix ``a`` and stores the result
+  in matrix ``a1``.
+
+  Thus array ``a1`` must have length ``n``; and array ``a1``
+  must have length 24.
+*/
+// %%EXPORT px
+void gen_leech2_op_mul_matrix24(uint32_t *a1, uint32_t n, uint32_t *a)
+{
+     uint32_t i, j, v, w;
+     for (i = 0; i < n; ++i) {
+         v = a1[i]; w = 0;
+         for (j = 0; j < 24; ++j) w ^= a[j] & (0UL - ((v >> j) & 1UL));
+         a1[i] = w & 0xffffffUL;
+     }
+}
+
 /*************************************************************************
 *** Operation of generators of G{x0} on a subframe
 *************************************************************************/

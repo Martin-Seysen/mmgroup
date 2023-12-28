@@ -346,6 +346,41 @@ int32_t bitmatrix64_to_numpy(uint64_t *m, uint32_t rows, uint32_t cols, uint8_t 
 }
 
 
+/*************************************************************************
+*** Conversion between arrays of 32-bit integers and 64-bit integers
+*************************************************************************/
+
+/**
+  @brief Copy array of 32-bit integers to array of 64-bit integers
+
+  Copy the array ``a32`` of ``n`` 32-bit integers to the array ``a64``
+  of ``n`` 64-bit integers. Entries of the array are zero extended.
+
+*/
+// %%EXPORT px
+void bitmatrix64_from_32bit(uint32_t *a32, uint32_t n, uint64_t *a64)
+{
+    uint32_t i;
+    for (i = 0; i < n; ++i)  a64[i] = a32[i];
+}
+
+
+
+/**
+  @brief Copy array of 64-bit integers to array of 32-bit integers
+
+  Copy the array ``a64`` of ``n`` 64-bit integers to the array ``a32``
+  of ``n`` 32-bit integers. Upper 32 bits of the entries are dropped.
+
+*/
+// %%EXPORT px
+void bitmatrix64_to_32bit(uint32_t *a32, uint32_t n, uint64_t *a64)
+{
+    uint32_t i;
+    for (i = 0; i < n; ++i)  a64[i] = (uint32_t)a32[i];
+}
+
+
 
 /*************************************************************************
 *** Lowest nonzero bit of a bit matrix
