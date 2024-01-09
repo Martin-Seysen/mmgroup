@@ -1,7 +1,7 @@
 /** @file gen_union_find.c
 The functions in file ``gen_union_find.c`` implement a union-find
 algorithm. This may be used e.g. for computing the orbits of  the Leech 
-lattice lattice mod 2 under the action of a group.
+lattice mod 2 under the action of a group.
 
 
 */
@@ -42,9 +42,25 @@ extern "C" {
 
 /** @brief Initialize table for union-find algorithm
 
+The function initializes an array referred by parameter ``table``
+for performing a union-find algorithm on the set ``S(length)`` of
+integers ``i`` with ``0 <= i < length``. Array ``table`` must have
+size ``length``. Here ``0 <= length <= 0x40000000``must hold.
 
-Yet to be documented!
+Then ``table`` will store a partition of the set ``S(length)``
+in an internal format. Initially, that partition consists of
+singletons. One may use function ``gen_ufind_union`` for joining
+two sets of that partition. Any set in the partition is
+represented by an element of that set. The rules for computing
+a representative of a set are not disclosed to the user.
+You may use function ``gen_ufind_find`` for finding the
+representative of a set. After calling
+function ``gen_ufind_find_all_min`` each set is represented by
+its smallest element. The representative of a set may change
+after calling function ``gen_ufind_union``.
 
+The function returns 0 in case of success, and a negative value
+in case of failure (e.g. if ``length`` is too big.)
 */
 // %%EXPORT px
 int32_t gen_ufind_init(uint32_t * table, uint32_t length)
@@ -61,12 +77,15 @@ int32_t gen_ufind_init(uint32_t * table, uint32_t length)
 
 
 
-/** @brief The find algorithm
+/** @brief The find function for the union-find algorithm
 
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
 
-Yet to be documented!
-
-
+The function returns the representative of the set containing the
+integer ``n``. It returns a negative number in case of failure,
+e.g. if ``n >= length``.
 */
 // %%EXPORT px
 int32_t gen_ufind_find(uint32_t *table, uint32_t length, uint32_t n)
@@ -91,12 +110,14 @@ int32_t gen_ufind_find(uint32_t *table, uint32_t length, uint32_t n)
 
 
 
-/** @brief The union algorithm
+/** @brief The union function for the union-find algorithm
 
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
 
-Yet to be documented!
-
-
+The function joins the sets in the partition containg the
+elements ``n1`` and ``n2``.
 */
 // %%EXPORT px
 void gen_ufind_union(uint32_t * table, uint32_t length, uint32_t n1, uint32_t n2)
@@ -151,12 +172,19 @@ void gen_ufind_union(uint32_t * table, uint32_t length, uint32_t n1, uint32_t n2
   
 
 
-/** @brief Write minimum element of found set in table
+/** @brief Choose smallest representatives for sets in union-find algorithm
 
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
 
-Yet to be documented!
+The function chooses the smallest element of a set in a partition
+as the representative of the set. Thus a subsequent call to
+function ``gen_ufind_find`` with parameter ``n`` returns the
+smallest element of the set containg ``n``.
 
-
+The function returns the number of the sets in the partition.
+A negative return value indicates a error the array ``table``.
 */
 // %%EXPORT px
 int32_t gen_ufind_find_all_min(uint32_t *table, uint32_t length)
@@ -235,12 +263,35 @@ int32_t gen_ufind_find_all_min(uint32_t *table, uint32_t length)
 
 
 
-/** @brief Write partition of sets
+/** @brief Output the partition computed by the union-find algorithm
 
-Yet to be documented!
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
 
+We assume that the partition stored in the array ``table``
+contains ``n_sets`` sets. Then we overwrite the array ``table``
+with a list of lists, where each list corresponds to a set in
+the partition. We write some index infomation for interpreting
+these lists into the array ``ind`` of length ``len_ind``.
 
+Array ``table`` will contain the ``length`` elements of the
+set ``S(length)`` in such a way that for ``0 <= i < n_sets``
+the ``i``-th set in the partition is equal to the set of
+integers given by ``table[ind[i]], ...,  table[ind[i+1] - 1]``.
 
+So the array ``ind`` must have size at least ``n_sets + 1``;
+i.e. we must have ``len_ind > n_sets``.
+Function ``gen_ufind_find_all_min`` must be called beford calling
+this function. Note that function ``gen_ufind_find_all_min``
+returns ``n_sets`` in case of success.
+
+The entries ``table[ind[i]], ...,  table[ind[i+1] - 1]``
+corresponding to set in the partition are sorted. The sets of
+the partition are sorted by their smallest elements.
+
+The function returns ``n_set`` in case of success and a negative
+value in case of failure.
 */
 // %%EXPORT px
 int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uint32_t len_ind)
@@ -366,16 +417,17 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 
 
 
-/** @brief An affine union algorithm
+/** @brief Perform affine union operations in the union-find algorithm
 
-  Yet to be documented!
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
 
-
-  Unites ``i`` with ``i * M + v``; with ``M`` the bit matrix over GF(2)
-  referred by ``m``  with ``len_m`` rows,  and ``v`` a bit vector. 
-  Here the arithmetic is done in GF(2).   
-
-
+In this function the entries of ``S(length)`` are interpreted as bit
+vectors. The function joins the set containing ``i`` with the set
+containg ``i * M + v`` for all ``i``. Here ``M`` the bit matrix
+over GF(2) referred by ``m``  with ``len_m`` rows,  and ``v`` a
+bit vector. All bit vector arithmetic is done over GF(2).
 */
 // %%EXPORT px
 void gen_ufind_union_affine(uint32_t *table, uint32_t length, uint32_t *m, uint32_t len_m, uint32_t v)
@@ -401,12 +453,42 @@ void gen_ufind_union_affine(uint32_t *table, uint32_t length, uint32_t *m, uint3
 
 
 /************************************************************************
-*
+* Join orbits of the Leech lattice mod 2
 ************************************************************************/
 
 
 
-/** @brief Yet to be documented!
+/** @brief Join orbits of the Leech lattice mod 2.
+
+ The Conway group \f$\mbox{Co}_1\f$ has a natural action on
+ on \f$\Lambda / 2 \Lambda\f$, i.e. on  the Leech lattice mod 2.
+ The subgroup \f$G_{x0}\f$ of the Monster (of
+ structure \f$2^{1+24}.\mbox{Co}_1\f$) has the same action on
+ on \f$\Lambda / 2 \Lambda\f$.
+
+ In this function we assume that the array ``table`` contains a partition
+ of the set \f$\{i \mid 0 \leq i < 2^{24}\}\f$ as described in
+ function ``gen_ufind_init``. In that function the array ``table``
+ should have been initialized with a length of \f$2^{24}\f$.
+
+ Here each integer \f$i\f$ is interpreted as an element
+ of \f$\Lambda / 2 \Lambda\f$ in *Leech lattice encoding*, as
+ described in the document *The C interface of the mmgroup project*,
+ section *Description of the mmgroup.generators extension*.
+
+ Let \f$g \in G_{x0}\f$ be stored in the array referred
+ by ``g`` as a word of generators of the subgroup \f$G_{x0}\f$
+ of the  monster. Here \f$g\f$ is given as a word of generators
+ of length ``len_g`` in the array ``g``. Each atom of the
+ word \f$g\f$ is encoded as defined in the header
+ file ``mmgroup_generators.h``.
+
+ Then the function joins the set containing \f$i\f$ with the
+ set containing \f$i \cdot g\f$ for all \f$i\f$, using the
+ union-find algorithm.
+
+ The function returns 0 in case of success and a negative value
+ in case of failure (e.g. if \f$g\f$ is not in \f$G_{x0}\f$).
 
 */
 // %%EXPORT px

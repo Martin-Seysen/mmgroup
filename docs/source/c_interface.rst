@@ -167,6 +167,11 @@ C interface for file gen_leech_reduce_22.c
 
 .. doxygenfile:: gen_leech_reduce_22.c
 
+C interface for file gen_union_find.c
+............................................
+
+.. doxygenfile:: gen_union_find.c
+
 
 C functions for the generator  :math:`\xi` of the monster group
 ----------------------------------------------------------------   

@@ -610,7 +610,7 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
   @brief Perform operation of \f$G_{x0}\f$ on Leech lattice mod 2
 
   Let \f$g_0 \in G_{x0}\f$ be stored in the array referred
-  by ``g``` as a word of generators of the subgroup \f$G_{x0}\f$
+  by ``g`` as a word of generators of the subgroup \f$G_{x0}\f$
   of the  monster. Here \f$g_0\f$ is given as a word of generators
   of length \f$n\f$ in the array ``g``. Each atom of the
   word \f$g\f$ is encoded as defined in the header
