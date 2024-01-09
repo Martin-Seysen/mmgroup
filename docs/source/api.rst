@@ -172,6 +172,10 @@ The Leech lattice modulo 2 and its preimage :math:`Q_{x0}`
    :members: 
 
 
+.. autofunction:: mmgroup.leech2_orbits_raw
+
+
+
 .. _basis-golay-label:
 
 The basis of the Golay code and of its cocode

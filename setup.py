@@ -236,6 +236,7 @@ GENERATORS_SOURCES = '''
    gen_leech_type.c gen_leech3.c gen_leech_reduce.c
    gen_leech_reduce_22.c
    gen_leech_reduce_n.c gen_random.c
+   gen_union_find.c
 '''
 
 

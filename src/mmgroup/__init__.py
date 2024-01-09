@@ -66,6 +66,7 @@ try:
     from mmgroup.structures.autpl import  AutPL
     _m = "xleech2"
     from mmgroup.structures.xleech2 import XLeech2
+    from mmgroup.structures.xleech2 import leech2_orbits_raw
 except:
     #import traceback
     #traceback.print_stack()

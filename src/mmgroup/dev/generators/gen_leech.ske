@@ -691,7 +691,7 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
   @brief Convert operation of group \f$G_{x0}\f$ to 24 times 24 bit matrix
 
   Let \f$g_0 \in G_{x0}\f$ be stored in the array referred
-  by ``g``` as a word of generators of the subgroup \f$G_{x0}\f$
+  by ``g`` as a word of generators of the subgroup \f$G_{x0}\f$
   of the  monster. Here \f$g_0\f$ is given as a word of generators
   of length \f$n\f$ in the array ``g``. Each atom of the
   word \f$g\f$ is encoded as defined in the header

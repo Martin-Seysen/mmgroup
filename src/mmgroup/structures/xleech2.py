@@ -706,5 +706,68 @@ class XLeech2(AbstractGroupWord):
 add_to_embedded_classes(XLeech2)
 
 
+gen_ufind_init = None
+def _import_ufind():
+    global gen_ufind_init, gen_ufind_union_leech2
+    global gen_ufind_find_all_min, gen_ufind_partition
+    global ERR_L2_ORB_G, ERR_L2_ORB_INT
+    from mmgroup.generators import gen_ufind_init
+    from mmgroup.generators import gen_ufind_union_leech2
+    from mmgroup.generators import gen_ufind_find_all_min
+    from mmgroup.generators import gen_ufind_partition
+    ERR_L2_ORB_G = "Entry is not in the subgroup G_x0 of the Monster"
+    ERR_L2_ORB_INT = "Internal error in function leech2_orbits_raw"
 
+def leech2_orbits_raw(g_list):
+    """Compute orbits of the Conway group on the Leech lattice mod 2
+
+    The Conway group :math:`\mbox{Co}_1` has a natural action on
+    :math:`\Lambda / 2 \Lambda`, i.e. on  the Leech lattice mod 2.
+    The subgroup :math:`G_{x0}` of the Monster (of structure
+    :math:`2^{1+24}.\mbox{Co}_1`) has the same action on
+    :math:`\Lambda / 2 \Lambda`.
+
+    Given a list ``g_list`` of generators of a subgroup :math:`H`
+    of :math:`G_{x0}`, the function computes the orbits of
+    :math:`\Lambda / 2 \Lambda` under the action of  :math:`H`.
+    Here the entrries of the list ``g_list`` may be instances of
+    class |MM|, which are elements of the group :math:`G_{x0}`.
+
+    The function encodes an element of :math:`\Lambda / 2 \Lambda`
+    as an integer, as in class |XLeech2|, setting the sign bit
+    to zero.
+
+    The function returns a triple ``(n_sets, indices, data)``
+    that defines the partition of :math:`\Lambda / 2 \Lambda`.
+    Here the integer ``n_sets`` is the number of sets in the
+    partition. ``indices`` is an array of indices referring
+    the the array ``data``. Array ``data`` stores the
+    :math:`2^{24}` elements of :math:`\Lambda / 2 \Lambda`,
+    so that for ``0 <= i < n_sets`` the ``i``-th set of
+    the partition is equal to the array
+    ``data[indices[i] : indices[i+1]]``.
+
+    The entries of the array ``data[indices[i] : indices[i+1]]`` are
+    sorted. The sets of the partition are sorted by their smallest
+    elements.
+    """
+    if gen_ufind_init is  None:
+        _import_ufind()
+    L_DATA = 0x1000000
+    data = np.zeros(L_DATA, dtype = np.uint32)
+    gen_ufind_init(data, L_DATA)
+    for g in g_list:
+        if not isinstance(g, (AbstractMMGroupWord, XLeech2)):
+             raise ValueError(ERR_L2_ORB_G)
+        mmd = g.mmdata
+        if gen_ufind_union_leech2(data, mmd, len(mmd)) < 0:
+            raise ValueError(ERR_L2_ORB_G)
+    n_sets = gen_ufind_find_all_min(data, L_DATA)
+    if n_sets < 1:
+        raise ValueError(ERR_L2_ORB_INT)
+    indices = np.zeros(n_sets + 1, dtype = np.uint32)
+    n_sets1 = gen_ufind_partition(data, L_DATA, indices, n_sets + 1)
+    if n_sets1 != n_sets:
+        raise ValueError(ERR_L2_ORB_INT)
+    return n_sets, indices, data
 

@@ -1,0 +1,439 @@
+/** @file gen_union_find.c
+The functions in file ``gen_union_find.c`` implement a union-find
+algorithm. This may be used e.g. for computing the orbits of  the Leech 
+lattice lattice mod 2 under the action of a group.
+
+
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+#include <stdlib.h> 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+/// @endcond 
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+
+
+/** @brief Initialize table for union-find algorithm
+
+
+Yet to be documented!
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_init(uint32_t * table, uint32_t length)
+{
+     uint32_t i;
+     if (length > 0x40000000) return -1;
+     for (i = 0; i < length; ++i) table[i] = 0x80000000;
+     return 0;
+}
+
+
+
+
+
+
+
+/** @brief The find algorithm
+
+
+Yet to be documented!
+
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_find(uint32_t *table, uint32_t length, uint32_t n)
+{
+     uint32_t u = n, p, gp;
+     if (length > 0x40000000UL || n >= length) return -1;
+ 
+     p = table[u];
+     while ((p & 0x80000000UL) == 0) {
+         if (p >= length) return -2;
+         gp = table[p];
+         if (gp & 0x80000000UL) return p;
+         table[u] = gp;
+         u = gp;
+         if (u >= length) return -3;
+         p = table[u];
+     }
+     return u;
+}
+
+
+
+
+
+/** @brief The union algorithm
+
+
+Yet to be documented!
+
+
+*/
+// %%EXPORT px
+void gen_ufind_union(uint32_t * table, uint32_t length, uint32_t n1, uint32_t n2)
+{
+     uint32_t u1 = n1, u2 = n2, p1, p2, gp1, gp2;
+     if (length > 0x40000000UL || n1 >= length || n2 >= length) return;
+
+     p1 = table[u1];
+     while ((p1 & 0x80000000UL) == 0) {
+         if (p1 >= length) return;
+         gp1 = table[p1];
+         if (gp1 & 0x80000000UL) {
+             u1 = p1; p1 = gp1;
+             break;
+         }
+         if (u1 >= length) return;
+         table[u1] = gp1;
+         u1 = gp1;
+         p1 = table[u1];
+     }
+     // u1 = find(n1); p1 = rank(tree(n1)) + CONST
+
+     p2 = table[u2];
+     while ((p2 & 0x80000000UL) == 0) {
+         if (p2 >= length) return;
+         gp2 = table[p2];
+         if (gp2 & 0x80000000UL) {
+             u2 = p2; p2 = gp2;
+             break;
+         }
+         if (u2 >= length) return;
+         table[u2] = gp2;
+         u2 = gp2;
+         p2 = table[u2];
+     }
+     // u2 = find(n1); p2 = rank(tree(n1)) + CONST
+
+     if (u1 == u2) return; // n1 and n2 are in the same set
+
+     if (p1 <= p2) {
+         table[u1] = u2;
+         if (p1 == p2) ++table[u2];
+     } else {
+         table[u2] = u1;
+     }
+}
+
+
+
+
+   
+  
+
+
+/** @brief Write minimum element of found set in table
+
+
+Yet to be documented!
+
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_find_all_min(uint32_t *table, uint32_t length)
+{
+    uint32_t n, u, p, mu, u1, gp, res = 0;
+
+    if (length > 0x40000000UL) return -1;
+     
+    // Map all elements of a set S to the representative u(S) of S;
+    // and map u(S) to 0xc0000000 + mu, where mu = min(S). Ignore
+    // all singletons S = {u}. A singleton is  mapped to 0x80000000.
+    for (n = 0; n < length; ++n) {
+        u = mu = n; 
+        p = table[u];
+        res += p >> 31;
+        if (p == 0x80000000UL) continue;
+        while ((p & 0x80000000UL) == 0) {
+            mu = mu < p ? mu : p;
+            u = p;
+            if (u >= length) {
+                 u = 0x40000000UL;
+                 goto table_stuck;
+            }
+            p = table[u];
+        }
+        if ((p & 0xc0000000UL) == 0xc0000000UL) {
+            p &= 0x3fffffffUL;
+            mu = mu < p ? mu : p;
+        }
+        table[u] = mu | 0xc0000000UL; 
+ table_stuck:
+        u1 = n;
+        p = table[u1];
+        while ((p & 0xc0000000UL) == 0) {
+            table[u1] = u;
+            u1 = p;
+            p = table[u1];
+        }
+    }
+
+    // Map all elements of a set S to min(S); and map min(S) to
+    // 0x80000001. We have min(S) = table[u(s)] & 0x3fffffff.
+    // Ignore all singletons S.
+    for (n = 0; n < length; ++n) {
+        u = n; 
+        p = table[u];
+        if (p & 0x80000000UL) {
+            if ((p & 0x40000000UL) == 0) continue;
+            p &= 0x3fffffffUL;
+            if (p >= length) {
+                table[u] = 0x40000000UL;
+                continue;
+            }
+            table[u] = p;
+            table[p] = 0x80000001;
+            continue;
+        }
+        gp = table[p];
+        if (gp & 0x80000000UL) {
+            if ((gp & 0x40000000UL) == 0) continue;
+            gp &= 0x3fffffffUL;
+        }
+        if (gp >= length) {
+            table[p] = 0x40000000UL;
+            continue;
+        }
+        table[u] = table[p] = gp;
+        table[gp] = 0x80000001;
+    }
+
+    // Return number of sets in partition 
+    return res;
+}
+
+
+
+
+
+/** @brief Write partition of sets
+
+Yet to be documented!
+
+
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uint32_t len_ind)
+{
+    uint32_t *next, n, p, i=0, j, last, fst;
+    int32_t status = -1;
+
+    if (length > 0x40000000UL) return -1;
+    next = malloc(sizeof(uint32_t) * (length + len_ind));
+    if (next == NULL) return -1;
+
+    // Here ``next`` is an array of length ``length + i.`` index ``i``
+    // is incremented whenever we see a new set of the partition while
+    // iterating though the ``table``. Eventually, ``i`` will be the
+    // number of sets in the partition.
+
+    // We will store the set {x_1, ..., x_m} with index ``j`` in the
+    // arrays ``ind`` and ``next`` as shown in the following figure.
+    // This peculiar scheme is dictated by the fact that array ``next``
+    // is usually much larger than array ``ind``. Note that the original
+    // information about the set is copied from ``table`` to ``ind``
+    // and ``next``. In the ``table`` the enties ``x_i, i > 1`` contain
+    // a pointer to ``x_1``; thus index ``j`` must be reachable from
+    // the entry ``x_1`` stored in the array ``next``. Also we want 
+    // the first entry ``x_1`` and the last entry ``x_m`` to be
+    // reachable from the index ``j`` of the set  {x_1, ..., x_m}.
+    
+    //
+    //  ind:     +-----------------------j
+    //           |                       ^
+    //           |                       |                             
+    //           v                       v
+    //  next:   x_m  -->  x_1  -->  j + length  -->  x_2 --> x_3
+    //           ^                                            |
+    //           |_____________ ............ _________________|
+
+    for (n = 0; n < length; ++n) {            
+        p = table[n];                        // In case m = 1 we put:
+        if (p & 0x80000000) {                //   ind:            +-----i
+            status = -2;                     //                   |     |
+            if (i >= len_ind) goto cleanup;  //                   v     |
+            ind[i] = next[n] = length + i;   //   next: x_1  -->  i + length
+            next[length + i] = n;            //          ^              |
+            ++i;                             //          |______________|  
+        } else {
+            if (p >= length) continue; 
+            // Now ``n`` is the entry to be appended to the set with 
+            // index ``j``; and  ``p`` is the first element of that set
+            // (corresponding to ``x_1`` in the figure above).
+            status = -4;
+            if (p >= n) goto cleanup;
+            status = -5;
+            if ((table[p] & 0x80000000) == 0) goto cleanup;
+            j = next[p] - length; // index of the set
+            status = -6;
+            if (j >= i) goto cleanup;
+            last = ind[j];        // old ``x_m`` in the figure above
+            status = -7;
+            if (next[last] != p) goto cleanup;
+            // append ``n`` to the list [x_1, ..., x_m]
+            ind[j] = next[last] = n;   
+            next[n] = p;          // let ``n`` point to the 1st element       
+        }
+    }
+
+    // Store the number of the sets in ``len_ind``.
+    status = -8;
+    if (i >= len_ind) goto cleanup;
+    len_ind = i;
+
+    // Copy the elements of the sets from array ``next`` back
+    // tp the array ``table``, so the elements of the same set are
+    // adjacent. Store index information for these sets in the
+    // array ``ind``.
+    n = 0;
+    for (i = 0; i < len_ind; ++i) {
+        last = ind[i];        // Last element of the set
+        ind[i] = n;           // Store index of the beginning of the set
+        table[n++] = fst = next[last]; // store 1st element of the set
+        p = next[length + i]; // 2nd element of the set or end marker
+        while (p != fst) {    // Here  ``fst`` will be the end marker
+            table[n++] = p;   // Fill ``table`` until end marker found
+            p = next[p];
+        } 
+    }
+
+    // Store total number of elements all sets in ``ind[len_ind]``.
+    // Thus for ``0 <= j < len_ind``the j-th set contains the
+    // elements ``table[k]``, for ``ind[j] <= k < ind[j+1].
+    status = -8;
+    if (n > length) goto cleanup;
+    ind[len_ind] = n;
+    status = len_ind;      // return the number of the sets
+    
+cleanup:
+    free(next);
+    return status;
+
+}
+
+
+
+/************************************************************************
+* Unite node i with node A * i + v, with A a matrix over GF(2)
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#define MAT_BLOCKSIZE 7  // must divide LEECH2_SIZE
+
+static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
+// Multiply 32-bit vector with 32 times 32 bit matrix v.
+// Zero high bits of v to multiply with matrix with less than 32 rows!
+{
+    uint32_t w = 0;
+    while (v) {
+       w ^= *m++ & (0UL - (v & 1UL));
+       v >>= 1;
+    }
+    return w;
+} 
+
+/// @endcond
+
+
+
+/** @brief An affine union algorithm
+
+  Yet to be documented!
+
+
+  Unites ``i`` with ``i * M + v``; with ``M`` the bit matrix over GF(2)
+  referred by ``m``  with ``len_m`` rows,  and ``v`` a bit vector. 
+  Here the arithmetic is done in GF(2).   
+
+
+*/
+// %%EXPORT px
+void gen_ufind_union_affine(uint32_t *table, uint32_t length, uint32_t *m, uint32_t len_m, uint32_t v)
+{
+     uint32_t i, j, lg_k, k, a[1UL << MAT_BLOCKSIZE], w;
+
+     if (length > 0x40000000UL || length == 0) return;
+     len_m = len_m < 30 ? len_m : 30;
+     while ((1UL << len_m) >= 2 * length && len_m) --len_m;
+     lg_k = (len_m + 1) >> 1;
+     lg_k = lg_k < MAT_BLOCKSIZE ? lg_k : MAT_BLOCKSIZE;
+     k = 1UL << lg_k;
+     for (j = 0; j < k; ++j) a[j] = v ^ vmatmul(j, m);
+     for (i = 0; i < (1UL << len_m); i += k) {
+         w = vmatmul(i >> lg_k, m + lg_k);
+         for (j = 0; j < k; ++j) {
+             gen_ufind_union(table, length, i ^ j, w ^ a[j]);
+         }
+     }
+}
+
+
+
+
+/************************************************************************
+*
+************************************************************************/
+
+
+
+/** @brief Yet to be documented!
+
+*/
+// %%EXPORT px
+int32_t  gen_ufind_union_leech2(uint32_t *table, uint32_t *g, uint32_t len_g)
+{
+     int32_t m[24];
+     int32_t res = gen_leech2_op_word_matrix24(g, len_g, 0, m);
+     if (res < 0) return res;
+     gen_ufind_union_affine(table, 0x1000000, m, 24, 0);
+     return 0;
+}
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+
