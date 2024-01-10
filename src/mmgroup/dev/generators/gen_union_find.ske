@@ -494,7 +494,7 @@ void gen_ufind_union_affine(uint32_t *table, uint32_t length, uint32_t *m, uint3
 // %%EXPORT px
 int32_t  gen_ufind_union_leech2(uint32_t *table, uint32_t *g, uint32_t len_g)
 {
-     int32_t m[24];
+     uint32_t m[24];
      int32_t res = gen_leech2_op_word_matrix24(g, len_g, 0, m);
      if (res < 0) return res;
      gen_ufind_union_affine(table, 0x1000000, m, 24, 0);

@@ -34,7 +34,7 @@ markers = r"""
    extremely_slow:  even slower than very slow 
    hadamard:   test exection of code generated for hadamard matrices
    involution: test module involution.c
-   gen_xi:     test for functions gen_xi_XXX in the generators module
+   gen_xi:     test for functions gen_XXX in the generators module
    mat24:      test for the mat24 module
    mm:         test high-level group operation
    mm_op:      test group operation on vector space in mmgroup.mm_space

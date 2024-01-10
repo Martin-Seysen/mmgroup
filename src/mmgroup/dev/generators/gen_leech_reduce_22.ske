@@ -297,7 +297,7 @@ have to calculate an element ``g_1`` of the subgroup
 // %%EXPORT px
 int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a)
 {
-    uint32_t k=0, r, syn_v3, syn_v2, atom, y;
+    uint32_t k=0, syn_v3, syn_v2, atom, y;
     int32_t res;
     uint8_t img_pi[2], pi[32];
 
