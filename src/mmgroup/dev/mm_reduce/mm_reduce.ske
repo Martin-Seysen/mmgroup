@@ -650,29 +650,31 @@ static inline int32_t op_axis(uint32_t *p_axis, uint32_t *a, uint32_t n)
 
 
 /**
-  @brief Function is yet to be documented!
+  @brief Workhorse for function mm_reduce_transform_v4
+
+  See documentation of that function for details.
 */
 static inline int32_t transform_v4(
     uint_mmv_t *v, 
     uint32_t v4,
     uint32_t *target_axes,
     uint32_t *r,
-    uint_mmv_t *p_work
+    uint_mmv_t *work
 )
 {
     uint32_t  len_r = gen_leech2_reduce_type4(v4, r), e, ax_type, j;
         
     if (len_r < 0) return -1000 + len_r;
-    mm_op15_word(v, r, len_r, 1, p_work);
+    mm_op15_word(v, r, len_r, 1, work);
     if (target_axes[0] & 0xffffff00) return len_r;
     
     for (e = 1; e < 3; ++e) {
-        mm_op15_t_A(v, e, p_work);                    
-        ax_type = mm_reduce_2A_axis_type(p_work) >> 24;
+        mm_op15_t_A(v, e, work);
+        ax_type = mm_reduce_2A_axis_type(work) >> 24;
         for (j = 0; j < 2; ++j) {
             if (ax_type == target_axes[j]) {
                 r[len_r] = 0xD0000003 - e;
-                mm_op15_word(v, r + len_r, 1, 1, p_work);
+                mm_op15_word(v, r + len_r, 1, 1, work);
                 return ++len_r;
             }
         }
@@ -680,8 +682,55 @@ static inline int32_t transform_v4(
     return -10;
 }
 
-
 /// @endcond  
+
+
+
+/**
+  @brief Transform a 2A axis to a 'better' 2A axis.
+
+  The function tries to transform the 2A axis \f$v\f$ given by
+  parameter ``v`` to a better axis. Therefore it first applies a
+  transformation \f$g \in G_{x0}\f$ given by parameter ``v4``.
+  Here ``v4`` must be a vector of type 4 in the Leech lattice
+  mod 2 in *Leech lattice encoding*. Then \f$g\f$ is the
+  transformation mapping ``v4`` to the standard
+  type 4-vector ``Omega`` as computed by
+  function ``gen_leech2_reduce_type4``.
+
+  In the next step this function tries to apply the
+  transfomations \f$\tau^e\f$ for \f$e = 1,2\f$
+  (in that order) until the type of the axis \f$v g \tau^e\f$
+  is in a set of types given by parameter ``target_axes``.
+  Here ``target_axes`` must be an array of length 2 containing
+  the feasible axis types, encoded as described in
+  function ``mm_reduce_2A_axis_type``. An unused entry
+  in array ``target_axes`` should be set to ``0xffffffff``.
+
+  If a suitable transformed axis \f$v g \tau^e\f$ has been found
+  then the function stores the element \f$g \tau^e\f$ in the
+  array referred by ``r``; and it returns the length of the
+  data in the array ``r``. Then it also overwrites the axis in
+  buffer ``v`` with  the transformed axis.
+
+  The function returns a negative value in case of any error, e.g.
+  if no suitable transformed axis \f$v\f$ has been found; then
+  buffers ``v`` and ``r`` will contain garbage.
+
+  If the original axis \f$v\f$ is orthogonal to the standard 2A axis
+  then the transformed axis is also orthogonal to that axis.
+
+  Buffer ``r`` must have size at least 7. The function requires a
+  work buffer ``work`` of the same type and size as parameter ``v``.
+*/
+// %%EXPORT px
+int32_t mm_reduce_transform_v4(uint_mmv_t *v, uint32_t v4, uint32_t *target_axes, uint32_t *r, uint_mmv_t *work)
+{
+    return transform_v4(v, v4, target_axes, r, work);
+}
+
+
+
 
 
 
@@ -726,7 +775,7 @@ int32_t  mm_reduce_load_axis(uint_mmv_t *v, uint32_t s)
   in ``*vt`` (if possible), or in ``v``. In last case it
   sets ``*vt`` to zero.
   
-  The function returns 0 in case of succes an a negative value in case
+  The function returns 0 in case of success an a negative value in case
   of failure. It requires a work buffer ``work`` of the same type and
   size as parameter ``v``.
 */
@@ -1281,7 +1330,7 @@ int32_t mm_reduce_vector_v1_mod3(uint_mmv_t *v, uint32_t *r, uint_mmv_t *work)
   the special case when all prefixes of a word \f$g\f$ in the Monster
   map the 2A-involutions \f$v^+\f$ and  \f$v^-\f$ to
   2A-involutions in the subgroup \f$Q_{x0}\f$ of \f$G_{x0}\f$. Here
-  the mapping is done via conjuation.That condition holds e.g if all
+  the mapping is done via conjuation. That condition holds e.g if all
   prefixes of the word \f$g\f$ are in \f$\in N_x \cdot G_{x0}\f$.
 
   The function returns 0 in case of success and a negative value in
