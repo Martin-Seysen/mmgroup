@@ -14,6 +14,7 @@ Welcome to mmgroup's documentation!
    guide.rst
    c_interface.rst
    applications.rst
+   demo_reduction.rst
 
 
 Indices and tables

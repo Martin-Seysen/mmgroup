@@ -31,6 +31,7 @@ markers = r"""
    bitfunc:    test for the bitfunctions module
    build:      tests to be done after build process (very few tests)
    compiler:   test requires a C compiler 
+   demo:       test demonstration code for reduction algorithm
    extremely_slow:  even slower than very slow 
    hadamard:   test exection of code generated for hadamard matrices
    involution: test module involution.c

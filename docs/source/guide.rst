@@ -22,6 +22,7 @@ Directory structure
 .. include:: guide_directory.inc
 
 
+
 Some mathematical aspects of the implementation
 ===============================================
 
