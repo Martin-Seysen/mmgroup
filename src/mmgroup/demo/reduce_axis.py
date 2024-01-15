@@ -13,8 +13,6 @@ from mmgroup.demo.reduce_sub import find_triality_element_for_axis
 from mmgroup.demo.reduce_sub import vect15_S
 from mmgroup.demo.reduce_sub import leech2_span
 from mmgroup.demo.reduce_sub import leech2_rad
-from mmgroup.demo.reduce_sub import find_in_Nx0
-
 
 
 def get_axis_type(v):
@@ -114,8 +112,6 @@ TARGET_AXES_TYPES = {
 }
 
 
-G_MINUS = Mm('x', 0x200)
-assert MmV15('v-') * G_MINUS ==  MmV15('v+')
 
 def reduce_axis(v):
     r"""Yet to be documented
@@ -144,6 +140,7 @@ def reduce_axis(v):
     g = g * g_Gx0
     v1 = v1 * g_Gx0
     if v1 != MmV15('v+'):
+        G_MINUS = Mm('negate_beta')
         v1 = v1 * G_MINUS
         g = g * G_MINUS
     assert v1 == MmV15('v+')
@@ -151,12 +148,12 @@ def reduce_axis(v):
 
  
 
-BETA = Leech2('beta')
-OMEGA = Leech2('Omega')
 
 def reduce_baby_axis(v):
     r"""Yet to be documented
     """
+    BETA = Leech2('beta')
+    OMEGA = Leech2('Omega')
     v1 = v.copy()
     g = Mm(1)
     while True:
@@ -196,28 +193,5 @@ def reduce_baby_axis(v):
 
 
 
-def reduce_G_x0(v):
-    v1 = v.copy()
-    r3, l2 = mat15_rank_3(v1, 0)
-    assert r3 == 23
-    g1 = map_type4_to_Omega(l2) 
-    v1 = v1 * g1
-    g2 = find_in_Nx0(v1)
-    return g1 * g2
-    
-
-def reduce_monster_element(g):
-    r"""Yet to be documented
-    """
-    v_plus = MmV15('v+') * g
-    h = reduce_axis(v_plus)
-    v_minus = MmV15('v-') * g * h
-    h = h * reduce_baby_axis(v_minus)
-    from mmgroup import MM
-    assert (MM(g*h)).in_G_x0()
-
-    v_1 = MmV15('v1') * g * h
-    h = h * reduce_G_x0(v_1)
-    return h
     
 

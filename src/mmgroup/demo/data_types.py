@@ -110,20 +110,31 @@ class Mm(AbstractMMGroupWord):
     action as the constructor of class :py:class:`~mmgroup.MM`. But
     multiplication of instances of class ``Mm`` is simply a 
     concatenation of words, without any attempt to reduce the result.
+
+    Calling **Mm('r', k)** constructs a random word in the generators
+    of the Monster containing **k** triality elements
+    :math:`\tau^{\pm 1}`. The generators of the Monster used
+    here are discussed in :cite:`Seysen22`, Section 3 - 5; their
+    implementation in python is discussed in the documentation
+    of :py:class:`~mmgroup.MM`.
+
+    Calling the constructor with the string **'negate_beta'** constructs
+    an element of the normal subgroup :math:`Q_{x0}` of the subgroup
+    :math:`G_{x0}` of the monster that exchanges the axes :math:`v^+`
+    and :math:`v^-` defined in ibid., Section 7.2.
     """
     __slots__ =  "length", "_data"
     ERR_ITER = "A monster group element g is not iterable. Use g.mmdata instead"
     MIN_LEN = 16
     def __init__(self,  tag = None, atom = None, *args, **kwds):
+        self._data = np.zeros(self.MIN_LEN, dtype = np.uint32)
         if tag is None:
-            self._data = np.zeros(self.MIN_LEN, dtype = np.uint32) 
             self.length = 0
+        elif tag == 'negate_beta':
+            self._setdata(Mm('x', 0x200).mmdata) 
         else:
             atoms = iter_mm(self.group, tag, atom)
-            self._data = np.fromiter(atoms, dtype = np.uint32) 
-            self.length = len(self._data)
-            if self.length < self.MIN_LEN:
-                self._data = np.resize(self._data, self.MIN_LEN)
+            self._setdata(np.fromiter(atoms, dtype = np.uint32)) 
                   
     def _extend(self, length):
         if length > len(self._data):
@@ -143,7 +154,6 @@ class Mm(AbstractMMGroupWord):
         in the word representing the group element.
         """
         return sum([1 for x in self.mmdata if (x >> 28) & 7 == 5])
-
 
     def __bool__(self):
         return True
@@ -199,13 +209,9 @@ class MmGroup(AbstractMMGroup):
         raise ValueError("Don't know if monster group elements are equal")
 
 
-
-
 StdMmGroup = MmGroup()
 Mm.group = StdMmGroup
 load_group_name(StdMmGroup, "M0")
-
-
 
 ######################################################################
 # Vectors in the representation of the Monster mod 15
@@ -221,7 +227,7 @@ class MmV15(AbstractMmRepVector):
     passed as an argument.
     If ``vector_name`` is 'v+' or 'v-' then it constructs the vector
     :math:`v^+` or :math:`v^-` defined in :cite:`Seysen22`,
-    Section 7.2.
+    Section 7.2, respectively.
 
     If ``vector_name`` is 'v1'  then the constructor constructs a
     precomputed vector :math:`v_1` satisfying the requirements
@@ -290,8 +296,7 @@ class MmV15Space(AbstractMmRepSpace):
         return v1
  
     def imul_group_word(self, v1, g):
-        """Return product v1 * g of vector v1 and group word g.
-        """
+        """Return product v1 * g of vector v1 and group word g."""
         work =  mm_vector(15)
         if isinstance(g, AbstractMMGroupWord):
             a = g.mmdata
@@ -301,8 +306,7 @@ class MmV15Space(AbstractMmRepSpace):
         raise TypeError(err) 
  
     def equal_vectors(self, v1, v2):
-        """Return True iff vectors v1 and v2 are equal 
-        """
+        """Return True iff vectors v1 and v2 are equal"""
         return not mm_op_compare(15, v1.data, v2.data) 
 
     def str_vector(self, v1):

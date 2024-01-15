@@ -144,16 +144,19 @@ def vect15_S(v, k):
 def leech2_span(l2_list):
     r"""List vectors in a subspace of the Leech lattice modulo 2
 
-    TODO: update documentation of this and follwing functions!!
+    :param l2_list: List of vectors in the Leech lattice mod 2
+    :type l2_list: list[class Leech2]
 
-    Let ``l2_list`` be a list of vectors in the Leech lattice mod 2.
     The function returns the list of all vectors in the Leech
     lattice mod 2 that are in the subspace spanned by the vectors
-    in the list ``l2_list``. 
+    in the list **l2_list**. 
+
+    :return: List of short Leech lattice vectors as described above
+    :rtype: list[class Leech2]
 
     This corresponds to computing the set :math:`\mbox{span}(S)`, 
     as defined in :cite:`Seysen22`, Section 8.3, where :math:`S`
-    is the set of vectors given by the list ``l2_list``.
+    is the set of vectors given by the list **l2_list**.
     """
     # Implementation is technical in order to be fast
     MAXDIM = 10
@@ -172,16 +175,21 @@ def leech2_span(l2_list):
 def leech2_rad(l2_list):
     r"""List vectors in a subspace of the Leech lattice modulo 2
 
-    Let ``l2_list`` be a list of vectors in the Leech lattice mod 2.
+    :param l2_list: List of vectors in the Leech lattice mod 2
+    :type l2_list: list[class Leech2]
+
     The function returns the list of all vectors in the Leech
-    lattice mod 2 that are in the radical of the subspace spanned
-    by the vectors in the  list ``l2_list``. The radical of a
+    lattice mod 2 that are in the radica of the subspace spanned
+    by the vectors in the list **l2_list**. The radical of a
     subspace is the intersection of that subspace with its
     orthogonal complement.
 
+    :return: List of short Leech lattice vectors as described above
+    :rtype: list[class Leech2]
+
     This corresponds to computing the set :math:`\mbox{rad}(S)`, 
     as defined in :cite:`Seysen22`, Section 8.3, where :math:`S`
-    is the set of vectors given by the list ``l2_list``.
+    is the set of vectors given by the list **l2_list**.
     """
     # Implementation is technical in order to be fast
     MAXDIM = 10
@@ -199,7 +207,9 @@ def leech2_rad(l2_list):
 
 
 def map_type4_to_Omega(l2):
-    r"""Map a type-4 vector in the Leech lattice mod 2 to Omega
+    r"""Map a type-4 vector in the Leech lattice mod 2 to :math:`\lambda_\Omega`
+
+    Yet to be documented!
 
     The function returns an element :math:`g` of the group
     :math:`G_{x0}` that maps the vector ``l2`` of type 4 in 
@@ -218,7 +228,9 @@ def map_type4_to_Omega(l2):
 
 
 def map_type2_to_standard(l2):
-    r"""Map a type-2 vector in Leech lattice mod 2 to standard
+    r"""Map a type-2 vector in Leech lattice mod 2 to :math:`\lambda_\beta`
+
+    Yet to be documented!
 
     The function returns an element :math:`g` of the group
     :math:`G_{x0}` that maps the vector ``l2`` of type 2 in 
@@ -237,7 +249,9 @@ def map_type2_to_standard(l2):
 
 
 def map_feasible_type2_to_standard(l2):
-    r"""Map feasible type-2 vector in Leech lattice mod 2 to standard
+    r"""Map feasible type-2 vector in Leech lattice mod 2 to :math:`\lambda_\beta+\lambda_\Omega`
+
+    Yet to be documented!
 
     The function returns an element :math:`g` of the group
     :math:`G_{x0}` that maps the 'feasible' vector ``l2`` of
@@ -256,21 +270,43 @@ def map_feasible_type2_to_standard(l2):
 
 
 
-def find_triality_element_for_axis(v, target_axis_types):
-    r"""Try to simplify the type of an axis
+def find_triality_element_for_axis(v, axis_types):
+    r"""Try to transform an axis in :math:`\rho_{15}` to a given axis type
 
-    Let :math:`v` be the axis in the representation of the monster
-    mod 15  given by ``v``. The function computes the axes
-    :math:`v \cdot \tau^e` for :math:`e = 1,2`, where
-    :math:`\tau` is the triality element in the monster group.
+    :param v: an axis in the representation :math:`\rho_{15}` of the Monster
+    :type v: class MmV15
+    :param axis_types: List of expected types of the transformed axis 
+    :type axis_types: list[str]
+
+    Let :math:`v` be the axis  given by **v**. The function computes 
+    the axes :math:`v \cdot \tau^e` for :math:`e =\pm 1`, where
+    :math:`\tau` is the triality element in the Monste.
     
     If possible, the function returns an element
-    :math:`\tau^e, e \in \{1,2\}` such that the type of the axis
-    :math:`v \cdot \tau^e` is in the list ``target_axis_types``
-    of axis types.
+    :math:`\tau^e, e = \pm 1` such that the type of the axis
+    :math:`v \cdot \tau^e` is in the list **axis_types**
+    of axis types. Names of axis types are as in
+    :cite:`Seysen22`, Section 8.2.
     
-    The function raises ValueError if this is not possible.
-    It does not change the axis stored in ``v``. 
+    The function raises **ValueError** if this is not possible.
+    It does not change the axis stored in **v**. 
+
+    :return: An element :math:`\tau^e` of the Monster as described above
+    :rtype: class Mm
+
+    Using function **get_axis_type** in module **mmgroup.demo.reduce_axis**
+    this function can be implemented as follows: 
+
+    .. code-block:: python
+
+       def find_triality_element_for_axis(v, axis_types)
+           for e in [1, -1]:
+               if get_axis_type(v * Mm('t', e)) in axis_types:
+                  return  Mm('t', e)
+       raise ValueError      
+    
+    The implementation used here is much faster, since it computes
+    fewer co-ordinates of the transformed axes. 
     """
     # Implementation is technical in order to be fast
     assert isinstance(v, MmV15)
@@ -279,8 +315,8 @@ def find_triality_element_for_axis(v, target_axis_types):
         mm_op_t_A(15, v.data, e, img);
         ax_t = mm_reduce_2A_axis_type(img) >> 24;
         ax_type = str(ax_t // 16) + chr(ax_t % 16 + ord('A') - 1) 
-        #print("e=", e, ax_type, target_axis_types)
-        if ax_type in target_axis_types:
+        #print("e=", e, ax_type, axis_types)
+        if ax_type in axis_types:
             return Mm('t', e)
     raise ValueError("Could not simplify axis")
 
@@ -288,9 +324,24 @@ def find_triality_element_for_axis(v, target_axis_types):
     
 
 def find_in_Nx0(v):
-    r"""Compute element of N_x0 from its image of the vector v_1
+    r"""Compute an element of :math:`N_{x0}` from its image of :math:`v_1` in :math:`\rho_{15}`
 
-    Yet to be documented!!!
+    :param v: vector in representation :math:`\rho_{15}` of the Monster
+    :type v: class MmV15
+
+    Vector **v** must be an image of the vector :math:`v_1` defined
+    in the constructor of class **MmV15** under an element :math:`g`
+    of the subgroup :math:`N_{x0}` of the Monster. Then the function
+    returns :math:`g`. Otherwise it raises **ValueError**.
+    At most one element :math:`g` of the Monster
+    satisfies **v** = :math:`v_1 g`.
+    
+    :return: An element :math:`g` of the Monster as described above
+    :rtype: class Mm
+
+    An implementation of this identification of an element of the subgroup 
+    :math:`N_{x0}` of the Monster is described in :cite:`Seysen22`,
+    Section 6.
     """
     # Here the implementation just gets the job done
     assert isinstance(v, MmV15)
