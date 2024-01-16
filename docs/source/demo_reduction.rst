@@ -91,6 +91,9 @@ The reduction algorithm for the Monster group
     from mmgroup.demo.reduce_sub import *
     from mmgroup.demo.reduce_axis import *
 
+
+
+
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
    :language: python
    :pyobject: reduce_monster_element
@@ -113,14 +116,13 @@ The reduction algorithm for the Monster group
 Reducing an axis in the Monster
 ------------------------------------------
 
-In this section we discuss functions in module **mmgroup.demo.reduce_axis**
-for reducing an axis in the Monster group. Here the *axes* are vectors in
-the representation :math:`\rho_{15}` the Monster. The axes are in a
-one-to-one correspondence with the cosets of the subgroup
-:math:`H^+` of structure :math:`2.B` of the Monster. For background we
-refer to :cite:`Seysen22`, Section 7.
 
 .. automodule:: mmgroup.demo.reduce_axis
+
+
+Module **mmgroup.demo.reduce_monster** requires the following external
+references.
+
 
 
 .. code-block:: python
@@ -129,12 +131,15 @@ refer to :cite:`Seysen22`, Section 7.
     from mmgroup.demo import Mm, Leech2, MmV15  # data strucures used
     from mmgroup.demo.reduce_sub import *       # functions used
 
-
+Here is the implementation of function **reduce_axis**.
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
    :language: python
    :pyobject: reduce_axis
 
+Dictionary **TARGET_AXES_TYPES** encodes the graph shown in Figure 2
+in :cite:`Seysen22`, Section 8.3. The vertices of that graph are
+orbits of axes.
 
 .. code-block:: python
 
@@ -152,14 +157,21 @@ refer to :cite:`Seysen22`, Section 7.
      '12C' : ['4B', '6A'],
     }
 
+Here is the implementation of function **axis_orbit**.
+
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
    :language: python
-   :pyobject: get_axis_type
+   :pyobject: axis_orbit
+
+
+Here is the implementation of function **compute_U**.
+
+
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
    :language: python
-   :pyobject: axis_leech2_vectors
+   :pyobject: compute_U
 
 
 

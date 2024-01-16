@@ -1,8 +1,56 @@
-"""Module **mmgroup.demo.reduce_axis** demonstrates the reduction of an axis
+r"""Module **mmgroup.demo.reduce_axis** demonstrates the reduction of an axis
 
 
-Documentation is yet under construction.
+Here the *axes* are certain vectors in the representation
+:math:`\rho_{15}` the Monster. The axes are in a one-to-one
+correspondence with the left cosets of the subgroup :math:`H^+` of
+structure :math:`2.B` of the Monster. Thus mapping an arbitrary
+axis **v** to the standard axis :math:`v^+`  corresponding to the
+subgroup :math:`H^+` is equivalent to mapping an element of the
+Monster to an element of :math:`H^+` by right multiplication.
+For background we refer to :cite:`Seysen22`, Section 7.
 
+The process of finding an element :math:`g` that maps axis **v**
+to :math:`v^+` is called *reduction* of the axis  **v**. Function
+*reduce_axis* in this module reduces an axis  **v**.
+
+We name an orbit of an axis under the action of the subgroup
+:math:`G_{x0}` by a string as in :cite:`Seysen22`, Section 8.2.
+In the sequel an *orbit* of an axis means an
+orbit under the action of :math:`G_{x0}`. Function
+**axis_orbit** in this module computes the orbit of an axis.
+
+For reducing an axis we first multiply an axis with a suitable
+element of :math:`G_{x0}` in order to obtain a 'nice' axis
+in the same orbit. Roughly speaking, an axis is 'nice' if
+multiplication with a suitable power of the triality element
+:math:`\tau` of the Monster maps that axis into a 'simpler'
+orbit.
+
+This way we may repeatedly multiply an axis first with an
+element of :math:`G_{x0}` and then with a power of :math:`\tau`,
+leading to a 'simpler' orbit in each step of the reduction
+process. Possible sequences of orbits obtained during such a
+reduction process are shown in Figure 2 in
+:cite:`Seysen22`, Section 8.3.
+
+For each axis :math:`{\bf v}` there is a set :math:`U_4({\bf v})`
+of vectors in the Leech lattice mod 2 such that for any
+:math:`g \in G_{x0}` the axis :math:`{\bf v} g` is 'nice', if
+there is an :math:`l_2 \in U_4({\bf v})` with
+:math:`l_2 g = \lambda_\Omega`. For background we refer to
+:cite:`Seysen22`, Section 8.3. Function **compute_U** in this
+module is used to compute the set :math:`U_4({\bf v})`. More
+precisely, :math:`U_4({\bf v})` is the set of type-4 vectors
+in the set returned by applying function **compute_U** to
+:math:`{\bf v}`. Function **map_type4_to_Omega** in module
+**mmgroup.demo.reduce_sub** computes :math:`g` from
+:math:`l_2`.
+
+At the end of that process we obtain an axis in the orbit
+'2A'. That orbit also contains the axis :math:`v^+`. Mapping
+an arbitrary axis in orbit '2A' to the standard axis
+:math:`v^+` is easy.
 """
 
 from random import choice
@@ -21,7 +69,7 @@ from mmgroup.demo.reduce_sub import leech2_span
 from mmgroup.demo.reduce_sub import leech2_rad
 
 
-def get_axis_type(v):
+def axis_orbit(v):
     """Yet to be documented
     """
     assert isinstance(v, MmV15) and v.p == 15
@@ -69,36 +117,36 @@ def get_axis_type(v):
 
 
 
-def axis_leech2_vectors(v, axis_type):
+def compute_U(v, orbit):
     """Yet to be documented
     """
     assert isinstance(v, MmV15) and v.p == 15
-    if axis_type == '2A':
+    if orbit == '2A':
         return []    
-    if axis_type == '2B':
+    if orbit == '2B':
         return leech2_span(vect15_S(v, 4))
-    if axis_type == '4A':
+    if orbit == '4A':
         _, l2  = mat15_rank_3(v, 0)
         return [l2]
-    if axis_type in ['4B','4C']:
+    if orbit in ['4B','4C']:
         return leech2_rad(vect15_S(v, 1))
-    if axis_type == '6A':
+    if orbit == '6A':
         _, l2  = mat15_rank_3(v, 2)
         return [x + l2 for x in vect15_S(v, 5)]
-    if axis_type == '6C':
+    if orbit == '6C':
         return leech2_span(vect15_S(v, 3))
-    if axis_type in ['6F', '12C']:
+    if orbit in ['6F', '12C']:
         return leech2_rad(vect15_S(v, 7))
-    if axis_type == '8B':
+    if orbit == '8B':
         S1 = (vect15_S(v, 1))
         l2 = choice(S1)
         return [l2 + x for x in S1]
-    if axis_type == '10A':
+    if orbit == '10A':
         S1 = (vect15_S(v, 1))
         S3 = (vect15_S(v, 3))
         l2 = choice(S3)
         return [l2 + x for x in S1]
-    if axis_type == '10B':
+    if orbit == '10B':
         return leech2_rad(vect15_S(v, 4))
        
 
@@ -125,17 +173,17 @@ def reduce_axis(v):
     v1 = v.copy()
     g = Mm(1)
     while True:
-        axis_type = get_axis_type(v1)
-        if axis_type == '2A':
+        orbit = axis_orbit(v1)
+        if orbit == '2A':
             break
-        leech2_vectors = axis_leech2_vectors(v1, axis_type)
+        leech2_vectors = compute_U(v1, orbit)
         type4_vectors = [l2 for l2 in leech2_vectors if l2.type == 4]
         l2 = choice(type4_vectors)
         g_Gx0 = map_type4_to_Omega(l2)
         v1 = v1 * g_Gx0
         g = g * g_Gx0
         assert v * g == v1
-        target_axes_types = TARGET_AXES_TYPES[axis_type]
+        target_axes_types = TARGET_AXES_TYPES[orbit]
         g_tau = find_triality_element_for_axis(v1, target_axes_types)
         v1 = v1 * g_tau
         g = g * g_tau
@@ -163,10 +211,10 @@ def reduce_baby_axis(v):
     v1 = v.copy()
     g = Mm(1)
     while True:
-        axis_type = get_axis_type(v1)
-        if axis_type == '2A':
+        orbit = axis_orbit(v1)
+        if orbit == '2A':
             break
-        leech2_vectors = axis_leech2_vectors(v1, axis_type)
+        leech2_vectors = compute_U(v1, orbit)
         feasible_type2_vectors = [
             l2 + BETA for l2 in leech2_vectors if
             l2.type == 4 and (l2 + BETA).type == 2
@@ -176,7 +224,7 @@ def reduce_baby_axis(v):
         v1 = v1 * g_Gx0
         g = g * g_Gx0
         assert v * g == v1
-        target_axes_types = TARGET_AXES_TYPES[axis_type]
+        target_axes_types = TARGET_AXES_TYPES[orbit]
         g_tau = find_triality_element_for_axis(v1, target_axes_types)
         v1 = v1 * g_tau
         g = g * g_tau

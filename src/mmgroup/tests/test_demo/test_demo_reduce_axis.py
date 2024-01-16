@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 
 from mmgroup.demo import Leech2, Mm, MmV15
-from mmgroup.demo.reduce_axis import get_axis_type
+from mmgroup.demo.reduce_axis import axis_orbit
 from mmgroup.demo.reduce_axis import reduce_axis
 from mmgroup.demo.reduce_axis import reduce_baby_axis
 
@@ -37,7 +37,7 @@ def axis_type_testdata(NTESTS = 3):
 @pytest.mark.demo
 def test_axis_type():
     for v, ref_ax_type in axis_type_testdata():
-        ax_type =  get_axis_type(v)
+        ax_type =  axis_orbit(v)
         assert ax_type == ref_ax_type
         g = reduce_axis(v)
         assert v * g == V_START
