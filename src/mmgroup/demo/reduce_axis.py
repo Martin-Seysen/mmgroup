@@ -1,3 +1,9 @@
+"""Module **mmgroup.demo.reduce_axis** demonstrates the reduction of an axis
+
+
+Documentation is yet under construction.
+
+"""
 
 from random import choice
 

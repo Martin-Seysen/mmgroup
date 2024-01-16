@@ -1,4 +1,9 @@
-"""Yet to be documented"""
+"""This module demonstrates the reduction algorithm for the Monster
+
+
+Documentation is yet under construction.
+
+"""
 
 from mmgroup.demo import Mm, Leech2, MmV15
 from mmgroup.demo.reduce_sub import mat15_rank_3

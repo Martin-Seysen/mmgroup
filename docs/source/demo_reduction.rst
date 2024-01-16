@@ -8,13 +8,11 @@
 Demonstration code for the reduction algorithm
 ===============================================
 
-This chapter is yet under construction!
-
 
 This chapter has been written for a mathmatically-inclinded reader who
 wants to read an implementation demonstrating the reduction algorithm
 for the Monster group in :cite:`Seysen22`. 
-In the section we present a Python implementation of that reduction
+In this section we present a Python implementation of that reduction
 algorithm. This implementation has been optimized for readability, 
 and not for speed; but it can still be executed and tested.
 
@@ -22,7 +20,7 @@ Our goal is present a satisfactory demonstration of the new reduction
 algorithm in this Chapter of the project documentation. Executable
 Python code can be found in the ``mmgoup.demo`` package. Function
 ``reduce_monster_element`` in the ``mmgroup.demo.reduce_monster``
-packgage actually reduces an element of the Monster-
+packgage actually reduces an element of the Monster.
 
 Demonstrating every tiny detail of the reduction algorithm in Python
 leads to a bloated software package that is hardly readable or 
@@ -39,16 +37,14 @@ in :math:`G_{x0}` are described in detail in the appendices of
 We also assume that functions for the operation of the Monster on 
 its 196883-dimensional representation :math:`\rho_{15}` (with
 coefficients taken modulo 15) are available. This operation
-is decscibed in detail in :cite:`Seysen20`. In our demonstration
-we use multiplication for that operation.
+is decscibed in detail in :cite:`Seysen20`. In the ``mmgroup``
+package we use multiplication for that operation.
 
 We also assume that functions performing linear algebra with matrices
 over the Leech lattice (modulo 2 and 3) are available.
 
 Module ``mmgroup.demo.redcue_sub`` contains Python functions
-implementing the required functionality mentioned above. Most
-functions in this module are just Python wrappers for the
-corresponding C functions in the ``mmgroup`` package.
+implementing the required functionality mentioned above.
 
 
 
@@ -62,6 +58,11 @@ corresponding C functions in the ``mmgroup`` package.
 
 Data structures
 ----------------
+
+This section contains the data structures required for the
+demonstration of the reduction algorithm. These data structures
+are classes that can be imported from module **mmgroup.demo**.
+
 
 .. autoclass:: mmgroup.demo.Mm
    :members: count_triality_elements
@@ -78,18 +79,17 @@ Data structures
 
 
 
-The main Python module **mmgroup.demo.reduce_monster**
+The reduction algorithm for the Monster group
 -------------------------------------------------------
 
-This section is yet under construction!
+.. automodule:: mmgroup.demo.reduce_monster
 
 
 .. code-block:: python
 
     from mmgroup.demo import Mm, Leech2, MmV15
     from mmgroup.demo.reduce_sub import *
-    from mmgroup.demo.reduce_axis import reduce_axis
-    from mmgroup.demo.reduce_axis import reduce_baby_axis
+    from mmgroup.demo.reduce_axis import *
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
    :language: python
@@ -110,11 +110,17 @@ This section is yet under construction!
 
 
 
-Python module **mmgroup.demo.reduce_axes**
+Reducing an axis in the Monster
 ------------------------------------------
 
+In this section we discuss functions in module **mmgroup.demo.reduce_axis**
+for reducing an axis in the Monster group. Here the *axes* are vectors in
+the representation :math:`\rho_{15}` the Monster. The axes are in a
+one-to-one correspondence with the cosets of the subgroup
+:math:`H^+` of structure :math:`2.B` of the Monster. For background we
+refer to :cite:`Seysen22`, Section 7.
 
-This section is yet under construction!
+.. automodule:: mmgroup.demo.reduce_axis
 
 
 .. code-block:: python
@@ -128,20 +134,6 @@ This section is yet under construction!
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
    :language: python
    :pyobject: reduce_axis
-
-
-.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
-   :language: python
-   :pyobject: reduce_baby_axis
-
-
-.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
-   :language: python
-   :pyobject: get_axis_type
-
-.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
-   :language: python
-   :pyobject: axis_leech2_vectors
 
 
 .. code-block:: python
@@ -161,10 +153,34 @@ This section is yet under construction!
     }
 
 
+.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
+   :language: python
+   :pyobject: get_axis_type
 
-Python module **mmgroup.demo.reduce_sub**
+.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
+   :language: python
+   :pyobject: axis_leech2_vectors
+
+
+
+Reducing an axis in the Baby Monster
+------------------------------------------
+
+This section contains a program for reducing an axis in the
+baby Monster.
+
+The section is yet under construction!
+
+.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
+   :language: python
+   :pyobject: reduce_baby_axis
+
+
+
+
+
+Subfunctions for the reduction algorithm
 --------------------------------------------
-
 
 .. automodule:: mmgroup.demo.reduce_sub
 

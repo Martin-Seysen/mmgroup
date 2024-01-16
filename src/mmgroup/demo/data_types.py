@@ -77,7 +77,7 @@ class Leech2:
 
         The type of a vector is the halved norm of the shortest
         preimage of the vector in the Leech lattice.
-        That type is equal to 0, 2, 3 or 4.
+        That type is equal to 0, 2, 3, or 4.
         """
         return gen_leech2_type(self.value)
 
@@ -100,28 +100,33 @@ class Mm(AbstractMMGroupWord):
     r"""Models an element of the Monster group
 
     Here it would be tempting to use the class :py:class:`~mmgroup.MM`
-    defined in the *API reference* of the ``mmgroup`` package for 
+    defined in the *API reference* of the **mmgroup** package for 
     computing in the Monster instead. Note that methods of class
     :py:class:`~mmgroup.MM` may apply the reduction algortihm whenever
-    appropriate. So it would be cheating to demonstrate the reduction
+    appropriate. Hence it would be cheating to demonstrate the reduction
     algorithm with instances of that class.  
     
-    The constructor of the class ``Mm`` defined here performs the same
-    action as the constructor of class :py:class:`~mmgroup.MM`. But
-    multiplication of instances of class ``Mm`` is simply a 
+    So we use this class **Mm** for demonstrating the reduction algorithm
+    for the Monster.
+
+    The constructor of the class **Mm** performs the same
+    action as the constructor of class :py:class:`~mmgroup.MM`.
+    The generators of the Monster used
+    here are discussed in :cite:`Seysen22`, Section 3 - 5.
+
+    But  multiplication of instances of class **Mm** is simply a
     concatenation of words, without any attempt to reduce the result.
+
+    We use the following special cases of calling the constructor:
 
     Calling **Mm('r', k)** constructs a random word in the generators
     of the Monster containing **k** triality elements
-    :math:`\tau^{\pm 1}`. The generators of the Monster used
-    here are discussed in :cite:`Seysen22`, Section 3 - 5; their
-    implementation in python is discussed in the documentation
-    of :py:class:`~mmgroup.MM`.
+    :math:`\tau^{\pm 1}`, for an integer **k**.
 
     Calling the constructor with the string **'negate_beta'** constructs
     an element of the normal subgroup :math:`Q_{x0}` of the subgroup
-    :math:`G_{x0}` of the monster that exchanges the axes :math:`v^+`
-    and :math:`v^-` defined in ibid., Section 7.2.
+    :math:`G_{x0}` of the Monster that exchanges the axes :math:`v^+`
+    and :math:`v^-` defined in :cite:`Seysen22`, Section 7.2.
     """
     __slots__ =  "length", "_data"
     ERR_ITER = "A monster group element g is not iterable. Use g.mmdata instead"
@@ -148,10 +153,13 @@ class Mm(AbstractMMGroupWord):
 
     @property
     def count_triality_elements(self):
-        """Return number of triality elements 
+        r"""Length of a word representing an element of the Monster
 
-        Returns the number of triality elements contained 
-        in the word representing the group element.
+        The function returns the number of the triality elements
+        :math:`\tau^{\pm 1}` contained in the word representing the
+        group element. This will be used as an indication for the
+        length of the word. This is similar to (although not equal to)
+        the definition of the length of a word in :cite:`Wilson13`.
         """
         return sum([1 for x in self.mmdata if (x >> 28) & 7 == 5])
 
@@ -223,19 +231,19 @@ class MmV15(AbstractMmRepVector):
     """Models a vector in the representation of the Monster mod 15
 
     The constructor constructs a vector in the representation of
-    the Monster mod 15 depending on the string ``vector_name``
+    the Monster mod 15 depending on the parameter **vector_name**
     passed as an argument.
-    If ``vector_name`` is 'v+' or 'v-' then it constructs the vector
-    :math:`v^+` or :math:`v^-` defined in :cite:`Seysen22`,
+    If **vector_name** is the string 'v+' or 'v-' then we construct
+    the vector :math:`v^+` or :math:`v^-` defined in :cite:`Seysen22`,
     Section 7.2, respectively.
 
-    If ``vector_name`` is 'v1'  then the constructor constructs a
+    If **vector_name** is the string 'v1'  then the we construct a
     precomputed vector :math:`v_1` satisfying the requirements
-    in ibid., Section 6. The computation of such a
-    vector :math:`v_1` is discussed in ibid., Appendix B.
+    in :cite:`Seysen22`, Section 6. The computation of such a
+    vector :math:`v_1` is discussed in :cite:`Seysen22`, Appendix B.
 
-    Two such vectors may be checked for equality. A vector may be 
-    multiplied with an element of the Monster group.
+    Two such vectors in this class may be checked for equality. A
+    vector may be multiplied with an element of the Monster group.
     Other operations are not supported.
     """
     p = 15

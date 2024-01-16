@@ -1,6 +1,15 @@
-"""Subfunctions for the reduction algorithm for the Monster group
+# Subfunctions for the reduction algorithm for the Monster group
+"""
+The Python module **mmgroup.demo.redcue_sub** contains auxiliary
+functions required for the reduction on an element of the Monster
+group.
 
-Yet to be documented!!!
+Most functions in this module correspond to functions defined in
+:cite:`Seysen22`. Cross references are given in the documentation
+of a function.
+
+Implementations of the functions in this module are usually just Python
+wrappers for the corresponding C functions in the **mmgroup** package.
 """
 
 from numbers import Integral
@@ -86,7 +95,7 @@ def mat15_rank_3(v, k):
     taken modulo 3. Matrix :math:`A_k` has a natural interpretation
     as a matrix acting on the Leech lattice (mod 3).
 
-    :return tuple(r, l2):  with **r** the rank of the matrix :math:`A_k`  
+    :return:  tuple(**r, l2**) with **r** the rank of the matrix :math:`A_k`
     :rtype: (int, class Leech2) 
 
     If the kernel of :math:`A_k` is
@@ -209,14 +218,19 @@ def leech2_rad(l2_list):
 def map_type4_to_Omega(l2):
     r"""Map a type-4 vector in the Leech lattice mod 2 to :math:`\lambda_\Omega`
 
-    Yet to be documented!
+    :param l2: Vector of type 4 in the Leech lattice mod 2
+    :type l2: class Leech2
 
     The function returns an element :math:`g` of the group
-    :math:`G_{x0}` that maps the vector ``l2`` of type 4 in 
+    :math:`G_{x0}` that maps the vector **l2** of type 4 in
     the Leech lattice mod 2 to the standard type-4 vector
     :math:`\lambda_\Omega`.  
 
-    More details and an implementation of this function are
+    :return: group element  :math:`g` mapping **l2**  to :math:`\lambda_\Omega`
+    :rtype: class Mm
+
+
+    An implementation of this function is
     discussed in :cite:`Seysen22`, Appendix A. 
     """
     # Implementation is technical in order to be fast
@@ -230,14 +244,18 @@ def map_type4_to_Omega(l2):
 def map_type2_to_standard(l2):
     r"""Map a type-2 vector in Leech lattice mod 2 to :math:`\lambda_\beta`
 
-    Yet to be documented!
+    :param l2: Vector of type 2 in the Leech lattice mod 2
+    :type l2: class Leech2
 
     The function returns an element :math:`g` of the group
-    :math:`G_{x0}` that maps the vector ``l2`` of type 2 in 
+    :math:`G_{x0}` that maps the vector **l2** of type 2 in
     the Leech lattice mod 2 to the standard type-2 vector
     :math:`\lambda_\beta`.
 
-    More details and an implementation of this function are
+    :return: group element :math:`g` mapping **l2**  to :math:`\lambda_\beta`
+    :rtype: class Mm
+
+    An implementation of this function is
     discussed in :cite:`Seysen22`, Appendix C. 
     """
     # Implementation is technical in order to be fast
@@ -249,16 +267,22 @@ def map_type2_to_standard(l2):
 
 
 def map_feasible_type2_to_standard(l2):
-    r"""Map feasible type-2 vector in Leech lattice mod 2 to :math:`\lambda_\beta+\lambda_\Omega`
+    r"""Map a feasible type-2 vector in the Leech lattice mod 2 to :math:`\lambda_\beta+\lambda_\Omega`
 
-    Yet to be documented!
+    :param l2: Feasible vector of type 2 in the Leech lattice mod 2
+    :type l2: class Leech2
 
     The function returns an element :math:`g` of the group
-    :math:`G_{x0}` that maps the 'feasible' vector ``l2`` of
+    :math:`G_{x0}` that maps the *feasible* vector **l2** of
     type 2 in the Leech lattice mod 2 to the standard feasible
     type-2 vector :math:`\lambda_\Omega + \lambda_\beta`. 
+    Here the term *feasible* is defined in :cite:`Seysen22`,
+    Section 9.1.
 
-    More details and an implementation of this function are
+    :return: group element :math:`g` mapping **l2**  to :math:`\lambda_\beta+\lambda_\Omega`
+    :rtype: class Mm
+
+    An implementation of this function is
     discussed in :cite:`Seysen22`, Appendix D. 
     """
     # Implementation is technical in order to be fast
@@ -302,7 +326,7 @@ def find_triality_element_for_axis(v, axis_types):
        def find_triality_element_for_axis(v, axis_types)
            for e in [1, -1]:
                if get_axis_type(v * Mm('t', e)) in axis_types:
-                  return  Mm('t', e)
+                   return  Mm('t', e)
        raise ValueError      
     
     The implementation used here is much faster, since it computes
@@ -324,24 +348,29 @@ def find_triality_element_for_axis(v, axis_types):
     
 
 def find_in_Nx0(v):
-    r"""Compute an element of :math:`N_{x0}` from its image of :math:`v_1` in :math:`\rho_{15}`
+    r"""Identify an element of the subgroup :math:`N_{x0}` of the Monster
 
     :param v: vector in representation :math:`\rho_{15}` of the Monster
     :type v: class MmV15
 
-    Vector **v** must be an image of the vector :math:`v_1` defined
-    in the constructor of class **MmV15** under an element :math:`g`
+    Let  :math:`v_1` be the precomputed vector in :math:`\rho_{15}`
+    defined in the constructor of class
+    :py:class:`~mmgroup.demo.MmV15`.
+    Vector **v** must be an image of :math:`v_1` under an element
     of the subgroup :math:`N_{x0}` of the Monster. Then the function
-    returns :math:`g`. Otherwise it raises **ValueError**.
-    At most one element :math:`g` of the Monster
-    satisfies **v** = :math:`v_1 g`.
+    returns an element :math:`g` of :math:`N_{x0}` with
+    :math:`{\bf v} g = v_1`, if such an element :math:`g` exists.
+    Otherwise it raises **ValueError**.
+    Note that at most one element :math:`g` of the Monster may satisfy
+    that condition.
     
     :return: An element :math:`g` of the Monster as described above
     :rtype: class Mm
 
-    An implementation of this identification of an element of the subgroup 
-    :math:`N_{x0}` of the Monster is described in :cite:`Seysen22`,
-    Section 6.
+    An implementation of this identification of an element of the
+    group :math:`N_{x0}` is described in
+    :cite:`Seysen22`, Section 6. The precomputed vector :math:`v_1`
+    satisfies the conditions stated in the same section.
     """
     # Here the implementation just gets the job done
     assert isinstance(v, MmV15)
@@ -356,7 +385,7 @@ def find_in_Nx0(v):
     ok = ok and mm_group_n_scan_word(g, res) == res
     if not ok:
         print(res)
-        ERR = "Could not construct element of G_x0 from its image"
+        ERR = "Could not identify element of N_x0 from its image"
         raise ValueError(ERR)
     return Mm('a', g[:res])
     
