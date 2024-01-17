@@ -139,13 +139,13 @@ Here is the implementation of function **reduce_axis**.
    :language: python
    :pyobject: reduce_axis
 
-Dictionary **TARGET_AXES_TYPES** encodes the graph shown in Figure 2
+Dictionary **TARGET_ORBITS** encodes the graph shown in Figure 2
 in :cite:`Seysen22`, Section 8.3. The vertices of that graph are
 orbits of axes.
 
 .. code-block:: python
 
-   TARGET_AXES_TYPES = {
+   TARGET_ORBITS = {
      '2B' : ['2A'],
      '4A' : ['2A'],
      '4B' : ['2B'],

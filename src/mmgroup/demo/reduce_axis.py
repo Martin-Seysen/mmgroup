@@ -41,11 +41,11 @@ there is an :math:`l_2 \in U_4({\bf v})` with
 :math:`l_2 g = \lambda_\Omega`. For background we refer to
 :cite:`Seysen22`, Section 8.3. Function **compute_U** in this
 module is used to compute the set :math:`U_4({\bf v})`. More
-precisely, calling **compute_U(v)** returns a list of vectors in
-the Leech lattice mod 2; and :math:`U_4({\bf v})` is the set of
-type-4 vectors in that list. Function **map_type4_to_Omega**
-in module **mmgroup.demo.reduce_sub** computes :math:`g` from
-:math:`l_2`.
+precisely, calling **compute_U(v)** returns a set
+:math:`U({\bf v})` of vectors in the Leech lattice mod 2; and
+:math:`U_4({\bf v})` is the set of type-4 vectors in that list.
+Function **map_type4_to_Omega** in module
+**mmgroup.demo.reduce_sub** computes :math:`g` from :math:`l_2`.
 
 At the end of that process we obtain an axis in the orbit
 '2A'. That orbit also contains the axis :math:`v^+`. Mapping
@@ -90,10 +90,10 @@ def axis_orbit(v):
         return ORBITS_KNOWN_FROM_NORM[norm]
     elif norm == 4:
         # If 300_x has norm 4 then compute rank of matrix 
-        # M = 300_x - 1 * M_1, where M_1 is the unit matrix
+        # M = 300_x - 2 * M_1, where M_1 is the unit matrix
         r3, l2  = mat15_rank_3(v, 2)
         if r3 == 23:
-            # If M has rank 23 then we check the kernel of M
+            # If M has rank 23 then we check that the kernel of M
             # contains a vector l2 of type 2 in Leech lattice.
             if l2.type == 2:
                 # compute y = transposed(l2) * M * l2 (mod 15)
@@ -212,12 +212,12 @@ def reduce_axis(v):
     while True:
         orbit = axis_orbit(v1)     # orbit of current axis v
         if orbit == '2A':
-            break                  # done if we ar in orbit '2A'
+            break                  # done if we are in orbit '2A'
 
         # Compute the set U_4(v) and select a random element of that set
-        leech2_vectors = compute_U(v1)
-        type4_vectors = [l2 for l2 in leech2_vectors if l2.type == 4]
-        l2 = choice(type4_vectors) # a random element of U_4(v)
+        U = compute_U(v1)
+        U_4 = [l2 for l2 in U if l2.type == 4]
+        l2 = choice(U_4) # a random element of U_4(v)
 
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' axis
@@ -238,16 +238,17 @@ def reduce_axis(v):
     # Map the short Leech lattice vector l2 corresponding to axis v1
     # to the standard short vector \lambda_\beta.
     _, l2 = mat15_rank_3(v1, 2)     
-    g_Gx0 = map_type2_to_standard(l2)
-    g = g * g_Gx0
-    v1 = v1 * g_Gx0
+    g1 = map_type2_to_standard(l2) # g1 transforms l2 to  \lambda_\beta
+    v1 = v1 * g1                   # Transfrom v1 with g1
+    g = g * g1
 
-    assert v1 in [MmV15('v+'), MmV15('v-')] # Here v1 must be v^+ or v^-
-    if v1 != MmV15('v+'):         
-        G_MINUS = Mm('negate_beta') # Correct v1 if it is equal to v^-
-        v1 = v1 * G_MINUS
+    # Here Here v1 must be v^+ or v^-
+    assert v1 in [MmV15('v+'), MmV15('v-')]
+    if v1 != MmV15('v+'):
+        G_MINUS = Mm('negate_beta')
+        v1 = v1 * G_MINUS             # Correct v1 if it is equal to v^-
         g = g * G_MINUS
-    assert v1 == MmV15('v+')        # This is what we expect
+    assert v * g == v1 == MmV15('v+') # This is what we expect
     return g       
 
  
