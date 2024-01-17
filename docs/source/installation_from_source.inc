@@ -1,8 +1,9 @@
 
 
 The current version of the ``mmgroup`` package is a source distribution 
-that has been tested on a 64-bit Windows, Linux and macOS. It runs with 
-python 3.8 or higher. The sources of the project can be downloaded from
+that has been tested on a bit Windows, Linux and macOS with a 
+64-bit x85 CPU. It runs with python 3.8 or higher. The sources of the
+project can be downloaded from
 
 https://github.com/Martin-Seysen/mmgroup . 
 
@@ -17,6 +18,74 @@ section :ref:`build-process-label`.
 The *mmmgroup* package contains a number of extensions written
 in ``C`` which have to be built before use. This will be discussed
 in section :ref:`code-generation-label`.
+
+
+.. _cibuildwheel_label:
+
+Building the ``mmgroup`` package with cibuildwheel
+---------------------------------------------------
+
+The easiest way to build the ``mmgroup`` package is to clone the sources
+from the github repository with *git*, and to build a python wheel
+with *cibuildwheel*. Therefore, the cibuildwheel tool must support
+your target platform. In the sequel we assume that python and the git
+revision control system are installed on your platform.
+We describe the build process on a unix-like platform.
+
+Depending on your platform, you might have to install additional tools.
+For details we refer to the cibuildwheel docmentation
+https://cibuildwheel.readthedocs.io/en/stable/
+
+Any previously installed version of the ``mmgroup`` package must
+be uninstalled before building a new version of that package!
+
+E.fg. for building the ``mmgroup`` package for python 3.12 on Linux 
+with a 64-bit x86 CPU, open a shell and type:
+
+.. code-block:: bash
+
+    pip3 install cibuildwheel
+    git clone https://github.com/Martin-Seysen/mmgroup
+    cd mmgroup
+    git pull origin master
+    git checkout .
+    python3 -m cibuildwheel --output-dir wheelhouse --only cp312-manylinux_x86_64
+
+The last command builds the python wheel. For building the wheel on
+a different platform, the argument 'cp312-manylinux_x86_64' in the
+last command should be replaced by a *build identifier* that
+describes the requested python version and target platform.
+A list of valid build identifiers is given in Section 
+*'Options/build selection'* of the cibuildwheel documentation, see
+
+https://cibuildwheel.readthedocs.io/en/stable/options/#build-skip
+
+After building the python wheel, switch to subdirectory *wheelhouse*,
+and check the file name of the wheel that has been built:
+
+.. code-block:: bash
+
+    cd wheelhouse
+    ls
+
+Then you may install the wheel with pip, e.g.:  
+
+.. code-block:: bash
+
+    pip3 install mmgroup-0.0.13-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+
+Here the file name after the *pip3 install* command must be changed 
+to the file name of the wheel just generated. 
+
+You should test your installation of the ``mmgroup`` package before
+using it:
+
+.. code-block:: bash
+
+   pip3 install pytest
+   python3 -m pytest --pyargs mmgroup -m "not slow"
+
 
 Dependencies
 ------------

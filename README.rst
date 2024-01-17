@@ -19,7 +19,7 @@ For Windows 64:
    pip install pytest
    python -m pytest --pyargs mmgroup -m "not slow"
 
-For Linux and macOS:
+For Linux and macOS with a 64-bit x64 CPU:
 
 .. code-block::
 
@@ -27,6 +27,11 @@ For Linux and macOS:
    pip3 install pytest
    python3 -m pytest --pyargs mmgroup -m "not slow"
 
+
+Python wheels for some other platforms may be built with the
+cibuildwheel tool, see
+
+https://mmgroup.readthedocs.io/en/latest/guide.html#cibuildwheel-label
 
 License
 -------

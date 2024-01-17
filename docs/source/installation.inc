@@ -13,10 +13,9 @@ python 3 must be installed. Then type:
 
 
 The last command tests the installation.
-32-bit Windows systems are not supported.
 
-Installation on Linux and macOS
--------------------------------
+Installation on Linux and macOS with a 64-bit x86 CPU
+------------------------------------------------------
 
 For installing the *mmgroup* package on a Linux or macOS system,
 python 3 must be installed. Then type:
@@ -32,12 +31,13 @@ python 3 must be installed. Then type:
 The last command tests the installation.
 
 
-Other operating systems
------------------------
+Other platforms
+---------------
 
-For other operating systems the package must be compiled from a
-source distribution. Some hints for doing so are given in the
-*Guide for developers*. Source code is available at:
+For other platforms the package must be compiled from a
+source distribution. Therefore the *cibuildwheel* tool
+may be used, see :ref:`cibuildwheel_label`. 
 
-https://github.com/Martin-Seysen/mmgroup
+A general description of the build process is given in the
+*Guide for developers* of the project documentation.
 
