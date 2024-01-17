@@ -17,7 +17,7 @@ algorithm. This implementation has been optimized for readability,
 and not for speed; but it can still be executed and tested.
 
 Our goal is present a satisfactory demonstration of the new reduction
-algorithm in this Chapter of the project documentation. Executable
+algorithm in this chapter of the project documentation. Executable
 Python code can be found in the ``mmgoup.demo`` package. Function
 ``reduce_monster_element`` in the ``mmgroup.demo.reduce_monster``
 packgage actually reduces an element of the Monster.
@@ -43,8 +43,10 @@ package we use multiplication for that operation.
 We also assume that functions performing linear algebra with matrices
 over the Leech lattice (modulo 2 and 3) are available.
 
-Module ``mmgroup.demo.redcue_sub`` contains Python functions
-implementing the required functionality mentioned above.
+
+
+Section :ref:`demonstration-subfunction-label` describes the
+interface of functions implementing the tasks mentioned above.
 
 
 
@@ -158,6 +160,8 @@ orbits of axes.
     }
 
 Here is the implementation of function **axis_orbit**.
+This function has been implemented according to the discussion of 
+the orbits of axes in :cite:`Seysen22`, Section 8.4.
 
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
@@ -165,8 +169,12 @@ Here is the implementation of function **axis_orbit**.
    :pyobject: axis_orbit
 
 
-Here is the implementation of function **compute_U**.
-
+Here is the implementation of function **compute_U**. For an axis
+**v** the function computes the set **U(v)** of vectors in the 
+Leech lattice (mod 2) defined in :cite:`Seysen22`,
+Section 8.4. The implementation of the function is essentially a 
+rewrite of the discussion of the different cases of axis orbits in
+that section.
 
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
@@ -189,6 +197,7 @@ The section is yet under construction!
 
 
 
+.. _demonstration-subfunction-label:
 
 
 Subfunctions for the reduction algorithm

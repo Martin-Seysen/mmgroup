@@ -41,10 +41,10 @@ there is an :math:`l_2 \in U_4({\bf v})` with
 :math:`l_2 g = \lambda_\Omega`. For background we refer to
 :cite:`Seysen22`, Section 8.3. Function **compute_U** in this
 module is used to compute the set :math:`U_4({\bf v})`. More
-precisely, :math:`U_4({\bf v})` is the set of type-4 vectors
-in the set returned by applying function **compute_U** to
-:math:`{\bf v}`. Function **map_type4_to_Omega** in module
-**mmgroup.demo.reduce_sub** computes :math:`g` from
+precisely, calling **compute_U(v)** returns a list of vectors in
+the Leech lattice mod 2; and :math:`U_4({\bf v})` is the set of
+type-4 vectors in that list. Function **map_type4_to_Omega**
+in module **mmgroup.demo.reduce_sub** computes :math:`g` from
 :math:`l_2`.
 
 At the end of that process we obtain an axis in the orbit
@@ -70,46 +70,62 @@ from mmgroup.demo.reduce_sub import leech2_rad
 
 
 def axis_orbit(v):
-    """Yet to be documented
+    """Compute the orbit of an axis
+
+    :param v: The axis to be checked
+    :type v: class MmV15
+    :return: Name of the orbit of axis v
+    :rtype: str
     """
-    assert isinstance(v, MmV15) and v.p == 15
-    norm = mat15_norm(v)
-    AXIS_TYPES_KNOWN_FROM_NORM = {
+    ORBITS_KNOWN_FROM_NORM = {
         2:'8B', 3:'4C', 5:'6C', 10:'12C', 13:'4B'
     }
-    if norm in AXIS_TYPES_KNOWN_FROM_NORM:
-        return AXIS_TYPES_KNOWN_FROM_NORM[norm]
+    assert isinstance(v, MmV15) and v.p == 15
+
+    # Compute norm of the 24 times 24 matrix 300_x contained in vector v (mod 15)
+    norm = mat15_norm(v)
+
+    if norm in ORBITS_KNOWN_FROM_NORM:
+        # If there is only one orbit with that norm, return that orbit
+        return ORBITS_KNOWN_FROM_NORM[norm]
     elif norm == 4:
+        # If 300_x has norm 4 then compute rank of matrix 
+        # M = 300_x - 1 * M_1, where M_1 is the unit matrix
         r3, l2  = mat15_rank_3(v, 2)
         if r3 == 23:
+            # If M has rank 23 then we check the kernel of M
+            # contains a vector l2 of type 2 in Leech lattice.
             if l2.type == 2:
-                M_v_l2 = mat15_apply(v, l2)
-                if M_v_l2 == 4:
-                    return '2A'
-                elif M_v_l2 == 7:
-                    return '6A'
+                # compute y = transposed(l2) * M * l2 (mod 15)
+                y = mat15_apply(v, l2)
+                if y == 4:
+                    return '2A'  # orbit is '2A' if y == 4
+                elif y == 7:
+                    return '6A'  # orbit is '6A' if y == 7
                 else:
                     raise ValueError("Vector is not an axis")
             else:
-                raise ValueError("Vector is not an axis")
+               raise ValueError("Vector is not an axis")
         elif r3 == 2:
-            return '10A'
+            return '10A'         # orbit is '10A' if M has rank 2
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 8:
+        # If 300_x has norm 8 then compute rank of matrix 300_x
         r3, _,  = mat15_rank_3(v, 0)
         if r3 == 8:
-            return '2B'
+            return '2B'          # orbit is '2A' if rank is 8
         elif r3 == 24:
-            return '10B'
+            return '10B'         # orbit is '10B' if rank is 8
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 14:
+        # If 300_x has norm 14 then compute rank of matrix 300_x
         r3, _, = mat15_rank_3(v, 0)
         if r3 == 8:
-            return '6F'
+            return '6F'          # orbit is '6F' if rank is 8
         elif r3 == 23:
-            return '4A'
+            return '4A'          # orbit is '4A' if rank is 23 
         else:
             raise ValueError("Vector is not an axis")
     else:
@@ -117,10 +133,19 @@ def axis_orbit(v):
 
 
 
-def compute_U(v, orbit):
-    """Yet to be documented
+def compute_U(v):
+    """Compute a set of Leech lattice vectors from an axis v
+
+     For a given axis v the function computes the set U(v) of
+     vectors in the Leech lattice mod 2, as defined above. 
+
+    :param v: The axis v
+    :type v: class MmV15
+    :return: The set U(v) of vectors in the Leech lattice (mod 2)
+    :rtype: list[Leech2]
     """
     assert isinstance(v, MmV15) and v.p == 15
+    orbit = axis_orbit(v)      # Compute the orbit of axis v
     if orbit == '2A':
         return []    
     if orbit == '2B':
@@ -139,19 +164,20 @@ def compute_U(v, orbit):
         return leech2_rad(vect15_S(v, 7))
     if orbit == '8B':
         S1 = (vect15_S(v, 1))
-        l2 = choice(S1)
+        l2 = choice(S1)   # l2 is a random element of S1
         return [l2 + x for x in S1]
     if orbit == '10A':
         S1 = (vect15_S(v, 1))
         S3 = (vect15_S(v, 3))
-        l2 = choice(S3)
+        l2 = S3[0]        # S3 is a singleton here
         return [l2 + x for x in S1]
     if orbit == '10B':
         return leech2_rad(vect15_S(v, 4))
+    raise ValueError('Unknown orbit')
        
 
 
-TARGET_AXES_TYPES = {
+TARGET_ORBITS = {
    '2B' : ['2A'],
    '4A' : ['2A'],
    '4B' : ['2B'],
@@ -168,36 +194,60 @@ TARGET_AXES_TYPES = {
 
 
 def reduce_axis(v):
-    r"""Yet to be documented
-    """
-    v1 = v.copy()
-    g = Mm(1)
+    r"""Return element of Monster reducing an axis v to the standard axis v^+
+
+    :param v: The axis to be reduced
+    :type v: class MmV15
+    :return: Element g of the Monster with v * g = v^+
+    :rtype: class Mm
+
+    Here v^+ is the standard axis. 
+    """ 
+    v1 = v.copy()                  # local copy of axis v
+    g = Mm(1)                      # the neutral element of the Monster
+
+    # We accumulate in g the element of the Monster that transforms v
+
+    # Map axis to a 'simpler' orbit; see documentation of the module
     while True:
-        orbit = axis_orbit(v1)
+        orbit = axis_orbit(v1)     # orbit of current axis v
         if orbit == '2A':
-            break
-        leech2_vectors = compute_U(v1, orbit)
+            break                  # done if we ar in orbit '2A'
+
+        # Compute the set U_4(v) and select a random element of that set
+        leech2_vectors = compute_U(v1)
         type4_vectors = [l2 for l2 in leech2_vectors if l2.type == 4]
-        l2 = choice(type4_vectors)
-        g_Gx0 = map_type4_to_Omega(l2)
-        v1 = v1 * g_Gx0
-        g = g * g_Gx0
-        assert v * g == v1
-        target_axes_types = TARGET_AXES_TYPES[orbit]
-        g_tau = find_triality_element_for_axis(v1, target_axes_types)
-        v1 = v1 * g_tau
+        l2 = choice(type4_vectors) # a random element of U_4(v)
+
+        # Find a Monster element g1 that maps v1 to a 'nice' axis
+        # and map v1 to that 'nice' axis
+        g1 = map_type4_to_Omega(l2) 
+        v1 = v1 * g1               # Transfrom v1 with g1
+        g = g * g1
+        assert v * g == v1         # Correctness condition for loop
+
+        # Find a Monster element g_tau that maps v1 to a 'simpler' axis,
+        # and map v1 to that 'simpler' axis
+        target_orbits = TARGET_ORBITS[orbit] # possible 'simpler' orbits
+        g_tau = find_triality_element_for_axis(v1, target_orbits)
+        v1 = v1 * g_tau            # Transform v1 with g_tau
         g = g * g_tau
-        assert v * g == v1
+        assert v * g == v1         # Correctness condition for loop
     
-    _, l2 = mat15_rank_3(v1, 2)
+    # Now axis v has been transformed to an axis v1 in orbit '2A'
+    # Map the short Leech lattice vector l2 corresponding to axis v1
+    # to the standard short vector \lambda_\beta.
+    _, l2 = mat15_rank_3(v1, 2)     
     g_Gx0 = map_type2_to_standard(l2)
     g = g * g_Gx0
     v1 = v1 * g_Gx0
-    if v1 != MmV15('v+'):
-        G_MINUS = Mm('negate_beta')
+
+    assert v1 in [MmV15('v+'), MmV15('v-')] # Here v1 must be v^+ or v^-
+    if v1 != MmV15('v+'):         
+        G_MINUS = Mm('negate_beta') # Correct v1 if it is equal to v^-
         v1 = v1 * G_MINUS
         g = g * G_MINUS
-    assert v1 == MmV15('v+')
+    assert v1 == MmV15('v+')        # This is what we expect
     return g       
 
  
@@ -214,7 +264,7 @@ def reduce_baby_axis(v):
         orbit = axis_orbit(v1)
         if orbit == '2A':
             break
-        leech2_vectors = compute_U(v1, orbit)
+        leech2_vectors = compute_U(v1)
         feasible_type2_vectors = [
             l2 + BETA for l2 in leech2_vectors if
             l2.type == 4 and (l2 + BETA).type == 2
@@ -224,8 +274,8 @@ def reduce_baby_axis(v):
         v1 = v1 * g_Gx0
         g = g * g_Gx0
         assert v * g == v1
-        target_axes_types = TARGET_AXES_TYPES[orbit]
-        g_tau = find_triality_element_for_axis(v1, target_axes_types)
+        target_orbits = TARGET_ORBITS[orbit]
+        g_tau = find_triality_element_for_axis(v1, target_orbits)
         v1 = v1 * g_tau
         g = g * g_tau
         assert v * g == v1

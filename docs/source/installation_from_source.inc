@@ -39,7 +39,7 @@ https://cibuildwheel.readthedocs.io/en/stable/
 Any previously installed version of the ``mmgroup`` package must
 be uninstalled before building a new version of that package!
 
-E.fg. for building the ``mmgroup`` package for python 3.12 on Linux 
+E.g. for building the ``mmgroup`` package for python 3.12 on Linux 
 with a 64-bit x86 CPU, open a shell and type:
 
 .. code-block:: bash
