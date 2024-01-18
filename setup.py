@@ -153,7 +153,7 @@ package_data = {
 
 general_presteps = CustomBuildStep(
   'Cleaning up before code generation',
-  [sys.executable, 'cleanup.py', '-pcx'],
+  [sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'],
 )
 
 ext_modules = []

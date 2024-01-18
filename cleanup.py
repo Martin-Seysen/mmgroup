@@ -69,7 +69,7 @@ def del_pyc(verbose = False):
                 except:
                     if verbose:
                        print("failed")
-
+    delete_recursive_subdirs('.', "__pycache__", verbose)
 
 def del_c(verbose = False):
     C_DIRS = [
@@ -87,6 +87,19 @@ def del_c(verbose = False):
             print("Failed to delete directory", '/'.join(dir_list))
 
     
+def check_mmgroup_uninstalled():
+    try:
+        import mmgroup
+        installed = getattr(mmgroup, '__file__', None) is not None
+    except:
+        installed = False
+    if installed:
+        W1 = "A version of the 'mmgroup' package has been installed. "
+        W2 = "Please unstall 'mmgroup' before building a new 'mmgroup' version!"
+        print("\n")
+        raise RuntimeError(W1+W2)
+
+
 
 
 DATA_FILE_DICT = {
@@ -187,6 +200,10 @@ def main():
         help="Delete all automatically generated files" )
     parser.add_option("-g",  dest="git_checkout", action="store_true",
         help="Checkout all automatically generated files with git" )
+    parser.add_option("--check-uninstalled",  dest="check_uninstalled",
+        action="store_true", help=
+    "Issue an error if mmgroup as been installed (used in build process)"
+    )
     parser.add_option("-v",  dest="verbose", action="store_true",
         help="Verbose operation" )
     
@@ -205,6 +222,8 @@ def main():
         del_ext(verbose)
     if options.git_checkout:
         git_checkout_data(verbose)
+    if options.check_uninstalled:
+        check_mmgroup_uninstalled()
 
 
 if __name__ == "__main__":
