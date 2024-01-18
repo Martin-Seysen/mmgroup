@@ -84,12 +84,14 @@ jobs:
 
 
   build_wheels_macos_m1:
+    # An experimental work fow that dos not yet work
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     strategy:
       matrix:
-        os: [flyci-macos-large-latest-m1]
+        # os: [flyci-macos-large-latest-m1]
+        os: []
 
     steps:
       - uses: actions/checkout@v3

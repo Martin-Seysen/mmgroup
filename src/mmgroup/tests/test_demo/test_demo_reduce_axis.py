@@ -15,7 +15,7 @@ if __name__ == "__main__":
 from mmgroup.demo import Leech2, Mm, MmV15
 from mmgroup.demo.reduce_axis import axis_orbit
 from mmgroup.demo.reduce_axis import reduce_axis
-from mmgroup.demo.reduce_axis import reduce_feasible_axis
+from mmgroup.demo.reduce_feasible import reduce_feasible_axis
 
 from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 

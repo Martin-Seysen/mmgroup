@@ -91,7 +91,8 @@ The reduction algorithm for the Monster group
 
     from mmgroup.demo import Mm, Leech2, MmV15
     from mmgroup.demo.reduce_sub import *
-    from mmgroup.demo.reduce_axis import *
+    from mmgroup.demo.reduce_axis import reduce_axis
+    from mmgroup.demo.reduce_feasible import reduce_feasible_axis
 
 
 
@@ -122,7 +123,7 @@ Reducing an axis in the Monster
 .. automodule:: mmgroup.demo.reduce_axis
 
 
-Module **mmgroup.demo.reduce_monster** requires the following external
+Module **mmgroup.demo.reduce_axis** requires the following external
 references.
 
 
@@ -183,17 +184,32 @@ that section.
 
 
 
-Reducing an axis in the Baby Monster
-------------------------------------------
+Reducing a feasible axis in the Baby Monster
+------------------------------------------------
 
-This section contains a program for reducing an axis in the
-baby Monster.
 
-The section is yet under construction!
+.. automodule:: mmgroup.demo.reduce_feasible
 
-.. literalinclude:: ../../src/mmgroup/demo/reduce_axis.py
+
+Module **mmgroup.demo.reduce_feasible** requires the 
+following external references.
+
+
+.. code-block:: python
+
+
+    from mmgroup.demo import Mm, Leech2, MmV15
+    from mmgroup.demo.reduce_axis import axis_orbit
+    from mmgroup.demo.reduce_axis import compute_U
+    from mmgroup.demo.reduce_axis import TARGET_ORBITS
+    from mmgroup.demo.reduce_sub import*
+
+Here is the implementation of function **reduce_feasible_axis**.
+
+
+.. literalinclude:: ../../src/mmgroup/demo/reduce_feasible.py
    :language: python
-   :pyobject: reduce_baby_axis
+   :pyobject: reduce_feasible_axis
 
 
 

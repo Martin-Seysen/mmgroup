@@ -12,7 +12,7 @@ For background we refer to :cite:`Seysen22`, Section 7.
 
 The process of finding an element :math:`g` that maps axis **v**
 to :math:`v^+` is called *reduction* of the axis  **v**. Function
-*reduce_axis* in this module reduces an axis  **v**.
+**reduce_axis** in this module reduces an axis  **v**.
 
 We name an orbit of an axis under the action of the subgroup
 :math:`G_{x0}` by a string as in :cite:`Seysen22`, Section 8.2.
@@ -62,7 +62,6 @@ from mmgroup.demo.reduce_sub import mat15_rank_3
 from mmgroup.demo.reduce_sub import mat15_apply
 from mmgroup.demo.reduce_sub import map_type4_to_Omega
 from mmgroup.demo.reduce_sub import map_type2_to_standard
-from mmgroup.demo.reduce_sub import map_feasible_type2_to_standard
 from mmgroup.demo.reduce_sub import find_triality_element_for_axis
 from mmgroup.demo.reduce_sub import vect15_S
 from mmgroup.demo.reduce_sub import leech2_span
@@ -217,7 +216,7 @@ def reduce_axis(v):
         # Compute the set U_4(v) and select a random element of that set
         U = compute_U(v1)
         U_4 = [l2 for l2 in U if l2.type == 4]
-        l2 = choice(U_4) # a random element of U_4(v)
+        l2 = choice(U_4)           # a random element of U_4(v)
 
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' axis
@@ -239,7 +238,7 @@ def reduce_axis(v):
     # to the standard short vector \lambda_\beta.
     _, l2 = mat15_rank_3(v1, 2)     
     g1 = map_type2_to_standard(l2) # g1 transforms l2 to  \lambda_\beta
-    v1 = v1 * g1                   # Transfrom v1 with g1
+    v1 = v1 * g1                   # Transform v1 with g1
     g = g * g1
 
     # Here Here v1 must be v^+ or v^-
@@ -252,61 +251,6 @@ def reduce_axis(v):
     return g       
 
  
-
-
-def reduce_feasible_axis(v):
-    r"""Return element of Monster reducing a feasible axis v
-
-    Here reducing a fesible axis means reduction to the 
-    standard feasible axis v^-.
-
-    :param v: The feasible axis to be reduced
-    :type v: class MmV15
-    :return: Element g of the Monster with v * g = v^-
-    :rtype: class Mm
-    """
-    BETA = Leech2('beta')    # Vector \lambda_\beta in leech lattice mod 2
-    OMEGA = Leech2('Omega')  # Vector \lambda_\Omega in leech lattice mod 2
-    v1 = v.copy()            # local copy of the feasible axis v
-    g = Mm(1)                # the neutral element of the Monster
-
-    # In g we will accumulate the element of the Monster that transforms v
-
-    while True:
-        orbit = axis_orbit(v1)
-        if orbit == '2A':
-            break
-        leech2_vectors = compute_U(v1)
-        feasible_type2_vectors = [
-            l2 + BETA for l2 in leech2_vectors if
-            l2.type == 4 and (l2 + BETA).type == 2
-        ]
-        l2 = choice(feasible_type2_vectors)
-        g_Gx0 = map_feasible_type2_to_standard(l2)
-        v1 = v1 * g_Gx0
-        g = g * g_Gx0
-        assert v * g == v1
-        target_orbits = TARGET_ORBITS[orbit]
-        g_tau = find_triality_element_for_axis(v1, target_orbits)
-        v1 = v1 * g_tau
-        g = g * g_tau
-        assert v * g == v1
-        
-    _, l2 = mat15_rank_3(v1, 2)
-    if l2 == BETA:
-        assert v1 == MmV15('v-')
-        return g
-
-    g_Gx0 = map_feasible_type2_to_standard(l2)
-    g = g * g_Gx0
-    v1 = v1 * g_Gx0
-    for e in 1, 2:
-        v2 = v1 * Mm('t', e)
-        if v2 == MmV15('v-'):
-            return g * Mm('t', e)
-
-    raise ValueError("Cannnot reduce axis for baby monster")
-
 
 
     

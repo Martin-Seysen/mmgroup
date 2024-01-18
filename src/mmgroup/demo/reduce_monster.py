@@ -10,7 +10,7 @@ from mmgroup.demo.reduce_sub import mat15_rank_3
 from mmgroup.demo.reduce_sub import map_type4_to_Omega
 from mmgroup.demo.reduce_sub import find_in_Nx0
 from mmgroup.demo.reduce_axis import reduce_axis
-from mmgroup.demo.reduce_axis import reduce_feasible_axis
+from mmgroup.demo.reduce_feasible import reduce_feasible_axis
 
 
 
