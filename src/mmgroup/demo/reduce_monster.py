@@ -10,7 +10,7 @@ from mmgroup.demo.reduce_sub import mat15_rank_3
 from mmgroup.demo.reduce_sub import map_type4_to_Omega
 from mmgroup.demo.reduce_sub import find_in_Nx0
 from mmgroup.demo.reduce_axis import reduce_axis
-from mmgroup.demo.reduce_axis import reduce_baby_axis
+from mmgroup.demo.reduce_axis import reduce_feasible_axis
 
 
 
@@ -33,7 +33,7 @@ def reduce_monster_element(g):
     v_plus = MmV15('v+') * g
     h = reduce_axis(v_plus)
     v_minus = MmV15('v-') * g * h
-    h = h * reduce_baby_axis(v_minus)
+    h = h * reduce_feasible_axis(v_minus)
     v_1 = MmV15('v1') * g * h
     h = h * reduce_G_x0(v_1)
     return h

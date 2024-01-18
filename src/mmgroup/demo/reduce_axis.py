@@ -27,12 +27,12 @@ multiplication with a suitable power of the triality element
 :math:`\tau` of the Monster maps that axis into a 'simpler'
 orbit.
 
-This way we may repeatedly multiply an axis first with an
-element of :math:`G_{x0}` and then with a power of :math:`\tau`,
-leading to a 'simpler' orbit in each step of the reduction
-process. Possible sequences of orbits obtained during such a
-reduction process are shown in Figure 2 in
-:cite:`Seysen22`, Section 8.3.
+This way we may repeatedly multiply an axis first with an element
+of :math:`G_{x0}` and then with a power of :math:`\tau`, leading
+to a 'simpler' orbit in each step of the reduction process, as
+discussed in :cite:`Seysen22`, Section 8. Possible sequences of
+orbits obtained during such a reduction process are shown in
+Figure 2 in :cite:`Seysen22`, Section 8.3.
 
 For each axis :math:`{\bf v}` there is a set :math:`U_4({\bf v})`
 of vectors in the Leech lattice mod 2 such that for any
@@ -206,7 +206,7 @@ def reduce_axis(v):
     v1 = v.copy()                  # local copy of axis v
     g = Mm(1)                      # the neutral element of the Monster
 
-    # We accumulate in g the element of the Monster that transforms v
+    # In g we will accumulate the element of the Monster that transforms v
 
     # Map axis to a 'simpler' orbit; see documentation of the module
     while True:
@@ -254,13 +254,24 @@ def reduce_axis(v):
  
 
 
-def reduce_baby_axis(v):
-    r"""Yet to be documented
+def reduce_feasible_axis(v):
+    r"""Return element of Monster reducing a feasible axis v
+
+    Here reducing a fesible axis means reduction to the 
+    standard feasible axis v^-.
+
+    :param v: The feasible axis to be reduced
+    :type v: class MmV15
+    :return: Element g of the Monster with v * g = v^-
+    :rtype: class Mm
     """
-    BETA = Leech2('beta')
-    OMEGA = Leech2('Omega')
-    v1 = v.copy()
-    g = Mm(1)
+    BETA = Leech2('beta')    # Vector \lambda_\beta in leech lattice mod 2
+    OMEGA = Leech2('Omega')  # Vector \lambda_\Omega in leech lattice mod 2
+    v1 = v.copy()            # local copy of the feasible axis v
+    g = Mm(1)                # the neutral element of the Monster
+
+    # In g we will accumulate the element of the Monster that transforms v
+
     while True:
         orbit = axis_orbit(v1)
         if orbit == '2A':
