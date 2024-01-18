@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 120
     strategy:
       matrix:
+        # os: [flyci-macos-large-latest-m1] not working
+        # os: [ubuntu-latest,  macOS-latest, flyci-macos-large-latest-m1]
         os: [ubuntu-latest,  macOS-latest]
 
     steps:
@@ -81,33 +83,6 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: ./dist/*.tar.gz
-
-
-  build_wheels_macos_m1:
-    # An experimental work fow that dos not yet work
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
-    strategy:
-      matrix:
-        # os: [flyci-macos-large-latest-m1]
-        os: []
-
-    steps:
-      - uses: actions/checkout@v3
-
-      # Used to host cibuildwheel
-      - uses: actions/setup-python@v4
-      
-      - name: Install cibuildwheel
-        run: python3 -m pip install cibuildwheel
-               
-      - name: Build wheels
-        run: python3 -m cibuildwheel --output-dir wheelhouse
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
 
 
 
