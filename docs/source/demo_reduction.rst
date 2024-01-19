@@ -103,11 +103,6 @@ external references.
 
 Here comes the main function **reduce_monster_element** of the
 module that reduces an element of the Monster group.
-Given an word :math:`g` of generators of the Monster of an arbitrary
-length, the function returns an word :math:`h` of generators of the
-Monster of length at most 7, such that :math:`g \cdot h` is the
-neutral element. Here the length of a word is is the number of
-triality elements :math:`\tau^{\pm 1}` contained in that word.
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
    :language: python

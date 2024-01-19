@@ -1,8 +1,12 @@
-"""This module demonstrates the reduction algorithm for the Monster
+r"""This module demonstrates the reduction algorithm for the Monster
 
-
-Documentation is yet under construction.
-
+The main function **reduce_monster_element** in this module reduces
+an element of the Monster group. Given an word :math:`g` of
+generators of the Monster of an arbitrary length, the function
+returns an word :math:`h` of generators of the Monster of length
+at most 7, such that :math:`g \cdot h` is the neutral element
+of the Monster. Here the length of a word is is the number of
+triality elements :math:`\tau^{\pm 1}` contained in that word.
 """
 
 from mmgroup.demo import Mm, Leech2, MmV15
@@ -62,7 +66,7 @@ def reduce_monster_element(g):
     # Change g to an element of the subgroup H of G_x0
     v_minus = MmV15('v-') * g * h
     h = h * reduce_feasible_axis(v_minus)     # Now g * h is in H
-    # Reduce that element of the subgroup H
+    # Reduce that element of the subgroup G_x0
     v_1 = MmV15('v1') * g * h
     h = h * reduce_G_x0(v_1)                  # Now g * h is 1
     return h

@@ -484,6 +484,11 @@ Version history
      - 2023-10-27
      - Supports numbering elements of the Monster, and Python 3.12
 
+   * - 0.0.14
+     - 2024-01-19
+     - Demonstration code for reduction in the Monster added
+
+
 
 
 .. only:: html

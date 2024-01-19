@@ -2,7 +2,10 @@
 # History
 ####################################################################
 
-VERSION = '0.0.13'   # 2023-10-27. Supports numbering of elements of the Monster.
+
+
+VERSION = '0.0.14'   # 2024-01-18. Demonstration code for reduction in the Monster added
+#VERSION = '0.0.13'   # 2023-10-27. Supports numbering of elements of the Monster.
                      #             Adjusted for Python 3.12 
 # VERSION = '0.0.12' # 2023-01-09. Support for the group Y_555 and the Bimonster
 # VERSION = '0.0.11' # 2022-10-19. Bugfixes and macOS version added

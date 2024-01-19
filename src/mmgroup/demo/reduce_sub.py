@@ -1,6 +1,6 @@
 # Subfunctions for the reduction algorithm for the Monster group
 """
-The Python module **mmgroup.demo.redcue_sub** contains auxiliary
+The Python module **mmgroup.demo.reduce_sub** contains auxiliary
 functions required for the reduction on an element of the Monster
 group.
 
