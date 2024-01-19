@@ -48,8 +48,8 @@ Function **map_type4_to_Omega** in module
 **mmgroup.demo.reduce_sub** computes :math:`g` from :math:`l_2`.
 
 At the end of that process we obtain an axis in the orbit
-'2A'. That orbit also contains the axis :math:`v^+`. Mapping
-an arbitrary axis in orbit '2A' to the standard axis
+**'2A'**. That orbit also contains the axis :math:`v^+`. Mapping
+an arbitrary axis in orbit **'2A'** to the standard axis
 :math:`v^+` is easy.
 """
 

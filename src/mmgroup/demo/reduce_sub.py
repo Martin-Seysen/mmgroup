@@ -188,7 +188,7 @@ def leech2_rad(l2_list):
     :type l2_list: list[class Leech2]
 
     The function returns the list of all vectors in the Leech
-    lattice mod 2 that are in the radica of the subspace spanned
+    lattice mod 2 that are in the radical of the subspace spanned
     by the vectors in the list **l2_list**. The radical of a
     subspace is the intersection of that subspace with its
     orthogonal complement.
@@ -304,7 +304,7 @@ def find_triality_element_for_axis(v, axis_types):
 
     Let :math:`v` be the axis  given by **v**. The function computes 
     the axes :math:`v \cdot \tau^e` for :math:`e =\pm 1`, where
-    :math:`\tau` is the triality element in the Monste.
+    :math:`\tau` is the triality element in the Monster.
     
     If possible, the function returns an element
     :math:`\tau^e, e = \pm 1` such that the type of the axis

@@ -1,12 +1,11 @@
 r"""Module **mmgroup.demo.reduce_feasible**: reduction of a feasible axis
 
-Yet to be documented!!
 
 Here the *feasible axes* are certain axes in the representation
 :math:`\rho_{15}` the Monster, see :cite:`Seysen22`, Section 9.1
 for details. They are in a one-to-one correspondence with the
-left cosets of the subgroup :math:`H` of the group
-:math:`H^+` defined in :cite:`Seysen22`.
+left cosets of the subgroup :math:`H = G_{x0} \cap H^+` of the
+group :math:`H^+` defined in :cite:`Seysen22`.
 
 Thus mapping an arbitrary feasible axis **v** to the standard
 feasible axis :math:`v^-`  corresponding to the subgroup :math:`H`
@@ -25,8 +24,28 @@ This algorithm is quite similar to the algorithm in function
 between these two algorithms are summarized in Table 2 in
 that section.
 
-More details yet to be documented!!
+A orbit of :math:`H^+` under the action of :math:`H` will be called
+a :math:`H`-orbit. As in function **reduce_axis**, we repeatedly
+multiply a feasible axis first with an element of :math:`H` and then
+with a power of :math:`\tau`. This way we will map the axis into a
+'simpler' :math:`H`-orbit in each step of the reduction process.
 
+Details of that reduction process are discussed in :cite:`Seysen22`,
+Section 9. Possible sequences of :math:`H`-orbits obtained during
+such a reduction process are shown in Figure 3 in that section.
+
+A orbit of the Monster under the action of :math:`G_{x0}` will be
+called a :math:`G`-orbit. Note that disjoint :math:`H`-orbits
+lie in disjoint :math:`G`-orbit, with the following exceptions.
+:math:`H`-orbits **'2A0'** and **'2A1'** are in :math:`G`-orbit
+**'2A'**; and :math:`H`-orbits **'2B0'** and **'2B1'** are in
+:math:`G`-orbit **'2B'**.
+
+The reduction process mentioned above terminates if the
+feasible axis is in the :math:`H`-orbit **'2A0'** or **'2A1'**.
+Orbit **'2A1'** is the singleton :math:`\{v^-\}`, so that we
+are done in that case. Transforming a feasible axis from orbit
+**'2A0'** to orbit **'2A1'** is easy.
 
 """
 
@@ -53,7 +72,7 @@ def reduce_feasible_axis(v):
 
     :param v: The feasible axis to be reduced
     :type v: class MmV15
-    :return: Element g of the Monster with v * g = v^-
+    :return: Element g of subgroup H^+ of the Monster with v * g = v^-
     :rtype: class Mm
     """
     BETA = Leech2('beta')    # Vector \lambda_\beta in leech lattice mod 2
@@ -61,12 +80,12 @@ def reduce_feasible_axis(v):
     v1 = v.copy()            # local copy of the feasible axis v
     g = Mm(1)                # the neutral element of the Monster
 
-    # In g we will accumulate the element of the Monster that transforms v
+    # In g we will accumulate the element of H^+ that transforms v
 
     # Map axis to a 'simpler' orbit
     while True:
         orbit = axis_orbit(v1)
-        if orbit == '2A':
+        if orbit == '2A':   # done if we are in orbit '2A1' or '2A0'
             break
 
         # Compute the set U_f(v) and select a random element of that set
@@ -81,7 +100,7 @@ def reduce_feasible_axis(v):
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' (feasible) axis
         g1 = map_feasible_type2_to_standard(l2)
-        v1 = v1 * g1
+        v1 = v1 * g1         # Transfrom v1 with g1
         g = g * g1
         assert v * g == v1   # Correctness condition for loop
 
@@ -89,7 +108,7 @@ def reduce_feasible_axis(v):
         # and map v1 to that 'simpler' (feasible) axis
         target_orbits = TARGET_ORBITS[orbit]
         g_tau = find_triality_element_for_axis(v1, target_orbits)
-        v1 = v1 * g_tau
+        v1 = v1 * g_tau      # Transform v1 with g_tau
         g = g * g_tau
         assert v * g == v1   # Correctness condition for loop
         
@@ -105,7 +124,7 @@ def reduce_feasible_axis(v):
     # Map v1 to an axis v1 with \lambda(v1) = \lambda\beta + \lambda\Omega
     g1 = map_feasible_type2_to_standard(l2)
     g = g * g1
-    v1 = v1 * g1
+    v1 = v1 * g1             # Transfrom v1 with g1
 
     # Now a power of the triality element maps v1 to the
     # standard feasible axis v^-
