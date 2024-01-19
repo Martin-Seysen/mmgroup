@@ -93,38 +93,38 @@ def axis_orbit(v):
         r3, l2  = mat15_rank_3(v, 2)
         if r3 == 23:
             # If M has rank 23 then we check that the kernel of M
-            # contains a vector l2 of type 2 in Leech lattice.
+            # contains a vector l2 of type 2 in Leech lattice
             if l2.type == 2:
-                # compute y = transposed(l2) * M * l2 (mod 15)
+                # Compute y = transposed(l2) * M * l2 (mod 15)
                 y = mat15_apply(v, l2)
                 if y == 4:
-                    return '2A'  # orbit is '2A' if y == 4
+                    return '2A'  # Orbit is '2A' if y == 4
                 elif y == 7:
-                    return '6A'  # orbit is '6A' if y == 7
+                    return '6A'  # Orbit is '6A' if y == 7
                 else:
                     raise ValueError("Vector is not an axis")
             else:
                raise ValueError("Vector is not an axis")
         elif r3 == 2:
-            return '10A'         # orbit is '10A' if M has rank 2
+            return '10A'         # Orbit is '10A' if M has rank 2
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 8:
         # If 300_x has norm 8 then compute rank of matrix 300_x
         r3, _,  = mat15_rank_3(v, 0)
         if r3 == 8:
-            return '2B'          # orbit is '2A' if rank is 8
+            return '2B'          # Orbit is '2A' if rank is 8
         elif r3 == 24:
-            return '10B'         # orbit is '10B' if rank is 8
+            return '10B'         # Orbit is '10B' if rank is 8
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 14:
         # If 300_x has norm 14 then compute rank of matrix 300_x
         r3, _, = mat15_rank_3(v, 0)
         if r3 == 8:
-            return '6F'          # orbit is '6F' if rank is 8
+            return '6F'          # Orbit is '6F' if rank is 8
         elif r3 == 23:
-            return '4A'          # orbit is '4A' if rank is 23 
+            return '4A'          # Orbit is '4A' if rank is 23
         else:
             raise ValueError("Vector is not an axis")
     else:
@@ -144,7 +144,7 @@ def compute_U(v):
     :rtype: list[Leech2]
     """
     assert isinstance(v, MmV15) and v.p == 15
-    orbit = axis_orbit(v)      # Compute the orbit of axis v
+    orbit = axis_orbit(v)        # Compute the orbit of axis v
     if orbit == '2A':
         return []    
     if orbit == '2B':
@@ -163,12 +163,12 @@ def compute_U(v):
         return leech2_rad(vect15_S(v, 7))
     if orbit == '8B':
         S1 = (vect15_S(v, 1))
-        l2 = choice(S1)   # l2 is a random element of S1
+        l2 = choice(S1)          # l2 is a random element of S1
         return [l2 + x for x in S1]
     if orbit == '10A':
         S1 = (vect15_S(v, 1))
         S3 = (vect15_S(v, 3))
-        l2 = S3[0]        # S3 is a singleton here
+        l2 = S3[0]               # S3 is a singleton here
         return [l2 + x for x in S1]
     if orbit == '10B':
         return leech2_rad(vect15_S(v, 4))
@@ -202,21 +202,21 @@ def reduce_axis(v):
 
     Here v^+ is the standard axis. 
     """ 
-    v1 = v.copy()                  # local copy of axis v
-    g = Mm(1)                      # the neutral element of the Monster
+    v1 = v.copy()                  # Local copy of axis v
+    g = Mm(1)                      # Neutral element of the Monster
 
     # In g we will accumulate the element of the Monster that transforms v
 
     # Map axis to a 'simpler' orbit; see documentation of the module
     while True:
-        orbit = axis_orbit(v1)     # orbit of current axis v
+        orbit = axis_orbit(v1)     # Orbit of current axis v
         if orbit == '2A':
-            break                  # done if we are in orbit '2A'
+            break                  # Done if we are in orbit '2A'
 
         # Compute the set U_4(v) and select a random element of that set
         U = compute_U(v1)
         U_4 = [l2 for l2 in U if l2.type == 4]
-        l2 = choice(U_4)           # a random element of U_4(v)
+        l2 = choice(U_4)           # A random element of U_4(v)
 
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' axis
@@ -233,11 +233,11 @@ def reduce_axis(v):
         g = g * g_tau
         assert v * g == v1         # Correctness condition for loop
     
-    # Now axis v has been transformed to an axis v1 in orbit '2A'
+    # Now axis v has been transformed to an axis v1 in orbit '2A'.
     # Map the short Leech lattice vector l2 corresponding to axis v1
     # to the standard short vector \lambda_\beta.
     _, l2 = mat15_rank_3(v1, 2)     
-    g1 = map_type2_to_standard(l2) # g1 transforms l2 to  \lambda_\beta
+    g1 = map_type2_to_standard(l2) # g1 transforms l2 to \lambda_\beta
     v1 = v1 * g1                   # Transform v1 with g1
     g = g * g1
 
@@ -245,9 +245,9 @@ def reduce_axis(v):
     assert v1 in [MmV15('v+'), MmV15('v-')]
     if v1 != MmV15('v+'):
         G_MINUS = Mm('negate_beta')
-        v1 = v1 * G_MINUS             # Correct v1 if it is equal to v^-
+        v1 = v1 * G_MINUS          # Correct v1 if it is equal to v^-
         g = g * G_MINUS
-    assert v * g == v1 == MmV15('v+') # This is what we expect
+    assert v * g == MmV15('v+')    # This is what we expect
     return g       
 
  

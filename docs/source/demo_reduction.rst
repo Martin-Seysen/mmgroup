@@ -44,7 +44,6 @@ We also assume that functions performing linear algebra with matrices
 over the Leech lattice (modulo 2 and 3) are available.
 
 
-
 Section :ref:`demonstration-subfunction-label` describes the
 interface of functions implementing the tasks mentioned above.
 
@@ -56,6 +55,9 @@ interface of functions implementing the tasks mentioned above.
     are for demonstration only. They should not be used in a
     life application!
 
+This demonstration makes some random choices in the reduction
+process. This is appropriate for testing. The life implementation
+of the reduction algorithm is deterministic.
 
 
 Data structures
@@ -87,6 +89,10 @@ The reduction algorithm for the Monster group
 .. automodule:: mmgroup.demo.reduce_monster
 
 
+
+Module **mmgroup.demo.reduce_monster** requires the following
+external references.
+
 .. code-block:: python
 
     from mmgroup.demo import Mm, Leech2, MmV15
@@ -95,11 +101,21 @@ The reduction algorithm for the Monster group
     from mmgroup.demo.reduce_feasible import reduce_feasible_axis
 
 
-
+Here comes the main function **reduce_monster_element** of the
+module that reduces an element of the Monster group.
+Given an word :math:`g` of generators of the Monster of an arbitrary
+length, the function returns an word :math:`h` of generators of the
+Monster of length at most 7, such that :math:`g \cdot h` is the
+neutral element. Here the length of a word is is the number of
+triality elements :math:`\tau^{\pm 1}` contained in that word.
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
    :language: python
    :pyobject: reduce_monster_element
+
+
+Here is a simple test function for testing the main function 
+**reduce_monster_element**.
 
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
@@ -107,6 +123,9 @@ The reduction algorithm for the Monster group
    :pyobject: check_reduce_monster_element
 
 
+The following function reduces an element of the subgroup
+:math:`G_{x0}` of the Monster. The implementation of this
+function is discussed in :cite:`Seysen22`, Section 6.
 
 .. literalinclude:: ../../src/mmgroup/demo/reduce_monster.py
    :language: python

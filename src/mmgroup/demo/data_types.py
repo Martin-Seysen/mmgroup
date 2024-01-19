@@ -1,6 +1,8 @@
 """Data structures for the reduction algorithm for the Monster group
 
-Yet to be documented!!!
+The classes defined in this module are for demonstration only.
+
+Do not impart any of these classes in a life application!
 """
 
 from numbers import Integral
@@ -102,7 +104,7 @@ class Mm(AbstractMMGroupWord):
     Here it would be tempting to use the class :py:class:`~mmgroup.MM`
     defined in the *API reference* of the **mmgroup** package for 
     computing in the Monster instead. Note that methods of class
-    :py:class:`~mmgroup.MM` may apply the reduction algortihm whenever
+    :py:class:`~mmgroup.MM` may apply the reduction algorithm whenever
     appropriate. Hence it would be cheating to demonstrate the reduction
     algorithm with instances of that class.  
     

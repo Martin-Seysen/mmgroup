@@ -77,15 +77,15 @@ def reduce_feasible_axis(v):
     """
     BETA = Leech2('beta')    # Vector \lambda_\beta in leech lattice mod 2
     OMEGA = Leech2('Omega')  # Vector \lambda_\Omega in leech lattice mod 2
-    v1 = v.copy()            # local copy of the feasible axis v
-    g = Mm(1)                # the neutral element of the Monster
+    v1 = v.copy()            # Local copy of the feasible axis v
+    g = Mm(1)                # Neutral element of the Monster
 
     # In g we will accumulate the element of H^+ that transforms v
 
     # Map axis to a 'simpler' orbit
     while True:
         orbit = axis_orbit(v1)
-        if orbit == '2A':   # done if we are in orbit '2A1' or '2A0'
+        if orbit == '2A':   # Done if we are in orbit '2A1' or '2A0'
             break
 
         # Compute the set U_f(v) and select a random element of that set
@@ -94,7 +94,7 @@ def reduce_feasible_axis(v):
             l2 + BETA for l2 in U if
             l2.type == 4 and (l2 + BETA).type == 2
         ]
-        l2 = choice(U_f)     # a random element of U_f(v)
+        l2 = choice(U_f)     # A random element of U_f(v)
 
 
         # Find a Monster element g1 that maps v1 to a 'nice' axis
