@@ -15,7 +15,7 @@ of :math:`H` by right multiplication.
 The process of finding an element :math:`g` that maps a feasible
 axis **v** to :math:`v^-` is called *reduction* of the feasible
 axis  **v**. Function **reduce_feasible_axis** in this module
-reduces an feasible axis  **v**.
+reduces a feasible axis  **v**.
 
 The algorithm in function **reduce_feasible_axis** for reducing
 a feasible axis is discussed in :cite:`Seysen22`, Section 9.
@@ -24,7 +24,7 @@ This algorithm is quite similar to the algorithm in function
 between these two algorithms are summarized in Table 2 in
 that section.
 
-A orbit of :math:`H^+` under the action of :math:`H` will be called
+An orbit of :math:`H^+` under the action of :math:`H` will be called
 a :math:`H`-orbit. As in function **reduce_axis**, we repeatedly
 multiply a feasible axis first with an element of :math:`H` and then
 with a power of :math:`\tau`. This way we will map the axis into a
@@ -34,9 +34,9 @@ Details of that reduction process are discussed in :cite:`Seysen22`,
 Section 9. Possible sequences of :math:`H`-orbits obtained during
 such a reduction process are shown in Figure 3 in that section.
 
-A orbit of the Monster under the action of :math:`G_{x0}` will be
+An orbit of the Monster under the action of :math:`G_{x0}` will be
 called a :math:`G`-orbit. Note that disjoint :math:`H`-orbits
-lie in disjoint :math:`G`-orbit, with the following exceptions.
+lie in disjoint :math:`G`-orbits, with the following exceptions.
 :math:`H`-orbits **'2A0'** and **'2A1'** are in :math:`G`-orbit
 **'2A'**; and :math:`H`-orbits **'2B0'** and **'2B1'** are in
 :math:`G`-orbit **'2B'**.
@@ -67,7 +67,7 @@ from mmgroup.demo.reduce_sub import mat15_rank_3
 def reduce_feasible_axis(v):
     r"""Return element of Monster reducing a feasible axis v
 
-    Here reducing a fesible axis means reduction to the 
+    Here reducing a feasible axis means reduction to the
     standard feasible axis v^-.
 
     :param v: The feasible axis to be reduced
@@ -88,7 +88,8 @@ def reduce_feasible_axis(v):
         if orbit == '2A':   # Done if we are in orbit '2A1' or '2A0'
             break
 
-        # Compute the set U_f(v) and select a random element of that set
+        # Compute the set U_f(v), as defined in [Sey22], Section 9.2;
+        # and select a random element l2 of that set
         U = compute_U(v1)
         U_f = [
             l2 + BETA for l2 in U if
@@ -100,7 +101,7 @@ def reduce_feasible_axis(v):
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' (feasible) axis
         g1 = map_feasible_type2_to_standard(l2)
-        v1 = v1 * g1         # Transfrom v1 with g1
+        v1 = v1 * g1         # Transform v1 with g1
         g = g * g1
         assert v * g == v1   # Correctness condition for loop
 
@@ -113,7 +114,7 @@ def reduce_feasible_axis(v):
         assert v * g == v1   # Correctness condition for loop
         
     # Now v has been transformed to an axis v1 in orbit '2A0' or '2A1'.
-    # Compute the short Leech lattice vector l2 = \lambda(v2).
+    # Compute the short Leech lattice vector l2 = \lambda(ax(v2)).
     _, l2 = mat15_rank_3(v1, 2)
 
     if l2 == BETA:
@@ -121,10 +122,10 @@ def reduce_feasible_axis(v):
         assert v1 == MmV15('v-')
         return g
 
-    # Map v1 to an axis v1 with \lambda(v1) = \lambda\beta + \lambda\Omega
+    # Map v1 to an axis with \lambda(ax(v1)) = \lambda\beta + \lambda\Omega
     g1 = map_feasible_type2_to_standard(l2)
     g = g * g1
-    v1 = v1 * g1             # Transfrom v1 with g1
+    v1 = v1 * g1             # Transform v1 with g1
 
     # Now a power of the triality element maps v1 to the
     # standard feasible axis v^-

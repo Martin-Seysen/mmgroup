@@ -88,7 +88,7 @@ def axis_orbit(v):
         # If there is only one orbit with that norm, return that orbit
         return ORBITS_KNOWN_FROM_NORM[norm]
     elif norm == 4:
-        # If 300_x has norm 4 then compute rank of matrix 
+        # If 300_x has norm 4 then compute the rank r3 of matrix
         # M = 300_x - 2 * M_1, where M_1 is the unit matrix
         r3, l2  = mat15_rank_3(v, 2)
         if r3 == 23:
@@ -110,16 +110,16 @@ def axis_orbit(v):
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 8:
-        # If 300_x has norm 8 then compute rank of matrix 300_x
+        # If 300_x has norm 8 then compute rank r3 of matrix 300_x
         r3, _,  = mat15_rank_3(v, 0)
         if r3 == 8:
             return '2B'          # Orbit is '2A' if rank is 8
         elif r3 == 24:
-            return '10B'         # Orbit is '10B' if rank is 8
+            return '10B'         # Orbit is '10B' if rank is 24
         else:
             raise ValueError("Vector is not an axis")
     elif norm == 14:
-        # If 300_x has norm 14 then compute rank of matrix 300_x
+        # If 300_x has norm 14 then compute rank r3 of matrix 300_x
         r3, _, = mat15_rank_3(v, 0)
         if r3 == 8:
             return '6F'          # Orbit is '6F' if rank is 8
@@ -213,7 +213,7 @@ def reduce_axis(v):
         if orbit == '2A':
             break                  # Done if we are in orbit '2A'
 
-        # Compute the set U_4(v) and select a random element of that set
+        # Compute the set U_4(v) and select a random element l2 of that set
         U = compute_U(v1)
         U_4 = [l2 for l2 in U if l2.type == 4]
         l2 = choice(U_4)           # A random element of U_4(v)
@@ -221,7 +221,7 @@ def reduce_axis(v):
         # Find a Monster element g1 that maps v1 to a 'nice' axis
         # and map v1 to that 'nice' axis
         g1 = map_type4_to_Omega(l2) 
-        v1 = v1 * g1               # Transfrom v1 with g1
+        v1 = v1 * g1               # Transform v1 with g1
         g = g * g1
         assert v * g == v1         # Correctness condition for loop
 

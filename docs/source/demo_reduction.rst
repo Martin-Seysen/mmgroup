@@ -9,7 +9,7 @@ Demonstration code for the reduction algorithm
 ===============================================
 
 
-This chapter has been written for a mathmatically-inclinded reader who
+This chapter has been written for a mathematically-inclined reader who
 wants to read an implementation demonstrating the reduction algorithm
 for the Monster group in :cite:`Seysen22`. 
 In this section we present a Python implementation of that reduction
@@ -18,9 +18,9 @@ and not for speed; but it can still be executed and tested.
 
 Our goal is present a satisfactory demonstration of the new reduction
 algorithm in this chapter of the project documentation. Executable
-Python code can be found in the ``mmgoup.demo`` package. Function
-``reduce_monster_element`` in the ``mmgroup.demo.reduce_monster``
-packgage actually reduces an element of the Monster.
+Python code can be found in the **mmgoup.demo** package. Function
+**reduce_monster_element** in the **mmgroup.demo.reduce_monster**
+package actually reduces an element of the Monster.
 
 Demonstrating every tiny detail of the reduction algorithm in Python
 leads to a bloated software package that is hardly readable or 
@@ -35,9 +35,9 @@ in :math:`G_{x0}` are described in detail in the appendices of
 :cite:`Seysen22`. 
 
 We also assume that functions for the operation of the Monster on 
-its 196883-dimensional representation :math:`\rho_{15}` (with
+its 196884-dimensional representation :math:`\rho_{15}` (with
 coefficients taken modulo 15) are available. This operation
-is decscibed in detail in :cite:`Seysen20`. In the ``mmgroup``
+is described in detail in :cite:`Seysen20`. In the **mmgroup**
 package we use multiplication for that operation.
 
 We also assume that functions performing linear algebra with matrices

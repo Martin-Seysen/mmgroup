@@ -96,7 +96,7 @@ def mat15_rank_3(v, k):
     as a matrix acting on the Leech lattice (mod 3).
 
     :return:  tuple(**r, l2**) with **r** the rank of the matrix :math:`A_k`
-    :rtype: (int, class Leech2) 
+    :rtype: tuple(int, class Leech2)
 
     If the kernel of :math:`A_k` is
     one-dimensional and its preimage in the Leech lattice contains
