@@ -67,8 +67,19 @@ from linuxpatch import copy_shared_libs
 
 
 ####################################################################
-# Print command line arguments (if desired)
+# Print patform and command line arguments (if desired)
 ####################################################################
+
+
+def print_platform():
+    import platform
+    print('Build running on platform')
+    uname = platform.uname()
+    for key in [
+        'system', 'node', 'release', 'version', 'machine'
+        ]:
+        print(" " + key + ":", getattr(uname, key, None))
+    print("")
 
 
 def print_commandline_args():
@@ -81,6 +92,7 @@ def print_commandline_args():
     print(' ' + os.path.abspath(__file__))
     print('')
 
+print_platform()
 print_commandline_args()
 
 ####################################################################
