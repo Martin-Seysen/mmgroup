@@ -436,42 +436,7 @@ def make_dll_nt_mingw32(cmdline_args):
 
 def make_so_darwin_gcc(cmdline_args):
     """Create a macOS shared library with gcc"""
-
-    machine = platform.uname().machine
-    if machine == 'x86_64':
-        compiler = ["gcc", "-arch", "x86_64"]
-    elif machine == 'arm64':
-        compiler = ["gcc", "-arch", "arm64"]
-    else:
-        compiler = ["cc"]
-
-    compile_args = compiler + ["-c", "-O3", "-Wall"]
-    compile_args += process_flags(cmdline_args.cflags)
-    for ipath in cmdline_args.include_path:
-        compile_args.append("-I " + os.path.realpath(ipath))
-    compile_args += c_define_args(cmdline_args)
-    objects = []
-    arglist = []
-    # Compile sources and add objects to list 'objects'
-    for source, obj in make_source_object_pairs(cmdline_args):
-        args = compile_args + ["-fPIC", source, "-o", obj]
-        arglist.append(args)
-        objects.append(obj)
-    workers = SimpleProcessWorkers(cmdline_args.n)
-    workers.run(arglist)
-
-    # Link
-    lib, implib = output_names(cmdline_args)
-    if cmdline_args.static:
-        lcmd =  ["ar", "rcs", lib ] + objects
-    else:
-        lcmd = compiler + ["-shared",  "-Wall"]
-        lcmd += objects + linker_library_args(cmdline_args)
-        lcmd += ["-o", lib ]
-    print(" ".join(lcmd))
-    subprocess.check_call(lcmd)
-    print(lib + "\nhas been generated.\n")
-
+    return make_so_posix_gcc(cmdline_args)
 
 
 
