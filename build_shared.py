@@ -3,8 +3,11 @@ import re
 import os
 import argparse
 import subprocess
+import platform
 
 from parallel_processes import SimpleProcessWorkers
+
+
 
 
 def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, flat=False):
@@ -101,6 +104,8 @@ def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, flat=Fa
 
 def default_compiler():
     if os.name == "posix":
+        if platform.uname().system == "Darwin":
+            return 'darwin'
         return  'unix'
     elif os.name == "nt":
         return 'msvc'
@@ -204,7 +209,7 @@ def build_shared_lib_parser():
     parser.add_argument('--compiler',
         action = 'store', default = default_compiler(), metavar = 'C',
         help = "Specify name of default compiler. "
-               "C must be 'unix', 'msvc', or 'mingw32'."
+               "C must be 'unix', 'darwin', 'msvc', or 'mingw32'."
         )
 
     parser.add_argument('--cflags',
@@ -229,7 +234,7 @@ COMPILER_ERROR = "Don't know how to deal with %s compiler"
 def c_define_args(cmdline_args):
     compiler = cmdline_args.compiler
     cargs = []
-    if compiler in ['mingw32', 'unix']:
+    if compiler in ['mingw32', 'unix', 'darwin']:
         def_, undef_ =  '-D', '-U'
     elif compiler in ['msvc']:
         def_, undef_ =  '/D', '/U'
@@ -246,7 +251,7 @@ def c_define_args(cmdline_args):
 
 def linker_library_args(cmdline_args):
     compiler = cmdline_args.compiler
-    if compiler in ['unix', 'mingw32']:
+    if compiler in ['unix', 'mingw32', 'darwin']:
         path, lib = "-L", "-l"
     elif compiler in ['msvc']:
         path, lib = "/LIBPATH:", "/DEFAULTLIB:"
@@ -362,6 +367,8 @@ def make_dll_nt_msvc(cmdline_args):
 
 
 
+
+
 def make_so_posix_gcc(cmdline_args):
     """Create a posix shared library with gcc"""
     compile_args = ["cc", "-c", "-O3", "-Wall"]
@@ -427,6 +434,44 @@ def make_dll_nt_mingw32(cmdline_args):
     print(lib + "\nhas been generated.\n")
 
 
+def make_so_darwin_gcc(cmdline_args):
+    """Create a macOS shared library with gcc"""
+
+    machine = platform.uname().machine
+    if machine == 'x86_64':
+        compiler = ["gcc", "-arch", "x86_64"]
+    elif machine == 'arm64':
+        compiler = ["gcc", "-arch", "arm64"]
+    else:
+        compiler = ["cc"]
+
+    compile_args = compiler + ["-c", "-O3", "-Wall"]
+    compile_args += process_flags(cmdline_args.cflags)
+    for ipath in cmdline_args.include_path:
+        compile_args.append("-I " + os.path.realpath(ipath))
+    compile_args += c_define_args(cmdline_args)
+    objects = []
+    arglist = []
+    # Compile sources and add objects to list 'objects'
+    for source, obj in make_source_object_pairs(cmdline_args):
+        args = compile_args + ["-fPIC", source, "-o", obj]
+        arglist.append(args)
+        objects.append(obj)
+    workers = SimpleProcessWorkers(cmdline_args.n)
+    workers.run(arglist)
+
+    # Link
+    lib, implib = output_names(cmdline_args)
+    if cmdline_args.static:
+        lcmd =  ["ar", "rcs", lib ] + objects
+    else:
+        lcmd = compiler + ["-shared",  "-Wall"]
+        lcmd += objects + linker_library_args(cmdline_args)
+        lcmd += ["-o", lib ]
+    print(" ".join(lcmd))
+    subprocess.check_call(lcmd)
+    print(lib + "\nhas been generated.\n")
+
 
 
 
@@ -439,6 +484,8 @@ def build_shared_library(cmdline_args):
     if os.name == "posix":
         if compiler == 'unix':
             make_so_posix_gcc(cmdline_args)
+        elif compiler == 'darwin':
+            make_so_darwin_gcc(cmdline_args)
         else:
             raise ValueError(ERR_BLD % ("posix shared library", compiler))
     elif os.name == "nt":
