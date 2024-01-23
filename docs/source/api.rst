@@ -488,6 +488,9 @@ Version history
      - 2024-01-19
      - Demonstration code for reduction in the Monster added
 
+   * - 1.0.0
+     - 2024-01-23
+     - First official release (documentation updated)
 
 
 
