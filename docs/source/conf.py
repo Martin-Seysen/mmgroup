@@ -57,7 +57,7 @@ copyright = '2020, Martin Seysen'
 author = 'Martin Seysen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = 'mmgroup v1.0.0'
 
 
 # -- General configuration ---------------------------------------------------
