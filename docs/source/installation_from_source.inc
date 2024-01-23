@@ -2,7 +2,7 @@
 
 The current version of the ``mmgroup`` package is a source distribution 
 that has been tested on a bit Windows, Linux and macOS with a 
-64-bit x85 CPU. It runs with python 3.8 or higher. The sources of the
+64-bit x86 CPU. It runs with python 3.8 or higher. The sources of the
 project can be downloaded from
 
 https://github.com/Martin-Seysen/mmgroup . 
@@ -18,6 +18,7 @@ section :ref:`build-process-label`.
 The *mmmgroup* package contains a number of extensions written
 in ``C`` which have to be built before use. This will be discussed
 in section :ref:`code-generation-label`.
+
 
 
 .. _cibuildwheel_label:
@@ -38,6 +39,9 @@ https://cibuildwheel.readthedocs.io/en/stable/
 
 Any previously installed version of the ``mmgroup`` package must
 be uninstalled before building a new version of that package!
+
+The current build system supports native compilation only.
+Cross compilation is not supported.
 
 E.g. for building the ``mmgroup`` package for python 3.12 on Linux 
 with a 64-bit x86 CPU, open a shell and type:

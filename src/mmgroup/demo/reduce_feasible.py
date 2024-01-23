@@ -2,9 +2,9 @@ r"""Module **mmgroup.demo.reduce_feasible**: reduction of a feasible axis
 
 
 Here the *feasible axes* are certain axes in the representation
-:math:`\rho_{15}` the Monster, see :cite:`Seysen22`, Section 9.1
+:math:`\rho_{15}` of the Monster, see :cite:`Seysen22`, Section 9.1
 for details. They are in a one-to-one correspondence with the
-left cosets of the subgroup :math:`H = G_{x0} \cap H^+` of the
+left cosets of the subgroup :math:`H = G_{x0} \cap H^+` in the
 group :math:`H^+` defined in :cite:`Seysen22`.
 
 Thus mapping an arbitrary feasible axis **v** to the standard
@@ -12,10 +12,10 @@ feasible axis :math:`v^-`  corresponding to the subgroup :math:`H`
 is equivalent to mapping an element of :math:`H^+` to an element
 of :math:`H` by right multiplication.
 
-The process of finding an element :math:`g` that maps a feasible
-axis **v** to :math:`v^-` is called *reduction* of the feasible
-axis  **v**. Function **reduce_feasible_axis** in this module
-reduces a feasible axis  **v**.
+The process of finding an element :math:`g` in :math:`H^+` that maps
+a feasible axis **v** to :math:`v^-` is called *reduction* of the
+feasible axis  **v**. Function **reduce_feasible_axis** in this
+module reduces a feasible axis  **v**.
 
 The algorithm in function **reduce_feasible_axis** for reducing
 a feasible axis is discussed in :cite:`Seysen22`, Section 9.
@@ -119,7 +119,7 @@ def reduce_feasible_axis(v):
 
     if l2 == BETA:
         # If l2 is \lambda_beta then v1 is in orbit '2A1' and we are done
-        assert v1 == MmV15('v-')
+        assert v * g == MmV15('v-')       # This is what we expect
         return g
 
     # Map v1 to an axis with \lambda(ax(v1)) = \lambda\beta + \lambda\Omega

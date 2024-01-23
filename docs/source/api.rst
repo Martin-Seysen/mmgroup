@@ -21,7 +21,7 @@ That construction has been simplified by Conway :cite:`Con85`.
 For more information about the Monster group we refer to
 :cite:`wiki:monster`.
 
-The *mmgroup* package is a python implementation of Conway's 
+The **mmgroup** package is a Python implementation of Conway's 
 construction :cite:`Con85` of the Monster group :math:`\mathbb{M}`. 
 Its is the first implementation of the Monster group where arbitrary
 operations in that group can effectively be performed. On the author's 
@@ -44,7 +44,7 @@ computation in :math:`\mathbb{M}` is the calculation and the
 analysis of the images of certain vectors in :math:`\rho_p`
 that are called 2A axes in :cite:`Con85`.
 
-In the description of the *mmgroup* package we use the notation
+In the description of the **mmgroup** package we use the notation
 in :cite:`Seysen20`, where an explicit generating set of the
 Monster :math:`\mathbb{M}` is given. For a mathematical description
 of the implementation we refer to :cite:`Seysen22`.

@@ -40,7 +40,7 @@ def reduce_G_x0(v):
     # Compute kernel of the matrix corresponding to part 300_x of v;
     # that kernel must contain a unique Leech lattice vector l2 of type 4
     r3, l2 = mat15_rank_3(v2, 0)
-    assert r3 == 23
+    assert r3 == 23                         # Rank of 300_x must be 23
 
     # Compute element g1 of G_x0 that transforms l2 to \lambda_\Omega
     g1 = map_type4_to_Omega(l2) 
@@ -60,13 +60,13 @@ def reduce_monster_element(g):
     :return: Element h of length at most 7 with g * h == 1
     :rtype:  class Mm
     """
-    # Change g to an element of the subgroup H^+
+    # Compute h such that g * h is in the subgroup H^+ of the Monster
     v_plus = MmV15('v+') * g
     h = reduce_axis(v_plus)                   # Now g * h is in H^+
-    # Change g to an element of the subgroup H of G_x0
+    # Compute h such that g * h is in the subgroup H of G_x0
     v_minus = MmV15('v-') * g * h
     h = h * reduce_feasible_axis(v_minus)     # Now g * h is in H
-    # Reduce that element of the subgroup G_x0
+    # Reduce the element g * h in the group G_x0
     v_1 = MmV15('v1') * g * h
     h = h * reduce_G_x0(v_1)                  # Now g * h is 1
     return h

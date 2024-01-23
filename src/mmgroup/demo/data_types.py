@@ -77,7 +77,7 @@ class Leech2:
     def type(self):
         r"""Return type of vector in Leech lattice mod 2.
 
-        The type of a vector is the halved norm of the shortest
+        The type of a vector is the halved norm of a shortest
         preimage of the vector in the Leech lattice.
         That type is equal to 0, 2, 3, or 4.
         """

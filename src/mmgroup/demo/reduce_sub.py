@@ -294,13 +294,13 @@ def map_feasible_type2_to_standard(l2):
 
 
 
-def find_triality_element_for_axis(v, axis_types):
-    r"""Try to transform an axis in :math:`\rho_{15}` to a given axis type
+def find_triality_element_for_axis(v, axis_orbits):
+    r"""Try to transform an axis in :math:`\rho_{15}` into a given axis orbit
 
     :param v: an axis in the representation :math:`\rho_{15}` of the Monster
     :type v: class MmV15
-    :param axis_types: List of expected types of the transformed axis 
-    :type axis_types: list[str]
+    :param axis_orbits: List of expected types of the transformed axis 
+    :type axis_orbits: list[str]
 
     Let :math:`v` be the axis  given by **v**. The function computes 
     the axes :math:`v \cdot \tau^e` for :math:`e =\pm 1`, where
@@ -308,7 +308,7 @@ def find_triality_element_for_axis(v, axis_types):
     
     If possible, the function returns an element
     :math:`\tau^e, e = \pm 1` such that the type of the axis
-    :math:`v \cdot \tau^e` is in the list **axis_types**
+    :math:`v \cdot \tau^e` is in the list **axis_orbits**
     of axis types. Names of axis types are as in
     :cite:`Seysen22`, Section 8.2.
     
@@ -318,14 +318,14 @@ def find_triality_element_for_axis(v, axis_types):
     :return: An element :math:`\tau^e` of the Monster as described above
     :rtype: class Mm
 
-    Using function **get_axis_type** in module **mmgroup.demo.reduce_axis**
+    Using function **axis_orbit** in module **mmgroup.demo.reduce_axis**
     this function can be implemented as follows: 
 
     .. code-block:: python
 
-       def find_triality_element_for_axis(v, axis_types)
+       def find_triality_element_for_axis(v, axis_orbits)
            for e in [1, -1]:
-               if get_axis_type(v * Mm('t', e)) in axis_types:
+               if axis_orbit(v * Mm('t', e)) in axis_orbits:
                    return  Mm('t', e)
        raise ValueError      
     
@@ -339,8 +339,8 @@ def find_triality_element_for_axis(v, axis_types):
         mm_op_t_A(15, v.data, e, img);
         ax_t = mm_reduce_2A_axis_type(img) >> 24;
         ax_type = str(ax_t // 16) + chr(ax_t % 16 + ord('A') - 1) 
-        #print("e=", e, ax_type, axis_types)
-        if ax_type in axis_types:
+        #print("e=", e, ax_type, axis_orbits)
+        if ax_type in axis_orbits:
             return Mm('t', e)
     raise ValueError("Could not simplify axis")
 

@@ -43,8 +43,8 @@ there is an :math:`l_2 \in U_4({\bf v})` with
 module is used to compute the set :math:`U_4({\bf v})`. More
 precisely, calling **compute_U(v)** returns a set
 :math:`U({\bf v})` of vectors in the Leech lattice mod 2; and
-:math:`U_4({\bf v})` is the set of type-4 vectors in that list.
-Function **map_type4_to_Omega** in module
+:math:`U_4({\bf v})` is the set of type-4 vectors contained in
+that set. Function **map_type4_to_Omega** in module
 **mmgroup.demo.reduce_sub** computes :math:`g` from :math:`l_2`.
 
 At the end of that process we obtain an axis in the orbit
