@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         # os: [flyci-macos-large-latest-m1] not working
-        # os: [ubuntu-latest,  macOS-latest, flyci-macos-large-latest-m1]
-        os: [ubuntu-latest,  macOS-latest]
+        os: [ubuntu-latest,  macOS-latest, macos-large-latest]
+        # os: [ubuntu-latest,  macOS-latest]
 
     steps:
       - uses: actions/checkout@v3
