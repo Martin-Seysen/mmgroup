@@ -313,8 +313,8 @@ int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a
     k = res = gen_leech2_reduce_type4(v4, a);
     if (res < 0) return res;
     // Put v2 = v2 * g_0, v3 = v3 * g0.
-    v2 = gen_leech2_op_word(v2, a, k);
-    v3 = gen_leech2_op_word(v3, a, k);
+    v2 = gen_leech2_op_word_leech2(v2, a, k, 0);
+    v3 = gen_leech2_op_word_leech2(v3, a, k, 0);
 
     // Let syn_v3 be the syndrome of the Golay code part of vector v3.
     // Then syn_v3 must be a singleton. 

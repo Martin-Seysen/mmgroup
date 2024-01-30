@@ -790,13 +790,12 @@ uint64_t gen_leech3_op_vector_word(uint64_t v3, uint32_t *pg, uint32_t n)
                break;
             case 8 + 5:
             case 5:
-               v = v % 3;
-               if (v) return 0xffff000000000000ULL;
+               if ((v + 1) & 2) return 0xffff000000000000ULL;
                break;
             case 8 + 6:
-               v ^= 0xfffffff;
+               v ^= 3;
             case 6:
-               if (v)  v3 = gen_leech3_op_xi(v3, v);
+               if ((v + 1) & 2) v3 = gen_leech3_op_xi(v3, v & 3);
                break;
             default:
                return 0xffff000000000000ULL;

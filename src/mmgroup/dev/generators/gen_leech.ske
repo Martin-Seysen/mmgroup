@@ -378,18 +378,17 @@ uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *g, uint32_t n)
                q0 = op_y(q0, y & 0x1fff);
                break;
             case MMGROUP_ATOM_TAG_IT:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_T:
-               v = v % 3;
-               if (v) {
+               if ((v + 1) & 2) {
                    if (q0 & 0x7ff800UL) return (uint32_t)(0-1UL);
-                   q0 = img_omega(q0, v) ^  (q0 & 0x7ff);
+                   q0 = img_omega(q0, v & 3) ^  (q0 & 0x7ff);
                }
                break;
             case MMGROUP_ATOM_TAG_IL:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_L:
-               q0 = gen_xi_op_xi(q0, v);
+               q0 = gen_xi_op_xi(q0, v & 3);
                break;
             default:
                return (uint32_t)(0-1UL);
@@ -518,22 +517,22 @@ uint32_t gen_leech2_op_word_many(uint32_t *q, uint32_t m, uint32_t *g, uint32_t 
                    q[j] = op_y(q[j], y & 0x1fff);
                break;
             case MMGROUP_ATOM_TAG_IT:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_T:
-               if ((v = v % 3) == 0) break;
+               if ((v - 1) & 2) break;
                acc = 0;
                for (j = 0; j < m; ++j) acc |= q[j];
                if (acc & 0x7ff800UL) return i;
                for (j = 0; j < m; ++j) {
-                   q[j] = img_omega(q[j], v) ^ (q[j] & 0x7ff);
+                   q[j] = img_omega(q[j], v & 3) ^ (q[j] & 0x7ff);
                }
                break;
             case MMGROUP_ATOM_TAG_IL:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_L:
-               if ((v = v % 3) == 0) break;
+               if ((v - 1) & 2) break;
                for (j = 0; j < m; ++j) 
-                   q[j] = gen_xi_op_xi(q[j], v);
+                   q[j] = gen_xi_op_xi(q[j], v & 3);
                break;
             default:
                return i;
@@ -667,9 +666,9 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
                q0 = op_y_nosign(q0, y & 0x1fff);
                break;
             case MMGROUP_ATOM_TAG_IL:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_L:
-               q0 = gen_xi_op_xi_nosign(q0, v);
+               q0 = gen_xi_op_xi_nosign(q0, v & 3);
                break;
             default:
                break;
@@ -744,13 +743,13 @@ int32_t gen_leech2_op_word_matrix24(uint32_t *g, uint32_t n, uint32_t back, uint
                for (i = 0; i < 24; ++i) a[i] = op_y_nosign(a[i], y & 0x1fff);
                break;
             case MMGROUP_ATOM_TAG_IL:
-               v ^= 0xfffffff;
+               v ^= 3;
             case MMGROUP_ATOM_TAG_L:
                for (i = 0; i < 24; ++i) a[i] = gen_xi_op_xi_nosign(a[i], v);
                break;
             case MMGROUP_ATOM_TAG_IT:
             case MMGROUP_ATOM_TAG_T:
-               if (v % 3 == 0) break;
+               if ((v - 1) & 2) break;
                return -1;
             case 0x70000000UL:
             case 0xF0000000UL:

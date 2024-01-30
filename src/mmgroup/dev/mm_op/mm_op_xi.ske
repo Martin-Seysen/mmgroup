@@ -180,12 +180,11 @@ int32_t mm_op%{P}_xi(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     uint32_t exp1;
 
   // %%IF* GENERATE_CODE 
-    exp %= 3;
-    if (exp == 0) {
+    if ((exp - 1) & 2) {
         for (i = 0; i < %{MMV_INTS}; ++i) v_out[i] = v_in[i];
         return 0;
     }
-    exp1 =  exp - 1;
+    exp1 =  (exp & 3) - 1;
 
     // Do monomial part, i.e. tags B, C, T, X
     // Caution: this uses v_out[MM_OP%{P}_OFS_Z:] as temporary storage
@@ -227,9 +226,8 @@ int32_t mm_op%{P}_xi_tag_A(uint_mmv_t *v,  uint32_t exp)
     uint_mmv_t v_tmp[24 * %{V24_INTS}];
     uint_fast32_t i;
     
-    exp %= 3;
-    if (exp == 0) return 0;
-    mm_op%{P}_xi_a(v, exp - 1, v_tmp);
+    if ((exp - 1) & 2) return 0;
+    mm_op%{P}_xi_a(v, (exp & 3) - 1, v_tmp);
     for (i = 0; i < 24 * %{V24_INTS}; ++i) v[i] = v_tmp[i];
     return 0;
 }

@@ -456,15 +456,14 @@ uint32_t _mul_word_scan(uint32_t *g, uint32_t *w, uint32_t n, uint32_t index)
             mm_group_n_mul_y(g, op & 0x1fff);
             break;
          case 8 + 5:
-            op ^= 0xfffffff;
+            op ^= 3;
          case 5:
-            mm_group_n_mul_t(g, op);
+            mm_group_n_mul_t(g, op & 3);
             break;
          case 8 + 6:
-            op ^= 0xfffffff;
+            op ^= 3;
          case 6:
-            op = op % 3;
-            if (op) return index ? i : 0x60000000 + op;
+            if ((op + 1) & 2) return index ? i : 0x60000000 + (op & 3);
             break;
          default:
             return index ? i : atom;

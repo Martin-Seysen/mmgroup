@@ -137,10 +137,10 @@ uint32_t gen_xi_w2_cocode(uint32_t v)
 uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 {
     uint_fast32_t tv, tc; 
-    // reduce e mod 3, no action if e is 0 (mod 3)
-    if ((e = e % 3) == 0) return x;
+    // reduce bits 1 and 0 of e mod 3, no action if e is 0 (mod 3)
+    if ((e - 1) & 2) return x;
     // map e = 1, 2   to  e = -1,  0
-    e -= 2;   
+    e = (e & 3) - 2;   
     // put tv = scalar product of gray parts of code and cocode
     tv = (x >> 12) & x & 0xc0f;
     tv = 0x6996UL >> ((tv ^ (tv >> 10)) & 0xf);
@@ -178,10 +178,10 @@ uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 uint32_t gen_xi_op_xi_nosign(uint32_t x, uint32_t e)
 {
     uint_fast32_t tv, tc; 
-    // reduce e mod 3, no action if e is 0 (mod 3)
-    if ((e = e % 3) == 0) return x;
+    // reduce bits 1 and 0 of e mod 3, no action if e is 0 (mod 3)
+    if ((e - 1) & 2) return x;
     // map e = 1, 2   to  e = -1,  0
-    e -= 2;   
+    e = (e & 3) - 2;   
     // tv = w2(code), g(code);   tc = w2(cocode), g(cocode);      
     tv = MAT24_XI_G_GRAY_TABLE[compress_gray(x >> 12)]; 
     tc = MAT24_XI_G_COCODE_TABLE[compress_gray(x)];

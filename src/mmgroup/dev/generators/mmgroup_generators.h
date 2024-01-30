@@ -59,6 +59,8 @@
  Tags with other letters occuring in the constructor of class ``MM`` 
  are converted to a word of atoms with tags taken from the table 
  above.
+
+ For tags 't' and 'l' the values 0 <= i <= 3 are legal on input. 
 */
 
 enum MMGROUP_ATOM_TAG_ {

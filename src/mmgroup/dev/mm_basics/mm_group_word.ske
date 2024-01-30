@@ -126,16 +126,16 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
                 xi_used = 1;
                 break;
             case 8 + 5:
-                atom ^= 0xfffffff;
+                atom ^= 0x3;
             case 5:
-                mm_group_n_mul_t(g, atom & 0xfffffff);
+                mm_group_n_mul_t(g, atom & 3);
                 xi_used = 1;
                 break;
             case 8 + 6:
-                atom ^= 0xfffffff;
+                atom ^= 3;
             case 6:              
                 if (xi_used)  return 0;
-                pit->data[0] = (pit->data[0] + (atom & 0xfffffff)) % 3;
+                pit->data[0] = (pit->data[0] + (atom & 3)) % 3;
                 break;
             default:
                 atom |= 0x80000000;

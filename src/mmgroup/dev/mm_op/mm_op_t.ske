@@ -211,12 +211,11 @@ int32_t mm_op%{P}_t(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     uint_mmv_t i, exp1;
  
   // %%IF* GENERATE_CODE
-    exp %= 3;
-    if (exp == 0) {
+    if ((exp - 1) & 2) {
         for (i = 0; i < %{MMV_INTS}; ++i) v_out[i] = v_in[i];
         return 0;
     }
-    exp1 = %{hex:1} - (uint_mmv_t)exp;
+    exp1 = %{hex:1} - (uint_mmv_t)(exp & 3);
 
     // Do tags A, B, C
     op%{P}_t_ABC(v_in, exp1, v_out);
@@ -294,12 +293,13 @@ int32_t mm_op%{P}_t_A(uint_mmv_t *v_in,  uint32_t exp, uint_mmv_t *v_out)
     uint_mmv_t i, exp1;
  
   // %%IF* GENERATE_CODE
-    exp %= 3;
-    if (exp == 0) {
+
+    if ((exp - 1) & 2) {
         for (i = 0; i < %{int:24*V24_INTS}; ++i) v_out[i] = v_in[i];
         return 0;
     }
-    exp1 = %{hex:1} - (uint_mmv_t)exp;
+    exp1 = %{hex:1} - (uint_mmv_t)(exp & 3);
+
     op%{P}_t_A(v_in, exp1, v_out);
     return 0;
   // %%END IF  # GENERATE_CODE
@@ -331,9 +331,10 @@ int32_t mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
     uint_mmv_t  exp1;
  
   // %%IF* GENERATE_CODE
-    exp %= 3;
-    if (exp == 0) return 0;
-    exp1 = %{hex:1} - (uint_mmv_t)exp;
+
+    if ((exp - 1) & 2) return 0;
+    exp1 = %{hex:1} - (uint_mmv_t)(exp & 3);
+
     op%{P}_t_ABC(v, exp1, v);
     return 0;
   // %%END IF  # GENERATE_CODE
