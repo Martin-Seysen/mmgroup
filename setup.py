@@ -503,7 +503,7 @@ MM_OP_SHARED_NEW = SHARED_START + '''
     
 
 mm_op_build_steps = CustomBuildStep(
-  'Build libraries for extension mmm_op',
+  'Build libraries for extension mm_op',
    [sys.executable, 'build_shared.py'] + MM_OP_SHARED_NEW.split(),
 )
 

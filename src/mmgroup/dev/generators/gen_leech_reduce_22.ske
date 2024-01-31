@@ -98,6 +98,39 @@ static const uint64_t TABLE_OCTAD_22[77] = {
 static uint8_t COC_LIST[2] = {2,3};
 
 
+
+static const uint16_t TABLE_ODD_COC[22] = {
+  // %%TABLE GenLeech_v22_odd_coc_table, uint16
+};
+
+
+#define OMEGA 0x800000UL
+
+
+
+
+#define PRIME 4643       // a prime slightly greater than 4600
+#define P_GEN 2869  // generator of the multiplicative group mod PRIME
+
+
+typedef struct {
+    uint32_t a;
+    uint32_t d;
+    uint32_t n;
+} seed_type;
+
+
+static inline 
+void init_seed(uint64_t *seed, seed_type *local_seed)
+{
+    uint32_t bad = gen_rng_modp(PRIME, seed);
+    local_seed->n =  PRIME;
+    local_seed->a = gen_rng_modp(PRIME - 1, seed);
+    local_seed->a += local_seed->a >= bad;
+    local_seed->d = ((PRIME + 1 - P_GEN) * bad) % PRIME;
+}  
+
+
 /// @endcond
 
 
@@ -184,6 +217,8 @@ int32_t gen_leech2_n_type_22(uint32_t n)
 
 /** @brief Support for reducing a certain pair of vectors in the Leech lattice
 
+Function is yet under construction. Do not use!
+
 Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
 and let ``v3`` be a vector of type 3 in the Leech lattice mod 2,
 such that ``v2 + v3`` is also of type 3. Here ``v2`` and ``v3``
@@ -199,9 +234,7 @@ for reducing the pair ``(v2, v3)`` to a standard pair of vectors.
 The function returns the value ``t * 0x1000000 + v4`` in case of
 succcess, where ``t`` is the number of trials is a random process
 described below. In case ``t > 127`` we put ``t = 127``.
-Input ``trials`` is the maximum number of trials;
-here ``trials = 5000`` appears to be adequate. Parameter ``seed``
-is a seed for a random generator as described in
+Parameter ``seed`` is a seed for a random generator as described in
 module ``gen_random.c``. The function returns a negative value
 in case of failure.
 
@@ -218,13 +251,16 @@ check check the required conditions on the transformed
 vectors ``tf(v2)``, ``tf(v3)``, and ``tf(v100)``.
 */
 // %%EXPORT px
-int32_t gen_leech2_find_v4_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64_t *seed)
+int32_t gen_leech2_find_v4_233(uint32_t v2, uint32_t v3, uint64_t *seed)
 {
     uint32_t k=0,  v3tf, t, v100, r, v4, a[8];
     int32_t res;
+    seed_type local_seed;
+
     if (gen_leech2_type(v3) != 3 || gen_leech2_type(v2 ^ v3) != 3) 
         return -8;
 
+    init_seed(seed, &local_seed);
     // Set a[:k] to a word g' of generators of Co_1 such
     // that v2 * g' = w2.
     k = res = gen_leech2_reduce_type2(v2, a);
@@ -236,11 +272,12 @@ int32_t gen_leech2_find_v4_233(uint32_t v2, uint32_t v3, uint32_t trials, uint64
     // type(v100 + v2) = type(v100 + v3tf) = 2.
     // Here we use function gen_leech2_n_type_22(r) for obtaining
     // vectors v100 with type(v100) = type(v100 + v2) = 2.
-    for (t = 0; t < trials; ++t) {
-        r =  gen_rng_modp(4600, seed);
-        v100 = gen_leech2_n_type_22(r);
+    do {
+        local_seed.a = (local_seed.a * P_GEN + local_seed.d) % PRIME;
+        if (local_seed.a >= 4600) continue;
+        v100 = gen_leech2_n_type_22(local_seed.a);
         if (gen_leech2_type2(v100 ^  v3tf)) goto found;
-    }
+    } while (--local_seed.n);
     return -10;
 
 
@@ -261,6 +298,8 @@ found:
 
 /** @brief Reduce a certain pair of vectors in the Leech lattice
 
+Function is yet under construction. Do not use!
+
 Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
 and let ``v3`` be a vector of type 3 in the Leech lattice mod 2,
 such that ``v2 + v3`` is also of type 3. Here ``v2`` and ``v3``
@@ -273,11 +312,11 @@ The function computes an element ``g`` of the Conway group
 with ``w2 = (0, 0, 4, -4, 0, ..., 0)``
 and ``w3 = (1, 1, 5, 1, ..., 1)``.
 
-The function stores ``g`` in the array ``a`` as a word of
+The function stores ``g`` in the array ``g`` as a word of
 length ``k`` of generators of the subgroup ``G_x0`` of the
 Monster. These generators are encoded as described in
 file ``mmgroup_generators.h``. We have ``k <= 8``; so the
-array ``a`` must have size at least 8.
+array ``g`` must have size at least 8.
 
 The function returns the value ``k >= 0`` in case of
 succcess, and a negative value in case of failure.
@@ -295,13 +334,13 @@ have to calculate an element ``g_1`` of the subgroup
 ``g = g_0 * g_1`` satisfies the required conditions.
 */
 // %%EXPORT px
-int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a)
+int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *g)
 {
-    uint32_t k=0, syn_v3, syn_v2, atom, y;
+    uint32_t k=0, syn_v3, syn_v2, atom, y, va[2];
     int32_t res;
     uint8_t img_pi[2], pi[32];
 
-    // Set a[:k] to a word g_0 of generators of Co_1 such that
+    // Set g[:k] to a word g_0 of generators of Co_1 such that
     // that v4 * g_0 is the standard type-4 element OMEGA.
     if (gen_leech2_type(v2) != 2) return -7;
     if (gen_leech2_type(v3) != 3 || gen_leech2_type(v2 ^ v3) != 3)
@@ -310,11 +349,12 @@ int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a
     if (gen_leech2_type(v2 ^ v4) != 2 ||
           gen_leech2_type(v2 ^ v3 ^ v4 ) != 2)   return -10;
 
-    k = res = gen_leech2_reduce_type4(v4, a);
+    k = res = gen_leech2_reduce_type4(v4, g);
     if (res < 0) return res;
     // Put v2 = v2 * g_0, v3 = v3 * g0.
-    v2 = gen_leech2_op_word_leech2(v2, a, k, 0);
-    v3 = gen_leech2_op_word_leech2(v3, a, k, 0);
+    va[0] = v2; va[1] = v3;
+    v2 = gen_leech2_op_word_leech2_many(va, 2, g, k, 0);
+    v2 = va[0]; v3 = va[1];
 
     // Let syn_v3 be the syndrome of the Golay code part of vector v3.
     // Then syn_v3 must be a singleton. 
@@ -337,7 +377,7 @@ int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a
     v2 =  gen_leech2_op_atom(v2, atom);
     v3 =  gen_leech2_op_atom(v3, atom);
     // Multiply g_0 with generator ``atom``.
-    a[k++] = atom;
+    g[k++] = atom;
 
     // In the real Leech lattice we have now v2 = w2 and v3 = w3, up to
     // sign. We compute a mapping y (in ``gcode`` representation) such
@@ -354,9 +394,58 @@ int32_t gen_leech2_reduce_233(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *a
     // Multiply g_0 with generator ``atom``, so that this will be equal
     // to the result g. The result g will be sored in a[0:k] as a word
     // of generators.
-    a[k++] = atom;
+    g[k++] = atom;
     return  k;
 }
+
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void fill_std_100_322(uint32_t *a)
+{
+    uint32_t i, v;
+    a[0] = OMEGA;
+    for (i = 0; i < 22; ++i) a[i+1] = TABLE_ODD_COC[i];
+    for (i = 0; i < 77; ++i) {
+        v = (uint32_t)(TABLE_OCTAD_22[i] >> 50);
+        a[i + 23] = (v << 12) ^ (MAT24_THETA_TABLE[v & 0x7ff] & 0xfff)
+                              ^ COCODE_STD;
+    }
+}
+
+/// @endcond
+
+
+
+
+/** @brief Yet to be documented!
+
+Function is yet under construction. Do not use!
+
+Array ``a`` must have length at least 100
+
+*/
+// %%EXPORT px
+int32_t gen_leech2_map_233(uint32_t *g, uint32_t n, uint32_t *a)
+{
+    uint32_t mat_g[24];
+    int32_t res;
+
+    fill_std_100_322(a);
+    res = gen_leech2_op_word_matrix24(g, n, 1, mat_g);
+    if (res < 0) return res;
+    gen_leech2_op_mul_matrix24(a, 100, mat_g);
+    return 0;
+}
+
+
+
+
+
+
 
 
 

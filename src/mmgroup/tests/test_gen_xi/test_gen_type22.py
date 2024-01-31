@@ -44,7 +44,7 @@ def test_reduce_233(verbose = 0):
         tf = Xsp2_Co1('r', 'G_x0')
         v2 = (XLeech2(STD_V2) * tf).ord & 0xffffff 
         v3 = (XLeech2(STD_V3) * tf).ord & 0xffffff 
-        v4 = gen_leech2_find_v4_233(v2, v3, 5000, seed)
+        v4 = gen_leech2_find_v4_233(v2, v3, seed)
         assert v4 >= 0
         trials, v4 = divmod(v4, 0x1000000)
         if verbose:

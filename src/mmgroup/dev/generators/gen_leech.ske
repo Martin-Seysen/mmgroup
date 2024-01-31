@@ -440,7 +440,7 @@ uint32_t gen_leech2_prefix_Gx0(uint32_t *g, uint32_t len_g)
 
 
 /*************************************************************************
-*** Conjugating a vector in the extraspecial group 2^{1+24}
+*** Conjugating several vectors in the extraspecial group 2^{1+24}
 *************************************************************************/
 
 
@@ -679,6 +679,85 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
 
 
 
+
+/*************************************************************************
+*** Conjugating several vectors in the Leech lattice mod 2
+*************************************************************************/
+
+
+
+/**
+  @brief Perform operation of \f$G_{x0}\f$ on elements ofLeech lattice mod 2
+
+  Let ``a`` be an array of ``m`` elements \f$l_j\f$ of the Leech
+  lattice mod 2 in **Leech lattice encoding**. Let \f$g_0\f$
+  be an element of the group \f$G_{x0}\f$ encoded in the array ``g``
+  of length ``n`` as in function ``gen_leech2_op_word``.
+  Put \f$g = g_0\f$ if ``back == 0`` and \f$g = g_0^{-1}\f$ otherwise.
+
+  The function replaces each element  \f$l_j\f$ in the array ``m``
+  by \f$l_j \cdot g\f$. Elements \f$l_j\f$ are encoded in Leech
+  lattice encoding, igoring the sign.
+
+  The function is optimized for speed. It returns zero in case of
+  success. It stores garbage in the array ``m`` and returns a
+  negative value if any generator in the buffer ``g`` is not
+  in \f$G_{x0}\f$.
+*/
+// %%EXPORT px
+int32_t gen_leech2_op_word_leech2_many(uint32_t *a, uint32_t m, uint32_t *g, uint32_t n, uint32_t back)
+{
+    uint_fast32_t tag, v, y, imask = 0, i;
+    int_fast32_t d = 1;
+    static uint8_t perm[24];
+
+    if (back) {
+        d = -1; g += n - 1; imask = 0x80000000UL;
+    }
+
+    while (n--) {
+        v = g[0] ^ imask;
+        g += d;
+        tag = v & MMGROUP_ATOM_TAG_ALL;
+        v  &= MMGROUP_ATOM_DATA;
+        y = 0;
+        switch(tag) {
+            case MMGROUP_ATOM_TAG_IP:
+               if (mat24_m24num_to_perm(v,perm)) return -1;
+               mat24_inv_perm(perm, perm);
+               goto _perm;
+               break;
+            case MMGROUP_ATOM_TAG_P:
+               if (mat24_m24num_to_perm(v,perm)) return -1;
+            _perm:
+               for (i = 0; i < m; ++i) a[i] = op_perm_nosign(a[i], perm);
+               break;
+            case MMGROUP_ATOM_TAG_IY:
+               y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
+            case MMGROUP_ATOM_TAG_Y:
+               y ^= v & 0x1fffUL;
+               for (i = 0; i < m; ++i) a[i] = op_y_nosign(a[i], y & 0x1fff);
+               break;
+            case MMGROUP_ATOM_TAG_IL:
+               v ^= 3;
+            case MMGROUP_ATOM_TAG_L:
+               for (i = 0; i < m; ++i) a[i] = gen_xi_op_xi_nosign(a[i], v);
+               break;
+            case MMGROUP_ATOM_TAG_IT:
+            case MMGROUP_ATOM_TAG_T:
+               if ((v - 1) & 2) break;
+               return -1;
+            case 0x70000000UL:
+            case 0xF0000000UL:
+               if (v) return -1;
+            default:
+               break;
+        }
+    }
+    return 0;
+}
+
+
 /*************************************************************************
 *** Convert operation of group G_x0 to 24 times 24 bit matrix
 *************************************************************************/
@@ -709,56 +788,9 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
 // %%EXPORT px
 int32_t gen_leech2_op_word_matrix24(uint32_t *g, uint32_t n, uint32_t back, uint32_t *a)
 {
-    uint_fast32_t tag, v, y, imask = 0, i;
-    int_fast32_t d = 1;
-    static uint8_t perm[24];
-
-    if (back) {
-        d = -1; g += n - 1; imask = 0x80000000UL;
-    }
-
-    for (i = 0; i < 24; ++i) a[i] = 1 << i;
-
-    while (n--) {
-        v = g[0] ^ imask;
-        g += d;
-        tag = v & MMGROUP_ATOM_TAG_ALL;
-        v  &= MMGROUP_ATOM_DATA;
-        y = 0;
-        switch(tag) {
-            case MMGROUP_ATOM_TAG_IP:
-               if (mat24_m24num_to_perm(v,perm)) return -1;
-               mat24_inv_perm(perm, perm);
-               goto _perm;
-               break;
-            case MMGROUP_ATOM_TAG_P:
-               if (mat24_m24num_to_perm(v,perm)) return -1;
-            _perm:
-               for (i = 0; i < 24; ++i) a[i] = op_perm_nosign(a[i], perm);
-               break;
-            case MMGROUP_ATOM_TAG_IY:
-               y ^= (MAT24_THETA_TABLE[v & 0x7ff] & 0x1000);
-            case MMGROUP_ATOM_TAG_Y:
-               y ^= v & 0x1fffUL;
-               for (i = 0; i < 24; ++i) a[i] = op_y_nosign(a[i], y & 0x1fff);
-               break;
-            case MMGROUP_ATOM_TAG_IL:
-               v ^= 3;
-            case MMGROUP_ATOM_TAG_L:
-               for (i = 0; i < 24; ++i) a[i] = gen_xi_op_xi_nosign(a[i], v);
-               break;
-            case MMGROUP_ATOM_TAG_IT:
-            case MMGROUP_ATOM_TAG_T:
-               if ((v - 1) & 2) break;
-               return -1;
-            case 0x70000000UL:
-            case 0xF0000000UL:
-               if (v) return -1;
-            default:
-               break;
-        }
-    }
-    return 0;
+    uint_fast32_t i;
+    for (i = 0; i < 24; ++i) a[i] = 1UL << i;
+    return gen_leech2_op_word_leech2_many(a, 24, g, n, back);
 }
  
 
@@ -780,10 +812,33 @@ int32_t gen_leech2_op_word_matrix24(uint32_t *g, uint32_t n, uint32_t back, uint
 void gen_leech2_op_mul_matrix24(uint32_t *a1, uint32_t n, uint32_t *a)
 {
      uint32_t i, j, v, w;
-     for (i = 0; i < n; ++i) {
-         v = a1[i]; w = 0;
-         for (j = 0; j < 24; ++j) w ^= a[j] & (0UL - ((v >> j) & 1UL));
-         a1[i] = w & 0xffffffUL;
+     if (n < 6) {
+         for (i = 0; i < n; ++i) {
+             v = a1[i]; w = 0;
+             for (j = 0; j < 24; ++j) w ^= a[j] & (0UL - ((v >> j) & 1UL));
+             a1[i] = w & 0xffffffUL;
+         }
+     }
+     else {
+          uint32_t b[64];
+          for (i = 0; i < 64; i += 8) {
+               b[i] = 0;
+               b[i+1] = a[0];
+               b[i+2] = a[1];
+               b[i+3] = a[0] ^ a[1];
+               b[i+4] = a[2];
+               b[i+5] = a[0] ^ a[2];
+               b[i+6] = a[1] ^ a[2];
+               b[i+7] = b[i+3] ^ a[2];
+               a += 3;
+          }
+          do {
+             v = *a1;
+             *a1++ = b[v & 7] ^ b[((v >> 3) & 7) + 8]
+                   ^ b[((v >> 6) & 7) + 16] ^ b[((v >> 9) & 7) + 24]
+                   ^ b[((v >> 12) & 7) + 32] ^ b[((v >> 15) & 7) + 40]
+                   ^ b[((v >> 18) & 7) + 48] ^ b[((v >> 21) & 7) + 56];
+          } while (--n); 
      }
 }
 

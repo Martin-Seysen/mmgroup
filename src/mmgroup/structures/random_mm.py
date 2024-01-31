@@ -38,7 +38,7 @@ from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 
 
-"""Bit semantics
+r"""Bit semantics
 
 # Fix x_{-1}  and the set  \{x_{\pm \Omega}\}
 # and the following partition of the set \tilde{\Omega}

@@ -1,5 +1,10 @@
 """Compute tables für functions in file gen_reduce_22.c"""
 
+
+import sys
+if __name__ == "__main__":
+    sys.path.append("../../..")
+
 from mmgroup.dev.mat24.mat24_ref import Mat24 as m
 
 
@@ -101,20 +106,111 @@ def w_mod4():
             a |= 1 << i
     return a
 
+
+
+def make_odd_coc_table():
+    r"""Compute a certain table of odd  covectors
+
+    the function returns a table of 22 covectors x_delta with
+    delta = {i, 2, 3}; 0 <= i < 24; i != 2, 3.
+    """
+    coc_table = []
+    for i in range(24):
+        if i not in [2,3]:
+            vector = (1 << i) ^ 0xc
+            coc_table.append(m.vect_to_cocode(vector))
+    return coc_table
+
+
+
+class Prime4600:
+    primes = [p for p in range(5, 75, 2) if p % 5 and p % 7]
+    p = m = 0
+
+    @classmethod
+    def compute_p(cls):
+        start = (4600 // 12) * 12 + 11
+        for p in range(start, start+800, 12):
+            ok = 1
+            for pi in cls.primes:
+                ok = p % pi
+                if not ok:
+                    break
+            if ok:
+                cls.p = p
+                return p
+        raise ValueError("No suitable prime found")
+
+    @classmethod
+    def factors(cls, n):
+        f = []
+        for p in [2,3] + cls.primes:
+            while n % p == 0:
+                f.append(p)
+                n = n // p
+        if n > 1:
+            f.append(n)
+        return f
+
+    @classmethod
+    def cofactors(cls, n):
+        return [n // x for x in set(cls.factors(n))]
+
+    @classmethod
+    def multiplier(cls):
+        if not cls.p:
+            cls.compute_p()
+        p = cls.p
+        cofactors = cls.cofactors(p - 1)
+        phi = (5 ** 0.5 - 1) / 2
+        start = int(phi*cls.p)
+        def iter_dist():
+            yield start
+            for i in range(1, 100):
+                yield start + i
+                yield start - i
+        for m in iter_dist():
+            assert pow(m, p-1, p) == 1
+            ok = True
+            for e in cofactors:
+                ok = pow(m, e, p) != 1
+                if not ok:
+                    break;
+            cls.m = m
+            return m
+        raise ValueError("No suitable multiplier found")
+
+    @classmethod
+    def check(cls, verbose = 1):
+        if not cls.m:
+            cls.multiplier()
+        p, m = cls.p, cls.m
+        s = set()
+        x = 1
+        for i in range(p-1):
+            x = x * m % p
+            s.add(x)
+        assert s == set(range(1,p))
+        if verbose:
+            print("Recommended prime: %d, multplier: %d" % (p, m))
+
+
 class Tables:
     tbl = make_table()
     w = w_mod4()
     #print(tbl)
     #print(hex(w))
+    odd_coc_table = make_odd_coc_table()
 
     tables = {
        "GenLeech_v22_table" : tbl,
        "GenLeech_v22_weights" : w,
+       "GenLeech_v22_odd_coc_table" : odd_coc_table,
     }
 
     directives = {}
 
 
-
-
+if __name__ == "__main__":
+    Prime4600.check()
 

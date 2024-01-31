@@ -29,7 +29,7 @@ def list_to_vect(list_):
 
 
 def y_table(g, cocodes, sign, code_omega, cocode_x, verbose = 0):
-    """Return table for function  ``gen_leech2_reduce_n`` 
+    r"""Return table for function  ``gen_leech2_reduce_n``
 
 
     This table is used to map an entry :math:`x_d x_\delta`,

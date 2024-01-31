@@ -719,7 +719,7 @@ def _import_ufind():
     ERR_L2_ORB_INT = "Internal error in function leech2_orbits_raw"
 
 def leech2_orbits_raw(g_list):
-    """Compute orbits of the Conway group on the Leech lattice mod 2
+    r"""Compute orbits of the Conway group on the Leech lattice mod 2
 
     The Conway group :math:`\mbox{Co}_1` has a natural action on
     :math:`\Lambda / 2 \Lambda`, i.e. on  the Leech lattice mod 2.
