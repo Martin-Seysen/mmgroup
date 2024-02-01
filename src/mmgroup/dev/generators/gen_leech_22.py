@@ -2,6 +2,7 @@
 
 
 import sys
+import random
 if __name__ == "__main__":
     sys.path.append("../../..")
 
@@ -14,18 +15,32 @@ def iter_octads_22():
 
     The function yields the 77 octads o containing the entries
     2 and 3 as bit vectors. It also yields a list bl of five
-    entries of octad o, excludin the entries 2 and 3.
-    So the function yields 77 peits (o, bl)
+    entries of octad o, excluding the entries 2 and 3.
+    So the function yields 77 pairs (o, bl).
+
+    The computed pairs satisfy the following additional conditions.
+    Precisely the first 21 octads contain an entry 1. None of the
+    computed bit lists bl contains an entry 1.
     """
-    n = 0
+    n = k = 0
+    tail = []
     for i in range(759):
-        o = m.octad_to_vect(i) 
+        o = int(m.octad_to_vect(i))
         if o & 0xc == 0xc:
             n += 1
-            bl = m.vect_to_bit_list(o & ~0xc)
-            #print(hex(o), bl[1][:5])
-            yield int(o), bl[1][:5]
+            length, bl = m.vect_to_bit_list(o & ~0xc)
+            assert length == 6
+            bl = bl[:length]
+            if 1 in bl:
+                bl.remove(1)
+                #print(hex(o), bl)
+                yield o, bl
+                k += 1
+            else:
+                tail.append((o, bl[:5]))
     assert n == 77, n
+    assert k == 21, k
+    yield from tail
 
 
 
