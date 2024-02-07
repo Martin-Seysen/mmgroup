@@ -33,7 +33,7 @@ def iter_octads_22():
             bl = bl[:length]
             if 1 in bl:
                 bl.remove(1)
-                #print(hex(o), bl)
+                print(hex(o), bl)
                 yield o, bl
                 k += 1
             else:
@@ -52,11 +52,15 @@ def iter_vectors_22():
     v2 + w2  is also of type 2. Here w2 is the vector
     (0, 0, 4, -4, 0,...,0) in the Leech lattice mod 2.
     The function returns quintuples (x1, x2, x3, x4, ov)
-    such that ov + u1*x1 + u2*x2 + u3*x3 + u4*x4 + u5*Omega is
-    a type_2 vector as described above for any u1, u2, u3, u4
+    such that  v = ov + u1*x1 + u2*x2 + u3*x3 + u4*x4 + u5*Omega
+    is a type_2 vector as described above for any u1, u2, u3, u4
     in [0, 1]. Here u5 depends on  u1, u2, u3, u4 as follows:
     u5 is 1 if u1 + u2 + u3 + u4 in [0, 1, 4]; and u5 = 0
     otherwise. Here x1,...,x4 are even cocode vectors.
+
+    Precisely the vectors v computed from the first 21 octads satisfy
+    the following additional conditions. v2 + w1  is also of type 2;
+    and  v2 + w1 + w2 is of type 4, for w1  = (0, 4, -4, 0,...,0);
     """
     for o, bl in iter_octads_22():
         og = m.vect_to_gcode(o)
@@ -65,44 +69,18 @@ def iter_vectors_22():
         lst = []
         for i in range(1, 5):
             lst.append(m.vect_to_cocode((1 << bl[0]) | (1 << bl[i])))
-        #print([hex(x) for x in lst + [ov]])
+        print([hex(x) for x in lst + [ov]])
         yield lst + [int(ov)]
 
-
-def compress(x):
-    """Compress element obtained from iter_vectors_22()
-
-    A 24-bit integer obtained from function iter_vectors_22()
-    decribes an element x of the Leech lattice mod 2. By
-    construction, bits 9 and 11 of such a value x are always zero.
-    We compress x by mapping bits (23,...,12,10,8,...,0) of x
-    to bits (21,...,10,9,8,...,0). We return that compresses value.
-    """
-    return (x & 0x1ff) + ((x & 0x400) >> 1) + ((x & 0xfff000) >> 2)
-
-
 def make_table():
-    """Make table from function iter_vectors_22()
-
-    The function creates a table of 77 64-bit integers. Any such
-    integers correspond to a (compressed) quintuple
-    (x1, x2, x3, x4, ov) as obtained by function iter_vectors_22().
-    Here function compress() is used to compress x1, x2, x3, x4
-    from 12 to 10 bit and to compress ov from 24 to 22 bits.
-
-    The value x_i is stored in bits 10*i+9,...,10*i from an entry;
-    and ov is stored in bits 61,...,40 of an entry.
-    """
-    tbl = []
+    tbl_gcode, tbl_cocode = [], []
     for lst in iter_vectors_22():
-        a = 0
-        for i, v in enumerate(lst):
-            #print(i, hex(v), hex(compress(v)))
-            a = a + (compress(v) << (10*i))
-            #print(".",hex(a))
-        tbl.append(a)
-        #print(hex(a))
-    return tbl
+       tbl_gcode += lst[4:]
+       tbl_cocode += lst[:4]
+    return tbl_gcode, tbl_cocode
+
+
+
 
 
 def w_mod4():
@@ -130,10 +108,9 @@ def make_odd_coc_table():
     delta = {i, 2, 3}; 0 <= i < 24; i != 2, 3.
     """
     coc_table = []
-    for i in range(24):
-        if i not in [2,3]:
-            vector = (1 << i) ^ 0xc
-            coc_table.append(m.vect_to_cocode(vector))
+    for i in list(range(4, 24)) + [0, 1]:
+        vector = (1 << i) ^ 0xc
+        coc_table.append(m.vect_to_cocode(vector))
     return coc_table
 
 
@@ -211,14 +188,14 @@ class Prime4600:
 
 
 class Tables:
-    tbl = make_table()
     w = w_mod4()
-    #print(tbl)
-    #print(hex(w))
     odd_coc_table = make_odd_coc_table()
+    tbl_gcode, tbl_cocode = make_table()
+
 
     tables = {
-       "GenLeech_v22_table" : tbl,
+       "GenLeech_v22_table_gcode" : tbl_gcode,
+       "GenLeech_v22_table_cocode" : tbl_cocode,
        "GenLeech_v22_weights" : w,
        "GenLeech_v22_odd_coc_table" : odd_coc_table,
     }
