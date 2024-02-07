@@ -21,20 +21,24 @@ jobs:
         os: [ubuntu-latest,  macOS-latest]
 
     steps:
-      - uses: actions/checkout
+      # A reasonable refernce for the current checkout and python version is:
+      # https://github.com/actions/setup-python
+      - uses: actions/checkout@v4
 
       # Used to host cibuildwheel
-      - uses: actions/setup-python
+      - uses: actions/setup-python@v5
         with:
             python-version: '3.11'
-   
+     
       - name: Install cibuildwheel
         run: python3 -m pip install cibuildwheel
                
       - name: Build wheels
         run: python3 -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact
+      # A reasonable refernce for the current upload-artifact is:
+      # https://github.com/actions/upload-artifact
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
           
@@ -47,16 +51,16 @@ jobs:
         os: [windows-latest]
 
     steps:
-      - uses: actions/checkout
+      - uses: actions/checkout@v4
 
       # Used to host cibuildwheel
-      - uses: actions/setup-python
+      - uses: actions/setup-python@v5
         with:
             python-version: '3.11'
       
       # Install MSVC compiler on Windows
       - if: ${{ matrix.os == 'windows-latest' }}
-        uses: ilammy/msvc-dev-cmd
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
@@ -64,7 +68,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
 
@@ -74,9 +78,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python
+      - uses: actions/setup-python@v5
         with:
             python-version: '3.11'
 
@@ -86,7 +90,7 @@ jobs:
       - name: Build sdist
         run: python3 -m build --sdist
 
-      - uses: actions/upload-artifact
+      - uses: actions/upload-artifact@v4
         with:
           path: ./dist/*.tar.gz
 
