@@ -1,15 +1,47 @@
 /** @file gen_leech_reduce_22.c
-The functions in file ``gen_leech_reduce_22.c`` implement some
-special transformations of vectors in the Leech lattice modulo 2.
-Given a two-dimensional subspace of Leech lattice (mod 2) spanned 
-by vector of type 2 and two vectors of type 2 or 3, we want to find
-a transformation in the group \f$\mbox{Co}_1\f$ that transforms
-that subspace into a standard subspace.
 
+Let \f$\Lambda / 2\Lambda\f$ be the Leech lattice modulo 2.
+Let \f$v_2, v_3 \in \Lambda / 2\Lambda\f$
+with \f$\mbox{type}(v_2) = 2\f$
+and \f$\mbox{type}(v_3) = \mbox{type}(v_2 + v_3) = t\f$
+for \f$2 \leq t \leq 3\f$. We want to compute the set of all
+vectors \f$v_4 \in \Lambda / 2\Lambda\f$ of type 4
+with \f$\mbox{type}(v_2 + v_4) = \mbox{type}(v_3 + v_4) = \mbox{type}(v_2 + v_3 + v_4) = 2\f$.
+There are 891 or 100 such vectors in case \f$t = 2\f$
+or \f$t = 3\f$, respectively. Function ``gen_leech2_u4_2xx``
+in this module computes the list of all such vectors.
+
+We motivate this (rather complicated) computation as follows. The
+main algorithm for the reduction of an element of the Monster in
+Version v1.0.0 the **mmgroup** package works in the
+representation \f$\rho_{15}\f$ of the monster, with coefficients
+taken mod 15. In future versions it would be faster to work in
+representation \f$\rho_{3}\f$ instead. For the reduction algorithm
+we have to compute certain sets \f$U_4(v)\f$ for axis \f$v\f$ in the
+representation of the Monster as defined in [Sey22]. This computation
+is considerably more difficult for \f$v \in \rho_3\f$
+than for \f$v \in \rho_{15}\f$. It turns out that for \f$t = 2,3\f$
+the sets computed above are just the sets \f$U_4(v)\f$ when
+\f$v\f$ is in the orbit called '6A' or '10A' in  [Sey22]. Given
+an axis \f$v \in \rho_3\f$ in one of these orbits, we can effectively
+compute suitable vectors \f$v_2, v_3\f$ as discussed above.
+
+For that computation we need a function that maps vectors \f$v_2, v_3\f$
+to fixed vectors \f$w_2, w_{3t} \in \Lambda / 2\Lambda\f$.
+Function ``gen_leech2_reduce_2xx`` essentially performs this task;
+see the documentation of that function for details.
+
+The group fixing  \f$v_2\f$ and  \f$v_3\f$ is the unitary
+group \f$\mbox{PSU}_6(2)\f$ in case \f$t = 2\f$, and the Higman-Sims
+group in case \f$t = 3\f$, see [CS99], Ch. 10.3.4. A detailed
+discussion of the case \f$t = 3\f$ is given in [CS99], Ch. 10.3.5.
 
 We use the terminology defined in
 the document *The C interface of the mmgroup project*, 
-section *Description of the mmgroup.generators extension*.
+Section *Description of the mmgroup.generators extension*.
+Vectors in  \f$\Lambda / 2\Lambda\f$ are given
+in *Leech lattice encoding*; the sign bit is ignored on
+input and set to zero on output.
 */
 
 
@@ -226,9 +258,6 @@ Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
 and let ``v3`` be a vector of type t in the Leech lattice mod 2,
 with 2 <= t <= 3,  such that ``v2 + v3`` is also of type t.
 Here ``v2`` and ``v3`` must be given in *Leech lattice encoding*.
-It is known that the group fixing ``v2`` and ``v3`` is the unitary
-group \f$\mbox{PSU}_6(2)\f$ in case t = 2, and the Highman-Sims
-group in case t = 3, see [CS99], Ch. 10.3.4.
 
 The function computes a vector ``v4`` of type 4 such
 that ``v2 + v4, v3 + v4``, and ``v2 + v3 + v4`` are all of type 2.
@@ -244,14 +273,12 @@ The function tries to find random vectors ``vx`` of type 2
 in the Leech lattice mod 2 such that both, ``vx + v2``,
 and ``vx + v3`` are of type 2. Then the
 vector ``v4 = v2 + v3 + vx`` satifies the required conditions.
-In case ``t = 3``, see [CS99], Ch. 10.3.5 for details. The
-case ``t = 2`` is similar.
 
 For finding ``vx`` we transform ``v2`` to the standard type-2 vector
 with a transformation ``tf``. Then we generate random type-2 vectors
 with function ``gen_leech2_n_type_22``. These random type-2 vectors
 are interpreted as transformed vectors ``tf(vx)``; and we will
-check check the required conditions on the transformed
+check the required conditions on the transformed
 vectors ``tf(v2)``, ``tf(v3)``, and ``tf(vx)``.
 */
 // %%EXPORT px
@@ -310,15 +337,12 @@ Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
 and let ``v3`` be a vector of type t in the Leech lattice mod 2,
 with 2 <= t <= 3,  such that ``v2 + v3`` is also of type t.
 Here ``v2`` and ``v3`` must be given in *Leech lattice encoding*.
-It is known that the group fixing ``v2`` and ``v3`` is the unitary
-group \f$\mbox{PSU}_6(2)\f$ in case t = 2, and the Highman-Sims
-group in case t = 3, see [CS99], Ch. 10.3.4.
 
 The function computes an element ``g`` of the Conway group
 \f$\mbox{Co}_1\f$ such that ``v2 * g = w2`` and ``v3 * g = w3``
 with ``w2 = (0, 0, 4, -4, 0, ..., 0)``. Here we
 have ``w3 = (0, 4, -4, 0, ..., 0)`` if ``t == 2``
-and ``w3 = (1, 1, 5, 1, ..., 1)``` if ``t == 3``.
+and ``w3 = (1, 1, 5, 1, ..., 1)`` if ``t == 3``.
 
 The function stores ``g`` in the array ``g`` as a word of
 length ``k`` of generators of the subgroup ``G_x0`` of the
@@ -511,23 +535,32 @@ static inline void fill_std_891_222(uint32_t *a)
 
 
 
-/** @brief Yet to be documented!
+/** @brief Auxiliary function for function ``gen_leech2_u4_2xx``
 
-Function is yet under construction. Do not use!
+Let ``v2``, ``v3`` be as in function ``gen_leech2_reduce_2xx``.
+Let ``g`` be an element of the group ``G_x0`` of
+length ``n`` that maps ``v2`` and ``v3`` to ``w2`` and ``w3``,
+with ``w2``, ``w3`` as in function ``gen_leech2_reduce_2xx``.
+Here ``g`` should have been computed by that function.
 
-Array ``a`` must have length 891 in case ``vtype == 2`` and length 100
-in case ``vtype == 3``. Other values of ``vtype`` are illegal.
+The function computes all vectors ``v4`` of type 4 in the Leech
+lattice mod 2 such that ``v2 + v4, v3 + v4``, and ``v2 + v3 + v4``
+are of type 2. It stores the list of these vectors in the
+array ``a`` and returns the length of that list.
+
+Array ``a`` must have length 891 in case ``t == 2`` and length 100
+in case ``t == 3``. Other values of ``t`` are illegal.
 
 */
 // %%EXPORT px
-int32_t gen_leech2_map_2xx(uint32_t *g, uint32_t n, uint32_t vtype, uint32_t *a)
+int32_t gen_leech2_map_2xx(uint32_t *g, uint32_t n, uint32_t t, uint32_t *a)
 {
     uint32_t mat_g[24], length;
     int32_t res;
     res = gen_leech2_op_word_matrix24(g, n, 1, mat_g);
     if (res < 0) return res;
 
-    switch (vtype) {
+    switch (t) {
         case 2:
             fill_std_891_222(a);
             length = 891;
@@ -550,26 +583,39 @@ int32_t gen_leech2_map_2xx(uint32_t *g, uint32_t n, uint32_t vtype, uint32_t *a)
 
 
 
-/** @brief Yet to be documented!
+/** @brief Compute a certain set of type-4 vectors in the Leech lattice mod 2
 
-Function is yet under construction. Do not use!
+Let ``v2`` be a vector of type 2 in the Leech lattice mod 2,
+and let ``v3`` be a vector of type t in the Leech lattice mod 2,
+with 2 <= t <= 3,  such that ``v2 + v3`` is also of type t.
+Here ``v2`` and ``v3`` must be given in *Leech lattice encoding*.
 
-Array ``a`` must have length 891.
+The function computes all vectors ``v4`` of type 4 in the Leech
+lattice mod 2 such that ``v2 + v4, v3 + v4``, and ``v2 + v3 + v4``
+are of type 2. There are 891 such vectors in case ``t = 2`` and
+100 such vectors in case ``t = 3``. The list all these vectors is
+stored in the array ``a`` in *Leech lattice encoding* in an
+undefined order. Thus array ``a`` must have length at least 891.
 
+The function uses a random generator.  Parameter ``seed`` is a seed
+for a random generator as described in module ``gen_random.c``.
+
+The function returns the length of the  array ``a`` in case of
+succcess, and a negative value in case of failure.
 */
 // %%EXPORT px
 int32_t gen_leech2_u4_2xx(uint32_t v2, uint32_t v3, uint64_t *seed, uint32_t *a)
 {
     int32_t res;
-    uint32_t v4, vtype, len, g[8];
+    uint32_t v4, t, len, g[8];
 
     res = gen_leech2_find_v4_2xx(v2, v3, seed);
     if (res < 0) return res;
     v4 = (uint32_t)res & 0xffffff;
-    vtype = (uint32_t)res >> 24;
+    t = (uint32_t)res >> 24;
     len = res = gen_leech2_reduce_2xx(v2, v3, v4, g);
     if (res < 0) return res;
-    return gen_leech2_map_2xx(g, len, vtype, a);
+    return gen_leech2_map_2xx(g, len, t, a);
 }
 
 
