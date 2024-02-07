@@ -220,8 +220,8 @@ int32_t gen_leech2_n_type_22(uint32_t n)
         // read one of the 77*16 vectors v of subtype 22 from tables
         // TABLE_OCTAD_GCODE and TABLE_OCTAD_COCODE as described in
         // the documentation of these table.
-        uint32_t res = n - 44, c, i, v;
-        uint16_t *p_cocode = TABLE_OCTAD_COCODE + ((res >> 4) << 2);
+        uint32_t res = n - 44, c, v;
+        const uint16_t *p_cocode = TABLE_OCTAD_COCODE + ((res >> 4) << 2);
         v = TABLE_OCTAD_GCODE[res >> 4];
         c = res & 0xf;
         v ^= (0 - (c & 1)) & p_cocode[0];
@@ -445,8 +445,8 @@ int32_t gen_leech2_reduce_2xx(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *g
     if (gen_leech2_op_word_leech2_many(va, 2, &atom, 1, 0) < 0) return -16;
     v2 = va[0] & 0xffffff ; v3 = va[1] & 0xffffff;
     // Check that we now have v2 = w2 and v3 = w3.
-    //if (v2 != 0x200) return -17;
-    //if (v3 != v3_expected) return -18;
+    if (v2 != 0x200) return -17;
+    if (v3 != v3_expected) return -18;
     return  k;
 }
 

@@ -33,7 +33,6 @@ def iter_octads_22():
             bl = bl[:length]
             if 1 in bl:
                 bl.remove(1)
-                print(hex(o), bl)
                 yield o, bl
                 k += 1
             else:
@@ -69,7 +68,6 @@ def iter_vectors_22():
         lst = []
         for i in range(1, 5):
             lst.append(m.vect_to_cocode((1 << bl[0]) | (1 << bl[i])))
-        print([hex(x) for x in lst + [ov]])
         yield lst + [int(ov)]
 
 def make_table():
