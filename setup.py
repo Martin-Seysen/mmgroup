@@ -31,6 +31,7 @@ VERSION = '1.0.0' # 2024-01-23. Documentation updated
 import sys
 import os
 import re
+import time
 import subprocess
 import numpy as np
 from glob import glob
@@ -57,13 +58,20 @@ SHARED_DIR = os.path.join(DEV_DIR, 'shared_files')
 sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
 
-from build_ext_steps import Extension, CustomBuildStep
-from build_ext_steps import AddSharedExtension
-from build_ext_steps import BuildExtCmd, BuildExtCmdObj
-from build_shared import shared_lib_name
+
+# Remove old shared libraries before(!) anybody can use them!!!
+subprocess.check_output([
+    sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
+])
+
+
+from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
+from mmgroup.generate_c.build_ext_steps import AddSharedExtension
+from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
+from mmgroup.generate_c.build_shared import shared_lib_name
    
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
-from linuxpatch import copy_shared_libs
+from mmgroup.generate_c.linuxpatch import copy_shared_libs
 
 
 ####################################################################
@@ -135,6 +143,11 @@ while None in sys.argv:
 if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
     raise ValueError("Unknown compiler '%s'" % COMPILER)
 
+
+subprocess.check_output([
+    sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
+])
+time.sleep(1.0)
 
 ####################################################################
 # Check if we are in a 'readthedocs' environment

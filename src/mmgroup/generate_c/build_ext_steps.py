@@ -209,8 +209,7 @@ import setuptools
 from setuptools.extension import Extension as _Extension
 from Cython.Distutils import build_ext as _build_ext
 
-from parallel_processes import SimpleProcessWorkers
-from build_shared import shared_lib_name
+from mmgroup.generate_c.build_shared import shared_lib_name
 
 
 
