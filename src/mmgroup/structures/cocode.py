@@ -309,10 +309,23 @@ class Cocode():
         corresponding to the bits which are set in the syndrome.
         """
         if i is None: i = 24
-        syn = mat24.cocode_syndrome(self.value, i)
-        return [i for i in range(24) if (syn >> i) & 1]
+        return mat24.cocode_to_bit_list(self.value, i)
 
+    def syndromes_llist(self):
+        """Return shortest syndromes of cocode element as list of lists.
 
+        The function returns the list of all shortest representatives
+        of the cocode element as a list ``ll`` of lists.  Each entry
+        of ``ll`` corresponds to a shortest representative. Such an
+        entry is an ordered list of bit positions corresponding to
+        the bits which are set in the representative. Output ``ll``
+        is sorted in natural order.
+        """
+        try:
+            return [mat24.cocode_to_bit_list(self.value, 24)]
+        except:
+            bl = mat24.cocode_to_sextet(self.value)
+            return [bl[i:i+4] for i in range(0, 24, 4)]
 
     def str(self):
         return "<Cocode_%s>" % ihex(self.value & 0xfff, 3)

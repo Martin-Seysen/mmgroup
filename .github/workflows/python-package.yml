@@ -41,9 +41,10 @@ jobs:
       # Version v4 has a serious problem, see:
       # https://github.com/actions/upload-artifact/issues/478
       # So I roll back to version v3
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          overwrite: true
           
   build_wheels_windows:
     name: Build wheels on ${{ matrix.os }}
@@ -71,9 +72,10 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
+          overwrite: true
 
   build_sdist:
     name: Build source distribution
@@ -93,10 +95,10 @@ jobs:
       - name: Build sdist
         run: python3 -m build --sdist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./dist/*.tar.gz
-
+          overwrite: true
 
 
 
