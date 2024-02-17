@@ -618,7 +618,8 @@ int32_t qstate12_compare_signs(qstate12_type *pqs, uint64_t *bmap)
 
 /**
  @brief Returns highest bit (at its position) of a 64-bit integer ``v``.      
-*/ 
+*/
+/* // At present, we do no need this function
 static inline uint64_t hibit(uint64_t v)
 {
     v |= v >> 1;
@@ -629,7 +630,7 @@ static inline uint64_t hibit(uint64_t v)
     v |= v >> 32;
     return v & ~(v >> 1); 
 }
-
+*/
 
 
 #define find_low_bit(bmap, imin, imax) \

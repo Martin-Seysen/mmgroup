@@ -370,7 +370,7 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
 
 
 /// @cond DO_NOT_DOCUMENT
-#define CHI_24_4096_BAD 0x80000000UL
+#define CHI_24_4096_BAD ((int32_t)-0x80000000L)
 /**
    @brief Compute character of rep \f$\rho_{24} \otimes \rho_{4096}\f$ of \f$g \in G_{x0}\f$
 

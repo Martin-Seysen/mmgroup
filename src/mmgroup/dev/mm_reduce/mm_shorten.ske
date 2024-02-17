@@ -213,7 +213,10 @@ extern "C" {
 
 #define OMEGA 0x800000
 
-#define _ERROR(source, error) ((-(source) << 24) - ((-(error)) & 0xffffff)) 
+#define _ERROR(source, error) (0 - (source << 16) - error)
+#define _VAR_ERROR(source, res) \
+    (0 - (((source)+1) << 24) + ((uint32_t)res & 0xffffffUL))
+
 
 
 /// @endcond  
@@ -554,7 +557,7 @@ int32_t gt_word_delete(gt_word_type *p_gt)
 {
     gt_subword_type *p_prev, *p_cur, *p_next;
  
-    if ((p_cur = p_gt->p_node)->eof) return _ERROR(1, -2);
+    if ((p_cur = p_gt->p_node)->eof) return _ERROR(1, 2);
     p_next = p_cur->p_next;
     p_prev = p_cur->p_prev;
 
@@ -592,12 +595,12 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
     if (pos > 0) {
         for (i = 1; i <= pos; ++i) {
             p_gt->p_node = p_gt->p_node->p_next;
-            if (p_gt->p_node->eof && pos != i) return _ERROR(1, -3);
+            if (p_gt->p_node->eof && pos != i) return _ERROR(1, 3);
         }
     } else if (pos < 0) {
         for (i = -1; i >= pos; --i) {
             p_gt->p_node = p_gt->p_node->p_prev;
-            if (p_gt->p_node->eof && pos != i) return _ERROR(1, -4);
+            if (p_gt->p_node->eof && pos != i) return _ERROR(1, 4);
         }
     }
     return 0;
@@ -654,7 +657,7 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
         ulen += j;
         if (e || i >= n) break;
         v = a[i++];
-        if ((v & 0x70000000) != 0x60000000) return _ERROR(2,-1);
+        if ((v & 0x70000000) != 0x60000000) return _ERROR(2,1);
         v ^=  0 - ((v >> 31) & 1);
         v = (v & 0xfffffff) % 3;
         if (v) {
@@ -663,7 +666,7 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
         }
         if (ulen > MAX_INTERN_WORD_DATA - 6) {
             if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
-                   return _ERROR(-0x10, res);
+                   return _VAR_ERROR(1, res);
             ulen = res;
             img_omega_len = 0;
             p_cur->img_Omega = OMEGA;
@@ -673,7 +676,7 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
     p_cur->t_exp = e;
     if (ulen > MAX_GT_WORD_DATA - 1) {
        if ((res = xsp2co1_reduce_word(w, ulen, w)) < 0) 
-          return _ERROR(-0x11, res);
+          return _VAR_ERROR(2, res);
        ulen = res;
        img_omega_len = 0;
        p_cur->img_Omega = OMEGA;
@@ -781,7 +784,7 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
         }
         if (reduce) {
             res = xsp2co1_reduce_word(w, p_cur->length, w);
-            if (res < 0) return _ERROR(-0x12, res);
+            if (res < 0) return _VAR_ERROR(3, res);
             p_cur->length = res;
             p_cur->reduced = 1;
         }
@@ -830,7 +833,7 @@ int32_t gt_word_rule_join(gt_word_type *p_gt)
         if (p_cur->img_Omega == OMEGA && p_cur->t_exp == 0) {
             res = xsp2co1_reduce_word(
                 p_cur->data, p_cur->length, p_cur->data);
-            if (res < 0) return _ERROR(-0x14, res);
+            if (res < 0) return _VAR_ERROR(4, res);
             if (res == 0) {
                 gt_word_delete(p_gt);
                 p_gt->p_node = p_gt->p_node->p_next;
@@ -844,23 +847,23 @@ int32_t gt_word_rule_join(gt_word_type *p_gt)
 
     if (p_prev->t_exp == 0) {
         gt_word_delete(p_gt);
-        if (p_gt->p_node != p_prev) return _ERROR(2, -0x104);
+        if (p_gt->p_node != p_prev) return _ERROR(3, 1);
         p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
         res = gt_word_append_sub_part(p_gt, p_cur->data, p_cur->length);
         if (res != (int32_t)p_cur->length) 
-            return res < 0 ? res : _ERROR(2, -4);
+            return res < 0 ? res : _VAR_ERROR(5, res);
         return 1;
     } else if (p_cur->img_Omega == OMEGA) {
         gt_word_delete(p_gt);
-        if (p_gt->p_node != p_prev) return _ERROR(2, -0x105);
+        if (p_gt->p_node != p_prev) return _ERROR(3, 2);
         res = xsp2co1_reduce_word(
              p_cur->data, p_cur->length, p_cur->data);
-        if (res < 0) return _ERROR(-0x14, res);
+        if (res < 0) return _VAR_ERROR(6, res);
         p_cur->length = res;
         p_cur->data[p_cur->length++] = 0x50000000 + p_cur->t_exp;
         res = gt_word_append_sub_part(p_gt, p_cur->data, p_cur->length);
         if (res != (int32_t)p_cur->length) 
-            return res < 0 ? res : _ERROR(2, -5);
+            return res < 0 ? res : _VAR_ERROR(7, res);
         return 1;
     } 
     return 0;
@@ -1041,7 +1044,7 @@ int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
     while (i < n) {
         if ((res = gt_word_insert(p_gt)) < 0) return res;
         if ((res = gt_word_append_sub_part(p_gt, a + i,  n - i)) <= 0) 
-            return res < 0 ? res : _ERROR(2,-3);
+            return res < 0 ? res : _VAR_ERROR(8, res);
         i += res;
         if (p_gt->reduce_mode) {
             res = gt_word_reduce_input(p_gt);
@@ -1180,7 +1183,7 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
         p_data = p_cur->data;
         p_data[n = p_cur->length] = 0x50000000 + e;
         n += e != 0;
-        if  (p_out + n > p_end) return _ERROR(2, -7); 
+        if  (p_out + n > p_end) return _ERROR(4, 1);
         while (n--) *p_out++ = *p_data++;
     } 
     return (int32_t)(p_out - pa);
