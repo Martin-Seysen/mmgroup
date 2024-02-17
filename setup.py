@@ -59,20 +59,6 @@ sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
 
 
-# Remove old shared libraries before(!) anybody can use them!!!
-subprocess.check_output([
-    sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
-])
-
-
-from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
-from mmgroup.generate_c.build_ext_steps import AddSharedExtension
-from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
-from mmgroup.generate_c.build_shared import shared_lib_name
-   
-from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
-from mmgroup.generate_c.linuxpatch import copy_shared_libs
-
 
 ####################################################################
 # Print patform and command line arguments (if desired)
@@ -143,17 +129,36 @@ while None in sys.argv:
 if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
     raise ValueError("Unknown compiler '%s'" % COMPILER)
 
+if STAGE > 1:
+    err = "Compling with --stage=%s is not supported"
+    raise ValueError(err % STAGE)
 
-subprocess.check_output([
-    sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
-])
-time.sleep(1.0)
 
 ####################################################################
 # Check if we are in a 'readthedocs' environment
 ####################################################################
 
 on_readthedocs = MOCKUP or os.environ.get('READTHEDOCS') == 'True'
+
+
+####################################################################
+# Remove old stuff and import build tools
+####################################################################
+
+
+# Remove old shared libraries before(!) anybody else can grab them!!!
+if STAGE <= 1:
+    subprocess.check_output([
+        sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
+    ])
+
+from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
+from mmgroup.generate_c.build_ext_steps import AddSharedExtension
+from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
+from mmgroup.generate_c.build_shared import shared_lib_name
+from mmgroup.generate_c.linuxpatch import copy_shared_libs
+from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
+
 
 
 ####################################################################
@@ -175,19 +180,13 @@ package_data = {
 
 
 ####################################################################
-# Cleaning up before code generation
+# Initialize list of external build operations
 ####################################################################
 
 
-general_presteps = CustomBuildStep(
-  'Cleaning up before code generation',
-  [sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'],
-)
 
 ext_modules = []
 
-if STAGE <= 1:
-    ext_modules.append(general_presteps)
 
 ####################################################################
 # We have to divide the code generation process 

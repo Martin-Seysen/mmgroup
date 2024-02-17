@@ -848,3 +848,29 @@ def set_shared_libraries(parsed_args):
         raise ValueError(ERR % os.name)
 
 
+
+
+
+############################################################################
+# Setting shared library path
+############################################################################
+
+
+
+
+def parse_set_shared_libraries(args):
+    """Set path for finding shared libraries
+
+    Here parameter 'args' should be ``sys.arv[1:]``
+
+    Then the function parses 'args' and performs the same action and
+    returns the same value as function ``set_shared_libraries(args)``.
+    """
+    path_parser = argparse.ArgumentParser(add_help=False)
+    path_parser.add_argument('--library-path',
+        nargs = '*', action='extend',  default = []
+    )
+    path_parser.add_argument('--no-library-path', action = 'store_true')
+    path_args = path_parser.parse_known_args(args)
+    return set_shared_libraries(path_args[0])
+

@@ -1,23 +1,16 @@
 """Executable program for class generate_code.CodeGenerator"""
 
 import sys
-import argparse
-
-path_parser = argparse.ArgumentParser(add_help=False)
-path_parser.add_argument('--library-path',
-        nargs = '*', action='extend',  default = []
-)
-path_parser.add_argument('--no-library-path', action = 'store_true')
 
 
 if __name__ == "__main__":
     sys.path.append('src')
-    from mmgroup.generate_c import generate_code_parser, CodeGenerator
-    from mmgroup.generate_c.generate_code import set_shared_libraries
+    from mmgroup.generate_c import CodeGenerator
+    from mmgroup.generate_c import parse_set_shared_libraries
     sys.path.pop()
 
-    path_args = path_parser.parse_known_args(sys.argv[1:])
-    env_changed = set_shared_libraries(path_args[0])
+    # Set paths to shared libraries as given by command line args
+    env_changed = parse_set_shared_libraries(sys.argv[1:])
     if env_changed:
         # Do the job in a subprocess, since the environment has changed
         import subprocess
@@ -26,10 +19,7 @@ if __name__ == "__main__":
         ]
         subprocess.check_call(args + sys.argv[1:])
     else:
-        parser = generate_code_parser()
-        cmdline_args = parser.parse_args(sys.argv[1:])
-
-        cg = CodeGenerator(cmdline_args)
+        cg = CodeGenerator(sys.argv[1:])
         cg.activate_py_path()
         cg.import_tables()
         cg.display_args()

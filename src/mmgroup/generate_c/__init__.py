@@ -15,6 +15,7 @@ from mmgroup.generate_c.make_c_tables import NoDirectives
 
 from mmgroup.generate_c.generate_code import CodeGenerator
 from mmgroup.generate_c.generate_code import generate_code_parser
+from mmgroup.generate_c.generate_code import parse_set_shared_libraries
 
 from mmgroup.generate_c.generate_pxd import pxdGenerator
 from mmgroup.generate_c.generate_pxd import generate_pxd_parser
