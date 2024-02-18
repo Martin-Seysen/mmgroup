@@ -101,9 +101,6 @@ except:
 
 
 
-import mmgroup.generate_c
-
-
 try:
     import mmgroup.mm_space
     from mmgroup.mm_space import characteristics

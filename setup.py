@@ -129,10 +129,6 @@ while None in sys.argv:
 if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
     raise ValueError("Unknown compiler '%s'" % COMPILER)
 
-if STAGE > 1:
-    err = "Compling with --stage=%s is not supported"
-    raise ValueError(err % STAGE)
-
 
 ####################################################################
 # Check if we are in a 'readthedocs' environment
@@ -147,10 +143,23 @@ on_readthedocs = MOCKUP or os.environ.get('READTHEDOCS') == 'True'
 
 
 # Remove old shared libraries before(!) anybody else can grab them!!!
-if STAGE <= 1:
-    subprocess.check_output([
-        sys.executable, 'cleanup.py', '-pcx', '--check-uninstalled'
-    ])
+
+CLEANUP_ARGS = defaultdict(list)
+CLEANUP_ARGS.update({
+    1: ['-pcx'],
+    2: ['--rm-ext', 'mm_op', 'mm_reduce'],
+    3: ['--rm-ext', 'mm_reduce'],
+})
+
+subprocess.check_call([sys.executable, 'cleanup.py',
+   '--check-uninstalled'] +  CLEANUP_ARGS[STAGE])
+
+
+####################################################################
+# import build tools
+####################################################################
+
+
 
 from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
 from mmgroup.generate_c.build_ext_steps import AddSharedExtension
@@ -158,7 +167,6 @@ from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
 from mmgroup.generate_c.build_shared import shared_lib_name
 from mmgroup.generate_c.linuxpatch import copy_shared_libs
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
-
 
 
 ####################################################################

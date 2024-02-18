@@ -1,9 +1,8 @@
 import os
 import subprocess
-from optparse import OptionParser
+from argparse import ArgumentParser
 import shutil
 
-parser = OptionParser()
 
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -180,35 +179,57 @@ def git_checkout_data(verbose = False):
 
 
 
+def remove_extensions(extension_list, verbose):
+    SH_EXTENSIONS =  [".pyd", ".so"]
+    dir = os.path.join('src', 'mmgroup')
+    files = os.listdir(dir)
+    for extension in extension_list:
+        for fname in files:
+            if fname.startswith(extension + '.'):
+                if os.path.splitext(fname)[1] in SH_EXTENSIONS:
+                    path = os.path.join(dir, fname)
+                    try:
+                        if verbose:
+                            print("Delete %s" % path)
+                        os.remove(path)
+                    except:
+                        if verbose:
+                            print("failed")
+
 
 def main():
     usage = "usage: %prog [options]"
-    parser = OptionParser(usage)
-    parser.add_option("-p",  dest="del_pyc", action="store_true",
+    parser = ArgumentParser(usage)
+    parser.add_argument("-p",  dest="del_pyc", action="store_true",
         help="Delete intermediate python files (.pyc)")
-    parser.add_option("-c",  dest="del_c", action="store_true",
+    parser.add_argument("-c",  dest="del_c", action="store_true",
         help="Delete automatically generated program files (%s)" %
         ", ".join(PROGRAM_FILES))
-    parser.add_option("-d",  dest="del_data", action="store_true",
+    parser.add_argument("-d",  dest="del_data", action="store_true",
         help="Delete automatically generated data files (.py)")
-    parser.add_option("-x",  dest="del_ext", action="store_true",
+    parser.add_argument("-x",  dest="del_ext", action="store_true",
         help="Delete automatically generated extensions (%s)" %
         EXTENSION_STR)
-    parser.add_option("-s",  dest="del_subdirs", action="store_true",
+    parser.add_argument("-s",  dest="del_subdirs", action="store_true",
         help="Delete temporary subdirectories" )
-    parser.add_option("-a",  dest="del_all", action="store_true",
-        help="Delete all automatically generated files" )
-    parser.add_option("-g",  dest="git_checkout", action="store_true",
+   # parser.add_argument("-a",  dest="del_all", action="store_true",
+   #     help="Delete all automatically generated files" )
+    parser.add_argument("-g",  dest="git_checkout", action="store_true",
         help="Checkout all automatically generated files with git" )
-    parser.add_option("--check-uninstalled",  dest="check_uninstalled",
+    parser.add_argument("--check-uninstalled",  dest="check_uninstalled",
         action="store_true", help=
     "Issue an error if mmgroup as been installed (used in build process)"
     )
-    parser.add_option("-v",  dest="verbose", action="store_true",
+    parser.add_argument("--rm-ext",   nargs = '*', action='extend',
+        metavar = 'EXT', default = [],
+        help = 'Remove Cython extension(s) EXT from subdirectory src/mmgroup'
+    )
+    parser.add_argument("-v",  dest="verbose", action="store_true",
         help="Verbose operation" )
     
-    options, args = parser.parse_args()
+    options  = parser.parse_args()
     verbose = options.verbose
+    options.del_all = False
 
     if options.del_pyc or options.del_all:
         del_pyc(verbose)
@@ -224,6 +245,7 @@ def main():
         git_checkout_data(verbose)
     if options.check_uninstalled:
         check_mmgroup_uninstalled()
+    remove_extensions(options.rm_ext, verbose)
 
 
 if __name__ == "__main__":

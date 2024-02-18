@@ -220,6 +220,6 @@ Description of module ``build_ext_steps.py``
 --------------------------------------------
 
 
-.. automodule:: build_ext_steps
+.. automodule:: mmgroup.generate_c.build_ext_steps
 
 
