@@ -167,9 +167,12 @@ class C_Expr:
      
         'value' must be another instance of this class or a string  
         containing a valid C expression or an integer.
-        """ 
-        return  "%s = %s;\n" % (self, as_c_expr(value))
- 
+        """
+        myself, value = str(self), str(as_c_expr(value))
+        if myself != value:
+            return  "%s = %s;\n" % (myself, value)
+        return ""
+
     def assign_xor(self, value):
         """Return string encoding an assignment statement: self ^= value;
      

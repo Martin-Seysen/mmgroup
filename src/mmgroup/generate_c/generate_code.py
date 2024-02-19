@@ -8,6 +8,7 @@ import types
 import sys
 import re
 import os
+import shutil
 import warnings
 from io import IOBase
 import argparse
@@ -44,7 +45,6 @@ class MyArgumentParser(argparse.ArgumentParser):
 
 
 
-
 def generate_code_parser():
     description = ('Generate C files and a header file for the mmgroup project '
     'from source files using certain tables and directives in the source file. '
@@ -74,17 +74,24 @@ def generate_code_parser():
     )
 
     parser.add_argument('--out-header', 
-        metavar = 'HEADER', default = None,
+        metavar = 'HEADER', default = None, nargs = '*',
         help = "Set name of output header file to HEADER. By default we take "
                "the first file with extension .h in the list given in the "
                "argument '--sources'." )
 
+    parser.add_argument('--copy',
+        nargs = '*',  metavar='FILE',
+        action = 'extend', default = [],
+        help = "Copy FILE to directory set by parameter '--out-dir'. "
+               "Each FILE is searched in the path set by parameter "
+               "'--source-path'."
+    )
 
     parser.add_argument('--pxd', 
         metavar='PXD',
         action='store', default = None,
-        help="Set input '.pxd' file PXD for generating '.pxd' file with "
-        "same name from that input file and from the generated header."
+        help = "Set input '.pxd' file PXD for generating '.pxd' file with "
+               "same name from that input file and from the generated header."
     )
 
     parser.add_argument('--pxi', 
@@ -173,6 +180,10 @@ def generate_code_parser():
         "when set."
     )
 
+    #parser.add_argument('--n',
+    #    type=int,  default = 1, metavar = 'N',
+    #    help = 'Use N parallel processes for compiling.'
+    #    )
 
     parser.add_argument('--mockup', 
         default = False,
@@ -200,8 +211,6 @@ def set_real_path(instance, attribute):
         return
     real_path = os.path.realpath(path)
     setattr(instance, attribute, real_path) 
-
-
 
 def set_real_pathlist(instance, attribute):
     pathlist = getattr(instance, attribute)
@@ -235,7 +244,6 @@ def find_file(pathlist, filename, verbose = 0):
             pass
     ERR = "File %s not found" 
     raise IOError(ERR % filename)
-
      
 def set_real_out_header(instance):   
     dir = getattr(instance,'out_dir')
@@ -245,8 +253,6 @@ def set_real_out_header(instance):
     real_header = os.path.join(dir, os.path.normpath(header))
     setattr(instance, 'real_out_header', real_header) 
      
-
-
 
 class ActivatedPythonPath:
     """Add a list of paths to the path where python finds scripts
@@ -294,10 +300,6 @@ class ActivatedPythonPath:
 
     def close(self):
         self.de_activate_py_path()
-
-
-
-
 
 
 class ImmutableDict(Mapping):
@@ -379,10 +381,6 @@ def subst_source_name(input_name, subst):
     return source, target, ext, vars    
 
 
-
-
-
-
 def make_actions(s):
     n = 1
     param = {}
@@ -418,8 +416,6 @@ def make_actions(s):
             subst = data
  
             
-
-
 def finalize_parse_args(s):
     #print("\nFinalizing\n", s)
     if getattr(s, 'finalized', None):
@@ -462,8 +458,6 @@ def import_tables(table_modules, mockup = False, verbose = False):
             table_classes.append(table_class)
     return table_classes    
 
-
- 
 
 def load_tables(tg, tables, params, directives=True):
     """Load tables into instance ``tg`` of class ``TableGenerator``
@@ -577,9 +571,6 @@ def split_header(file):
     return head, split_comment, tail
 
 
-
-
-
 def open_for_write(dir, filename):
     """Open file ``dir\filename`` for output""" 
     if not filename:
@@ -595,7 +586,6 @@ def write_warning_generated(stream):
     "// Warning: This file has been generated automatically."
     " Do not change!\n" 
     )
-
 
 
 def check_arg_parser(parser_namespace):
@@ -661,6 +651,7 @@ EXPORT_KWD = "{0}_API"
 class CodeGenerator:
     """Yet to be documented"""
     activated_python_path = None
+    BIGINT = 0x7fffffff
     def __init__(self, args):
         if isinstance(args, str):
             parser = generate_code_parser()
@@ -676,6 +667,7 @@ class CodeGenerator:
             raise TypeError(ERR % (self.__class__, type(args)))
         self.old_path = None
         finalize_parse_args(self.s)
+        self.tg = TableGenerator()
 
     def check_input_files(self):
         finalize_parse_args(self.s)
@@ -718,54 +710,98 @@ class CodeGenerator:
             self.c_prefix = ""
             self.h_prefix = ""
 
+    def copy_files(self):
+        for file in self.s.copy:
+            src_path = self.find_file(file)
+            dest_path = os.path.join(self.s.out_dir, file)
+            dest_dir = os.path.split(dest_path)[0]
+            if len(dest_dir):
+                os.makedirs(dest_dir, exist_ok=True)
+            shutil.copyfile(src_path, dest_path)
+
+    def generate_c(self, src_name, dest_name, n, h_prefix=""):
+        src_file_name = self.find_file(src_name)
+        src = open(src_file_name, "rt")
+        s = self.s
+        if dest_name:
+            dest = open_for_write(s.out_dir, dest_name)
+            if s.verbose:
+                 print("Generating file %s" % dest_name)
+            write_warning_generated(dest)
+            out_h = StringOutputFile()
+            out_h.write(h_prefix)
+            out_h.write("// %%%%FROM %s\n" % dest_name)
+            dest.write(self.c_prefix)
+            self.tg.generate(src, dest, out_h)
+            out_h.write("\n")
+            dest.close()
+            return [(n, out_h.as_string())]
+        else:
+            out_h = StringOutputFile()
+            end_h = StringOutputFile()
+            h_head, h_split, h_tail = split_header(src)
+            self.tg.generate(h_head, None, out_h, 'h')
+            out_h.write("\n")
+            end_h.write(h_split)
+            self.tg.generate(h_tail, None, end_h, 'h')
+            end_h.write("\n")
+            return [
+               (n, out_h.as_string()),
+               (self.BIGINT-n, end_h.as_string())
+            ]
+
+    def generate_c_files(self, gen_list):
+        h_list = []
+        for args in gen_list:
+            h_list += self.generate_c(*args)
+        return h_list
+        """ # The following does work due to pickle problems
+        h_list = []
+        processes = self.s.n
+        if processes > 1:
+            from multiprocessing import Pool, cpu_count
+            if cpu_count():
+                processes = min(processes, cpu_count())
+        if processes <= 1:
+            for args in gen_list:
+                h_list += self.generate_c(*args)
+            return h_list
+        with Pool(processes = processes) as pool:
+             results = pool.starmap(self.generate_c, gen_list)
+        pool.join()
+        for data in results:
+            h_list += data
+        return h_list
+        """
+
     def generate(self):
-        BIGINT = 0x7fffffff
         finalize_parse_args(self.s)
-        out_headers = {}
+        h_list = []
         s = self.s
         out_dir = s.out_dir
-        tg = TableGenerator()
-        self.set_dll_prefixes(tg)
+        self.set_dll_prefixes(self.tg)
         if s.verbose:
             print("Generating header %s" % s.out_header)
         for param, c_files in s.c_files.items():
-            self.load_table_generator(tg, param)
+            gen_list = []
+            self.load_table_generator(self.tg, param)
             for src_name, dest_name, n in c_files:
-                src_file_name = self.find_file(src_name)
-                src = open(src_file_name, "rt")
-                if dest_name:
-                    dest = open_for_write(out_dir, dest_name)
-                    if s.verbose:
-                        print("Generating file %s" % dest_name)
-                    write_warning_generated(dest)
-                    out_h = out_headers[n] = StringOutputFile()
-                    out_h.write(self.h_prefix)
-                    self.h_prefix = ""
-                    out_h.write("// %%%%FROM %s\n" % dest_name)
-                    dest.write(self.c_prefix)
-                    tg.generate(src, dest, out_h)
-                    out_h.write("\n")
-                    dest.close()
-                else:
-                    out_h = out_headers[n] = StringOutputFile()
-                    end_h = out_headers[BIGINT-n] = StringOutputFile()
-                    h_head, h_split, h_tail = split_header(src)
-                    tg.generate(h_head, None, out_h, 'h')
-                    out_h.write("\n")
-                    end_h.write(h_split)
-                    tg.generate(h_tail, None, end_h, 'h')
-                    end_h.write("\n")
-
+                h_prefix = self.h_prefix if dest_name else ""
+                gen_list.append((src_name, dest_name, n, h_prefix))
+                self.h_prefix = "" if  h_prefix else self.h_prefix
+            h_list += self.generate_c_files(gen_list)
         out_header = open_for_write(out_dir, s.real_out_header)
         write_warning_generated(out_header)
-        for key in sorted(out_headers):
-            out_headers[key].copy_to(out_header)
+        for i, text in sorted(h_list):
+            out_header.write(text)
         out_header.close()
+
+        self.copy_files()
  
         if not s.mockup:
             from mmgroup.generate_c.generate_pxd import make_pxd
-            self.load_table_generator(tg, ImmutableDict())
-            make_pxd(s, tg)
+            self.load_table_generator(self.tg, ImmutableDict())
+            make_pxd(s, self.tg)
 
     def c_files(self):
         finalize_parse_args(self.s)

@@ -133,7 +133,9 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 /// @cond DO_NOT_DOCUMENT 
 
-#define error(pos, err) (int32_t)(((-pos << 24) + err) | 0x80000000UL)
+// #define _ERROR(source, error) (0 - (source << 16) - error)
+#define _VAR_ERROR(source, res) \
+    (0 - (((source)+1) << 24) + ((uint32_t)res & 0xffffffUL))
 
 /// @endcond 
 
@@ -157,33 +159,33 @@ int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
     if ((w3 >> 48) != 23 || (w3 & 0xffffffffffffULL) == 0) return -0x101;
     if (w_type4 == 0) return -0x102;
     len = gen_leech2_reduce_type4(w_type4, g);
-    if (len < 0) return error(2, len);
+    if (len < 0) return _VAR_ERROR(2, len);
     for (i = 0; i < 24; ++i) A[i] = v[i];
     res = mm_op3_word_tag_A(A, g, len, 1);
-    if (res < 0) return error(3, res);
+    if (res < 0) return _VAR_ERROR(3, res);
     res =  mm_op3_watermark_A_perm_num(
         V1_MOD3_TAG_DATA +  OFS3_WATERMARK_PERM, A);
-    if (res < 0) return error(4, res);
+    if (res < 0) return _VAR_ERROR(4, res);
     perm_num = res;
     if (perm_num) {
         g[len] = 0xA0000000UL + perm_num;
         res = mm_op3_word_tag_A(A, g + len, 1, 1);
-        if (res < 0) return error(5, res);
+        if (res < 0) return _VAR_ERROR(5, res);
         len += 1;
     }
     v_y = mm_aux_mmv_extract_sparse_signs(3, A, 
         V1_MOD3_TAG_DATA + OFS3_TAGS_Y, 11);
-    if (v_y < 0) return  error(6, v_y);
+    if (v_y < 0) return  _VAR_ERROR(6, v_y);
     y = leech2matrix_solve_eqn(
         V1_MOD3_TAG_DATA + OFS3_SOLVE_Y, 11, v_y);
     if (y > 0) g[len++] = 0xC0000000 + y;
 
     for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
     res = xsp2co1_set_elem_word(elem_g_i, g_inv, len);
-    if (res < 0) return error(8, res);
+    if (res < 0) return _VAR_ERROR(8, res);
     v_x = mm_aux_mmv_extract_x_signs(3, v, elem_g_i, 
         V1_MOD3_TAG_DATA + OFS3_TAGS_X, 24);
-    if (v_x < 0) return  error(9, v_x);
+    if (v_x < 0) return  _VAR_ERROR(9, v_x);
     x = leech2matrix_solve_eqn(V1_MOD3_TAG_DATA + OFS3_SOLVE_X, 24, v_x);
     v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
     aa = xsp2co1_elem_read_mod3(v + OFS3_Z, elem_g_i, v_sign, 24); 
