@@ -93,18 +93,18 @@ jobs:
           path: ./dist/*.tar.gz
 
 
-merge:
-   # A rather nasty (and almost unintelligible) change
-   # forced by the transition to upload-artifact@v4.
-   # The world was so easy while still running upload-artifact@v3 !
-   # For the hairy details see:
-   # https://github.com/actions/upload-artifact/blob/main/docs/MIGRATION.md
-   runs-on: ubuntu-latest
-   needs: upload
-   steps:
-     - name: Merge Artifacts
-       uses: actions/upload-artifact/merge@v4
-       with:
-         name: wheelhouse
-         pattern: wheelhouse_*
+  merge:
+    # A rather nasty (and almost unintelligible) change
+    # forced by the transition to upload-artifact@v4.
+    # The world was so easy while still running upload-artifact@v3 !
+    # For the hairy details see:
+    # https://github.com/actions/upload-artifact/blob/main/docs/MIGRATION.md
+    runs-on: ubuntu-latest
+    needs: upload
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: wheelhouse
+          pattern: wheelhouse_*
 
