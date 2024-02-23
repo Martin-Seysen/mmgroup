@@ -100,7 +100,8 @@ jobs:
     # For the hairy details see:
     # https://github.com/actions/upload-artifact/blob/main/docs/MIGRATION.md
     runs-on: ubuntu-latest
-    needs: upload
+    needs: build_wheels
+    needs: build_wheels_windows
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
