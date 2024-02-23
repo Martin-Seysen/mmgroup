@@ -34,12 +34,11 @@ jobs:
         run: python3 -m pip install cibuildwheel
                
       - name: Build wheels
-        run: python3 -m cibuildwheel --output-dir wheelhouse
+        run: python3 -m cibuildwheel --output-dir wheelhouse_{{ matrix.runs-on }}
 
       - uses: actions/upload-artifact@v4
         with:
-          path: ./wheelhouse/*.whl
-          overwrite: true
+          path: ./wheelhouse_{{ matrix.runs-on }}/*.whl
           
   build_wheels_windows:
     name: Build wheels on ${{ matrix.os }}
@@ -65,12 +64,11 @@ jobs:
         run: python -m pip install cibuildwheel
                
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
+        run: python -m cibuildwheel --output-dir wheelhouse_{{ matrix.runs-on }}
 
       - uses: actions/upload-artifact@v4
         with:
-          path: ./wheelhouse/*.whl
-          overwrite: true
+          path: ./wheelhouse_{{ matrix.runs-on }}/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -93,7 +91,20 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: ./dist/*.tar.gz
-          overwrite: true
 
 
+merge:
+   # A rather nasty (and almost unintelligible) change
+   # forced by the transition to upload-artifact@v4.
+   # The world was so easy while still running upload-artifact@v3 !
+   # For the hairy details see:
+   # https://github.com/actions/upload-artifact/blob/main/docs/MIGRATION.md
+   runs-on: ubuntu-latest
+   needs: upload
+   steps:
+     - name: Merge Artifacts
+       uses: actions/upload-artifact/merge@v4
+       with:
+         name: wheelhouse
+         pattern: wheelhouse_*
 
