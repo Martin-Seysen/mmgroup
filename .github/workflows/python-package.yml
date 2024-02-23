@@ -64,7 +64,7 @@ jobs:
         run: python -m pip install cibuildwheel
                
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse_{{ matrix.runs-on }}
+        run: python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
