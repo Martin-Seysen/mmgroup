@@ -492,6 +492,9 @@ Version history
      - 2024-01-23
      - First official release (documentation updated)
 
+   * - 1.0.1
+     - 2024-02-23
+     - Support for exporting C functions from libraries
 
 
 .. only:: html
