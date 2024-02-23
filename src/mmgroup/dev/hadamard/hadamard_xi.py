@@ -304,7 +304,7 @@ class HadamardOpXi64(HadamardMatrixCode):
         for i in range(16):
             v0, v1, v2 = self.array[i], self.array[i+16], self.vars[i]
             v0.assign((v0 & m0) | ((v1 << sh1) & m1))
-            v2.assign(v2)
+            #v2.assign(v2)
             #self.mul_var_pwr2(v0, -3)           
             #self.mul_var_pwr2(v2, -3)           
             self.store_var(v0, p_mask, dest, i, 0, t)

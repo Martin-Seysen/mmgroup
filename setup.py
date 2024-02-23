@@ -54,6 +54,8 @@ C_DIR = os.path.join(DEV_DIR, 'c_files')
 LIB_DIR = os.path.join(DEV_DIR, 'lib_files')
 PXD_DIR = os.path.join(DEV_DIR, 'pxd_files')
 SHARED_DIR = os.path.join(DEV_DIR, 'shared_files')
+HEADERS_DIR = os.path.join(DEV_DIR, 'headers')
+
 
 sys.path.append(ROOT_DIR)
 sys.path.append(SRC_DIR)
@@ -173,18 +175,23 @@ from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
 # Add extensions and shared libraries to package data
 ####################################################################
 
+header_wildcards = ['*.h']
+extension_wildcards =  []
 if os.name in ['nt']:
-    extension_wildcards =  ['*.pyd', '*.dll']     
+    extension_wildcards =  ['*.pyd', '*.dll']
+    header_wildcards = ['*.h', '*.lib']
 elif os.name in ['posix']:
     extension_wildcards =  ['*.so']  
-else:   
-    extension_wildcards =  []  
 
 
 package_data = {
-        # If any package contains *.txt or *.rst files, include them:
-        'mmgroup': extension_wildcards
+        # If any package contains files as given above, include them:
+        'mmgroup': extension_wildcards,
+        'mmgroup.dev.headers': header_wildcards,
 }
+
+
+
 
 
 ####################################################################
@@ -212,6 +219,7 @@ DIR_DICT = {
    'PACKAGE_DIR': PACKAGE_DIR,
    'STATIC_LIB' : int(STATIC_LIB),
    'NPROCESSES' : str(NPROCESSES),
+   'HEADERS_DIR' : HEADERS_DIR,
 }
 
 DIR_DICT['MOCKUP'] = '--mockup\n' if on_readthedocs else ''
@@ -236,6 +244,7 @@ SHARED_START = '''
     --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
     --library-dir {LIB_DIR}
     --shared-dir {SHARED_DIR}
+    --rpath $ORIGIN
     --define
     --static {STATIC_LIB}
     --n {NPROCESSES}
@@ -671,6 +680,26 @@ if STAGE < 4:
         ]
 
 ####################################################################
+# Copy generated header files
+####################################################################
+
+COPY_HEADERS = """
+  --header-path {C_DIR}
+  --header-dir {HEADERS_DIR}
+  --lib-path {LIB_DIR}
+  --lib-dir {HEADERS_DIR}
+""".format(**DIR_DICT)
+
+
+if not STATIC_LIB and not on_readthedocs:
+    copy_headers_step = CustomBuildStep(
+       'Copy header files',
+      [sys.executable, 'shared_headers.py'] + COPY_HEADERS.split(),
+    )
+    ext_modules.append(copy_headers_step)
+
+
+####################################################################
 # Patching shared libraries for Linux version
 ####################################################################
 
@@ -681,7 +710,7 @@ if STAGE < 4:
 # where the build process writes its output.
 
 
-if  not on_readthedocs:
+if not on_readthedocs:
     MMGROUP_DIR = os.path.join(SRC_DIR, 'mmgroup')
     patch_step =  CustomBuildStep(
         'Patching and copying shared libraries',

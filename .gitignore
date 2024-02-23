@@ -15,6 +15,7 @@ src/mmgroup/dev/c_files/
 src/mmgroup/dev/lib_files/
 src/mmgroup/dev/shared_files/
 src/mmgroup/dev/pxd_files/
+src/mmgroup/dev/headers/
 src/mmgroup.egg-info
 temp/
 PKG-INFO

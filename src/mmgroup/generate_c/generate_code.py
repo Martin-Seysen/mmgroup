@@ -249,6 +249,7 @@ def set_real_out_header(instance):
     dir = getattr(instance,'out_dir')
     header =  getattr(instance,'out_header')
     if header is None:
+        setattr(instance, 'real_out_header', None)
         return
     real_header = os.path.join(dir, os.path.normpath(header))
     setattr(instance, 'real_out_header', real_header) 
@@ -386,6 +387,8 @@ def make_actions(s):
     param = {}
     s.c_files = OrderedDict()
     subst = None
+    if not s.actions:
+        return
     for action, data in s.actions:
         if action == 'set':
             for instruction in data:
@@ -790,11 +793,12 @@ class CodeGenerator:
                 gen_list.append((src_name, dest_name, n, h_prefix))
                 self.h_prefix = "" if  h_prefix else self.h_prefix
             h_list += self.generate_c_files(gen_list)
-        out_header = open_for_write(out_dir, s.real_out_header)
-        write_warning_generated(out_header)
-        for i, text in sorted(h_list):
-            out_header.write(text)
-        out_header.close()
+        if s.real_out_header:
+            out_header = open_for_write(out_dir, s.real_out_header)
+            write_warning_generated(out_header)
+            for i, text in sorted(h_list):
+                out_header.write(text)
+            out_header.close()
 
         self.copy_files()
  

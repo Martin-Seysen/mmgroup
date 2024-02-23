@@ -179,7 +179,6 @@ def build_shared_lib_parser():
                "This corresponds to the gcc option '-l'."
         )
 
-
     parser.add_argument('--library-dir', 
         metavar='DIR', action='store', default = "",
         help = 'Set directory DIR for storing object files and static libraries.'
@@ -217,6 +216,13 @@ def build_shared_lib_parser():
         metavar='FLAGS', action = 'store', default = '',
         help = "Add extra arguments FLAGS for the compiler. E.g. "
                "'--cflags=-c,foo=bar' adds arguments '-c' and 'foo=bar'."
+        )
+
+    parser.add_argument('--rpath',
+        nargs = '*',  metavar='PATH',
+        action = 'extend', default = [],
+        help = "Set path PATH[:PATH] in unix-like os shared library with linker "
+               "option -rpath. Ingnored in a non unix-like os."
         )
 
     parser.add_argument('--display',
@@ -335,13 +341,19 @@ def output_names(cmdline_args):
         implib_path = None
     return lib_path, implib_path
     
-      
+
+def set_ld_library_path_args(cmdline):
+    args = []
+    for path in cmdline.rpath:
+        args.append("-Wl,-rpath," + path)
+    return args
+
 def make_dll_nt_msvc(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
     compile_args = ["cl", "/c", "/O2",  "/W4", "/DMS_WIN64"]
     compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
-        compile_args.append("/I " + os.path.realpath(ipath))
+        compile_args.append("/I" + os.path.realpath(ipath))
     compile_args += c_define_args(cmdline_args)
     objects = []
     arglist = []
@@ -375,7 +387,7 @@ def make_so_posix_gcc(cmdline_args):
     compile_args = ["cc", "-c", "-O3", "-Wall"]
     compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
-        compile_args.append("-I " + os.path.realpath(ipath))
+        compile_args += ["-I", os.path.realpath(ipath)]
     compile_args += c_define_args(cmdline_args)
     objects = []
     arglist = []
@@ -395,6 +407,7 @@ def make_so_posix_gcc(cmdline_args):
         lcmd = ["cc", "-shared",  "-Wall"]
         lcmd += objects + linker_library_args(cmdline_args)
         lcmd += ["-o", lib ]
+    lcmd += set_ld_library_path_args(cmdline_args)
     print(" ".join(lcmd))
     subprocess.check_call(lcmd) 
     print(lib + "\nhas been generated.\n")
@@ -409,7 +422,7 @@ def make_dll_nt_mingw32(cmdline_args):
     # that the symbol ___chkstk_ms  cannot be found.
     compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
-        compile_args.append("-I " + os.path.realpath(ipath))
+        compile_args += ["-I", os.path.realpath(ipath)]
     compile_args += c_define_args(cmdline_args)
     objects = []
     arglist = []

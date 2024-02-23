@@ -2,7 +2,8 @@
 requires = [
    "setuptools",
    "build",
-   "wheel", 
+   "wheel",
+   "cibuildwheel",
    "Cython", 
    "numpy", 
    "regex", 

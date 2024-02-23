@@ -113,6 +113,8 @@ should install the following python packages:
   ``regex``                Development: parsing balanced curly braces
   ``setuptools``           Development: basic package used for setup and building
                            extensions
+  ``cibuildwheel``         Development: build wheel in continuous integration
+                           process
   ``auditwheel``           Development (Linux and macOS only): patching shared
                            libraries
   ``sphinx``               Documentation: basic package used for documentation

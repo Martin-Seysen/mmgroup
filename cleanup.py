@@ -22,6 +22,7 @@ TEMP_SUBDIRS = [
     "src/mmgroup/dev/lib_files",
     "src/mmgroup/dev/shared_files",
     "src/mmgroup/dev/pxd_files",
+    "src/mmgroup/dev/headers",
 ]
 
 RECURSIVE_TEMP_SUBDIRS = [
