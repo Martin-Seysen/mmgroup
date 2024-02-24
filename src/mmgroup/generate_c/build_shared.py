@@ -225,6 +225,11 @@ def build_shared_lib_parser():
                "option -rpath. Ingnored in a non unix-like os."
         )
 
+    parser.add_argument('--mockup', nargs='?', const=1, default=0, type=int,
+         help = "Do nothing when set; for compatibility with the corresponding "
+           "option in the 'generate_code.py' tool."
+        )
+
     parser.add_argument('--display',
         action = 'store',  metavar = 'MODE',  default = None,
         help = "display (full) name of generated library and exit. "
@@ -458,7 +463,9 @@ def build_shared_library(cmdline_args):
     """Build a shared library
 
     """ 
-    ERR_BLD = "Don't know how to build a %s with the '%s' compiler" 
+    ERR_BLD = "Don't know how to build a %s with the '%s' compiler"
+    if cmdline_args.mockup:
+        return
     compiler = cmdline_args.compiler
     if os.name == "posix":
         if compiler == 'unix':
