@@ -148,7 +148,7 @@ on_readthedocs = MOCKUP or os.environ.get('READTHEDOCS') == 'True'
 
 CLEANUP_ARGS = defaultdict(list)
 CLEANUP_ARGS.update({
-    1: ['-pcx'],
+    1: ['-pcxs'],
     2: ['--rm-ext', 'mm_op', 'mm_reduce'],
     3: ['--rm-ext', 'mm_reduce'],
 })
@@ -167,7 +167,7 @@ from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
 from mmgroup.generate_c.build_ext_steps import AddSharedExtension
 from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
 from mmgroup.generate_c.build_shared import shared_lib_name
-from mmgroup.generate_c.linuxpatch import copy_shared_libs
+from mmgroup.generate_c.copy_shared import copy_shared_libs
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS
 
 
@@ -347,12 +347,6 @@ mat24_steps = CustomBuildStep(
    [sys.executable, 'build_shared.py'] + MAT24_SHARED.split(),
 )
 
-add_mat24_shared = AddSharedExtension(
-    name = 'mmgroup.mmgroup_mat24', 
-    library_dirs = [PACKAGE_DIR],
-    static_lib = STATIC_LIB,
-)
-
 mat24_extension = Extension('mmgroup.mat24',
         sources=[
             os.path.join(PXD_DIR, 'mat24fast.pyx'),
@@ -399,7 +393,6 @@ if STAGE < 2:
     ]
     if not on_readthedocs:
         ext_modules += [
-  #          add_mat24_shared,
             mat24_extension,
             generators_extension,
             clifford12_extension,
@@ -519,12 +512,6 @@ mm_op_steps =  CustomBuildStep(
    [sys.executable, 'build_shared.py'] + MM_OP_SHARED.split(),
 )
 
-add_mm_op_shared = AddSharedExtension(
-    name = 'mmgroup.mmgroup_mm_op', 
-    library_dirs = [PACKAGE_DIR],
-    static_lib = STATIC_LIB,
-)
-
 mm_op_extension = Extension('mmgroup.mm_op',
     sources=[
             os.path.join(PXD_DIR, 'mm_op_p.pyx'),
@@ -555,7 +542,6 @@ if STAGE < 3:
     ]
     if not on_readthedocs:
         ext_modules += [
-   #         add_mm_op_shared, 
             mm_op_extension,
             mm_op_poststeps, 
         ]
@@ -616,13 +602,6 @@ mm_reduce_steps =  CustomBuildStep(
    [sys.executable, 'build_shared.py'] + MM_REDUCE.split(),
 )
 
-
-add_mm_reduce = AddSharedExtension(
-    name = 'mmgroup.mmgroup_mm_reduce', 
-    library_dirs = [PACKAGE_DIR],
-    static_lib = STATIC_LIB,
-)
-
 mm_reduce_extension = Extension('mmgroup.mm_reduce',
     sources=[
             os.path.join(PXD_DIR, 'mm_reduce.pyx'),
@@ -640,14 +619,12 @@ mm_reduce_extension = Extension('mmgroup.mm_reduce',
 )
 
 
-
 if STAGE < 4:
     ext_modules += [
         mm_reduce_steps,
     ]
     if not on_readthedocs:
         ext_modules += [
-  #          add_mm_reduce,
             mm_reduce_extension,
         ]
 
@@ -667,36 +644,14 @@ if not STATIC_LIB and not on_readthedocs:
     copy_headers_step = CustomBuildStep(
        'Copy header files',
       [sys.executable, 'shared_headers.py'] + COPY_HEADERS.split(),
-      [sys.executable, 'src/mmgroup/generate_c/linuxpatch.py', r'${build_lib}'],
+      [sys.executable, 'src/mmgroup/generate_c/copy_shared.py', r'${build_lib}'],
     )
     ext_modules.append(copy_headers_step)
-
-
-
-####################################################################
-# Patching shared libraries for Linux version
-####################################################################
-
-# This is the only 'dirty' custom build step. By passing parameter
-# 'BuildExtCmdObj' we do actually pass the current object of that
-# class (which is an extension of class Extension) used for building
-# the extension. This object is required for obtaining the directory
-# where the build process writes its output.
-
-
-if not on_readthedocs:
-    MMGROUP_DIR = os.path.join(SRC_DIR, 'mmgroup')
-    patch_step =  CustomBuildStep(
-        'Copying shared libraries',
-   #     [copy_shared_libs, BuildExtCmdObj, 1], 
-    )
-    ext_modules.append(patch_step)
 
 
 ####################################################################
 # Don't build any externals when building the documentation.
 ####################################################################
-
 
 
 def read(fname):

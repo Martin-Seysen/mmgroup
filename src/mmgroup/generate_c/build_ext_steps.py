@@ -135,15 +135,15 @@ The constructor for that class takes a string 'name' describing the
 action of these functions, followed by an arbitrary number of lists, 
 where each list describes a function to be executed.
 
-Here the first entry of each list is either a string or a callable
-python function. If the first entry is a string then a subprocess
-with that name is called. Otherwise the corresponding python function
-is executed. Subsequent entries in the list are arguments given to
-the subprocess or to the function.
+Here the first entry should be a string. Then a subprocess with that
+name is called. Subsequent entries in the list are arguments passed to
+the subprocess.
 
-Keyword arguments in the constructor are passed to function
-``subprocess.check_call`` when executing a subprocess and 
-ignored when executing a python function.
+If such an argument contains the string '${build_lib}' then that string
+is replaced by the name of the root directory of the path where the
+extionsion is to be built. If the 'build_ext' command of  ``setup.py``
+is invoked with the '--inplace' option then the string '${build_lib}'
+is replaced by 'null'.
 
 Such a subprocess may be e.g. a step that generates C code to be
 used for building a subsequent python extension.    
@@ -152,9 +152,17 @@ Its recommended to use the string ``sys.executable`` (provided
 by the ``sys`` package) instead of the string ``'python'`` for 
 starting a python subprocess.
 
+The following functionality is deprecated:
+
+If the first entry of a list as descibed above is a python function
+then that function is called.  Subsequent entries in the list are
+passed as arguments to the function.
+
 
 Adding shared libraries
 ........................
+
+The class described in the sequel is deprecated.
 
 Module ``build_ext_steps`` provides another class ``AddSharedExtension``
 for adding  a shared library (or a DLL in Windows) to the python
@@ -180,7 +188,6 @@ keyword  arguments are recognized:
 
 Using a shared library in an extension
 ......................................
-
 
 The user may have to perform some os-specific steps for making the 
 library available for python extension. Details are out of the scope 
@@ -259,7 +266,9 @@ class CustomBuildStep(_Extension):
 class AddSharedExtension(_Extension):
     """Model an external shared library; yet to be described 
     """
+    WARN = "Class AddSharedExtension is deprecated!"
     def __init__(self,  *args, **kwds):
+        warnings.warn(self.WARN, UserWarning)
         self.static_lib = False
         kwds['sources'] = []
         if "static_lib" in kwds:
@@ -310,6 +319,7 @@ class  BuildExtCmd(_build_ext):
     Instances of class ``CustomBuildStep`` or ``AddSharedExtension``
     are treated as in the description of this module.
     """
+    WARN_PY = "Executing a python function with class BuildExtCmd is deprecated!"
     user_options = _build_ext.user_options + [
         ("nprocesses=", None, 
         "Number of prcesses used by class ParallelSteps"
@@ -357,14 +367,14 @@ class  BuildExtCmd(_build_ext):
                         args1 = self._convert_subprocesss_args(args)
                         print(" ".join(map(str, args)))
                         try:
-                            subprocess.check_call(args1)  ## , 
-                               # **ext.keyword_dict)
+                            subprocess.check_call(args1)
                         except CalledProcessError:
                             err = "\nSubprocess '%s' has failed!"
                             print(err % str(args[0]))
                             raise             
                     else:
                         # Then execute a python function
+                        warning.warn(self.WARN_PY, UserWarning)
                         f, f_args = args[0], args[1:]
                         for i, arg in enumerate(f_args):
                             ## Substitute BuildExtCmdObj by self
@@ -461,34 +471,6 @@ class  BuildExtCmd(_build_ext):
  
 
 
-    def get_outputs(self):
-        """This extends the corresponding method of class Extension
-
-        It returns a list of output file names. Apart from the names 
-        of the created python extensions, that list also contains 
-        the names of the created shared libraries.
-        """
-        extensions = self.extensions
-        self.extension = [ x for  x in extensions
-            if not getattr(x, "is_non_standard", None)
-        ]
-        self.extensions = extensions
-        standard_outputs = super(BuildExtCmd, self).get_outputs()
-        return standard_outputs + self.get_non_standard_outputs()
-
-    def get_non_standard_outputs(self):
-        """Auxilary method for self. get_outputs()
-
-        Returns list of the shared libraries (to be) built.
-        """
-        outputs = []
-        for ext in self.extensions[:]:
-            if isinstance(ext, AddSharedExtension) and not ext.static_lib:
-                #outputs.append(self.get_shared_ext_filename(ext.name))
-                name = shared_lib_name(ext.name, 'load', pymod=True)
-                outputs.append(name)
-
-        return outputs
 
     def get_build_directory(self):
         """Returns name of directory for the output to be built
