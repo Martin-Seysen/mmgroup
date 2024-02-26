@@ -117,6 +117,7 @@ def copy_shared_libs(build_ext_cmd = None, verbose = 1):
     shared = [x for x in files if has_extension(x, extensions)] 
 
     if (not build_ext_cmd) or build_ext_cmd.inplace:
+        print("nothing to copy")
         return
 
     build_lib = build_ext_cmd.build_lib
@@ -134,6 +135,45 @@ def copy_shared_libs(build_ext_cmd = None, verbose = 1):
 
 
 
+def copy_shared_libs_str(build_lib = "", verbose = 1):
+    """This is necessary for setuptools/distutils"""
+
+    assert isinstance(build_lib, str)
+    DIR = 'src/mmgroup'
+    ABSDIR = os.path.abspath(DIR)
+    if os.name in ["nt"]:
+        extensions =  [".pyd", ".dll"]
+    elif os.name in ["posix"]:
+        extensions = [".so"]
+    else:
+        W = "don't know how do process shared libraries in a %s system"
+        print("Warning:", W % os.name)
+        extensions =  []
+
+    files = os.listdir(ABSDIR)
+    shared = [x for x in files if has_extension(x, extensions)]
+
+    if build_lib.startswith('null') and not build_lib[4:5].isalnum():
+        if verbose:
+            print("No shared libraries to copy")
+        return
+
+    print("*** build_lib in setup.py =", build_lib)
+    OUTDIR = os.path.abspath(os.path.join(build_lib, 'mmgroup'))
+
+    for filename in shared:
+        path = os.path.abspath(os.path.join(ABSDIR, filename))
+        dest = os.path.join(OUTDIR, filename)
+        if verbose:
+            print("Copying %s to %s" % (path, dest))
+        copyfile(path, dest)
+
+
+
+
+
+
+
 
 def patch(args):
     parser = generate_linuxpatch_parser()
@@ -142,5 +182,5 @@ def patch(args):
 
 
 if __name__ == "__main__":
-    patch(sys.argv[1:])      
-
+    #patch(sys.argv[1:])
+    copy_shared_libs_str(sys.argv[1], verbose = 1)

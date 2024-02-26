@@ -667,8 +667,10 @@ if not STATIC_LIB and not on_readthedocs:
     copy_headers_step = CustomBuildStep(
        'Copy header files',
       [sys.executable, 'shared_headers.py'] + COPY_HEADERS.split(),
+      [sys.executable, 'src/mmgroup/generate_c/linuxpatch.py', r'${build_lib}'],
     )
     ext_modules.append(copy_headers_step)
+
 
 
 ####################################################################
@@ -686,7 +688,7 @@ if not on_readthedocs:
     MMGROUP_DIR = os.path.join(SRC_DIR, 'mmgroup')
     patch_step =  CustomBuildStep(
         'Copying shared libraries',
-        [copy_shared_libs, BuildExtCmdObj, 1], 
+   #     [copy_shared_libs, BuildExtCmdObj, 1], 
     )
     ext_modules.append(patch_step)
 

@@ -354,10 +354,11 @@ class  BuildExtCmd(_build_ext):
                 for args in ext.function_list:
                     if isinstance(args[0], str):
                         # Then execute a subprocess
+                        args1 = self._convert_subprocesss_args(args)
                         print(" ".join(map(str, args)))
                         try:
-                            subprocess.check_call(list(map(str, args)), 
-                                **ext.keyword_dict)
+                            subprocess.check_call(args1)  ## , 
+                               # **ext.keyword_dict)
                         except CalledProcessError:
                             err = "\nSubprocess '%s' has failed!"
                             print(err % str(args[0]))
@@ -423,6 +424,16 @@ class  BuildExtCmd(_build_ext):
                 self.force = True
                 self.compiler = compiler
 
+
+    def _convert_subprocesss_args(self, args):
+        def subs(s):
+            s_subst = 'null' if self.inplace else str(self.build_lib)
+            f_subst = lambda x: str(s_subst)
+            if r'${build_lib}' in s:
+                print(s_subst)
+                return re.sub(r'\${build_lib}', f_subst, s)
+            return s
+        return [subs(arg) for arg in args]
 
     def eval_extra_args(self, extra_args):
         """Evaluate the dictionary ``extra_args`` to a string.
