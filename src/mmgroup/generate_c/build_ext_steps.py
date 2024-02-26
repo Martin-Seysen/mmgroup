@@ -159,33 +159,6 @@ then that function is called.  Subsequent entries in the list are
 passed as arguments to the function.
 
 
-Adding shared libraries
-........................
-
-The class described in the sequel is deprecated.
-
-Module ``build_ext_steps`` provides another class ``AddSharedExtension``
-for adding  a shared library (or a DLL in Windows) to the python
-distrubution.
-
-In the list ``ext_modules`` of extensions, instances of class 
-``AddSharedExtension`` may be mixed with instances of other  classes.
-
-For the constructor of class ``AddSharedExtension``  the following 
-keyword  arguments are recognized:
-
-
-  * ``name``: The name of a sharded library in python module syntax.
-              E.g. 'mypackage.mystuff' will store 'libmystuff.so'
-              (in unix) or 'mystuff.dll' into directory 'mypackage'
-              of the distribution.
-                
-  * ``library_dirs``: list of directories where to search for the
-                      library to be added.
-
-  * ``static_lib``: Ignore this step if  static_lib`` is true.                     
-
-
 Using a shared library in an extension
 ......................................
 
@@ -261,28 +234,6 @@ class CustomBuildStep(_Extension):
 
 
 
-
-
-class AddSharedExtension(_Extension):
-    """Model an external shared library; yet to be described 
-    """
-    WARN = "Class AddSharedExtension is deprecated!"
-    def __init__(self,  *args, **kwds):
-        warnings.warn(self.WARN, UserWarning)
-        self.static_lib = False
-        kwds['sources'] = []
-        if "static_lib" in kwds:
-            self.static_lib = bool(kwds["static_lib"])
-            del kwds["static_lib"]
-        super(AddSharedExtension, self).__init__(*args, **kwds)
-        self.is_non_standard = True
-        self.lib_name = shared_lib_name(self.name, 'build_ext',
-               static=self.static_lib,  pymod=True, flat=True)
-
-
-
-
-
 class BuildExtCmdObj:
     """Placeholder for argument in class CustomBuildStep
 
@@ -316,8 +267,8 @@ class  BuildExtCmd(_build_ext):
     The ``run`` function of this class treats an instance  of class
     Extension in the usual way, i.e. it builds a python extension. 
 
-    Instances of class ``CustomBuildStep`` or ``AddSharedExtension``
-    are treated as in the description of this module.
+    Instances of class ``CustomBuildStep`` are treated as in the 
+    description of this module.
     """
     WARN_PY = "Executing a python function with class BuildExtCmd is deprecated!"
     user_options = _build_ext.user_options + [
@@ -383,25 +334,6 @@ class  BuildExtCmd(_build_ext):
                         f(*f_args) 
                 sys.stdout.flush()
                 sys.stderr.flush()
-            elif isinstance(ext, AddSharedExtension):
-                if not ext.static_lib:
-                    package_dir = self.get_package_dir()
-                    lib = os.path.split(shared_lib_name(
-                              ext.name, 'load', pymod=True))
-                    dest_path = os.path.join(package_dir, *(lib[:-1]))
-                    lib_name = lib[-1]
-                    ok = False
-                    for dir_ in ext.library_dirs:
-                        src_path = os.path.join(dir_, lib_name)
-                        if os.path.isfile(src_path):
-                            print("Copying shared library %s" % src_path)
-                            print("to %s" % dest_path)
-                            shutil.copy(src_path, dest_path) 
-                            print("Shared has been copied")
-                            ok = True
-                    if not ok:
-                        err = "Shared library %s not found"
-                        raise ValueError(err % ext.name)
             elif isinstance(ext, str):
                 # A string is taken as a comment
                 pass 

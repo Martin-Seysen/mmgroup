@@ -164,8 +164,7 @@ subprocess.check_call([sys.executable, 'cleanup.py',
 
 
 from mmgroup.generate_c.build_ext_steps import Extension, CustomBuildStep
-from mmgroup.generate_c.build_ext_steps import AddSharedExtension
-from mmgroup.generate_c.build_ext_steps import BuildExtCmd, BuildExtCmdObj
+from mmgroup.generate_c.build_ext_steps import BuildExtCmd
 from mmgroup.generate_c.build_shared import shared_lib_name
 from mmgroup.generate_c.copy_shared import copy_shared_libs
 from config import EXTRA_COMPILE_ARGS, EXTRA_LINK_ARGS

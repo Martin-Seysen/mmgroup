@@ -24,8 +24,7 @@ def copy_shared_libs(build_lib = "", verbose = 1):
     """This is necessary for setuptools/distutils"""
 
     assert isinstance(build_lib, str)
-    DIR = 'src/mmgroup'
-    ABSDIR = os.path.abspath(DIR)
+    ABSDIR = os.path.abspath(os.path.join('src', 'mmgroup'))
     if os.name in ["nt"]:
         extensions =  [".pyd", ".dll"]
     elif os.name in ["posix"]:
@@ -45,7 +44,6 @@ def copy_shared_libs(build_lib = "", verbose = 1):
 
     print("*** build_lib in setup.py =", build_lib)
     OUTDIR = os.path.abspath(os.path.join(build_lib, 'mmgroup'))
-
     for filename in shared:
         path = os.path.abspath(os.path.join(ABSDIR, filename))
         dest = os.path.join(OUTDIR, filename)
@@ -53,6 +51,16 @@ def copy_shared_libs(build_lib = "", verbose = 1):
             print("Copying %s to %s" % (path, dest))
         copyfile(path, dest)
 
+    ABSDIR_H = os.path.join(ABSDIR, 'dev', 'headers')
+    OUTDIR_H = os.path.join(OUTDIR, 'dev', 'headers')
+    os.makedirs(OUTDIR_H, exist_ok=True)
+    files = os.listdir(ABSDIR_H)
+    for filename in files:
+        path = os.path.abspath(os.path.join(ABSDIR_H, filename))
+        dest = os.path.join(OUTDIR_H, filename)
+        if verbose:
+            print("Copying %s to %s" % (path, dest))
+        copyfile(path, dest)
 
 
 if __name__ == "__main__":
