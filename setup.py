@@ -54,7 +54,6 @@ DEV_DIR = os.path.join(PACKAGE_DIR, 'dev')
 C_DIR = os.path.join(DEV_DIR, 'c_files')
 LIB_DIR = os.path.join(DEV_DIR, 'lib_files')
 PXD_DIR = os.path.join(DEV_DIR, 'pxd_files')
-SHARED_DIR = os.path.join(DEV_DIR, 'shared_files')
 HEADERS_DIR = os.path.join(DEV_DIR, 'headers')
 
 
@@ -214,7 +213,6 @@ DIR_DICT = {
    'SRC_DIR' : SRC_DIR,
    'C_DIR' : C_DIR,
    'LIB_DIR' : LIB_DIR,
-   'SHARED_DIR' : SHARED_DIR,
    'DEV_DIR' : DEV_DIR,
    'PXD_DIR' : PXD_DIR,
    'PACKAGE_DIR': PACKAGE_DIR,
@@ -234,7 +232,7 @@ GENERATE_START = '''
  --py-path {SRC_DIR}
  --out-dir {C_DIR}
  --out-pxd-dir {PXD_DIR}
- --library-path  {SHARED_DIR} {PACKAGE_DIR}
+ --library-path  {PACKAGE_DIR}
 '''.format(**DIR_DICT)
 
 SHARED_START = '''
@@ -243,9 +241,9 @@ SHARED_START = '''
     {MOCKUP}
     --source-dir {C_DIR}
     --include-path {PACKAGE_DIR} {LIB_DIR}  
-    --library-path {PACKAGE_DIR} {SHARED_DIR} {LIB_DIR}
+    --library-path {PACKAGE_DIR} {LIB_DIR}
     --library-dir {LIB_DIR}
-    --shared-dir {SHARED_DIR}
+    --shared-dir {PACKAGE_DIR}
     --rpath $ORIGIN
     --define
     --static {STATIC_LIB}
@@ -351,7 +349,7 @@ mat24_steps = CustomBuildStep(
 
 add_mat24_shared = AddSharedExtension(
     name = 'mmgroup.mmgroup_mat24', 
-    library_dirs = [SHARED_DIR],
+    library_dirs = [PACKAGE_DIR],
     static_lib = STATIC_LIB,
 )
 
@@ -401,7 +399,7 @@ if STAGE < 2:
     ]
     if not on_readthedocs:
         ext_modules += [
-            add_mat24_shared,
+  #          add_mat24_shared,
             mat24_extension,
             generators_extension,
             clifford12_extension,
@@ -523,7 +521,7 @@ mm_op_steps =  CustomBuildStep(
 
 add_mm_op_shared = AddSharedExtension(
     name = 'mmgroup.mmgroup_mm_op', 
-    library_dirs = [SHARED_DIR],
+    library_dirs = [PACKAGE_DIR],
     static_lib = STATIC_LIB,
 )
 
@@ -557,7 +555,7 @@ if STAGE < 3:
     ]
     if not on_readthedocs:
         ext_modules += [
-            add_mm_op_shared, 
+   #         add_mm_op_shared, 
             mm_op_extension,
             mm_op_poststeps, 
         ]
@@ -621,7 +619,7 @@ mm_reduce_steps =  CustomBuildStep(
 
 add_mm_reduce = AddSharedExtension(
     name = 'mmgroup.mmgroup_mm_reduce', 
-    library_dirs = [SHARED_DIR],
+    library_dirs = [PACKAGE_DIR],
     static_lib = STATIC_LIB,
 )
 
@@ -649,7 +647,7 @@ if STAGE < 4:
     ]
     if not on_readthedocs:
         ext_modules += [
-            add_mm_reduce,
+  #          add_mm_reduce,
             mm_reduce_extension,
         ]
 
