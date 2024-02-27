@@ -20,11 +20,13 @@ def has_extension(filename, extension_list):
 
 
 
-def copy_shared_libs(build_lib = "", verbose = 1):
+def copy_shared_libs(build_lib = "", package = None, verbose = 1):
     """This is necessary for setuptools/distutils"""
 
     assert isinstance(build_lib, str)
-    ABSDIR = os.path.abspath(os.path.join('src', 'mmgroup'))
+    if package is None:
+        package = 'mmgroup'
+    ABSDIR = os.path.abspath(os.path.join('src', package))
     if os.name in ["nt"]:
         extensions =  [".pyd", ".dll"]
     elif os.name in ["posix"]:
@@ -42,8 +44,8 @@ def copy_shared_libs(build_lib = "", verbose = 1):
             print("No shared libraries to copy")
         return
 
-    print("*** build_lib in setup.py =", build_lib)
-    OUTDIR = os.path.abspath(os.path.join(build_lib, 'mmgroup'))
+    #print("*** build_lib in setup.py =", build_lib)
+    OUTDIR = os.path.abspath(os.path.join(build_lib, package))
     for filename in shared:
         path = os.path.abspath(os.path.join(ABSDIR, filename))
         dest = os.path.join(OUTDIR, filename)

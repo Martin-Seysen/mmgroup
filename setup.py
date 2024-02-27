@@ -643,7 +643,7 @@ if not STATIC_LIB and not on_readthedocs:
     copy_headers_step = CustomBuildStep(
        'Copy header files',
       [sys.executable, 'shared_headers.py'] + COPY_HEADERS.split(),
-      [sys.executable, 'src/mmgroup/generate_c/copy_shared.py', r'${build_lib}'],
+      [sys.executable, 'copy_shared.py', r'${build_lib}'],
     )
     ext_modules.append(copy_headers_step)
 
