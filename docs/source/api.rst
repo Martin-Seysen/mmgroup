@@ -496,6 +496,10 @@ Version history
      - 2024-02-23
      - Support for exporting C functions from libraries
 
+   * - 1.0.2
+     - 2024-02-27
+     - Changes in build system regarding shared libraries
+
 
 .. only:: html
 

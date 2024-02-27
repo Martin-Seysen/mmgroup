@@ -72,10 +72,7 @@ def copy_libs(cmdline_args):
 
 def copy_shared_all(args):
     parser = build_parser()
-
-    print(args)
     cmdline_args = parser.parse_args(args)
-    print(cmdline_args)
     copy_headers(cmdline_args)
     copy_libs(cmdline_args)
 

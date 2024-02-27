@@ -2,8 +2,8 @@
 # History
 ####################################################################
 
-
-VERSION = '1.0.1' # 2024-02-23. Support for exporting C functions from libraries
+VERSION = '1.0.2' # 2024-02-27. Changes in build system regarding shared libraries
+# VERSION = '1.0.1' # 2024-02-23. Support for exporting C functions from libraries
 # VERSION = '1.0.0' # 2024-01-23. Documentation updated
 # VERSION = '0.0.14' # 2024-01-18. Demonstration code for reduction in the Monster added
 # VERSION = '0.0.13' # 2023-10-27. Supports numbering of elements of the Monster.
