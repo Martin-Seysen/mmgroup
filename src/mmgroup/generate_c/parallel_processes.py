@@ -47,14 +47,19 @@ class SimpleSubProcess:
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                  pipesize=self.PIPESIZE)
         except:
-            sys.stdout.flush()
-            sys.stderr.flush()
-            ERR= """
+            # Some installations don't like the 'pipesize' keyword arg
+            try:
+                self.process = subprocess.Popen(args, 
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            except:
+                sys.stdout.flush()
+                sys.stderr.flush()
+                ERR= """
 Error: Could not launch the following subprocess!
  %s
 """
-            print(ERR % self.args)
-            raise
+                print(ERR % self.args)
+                raise
         assert number >= 0
         self.number = number
 
