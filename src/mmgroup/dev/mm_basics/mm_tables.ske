@@ -409,24 +409,24 @@ void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
                 p_out->preimage = (uint16_t)(src | sign);
             }
             {  // deal with permutation inside a row of 64 entries
-                uint_fast8_t qi[24], acc;
+                uint_fast8_t qi[24], acc, q0;
                 const uint8_t *p1 = MM_SUB_OCTAD_ELEMENT_TABLE + (src << 3);
                 qi[p1[0]] = 0; qi[p1[1]] = 1; 
-                qi[p1[2]] = 2; qi[p1[3]] = 3;
-                qi[p1[4]] = 4; qi[p1[5]] = 5; 
-                qi[p1[6]] = 6; qi[p1[7]] = 7;
-                p1 = MM_SUB_PERM64_TABLE + (qi[p_inv[p0[0]]] << 3);
-                acc =  p1[qi[p_inv[p0[1]]]];
+                qi[p1[2]] = 2; qi[p1[3]] = 4;
+                qi[p1[4]] = 8; qi[p1[5]] = 16;
+                qi[p1[6]] = 32; qi[p1[7]] = 63;
+                q0 = qi[p_inv[p0[0]]];
+                acc =  qi[p_inv[p0[1]]] ^ q0;
                 p_out->perm[0] = acc;
-                acc ^=  p1[qi[p_inv[p0[2]]]];
+                acc ^=  qi[p_inv[p0[2]]] ^ q0;
                 p_out->perm[1] = acc;
-                acc ^=  p1[qi[p_inv[p0[3]]]];
+                acc ^=  qi[p_inv[p0[3]]] ^ q0;
                 p_out->perm[2] = acc;
-                acc ^=  p1[qi[p_inv[p0[4]]]];
+                acc ^=  qi[p_inv[p0[4]]] ^ q0;
                 p_out->perm[3] = acc;
-                acc ^=  p1[qi[p_inv[p0[5]]]];
+                acc ^=  qi[p_inv[p0[5]]] ^ q0;
                 p_out->perm[4] = acc;
-                acc ^=  p1[qi[p_inv[p0[6]]]];
+                acc ^=  qi[p_inv[p0[6]]] ^ q0;
                 p_out->perm[5] = acc;
             }
             p0 += 8;

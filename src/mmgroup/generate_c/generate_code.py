@@ -738,7 +738,8 @@ class CodeGenerator:
             self.tg.generate(src, dest, out_h)
             out_h.write("\n")
             dest.close()
-            return [(n, out_h.as_string())]
+            log = "Inserting header for " + dest_name
+            return [(n, out_h.as_string(), log)]
         else:
             out_h = StringOutputFile()
             end_h = StringOutputFile()
@@ -748,9 +749,10 @@ class CodeGenerator:
             end_h.write(h_split)
             self.tg.generate(h_tail, None, end_h, 'h')
             end_h.write("\n")
+            log = "Inserting header " + src_file_name
             return [
-               (n, out_h.as_string()),
-               (self.BIGINT-n, end_h.as_string())
+               (n, out_h.as_string(), log),
+               (self.BIGINT-n, end_h.as_string(), "")
             ]
 
     def generate_c_files(self, gen_list):
@@ -796,7 +798,9 @@ class CodeGenerator:
         if s.real_out_header:
             out_header = open_for_write(out_dir, s.real_out_header)
             write_warning_generated(out_header)
-            for i, text in sorted(h_list):
+            for i, text, log in sorted(h_list):
+                if s.verbose and log:
+                      print(log)
                 out_header.write(text)
             out_header.close()
 

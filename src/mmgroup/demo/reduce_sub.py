@@ -327,7 +327,7 @@ def find_triality_element_for_axis(v, axis_orbits):
            for e in [1, -1]:
                if axis_orbit(v * Mm('t', e)) in axis_orbits:
                    return  Mm('t', e)
-       raise ValueError      
+           raise ValueError
     
     The implementation used here is much faster, since it computes
     fewer co-ordinates of the transformed axes. 

@@ -33,6 +33,7 @@ def arg_list_to_str(args):
 
 class SimpleSubProcess:
     """Models a simple subprocess"""
+    PIPESIZE = 0x80000
     def __init__(self, args, number):
         """Start a subprocess with argument list ``args``.
 
@@ -43,7 +44,8 @@ class SimpleSubProcess:
         self.args = arg_list_to_str(args)
         try: 
             self.process = subprocess.Popen(args, 
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                 pipesize=self.PIPESIZE)
         except:
             sys.stdout.flush()
             sys.stderr.flush()
