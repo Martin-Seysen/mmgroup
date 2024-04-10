@@ -80,7 +80,7 @@ The operation :math:`y_{f} \cdot x_{e} \cdot x_\epsilon`
 
 The operation  :math:`g = y_{f} \cdot x_{e} \cdot x_\epsilon` on
 :math:`\rho_p` is coded in function ``mm_op<p>_xy`` in the
-automatically generated C file ``mm_op<p>_xy.c`` for the modulus ``p``.
+automatically generated C file ``mm<p>_op_xy.c`` for the modulus ``p``.
 The C function performs that operation for arbitrary
 :math:`e, f \in \mathcal{P}` and :math:`\epsilon \in \mathcal{C}^*` 
 in a single pass.
@@ -155,6 +155,146 @@ otherwise. Then
   \quad \mbox{with} \; \;  n = m + \left<f, ij \right> \, ;  \\  
   (ij)_1    &  \stackrel{g^{-1}}{\longrightarrow} 
     (-1)^{\left< f, ij \right>} (ij)_1  \; .
+
+The sign bits :math:`s_X, s_{YZ},` and :math:`s_T` can also be
+computed as follows:
+
+.. math::
+
+  s_X & =
+  |\epsilon| \left<d, i \right>
+  + \left< e, i \right>
+  + |\epsilon| P(d)
+  + \left<ef, \theta(d)  \right>
+  + \left<d, \epsilon \theta(e) \right> + P(f)
+  \, ;  \\
+  s_{YZ} & =
+  \left<f,  i \right>
+  + \left<f, \theta(d) \right>
+  + \left<d, \epsilon \theta(ef) \theta(f)^{\sigma + 1} \right> \\
+  & + \left<f,  \theta(e) \right>
+  + \sigma \left<e, \theta(f) \right>
+  + (\sigma + 1) P(f)
+  \, ;  \\
+  s_{T} & =
+  |\delta||\epsilon|/2
+  + \left<ef,\delta\right>
+  + \left<e, \theta(d)  \right>
+  + \left<d,  \epsilon \theta(e)  \right>
+  \; .
+
+
+
+The operation :math:`\tau^e`
+..............................
+
+The operation  :math:`g = \tau^e` on :math:`\rho_p` is coded in
+function ``mm_op<p>_t`` in the automatically generated C file 
+``mm<p>_op_t.c`` for the modulus ``p``. Since  :math:`\tau` has
+order 3, it suffices to present the formulas for :math:`e = \pm 1`.
+Note that :math:`\tau` fixes  :math:`(ii)_1`. 
+For :math:`i \neq j` we have:
+
+.. math::
+   \begin{array}{ccccccc}
+  (ij)_1  
+  & \stackrel{\tau}{\longrightarrow} &
+  X_{ij} -  X^+_{ij}
+  & \stackrel{\tau}{\longrightarrow} &
+  X_{ij} +  X^+_{ij} 
+  & \stackrel{\tau}{\longrightarrow} & 
+  (ij)_1  \, , \\
+  2 X_{ij}  
+  & \stackrel{\tau}{\longrightarrow} &
+  (ij)_1 + X_{ij} +  X^+_{ij}
+  & \stackrel{\tau}{\longrightarrow} &
+  (ij)_1 + X_{ij} -  X^+_{ij} 
+  & \stackrel{\tau}{\longrightarrow} & 
+  2 X_{ij} \, , \\
+  2 X^+_{ij}   
+  & \stackrel{\tau}{\longrightarrow} &
+  (ij)_1 - X_{ij} -  X^+_{ij}
+  & \stackrel{\tau}{\longrightarrow} &
+  -(ij)_1 + X_{ij} -  X^+_{ij} 
+  & \stackrel{\tau}{\longrightarrow} & 
+  2 X^+_{ij} \, . \\
+  X^+_{d \cdot i}
+  & \stackrel{\tau}{\longrightarrow} &
+  (-1)^{\left<d, i \right>} (d^- \otimes_1 i)
+  & \stackrel{\tau}{\longrightarrow} &
+  (-1)^{P(d)} (d^+ \otimes_1 i)
+  & \stackrel{\tau}{\longrightarrow} &
+  X^+_{d \cdot i} \\
+  X^+_{d,\delta}
+  & \stackrel{\tau}{\longrightarrow} &
+  \textstyle\frac{1}{8} 
+  \sum_\epsilon \textstyle{(-)_{\delta,\epsilon}} X^+_{d,\delta}
+  & \stackrel{\tau}{\longrightarrow} &
+  \sum_\epsilon \textstyle{(-)_{\epsilon,\delta}} X^+_{d,\delta}
+  & \stackrel{\tau}{\longrightarrow} &
+  X^+_{d,\delta}
+  \end{array}
+
+The last formula describes the operation of :math:`\tau` on
+:math:`X^+_{d,\delta}`, where :math:`d` is a preimage of an octad
+in the Parker loop, and :math:`\delta` is an even element of the
+Golay cocode represented by a subset of that octad. The summation
+runs over all even subsets :math:`\epsilon` of that octad; and
+:math:`(-)_{\delta,\epsilon}` means
+:math:`(-1)^{\left|\delta \cap \epsilon \right| + \left|\delta \right| /2}`
+as in :cite:`Seysen20`. We will briefly comment on the implementation
+of the last formula.
+
+For any octad :math:`d` as above we consider the row vector
+:math:`X^+_{d}` with 64 entries :math:`X^+_{d, \delta}`, where
+:math:`\delta` runs over the 64 even subsets of the octad corresponding
+to  :math:`d`. Then operation of :math:`\tau` on  :math:`X^+_{d}` can 
+be written as
+   
+.. math::
+     X^+_{d} 
+     \stackrel{\tau}{\longrightarrow} 
+     \textstyle\frac{1}{8} X^+_{d} \cdot D \cdot H
+     \stackrel{\tau}{\longrightarrow} 
+     \textstyle\frac{1}{8}  X^+_{d} \cdot H \cdot D
+     \stackrel{\tau}{\longrightarrow} 
+     X^+_{d} \; .
+
+Here matrix :math:`D` is a diagonal matrix with an entry
+:math:`(-1)^{\left|\delta \right| /2}` in the row and column
+corrsponding to :math:`\delta`. Matrix :math:`H` is
+(essentially) a Hadamard matrix  with an entry
+:math:`(-1)^{\left|\delta \cap \epsilon \right|}` in the row and
+column corresponding to :math:`\delta` and :math:`\epsilon`,
+respectively.  
+    
+When implementing the muliplication with matrices :math:`D` and
+:math:`H` we have to be aware of the numbering of the entries 
+:math:`\delta` used in Section :ref:`mmrep-label`. Using that
+numbering, it turns out that matrix :math:`D` has diagonal entries
+:math:`(-1)^{w(i(i+1)/2)}`, with :math:`i` running from 0 to 63,
+and :math:`w(j)` the bit weight of the binary representation
+of a nonnegative integer :math:`j`. Matrix :math:`H` is a
+(commuting) product of a permutation matrix :math:`P`, and a
+standard :math:`64 \times 64` Hadamard matrix :math:`H_{64}`
+according to Sylvester's construction.
+Matrix :math:`P` fixes entry :math:`i` if  :math:`w(i)` is
+even and exchanges entry :math:`i` with entry :math:`63 - i`
+otherwise.  
+
+Here multiplication with matrix :math:`H_{64}` is the most
+time-consuming operation. We can speed this up by using the
+decomposition:
+
+.. math::
+    H_{64} = H_2 \otimes H_2 \otimes H_2 \otimes H_2
+    \otimes H_2 \otimes H_2 \, , \quad \mbox{with} \;
+    H_2 = \left(
+    \begin{array}{cc}
+    1 & 1 \\
+    1 & -1
+    \end{array}
+    \right) \, .
 
 
 Conjugation of  :math:`\tilde{x}_d x_\delta` with :math:`y_e`

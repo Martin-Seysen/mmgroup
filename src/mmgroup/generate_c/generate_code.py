@@ -363,8 +363,8 @@ def subst_source_name(input_name, subst):
         source_ext = '.h'
         target_name = None
     else:
-        ERR = "Dont know how to generate source "
-        raise ValueError(ERR + source_name)
+        ERR = "Don't know how to generate source from file"
+        raise ValueError(ERR + filename)
     mm = re.compile(subst[0]) if subst and len(subst) else None
     if mm and len(subst) > 1:
         source_name = mm.sub(subst[1], name)

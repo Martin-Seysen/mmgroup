@@ -37,18 +37,21 @@ def pxi_defs(pxifile_name):
 
 
 
-m_pxd_line = re.compile(r"\s+(\w+)\s+(\w+)\((.+)\)")
+m_pxd_line = re.compile(r"\s+(\w+)\s+(\w+)\(([^()]*)\)")
 m_pxd_arglist = re.compile(r"\s*(\w+)(\s*(\*)?\s*)(\w+)")
 
 def _parse_pxd_line(l):
-    m = m_pxd_line.match(l) 
+    m = m_pxd_line.match(l)
     if m:
          type, function, args = m.groups()
          arglist = args.split(",")
          args = []
          for arg in arglist:
+             if not arg or arg.isspace():
+                 continue
              m_arg = m_pxd_arglist.match(arg)
-             if not m_arg: return None
+             if not m_arg:
+                 return None
              g = m_arg.groups()
              args.append( (g[0],) + g[2:])
          return (type, function, args) 

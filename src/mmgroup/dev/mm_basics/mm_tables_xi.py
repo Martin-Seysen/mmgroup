@@ -10,7 +10,7 @@ occuring as indices for tag T into three groups:
 
 Octads are Golay code elements. Odd, even and grey Golay code elements 
 are defined in [Seys19]. In the numbering of our octads and basis
-vectorv, octads are ordered as in the table above. Similarly, we divide 
+vectors, octads are ordered as in the table above. Similarly, we divide 
 the basis vectors with tag T into two blocks with tags T0 and T1. 
 Basis vectors in T0 are indexed by even and are indexed by odd Golay 
 code vectors.
