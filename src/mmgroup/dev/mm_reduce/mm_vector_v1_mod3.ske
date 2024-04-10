@@ -42,7 +42,6 @@ static  uint32_t V1_MOD3_DATA[] = {
 };
 
 
-// %%USE_TABLE
 static  uint32_t V1_MOD3_TAG_DATA[] = {
 // %%TABLE V1_MOD3_TAG_DATA, uint32
 };

@@ -36,7 +36,6 @@ const uint32_t MM_ORDER_VECTOR_TAG_DATA[] = {
 };
 
 
-// %%USE_TABLE
 static const uint16_t TAG_INDICES[] = {
 // %%TABLE ORDER_VECTOR_TAG_INDICES, uint16
 };
@@ -123,7 +122,6 @@ int32_t mm_order_load_tag_data(uint32_t n, uint32_t *buf, uint32_t buf_size)
 #error A %{P}-Bit version of this module is not supported
 // %%END IF
 
-// %%USE_TABLE
 static const uint32_t ORDER_VECTOR[] = {
 // %%TABLE ORDER_VECTOR_DATA, uint32
 };

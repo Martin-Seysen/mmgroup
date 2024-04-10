@@ -122,7 +122,6 @@ class Mat24(Mat24Tables):
            "Mat24_recip_basis"   : recip_basis_c,
            "Mat24_syndrome_table"    : Mat24Tables.syndrome_table,
            "Mat24_oct_enc_table"     : Mat24Tables.oct_enc_table,
-           "Mat24_oct_enc_offset"    : Mat24Tables.oct_enc_offset,
            "Mat24_oct_dec_table"     : Mat24Tables.oct_dec_table, 
            "Mat24_theta_table"       : theta_table,
            "Mat24_autpl_qf_table"    : autpl_qf_table,

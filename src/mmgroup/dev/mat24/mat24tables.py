@@ -344,18 +344,17 @@ def make_octad_tables(basis):
     Given an octad (or a complement of an octad) v in 'gcode' 
     representation, the number of the corresponding octad is:
 
-       (oct_enc_table[v1] >> 1) + 3 * (v1 >> 3) - oct_enc_offset ,
+       (oct_enc_table[v & 0x7ff] >> 1) ,
 
-    where  v1 = v & 0x7ff.
 
     The vector v is a (possibly complemented) octad if the following 
     condition holds:
 
-       oct_enc_table[v1] < 255  .
+       oct_enc_table[v & 0x7ff] & 0x8000 == 0  .
 
-    It is not a complemented octad if in addition we have:
+    Vector v is not a complemented octad if in addition we have:
 
-       (v >> 12) & oct_enc_table[v1] & 1 == 0
+       ((v >> 11) ^ oct_enc_table[v & 0x7ff]) & 1 == 0
 
     """
     codewords = lin_table(basis[:11])
@@ -363,22 +362,15 @@ def make_octad_tables(basis):
     octad = 0
     d = {}
     w = {}
+    oct_enc_table = numpy.full(2048, 0xffff, dtype = uint16)
     for gcode, vector in enumerate(codewords[:2048]):
         weight = bw24(vector)
         if weight in [8, 16]:
             oct_dec_table[octad] = gcode + ((weight & 16) << 7)
-            d[gcode] = octad - 3 * (gcode >> 3)
-            w[gcode] = weight >> 4
+            oct_enc_table[gcode] = (weight >> 4) + 2 * octad
             octad += 1
     assert octad == 759
-    d_min, d_max = min(d.values()), max(d.values())
-    assert d_min <= 0
-    assert d_max - d_min < 127
-    oct_enc_table = numpy.full(2048, 255, dtype = uint8)
-    for gcode, dict_value in d.items():
-        new_value = dict_value - d_min
-        oct_enc_table[gcode] = w[gcode] + 2 * new_value
-    return oct_enc_table, oct_dec_table, -d_min
+    return oct_enc_table, oct_dec_table
 
 
 class Mat24Tables(object):
@@ -387,10 +379,7 @@ class Mat24Tables(object):
     enc_table0, enc_table1, enc_table2 = encoding_tables(recip_basis)
     dec_table0, dec_table1, dec_table2 = encoding_tables(basis)
     syndrome_table = make_syndrome_table(recip_basis)
-    #oct_enc_table, oct_dec_table, oct_index_table = make_octad_tables_old( 
-    #    basis[12:] )
-    oct_enc_table, oct_dec_table, oct_enc_offset = make_octad_tables(
-        basis[12:] )
+    oct_enc_table, oct_dec_table = make_octad_tables(basis[12:])
 
     ###########################################################################
     # Some general bit operations
@@ -538,10 +527,9 @@ class Mat24Tables(object):
     @classmethod
     def gcode_to_octad(self, v1, u_strict = 1):
        y = int(self.oct_enc_table[v1 & 0x7ff])
-       if ((v1 >> 11) ^ y) & u_strict & 1 or y >= 254:
+       if y >> 15 or ((v1 >> 11) ^ y) & u_strict & 1:
            raise ValueError("Golay code vector is not an octad")
-       v1 &= 0x7ff
-       return (y >> 1) + 3 * (v1 >> 3) - self.oct_enc_offset 
+       return y >> 1 
 
 
     @classmethod

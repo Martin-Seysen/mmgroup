@@ -56,7 +56,7 @@
 
 
 // %%USE_TABLE
-static const uint32_t MMV_CONST_TABLE[] = {
+const uint32_t MMV_CONST_TABLE[] = {
 // %%TABLE MMV_CONST_TAB, uint32
 };
 

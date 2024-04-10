@@ -114,7 +114,6 @@ class Lsbit24Function(object):
  
     In order to create the table ``lsbit_table``, put e.g. the lines::
 
-        // %%USE_TABLE
         static const uint8_t MAT24_LSBIT_TABLE[32] = { 
         // %%TABLE Mat24_lsbit_table, uint8
         };
@@ -163,7 +162,7 @@ class Lsbit24Function(object):
 
     The second argument ``"s"`` of ``UserFormat()`` means that the
     argument (which is ``x`` in the example ``{MAT24_LSBIT:x}``) is
-    interpreted as the string ``"x"". See documentation of class 
+    interpreted as the string ``"x"``. See documentation of class 
     ``UserFormat()`` for details.
 
     """
@@ -223,7 +222,7 @@ class Lsbit24Function(object):
 
 ############################################################################
 ############################################################################
-# Functions for analyzing basis vecors of the Golay code  
+# Functions for analyzing basis vectors of the Golay code  
 ############################################################################
 ############################################################################
  

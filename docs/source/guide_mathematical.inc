@@ -185,15 +185,15 @@ computed as follows:
 
 
 
-The operation :math:`\tau^e`
-..............................
+The operation of the triality elements  :math:`\tau^e`
+.......................................................
 
 The operation  :math:`g = \tau^e` on :math:`\rho_p` is coded in
 function ``mm_op<p>_t`` in the automatically generated C file 
 ``mm<p>_op_t.c`` for the modulus ``p``. Since  :math:`\tau` has
 order 3, it suffices to present the formulas for :math:`e = \pm 1`.
-Note that :math:`\tau` fixes  :math:`(ii)_1`. 
-For :math:`i \neq j` we have:
+Note that :math:`\tau` fixes  :math:`(ii)_1`. From the discussion
+in :cite:`Seysen20`, Section 8, we obtain for :math:`i \neq j`:
 
 .. math::
    \begin{array}{ccccccc}
