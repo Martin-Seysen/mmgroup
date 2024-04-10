@@ -217,22 +217,23 @@ For :math:`i \neq j` we have:
   & \stackrel{\tau}{\longrightarrow} &
   -(ij)_1 + X_{ij} -  X^+_{ij} 
   & \stackrel{\tau}{\longrightarrow} & 
-  2 X^+_{ij} \, . \\
+  2 X^+_{ij} \, , \\
   X^+_{d \cdot i}
   & \stackrel{\tau}{\longrightarrow} &
   (-1)^{\left<d, i \right>} (d^- \otimes_1 i)
   & \stackrel{\tau}{\longrightarrow} &
   (-1)^{P(d)} (d^+ \otimes_1 i)
   & \stackrel{\tau}{\longrightarrow} &
-  X^+_{d \cdot i} \\
+  X^+_{d \cdot i} \, , \\
   X^+_{d,\delta}
   & \stackrel{\tau}{\longrightarrow} &
   \textstyle\frac{1}{8} 
   \sum_\epsilon \textstyle{(-)_{\delta,\epsilon}} X^+_{d,\delta}
   & \stackrel{\tau}{\longrightarrow} &
+  \textstyle\frac{1}{8} 
   \sum_\epsilon \textstyle{(-)_{\epsilon,\delta}} X^+_{d,\delta}
   & \stackrel{\tau}{\longrightarrow} &
-  X^+_{d,\delta}
+  X^+_{d,\delta} \, .
   \end{array}
 
 The last formula describes the operation of :math:`\tau` on
@@ -262,11 +263,10 @@ be written as
 
 Here matrix :math:`D` is a diagonal matrix with an entry
 :math:`(-1)^{\left|\delta \right| /2}` in the row and column
-corrsponding to :math:`\delta`. Matrix :math:`H` is
-(essentially) a Hadamard matrix  with an entry
-:math:`(-1)^{\left|\delta \cap \epsilon \right|}` in the row and
-column corresponding to :math:`\delta` and :math:`\epsilon`,
-respectively.  
+corrsponding to :math:`\delta`. Matrix :math:`H` is a Hadamard matrix
+with an entry :math:`(-1)^{\left|\delta \cap \epsilon \right|}` in
+the row and column corresponding to :math:`\delta` and
+:math:`\epsilon`, respectively.
     
 When implementing the muliplication with matrices :math:`D` and
 :math:`H` we have to be aware of the numbering of the entries 
