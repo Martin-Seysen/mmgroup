@@ -112,22 +112,25 @@ class Mat24(Mat24Tables):
 
     ## Collect tables and coding functions for generating C code
     tables = {
-           "Mat24_enc_table0"    : Mat24Tables.enc_table0,
-           "Mat24_enc_table1"    : Mat24Tables.enc_table1,
-           "Mat24_enc_table2"    : Mat24Tables.enc_table2,
-           "Mat24_dec_table0"    : Mat24Tables.dec_table0,
-           "Mat24_dec_table1"    : Mat24Tables.dec_table1,
-           "Mat24_dec_table2"    : Mat24Tables.dec_table2,
-           "Mat24_basis"         : Mat24Tables.basis,
-           "Mat24_recip_basis"   : recip_basis_c,
-           "Mat24_syndrome_table"    : Mat24Tables.syndrome_table,
-           "Mat24_oct_enc_table"     : Mat24Tables.oct_enc_table,
-           "Mat24_oct_dec_table"     : Mat24Tables.oct_dec_table, 
-           "Mat24_theta_table"       : theta_table,
-           "Mat24_autpl_qf_table"    : autpl_qf_table,
-           "Mat24_autpl_qf_table64"  : autpl_qf_table64,
-           "Mat24_doc"               : Mat24__doc__, 
-           "Mat24_basis_weights_8"   : basis_weights_8,
+        "Mat24_enc_table0"        : Mat24Tables.enc_table0,
+        "Mat24_enc_table1"        : Mat24Tables.enc_table1,
+        "Mat24_enc_table2"        : Mat24Tables.enc_table2,
+        "Mat24_dec_table0"        : Mat24Tables.dec_table0,
+        "Mat24_dec_table1"        : Mat24Tables.dec_table1,
+        "Mat24_dec_table2"        : Mat24Tables.dec_table2,
+        "Mat24_basis"             : Mat24Tables.basis,
+        "Mat24_recip_basis"       : recip_basis_c,
+        "Mat24_syndrome_table"    : Mat24Tables.syndrome_table,
+        "Mat24_oct_enc_table"     : Mat24Tables.oct_enc_table,
+        "Mat24_oct_dec_table"     : Mat24Tables.oct_dec_table, 
+        "Mat24_theta_table"       : theta_table,
+        "Mat24_autpl_qf_table"    : autpl_qf_table,
+        "Mat24_autpl_qf_table64"  : autpl_qf_table64,
+        "Mat24_doc"               : Mat24__doc__, 
+        "Mat24_basis_weights_8"   : basis_weights_8,
+        "Mat24_octad_table"       : Mat24Tables.octad_table,
+        "Mat24_octad_index_table" : Mat24Tables.octad_index_table,
+
     }
 
     directives = {}

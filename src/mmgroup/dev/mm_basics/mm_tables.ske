@@ -290,18 +290,6 @@ extern "C" {
 
 
 
-/**
-  @var MM_SUB_OCTAD_ELEMENT_TABLE
-
-  For ``0 <= i < 759``, the entries ``8*i,...8*i+7`` in the
-  table ``MM_SUB_OCTAD_ELEMENT_TABLE`` are the bit positions of the
-  octad with the number ``i`` (in natural order).
-*/
-// %%EXPORT_TABLE
-const uint8_t MM_SUB_OCTAD_ELEMENT_TABLE[759*8] = { 
-    // %%TABLE MM_OctadElementsTable, uint8
-};
-
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -392,7 +380,7 @@ void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
         uint_fast16_t i, src;
         uint_fast8_t p_inv[24];
         mm_sub_op_pi64_type *p_out;
-        const uint8_t *p0 = MM_SUB_OCTAD_ELEMENT_TABLE;
+        const uint8_t *p0 = MAT24_OCTAD_ELEMENT_TABLE;
 
         p_out = p_op->tbl_perm64;
         for (i = 0; i < 24; ++i) p_inv[i] = p_op->inv_perm[i];
@@ -410,7 +398,7 @@ void  mm_sub_prep_pi(uint32_t eps, uint32_t pi, mm_sub_op_pi_type *p_op)
             }
             {  // deal with permutation inside a row of 64 entries
                 uint_fast8_t qi[24], acc, q0;
-                const uint8_t *p1 = MM_SUB_OCTAD_ELEMENT_TABLE + (src << 3);
+                const uint8_t *p1 = MAT24_OCTAD_ELEMENT_TABLE + (src << 3);
                 qi[p1[0]] = 0; qi[p1[1]] = 1; 
                 qi[p1[2]] = 2; qi[p1[3]] = 4;
                 qi[p1[4]] = 8; qi[p1[5]] = 16;
@@ -480,7 +468,7 @@ int32_t mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
     
 // Compute interssection of vector ``v`` in ``{0,1}^24`` and the
 // octad referred by the pointer ``po`` to an antry of the
-// octad table ``MM_SUB_OCTAD_ELEMENT_TABLEE``. Return the
+// octad table ``MAT24_OCTAD_ELEMENT_TABLE``. Return the
 // result as a 6-bit number denoting a suboctad.
 #define to_suboctad(v, po) MM_SUBOCTAD_TABLE[ \
     ((v >> po[0]) & 1) + ((v >> (po[1] - 1)) & 2) \
@@ -565,7 +553,7 @@ void  mm_sub_prep_xy(uint32_t f, uint32_t e, uint32_t eps, mm_sub_op_xy_type *p_
         uint_fast32_t vef = vf ^ p_op->lin_i[0];
         uint_fast16_t sign_e = PwrMap(e);
         uint_fast16_t oct, d, res, sign;
-        const uint8_t* p_oct = MM_SUB_OCTAD_ELEMENT_TABLE;
+        const uint8_t* p_oct = MAT24_OCTAD_ELEMENT_TABLE;
         uint16_t* p_res = p_op->s_T;
 
         for (oct = 0; oct < 759; ++oct) {

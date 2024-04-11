@@ -152,8 +152,6 @@ extern "C" {
 
 
 
-
-
 /// @cond DO_NOT_DOCUMENT 
 
 
@@ -269,6 +267,42 @@ const uint16_t MAT24_OCT_ENC_TABLE[2048] = {
 const uint16_t MAT24_THETA_TABLE[] = { 
 // %%TABLE Mat24_theta_table, uint16
 };
+
+
+
+
+/*************************************************************************
+*** Table of entries of an octad.
+*************************************************************************/
+
+
+
+/**
+  @var MAT24_OCTAD_ELEMENT_TABLE
+
+  For ``0 <= i < 759``, the entries ``8*i,...8*i+7`` in the
+  table ``MAT24_OCTAD_ELEMENT_TABLE`` are the bit positions of the
+  octad with the number ``i``.
+*/
+// %%EXPORT_TABLE
+const uint8_t MAT24_OCTAD_ELEMENT_TABLE[759*8] = { 
+// %%TABLE Mat24_octad_table, uint8
+};
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+// %%EXPORT_TABLE
+const uint8_t MAT24_OCTAD_INDEX_TABLE[64*4] = { 
+// %%TABLE Mat24_octad_index_table, uint8
+};
+
+
+/// @endcond  
+
+
 
 
 

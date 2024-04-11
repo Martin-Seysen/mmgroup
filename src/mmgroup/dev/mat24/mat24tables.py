@@ -37,7 +37,7 @@ from mmgroup.bitfunctions import pivot_binary_high, bit_mat_transpose
 from mmgroup.bitfunctions import bit_mat_inverse, bit_mat_basis_spanned
 from mmgroup.bitfunctions import reverse24, lin_table, bw24
 from mmgroup.bitfunctions import iter_bitweight, lmap
-
+from mmgroup.bitfunctions import bitweight, bitparity, bits2list
 
 from mmgroup.dev.mat24.mat24aux import Lsbit24Function
 
@@ -327,6 +327,15 @@ def make_syndrome_table(recip_basis):
 
 
 
+def octad_to_bitlist(vector):
+    """Convert an octad to a bit list
+
+    Here vector must be a vector of bitwight 8 representing an octad.
+    The function returns the corresponding list of bits.
+    """
+    assert bitweight(vector) == 8
+    return bits2list(vector)
+
 def make_octad_tables(basis):
     """Return tables for encoding an decoding octads.
 
@@ -334,9 +343,9 @@ def make_octad_tables(basis):
     numbers of the corresponding Golay codewords in 'gcode' 
     representation. 
 
-    The function returns a triple 
+    The function returns a triple  
 
-       (oct_enc_table, oct_dec_table, oct_enc_offset)
+       (oct_enc_table, oct_dec_table, suboctad_table)
 
     Given octad o, the corresponding Golay code word in gcode
     representation is oct_dec_table(o), for 0 <= 0 < 759.
@@ -356,22 +365,53 @@ def make_octad_tables(basis):
 
        ((v >> 11) ^ oct_enc_table[v & 0x7ff]) & 1 == 0
 
+    suboctad_table[8*o+j] is the j-th entry of the octad with
+    number o, for 0 <= o < 759. Here the entries of octad are the 
+    the postions of the bits being set in that octad o.
     """
     codewords = lin_table(basis[:11])
     oct_dec_table = numpy.zeros(759, dtype = uint16)
+    octad_table = numpy.zeros(759 * 8, dtype = uint8)
     octad = 0
-    d = {}
-    w = {}
     oct_enc_table = numpy.full(2048, 0xffff, dtype = uint16)
     for gcode, vector in enumerate(codewords[:2048]):
         weight = bw24(vector)
         if weight in [8, 16]:
             oct_dec_table[octad] = gcode + ((weight & 16) << 7)
             oct_enc_table[gcode] = (weight >> 4) + 2 * octad
+            oct_vector = vector if weight == 8 else vector ^ 0xffffff
+            blist = octad_to_bitlist(oct_vector)
+            octad_table[8 * octad : 8 * octad + 8] = blist
             octad += 1
     assert octad == 759
-    return oct_enc_table, oct_dec_table
+    return oct_enc_table, oct_dec_table, octad_table
 
+
+
+
+def make_octad_index_table():
+    """Return numpy array A for indexing suboctads octads
+
+    Let 0 < i < 64 be the number of a suboctad. Let b[0],...,b[7]
+    be the 8 basis vectors of the Golay cocode the make up the
+    octad to which the suboctad refers, in the order given by
+    the table created by function make_suboctad_table().
+
+    Then b[4*i] + b[4*i+1] + b[4*i+2] + b[4*i+3] is cocode 
+    vector corresponding to the suboctad with number i.
+    """
+    bl = []
+    for i in range(64):
+         j = (i << 1) + bitparity(i)
+         if (bitweight(j) > 4):
+             j ^= 0xff
+         blist = bits2list(j)
+         while len(blist) < 4:
+              blist += [0, 0]
+         assert len(blist) == 4
+         bl += blist
+    return numpy.array(bl, dtype = numpy.uint8)
+         
 
 class Mat24Tables(object):
     basis = HexacodeToGolay.basis()
@@ -379,7 +419,9 @@ class Mat24Tables(object):
     enc_table0, enc_table1, enc_table2 = encoding_tables(recip_basis)
     dec_table0, dec_table1, dec_table2 = encoding_tables(basis)
     syndrome_table = make_syndrome_table(recip_basis)
-    oct_enc_table, oct_dec_table = make_octad_tables(basis[12:])
+    B = basis[12:]
+    oct_enc_table, oct_dec_table, octad_table = make_octad_tables(B)
+    octad_index_table = make_octad_index_table()
 
     ###########################################################################
     # Some general bit operations
