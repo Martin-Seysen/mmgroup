@@ -1,0 +1,292 @@
+
+/** @file mat24_tables.c
+ File ``mat24_tables.c`` contains tables that are used in the 
+ file ``mat24_functions.c``.
+*/
+
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+
+
+
+#include <stdint.h>
+#include <string.h>
+#include "mat24_functions.h"
+
+
+
+
+/*************************************************************************
+*** Definitions
+*************************************************************************/
+
+
+
+
+// %%GEN h
+
+/**
+ @def MAT24_ORDER 
+ @brief Order of Mathieu group ``Mat24``. This is equal to 244823040. 
+*/
+#define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
+
+/**
+ @def mat24_def_lsbit24(v1) 
+ @brief Macro version of function ``mat24_lsbit24``.
+*/
+#define mat24_def_lsbit24(v1) \
+   MAT24_LSBIT_TABLE[((((v1) & (0 - (v1))) * %{Mat24_lsbit_const}) >> 26) & 0x1f]
+
+
+
+/**
+ @def mat24_def_lsbit24_pwr2(v1) 
+ @brief Special macro version of function ``mat24_lsbit24``.
+
+ This is faster than ``mat24_def_lsbit24``, but here
+ ``v1`` must be  power of two. 
+*/
+#define mat24_def_lsbit24_pwr2(v1) \
+   MAT24_LSBIT_TABLE[(((v1) * %{Mat24_lsbit_const}) >> 26) & 0x1f]
+
+
+/**
+ @def mat24_def_parity12(v1) 
+ @brief Parity of vector ``v1`` of 12 bits length.
+
+ Generate a sequence of statements that replaces ``v1`` by
+ the bit parity of ``v1 & 0xfff``. 
+*/
+#define mat24_def_parity12(v1)   v1 ^= v1 >> 6; \
+   v1 ^= v1 >> 3; \
+   v1 = (0x96 >> (v1 & 7)) & 1;
+
+
+
+/**
+  @def mat24_def_octad_to_gcode(o)
+  @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
+
+  ``mat24_def_octad_to_gcode(o)`` returns the  number 
+  of the Golay code word corresponding to octad ``o``. 
+  Parameter ``o`` is not checked.
+*/
+#define mat24_def_octad_to_gcode(o) (MAT24_OCT_DEC_TABLE[o])
+
+
+/**
+  @def  mat24_def_gcode_to_octad(v)
+  @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
+
+  ``mat24_def_gcode_to_octad(v)`` returns the  number of the
+  octad corresponding to Golay code vector ``v``, with ``v``
+  in ``gcode``. It returns garbage if ``v`` is not an octad. 
+*/
+#define mat24_def_gcode_to_octad(v) \
+  (MAT24_OCT_ENC_TABLE[(v) & 0x7ff] >> 1) 
+
+
+/**
+  @def  mat24_def_not_nonstrict_octad(v)
+  @brief Check if ``v`` (or its complement) is an octad.
+
+  Returns 0 if ``v`` (or its complement) is an 
+  octad and 1 otherwise.
+
+  Vector ``v`` must be given in ``gcode`` representation
+*/
+#define mat24_def_not_nonstrict_octad(v) \
+    (MAT24_OCT_ENC_TABLE[(v) & 0x7ff] >> 15)
+
+
+/** 
+  @def  mat24_def_gcode_to_vect(v)
+  @brief Convert Golay code element number ``v`` to a vector in ``GF(2)^24``
+
+  Macro version of function ``mat24_gcode_to_vect``.
+*/
+#define mat24_def_gcode_to_vect(v) \
+    (MAT24_DEC_TABLE1[((v) << 4) & 0xf0]   \
+          ^ MAT24_DEC_TABLE2[((v) >> 4) & 0xff])
+
+
+
+/** 
+  @def  mat24_def_syndrome_from_table(t)
+  @brief Convert entry ``t`` of table ``MAT24_SYNDROME_TABLE`` to syndrome
+
+  An entry ``t`` of the table ``MAT24_SYNDROME_TABLE`` encodes an odd
+  cocode syndrome. The macro returns that syndrome as a bit vector.
+*/
+#define mat24_def_syndrome_from_table(t) \
+    ((1UL << ((t) & 31)) ^ (1UL << (((t) >> 5) & 31)) \
+        ^ (1UL << (((t) >> 10) & 31)))
+
+
+
+
+/*************************************************************************
+***  Start of tables
+*************************************************************************/
+
+// %%GEN h
+
+/// @cond DO_NOT_DOCUMENT 
+//  Do not document C functions in the header file!
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+/*************************************************************************
+*** Table for finding lsbit
+*************************************************************************/
+
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// %%EXPORT_TABLE p
+const uint8_t MAT24_LSBIT_TABLE[32] = { 
+// %%TABLE Mat24_lsbit_table, uint8
+};
+
+
+/// @endcond  
+
+
+/*************************************************************************
+*** Conversion between representations of GF(2)**24, Golay code, etc.
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_ENC_TABLE0[256] = {
+// %%TABLE Mat24_enc_table0, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_ENC_TABLE1[256] = {
+// %%TABLE Mat24_enc_table1, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_ENC_TABLE2[256] = {
+// %%TABLE Mat24_enc_table2, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE0[256] = {
+// %%TABLE Mat24_dec_table0, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE1[256] = {
+// %%TABLE Mat24_dec_table1, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_DEC_TABLE2[256] = {
+// %%TABLE Mat24_dec_table2, uint32
+};
+
+
+
+// The following table MAT24_BASIS contains the used basis of the 
+// Golay cocode (12 bit vectors of type uint32_t) followed by the 
+// used basis of the Golay code (12 bit vectors).
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_BASIS[24] = { 
+// %%TABLE Mat24_basis, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint32_t MAT24_RECIP_BASIS[24+8] = { 
+// %%TABLE Mat24_recip_basis, uint32
+};
+
+// %%EXPORT_TABLE p
+const uint16_t MAT24_SYNDROME_TABLE[0x800] = { 
+// %%TABLE Mat24_syndrome_table, uint16
+};
+
+/// @endcond 
+
+
+
+
+/**
+  @brief Table for converting ``octad`` to ``gcode`` representation
+
+  The public macro ``mat24_def_octad_to_gcode`` uses this table
+*/
+// %%EXPORT_TABLE p
+const uint16_t MAT24_OCT_DEC_TABLE[759] = { 
+// %%TABLE Mat24_oct_dec_table, uint16
+};
+
+/**
+ @brief Table for converting ``gcode`` to ``octad`` representation
+
+ The public macro ``mat24_def_gcode_to_octad`` uses this table
+*/
+// %%EXPORT_TABLE p
+const uint16_t MAT24_OCT_ENC_TABLE[2048] = { 
+// %%TABLE Mat24_oct_enc_table, uint16
+};
+
+
+/** 
+ @brief Table containing data about the Golay code.
+
+ For ``0 <= d < 0x800`` entry ``d``  contains the following
+ information the code word ``d``, with ``d`` in ``gcode``
+ representation.
+
+   Bit 11,...,0:   ``mat24_ploop_theta(d)``
+
+   Bit 14,...,12:  Bit weight of code word ``d`` in ``GF(2)**24`` divided by 4
+
+   Bit 15:         reserved
+
+ We have ``d**2 = (-1)**<Bit 12 of entry d>`` for ``d`` in the Parker loop.
+*/
+// %%EXPORT_TABLE
+const uint16_t MAT24_THETA_TABLE[] = { 
+// %%TABLE Mat24_theta_table, uint16
+};
+
+
+
+/*************************************************************************
+***  End of tables
+*************************************************************************/
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+// %%GEN h
+
+/// @endcond  
+//  End condition: Do not document C functions in the header file!
+
+// %%GEN c
+
+

@@ -41,6 +41,8 @@ Header files
 C functions for the Mathieu group :math:`M_{24}`
 ................................................
 
+.. doxygenfile:: mat24_tables.c
+
 .. doxygenfile:: mat24_functions.c
 
 

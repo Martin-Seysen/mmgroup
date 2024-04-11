@@ -259,6 +259,7 @@ DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MAT24"
 
 
 MAT24_SOURCES = '''
+   mat24_tables.c
    mat24_functions.c
    mat24_random.c
 '''
