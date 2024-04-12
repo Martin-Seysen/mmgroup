@@ -130,6 +130,7 @@
 
 
 
+
 /*************************************************************************
 ***  Start of tables
 *************************************************************************/
@@ -323,4 +324,94 @@ const uint8_t MAT24_OCTAD_INDEX_TABLE[64*4] = {
 
 // %%GEN c
 
+
+
+
+// %%GEN h
+/*************************************************************************
+***  Static inline functions
+*************************************************************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*************************************************************************
+***  Conversion from and to suboctads
+*************************************************************************/
+
+
+/**
+  @brief Convert even suboctad of octad  to cocode representation
+
+  The function converts a suboctad ``u_sub`` (in ``suboctad``
+  representation) of an octad ``u_octad`` (in ``octad``
+  representation) to a cocode element. It returns that cocode
+  element in ``cocode`` representation.
+
+  The function returns 0xffffffff on illegal input.
+*/
+static inline uint32_t
+mat24_octad_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
+{
+    const uint8_t *p_octad = MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3);
+    const uint8_t *p_sub = MAT24_OCTAD_INDEX_TABLE + ((u_sub & 0x3f) << 2);
+    uint_fast32_t c;
+    if (u_octad >= 759) return 0xffffffffULL;
+    c = MAT24_RECIP_BASIS[p_octad[p_sub[0]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[1]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[2]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[3]]];
+    return c & 0xfff;
+}
+
+
+/**
+  @brief Convert cocode element ``c1`` to suboctad of octad ``u_octad``
+
+  New function; yet to be tested!!!!!!!!!!!
+
+  The function converts a cocode element ``c1`` (in ``cocode``
+  representation) to a suboctad with respect to an octad ``u_octad``.
+  ``u_octad`` must be given in ``octad`` representation.
+
+  This is an inverse of function mat24_octad_suboctad_to_cocode().
+  The function returns the suboctad number corresponding to the
+  cocode element ``c1``, if ``u_octad`` is an octad and ``c1`` is an
+  even subset of ``u_octad``. See documentation of function
+  mat24_suboctad_to_cocode() for the numbering of the suboctads.
+
+  The function returns  0xffffffff on illegal input.
+*/
+static inline uint32_t
+mat24_octad_cocode_to_suboctad(uint32_t c1, uint32_t u_octad)
+{
+    const uint8_t *p_octad = MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3);
+    uint_fast32_t res = 0, t, syn, csyn, mask, j;
+
+    if (u_octad >= 759 || c1 & 0x800) return 0xfffffffeULL;
+    j = p_octad[0];
+    syn = mask = 1UL << j;
+    // Let ``syn`` be the cocode syndrome of c1 as subset of the octad
+    t = MAT24_SYNDROME_TABLE[(c1 ^ MAT24_RECIP_BASIS[j]) & 0x7ff ];
+    syn ^= mat24_def_syndrome_from_table(t);
+    j =  p_octad[7];
+    mask |= (1UL << j);
+    csyn = syn ^ (0 - ((syn >> j) & 1UL)); // zero high bit of suboctad
+    // %%FOR* i in range(6)
+    j =  p_octad[%{int:i+1}];
+    mask |= 1UL << j;
+    res ^= ((csyn >> j) & 1UL) << %{i};
+    // %%END FOR
+    return (syn & ~mask) ? 0xfffffffdUL : res;
+}
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+// %%GEN c
 

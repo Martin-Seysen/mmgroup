@@ -676,25 +676,8 @@ uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
 // %%EXPORT p
 uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
 {
-    uint_fast32_t oct, l;
-    // Let oct = vector of v1 in 'vect' representation
-    oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
-                       ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
-    // Let  l =  weight(v1)/4
-    l = mat24_gcode_weight(v1);
-    // Complement ``oct`` if weight(v1) == 16, 
-    // abort if that weight is not 8 or 16
-    if (l == 4) oct ^= 0xffffff;
-    else if (l != 2) return (uint32_t)(-1);
-    // Put l = parity of u_sub
-    l =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1;  
-    // Let u_sub be a vector representing the suboctad of w with No u_sub
-    u_sub = l + ((u_sub & 0x3f) << 1); 
-    u_sub = mat24_spread_b24(u_sub, oct);
-    // Finally, convert that vector to cocode representation
-    return  (MAT24_ENC_TABLE0[u_sub & 0xff]
-          ^ MAT24_ENC_TABLE1[(u_sub >> 8) & 0xff]
-          ^ MAT24_ENC_TABLE2[(u_sub >> 16) & 0xff]) & 0xfff;
+    uint_fast32_t oct = MAT24_OCT_ENC_TABLE[v1 & 0x7ff] >> 1;
+    return mat24_octad_suboctad_to_cocode(u_sub, oct);
 }
 
 /** 
@@ -720,31 +703,8 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t v1)
 uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1)
 
 {
-    uint_fast32_t syn, oct, l;
-    // Let oct = vector of v1 in 'vect' representation
-    oct =  MAT24_DEC_TABLE1[(v1 << 4) & 0xf0]
-                       ^ MAT24_DEC_TABLE2[(v1 >> 4) & 0xff]; 
-    // Let  l =  weight(v1)/4
-    l = mat24_gcode_weight(v1);
-    // Complement ``oct`` if weight(v1) == 16, 
-    // abort if that weight is not 8 or 16
-    if (l == 4) oct ^= 0xffffff;
-    else if (l != 2) return (uint32_t)(-1);
-    // Abort if c1 is not even
-    if (c1 & 0x800) return (uint32_t)(-1);
-    // l = lsbit of oct
-    l = mat24_def_lsbit24(oct);
-    // compute syndrome of (odd) vector w ^ 2**l, w = gcode_to_vect(v1)
-    c1 ^= MAT24_RECIP_BASIS[l];
-    syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
-    syn = mat24_def_syndrome_from_table(syn);
-    // Abort if syndrome is not a subset of the octad oct
-    if ((syn & oct) != syn) return (uint32_t)(-1);
-    // Compress syndrome to suboctad number
-    syn = mat24_extract_b24(syn, oct) >> 1;
-    // Complement suboctad number if highest bit is set
-    l = (syn >> 6) & 1;
-    return (syn ^ (0-l)) & 0x3f;
+    uint_fast32_t oct = MAT24_OCT_ENC_TABLE[v1 & 0x7ff] >> 1;
+    return mat24_octad_cocode_to_suboctad(c1, oct);
 }    
 
 /** 
