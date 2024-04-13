@@ -409,7 +409,8 @@ mat24_inline_cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict)
     mask |= 1UL << j;
     res ^= ((csyn >> j) & 1UL) << %{i};
     // %%END FOR
-    status = (oct_weight ^ mat24_def_suboctad_weight(res)) & u_strict & 1;
+    status = (oct_weight ^ mat24_def_suboctad_weight(res) ^ (v1 >> 11)) 
+              & u_strict & 1;
     status |= syn & ~mask; 
     return status ? 0xffffffffUL : (oct << 6) + res;
 }

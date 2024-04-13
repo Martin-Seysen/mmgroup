@@ -197,17 +197,6 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
             if ((tag & 1) == 0) v[i] = -4;
             return 0;
         case 4:  // tag T
-            /********
-            if (i >= 759) return -1;
-            w = mat24_octad_to_vect(i);
-            // Put k = parity of j
-            k = (0x96 >> ((j ^ (j >> 3)) & 7)) & 1;  
-            // Let u_sub be a vector representing suboctad j of w 
-            j = k + (j << 1);  // even-parity adjusted j
-            u_sub = mat24_spread_b24(j, w);
-            for (k = 0; k < 24; ++k) v[k] = 
-                 2 * ((w >> k) & 1) - 4 * ((u_sub >> k) & 1);
-            **********/
             coc = mat24_octad_suboctad_to_cocode(j, i);
             w = mat24_octad_to_vect(i);
             if (coc >= 0x800) return -1;
@@ -302,7 +291,7 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
 // %%EXPORT px
 uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
 {
-    uint_fast32_t theta, syn, scalar, w, coc, octad, cw, lsb, cocodev, sub;
+    uint_fast32_t theta, syn, scalar, gc, res;
 
     // in the sequel we cut and paste the code for the detection of 
     // a short vector v2 in the Leech lattice mod 2 from 
@@ -345,49 +334,11 @@ uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
                  + ((0x800000 & v2) << 2);
     }
 
-    theta = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff];
-
-    // Here (theta >> 12) & 7 is the bit weight of 
-    // v2 + Omega * b23, where b23 is bit 23 of v2.
-    // If bit 12 of theta is odd then v2 is a dodecad
-    // and hence never short.
-    if (theta & 0x1000) return 0;
-    // Now v2 is a (possibly complemented) octad.
-    // Put w = 1 if v2 is an octad and w = 0 otherwise.
-    w = ((theta >> 13) ^ (v2 >> 23)) & 1;
-    // XOR v2 with Omega if it has weight 16
-    v2 ^= (1 - w) << 23;
-    // Let coc be the cocode part of v2 (this is even)
-    coc = (v2 ^ theta) & 0x7ff;
-    // Let octad be the octad in vector representaition
-    octad = mat24_def_gcode_to_vect(v2 >> 12); 
-
-    // Now we proceed as in function suboctad_type(octad, w, coc)
-
-    // Let cw be the halved bit weight of coc
-    cw = MAT24_SYNDROME_TABLE[coc & 0x7ff] >> 15;
-    // Put cocodev = cocode word of v (in vector rep), such 
-    // that the cocode word is a suboctad of octad if possible.
-    lsb = mat24_def_lsbit24(octad);
-    coc ^= MAT24_RECIP_BASIS[lsb];
-    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
-    cocodev = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
-    // Set sub = 0 iff cocodev is a subset of octad.
-    sub = (octad & cocodev) != cocodev;
-    // Check if v2 is short as in function suboctad_type().
-    // Return 0 if this is not the case
-    if (((~w ^ cw) & 1) | sub) return 0;
-
-    // Here v2 is of type 2 and 'cocodev' is the cocode vector. 
-    // Now we compute the number of the octad and the suboctad.
-    v2 = mat24_def_gcode_to_octad(v2 >> 12); // Number of octad
-    // Compute the suboctad in w
-    w = mat24_extract_b24(cocodev, octad);   // This is the suboctad
-    // Compute the number of the suboctad in w
-    if (w & 0x80) w ^= 0xff;                 // Clear MSBit of suboctad
-    w = (w >> 1) & 63;                       // Number of suboctad
-    // Return sparse vector with tag 'T', octad, and suboctad
-    return 0x8000000 + (v2 << 14) + (w << 8);
+    // Deal with octads (and suboctads)
+    theta = MAT24_THETA_TABLE[(gc = v2 >> 12) & 0x7ff] & 0x7ff;
+    res = mat24_inline_cocode_to_suboctad((v2 ^ theta)  & 0xfff, gc, 1);
+    if (res == 0xffffffff) return 0;
+    return 0x8000000 + (res << 8);
 }
 
 

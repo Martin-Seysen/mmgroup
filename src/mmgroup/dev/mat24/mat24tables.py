@@ -378,7 +378,7 @@ def make_octad_tables(basis):
         weight = bw24(vector)
         if weight in [8, 16]:
             oct_dec_table[octad] = gcode + ((weight & 16) << 7)
-            oct_enc_table[gcode] = (weight >> 4) + 2 * octad
+            oct_enc_table[gcode] = ((weight - 8) >> 3) + 2 * octad
             oct_vector = vector if weight == 8 else vector ^ 0xffffff
             blist = octad_to_bitlist(oct_vector)
             octad_table[8 * octad : 8 * octad + 8] = blist

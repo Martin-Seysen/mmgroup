@@ -14,12 +14,23 @@ from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 
-LEECH_SHORT = np.zeros(98280, dtype = np.int32)
-for i in range(98280):
-    sparse = mm_aux_index_extern_to_sparse(300 + i)
-    l1 = LEECH_SHORT[i] = mm_aux_index_sparse_to_leech2(sparse)
-    sparse1 = mm_aux_index_leech2_to_sparse(l1)
-    assert sparse == sparse1, [hex(x) for x in (i, sparse, l1, sparse1)]
+
+
+
+LEECH_SHORT =  None
+
+def load_leech_short():
+    global LEECH_SHORT
+    LEECH_SHORT = np.zeros(98280, dtype = np.int32)
+    for i in range(98280):
+        sparse = mm_aux_index_extern_to_sparse(300 + i)
+        l1 = LEECH_SHORT[i] = mm_aux_index_sparse_to_leech2(sparse)
+        sparse1 = mm_aux_index_leech2_to_sparse(l1)
+        assert sparse == sparse1, [hex(x) for x in (i, sparse, l1, sparse1)]
+
+def test_extern_sparse():
+    load_leech_short()
+
 
 V = MMV(15)
 
@@ -29,6 +40,7 @@ v = V('R')
 
 
 def from_v(v_abs, value, value1 = 0):
+    load_leech_short()
     if not value1:
         a = [LEECH_SHORT[i] for i in range(98280) if v_abs[i] == value]
         return np.array(a, dtype = np.uint32)
