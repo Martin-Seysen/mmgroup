@@ -130,6 +130,7 @@ class Mat24(Mat24Tables):
         "Mat24_basis_weights_8"   : basis_weights_8,
         "Mat24_octad_table"       : Mat24Tables.octad_table,
         "Mat24_octad_index_table" : Mat24Tables.octad_index_table,
+        "Mat24_suboctad_weights"  : Mat24Tables.suboctad_weights,
 
     }
 

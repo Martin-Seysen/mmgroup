@@ -320,7 +320,7 @@ def index_suboctad(tag, i, index_type_T = 3, a_indices_T = None):
                 cocode = mat24.ploop_cap(gcode, i)
             else:
                 cocode = Cocode(i).cocode
-            sub = mat24.cocode_to_suboctad(cocode, gcode)
+            sub = mat24.cocode_to_suboctad(cocode, gcode) & 0x3f
             return 0, sub, 0
         err = "Second vector index for tag T must be integer here"
         raise TypeError(err)

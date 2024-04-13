@@ -35,6 +35,15 @@
 */
 #define MAT24_ORDER 244823040 // Order of Mathieu group Mat24
 
+
+/**
+ @def MAT24_SUBOCTAD_WEIGHTS 
+ @brief (MAT24_SUBOCTAD_WEIGHTS >> x) & 1 is halved weight of suboctad x (mod 2). 
+*/
+#define MAT24_SUBOCTAD_WEIGHTS %{hex:Mat24_suboctad_weights}ULL
+
+
+
 /**
  @def mat24_def_lsbit24(v1) 
  @brief Macro version of function ``mat24_lsbit24``.
@@ -129,7 +138,12 @@
 
 
 
-
+/** 
+  @def  mat24_def_suboctad_weight(u_sub)
+  @brief Equivalent to mat24_suboctad_weight(u_sub)
+*/
+#define mat24_def_suboctad_weight(u_sub)\
+    ((uint32_t)((MAT24_SUBOCTAD_WEIGHTS >> ((u_sub) & 0x3f)) & 1))
 
 /*************************************************************************
 ***  Start of tables
@@ -349,7 +363,7 @@ extern "C" {
   representation) to a cocode element. It returns that cocode
   element in ``cocode`` representation.
 
-  The function returns 0xffffffff on illegal input.
+  The function returns 0xffffffff on any illegal input.
 */
 static inline uint32_t
 mat24_octad_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
@@ -367,29 +381,21 @@ mat24_octad_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
 
 
 /**
-  @brief Convert cocode element ``c1`` to suboctad of octad ``u_octad``
-
-  New function; yet to be tested!!!!!!!!!!!
-
-  The function converts a cocode element ``c1`` (in ``cocode``
-  representation) to a suboctad with respect to an octad ``u_octad``.
-  ``u_octad`` must be given in ``octad`` representation.
-
-  This is an inverse of function mat24_octad_suboctad_to_cocode().
-  The function returns the suboctad number corresponding to the
-  cocode element ``c1``, if ``u_octad`` is an octad and ``c1`` is an
-  even subset of ``u_octad``. See documentation of function
-  mat24_suboctad_to_cocode() for the numbering of the suboctads.
-
-  The function returns  0xffffffff on illegal input.
+  @brief Inline version of function ``mat24_cocode_to_suboctad``
 */
 static inline uint32_t
-mat24_octad_cocode_to_suboctad(uint32_t c1, uint32_t u_octad)
+mat24_inline_cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict)
 {
-    const uint8_t *p_octad = MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3);
-    uint_fast32_t res = 0, t, syn, csyn, mask, j;
+    const uint8_t *p_octad;
+    uint_fast32_t res = 0, t, syn, csyn, mask, j, oct_weight, oct;
+    uint_fast32_t status = c1 >> 11;
 
-    if (u_octad >= 759 || c1 & 0x800) return 0xfffffffeULL;
+    oct_weight = MAT24_OCT_ENC_TABLE[v1 & 0x7ff];
+    status |= oct_weight >> 15;
+    oct = oct_weight >> 1;
+    if (status & 1) return 0xffffffffULL;
+    p_octad = MAT24_OCTAD_ELEMENT_TABLE + (oct << 3);
+
     j = p_octad[0];
     syn = mask = 1UL << j;
     // Let ``syn`` be the cocode syndrome of c1 as subset of the octad
@@ -403,7 +409,9 @@ mat24_octad_cocode_to_suboctad(uint32_t c1, uint32_t u_octad)
     mask |= 1UL << j;
     res ^= ((csyn >> j) & 1UL) << %{i};
     // %%END FOR
-    return (syn & ~mask) ? 0xfffffffdUL : res;
+    status = (oct_weight ^ mat24_def_suboctad_weight(res)) & u_strict & 1;
+    status |= syn & ~mask; 
+    return status ? 0xffffffffUL : (oct << 6) + res;
 }
 
 

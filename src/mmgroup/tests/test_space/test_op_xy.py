@@ -35,7 +35,7 @@ def vector_data(v):
 
 def as_suboctad(v1, d):
     c = m24.ploop_cap(v1, d)
-    return m24.cocode_to_suboctad(c, d)
+    return m24.cocode_to_suboctad(c, d) & 0x3f
 
 
 1234567890123456789012345678901234567890123456789012345678901234567890

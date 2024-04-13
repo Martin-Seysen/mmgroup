@@ -236,10 +236,10 @@ def suboctad_to_cocode(uint32_t u_sub, uint32_t v1):
     return res
 
 
-def cocode_to_suboctad(uint32_t c1, uint32_t v1):
+def cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict = 0):
     cdef uint32_t res
-    res =  mat24_cocode_to_suboctad(c1, v1)
-    if res & 0xfffff000:
+    res =  mat24_cocode_to_suboctad(c1, v1, u_strict)
+    if res == 0xffffffff:
         raise ValueError("Octad/suboctad mismatch")
     return res
 

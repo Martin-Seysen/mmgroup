@@ -113,7 +113,7 @@ def mul_Tp(tag, octad, sub, g):
     s = d1 >> 12
     s ^= (eps >> 11) & 1 & m24.suboctad_weight(sub) 
     octad1 = m24.gcode_to_octad(d1) 
-    sub1 = m24.cocode_to_suboctad(c1, d1)
+    sub1 = m24.cocode_to_suboctad(c1, d1) & 0x3f
     return s, tag, octad1, sub1
 
 def mul_Ap(tag, i, j, g):
@@ -209,7 +209,7 @@ def mul_Ty(tag, octad, sub, g):
     c = m24.suboctad_to_cocode(sub, d)
     e = g.pl
     c1 = m24.ploop_cap(d, e) ^ c
-    sub1 = m24.cocode_to_suboctad(c1, d)
+    sub1 = m24.cocode_to_suboctad(c1, d) & 0x3f
     s = m24.scalar_prod(e, c)
     return s, tag, octad, sub1
 

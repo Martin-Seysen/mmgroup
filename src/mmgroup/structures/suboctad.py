@@ -344,10 +344,10 @@ def SubOctad(octad, suboctad = 0):
         suboctad_ = suboctad & 0x3f
     elif isinstance(suboctad, GCode):
         value = mat24.ploop_cap(gcode, suboctad.value)
-        suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+        suboctad_ = mat24.cocode_to_suboctad(value, gcode) & 0x3f
     else:
         value = Cocode(suboctad).cocode 
-        suboctad_ = mat24.cocode_to_suboctad(value, gcode)
+        suboctad_ = mat24.cocode_to_suboctad(value, gcode) & 0x3f
     cocode = mat24.suboctad_to_cocode(suboctad_, gcode)
     result = XLeech2(ploop, cocode)
     subtype =  result.xsubtype

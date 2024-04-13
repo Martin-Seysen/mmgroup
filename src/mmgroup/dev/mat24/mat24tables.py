@@ -422,6 +422,8 @@ class Mat24Tables(object):
     B = basis[12:]
     oct_enc_table, oct_dec_table, octad_table = make_octad_tables(B)
     octad_index_table = make_octad_index_table()
+    suboctad_weights = sum([1 << i for i in range(64)
+                         if bitweight(i) in (1,2,5,6)])
 
     ###########################################################################
     # Some general bit operations
@@ -784,7 +786,7 @@ class Mat24Tables(object):
         return cls.vect_to_cocode(vector) 
         
     @classmethod
-    def cocode_to_suboctad(cls, c1, v1):
+    def cocode_to_suboctad(cls, c1, v1, u_strict = 0):
         """Convert cocode element c1 to suboctad of octad v1.
 
         This is an inverse of member function suboctad_to_cocode().
@@ -806,7 +808,12 @@ class Mat24Tables(object):
         u_sub = cls.extract_b24(syn, oct)
         b7 = (u_sub >> 7) & 1
         u_sub ^= (b7 << 8) - b7
-        return (u_sub >> 1) & 0x3f
+        u_sub = ((u_sub >> 1) & 0x3f)
+        oct_no = cls.gcode_to_octad(v1, u_strict = 0)
+        result = (oct_no << 6) + u_sub
+        if u_strict & 1:
+            assert ((w >> 3) ^ suboctad_weight(u_sub)) &  1
+        return result 
 
 
     @staticmethod

@@ -185,7 +185,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
 // Vector v has norm 32. The sign of v is implementation dependent.
 // Return -1 if index i is bad or does not map to a short vector
 {
-    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f, k, w, u_sub;
+    uint_fast32_t tag = i >> 25, j = (i >> 8) & 0x3f, k, w, u_sub, coc;
     i = (i >> 14) & 0x7ff;
     switch (tag) {
         case 2:  // tag B
@@ -197,6 +197,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
             if ((tag & 1) == 0) v[i] = -4;
             return 0;
         case 4:  // tag T
+            /********
             if (i >= 759) return -1;
             w = mat24_octad_to_vect(i);
             // Put k = parity of j
@@ -204,6 +205,13 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
             // Let u_sub be a vector representing suboctad j of w 
             j = k + (j << 1);  // even-parity adjusted j
             u_sub = mat24_spread_b24(j, w);
+            for (k = 0; k < 24; ++k) v[k] = 
+                 2 * ((w >> k) & 1) - 4 * ((u_sub >> k) & 1);
+            **********/
+            coc = mat24_octad_suboctad_to_cocode(j, i);
+            w = mat24_octad_to_vect(i);
+            if (coc >= 0x800) return -1;
+            u_sub = mat24_cocode_syndrome(coc, MAT24_OCTAD_ELEMENT_TABLE[8*i]);
             for (k = 0; k < 24; ++k) v[k] = 
                  2 * ((w >> k) & 1) - 4 * ((u_sub >> k) & 1);
             return 0;

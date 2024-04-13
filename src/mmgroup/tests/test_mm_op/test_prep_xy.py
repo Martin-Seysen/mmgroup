@@ -24,7 +24,7 @@ PRIMES = characteristics()
 def _as_suboctad(v1, o):
     d = m24.octad_to_gcode(o)
     c = m24.ploop_cap(v1, d)
-    return m24.cocode_to_suboctad(c, d)
+    return m24.cocode_to_suboctad(c, d) & 0x3f
 
 
 class prep_xy:
