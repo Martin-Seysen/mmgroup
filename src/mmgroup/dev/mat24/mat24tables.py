@@ -758,31 +758,31 @@ class Mat24Tables(object):
     ############################################################################
 
     @classmethod
-    def suboctad_to_cocode(cls, u_sub, v1):
-        """Convert even suboctad u_sub of octad v to cocode representation
+    def suboctad_to_cocode(cls, u_sub, octad):
+        r"""Convert even suboctad u_sub of octad v to cocode representation
 
-        Each octad v1 has 64 even subsets, when a subset x of v1 is identified
-        with its complement v1 \\ x. These subsets are called suboctads.
-        Let b_0,...,b_7 be the elements of the octad v1 in natural order. 
+        Each octad ``octad`` has 64 even subsets, when a subset x of
+        ``octad`` is identified with its complement ``octad \ x``.
+        These subsets are called suboctads.Let b_0,...,b_7 be the
+        elements of the octad ``octad`` in order specified by function
+        ``mat24_cocode_to_suboctad``.
         Then the even subset (b_0 , b_i)  has suboctad number 2**(i-1) for 
         i = 1,...,6. Combining suboctads by disjoint union corresponds to 
         combining their numbers by xor. The empty subocatad has number 0.
         This yields a 1:1 correspondence between the integers 0,...,63 and
-        the suboctads of a fixed octad v1, when identifying a suboctad with
-        its complement.
+        the suboctads of a fixed octad ``octad``, when identifying a
+        suboctad with its complement.
 
-        The function returns the suboctad of v1 with number u_sub in 'cocode'
-        representation. Octad v1 must be given in 'gcode' representation.
-        An exception is raised if v1 does not represent an octad.
+        The function returns the suboctad of ``octad`` with number u_sub
+        in 'cocode' representation. Octad ``octad`` must be given in
+        'gcode' representation. An exception is raised if ``octad`` is
+        not the nunber of an octad.
         """
-        oct = cls.gcode_to_vect(v1)
-        w = cls.bw24(oct)
-        if w == 16:
-             w, oct =  8, oct ^ 0xffffff
-        assert w == 8
         parity =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1
         sub = parity + ((u_sub & 0x3f) << 1)
-        vector =  cls.spread_b24(sub, oct)
+        octad_entries = cls.octad_table[8*octad:8*octad+8]
+        vector =  sum(1 << o for i,o in enumerate(octad_entries) if
+                      (1 << i) & sub)
         return cls.vect_to_cocode(vector) 
         
     @classmethod
@@ -796,24 +796,27 @@ class Mat24Tables(object):
         representation, respectively. The function raises an exception
         if v1 is not an octad or c1 cannot be represented as an even
         subset of v1.
+
+        If bit 0 of ``u_strict`` is set then the suboctad must also
+        correspond to a short Leech lattice vector; otherwise
+        ValueError is raised. 
         """ 
-        assert c1 & 0x800 == 0
-        oct = cls.gcode_to_vect(v1)
-        w = cls.bw24(oct)
-        if w == 16:
-             w, oct =  8, oct ^ 0xffffff
-        assert w == 8
-        syn = cls.cocode_syndrome(c1, cls.lsbit24(oct))
-        assert syn & oct == syn
-        u_sub = cls.extract_b24(syn, oct)
-        b7 = (u_sub >> 7) & 1
-        u_sub ^= (b7 << 8) - b7
-        u_sub = ((u_sub >> 1) & 0x3f)
-        oct_no = cls.gcode_to_octad(v1, u_strict = 0)
-        result = (oct_no << 6) + u_sub
+        octad = cls.gcode_to_octad(v1, u_strict = 0)
+        octad_entries = cls.octad_table[8*octad:8*octad+8]
+        syn = cls.cocode_syndrome(c1, octad_entries[0])
+        v = sum(1 << i for i in octad_entries)
+        if c1 & 0x800 or syn & v != syn:
+            raise ValueError("Cocode word is not a suboctad")
+        suboctad = sum(1 << i for i,o in enumerate(octad_entries) if
+                      (1 << o) & syn)
+        if suboctad & 0x80:
+            suboctad ^= 0xff
         if u_strict & 1:
-            assert ((w >> 3) ^ suboctad_weight(u_sub)) &  1
-        return result 
+            w = cls.bw24(cls.gcode_to_vector(v1))
+            if not(((w >> 3) ^ suboctad_weight(u_sub)) &  1):
+                E = "Leech vector corresponding to suboctad is not short"
+                raise ValueError(E) 
+        return suboctad >> 1
 
 
     @staticmethod

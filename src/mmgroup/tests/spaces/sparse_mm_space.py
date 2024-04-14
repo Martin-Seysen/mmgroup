@@ -106,7 +106,7 @@ def mul_Zp(tag, d, i, g):
 
 def mul_Tp(tag, octad, sub, g):
     d = m24.octad_to_gcode(octad)
-    c = m24.suboctad_to_cocode(sub, d)
+    c = m24.suboctad_to_cocode(sub, octad)
     eps, pi, rep =  g.cocode, g.perm, g.rep   
     d1 = m24.op_ploop_autpl(d, rep)
     c1 = m24.op_cocode_perm(c, pi)
@@ -160,7 +160,7 @@ def mul_Zx(tag, d, i, g):
 
 def mul_Tx(tag, octad, sub, g):
     d = m24.octad_to_gcode(octad)
-    c = m24.suboctad_to_cocode(sub, d)
+    c = m24.suboctad_to_cocode(sub, octad)
     e = g.pl
     s = m24.ploop_comm(d, e)
     s ^= m24.scalar_prod(e, c)
@@ -206,7 +206,7 @@ def mul_Zy(tag, d, i, g):
 
 def mul_Ty(tag, octad, sub, g):
     d = m24.octad_to_gcode(octad)
-    c = m24.suboctad_to_cocode(sub, d)
+    c = m24.suboctad_to_cocode(sub, octad)
     e = g.pl
     c1 = m24.ploop_cap(d, e) ^ c
     sub1 = m24.cocode_to_suboctad(c1, d) & 0x3f

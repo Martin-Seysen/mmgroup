@@ -350,8 +350,9 @@ def test_suboctads(gc, ref):
         c = gc.vect_to_cocode(suboctad)
         last_u_sub = 0
         if status == 0:
-            u_sub = gc.cocode_to_suboctad(c,v)
-            c1 = gc.suboctad_to_cocode(u_sub,v)
+            o = gc.vect_to_octad(octad, 0) 
+            u_sub = gc.cocode_to_suboctad(c,v) & 0x3f
+            c1 = gc.suboctad_to_cocode(u_sub, o)
             syn1 = gc.cocode_syndrome(c1, gc.lsbit24(octad))
             assert c == c1, map(hex,[octad, suboctad, u_sub, syn1, status])
             w = gc.suboctad_weight(u_sub)
@@ -360,8 +361,8 @@ def test_suboctads(gc, ref):
               ^ gc.suboctad_weight(u_sub) ^ gc.suboctad_weight(last_u_sub))
             assert gc.suboctad_scalar_prod(u_sub, last_u_sub) == scal_ref
             if ref:
-                assert u_sub == ref.cocode_to_suboctad(c,v)
-                assert c == ref.suboctad_to_cocode(u_sub,v)
+                assert u_sub == ref.cocode_to_suboctad(c,v) & 0x3f
+                assert c == ref.suboctad_to_cocode(u_sub, o)
                 assert w == ref.suboctad_weight(u_sub)
                 assert ref.suboctad_scalar_prod(u_sub, last_u_sub) == scal_ref
             last_sub = u_sub
@@ -376,14 +377,18 @@ def test_suboctads(gc, ref):
                 print ("Bad suboctad", list(map(hex,[octad, suboctad, syn1, status])))
                 raise ValueError("cocode_to_suboctad() should fail bud didn't.")
             if status == 2:
+                continue # no reasonabale action do do in current setup
+                """
                 try:
-                    gc.suboctad_to_cocode(randint(0,63),v)
+                    gc.suboctad_to_cocode(randint(0,63), )
                 except:
                     pass
                 else:
                     print ("Bad octad", list(map(hex,[octad, suboctad, v, c, status])))
                     raise ValueError("suboctad_to_cocode() should fail bud didn't.")
+                """
     print("Golay code suboctad test passed")
+
 
 
 

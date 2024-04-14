@@ -348,7 +348,7 @@ def SubOctad(octad, suboctad = 0):
     else:
         value = Cocode(suboctad).cocode 
         suboctad_ = mat24.cocode_to_suboctad(value, gcode) & 0x3f
-    cocode = mat24.suboctad_to_cocode(suboctad_, gcode)
+    cocode = mat24.suboctad_to_cocode(suboctad_, ploop.octad)
     result = XLeech2(ploop, cocode)
     subtype =  result.xsubtype
     assert subtype in [0x22, 0x42], (hex(subtype), hex(ploop), hex(cocode), hex(result.value))

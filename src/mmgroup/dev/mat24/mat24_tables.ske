@@ -355,29 +355,7 @@ extern "C" {
 *************************************************************************/
 
 
-/**
-  @brief Convert even suboctad of octad  to cocode representation
 
-  The function converts a suboctad ``u_sub`` (in ``suboctad``
-  representation) of an octad ``u_octad`` (in ``octad``
-  representation) to a cocode element. It returns that cocode
-  element in ``cocode`` representation.
-
-  The function returns 0xffffffff on any illegal input.
-*/
-static inline uint32_t
-mat24_octad_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
-{
-    const uint8_t *p_octad = MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3);
-    const uint8_t *p_sub = MAT24_OCTAD_INDEX_TABLE + ((u_sub & 0x3f) << 2);
-    uint_fast32_t c;
-    if (u_octad >= 759) return 0xffffffffULL;
-    c = MAT24_RECIP_BASIS[p_octad[p_sub[0]]]
-      ^ MAT24_RECIP_BASIS[p_octad[p_sub[1]]]
-      ^ MAT24_RECIP_BASIS[p_octad[p_sub[2]]]
-      ^ MAT24_RECIP_BASIS[p_octad[p_sub[3]]];
-    return c & 0xfff;
-}
 
 
 /**
@@ -413,6 +391,24 @@ mat24_inline_cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict)
               & u_strict & 1;
     status |= syn & ~mask; 
     return status ? 0xffffffffUL : (oct << 6) + res;
+}
+
+
+/**
+  @brief Inline version of function ``suboctad_to_cocode``
+*/
+static inline uint32_t
+mat24_inline_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
+{
+    const uint8_t *p_octad = MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3);
+    const uint8_t *p_sub = MAT24_OCTAD_INDEX_TABLE + ((u_sub & 0x3f) << 2);
+    uint_fast32_t c;
+    if (u_octad >= 759) return 0xffffffffULL;
+    c = MAT24_RECIP_BASIS[p_octad[p_sub[0]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[1]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[2]]]
+      ^ MAT24_RECIP_BASIS[p_octad[p_sub[3]]];
+    return c & 0xfff;
 }
 
 

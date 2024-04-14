@@ -197,7 +197,7 @@ int32_t mm_aux_index_sparse_to_leech(uint32_t i, int32_t *v)
             if ((tag & 1) == 0) v[i] = -4;
             return 0;
         case 4:  // tag T
-            coc = mat24_octad_suboctad_to_cocode(j, i);
+            coc = mat24_inline_suboctad_to_cocode(j, i);
             w = mat24_octad_to_vect(i);
             if (coc >= 0x800) return -1;
             u_sub = mat24_cocode_syndrome(coc, MAT24_OCTAD_ELEMENT_TABLE[8*i]);
@@ -243,18 +243,10 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
         case 4:  // tag T
             if (i >= 759) return 0;
             {
-                uint_fast32_t w, gcode, cocode, v;
-                // Put w = bitweight(j)  (mod 4)
-                w = (j & 0x15) + ((j >> 1) & 0x15);
-                w = w + (w >> 2) + (w >> 4);
-                // Double j and adjust parity of j to even
-                j = (j << 1) + (w & 1);
+                uint_fast32_t gcode, cocode;
+                cocode = mat24_inline_suboctad_to_cocode(j, i);
                 gcode = MAT24_OCT_DEC_TABLE[i] & 0xfff;
-                v = mat24_gcode_to_vect(gcode);
-                cocode = mat24_vect_to_cocode(mat24_spread_b24(j, v));
-                // Put w = bitweight(adjusted j)   (mod 4)
-                w += w & 1;
-                gcode ^= ((w >> 1) & 1) << 11;
+                gcode ^= mat24_def_suboctad_weight(j) << 11;
                 cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff;
                 res = (gcode << 12) + cocode;
             }

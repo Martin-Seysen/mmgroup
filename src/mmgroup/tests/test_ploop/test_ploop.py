@@ -264,7 +264,7 @@ def test_octads():
         assert gcode == o.gcode ^ 0x800 * sub_weight  
         #assert sub.suboctad == nsub 
         assert sign == signed_o.sign == (-1)**o_signbit
-        coc = mat24.suboctad_to_cocode(nsub, o.gcode)
+        coc = mat24.suboctad_to_cocode(nsub, no)
         assert cocode == coc 
         assert Cocode(sub) == Cocode(coc)
         assert sub == SubOctad(sub.sign * o, Cocode(coc))

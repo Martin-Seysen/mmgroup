@@ -93,8 +93,7 @@ def suboctad_to_cocode(suboctad, oct):
     The function returns the suboctad as a cocode element in 
     'cocode' representation.    
     """
-    gcode = mat24.octad_to_gcode(oct)
-    return  mat24.suboctad_to_cocode(suboctad, gcode)
+    return  mat24.suboctad_to_cocode(suboctad, oct)
    
 
 def map_cocode(c, pi):
