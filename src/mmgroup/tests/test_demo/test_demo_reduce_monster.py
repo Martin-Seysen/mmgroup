@@ -8,9 +8,10 @@ import pytest
 if __name__ == "__main__":
     sys.path.append("../../../")
 
-
-from mmgroup.demo import Mm, MmV15
-from mmgroup.demo.reduce_monster import check_reduce_monster_element
+def import_all():
+    global MM, check_reduce_monster_element 
+    from mmgroup.demo import Mm
+    from mmgroup.demo.reduce_monster import check_reduce_monster_element
 
 
 def monster_element_testdata(NTESTS = 3):
@@ -21,6 +22,7 @@ def monster_element_testdata(NTESTS = 3):
 
 @pytest.mark.demo
 def test_monster_reduction(NTESTS = 10):
+    import_all()
     for i in range(NTESTS):
         check_reduce_monster_element()
 

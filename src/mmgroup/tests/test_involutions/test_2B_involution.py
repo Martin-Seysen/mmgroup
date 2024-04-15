@@ -17,7 +17,10 @@ import numpy as np
 import pytest
 
 from mmgroup import MM0, AutPL, PLoop, Cocode, Xsp2_Co1
-from mmgroup.structures.involutions import reduce_via_power
+
+def import_all():
+    global reduce_via_power 
+    from mmgroup.structures.involutions import reduce_via_power
 
 
 z = MM0('x', 0x1000)
@@ -48,7 +51,8 @@ def do_test_2B_involution(n_tests = 3, verbose = 0):
 
 
 @pytest.mark.involution
-def test_2B_involution():     
+def test_2B_involution():
+    import_all()     
     do_test_2B_involution(n_tests = 3, verbose = 0)
 
 
@@ -56,6 +60,7 @@ def test_2B_involution():
 @pytest.mark.involution
 @pytest.mark.slow
 def test_2B_involution_extensive():     
+    import_all()     
     do_test_2B_involution(n_tests = 10, verbose = 0)
 
 
@@ -63,6 +68,7 @@ def test_2B_involution_extensive():
 @pytest.mark.slow
 @pytest.mark.very_slow
 def test_reduce_via_power(verbose = 1, ntests = 10):     
+    import_all()     
     start_time = datetime.datetime.now()
     header = "\nTest shortening element of the monster via powers"
     print(header)
@@ -110,6 +116,7 @@ def do_test_2A_involution(n_tests = 30, verbose = 1):
 
 @pytest.mark.involution
 def test_2A_involution():  
+    import_all()     
     itype, h = MM0().conjugate_involution()
     assert (itype, h) == (0, MM0())  
     do_test_2A_involution(n_tests = 3, verbose = 0)

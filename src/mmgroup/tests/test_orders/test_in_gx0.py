@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from mmgroup import MM
-import mmgroup.structures.mm_order
 
 from mmgroup.mat24 import ploop_theta
 from mmgroup.generators import gen_leech3to2_type4
@@ -12,7 +11,6 @@ from mmgroup.clifford12 import uint64_parity
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 
 
-from mmgroup.structures.mm_order import get_order_vector
 from mmgroup import MM0Group, MM0, MM
 from mmgroup.mm_op import mm_vector
 
@@ -26,7 +24,6 @@ from mmgroup.mm_op import mm_op_word_tag_A
 from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
 from mmgroup.mm_op import mm_op_watermark_A_perm_num
-from mmgroup.mm_reduce import mm_order_check_in_Gx0
 
 
 
@@ -38,20 +35,33 @@ from mmgroup.mm_reduce import mm_order_check_in_Gx0
 # Here we implement the python version of function check_mm_in_g_x0()
 # that has been used in the development phase.
 
-get_order_vector()
-from mmgroup.structures.mm_order import get_order_tag_vector
-from mmgroup.dev.mm_reduce.order_vector import OFS_NORM_A, OFS_DIAG_VA
-from mmgroup.dev.mm_reduce.order_vector import OFS_WATERMARK_PERM
-from mmgroup.dev.mm_reduce.order_vector import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
-from mmgroup.dev.mm_reduce.order_vector import OFS_SOLVE_X, OFS_TAG_SIGN 
+
+def import_all():
+    global get_order_vector
+    global mm_order_check_in_Gx0
+    global get_order_tag_vector
+    global OFS_NORM_A, OFS_DIAG_VA
+    global OFS_WATERMARK_PERM
+    global OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
+    global OFS_SOLVE_X, OFS_TAG_SIGN
+    global ORDER_VECTOR, ORDER_TAGS
+    import mmgroup.structures.mm_order
+    from mmgroup.structures.mm_order import get_order_vector
+    from mmgroup.mm_reduce import mm_order_check_in_Gx0
+    get_order_vector()
+    from mmgroup.structures.mm_order import get_order_tag_vector
+    from mmgroup.dev.mm_reduce.order_vector import OFS_NORM_A, OFS_DIAG_VA
+    from mmgroup.dev.mm_reduce.order_vector import OFS_WATERMARK_PERM
+    from mmgroup.dev.mm_reduce.order_vector import OFS_TAGS_Y, OFS_SOLVE_Y, OFS_TAGS_X
+    from mmgroup.dev.mm_reduce.order_vector import OFS_SOLVE_X, OFS_TAG_SIGN 
+    ORDER_VECTOR = get_order_vector()
+    ORDER_TAGS = get_order_tag_vector()
 
 
 err_in_g_x0_py = 0 
 err_in_g_x0_c = 0 
 
 
-ORDER_VECTOR = get_order_vector()
-ORDER_TAGS = get_order_tag_vector()
 
 
 
@@ -282,7 +292,8 @@ def in_gx0_testdata():
 
 
 @pytest.mark.orders
-def test_in_gx0(verbose = 0):
+def test_in_gx0(verbose = 1):
+    import_all()
     print("Testing function check_mm_in_g_x0()")
     for n, (g, in_g_x0) in enumerate(in_gx0_testdata()):
         g = MM0(g)

@@ -12,11 +12,19 @@ if __name__ == "__main__":
 
 
 from mmgroup import MM0, MMSpace, MMV
-from mmgroup.mm_reduce import mm_reduce_2A_axis_type
-from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
-from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
-from mmgroup.tests.test_axes.test_reduce_axis import leech_type
-from mmgroup.tests.test_axes.test_import import display_norm_A
+
+
+def import_all():
+    global mm_reduce_2A_axis_type
+    global AXES, BABY_AXES
+    global short, span, radical
+    global leech_type
+    global display_norm_A
+    from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
+    from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
+    from mmgroup.tests.test_axes.test_reduce_axis import leech_type
+    from mmgroup.tests.test_axes.test_import import display_norm_A
 
 V = MMV(15)
 
@@ -125,6 +133,7 @@ reduce_targets = {
 
 @pytest.mark.axes
 def test_cases(verbose = 0):
+    import_all()
     s = "For an axis let A be the symmetric matrix corresponding to part 300x"
     print(s,"\n")
     for axis_type, g_str in AXES.items():

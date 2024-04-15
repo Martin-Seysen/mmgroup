@@ -14,8 +14,9 @@ from mmgroup import  MMV, MM0
 ref_space = MMV(3)
 ref_group = MM0
 
-from mmgroup.structures import mm_order
-#from mmgroup.structures.mm_order import reduce_mm
+def import_all():
+    global mm_order
+    from mmgroup.structures import mm_order
 
 ########################################################################
 # Computing the order of a group element using a random vector
@@ -81,6 +82,7 @@ def order_testcases(group):
    
 @pytest.mark.orders
 def test_order(verbose = 0):
+    import_all()
     group = MM0
     for n, (g, ref_order) in enumerate(order_testcases(group)):
         order = g.order()
@@ -168,6 +170,7 @@ def equality_testcases(group):
 
 @pytest.mark.orders
 def test_equality(verbose = 0):
+    import_all()
     group = MM0
     for n, (g1, g2, ref_equal) in enumerate(equality_testcases(group)):
         equal = g1 == g2
@@ -240,6 +243,7 @@ def set_of_divisors(order):
 @pytest.mark.orders
 def test_chi_powers():
     """Test method g.chi_powers() of class MMGROUP"""
+    import_all()
     print("")
     MAX_E = None
     found_2A = found_2B = False

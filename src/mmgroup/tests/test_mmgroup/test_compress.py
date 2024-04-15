@@ -15,9 +15,7 @@ import pytest
 import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
-from mmgroup.mm_reduce import mm_reduce_M, gt_word_shorten
 from mmgroup import MM0, MM, MM_from_int
-from mmgroup.mm_reduce import GtWord
 from mmgroup.generators import gen_leech2_op_word_leech2
 from mmgroup.generators import mm_group_invert_word
 from mmgroup.generators import gen_leech2_type
@@ -27,6 +25,14 @@ from mmgroup import mat24
 from mmgroup.mat24 import MAT24_ORDER
 from mmgroup import mm_op
 from mmgroup.bitfunctions import bitparity
+
+
+def import_all():
+    global mm_reduce_M, gt_word_shorten
+    global GtWord
+    from mmgroup.mm_reduce import mm_reduce_M, gt_word_shorten
+    from mmgroup.mm_reduce import GtWord
+
 
 
 #####################################################################################
@@ -184,6 +190,7 @@ def test_mm_decompress(ntests = 12, verbose = 0):
     #expand_23bit_type4(0x45678f)
     #expand_17bit_type2(0x673f)
     for nt, (g, small) in enumerate(compress_testcases(ntests)):
+        import_all()
         if verbose:
             print("test %d" % (nt+1))
             print("g=", g)

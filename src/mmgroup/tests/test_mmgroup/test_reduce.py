@@ -14,10 +14,15 @@ import pytest
 import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
-from mmgroup.mm_reduce import mm_reduce_M
-from mmgroup.mm_reduce import mm_reduce_set_order_vector_mod15
 from mmgroup import MM0, MM, MMV, Xsp2_Co1
-from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
+
+def import_all():
+    global mm_reduce_M 
+    global mm_reduce_set_order_vector_mod15 
+    global g_complexity 
+    from mmgroup.mm_reduce import mm_reduce_M
+    from mmgroup.mm_reduce import mm_reduce_set_order_vector_mod15
+    from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
 
 #####################################################################################
 # Auxiliary fuctions
@@ -78,6 +83,7 @@ def reduce_testcases_C():
 
 @pytest.mark.mmgroup
 def test_reduce_mm_C(verbose = 0):
+    import_all()
     for n, (g, mode) in enumerate(reduce_testcases_C()):
         g1 = reduce_mm_C(g.copy(), check = False, mode = mode)
         ok = g == g1
@@ -135,6 +141,7 @@ def single_test_reduce(ncases, verbose = 0):
 # The final test programm
 @pytest.mark.mmgroup 
 def test_reduce(ncases = 10, verbose = 0):
+    import_all()
     if verbose or NPROCESSES <= 1:
         single_test_reduce(ncases, verbose = verbose)
         return    
@@ -157,6 +164,7 @@ def G_x0_samples(n = 100):
 
 @pytest.mark.mmgroup 
 def test_mm_order_find_Gx0_via_v1_mod3(verbose = 0):
+    import_all()
     from mmgroup.mm_reduce import mm_order_load_vector_v1_mod3
     from mmgroup.mm_reduce import mm_order_find_Gx0_via_v1_mod3
     from mmgroup.mm_reduce import mm_order_compare_v1_mod3
@@ -204,6 +212,7 @@ def get_mul_samples():
 
 @pytest.mark.mmgroup 
 def test_mul(ncases = 20):
+    import_all()
     vtest= MMV(127)('R')
     indices, glist = get_mul_samples()
     for n in range(ncases):
@@ -260,6 +269,7 @@ def benchmark_mul(ncases = 20, verbose = 0, order_vector_mod15 = 0):
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
 def test_benchmark_mul(ncases = 100, verbose = 0, order_vector_mod15 = 0):
+    import_all()
     print("")
     for i in range(1):
         n, mu, sigma, stat = benchmark_mul(ncases, verbose = verbose,
@@ -274,6 +284,7 @@ def test_benchmark_mul(ncases = 100, verbose = 0, order_vector_mod15 = 0):
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
 def test_benchmark_mul_G_x0(ncases = 5000, verbose = 0):
+    import_all()
     glist = []
     for i in range(100):
         glist.append(MM('r', 'G_x0'))

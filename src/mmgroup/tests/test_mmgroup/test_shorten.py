@@ -14,11 +14,16 @@ import pytest
 import numpy as np
 from multiprocessing import Pool, TimeoutError, cpu_count
 
-from mmgroup.mm_reduce import mm_reduce_M, gt_word_shorten
 from mmgroup import MM0, MM
-from mmgroup.mm_reduce import GtWord
 from mmgroup.generators import gen_leech2_op_word_leech2
 from mmgroup.generators import mm_group_invert_word
+
+def import_all():
+    global mm_reduce_M, gt_word_shorten, GtWord
+    from mmgroup.mm_reduce import mm_reduce_M, gt_word_shorten
+    from mmgroup.mm_reduce import GtWord
+
+
 
 #####################################################################################
 # Test data for wortd shortening
@@ -155,6 +160,7 @@ def fast_load_word(g, mode = 1, verbose = 0):
 
 @pytest.mark.mmgroup 
 def test_shorten_pyx(ntests = 20, verbose = 0):
+    import_all()
     LEN_A_MAX = 1000
     A = np.zeros(LEN_A_MAX, dtype = np.uint32)
     reduce_mode = 1
@@ -226,6 +232,7 @@ def benchmark_shorten(ncases = 32, reduce_mode = 1, verbose = 0):
 @pytest.mark.bench 
 @pytest.mark.mmgroup 
 def test_benchmark_shorten(ntests = 10000, reduce_mode = 2, verbose = 0):
+    import_all()
     print("")
     for i in range(1):
         t = benchmark_shorten(ntests, reduce_mode, verbose=verbose) 

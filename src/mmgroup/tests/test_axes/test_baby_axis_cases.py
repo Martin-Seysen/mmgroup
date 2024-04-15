@@ -11,15 +11,25 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 from mmgroup import MM0, MMSpace, MMV
-from mmgroup.mm_reduce import mm_reduce_2A_axis_type
 
-from mmgroup.generators import gen_leech2_reduce_type2
-from mmgroup.generators import gen_leech2_reduce_type2_ortho
-from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
-from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
-from mmgroup.tests.test_axes.test_reduce_axis import leech_type
-from mmgroup.tests.test_axes.test_reduce_axis import eval_A_vstart
-from mmgroup.tests.test_axes.test_import import display_norm_A
+
+def import_all():
+    global mm_reduce_2A_axis_type
+    global gen_leech2_reduce_type2_ortho
+    global AXES, BABY_AXES
+    global short, span, radical
+    global leech_type
+    global display_norm_A
+    global eval_A_vstart
+    from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    from mmgroup.generators import gen_leech2_reduce_type2_ortho
+    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
+    from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
+    from mmgroup.tests.test_axes.test_reduce_axis import leech_type
+    from mmgroup.tests.test_axes.test_import import display_norm_A
+    from mmgroup.tests.test_axes.test_reduce_axis import eval_A_vstart
+
+
 
 V = MMV(15)
 
@@ -131,6 +141,7 @@ def baby_axis_type(v, e = 0):
 
 @pytest.mark.axes
 def test_cases(verbose = 0):
+    import_all()
     if verbose: print("\n")
     r = np.zeros(10, dtype = np.uint32)
     for axis_type, g_str in BABY_AXES.items():

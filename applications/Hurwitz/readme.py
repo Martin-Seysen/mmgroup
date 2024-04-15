@@ -33,7 +33,7 @@ isomorphic (via conjugation), we also want to find several such
 pairs. So we have to reimplement the search for such pairs here.
 
 At the time of writing this document we have found  7 pairs of
-such generators  :math:`a, b`; and in both cases the commmutator
+such generators  :math:`a, b`; and in both cases the commutator
 :math:`[a,b]` has order 39. I thank Gabriel Goller in Augsburg, 
 Germany for computing most of these pairs.
 

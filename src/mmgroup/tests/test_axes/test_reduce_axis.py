@@ -25,14 +25,24 @@ from mmgroup.mm_op import mm_op_t_A
 from mmgroup.mm_op import mm_op_compare
 from mmgroup.mm_op import mm_op_copy
 from mmgroup.mm_op import mm_op_eval_A
-from mmgroup.mm_reduce import mm_reduce_find_type4
-from mmgroup.mm_reduce import mm_reduce_2A_axis_type
-from mmgroup.mm_reduce import mm_reduce_load_axis
-from mmgroup.mm_reduce import mm_reduce_vector_vp
-from mmgroup.mm_reduce import mm_reduce_vector_vm
-from mmgroup.mm_reduce import mm_reduce_vector_shortcut
 
-from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
+
+def import_all():
+    global mm_reduce_find_type4
+    global mm_reduce_2A_axis_type
+    global mm_reduce_load_axis
+    global mm_reduce_vector_vp
+    global mm_reduce_vector_vm
+    global mm_reduce_vector_shortcut
+    global AXES, BABY_AXES
+
+    from mmgroup.mm_reduce import mm_reduce_find_type4
+    from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    from mmgroup.mm_reduce import mm_reduce_load_axis
+    from mmgroup.mm_reduce import mm_reduce_vector_vp
+    from mmgroup.mm_reduce import mm_reduce_vector_vm
+    from mmgroup.mm_reduce import mm_reduce_vector_shortcut
+    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
 
 V = MMV(15)
 
@@ -490,6 +500,7 @@ def reduce_v_axis_C(v, std_axis):
 
 @pytest.mark.axes
 def test_reduce_axis(verbose = 0):
+    import_all()
     for i, (v, std_axis) in enumerate(make_axis_testcases()):
         if verbose:
             print("\nTest case", i, ", std_axis =", bool(std_axis))
@@ -583,6 +594,7 @@ def make_baby_testcases():
 
 @pytest.mark.axes
 def test_reduce_baby_axis(verbose = 0):
+    import_all()
     for i, (v, axis) in enumerate(make_baby_testcases()):
         if verbose:
             print("\nTest case", i, ", axis =",  hex(axis))
@@ -669,6 +681,7 @@ def make_reduce_testcases():
 
 @pytest.mark.axes
 def test_reduce_G_x0(verbose = 0):
+    import_all()
     for i, (g, mode) in enumerate(make_reduce_testcases()):
         if verbose:
             print("\nTest case", i, "mode =", mode)

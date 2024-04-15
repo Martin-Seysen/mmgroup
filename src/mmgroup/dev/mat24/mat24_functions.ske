@@ -660,15 +660,16 @@ uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
   is an octad and ``c1`` is an even subset of ``u_octad``.
 
   Each octad ``v1`` has 64 even subsets, when each subset of ``v1``
-  is identified with its complement in ``v1``. These subsets are 
-  called suboctads. Let ``b_0, ..., b_7 `` be the elements of the 
-  octad ``v1`` in a given order. Then the even subset ``(b_0 , b_i)``
-  has suboctad number ``2**(i-1)`` for ``i = 1,...,6``. Combining 
-  suboctads by symmetric difference corresponds to combining their 
-  numbers by ``xor``. The empty subocatad has number zero. This yields 
-  a one-to-one correspondence between the integers ``0,...,63`` and
-  the suboctads of a fixed octad ``v1``, when identifying a suboctad 
-  with its complement. 
+  is identified with its complement in ``v1``. These subsets are
+  called suboctads. Let ``b_0, ..., b_7 `` be the elements of the
+  octad ``v1`` in the order as returned by applying
+  function ``mat24_octad_entries`` to octad number ``o``. Then the
+  even subset ``(b_0 , b_i)`` has suboctad number ``2**(i-1)``
+  for ``i = 1,...,6``. Combining suboctads by symmetric difference
+  corresponds to combining their numbers by ``xor``. The empty
+  subocatad has number zero. This yields a one-to-one correspondence
+  between the integers ``0,...,63`` and the suboctads of a fixed
+  octad ``v1``, when identifying a suboctad  ith its complement.
 
   At present elements of the octads are ordered in natural order.
   But this is subject to change!
@@ -700,7 +701,7 @@ uint32_t mat24_cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict)
   inverse of function ``mat24_suboctad_to_cocode()``.
   The ordering of the suboctads is described in that function.
 
-  The function fails if ``v1`` does not represent an octad.
+  The function fails if ``u_octad`` does not represent an octad.
   It returns ``(uint32_t)(-1)`` in case of failure.
 */
 // %%EXPORT p
@@ -710,9 +711,24 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
 }
 
 
+/**
+  @brief List the entries of an octad
 
+  The function writes the list of entries of octad ``u_octad``
+  (in ``octad`` representation) into the array ``a_out`` of
+  length 8. The order of these entries is the order used for the
+  conversion of suboctads. It may differ from the natrual order.
 
-
+  The function returns 0 if ``u_octad`` is the number of an
+  octad and ``(uint32_t)(-1)`` otherwise.
+*/
+// %%EXPORT p
+uint32_t mat24_octad_entries(uint32_t u_octad, uint8_t *a_out)
+{
+    if (u_octad >= 759) return -1;
+    memcpy(a_out, MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3), 8);
+    return 0;
+}
 
 
 /** 

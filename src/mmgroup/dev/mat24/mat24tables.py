@@ -325,7 +325,7 @@ def make_syndrome_table(recip_basis):
      return syndrome_table
                  
 
-
+ODD_OCTADS_SPECIAL = False
 
 def octad_to_bitlist(vector):
     """Convert an octad to a bit list
@@ -334,7 +334,17 @@ def octad_to_bitlist(vector):
     The function returns the corresponding list of bits.
     """
     assert bitweight(vector) == 8
-    return bits2list(vector)
+    if not ODD_OCTADS_SPECIAL or bitweight(vector & 15) & 1 == 0:
+        return bits2list(vector)
+    else:
+        for i in range(0, 24, 4):
+            v3 = vector & (15 << i)
+            if bitweight(v3) == 3:
+                return bits2list(v3) + bits2list(vector & ~v3)
+        ERR = "Error in converting odd octad to bit list"
+        raise ValueError(ERR)
+
+
 
 def make_octad_tables(basis):
     """Return tables for encoding an decoding octads.
@@ -585,8 +595,6 @@ class Mat24Tables(object):
     def octad_to_vect(self,u_octad):
         return self.gcode_to_vect(self.octad_to_gcode(u_octad))
 
-
-
     ###########################################################################
     # Golay code syndromes and weights
     ###########################################################################
@@ -818,6 +826,10 @@ class Mat24Tables(object):
                 raise ValueError(E) 
         return suboctad >> 1
 
+    @classmethod
+    def octad_entries(self, u_octad):
+        assert 0 <= u_octad < 759, "not a Golay code octad"
+        return list(octad_table[8*u_octad : 8*u_octad+8])
 
     @staticmethod
     def suboctad_weight(u_sub):

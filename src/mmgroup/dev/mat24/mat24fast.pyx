@@ -228,9 +228,9 @@ def scalar_prod(uint32_t v1, uint32_t c1):
 ############################################################################
 
 
-def suboctad_to_cocode(uint32_t u_sub, uint32_t v1):
+def suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad):
     cdef uint32_t res
-    res =  mat24_suboctad_to_cocode(u_sub, v1)
+    res =  mat24_suboctad_to_cocode(u_sub, u_octad)
     if res & 0xfffff000:
         raise ValueError("Attempt to compute suboctad of a non-octad")
     return res
@@ -243,6 +243,13 @@ def cocode_to_suboctad(uint32_t c1, uint32_t v1, uint32_t u_strict = 0):
         raise ValueError("Octad/suboctad mismatch")
     return res
 
+def octad_entries(uint32_t u_octad):
+    cdef uint32_t res
+    cdef uint8_t data[8]
+    res =  mat24_octad_entries(u_octad, &data[0])
+    if res != 0:
+        raise ValueError("Illegal octad number")
+    return list(data)
 
 def suboctad_weight(uint32_t u_sub):
     return mat24_suboctad_weight(u_sub)

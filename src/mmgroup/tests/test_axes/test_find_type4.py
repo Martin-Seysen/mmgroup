@@ -12,7 +12,11 @@ import pytest
 
 from mmgroup import MM, MMV, Xsp2_Co1, XLeech2
 from mmgroup.generators import gen_leech2_subtype, gen_leech2_type
-from mmgroup.mm_reduce import mm_reduce_find_type4
+
+
+def import_all():
+    global mm_reduce_find_type4
+    from mmgroup.mm_reduce import mm_reduce_find_type4
 
 
 VALUE_T4 = defaultdict(lambda : 5)
@@ -77,6 +81,7 @@ def find_type4_testcases(ncases = 1):
 
 @pytest.mark.mmgroup
 def test_find_type4(verbose = 0):
+    import_all()
     print("Test function mm_reduce_find_type4")
     for a, v2, v_best  in find_type4_testcases():
         if verbose:
