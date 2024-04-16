@@ -262,6 +262,7 @@ MAT24_SOURCES = '''
    mat24_tables.c
    mat24_functions.c
    mat24_random.c
+   check_endianess.c
 '''
 
 MAT24_GENERATE = GENERATE_START + '''
@@ -397,6 +398,13 @@ if STAGE < 2:
             generators_extension,
             clifford12_extension,
         ]
+    ext_modules +=  [CustomBuildStep(
+        'Generate header describing the endianess of the machine',
+        [sys.executable, 'make_endianess_header.py',
+            os.path.join(C_DIR,'mmgroup_endianess.h'),
+            DIR_DICT['MOCKUP']]
+    )]
+
 
 ####################################################################
 # Building the extensions at stage 2

@@ -1,0 +1,54 @@
+/** @file check_endianess.c
+
+ File ``check_endianess.c`` contains a function for checking the
+ endianess of the hardware platform.
+*/
+
+
+#include <stdint.h>
+#include "mat24_functions.h"
+
+
+
+/** @brief Check endianess of the machine
+
+Return 0 if machine is little endian, 1 if it is Big endian,
+and -1 if endianess could not be detected.
+*/
+// %%EXPORT px
+int32_t mat24_check_endianess(void)
+{
+   static union {
+       uint8_t u8[8];
+       uint16_t u16[4];
+       uint32_t u32[2];
+       uint64_t u64;
+   } a = { 
+       {0xf2, 0xe3, 0xd4, 0xc5,  0xb6, 0xa7, 0x98, 0x89}
+   };
+   static struct {
+       uint16_t u16[4];
+       uint32_t u32[2];
+       uint64_t u64;
+   } b[2] = {
+       {
+         {0xe3f2, 0xc5d4, 0xa7b6, 0x8998}, 
+         {0xc5d4e3f2UL, 0x8998a7b6UL}, 
+          0x8998a7b6c5d4e3f2ULL
+       },
+       {
+         {0xf2e3, 0xd4c5, 0xb6a7, 0x9889},
+         {0xf2e3d4c5UL, 0xb6a79889UL}, 
+          0xf2e3d4c5b6a79889ULL
+       }
+   };
+   int32_t i, j;
+   for (i = 0; i <= 1; ++i) {
+       if (a.u64 == b[i].u64) {
+           for (j = 0; j < 2; ++j) if (a.u32[j] != b[i].u32[j]) return -1;
+           for (j = 0; j < 4; ++j) if (a.u16[j] != b[i].u16[j]) return -1;
+           return i;
+       }
+   }     
+   return -1;
+}
