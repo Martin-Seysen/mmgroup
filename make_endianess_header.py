@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 sys.path.append('src')
 
 def _comment_endianess(endianess, mockup = False):
@@ -16,8 +17,12 @@ def get_endianess(mockup = False, verbose = 0):
     if mockup:
         endianess = -1
     else:
-        from mmgroup.mat24 import check_endianess
-        endianess = check_endianess()
+        try:
+            from mmgroup.mat24 import check_endianess
+        except:
+            time.sleep(0.1) # GitHub may be a bit slow here
+            from mmgroup.mat24 import check_endianess
+       endianess = check_endianess()
     if verbose:
         print(_comment_endianess(endianess, mockup))
     print("END", endianess, mockup)
