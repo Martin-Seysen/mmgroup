@@ -388,6 +388,13 @@ clifford12_extension =  Extension('mmgroup.clifford12',
 )
 
 
+
+MAKE_ENDIANESS_ARGS = os.path.join(C_DIR,'mmgroup_endianess.h') + """
+ --library-path {PACKAGE_DIR} {LIB_DIR}
+ {MOCKUP}
+ -v
+""".format(**DIR_DICT)
+
 if STAGE < 2:
     ext_modules += [
         mat24_steps,
@@ -400,9 +407,8 @@ if STAGE < 2:
         ]
     ext_modules +=  [CustomBuildStep(
         'Generate header describing the endianess of the machine',
-        [sys.executable, 'make_endianess_header.py',
-            os.path.join(C_DIR,'mmgroup_endianess.h'),
-            DIR_DICT['MOCKUP']]
+        [sys.executable, 'make_endianess_header.py'
+            ] + MAKE_ENDIANESS_ARGS.split()
     )]
 
 

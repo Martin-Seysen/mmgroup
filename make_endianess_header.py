@@ -3,7 +3,10 @@
 import sys
 import os
 import time
-sys.path.append('src')
+import argparse
+
+
+
 
 def _comment_endianess(endianess, mockup = False):
     if 0 <= endianess <= 1:
@@ -52,5 +55,68 @@ def write_header(h_file, mockup = False, verbose = 0):
     if verbose:
         print(comment)
 
+
+###########################################################################
+# Command line interface
+###########################################################################
+
+
+def make_endianess_parser():
+    description = ('Generate header file for the mmgroup project '
+    'that defines the endianess of the local machine. '
+    )
+
+    # epilog = ("Some more documentation will follow here later."
+    #)
+
+    parser = argparse.ArgumentParser(
+        prog = 'make_endianess_header',
+        description=description,
+        # epilog=epilog,
+    )
+
+    parser.add_argument('filename',  metavar='FILE', type=str,
+         action = 'store', help='Name of generated header file')
+
+    parser.add_argument('--mockup',
+        default = False,
+        action = 'store_true',
+        help = 'Mockup output header for Sphinx')
+
+    parser.add_argument('--library-path', nargs = '*', action='extend',
+        metavar = 'PATHS', default = [],
+        help = 'Set list of PATHS for finding shared libraries')
+
+    parser.add_argument('--no-library-path', action = 'store_true',
+        help=argparse.SUPPRESS)
+
+    parser.add_argument('-v', '--verbose', action = 'store_true',
+        help = 'Verbose operation')
+
+    return parser
+
+
+
+
 if __name__ == "__main__":
-    write_header(sys.argv[1], "--mockup" in sys.argv, verbose = 1)
+    sys.path.append('src')
+    from mmgroup.generate_c import parse_set_shared_libraries
+    sys.path.pop()
+
+    # Set paths to shared libraries as given by command line args
+    env_changed = parse_set_shared_libraries(sys.argv[1:])
+    if env_changed:
+        # Do the job in a subprocess, since the environment has changed
+        import subprocess
+        args = [
+            sys.executable, '-m', 'make_endianess_header', '--no-library-path'
+        ]
+        # Same stupid Linux-like LD_LIBRARY_PATH stuff as
+        # in module generate_code.py
+        subprocess.check_call(args + sys.argv[1:])
+    else:
+        parsed_args = make_endianess_parser().parse_args(sys.argv[1:])
+        write_header(parsed_args.filename, parsed_args.mockup,
+            parsed_args.verbose)
+
+
