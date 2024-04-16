@@ -901,7 +901,8 @@ class MM0Group(AbstractMMGroup):
                 return False
             g1.reduce()
             g2.reduce()
-            if (g1.mmdata == g2.mmdata).all():
+            md1, md2 = g1.mmdata, g2.mmdata
+            if len(md1) == len(md2) and (md1 == md2).all():
                  return True
             raise ValueError("Don't know if monster group elements are equal")
 

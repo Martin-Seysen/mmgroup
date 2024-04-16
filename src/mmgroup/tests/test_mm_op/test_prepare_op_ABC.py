@@ -120,17 +120,22 @@ def prep_op_ABC_testdata():
     
 
 
+@pytest.mark.mmm
 @pytest.mark.mm_op
-def test_prepare_op_ABC(verbose = 0):
+def test_prepare_op_ABC(verbose = 1):
     print("Testing function mm_group_prepare_op_ABC")
     for i, (g, must_be_in_N0) in enumerate(prep_op_ABC_testdata()):
         b0, g1 = py_prepare_op_ABC(g)
-        ok = g == g.group('a', g1)
+        try:
+            ok = g == g.group('a', g1)
+        except:
+            print("Could not compare elements in Monster group")
+            ok = False
         if must_be_in_N0:
             ok &= b0 == 1
         b02, g2 = prep_op_ABC(g, must_be_in_N0, verbose = verbose)
         #print(type(g2), type(g2), g1, g2)
-        ok &= b02 == b0 and (g2 == g1).all()
+        ok &= b02 == b0 and len(g1) == len(g2) and (g2 == g1).all()
         if  verbose or not ok:
             print("Input g:\n" + str(g))
             print("Py Output g (b0 = %d):\n" % b0 + str(g1))
