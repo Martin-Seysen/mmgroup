@@ -22,7 +22,7 @@ def get_endianess(mockup = False, verbose = 0):
         except:
             time.sleep(0.1) # GitHub may be a bit slow here
             from mmgroup.mat24 import check_endianess
-       endianess = check_endianess()
+        endianess = check_endianess()
     if verbose:
         print(_comment_endianess(endianess, mockup))
     print("END", endianess, mockup)
