@@ -236,19 +236,8 @@ uint32_t gen_xi_leech_to_short(uint32_t x)
         uint_fast32_t  c, y1, y2;
         switch (w) {
             case 4:
-                gcodev ^= 0xffffff;
-                x ^= 0x800000;
-                // fall through to case 2
             case 2:
-                c =  mat24_extract_b24(cocodev, gcodev);
-                // put y2 = bitweight(c) (mod 4); here c < 256
-                y2 = (c & 0x55) + ((c & 0xaa) >> 1);
-                y2 = (y2 & 0x33) + ((y2 & 0xcc) >> 2);
-                y2 = (y2 + (y2 >> 4));
-                if ( (cocodev & gcodev) != cocodev
-                    ||  (y2 ^ 2 ^ w) & 3 ) return 0;
-                c ^=  (0 - (c >> 7)) & 0xff; 
-                code = (c >> 1) | (mat24_gcode_to_octad(x >> 12, 1) << 6);
+                code = mat24_inline_cocode_to_suboctad(x, x >> 12, 1);
                 if (code >= 24000) { 
                     //  24000 = (15 + 360) * 64
                     code -= 24000; box = 3;
@@ -323,8 +312,6 @@ uint32_t gen_xi_short_to_leech(uint32_t x)
                 cocode = mat24_vect_to_cocode(1 << (code & 31));
                 if (cocode == 0) return 0;
                 gcode = (code >> 5) & 0x7ff;
-                //w =  mat24_gcode_weight(gcode) 
-                //        ^ mat24_scalar_prod(gcode, cocode); 
                 w = ((MAT24_THETA_TABLE[gcode] >> 12) & 1)
                     ^ (gcode & cocode);
                 mat24_def_parity12(w);
@@ -337,16 +324,10 @@ uint32_t gen_xi_short_to_leech(uint32_t x)
     if (octad < 48576) {
         // 48756 = 759 * 64 
         uint_fast32_t cc, w, gcodev;
-        cc = octad & 0x3f;
-        w = (cc & 0x55) + ((cc & 0xaa) >> 1);
-        w = (w & 0x33) + ((w & 0xcc) >> 2);
-        w = (w + (w >> 4)) & 0xf;
-        cc = (cc << 1) ^ (w & 1);
-        w += w & 1;
         gcode = MAT24_OCT_DEC_TABLE[octad >> 6] & 0xfff;
-        gcodev = mat24_gcode_to_vect(gcode);
-        cocode = mat24_vect_to_cocode(mat24_spread_b24(cc, gcodev));
-        gcode ^=  ((w >> 1) & 1) << 11;
+        cocode = mat24_inline_suboctad_to_cocode(octad & 0x3f, octad >> 6);
+        w = mat24_def_suboctad_weight(octad & 0x3f);
+        gcode ^=  w << 11;
     }
     // transform internal Leech lattice rep to linear rep
     cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff; 

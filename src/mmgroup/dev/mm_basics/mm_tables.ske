@@ -471,10 +471,10 @@ int32_t mm_sub_test_prep_pi_64(uint32_t eps, uint32_t pi, uint32_t *p_tbl)
 // octad table ``MAT24_OCTAD_ELEMENT_TABLE``. Return the
 // result as a 6-bit number denoting a suboctad.
 #define to_suboctad(v, po) MM_SUBOCTAD_TABLE[ \
-    ((v >> po[0]) & 1) + ((v >> (po[1] - 1)) & 2) \
-    + ((v >> (po[2] - 2)) & 4) + ((v >> (po[3] - 3)) & 8) \
-    + ((v >> (po[4] - 4)) & 16) + ((v >> (po[5] - 5)) & 32) \
-    + ((v >> (po[6] - 6)) & 64) ]
+    ((v >> po[0]) & 1) + (((v >> po[1]) & 1) << 1) \
+    + (((v >> po[2]) & 1) << 2) + (((v >> po[3]) & 1) << 3) \
+    + (((v >> po[4]) & 1) << 4) + (((v >> po[5]) & 1) << 5) \
+    + (((v >> po[6]) & 1) << 6) ]
 
 /// @endcond  
 

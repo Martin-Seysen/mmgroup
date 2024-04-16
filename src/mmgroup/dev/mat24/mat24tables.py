@@ -26,7 +26,7 @@ import types
 import sys
 import re
 import os
-from random import randint
+from random import randint, shuffle
 from operator import __or__, __xor__, __and__
 from functools import reduce
 
@@ -325,7 +325,7 @@ def make_syndrome_table(recip_basis):
      return syndrome_table
                  
 
-ODD_OCTADS_SPECIAL = False
+ODD_OCTADS_SPECIAL = 0
 
 def octad_to_bitlist(vector):
     """Convert an octad to a bit list
@@ -334,6 +334,12 @@ def octad_to_bitlist(vector):
     The function returns the corresponding list of bits.
     """
     assert bitweight(vector) == 8
+    global _shuffled_octad_list
+    if ODD_OCTADS_SPECIAL > 1:
+        # Then we shuffle the entries of an octad for test purposes.
+        s = 1 + (vector % 19) % 7
+        lst = bits2list(vector)
+        return lst[s:] + lst[:s]
     if not ODD_OCTADS_SPECIAL or bitweight(vector & 15) & 1 == 0:
         return bits2list(vector)
     else:
@@ -815,16 +821,16 @@ class Mat24Tables(object):
         v = sum(1 << i for i in octad_entries)
         if c1 & 0x800 or syn & v != syn:
             raise ValueError("Cocode word is not a suboctad")
-        suboctad = sum(1 << i for i,o in enumerate(octad_entries) if
+        suboctad = sum(1 << i for i, o in enumerate(octad_entries) if
                       (1 << o) & syn)
-        if suboctad & 0x80:
-            suboctad ^= 0xff
         if u_strict & 1:
-            w = cls.bw24(cls.gcode_to_vector(v1))
-            if not(((w >> 3) ^ suboctad_weight(u_sub)) &  1):
+            w = cls.bw24(cls.gcode_to_vect(v1))
+            if not(((w >> 3) ^ cls.suboctad_weight(suboctad)) &  1):
+                print("Octad = %s, suboctad = %s" % (hex(v), hex(suboctad)))
                 E = "Leech vector corresponding to suboctad is not short"
                 raise ValueError(E) 
-        return suboctad >> 1
+        suboctad ^= 0xff if suboctad & 0x80 else 0
+        return (octad << 6) + (suboctad >> 1)
 
     @classmethod
     def octad_entries(self, u_octad):
@@ -839,9 +845,8 @@ class Mat24Tables(object):
         suboctads. The function returns 0 is the bit weight of a
         suboctad is divisible by four and 1 othewise.
         """
-        w = (u_sub & 0x15) + ((u_sub & 0x2a) >> 1)
-        w = w + (w >> 2) + (w >> 4) + 1
-        return (w >> 1) & 1 
+        w = bw24(u_sub & 0x3f)
+        return ((w + 1) >> 1) & 1
   
     @staticmethod
     def suboctad_scalar_prod(u_sub1, u_sub2):

@@ -376,7 +376,7 @@ class GenXi(object):
         vector encoding. 
 
         The function returns 0 for an illegal input x1. 
-        """   
+        """
         box, sign, code = x1 >> 16, (x1 >> 15) & 1, x1 & 0x7fff
         octad = 0xffff
         if box == 1:
@@ -413,13 +413,11 @@ class GenXi(object):
             return 0  
         if octad < 48756:  # this is  759 * 64 
             cc = octad & 0x3f
-            w = Mat24.bw24(cc) 
-            cc = (cc << 1) ^ (w & 1)
-            w += w & 1
+            w = Mat24.suboctad_weight(cc)
             gcode = Mat24.octad_to_gcode(octad >> 6)
             gcodev = Mat24.gcode_to_vect(gcode)
-            cocode = Mat24.vect_to_cocode(Mat24.spread_b24(cc, gcodev))
-            gcode ^=  ((w >> 1) & 1) << 11
+            cocode = Mat24.suboctad_to_cocode(cc, octad >> 6)
+            gcode ^=  w << 11
         cocode ^= Mat24.ploop_theta(gcode)
         return (sign << 24) | (gcode << 12) | cocode
 
@@ -433,7 +431,7 @@ class GenXi(object):
         lattice encoding. 
 
         The function returns 0 if the vector x1 is not short. 
-        """   
+        """
         sign = (x1 >> 24) & 1
         x1 ^= Mat24.ploop_theta(x1 >> 12)
         gcodev = Mat24.gcode_to_vect(x1 >> 12) 
@@ -453,17 +451,7 @@ class GenXi(object):
             if w == 3:
                 return 0
             elif w in [2,4]:
-                if w == 4:
-                    gcodev ^= 0xffffff
-                    x1 ^= 0x800000
-                w_bad = (Mat24.bw24(cocodev) ^ 2 ^ w) & 3
-                if w_bad or (cocodev & gcodev) != cocodev:
-                    return 0
-                c =  Mat24.extract_b24(cocodev, gcodev)
-                if (c & 0x80):
-                     c ^=  0xff 
-                y1 = Mat24.gcode_to_octad(x1 >> 12)
-                code = (y1 << 6) | (c >> 1)
+                code = Mat24.cocode_to_suboctad(x1, x1 >> 12, 0)
                 if code >= 24000: # this is (15 + 360) * 64
                     code -= 24000
                     box = 3

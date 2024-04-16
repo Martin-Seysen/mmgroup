@@ -327,8 +327,9 @@ uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
     }
 
     // Deal with octads (and suboctads)
-    theta = MAT24_THETA_TABLE[(gc = v2 >> 12) & 0x7ff] & 0x7ff;
-    res = mat24_inline_cocode_to_suboctad((v2 ^ theta)  & 0xfff, gc, 1);
+    gc = (v2 >> 12) & 0xfff;
+    theta = MAT24_THETA_TABLE[gc & 0x7ff] & 0x7ff;
+    res = mat24_inline_cocode_to_suboctad((v2 ^ theta) & 0xfff, gc, 1);
     if (res == 0xffffffff) return 0;
     return 0x8000000 + (res << 8);
 }

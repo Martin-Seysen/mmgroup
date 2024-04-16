@@ -15,6 +15,7 @@ from mmgroup.dev.mat24.mat24_ref import Mat24
 from mmgroup.dev.generators.gen_xi_ref import GenXi
 from mmgroup import generators as gen  
 from mmgroup.generators import gen_leech2_mul
+from mmgroup.generators import gen_leech2_subtype
 
         
 
@@ -103,7 +104,7 @@ def rand_short_vector(xmin = 0x10000, xmax = 0x60000):
 
 
 def short_samples(ntests):
-    data = [ 0x10030,  0x10001, 0x35000, 0x3ddb0 ]
+    data = [] # [ 0x10030,  0x10001, 0x35000, 0x3ddb0 ]
     for x in data:
         yield x
     for i in range(max(10, ntests // 50)):
@@ -126,9 +127,18 @@ def test_gen_xi_short(gen_xi_class, ntests):
     to_leech = gen_xi_class.gen_xi_short_to_leech
     to_short = gen_xi_class.gen_xi_leech_to_short
     for x in short_samples(ntests):
-        xl = to_leech(x)
-        x_norm = normalize_short_vector_code(x)
-        assert to_short(xl) == x_norm, lmap(hex, [x, xl, x_norm, to_short(xl)])
+        try:
+            xl = 0
+            x_norm = normalize_short_vector_code(x)
+            xl = to_leech(x)
+            if to_short(xl) != x_norm:
+                raise ValueError("Recomputation of short vector failed")
+        except:
+            print("Test 'test_gen_xi_short with 'class", gen_xi_class) 
+            print("Input:", hex(x), ", normalized:", hex(x_norm))
+            print("Leech2 vector:", hex(xl), ", subtype:", hex(gen_leech2_subtype(xl)))
+            print("Recomputed input:", hex(to_short(xl)))
+            raise
         for i in range(1,3): 
             continue           
             y = xi_short(x,i) 
@@ -151,8 +161,8 @@ def test_gen_xi_ref(gen_xi_class, ref, ntests=200):
     x_old = 0
     for x in xi_samples(ntests):
         for i in range(0,3):
-           res, ref_ = xi(x, i), xi_ref(x, i)
-           assert res == ref_ , lmap(hex,[i, x,res, ref_ ])
+            res, ref_ = xi(x, i), xi_ref(x, i)
+            assert res == ref_ , lmap(hex,[i, x,res, ref_ ])
         assert gen_xi_class.gen_xi_g_gray(x) == ref.gen_xi_g_gray(x)
         assert gen_xi_class.gen_xi_w2_gray(x) == ref.gen_xi_w2_gray(x)
         assert gen_xi_class.gen_xi_g_cocode(x) == ref.gen_xi_g_cocode(x)

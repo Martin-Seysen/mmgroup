@@ -196,6 +196,7 @@ extract_BC(uint_mmv_t *v_in, uint32_t *a, uint_mmv_t *v_out)
 
             gen_leech2_def_mul(a[0], a[j], c);
             sparse = mm_aux_index_leech2_to_sparse(c);
+            if (sparse == 0) return -1;
             sparse |= (0 - ((c >> 24) & 1)) & %{P};
             value  = mm_aux_mmv_get_sparse(%{P}, v_in, sparse) & %{P};
             index = make_index(24 + i, j); 

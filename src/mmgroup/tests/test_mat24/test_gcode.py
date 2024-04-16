@@ -350,8 +350,11 @@ def test_suboctads(gc, ref):
         c = gc.vect_to_cocode(suboctad)
         last_u_sub = 0
         if status == 0:
-            o = gc.vect_to_octad(octad, 0) 
-            u_sub = gc.cocode_to_suboctad(c,v) & 0x3f
+            o = gc.vect_to_octad(octad, 0)
+            assert 0 <= o < 759 
+            u_sub = gc.cocode_to_suboctad(c,v)
+            assert 0 <= u_sub < 1 << 16
+            u_sub &= 0x3f
             c1 = gc.suboctad_to_cocode(u_sub, o)
             syn1 = gc.cocode_syndrome(c1, gc.lsbit24(octad))
             assert c == c1, map(hex,[octad, suboctad, u_sub, syn1, status])
@@ -361,7 +364,8 @@ def test_suboctads(gc, ref):
               ^ gc.suboctad_weight(u_sub) ^ gc.suboctad_weight(last_u_sub))
             assert gc.suboctad_scalar_prod(u_sub, last_u_sub) == scal_ref
             if ref:
-                assert u_sub == ref.cocode_to_suboctad(c,v) & 0x3f
+                ref_u_sub = ref.cocode_to_suboctad(c,v)
+                assert u_sub == ref_u_sub & 0x3f, (hex(u_sub), hex(ref_u_sub))
                 assert c == ref.suboctad_to_cocode(u_sub, o)
                 assert w == ref.suboctad_weight(u_sub)
                 assert ref.suboctad_scalar_prod(u_sub, last_u_sub) == scal_ref
