@@ -527,6 +527,12 @@ class GenXi(object):
         table = (table & 0x7fff) % modulus
         return table, a
 
+    @classmethod
+    def table_immage_box(cls, u_box, u_exp):
+        return cls.gen_xi_op_xi_short(u_box << 16, u_exp) >> 16
+
+
+
 
 
 class Tables(GenXi):

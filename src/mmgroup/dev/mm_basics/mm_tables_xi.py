@@ -67,7 +67,9 @@ import sys
 import numpy as np
 from itertools import product
 
-from mmgroup.generate_c import UserDirective
+from mmgroup.generate_c import UserDirective, UserFormat
+from mmgroup.dev.generators.gen_xi_ref import GenXi 
+
 
 try:
     # Try importing the fast C function
@@ -75,7 +77,6 @@ try:
 except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
     print("\nUsing slow Python functions for table generation!!!\n")
-    from mmgroup.dev.generators.gen_xi_ref import GenXi 
     gen = GenXi
 
 
@@ -155,6 +156,7 @@ class Pre_MM_TablesXi:
 
         self.PERM_TABLES = {}
         self.SIGN_TABLES = {}
+        self.TABLE_BOXES = {} # items are pairs of source and destination box
         for (i, j), (_, start) in self.REVERSE_TABLE_INDICES.items():
             image_start = self.MAP_XI[i, start]
             shape =  self.SHAPES[start]
@@ -173,6 +175,7 @@ class Pre_MM_TablesXi:
                 t_perm = cut24(t_perm)
             self.PERM_TABLES[i, j] = t_perm 
             self.SIGN_TABLES[i, j] = t_sign
+            self.TABLE_BOXES[i, j] = (j, GenXi.table_immage_box(j, i))
 
 def map_table(exp, j):
     j1 = j if (exp == 1 or j < 4) else 9 - j
@@ -198,6 +201,7 @@ def code_pointers(name_perm, name_sign):
     return s
 
 
+
 class MM_TablesXi:
     done_ = False
     directives = {
@@ -211,12 +215,14 @@ class MM_TablesXi:
         cls.TAG_NAMES = Pre_Tables.TAG_NAMES
         cls.PERM_TABLES = {}
         cls.SIGN_TABLES = {}
+        cls.TABLE_BOXES = {}
             
         for i in range(1,3):
             for j in range(1,6):
                 i1, j1 =  map_table(i, j)
                 cls.PERM_TABLES[i, j] = Pre_Tables.PERM_TABLES[i1, j1] 
                 cls.SIGN_TABLES[i, j] = Pre_Tables.SIGN_TABLES[i1, j1]
+                cls.TABLE_BOXES[i, j] = Pre_Tables.TABLE_BOXES[i1, j1]
 
         cls.SOURCE_SHAPES = {}
         cls.DEST_SHAPES = {}
@@ -254,13 +260,23 @@ class MM_TablesXi:
                 cls.TAG_NAMES[dest_start2]) 
         del SHAPES; del REV
        
+        
         TABLES = {}
         for k in product([1,2], range(1,6)):
             TABLES["MM_TABLE_PERM_XI_%d%d" % k] = cls.PERM_TABLES[k]
             TABLES["MM_TABLE_SIGN_XI_%d%d" % k] = cls.SIGN_TABLES[k]
+        TABLES["MM_TABLE_XI_COMMENT"] = UserFormat(
+             cls.comment_table_mapping, "ii")
 
         cls.tables = TABLES
         cls.done_ = True
+        cls.BOX_NAMES = ["",  "BC", "T0", "T1", "X0", "X1"]
+
+    @classmethod
+    def comment_table_mapping(cls, i, j):
+         s = "table for xi**%d: map tag %s to tag %s"
+         src, dest = cls.TABLE_BOXES[i, j]
+         return s % (i, cls.BOX_NAMES[src], cls.BOX_NAMES[dest])
 
     @classmethod
     def display_config(cls):
