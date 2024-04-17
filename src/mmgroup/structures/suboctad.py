@@ -149,10 +149,6 @@ def str_basis(text, letter, basis):
 
 
 
-
-
-
-
 def Octad(octad):
     """Return a (signed) octad as an element of the Parker loop. 
 
@@ -228,8 +224,29 @@ def Octad(octad):
         return v
 
 
+#######################################################################
+# Function ectad_entries
+#######################################################################
 
+def octad_entries(octad):
+    """Return list of entries of an octad
 
+    Here parameter ``octad`` describes an octad as in function
+    ``Octad``. That octad is a sum of eight basis vectors of
+    :math:`\mbox{GF}_2^{24}`, with basis vectors numbered from 0 to 23.
+    The function returns the list ``[b0,...,b7]`` of the indices of
+    these eight basis vectors in a certain order that may differ from
+    the natural order.
+
+    We use these indices for numbering the suboctads of that octad
+    as described in the documentation of function ``SubOctad``.
+
+    .. Caution::
+      The order of the basis vectors returned by this function
+      may be changed in future versions!
+    """
+    o = Octad(octad).octad
+    return mat24.octad_entries(o)
 
 #######################################################################
 # Function  SubOctad
@@ -316,11 +333,14 @@ def SubOctad(octad, suboctad = 0):
     The numbering of the suboctads
 
     Suboctads are numbered for 0 to 63. Let ``[b0, b1,..., b7]`` be the 
-    bits set in the octad of the pair ``(octad, suboctad)`` in natural 
-    order. The following table shows the suboctad numbers for some 
-    suboctads given as cocode elements. More suboctad numbers can be 
-    obtained by combining suboctads and their corresponding numbers 
-    with ``XOR``.
+    bits set in the octad of the pair ``(octad, suboctad)``. Here we
+    assume the indices of the basis vectors making up the octad are
+    ordered as returned by function ``octad_entries``, when applied
+    to the octad.
+
+    The following table shows the suboctad numbers for some suboctads
+    given as cocode elements. More suboctad numbers can be obtained by
+    combining suboctads and their corresponding numbers  with ``XOR``.
 
     .. table:: Suboctad numbers of some cocode elements
       :widths: 16 16 16 16 18 18
@@ -352,7 +372,7 @@ def SubOctad(octad, suboctad = 0):
     result = XLeech2(ploop, cocode)
     subtype =  result.xsubtype
     assert subtype in [0x22, 0x42], (hex(subtype), hex(ploop), hex(cocode), hex(result.value))
-    # complent a complement of an octad
+    # if necessary, complement octad to make Leech vector short
     if subtype == 0x42:
         result.value  ^= 0x800000
     return result

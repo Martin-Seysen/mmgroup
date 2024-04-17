@@ -62,6 +62,7 @@ try:
     from mmgroup.structures.ploop import  PLoop, PLoopZ
     _m = "suboctad"
     from mmgroup.structures.suboctad import Octad, SubOctad
+    from mmgroup.structures.suboctad import octad_entries
     _m = "autpl"
     from mmgroup.structures.autpl import  AutPL
     _m = "xleech2"

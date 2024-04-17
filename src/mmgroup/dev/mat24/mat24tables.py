@@ -327,6 +327,11 @@ def make_syndrome_table(recip_basis):
 
 ODD_OCTADS_SPECIAL = 0
 
+
+ODD_OCTADS_DICT = {
+    7: [0, 1, 2], 11: [1 ,0, 2], 13: [1, 2, 0], 14: [2, 1, 0]
+}
+
 def octad_to_bitlist(vector):
     """Convert an octad to a bit list
 
@@ -345,8 +350,10 @@ def octad_to_bitlist(vector):
     else:
         for i in range(0, 24, 4):
             v3 = vector & (15 << i)
-            if bitweight(v3) == 3:
-                return bits2list(v3) + bits2list(vector & ~v3)
+            if v3 >> i in ODD_OCTADS_DICT:
+                first, last = bits2list(v3), bits2list(vector & ~v3)
+                seq = ODD_OCTADS_DICT[v3 >> i]
+                return [first[seq[i]] for i in range(3)] + last 
         ERR = "Error in converting odd octad to bit list"
         raise ValueError(ERR)
 

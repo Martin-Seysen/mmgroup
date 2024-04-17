@@ -652,6 +652,27 @@ class XLeech2(AbstractGroupWord):
         return mat24.gcode_to_octad(self.value >> 12, 0)
 
 
+    def as_suboctad(self, strict = False):
+        r"""Convert element to a suboctad if possible.
+
+        Let :math:`x_d \cdot x_\delta` be equal to the given element
+        of  :math:`Q_{x0}`. If :math:`d` corresponds to a (possibly
+        complemented) octad and :math:`\delta` is an even cocode
+        element and can be  represented as a subset of :math:`d` then
+        the given element is a suboctad. In this case the function
+        returns a pair *(octad, suboctad)* of integers describing a
+        suboctad  a in function ``SubOctad`` in
+        Section :ref:`octads_label`.
+
+        If ``strict`` is True then the given element must also
+        correspond to a short vector in the Leech lattice mod 2.
+        The function raise ValueError if the given element does not
+        satisfy the conditions mentioned above.
+        """
+        x, d = self.isplit()
+        o_sub = mat24.cocode_to_suboctad(d, x, bool(strict))
+        return o_sub >> 6, o_sub & 0x3f
+
     @classmethod
     def gen_type(cls, vtype = 2, positive = True):
         r"""Return generator that yields the vectors of a given type 

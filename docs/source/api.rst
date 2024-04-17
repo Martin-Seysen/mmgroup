@@ -146,6 +146,8 @@ Octads and suboctads
 
 .. autofunction:: mmgroup.Octad
 
+.. autofunction:: mmgroup.octad_entries
+
 .. autofunction:: mmgroup.SubOctad
 
 .. _aut_ploop_label:
