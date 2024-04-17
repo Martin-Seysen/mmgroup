@@ -357,6 +357,8 @@ class GCode():
 
 
     def __mul__(self, other):
+        if import_pending:
+            complete_import()
         if isinstance(other, Integral):
             mask = -(other & 1)
             return GCode(self.value & mask & 0xfff)
@@ -373,6 +375,8 @@ class GCode():
             return NotImplemented
 
     def __len__(self):
+        if import_pending:
+            complete_import()
         return mat24.gcode_weight(self.value) << 2
 
     def __abs__(self):
@@ -382,6 +386,8 @@ class GCode():
         return  GCode(self.value ^ 0x800)
 
     def __truediv__(self, other):
+        if import_pending:
+            complete_import()
         if isinstance(other, Integral):
             other = abs(other)
             if other == 1:
@@ -420,6 +426,8 @@ class GCode():
 
 
         """
+        if import_pending:
+            complete_import()
         return mat24.gcode_to_octad(self.value & 0xfff, 0)
 
     @property
@@ -438,6 +446,8 @@ class GCode():
         Bit ``i`` of the number ``v`` is the  ``i``-th coordinate
         of the corresponding bit vector.
         """
+        if import_pending:
+            complete_import()
         return mat24.gcode_to_vect(self.value)
         
     @property    
@@ -450,6 +460,8 @@ class GCode():
         try:
             return self.bit_vector
         except:
+            if import_pending:
+                complete_import()
             v = mat24.gcode_to_vect(self.value)
             self.bit_vector = ([(v >> i) & 1 for i in range(24)]) 
             return self.bit_vector
@@ -460,6 +472,8 @@ class GCode():
         try:
             return self.bit_list_
         except AttributeError:
+            if import_pending:
+                complete_import()
             self.bit_list_ = mat24.gcode_to_bit_list(self.value)
             return self.bit_list_
              
@@ -494,6 +508,8 @@ class GCode():
         :raise:
           * ValueError if this is not possible.
         """
+        if import_pending:
+            complete_import()
         v = self.value
         eo, w = 0, mat24.gcode_weight(v)
         if mat24.gcode_weight(v) > 3:
@@ -535,6 +551,8 @@ class GCode():
        
         ``PLoop(g1) * PLoop(g2) == (-1)**g1.theta(g2) * PLoop(g1 + g2) .``
         """
+        if import_pending:
+            complete_import()
         th = mat24.ploop_theta(self.value) 
         if g2 == None:
             complete_import()

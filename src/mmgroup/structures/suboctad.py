@@ -67,7 +67,6 @@ import warnings
 
 
 
-
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.parity import Parity
 from mmgroup.structures.parse_atoms import ihex
@@ -245,7 +244,10 @@ def octad_entries(octad):
       The order of the basis vectors returned by this function
       may be changed in future versions!
     """
+    if import_pending:
+        complete_import()
     o = Octad(octad).octad
+    print("o=", o)
     return mat24.octad_entries(o)
 
 #######################################################################

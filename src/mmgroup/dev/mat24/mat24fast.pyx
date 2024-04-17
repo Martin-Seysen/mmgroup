@@ -216,7 +216,7 @@ def octad_entries(uint32_t u_octad):
     res =  mat24_octad_entries(u_octad, &data[0])
     if res != 0:
         raise ValueError("Illegal octad number")
-    return list(data)
+    return list(data[:8])
 
 def suboctad_weight(uint32_t u_sub):
     return mat24_suboctad_weight(u_sub)
