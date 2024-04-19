@@ -479,7 +479,9 @@ good_ast_nodes = set([
 
    ast.Call,
    ast.Subscript, ast.Index, ast.Slice, ast.ExtSlice, 
-   ast.ListComp, ast.comprehension
+   ast.ListComp, ast.comprehension,
+
+   ast.Store,
 ])
 
 
@@ -542,7 +544,7 @@ def safe_eval(s,  locals_ = {}):
     vars_.update(locals_)
     EvalNodeVisitor().visit(a_tree)
     code = compile(a_tree, filename="Python expression", mode="eval")
-    result = eval(code, {'__builtins__': {}},  vars_ )
+    result = eval(code,  vars_ )
     return result
 
 
@@ -1087,7 +1089,6 @@ def make_table(table, format=None):
             if  isinstance(x, Iterable) and not isinstance(x, str):
                 s.append("{")
                 s.append(make_table(x, format))
-                print("TTT", s)
                 if s[-1][-1:] == "\n":
                     s[-1] = s[-1][:-1]
                     s += ["},", "\n"]

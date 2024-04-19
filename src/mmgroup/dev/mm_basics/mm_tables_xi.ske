@@ -1,8 +1,6 @@
 
 #include <stdint.h>
 
-
-
 #include "mm_basics.h"
 
 
@@ -30,117 +28,36 @@ extern "C" {
 //  %%GEN c
 
 
-// Sign %{MM_TABLE_XI_COMMENT:1,1}
-static uint32_t TAB_SIGN_XI_11[] = {
-// %%TABLE MM_TABLE_SIGN_XI_11, uint32
+
+// %%FOR* i in [1,2]
+// %%FOR* j in range(1,6)
+// Sign %{MM_TABLE_XI_COMMENT:i,j}
+static uint32_t TAB_SIGN_XI_%{i}%{j}[] = {
+// %%TABLE MM_TABLE_SIGN_XI_%{i}%{j}, uint32
 };
 
-// Permutation %{MM_TABLE_XI_COMMENT:1,1}
-static uint16_t TAB_PERM_XI_11[] = {
-// %%TABLE MM_TABLE_PERM_XI_11, uint16
+// Permutation %{MM_TABLE_XI_COMMENT:i,j}
+static uint16_t TAB_PERM_XI_%{i}%{j}[] = {
+// %%TABLE MM_TABLE_PERM_XI_%{i}%{j}, uint16
 };
 
-// Sign %{MM_TABLE_XI_COMMENT:1,2}
-static uint32_t TAB_SIGN_XI_12[] = {
-// %%TABLE MM_TABLE_SIGN_XI_12, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:1,2}
-static uint16_t TAB_PERM_XI_12[] = {
-// %%TABLE MM_TABLE_PERM_XI_12, uint16
-};
+// %%END FOR
+// %%END FOR
 
 
-// Sign %{MM_TABLE_XI_COMMENT:1,3}
-static uint32_t TAB_SIGN_XI_13[] = {
-// %%TABLE MM_TABLE_SIGN_XI_13, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:1,3}
-static uint16_t TAB_PERM_XI_13[] = {
-// %%TABLE MM_TABLE_PERM_XI_13, uint16
-};
-
-// Sign %{MM_TABLE_XI_COMMENT:1,4}
-static uint32_t TAB_SIGN_XI_14[] = {
-// %%TABLE MM_TABLE_SIGN_XI_14, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:1,4}
-static uint16_t TAB_PERM_XI_14[] = {
-// %%TABLE MM_TABLE_PERM_XI_14, uint16
-};
-
-// Sign %{MM_TABLE_XI_COMMENT:1,5}
-static uint32_t TAB_SIGN_XI_15[] = {
-// %%TABLE MM_TABLE_SIGN_XI_15, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:1,5}
-static uint16_t TAB_PERM_XI_15[] = {
-// %%TABLE MM_TABLE_PERM_XI_15, uint16
-};
-
-
-
-
-// Sign %{MM_TABLE_XI_COMMENT:2,1}
-static uint32_t TAB_SIGN_XI_21[] = {
-// %%TABLE MM_TABLE_SIGN_XI_21, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:2, 1}
-static uint16_t TAB_PERM_XI_21[] = {
-// %%TABLE MM_TABLE_PERM_XI_21, uint16
-};
-
-// Sign %{MM_TABLE_XI_COMMENT:2,2}
-static uint32_t TAB_SIGN_XI_22[] = {
-// %%TABLE MM_TABLE_SIGN_XI_22, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:2, 2}
-static uint16_t TAB_PERM_XI_22[] = {
-// %%TABLE MM_TABLE_PERM_XI_22, uint16
-};
-
-
-// Sign %{MM_TABLE_XI_COMMENT:2, 3}
-static uint32_t TAB_SIGN_XI_23[] = {
-// %%TABLE MM_TABLE_SIGN_XI_23, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:2, 3}
-static uint16_t TAB_PERM_XI_23[] = {
-// %%TABLE MM_TABLE_PERM_XI_23, uint16
-};
-
-// Sign %{MM_TABLE_XI_COMMENT:2, 4}
-static uint32_t TAB_SIGN_XI_24[] = {
-// %%TABLE MM_TABLE_SIGN_XI_24, uint32
-};
-
-// Permutation %{MM_TABLE_XI_COMMENT:2, 4}
-static uint16_t TAB_PERM_XI_24[] = {
-// %%TABLE MM_TABLE_PERM_XI_24, uint16
-};
-
-// Sign %{MM_TABLE_XI_COMMENT:2, 5}
-static uint32_t TAB_SIGN_XI_25[] = {
-// %%TABLE MM_TABLE_SIGN_XI_25, uint32
-};
-
-
-// Permutation %{MM_TABLE_XI_COMMENT:2, 5}
-static uint16_t TAB_PERM_XI_25[] = {
-// %%TABLE MM_TABLE_PERM_XI_25, uint16
-};
-
+// %%WITH* V = ['TAB_PERM_XI_', 'TAB_SIGN_XI_']
+// %%WITH* R = range(1, 6)
+// %%WITH* T = [[['%s%d%d' % (s,i,j) for s in V] for j in R] for i in (1,2)]
 
 // %%EXPORT_TABLE 
 mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
-    // %%CODE_XI_POINTERS   TAB_PERM_XI_, TAB_SIGN_XI_
+    // %%TABLE T
 };
+
+// %%END WITH
+// %%END WITH
+// %%END WITH
+
 
 // %%EXPORT px
 uint32_t mm_sub_get_table_xi(uint32_t e, uint32_t i, uint32_t j, uint32_t k)
