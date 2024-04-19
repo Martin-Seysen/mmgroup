@@ -367,6 +367,24 @@ class UserFormat(UserDirective):
         args += eval_codegen_args(self.tg.names, format_, self.eval_mode)
         return self.format_function(*args)
 
+
+class ConstUserFormat(UserDirective):
+    r"""Create constant function for string formatting in code generator
+
+    The returned string is always equal to parameter ``value``;
+    other parameters are ignored. This is may be used for mockup
+    in documentation generation with Sphinx.
+    """
+    def __init__(self, value="", *args, **kwds):
+        self.value = str(value)
+
+    def __call__(self, *args, **kwds):
+        return self.value
+    __format__ = __call__
+
+
+
+
 def _zero_string(*args, **kwds):
     return "0" 
 

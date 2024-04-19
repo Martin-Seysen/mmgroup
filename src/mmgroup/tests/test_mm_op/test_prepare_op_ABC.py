@@ -120,9 +120,8 @@ def prep_op_ABC_testdata():
     
 
 
-@pytest.mark.mmm
 @pytest.mark.mm_op
-def test_prepare_op_ABC(verbose = 1):
+def test_prepare_op_ABC(verbose = 0):
     print("Testing function mm_group_prepare_op_ABC")
     for i, (g, must_be_in_N0) in enumerate(prep_op_ABC_testdata()):
         b0, g1 = py_prepare_op_ABC(g)

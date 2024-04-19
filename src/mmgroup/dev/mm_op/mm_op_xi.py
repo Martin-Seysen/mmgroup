@@ -36,20 +36,23 @@ class MonomialOp_xi_uint8_t(MM_Op):
       
     In this case the main loop is:
 
+    // %%WITH* SRC_SHAPE = MM_TABLE_SHAPES_XI[i][0]
+    // %%WITH* DEST_SHAPE = MM_TABLE_SHAPES_XI[i][1]
+
     uint8_t b[2496], *p_b;
-    for (i = 0; i < {i_src.SHAPE[0]}; ++i) {
+    for (i = 0; i < {SRC_SHAPE[0]}; ++i) {
         p_b = b;
         
-        for (j = 0; j < {i_src.SHAPE[1]}; ++j) {
-           // %%OP_XI_LOAD p_src, p_b, {i_src.SHAPE[2]}
-           p_src += {V24_INTS};
+        for (j = 0; j < {SRC_SHAPE[1]}; ++j) {
+           // %%OP_XI_LOAD p_src, p_b, {SRC_SHAPE[2]}
+           p_src += %{V24_INTS};
            p_b += 32;
         }
         
-        for (j = 0; j < {i_dest.SHAPE[1]}; ++j) {
-           // %%OP_XI_STORE b, p_perm, p_sign, p_dest, {i_dest.SHAPE[2]}
-           p_dest += {V24_INTS};
-           p_perm += {i_dest.SHAPE[2]};
+        for (j = 0; j < {DEST_SHAPE[1]}; ++j) {
+           // %%OP_XI_STORE b, p_perm, p_sign, p_dest, {DEST_SHAPE[2]}
+           p_dest += %{V24_INTS};
+           p_perm += %{DEST_SHAPE[2]};
            p_sign += 1;
         }        
     }
@@ -58,10 +61,9 @@ class MonomialOp_xi_uint8_t(MM_Op):
 
     def __init__(self, p):
         super(MonomialOp_xi_uint8_t, self).__init__(p = p)
-        MM_TablesXi()
-        self.make_table_info()
-        # make tables and directives for code generation
         self.tables.update(self.make_tables())
+        sub = MM_TablesXi()
+        self.tables["MM_TABLE_SHAPES_XI"] = sub.SHAPES 
         self.directives.update(self.make_directives())
 
     def load_bytes(self, source, bytes, n_bytes, type_=""):
@@ -107,6 +109,7 @@ class MonomialOp_xi_uint8_t(MM_Op):
 
 
     def comment(self,i):
+        """This does not work!!!"""
         src_t = MM_TablesXi.SOURCE_TAGS[i]
         dest_t = MM_TablesXi.DEST_TAGS[i]
         if (src_t[0] == src_t[1] and dest_t[0] == dest_t[1]):
@@ -116,29 +119,8 @@ class MonomialOp_xi_uint8_t(MM_Op):
         return s
 
 
-    def make_table_info(self):
-        self.table_info = []
-        sh = self.LOG_INT_FIELDS
-        for i in range(1,6):
-            c = self.comment(i)
-            info_source =  MonomialOpTableInfo(
-                MM_TablesXi.SOURCE_SHAPES[i],
-                MM_TablesXi.SOURCE_START_1[i] >> sh, 
-                MM_TablesXi.SOURCE_OP_DIFF[i]
-            )
-            info_dest =  MonomialOpTableInfo(
-                MM_TablesXi.DEST_SHAPES[i],
-                MM_TablesXi.DEST_START_1[i] >> sh, 
-                MM_TablesXi.DEST_OP_DIFF[i]
-            )
-            self.table_info.append((i-1, info_source, info_dest, c))    
-        self.table_diff = MM_TablesXi.MAX_ABS_START_DIFF >> sh
-
     def make_tables(self):
-        return {
-            "OP_XI_TABLE_INFO": self.table_info, 
-            "OP_XI_TABLE_DIFF": self.table_diff
-        }
+        return {}
      
     def make_directives(self):
         return {
@@ -205,103 +187,11 @@ class MonomialOp_xi_uint_fast8_t(MonomialOp_xi_uint8_t):
             s += self.gen_mmv_uint_spread("r1", "r1")
             s += "(%s)[%d] = r0 ^ r1;\n" % (dest, i)
 
-        #s +=("// i=%d\n" % i)
         for j in range(i+1, 32 // self.INT_FIELDS):
             s += "%s[%d] = 0;\n" % (dest,j)
         return s
 
 
-
-class MonomialOp_xi_alternative(MM_Op):
-    """Alternative implementation to class MonomialOp_xi
- 
-    In this case the main loop is:
-
-    for (i = 0; i < {i_dest.SHAPE[0]}; ++i) {
-        for (j = 0; j < {i_dest.SHAPE[1]}; ++j) {
-           // %%OP_XI p_src, p_perm, p_sign, p_dest, {i_dest.SHAPE[2]}
-           p_dest += {V24_INTS};
-           p_perm += {i_dest.SHAPE[2]};
-           p_sign += 1;
-        }
-        p_src += {int:i_src.SHAPE[1] * V24_INTS};
-    }
-
-    Although here fewer data are being moved, this leads to a slower
-    implementation on a 64 bit 80x86 CPU.
-    """
-    def __init__(self, p):
-        super(MonomialOp_xi, self).__init__(p)
-        self.make_table_info()
-        self.tables.update(self.make_tables())
-        self.directives.update(self.make_directives())
-
-    def make_table_info(self):
-        self.table_info = []
-        sh = self.LOG_INT_FIELDS
-        for i in range(1,6):
-            c = self.comment(i)
-            info_source =  MonomialOpTableInfo(
-                MM_TablesXi.SOURCE_SHAPES[i],
-                MM_TablesXi.SOURCE_START_1[i] >> sh, 
-                MM_TablesXi.SOURCE_OP_DIFF[i]
-            )
-            info_dest =  MonomialOpTableInfo(
-                MM_TablesXi.DEST_SHAPES[i],
-                MM_TablesXi.DEST_START_1[i] >> sh, 
-                MM_TablesXi.DEST_OP_DIFF[i]
-            )
-            self.table_info.append((i-1, info_source, info_dest, c))    
-        self.table_diff = MM_TablesXi.MAX_ABS_START_DIFF >> sh
-
-    def comment(self,i):
-        src_t = MM_TablesXi.SOURCE_TAGS[i]
-        dest_t = MM_TablesXi.DEST_TAGS[i]
-        if (src_t[0] == src_t[1] and dest_t[0] == dest_t[1]):
-            return "// Map tag %s to tag %s."% (src_t[0], dest_t[0])
-        s = "// Map tag %s to tag %s if e = 1\n" % (src_t[0], dest_t[0])
-        s += "// Map tag %s to tag %s if e = 2" % (src_t[1], dest_t[1])
-        return s
-
-
-    def op(self, src, perm, sign, dest, length):
-        assert length in (24, 32)
-        INT_FIELDS = self.INT_FIELDS
-        s = "uint_mmv_t r0, rd, rp;\n"
-        for i in range(0, length, INT_FIELDS): 
-            op = ""
-            for j in range(0, min(INT_FIELDS, length - i)):
-                s += "rp = (%s)[%d];\n" % (perm, i + j)
-                s += "rd = (%s)[rp >> %d] >> ((rp & %d) << %d);\n" % (
-                      src, self.LOG_INT_FIELDS, INT_FIELDS - 1, 
-                      self.LOG_FIELD_BITS
-                )
-                s += "r0 %s= ((rd & %d) << %s);\n" % (
-                     op, self.p, j * self.FIELD_BITS
-                )
-                op = "+"
-            s += "rd = (%s)[0] >> %s;\n" % (sign, i)
-            s += self.gen_mmv_uint_spread("rd", "rd")
-            s += "(%s)[%d] = r0 ^ rd;\n" % (dest, i // INT_FIELDS)
-        for i in range(1 + (length - 1) // INT_FIELDS, 32 // INT_FIELDS):
-            s += "(%s)[%d] = 0;\n"   % (dest, i)
-        return s    
-
-    def make_tables(self):
-        return {
-            "OP_XI_TABLE_INFO": self.table_info, 
-            "OP_XI_TABLE_DIFF": self.table_diff
-        }
-     
-    def make_directives(self):
-        return {
-            "OP_XI": UserDirective(self.op, "ssssi"),
-        }
-
-
- 
-
-#MonomialOp_xi =  MonomialOp_xi_uint8_t
 
 
 class Tables(MonomialOp_xi_uint8_t):

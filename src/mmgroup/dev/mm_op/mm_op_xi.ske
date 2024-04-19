@@ -65,46 +65,44 @@ static void mm_op%{P}_xi_mon(
     // Caution: this uses v_out[MM_OP%{P}_OFS_Z:] as temporary storage
     uint_mmv_t *p_src, *p_dest;
     uint_fast32_t i, j;
-    uint_fast32_t diff = exp1 ? %{OP_XI_TABLE_DIFF} : 0;
     uint8_t *b =  (uint8_t*)(v_out + MM_OP%{P}_OFS_Z), *p_b;
-    mm_sub_table_xi_type *p_tables = mm_sub_table_xi[exp1];
+    mm_sub_table_xi_type *p_tables;
     uint16_t *p_perm;
     uint32_t *p_sign;
 
 
-    // %%FOR* i, i_src, i_dest, comment  in OP_XI_TABLE_INFO
+    // %%FOR* i  in range(5)
+    // %%WITH* SRC_SHAPE = MM_TABLE_SHAPES_XI[i][0]
+    // %%WITH* DEST_SHAPE = MM_TABLE_SHAPES_XI[i][1]
 
     ///////////////////////////////////////////////////////////////
-    %{comment}
+    // 
     ///////////////////////////////////////////////////////////////
-    p_src = v_in + %{i_src.START};
-    // %%IF* i_src.OP_DIFF
-    p_src %{i_src.OP_DIFF}= diff;
-    // %%END IF
-    p_dest = v_out + %{i_dest.START};
-    // %%IF* i_dest.OP_DIFF
-    p_dest %{i_dest.OP_DIFF}= diff;
-    // %%END IF
-    p_sign = p_tables[%{i}].p_sign;
-    p_perm = p_tables[%{i}].p_perm;
+    p_src = v_in + (MM_SUB_OFFSET_TABLE_XI[%{i}][exp1][0] >> %{LOG_INT_FIELDS});
+    p_dest = v_out + (MM_SUB_OFFSET_TABLE_XI[%{i}][exp1][1] >> %{LOG_INT_FIELDS});
+    p_tables =  &MM_SUB_TABLE_XI[%{i}][exp1];
+    p_sign = p_tables->p_sign;
+    p_perm = p_tables->p_perm;
 
-    for (i = 0; i < %{i_src.SHAPE[0]}; ++i) {
+    for (i = 0; i < %{SRC_SHAPE[0]}; ++i) {
         p_b = b;
         
-        for (j = 0; j < %{i_src.SHAPE[1]}; ++j) {
-           // %%OP_XI_LOAD p_src, p_b, %{i_src.SHAPE[2]}, uint8_t
+        for (j = 0; j < %{SRC_SHAPE[1]}; ++j) {
+           // %%OP_XI_LOAD p_src, p_b, SRC_SHAPE[2], uint8_t
            p_src += %{V24_INTS};
            p_b += 32;
         }
         
-        for (j = 0; j < %{i_dest.SHAPE[1]}; ++j) {
-           // %%OP_XI_STORE b, p_perm, p_sign, p_dest, %{i_dest.SHAPE[2]}
+        for (j = 0; j < %{DEST_SHAPE[1]}; ++j) {
+           // %%OP_XI_STORE b, p_perm, p_sign, p_dest, DEST_SHAPE[2]
            p_dest += %{V24_INTS};
-           p_perm += %{i_dest.SHAPE[2]};
+           p_perm += %{DEST_SHAPE[2]};
            p_sign += 1;
         }
         
     }
+    // %%END WITH
+    // %%END WITH
     // %%END FOR
 }
 

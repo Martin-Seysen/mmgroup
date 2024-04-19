@@ -3,6 +3,7 @@ from mmgroup.generate_c.generate_functions import prepend_blanks
 from mmgroup.generate_c.generate_functions import format_item
 from mmgroup.generate_c.generate_functions import UserDirective
 from mmgroup.generate_c.generate_functions import UserFormat
+from mmgroup.generate_c.generate_functions import ConstUserFormat
 from mmgroup.generate_c.generate_functions import EmptyUserDirective
 from mmgroup.generate_c.generate_functions import ZeroUserFormat
 from mmgroup.generate_c.generate_functions import make_table

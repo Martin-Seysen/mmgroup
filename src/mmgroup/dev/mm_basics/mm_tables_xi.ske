@@ -29,8 +29,8 @@ extern "C" {
 
 
 
-// %%FOR* i in [1,2]
-// %%FOR* j in range(1,6)
+// %%FOR* i in range(5)
+// %%FOR* j in range(2)
 // Sign %{MM_TABLE_XI_COMMENT:i,j}
 static uint32_t TAB_SIGN_XI_%{i}%{j}[] = {
 // %%TABLE MM_TABLE_SIGN_XI_%{i}%{j}, uint32
@@ -46,11 +46,11 @@ static uint16_t TAB_PERM_XI_%{i}%{j}[] = {
 
 
 // %%WITH* V = ['TAB_PERM_XI_', 'TAB_SIGN_XI_']
-// %%WITH* R = range(1, 6)
-// %%WITH* T = [[['%s%d%d' % (s,i,j) for s in V] for j in R] for i in (1,2)]
+// %%WITH* R = range(5)
+// %%WITH* T = [[['%s%d%d' % (s,i,j) for s in V] for j in (0,1)] for i in R]
 
 // %%EXPORT_TABLE 
-mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
+mm_sub_table_xi_type MM_SUB_TABLE_XI[5][2] = {
     // %%TABLE* T
 };
 
@@ -59,12 +59,32 @@ mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
 // %%END WITH
 
 
+
+
+// %%EXPORT_TABLE 
+uint32_t MM_SUB_OFFSET_TABLE_XI[5][2][2] = {
+    // %%TABLE  MM_TABLE_OFFSETS_XI, uint32
+};
+
+
+
+
 // %%EXPORT px
-uint32_t mm_sub_get_table_xi(uint32_t e, uint32_t i, uint32_t j, uint32_t k)
+uint32_t mm_sub_get_table_xi(uint32_t i, uint32_t e, uint32_t j, uint32_t k)
 {
-    if (k) return mm_sub_table_xi[e][i].p_sign[j];
-    return mm_sub_table_xi[e][i].p_perm[j];
+    if (k) return MM_SUB_TABLE_XI[i][e].p_sign[j];
+    return MM_SUB_TABLE_XI[i][e].p_perm[j];
 }
+
+
+// %%EXPORT px
+uint32_t mm_sub_get_offset_table_xi(uint32_t i, uint32_t e, uint32_t j)
+{
+    return MM_SUB_OFFSET_TABLE_XI[i][e][j];
+}
+
+
+
 
 
 //  %%GEN h

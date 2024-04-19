@@ -496,7 +496,7 @@ def gen_unit_BC(p, scalar, tag, i0 = 'r', i1 = 'r'):
     peculiarities:
 
       -  if i0 == i1:
-             raise IndexError (This case is illegal)
+             raise IndexError("This case is illegal")
       -  if i0 or i1 encodes a random index:
              ensure i1 != i0
     """
@@ -512,7 +512,7 @@ def gen_unit_BC(p, scalar, tag, i0 = 'r', i1 = 'r'):
         _, j1, _ = index_I(tag, i1)
     if j0 == j1:
         err = "Vector indices 1 and 2 must be different for tag %s"
-        raise ValueError(err & tag)
+        raise ValueError(err % tag)
     j0, j1 = max(j0, j1), min(j0, j1)
     sc = scalar % p
     a = [tag_offsets[tag] + (j0 << 14) + (j1 << 8) + sc]
@@ -649,8 +649,8 @@ def gen_vector_sparse(p, scalar, tag, data, p1=None):
     a1 = np.zeros(len(a), dtype = np.uint32)
     res =  mm_aux_mul_sparse(p1, a, len(a), scalar, p, a1)
     if res < 0:
-        err = "Cannot reduce sparse MM vector module %d"
-        raise ValueError(err, p)
+        err = "Cannot reduce sparse MM vector modulo %d"
+        raise ValueError(err % p)
     return a1[:res]
 
 

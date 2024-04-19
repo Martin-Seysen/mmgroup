@@ -68,6 +68,7 @@ import numpy as np
 from itertools import product
 
 from mmgroup.generate_c import UserDirective, UserFormat
+from mmgroup.generate_c import ConstUserFormat
 from mmgroup.dev.generators.gen_xi_ref import GenXi 
 
 
@@ -122,71 +123,81 @@ def check_table(table, blocks, row_length):
 
 class Pre_MM_TablesXi: 
     def __init__(self):
+        """
         BCT, T0 = 24*32, 72*32 + 15*64
         T1, X0  = 72*32 + 375*64,  72*32 + 759*64
         X1 = X0 + 1024*32
-
+        """
+        BCT, T0, T1, X0, X1 = 1, 2, 3, 4, 5
+        _OFS_X0 = 72*32 + 759*64
+        OFFSETS = [None, 24*32, 72*32 + 15*64, 72*32 + 375*64, 
+                   _OFS_X0, _OFS_X0 + 1024*32]
         self.TAG_NAMES = {BCT:"BC", T0:"T0", T1:"T1", X0:"X0", X1:"X1"} 
 
-        self.SHAPES = {
+        self.BOX_SHAPES = {
             BCT: (1, 78, 32), T0: (45, 16, 32), T1: (64, 12, 32),
             X0: (64, 16, 24), X1: (64, 16, 24)
         }
 
-        self.MAP_XI = {
-            (1,BCT): BCT, (1,T0): T0, (1, T1): X0, (1, X0): X1, (1,X1): T1
-        }
-        MAP_XI_ = {}
-        for (exp, src), dest in self.MAP_XI.items():
-            MAP_XI_[2, dest] = src
-        self.MAP_XI.update(MAP_XI_)
-        del MAP_XI_ 
+        self.MAP_XI = [
+            [[BCT, BCT], [BCT, BCT]],
+            [[T0, T0], [T0, T0]],
+            [[T1, X0], [T1, X1]],
+            [[X0, X1], [X1, X0]],
+            [[X1, T1], [X0, T1]]
+        ]   
 
-        TABLE_ORDER = [None, BCT, T0, T1, X0, X1]
-
-        self.TABLE_INDICES = {}
-        for i, ofs in enumerate(TABLE_ORDER):
-            if i:
-                self.TABLE_INDICES[1, ofs] = (1, i) 
-                self.TABLE_INDICES[2, ofs] = (2, i) 
-
-        self.REVERSE_TABLE_INDICES = {}
-        for x, y in self.TABLE_INDICES.items():
-            self.REVERSE_TABLE_INDICES[y] = x
+        for n in range(5):
+            _m = self.MAP_XI[n]
+            for j in range(2):
+                assert self.BOX_SHAPES[_m[0][j]] == self.BOX_SHAPES[_m[1][j]]
+            for exp1 in range(2):
+                box = _m[exp1][0]
+                img = gen.gen_xi_op_xi_short(box << 16, exp1 + 1) >> 16
+                assert _m[exp1][1] == img
 
         self.PERM_TABLES = {}
         self.SIGN_TABLES = {}
-        self.TABLE_BOXES = {} # items are pairs of source and destination box
-        for (i, j), (_, start) in self.REVERSE_TABLE_INDICES.items():
-            image_start = self.MAP_XI[i, start]
-            shape =  self.SHAPES[start]
-            image_shape = self.SHAPES[image_start]
-            table = gen.make_table(j, i)
-            assert shape[0] == image_shape[0], (shape[0], image_shape[0]) 
-            assert len(table) == shape[0] * shape[1] * 32
-            image_len = image_shape[0] * image_shape[1] * 32
-            check_table(table, shape[0], shape[2])
-            inv_table = gen.invert_table(table, shape[2], image_len)
-            if start == BCT:
-                make_table_bc_symmetric(inv_table)
-            t_perm, t_sign = gen.split_table(inv_table, shape[1]*32)
-            del inv_table
-            if image_shape[2] == 24:
-                t_perm = cut24(t_perm)
-            self.PERM_TABLES[i, j] = t_perm 
-            self.SIGN_TABLES[i, j] = t_sign
-            self.TABLE_BOXES[i, j] = (j, GenXi.table_immage_box(j, i))
+        self.TABLE_BOX_NAMES = {} # items are pairs of source and destination box
+        self.OFFSETS = np.zeros((5,2,2), dtype = np.uint32).tolist()
+        self.SHAPES =  np.zeros((5,2, 3), dtype = np.uint32).tolist()
 
-def map_table(exp, j):
-    j1 = j if (exp == 1 or j < 4) else 9 - j
-    return exp, j1
+        for n in range(5):
+            box = self.MAP_XI[n][0][0]
+            img = self.MAP_XI[n][0][1]
+            self.SHAPES[n][0] = self.BOX_SHAPES[box]
+            self.SHAPES[n][1] = self.BOX_SHAPES[img]
+            #print(n, box, img, self.SHAPES[n])
+        
 
-def operator_(x):
-    if x == 0: return None
-    if x > 0: return '+'
-    return '-'
-
-#234567890123456789012345678901234567890123456789012345678901234567890
+        for n in range(5):
+            for exp1 in range(2):
+                box = self.MAP_XI[n][exp1][0]
+                img = self.MAP_XI[n][exp1][1]
+                assert self.SHAPES[n][0] == self.BOX_SHAPES[box]
+                assert self.SHAPES[n][1] == self.BOX_SHAPES[img]
+                table = gen.make_table(box, exp1 + 1)
+                shape =  self.SHAPES[n][0]
+                img_shape = self.SHAPES[n][1]
+                #print(shape, img_shape)
+                assert shape[0] == img_shape[0], (shape[0], img_shape[0]) 
+                assert len(table) == shape[0] * shape[1] * 32
+                img_len = img_shape[0] * img_shape[1] * 32
+                check_table(table, shape[0], shape[2])
+                inv_table = gen.invert_table(table, shape[2], img_len)
+                if box == BCT:
+                    make_table_bc_symmetric(inv_table)
+                t_perm, t_sign = gen.split_table(inv_table, shape[1]*32)
+                del table
+                del inv_table
+                if img_shape[2] == 24:
+                    t_perm = cut24(t_perm)
+                self.PERM_TABLES[n, exp1] = t_perm 
+                self.SIGN_TABLES[n, exp1] = t_sign
+                self.TABLE_BOX_NAMES[n, exp1] = [self.TAG_NAMES[box],
+                                                  self.TAG_NAMES[img]]
+                self.OFFSETS[n][exp1][0] = OFFSETS[box]
+                self.OFFSETS[n][exp1][1] = OFFSETS[img]
 
 
 
@@ -194,100 +205,51 @@ def operator_(x):
 class MM_TablesXi:
     done_ = False
     directives = {}
+    tables = {}
     def __init__(self):
         cls = self.__class__
         if cls.done_:
             return
-        Pre_Tables = Pre_MM_TablesXi()
-        cls.TAG_NAMES = Pre_Tables.TAG_NAMES
-        cls.PERM_TABLES = {}
-        cls.SIGN_TABLES = {}
-        cls.TABLE_BOXES = {}
-            
-        for i in range(1,3):
-            for j in range(1,6):
-                i1, j1 =  map_table(i, j)
-                cls.PERM_TABLES[i, j] = Pre_Tables.PERM_TABLES[i1, j1] 
-                cls.SIGN_TABLES[i, j] = Pre_Tables.SIGN_TABLES[i1, j1]
-                cls.TABLE_BOXES[i, j] = Pre_Tables.TABLE_BOXES[i1, j1]
+        Pre = Pre_MM_TablesXi()
 
-        cls.SOURCE_SHAPES = {}
-        cls.DEST_SHAPES = {}
-        cls.SOURCE_START_1 = {}
-        cls.SOURCE_START_DIFF = {}
-        cls.SOURCE_OP_DIFF = {}
-        cls.DEST_START_1 = {}
-        cls.DEST_START_DIFF = {}
-        cls.DEST_OP_DIFF = {}
-        cls.SOURCE_TAGS = {}
-        cls.DEST_TAGS = {}
-        cls.MAX_ABS_START_DIFF = MDIFF = 32768
-        REV = Pre_Tables.REVERSE_TABLE_INDICES
-        for j in range(1,6):
-            source_start1 = REV[map_table(1,j)][1] 
-            source_start2 = REV[map_table(2,j)][1]
-            dest_start1 = Pre_Tables.MAP_XI[1, source_start1]
-            dest_start2 = Pre_Tables.MAP_XI[2, source_start2]
-            SHAPES = Pre_Tables.SHAPES
-            assert SHAPES[source_start1] == SHAPES[source_start2] 
-            assert SHAPES[dest_start1] == SHAPES[dest_start2]
-            cls.SOURCE_SHAPES[j] = SHAPES[source_start1]
-            cls.DEST_SHAPES[j] = SHAPES[dest_start1]
-            cls.SOURCE_START_1[j] = source_start1
-            cls.SOURCE_START_DIFF[j] = source_start2 - source_start1
-            cls.DEST_START_1[j] = dest_start1
-            cls.DEST_START_DIFF[j] = dest_start2 - dest_start1
-            assert abs(cls.SOURCE_START_DIFF[j]) in [0, MDIFF]
-            assert abs(cls.DEST_START_DIFF[j]) in [0, MDIFF]
-            cls.SOURCE_OP_DIFF[j] = operator_(cls.SOURCE_START_DIFF[j])
-            cls.DEST_OP_DIFF[j] = operator_(cls.DEST_START_DIFF[j])
-            cls.SOURCE_TAGS[j] = (cls.TAG_NAMES[source_start1], 
-                cls.TAG_NAMES[source_start2]) 
-            cls.DEST_TAGS[j] = (cls.TAG_NAMES[dest_start1], 
-                cls.TAG_NAMES[dest_start2]) 
-        del SHAPES; del REV
-       
-        
-        TABLES = {}
-        for k in product([1,2], range(1,6)):
-            TABLES["MM_TABLE_PERM_XI_%d%d" % k] = cls.PERM_TABLES[k]
-            TABLES["MM_TABLE_SIGN_XI_%d%d" % k] = cls.SIGN_TABLES[k]
-        TABLES["MM_TABLE_XI_COMMENT"] = UserFormat(
+        cls.PERM_TABLES = Pre.PERM_TABLES
+        cls.SIGN_TABLES = Pre.SIGN_TABLES
+        cls.TABLE_BOX_NAMES = Pre.TABLE_BOX_NAMES
+        cls.OFFSETS = Pre.OFFSETS
+        cls.SHAPES = Pre.SHAPES
+
+        for k in product(range(5), range(2)):
+            cls.tables["MM_TABLE_PERM_XI_%d%d" % k] = cls.PERM_TABLES[k]
+            cls.tables["MM_TABLE_SIGN_XI_%d%d" % k] = cls.SIGN_TABLES[k]
+        cls.tables["MM_TABLE_OFFSETS_XI"] = cls.OFFSETS
+        cls.tables["MM_TABLE_XI_COMMENT"] = UserFormat(
              cls.comment_table_mapping, "ii")
-
-        cls.tables = TABLES
         cls.done_ = True
-        cls.BOX_NAMES = ["",  "BC", "T0", "T1", "X0", "X1"]
+
 
     @classmethod
     def comment_table_mapping(cls, i, j):
          s = "table for xi**%d: map tag %s to tag %s"
-         src, dest = cls.TABLE_BOXES[i, j]
-         return s % (i, cls.BOX_NAMES[src], cls.BOX_NAMES[dest])
+         src, dest = cls.TABLE_BOX_NAMES[i, j]
+         return s % (j + 1, src, dest)
 
     @classmethod
     def display_config(cls):
         cls.__init__()
         print("source:")
-        print(" shapes:", cls.SOURCE_SHAPES)
-        print(" start: ", cls.SOURCE_START_1)
-        print(" diff:  ", cls.SOURCE_OP_DIFF)
-        print(" tags:  ", cls.SOURCE_TAGS)
-        print("destination:")
-        print(" shapes:", cls.DEST_SHAPES)
-        print(" start: ", cls.DEST_START_1)
-        print(" diff:  ", cls.DEST_OP_DIFF)
-        print(" tags:  ", cls.DEST_TAGS)
-
+        print(" shapes:", cls.SHAPES)
+        print(" start: ", cls.OFFSETS)
+        print(" boxes: ", cls.TABLE_BOX_NAMES)
 
 
 class Mockup_MM_TablesXi:
     directives = {}
-    TABLES = {}
+    tables = {}
     for k in product([1,2], range(1,6)):
-        TABLES["MM_TABLE_PERM_XI_%d%d" % k] = [0]
-        TABLES["MM_TABLE_SIGN_XI_%d%d" % k] = [0]
-    tables = TABLES
+        tables["MM_TABLE_PERM_XI_%d%d" % k] = [0]
+        tables["MM_TABLE_SIGN_XI_%d%d" % k] = [0]
+        tables["MM_TABLE_OFFSETS_XI"] = ConstUserFormat()
+        tables["MM_TABLE_XI_COMMENT"] = ConstUserFormat()
 
 
 class Tables:

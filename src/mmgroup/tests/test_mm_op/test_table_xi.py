@@ -11,6 +11,7 @@ import pytest
 
 
 from mmgroup.mm_op import mm_sub_get_table_xi
+from mmgroup.mm_op import mm_sub_get_offset_table_xi
 from mmgroup.tests.groups.mgroup_n import MGroupNWord
 from mmgroup.tests.spaces.sparse_mm_space import SparseMmV
 
@@ -66,36 +67,66 @@ def xi_tuple_to_tuple(t):
         return "X", (i >> 5) + 1024, i & 31
 
 
+
+MAP_OFFSET_BOX = {
+   0x300 : 'BC', 0xcc0 : 'T0', 0x66c0 : 'T1', 0xc6c0 : 'X0', 0x146c0: 'X1'
+}
+
+
+def source_box_to_table_index(box, e):
+    e1 = (e - 1) % 3
+    assert e1 < 2
+    for i in range(5):
+        ofs = mm_sub_get_offset_table_xi(i, e1, 0)
+        #print(box, e, i, e1, 0, hex(ofs))
+        if ofs in MAP_OFFSET_BOX and MAP_OFFSET_BOX[ofs] == box:
+            return i
+    ERR = "Could not find table index for box %s, exponent %d"
+    raise ValueError(ERR % (box, e))
+
+def table_index_to_boxes(index, e):
+    e1 = (e - 1) % 3
+    assert e1 < 2
+    assert 0 <= index < 5
+    src_box = MAP_OFFSET_BOX[mm_sub_get_offset_table_xi(index, e1, 0)]
+    dest_box = MAP_OFFSET_BOX[mm_sub_get_offset_table_xi(index, e1, 1)]
+    return src_box, dest_box
+
+
 def op_xi_tuple(v, e, verbose =  0):
     from mmgroup.dev.mm_basics.mm_tables_xi import MM_TablesXi
     tables_xi = MM_TablesXi()
     e1 = e - 1
+    """
     table_index = None
     for i, source_tag in tables_xi.SOURCE_TAGS.items():
         if source_tag[e1] == v[0]:
             table_index = i
     dest_tag = tables_xi.DEST_TAGS[table_index][e1]
-    dest_shape = tables_xi.DEST_SHAPES[table_index]
-    source_shape = tables_xi.SOURCE_SHAPES[table_index]
+    """
+    index = source_box_to_table_index(v[0], e)
+    #print("index =", index)
+    source_box, dest_box = table_index_to_boxes(index, e)
+    assert source_box == v[0]
+    source_shape, dest_shape = tables_xi.SHAPES[index]
     block, entry = divmod(v[1], source_shape[1] * 32)
     section_len = dest_shape[1] * dest_shape[2]
     section = block * section_len
-    ti1 = table_index - 1
     if verbose > 1:
-        print("xi_tuple table", e1, ti1,  "; ", block, entry, source_shape)
-        print("destination",  dest_tag , dest_shape) 
-    ref_table = tables_xi.PERM_TABLES[e, table_index]
+        print("xi_tuple table", e1, index,  "; ", block, entry, source_shape)
+        print("destination",  dest_box , dest_shape) 
+    ref_table = tables_xi.PERM_TABLES[index, e1]
     ref_part = ref_table[section : section + section_len] 
-    index = section + int(np.nonzero((ref_part & 0x7fff) == entry)[0][0])
-    assert mm_sub_get_table_xi(e1, ti1, index, 0) & 0x7fff == entry
+    j = section + int(np.nonzero((ref_part & 0x7fff) == entry)[0][0])
+    assert mm_sub_get_table_xi(index, e1, j, 0) & 0x7fff == entry
     if verbose > 1:
-        print("dest tag", dest_tag, ", index", index)
-    q, r = divmod(index, dest_shape[2])
+        print("dest tag", dest_box, ", index", j)
+    q, r = divmod(j, dest_shape[2])
     dest_index = 32 * q + r
-    dest_sign = (mm_sub_get_table_xi(e1, ti1, q, 1) >> r) & 1
-    ref_sign_table = tables_xi.SIGN_TABLES[e, table_index]
+    dest_sign = (mm_sub_get_table_xi(index, e1, q, 1) >> r) & 1
+    ref_sign_table = tables_xi.SIGN_TABLES[index, e1]
     assert dest_sign == (ref_sign_table[q] >> r) & 1
-    return dest_sign, (dest_tag, dest_index)
+    return dest_sign, (dest_box, dest_index)
 
 
 
@@ -151,7 +182,7 @@ def xi_testcases(n_cases = 50):
                 yield v, exp
  
 
-def one_test_op_xi(v, exp, verbose = 1):
+def one_test_op_xi(v, exp, verbose = 0):
     w_ref = op_xi_ref(v, exp)
     if verbose:
         print("\nCompute ", v, "* t**", exp, "=", w_ref)
