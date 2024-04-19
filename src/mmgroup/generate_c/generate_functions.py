@@ -79,6 +79,7 @@ def format_item(n, format = None):
     If format is one of  ``'int8', 'int16', 'int32', 'int64'`` then
     an integer is reduced modulo the appropriate power of two and
     formatted hexadecimal. Everything else is formatted 'as is'.
+    An argument ``n = None`` is interpreted as the NULL poiner in C.
     """
     if format in UINT_FORMATS:
         fmt, mask = UINT_FORMATS[format]
@@ -86,7 +87,7 @@ def format_item(n, format = None):
     if format in INT_FORMATS:
         return (fmt % n) + INT_FORMATS[format]
     if not format:
-        return str(n)
+        return 'NULL' if n is None else str(n)
     raise ValueError("Bad format " + str(format))
 
 

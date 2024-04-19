@@ -51,7 +51,7 @@ static uint16_t TAB_PERM_XI_%{i}%{j}[] = {
 
 // %%EXPORT_TABLE 
 mm_sub_table_xi_type mm_sub_table_xi[2][5] = {
-    // %%TABLE T
+    // %%TABLE* T
 };
 
 // %%END WITH

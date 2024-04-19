@@ -189,24 +189,11 @@ def operator_(x):
 #234567890123456789012345678901234567890123456789012345678901234567890
 
 
-def code_pointers(name_perm, name_sign):
-    s = ""
-    for exp in range(1,3):
-       s += "{\n"
-       for i in range(1,6):
-           t_p = name_perm + str(exp) + str(i) 
-           t_s = name_sign + str(exp) + str(i)
-           s += "    {%s, %s}%s\n" % (t_p, t_s, ("," if i < 5 else ""))
-       s += "}%s\n" % ("," if exp < 2 else "")
-    return s
-
 
 
 class MM_TablesXi:
     done_ = False
-    directives = {
-        "CODE_XI_POINTERS": UserDirective(code_pointers, "ss"),
-    }
+    directives = {}
     def __init__(self):
         cls = self.__class__
         if cls.done_:
@@ -295,9 +282,7 @@ class MM_TablesXi:
 
 
 class Mockup_MM_TablesXi:
-    directives = {
-        "CODE_XI_POINTERS": UserDirective(code_pointers, "ss"),
-    }
+    directives = {}
     TABLES = {}
     for k in product([1,2], range(1,6)):
         TABLES["MM_TABLE_PERM_XI_%d%d" % k] = [0]
