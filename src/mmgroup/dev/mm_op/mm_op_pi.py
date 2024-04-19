@@ -200,7 +200,7 @@ uint_fast8_t i;
 """
         if self.V24_INTS_USED > 1:
             s +=  self.snippet("""static uint8_t tbl[] = {
-    // %%TABLE table_prepare_perm24, uint8_t
+    // %%TABLE table_prepare_perm24, uint8
 };
 """     , table_prepare_perm24 = self.prep_table)
         return s

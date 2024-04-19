@@ -266,7 +266,11 @@ class TableGenerator(object):
 
     def table(self, args, *_):
         """built-in function TABLE"""
-        name, table, format_  = eval_codegen_table(self.tables, args)
+        try:
+            name, table, format_  = eval_codegen_table(self.tables, args)
+        except:
+            _ , table, format_  = eval_codegen_table(self.names, args)
+            name = ""
         if name and self.C_table_name:
             self.names[name] = named_table(self.C_table_name, table)
             if self.C_table_export:

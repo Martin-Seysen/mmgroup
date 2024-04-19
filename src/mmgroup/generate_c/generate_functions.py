@@ -51,6 +51,21 @@ int_format_dict = {8 : (2,""), 16:(4,""), 32:(8,"L"), 64:(16,"LL")}
 
 m_int_format = re.compile(r"(u?)int([0-9]+)")
 
+
+UINT_FORMATS = {
+    'uint8' : ('0x%02x', 0xff),
+    'uint16': ('0x%04x', 0xffff),
+    'uint32': ('0x%08xUL', 0xffffffff),
+    'uint64': ('0x%016xULL',  0xffffffffffffffff),
+}
+
+INT_FORMATS = {
+    'int8' : '',
+    'int16': '',
+    'int32': 'L',
+    'int64': 'LL',
+}
+
 def format_item(n, format = None):
     """Format a python object ``n`` to a C string for use in a C table
 
@@ -60,26 +75,18 @@ def format_item(n, format = None):
     Parameter ``format`` must be one of the following strings:
 
      ``'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'``
+
+    If format is one of  ``'int8', 'int16', 'int32', 'int64'`` then
+    an integer is reduced modulo the appropriate power of two and
+    formatted hexadecimal. Everything else is formatted 'as is'.
     """
+    if format in UINT_FORMATS:
+        fmt, mask = UINT_FORMATS[format]
+        return fmt % (n & mask)
+    if format in INT_FORMATS:
+        return (fmt % n) + INT_FORMATS[format]
     if not format:
-        s = str(n)
-        if isinteger(n) and s[-1]=='L':
-            s = s[:-1]
-        return s
-    m =  m_int_format.match(format)
-    if m:
-        blen =  int(m.group(2))
-        n = int(n) 
-        try:
-            len, suffix = int_format_dict[blen]
-        except:
-            raise ValueError("Bad integer format " + str(format))
-        if m.group(1) == 'u':
-            n &=  (1 << blen) - 1
-            if suffix: suffix = "U" + suffix
-            return "0x{0:0{1}x}{2}".format(n , len, suffix)
-        else:
-            return  "{1}0x{0:0{2}x}{3}".format(abs(n),"-"[n>=0:], len, suffix)
+        return str(n)
     raise ValueError("Bad format " + str(format))
 
 
@@ -1048,18 +1055,59 @@ def make_table(table, format=None):
 
     is applied to each item ``x`` in the table.
 
-    The output may contain several lines.
+    The output may contain several lines. Iterated lists of integers
+    (or strings) are converted to C constants as expected. E.g. the
+    list ``[[1,2], 3, [4,5,6]]`` is converted to something like:
+     
+    {1,2}, 3, {4,5,6}
     """
-    l = 77 // (len(format_item(0,format)) + 1)
-    while (l & (l-1)): l = l-1
-    s = ""
-    for i,x in enumerate(table):
-        if i % l == 0: s += ""
-        s += format_item(x, format) 
-        if i < len(table) - 1: s += ","
-        if i % l == l-1: s += "\n"
-    if s[-1] != "\n": s += "\n"
-    return s    
+    LINELEN = 77
+    s = [""]
+    i = 0
+    done = False
+    if format in UINT_FORMATS:
+        # A long formatted list of unsigned integers should be done fast
+        done = True
+        fmt, mask =  UINT_FORMATS[format]
+        fmt += ','
+        ll = LINELEN // len(fmt % 0)
+        ll = (1 << max(0, ll.bit_length() - 1)) - 1
+        for i, x in enumerate(table):
+            if not isinstance(x, Integral):
+                done = False
+                break
+            s.append(fmt % (x & mask))
+            if i & ll == ll:
+                s.append("\n")
+    if i and not done and s[-1] != "\n":
+        s.append("\n")
+    linelen = 0
+    if not done:
+        for x in table[i:]:
+            if  isinstance(x, Iterable) and not isinstance(x, str):
+                s.append("{")
+                s.append(make_table(x, format))
+                print("TTT", s)
+                if s[-1][-1:] == "\n":
+                    s[-1] = s[-1][:-1]
+                    s += ["},", "\n"]
+                else:
+                    s.append("},")
+                linelen = 0
+            else:
+                xf = format_item(x, format)
+                lf = len(xf)
+                if linelen + lf >= LINELEN:
+                    s.append("\n")
+                    linelen = 0
+                s.append(xf + ',')
+                linelen += lf + 1
+    i = -2 if s[-1] == "\n" else -1
+    if s[i][-1:] == ',':
+        s[i] = s[i][:-1]
+    if s[-1] != "\n":
+        s.append("\n")
+    return "".join(s)
 
 
 class named_table(object):
