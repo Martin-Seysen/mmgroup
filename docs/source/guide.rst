@@ -26,10 +26,11 @@ Directory structure
 Some mathematical aspects of the implementation
 ===============================================
 
-.. include:: guide_mathematical.inc
+.. include:: guide_math_implement.inc
 
+.. include:: guide_math_leech2.inc
 
-.. include:: guide_mathematical_2.inc
+.. include:: guide_math_subgroup_m24.inc
 
 
 

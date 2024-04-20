@@ -124,23 +124,23 @@ def check_table(table, blocks, row_length):
 class Pre_MM_TablesXi: 
     def __init__(self):
         """
-        BCT, T0 = 24*32, 72*32 + 15*64
+        BC, T0 = 24*32, 72*32 + 15*64
         T1, X0  = 72*32 + 375*64,  72*32 + 759*64
         X1 = X0 + 1024*32
         """
-        BCT, T0, T1, X0, X1 = 1, 2, 3, 4, 5
+        BC, T0, T1, X0, X1 = 1, 2, 3, 4, 5
         _OFS_X0 = 72*32 + 759*64
         OFFSETS = [None, 24*32, 72*32 + 15*64, 72*32 + 375*64, 
                    _OFS_X0, _OFS_X0 + 1024*32]
-        self.TAG_NAMES = {BCT:"BC", T0:"T0", T1:"T1", X0:"X0", X1:"X1"} 
+        self.TAG_NAMES = {BC:"BC", T0:"T0", T1:"T1", X0:"X0", X1:"X1"} 
 
         self.BOX_SHAPES = {
-            BCT: (1, 78, 32), T0: (45, 16, 32), T1: (64, 12, 32),
+            BC: (1, 78, 32), T0: (45, 16, 32), T1: (64, 12, 32),
             X0: (64, 16, 24), X1: (64, 16, 24)
         }
 
         self.MAP_XI = [
-            [[BCT, BCT], [BCT, BCT]],
+            [[BC, BC], [BC, BC]],
             [[T0, T0], [T0, T0]],
             [[T1, X0], [T1, X1]],
             [[X0, X1], [X1, X0]],
@@ -185,7 +185,7 @@ class Pre_MM_TablesXi:
                 img_len = img_shape[0] * img_shape[1] * 32
                 check_table(table, shape[0], shape[2])
                 inv_table = gen.invert_table(table, shape[2], img_len)
-                if box == BCT:
+                if box == BC:
                     make_table_bc_symmetric(inv_table)
                 t_perm, t_sign = gen.split_table(inv_table, shape[1]*32)
                 del table
