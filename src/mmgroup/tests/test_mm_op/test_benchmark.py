@@ -86,7 +86,6 @@ All times are given in milliseconds.
 
 
 @pytest.mark.mm_op
-@pytest.mark.very_slow
 @pytest.mark.slow
 @pytest.mark.bench
 @pytest.mark.user

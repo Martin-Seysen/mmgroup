@@ -29,33 +29,51 @@ class MonomialOpTableInfo:
 
 
 class MonomialOp_xi_uint8_t(MM_Op):
-    """Standard implementation for class MonomialOp_xi
+    r"""Standard implementation for class MonomialOp_xi
 
     This is the standard implementation for the monomial cases
     of operation xi.
       
-    In this case the main loop is:
+    In this case the main block for computing the monomial part of
+    ``v_in * xi**(e1 + 1)`` in ``v_out`` is:
 
-    // %%WITH* SRC_SHAPE = MM_TABLE_SHAPES_XI[i][0]
-    // %%WITH* DEST_SHAPE = MM_TABLE_SHAPES_XI[i][1]
+    .. code-block:: c
 
-    uint8_t b[2496], *p_b;
-    for (i = 0; i < {SRC_SHAPE[0]}; ++i) {
-        p_b = b;
+      uint_mmv_t *p_src, *p_dest;
+      uint_fast32_t j, k;
+      uint8_t b[2496], *p_b;
+      mm_sub_table_xi_type *p_tables;
+      uint16_t *p_perm;
+      uint32_t *p_sign;
+      uint32_t L =  %{LOG_INT_FIELDS};
+
+      // %%FOR* i  in range(5)
+      // %%WITH* SRC_SHAPE = MM_TABLE_SHAPES_XI[i][0]
+      // %%WITH* DEST_SHAPE = MM_TABLE_SHAPES_XI[i][1]
+      p_src = v_in + (MM_SUB_OFFSET_TABLE_XI[%{i}][e1][0] >> L);
+      p_dest = v_out + (MM_SUB_OFFSET_TABLE_XI[%{i}][e1][1] >> L);
+      p_tables =  &MM_SUB_TABLE_XI[%{i}][e1];
+      p_sign = p_tables->p_sign;
+      p_perm = p_tables->p_perm;
+
+      for (j = 0; j < %{SRC_SHAPE[0]}; ++j) {
+          p_b = b;
+          for (k = 0; k < %{SRC_SHAPE[1]}; ++k) {
+             // %%OP_XI_LOAD p_src, p_b, SRC_SHAPE[2], uint8_t
+             p_src += %{V24_INTS};
+             p_b += 32;
+          }
         
-        for (j = 0; j < {SRC_SHAPE[1]}; ++j) {
-           // %%OP_XI_LOAD p_src, p_b, {SRC_SHAPE[2]}
-           p_src += %{V24_INTS};
-           p_b += 32;
-        }
-        
-        for (j = 0; j < {DEST_SHAPE[1]}; ++j) {
-           // %%OP_XI_STORE b, p_perm, p_sign, p_dest, {DEST_SHAPE[2]}
-           p_dest += %{V24_INTS};
-           p_perm += %{DEST_SHAPE[2]};
-           p_sign += 1;
-        }        
-    }
+          for (k = 0; k < %{DEST_SHAPE[1]}; ++k) {
+             // %%OP_XI_STORE b, p_perm, p_sign, p_dest, DEST_SHAPE[2]
+             p_dest += %{V24_INTS};
+             p_perm += %{DEST_SHAPE[2]};
+             p_sign += 1;
+          }
+      }
+      // %%END WITH
+      // %%END WITH
+      // %%END FOR
 
     """
 
@@ -85,8 +103,6 @@ class MonomialOp_xi_uint8_t(MM_Op):
                         type_, j % n_registers, 8 * (j // n_registers))
         return s;
 
-
-
     def store_bytes(self, bytes, perm, sign, dest, n_bytes):
         s = "uint_mmv_t r0, r1;\n"
 
@@ -107,17 +123,18 @@ class MonomialOp_xi_uint8_t(MM_Op):
             s += "%s[%d] = 0;\n" % (dest,j)
         return s
 
-
-    def comment(self,i):
+    def comment(self, i):
         """This does not work!!!"""
-        src_t = MM_TablesXi.SOURCE_TAGS[i]
-        dest_t = MM_TablesXi.DEST_TAGS[i]
-        if (src_t[0] == src_t[1] and dest_t[0] == dest_t[1]):
-            return "// Map tag %s to tag %s."% (src_t[0], dest_t[0])
-        s = "// Map tag %s to tag %s if e = 1\n" % (src_t[0], dest_t[0])
-        s += "// Map tag %s to tag %s if e = 2" % (src_t[1], dest_t[1])
-        return s
-
+        boxes = [MM_TablesXi.TABLE_BOX_NAMES[i,j] for j in (0,1)]
+        if boxes[0] == boxes[1]:
+            args = boxes[0][0], boxes[0][1]
+            return "// Map box %s to box %s\n" % args
+        else:
+            fmt =  "// Map box %s to box %s if exponent is %d\n"
+            s = ""
+            for exp1, (src, dest) in enumerate(boxes):
+                s += fmt % (src, dest, exp1 + 1)
+            return s
 
     def make_tables(self):
         return {}
@@ -126,6 +143,7 @@ class MonomialOp_xi_uint8_t(MM_Op):
         return {
             "OP_XI_LOAD": UserDirective(self.load_bytes, "ssis"),
             "OP_XI_STORE": UserDirective(self.store_bytes, "ssssi"),
+            "OP_XI_COMMENT": UserDirective(self.comment, "i"),
         }
 
 
@@ -137,7 +155,9 @@ class MonomialOp_xi_uint_fast8_t(MonomialOp_xi_uint8_t):
     But the variable ``b`` may also be integer type.
  
     It might save a *partial register stall* when storing data to a
-    variable of type ``uint_fast8_t`` instead of type ``uint8_t``
+    variable of type ``uint_fast8_t`` instead of type ``uint8_t``.
+
+    Warning: This class has not been tested and will probably fail!!
     """
     n_regs = {1:1, 2:2, 4:2, 8:2, 16:4, 32:4, 64:8}
 
@@ -201,16 +221,9 @@ class Tables(MonomialOp_xi_uint8_t):
      
 
 class MockupTables:
+    tables =  {}
+    directives = {}
     def __init__(self, *args, **kwds):
         pass
-    tables =  {
-        "OP_XI_TABLE_INFO": [], 
-        "OP_XI_TABLE_DIFF": 0
-    }
-    def op(self, *args):
-        return "\n"
-    directives = {
-        "OP_XI": UserDirective(op, "ssssi")
-    }
         
         
