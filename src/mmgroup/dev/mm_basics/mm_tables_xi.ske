@@ -33,12 +33,12 @@ extern "C" {
 // %%FOR* j in range(2)
 // Sign %{MM_TABLE_XI_COMMENT:i,j}
 static uint32_t TAB_SIGN_XI_%{i}%{j}[] = {
-// %%TABLE MM_TABLE_SIGN_XI_%{i}%{j}, uint32
+// %%TABLE MM_TABLE_SIGN_XI[i][j], uint32
 };
 
 // Permutation %{MM_TABLE_XI_COMMENT:i,j}
 static uint16_t TAB_PERM_XI_%{i}%{j}[] = {
-// %%TABLE MM_TABLE_PERM_XI_%{i}%{j}, uint16
+// %%TABLE MM_TABLE_PERM_XI[i][j], uint16
 };
 
 // %%END FOR

@@ -156,8 +156,8 @@ class Pre_MM_TablesXi:
                 img = gen.gen_xi_op_xi_short(box << 16, exp1 + 1) >> 16
                 assert _m[exp1][1] == img
 
-        self.PERM_TABLES = {}
-        self.SIGN_TABLES = {}
+        self.PERM_TABLES = [[0,0], [0,0], [0,0], [0,0], [0,0]]
+        self.SIGN_TABLES = [[0,0], [0,0], [0,0], [0,0], [0,0]]
         self.TABLE_BOX_NAMES = {} # items are pairs of source and destination box
         self.OFFSETS = np.zeros((5,2,2), dtype = np.uint32).tolist()
         self.SHAPES =  np.zeros((5,2, 3), dtype = np.uint32).tolist()
@@ -192,8 +192,8 @@ class Pre_MM_TablesXi:
                 del inv_table
                 if img_shape[2] == 24:
                     t_perm = cut24(t_perm)
-                self.PERM_TABLES[n, exp1] = t_perm 
-                self.SIGN_TABLES[n, exp1] = t_sign
+                self.PERM_TABLES[n][exp1] = t_perm
+                self.SIGN_TABLES[n][exp1] = t_sign
                 self.TABLE_BOX_NAMES[n, exp1] = [self.TAG_NAMES[box],
                                                   self.TAG_NAMES[img]]
                 self.OFFSETS[n][exp1][0] = OFFSETS[box]
@@ -218,9 +218,8 @@ class MM_TablesXi:
         cls.OFFSETS = Pre.OFFSETS
         cls.SHAPES = Pre.SHAPES
 
-        for k in product(range(5), range(2)):
-            cls.tables["MM_TABLE_PERM_XI_%d%d" % k] = cls.PERM_TABLES[k]
-            cls.tables["MM_TABLE_SIGN_XI_%d%d" % k] = cls.SIGN_TABLES[k]
+        cls.tables["MM_TABLE_PERM_XI"] = cls.PERM_TABLES
+        cls.tables["MM_TABLE_SIGN_XI"] = cls.SIGN_TABLES
         cls.tables["MM_TABLE_OFFSETS_XI"] = cls.OFFSETS
         cls.tables["MM_TABLE_XI_COMMENT"] = UserFormat(
              cls.comment_table_mapping, "ii")
@@ -245,11 +244,6 @@ class MM_TablesXi:
 class Mockup_MM_TablesXi:
     directives = {}
     tables = {}
-    for k in product([1,2], range(1,6)):
-        tables["MM_TABLE_PERM_XI_%d%d" % k] = [0]
-        tables["MM_TABLE_SIGN_XI_%d%d" % k] = [0]
-        tables["MM_TABLE_OFFSETS_XI"] = ConstUserFormat()
-        tables["MM_TABLE_XI_COMMENT"] = ConstUserFormat()
 
 
 class Tables:

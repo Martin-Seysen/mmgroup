@@ -374,14 +374,14 @@ This subdivision looks weird, but is has quite a few advantages:
     accessing an entry is easy. In the C code for a representation
     derived from :math:`\rho` the entries of a vector of such a 
     representation are strided in the same way. So the tables 
-    computed in this module can be used in the C code for operator
-    :math:`\xi`.
+    computed under these assumptions can be used in the C code
+    for the operator :math:`\xi`.
 
   * Boxes are permuted as above, so the operation of
     :math:`\xi^{\pm 1}` can be stored in a set ot 5 tables
     encoding mappings between boxes.
 
-A similar, but finer  subdivision of the whole space :math:`\rho`
+A similar, but finer subdivision of the whole space :math:`\rho`
 (and not only of the subspace :math:`98280_x`) is given in 
 :cite:`Iva09`, section 3.4.
 
@@ -389,7 +389,7 @@ We further subdivide a box into *clusters*, *rows*, and *columns*.
 Here a row always contains 32 columns; with either all or just the
 first 24 columns being used. A cluster contains a variable nubmer of
 rows, and a box contains a variable numer of clusters, as indicated
-in the  following table. We also assign names to the Boxes.
+in the  following table. We also assign names to the boxes.
 
 
  === ==== ======= ======== ====== ============
@@ -414,7 +414,7 @@ a cluster. Since a cluster has size at most 2486, such a permutation
 can be stored in an array of 16-bit integers, with indices relative
 to the beginning of the cluster.
 
-An optimized implementation of a mapping :math:`\xi^{\pm 1}:` between
+An optimized implementation of a mapping :math:`\xi^{\pm 1}` between
 two boxes depends on the shape of these two boxes. We want to use
 the same program code for both mappings, using different parameters
 in both cases. Therefore we implement five procedures, labelled
@@ -483,39 +483,47 @@ The following code block multiplies a vector ``v_in`` in the
 representation :math:`\rho` of the Monster with :math:`\xi^e` for
 :math:`e=1, 2` and stores the monomial part of the result in the
 vector ``v_out``. It uses the arrays described in the table above. 
-
+The function in that code block is tested in module
+``mmgroup.tests.test_mm_op.test_table_xi``.
 
 .. code-block:: python
 
-   def map_xi(v_in, e, v_out):
-       r"""Compute v_out = v_in * \xi **e, for e = 1, 2.
+    from mmgroup.dev.mm_basics.mm_tables_xi import MM_TablesXi
+    tbl = MM_TablesXi()
+    PERM_TABLES = tbl.PERM_TABLES
+    SIGN_TABLES = tbl.SIGN_TABLES
+    OFFSETS = tbl.OFFSETS
+    SHAPES = tbl.SHAPES
 
-       We compute the monomial part of v_out only. 
-       v_in is a array of 196884 integers corresponding to a vector
-       in the  representation \rho of the Monster. Vector v_out is
-       an empty vector of integers of the same size.  
-       """
-       for stage in range(5):
-           box_in = v_in[OFFSETS[stage, e-1, 0]:] 
-           box_out = v_out[OFFSETS[stage, e-1, 1]:]
-           shape_in = SHAPES[stage, 0]
-           shape_out = SHAPES[stage, 1]
-           cluster_in_size = shape_in[1] * 32
-           cluster_out_size = shape_out[1] * 32
-           cluster_perm_size = shape_out[1] * shape_out[2]
-           cluster_sign_size = shape_out[1]
-           perm_table = PERM_TABLES[stage, e-1]
-           sign_table = SIGN_TABLES[stage, e-1]
-           for cluster in range(shape_out[0]):
-               cluster_in = box_in[cluster * cluster_in_size:]
-               cluster_out = box_out[cluster * cluster_out_size:]
-               cluster_perm = perm_table[cluster * cluster_perm_size:]
-               cluster_sign = sign_table[cluster * cluster_sign_size:]
-               for i in range(shape_out[1]):
-                   for j in range(shape_out[2]):
-                       x = cluster_in[cluster_perm[shape_out[2]*i + j]]
-                       x = (-1)**(cluster_sign[i] >> j) * x
-                       cluster_out[32 * i + j] = x
+    def map_xi(v_in, e, v_out):
+        r"""Compute v_out = v_in * \xi**e, for e = 1, 2.
+
+        We compute the monomial part of v_out only.
+        v_in is a array of integers corresponding to a vector in the
+        representation \rho of the Monster. Vector v_out is
+        an empty vector of integers of the same size.
+        """
+        for stage in range(5):
+            box_in = v_in[OFFSETS[stage][e-1][0]:]
+            box_out = v_out[OFFSETS[stage][e-1][1]:]
+            shape_in = SHAPES[stage][0]
+            shape_out = SHAPES[stage][1]
+            cluster_in_size = shape_in[1] * 32
+            cluster_out_size = shape_out[1] * 32
+            cluster_perm_size = shape_out[1] * shape_out[2]
+            cluster_sign_size = shape_out[1]
+            perm_table = PERM_TABLES[stage][e-1]
+            sign_table = SIGN_TABLES[stage][e-1]
+            for cluster in range(shape_out[0]):
+                cluster_in = box_in[cluster * cluster_in_size:]
+                cluster_out = box_out[cluster * cluster_out_size:]
+                cluster_perm = perm_table[cluster * cluster_perm_size:]
+                cluster_sign = sign_table[cluster * cluster_sign_size:]
+                for i in range(shape_out[1]):
+                    for j in range(shape_out[2]):
+                        x = cluster_in[cluster_perm[shape_out[2]*i + j]]
+                        x = (-1)**(cluster_sign[i] >> j) * x
+                        cluster_out[32 * i + j] = x
 
 
 Non-monomial operation of the generators  :math:`\xi^e`

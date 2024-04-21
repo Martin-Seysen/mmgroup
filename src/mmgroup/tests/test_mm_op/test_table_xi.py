@@ -115,7 +115,7 @@ def op_xi_tuple(v, e, verbose =  0):
     if verbose > 1:
         print("xi_tuple table", e1, index,  "; ", block, entry, source_shape)
         print("destination",  dest_box , dest_shape) 
-    ref_table = tables_xi.PERM_TABLES[index, e1]
+    ref_table = tables_xi.PERM_TABLES[index][e1]
     ref_part = ref_table[section : section + section_len] 
     j = section + int(np.nonzero((ref_part & 0x7fff) == entry)[0][0])
     assert mm_sub_get_table_xi(index, e1, j, 0) & 0x7fff == entry
@@ -124,7 +124,7 @@ def op_xi_tuple(v, e, verbose =  0):
     q, r = divmod(j, dest_shape[2])
     dest_index = 32 * q + r
     dest_sign = (mm_sub_get_table_xi(index, e1, q, 1) >> r) & 1
-    ref_sign_table = tables_xi.SIGN_TABLES[index, e1]
+    ref_sign_table = tables_xi.SIGN_TABLES[index][e1]
     assert dest_sign == (ref_sign_table[q] >> r) & 1
     return dest_sign, (dest_box, dest_index)
 
@@ -211,5 +211,98 @@ def test_op_xi(n_cases = 150, verbose = 0):
 
 
 
+#####################################################################
+# In the remainder of this file we test the following program
+#####################################################################
 
+
+
+
+
+
+def map_xi(v_in, e, v_out):
+        r"""Compute v_out = v_in * \xi**e, for e = 1, 2.
+
+        We compute the monomial part of v_out only.
+        v_in is a array of integers corresponding to a vector in the
+        representation \rho of the Monster. Vector v_out is
+        an empty vector of integers of the same size.
+        """
+        for stage in range(5):
+            box_in = v_in[OFFSETS[stage][e-1][0]:]
+            box_out = v_out[OFFSETS[stage][e-1][1]:]
+            shape_in = SHAPES[stage][0]
+            shape_out = SHAPES[stage][1]
+            cluster_in_size = shape_in[1] * 32
+            cluster_out_size = shape_out[1] * 32
+            cluster_perm_size = shape_out[1] * shape_out[2]
+            cluster_sign_size = shape_out[1]
+            perm_table = PERM_TABLES[stage][e-1]
+            sign_table = SIGN_TABLES[stage][e-1]
+            for cluster in range(shape_out[0]):
+                cluster_in = box_in[cluster * cluster_in_size:]
+                cluster_out = box_out[cluster * cluster_out_size:]
+                cluster_perm = perm_table[cluster * cluster_perm_size:]
+                cluster_sign = sign_table[cluster * cluster_sign_size:]
+                for i in range(shape_out[1]):
+                    for j in range(shape_out[2]):
+                        x = cluster_in[cluster_perm[shape_out[2]*i + j]]
+                        x = (-1)**(cluster_sign[i] >> j) * x
+                        cluster_out[32 * i + j] = x
+
+
+
+from mmgroup.mm_op import mm_aux_index_extern_to_intern
+from mmgroup.mm_op import mm_aux_index_intern_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_intern
+from mmgroup.generators import gen_xi_op_xi
+
+
+def load_tables():
+    from mmgroup.dev.mm_basics.mm_tables_xi import MM_TablesXi
+    global PERM_TABLES, SIGN_TABLES, OFFSETS, SHAPES, LEN_VECTOR
+    tbl = MM_TablesXi()
+    PERM_TABLES = tbl.PERM_TABLES
+    SIGN_TABLES = tbl.SIGN_TABLES
+    OFFSETS = tbl.OFFSETS
+    SHAPES = tbl.SHAPES
+    LEN_VECTOR = 247488
+
+
+
+def demo_xi_test_indices():
+    for i in range(300, 300+98280, 111):
+         yield  mm_aux_index_extern_to_intern(i)
+
+
+def map_xi_intern(x, e):
+    x = mm_aux_index_sparse_to_leech2(mm_aux_index_intern_to_sparse(x))
+    y = gen_xi_op_xi(x & 0xffffff, e)
+    sign = (-1) ** (y >> 24)
+    y = mm_aux_index_sparse_to_intern(mm_aux_index_leech2_to_sparse(y))
+    return y, sign
+
+
+
+@pytest.mark.mm_op
+def test_demo_xi_monomimal():
+    load_tables()
+    for e in (1,2):
+        v_in = np.random.randint(-127, 127, LEN_VECTOR, dtype=np.int8)
+        v_out = np.zeros(LEN_VECTOR, dtype=np.int8)
+        map_xi(v_in, e, v_out)
+        for index_in in demo_xi_test_indices():
+             entry_in = v_in[index_in]
+             index_out, sign = map_xi_intern(index_in, e)
+             entry_out = v_out[index_out]
+             if entry_out !=  sign * entry_in:
+                 print("\nMap index %s with eponent %d" % (hex(index_in), e))
+                 print("Entry is", entry_in)
+                 print("Output index = %s, sign = %d" % (hex(index_out), sign))
+                 print("Output entry obtained:", entry_out)
+                 ERR = "Test'test_demo_xi_monomimal' failed"
+                 raise ValueError(ERR)
+                 #print(ERR)
 
