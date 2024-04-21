@@ -3,9 +3,8 @@
  File ``mm%{P}_op_xi.c`` implements the operation of the element
  \f$\xi^e\f$ of the monster group on a vector in the
  representation \f$\rho_{%{P}}\f$ of the monster.
-
- Here the generator \f$\xi\f$ of the monster group is defined as 
- in section **The monster group** of the **API reference**.
+ We have \f$\xi^3 = 1\f$; and the opration of \f$\xi^e, e = 1,2\f$
+ on \f$\rho\f$ is given in [Seysen19], section 9.4 - 9.6. The
 
  The representation \f$\rho_{%{P}}\f$ is equal to the
  196884-dimensional representation  \f$\rho\f$ of the monster,
@@ -15,27 +14,25 @@
 
  An element of \f$\rho_{%{P}}\f$ is implemented as an array of
  integers of type ``uint_mmv_t`` as described in
- section **Description of the mmgroup.mm extension**
- in this document.
+ section **Description of the mmgroup.mm extension** in
+ the document **The C interface of the mmgroup project**.
+ 
+ The operation of the generator \f$\xi^e\f$ is implemented as
+ described in **The mmgroup guide for developpers**, section
+ **Some mathematical aspects of the implementation**, subsection
+ **Implementing generators of the Monster group**.
 
- We have \f$\xi^3 = 1\f$, and the opration of \f$\xi^e, e = 1,2\f$
- on \f$\rho\f$ is given in [Seysen19], section 9.4 - 9.6. The
- non-monomial part of the operation of \f$\xi^e\f$ can be decomposed
- into a product of monomial matrices and matrices containing
- blocks of \f$2 \times 2\f$ Hadamard matrices. We use the Python
- functions and classes in files ``hadamard_codegen.py`` and
- ``hadamard_xi.py`` in subdirectory ``mmgroup/dev/hadamard`` for
- generating C code that implements the products of Hadamard
- matrices corresponding to the generator \f$\xi^e\f$.
+ We use the tables in file ``mm_tables_xi.c`` for implementing
+ the monomial part of generator \f$\xi^e\f$. These tables are
+ required for implementing the operation of the
+ generators \f$\xi^{\pm 1}\f$ on the representation \f$\rho\f$
+ of the Monster.
 
- Although the monomial part of the operation of \f$\xi^e\f$ is
- described in [Seysen19], we have not found an easy way to 
- convert that description to a C function. So we use (rather
- large) tables for implementing these operations. The C file
- ``mm_tables_xi.c`` contains these tables as static arrays and
- also an array ``mm_sub_table_xi`` that provides public 
- access to these tables. The same tables are used for the
- operations on \f$\rho_p\f$ for all characteritics \f$p\f$. 
+ We use the Python functions and classes in
+ files ``hadamard_codegen.py`` and ``hadamard_xi.py`` in
+ subdirectory ``mmgroup/dev/hadamard`` for generating C code
+ that implements the non-monomial part of the
+ generator \f$\xi^e\f$.
 
  Unless otherwise stated, functions exported from this module return 0. 
 */

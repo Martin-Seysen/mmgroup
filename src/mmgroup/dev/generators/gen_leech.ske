@@ -67,8 +67,8 @@ extern "C" {
 /**
   @brief Return product of two elements the group \f$Q_{x0}\f$.
 
-  Here all elements of the group \f$Q_{x0}\f$ are encoded in
-  ``Leech lattice encoding``. The function returns the
+  Here all elements of the group \f$Q_{x0}\f$ are encoded
+  in **Leech lattice encoding**. The function returns the
   product of the elements ``x1`` and ``x2`` of \f$Q_{x0}\f$.
 */
 // %%EXPORT px
@@ -83,8 +83,8 @@ uint32_t gen_leech2_mul(uint32_t x1, uint32_t x2)
 /**
   @brief Return power of element the group \f$Q_{x0}\f$.
 
-  Here all elements of the group \f$Q_{x0}\f$ are encoded in
-  ``Leech lattice encoding``. The function returns the
+  Here all elements of the group \f$Q_{x0}\f$ are encoded
+  in **Leech lattice encoding**. The function returns the
   power ``x1**e`` of the element ``x1`` of \f$Q_{x0}\f$.
 */
 // %%EXPORT px
@@ -106,7 +106,7 @@ uint32_t gen_leech2_pow(uint32_t x1, uint32_t e)
   @brief Return scalar product in the Leech lattice modulo 2.
 
   Here all elements of Leech lattice modulo 2 are encoded in
-  ``Leech lattice encoding``. The function returns the
+  **Leech lattice encoding**. The function returns the
   scalar product of the vectors ``x1`` and ``x2`` in the
   Leech lattice modulo 2, which may be 0 or 1.
 */
@@ -145,8 +145,8 @@ uint32_t gen_leech2_scalprod(uint32_t x1, uint32_t x2)
   and the cocode element \f$\delta\f$ defined in the API reference  
   in section **The Golay code and its cocode**.
   
-  Parameter \f${q_0}\f$ and the result are given Leech lattice 
-  encoding.
+  Parameter \f${q_0}\f$ and the result are given
+  in **Leech lattice encoding**.
 */
 static inline
 uint32_t op_x_d_delta(uint32_t q0, uint32_t d, uint32_t delta)
@@ -251,8 +251,8 @@ int32_t op_delta_pi(
   of the Golay code element \f$d\f$ defined in the API reference  
   in section **The Golay code and its cocode**.
   
-  Parameter \f${q_0}\f$ and the result are given Leech lattice 
-  encoding.
+  Parameter \f${q_0}\f$ and the result are given
+  in **Leech lattice encoding**.
 */
 static inline
 uint32_t op_y(uint32_t q0, uint32_t d)
@@ -304,17 +304,13 @@ static uint8_t  IMG_OMEGA[2][4] = {{0,2,3,1},{0,3,1,2}};
   \f$q_0 \in Q_{x0}\f$ and \f$g \in G_{x0}\f$. Here \f$g\f$
   is given as a word of genenators of length \f$n\f$ in the 
   array ``g``. Each atom of the word \f$g\f$ is encoded as 
-  defined in the header file ``mmgroup_generators.h``. The 
-  element \f$q_0\f$ and its image under \f$g\f$ are encoded
+  defined in the header file ``mmgroup_generators.h``.
+  Parameter \f$q_0\f$ and the result are encoded
   in **Leech lattice encoding**.
 
   The function succeeds also in case \f$g \notin G_{x0}\f$
   if  \f$h^{-1} q_0 h \in G_{x0}\f$  for all prefixes \f$h\f$
   of \f$g\f$.
-
-  
-  Parameter \f${q_0}\f$ and the result are given Leech lattice 
-  encoding.
 */
 // %%EXPORT px
 uint32_t gen_leech2_op_word(uint32_t q0, uint32_t *g, uint32_t n)
@@ -562,8 +558,8 @@ uint32_t gen_leech2_op_word_many(uint32_t *q, uint32_t m, uint32_t *g, uint32_t 
   \f$v \in \Lambda / 2 \Lambda\f$. Here  parameter ``pi`` is a 
   of the permutation \f$\pi\f$  in \f$M_{24}\f$
   
-  Parameter \f${v}\f$ and the returned result are given Leech lattice 
-  encoding.
+  Parameter \f${v}\f$ and the returned result are given
+  in **Leech lattice encoding**.
 */
 static inline
 uint32_t op_perm_nosign(uint32_t v,  uint8_t *pi)
@@ -619,9 +615,9 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
   The function returns the element \f$l \cdot g\f$ for a
   vector \f$l\f$ in the Leech lattice mod 2.
 
-  Parameter \f$l\f$ is encoded in Leech lattice encoding,
+  Parameter \f$l\f$ is encoded in **Leech lattice encoding**,
   igoring the sign. The function returns \f$l \cdot g\f$,
-  in Leech lattice encoding, with the sign bit set to zero.
+  in **Leech lattice encoding**, with the sign bit set to zero.
 
   The function is optimized for speed. It returns garbage if
   any generator in the buffer ``g`` is not in \f$G_{x0}\f$.
@@ -696,8 +692,8 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
   Put \f$g = g_0\f$ if ``back == 0`` and \f$g = g_0^{-1}\f$ otherwise.
 
   The function replaces each element  \f$l_j\f$ in the array ``m``
-  by \f$l_j \cdot g\f$. Elements \f$l_j\f$ are encoded in Leech
-  lattice encoding, igoring the sign.
+  by \f$l_j \cdot g\f$. Elements \f$l_j\f$ are encoded
+  in **Leech lattice encoding**, igoring the sign.
 
   The function is optimized for speed. It returns zero in case of
   success. It stores garbage in the array ``m`` and returns a
@@ -778,7 +774,7 @@ int32_t gen_leech2_op_word_leech2_many(uint32_t *a, uint32_t m, uint32_t *g, uin
 
   The function converts \f$g\f$  to a \f$24 \times 24\f$ bit
   matrix  \f$a\f$ acting on the vectors of the Leech lattice
-  mod 2 (encoded in Leech lattice encoding) by right
+  mod 2 (encoded in **Leech lattice encoding**) by right
   multiplication. Such matrices form a natural representation
   of the Conway group \f$\mbox{Co}_1\f$.
 

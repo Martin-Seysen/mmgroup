@@ -1,3 +1,16 @@
+/** @file mm_tables_xi.c
+
+ File **mm_tables_xi.c** contains tables corresponding to the tables
+ PERM_TABLES, SIGN_TABLES, OFFSETS, SHAPES, as secribed in the
+ **mmgroup guide for developpers**, section
+ **Some mathematical aspects of the implementation**, subsection
+ **Implementing generators of the Monster group**, subsubsection
+ **Monomial operation of the generators \xi**.
+
+ These tables are required for implementing the operation of the
+ generators \f$\xi^{\pm 1}\f$ on the representation \f$\rho\f$
+ of the Monster.
+*/
 
 #include <stdint.h>
 

@@ -302,7 +302,7 @@ Monomial operation of the generators  :math:`\xi^e`
 
 Generator :math:`\xi` is an element of the subgroup :math:`G_{x0}`
 of the monster. The basis vectors with tags ``B, C, T, X`` (as
-explained below below) of the representtion  :math:`\rho` of the
+explained below below) of the representation  :math:`\rho` of the
 Monster span a subspace :math:`98280_x` of :math:`\rho`. The basis
 vectors with the tags listed above (together with their opposite
 vectors) correspond to the short elements of the normal subgroup
@@ -409,7 +409,7 @@ of the box.
 It turns out that :math:`\xi` always maps the :math:`i`-th cluster
 of a box to the :math:`i`-th cluster of a (possibly different) box.
 This greatly simplifies the implementation of the mapping. So it
-suffices to specify the mapping as a collection of permutaions inside
+suffices to specify the mapping as a collection of permutations inside
 a cluster. Since a cluster has size at most 2486, such a permutation
 can be stored in an array of 16-bit integers, with indices relative
 to the beginning of the cluster.
@@ -460,7 +460,7 @@ PERM_TABLES, SIGN_TABLES, OFFSETS, and SHAPES in that class.
                             output entry (h,i,j) in stage s under :math:`\xi^{e+1}`; 
                             with [c, m, n] = SHAPES[s, 1].
 
-  SIGN_TABLES (5, 2, c*m)   Bit j of entry (s, e, h*n + i) is the sign of the preimage of 
+  SIGN_TABLES (5, 2, c*m)   Bit j of entry (s, e, h*m + i) is the sign of the preimage of 
                             output entry (h,i,j) in stage s under :math:`\xi^{e+1}`; 
                             with [c, m, n] = SHAPES[s, 1].
 
