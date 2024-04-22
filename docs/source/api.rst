@@ -225,6 +225,14 @@ Generating random elements of certain subgroups of the Monster
 .. include:: random_MM.inc
 
 
+
+Long-term stable storage of elements of the Monster group
+---------------------------------------------------------
+
+.. include:: stability_MM.inc
+
+
+
 .. _mmrep-label:
 
 The representation of the Monster group
@@ -260,6 +268,20 @@ Auxiliary functions for the representation of the Monster group
 .. autofunction:: mmgroup.order_vector
 
 .. _clifford-group-label:
+
+
+
+Long-term stable storage of vectors of the representation
+----------------------------------------------------------
+
+The representations :math:`\rho_p` of the Monster are considered
+as auxiliary tools for computing in the Monster.
+We do not guarantee the interoperability of vectors in these
+representations between different versions of the *mmgroup*
+package. The internal representation of such vectors is likely
+to change in the near future. A user with a serious need for
+such interoperability can consult the author for advice.
+
 
 The subgroup :math:`G_{x0}` of the Monster and the Clifford group
 ========================================================================
