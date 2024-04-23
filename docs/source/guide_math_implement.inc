@@ -302,7 +302,7 @@ Monomial operation of the generators  :math:`\xi^e`
 
 Generator :math:`\xi` is an element of the subgroup :math:`G_{x0}`
 of the monster. The basis vectors with tags ``B, C, T, X`` (as
-explained below below) of the representation  :math:`\rho` of the
+explained below) of the representation  :math:`\rho` of the
 Monster span a subspace :math:`98280_x` of :math:`\rho`. The basis
 vectors with the tags listed above (together with their opposite
 vectors) correspond to the short elements of the normal subgroup

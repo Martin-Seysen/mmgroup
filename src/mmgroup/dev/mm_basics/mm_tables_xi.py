@@ -27,7 +27,6 @@ from itertools import product
 
 from mmgroup.generate_c import UserDirective, UserFormat
 from mmgroup.generate_c import ConstUserFormat
-from mmgroup.dev.generators.gen_xi_ref import GenXi 
 
 
 try:
@@ -36,6 +35,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     # Use the slow python function if the C function is not available
     print("\nUsing slow Python functions for table generation!!!\n")
+    from mmgroup.dev.generators.gen_xi_ref import GenXi
     gen = GenXi
 
 
@@ -77,6 +77,10 @@ def check_table(table, blocks, row_length):
          t_min, t_max = i*image_blocklen, (i+1)*image_blocklen
          assert t_min <= min(part) <= max(part) < t_max
 
+
+
+def table_immage_box(u_box, u_exp):
+    return gen.gen_xi_op_xi_short(u_box << 16, u_exp) >> 16
 
 
 class Pre_MM_TablesXi: 

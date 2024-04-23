@@ -1,6 +1,9 @@
 /** @file gen_xi_functions.c
-The functions in file ``gen_xi_function.c`` implement the operation 
-of the generator \f$\xi\f$ on the group \f$Q_{x0}\f$.
+The functions in file ``gen_xi_function.c`` correspond to the python
+functions in class ``mmgroup.dev.generators.gen_xi_ref.GenXi``. They
+are used for computing the tables required for implementing the
+operation of generator \f$\xi\f$ on the representation \f$\rho_p\f$
+of the Monster.
 */
 
 

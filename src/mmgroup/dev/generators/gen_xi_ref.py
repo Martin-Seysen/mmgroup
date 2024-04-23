@@ -1,166 +1,77 @@
-r"""
+r"""Reference implementation for module ``gen_xi_functions.c``
 
-The functions in module ``gen_xi_functions.c`` deal with the 
-operation of the generator :math:`\xi` of the monster defined 
-in :cite:`Seysen20`, section 9, on a subgroup :math:`Q_{x0}` and
-also with the monomial part of that operation on the  
-196884-dimensional representation :math:`\rho` of the monster.
+The methods in class ``GenXi`` in this module are a reference
+implementations of the functions in module ``gen_xi_functions.c``.
+These functions deal with the operation of the generator
+:math:`\xi` of the monster defined  in :cite:`Seysen20`,
+Section 9, on a subgroup :math:`Q_{x0}`, and also with the monomial
+part of that operation on the 196884-dimensional representation
+:math:`\rho` of the monster.
 
-Generator :math:`\xi` is an element of the subgroup 
-:math:`G_{x0}` of the monster. :math:`G_{x0}` operates on its 
-normal subgroup :math:`Q_{x0}` of  of structure :math:`2^{1+24}`
-by conjugation as described in the **Guide**, section 
-:ref:`computation-leech2`. :math:`Q_{x0}` is extraspecial 
-and has center :math:`\{\pm1\}`. We have 
-:math:`Q_{x0} / \{\pm 1\} \cong \Lambda / 2 \Lambda`. An element 
-:math:`x` of :math:`Q_{x0}` is short if it corresponds to
-a vector in the Leech lattice :math:`\Lambda` of norm 4. 
-:math:`G_{x0}` also operates on the :math:`2 \cdot 98280` short 
-elements of :math:`Q_{x0}`.
+Generator :math:`\xi` is an element of the subgroup
+:math:`G_{x0}` of the monster. It operates on the normal subgroup
+:math:`Q_{x0}` of :math:`G_{x0}` of structure :math:`2^{1+24}`
+by conjugation as described in cite:`Seysen20`, Lemma 9.5.
+Method ``gen_xi_op_xi`` of class ``GenXi`` implements the
+operation of the generators :math:`\xi^e` on the group
+:math:`Q_{x0}`. Here the elements of :math:`Q_{x0}` are given
+in *Leech lattice encoding*, as described in 
+*The C interface of the mmgroup project*, Section 
+*Description of the mmgroup.generators extension*.
 
 Representation :math:`\rho` has a subspace :math:`98280_x` of 
 dimension 98280 on which :math:`G_{x0}` operates monomially in the 
 same way as it operates on the short elements of :math:`Q_{x0}`. 
-So the basis vectors of  :math:`98280_x` (together with their opposite 
-vectors) can be identified with the short elements of :math:`Q_{x0}`.
+Here the basis vectors of  :math:`98280_x` (together with their
+opposite vectors) can be identified with the short elements of
+:math:`Q_{x0}`.
 
-The functions in module ``gen_xi_functions.c`` are also used for 
-computing tables describing the monomial operation of 
-:math:`\xi^e, e=1,2` on :math:`98280_x`.
+For a fast implementation of the operation of :math:`\xi^e` on
+:math:`98280_x` we precompute tables as described in the
+*mmgroup guide for developers*, Section
+*Some mathematical aspects of the implementation*, Subsection
+*Implementing generators of the Monster group*, Subsubsection
+*Monomial operation of the generators \xi^e*.
+We adopt the terminology from that subsection.
 
-Module ``mmgroup.dev.generators.gen_xi_ref`` is a pure python 
-substitute for this set of C functions; but calculating the tables
-with python takes a rather long time.
+In that subsection the basis vectors of :math:`98280_x` are
+subdivided into five boxes, so that :math:`\xi` acts as a
+permutation on these boxes. Within each of these boxes the
+basis vectors of :math:`98280_x` are numbered in a natural way
+as described in that subsection. Operator :math:`\xi` permutes
+the five boxes 1,...,5 as follows:
 
-In  section :ref:`mmrep-label` we use the following names and tags 
-for the basis vectors of :math:`98280_x`.
-
-
-    ================ === =================================== ========
-    Name             Tag Entries                             Remarks
-    ================ === =================================== ========
-    :math:`X^+_{ij}`  B  i, j;  0 <= j < i < 24              (1)
-    :math:`X_{ij}`    C  i, j;  0 <= j < i < 24              (1)
-    :math:`X_{o,s}`   T  o, s;  0 <= o < 759, 0 <= s < 64    (2)
-    :math:`X_{d,j}`   X  d, j;  0 <= d < 2**11, 0 <= j < 24  (1),(3)
-    ================ === =================================== ========
-
-Remarks
-
-(1)  i and j, 0 <= i,j < 24  refer to basis vectors of the
-     Boolean vector space in which the Golay code is defined.
-(2)  o is one of 759 octads, s is one of 64 even subsets of
-     octad d (modulo its complement in d), as described in
-     section :ref:`octads_label`.
-(3)  d with 0 <= d < 2048 refers to the Parker loop element d. 
-     For larger values d we have:
-     
-     .. math::
-     
-        X_{2048+k,j} = X_{k,j}, \; Y_{2048+k,j} = -Y_{k,j},  \;
-        Z_{2048+k,j} = Z_{k,j},
-        
-        U_{4096+k,j} = -U_{k,j},  \quad  \mbox{for} \;  U = X, Y, Z;
-        \; 0 <= k < 2048 \, .
-
-We group these basis vectrors into 5 boxes (labelled 1,...,5) with 
-each box containing at most :math:`3 \cdot 2^{13}` entries. Element 
-:math:`\xi` permutes these boxes as follows:
-
-   Box1 -> Box1,  Box2 -> Box2,  Box3 -> Box4 -> Box5 -> Box3 .  (1)
-
-The mapping from the basis vectors to entries in boxes is:
-
-   ===================== ===     =======================
-   Basis vector          Box     Entry
-   ===================== ===     =======================
-   B[i,j]                 1         0 +  32 * i + j
-   C[i,j]                 1       768 +  32 * i + j
-   T[o,s], o < 15         1      1536 +  64 * o + j             
-   T[o,s], 15 <= o < 375  2        64 * (o - 15) + j           
-   T[o,s], o >=  375      3        64 * (o - 375) + j
-   X[d,j], d <  1024      4        32 *  d + j
-   X[d,j], d >= 1024      5        32 * (d - 1024) + j
-   ===================== ===     =======================
-
-This subdivision looks weird, but is has quite a few advantages:
-
-  * The lower index (j or s) has stride 1, and the the stride of the
-    higher index (i, o or d) is the lowest possible power of two. So 
-    accessing an entry is easy. In the C code for a representation
-    derived from :math:`\rho` the entries of a vector of such a 
-    representation are strided in the same way. So the tables 
-    computed in this module can be used in the C code for operator
-    :math:`\xi`.
-
-  * An entry in a box is always less than :math:`2^{15}`, so any 
-    entry can be stored in a 16-bit integer, together with a sign bit.  
-
-  * Boxes are permuted as above, so 4 tables of 16-bit integers
-    and size <=  :math:`3 \cdot 2^{15}` are sufficent to encode 
-    the operation of :math:`\xi`.
-
-We remark that boxes 3 and 5 contain the short vectors with odd
-Golay code words; the other boxes contain those with even
-code words. Here the parity (even/odd) of a Golay code word means 
-the scalar product with the cocode word :math:`\omega` which 
-has six 1-bits  in column 0 of the MOG, see :cite:`Seysen20`, 
-section 2.2. Short vectors with an odd cocode element occur 
-precisely in boxes 4 and 5.
-
-A similar, but finer  subdivision of the whole space :math:`\rho`
-(and not only of the subspace :math:`98280_x`) is given in 
-:cite:`Iva09`, section 3.4.
-
-
-The operation of the generator :math:`\xi` on the group :math:`Q_{x0}`
-......................................................................
-
-Using :cite:`Seysen20`, Lemma 9.5, we can easily compute the
-values :math:`\xi^{-e} x \xi^e` for all short :math:`x \in Q_{x0}`
-and :math:`e = 1,2`. Here we represent an  :math:`x \in Q_{x0}`
-as a 25-bit integer in Leech lattice encoding as described above.
-
-Let :math:`\mathcal{C}` and :math:`\mathcal{C}^*` be the Golay 
-code and its cocode. In :cite:`Seysen20`, section 2.2 we give 
-decompositions
-:math:`\mathcal{C} = \mathcal{G} \oplus \mathcal{H}` and
-:math:`\mathcal{C}^* = \mathcal{G}^* \oplus \mathcal{H}^*`.
-
-The formulas in ibid., Lemma 9.5 use auxiliary functions 
-:math:`\gamma : \mathcal{G} \rightarrow \mathcal{G^*}` and
-:math:`w_2 : \mathcal{G} \cup \mathcal{G^*} \rightarrow
-\mathbb{F}_2` defined in ibid., section 3.3. Using the
-decompositions above, we may extend :math:`\gamma` to
-:math:`\mathcal{C}` and :math:`w_2` to
-:math:`\mathcal{C} \cup \mathcal{C^*}`.
-
-
-
-Short vector encoding of the short vectors in :math:`Q_{x0}`
-.............................................................
+   *  1 -> 1,  2 -> 2,  3 -> 4 -> 5 -> 3 .
   
-For each short vector in :math:`Q_{x0}` we compute the number of 
-the box and the entry in the box using the information given in (2). 
-Then we store the vector in the lowest 19 bits of a 32-bit integer 
-as follows:
+For each short vector in :math:`Q_{x0}` we encode the number of
+the box containing the vector, the position of the vector inside
+the box, and and the sign of the vector in the lowest 19 bits
+of a 32-bit integer as follows:
 
-  *  Bit 18...16:  number of the box
+  *  Bit 18...16:  number of the box, running from 1 to 5.
   
   *  Bit 15:       sign bit 
   
-  *  Bit 14...0:   Entry in the box
+  *  Bit 14...0:   Entry inside the box
 
-Tables for the operation of :math:`\xi` and :math:`\xi^2` contain the 
-lower 16 bits of that encoding. Bits 18...16 can be reconstructed 
-from the permutation of the boxes given by (1).
+We call this encoding the *Short vector encoding* of a short vector
+in  :math:`Q_{x0}`.
 
-We precomute a set of tables containing  :math:`2 \cdot 98260`
-values :math:`\xi^{-e} x \xi^e`, where the short element 
-:math:`x` of :math:`Q_{x0}`  is given in 
-**Short vector encoding**.
+Methods ``gen_xi_short_to_leech`` and
+``gen_xi_leech_to_short`` in class ``GenXi`` convert elements of
+:math:`Q_{x0}` from *Leech lattice encoding* to
+*Short vector encoding* and vice versa.
+Method ``gen_xi_op_xi_short`` uses these two methods together with
+method ``gen_xi_op_xi`` in order to compute the operation of
+:math:`\xi^e` on a vector in :math:`98280_x` encoded in
+*Short vector encoding*.
 
-
+Using method ``gen_xi_op_xi_short`` we may easily compute tables for
+the operation of :math:`\xi` and :math:`\xi^2` on a specific box.
+Method ``gen_xi_make_table`` computes an array containing the lower
+16 bits of the images of the entries of a box under the operation
+:math:`\xi^e`. Bits 18...16 of these images can be reconstructed
+from the permutation of the boxes given above.
 """
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
@@ -225,7 +136,7 @@ def expand_gray(x):
 
 
 #######################################################################
-# Class Mat24Xi
+# Class GenXi
 #######################################################################
 
 
@@ -496,7 +407,7 @@ class GenXi(object):
 
         
     @classmethod
-    def make_table(cls, u_box, u_exp):
+    def gen_xi_make_table(cls, u_box, u_exp):
         assert 1 <= u_box <= 5 and 1 <= u_exp <= 2
         t_size = [0, 2496, 23040, 24576, 32768, 32768]
         a = numpy.zeros(32768, dtype = numpy.uint16) 
@@ -507,7 +418,7 @@ class GenXi(object):
         return a[:length]
 
     @staticmethod
-    def invert_table(table, n_columns, len_result):
+    def gen_xi_invert_table(table, n_columns, len_result):
         assert len(table) & 31 == 0 and len_result & 31 == 0
         result = numpy.zeros(len_result, dtype = numpy.uint16) 
         for i, r in enumerate(table):
@@ -517,7 +428,7 @@ class GenXi(object):
 
 
     @staticmethod
-    def split_table(table, modulus):
+    def gen_xi_split_table(table, modulus):
         length = len(table)
         assert length & 31 == 0
         a = numpy.zeros(length >> 5, dtype = numpy.uint32) 
@@ -527,9 +438,6 @@ class GenXi(object):
         table = (table & 0x7fff) % modulus
         return table, a
 
-    @classmethod
-    def table_immage_box(cls, u_box, u_exp):
-        return cls.gen_xi_op_xi_short(u_box << 16, u_exp) >> 16
 
 
 

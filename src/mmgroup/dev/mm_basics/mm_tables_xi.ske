@@ -5,7 +5,7 @@
  **mmgroup guide for developpers**, section
  **Some mathematical aspects of the implementation**, subsection
  **Implementing generators of the Monster group**, subsubsection
- **Monomial operation of the generators \xi**.
+ **Monomial operation of the generators xi**.
 
  These tables are required for implementing the operation of the
  generators \f$\xi^{\pm 1}\f$ on the representation \f$\rho\f$
@@ -41,6 +41,7 @@ extern "C" {
 //  %%GEN c
 
 
+/// @cond DO_NOT_DOCUMENT
 
 // %%FOR* i in range(5)
 // %%FOR* j in range(2)
@@ -71,15 +72,17 @@ mm_sub_table_xi_type MM_SUB_TABLE_XI[5][2] = {
 // %%END WITH
 // %%END WITH
 
+/// @endcond
 
 
+
+
+/// @cond DO_NOT_DOCUMENT
 
 // %%EXPORT_TABLE 
 uint32_t MM_SUB_OFFSET_TABLE_XI[5][2][2] = {
     // %%TABLE  MM_TABLE_OFFSETS_XI, uint32
 };
-
-
 
 
 // %%EXPORT px
@@ -96,6 +99,7 @@ uint32_t mm_sub_get_offset_table_xi(uint32_t i, uint32_t e, uint32_t j)
     return MM_SUB_OFFSET_TABLE_XI[i][e][j];
 }
 
+/// @endcond
 
 
 
