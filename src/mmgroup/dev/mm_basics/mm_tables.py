@@ -20,29 +20,6 @@ from mmgroup.bitfunctions import bitweight, bitparity
 from mmgroup.dev.mm_basics.mm_basics import MM_Const
 
 
-try:
-    # Try importing the fast C function
-    from mmgroup import mat24 
-except (ImportError, ModuleNotFoundError):
-    # Use the slow python function if the C function is not available
-    from mmgroup.dev.mat24.mat24_ref import  Mat24
-    mat24 = Mat24
-
-
-
-def make_octads_table():
-    """Return numpy array A with entries of octads
-
-    A[8*o+j] is the j-th entry of the octad with number o,
-    for 0 <= o < 759. Here the entries of octad are the 
-    the postions of the bits being set in that octad o,
-    in natural order.
-    """
-    bl = [mat24.gcode_to_bit_list(mat24.octad_to_gcode(i))
-                 for i in range(759)] 
-    return np.array(sum(bl, []), dtype = np.uint8)
-
-
 def make_perm64_table():
     """Make table for conversion from bit vector to suboctad
 
@@ -85,13 +62,11 @@ def make_suboctad_table():
 
 
 class MM_OctadTable:    
-    octad_elements = make_octads_table()
     perm64_table = make_perm64_table()
     perm64_weights = make_perm64_weights() 
     suboctad_table = make_suboctad_table()
 
     tables = {
-        "MM_OctadElementsTable" :  octad_elements,
         "MM_PERM64_TABLE": perm64_table,
         "MM_SUBOCTAD_TABLE": suboctad_table,
     }
