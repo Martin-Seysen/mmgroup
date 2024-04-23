@@ -407,7 +407,7 @@ class GenXi(object):
 
         
     @classmethod
-    def gen_xi_make_table(cls, u_box, u_exp):
+    def make_table(cls, u_box, u_exp):
         assert 1 <= u_box <= 5 and 1 <= u_exp <= 2
         t_size = [0, 2496, 23040, 24576, 32768, 32768]
         a = numpy.zeros(32768, dtype = numpy.uint16) 
@@ -418,7 +418,7 @@ class GenXi(object):
         return a[:length]
 
     @staticmethod
-    def gen_xi_invert_table(table, n_columns, len_result):
+    def invert_table(table, n_columns, len_result):
         assert len(table) & 31 == 0 and len_result & 31 == 0
         result = numpy.zeros(len_result, dtype = numpy.uint16) 
         for i, r in enumerate(table):
@@ -428,7 +428,7 @@ class GenXi(object):
 
 
     @staticmethod
-    def gen_xi_split_table(table, modulus):
+    def split_table(table, modulus):
         length = len(table)
         assert length & 31 == 0
         a = numpy.zeros(length >> 5, dtype = numpy.uint32) 
