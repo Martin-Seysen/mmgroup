@@ -145,12 +145,24 @@ def cocode_syndrome(uint32_t c1,  uint32_t u_tetrad = 24):
         raise ValueError("Golay code syndrome is not unique")
     return res
 
+def cocode_all_syndromes(uint32_t c1):
+    cdef uint32_t data[8]
+    cdef uint32_t length
+    length = mat24_cocode_all_syndromes(c1, &data[0])
+    return [data[i] for i in range(length)]
+
 def syndrome(uint32_t v1,  uint32_t u_tetrad = 24):
     cdef uint32_t res
     res =  mat24_syndrome(v1, u_tetrad)
     if res == 0xffffffff:
         raise ValueError("Golay code syndrome is not unique")
     return res
+
+def all_syndromes(uint32_t c1):
+    cdef uint32_t data[8]
+    cdef uint32_t length
+    length = mat24_all_syndromes(c1, &data[0])
+    return [data[i] for i in range(length)]
 
 def vect_type(v1):
     cdef uint32_t res

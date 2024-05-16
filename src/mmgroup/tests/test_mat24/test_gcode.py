@@ -142,7 +142,7 @@ def test_gcode(gc, ref):
 #####################################################################
 
 
-def syndrome_testcases():
+def syndrome_testcases(ntests = 2000):
     """yields test cases (codewordNo, cocode, t) for Mat24.syndrome
 
     codewordNo is 12-bit random number indicating a Golay code word
@@ -157,7 +157,7 @@ def syndrome_testcases():
     for t in testcases: 
         yield t
     ll = [0,1,1,2,2,2,3,3,3,3,3,4,4,4,4,4]
-    for i in range(2000):
+    for i in range(ntests):
         codewordNo = randint(0, 0xfff)
         l = ll[randint(0,len(ll)-1)]
         cocode = []
@@ -224,7 +224,26 @@ def test_syndrome(gc, ref):
     print( "Golay code syndome decoding test passed" )
 
 
+#####################################################################
+# Test functions related to lists Golay code syndromes
+#####################################################################
 
+
+@pytest.mark.mat24
+@pytest.mark.parametrize("gc, ref", [(mat24fast, Mat24)])
+def test_syndrome(gc, ref):
+    for codewordNo, cocode, t in syndrome_testcases(500):
+        codeword = gc.gcode_to_vect(codewordNo)
+        synd = sum([1 << i for i in cocode])
+        syn_list = gc.all_syndromes(codeword ^ synd)
+        syn_list_c = gc.cocode_all_syndromes(gc.vect_to_cocode(synd))
+        #print(hex(codeword), cocode, [hex(x) for x in syn_list])
+        assert syn_list_c == syn_list
+        syn_len = 6 if len(cocode) == 4 else 1
+        assert len(syn_list) == syn_len
+        for v in syn_list:
+            # Next instruction fails if synd ^ v not in Golay code
+            gc.vect_to_gcode(synd ^ v)
 
 
 #####################################################################

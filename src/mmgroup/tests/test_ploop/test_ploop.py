@@ -233,8 +233,10 @@ def test_cocode():
         syndrome_list = cc1.syndrome(i).bit_list
         assert len(cc1) == len(syndrome_list)
         assert syndrome_list == mat24.cocode_to_bit_list(cc1.value, i)
-        
-        
+        syn1 = [GcVector(x) for x in mat24.all_syndromes(ccvector)]
+        syn2 = GcVector(ccvector).all_syndromes()
+        assert cc1.all_syndromes() == syn1 == syn2
+
 @pytest.mark.ploop
 def test_octads():
     print("")

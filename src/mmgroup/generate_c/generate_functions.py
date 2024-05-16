@@ -507,7 +507,7 @@ good_ast_nodes = set([
 with warnings.catch_warnings():
     warnings.filterwarnings('error')
     # Some deprecated ast classes
-    AST_CLASSES = ['Num', 'Str', 'Ellipsis', 'NameConstant']
+    AST_CLASSES = ['Num', 'Str', 'Ellipsis', 'NameConstant', 'IfExp']
     for attr in AST_CLASSES:
         try:
             good_ast_nodes.add(getattr(ast, attr))

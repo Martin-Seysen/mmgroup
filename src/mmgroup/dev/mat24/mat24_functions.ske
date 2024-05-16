@@ -423,6 +423,44 @@ uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
 }
 
 
+
+
+/** 
+  @brief Return all Golay code syndromes of cocode element  ``c1``.
+
+  Here ``c1`` is a cocode element in ``cocode``  representation.
+  The function writes all Golay code syndromes of length at most 4
+  as bit vectors in ``vector``  representation into the array
+  ``a_out``. It returns the length of the array ``a_out``, which
+  will be 1 or 6. Buffer ``a_out`` must have length at least 6.
+*/
+// %%EXPORT p
+uint32_t mat24_cocode_all_syndromes(uint32_t c1, uint32_t *a_out)
+{
+
+    uint_fast32_t  syn, remain, i, next, b;
+    syn = MAT24_SYNDROME_TABLE[ c1 & 0x7ff ];
+    a_out[0] = (1 << (syn & 31)) ^ (1 << ((syn >> 5) & 31))   
+               ^ (1 << ((syn >> 10) & 31));
+    if (c1 & 0x800) return 1;                 // done if c1 has odd party
+    a_out[0] ^= 1;                            // correct for even parity
+    if (syn >> 15 || a_out[0] == 0) return 1; // done if c1 is not a tetrad
+    // Compute the other five tetrads of a sextet
+    remain = 0xffffff & ~a_out[0];
+    for (i = 1; i < 6; ++i) {
+        next = remain & (0 - remain);
+        b = MAT24_RECIP_BASIS[mat24_def_lsbit24_pwr2(next)];
+        syn = MAT24_SYNDROME_TABLE[(c1 ^ b) & 0x7ff];
+        a_out[i] = (1 << (syn & 31)) ^ (1 << ((syn >> 5) & 31))   
+                   ^ (1 << ((syn >> 10) & 31)) ^ next;
+        remain &= ~a_out[i];
+    }
+    return 6;
+}
+
+
+
+
 /** 
   @brief Return Golay code syndrome of word ``v1``.
 
@@ -450,14 +488,35 @@ uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
 // %%EXPORT p
 uint32_t mat24_syndrome(uint32_t v1, uint32_t u_tetrad)
 {
-        uint_fast32_t as_cocode;
-
-        as_cocode = MAT24_ENC_TABLE0[v1 & 0xff]
+        uint_fast32_t as_cocode = MAT24_ENC_TABLE0[v1 & 0xff]
                   ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
                   ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
                   // This is  mat24_vect_to_vintern(v1)
         return  mat24_cocode_syndrome(as_cocode, u_tetrad);
 }
+
+
+/** 
+  @brief Return all Golay code syndromes of bit vector  ``v1``.
+
+  Here ``v1`` is an arbitrary word in ``GF(2)**24`` in ``vector``
+  representation. The function writes all Golay code syndromes of
+  length at most 4 as bit vectors in ``vector``  representation
+  into the array ``a_out``. It returns the length of the array
+  ``a_out``, which will be 1 or 6. Buffer ``a_out`` must have
+  length at least 6.
+*/
+// %%EXPORT p
+uint32_t mat24_all_syndromes(uint32_t v1, uint32_t *a_out)
+{
+        uint_fast32_t as_cocode = MAT24_ENC_TABLE0[v1 & 0xff]
+                  ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+                  ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff];
+                  // This is  mat24_vect_to_vintern(v1)
+        return  mat24_cocode_all_syndromes(as_cocode, a_out);
+}
+
+
 
 
 

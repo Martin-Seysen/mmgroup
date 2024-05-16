@@ -290,6 +290,18 @@ class Cocode():
         if i is None: i = 24
         return GcVector(mat24.cocode_syndrome(self.value, i))
 
+    def all_syndromes(self):
+        """Return list of all Golay code syndromes of the element.
+
+                 
+        :return: List of all Golay code syndromes of the cocode element
+                 as a list of vectors of type |GcVector|. Such a list
+                 contains either six vectors of bit weight 4, or one
+                 vector of bit weight less than 4. 
+        """
+        return [GcVector(x) 
+            for x in mat24.cocode_all_syndromes(self.value)]
+
     def syndrome_list(self, i=None):
         """Return syndrome of cocode element as list of bit positions.
 
