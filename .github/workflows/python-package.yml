@@ -18,7 +18,9 @@ jobs:
       matrix:
         # os: [flyci-macos-large-latest-m1] not working
         # os: [ubuntu-latest,  macOS-latest, macos-12-large]
-        os: [ubuntu-latest,  macOS-latest]
+        os: [ubuntu-latest,  macOS-13]
+        # Since about April 2024 macOS-latest default to macOS-14;
+        # and macOS-14 support an arm-based architecture only.
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
