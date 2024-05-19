@@ -197,6 +197,13 @@ def cocode_to_sextet(uint32_t  c1):
         raise ValueError("Golay cocode word is not a sextet")
     return list(data[:24])
 
+def intersect_octad_tetrad(uint32_t v1, uint32_t v2):
+    cdef uint32_t res
+    result =  mat24_intersect_octad_tetrad(v1, v2)
+    if result == 0xffffffff:
+        raise ValueError("No vector intersecting octad in tetrad found")
+    return result
+
 ############################################################################
 # Scalar product of Golay code and cocode
 ############################################################################

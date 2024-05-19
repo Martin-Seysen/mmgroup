@@ -659,7 +659,7 @@ class GcVector:
     the number of bits set in the vector ``v``. 
  
     """
-    __slots__ = "value", "bit_list_"
+    __slots__ = "value", "bit_list_", "bit_vector"
     parity_class = True
     sign = 1
 

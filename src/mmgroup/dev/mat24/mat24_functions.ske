@@ -388,6 +388,26 @@ uint32_t mat24_octad_to_vect(uint32_t u_octad)
 *** Golay code syndomes and weights
 *************************************************************************/
 
+
+/// @cond DO_NOT_DOCUMENT
+
+// Return the same result as function mat24_syndrome(x, 24).
+// But this is faster and works for vectors x with odd
+// parity only.
+static inline uint_fast32_t odd_syn(uint_fast32_t x) {
+    x = MAT24_ENC_TABLE0[(x) & 0xff] 
+      ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  
+      ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
+    x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; 
+    return  mat24_def_syndrome_from_table(x);
+}
+
+#define lsb24(x) ((uint8_t)(mat24_def_lsbit24_pwr2(x)))
+
+/// @endcond
+
+
+
 /** 
   @brief Return Golay code syndrome of cocode element  ``c1``.
 
@@ -679,6 +699,80 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
 
 
 
+
+
+/**
+  @brief Compute an octad intersecting another octad in a tetrad
+
+  Let ``v1`` be a vector given in ``vector`` representation which
+  is a (possibly complemented) octad; and let ``o`` be that octad.
+  Let ``v2`` be another vector given in ``vector`` representation.
+  If there is an octad containing the vector ``v2`` and
+  intersecting ``o`` in a tetrad then the functon returns such an
+  octad in ``vector`` representation. Otherwise the function
+  fails and returns ``(uint32_t)(-1)``.
+*/
+// %%EXPORT p
+uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
+{
+    uint_fast32_t o, sub, up, w, w_up, pool, i, len, res;
+    uint32_t syndromes[6];
+    {
+        // get the requested octad ``o`` first
+        uint_fast32_t gc, y;
+        gc = (MAT24_ENC_TABLE0[v1 & 0xff]
+             ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
+             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]) >> 12;
+        y = MAT24_OCT_ENC_TABLE[gc & 0x7ff];
+        if (y & 0x8000) return (uint32_t)(-1); // not an octad
+        v1 ^= (0 - ((y ^ (gc >> 11)) & 1));
+        o = v1 & 0xffffff;
+    }
+    // Now ``o`` is the octad given by parameter ``v1``.
+
+    v2 &= 0xffffff;
+    sub = v2 & o;
+    w = mat24_bw24(sub);
+    w_up = mat24_bw24(v2 & ~o);
+    // sub is too large
+    if (w > 4) return (uint32_t)(-1);
+    // Upgrade sub to bit weight 1. Upgrade sub to weight 3
+    // if sub has weight 2 and v has weight <= 4.
+    // Store upgraded weight of sub in w.
+    if (w == 0 || (w == 2 && w_up <= 2)) {
+        uint_fast32_t b = o & ~sub;
+        sub |= b & (0 - b);
+        w += 1;
+    }
+    // Construct a set ``up`` of bit length w_up == 4 - w.
+    // or w_up == 5 - w. Here we take the bits from v2 & ~o,
+    // if possible, and from ~o if not.
+    up = w_up = 0;
+    pool = v2 & ~o;
+    while (w + w_up < 4 && pool) {
+        uint_fast32_t b = pool & (0 - pool);
+        up |= b; pool &= ~b; ++w_up;
+    }
+    pool = ~o & ~up & 0xffffff;
+    while (w + w_up < 4 && pool) {
+        uint_fast32_t b = pool & (0 - pool);
+        up |= b; pool &= ~b; ++w_up;
+    }
+    // Now (sub | up) is a superset of (v2 & o) of weight 4 or 5.
+    // If that weight is 4 then sub has odd inersection with o.
+    up |= sub;
+    len = mat24_all_syndromes(up, syndromes);
+    for (i = 0; i < len; ++i) {
+        res = up ^ syndromes[i];
+        sub = res & o;
+        if ((res & v2) == v2 && mat24_bw24(sub) == 4) return res;
+    }
+    return (uint32_t)(-1);
+ }
+
+
+
+
 /*************************************************************************
 *** Scalar product of Golay code and cocode
 *************************************************************************/
@@ -706,7 +800,7 @@ uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
 *** Conversion from and to suboctads
 *************************************************************************/
 
-/** 
+/**
   @brief Convert cocode element ``c1`` to suboctad of octad ``v1``
 
   The function converts a cocode element ``c1`` (in ``cocode``
@@ -784,13 +878,13 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
 // %%EXPORT p
 uint32_t mat24_octad_entries(uint32_t u_octad, uint8_t *a_out)
 {
-    if (u_octad >= 759) return -1;
+    if (u_octad >= 759) return (uint32_t)(0-1);
     memcpy(a_out, MAT24_OCTAD_ELEMENT_TABLE + (u_octad << 3), 8);
     return 0;
 }
 
 
-/** 
+/**
   @brief Return parity of halved bit weight of the even suboctad
 
   Here parameter ``u_sub`` is the number of a suboctad. A suboctad
@@ -1172,23 +1266,6 @@ uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
 *** Mathieu group Mat24
 *************************************************************************/
 
-
-/// @cond DO_NOT_DOCUMENT
-
-// Return the same result as function mat24_syndrome(x, 24).
-// But this is faster and works for vectors x with odd
-// parity only.
-static inline uint_fast32_t odd_syn(uint_fast32_t x) {
-    x = MAT24_ENC_TABLE0[(x) & 0xff] 
-      ^ MAT24_ENC_TABLE1[((x) >> 8) & 0xff]  
-      ^ MAT24_ENC_TABLE2[((x) >> 16) & 0xff];
-    x = MAT24_SYNDROME_TABLE[(x) & 0x7ff]; 
-    return  mat24_def_syndrome_from_table(x);
-}
-
-#define lsb24(x) ((uint8_t)(mat24_def_lsbit24_pwr2(x)))
-
-/// @endcond
 
 
 /** 
