@@ -154,7 +154,7 @@ uint32_t mat24_vect_to_list(uint32_t v1, uint32_t u_len, uint8_t *a_out)
     return u_len;
 }
 
-
+  
 
 /**
  @brief Extract the bits of 24-bit vector ``v1`` given by the mask ``u_mask``
@@ -192,12 +192,6 @@ uint32_t mat24_spread_b24(uint32_t v1, uint32_t u_mask)
     // %%END FOR 
     return res;
 }
-
-
-
-
-
-
 
 
 
@@ -338,7 +332,9 @@ uint32_t mat24_vect_to_octad(uint32_t v1, uint32_t u_strict)
     uint_fast32_t gc, y;
     gc = (MAT24_ENC_TABLE0[v1 & 0xff]
              ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
-             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]) >> 12;
+             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]);
+    if (gc & 0xfff) return (uint32_t)(-1);
+    gc >>= 12;
     y = MAT24_OCT_ENC_TABLE[gc & 0x7ff];
     if (y & 0x8000 || (y ^ (gc >> 11)) & 1 & u_strict) return (uint32_t)(-1);
     return y >> 1;
@@ -710,7 +706,8 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
   If there is an octad containing the vector ``v2`` and
   intersecting ``o`` in a tetrad then the functon returns such an
   octad in ``vector`` representation. Otherwise the function
-  fails and returns ``(uint32_t)(-1)``.
+  returns 0. If ``v1`` is not a (possibly complemented) octad then
+  the function fails and returns ``(uint32_t)(-1)``.
 */
 // %%EXPORT p
 uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
@@ -722,7 +719,9 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
         uint_fast32_t gc, y;
         gc = (MAT24_ENC_TABLE0[v1 & 0xff]
              ^ MAT24_ENC_TABLE1[(v1 >> 8) & 0xff]
-             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]) >> 12;
+             ^ MAT24_ENC_TABLE2[(v1 >> 16) & 0xff]);
+        if (gc & 0xfff) return (uint32_t)(-1);
+        gc >>= 12;
         y = MAT24_OCT_ENC_TABLE[gc & 0x7ff];
         if (y & 0x8000) return (uint32_t)(-1); // not an octad
         v1 ^= (0 - ((y ^ (gc >> 11)) & 1));
@@ -735,7 +734,7 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
     w = mat24_bw24(sub);
     w_up = mat24_bw24(v2 & ~o);
     // sub is too large
-    if (w > 4) return (uint32_t)(-1);
+    if (w > 4) return 0;
     // Upgrade sub to bit weight 1. Upgrade sub to weight 3
     // if sub has weight 2 and v has weight <= 4.
     // Store upgraded weight of sub in w.
@@ -767,7 +766,7 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
         sub = res & o;
         if ((res & v2) == v2 && mat24_bw24(sub) == 4) return res;
     }
-    return (uint32_t)(-1);
+    return 0;
  }
 
 
