@@ -325,7 +325,7 @@ def make_syndrome_table(recip_basis):
      return syndrome_table
                  
 
-ODD_OCTADS_SPECIAL = 0
+ODD_OCTADS_SPECIAL = 1
 
 
 ODD_OCTADS_DICT = {

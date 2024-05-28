@@ -64,7 +64,7 @@ ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
 try:
     from mmgroup.mm_op import mm_aux_mul_sparse
 except (ImportError, ModuleNotFoundError):
-    mmgroup._warn(ERR_MM_SPARSE, UserWarning)
+    mmgroup._warn(ERR_MM_SPARSE)
 
 
 

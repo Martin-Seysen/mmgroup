@@ -24,47 +24,74 @@ def bench(p, operation = [], iterations = ITERATIONS, break_g = True):
     #print(operation)
     g = MM0(operation)
     v.mul_exp(g, iterations, break_g = break_g)
-    return v.last_timing, iterations
+    return v.last_timing / iterations
 
 
 def bench_nobreak(p, operation = [], iterations = ITERATIONS_NOBREAK):
     return bench(p, operation, iterations, break_g = False) 
 
-def quot(f, *args):
-    q, r = f(*args)
-    return q/r
+def bench_weights(frequencies, timings):
+    t = 0.0
+    for tag, f in frequencies.items():
+        t += f * timings[tag] 
+    return t   
+
 
 def quot_ms(f, *args):
-    return "%9.6f" % (1000 * quot(f, *args))
+    t = f(*args)
+    return t, "%9.6f" % (1000 * t)
 
 
+# frequencies of operators in random mmgroup element
+FREQ = {'xy':1, 'p':16, 'l':17, 't':6.25}
 
+MM_REDUCE_OPS = {3:3.0, 15:(3.0 + 2 + 3.0/7.0)}
+
+FREQ_G = {'xy':1, 'p':4, 'l':3}
+
+FREQ_N = {'xy':1, 'p':1}
 
 
 def benchmark(few = True):
     print("""
-Benchmarking monster operations a %d-bit system.
+Benchmarking monster operations on a %d-bit system.
 All times are given in milliseconds.
 """ % (INT_BITS)
     )
     p_values = [3, 15] if few else characteristics()
+    runtimes = {}
+    runtimes_mm = {}
     for p in p_values:
         print("Operation modulo", p)
         op = [('p', 22), ('d', 127)]
-        print ("p    ", quot_ms(bench_nobreak, p, op), " local optimization")
+        print ("p    ", quot_ms(bench_nobreak, p, op)[1], " local optimization")
+        print ("p    ", quot_ms(bench, p, op)[1])
 
-        print ("p    ", quot_ms(bench, p, op))
-        op = [('p', 23), ('d', 12745645)]
-        print ("p odd", quot_ms(bench, p, op))
+        op = [('p', 23), ('d', 12745645)]        
+        runtimes['p'], msg = quot_ms(bench, p, op)
+        print ("p odd", msg)
 
         op = [('x', 1237), ('y', 567),]
-        print ("xy   ", quot_ms(bench, p, op))
+        runtimes['xy'], msg = quot_ms(bench, p, op)
+        print ("xy   ", msg)
 
         op = [('l', 2)]
-        print ("l    ", quot_ms(bench, p, op))
+        runtimes['l'], msg = quot_ms(bench, p, op)
+        print ("l    ", msg)
 
         op = [('t', 2)]
-        print ("t    ", quot_ms(bench, p, op))
+        runtimes['t'], msg = quot_ms(bench, p, op)
+        print ("t    ", msg)
+
+        _, msg = quot_ms(bench_weights, FREQ_N, runtimes)
+        print ("N_x0 ", msg)
+
+        _, msg = quot_ms(bench_weights, FREQ_G, runtimes)
+        print ("G_x0 ", msg)
+
+        runtimes_mm[p], msg = quot_ms(bench_weights, FREQ, runtimes)
+        print ("MM   ", msg)
+
         if few:
            continue
         op = [('t', 2), ('p', 23), ('d', 12745645),
@@ -84,6 +111,8 @@ All times are given in milliseconds.
         print ("rand ", quot_ms(bench, p, op))
         print("")
 
+    _, t_mm = quot_ms(bench_weights, MM_REDUCE_OPS, runtimes_mm)
+    print("Estimated time for group operation:", t_mm)
 
 @pytest.mark.mm_op
 @pytest.mark.slow
