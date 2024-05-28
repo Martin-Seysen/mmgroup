@@ -497,8 +497,15 @@ def load_tables(tg, tables, params, directives=True):
     for table_class in tables:
         m_tables = table_class(**params)
         #print("Loading", table_class, params)
-        new_tables = m_tables.tables
-        _tables.update(new_tables)
+        try:
+            new_tables = m_tables.tables
+            _tables.update(new_tables)
+        except:
+            print("Could not load table from class", table_class)
+            print("Parameters:", dict(params))
+            new_tables = getattr(m_tables, 'tables', "<undefined>")
+            print("Attribute 'tables' of table class is:", new_tables)
+            raise
         if directives:
             new_directives = m_tables.directives
             _directives.update(new_directives)

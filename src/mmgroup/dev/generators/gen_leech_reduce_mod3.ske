@@ -1,0 +1,86 @@
+/** @file gen_leech_reduce_od3.c
+
+This is yet a stub!!!
+*/
+
+
+/*************************************************************************
+** External references 
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+#include <string.h>
+#include "mat24_functions.h"
+#define MMGROUP_GENERATORS_INTERN
+#include "mmgroup_generators.h"
+/// @endcond 
+
+
+
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+extern "C" {
+#endif
+// %%GEN c
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+
+static const uint32_t TABLE_SIGN_OCTADS[10] = {
+  // %%TABLE Leech3SignOctads, uint32
+};
+
+
+static const uint8_t TABLE_POSITIONS[10][8] = {
+  // %%TABLE Leech3BitPositions, uint8
+};
+
+
+static const uint8_t TABLE_UMBRAL9[9] = {
+  0, 4, 8, 13,14,15, 17,18,19
+};
+
+
+
+
+/// @endcond
+
+
+
+/*******************************************************************
+*** Fucntions will be coded here
+*******************************************************************/
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+
+
+
+// %%GEN ch
+#ifdef __cplusplus
+}
+#endif
+
+
+
+

@@ -282,6 +282,7 @@ GENERATORS_SOURCES = '''
    gen_leech_reduce_22.c
    gen_leech_reduce_n.c gen_random.c
    gen_union_find.c
+   gen_leech_reduce_mod3.c
 '''
 
 
@@ -292,6 +293,7 @@ GENERATORS_GENERATE = GENERATE_START + '''
           mmgroup.dev.generators.gen_leech_reduce_n 
           mmgroup.dev.generators.gen_xi_ref
           mmgroup.dev.generators.gen_leech_22
+          mmgroup.dev.generators.gen_leech_reduce_mod3
  --sources mmgroup_generators.h
  --sources 
 '''.format(**DIR_DICT) + GENERATORS_SOURCES + '''
