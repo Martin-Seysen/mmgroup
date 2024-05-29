@@ -233,7 +233,7 @@ def find_tetrad_leech_mod3(a):
     the support of ``a * g`` has bit weight less than the weight
     of ``v``. The function returns 0 if no such tetrad can be found.
 
-    This procedure may reduce the bit weight of ``v`` by
+    This procedure reduces the bit weight of ``v`` by
 
     - at least 12 if ``v`` has bit weight 20, 22, 23, or 24
 

@@ -414,7 +414,7 @@ static inline uint_fast32_t odd_syn(uint_fast32_t x) {
   The function returns a Golay code syndrome as described in the 
   documentation of function  mat24_syndrome().   
 */
-// %%EXPORT p
+// %%EXPORT px
 uint32_t mat24_cocode_syndrome(uint32_t c1, uint32_t u_tetrad)
 {
         uint_fast32_t  y, syn, bad; 

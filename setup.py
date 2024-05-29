@@ -105,6 +105,9 @@ VERBOSE = False
 # Parse a global option '--stage=i', '--compiler=c', and set variable 
 # ``STAGE`` to the integer value i if such an option is present.
 for i, s in enumerate(sys.argv[1:]):
+    if s.startswith('--n='):
+        NPROCESSES = int(s[4:])
+        sys.argv[i+1] = None
     if s.startswith('--stage='):
         STAGE = int(s[8:])
         sys.argv[i+1] = None
