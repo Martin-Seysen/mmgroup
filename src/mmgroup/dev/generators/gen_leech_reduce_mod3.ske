@@ -399,6 +399,149 @@ int32_t gen_leech3_find_tetrad_leech_mod3(uint64_t a)
 }
 
 
+/*******************************************************************
+*** Multiply vector in Leech lattice mod 3 with group element
+*******************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+
+#define MAX_LEECH3_G 12
+
+typedef struct {
+    uint64_t a;                // vector in Lecch lattice mod 3 encoding
+    uint32_t g[MAX_LEECH3_G];  // Element of subgroup G_x0 of the Monster
+    uint32_t len_g;            // length of word in component g
+    int32_t status;            // Any nonzero value indicates an error
+} leech3_record_type;
+ 
+
+static inline 
+void leech3_record_load(leech3_record_type *r, uint64_t a)
+{
+    r->a = a; r->len_g = r->status = 0; 
+}
+
+
+static inline 
+void leech3_record_mul_atom(leech3_record_type *r, uint32_t atom)
+{
+    if (r->status) return;
+    if (r->len_g >= MAX_LEECH3_G) {
+        r->status = -1;
+        return;
+    }
+    r->g[r->len_g++] =
+        gen_leech3_op_vector_word(r->g[r->len_g], &atom, 1);
+}
+
+
+static inline 
+void leech3_record_mul_perm_map(
+   leech3_record_type *r,
+   uint8_t *source,
+   uint8_t *dest,
+   int32_t length
+)
+// Multiply vector stored in ``r`` with a permutation in the Mathieu
+// group that maps the first ``length`` entries of ``source`` to the
+// first `length`` entries of ``dest``.
+{
+    uint32_t res, atom;
+    uint8_t pi[32];
+    if (mat24_perm_from_map(source, dest, length, pi) <= 0) {
+        r->status = -1;
+        return;
+    }
+    atom = 0x20000000 + mat24_perm_to_m24num(pi);
+    leech3_record_mul_atom(r, atom);
+}
+
+
+static inline 
+void leech3_record_mul_perm_tet(
+   leech3_record_type *r,
+   uint32_t tet
+)
+// Multiply vector stored in ``r`` with a permutation in the Mathieu
+// group that maps the tetrad ``tet`` (in vector representation)
+// to the standard tetrad 
+{
+    uint8_t tet_bits[32];
+    static uint8_t STD_TET[4] = {0, 1, 2, 3};
+    if (mat24_vect_to_bit_list(tet, tet_bits) != 4) {
+        r->status = -1;
+        return;
+    }
+    leech3_record_mul_perm_map(r, tet_bits, STD_TET, 4);
+}
+
+
+static inline 
+void leech3_record_mul_perm_y(
+   leech3_record_type *r,
+   uint32_t v
+)
+// Multiply vector stored in ``r`` with a generator ``y_v`` in the
+// group G_y0 that negates exactly the bits in GF(2^24) that sre set
+// in the bit vector ``v``. Here ``v`` must be a Golay code word.
+{
+    uint32_t gc = mat24_vect_to_gcode(v);
+    if (v & 0xfffff000) {
+        r->status = -1;
+        return;
+    }
+    leech3_record_mul_atom(r, 0x40000000 + gc);
+}
+
+
+
+
+
+
+
+/// @endcond DO_NOT_DOCUMENT
+
+
+/*******************************************************************
+*** Special reduction for an umbral undecad
+*******************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+
+
+static inline
+uint32_t neg_dodecad(uint32_t v, uint32_t syn, uint32_t neg)
+{
+    /* Adjust signs of a weight-11 vector in Leech lattice mod 3
+
+    Let ``v`` be the support of a vector ``w`` in the Leech lattice
+    mod 3, i.e. the bit vector containing the  nonzero entries 
+    of ``w``. Here ``v``must be a umbral undecad, and the (disjoint)
+    union of ``v`` and the singleton ``syn`` must be a umbral 
+    dodecad. Let ``neg`` be the bit vector containing the bits
+    where ``w`` has an entry -1.
+    
+    We may change the signs of a vector in ``w`` by flipping the
+    signs of all entries corresponding to the bits of a Golay code
+    word. The function returns a suitable Golay code wort ``gc`` (as
+    a bit vector) such that flipping the signs in ``w`` corresponding
+    to the bits in ``gc`` makes all entries of ``w`` nonegative. 
+    */  
+    uint32_t neg1 = mat24_cocode_as_subdodecad(
+        mat24_vect_to_cocode(neg = neg &= v),
+        mat24_vect_to_gcode(0xffffff & ~(v | syn)),
+        mat24_lsbit24(syn)
+    );
+    return neg | neg1;
+}
+
+    
+
+
+
+
+/// @endcond DO_NOT_DOCUMENT
+
 
 
 //  %%GEN h

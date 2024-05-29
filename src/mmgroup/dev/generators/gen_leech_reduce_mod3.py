@@ -16,11 +16,12 @@ import_pending = True
 def import_all():
     global import_pending 
     if import_pending:
-        global mat24, gen_leech3_op_vector_word
+        global mat24, gen_leech3_op_vector_atom, gen_leech3_op_vector_word
         if __name__ == "__main__":
             sys.path.append(r"../../..")
         try:
             from mmgroup import mat24
+            from mmgroup.generators import gen_leech3_op_vector_atom
             from mmgroup.generators import gen_leech3_op_vector_word
             import_pending = False
         except (ImportError, ModuleNotFoundError, AssertionError):
@@ -42,14 +43,9 @@ def str_vector3(a):
     neg = a & supp      
     return "Leech3_%06xh_%06xh" % (supp, neg)
 
-def weight_vector3(a):
-    """Return weight of support of vector in Leech lattice mod 3"""
-    supp = (a ^ (a >> 24)) & 0xffffff
-    return mat24.bw24(supp)
-
 def reduce_vector3(a):
     """Change vector in Leech lattice mod 3 to a standard form"""
-    ovfl = (a & (a >> 24)) & 0xffffff
+    ovfl = a & (a >> 24) & 0xffffff
     return (a ^ ovfl ^ (ovfl << 24)) & 0xffffffffffff 
 
 def mul_vector3(a, g):
@@ -255,7 +251,9 @@ def find_tetrad_leech_mod3(a):
     """
     if import_pending:
         import_all()
-    v = (a ^ (a >> 24)) & 0xffffff # non-zero entries of vector
+    mask = a & (a >> 24) & 0xffffff
+    a ^= mask | (mask << 24)
+    v = (a | (a >> 24)) & 0xffffff # non-zero entries of vector
     neg = a & v                    # 'negative' entries of v
     w_v = mat24.bw24(v)
     if w_v >= 20:
@@ -324,6 +322,83 @@ def find_tetrad_leech_mod3(a):
     raise ValueError("This should not happen")
 
 
+###############################################################
+# Multiply vector in Leech lattice mod 3 with group element
+###############################################################
+
+class Leech3VectorRecord:
+    r"""Record group operation on vector in Leech lattice mod 3
+
+    An instance of this class records the operation of the
+    group :math:`G_{x0}` on a vector in the Leech lattice mod 3.
+    The constructor of this class takes a single parameter that
+    is a vector in the Leech lattice mod3 
+    in *Leech lattice mod 3 encoding*.
+
+    Method ``mul_atom`` multiplies that vector with a generator
+    ``g`` of the group :math:`G_{x0}`. Here ``g`` is encoded as a
+    32-bit integer as described in file ``mmgroup_generators.h``. 
+
+    Attribute ``v`` contains the current vector in
+    *Leech lattice mod 3 encoding*. Attribute ``g`` contains the
+    word of all generators of the group :math:`G_{x0}` entered
+    with method ``mul_atom`` as a numpy array of 
+    type ``numpy.uint32``. 
+    """
+    MAX_LEECH3_G = 12
+    __slots__ = 'v', '_g', 'len_g'
+
+    def __init__(self, v):
+        self._g = np.zeros(self.MAX_LEECH3_G, dtype = np.uint32) 
+        self.v = v & 0xffffffffffff
+        self.len_g = 0
+
+    @property
+    def g(self):
+        return self._g[:self.len_g]
+
+    def bw24(self):
+        supp, _ = self.support()
+        return mat24.bw24(supp)
+
+    def reduce_vector(self):
+        mask = self.v  & (self.v  >> 24) & 0xffffff
+        self.v ^= mask | (mask << 24)
+        self.v &= 0xffffffffffff
+        return self.v
+
+    def support(self):
+        mask = self.v  & (self.v  >> 24) & 0xffffff
+        self.v ^= mask | (mask << 24)
+        neg = (self.v >> 24) & 0xffffff
+        return (self.v | neg) & 0xffffff, neg
+
+    def mul_atom(self, atom):
+        assert self.len_g < self.MAX_LEECH3_G
+        self.v = gen_leech3_op_vector_atom(self.v, atom)
+        self._g[self.len_g] = atom
+        self.len_g += 1
+        return self
+
+    def mul_perm_map(self, source, dest):
+        res, pi = mat24.perm_from_map(source, dest)
+        assert res > 0
+        return self.mul_atom(0x20000000 + mat24.perm_to_m24num(pi))
+
+    def mul_perm_tetrad(self, tetrad):
+        length, tetrad_bits = mat24.vect_to_bit_list(tetrad)
+        assert length == 4
+        return self.mul_perm_map(tetrad_bits[:4], range(4))
+
+    def mul_neg_y(self, y):
+        gc = mat24.vect_to_gcode(y)
+        return self.mul_atom(0x40000000 + gc)
+
+    def mul_xi_exp(self, e):
+        return self.mul_atom(0x60000000 + (e & 3))
+
+    def str_vector(self):
+         return str_vector3(self.v)
 
 
 
@@ -334,24 +409,19 @@ def find_tetrad_leech_mod3(a):
 
 
 
-def reduce_tetrad_leech_mod3(a, tetrad):
+def reduce_tetrad_leech_mod3(r, t):
     r"""Reduce weight of a vector in the Leech lattice mod 3
 
-    Let ``a`` be a vector in the Leech lattice mod 3 given in
-    Leech lattice mod 3 encoding. Let the ``t`` be  a tetrad
-    given as a bit vector. Let the weight of ``a`` be the number
-    of nonzero bits in ``a``.
+    Let ``r`` be an object of class ``Leech3VectorRecord``
+    encoding a vector ``a`` in the Leech lattice mod 3. Let ``t``
+    be  a tetrad given as a bit vector. The weight of  ``a`` is
+    be the number of nonzero bits in ``a``.
 
-    The function tries to reduce the weight of ``a`` by applying
-    the following procedure. It first computes a permmutation in the
+    The function tries to reduce the weight of ``a`` by modifying
+    object ``r`` as follows. It first applies a permmutation in the
     Mathieu group :math:`M_{24}` that  maps ``t`` to the standard
     tetrad (0,1,2,3). Then it applies a power :math:`\xi^e, e = \pm1`
     of the generator :math:`\xi`  of :math:`\mbox{Co}_1`.
-
-    In case of success the function returns an element ``g``
-    of :math:`\mbox{Co}_1` such that ``w * g`` has a smaller
-    weight than ``g``. Here ``g`` is returned as a numpy array of
-    generators as defined in file ``mmgroup_generators.h``.
     
     For each tetrad ``t'`` of the standard sextet the function
     computes a score for exponenets :math:`e = \pm 1`  as follows:
@@ -369,14 +439,8 @@ def reduce_tetrad_leech_mod3(a, tetrad):
     We remark that in case of success the weight of (the support of)
     ``a`` is reduced by a multiple of 3.
     """
-    g = np.array([0x20000000, 0x60000000], dtype = np.uint32)
-    length, tetrad_bits =  mat24.vect_to_bit_list(tetrad)
-    res, pi = mat24.perm_from_map(tetrad_bits[:length], range(4))
-    assert res > 0
-    g[0] += mat24.perm_to_m24num(pi)
-    a = mul_vector3(a, g[:1]) 
-    supp = (a ^ (a >> 24)) & 0xffffff
-    neg = a & 0xffffff
+    r.mul_perm_tetrad(t)
+    supp, neg = r.support()
     SCORE = 0x2000000100010110    
     n_plus = n_minus = n_bad = 0
     for i in range(0, 24, 4):
@@ -394,10 +458,7 @@ def reduce_tetrad_leech_mod3(a, tetrad):
     else:
         n, e = n_minus, 2
     assert n > n_bad
-    g[1] += e
-    a = mul_vector3(a, g[1:]) 
-    return g, a
- 
+    r.mul_xi_exp(e)
 
 ###############################################################
 # Special reduction for an umbral undecad
@@ -430,39 +491,31 @@ def neg_dodecad(v, syn, neg):
     return neg | neg1
     
 
-
-def reduce_umbral_undecad(a):
+def reduce_umbral_undecad(r):
     r"""Reduce vector of weight 11 in the Leech lattice mod 3
 
-    Let ``a`` be a vector in the Leech lattice mod 3 such that the
-    support `´v`` of ``a`` (i.e. the bit vector containing the nonzero
-    entries of ``a``) is an umbral undecad. The function returns an
-    element ``g`` of :math:`\mbox{Co}_1` such that the support
-    of ``w * g`` is a non-umbral undecad. Here ``g`` is returned as a
-    numpy array of generators as defined in 
-    file ``mmgroup_generators.h``.
+    Let ``r`` be an object of class ``Leech3VectorRecord`` encoding
+    a vector ``a`` in the Leech lattice mod 3. In this function the
+    support of ``v`` of ``a`` (i.e. the bit vector containing the
+    nonzero entries of ``a``) must be an umbral undecad. The
+    function multiples the vector ``a`` in object ``r`` with a
+    group element ``g``such that ``a * g`` is a non-umbral undecad.
 
     Element ``g`` first flips suitable bit of vector ``a``; then
     permutes the bits of ``a`` in a suitable way; and, finally, 
-    it applies generator :math:`\xi`.  
+    it applies  the generator :math:`\xi`.  
     """
-    g = np.zeros(0, dtype = np.uint32)
-    v = (a ^ (a >> 24)) & 0xffffff # non-zero entries of vector
+    v, _ = r.support()
     w_v = mat24.bw24(v)
     syn = mat24.syndrome(v, 0)
     if syn & (syn - 1) or syn & v or mat24.bw24(v) != 11:
-        return g, a
-    g = np.array([0x20000000, 0x40000000, 0x60000001], dtype = np.uint32)
+        return r
     tet = augment_bitvector(syn, v, 4)
-    length, tetrad_bits =  mat24.vect_to_bit_list(tet)
-    res, pi = mat24.perm_from_map(tetrad_bits[:length], range(4))
-    assert res > 0
-    g[0] += mat24.perm_to_m24num(pi)
-    a = mul_vector3(a, g[:1]) 
-    v = (a ^ (a >> 24)) & 0xffffff
+    r.mul_perm_tetrad(tet)
+    v, neg = r.support()
     syn = mat24.syndrome(v, 0) 
     #print("u11", hex(mul_vector3(tet, g[:1])), hex(v))
-    y = neg_dodecad(v, syn, a & v)
+    y = neg_dodecad(v, syn, neg)
     n_swapped = 0
     gc_opp = 0xffffff ^ v ^ syn
     for i in range(4, 24, 4):
@@ -471,15 +524,8 @@ def reduce_umbral_undecad(a):
             duad = syn ^ (t & -t)
             y ^= cohexad(gc_opp, duad, 0) ^ duad
             n_swapped += 1
-    g[1] ^= mat24.vect_to_gcode(y)
-    a = mul_vector3(a, g[1:2]) 
-    #print("u11 a", hex(v), hex(a & v))
-    # return g[:2], a
-    a = mul_vector3(a, g[2:])
-    v = (a ^ (a >> 24)) & 0xffffff; 
-    syn = mat24.syndrome(v, 0)
-    #print("u11 b", hex(v), hex(syn))
-    return g, a
+    r.mul_neg_y(y) 
+    r.mul_xi_exp(1)
 
 
 
@@ -547,25 +593,21 @@ def reduce_sign(a):
                 sign_vector ^= SIGN_OCTADS[i]
         if (neg ^ sign_vector) & 1 and v & 8 == 0:
             sign_vector ^= SIGN_OCTADS[0]
-    return mat24.vect_to_gcode(sign_vector)
+    #return mat24.vect_to_gcode(sign_vector)
+    return sign_vector
 
 
 
-def reduce_final_perm(a):
-    g = np.array([0x20000000, 0x40000000], dtype = np.uint32)
-    v = (a ^ (a >> 24)) & 0xffffff # non-zero entries of vector
+def reduce_final_perm(r):
+    v, neg = r.support()
     w_v = mat24.bw24(v)
     if w_v == 0:
-        return g[:0], a
+        return r
     if w_v <= 6:
         _, v_bits =  mat24.vect_to_bit_list(v)
-        res, pi = mat24.perm_from_map(v_bits[:w_v], POSITIONS[w_v, :w_v])
-        assert res > 0
-        g[0] += mat24.perm_to_m24num(pi)
-        a = mul_vector3(a, g[:1])
-        g[1] ^= reduce_sign(a)
-        a = mul_vector3(a, g[1:])
-        return g, a
+        r.mul_perm_map(v_bits[:w_v], POSITIONS[w_v, :w_v])
+        r.mul_neg_y(reduce_sign(r.v))
+        return
     syn = mat24.syndrome(v, 0)
     sub = syn & ~v
     add = syn & v
@@ -576,69 +618,49 @@ def reduce_final_perm(a):
     if w_v == w_core == 9:
         # Then a is a (signed) umbral nonad
         pi = mat24.perm_from_dodecads(sub_bits + core_bits, UMBRAL9) 
-        g[0] += mat24.perm_to_m24num(pi)
-        a = mul_vector3(a, g[:1]) 
-        v = (a ^ (a >> 24)) & 0xffffff
+        r.mul_atom(0x20000000 + mat24.perm_to_m24num(pi))
+        v, neg = r.support() 
         assert v == 0xEEE000, hex(v)
-        neg = (a >> 24) & 0xffffff
         neg1 = neg_dodecad(0xEEE111, 1, neg)
-        gc = mat24.vect_to_gcode(neg | neg1)
-        g[1] ^= gc
-        a = mul_vector3(a, g[1:]) 
-        assert a == 0xeee000
-        return g, a
+        r.mul_neg_y(neg | neg1)
+        return
     w_add, add_bits =  mat24.vect_to_bit_list(add)
     add_bits = add_bits[:w_add]
     if w_add == 1 and  w_v + w_sub == 9:
         base_bits = (sub_bits + core_bits)[:6] + add_bits
-        res, pi = mat24.perm_from_map(base_bits, POSITIONS[w_v, :7])
-        assert res > 0  
-        g[0] += mat24.perm_to_m24num(pi)
-        a = mul_vector3(a, g[:1])
-        g[1] ^= reduce_sign(a)
-        a = mul_vector3(a, g[1:])
-        return g, a
-    return g[:0], a
-        
-     
+        r.mul_perm_map(base_bits, POSITIONS[w_v, :7])
+        r.mul_neg_y(reduce_sign(r.v))
+    return
+
 ###############################################################
 # The final reduction function
 ###############################################################
 
-def reduce_weight_leech_mod3(a):
-    g = np.zeros(0, dtype = np.uint32)
-    #w_start = weight_vector3(a)
-    #print("w_start =", w_start)
+def reduce_weight_leech_mod3(r):
     for i in range(6):
-        tetrad = find_tetrad_leech_mod3(a)
-        #print('tet', hex(tetrad))
+        tetrad = find_tetrad_leech_mod3(r.v)
         if mat24.bw24(tetrad) != 4:
             assert tetrad == 0
-            if weight_vector3(a) >= 12: 
-                print("too heavy!!!", weight_vector3(a))
+            if r.bw24() >= 12:
+                print("too heavy!!!", r.bw24())
                 raise ValueError("too heavy")
-            #print("done")
-            return g, reduce_vector3(a)
-        g1, a = reduce_tetrad_leech_mod3(a, tetrad)
-        #print(str_vector3(a), ", weight =", weight_vector3(a))
-        g = np.concatenate([g, g1]) 
-    raise ValueError("WTF")
+            return r
+        reduce_tetrad_leech_mod3(r, tetrad)
+    raise ValueError("This should not happen")
 
 
 def reduce_leech_mod3(a):
     global set_a_reduced
     if import_pending:
         import_all()
-    g, a = reduce_weight_leech_mod3(a)
-    if mat24.bw24((a ^ (a >> 24)) & 0xffffff) == 11:
-        g1, a = reduce_umbral_undecad(a)
-        g2, a = reduce_weight_leech_mod3(a)
-        g = np.concatenate([g, g1, g2])
-    g3, a = reduce_final_perm(a)
-    g = np.concatenate([g, g3])
-    a = reduce_vector3(a)
-    return g, a
-     
+    r = Leech3VectorRecord(a)
+    reduce_weight_leech_mod3(r)
+    if r.bw24() == 11: 
+        reduce_umbral_undecad(r)   
+        reduce_weight_leech_mod3(r)
+    reduce_final_perm(r)
+    return r.g, r.reduce_vector()
+
 
 
 
@@ -813,18 +835,26 @@ def test_reduce_leech_mod3(ntests = 1000, f_test = None, verbose = 0):
     M = "Testing function reduce_leech_mod3() with about %d tests"
     print(M % max(int(ntests), MIN_TESTS))
     for i, a in enumerate(reduce_leech_mod3_testdata(ntests)):
+        if verbose >= 3:
+            print("Test %d, vector = %s" % (i+1, str_vector3(a))) 
         g, a1 = reduce_leech_mod3(a)
         a_g = mul_vector3(a, g)
-        assert a_g == a1, [str_vector3(a_g), str_vector3(a1)]
+        ok =  a_g == a1
         analyse_final(g, a1)
         if f_test:
             g_test, a1_test = f_test(a)
-            assert reduce_vector3(a1_test) == a1
-            assert  g_test == g
-        if verbose > 1 and (i + 1) % 10000 == 0:
+            ok |= reduce_vector3(a1_test) == a1
+            ok |=  g_test == g
+        if verbose >= 3 or not ok:
+            print("Vector expected %s, otained %s" %
+                (str_vector3(a1), str_vector3(a_g)))
+            print("g:", [hex(x) for x in g]) 
+            if not ok:
+                raise valueError("Test failed")
+        if 1 < verbose < 3 and (i + 1) % 100000 == 0:
             print('\r%d       ' % (i+1), end = '')
             sys.stdout.flush()
-    if verbose > 1:
+    if 1 < verbose < 3:
         print("\r"+ 40 * ' ', end = "\r")
         sys.stdout.flush()
     if verbose:
@@ -843,8 +873,6 @@ def test_reduce_leech_mod3(ntests = 1000, f_test = None, verbose = 0):
 ###############################################################
 # Crated tables for generating C code
 ###############################################################
-
-
 
 
 class MockupTables:
@@ -870,7 +898,7 @@ class Tables(MockupTables):
 
 
 if __name__ == "__main__":
-    test_reduce_leech_mod3(1.e4, None, verbose = 2)
+    test_reduce_leech_mod3(1.e5, None, verbose = 0)
 
 
 
