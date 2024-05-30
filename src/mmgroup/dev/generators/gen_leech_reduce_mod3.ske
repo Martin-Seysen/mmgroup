@@ -41,18 +41,18 @@ extern "C" {
 
 
 
-static const uint32_t TABLE_SIGN_OCTADS[10] = {
+static uint32_t TABLE_SIGN_OCTADS[10] = {
   // %%TABLE Leech3SignOctads, uint32
 };
 
 
-static const uint8_t TABLE_POSITIONS[10][8] = {
+static uint8_t TABLE_POSITIONS[10][8] = {
   // %%TABLE Leech3BitPositions, uint8
 };
 
 
-static const uint8_t TABLE_UMBRAL9[9] = {
-  0, 4, 8, 13,14,15, 17,18,19
+static uint8_t TABLE_UMBRAL9[9] = {
+  0, 4, 8, 13, 14, 15, 17, 18, 19
 };
 
 
@@ -316,7 +316,8 @@ int32_t gen_leech3_find_tetrad_leech_mod3(uint64_t a)
 {
     syndrome_type sy;
     uint32_t v, neg, w_add, syn, gc, w_gc, add, sub, w_sub, tet;
-    v = (uint32_t)((a ^ (a >> 24)) & 0xffffff); // non-zero entries of a
+    a = short_3_reduce(a); 
+    v = (uint32_t)((a | (a >> 24)) & 0xffffff); // non-zero entries of a
     neg =  (uint32_t)(a & v);                   // 'negative' entries of a
     sy = bitvector_syndromes(v);
     if (sy.w_v >= 20) {
@@ -388,10 +389,11 @@ int32_t gen_leech3_find_tetrad_leech_mod3(uint64_t a)
                 return augment_bitvector(sub, hexad, 4);
             }
         }
-        // Here (w_sub, w_add) is (1, 0) or (3, 0). We cannot reduce
-        // the case (3, 0). There may be a trick for reducing the case
-        // (1, 0), i.e. an umbral undecad. Here we essentially have to
-        // 'move' duads inside a tetrad. This is not implemented here.
+        // Here (w_sub, w_add) is (1, 0) or (3, 0).
+        if (w_sub == 1) {
+            // Case (1, 0), i.e. support is an umbral undecad.
+            return 0x1000000 + augment_bitvector(sub, v, 4);
+        } 
         return 0;
     }
 
@@ -408,32 +410,54 @@ int32_t gen_leech3_find_tetrad_leech_mod3(uint64_t a)
 #define MAX_LEECH3_G 12
 
 typedef struct {
-    uint64_t a;                // vector in Lecch lattice mod 3 encoding
-    uint32_t g[MAX_LEECH3_G];  // Element of subgroup G_x0 of the Monster
-    uint32_t len_g;            // length of word in component g
-    int32_t status;            // Any nonzero value indicates an error
+    uint64_t a;               // vector in Lecch lattice mod 3 encoding
+    uint64_t status;          // Any nonzero value indicates an error
+    uint32_t g[MAX_LEECH3_G]; // Element of subgroup G_x0 of the Monster
+    uint32_t len_g;           // length of word in component g
 } leech3_record_type;
  
-
 static inline 
 void leech3_record_load(leech3_record_type *r, uint64_t a)
 {
-    r->a = a; r->len_g = r->status = 0; 
+    r->a = a; r->len_g = 0; r->status = 0; 
 }
 
+static
+void leech3_record_error(leech3_record_type *r, uint64_t error)
+{
+    if (r->status == 0) r->status = error & 0x3fffffffffffffffULL; 
+}
 
 static inline 
-void leech3_record_mul_atom(leech3_record_type *r, uint32_t atom)
+uint32_t leech3_record_support(leech3_record_type *r)
 {
-    if (r->status) return;
-    if (r->len_g >= MAX_LEECH3_G) {
-        r->status = -1;
-        return;
-    }
-    r->g[r->len_g++] =
-        gen_leech3_op_vector_word(r->g[r->len_g], &atom, 1);
+    r->a = short_3_reduce(r->a);
+    return (uint32_t)((r->a | (r->a >> 24)) & 0xffffff);
 }
 
+static inline 
+uint32_t leech3_record_neg(leech3_record_type *r)
+{
+    r->a = short_3_reduce(r->a);
+    return (uint32_t)((r->a >> 24) & 0xffffff);
+}
+
+static inline 
+void leech3_record_mul_gen(leech3_record_type *r, uint32_t gen)
+{
+    if (r->status || r->len_g >= MAX_LEECH3_G) {
+        leech3_record_error(r, 1);
+    } else {
+        r->g[r->len_g++] = gen;
+        r->a = gen_leech3_op_vector_atom(r->a, gen);
+    }
+}
+
+static inline 
+void leech3_record_mul_perm(leech3_record_type *r, uint8_t *pi)
+{
+    leech3_record_mul_gen(r, 0x20000000 + mat24_perm_to_m24num(pi));
+}
 
 static inline 
 void leech3_record_mul_perm_map(
@@ -442,69 +466,126 @@ void leech3_record_mul_perm_map(
    uint8_t *dest,
    int32_t length
 )
-// Multiply vector stored in ``r`` with a permutation in the Mathieu
-// group that maps the first ``length`` entries of ``source`` to the
-// first `length`` entries of ``dest``.
 {
-    uint32_t res, atom;
     uint8_t pi[32];
-    if (mat24_perm_from_map(source, dest, length, pi) <= 0) {
-        r->status = -1;
-        return;
+    if (mat24_perm_from_map(source, dest, length, pi) > 0) {
+        leech3_record_mul_perm(r, pi);
+    } else {
+        leech3_record_error(r, 2);
     }
-    atom = 0x20000000 + mat24_perm_to_m24num(pi);
-    leech3_record_mul_atom(r, atom);
 }
 
-
 static inline 
-void leech3_record_mul_perm_tet(
+void leech3_record_mul_perm_tetrad(
    leech3_record_type *r,
    uint32_t tet
 )
-// Multiply vector stored in ``r`` with a permutation in the Mathieu
-// group that maps the tetrad ``tet`` (in vector representation)
-// to the standard tetrad 
 {
     uint8_t tet_bits[32];
     static uint8_t STD_TET[4] = {0, 1, 2, 3};
-    if (mat24_vect_to_bit_list(tet, tet_bits) != 4) {
-        r->status = -1;
-        return;
-    }
-    leech3_record_mul_perm_map(r, tet_bits, STD_TET, 4);
+    if (mat24_vect_to_bit_list(tet, tet_bits) == 4) {
+        leech3_record_mul_perm_map(r, tet_bits, STD_TET, 4);
+    } else {
+        leech3_record_error(r, 3);
+   }    
 }
 
-
 static inline 
-void leech3_record_mul_perm_y(
+void leech3_record_mul_neg_y(
    leech3_record_type *r,
    uint32_t v
 )
-// Multiply vector stored in ``r`` with a generator ``y_v`` in the
-// group G_y0 that negates exactly the bits in GF(2^24) that sre set
-// in the bit vector ``v``. Here ``v`` must be a Golay code word.
 {
     uint32_t gc = mat24_vect_to_gcode(v);
-    if (v & 0xfffff000) {
-        r->status = -1;
-        return;
-    }
-    leech3_record_mul_atom(r, 0x40000000 + gc);
+    if ((gc >> 12) == 0) leech3_record_mul_gen(r, 0x40000000 + gc);
+    else leech3_record_error(r, 4);
 }
 
+static inline 
+void leech3_record_mul_xi_exp(
+   leech3_record_type *r,
+   uint32_t e
+)
+{
+    leech3_record_mul_gen(r, 0x60000000 + (e & 3));
+}
 
+/// @endcond DO_NOT_DOCUMENT
 
+/*******************************************************************
+*** Reduce an element of the Leech lattice mod 3
+*******************************************************************/
 
+/// @cond DO_NOT_DOCUMENT
+
+static inline 
+void reduce_tetrad_leech_mod3(leech3_record_type *r)
+{
+    /* Reduce weight of a vector in the Leech lattice mod 3
+
+    Let ``r`` be an object of class ``Leech3VectorRecord``
+    encoding a vector ``a`` in the Leech lattice mod 3. Let ``t``
+    be  a tetrad given as a bit vector. The weight of  ``a`` is
+    be the number of nonzero bits in ``a``.
+
+    The function tries to reduce the weight of ``a`` by modifying
+    object ``r`` as follows. It first applies a permmutation in the
+    Mathieu group :math:`M_{24}` that  maps ``t`` to the standard
+    tetrad (0,1,2,3). Then it applies a power :math:`\xi^e, e = \pm1`
+    of the generator :math:`\xi`  of :math:`\mbox{Co}_1`.
+    
+    For each tetrad ``t'`` of the standard sextet the function
+    computes a score for exponenets :math:`e = \pm 1`  as follows:
+
+    The score for :math:`e = 1` is +1 if ``t'`` has weight 4 and
+    an odd number of entries -1. The score for :math:`e = -1` is +1
+    if ``t'`` has weight 4 and an even number of entries -1.
+    The score for any :math:`e` is -1 if if ``t'`` has weight 1.
+    In all other cases the score is 0.
+
+    The function succeeds with exponent :math:`e` if the sum of the
+    scores of all tetrads is strictly positive for that exponent.
+    Otherwise it fails and raises an exception.
+
+    We remark that in case of success the weight of (the support of)
+    ``a`` is reduced by a multiple of 3.
+    */
+    uint32_t supp, neg, n_plus, n_minus, n_bad, i, e, n;
+    supp = leech3_record_support(r);
+    neg = leech3_record_neg(r);
+    #define SCORE  0x2000000100010110ULL   
+    n_plus = n_minus = n_bad = 0;
+    for (i = 0; i < 24; i += 4) {
+        uint32_t tet = (supp >> i) & 15, score_tet, neg1, wn;
+        score_tet = (uint32_t)(((uint64_t)SCORE >> (4 * tet)) & 15);
+        if (score_tet == 2) {
+            neg1 = (neg >> i) & tet;
+            wn = (0x6996 >> neg1) & 1;
+            n_plus += wn;
+            n_minus += 1 - wn;
+        } else {
+            n_bad += score_tet;
+        }
+    }
+    if (n_plus >= n_minus) {
+        e = 1; n = n_plus;
+    } else {
+        e = 2; n = n_minus;
+    }
+    if (n <= n_bad) leech3_record_error(r, 10); 
+    leech3_record_mul_xi_exp(r, e);
+}
 
 
 
 /// @endcond DO_NOT_DOCUMENT
 
-
 /*******************************************************************
 *** Special reduction for an umbral undecad
 *******************************************************************/
+
+
+
 
 /// @cond DO_NOT_DOCUMENT
 
@@ -536,12 +617,139 @@ uint32_t neg_dodecad(uint32_t v, uint32_t syn, uint32_t neg)
 }
 
     
-
+static inline
+void reduce_umbral_undecad(leech3_record_type *r)
+{
+    uint32_t v, neg, syn, y, n_swapped, gc_opp, i;
+    v = leech3_record_support(r);
+    neg = leech3_record_neg(r);
+    syn = mat24_syndrome(v, 0); 
+    y = neg_dodecad(v, syn, neg);
+    n_swapped = 0;
+    gc_opp = 0xffffff ^ v ^ syn;
+    for (i = 4; i < 24; i += 4) {
+        uint32_t t = v & (15 << i), duad;
+        if (t && n_swapped < 3) {
+            duad = syn ^ (t & (0 - t));
+            y ^= cohexad(gc_opp, duad, 0) ^ duad;
+            n_swapped += 1;
+        }
+    }
+    leech3_record_mul_neg_y(r, y); 
+    leech3_record_mul_xi_exp(r, 1);
+}
 
 
 
 /// @endcond DO_NOT_DOCUMENT
 
+
+/*******************************************************************
+*** The final permutation
+*******************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+
+
+
+static inline
+void reduce_signs(leech3_record_type *r)
+{
+    uint32_t v, neg, sign_vector = 0, i;
+    v = leech3_record_support(r);
+    neg = leech3_record_neg(r);
+    if (v == 0x111111UL) {
+        for (i = 0; i < 24; i += 4) {
+            if (neg & (1 << i)) sign_vector ^= 0xeeeeeeUL ^ (15UL << i);
+        }
+    } else {
+        for (i = 1; i < 9; ++i) {
+            if ((neg >> i) & 1) sign_vector ^= TABLE_SIGN_OCTADS[i];
+        }
+        if ((neg ^ sign_vector) & 1 && (v & 8) == 0) {
+            sign_vector ^= TABLE_SIGN_OCTADS[0];
+        }
+    }
+   leech3_record_mul_neg_y(r, sign_vector);
+}
+
+
+static inline
+void reduce_final_perm(leech3_record_type *r)
+{
+    uint32_t v, neg, w_v, syn, sub, add, w_sub, w_core, w_add, neg1;
+    int32_t res;
+    uint8_t v_bits[64], pi[32];
+    v = leech3_record_support(r);
+    neg = leech3_record_neg(r);
+    w_v = mat24_bw24(v);
+    if (w_v == 0) return;
+    if (w_v <= 6) {
+        mat24_vect_to_bit_list(v, v_bits);
+        leech3_record_mul_perm_map(r, v_bits, TABLE_POSITIONS[w_v], w_v);
+        reduce_signs(r);
+        return;
+    }
+    syn = mat24_syndrome(v, 0); 
+    sub = syn & ~v;
+    add = syn & v;
+    w_sub =  mat24_vect_to_bit_list(sub, v_bits);
+    w_core =  mat24_vect_to_bit_list(v & ~add, v_bits + w_sub);
+    if (w_v == 9 && w_core == 9) {
+        // Then v is a (signed) umbral nonad
+        res = mat24_perm_from_dodecads(v_bits, TABLE_UMBRAL9, pi);
+        if (res) leech3_record_error(r, 0x30);
+        leech3_record_mul_perm(r, pi);
+        v = leech3_record_support(r);
+        neg = leech3_record_neg(r);
+        if (v != 0xEEE000UL) leech3_record_error(r, 0x31);
+        neg1 = neg_dodecad(0xEEE111UL, 1, neg);
+        leech3_record_mul_neg_y(r, neg | neg1);
+        return;
+    }  
+    w_add = mat24_vect_to_bit_list(add, v_bits + 6);
+    if (w_add == 1 &&  w_v + w_sub == 9) {
+        leech3_record_mul_perm_map(r, v_bits, TABLE_POSITIONS[w_v], w_v);
+        reduce_signs(r);
+    }
+}
+
+/// @endcond DO_NOT_DOCUMENT
+
+/*******************************************************************
+*** The final reduction functionThe final permutation
+*******************************************************************/
+
+/**
+   @brief Yet to be documented!
+
+   Buffer ``g`` must have size at least 12
+*/
+// %%EXPORT px
+int64_t gen_leech3_reduce_leech_mod3(uint64_t v3, uint32_t *g)
+{
+    leech3_record_type r;
+    uint32_t i = 6, tetrad;
+    leech3_record_load(&r, v3);
+    do {
+        tetrad = gen_leech3_find_tetrad_leech_mod3(r.a);
+        if (mat24_bw24(tetrad) != 4) {
+            if (tetrad) leech3_record_error(&r, 0x21);
+            // Activate and thst the following statement!!!!!
+            // if (!r.status) reduce_final_perm(&r);
+            goto done;
+        }
+        leech3_record_mul_perm_tetrad(&r, tetrad & 0xffffff);
+        if (tetrad & 0x1000000) reduce_umbral_undecad(&r);
+        else reduce_tetrad_leech_mod3(&r);
+   } while (--i && !r.status);
+   leech3_record_error(&r, 0x20);
+
+done:
+   if (r.status) return 0ULL - r.status;
+   memcpy(g, r.g, r.len_g * sizeof(uint32_t));
+   return short_3_reduce(r.a) + ((uint64_t)r.len_g << 48);
+}
 
 
 //  %%GEN h

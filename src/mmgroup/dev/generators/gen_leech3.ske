@@ -170,6 +170,16 @@ static inline uint64_t compute_3_sum(uint64_t v31, uint64_t v32)
 *************************************************************************/
 
 
+/**
+  @brief Return reduced form of a vector in the Leech lattice mod 3
+*/
+// %%EXPORT px
+uint64_t gen_leech3_reduce(uint64_t v3)
+{
+    return short_3_reduce(v3);
+}
+
+
 
 /**
   @brief Scalar product of two vectors in the Leech lattice mod 3
