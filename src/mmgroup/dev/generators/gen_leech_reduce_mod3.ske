@@ -670,14 +670,14 @@ void reduce_signs(leech3_record_type *r)
             sign_vector ^= TABLE_SIGN_OCTADS[0];
         }
     }
-   leech3_record_mul_neg_y(r, sign_vector);
+    leech3_record_mul_neg_y(r, sign_vector);
 }
 
 
 static inline
 void reduce_final_perm(leech3_record_type *r)
 {
-    uint32_t v, neg, w_v, syn, sub, add, w_sub, w_core, w_add, neg1;
+    uint32_t v, neg, w_v, syn, w_sub, w_core, w_add, neg1;
     int32_t res;
     uint8_t v_bits[64], pi[32];
     v = leech3_record_support(r);
@@ -691,10 +691,8 @@ void reduce_final_perm(leech3_record_type *r)
         return;
     }
     syn = mat24_syndrome(v, 0); 
-    sub = syn & ~v;
-    add = syn & v;
-    w_sub =  mat24_vect_to_bit_list(sub, v_bits);
-    w_core =  mat24_vect_to_bit_list(v & ~add, v_bits + w_sub);
+    w_sub =  mat24_vect_to_bit_list(syn & ~v, v_bits);
+    w_core =  mat24_vect_to_bit_list(v & ~syn, v_bits + w_sub);
     if (w_v == 9 && w_core == 9) {
         // Then v is a (signed) umbral nonad
         res = mat24_perm_from_dodecads(v_bits, TABLE_UMBRAL9, pi);
@@ -707,9 +705,9 @@ void reduce_final_perm(leech3_record_type *r)
         leech3_record_mul_neg_y(r, neg | neg1);
         return;
     }  
-    w_add = mat24_vect_to_bit_list(add, v_bits + 6);
+    w_add = mat24_vect_to_bit_list(syn & v, v_bits + 6);
     if (w_add == 1 &&  w_v + w_sub == 9) {
-        leech3_record_mul_perm_map(r, v_bits, TABLE_POSITIONS[w_v], w_v);
+        leech3_record_mul_perm_map(r, v_bits, TABLE_POSITIONS[w_v], 7);
         reduce_signs(r);
     }
 }
@@ -719,6 +717,27 @@ void reduce_final_perm(leech3_record_type *r)
 /*******************************************************************
 *** The final reduction functionThe final permutation
 *******************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+uint32_t GOOD_RESULTS[10] = { 
+   0x000000UL, 0x000001UL, 0x00000cUL, 0x00000eUL,  0x0000f1UL,
+   0x0001f3UL, 0x0001feUL, 0x111111UL, 0xeee000UL, 0x10001feUL
+};
+
+static inline
+void check_result(leech3_record_type *r)
+{
+    uint32_t i;
+    for (i = 0; i < 10; ++i)
+        if (r->a == (uint64_t)(GOOD_RESULTS[i])) return;
+    leech3_record_error(r, r->a + (1ULL << 48));
+}
+
+/// @endcond DO_NOT_DOCUMENT
+
+
 
 /**
    @brief Yet to be documented!
@@ -735,8 +754,8 @@ int64_t gen_leech3_reduce_leech_mod3(uint64_t v3, uint32_t *g)
         tetrad = gen_leech3_find_tetrad_leech_mod3(r.a);
         if (mat24_bw24(tetrad) != 4) {
             if (tetrad) leech3_record_error(&r, 0x21);
-            // Activate and thst the following statement!!!!!
-            // if (!r.status) reduce_final_perm(&r);
+            if (!r.status) reduce_final_perm(&r);
+            check_result(&r);
             goto done;
         }
         leech3_record_mul_perm_tetrad(&r, tetrad & 0xffffff);

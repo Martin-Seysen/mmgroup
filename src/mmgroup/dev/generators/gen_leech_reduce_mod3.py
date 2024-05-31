@@ -626,10 +626,9 @@ def sign_octads():
     return _SIGN_OCTADS  
 
 
-def reduce_sign(a):
+def reduce_sign(r):
     SIGN_OCTADS = sign_octads()
-    v = (a ^ (a >> 24)) & 0xffffff
-    neg = (a >> 24) & 0xffffff
+    v, neg = r.support()
     sign_vector = 0
     if v == 0x111111:
         for i in range(0, 24, 4):
@@ -641,8 +640,7 @@ def reduce_sign(a):
                 sign_vector ^= SIGN_OCTADS[i]
         if (neg ^ sign_vector) & 1 and v & 8 == 0:
             sign_vector ^= SIGN_OCTADS[0]
-    #return mat24.vect_to_gcode(sign_vector)
-    return sign_vector
+    r.mul_neg_y(sign_vector)
 
 
 
@@ -654,30 +652,26 @@ def reduce_final_perm(r):
     if w_v <= 6:
         _, v_bits =  mat24.vect_to_bit_list(v)
         r.mul_perm_map(v_bits[:w_v], POSITIONS[w_v, :w_v])
-        r.mul_neg_y(reduce_sign(r.v))
+        reduce_sign(r)
         return
     syn = mat24.syndrome(v, 0)
-    sub = syn & ~v
-    add = syn & v
-    w_core, core_bits =  mat24.vect_to_bit_list(v & ~add)
-    core_bits = core_bits[:w_core]  
-    w_sub, sub_bits =  mat24.vect_to_bit_list(sub)
-    sub_bits = sub_bits[:w_sub]  
+    w_sub, sub_bits =  mat24.vect_to_bit_list(syn & ~v)
+    w_core, core_bits = mat24.vect_to_bit_list(v & ~syn) 
+    source_bits = sub_bits[:w_sub] + core_bits
     if w_v == w_core == 9:
         # Then a is a (signed) umbral nonad
-        pi = mat24.perm_from_dodecads(sub_bits + core_bits, UMBRAL9) 
+        pi = mat24.perm_from_dodecads(source_bits, UMBRAL9) 
         r.mul_perm(pi)
         v, neg = r.support() 
         assert v == 0xEEE000, hex(v)
         neg1 = neg_dodecad(0xEEE111, 1, neg)
         r.mul_neg_y(neg | neg1)
         return
-    w_add, add_bits =  mat24.vect_to_bit_list(add)
-    add_bits = add_bits[:w_add]
+    w_add, add_bits =  mat24.vect_to_bit_list(syn & v)
     if w_add == 1 and  w_v + w_sub == 9:
-        base_bits = (sub_bits + core_bits)[:6] + add_bits
-        r.mul_perm_map(base_bits, POSITIONS[w_v, :7])
-        r.mul_neg_y(reduce_sign(r.v))
+        source_bits = source_bits[:6] + add_bits[:1]
+        r.mul_perm_map(source_bits, POSITIONS[w_v, :7])
+        reduce_sign(r)
     return
 
 ###############################################################
@@ -939,7 +933,7 @@ class Tables(MockupTables):
 
 
 if __name__ == "__main__":
-    test_reduce_leech_mod3(1.e5, verbose = 0)
+    test_reduce_leech_mod3(1.e5, verbose = 1)
 
 
 

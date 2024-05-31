@@ -55,7 +55,6 @@ def reduce_leech_mod3_C(a):
         raise ValueError(ERR % hex(abs(res)))
     return g[: res >> 48], res & 0xffffffffffff
 
-@pytest.mark.mmm
 @pytest.mark.gen_xi
 def test_gen_leech3_find_tetrad_leech_mod3(verbose = 3):
     """Test function ``reduce_type2`` """
@@ -69,8 +68,7 @@ def test_gen_leech3_find_tetrad_leech_mod3(verbose = 3):
         ok = tet == tet_ref
         g_ref, a1_ref = reduce_leech_mod3(a, verbose)
         g, a1 = reduce_leech_mod3_C(a)
-        # Activate and test the following statment!!!!!!
-        # ok = ok and list(g) == list(g_ref) and a1_ref == a1
+        ok = ok and list(g) == list(g_ref) and a1_ref == a1
 
         if verbose or not ok:           
             msg = MSG if tet >= 0 else ERR
