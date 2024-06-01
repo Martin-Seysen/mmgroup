@@ -68,7 +68,6 @@ on  \f$\Lambda / 3\Lambda\f$.
 
 
 
-
 <table>
 <caption id="multi_row">Types of vectors in Leech lattice mod 3 </caption>
 <tr>
@@ -78,10 +77,6 @@ on  \f$\Lambda / 3\Lambda\f$.
    <th> \f$\mbox{M}_{24}\f$ set
    <th> support
    <th> neg
-</tr>
-<tr>
-   <td colspan="3"> **Orbit on Leech lattice mod 3** 
-   <td colspan="3"> **Representative** 
 </tr>
 <tr>
    <td> \f$0\f$
@@ -165,9 +160,22 @@ on  \f$\Lambda / 3\Lambda\f$.
 </table>
 
 
-
-
 */
+
+
+
+
+/// @cond READTHEDOCS_DOES_NOT_LIKE_THIS_COMBINATION_OF_HTML_TAGS 
+/*************************************************************************
+!! The following HTML code does not work in Readthedocs. So the table in
+!! the file header cannot be made as nice as it should be.
+!!
+!!  <tr>
+!!   <th colspan="3"> Orbit on Leech lattice mod 3 
+!!   <th colspan="3"> Representative 
+!! </tr>
+**************************************************************************/
+/// @endcond
 
 
 
