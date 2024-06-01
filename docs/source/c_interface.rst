@@ -169,6 +169,13 @@ C interface for file gen_leech_reduce_22.c
 
 .. doxygenfile:: gen_leech_reduce_22.c
 
+
+C interface for file gen_leech_reduce_mod3.c
+............................................
+
+.. doxygenfile:: gen_leech_reduce_mod3.c
+
+
 C interface for file gen_union_find.c
 ............................................
 

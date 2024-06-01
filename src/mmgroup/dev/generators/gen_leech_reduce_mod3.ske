@@ -1,7 +1,65 @@
-/** @file gen_leech_reduce_od3.c
+/** @file gen_leech_reduce_mod3.c
 
-This is yet a stub!!!
+The orbits of the automorphism group \f$2.\mbox{Co}_{1}\f$ of the Leech
+lattice \f$\Lambda\f$ on vectors of norm up to 22 are described in
+[CS99], Ch. 10.3.
+There the *type* of a vector is its halved norm; and a more specific
+type (e.g. type \f$9_{33}\f$) is is assigned to each orbit of type 11
+or smaller. 
+
+Let \f$\Lambda / 3\Lambda\f$ be the Leech lattice mod 3. The
+automorphism group of \f$\Lambda / 3\Lambda\f$
+is also \f$2.\mbox{Co}_{1}\f$.
+A vector \f$v\f$ in \f$\Lambda / 3\Lambda\f$ has a preimage 
+in \f$\Lambda\f$ of type at most 9; and all shortest preimages
+of \f$v\f$ in \f$\Lambda\f$ are in the same \f$2.\mbox{Co}_{1}\f$
+orbit. So the \f$2.\mbox{Co}_{1}\f$ orbit of a vector 
+in \f$\Lambda / 3\Lambda\f$ may be described by the type
+of the orbit of its shortest preimage in \f$\Lambda\f$.
+
+Then main function ``gen_leech3_reduce_leech_mod3`` in this module
+maps a vector in the Leech lattice modulo 3 to a representative
+of its \f$2.\mbox{Co}_{1}\f$ orbit.
+
+More details are yet to be documented!
+
+The following table is yet to be documented!
+
+<table>
+<caption id="multi_row">Types of vectors in Leech lattice mod 3 </caption>
+<tr><th colspan="3"> Type in Leech lattice mod 3 <th colspan="3"> Representative
+<tr><th> Leech type   <th>  Aut                           <th> n 
+                      <th> \f$M_{24}\f$ set               <th> support      <th> neg
+<tr><td> \f$0\f$      <td> \f$2.\mbox{Co}_{1}\f$          <td> 1
+                      <td> \f$(0)\f$                      <td> ``0x000000`` <td>
+<tr><td> \f$2\f$      <td> \f$\mbox{Co}_2\f$              <td> 1
+                      <td> \f$S_2\f$                      <td> ``0x00000c`` <td>
+<tr><td> \f$3\f$      <td> \f$\mbox{Co}_3\f$              <td> 1
+                      <td> \f$S_9\f$                      <td> ``0x0001ff`` <td> ``[0]``
+<tr><td> \f$4\f$      <td> \f$\mbox{M}_{23}\f$            <td> 1
+                      <td> \f$S_1\f$                      <td> ``0x000001`` <td>
+<tr><td> \f$5\f$      <td> \f$\mbox{McL}\f$               <td> 1
+                      <td> \f$T_8\f$                      <td> ``0x0001fe`` <td>
+<tr><td> \f$6_{23}\f$ <td> \f$\mbox{M}_{24}\f$            <td> 1
+                      <td> \f$U_6\f$                      <td> ``0x111111`` <td>
+<tr><td> \f$6_{22}\f$ <td> \f$\mbox{PSU}_6(2):S_3\f$      <td> 6
+                      <td> \f$S_3\f$                      <td> ``0x00000e`` <td>
+<tr><td> \f$7\f$      <td> \f$\mbox{HS}:{2}\f$            <td> 2
+                      <td> \f$U_7\f$                      <td> ``0x0001f3`` <td>
+<tr><td> \f$8_{42}\f$ <td> \f$2^{1+8}.\mbox{A}_{9}\f$     <td> 9
+                      <td> \f$S_5\f$                      <td> ``0x0000f1`` <td>
+<tr><td> \f$9_{33}\f$ <td> \f$3^6:2.\mbox{M}_{12}\f$      <td> 36
+                      <td> \f$U_9\f$                      <td> ``0xeee000`` <td>
+</table>
+
+
+
+
+
+
 */
+
+
 
 
 /*************************************************************************
@@ -275,7 +333,12 @@ uint32_t find_tetrad_16_large(uint32_t gc, uint32_t sub)
 
 
 /**
-    @brief Find tetrad suitable for reduction in Leech lattice mod 3
+    @brief Auxiliary function for function ``gen_leech3_reduce_leech_mod3``
+
+    This function is not for public use!
+
+    The function tries to find tetrad suitable for reducing a
+    vector in the Leech lattice mod 3
 
     Let ``a`` be a vector in the Leech lattice mod 3 given in
     Leech lattice mod 3 encoding. Let the ``v`` be the support
@@ -510,7 +573,7 @@ void leech3_record_mul_xi_exp(
     leech3_record_mul_gen(r, 0x60000000 + (e & 3));
 }
 
-/// @endcond DO_NOT_DOCUMENT
+/// @endcond
 
 /*******************************************************************
 *** Reduce an element of the Leech lattice mod 3
@@ -578,7 +641,7 @@ void reduce_tetrad_leech_mod3(leech3_record_type *r)
 
 
 
-/// @endcond DO_NOT_DOCUMENT
+/// @endcond
 
 /*******************************************************************
 *** Special reduction for an umbral undecad
@@ -641,7 +704,7 @@ void reduce_umbral_undecad(leech3_record_type *r)
 
 
 
-/// @endcond DO_NOT_DOCUMENT
+/// @endcond
 
 
 /*******************************************************************
@@ -712,7 +775,7 @@ void reduce_final_perm(leech3_record_type *r)
     }
 }
 
-/// @endcond DO_NOT_DOCUMENT
+/// @endcond
 
 /*******************************************************************
 *** The final reduction functionThe final permutation
@@ -735,14 +798,16 @@ void check_result(leech3_record_type *r)
     leech3_record_error(r, r->a + (1ULL << 48));
 }
 
-/// @endcond DO_NOT_DOCUMENT
+/// @endcond
 
 
 
 /**
-   @brief Yet to be documented!
+   @brief Map a vector in \f$\Lambda / 3\Lambda\f$ to a representative of its orbit 
 
-   Buffer ``g`` must have size at least 12
+   This function is yet to be documented!!!
+
+   Buffer ``g`` must have size at least 12.
 */
 // %%EXPORT px
 int64_t gen_leech3_reduce_leech_mod3(uint64_t v3, uint32_t *g)
