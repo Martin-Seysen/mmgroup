@@ -72,16 +72,16 @@ on  \f$\Lambda / 3\Lambda\f$.
 <table>
 <caption id="multi_row">Types of vectors in Leech lattice mod 3 </caption>
 <tr>
-   <th colspan="3"> Orbit on Leech lattice mod 3 
-   <th colspan="3"> Representative 
+   <td colspan="3"> Orbit on Leech lattice mod 3 
+   <td colspan="3"> Representative 
 </tr>
 <tr>
-   <th> Leech type
-   <th>  Aut
-   <th> n
-   <th> \f$\mbox{M}_{24}\f$ set
-   <th> support
-   <th> neg
+   <td> Leech type
+   <td>  Aut
+   <td> n
+   <td> \f$\mbox{M}_{24}\f$ set
+   <td> support
+   <td> neg
 </tr>
 <tr>
    <td> \f$0\f$
