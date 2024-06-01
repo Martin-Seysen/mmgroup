@@ -1,19 +1,19 @@
 /** @file gen_leech_reduce_mod3.c
 
 The orbits of the automorphism group \f$2.\mbox{Co}_{1}\f$ of the Leech
-lattice \f$\Lambda\f$ on vectors of norm up to 22 are described in
-[CS99], Ch. 10.3.
+lattice \f$\Lambda\f$ on the vectors of norm up to 22 are described in
+[CS99], Ch. 10.3.3.
 There the *type* of a vector is its halved norm; and a more specific
 type (e.g. type \f$9_{33}\f$) is is assigned to each orbit of type 11
-or smaller. 
+or smaller.
 
 Let \f$\Lambda / 3\Lambda\f$ be the Leech lattice mod 3. The
 automorphism group of \f$\Lambda / 3\Lambda\f$
 is also \f$2.\mbox{Co}_{1}\f$.
-A vector \f$v\f$ in \f$\Lambda / 3\Lambda\f$ has a preimage 
+A vector \f$v\f$ in \f$\Lambda / 3\Lambda\f$ has a preimage
 in \f$\Lambda\f$ of type at most 9; and all shortest preimages
 of \f$v\f$ in \f$\Lambda\f$ are in the same \f$2.\mbox{Co}_{1}\f$
-orbit. So the \f$2.\mbox{Co}_{1}\f$ orbit of a vector 
+orbit. So the \f$2.\mbox{Co}_{1}\f$ orbit of a vector
 in \f$\Lambda / 3\Lambda\f$ may be described by the type
 of the orbit of its shortest preimage in \f$\Lambda\f$.
 
@@ -21,28 +21,72 @@ Then main function ``gen_leech3_reduce_leech_mod3`` in this module
 maps a vector in the Leech lattice modulo 3 to a representative
 of its \f$2.\mbox{Co}_{1}\f$ orbit.
 
-More details are yet to be documented!
 
-The following table is yet to be documented!
+In the following table the first three columns describe the
+orbits of \f$2.\mbox{Co}_{1}\f$ on  \f$\Lambda / 3\Lambda\f$.
+
+
+ * Column 1 is the name of the orbit, using the terminoloy in [CS99],
+   Ch. 10.3.3.
+
+ * Column 2 describes the automorphism group of the orbit.
+
+ * Column 3 contains the number of shortest vectors
+   of \f$\Lambda\f$  in the orbit.
+
+A vector \f$v\f$ in \f$\Lambda / 3\Lambda\f$ is described by the
+entries (modulo 3) of any preimage of \f$v\f$ in \f$\Lambda\f$,
+using the natural co-ordinate frame of  \f$\Lambda\f$. The *support*
+of vector \f$v\f$ is the set of the nonzero co-ordiantes of \f$v\f$.
+The support of \f$v\f$ has a natural interpretation as a bit vector in
+the underlying space \f$\mbox{GF}_2^{24}\f$ of the Golay code used in
+the construction of \f$\Lambda\f$. The orbits of the automorphism
+group \f$\mbox{M}_{24}\f$ of the Golay code on \f$\mbox{GF}_2^{24}\f$
+are described in [CS99], Ch. 10.2.6.
+In all but one case all coordinates of our chosen representative of an
+orbit of  \f$\Lambda / 3\Lambda\f$ are 0 or 1.
+
+
+The last three columns of the table describe our chosen
+representative \f$v\f$ of an orbit of \f$2.\mbox{Co}_{1}\f$
+on  \f$\Lambda / 3\Lambda\f$.
+
+ * Column 4 contains the name of the orbit of the support of \f$v\f$
+   under the action of \f$\mbox{M}_{24}\f$, as described in [CS99],
+   Ch. 10.2.6.
+
+ * Column 5 contains the suport of \f$v\f$ as a bit vector. Here we use
+   the basis of the natural co-ordinate frame of \f$\Lambda\f$. This
+   basis corresponds to the basis of \f$\mbox{GF}_2^{24}\f$ described
+   in the *mmgroup API reference*,
+   section *The basis of the Golay code and of its cocode*.  We adopt
+   the hexadecimal notation for bit vectors in \f$\mbox{GF}_2^{24}\f$
+   from that section.
+
+ * Column 6 contains the list of the indices of the coordinates
+   of  \f$v\f$ that are equal to -1 (if any).
+
+
+
 
 <table>
 <caption id="multi_row">Types of vectors in Leech lattice mod 3 </caption>
 <tr><th colspan="3"> Type in Leech lattice mod 3 <th colspan="3"> Representative
-<tr><th> Leech type   <th>  Aut                           <th> n 
-                      <th> \f$M_{24}\f$ set               <th> support      <th> neg
+<tr><th> Leech type   <th>  Aut                           <th> n
+                      <th> \f$\mbox{M}_{24}\f$ set        <th> support      <th> neg
 <tr><td> \f$0\f$      <td> \f$2.\mbox{Co}_{1}\f$          <td> 1
                       <td> \f$(0)\f$                      <td> ``0x000000`` <td>
 <tr><td> \f$2\f$      <td> \f$\mbox{Co}_2\f$              <td> 1
                       <td> \f$S_2\f$                      <td> ``0x00000c`` <td>
 <tr><td> \f$3\f$      <td> \f$\mbox{Co}_3\f$              <td> 1
                       <td> \f$S_9\f$                      <td> ``0x0001ff`` <td> ``[0]``
-<tr><td> \f$4\f$      <td> \f$\mbox{M}_{23}\f$            <td> 1
+<tr><td> \f$4\f$      <td> \f$2^{11}.\mbox{M}_{23}\f$     <td> 1
                       <td> \f$S_1\f$                      <td> ``0x000001`` <td>
 <tr><td> \f$5\f$      <td> \f$\mbox{McL}\f$               <td> 1
                       <td> \f$T_8\f$                      <td> ``0x0001fe`` <td>
 <tr><td> \f$6_{23}\f$ <td> \f$\mbox{M}_{24}\f$            <td> 1
                       <td> \f$U_6\f$                      <td> ``0x111111`` <td>
-<tr><td> \f$6_{22}\f$ <td> \f$\mbox{PSU}_6(2):S_3\f$      <td> 6
+<tr><td> \f$6_{22}\f$ <td> \f$\mbox{PSU}_6(2):S_3\f$      <td> 3
                       <td> \f$S_3\f$                      <td> ``0x00000e`` <td>
 <tr><td> \f$7\f$      <td> \f$\mbox{HS}:{2}\f$            <td> 2
                       <td> \f$U_7\f$                      <td> ``0x0001f3`` <td>
@@ -51,8 +95,6 @@ The following table is yet to be documented!
 <tr><td> \f$9_{33}\f$ <td> \f$3^6:2.\mbox{M}_{12}\f$      <td> 36
                       <td> \f$U_9\f$                      <td> ``0xeee000`` <td>
 </table>
-
-
 
 
 
