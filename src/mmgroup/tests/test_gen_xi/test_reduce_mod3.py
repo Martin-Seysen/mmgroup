@@ -9,6 +9,8 @@ from __future__ import  unicode_literals
 from random import randint, choices, shuffle, sample
 from numbers import Integral
 from collections import defaultdict
+import time
+
 
 import numpy as np
 import pytest
@@ -27,13 +29,15 @@ from mmgroup.dev.generators.gen_leech_reduce_mod3 import test_reduce_leech_mod3
 from mmgroup.generators import gen_leech3_find_tetrad_leech_mod3
 from mmgroup.generators import gen_leech3_reduce_leech_mod3
 from mmgroup.generators import gen_leech3_reduce
-
+from mmgroup.generators import gen_leech3_add, gen_leech3_neg
+from mmgroup.generators import gen_leech3to2
 
 #####################################################################
 # Test function gen_leech3_find_tetrad_leech_mod3
 #####################################################################
+
 #####################################################################
-# Testing function reduce_type_2
+# Testing function gen_leech3_find_tetrad_leech_mod3
 
 
 
@@ -91,4 +95,79 @@ def test_gen_leech3_find_tetrad_leech_mod3(verbose = 3):
                 print("g obtained", [hex(x) for x in g])
                 raise ValueError(err)
                 pass
+
+
+#####################################################################
+# Benchmarking function gen_leech3_find_tetrad_leech_mod3
+
+class RandomVectorPoolMod3:
+    N = 100
+    N2 = 0x2000
+    assert (N2 & (N2 - 1)) == 0
+    MASK = N2 - 1
+    def __init__(self):
+        a = np.zeros(self.N, dtype = np.uint64)
+        VMAX  = (1 << 48) - 1
+        for i in range(self.N):
+            a[i] = randint(0, VMAX)
+        for y in range(3*self.N):
+            i = randint(0, self.N - 1)
+            j = randint(0, self.N - 1)
+            a[i] = gen_leech3_add(a[i], a[j])
+            k = randint(0, self.N - 1)
+            a[k] = gen_leech3_neg(a[k])
+        self.a = a
+        self.ind = np.random.randint(0, self.N - 1, (self.N2, 3),
+            dtype = np.uint8)
+        self.n = 0
+
+    def rand(self):
+        i, j, k = self.ind[self.n & self.MASK]
+        self.n += 1
+        res = self.a[i] = gen_leech3_add(self.a[i], self.a[j])
+        self.a[k] = gen_leech3_neg(self.a[k])
+        return res
+
+    def rand_array(self, length):
+        ar = np.zeros(length, dtype = np.uint64)
+        for i in range(length):
+            ar[i] = self.rand()
+        return ar
+
+@pytest.mark.bench
+@pytest.mark.gen_xi
+def test_bench_reduce_leech_mod3():
+    S = "Run time of function %-30s is %.03f us"
+    rng = RandomVectorPoolMod3()
+    LEN = 0x10000
+    MASK = LEN - 1
+    a = rng.rand_array(LEN)
+    g = np.zeros(12, dtype = np.uint32)
+
+    t_start = time.process_time()
+    N = 1000000
+    for i in range(N):
+        v = a[i & MASK]
+    t = time.process_time() - t_start
+    t0 = t * 1.0e6 / N
+    print("\n" + S % ("<empty>", t0))
+
+    N = 200000
+    t_start = time.process_time()
+    for i in range(N):
+        v = a[i & MASK]
+        gen_leech3_reduce_leech_mod3(v, g)
+    t = time.process_time() - t_start
+    t1 = t * 1.0e6 / N  - t0
+    print(S % ("gen_leech3_reduce_leech_mod3", t1))
+
+    N = 1000000
+    t_start = time.process_time()
+    for i in range(N):
+        v = a[i & MASK]
+        u = gen_leech3to2(v)
+    t = time.process_time() - t_start
+    t1 = t * 1.0e6 / N - t0
+    print(S % ("gen_leech3to2", t1))
+
 

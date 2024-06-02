@@ -251,7 +251,10 @@ def find_tetrad_leech_mod3(a):
     For characterizing the bit vector ``v`` we use the termminology
     in [CS99], Ch. 10.2.6.
 
-    TODO: document the case of an umbral undecad!
+    If ``a`` is an umbral undecad then the function returns a
+    tetrad ``t`` such that ``a`` intersects with ``t`` in 3 points,
+    and with all other tetrads in the same sextet in 0 or 2  points.
+    In this special case bit 24 of the return value will be set.
     """
     if import_pending:
         import_all()
@@ -346,7 +349,7 @@ class Leech3VectorRecord:
     *Leech lattice mod 3 encoding*.  Attribute ``g`` contains the word
     of all generators of the group :math:`G_{x0}` entered with method
     ``mul_gen`` as a numpy array of type ``numpy.uint32``, encoded as
-    described in file ``mmgroup_generators.h``.. 
+    described in file ``mmgroup_generators.h``.
     """
     MAX_LEECH3_G = 12
     __slots__ = 'v', '_g', 'len_g'
@@ -680,6 +683,20 @@ def reduce_final_perm(r):
 
 
 def reduce_leech_mod3(a, verbose = 0):
+    """Find orbit of a vector in the Leech lattice mod 3
+    
+    This function maps a vector ``v3`` in the Leech lattice (given
+    in **Leech lattice mod 3 encoding**) to the representative ``v3'``
+    of its orbit under the action of the group :math:`2.\mbox{Co}_1`.
+    That representative is defined as described in the header of this
+    file. The function also computes an element ``g`` of the
+    group :math:`2.\mbox{Co}_1` with ``v3 * g = v3'``.
+    
+    The function returns the pair ``(g, v3')``, where ``g`` element
+    of :math:`2.\mbox{Co}_1` encoded an a numpy array as described in
+    file ``mmgroup_generators.h``. The vector ``v3'`` is returned
+    as an integer in Leech lattice mod 3 encoding.
+    """
     if import_pending:
         import_all()
 
