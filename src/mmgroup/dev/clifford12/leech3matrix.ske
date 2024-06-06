@@ -18,7 +18,7 @@
   of that bit field are zero.
 
   There are functions for loading such a matrix ``m`` from a
-  vector in a represenation of the  monster, for elechonization
+  vector in a representation of the  monster, for elechonization
   of ``m``, for computing the kernel of ``m`` etc.
 */
 
@@ -133,16 +133,57 @@ extern "C" {
 
 
 
-
-
 /*************************************************************************
-*** Echelonize a 24 times 24 times matrices mod 3
+*** Macros for 24 times 24 times matrices mod 3
 *************************************************************************/
 
 // %%WITH N_COL = 3
 
 
 /// @cond DO_NOT_DOCUMENT 
+
+
+
+// Add ``(-1)**sign * src`` to ``dest``.
+// Here ``p_src`` and ``p_dest`` should be of type uint64_t* and point
+// to rows ``src`` and ``dest`` of  matrices in **matrix mod 3**
+// encoding  as documented in the header of this file. ``sign`` must
+// be a variable of type uint64_t.
+#define ADDROW_MOD3(p_dest, p_src, sign) \
+    sign = (0 - ((sign) & ONE)) & NEG_MASK_MOD3; \
+    // %%FOR* j in range(N_COL)
+    (p_dest)[%{j}] += ((p_src)[%{j}] ^ (sign)); \
+    REDUCE_MOD3((p_dest)[%{j}]); \
+    // %%END FOR
+
+
+// Copy row from ``p_src`` to ``p_dest``
+#define COPYROW_MOD3(p_dest, p_src) \
+    // %%FOR* j in range(N_COL)
+    (p_dest)[%{j}] = (p_src)[%{j}]; \
+    // %%END FOR
+
+
+// obtain pointer to row ``i`` of matrix ``p_src``
+#define ROW_MOD3(p_src, i)  ((p_src) + (i) * %{int:N_COL})
+
+
+// obtain entry ``j`` in row ``p_src``
+#define ROWENTRY_MOD3(p_src, j) \
+   (((p_src)[(j) >> 4] >> (((j) & 15) << 2)) & 3)
+
+/// @endcond
+
+
+
+/*************************************************************************
+*** Echelonize a 24 times 24 times matrices mod 3
+*************************************************************************/
+
+
+
+
+/// @cond DO_NOT_DOCUMENT
 
 /** @brief Auxiliary function for function ``leech3matrix_echelon``.
 
@@ -175,11 +216,8 @@ pivot_found:
     for (p_row = p_pivot + %{N_COL}; p_row < p_end; p_row += %{N_COL}) {
         sign =  (p_row[col_ofs] >> col_sh) + 1;
         if (sign & 2) {
-            sign = (0 - ((sign + sign_pivot) & ONE)) & NEG_MASK_MOD3;
-            // %%FOR* i in range(N_COL)
-            p_row[%{i}] += (p_pivot[%{i}] ^ sign);
-            REDUCE_MOD3(p_row[%{i}]);
-            // %%END FOR
+            sign += sign_pivot;
+            ADDROW_MOD3(p_row, p_pivot, sign)
         }
     }
 
@@ -198,19 +236,269 @@ pivot_found:
    in the header of this file. That matrix is transformed to row
    echelon form. We echelonize columns 0,...,23 of matrix ``a`` in
    that order. The matrix is not converted to reduced echelon form.
+
+   The function returns the number of rows in the echelonized matrix
+   that are nonzero in columns 0,...,23.
 */
 
 // %%EXPORT px
-void leech3matrix_echelon(uint64_t *a)
+uint32_t leech3matrix_echelon(uint64_t *a)
 {
     uint64_t *p_a = a, *p_end = a +  %{int:24*N_COL};
     uint_fast32_t col;
     for (col = 0; col < 24; ++col) {
         p_a += pivot3(p_a, p_end, col);
     }
+    return (uint32_t)(((p_a - a) * %{int:1+2**24//N_COL}) >> 24);
 }
 
 
+/*************************************************************************
+*** Change a 24 times 24 times matrix mod 3 to reduced echelonized form
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+
+
+/** @brief Auxiliary function for function ``leech3matrix_reduced_echelon``.
+
+   Here ``p_a`` is a submatrix of a matrix ``a`` in  **matrix mod 3**
+   encoding  as documented in the header of this file. ``p_a`` should
+   point to a row ``i`` of matrix ``a``. The function scans for the
+   lowest column index ``j`` such that entry in column ``j`` of that
+   row is nonzero. It possibly changes the sign of row ``i`` so that
+   the entry in column ``j`` will be one. Then it zeros the entries
+   in column ``j`` in the ``n_up`` rows before row ``i``  by adding
+   a multiple of row ``i``.
+
+   The function returns the column index ``j``. If the vector in
+   row ``i`` is zero then the function performs no action and
+   returns  %{int:N_COL << 4}.
+*/
+static inline uint32_t pivot3_up(uint64_t *p_a, uint32_t n_up)
+{
+    uint64_t v, sign, *p_up;
+    uint_fast32_t i, col, n;
+    for (i = 0; i < %{N_COL}; ++i) {
+        v = (p_a[i] ^ (p_a[i] >> 1)) & 0x1111111111111111ULL;
+        if (v) goto found;
+    }
+    return %{int:N_COL << 4};
+found:
+    col = uint64_low_bit(v);
+    if ((p_a[i] >> col) & 2) {
+        // %%FOR* j in range(N_COL)
+        p_a[%{j}] ^= NEG_MASK_MOD3;
+        // %%END FOR
+    }
+
+    p_up = p_a;
+    for (n = 0; n < n_up; ++n) {
+        p_up -= %{N_COL};
+        sign =  (p_up[i] >> col);
+        if ((sign + 1) & 2) {
+            ADDROW_MOD3(p_up, p_a, sign)
+        }
+    }
+    return (i << 4) + (col >> 2);
+}
+
+
+/// @endcond
+
+
+/** @brief Convert matrix of integers mod 3 to reduced echelonized form.
+
+   Here ``a`` is a matrix in  **matrix mod 3** encoding as documented
+   in the header of this file. That matrix is converted to reduced row
+   echelon form.  We echelonize columns 0,...,47 of matrix ``a`` in
+   that order. The leading nonzero value in a row is always equal to 1.
+
+   The function returns the set of columns used for pivoting as a bit
+   field;  i.e. bit ``i`` in the returned integer is set if
+   column ``i`` has been used for pivoting.
+
+   Parameter ``d`` should usually be ``0``. In case ``d > 0`` we make
+   no atttempt to zero an entry ``(i, j)`` if ``j >= d `` and the
+   leading coefficient of row ``i`` is in a column with idnex ``< d``.
+*/
+
+// %%EXPORT px
+uint64_t leech3matrix_reduced_echelon(uint64_t *a, uint32_t d)
+{
+    uint64_t *p_a = a, *p_end = a + %{int:24*N_COL}, bitmap = 0, b;
+    uint_fast32_t col, row = 0;
+    for (col = 0; col < 48; ++col) {
+        if (col == d) row = 0;
+        if (pivot3(p_a, p_end, col)) {
+            b = pivot3_up(p_a, row);
+            bitmap |= ONE << b;
+            p_a += %{N_COL};
+            ++row;
+        }
+    }
+    return bitmap;
+}
+
+
+
+
+/*************************************************************************
+*** Intersect kernel and image in a 24 times 24 times matrix mod 3
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+typedef struct {
+    uint64_t *a;          // pointer to matrix
+    uint8_t row_mark[24]; // marked rows contain intersection
+    uint8_t col_piv[48];  // row used for pivoting a column
+    uint32_t n;           // No of columns in one of the matrices
+    uint32_t len_img;     // length of image matrix
+    uint32_t len_isect;   // length of intersection kernel/image
+} mat_mod3_type;
+
+
+static inline
+void _load_matrix(mat_mod3_type *m, uint64_t *a)
+{
+    uint64_t bitmap = leech3matrix_reduced_echelon(m->a = a, 24);
+    uint32_t i, row = 0;
+    memset(m->col_piv, 0xff, sizeof(m->col_piv));
+    for (i = 0;  i < 48; ++i) if ((bitmap >> i) & 1) {
+         m->col_piv[i] = (uint8_t)row;
+         ++row;
+    }
+    m->len_img = mat24_bw24((uint32_t)(bitmap & 0xffffffUL));
+    m->n = 24;
+}
+
+
+
+// This array will be deleted when development has been finished!
+static uint8_t _mark[72];
+
+// This function will be deleted when development has been finished!
+// %%EXPORT px
+void debug_mod3(uint8_t *data)
+{
+memcpy(data, _mark, 72);
+}
+
+
+static inline
+void _intersect_ker_im(mat_mod3_type *m)
+{
+    uint_fast32_t i, j, n = m->n;
+    uint64_t r0[%{N_COL}], r1[%{N_COL}], *a = m->a, x;
+    memset(m->row_mark, 0, sizeof(m->row_mark));
+    m->len_isect = 0;
+    for (i = 0; i < n; ++i)  {
+        uint32_t equ = 0;
+        uint64_t *p_row0, *p_row1, *p_add;
+        if (m->col_piv[i] >= n || m->col_piv[i + n] >= n) continue;
+        equ = 1;
+        p_row0 = ROW_MOD3(a, m->col_piv[i]);
+        p_row1 = ROW_MOD3(a, m->col_piv[i + n]);
+        COPYROW_MOD3(r0, p_row0)
+        COPYROW_MOD3(r1, p_row1)
+        for (j = i + 1; j < n; ++j) {
+            uint32_t piv0 = m->col_piv[j];
+            uint32_t piv1 = m->col_piv[j + n];
+            if (piv0 < n) {
+                if (piv1 < n) {
+                     continue;
+                } else {
+                    x = ROWENTRY_MOD3(r1, j + n) + 1;
+                    if ((x) & 2) {
+                        p_add = ROW_MOD3(a, piv0);
+                        ADDROW_MOD3(r0, p_add, x)
+                    }
+                }
+            } else {
+                if (piv1 < n) {
+                    x = ROWENTRY_MOD3(r0, j) + 1;
+                    if ((x) & 2) {
+                        p_add = ROW_MOD3(a, piv1);
+                        ADDROW_MOD3(r1, p_add, x)
+                    }
+                } else {
+                    x = ROWENTRY_MOD3(r0, j);
+                    x += ROWENTRY_MOD3(r1, j + n) ^ 3;
+                    // Set equ = 0 if r0[j] and r1[j+1] are not equal
+                    x += x >> 2;
+                    if ((x + 1) & 2) {
+                        equ = 0;
+                        break;
+                    }
+                }
+            }
+        }
+        if (equ) {
+            m->row_mark[m->col_piv[i]] =
+                 m->row_mark[m->col_piv[i + n]] = 1;
+            ++m->len_isect;
+            COPYROW_MOD3(p_row0, r0)
+            COPYROW_MOD3(p_row1, r1)
+        }
+    }
+    memcpy(_mark, m->col_piv, 48);
+    memcpy(_mark + 48, m->row_mark, 24);
+}
+
+
+
+
+static inline
+int32_t _sort_matrix(uint64_t *a, uint8_t *marker, uint32_t n)
+{
+     #define BUF_LEN 12
+     uint64_t buf[BUF_LEN * %{N_COL}];
+     uint64_t *p_buf_fill = buf + BUF_LEN * %{N_COL};
+     uint64_t *p_a_end = a + n * %{N_COL};
+     uint64_t *p_a_fill = p_a_end;
+     uint8_t *p_marker = marker + n;
+     while (p_a_end > a) {
+         p_a_end -=  %{N_COL};
+         if (*--p_marker) {
+             p_buf_fill -= %{N_COL};
+             if (p_buf_fill < buf) return -1;
+             COPYROW_MOD3(p_buf_fill, p_a_end)
+         } else {
+             p_a_fill -= %{N_COL};
+             COPYROW_MOD3(p_a_fill, p_a_end)
+         }
+     }
+     memcpy(a, p_buf_fill, (p_a_fill - a) * sizeof(uint64_t));
+     return 0;
+}
+
+
+/// @endcond
+
+
+
+/** @brief Intersection of kernel and image of matrix of integers mod 3
+
+The function is still under development!!!
+*/
+// %%EXPORT px
+int64_t leech3matrix_kernel_image(uint64_t *a)
+{
+    mat_mod3_type m;
+    _load_matrix (&m, a);
+    _intersect_ker_im(&m);
+    if (m.len_img > m.n) return -1;
+    if (_sort_matrix(a, m.row_mark, m.len_img)) return -2;
+    if (_sort_matrix(ROW_MOD3(a, m.len_img), m.row_mark + m.len_img,
+          m.n -  m.len_img)) return -3;
+    return m.len_img + (m.len_isect << 8);
+}
 
 
 

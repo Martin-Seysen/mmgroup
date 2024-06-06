@@ -2,7 +2,7 @@ import sys
 import os
 import warnings
 
-from random import randint
+from random import randint, sample
 from collections import OrderedDict
 
 import numpy as np
@@ -11,6 +11,8 @@ import pytest
 from mmgroup import MM0, MMSpace, MMV
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.clifford12 import leech3matrix_echelon
+from mmgroup.clifford12 import leech3matrix_reduced_echelon
+from mmgroup.clifford12 import leech3matrix_kernel_image
 from mmgroup.clifford12 import leech3matrix_compress
 from mmgroup.clifford12 import xsp2co1_from_vect_mod3
 from mmgroup.clifford12 import leech3matrix_sub_diag
@@ -24,17 +26,18 @@ from mmgroup.mm_op import mm_op_word_tag_A, mm_op_load_leech3matrix
 
 def rand_matrix_mod_n(n, dtype = np.int64):
     """Create random 24 x 24 matrix of intgers modulo n"""
-    m =  np.zeros((24, 24), dtype = dtype)
-    for i in range(24):
-        for j in range(24):
-            m[i,j] = randint(0,n-1)
-    return m
+    return np.random.randint(0, n-1, size = (24, 24), dtype = dtype)
 
-def print_mod3(m):
+def print_mod3(m1, m2 = None):
     """Print 24 x 24 matrix of integers modulo 3"""
-    m1 = m % 3
+    m1a = m1 % 3
+    if m2 is not None:
+        m2a = m2 % 3
     for i in range(24):
-        print("".join(map(str, m1[i] % 3)))
+        s = "".join(map(str, m1a[i] % 3))
+        if m2 is not None:
+            s += " " + "".join(map(str, m2a[i] % 3))
+        print(s)
     print("")
 
 
@@ -111,30 +114,85 @@ def as_array(a, high = 0, dtype = np.int64):
 #######################################################################
 
 
+def subunit_matrix(rank, d = 0, dtype = np.int64):
+    a = np.zeros((24, 24), dtype = dtype)
+    for i in range(rank):
+        if (i + d < 24):
+            a[i, i + d] = 1
+    return a
+
+
+def randomize_matrix(a):
+    rows = list(range(a.shape[0]))
+    cols = list(range(a.shape[1]))
+    for i in range(60):
+        j1, j2 = sample(rows, 2)
+        d = randint(1, 2)
+        a[j1] += d * a[j2]
+        j1, j2 = sample(cols, 2)
+        d = randint(1, 2)
+        a[:, j1] += d * a[:, j2]
+        a %= 3
+    return a
+
+
+def leech3matrix_echelon_testdata():
+    for i in range(1, 12):
+      for k in range(50):
+        yield randomize_matrix(subunit_matrix(i, i//2))
+    for i in range(20):
+        yield rand_matrix_mod_n(3, dtype = np.int64)
+
+
 @pytest.mark.qstate
 def test_leech3matrix_echelon(verbose = 0):
+    if verbose:
+        print("\nTest echelonization of 24 x 24 matrix mod 3\n")
     unit = np.eye(24)
     load_modes = [None, 15]
-    for i in range(20):
+    for i, m in enumerate(leech3matrix_echelon_testdata()):
         load_mode = load_modes[i % len(load_modes)]
-        m = rand_matrix_mod_n(3, dtype = np.int64)
         a =  from_array(m, load_mode)
         leech3matrix_sub_diag(a, 2, 24)
         if verbose:
-            print("load_mode =", load_mode)
-            print_mod3(as_array(a,0))
-            print_mod3(as_array(a,1))
-        leech3matrix_echelon(a)
+            print("Test %d, load_mode = %s" % (i+1, load_mode))
+            print_mod3(as_array(a,0), as_array(a,1))
+        a1 = np.copy(a)
+        leech3matrix_echelon(a1)
         if verbose:
-            print_mod3(as_array(a,0))
-            print_mod3(as_array(a,1))
-        mi = as_array(a, high=1)
-        prod = as_array(a, high=0)
-        if verbose:
-            print_mod3(prod)
-            print_mod3(mi @ m)
-            #print((mi @ m - prod) % 3)
+            print("echelon:")
+            print_mod3(as_array(a1,0), as_array(a1,1))
+        mi = as_array(a1, high=1)
+        prod = as_array(a1, high=0)
         assert ((mi @ m - prod) % 3 == 0).all()
+
+        a2 = np.copy(a)
+        cols = leech3matrix_reduced_echelon(a2, 0 if i % 3 else 24)
+        mi2 = as_array(a2, high=1)
+        prod2 = as_array(a2, high=0)
+        if verbose:
+            print("reduced echelon, columms: ", hex(cols))
+            print_mod3(prod2, mi2)
+        assert ((mi2 @ m - prod2) % 3 == 0).all()
+
+        a3 = np.copy(a)
+        l_0 = leech3matrix_kernel_image(a3)
+        assert l_0 >= 0, l_0
+        l_isect, l_image = divmod(l_0, 256)
+        mi3 = as_array(a3, high=1)
+        prod3 = as_array(a3, high=0)
+        if verbose:
+            S = "Intersection kernel/image, dim image = %d, dim rad = %d"
+            print(S % (l_image, l_isect))
+            print_mod3(prod3, mi3)
+            #print_mod3(mi3 @ m, mi3 @ m - prod3)
+            from mmgroup.clifford12 import debug_mod3
+            b = np.zeros((3, 24), dtype = np.uint8)
+            #debug_mod3(b.ravel())
+            print(b)
+        assert ((mi3 @ m - prod3) % 3 == 0).all()
+
+
 
 
 
