@@ -163,6 +163,15 @@ extern "C" {
     (p_dest)[%{j}] = (p_src)[%{j}]; \
     // %%END FOR
 
+// Set the 64-bit integer i to 0 if row ``p_src`` of matrix is 0.
+#define ROW_ISZERO(p_src, i) \
+    i = (p_src)[0] ^ ((p_src)[0] >> 1); \
+    // %%FOR* j in range(1, N_COL)
+    i |= (p_src)[%{j}] ^ ((p_src)[%{j}] >> 1); \
+    // %%END FOR
+    i &= 0x1111111111111111ULL;
+
+
 
 // obtain pointer to row ``i`` of matrix ``p_src``
 #define ROW_MOD3(p_src, i)  ((p_src) + (i) * %{int:N_COL})
@@ -171,6 +180,8 @@ extern "C" {
 // obtain entry ``j`` in row ``p_src``
 #define ROWENTRY_MOD3(p_src, j) \
    (((p_src)[(j) >> 4] >> (((j) & 15) << 2)) & 3)
+
+
 
 /// @endcond
 
@@ -325,7 +336,6 @@ found:
    no atttempt to zero an entry ``(i, j)`` if ``j >= d `` and the
    leading coefficient of row ``i`` is in a column with idnex ``< d``.
 */
-
 // %%EXPORT px
 uint64_t leech3matrix_reduced_echelon(uint64_t *a, uint32_t d)
 {
@@ -353,10 +363,20 @@ uint64_t leech3matrix_reduced_echelon(uint64_t *a, uint32_t d)
 
 /// @cond DO_NOT_DOCUMENT
 
+/** @brief Stucture for computing intersection of kernel an image.
 
+   Here component ``a`` is a matrix ``a`` in  **matrix mod 3**
+   encoding  as documented in the header of this file.
+   We consider ``a`` as a pair of two matrices ``Ah, Al``,
+   with``Al`` in columns 0,...,23 and ``Ah`` in columns 24,...,47
+   of ``a``.
+
+   Som more documentation shoud be added here!!!!!!!!
+
+*/
 typedef struct {
     uint64_t *a;          // pointer to matrix
-    uint8_t row_mark[24]; // marked rows contain intersection
+    uint8_t row_mark[24]; // No of partner row of a row or 0xff
     uint8_t col_piv[48];  // row used for pivoting a column
     uint32_t n;           // No of columns in one of the matrices
     uint32_t len_img;     // length of image matrix
@@ -380,75 +400,133 @@ void _load_matrix(mat_mod3_type *m, uint64_t *a)
 
 
 
-// This array will be deleted when development has been finished!
-static uint8_t _mark[72];
 
-// This function will be deleted when development has been finished!
-// %%EXPORT px
-void debug_mod3(uint8_t *data)
+static inline void
+_adjust_col(mat_mod3_type *m, uint32_t col, uint32_t ref_col, uint32_t fst_row)
 {
-memcpy(data, _mark, 72);
+    uint_fast32_t row = m->col_piv[col], n = m->n;
+    uint_fast32_t ref_index = ref_col >> 4, ref_sh = (ref_col & 15) << 2;
+    uint8_t *p_mark = m->row_mark + row;
+    uint64_t *a = m->a, *p_pivot_row = ROW_MOD3(a, row);
+    uint64_t *p_row = p_pivot_row, *p_fst_row = ROW_MOD3(a, fst_row);
+    while (p_row > p_fst_row) {
+        uint_fast32_t ref_row = *--p_mark;
+        p_row -= %{N_COL};
+        if (ref_row < n) {
+            uint64_t x = (ROW_MOD3(a, ref_row)[ref_index] >> ref_sh) + 1;
+            if (x & 2) {
+                ADDROW_MOD3(p_row, p_pivot_row, x)
+            }
+        }
+    }
+}
+
+static inline void
+_compare_cols(mat_mod3_type *m, uint32_t col)
+{
+    uint_fast32_t n = m->n, ref_col = col + n;
+    uint_fast32_t index = col >> 4, sh = (col & 15) << 2;
+    uint_fast32_t ref_index = ref_col >> 4, ref_sh = (ref_col & 15) << 2;
+    int_fast32_t icol = col, irow;
+    uint64_t *a = m->a, *p_piv, *p_ref_piv, d = 0;
+    uint8_t *p_mark;
+    while (icol >= 0 && m->col_piv[icol] >= n) --icol;
+    if (icol < 0) return;
+    irow = m->col_piv[icol];
+    p_mark = m->row_mark + irow;
+    while (irow >= 0) {
+        uint32_t ref_row = *p_mark;
+        if (ref_row < n) {
+            uint64_t x = (((ROW_MOD3(a, irow)[index] >> sh) & 3) ^ 3)
+                + ((ROW_MOD3(a, ref_row)[ref_index] >> ref_sh) & 3);
+            x += x >> 2;
+            if ((x + 1) & 2) {
+                d = x;
+                p_piv = ROW_MOD3(a, irow);
+                p_ref_piv = ROW_MOD3(a, ref_row);
+                *p_mark = m->row_mark[ref_row] = 0xff;
+                --p_mark; --irow;
+                goto pivot;
+            }
+        }
+        --p_mark; --irow;
+    }
+    return;
+
+  pivot:
+    while (irow >= 0) {
+        uint32_t ref_row = *p_mark;
+        if (ref_row < n) {
+            uint64_t x = (((ROW_MOD3(a, irow)[index] >> sh) & 3) ^ 3)
+                + ((ROW_MOD3(a, ref_row)[ref_index] >> ref_sh) & 3);
+            x += x >> 2;
+            if ((x + 1) & 2) {
+                uint64_t *p_row = ROW_MOD3(a, irow);
+                uint64_t *p_ref_row = ROW_MOD3(a, ref_row);
+                x += d + 1;
+                ADDROW_MOD3(p_row, p_piv, x)
+                ADDROW_MOD3(p_ref_row, p_ref_piv, x)
+            }
+        }
+        --p_mark; --irow;
+    }
 }
 
 
+
+/** @brief Intersect kernel and image of matrix of integers mod 3.
+
+   Here ``a = m->a`` is a matrix in **matrix mod 3** encoding as
+   documented in the header of this file. That matrix must be in
+   reduced echelon form as returned by the auxiliary
+   function ``_load_matrix``.
+
+   Let the parts ``Ah``, ``Al`` of ``a`, and also the output
+   submatrices ``A_imag``, ``A_ker`` be defined as in
+   function ``leech3matrix_kernel_image``.
+
+   The current function changes some rows of ``A_img``, ``A_ker``,
+   so that these rows will contain the intersection of the two
+   matrices. If ``i`` is a row of matrix ``A_img`` then on
+   return ``m->row_mark[i]`` will contain the number of a
+   row in matrix ``A_ker`` equal to row ``i`` of ``A_img``.
+   If now such row can be found then  ``m->row_mark[i]`` will
+   contain the entry 0xff. If ``m->row_mark[i]`` contains a valid
+   row ``j`` then ``m->row_mark[j]` will contain row number ``i``.
+
+   In the end, sufficiently many equal rows of ``A_ker`` and ``A_img``
+   will be computed (and marked in array ``m->row_mark``), so that
+   the intersction of the row spaces spanned by the two matrices
+   is known. But the rows of the two matrices will not be sorted as
+   required by function ``leech3matrix_kernel_image``.
+*/
 static inline
 void _intersect_ker_im(mat_mod3_type *m)
 {
-    uint_fast32_t i, j, n = m->n;
-    uint64_t r0[%{N_COL}], r1[%{N_COL}], *a = m->a, x;
-    memset(m->row_mark, 0, sizeof(m->row_mark));
-    m->len_isect = 0;
-    for (i = 0; i < n; ++i)  {
-        uint32_t equ = 0;
-        uint64_t *p_row0, *p_row1, *p_add;
-        if (m->col_piv[i] >= n || m->col_piv[i + n] >= n) continue;
-        equ = 1;
-        p_row0 = ROW_MOD3(a, m->col_piv[i]);
-        p_row1 = ROW_MOD3(a, m->col_piv[i + n]);
-        COPYROW_MOD3(r0, p_row0)
-        COPYROW_MOD3(r1, p_row1)
-        for (j = i + 1; j < n; ++j) {
-            uint32_t piv0 = m->col_piv[j];
-            uint32_t piv1 = m->col_piv[j + n];
-            if (piv0 < n) {
-                if (piv1 < n) {
-                     continue;
-                } else {
-                    x = ROWENTRY_MOD3(r1, j + n) + 1;
-                    if ((x) & 2) {
-                        p_add = ROW_MOD3(a, piv0);
-                        ADDROW_MOD3(r0, p_add, x)
-                    }
-                }
+    uint_fast32_t col, n = m->n, row;
+    memset(m->row_mark, 0xff, sizeof(m->row_mark));
+    for (col = 0; col < n; ++col)  {
+        uint32_t piv0 = m->col_piv[col];
+        uint32_t piv1 = m->col_piv[col + n];
+        if (piv0 < n) {
+            if (piv1 < n) {
+                m->row_mark[piv0] = (uint8_t)piv1;
+                m->row_mark[piv1] = (uint8_t)piv0;
             } else {
-                if (piv1 < n) {
-                    x = ROWENTRY_MOD3(r0, j) + 1;
-                    if ((x) & 2) {
-                        p_add = ROW_MOD3(a, piv1);
-                        ADDROW_MOD3(r1, p_add, x)
-                    }
-                } else {
-                    x = ROWENTRY_MOD3(r0, j);
-                    x += ROWENTRY_MOD3(r1, j + n) ^ 3;
-                    // Set equ = 0 if r0[j] and r1[j+1] are not equal
-                    x += x >> 2;
-                    if ((x + 1) & 2) {
-                        equ = 0;
-                        break;
-                    }
-                }
+                _adjust_col(m, col, col + n, 0);
+            }
+        } else {
+            if (piv1 < n) {
+                _adjust_col(m, col + n, col, m->len_img);
+            } else {
+                _compare_cols(m, col);
             }
         }
-        if (equ) {
-            m->row_mark[m->col_piv[i]] =
-                 m->row_mark[m->col_piv[i + n]] = 1;
-            ++m->len_isect;
-            COPYROW_MOD3(p_row0, r0)
-            COPYROW_MOD3(p_row1, r1)
-        }
     }
-    memcpy(_mark, m->col_piv, 48);
-    memcpy(_mark + 48, m->row_mark, 24);
+    m->len_isect = 0;
+    for (row = 0; row < m->len_img; ++row) {
+         m->len_isect += m->row_mark[row] < n;
+    }
 }
 
 
@@ -457,7 +535,7 @@ void _intersect_ker_im(mat_mod3_type *m)
 static inline
 int32_t _sort_matrix(uint64_t *a, uint8_t *marker, uint32_t n)
 {
-     #define BUF_LEN 12
+     #define BUF_LEN 24 // could be 12!!!!!!!!!!!!!!
      uint64_t buf[BUF_LEN * %{N_COL}];
      uint64_t *p_buf_fill = buf + BUF_LEN * %{N_COL};
      uint64_t *p_a_end = a + n * %{N_COL};
@@ -465,7 +543,7 @@ int32_t _sort_matrix(uint64_t *a, uint8_t *marker, uint32_t n)
      uint8_t *p_marker = marker + n;
      while (p_a_end > a) {
          p_a_end -=  %{N_COL};
-         if (*--p_marker) {
+         if (*--p_marker != 0xff) {
              p_buf_fill -= %{N_COL};
              if (p_buf_fill < buf) return -1;
              COPYROW_MOD3(p_buf_fill, p_a_end)
@@ -479,25 +557,80 @@ int32_t _sort_matrix(uint64_t *a, uint8_t *marker, uint32_t n)
 }
 
 
+/** @brief Reeturn rank of matrix of integers mod 3
+*/
+static inline
+uint32_t _rank_matrix(uint64_t *a)
+{
+     uint32_t rk = 24;
+     while (rk--) {
+         uint64_t *row, value;
+         row = ROW_MOD3(a, rk);
+         ROW_ISZERO(row, value)
+         if (value) return rk+1;
+     }
+     return 0;
+}
+
+
+
 /// @endcond
 
 
 
 /** @brief Intersection of kernel and image of matrix of integers mod 3
 
-The function is still under development!!!
+   Here  ``a`` is a matrix in **matrix mod 3** encoding  as documented
+   in the header of this file. We consider ``a`` as a pair of two
+   matrices ``Ah, Al``, with ``Al`` in columns 0,...,23, and ``Ah`` in
+   columns 24,...,47 of ``a``.
+
+   We apply a sequence of row operations to the pair ``Ah, Al``, so
+   that the resulting output ``Ah, Al`` has the properties stated
+   below. We will write ``A_img`` for the output matrix ``Al``.
+
+   The first ``len_img`` rows of matrix ``A_img`` are linear
+   independent, and the other rows of matrix ``A_img`` are zero;
+   so ``A_img`` has rank  ``len_img``.
+
+   Define ``A_ker`` to be the submatrix of output matrix ``Ah``
+   containing the rows ``len_img`` and above of that matrix. Then the
+   first ``len_ker`` rows of matrix ``A_ker`` are linear independent,
+   and the other rows of ``A_ker`` are zero; so ``A_ker`` has
+   rank  ``len_ker``.
+
+   The function also computes the intersection of the spaces spanned
+   by the rows of matrices ``A_img`` and ``A_ker``. The intersection
+   has dimension ``len_isect``; and the first ``len_isect`` rows of
+   the output matrices ``A_img`` and ``A_ker`` will be equal.
+
+   In case of success the function returns
+
+   ``len_img  +  0x100 * len_ker  +  0x10000 * len_isect``.
+
+   It returns -1 in case of failure. Such a failure sould be
+   considered as a software bug.
+
+   The typical use case for this function is to store an arbitrary
+   matrix in ``Al``, and the unit matrix in ``Ah``. Then the function
+   computes the image of input matrix ``Al`` in the first ``len_img``
+   rows of ``A_img``, and the kernel of ``Al`` in the first``len_ker``
+   rows of matrix ``A_ker``. As stated above, it also computes the
+   intersection of the kernel and the image.
 */
 // %%EXPORT px
-int64_t leech3matrix_kernel_image(uint64_t *a)
+int32_t leech3matrix_kernel_image(uint64_t *a)
 {
     mat_mod3_type m;
+    uint32_t len_ker;
     _load_matrix (&m, a);
     _intersect_ker_im(&m);
     if (m.len_img > m.n) return -1;
     if (_sort_matrix(a, m.row_mark, m.len_img)) return -2;
     if (_sort_matrix(ROW_MOD3(a, m.len_img), m.row_mark + m.len_img,
           m.n -  m.len_img)) return -3;
-    return m.len_img + (m.len_isect << 8);
+    len_ker = _rank_matrix(a) - m.len_img;
+    return m.len_img + (len_ker << 8) + (m.len_isect << 16);
 }
 
 

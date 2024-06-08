@@ -4,6 +4,7 @@ import warnings
 
 from random import randint, sample
 from collections import OrderedDict
+import time
 
 import numpy as np
 import pytest
@@ -73,7 +74,7 @@ def from_array(m, load_mode = None):
     """Load 24 x 24 matrix 'm' to array of type 'leech3matrix'
 
     If load_mode is 3 or 15 then matrix is converted to a vector of
-    of the monter rep using function ``matrix_to_rep_modp(m, p)``
+    of the monster rep using function ``matrix_to_rep_modp(m, p)``
     with ``p = load_mode``.
 
     By default we convert the matrix directly.
@@ -114,34 +115,55 @@ def as_array(a, high = 0, dtype = np.int64):
 #######################################################################
 
 
-def subunit_matrix(rank, d = 0, dtype = np.int64):
+def subunit_matrix(rank, isect, dtype = np.int64):
     a = np.zeros((24, 24), dtype = dtype)
-    for i in range(rank):
-        if (i + d < 24):
-            a[i, i + d] = 1
+    assert isect <= rank
+    assert rank + isect <= 24
+    dif = rank - isect
+    for i in range(dif):
+        a[i, i] = randint(1,2)
+        for j in range(i + 1, dif):
+            a[i, j] =  randint(0, 2)
+    for i in range(dif, rank):
+        a[i, i + rank - dif] = randint(1,2)
     return a
 
 
 def randomize_matrix(a):
     rows = list(range(a.shape[0]))
     cols = list(range(a.shape[1]))
+    rows = list(range(4))
     for i in range(60):
         j1, j2 = sample(rows, 2)
         d = randint(1, 2)
         a[j1] += d * a[j2]
-        j1, j2 = sample(cols, 2)
-        d = randint(1, 2)
-        a[:, j1] += d * a[:, j2]
+        a[:, j2] += (3 - d) * a[:, j1]
         a %= 3
     return a
 
 
+TEST_MATRIX_0 = [ [2], [1, 1, 2, 2], [1, 1, 2, 2], [2] ]
+
+TEST_MATRICES = [
+    (TEST_MATRIX_0, (2, 1)),
+]
+
+
 def leech3matrix_echelon_testdata():
-    for i in range(1, 12):
-      for k in range(50):
-        yield randomize_matrix(subunit_matrix(i, i//2))
+    for mat, data in TEST_MATRICES:
+        m = np.zeros((24, 24), dtype = np.int64)
+        for i, row in enumerate(mat):
+            for j, entry in enumerate(row):
+                 m[i, j] = entry
+        yield m, data
+    for rank in range(0, 24):
+      for _ in range(2):
+        for isect in range(0, min(rank, 24 - rank)):
+            m = subunit_matrix(rank, isect, dtype = np.int64)
+            m = randomize_matrix(m)
+            yield m, (rank, isect)
     for i in range(20):
-        yield rand_matrix_mod_n(3, dtype = np.int64)
+        yield rand_matrix_mod_n(3, dtype = np.int64), None
 
 
 @pytest.mark.qstate
@@ -150,18 +172,20 @@ def test_leech3matrix_echelon(verbose = 0):
         print("\nTest echelonization of 24 x 24 matrix mod 3\n")
     unit = np.eye(24)
     load_modes = [None, 15]
-    for i, m in enumerate(leech3matrix_echelon_testdata()):
+    for i, (m, rk) in enumerate(leech3matrix_echelon_testdata()):
         load_mode = load_modes[i % len(load_modes)]
         a =  from_array(m, load_mode)
         leech3matrix_sub_diag(a, 2, 24)
         if verbose:
-            print("Test %d, load_mode = %s" % (i+1, load_mode))
+            print("Test %d, load_mode = %s, rk = %s" %
+                 (i+1, load_mode, rk))
             print_mod3(as_array(a,0), as_array(a,1))
         a1 = np.copy(a)
         leech3matrix_echelon(a1)
         if verbose:
-            print("echelon:")
-            print_mod3(as_array(a1,0), as_array(a1,1))
+     #       print("echelon:")
+     #       print_mod3(as_array(a1,0), as_array(a1,1))
+             pass
         mi = as_array(a1, high=1)
         prod = as_array(a1, high=0)
         assert ((mi @ m - prod) % 3 == 0).all()
@@ -176,24 +200,47 @@ def test_leech3matrix_echelon(verbose = 0):
         assert ((mi2 @ m - prod2) % 3 == 0).all()
 
         a3 = np.copy(a)
-        l_0 = leech3matrix_kernel_image(a3)
-        assert l_0 >= 0, l_0
-        l_isect, l_image = divmod(l_0, 256)
+        l0 = leech3matrix_kernel_image(a3)
+        assert l0 >= 0, l0
+        l_isect, l_ker, l_image = l0 >> 16, (l0 >> 8) & 255, l0 & 255
         mi3 = as_array(a3, high=1)
         prod3 = as_array(a3, high=0)
         if verbose:
             S = "Intersection kernel/image, dim image = %d, dim rad = %d"
             print(S % (l_image, l_isect))
             print_mod3(prod3, mi3)
-            #print_mod3(mi3 @ m, mi3 @ m - prod3)
-            from mmgroup.clifford12 import debug_mod3
-            b = np.zeros((3, 24), dtype = np.uint8)
-            #debug_mod3(b.ravel())
-            print(b)
         assert ((mi3 @ m - prod3) % 3 == 0).all()
 
+        for i in range(l_isect):
+            assert (prod3[i] == mi3[i + l_image]).all()
+        for i in range(l_image, 24):
+            assert (prod3[i] == 0).all()
+        if rk:
+            ref_l_image, ref_l_isect = rk
+            assert l_image == ref_l_image, (l_image == ref_l_image)
+            assert l_isect == ref_l_isect, (l_isect == ref_l_isect)
+            assert l_ker + l_image == 24, (l_ker, l_image)
 
 
+@pytest.mark.qstate
+@pytest.mark.bench
+def test_bench_leech3matrix_kernel_image():
+    matrices = []
+    N_TESTS = 50000
+    N_SAMPLES = 64
+    MASK = N_SAMPLES - 1
+    a = np.zeros(72, dtype = np.uint64)
+    for i in range(N_SAMPLES):
+        m = subunit_matrix(24 - i % 8 - i % 3, i % 3, dtype = np.int64)
+        m = randomize_matrix(m)
+        matrices.append(from_array(m))
+    t_start = time.process_time()
+    for i in range(N_TESTS):
+        np.copyto(a, matrices[i & MASK])
+        leech3matrix_kernel_image(a)
+    t = time.process_time() - t_start
+    S = "Runtime of function leech3matrix_kernel_image: %.3f us"
+    print("\n" + S % (1.0e6 * t / N_TESTS))
 
 
 
