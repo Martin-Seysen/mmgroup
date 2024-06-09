@@ -539,6 +539,10 @@ static inline void expand_affine(
 
 /// @cond DO_NOT_DOCUMENT 
 
+// Standard type-2 vector correspnding to cocode word [2,3]
+#define STD_TYPE2 0x200
+
+
 /** Find a **nice** type-2 or type-4 vector in subset of Leech lattice mod 2
 
     Here ``a`` is a sequence of two concatenated arrays ``a0``
@@ -564,17 +568,24 @@ static inline void expand_affine(
     type-4 vector in the set ``V`` then the function
     returns ``guide``. Otherwise parameter ``guide`` is ignored.
 
+    Parameter ``baby`` should usually be zero. If ``baby`` is
+    nonzero then the function returns a type-4 vector ``v`` such
+    that ``type(v + v^+) == 2``, where ``v^+`` is the standard
+    type-2 vector corresponding to cocode word ``[2, 3]``. Then it
+    returns zero if no such type-4 vector can be found.
+
     Array ``a`` is destroyed.
 */
 static uint32_t 
-sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide)
+sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide, uint32_t baby)
 {  
     uint32_t v;                   // The current vector being analysed
     uint32_t v_out = 0;           // 0 or a saved type-4 vector
     uint32_t i0, i1, n2 = n0 + n1;
 
     for (i0 = 0; i0 < n2; ++i0) a[i0] &= 0xffffffUL;
-    if (gen_leech2_type(guide) == 4) {
+    if (gen_leech2_type(guide) == 4 &&
+            (!baby || gen_leech2_type2(guide ^ STD_TYPE2))) {
         guide &= 0xffffffUL;
         for (i0 = 0; i0 < n0; ++i0) {
             v = a[i0] ^ guide;
@@ -590,7 +601,8 @@ sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide)
             // to be analysed. v must be of type 0, 2, or 4.
             v = a[i0] ^ a[i1];
             // Continue if v is not of the type that we are looking for.
-            if (gen_leech2_type2(v) > 0) continue;
+            if (gen_leech2_type2(v)) continue;
+            if (baby && !gen_leech2_type2(v ^ STD_TYPE2)) continue;
             
             // Here we look for a vector of type 4 ...
             
@@ -615,7 +627,7 @@ sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide)
         }
     }
     // When searching for type 4 and a dodecad has been found then return
-    // that dodecad. Otherwise return the number of type-2 vectors found.
+    // that dodecad. Otherwise return 0.
     return v_out;
 }
 
@@ -643,9 +655,12 @@ sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide)
    type-4 vector in the Leech lattice mod 2 satisfying the
    assumptions the return value ``v``then the function
    returns ``v = guide``. Otherwise parameter ``guide`` is ignored.
+
+   Parameter ``baby`` is as in function ``sub_find_type`` and should
+   usually be zero.
 */
 // %%EXPORT px
-int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide)
+int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide, uint32_t baby)
 {
    uint64_t *pInv;
    uint32_t a[48], n, n0, n1, e0, e1;
@@ -678,7 +693,7 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide)
    // If coset == 0 then return a type-4 vector in V_1.
    // Otherwise store the type-2 vectors in V_1 in the
    // array A2 =  (a[32],..,a[47]).
-   return sub_find_type(a, e0, e1, guide); 
+   return sub_find_type(a, e0, e1, guide, baby);
 }
 
 
@@ -699,9 +714,11 @@ int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide)
    of two type-2 vectors in \f$I_1^+ \setminus I_1\f$. If no such 
    vector exists then we return 0.
 
-   Parameter ``guide`` is as in function ``sub_find_type``
+   Parameters ``guide`` and ``baby`` are as in
+   function ``sub_find_type``.
 */
-static int32_t xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide)
+static int32_t
+xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide, uint32_t baby)
 {
    uint32_t a0[16], a1[16], a2[16], i0, i1, i2 = 0, v;
 
@@ -720,7 +737,7 @@ static int32_t xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide)
        }
    }
    i2 -= i2 > 0;
-   return sub_find_type(a2, 1, i2, guide);
+   return sub_find_type(a2, 1, i2, guide, baby);
 }
 
 
@@ -770,12 +787,22 @@ static int32_t xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide)
 
    Parameter ``guide`` should usually be zero. If ``guide`` is a
    type-4 vector in the Leech lattice mod 2 satisfying the
-   assumptions the return value ``v``then the function
+   assumptions the return value ``v`` then the function
    returns ``v = guide``. Otherwise parameter ``guide`` is ignored.
    It is also ignored in case  \f$g \in Q_{x0}\f$.
+
+   Parameter ``baby`` should usually be zero. If this in nonzero,
+   then the function returns a type-4 vector ``v`` satisfying the
+   assumptions above and also ``type(v + v^+) == 2``. Here ``v^+``
+   is the standard type-2 vector corresponding to the Golay cocode
+   word ``[2, 3]``. Then the function fails if no such ``v`` can
+   be found.
+
+   Using parameter ``baby != 0`` hat not been tested; it may simplify
+   computations with axes in the Baby Monster in future versions.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide)
+int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide, uint32_t baby)
 {
     uint64_t invar[12];   
     int_fast32_t v, t, n;
@@ -796,7 +823,7 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide)
         case 8:
             // Then \f$(I_1^+) = I_1\f$ has dimension 8. Here
             // any type-4 vector in \f$I_1\f$ will do.
-            return xsp2co1_involution_find_type4(invar, guide);
+            return xsp2co1_involution_find_type4(invar, guide, baby);
         case 9:
             // Then the proper subspace \f$I_1\f$ of \f$(I_1^+)\f$ 
             // has dimension 8. Let \f$l\f$ be the linear form
@@ -809,16 +836,18 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide)
             // Leech lattice modulo 2. Then t is 0, 2 or 4.
             t = gen_leech2_type(v);
             // In case t == 4 we simply return v.
-            if (t == 4) return v;
-            // In case t = 0 try to$A, A_1, I find a sum of two type-2
+            if (t == 4 && (!baby || gen_leech2_type2(guide ^ STD_TYPE2))) {
+                return v;
+            }
+            // In case t = 0 try to find a sum of two type-2
             // vectors in \f$(I_1^+) \setminus I_1\f$
             if (t == 0) {
-                 v = xsp2co1_involution_find_coset8(invar, guide);
+                 v = xsp2co1_involution_find_coset8(invar, guide, baby);
                  if (v > 0) return v;
             } 
             // If this fails (or we have t == 2) then return a
             // vector in \f$I_1\f$ orthogonal to  v.
-            return xsp2co1_involution_find_type4(invar, guide);
+            return xsp2co1_involution_find_type4(invar, guide, baby);
         case 12:
             // Then \f$I_1\f$ has dimension 12, and the type
             // function on the Leech lattice mod 2 is a linear 
@@ -828,8 +857,10 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide)
             // type 4, we return f$v\f$; otherwise we fail.
             v = xsp2co1_involution_orthogonal(invar, 1);
             t = gen_leech2_type(v);
-            if (t != 4) return  ERR_QSTATE12_GX0_BAD_ELEM; 
-            return v;
+            if (t == 4 && (!baby || gen_leech2_type2(guide ^ STD_TYPE2))) {
+                return v;
+            }
+            return  ERR_QSTATE12_GX0_BAD_ELEM;
         default:    
             // Any other case is illegal; so we fail.
             return ERR_QSTATE12_GX0_BAD_ELEM;
@@ -875,7 +906,7 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1\f$
    // exists.
 
-   v = xsp2co1_elem_find_type4(elem, 0);
+   v = xsp2co1_elem_find_type4(elem, 0, 0);
    if (v < 0) return v;
 
    // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of

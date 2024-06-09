@@ -266,7 +266,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
     # :math:`\Omega` also changes ``g`` to a simpler form.
     # Therefore we use the C function 
     # ``xsp2co1_elem_find_type4`` which also deals with ``guide``.
-    v4 = xsp2co1_elem_find_type4(elem, guide)
+    v4 = xsp2co1_elem_find_type4(elem, guide, 0)
     if (v4 < 0):
         # Abort if ``xsp2co1_elem_find_type4`` has failed
         raise ValueError("xsp2co1_elem_find_type4 failed")
