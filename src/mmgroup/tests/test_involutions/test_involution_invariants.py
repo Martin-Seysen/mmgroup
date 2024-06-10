@@ -108,7 +108,7 @@ def invariant_status(ref_invariants):
 def conj_G_x0_to_Q_x0(g):
     gg = Xsp2_Co1(g)
     a = np.zeros(7, dtype = np.uint32)
-    lv = chk_qstate12(xsp2co1_elem_conj_G_x0_to_Q_x0(gg._data, a))
+    lv = chk_qstate12(xsp2co1_elem_conj_G_x0_to_Q_x0(gg._data, a, 0))
     length, q = lv >> 25, lv & 0x1ffffff
     h = MM0('a', a[:length])
     gh = MM0(g) ** h

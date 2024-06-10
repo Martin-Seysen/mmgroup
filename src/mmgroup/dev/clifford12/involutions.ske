@@ -576,7 +576,7 @@ static inline void expand_affine(
 
     Array ``a`` is destroyed.
 */
-static uint32_t 
+static int32_t 
 sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide, uint32_t baby)
 {  
     uint32_t v;                   // The current vector being analysed
@@ -656,8 +656,8 @@ sub_find_type(uint32_t *a, uint32_t n0, uint32_t n1, uint32_t guide, uint32_t ba
    assumptions the return value ``v``then the function
    returns ``v = guide``. Otherwise parameter ``guide`` is ignored.
 
-   Parameter ``baby`` is as in function ``sub_find_type`` and should
-   usually be zero.
+   Parameter ``baby`` is as in function ``xsp2co1_elem_find_type4``
+   and should usually be zero.
 */
 // %%EXPORT px
 int32_t xsp2co1_involution_find_type4(uint64_t *invar, uint32_t guide, uint32_t baby)
@@ -792,13 +792,13 @@ xsp2co1_involution_find_coset8(uint64_t *invar, uint32_t guide, uint32_t baby)
    It is also ignored in case  \f$g \in Q_{x0}\f$.
 
    Parameter ``baby`` should usually be zero. If this in nonzero,
-   then the function returns a type-4 vector ``v`` satisfying the
-   assumptions above and also ``type(v + v^+) == 2``. Here ``v^+``
-   is the standard type-2 vector corresponding to the Golay cocode
-   word ``[2, 3]``. Then the function fails if no such ``v`` can
-   be found.
+   then the function returns a type-4 vector \f$v\f$ satisfying the
+   assumptions above, such that \f$v + v^+\f$ is of type 2.
+   Here \f$v^+\f$ is the standard type-2 vector corresponding to the
+   Golay cocode word \f$[2, 3]\f$. Then the function fails if no
+   such \f$v\f$ can be found.
 
-   Using parameter ``baby != 0`` hat not been tested; it may simplify
+   Using parameter ``baby != 0`` has not been tested; it may simplify
    computations with axes in the Baby Monster in future versions.
 */
 // %%EXPORT px
@@ -807,9 +807,13 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide, uint32_t baby)
     uint64_t invar[12];   
     int_fast32_t v, t, n;
 
-    // Nothing to do if \f$g \in Q_{x0}\f$:
-    // The we return \f$\Omega\f$.
-    if (xsp2co1_xspecial_vector(elem) >= 0) return 0x800000;
+    // Not much to do if \f$g \in Q_{x0}\f$:
+    // The we return \f$\Omega\f$ (is this is allowed).
+    v = xsp2co1_xspecial_vector(elem);
+    if (v >= 0) {
+        if (!baby || (v & 0x200000) == 0) return 0x800000;
+        return ERR_QSTATE12_GX0_BAD_ELEM;
+    }
 
     // Compute involution invariants; abort if this fails.
     // Let \f$A, A_1, I_1, (I_1^+)\f$, and \f$(\ker A_1^+)\f$ 
@@ -823,7 +827,8 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide, uint32_t baby)
         case 8:
             // Then \f$(I_1^+) = I_1\f$ has dimension 8. Here
             // any type-4 vector in \f$I_1\f$ will do.
-            return xsp2co1_involution_find_type4(invar, guide, baby);
+            v = xsp2co1_involution_find_type4(invar, guide, baby);
+            return v ? v : ERR_QSTATE12_GX0_BAD_ELEM;
         case 9:
             // Then the proper subspace \f$I_1\f$ of \f$(I_1^+)\f$ 
             // has dimension 8. Let \f$l\f$ be the linear form
@@ -847,7 +852,8 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide, uint32_t baby)
             } 
             // If this fails (or we have t == 2) then return a
             // vector in \f$I_1\f$ orthogonal to  v.
-            return xsp2co1_involution_find_type4(invar, guide, baby);
+            v = xsp2co1_involution_find_type4(invar, guide, baby);
+            return v ? v : ERR_QSTATE12_GX0_BAD_ELEM;
         case 12:
             // Then \f$I_1\f$ has dimension 12, and the type
             // function on the Leech lattice mod 2 is a linear 
@@ -890,10 +896,13 @@ int32_t xsp2co1_elem_find_type4(uint64_t *elem, uint32_t guide, uint32_t baby)
 
    The function returns a negative value in case of failure.
    It returns ``ERR_QSTATE12_GX0_BAD_ELEM`` if no suitable
-   element \f$h\f$ can be found.   
+   element \f$h\f$ can be found.
+
+   Parameter ``baby`` is as in function ``xsp2co1_elem_find_type4``
+   and should usually be zero.
 */
 // %%EXPORT px
-int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
+int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a, uint32_t baby)
 {
    uint64_t elem1[26];
    uint32_t e_N[5];
@@ -906,12 +915,13 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a)
    // have \f$a_1^{-1} g a_1 \in  N_{x0}\f$. Abort if no such \f$a_1\f$
    // exists.
 
-   v = xsp2co1_elem_find_type4(elem, 0, 0);
+   v = xsp2co1_elem_find_type4(elem, 0, baby);
    if (v < 0) return v;
 
    // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of
    // generators of the monster of length ``len`` in the array ``a``. 
-   len = gen_leech2_reduce_type4(v, a);
+   if (baby) gen_leech2_reduce_type2_ortho(v, a);
+   else len = gen_leech2_reduce_type4(v, a);
    if (len < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
 
    // Put ``elem1`` = \f$g_1 = a_1^{-1} g a_1 \in  N_{x0}\f$.
@@ -982,7 +992,7 @@ int32_t xsp2co1_elem_conjugate_involution(uint64_t *elem, uint32_t *a)
    // the monster with \f$a_1^{-1} g a_1 = g_1\f$. Store  \f$g_1\f$
    // in ``v`` and \f$a_1\f$ in the buffer ``a`` as a word of generators
    // generators of the monster of length ``len``. Abort if this fails.
-   v = xsp2co1_elem_conj_G_x0_to_Q_x0(elem, a);
+   v = xsp2co1_elem_conj_G_x0_to_Q_x0(elem, a, 0);
    if (v < 0) return v;
    len = v >> 25; v &= 0x1ffffffUL; 
 
