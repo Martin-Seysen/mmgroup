@@ -75,11 +75,12 @@ between classes.
 
 
 def display_A(A):
-   """Display a 24 times 24 matrix A"""   
-   fmt = [4 if max(abs(A[i])) > 99 else 2 for i in range(24)] 
-   for i in range(24):
+   """Display a two-dimensional integer matrix A"""
+   imax, jmax = A.shape
+   fmt = [4 if max(abs(A[i])) > 99 else 2 for i in range(imax)]
+   for i in range(imax):
       print(" ", end = "")
-      for j in range(24):
+      for j in range(jmax):
           l = fmt[j]
           if i == j or A[i,j] != 0:
               print("%*d" % (fmt[j], A[i,j]), end = " ")

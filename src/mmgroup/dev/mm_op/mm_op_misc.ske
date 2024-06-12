@@ -127,6 +127,35 @@ int32_t mm_op%{P}_compare(uint_mmv_t *mv1, uint_mmv_t *mv2)
     return mm_op%{P}_compare_len(mv1, mv2, %{MMV_INTS}); 
 }
    
+/**
+  @brief Compare vectors of \f$\rho_{%{P}}\f$ up to sign
+
+  The function compares two vectors ``mv1`` and ``mv2`` of
+  the representation \f$\rho_{%{P}}\f$.
+
+  It returns 0 if these vectors are equal up to sign and 1 otherwise.
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_compare_abs(uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+    uint_mmv_t a, b, t, c;
+    uint_fast32_t i;
+    for (i = 0; i < %{MMV_INTS}; ++i) {
+        a = *mv1++;
+        b = *mv2++;
+        // Next we compare integers a and b modulo p.
+        // Idea for p = %{hex:P} and unsigned %{P_BITS}-bit integers a, b:
+        // t is in [0, p] iff (t ^ (t >> 1)) & %{hex:P>>1} == 0
+        // We have a = +- b (mod p)  iff  a ^ b in [0, p].
+        t = a ^ b;
+        c = (t ^ (t >> 1)) & %{smask:P>>1}; // c = 0 iff a = +- b (mod p)
+        if (c) return 1;
+    }
+    return 0;
+}
+
+
+
 
 
 /** 

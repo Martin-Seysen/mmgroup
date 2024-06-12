@@ -101,6 +101,24 @@ int32_t mm_op_compare(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2)
 {
   // %%DISPATCH_P int32_t, mm_op_compare, p, mv1, mv2
 }
+
+
+/**
+  @brief Compare vectors ``mv1`` and ``mv2`` of \f$\rho_p\f$
+
+  The function compares two vectors ``mv1`` and ``mv2`` of
+  the representation \f$\rho_p\f$.
+
+  It returns 0 if these vectors are equal up to sign and 1 otherwise.
+
+  Here modulus ``p`` must be one of the
+  values %{LEGAL_P:mm_op_compare}.
+*/
+// %%EXPORT px
+int32_t mm_op_compare_abs(uint32_t p, uint_mmv_t *mv1, uint_mmv_t *mv2)
+{
+  // %%DISPATCH_P int32_t, mm_op_compare_abs, p, mv1, mv2
+}
  
 
 /** 
