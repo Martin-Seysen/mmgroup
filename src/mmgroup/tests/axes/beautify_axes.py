@@ -10,6 +10,7 @@ of the subgroup :math:`G_{x0}` (of structure
 import sys
 import os
 import time
+from numbers import Integral
 from copy import deepcopy
 from math import floor, ceil
 from random import randint, shuffle, sample
@@ -45,6 +46,7 @@ from mmgroup.clifford12 import bitmatrix64_solve_equation
 from mmgroup.mm_op import mm_op_load_leech3matrix
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_t_A
 
 from mmgroup.tests.axes.get_sample_axes import G_CENTRAL
 from mmgroup.tests.axes.get_sample_axes import G_AXIS
@@ -73,7 +75,7 @@ v_axis_opp15 = V15(V_AXIS_OPP)
 def display_A(A):
    """Display a two-dimensional integer matrix A"""
    imax, jmax = A.shape
-   fmt = [4 if max(abs(A[i])) > 99 else 2 for i in range(imax)]
+   fmt = [4 if max(abs(A[:,j])) > 99 else 2 for j in range(jmax)]
    for i in range(imax):
       print(" ", end = "")
       for j in range(jmax):
@@ -84,6 +86,16 @@ def display_A(A):
               print("%*s" % (fmt[j], "."), end = " ")
       print("")
 
+def sym_part(v, part):
+    if isinstance(part, str) and part in 'ABC':
+        return v[part]
+    if  isinstance(part, Integral):
+        a = MMV(v.p)(0)
+        mm_op_t_A(v.p, v.data, part, a.data)
+        return a['A']
+    ERR =  "Cannot display a part of % of a vector"
+    raise TypeError(ERR % type(part))
+
 #################################################################
 # Classes for modelling an axis
 #################################################################
@@ -93,10 +105,16 @@ class Axis:
     g_axis_start = g_axis
     v15_start = v_axis15
     g_central = g_central
+    constant = False
+    ERR1 = "This axis is constant and may not be changed"
     """Models an axis modulo 15"""
     def __init__(self, g = 1):
-        self.g = MM0(g)
+        self.g0 = MM0()
+        self.g1 = MM0(g)
         self.v15 = v_axis15 * self.g
+    @property
+    def g(self):
+        return self.g0 * self.g1
     @property
     def g_axis(self):
         return self.g_axis_start ** self.g
@@ -104,16 +122,47 @@ class Axis:
     def norm_A_mod15(self):
         return mm_op_norm_A(15, self.v15.data)
     def copy(self):
-        return deepcopy(self)
+        axis = deepcopy(self)
+        if axis.constant:
+            del axis.constant
+        return axis
     def __imul__(self, g):
+        if self.constant:
+            raise TypeError(self.ERR1)
         g = MM0(g)
-        self.g *= g
+        self.g1 *= g
         self.v15 *= g
         return self
     def __mul__(self, g):
         return self.copy().__imul__(g)
     def __getitem__(self, index):
-        return self.v15.__getitem__(index) 
+        return self.v15.__getitem__(index)
+    def rebase(self, reduce = False):
+        """Rebase group element in axis
+
+        If `´reduce`` is true then
+        we try to shorten the group element ``self.g`` with the
+        'magic' *mmgroup* functionality.
+        This class will be used for proofs; so we'd better check
+        the correctness of that magic. We do not change ``self.g``
+        if the shortened group element does not map the start
+        axis to the current axis.
+        """
+        if self.constant:
+            raise TypeError(self.ERR1)
+        self.g0 *= self.g1
+        self.g1 = MM0()
+        if reduce:
+            try:
+                from mmgroup import MM
+                g0 = MM0(MM(self.g0).reduce())
+                assert self.v15_start * g0 == self.v15
+                self.g0 = g0
+            except:
+                import warnings
+                W = "Reducing an axis with mmgroup has failed"
+                warnings.warn(W, UserWarning)
+        return self
     def central_involution(self, guide=0):
         c = g_axis ** self.g * g_central
         _, h = c.half_order()
@@ -126,38 +175,22 @@ class Axis:
         mm_op_load_leech3matrix(self.v15.p, self.v15.data, a)
         return a
     def axis_type(self, e = 0):
-        return self.v15.axis_type(e)
-    def reduce(self):
-        """Use mmgroup functions to shorten group element
-
-        We try to shorten the group element ``self.g`` with the
-        'magic' *mmgroup* functionality.
-        This class will be used for proofs; so we'd better check
-        the correctness of that magic. We do not change ``self.g``
-        if the shortened group element does not map the start
-        axis to the current axis.  
-        """ 
-        try:
-            from mmgroup import MM
-            g1 = MM0(MM(self.g).reduce())
-            assert self.v15_start * g1 == self.g
-        except:
-            import warnings
-            W = "Reducing an axis with mmgroup has failed"
-            warnings.warn(W, UserWarning)
-                
+        return self.v15.axis_type(e) 
     def axis_in_space(self, space, *args):
         all_args = args + (V_AXIS,)
         return space(*all_args) * self.g
+    def display_sym(self, part = 'A', diff = 0, ind = None, text = "", end = ""):
+        if text:
+            print(text)
+        a =  sym_part(self.v15, part)
+        if diff:
+            a = (a - sym_part(diff.v15, part)) % 15 
+        if ind is not None:
+            a = np.array([[a[i, j] for j in ind] for i in ind])
+        display_A(a)
+        print(end)
 
 
-class ConstantAxis(Axis):
-    def __init__(self, g):
-        super(ConstantAxis, self).__init__(g)
-    def __imul__(self, *args):
-        ERR = "This axis is constant and may not be changed"
-        raise TypeError(ERR)
-        
 
 
 def find_short(v, value, radical = 0, verbose = 0):
@@ -460,6 +493,9 @@ def postpermute(class_, axis):
         axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
     if class_ == "10A":
         axis *= cond_swap_BC(axis['B', 0, 9] != axis['C', 0, 9])
+        b = axis['B'] % 3
+        l = [(0, j, b[0,j] != 1) for j in range(9,24) if  b[0,j]]
+        axis *= solve_gcode_diag(l, 'x')
 
     if class_ == "6C":
         diag = np.diagonal(axis['A'])  % 3
@@ -489,7 +525,7 @@ def postpermute(class_, axis):
         dodecad[0], dodecad[ind] = dodecad[ind], dodecad[0]
         axis *= permutation(perm_from_dodecads(dodecad, DODECAD_8F))
         axis *= cond_swap_BC(axis['B', 0, 2] != axis['C', 0, 2])
-        display_A(axis['B'] )
+        #display_A(axis['B'] )
         b = axis['B', 0]
         l =  [(0, j, b[j] != 1) for j in range(1, 20) if b[j]]
         axis *= solve_gcode_diag(l, 'x')
@@ -535,8 +571,10 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
 
     axis = Axis(g)
     if class_ == "2A":
-        return axis.g.raw_str()
-    print("\nOrbit" + class_)
+        return axis
+    if verbose:
+        print("\nOrbit" + class_)
+    axis.rebase()
     if rand:
         axis *= MM0('r', 'G_x0')
     if verbose > 1:
@@ -562,9 +600,8 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
     if verbose:
         for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
-            display_A((axis * MM0('t', e))['A'])  
-    axis.reduce()
-    return axis.g.raw_str()
+            display_A((axis * MM0('t', e))['A'])
+    return axis
 
 
 #################################################################

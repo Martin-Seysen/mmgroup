@@ -756,7 +756,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
     if beautify:
         from mmgroup.tests.axes.beautify_axes import beautify_axis
     sample_list.sort(key = sample_list_sort_key)
-    s_samples, s_stages, s_marks = "", "", "" 
+    s_samples, s_stages, s_marks = "", "", ""
     s_classes = ""
     s_beautiful_samples = ""
     s_powers = ""
@@ -773,21 +773,22 @@ def write_axes(sample_list, beautify = True, verbose = False):
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
-                b = '"' + beautify_axis(class_, g, _vb) + '",\n'
-                s_beautiful_samples += b
+                axis = beautify_axis(class_, g, _vb)
+                axis.rebase(reduce = True)          
+                s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:
             beautify = False
         s_powers += '"' + AXIS_POWERS[class_] + '",\n'
         s_groups += '"' + AXIS_GROUPS[class_] + '",\n'
     if beautify:
-        s_samples = s_beautiful_samples       
+        s_samples = s_beautiful_samples
 
     with open(PATH + ".py", "wt") as f:
-        f.write(f_text % (G_CENTRAL, G_AXIS, V_AXIS, 
+        f.write(f_text % (G_CENTRAL, G_AXIS, V_AXIS,
             G_AXIS_OPP, V_AXIS_OPP,
           s_samples, s_stages, s_classes, s_marks))
 
-        f.write(axes_text % (s_powers, s_groups)) 
+        f.write(axes_text % (s_powers, s_groups))
         
 
 ########################################################################
@@ -804,16 +805,17 @@ def get_axes_from_sample_axes(sample_axes):
     global AXES
     if len(AXES):
         return AXES
-    from mmgroup.tests.axes.beautify_axes import ConstantAxis
+    from mmgroup.tests.axes.beautify_axes import Axis
     for i, g1 in enumerate(sample_axes.g_strings):
         g = MM0(g1)
-        axis = ConstantAxis(g)
+        axis = Axis(g)
         g_class = sample_axes.g_classes[i]
         axis.g_class = g_class
         axis.mark = sample_axes.g_marks[i]
         axis.group = sample_axes.groups[i]
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
+        axis.constant = True
         AXES[g_class] = axis
     return AXES
 
