@@ -1156,8 +1156,6 @@ class MMSpace(AbstractMmRepSpace):
         the function returns the sparse index corresponding to the
         input parameters instead of the linear index.
         """
-        if import_pending:
-            complete_import()
         if isinstance(tag, str) and len(tag) == 1:
             t = TAGS.find(tag)
             if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
@@ -1183,13 +1181,17 @@ class MMSpace(AbstractMmRepSpace):
             else:
                 err = "MM vector is not multiple of basis vector"
                 raise ValueError(err)
-        elif isinstance(tag, XLeech2):
-            i = mm_aux_index_leech2_to_sparse(tag.ord & 0xffffff)
-            if i > 0:
-                return i                   
-            else:
-                err = "Vector in Leech lattice mod 2 is not short"
-                raise ValueError(err)
+        elif import_pending:
+            try:
+                complete_import()  
+                if isinstance(tag, XLeech2):
+                    i = mm_aux_index_leech2_to_sparse(tag.ord & 0xffffff)
+                    if i > 0:
+                        return i                   
+                    err = "Vector in Leech lattice mod 2 is not short"
+                    raise ValueError(err)
+            except:
+                pass
         ERR = "Cannot convert %s object to MM vector index"
         raise TypeError(ERR % type(tag))
 
