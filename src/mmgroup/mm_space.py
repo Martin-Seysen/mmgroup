@@ -1143,6 +1143,41 @@ class MMSpace(AbstractMmRepSpace):
     # Conversion between tags and indices
     #######################################################################
 
+    @staticmethod
+    def tuple_to_sparse(tag, i0 = -1, i1 = -1):
+        r"""Convert tuple ``(tag, i0, i1)`` to a sparse index
+
+        Parameters are as in method ``tuple_to_index``, but the
+        function returns the sparse index corresponding to the
+        input parameters instead of the linear index.
+        """
+        if isinstance(tag, str) and len(tag) == 1:
+            t = TAGS.find(tag)
+            if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
+                return  (t << 25) + (i0 << 14) + (i1 << 8)
+            elif  tag == "E" and 0 <= i0 < 196884:
+                return mm_aux_index_extern_to_sparse(index)
+            elif tag == "D" and 0 <= i0 < 24:
+                return  (1 << 25) + (i0 << 14) + (i0 << 8)
+            else:
+                raise ValueError("Cannot convert tuple to MM vector index")
+        elif isinstance(tag, Integral):
+            if  0 <= tag < 196884:
+                return mm_aux_index_extern_to_sparse(tag)
+            else:
+                raise ValueError("MM vector index out of range")
+        elif isinstance(tag, MMVector):
+            sp = tag.as_sparse()
+            if len(sp) == 1:
+                return sp[0]
+            else:
+                err = "MM vector is not multiple of basis vector"
+                raise ValueError(err)
+        else:
+            raise TypeError("Cannot convert object to MM vector index")
+
+
+
     @classmethod
     def tuple_to_index(cls, tag, i0 = -1, i1 = -1):
         r"""Convert tuple ``(tag, i0, i1)`` to a linear index
@@ -1157,28 +1192,14 @@ class MMSpace(AbstractMmRepSpace):
         this method returns ``i0`` on input ``('E', i0)``, for
         ``0 <= i0 < 196884``.
 
+        if ``tag`` is an integer ``i0`` then this is equivalent
+        to an input  ``('E', i0)``.
+
         If ``tag`` is an instance of class |MMVector|, which is
         a nonzero multiple of a basis vector, then the linear index 
         corresponding to that basis vector is returned.        
         """
-        i = 0
-        if isinstance(tag, str) and len(tag) == 1:
-            t = TAGS.find(tag)
-            if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
-                i = (t << 25) + (i0 << 14) + (i1 << 8) 
-            elif  tag == "E" and 0 <= i0 < 196884:
-                return i0
-            elif tag == "D" and 0 <= i0 < 24:
-                i = (1 << 25) + (i0 << 14) + (i0 << 8) 
-        elif isinstance(tag, MMVector):
-            sp = tag.as_sparse()
-            if len(sp) == 1:
-                i = sp[0] 
-            else:
-                err = "MM vector is not multiple of basis vector"
-                raise ValueError(err)
-        else:
-            raise TypeError("Cannot convert object to MM vector index")
+        i = cls.tuple_to_sparse(tag, i0 = -1, i1 = -1)
         i_ext = mm_aux_index_sparse_to_extern(i)
         if 0 <= i_ext < 196884:
             return i_ext
@@ -1186,8 +1207,8 @@ class MMSpace(AbstractMmRepSpace):
         raise ValueError(err % tag)
 
  
-    @classmethod
-    def index_to_tuple(cls, index):
+    @staticmethod
+    def index_to_tuple(index):
         """Convert linear index to tuple ``(tag, i0, i1)``
 
         This method reverses the effect of method ``tuple_to_index``.

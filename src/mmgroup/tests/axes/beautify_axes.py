@@ -24,6 +24,7 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
+from mmgroup import mat24
 from mmgroup.mat24 import perm_from_dodecads
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup import mat24, GcVector, AutPL, Parity, GCode
@@ -438,6 +439,16 @@ def debug_show_swapped(axis, swap = False, verbose = 1, submatrix = None):
 
 REF_CLASS = None
 
+
+def find_perm_6F(i):
+    syn = mat24.lsbit24(mat24.syndrome(0x10e | (1 << i)))
+    cosyn = mat24.lsbit24(0xf1 & ~(1 << syn) )
+    #print("SYN", i, syn, cosyn)
+    src = [syn, 1, 2, 3, 8, i, cosyn]
+    #print(src)
+    return  [0, 1, 2, 3, 8, 9, 4], src 
+
+
 def postpermute(class_, axis):
     if class_ == "12C":
         # display_A(axis['A'] ) 
@@ -496,7 +507,23 @@ def postpermute(class_, axis):
         b = axis['B'] % 3
         l = [(0, j, b[0,j] != 1) for j in range(9,24) if  b[0,j]]
         axis *= solve_gcode_diag(l, 'x')
-
+    if class_ == "6F":
+        b = axis['B', 8] % 3
+        c = axis['C', 8] % 3
+        #print(b)
+        for i in range(9, 24):
+            if b[i]:
+                axis *= cond_swap_BC(b[i] != c[i])
+                #print(i)
+                break
+        dest, src = find_perm_6F(i)             
+        #axis.display_sym('B', ind = range(8,24), text = 'axis B')
+        axis *= permutation(dest, src)
+        if axis['B', 8, 9] % 3 != 1:
+            axis *= solve_gcode_diag([(8, i, 1) for i in range(9, 24, 2)])
+        #print(i, [axis.axis_type(e) for e in range(3)])
+        #axis.display_sym('B', ind = range(8,24), text = 'axis B')
+        #axis.display_sym('C', ind = range(8,24), text = 'axis C')
     if class_ == "6C":
         diag = np.diagonal(axis['A'])  % 3
         head = []; tail = []

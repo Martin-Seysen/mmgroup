@@ -251,7 +251,8 @@ Python classes implementing the representation of the Monster group
               mul_exp
 
 .. autoclass:: mmgroup.MMSpace
-   :members:  tuple_to_index, index_to_tuple, index_to_short
+   :members:  tuple_to_index, index_to_tuple, index_to_short,
+              tuple_to_sparse, index_to_short_mod2
 
 
 
