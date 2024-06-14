@@ -499,6 +499,7 @@ from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_extern
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_aux_hash
 from mmgroup.mm_op import mm_aux_mmv_size
 
@@ -1144,21 +1145,30 @@ class MMSpace(AbstractMmRepSpace):
     #######################################################################
 
     @staticmethod
-    def tuple_to_sparse(tag, i0 = -1, i1 = -1):
+    def index_to_sparse(tag, i0 = -1, i1 = -1):
         r"""Convert tuple ``(tag, i0, i1)`` to a sparse index
 
-        Parameters are as in method ``tuple_to_index``, but the
-        function returns the sparse index corresponding to the
+        The method converts an index referring to a basis
+        vector in the representation of the Monster to a linear 
+        index.
+
+        Input parameters are as in method ``index_to_linear``, but
+        the function returns the sparse index corresponding to the
         input parameters instead of the linear index.
         """
+        if import_pending:
+            complete_import()
         if isinstance(tag, str) and len(tag) == 1:
             t = TAGS.find(tag)
             if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
                 return  (t << 25) + (i0 << 14) + (i1 << 8)
             elif  tag == "E" and 0 <= i0 < 196884:
-                return mm_aux_index_extern_to_sparse(index)
+                return mm_aux_index_extern_to_sparse(i0)
             elif tag == "D" and 0 <= i0 < 24:
                 return  (1 << 25) + (i0 << 14) + (i0 << 8)
+            elif tag == "S":
+                if i0 >= 0:
+                    return  i0 & 0x0fffff00
             else:
                 raise ValueError("Cannot convert tuple to MM vector index")
         elif isinstance(tag, Integral):
@@ -1169,75 +1179,83 @@ class MMSpace(AbstractMmRepSpace):
         elif isinstance(tag, MMVector):
             sp = tag.as_sparse()
             if len(sp) == 1:
-                return sp[0]
+                return sp[0] & 0xfffff00
             else:
                 err = "MM vector is not multiple of basis vector"
                 raise ValueError(err)
-        else:
-            raise TypeError("Cannot convert object to MM vector index")
+        elif isinstance(tag, XLeech2):
+            i = mm_aux_index_leech2_to_sparse(tag.ord & 0xffffff)
+            if i > 0:
+                return i                   
+            else:
+                err = "Vector in Leech lattice mod 2 is not short"
+                raise ValueError(err)
+        ERR = "Cannot convert %s object to MM vector index"
+        raise TypeError(ERR % type(tag))
 
 
 
     @classmethod
-    def tuple_to_index(cls, tag, i0 = -1, i1 = -1):
-        r"""Convert tuple ``(tag, i0, i1)`` to a linear index
+    def index_to_linear(cls, tag, i0 = -1, i1 = -1):
+        r"""Convert an index to a linear index
 
-
-        Remarks:
+        The method converts an index referring to a basis
+        vector in the representation of the Monster to a linear 
+        index. Starndard tuples as in the constuctor of a vector
+        in that representation are accepted. Furthermore, the
+        following tags or tuples are accepted as input:
 
         The tuple ``('D', i0)`` is accepted as a shorthand for 
         ``('A', i0,i0)``.
 
-        A tuple ``('E', i0)`` means a linear index ``i0``,  i.e.
-        this method returns ``i0`` on input ``('E', i0)``, for
+        A tuple ``('S', i0)`` means an index ``i0`` in *sparse*
+        representation.
+
+        A tuple ``('E', i0)`` means a linear index ``i0``, for
         ``0 <= i0 < 196884``.
 
-        if ``tag`` is an integer ``i0`` then this is equivalent
+        If ``tag`` is an integer ``i0`` then this is equivalent
         to an input  ``('E', i0)``.
 
         If ``tag`` is an instance of class |MMVector|, which is
-        a nonzero multiple of a basis vector, then the linear index 
-        corresponding to that basis vector is returned.        
+        a nonzero multiple of a basis vector, then the index 
+        corresponding to that basis vector is taken as input.
+
+        If ``tag`` is an instance of class |XLeech2| encoding a
+        short vector in the Leech lattice mod 2 then the index
+        corresponding the that short vector is taken as input.
+
+        A sign (possibly encoded in the input data) is ignored.         
         """
-        i = cls.tuple_to_sparse(tag, i0 = -1, i1 = -1)
+        i = cls.index_to_sparse(tag, i0 , i1)
         i_ext = mm_aux_index_sparse_to_extern(i)
         if 0 <= i_ext < 196884:
             return i_ext
         err = "Could not convert tuple with tag %s to MM vector index"
         raise ValueError(err % tag)
 
- 
-    @staticmethod
-    def index_to_tuple(index):
-        """Convert linear index to tuple ``(tag, i0, i1)``
 
-        This method reverses the effect of method ``tuple_to_index``.
-        Given a linear index ``0 <= i < 196884`` for a basis
-        vector, the function returns that index as a tuple
-        ``(tag, i0, i1)`` with ``tags`` one letter of the
+    @classmethod
+    def tuple_to_index(cls, tag, i0 = -1, i1 = -1):
+        r"""Deprecated, equivalent to method ``index_to_linear``"""
+        W = "Method tuple_to_index() of class MMSpace is deprecated. "
+        "Use method index_to_linear() instead!" 
+        warnings.warn(W, UserWarning)
+        return cls.index_to_linear(tag, i0 = -1, i1 = -1)
+ 
+    @classmethod
+    def index_to_tuple(cls, tag, i0 = -1, i1 = -1):
+        """Convert an index to tuple ``(tag, i0, i1)``
+
+        The function converts an index referring to an entry of
+        a vector in the representation of the Monster to tuple of
+        shape  ``(tag, i0, i1)`` with ``tags`` one letter of the
         string ``"ABCTXYZ"`` and integers ``i0``, ``i1``.
 
-        See method ``tuple_to_index`` for details.
-
-        If ``index`` is an instance of class |MMVector|, which is
-        a nonzero multiple of a basis vector, then the index of that 
-        basis vector is taken.        
+        Input parameters are as in method ``index_to_linear``.       
         """
-        if isinstance(index, Integral): 
-            if  0 <= i < 196884:
-                i = mm_aux_index_extern_to_sparse(index)
-                return TAGS[i >> 25], (i >> 14) & 0x7ff, (i >> 8) & 0x3f
-            else:
-                raise ValueError("MM vector index out of range")
-        elif isinstance(index, MMVector):
-            sp = index.as_sparse()
-            if len(sp) == 1:
-                i = sp[0]
-                return TAGS[i >> 25], (i >> 14) & 0x7ff, (i >> 8) & 0x3f
-            else:
-                raise ValueError("MM vector is not multiple of basis vector")
-        else:    
-            raise TypeError("Cannot convert object to MM index tuple")
+        i = cls.index_to_sparse(tag, i0 , i1)
+        return TAGS[i >> 25], (i >> 14) & 0x7ff, (i >> 8) & 0x3f
 
 
     #######################################################################
@@ -1245,47 +1263,17 @@ class MMSpace(AbstractMmRepSpace):
     #######################################################################
 
 
-    @staticmethod
-    def index_to_sparse(tag, i0 = -1, i1 = -1):
-        r"""Auxiliary method for index_to_short
-
-        Convert a tagged tuple ``(tag, i0, i1)`` to a sparse 
-        index. That tuple must refer to an index describing a
-        short Leech lattice vector.
-        See method ``index_to_short`` for details. 
-        """
-        i = 0x0
-        if isinstance(tag, Integral) and 300 <= tag < 98580:
-            i = mm_aux_index_extern_to_sparse(tag)
-        elif isinstance(tag, str) and len(tag) == 1:
-            t = TAGS.find(tag)
-            if  t >= 1 and 0 <= i0 < 2048 and 0 <= i1 < 64:
-                i = (t << 25) + (i0 << 14) + (i1 << 8) 
-            elif  tag == "E" and 300 <= i0 < 98580:
-                i = mm_aux_index_extern_to_sparse(i0)
-            elif tag == "D" and 0 <= i0 < 24:
-                i = (1 << 25) + (i0 << 14) + (i0 << 8) 
-        elif isinstance(tag, MMVector):
-            sp = tag.as_sparse()
-            if len(sp) == 1:
-                i = sp[0]
-        else:    
-            err = "Cannot convert object to short Leech lattice vector"
-            raise TypeError(err)
-        return i
 
     @staticmethod
     def index_to_short(tag, i0 = -1, i1 = -1):
         r"""Convert index to a short Leech lattice vector
-
-        If ``tag`` is an integer, this is interpreted a linear index 
-        for a basis vector in the representation :math:`\rho_p` as in 
-        method ``tuple_to_index``. Otherwise the tuple ``(tag, i0, i1)`` 
-        is interpreted a standard index for such a basis vector.
-        If ``tag`` is an instance of class |MMVector|, which is
-        a nonzero multiple of a basis vector, then that basis vector 
-        is taken.
  
+        The function converts an index referring to an entry of
+        a vector in the representation of the Monster to a
+        short Leech lattice vector. 
+
+        Input parameters are as in method ``index_to_linear``.       
+
         Some but not all of these basis vectors correspond to short
         vector in the Leech lattice up to sign. If this is the
         case then the function returns a short vector of the Leech
@@ -1310,8 +1298,13 @@ class MMSpace(AbstractMmRepSpace):
     def index_to_short_mod2(tag, i0 = -1, i1 = -1):
         r"""Convert index to a short Leech lattice vector modulo 2
 
-        The tuple ``(tag, i0, i1)`` is interpreted as a basis vector
-        as in method ``index_to_short``.
+        The function converts an index referring to an entry of
+        a vector in the representation of the Monster to a short
+        vector in Leech lattice mod 2. The result is returned as
+        an 24-bit integer as described in the documentation of
+        class |XLeech2|.
+
+        Input parameters are as in method ``index_to_linear``.       
  
         Some but not all of these basis vectors correspond to short
         vector in the Leech lattice up to sign. If this is the

@@ -60,7 +60,7 @@ def reduce_leech_mod3_C(a):
     return g[: res >> 48], res & 0xffffffffffff
 
 @pytest.mark.gen_xi
-def test_gen_leech3_find_tetrad_leech_mod3(verbose = 3):
+def test_gen_leech3_find_tetrad_leech_mod3(verbose = 0):
     """Test function ``reduce_type2`` """
     print("\nTesting function gen_leech3_find_tetrad_leech_mod3")
     MSG = "Test %d, a = 0x%012x, tetrad expected: 0x%06x, obtained: 0x%06x" 
