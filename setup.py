@@ -310,7 +310,7 @@ CLIFFORD12_SOURCES = '''
   qstate12.c qstate12io.c qmatrix12.c
   bitmatrix64.c uint_sort.c xsp2co1.c
   xsp2co1_word.c 
-  leech3matrix.c xsp2co1_elem.c
+  leech2matrix.c leech3matrix.c xsp2co1_elem.c
   involutions.c xsp2co1_traces.c
   xsp2co1_map.c
 '''

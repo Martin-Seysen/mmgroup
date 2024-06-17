@@ -301,6 +301,12 @@ C functions in ``xsp2co1_elem.c``
    .. doxygenfile:: xsp2co1_elem.c
 
 
+C functions in ``leech2matrix.c``
+----------------------------------
+
+   .. doxygenfile:: leech2matrix.c
+
+
 C functions in ``leech3matrix.c``
 ----------------------------------
 
