@@ -338,6 +338,7 @@ def octad_to_bitlist(vector):
     Here vector must be a vector of bitwight 8 representing an octad.
     The function returns the corresponding list of bits.
     """
+    vector = int(vector)
     assert bitweight(vector) == 8
     global _shuffled_octad_list
     if ODD_OCTADS_SPECIAL > 1:
@@ -458,11 +459,12 @@ class Mat24Tables(object):
 
         In case v1 & 0xffffff == 0 we return 24.
         """
-        return Lsbit24Function.compute(v1)
+        return Lsbit24Function.compute(int(v1))
         
     @staticmethod
     def bw24(v1):
         """Return the bit weight of the lowest 24 bits of v1"""
+        v1 = int(v1)
         v1 = (v1 & 0x555555) + ((v1 & 0xaaaaaa) >> 1)
         v1 = (v1 & 0x333333) + ((v1 & 0xcccccc) >> 2)
         v1 = (v1 + (v1 >> 4)) & 0xf0f0f
@@ -478,7 +480,7 @@ class Mat24Tables(object):
 
         The basis is returned as a list of 12 + 12 integers
         """
-        return [cls.basis[i] for i in range(24)]
+        return [int(cls.basis[i]) for i in range(24)]
 
 
     @classmethod
@@ -518,6 +520,7 @@ class Mat24Tables(object):
         This return value is for compatibility with the corresponding
         C function.
         """
+        v1 = int(v1)
         l1 = [ i for i in range(24) if v1 & (1 << i) ]
         l0 = [ i for i in range(24) if not v1 & (1 << i) ]
         return len(l1), l1 + l0
@@ -531,6 +534,8 @@ class Mat24Tables(object):
         (in ascending order) then the bit of v1 at position i_j is copied 
         to the bit at position j of the return value for j = 0,...,k.
         """
+        v1 = int(v1)
+        u_mask = int(u_mask)
         l = [(v1 >> i) & 1 for i in range(24) if (u_mask >> i) & 1] 
         return sum(x << i for i, x in enumerate(l))
 
@@ -542,6 +547,8 @@ class Mat24Tables(object):
         (in ascending order) then the bit of v1 at position i is copied 
         to the bit at position i_j of the return value for j = 0,...,k.
         """
+        v1 = int(v1)
+        u_mask = int(u_mask)
         l = [i for i in range(24) if (u_mask >> i) & 1] 
         return sum( ((v1 >> i) & 1) << x for i, x in enumerate(l) )
 
@@ -554,7 +561,7 @@ class Mat24Tables(object):
 
 
     @classmethod
-    def vect_to_vintern(self, v1):
+    def vect_to_vintern(self, v1):        
         return  int(    self.enc_table0[v1 & 0xff]
                    ^ self.enc_table1[(v1 >> 8) & 0xff]
                    ^ self.enc_table2[(v1 >> 16) & 0xff]  )
@@ -568,10 +575,11 @@ class Mat24Tables(object):
 
     @classmethod
     def vect_to_cocode(self, v1 ):
-        return self.vect_to_vintern(v1) & 0xfff
+        return self.vect_to_vintern(int(v1)) & 0xfff
 
     @classmethod
     def gcode_to_vect(self, v1):
+        v1 = int(v1)
         return  int(   self.dec_table1[(v1 << 4) & 0xf0]
                    ^ self.dec_table2[(v1 >> 4) & 0xff]  )
 
@@ -593,6 +601,7 @@ class Mat24Tables(object):
 
     @classmethod
     def gcode_to_octad(self, v1, u_strict = 1):
+       v1 = int(v1)
        y = int(self.oct_enc_table[v1 & 0x7ff])
        if y >> 15 or ((v1 >> 11) ^ y) & u_strict & 1:
            raise ValueError("Golay code vector is not an octad")
@@ -601,11 +610,13 @@ class Mat24Tables(object):
 
     @classmethod
     def octad_to_gcode(self, u_octad):
+        u_octad = int(u_octad)
         assert 0 <= u_octad < 759, "not a Golay code octad"
-        return self.oct_dec_table[u_octad] & 0xfff
+        return int(self.oct_dec_table[u_octad]) & 0xfff
 
     @classmethod
     def octad_to_vect(self,u_octad):
+        u_octad = int(u_octad)
         return self.gcode_to_vect(self.octad_to_gcode(u_octad))
 
     ###########################################################################
@@ -619,14 +630,16 @@ class Mat24Tables(object):
 
         Same as mat24_syndrome(mat24_cocode_to_vect(c1, u_tetrad)).  
         """
+        c1 = int(c1)
+        u_tetrad = int(u_tetrad)
         if not 0 <= u_tetrad <= 24:
             raise ValueError("Bad argument in function cocode_syndrome()")
         bad = (u_tetrad >= 24) & ((c1 >> 11) + 1) & 1
-        u_tetrad -= (u_tetrad + 8) >> 5      # change u_tetrad == 24 to 23
-        y = - (((c1 >> 11) + 1) & 1)         # y = 0 if c1 is odd else -1
-        c1 ^= cls.recip_basis[u_tetrad] & y  # make c1 odd, if c1 is odd:
-        y  &=   1 << u_tetrad                #     set bit u_tetrad in y
-        syn = cls.syndrome_table[ c1 & 0x7ff ]
+        u_tetrad -= (u_tetrad + 8) >> 5          # change u_tetrad == 24 to 23
+        y = - (((c1 >> 11) + 1) & 1)             # y = 0 if c1 is odd else -1
+        c1 ^= int(cls.recip_basis[u_tetrad]) & y # make c1 odd, if c1 is odd:
+        y  &=   1 << u_tetrad                    #     set bit u_tetrad in y
+        syn = int(cls.syndrome_table[ c1 & 0x7ff ])
         syn = (1 << (syn & 31)) | (1 << ((syn>>5) & 31)) | (1 << ((syn>>10) & 31))
         # bit 24 in syn is also set if syn has weight 1
         bad &= not bool(syn & (y | 0x1000000)) 
@@ -647,6 +660,8 @@ class Mat24Tables(object):
         Here 24 means don't care.  Thus u_tetrad = Mat24.lsbit24(x) is legal 
         for any x. 
         """
+        v1 = int(v1)
+        u_tetrad = int(u_tetrad)
         return cls.cocode_syndrome(cls.vect_to_vintern(v1), u_tetrad)
 
 
@@ -669,6 +684,7 @@ class Mat24Tables(object):
         It is well known that all vectors of the same type are
         in one orbit of the automorphism group of the Golay code.
         """
+        v1 = int(v1)
         x = v1
         w = cls.bw24(x)
         s = cls.syndrome(x)
@@ -694,8 +710,9 @@ class Mat24Tables(object):
 
         Here 0 <= v1 < 4096 is the number of a Golay code word.
         """
+        v1 = int(v1)
         t = - ((v1 >> 11) & 1)
-        w = (cls.theta_table[v1 & 0x7ff] >> 12) & 7
+        w = (int(cls.theta_table[v1 & 0x7ff]) >> 12) & 7
         return ((w & 7) ^ t) + (t & 7)  
 
     @classmethod
@@ -744,6 +761,7 @@ class Mat24Tables(object):
         tetrads are stored in lexical order. 
         It raises ValueError if 'c1' is not a tetrad.
         """
+        c1 = int(c1)
         sextet = cls.cocode_to_bit_list(c1, 0)
         if len(sextet) != 4:
             raise ValueError("Golay cocode word is not a sextet") 
@@ -768,6 +786,8 @@ class Mat24Tables(object):
         v1 is a Golay code vector in 'gcode' representation, c1 is a
         cocode vector in cocode representation.
         """
+        v1 = int(v1)
+        c1 = int(c1)
         r = v1 & c1
         r ^= r >> 6
         r ^= r >> 3
@@ -799,9 +819,11 @@ class Mat24Tables(object):
         'gcode' representation. An exception is raised if ``octad`` is
         not the nunber of an octad.
         """
+        u_sub = int(u_sub)
+        octad = int(octad)
         parity =  (0x96 >> ((u_sub ^ (u_sub >> 3)) & 7)) & 1
         sub = parity + ((u_sub & 0x3f) << 1)
-        octad_entries = cls.octad_table[8*octad:8*octad+8]
+        octad_entries = [int(x) for x in cls.octad_table[8*octad:8*octad+8]]
         vector =  sum(1 << o for i,o in enumerate(octad_entries) if
                       (1 << i) & sub)
         return cls.vect_to_cocode(vector) 
@@ -822,14 +844,16 @@ class Mat24Tables(object):
         correspond to a short Leech lattice vector; otherwise
         ValueError is raised. 
         """ 
+        v1 = int(v1)
+        c1 = int(c1)
         octad = cls.gcode_to_octad(v1, u_strict = 0)
-        octad_entries = cls.octad_table[8*octad:8*octad+8]
+        octad_entries = [int(x) for x in cls.octad_table[8*octad:8*octad+8]]
         syn = cls.cocode_syndrome(c1, octad_entries[0])
         v = sum(1 << i for i in octad_entries)
         if c1 & 0x800 or syn & v != syn:
             raise ValueError("Cocode word is not a suboctad")
         suboctad = sum(1 << i for i, o in enumerate(octad_entries) if
-                      (1 << o) & syn)
+                      (1 << int(o)) & syn)
         if u_strict & 1:
             w = cls.bw24(cls.gcode_to_vect(v1))
             if not(((w >> 3) ^ cls.suboctad_weight(suboctad)) &  1):
@@ -842,7 +866,7 @@ class Mat24Tables(object):
     @classmethod
     def octad_entries(self, u_octad):
         assert 0 <= u_octad < 759, "not a Golay code octad"
-        return list(octad_table[8*u_octad : 8*u_octad+8])
+        return [int(x) for x in octad_table[8*u_octad : 8*u_octad+8]]
 
     @staticmethod
     def suboctad_weight(u_sub):
@@ -852,6 +876,7 @@ class Mat24Tables(object):
         suboctads. The function returns 0 is the bit weight of a
         suboctad is divisible by four and 1 othewise.
         """
+        u_sub = int(u_sub)
         w = bw24(u_sub & 0x3f)
         return ((w + 1) >> 1) & 1
   
@@ -866,6 +891,8 @@ class Mat24Tables(object):
         But in this functions parameters u_sub1, u_sub2 are suboctad 
         numbers as described in function suboctad_to_cocode.
         """
+        u_sub = int(u_sub1)
+        u_sub = int(u_sub1)
         wp = (0x96 >> ((u_sub1 ^ (u_sub1 >> 3)) & 7)) 
         wp &=  (0x96 >> ((u_sub2 ^ (u_sub2 >> 3)) & 7))
         u_sub1 &= u_sub2

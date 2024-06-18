@@ -39,6 +39,9 @@ def test_axis_names(verbose =  0):
     for p in characteristics() + [0]:
         V = MMV(p) if p else partial(MMVectorCRT, 15)
         std_axis = V('Axis', 'v+')
+        if p == 0 and verbose:
+             print(std_axis['A'])
+             print(V("I", 3, 2)['A'])
         assert std_axis ==  V("I", 3, 2)
         opp_axis =  V('Axis', 'v-')
         assert opp_axis ==  V("I", 3, 2) * MM0('x', 0x200)

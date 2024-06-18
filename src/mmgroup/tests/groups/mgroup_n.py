@@ -415,6 +415,7 @@ def iter_inv_tl(group, atom):
 ERR_ATOM = "Illegal atom %s in constuctor of class MGroupNWord"
 
 def iter_generators_from_atom(atom):
+    atom = int(atom)
     if atom & -0x80000000 == 0:
         tag = atom >> 28
         data = atom & 0xfffffff

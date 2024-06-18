@@ -110,7 +110,7 @@ class MM_IO24:
         'External representation of a vector' for internal and
         external representation of a vector.
         """
-        a = np.zeros(24 + 3 * 276, dtype = np.int16)
+        a = np.zeros(24 + 3 * 276, dtype = np.uint16)
         for k0, (tag, i, j) in enumerate(cls.iter_ext_ABC()):
             k1 = (24 * tag + i) * 32 + j
             k1_entry = k1 - k0 + 24

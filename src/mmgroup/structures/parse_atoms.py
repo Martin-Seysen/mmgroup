@@ -316,7 +316,7 @@ class TaggedAtom(object):
         Subclasses may overwerite this method. The function
         may be implemented as a generator
         """
-        yield (self.tag,) + self.data
+        yield (self.tag,) + tuple(int(x) for x in self.data)
 
     def reduce(self, *args):
         """Reduce atom 'self' to a simpler form if possible"""

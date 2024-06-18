@@ -68,7 +68,7 @@ def check_table(table, blocks, row_length):
     if row_length == 24:
         table = cut24(np.copy(table))
     length = len(table)
-    image_length = (max(table & 0x7fff) + 31) & -32
+    image_length = (int(max(table & 0x7fff)) + 31) & -32
     blocklen, r0 = divmod(length, blocks)
     image_blocklen, r1 = divmod(image_length, blocks)
     assert r0 == r1 == 0

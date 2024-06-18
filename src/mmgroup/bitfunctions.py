@@ -156,7 +156,7 @@ def list_xor(ListList):
        return ListList[0] if len(ListList) else []
    d = len(ListList) >>1
    l1, l2 = ListXor(ListList[:d]), ListXor(ListList[d:])
-   return [x ^ y for x in l1 for y in l2]
+   return [int(x) ^ int(y) for x in l1 for y in l2]
 
 
 
@@ -295,8 +295,8 @@ def pivot_binary_high(basis):
            columns.append(mi)
            basis[i], basis[j] = m, basis[i]
            for j in range(0, len(basis)):
-               if j != i and basis[j] & mask: 
-                    basis[j] ^= m 
+               if j != i and int(basis[j]) & mask:
+                    basis[j] ^= m
    return basis, columns   
 
 
@@ -433,7 +433,7 @@ def bit_mat_inverse(a):
          raise ZeroDivisionError( msg )
     perm = [None] *  ncols
     hicol = 1 << ncols
-    ah = [ x + (hicol << i) for i,x in enumerate(a) ]
+    ah = [ int(x) + (hicol << i) for i,x in enumerate(a) ]
     for i in range(ncols):
         piv = v2(ah[i])
         if piv >= ncols:
@@ -556,6 +556,22 @@ def rand_perm(n):
        p2 = [n-1] + rand_perm(n-1)
        return bit_perm_mul(p1,p2)
         
+
+
+def unnumpy(obj):
+    """Change the stange numpy scalars in an object to python integers
+
+    This change is done recursively in tuples or lists.
+    """
+    if isinstance(obj, list):
+         return [unnumpy(x) for x in obj]
+    if isinstance(obj, tuple):
+         return tuple([unnumpy(x) for x in obj])
+    if isinstance(obj, Integral):
+         return int(obj)
+    return obj
+
+
 
 try:
     from math import comb as binomial

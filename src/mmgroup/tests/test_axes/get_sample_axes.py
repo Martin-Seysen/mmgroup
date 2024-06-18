@@ -10,6 +10,7 @@ of the subgroup :math:`G_{x0}` (of structure
 import sys
 import os
 import time
+from numbers import Integral
 from math import floor, ceil
 from random import randint, shuffle, sample
 from collections import defaultdict, OrderedDict
@@ -24,7 +25,7 @@ if __name__ == "__main__":
 
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
-
+from mmgroup.bitfunctions import unnumpy
 
 ########################################################################
 ########################################################################
@@ -750,10 +751,15 @@ groups = [
 """
 
 
+
+
+
 def sample_list_sort_key(sample_entry):
      stage, sample, _ = sample_entry 
      s_class = axis_type(sample.g) 
      return stage, int(s_class[:-1]), s_class[-1:]
+
+
 
 
 def write_axes(sample_list, verbose = False):
@@ -770,6 +776,7 @@ def write_axes(sample_list, verbose = False):
     for i, (stage, sample, mark) in enumerate(sample_list):
         s_samples += "\"" + sample.g.raw_str() + "\",\n"
         s_stages += str(stage) + ", "
+        mark = unnumpy(mark)
         s_marks += str(mark)  + ",\n"
         class_ = axis_type(sample.g)
         s_classes += '"' + class_ + '", '

@@ -210,8 +210,8 @@ def odd_syn(v):
 
     The bit vector v must have odd parity.
     """
-    coc = gc.vect_to_vintern(v)
-    t = gc.syndrome_table[coc & 0x7ff ]
+    coc = gc.vect_to_vintern(int(v))
+    t = int(gc.syndrome_table[coc & 0x7ff])
     return ( (1 << (t & 31)) ^ (1 << ((t >> 5) & 31)) ^
              (1 << ((t >> 10) & 31)) )
 
@@ -246,6 +246,9 @@ def mat24_complete_heptad(p_io):
    
     Otherwise the function returns a nonzero value.
     """
+    for i, x in enumerate(p_io):
+        if x is not None:
+            p_io[i] = int(x)
     ## uint_fast32_t  err, s1, s5, s015, s3, s4, s8, s01234; 
     ## uint_fast32_t  s567, s67, s9AB, s9CD, s9, s6GH, s6;
     ## uint_fast32_t  sACE, sD, sFGI, sG, sFJK, sJLM, sALN;
@@ -339,7 +342,7 @@ def split_n_mat24(n):
     """
     n_list = []
     for d in [16, 3, 20, 21, 22, 23, 24]:
-        n, r = divmod(n, d)
+        n, r = divmod(int(n), d)
         n_list.append(r)
     n_list.reverse()
     return n_list
@@ -366,6 +369,7 @@ def py_mat24_int_to_perm(n):
     not fast. Function ``mat24_int_to_perm`` is a faster version of
     this function.
     """
+    n = int(n)
     assert 0 <= n < MAT24_ORDER
     # Compute the output permutation in ``p``
     p = [None] * 24
@@ -385,7 +389,7 @@ def py_mat24_int_to_perm(n):
     # That syndrome has length 3.  
     bitmap = sum(1 << i for i in p[:5])
     cocode = gc.vect_to_cocode(bitmap)
-    syn_tab = gc.syndrome_table[cocode & 0x7ff]
+    syn_tab = int(gc.syndrome_table[cocode & 0x7ff])
     syn = [(syn_tab >> i) & 31 for i in [0, 5, 10]] 
     # Select image of the number 5 from that syndrome,
     # using entry 5 f the digit list ``n_list``
@@ -427,6 +431,7 @@ def mat24_int_to_perm(n):
     # ``py_mat24_int_to_perm``. For obtaining the next digit we subtract
     # k << SH from ``n1`` and then we  multiply ``n1`` by ``i``, 
     # for i = 23, 22, 21, 20, 3, 16 in that order. 
+    n = int(n)
     n1 = FACTOR24 * n
     # Let k be the first digit of n. Store this in p[0] 
     p[0] = k = n1 >> SH  
@@ -482,7 +487,7 @@ def mat24_int_to_perm(n):
     # fields of length 5. Each field contains an entry of the
     # syndrome. These entries are ordered. 
     cocode = gc.vect_to_cocode(bitmap)
-    syn = gc.syndrome_table[cocode & 0x7ff]
+    syn = int(gc.syndrome_table[cocode & 0x7ff])
 
     # Get next digit k from n. Assign the k-th entry of the
     # syndrome to p[5]
@@ -534,6 +539,7 @@ def mat24_perm_to_int(p1):
     The function returns an undefined integer if permutation
     p1 is not in the Mathieu group.
     """
+    p1 = [None if x is None else int(x) for x in p1]
     # We reverse to operation of function ``mat24_int_to_perm``.
     # We compute the digits of the result n in mixed-radix
     # representation as described in function ``mat24_int_to_perm``.
@@ -586,7 +592,7 @@ def mat24_perm_to_int(p1):
     # entry of the syndrome. These entries are ordered. 
     # Also let syn1 = syn[1] be the middle entry of that list.
     cocode = gc.vect_to_cocode(bitmap)
-    syn = gc.syndrome_table[cocode & 0x7ff]
+    syn = int(gc.syndrome_table[cocode & 0x7ff])
     syn1 = (syn >> 5) & 31
 
     # Compute next digit n_5 = k from p[5]. Put k = 2 if p1[5] > syn1,
@@ -629,6 +635,8 @@ def mat24_perm_from_heptads(h1, h2):
     Return permutation p if such a p exists an is unique,
     and return None otherwise.
     """
+    h1 = [None if x is None else int(x) for x in h1]
+    h2 = [None if x is None else int(x) for x in h2]
     # First find the special element of v h1 not contained in the octad
     v = 0
     for i in range(7):

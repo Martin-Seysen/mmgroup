@@ -79,7 +79,7 @@ class vsparse:
             self.d.update(data[0].d)
             return
         if isinstance(data[0], Integral):
-            scalar, data = data[0],  data[1:]
+            scalar, data = int(data[0]),  data[1:]
         if scalar == 0 or len(data) == 0:
             return
         if isinstance(data[0], str):
@@ -89,6 +89,7 @@ class vsparse:
         else:
             raise TypeError(ERR_CRT_TYPE % type(data[0]))          
         for t in tuple_to_sparse(255, *data):
+            t = int(t)
             scalar1, t =  t & 0xff, t & 0xffffff00
             scalar1 = scalar1 if scalar1 < 128 else scalar1 - 255
             self.d[t] += scalar * scalar1
@@ -734,6 +735,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
         l = len(d[7])
         a = np.zeros(l, dtype = np.int32)
         mm_crt_combine_bytes(d[7], d[31], d[127], d[255], l, a)
+        a = np.array(a, dtype = float)
         af = np.array(a * v.factor,  dtype = float)
         return af.reshape(shape) if len(shape) else float(af)
         

@@ -100,6 +100,7 @@ def w2_gamma(v):
     see module mat24.py. We also return the bit w2 = w2(c), with w2()
     as defined in [Seysen20], section 3.3.   
     """
+    v = int(v)
     x = Mat24.gcode_to_vect(v)
     x1 = sum( (x >> i) & 0x111111 for i in range(1,4) )
     x1 = (x1 >> 1) & 0x111111
@@ -123,6 +124,7 @@ def compress_gray(x):
     A Golay code word x must be given in 'gcode' and a cocode word 
     must be given in 'cocode' representation. 
     """
+    x = int(x)
     return (x & 0x0f) + ((x >> 6) & 0x30)
 
 def expand_gray(x):
@@ -131,6 +133,7 @@ def expand_gray(x):
     Given a compressed 'gray' Golay code or cocode word, the function 
     returns the original 'gray' word in code or cocode representation.
     """
+    x = int(x)
     return (x & 0x0f) + ((x & 0x30) << 6) 
 
 
@@ -205,7 +208,7 @@ class GenXi(object):
         cocode, with gamma() as in [Seysen20], section 3.3. c is 
         returned in 'cocode' representation, see module mat24.py.
         """
-        return expand_gray(cls.tab_g_gray[compress_gray(v)])
+        return expand_gray(int(cls.tab_g_gray[compress_gray(v)]))
   
     @classmethod
     def gen_xi_w2_gray(cls, v):
@@ -215,7 +218,7 @@ class GenXi(object):
         module mat24.py, we return the bit w2 = w2(c), with w2() as
         defined in [Seysen20], section 3.3.   
         """
-        return cls.tab_g_gray[compress_gray(v)] >> 7
+        return int(cls.tab_g_gray[compress_gray(v)]) >> 7
 
     @classmethod
     def gen_xi_g_cocode(cls, c):
@@ -226,7 +229,7 @@ class GenXi(object):
         code vector v such that cls.gen_xi_w2_gray(v) is the gray 
         part of c. 
         """
-        return expand_gray(cls.tab_g_cocode[compress_gray(c)])
+        return expand_gray(int(cls.tab_g_cocode[compress_gray(c)]))
   
     @classmethod
     def gen_xi_w2_cocode(cls, c):
@@ -236,7 +239,7 @@ class GenXi(object):
         module mat24.py, the function returns the bit w2 = w2(c), 
         with w2() as defined in [Seysen20], section 3.3.   
         """
-        return cls.tab_g_cocode[compress_gray(c)] >> 7
+        return int(cls.tab_g_cocode[compress_gray(c)]) >> 7
 
     @classmethod
     def gen_xi_op_xi(cls, x, exp):
@@ -253,15 +256,16 @@ class GenXi(object):
         The returned result is is coded in the same way. This 
         function implements the formula in [Seysen20], Lemma 9.5.
         """
+        x = int(x)
         exp %= 3
         if (exp == 0): 
             return x
         scal = bw24((x >> 12) &  x & 0xc0f) & 1  
         x ^= scal << 24 # xor scalar product to sign
 
-        tv =  cls.tab_g_gray[compress_gray(x >> 12)] 
+        tv =  int(cls.tab_g_gray[compress_gray(x >> 12)])
         w2v, gv = tv >> 7, expand_gray(tv)
-        tc =  cls.tab_g_cocode[compress_gray(x)] 
+        tc =  int(cls.tab_g_cocode[compress_gray(x)])
         w2c, gc = tc >> 7, expand_gray(tc)
         if (exp == 1):
             x &= ~0xc0f000  # kill gray code part
@@ -288,6 +292,7 @@ class GenXi(object):
 
         The function returns 0 for an illegal input x1. 
         """
+        x1 = int(x1)
         box, sign, code = x1 >> 16, (x1 >> 15) & 1, x1 & 0x7fff
         octad = 0xffff
         if box == 1:
@@ -330,7 +335,7 @@ class GenXi(object):
             cocode = Mat24.suboctad_to_cocode(cc, octad >> 6)
             gcode ^=  w << 11
         cocode ^= Mat24.ploop_theta(gcode)
-        return (sign << 24) | (gcode << 12) | cocode
+        return int((sign << 24) | (gcode << 12) | cocode)
 
     @staticmethod
     def gen_xi_leech_to_short(x1):   
@@ -343,6 +348,7 @@ class GenXi(object):
 
         The function returns 0 if the vector x1 is not short. 
         """
+        x1 = int(x1)
         sign = (x1 >> 24) & 1
         x1 ^= Mat24.ploop_theta(x1 >> 12)
         gcodev = Mat24.gcode_to_vect(x1 >> 12) 
@@ -380,7 +386,7 @@ class GenXi(object):
                     return 0
                 code = 384 * (w & 2) + 32 * y2 + y1
                 box = 1
-        return  (box << 16) | (sign << 15) | code
+        return  int((box << 16) | (sign << 15) | code)
   
 
     @classmethod
@@ -397,6 +403,7 @@ class GenXi(object):
 
         The returned result is is coded in the same way. 
         """
+        x = int(x)
         y = cls.gen_xi_short_to_leech(x)
         if (y == 0): return x
         y = cls.gen_xi_op_xi(y, exp)

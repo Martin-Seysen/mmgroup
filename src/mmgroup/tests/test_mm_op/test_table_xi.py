@@ -246,8 +246,8 @@ def map_xi(v_in, e, v_out):
                 cluster_sign = sign_table[cluster * cluster_sign_size:]
                 for i in range(shape_out[1]):
                     for j in range(shape_out[2]):
-                        x = cluster_in[cluster_perm[shape_out[2]*i + j]]
-                        x = (-1)**(cluster_sign[i] >> j) * x
+                        x = int(cluster_in[cluster_perm[shape_out[2]*i + j]])
+                        x = (-1)**(int(cluster_sign[i]) >> j) * x
                         cluster_out[32 * i + j] = x
 
 

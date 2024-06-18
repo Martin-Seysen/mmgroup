@@ -74,9 +74,9 @@ def test_mat24lex(ntests = 5000, verbose = 0):
         if test_ref:
             # Check result p against two slow reference implementations
             p_py_ref = py_mat24_int_to_perm(n)
-            assert p == p_py_ref, (n, p, p_py_ref)
+            assert list(p) == list(p_py_ref), (n, p, p_py_ref)
             p_ref = mat24_int_to_perm(n)
-            assert p == p_ref, (n, p, p_ref)
+            assert list(p) == list(p_ref), (n, p, p_ref)
         if verbose:
             print(i, n, p[:10])
         # Append pair (n i) to the list 'lindex' and put ldata[i] = p

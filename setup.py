@@ -75,6 +75,8 @@ def print_platform():
         'system', 'node', 'release', 'version', 'machine'
         ]:
         print(" " + key + ":", getattr(uname, key, None))
+    import numpy as np
+    print("numpy version:", np.version.version)
     print("")
 
 

@@ -63,7 +63,7 @@ def iter_vectors_22():
     """
     for o, bl in iter_octads_22():
         og = m.vect_to_gcode(o)
-        ov = (og << 12) + (m.theta_table[og & 0x7ff] & 0xfff)
+        ov = (og << 12) + (int(m.theta_table[og & 0x7ff]) & 0xfff)
         ov ^= m.vect_to_cocode((1 << 2) | (1 << bl[0]))
         lst = []
         for i in range(1, 5):

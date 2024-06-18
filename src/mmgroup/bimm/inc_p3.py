@@ -129,7 +129,7 @@ class P3_node:
     """
     slots = ['_ord']
     def __init__(self, obj):
-        self._ord = p3_obj(obj) 
+        self._ord = int(p3_obj(obj)) 
     def __str__(self):
         t = "point" if self._ord < 13 else "line"
         return "P3<%s %d>" % (t, self._ord % 13)
@@ -207,7 +207,7 @@ def P3_incidences(*x):
             l1 = p3_list(l)
             nodes &= reduce(__or__, [INCIDENCES[p] for p in l1], 0)
             no_nodes |= reduce(__or__, [1 << p for p in l1], 0)
-    nodes = uint64_to_bitlist(nodes & ~no_nodes)
+    nodes = uint64_to_bitlist(int(nodes) & ~no_nodes)
     return [P3_node(x) for x in nodes]
 
 
@@ -248,9 +248,10 @@ def _remaining_nodes(x1, x2):
     But the result is returned as a list of integers.
     """
     blist = uint64_to_bitlist(
-        INCIDENCES[p3_obj(x1)] & INCIDENCES[p3_obj(x2)])
+        int(INCIDENCES[p3_obj(x1)]) & int(INCIDENCES[p3_obj(x2)])
+    )
     if len(blist) == 1:
-        rem = INCIDENCES[blist[0]] & ~((1 << x1) | (1 << x2))
+        rem = int(INCIDENCES[blist[0]]) & ~((1 << x1) | (1 << x2))
         return uint64_to_bitlist(rem)
     if len(blist):
         s = "Arguments in P3_remaining_nodes() must be differnt"
@@ -293,7 +294,7 @@ def find_cross(points):
         """Return list of all points on line through x1 and x2"""
         blist = uint64_to_bitlist(INCIDENCES[x1] & INCIDENCES[x2])
         assert len(blist) == 1
-        return INCIDENCES[blist[0]]
+        return int(INCIDENCES[blist[0]])
 
     # Four different points x1, x2, x3, x4 form a cross if the inter-
     # section of the line through x1 and x2, and the line through
@@ -302,7 +303,7 @@ def find_cross(points):
         raise ValueError(ERR_DUPL)
     if not 0 <= min(points) <= max(points) < 13:
          raise ValueError(ERR_P_ALL % 'list')
-    points = points[:6]
+    points = [int(x) for x in points[:6]]
     n = len(points)
     if n < 4:
         return None
@@ -355,9 +356,9 @@ def find_collinear_points(points):
         for x2 in points[i1 + 1:]:
             x3, x4 = _remaining_nodes(x1, x2)
             if x3 in points:
-                return [x1, x2, x3, x4]
+                return [int(x1), int(x2), int(x3), int(x4)]
             if x4 in points:
-                return [x1, x2, x4, x3]
+                return [int(x1), int(x2), int(x4), int(x3)]
     return None            
        
 
@@ -398,6 +399,7 @@ def complete_cross_random(points):
 
     Duplicate entries in the list ``points`` are illegal.
     """
+    point = [int(x) for x in points]
     if len(points) == 0:
         points = [randint(0,12)]
     cross = find_cross(points) 
@@ -456,7 +458,7 @@ def cross_intersection(x11, x12, x21, x22):
         r"""Return bitnap of remaining points on line through x1 and x2"""
         blist = uint64_to_bitlist(INCIDENCES[x1] & INCIDENCES[x2])
         assert len(blist) == 1
-        return INCIDENCES[blist[0]] &~ ((1 << x1) | (1 << x2))
+        return int(INCIDENCES[blist[0]]) &~ ((1 << x1) | (1 << x2))
 
     s1 = remain(x11, x12)
     s2 = remain(x21, x22)
@@ -518,7 +520,7 @@ def line_map_from_map(perm):
     for x in range(13,26):
         p1, p2 = INCIDENCE_LISTS[x,:2]
         img = INCIDENCES[perm[p1]] & INCIDENCES[perm[p2]]
-        line_perm.append(uint64_low_bit(img >> 13))
+        line_perm.append(uint64_low_bit(int(img) >> 13))
     return line_perm
 
 
@@ -621,7 +623,7 @@ def mul_perm_P3(perm1, perm2):
     """
     perm3 = [None] * 13
     for i, x in enumerate(perm1):
-        perm3[i] = perm2[x]
+        perm3[i] = int(perm2[x])
     check_perm_P3(perm3)
     return perm3
 
@@ -642,7 +644,7 @@ def P3_point_set_type(s):
     bl = reduce(__or__, [1 << p for p in s], 0)
     l = [0]*5
     for i in range(13, 26):
-        l[uint64_bit_weight(INCIDENCES[i] & bl)] += 1
+        l[uint64_bit_weight(int(INCIDENCES[i]) & bl)] += 1
     return uint64_bit_weight(bl), tuple(l)
         
 

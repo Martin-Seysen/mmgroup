@@ -41,8 +41,8 @@ def bw24(uint32_t v1):
 ###########################################################################
 
 cdef int _i 
-basis =  [MAT24_BASIS[_i] for _i in range(24)]
-recip_basis =  [MAT24_RECIP_BASIS[_i] for _i in range(24)]
+basis =  [int(MAT24_BASIS[_i]) for _i in range(24)]
+recip_basis =  [int(MAT24_RECIP_BASIS[_i]) for _i in range(24)]
 
 ###########################################################################
 # Conversion between bit vectors of GF(2)**24
@@ -136,7 +136,7 @@ def octad_to_vect(uint32_t u_octad):
 ###########################################################################
 
 def syndrome_table(c1):
-    return MAT24_SYNDROME_TABLE[c1 & 0x7ff]
+    return int(MAT24_SYNDROME_TABLE[c1 & 0x7ff])
 
 def cocode_syndrome(uint32_t c1,  uint32_t u_tetrad = 24):
     cdef uint32_t res
@@ -614,7 +614,7 @@ def perm_to_net(p1):
     cdef uint32_t *p_res =res
     cdef int i
     for i in range(24):
-        p[i] = p1[i]
+        p[i] = int(p1[i])
     mat24_perm_to_net(p_p, p_res)
     return [res[i] for i in range(9)]
 
@@ -625,7 +625,7 @@ def op_all_autpl(m1):
     cdef uint16_t *p_res = res
     cdef int i
     for i in range(12):
-        pm[i] = m1[i]
+        pm[i] = int(m1[i])
     mat24_op_all_autpl(p_pm, p_res)
     return [res[i] for i in range(2048)]
 

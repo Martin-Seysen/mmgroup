@@ -66,7 +66,7 @@ def test_maps_std_subframe(verbose = 0):
     print("Testing  C function gen_leech2_map_std_subframe")
     a = np.zeros(24, dtype = np.uint32)
     a_ref = np.zeros(24, dtype = np.uint32)
-    BAD_MASK = -0x2000000
+    BAD_MASK = -0x2000000 & 0xffffffff
     for g in  G_x0_samples():
         if verbose:
            print("Input", MM0('a', g)) 

@@ -444,10 +444,10 @@ ERR_ILLEGAL_ATOM = "Illegal atom %s in monster group element"
 
 def iter_tuples_from_N_x0_element(element):
     mm_group_n_reduce_element(element)
-    if element[1]: yield('y', element[1])
-    if element[2]: yield('x', element[2])
-    if element[3]: yield('d', element[3])
-    if element[4]: yield('p', element[4])
+    if element[1]: yield('y', int(element[1]))
+    if element[2]: yield('x', int(element[2]))
+    if element[3]: yield('d', int(element[3]))
+    if element[4]: yield('p', int(element[4]))
     mm_group_n_clear(element)
 
 
@@ -465,7 +465,7 @@ def iter_tuples_from_atoms(atoms):
             v = (-v if a & 0x80000000 else v) % 3
             if v:
                 yield from iter_tuples_from_N_x0_element(N_x0_element)
-                yield ("tl"[tag-5], v)
+                yield ("tl"[tag-5], int(v))
         else:
             raise ValueError(ERR_ILLEGAL_ATOM % hex(a))
     yield from iter_tuples_from_N_x0_element(N_x0_element)

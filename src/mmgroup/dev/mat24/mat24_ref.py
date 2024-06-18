@@ -194,7 +194,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         
         with  scalar(.,.) the scalar product.
         """
-        return cls.theta_table[v1 & 0x7ff] & 0xfff
+        return int(cls.theta_table[int(v1) & 0x7ff]) & 0xfff
 
     @classmethod
     def ploop_cocycle(cls, v1, v2):
@@ -204,7 +204,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
 
              v1 (*) v2  =  v1 ^ v2 * (-1)**cocycle(v1, v2) . 
         """
-        s = cls.ploop_theta(v1) & v2 & 0xfff
+        s = cls.ploop_theta(int(v1)) & int(v2) & 0xfff
         s ^= s >> 6
         s ^= s >> 3
         s = 0x96 >> (s & 7)
@@ -220,15 +220,16 @@ Golay cocode vectors are to be understood modulo the Golay code.
         bit 12:         Parker loop sign
         otther bits:    ignored
         """
-
+        v1, v2 = int(v1), int(v2)
         return v1 ^ v2 ^ (cls.ploop_cocycle(v1, v2) << 12)
 
 
     @classmethod
     def pow_ploop(cls, v1, u_exp):
         """Return power v1 ** u_exp of the Parker loop element v1."""
+        v1 = int(v1)
         return (v1 & -(u_exp & 1)) ^ (
-             cls.theta_table[v1 & 0x7ff] & ((u_exp & 2) << 11) )
+             int(cls.theta_table[v1 & 0x7ff]) & ((u_exp & 2) << 11) )
 
 
     @classmethod
@@ -239,6 +240,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         bit weight 0 mod 4 and 1 is that intersection has bit weight 
         2 mod 4. v1 and v2 are in 'gvect' or 'ploop' representation.
         """
+        v1, v2 = int(v1), int(v2)
         cap = cls.gcode_to_vect(v1) & cls.gcode_to_vect(v2)
         return (cls.bw24(cap) >> 1) & 1
 
@@ -249,6 +251,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         This the parity of the intersection of the vectors v1, v2 and 
         v3.  v1, v2 and v3 are in 'gvect' or 'ploop' representation.
         """
+        v1, v2, v3 = int(v1), int(v2), int(v3)
         assoc = (cls.gcode_to_vect(v1) & cls.gcode_to_vect(v2)
                 & cls.gcode_to_vect(v3))
         return cls.bw24(assoc) & 1
@@ -261,7 +264,8 @@ Golay cocode vectors are to be understood modulo the Golay code.
         v1 and v2 are in 'gvect' or 'ploop' representation, the result
         is returned in 'cocode' representation.
         """
-        return ( cls.theta_table[(v1 ^ v2) & 0x7ff] 
+        v1, v2 = int(v1), int(v2)
+        return int ( cls.theta_table[(v1 ^ v2) & 0x7ff] 
                   ^  cls.theta_table[v1 & 0x7ff] 
                   ^  cls.theta_table[v2 & 0x7ff]  ) & 0xfff
 
@@ -277,11 +281,11 @@ Golay cocode vectors are to be understood modulo the Golay code.
         assume that lower bits have higher valence.
         If no such cocode element exists, ValueError is raised.
         """
-        a1 = [x & 0x1fff for x in a]
+        a1 = [int(x) & 0x1fff for x in a]
         basis, columns = pivot_binary_low(a1)
         res = 0
         for b, col in zip(basis, columns):
-            res |= ((b >> 12) & 1) << col 
+            res |= ((int(b) >> 12) & 1) << col 
 
     ###########################################################################
     # Mathieu group M24: conversion between representations
@@ -316,7 +320,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
 
         The function returns zero iff this is the case.
         """
-        p2 = list(p1[:])
+        p2 = list([int(x) for x in p1])
         if  cls.perm_complete_heptad(p2):
              return -1
         return  p2 != list(p1[:])
@@ -372,7 +376,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         For internal operation see
         mat24Heptad.HeptadCompleter.int_to_perm
         """
-        p = cls.heptad_completer.int_to_perm(u_m24)
+        p = cls.heptad_completer.int_to_perm(int(u_m24))
         return p
 
     @classmethod
@@ -459,15 +463,15 @@ Golay cocode vectors are to be understood modulo the Golay code.
         Golay cocode vector c1 is given in cocode representation.
         """
         v = c1
-        y = - (((v >> 11) + 1) & 1)          # y = 0 if v is odd else -1
-        v ^= cls.recip_basis[0] & y         # make v odd
-        res = cls.recip_basis[p1[0]] & y     # .. and adjust result
-        syn = cls.syndrome_table[v & 0x7ff ]  # get syndrome
-        res ^=  cls.recip_basis[p1[syn & 31]] # do 1st syndrome vector
-        syn = (syn >> 5) & 0x3ff             # mask out 2nd, 3rd synd. vector
-        syn &=  ((syn + 0x100) >> 10) - 1    # kill syn if v >= 24*32
-        res ^=  cls.recip_basis[p1[syn & 31]] ^ cls.recip_basis[p1[syn >> 5]]
-                                             #  do 1st and 2nd syndrome vector
+        y = - (((v >> 11) + 1) & 1)               # y = 0 if v is odd else -1
+        v ^= int(cls.recip_basis[0]) & y          # make v odd
+        res = int(cls.recip_basis[p1[0]]) & y     # .. and adjust result
+        syn = int(cls.syndrome_table[v & 0x7ff])  # get syndrome
+        res ^=  int(cls.recip_basis[p1[syn & 31]]) # do 1st syndrome vector
+        syn = (syn >> 5) & 0x3ff                  # mask out 2nd, 3rd synd. vector
+        syn &=  ((syn + 0x100) >> 10) - 1         # kill syn if v >= 24*32
+        res ^=  int(cls.recip_basis[p1[syn & 31]])
+        res ^= int(cls.recip_basis[p1[syn >> 5]]) #  do 1st and 2nd syndrome vector
         return res & 0xfff
 
 
@@ -477,7 +481,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
 
         p1, p2 are represented as permutations
         """
-        return [ p2[p1[i]] for i in range(24) ]
+        return [ int(p2[p1[i]]) for i in range(24) ]
  
     @classmethod
     def inv_perm(cls, p1):

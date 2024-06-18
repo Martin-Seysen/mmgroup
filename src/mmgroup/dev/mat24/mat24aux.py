@@ -352,7 +352,7 @@ class MatrixToPerm(object):
         basis vectors are combined with the and operation.
         The result is returned. 
         """
-        return  reduce(__and__, [self.basis[pos] ^ -sign for (pos,sign) in z])
+        return  reduce(__and__, [int(self.basis[pos]) ^ -sign for (pos,sign) in z])
        
 
     def augment_colored_basis(self):
@@ -485,7 +485,7 @@ class MatrixToPerm(object):
             basis.append(reduce(__xor__, [basis[x] for x in l], 0))
         t = []
         for z in self.col_aux_table + self.bw_aux_table:
-            t.append(reduce(__and__, [basis[i] ^ -s for (i,s) in z]))
+            t.append(reduce(__and__, [int(basis[i]) ^ -s for (i,s) in z]))
         out = []
         st = len(self.col_aux_table)
         for i in range(24):

@@ -86,6 +86,7 @@ def y_table(g, cocodes, sign, code_omega, cocode_x, verbose = 0):
         print("cocodes =", cocodes)
         print("cocode_x =", cocode_x)
         print("b =", [hex(x) for x in b])
+    b = [int(x) for x in b] # A stupid numpy problem!! 
     b, columns = pivot_binary_high(b)
     if verbose:
         print("reduced b =", [hex(x) for x in b])

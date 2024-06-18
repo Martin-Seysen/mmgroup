@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
 from mmgroup import GcVector, AutPL
+from mmgroup.bitfunctions import unnumpy
 
 
 from mmgroup.tests.test_axes.get_sample_axes import G_CENTRAL
@@ -245,7 +246,7 @@ def write_axes(verbose = False):
     for stage, sample, mark in sample_list:
         s_samples += "\"" + sample.g.raw_str() + "\",\n"
         s_stages += str(stage) + ", "
-        s_marks += str(mark)  + ",\n"
+        s_marks += str(unnumpy(mark))  + ",\n"
         s_classes += '"' + baby_axis_type(sample) + '", '
 
        

@@ -797,6 +797,7 @@ class SparseMmSpace(AbstractMmRepSpace):
                 return
             non_monomial = non_monomial_dict[g.tag](p, e)
         for vu, v_coord in v.data.items():
+            vu, v_coord  = int(vu), int(v_coord)
             vtag, i, j = vu >> 25, (vu >> 14) & 0x7ff, (vu >> 8) & 0x3f
             try:
                 f = mult_monomial_dict[vtag + gtag]
@@ -804,6 +805,7 @@ class SparseMmSpace(AbstractMmRepSpace):
                 non_monomial.load(vtag, i, j, v_coord)
             else:
                 sign, wtag, wi, wj = f(vtag, i, j, g)
+                sign, wi, wj =  int(sign), int(wi), int(wj)  
                 wu = int((wtag << 25) + (wi << 14) + (wj << 8))
                 #assert 0 <= v_coord <= p                
                 w.data[wu] = p - v_coord if (sign & 1) else v_coord
