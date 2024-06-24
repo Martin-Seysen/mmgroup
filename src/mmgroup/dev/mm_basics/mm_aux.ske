@@ -930,6 +930,8 @@ int32_t mm_aux_mmv_to_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp)
   same label then the same coordinate is taken from ``mv`` 
   several times.
 
+  Entries of vector ``sp`` with tag 0 are not changed.
+
   Bit 7,...,0 of any entry of ``sp`` should be either 0 or p. If that
   value is 0 then the coordinate is read to bits 7,...,0 of that entry. 
   If that entry is ``p`` then the negative coordinate is read instead. 
@@ -948,7 +950,9 @@ void mm_aux_mmv_extract_sparse(uint32_t p, uint_mmv_t *mv, uint32_t *sp, uint32_
     p_bits = %{MMV_CONST:P_BITS,p_bits}; // This is P_BITS
 
     for ( ;length--; ++sp) {
-        uint32_t i_intern = mm_aux_index_sparse_to_intern(*sp);
+        uint32_t i_intern;
+        if ((*sp & 0xE000000UL) == 0) continue;
+        i_intern = mm_aux_index_sparse_to_intern(*sp);
         // set k to the (possibly negated) entry of vector mv. reduce v mod p.
         uint32_t k = (mm_aux_get_mmv(p, mv, i_intern) ^ *sp) & p;
         *sp = (*sp & 0xffffff00) + k; 

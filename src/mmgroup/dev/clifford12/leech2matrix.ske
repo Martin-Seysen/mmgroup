@@ -54,19 +54,24 @@ extern "C" {
  accepted and ``0``  otherwise. A negative return value indicates
  an error. The size of the array ``m`` should be at least ``ncols``.
  
- Let ``A`` be the ``ncols`` times ``ncols`` matrix of all accepted
- rows ``a[i]``, ``0 <= i < ncols``; and let  ``I`` be the ``ncols``
- time ``ncols`` unit matrix. We left multiply ``A`` with a
- matrix ``T`` such that ``T * A = I``. Thus ``T = A**(-1)``.
+ Let ``A`` be the ``nrows`` times ``ncols`` matrix of all accepted
+ rows ``a[i]``, ``0 <= i < ncols``; and let  ``I`` be the ``nrows``
+ time ``ncols`` matrix obtained by transforming matrix ``A``
+ to *reduced echelon form*. (Thus ``I`` is the unit matrix in
+ case ``nrows = ncols``). We left multiply ``A`` with a
+ matrix ``T`` such that ``T * A = I``. 
+
  Technically, we perform row operations on the matrix ``A[:nrows]``
  containing the first ``nrows`` lines already accepted, such
- that ``T * A[:rnows]`` is in **reduced echelon form**. We also
- perform the same row operations on the unit matrix to obtain ``T``.
- We store ``T[:rnows]`` in columns ``0,...,ncols-1`` of matrix ``M``
- and ``T*A[:rnows]`` in columns ``ncols,...,2*ncols-1`` of
- matrix ``M``.
+ that ``T * A[:rnows]`` is in reduced echelon form. We also
+ perform the same row operations on the ``nrows`` times ``nrows``
+ unit matrix to obtain ``T``. We store ``T[:rnows]`` in
+ columns ``0,...,ncols-1`` of matrix ``M``,
+ and ``T*A[:rnows]`` in columns ``ncols,...,ncols + nrows - 1``
+ of matrix ``M``.
  
- One may use function ``leech2matrix_solve_eqn`` for solving a
+ One may use functions ``leech2matrix_prep_eqn``
+ and ``leech2matrix_solve_eqn`` for solving a
  system of linear equations obtained in that way.
 */
 // %%EXPORT px
@@ -129,31 +134,81 @@ int32_t leech2matrix_add_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64
 
 
 /**
+ @brief Adjust result of function ``leech2matrix_add_eqn``
+ 
+ The function adjusts the matrix in the array ``m`` obtained after
+ a (repeated) application of function ``leech2matrix_add_eqn``,
+ so that a (possibly underdetermined) equation system can be
+ solved with function ``leech2matrix_solve_eqn``.
+
+ Parameters ``m``, ``nrows``, and ``ncols`` are as in
+ function  ``leech2matrix_add_eqn``.
+
+ Let ``A`` be the ``nrows`` times ``ncols`` matrix of all
+ accepted rows ``a[i]``. Let ``v`` be a row vector of ``nrows``
+ bit length; and let ``x`` be an unknown row vector of ``ncols``
+ bit length. We want to solve the equation
+
+ ``A * x^T  = v^T``,
+
+ where  ``x^T`` and ``v^T`` are the transposed (column) vectors
+ of ``x`` and ``v``.
+ 
+ The function computes an ``nrows`` times ``ncols`` bit matrix ``B``
+ and stores that matrix in the array ``b``.  Then ``x = v * B`` is
+ a solution of the equation given above. That solution  can be
+ computed with function ``leech2matrix_solve_eqn``
+ Output array ``b`` must have size at least ``nrows``.
+
+ Matrix ``B`` is essentially the transposed matrix of the matrix ``T``
+ computed by function ``leech2matrix_add_eqn``. If the leading
+ coefficient of row ``i`` of the echelonized matrix ``T * A``
+ computed by function ``leech2matrix_add_eqn`` is in column ``j``
+ then column ``j`` of matrix ``B`` is equal to column ``i``
+ of the transposed matrix ``T^T`` of ``T``. Columns of matrix ``B``
+ that cannot be obtained in this way are zero.  
+*/
+// %%EXPORT px
+int32_t leech2matrix_prep_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint32_t *b)
+{
+    uint_fast32_t i, j, col;
+    uint64_t v;
+    // Check buffer overflow
+    if (ncols > 32 || nrows > ncols) return ERR_QSTATE12_BUFFER_OVFL;
+
+    for (i = 0; i < nrows; ++i) b[i] = 0; 
+    for (j = 0; j < nrows; ++j) {
+        v = m[j];
+        col = uint64_low_bit(v >> ncols);
+        for (i = 0; i < nrows; ++i) {
+            b[i] |= (uint32_t)(((v >> i) & ONE) << col);
+        }
+    }
+    return 0;
+}
+
+
+
+/**
  @brief Solve a system of linear bit equations
  
- Let ``A`` be a nonsingular  ``ncols`` times ``ncols`` bit matrix
- stored in the array ``m`` in the special form as described in 
- function ``leech2matrix_add_eqn``.
+ The function returns the product ``v * b``, where ``v`` is a
+ bit vector of length ``nrows``; and ``b`` is an ``nrows`` 
+ times ``ncols`` bit matrix.  
  
- The function returns the solution ``w`` of the equation
- ``w * A = v``.
-
- Caution:
-
- Here ``m`` is of of type ``uint32_t *``, but the corresponding
- parameter in function ``leech2matrix_add_eqn`` is of type
- ``uint64_t *``. This simplifies the use of this function in
- most pplications. 
+ This function can be used for solving linear bit equations.
+ For background we refer to functions ``leech2matrix_add_eqn``
+ and ``leech2matrix_prep_eqn``. 
   
 */
 // %%EXPORT px
-uint32_t leech2matrix_solve_eqn(uint32_t *m, uint32_t ncols, uint64_t v)
+uint32_t leech2matrix_solve_eqn(uint32_t *b, uint32_t nrows, uint64_t v)
 {
     uint_fast32_t row = 0;
     uint64_t mask = ONE, w = 0;
     
-    for (row = 0; row < ncols; ++row) {
-        w ^=  (v & mask) ? m[row] : 0; 
+    for (row = 0; row < nrows; ++row) {
+        w ^=  (v & mask) ? b[row] : 0; 
         mask <<= 1;
     }
     return  (uint32_t)(w & (mask - 1));     

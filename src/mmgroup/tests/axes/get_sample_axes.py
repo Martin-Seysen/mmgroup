@@ -861,5 +861,5 @@ def get_sample_axes(calculate = False, beautify = True, verbose = 0):
 if __name__ == "__main__":
     if PROCESSES != 1: 
         freeze_support()
-    _ = get_sample_axes(calculate = True, beautify = True, verbose = True)
+    _ = get_sample_axes(calculate = False, beautify = True, verbose = True)
 
