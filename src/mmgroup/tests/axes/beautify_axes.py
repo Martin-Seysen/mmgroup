@@ -540,6 +540,13 @@ def postpermute(class_, axis):
         a = axis['A'] % 3
         l = [(1, i, (a[1,i] - 2) & 1) for i in (2, 3)]
         axis *= solve_gcode_diag(l)
+        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        b = axis['B', 0]
+        x = sum((1 << i for i in range(8, 24) if b[i] != 9))
+        try:
+            axis *= MM0('x', mat24.vect_to_gcode(x))
+        except:
+            pass
     if class_ == "8B":
         diag = np.diagonal(axis['A'])
         if diag[0] == 9:
