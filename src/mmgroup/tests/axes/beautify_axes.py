@@ -571,8 +571,12 @@ def postpermute(class_, axis):
         elif position == 3:
             image = [0, 2, 3, 1, 4] 
         else:
-            return axis
+            image = [0, 1, 2, 3, 4]
         axis *= permutation(image, [0, 1, 2, 3, 4])
+        axis *= cond_swap_BC(axis['B', 1, 0] != axis['C', 1, 0])
+        b = axis['B', 1] % 3
+        l =  [(1, j, b[j] != 1) for j in range(4, 24)]
+        axis *= solve_gcode_diag(l, 'x')
     if class_ == "4B":
         diag = np.diagonal(axis['A']) % 3
         head = []; tail = []
@@ -588,6 +592,20 @@ def postpermute(class_, axis):
         a = axis['A'] % 3
         l = [(2, 3, (a[2, 3] - 1) & 1)]
         axis *= solve_gcode_diag(l)
+    if class_ == "4C":
+        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        l = [(j, j+1, axis['B', j, j+1] % 3 != 1) for j in range(8, 24, 2)]
+        b = axis['B', 8] % 3
+        l +=  [(8, j, b[j] == 2) for j in range(8)]
+        b = axis['B', 9] % 3
+        l +=  [(9, j, b[j] == 2) for j in range(8)]
+        b = axis['B', 10] % 3
+        l +=  [(10, j, b[j] == 2) for j in range(4)]
+        b = axis['B', 12] % 3
+        l +=  [(12, j, b[j] == 2) for j in range(2)]
+        b = axis['B', 16] % 3
+        l +=  [(16, 0, b[0] == 2)]
+        axis *= solve_gcode_diag(l, 'x')
 
     return axis
 
