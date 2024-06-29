@@ -592,6 +592,11 @@ def postpermute(class_, axis):
         a = axis['A'] % 3
         l = [(2, 3, (a[2, 3] - 1) & 1)]
         axis *= solve_gcode_diag(l)
+        axis *= cond_swap_BC(axis['B', 1, 0] == axis['C', 1, 0])
+        l = [(0, j, 0) for j in range(1, 8)]
+        b = axis['B', 8] % 3
+        l += [(8, j, b[j] != 1) for j in range(9, 24)]
+        axis *= solve_gcode_diag(l, 'x')
     if class_ == "4C":
         axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
         l = [(j, j+1, axis['B', j, j+1] % 3 != 1) for j in range(8, 24, 2)]
@@ -606,7 +611,11 @@ def postpermute(class_, axis):
         b = axis['B', 16] % 3
         l +=  [(16, 0, b[0] == 2)]
         axis *= solve_gcode_diag(l, 'x')
-
+    if class_ == "4A":
+        axis *= cond_swap_BC(axis['B', 1, 0] == axis['C', 1, 0])
+        b = axis['B', 0] // 3
+        l = [(0, j, b[j] == 1) for j in range(1, 24)]
+        axis *= solve_gcode_diag(l, 'x')
     return axis
 
     
