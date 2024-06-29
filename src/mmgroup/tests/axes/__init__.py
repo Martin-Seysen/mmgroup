@@ -13,6 +13,9 @@ so that we'd better clean up before documenting it.
 """
 
 from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+from mmgroup.tests.axes.get_sample_axes import g_central 
+from mmgroup.tests.axes.get_sample_axes import g_axis, g_axis_opp
+from mmgroup.tests.axes.get_sample_axes import v_axis, v_axis_opp
 from mmgroup.tests.axes.beautify_axes import Axis
 
 
