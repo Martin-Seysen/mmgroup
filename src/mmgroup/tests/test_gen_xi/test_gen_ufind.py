@@ -205,7 +205,7 @@ def test_ufind_L3_2(verbose = 0):
 @pytest.mark.gen_xi
 def test_ufind_leech2(verbose = 0):
      g_list = [Xsp2_Co1('r', 'G_x0') for i in range(4)]
-     n_sets, indices, data = leech2_orbits_raw(g_list)
+     n_sets, indices, data, mapping  = leech2_orbits_raw(g_list, map=True)
      lengths = [indices[i+1] - indices[i] for i in range(n_sets)]
      print(lengths)
      

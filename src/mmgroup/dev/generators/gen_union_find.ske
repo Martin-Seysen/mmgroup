@@ -263,6 +263,50 @@ int32_t gen_ufind_find_all_min(uint32_t *table, uint32_t length)
 
 
 
+
+/** @brief Map entries of the partition to their representatives
+
+Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
+and let a partition of ``S(length)`` be stored in the array ``table``
+(of size ``length``) as described in function ``gen_ufind_init``.
+
+Function ``gen_ufind_find_all_min`` must be called before calling this
+function. The we compute an array ``map`` of the same length as
+array ``table`` that maps each entry of the set ``S(length)`` to the
+smallest element  of the partition stored in the array ``table``.
+
+Output array ``map`` for storing that mapping must have size ``length``.
+
+The function returns 0 in case of success and a negative
+value in case of failure.
+*/
+// %%EXPORT px
+int32_t gen_ufind_make_map(uint32_t *table, uint32_t length, uint32_t *map)
+{
+    uint32_t p, n;
+
+    if (length > 0x40000000UL) return -1;
+
+    for (n = 0; n < length; ++n) {            
+        p = table[n];
+        if (p & 0x80000000) {
+           map[n] = n;
+        } else if (p >= length) {
+            map[n] = 0xffffffffUL;
+        } else { 
+            if (p >= n) return -4;
+            if ((table[p] & 0x80000000) == 0) return -5;
+            map[n] = p;
+        }
+    }
+    return 0;
+}
+
+
+
+
+
+
 /** @brief Output the partition computed by the union-find algorithm
 
 Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
@@ -282,7 +326,7 @@ integers given by ``table[ind[i]], ...,  table[ind[i+1] - 1]``.
 
 So the array ``ind`` must have size at least ``n_sets + 1``;
 i.e. we must have ``len_ind > n_sets``.
-Function ``gen_ufind_find_all_min`` must be called beford calling
+Function ``gen_ufind_find_all_min`` must be called before calling
 this function. Note that function ``gen_ufind_find_all_min``
 returns ``n_sets`` in case of success.
 

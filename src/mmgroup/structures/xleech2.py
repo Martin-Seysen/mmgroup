@@ -731,15 +731,17 @@ gen_ufind_init = None
 def _import_ufind():
     global gen_ufind_init, gen_ufind_union_leech2
     global gen_ufind_find_all_min, gen_ufind_partition
+    global gen_ufind_make_map 
     global ERR_L2_ORB_G, ERR_L2_ORB_INT
     from mmgroup.generators import gen_ufind_init
     from mmgroup.generators import gen_ufind_union_leech2
     from mmgroup.generators import gen_ufind_find_all_min
     from mmgroup.generators import gen_ufind_partition
+    from mmgroup.generators import gen_ufind_make_map
     ERR_L2_ORB_G = "Entry is not in the subgroup G_x0 of the Monster"
     ERR_L2_ORB_INT = "Internal error in function leech2_orbits_raw"
 
-def leech2_orbits_raw(g_list):
+def leech2_orbits_raw(g_list, map = False):
     r"""Compute orbits of the Conway group on the Leech lattice mod 2
 
     The Conway group :math:`\mbox{Co}_1` has a natural action on
@@ -747,6 +749,8 @@ def leech2_orbits_raw(g_list):
     The subgroup :math:`G_{x0}` of the Monster (of structure
     :math:`2^{1+24}.\mbox{Co}_1`) has the same action on
     :math:`\Lambda / 2 \Lambda`.
+
+    Parameter ``map`` should usually be False.
 
     Given a list ``g_list`` of generators of a subgroup :math:`H`
     of :math:`G_{x0}`, the function computes the orbits of
@@ -771,6 +775,12 @@ def leech2_orbits_raw(g_list):
     The entries of the array ``data[indices[i] : indices[i+1]]`` are
     sorted. The sets of the partition are sorted by their smallest
     elements.
+
+    If parameter ``map`` is True then we return a quadruple
+    ``(n_sets, indices, data, map)``. There ``map`` is an array of
+    size :math:`2^{24}` that maps any vector in
+    :math:`\Lambda / 2 \Lambda` to the samllest vector in
+    its orbit  under the action of  :math:`H`.
     """
     if gen_ufind_init is  None:
         _import_ufind()
@@ -779,16 +789,22 @@ def leech2_orbits_raw(g_list):
     gen_ufind_init(data, L_DATA)
     for g in g_list:
         if not isinstance(g, (AbstractMMGroupWord, XLeech2)):
-             raise ValueError(ERR_L2_ORB_G)
+            raise ValueError(ERR_L2_ORB_G)
         mmd = g.mmdata
         if gen_ufind_union_leech2(data, mmd, len(mmd)) < 0:
             raise ValueError(ERR_L2_ORB_G)
     n_sets = gen_ufind_find_all_min(data, L_DATA)
     if n_sets < 1:
         raise ValueError(ERR_L2_ORB_INT)
+    if map:
+        mapping = np.zeros(L_DATA, dtype = np.uint32)
+        if gen_ufind_make_map(data, L_DATA, mapping) < 0:
+            raise ValueError(ERR_L2_ORB_INT)
     indices = np.zeros(n_sets + 1, dtype = np.uint32)
     n_sets1 = gen_ufind_partition(data, L_DATA, indices, n_sets + 1)
     if n_sets1 != n_sets:
         raise ValueError(ERR_L2_ORB_INT)
-    return n_sets, indices, data
-
+    if map:
+        return n_sets, indices, data, mapping
+    else:
+        return n_sets, indices, data
