@@ -750,7 +750,7 @@ def leech2_orbits_raw(g_list, map = False):
     :math:`2^{1+24}.\mbox{Co}_1`) has the same action on
     :math:`\Lambda / 2 \Lambda`.
 
-    Parameter ``map`` should usually be False.
+    Parameter ``map`` should usually be ``False``.
 
     Given a list ``g_list`` of generators of a subgroup :math:`H`
     of :math:`G_{x0}`, the function computes the orbits of
@@ -776,10 +776,10 @@ def leech2_orbits_raw(g_list, map = False):
     sorted. The sets of the partition are sorted by their smallest
     elements.
 
-    If parameter ``map`` is True then we return a quadruple
+    If parameter ``map`` is ``True`` then we return a quadruple
     ``(n_sets, indices, data, map)``. There ``map`` is an array of
     size :math:`2^{24}` that maps any vector in
-    :math:`\Lambda / 2 \Lambda` to the samllest vector in
+    :math:`\Lambda / 2 \Lambda` to the smallest vector in
     its orbit  under the action of  :math:`H`.
     """
     if gen_ufind_init is  None:

@@ -271,8 +271,8 @@ and let a partition of ``S(length)`` be stored in the array ``table``
 (of size ``length``) as described in function ``gen_ufind_init``.
 
 Function ``gen_ufind_find_all_min`` must be called before calling this
-function. The we compute an array ``map`` of the same length as
-array ``table`` that maps each entry of the set ``S(length)`` to the
+function. Then this function computes an array ``map`` of the same length
+as array ``table`` that maps each entry of the set ``S(length)`` to the
 smallest element  of the partition stored in the array ``table``.
 
 Output array ``map`` for storing that mapping must have size ``length``.
