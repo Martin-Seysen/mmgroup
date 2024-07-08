@@ -106,7 +106,7 @@ DATA_FILE_DICT = {
     ("src", "mmgroup", "dev", "mm_reduce" ): [
         "order_vector_data", "v1_mod3_data", 
     ],
-    ("src", "mmgroup", "tests", "test_axes"): [
+    ("src", "mmgroup", "tests", "axes"): [
         "sample_axes", "baby_sample_axes",
     ],
     ("src", "mmgroup", "tests", "test_involutions"): [

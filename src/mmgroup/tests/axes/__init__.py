@@ -12,10 +12,14 @@ module ``mmgroup.tests.test_axes``. It is a rather messy state
 so that we'd better clean up before documenting it.
 """
 
+from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
 from mmgroup.tests.axes.get_sample_axes import get_sample_axes
 from mmgroup.tests.axes.get_sample_axes import g_central 
 from mmgroup.tests.axes.get_sample_axes import g_axis, g_axis_opp
 from mmgroup.tests.axes.get_sample_axes import v_axis, v_axis_opp
 from mmgroup.tests.axes.beautify_axes import Axis
+from mmgroup.tests.axes.beautify_axes import beautify_axis
+from mmgroup.tests.axes.beautify_baby_axes import BabyAxis
+from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
 
 

@@ -15,24 +15,23 @@ if __name__ == "__main__":
 def import_all():
     global V_START, V_BABY_START
     global reduce_axis
-    global Leech2, Mm, MmV15
+    global Mm, MmV15
     global axis_orbit
     global reduce_axis
     global reduce_feasible_axis
-    global AXES, BABY_AXES
     from mmgroup.demo.reduce_axis import reduce_axis
-    from mmgroup.demo import Leech2, Mm, MmV15
+    from mmgroup.demo import Mm, MmV15
     from mmgroup.demo.reduce_axis import axis_orbit
     from mmgroup.demo.reduce_axis import reduce_axis
     from mmgroup.demo.reduce_feasible import reduce_feasible_axis
-    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
     V_START = MmV15("v+")  
     V_BABY_START = MmV15("v-")
 
 
 def axis_testdata(NTESTS = 3):
+    from mmgroup.tests.axes.sample_axes import g_classes, g_strings
     n_types = 0
-    for axis_type, g_str in AXES.items():
+    for axis_type, g_str in zip(g_classes, g_strings):
         # Construct an axis v of the given axis type
         v = V_START * Mm(g_str)
         for i in range(NTESTS):
@@ -52,8 +51,9 @@ def test_axis_type():
 
   
 def feasible_axis_testdata(NTESTS = 3):
+    from mmgroup.tests.axes.baby_sample_axes import g_classes, g_strings
     n_types = 0
-    for axis_type, g_str in BABY_AXES.items():
+    for axis_type, g_str in zip(g_classes, g_strings):
         # Construct an axis v of the given axis type
         v = V_BABY_START * Mm(g_str)
         for i in range(NTESTS):

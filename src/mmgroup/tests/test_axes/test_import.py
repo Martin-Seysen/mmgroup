@@ -16,27 +16,27 @@ if __name__ == "__main__":
 
 
 from mmgroup import MM0, MMV
+from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
+from mmgroup.mm_op import mm_op_eval_A
+from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 from mmgroup.mm_crt_space import MMVectorCRT 
 
-
+"""
 from mmgroup.tests.test_axes.get_nice_sample_axes import import_sample_axes
 from mmgroup.tests.test_axes.get_sample_axes import do_test_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import import_baby_sample_axes
 from mmgroup.tests.test_axes.get_baby_sample_axes import do_test_baby_sample_axes
 from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
-from mmgroup.tests.test_axes.beautify_axes import adjacent_blocks
 from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
-from mmgroup.generators import gen_leech3to2_short, gen_leech3to2_type4
-from mmgroup.mm_op import mm_op_eval_A
-from mmgroup.mm_op import mm_op_norm_A
-from mmgroup.mm_op import mm_op_eval_A_rank_mod3
+"""
+
+from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
 
 
-baby_sample_axes = import_baby_sample_axes()
-sample_axes = import_sample_axes()
 
-AXES = dict(zip(sample_axes.g_classes, sample_axes.g_strings))
-BABY_AXES = dict(zip(baby_sample_axes.g_classes, baby_sample_axes.g_strings))
+baby_sample_axes = get_baby_sample_axes()
+sample_axes = get_sample_axes()
 
 
 def display_A(A):
@@ -53,60 +53,26 @@ def display_A(A):
       print("")
 
 
-norms_A_mod15 = None
-
-def axis_index(axis_type):
-    sample_axes = import_sample_axes()
-    NUM_AXES = len(sample_axes.g_strings)
-    for i, s in enumerate(sample_axes.g_classes):
-        if s == axis_type:
-            return i
-    err = "No axis of type %s found"
-    raise ValueError(err % str(axis_type))
 
 
-def norm_A_mod15(i):
-    """Return norm(A) mod 15 for entry i in the list in sample_axes.py
-
-    The lists in file sample_axes.py refer to a collection of 12-axes 
-    of different types.
-   
-    """
-    global norms_A_mod15
-    if isinstance(i, str): i = axis_index(i)
-    try:
-        return norms_A_mod15[i]
-    except:
-        norms_A_mod15 = []
-        sample_axes = import_sample_axes()
-        V15 = MMV(15)
-        v_start = V15(sample_axes.v_start)
-        for g in sample_axes.g_strings:
-             v = v_start * MM0(g)
-             norms_A_mod15.append(mm_op_norm_A(15, v.data))
-        return norms_A_mod15[i]
-
-
-
-
-def display_norm_A(i):
+def display_norm_A(axis):
     """Display additional information of a 2A axis
 
     
     """
-    sample_axes = import_sample_axes()
+    sample_axes = get_sample_axes()
     
-    if isinstance(i, str): i = axis_index(i)
-    norm_A = norm_A_mod15(i)
+    norm_A = axis.norm_A_mod15
+    g_class = axis.g_class
     s = "norm(A) = %d (mod 15)" % (norm_A)
-    common = [s for j, s in enumerate(sample_axes.g_classes) 
-                if  norm_A_mod15(j) == norm_A and j != i]
+    common = [other.g_class for other in sample_axes.values() 
+                if  other.norm_A_mod15 == norm_A and 
+                other.g_class != g_class]
     if len(common) == 0:
         return s + "\n"
     s += ", same norm for class " + " and ".join(map(str,common))
     d = 2 if norm_A == 4 else 0
-    V15 = MMV(15)
-    v = V15(sample_axes.v_start) * MM0(sample_axes.g_strings[i])
+    v = axis.v15
     r = mm_op_eval_A_rank_mod3(15, v.data, d)    
     rank = r >> 48
     v3 = r & 0xffffffffffff
@@ -125,7 +91,60 @@ def display_norm_A(i):
     return s + "\n"
     
 
+#################################################################
+# Eigenvalues of matrix A
+#################################################################
 
+
+def purge_diag(diag, power = 1):
+    """Convert list of real numbers to a dictionary
+
+    Given a list 'diag' of rea numbers, the function returns a
+    dictionary mapping each number occuring in that list to it
+    multiplicity. The function makes reasonable assumptions
+    regarding equality of approximately equal entries, so that
+    we obtain a dictionary from a list of eigenvalues of
+    a 24 times 24 matrix acting on the Leech lattice.
+    """
+    EPS = 1.0e-8
+    data = {}
+    non_ints = []
+    for x0 in diag:
+        x = float((x0**power).real) 
+        if abs(x - round(x)) < EPS:
+            i = int(round(x))
+            if i in data:
+                data[i] += 1
+            else:
+                data[i] = 1
+        else: 
+            done = False           
+            for d in non_ints:
+                if abs(d - x) < EPS:
+                    data[d] += 1
+                    done = True
+            if not done:
+                data[x] = 1
+                non_ints.append(x)
+    return data
+
+
+def format_eigen_values(A):
+   """Return description of eigenvalues of a matrix ``A``
+
+   The description of the eigenvalues is returned as a string.
+   """
+   eigen =  purge_diag(np.linalg.eigvals(A))
+   eigenv = sorted(eigen.items(), key = lambda x: x[0])
+   data = [("%d^%d" if isinstance(k, int) else "%.2f^%d") % 
+       (k,v) for k, v in eigenv ]
+   return "(" + ", ".join(data) + ")"
+ 
+
+
+#################################################################
+# Main test
+#################################################################
 
 
 
@@ -158,10 +177,8 @@ integer depending on the norm of A, and '1' is the unit matrix.
 If the kernel of U has dimension 1 and is spanned by a short Leech
 lattice vector then we may also use A(v) modulo 15 for distinguishing
 between classes.
-
 """ 
 
-@pytest.mark.axes 
 @pytest.mark.slow 
 def test_2A_axes_classes(verbose = 0):
     """Test computation of samples classes of 2A axes.
@@ -170,31 +187,28 @@ def test_2A_axes_classes(verbose = 0):
     then function displays the information relevant for 
     distinguishing between classes of 2A axes.
     """
-    do_test_baby_sample_axes(baby_sample_axes)
-    do_test_sample_axes(sample_axes)
     if verbose:
         print(HEADER)
 
-    NUM_AXES = len(sample_axes.g_strings)
-    for i in range(NUM_AXES): # sorted_axes(sample_axes):
-        g = MM0(sample_axes.g_strings[i])
-        v =  MMVectorCRT(20, sample_axes.v_start)
-        v *= g
-        g1 = MM0(sample_axes.g_beautifiers[i])
-        v *= g1
+    assert len(sample_axes) == 12
+    for orbit, axis in sample_axes.items():
+        g = axis.g
+        v =  axis.axis_in_space(MMVectorCRT, 20)
+        #g1 = MM0(sample_axes.g_beautifiers[i])
+        #v *= g1
         Afloat = 256 * v["A"]
         A = np.array(Afloat, dtype = np.int32)
         assert (A == Afloat).all()
         if verbose:
-            class_ = sample_axes.g_classes[i]
+            class_ = axis.g_class
             print("\nClass " + class_, end = ", ")
-            print("stage = " + str(sample_axes.g_stages[i]), end = "")
-            powers = sample_axes.powers[i]
+            print("stage = " + str(axis.stage), end = "")
+            powers = axis.powers
             s_powers = ", powers: " + powers if len(powers) else ""
             print(s_powers)
-            print("Automorphism group:", sample_axes.groups[i])
-            print(display_norm_A(i), end = "")
-            print("Eigenvalues", block_eigenvalues(A))
+            print("Automorphism group:", axis.group)
+            print(display_norm_A(axis), end = "")
+            print("Eigenvalues", format_eigen_values(A))
             display_A(A)
 
              

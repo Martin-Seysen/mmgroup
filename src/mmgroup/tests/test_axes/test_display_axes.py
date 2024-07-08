@@ -9,11 +9,7 @@ import pytest
 if __name__ == "__main__":
     sys.path.append("../../../")
 
-from mmgroup.tests.test_axes import sample_axes 
-from mmgroup.tests.test_axes.beautify_axes import Axis
-from mmgroup.tests.test_axes.beautify_axes import make_blocks_positive
-from mmgroup.tests.test_axes.beautify_axes import change_signs_A
-from mmgroup import MM0, AutPL, Cocode, GCode, MMSpace, MMV, GcVector
+from mmgroup import MM, MM0, AutPL, Cocode, GCode, MMSpace, MMV, GcVector
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import bitmatrix64_solve_equation
@@ -23,17 +19,12 @@ from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
-from mmgroup.tests.test_axes.get_sample_axes import G, V15
-from mmgroup.tests.test_axes.get_sample_axes import g_central
-from mmgroup.tests.test_axes.get_sample_axes import V_AXIS
-from mmgroup.tests.test_axes.get_sample_axes import V_AXIS_OPP
-from mmgroup.tests.test_axes.get_sample_axes import g_axis, g_axis_opp
 
-v_axis = MMVectorCRT(16, V_AXIS)
-v_axis_opp = MMVectorCRT(16, V_AXIS_OPP)
-v_axis15 = V15(V_AXIS)
-v_axis_opp15 = V15(V_AXIS_OPP)
+from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
 
+from mmgroup.tests.test_axes.test_import import display_A
+from mmgroup.tests.test_axes.test_import import display_norm_A
+from mmgroup.tests.test_axes.test_import import format_eigen_values
 
 HEADER = r"""Classes of 2A axes
 
@@ -69,25 +60,6 @@ between classes.
 
 
 
-#######################################################################
-# Display an integer matrix A
-#######################################################################
-
-
-def display_A(A):
-   """Display a two-dimensional integer matrix A"""
-   imax, jmax = A.shape
-   fmt = [4 if max(abs(A[i])) > 99 else 2 for i in range(imax)]
-   for i in range(imax):
-      print(" ", end = "")
-      for j in range(jmax):
-          l = fmt[j]
-          if i == j or A[i,j] != 0:
-              print("%*d" % (fmt[j], A[i,j]), end = " ")
-          else:
-              print("%*s" % (fmt[j], "."), end = " ")
-      print("")
-
 
 #######################################################################
 # Display central involtion of dihedral group of axis
@@ -96,7 +68,7 @@ def display_A(A):
 
 def x_equations(axis, t = 0):
     #print(".", end = "")
-    v = v_axis15 * axis.g_all() * MM0('t', t)
+    v = axis.v15 * MM0('t', t)
     data = v["E", 300:300+98280]
     short = [MMSpace.index_to_short_mod2(i+300) 
         for i, x in enumerate(data) if x != 0]
@@ -134,136 +106,6 @@ def analyze_xy(g):
            print(" ", "p", AutPL(0,i).perm)
 
 
-#######################################################################
-# Display eigenvalues of matrix A
-#######################################################################
-
-
-
-def purge_diag(diag, power = 1):
-    EPS = 1.0e-8
-    data = {}
-    non_ints = []
-    for x0 in diag:
-        x = (x0**power).real
-        if abs(x - round(x)) < EPS:
-            i = int(round(x))
-            if i in data:
-                data[i] += 1
-            else:
-                data[i] = 1
-        else: 
-            done = False           
-            for d in non_ints:
-                if abs(d - x) < EPS:
-                    data[d] += 1
-                    done = True
-            if not done:
-                data[x] = 1
-                non_ints.append(x)
-    return data
-
-def eigen(A):
-    eigen = purge_diag(np.linalg.eigvals(A))
-    values = sorted(eigen.keys())
-    l = []
-    for v in values:
-        s = str(v) if v == int(v) else "%.3f" % v
-        l.append(s + '^' + str(eigen[v]))
-    return ", ".join(l)
-
-
-
-#######################################################################
-# Read axes from file sample_axes.py
-#######################################################################
-
-
-
-AXES= {}
-
-def get_axes():
-    global AXES
-    if len(AXES):
-        return AXES
-    for i, g1 in enumerate(sample_axes.g_strings):
-        g2 = sample_axes.g_beautifiers[i]
-        g = MM0(g1) * MM0(g2)
-        g_class = sample_axes.g_classes[i]
-        axis =  Axis(g, g_class)
-        axis.mark = sample_axes.g_marks[i]
-        axis.group = sample_axes.groups[i]
-        axis.powers = sample_axes.powers[i]
-        axis.stage = sample_axes.g_stages[i]
-        axis.v15 =  v_axis15 * MM0(sample_axes.g_strings[i])
-        axis.norm15 = mm_op_norm_A(15, axis.v15.data)
-        AXES[g_class] = axis
-    return AXES
-
-
-#######################################################################
-# Display information of axes mod 15
-#######################################################################
-
-#norms_A_mod15 = [axis.norm15 for axis in AXES]
-
-def norm_A_mod15(i):
-    """Return norm(A) mod 15 for entry i in the list in sample_axes.py
-
-    The lists in file sample_axes.py refer to a collection of 12-axes 
-    of different types.
-   
-    """
-    global norms_A_mod15
-    try:
-        return norms_A_mod15[i]
-    except:
-        norms_A_mod15 = []
-        sample_axes = import_sample_axes()
-        V15 = MMV(15)
-        for g in sample_axes.g_strings:
-             v = v_axis * MM0(g)
-             norms_A_mod15.append(mm_op_norm_A(15, v.data))
-        return norms_A_mod15[i]
-
-
-
-
-def display_norm_A(axis):
-    """Display additional information of a 2A axis
-
-    
-    """
-    #sample_axes = import_sample_axes()
-    
-    norm_A = axis.norm15
-    s = "norm(A) = %d (mod 15)" % (norm_A)
-    common = [a.g_class for a in get_axes().values()
-       if  a.norm15 == norm_A and a.g_class != axis.g_class]
-    if len(common) == 0:
-        return s + "\n"
-    s += ", same norm for class " + " and ".join(map(str,common))
-    d = 2 if norm_A == 4 else 0
-    V15 = MMV(15)
-    v = axis.v15
-    r = mm_op_eval_A_rank_mod3(15, v.data, d)    
-    rank = r >> 48
-    v3 = r & 0xffffffffffff
-    s_A = "(A - %d * 1)" % d if d else "A"
-    s += "\nMatrix U = %s (mod 3) has rank %d" % (s_A, rank)
-    if (rank != 23):
-         return s + "\n"
-    v2 = gen_leech3to2_short(v3)
-    if v2:
-         f = "Kernel of U is spanned by a short vector v with A(v) ="
-         a2 = mm_op_eval_A(15, v.data, v2)
-         s += "\n%s %d (mod 15)" % (f, a2)
-    if gen_leech3to2_type4(v3):
-         f = "Kernel of U is spanned by a vector of type 4"
-         s += "\n" + f
-    return s + "\n"
-    
-
 
 
 
@@ -279,31 +121,31 @@ def test_display_axes(verbose = 0):
         print(HEADER)
     else:
         print("\nClasses of 2A axes (relative to G_x0):\n")
-    for cl in get_axes():
-        axis = get_axes()[cl]
+    for cl, axis in  get_sample_axes().items():
         print("Class:", axis.g_class, ", stage =", axis.stage, 
                 ", powers:", axis.powers)
         print("Automorphism group:", axis.group)
         print(display_norm_A(axis), end = "")
-        print("Eigenvalues of A part of axis v:", eigen(axis.A()))
         if verbose:
-            n, c = (g_central * axis.reflection()).half_order()
-            print("Half order:", n, ", central involution: ", c)
+            print("Eigenvalues of A part of axis v:",
+                format_eigen_values(axis.axis_in_space(MMVectorCRT, 20)['A']))
+        if verbose:
+            orb, c = axis.central_involution()
+            print("central involution: ", c)
             if c: 
-                print("Character of central involution:",  c.chi_G_x0())
-                (analyze_xy(c))
+                print("Character of central involution:",  c.chi_G_x0(),
+                ", class:", orb)
+                analyze_xy(c)
             print("Axis type of axis v * MM('t',1):", axis.axis_type(1))
             print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
             print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))
             #print("Dim intersection with Q_z0:", 24 - len(x_equations(axis,2)))
-            opp_axis_type = (v_axis_opp15 * MM0(axis.g)).axis_type()
+            opp_axis_type = axis.axis_type()
             print("Image of opposite axis: ", opp_axis_type) 
             print("A part of axis v:")
-            display_A(axis.A())
+            display_A(axis['A'])
             print("\nA part of axis v * MM('t', 1):")
-            display_A(axis.Ax())
-            print("A part of opposite axis v:")
-            display_A(axis.A_opp())
+            display_A((axis * MM('t', 1))['A'])
         print("")
 
 

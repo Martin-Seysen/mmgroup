@@ -25,16 +25,18 @@ from mmgroup import GcVector, AutPL
 from mmgroup.bitfunctions import unnumpy
 
 
-from mmgroup.tests.test_axes.get_sample_axes import G_CENTRAL
-from mmgroup.tests.test_axes.get_sample_axes import G_AXIS_OPP
-from mmgroup.tests.test_axes.get_sample_axes import V_AXIS_OPP
-from mmgroup.tests.test_axes.get_sample_axes import g_axis, v_axis
-from mmgroup.tests.test_axes.get_sample_axes import g_axis_opp
-from mmgroup.tests.test_axes.get_sample_axes import v_axis_opp
+from mmgroup.tests.axes.get_sample_axes import G_CENTRAL
+from mmgroup.tests.axes.get_sample_axes import G_AXIS_OPP
+from mmgroup.tests.axes.get_sample_axes import V_AXIS_OPP
+from mmgroup.tests.axes.get_sample_axes import g_axis, v_axis
+from mmgroup.tests.axes.get_sample_axes import g_axis_opp
+from mmgroup.tests.axes.get_sample_axes import v_axis_opp
 
-from mmgroup.tests.test_axes.get_sample_axes import g_central, GVector
-from mmgroup.tests.test_axes.get_sample_axes import next_generation_pool
-from mmgroup.tests.test_axes.get_sample_axes import axis_type
+from mmgroup.tests.axes.get_sample_axes import g_central, GVector
+from mmgroup.tests.axes.get_sample_axes import next_generation_pool
+from mmgroup.tests.axes.get_sample_axes import axis_type
+
+
 ########################################################################
 ########################################################################
 # The group and the vector space to be used
@@ -142,7 +144,7 @@ def _show_sample(i, sample):
     print("Vector %d, stage = " % i, stage)
     print("g = ", gv.g)
     print("mark = ", mark)
-    print("dihedral class:", axis_type(gv.g))
+    print("dihedral class:", baby_axis_type(gv))
 
 
 def explore_axes(stages, n_spread, n_keep, verbose = 0):
@@ -203,6 +205,9 @@ def baby_axis_type(gv):
 
 
 
+
+
+
 f_text = """# This file has been generated automatically. Do not change!
 # It contains samples of the 10 cosets of 2A axes othogonal to the
 # standard 2A axis wrt 2^{1+23}.Co_2.
@@ -234,21 +239,34 @@ g_marks = [
 
 def sample_list_sort_key(sample_entry):
      stage, sample, _ = sample_entry 
-     s_class = baby_axis_type(sample) 
+     s_class = baby_axis_type(sample)
      return stage, int(s_class[:-2]), s_class[-2:-1], -int(s_class[-1])
 
 
-def write_axes(verbose = False):
+def write_axes(sample_list, beautify = True, verbose = False):
+    if beautify:
+        from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", "" 
     s_classes = ""
-    for stage, sample, mark in sample_list:
-        s_samples += "\"" + sample.g.raw_str() + "\",\n"
+    for i, (stage, sample, mark) in enumerate(sample_list):
+        g = sample.g.raw_str()
+        s_samples += "\"" + g + "\",\n"
         s_stages += str(stage) + ", "
         s_marks += str(unnumpy(mark))  + ",\n"
-        s_classes += '"' + baby_axis_type(sample) + '", '
-
+        class_ = baby_axis_type(sample)
+        #print("class", class_)
+        s_classes += '"' + class_ + '", '
+        try:
+            if beautify:
+                axis = beautify_baby_axis(class_, g, _vb)
+                axis.rebase(reduce = True)          
+                s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
+        except:
+            beautify = False
+    if beautify:
+        s_samples = s_beautiful_samples
        
     with open(PATH + ".py", "wt") as f:
         f.write(f_text % (G_CENTRAL,  
@@ -264,6 +282,34 @@ def write_axes(verbose = False):
 ########################################################################
 
 
+
+BABY_AXES= {}
+
+def get_baby_axes_from_sample_axes(sample_axes):
+    global BABY_AXES
+    if len(BABY_AXES):
+        return BABY_AXES
+    from mmgroup.tests.axes.beautify_baby_axes import BabyAxis
+    for i, g1 in enumerate(sample_axes.g_strings):
+        g = MM0(g1)
+        axis = BabyAxis(g)
+        g_class = sample_axes.g_classes[i]
+        axis.g_class = g_class
+        axis.mark = sample_axes.g_marks[i]
+        axis.stage = sample_axes.g_stages[i]
+        axis.constant = True
+        BABY_AXES[g_class] = axis
+    return BABY_AXES
+
+
+
+def compute_and_write_baby_axes(beautify = True, verbose = 0):
+    v0 = GVector()
+    sample_list = explore_axes(5, 40, 30, verbose = verbose)
+    write_axes(sample_list, beautify, verbose)
+    time.sleep(0.1)
+
+
 def do_test_baby_sample_axes(baby_sample_axes):
     sax =  baby_sample_axes
     l = [G(sax.g_central), G(sax.g_axis), MMVector(7, sax.v_start)]
@@ -271,18 +317,18 @@ def do_test_baby_sample_axes(baby_sample_axes):
     assert len(lg) == 10
 
 
-def import_baby_sample_axes(calculate = False, verbose = 0):
+def get_baby_sample_axes(calculate = False, beautify = True, verbose = 0):
     if calculate:
-        write_axes(verbose)
+        compute_and_write_baby_axes(beautify = True, verbose = verbose)
         time.sleep(0.1)
     try:
-        from mmgroup.tests.test_axes import baby_sample_axes
+        from mmgroup.tests.axes import baby_sample_axes
     except ImportError: 
         write_axes(verbose)
         time.sleep(0.1)
-        from mmgroup.tests.test_axes import baby_sample_axes
+        from mmgroup.tests.axes import baby_sample_axes
     do_test_baby_sample_axes(baby_sample_axes)
-    return baby_sample_axes
+    return get_baby_axes_from_sample_axes(baby_sample_axes)
 
 
 
@@ -299,4 +345,11 @@ def import_baby_sample_axes(calculate = False, verbose = 0):
 if __name__ == "__main__":
     if PROCESSES != 1: 
         freeze_support()
-    import_baby_sample_axes(calculate = True, verbose = True)
+    axes = get_baby_sample_axes(calculate = 1, beautify = 1, verbose = 1)
+    for orbit, axis in axes.items():
+        assert orbit == axis.axis_type()
+        assert v_axis * axis.g == v_axis
+        # print(orbit, axis.axis_type())
+
+
+

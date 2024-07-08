@@ -21,20 +21,15 @@ V = MMV(15)
 
 START_AXIS =  ('I', 3, 2)
 
-from mmgroup.tests.test_axes.get_sample_axes import import_sample_axes
-sample_axes = import_sample_axes()
-
-from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
-# We have(V(START_AXIS) * MM(AXES[key]).axis_type() == key
-# for all kes in the dictionar AXES 
-
-
 
 
 @pytest.mark.axes
 def test_axes():
-    for key in AXES:
-        v = V(*START_AXIS) * MM0(AXES[key])
+    from mmgroup.tests.axes import get_sample_axes
+    sample_axes = get_sample_axes()
+    for key in sample_axes:
+        axis = sample_axes[key]
+        v = V(*START_AXIS) * axis.g
         assert v.axis_type() == key
         for i in range(20):
              w = v * MM0('r', 'G_x0')

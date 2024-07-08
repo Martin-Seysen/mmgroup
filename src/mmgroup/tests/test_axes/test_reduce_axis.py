@@ -34,7 +34,8 @@ def import_all():
     global mm_reduce_vector_vp
     global mm_reduce_vector_vm
     global mm_reduce_vector_shortcut
-    global AXES, BABY_AXES
+    global get_baby_sample_axes
+    global get_sample_axes
 
     from mmgroup.mm_reduce import mm_reduce_find_type4
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type
@@ -42,7 +43,8 @@ def import_all():
     from mmgroup.mm_reduce import mm_reduce_vector_vp
     from mmgroup.mm_reduce import mm_reduce_vector_vm
     from mmgroup.mm_reduce import mm_reduce_vector_shortcut
-    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
+    from mmgroup.tests.axes import get_baby_sample_axes
+    from mmgroup.tests.axes import get_sample_axes
 
 V = MMV(15)
 
@@ -469,8 +471,8 @@ def make_axis_testcases():
     yield V("I", 11, 9), 0
     for i in range(10):
         yield V_START * MM0("r", "G_x0"), i & 1
-    for ax in AXES:
-        v0 = V_START * MM0(AXES[ax])
+    for ax in get_sample_axes().values():
+        v0 = ax.v15
         for i in range(20):
             yield v0 * MM0("r", "G_x0"), i & 1
     for quality in range(2,11):
@@ -582,8 +584,8 @@ def make_baby_testcases():
     yield make_pair(V_OPP, False)
     for i in range(10):
         yield make_pair(V_OPP.copy() * rand_Co2(), i & 1)
-    for ax in BABY_AXES:
-        v0 = V_OPP * MM0(BABY_AXES[ax])
+    for ax in get_baby_sample_axes().values():
+        v0 = ax.v15
         for i in range(5):
             yield make_pair(v0 * rand_BM(), i & 1)
     for quality in range(2,11):

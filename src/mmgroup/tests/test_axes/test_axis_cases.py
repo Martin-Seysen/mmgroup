@@ -16,15 +16,15 @@ from mmgroup import MM0, MMSpace, MMV
 
 def import_all():
     global mm_reduce_2A_axis_type
-    global AXES, BABY_AXES
     global short, span, radical
     global leech_type
     global display_norm_A
+    global get_baby_sample_axes, get_sample_axes
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type
-    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
     from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
     from mmgroup.tests.test_axes.test_reduce_axis import leech_type
     from mmgroup.tests.test_axes.test_import import display_norm_A
+    from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
 
 V = MMV(15)
 
@@ -136,14 +136,14 @@ def test_cases(verbose = 0):
     import_all()
     s = "For an axis let A be the symmetric matrix corresponding to part 300x"
     print(s,"\n")
-    for axis_type, g_str in AXES.items():
+    for axis_type, axis in get_sample_axes().items():
         if verbose:
             print("\nTest reduction of axis type %s" % axis_type)
-            text = display_norm_A(axis_type).split("\n")
+            text = display_norm_A(axis).split("\n")
             for s in text:
                 if s: print("  " + s)
         # Construct an axis v of the given axi type
-        v = V_START * MM0(g_str)
+        v = axis.v15
         target_axes = reduce_targets[axis_type]
         if target_axes is None:
             if verbose:

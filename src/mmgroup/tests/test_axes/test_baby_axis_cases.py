@@ -16,18 +16,18 @@ from mmgroup import MM0, MMSpace, MMV
 def import_all():
     global mm_reduce_2A_axis_type
     global gen_leech2_reduce_type2_ortho
-    global AXES, BABY_AXES
     global short, span, radical
     global leech_type
     global display_norm_A
     global eval_A_vstart
+    global get_baby_sample_axes, get_sample_axes
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type
     from mmgroup.generators import gen_leech2_reduce_type2_ortho
-    from mmgroup.tests.test_axes.test_import import AXES, BABY_AXES
     from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
     from mmgroup.tests.test_axes.test_reduce_axis import leech_type
     from mmgroup.tests.test_axes.test_import import display_norm_A
     from mmgroup.tests.test_axes.test_reduce_axis import eval_A_vstart
+    from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
 
 
 
@@ -134,8 +134,6 @@ def baby_axis_type(v, e = 0):
 
 
 
-#for v in FINAL_2A0_AXES:
-#    print(baby_axis_type(v), v)
 
 
 
@@ -144,13 +142,12 @@ def test_cases(verbose = 0):
     import_all()
     if verbose: print("\n")
     r = np.zeros(10, dtype = np.uint32)
-    for axis_type, g_str in BABY_AXES.items():
+    for axis_type, axis in get_baby_sample_axes().items():
         # Construct an axis v of the given axi type
-        v = V_OPP * MM0(g_str)
+        v = axis.v15
         if verbose:
             print("\nTest reduction of axis type %s" % axis_type)
-            text = display_norm_A(axis_type[:-1]).split("\n")
-            for s in text:
+            for s in display_norm_A(axis).split("\n"):
                 if s: print("  " + s)
             print("  A(v_start) = %d mod 15" % eval_A_vstart(v.data))
         target_axes = reduce_targets[axis_type]
