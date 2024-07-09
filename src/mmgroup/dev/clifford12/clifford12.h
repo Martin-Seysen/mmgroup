@@ -3,9 +3,8 @@
 
 /** @file clifford12.h
  File ``clifford.h`` is the header file for shared library 
- ``mmgroup_clifford12``. This comprises the following C modules:
+ ``mmgroup_clifford12``. 
 
- {0}.
 */
 
 #ifndef CLIFFORD12_H

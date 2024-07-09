@@ -2,7 +2,8 @@
 # History
 ####################################################################
 
-VERSION = '1.0.2' # 2024-02-27. Changes in build system regarding shared libraries
+VERSION = '1.0.3' # 2024-07-09. Computation of sample 2A axes improved
+# VERSION = '1.0.2' # 2024-02-27. Changes in build system regarding shared libraries
 # VERSION = '1.0.1' # 2024-02-23. Support for exporting C functions from libraries
 # VERSION = '1.0.0' # 2024-01-23. Documentation updated
 # VERSION = '0.0.14' # 2024-01-18. Demonstration code for reduction in the Monster added

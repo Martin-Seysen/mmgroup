@@ -525,6 +525,10 @@ Version history
      - 2024-02-27
      - Changes in build system regarding shared libraries
 
+   * - 1.0.3
+     - 2024-07-09
+     - Computation of sample 2A axes improved
+
 
 .. only:: html
 
