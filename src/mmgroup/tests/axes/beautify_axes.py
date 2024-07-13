@@ -308,16 +308,12 @@ def reduce_leech_mod_3(v):
     return MM0('a', g[:len_g])
 
 
-def from_subspace_mod3(a, transformed = True):
+def from_subspace_mod3(a):
     if len(a) == 1:
        return leech3matrix_vmul(1, a)
     if len(a) == 2:
         result = 0
-        if transformed:
-            vl = [leech3matrix_vmul(v0, a) for v0 in [1, 2, 3, 0x1000002]]
-        else:
-            vl = [a[0], a[1], gen_leech3_add(a[0], a[1]),
-                 gen_leech3_add(a[0], gen_leech3_neg(a[1]))]
+        vl = [leech3matrix_vmul(v0, a) for v0 in [1, 2, 3, 0x1000002]]
         for v in vl:
             typev, v2 =  divmod(gen_leech3to2(v), 1 << 24)
             if not 2 <= typev <= 4:
@@ -344,14 +340,17 @@ def longest_in_kernel(kernels):
 
 
 
-def alternative_v3(class_, axis):
-    if class_ == "6A":
-        rad  = axis.find_short(5, radical = 1)
-        a = np.array(list(map(gen_leech2to3_abs, rad)), dtype = np.uint64)
-        b = np.array(list(map(gen_leech3to2, a)), dtype = np.uint64)
-        return from_subspace_mod3(a, transformed = False)
-    return 0
 
+def get_v3_case_6A(axis):
+    rad  = axis.find_short(5, radical = 1)
+    a = np.array(list(map(gen_leech2to3_abs, rad)), dtype = np.uint64)
+    assert len(a) == 2
+    for v in [gen_leech3_add(a[0], a[1]),
+                 gen_leech3_add(a[0], gen_leech3_neg(a[1]))]:
+        type_v = gen_leech3to2(v) >> 24
+        if not 2 <= type_v <= 4:
+            return v
+    raise ValueError("Reduction for axis orbit 6A failed")
 
 #################################################################
 # Final permutations and sign changes for beautifying an axis
@@ -642,20 +641,19 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
         print("Input:")
         display_A(axis['A'])
 
-    v3 = alternative_v3(class_, axis)
-    if v3 == 0:
-        d = kernels(axis)
-        v3 = longest_in_kernel(d)
-        #print("ker", hex(v3))
-        #print(class_, [(i, x[:2]) for i, x in d.items()])
-    guide = find_guide(class_, axis)
-    #print("guide =", hex(guide))
-    iclass, g2 = axis.central_involution(guide)
-    if v3 == 0 or 'o' in iclass:
+    if class_ in ['2B', '4B', '4C', '6C', '8B', '6F', '10B', '12C']:
+        guide = find_guide(class_, axis)
+        iclass, g2 = axis.central_involution(guide)
         axis *= g2
-        #print(iclass)
-    if v3 and class_ not in ["6C", "6F", "12C"]:
-        axis *= reduce_leech_mod_3(v3)
+ 
+    if class_ in  ['4A', '10A', '6A']:
+        if class_ == '6A':
+            v3 = get_v3_case_6A(axis)
+        else:
+            d = kernels(axis)
+            v3 = longest_in_kernel(d)
+        axis *= reduce_leech_mod_3(v3) 
+
     axis = postpermute(class_, axis)
     #print(axis.g)
     if verbose:
