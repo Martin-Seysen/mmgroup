@@ -26,16 +26,21 @@ START_AXIS =  ('I', 3, 2)
 @pytest.mark.axes
 def test_axes():
     from mmgroup.tests.axes import get_sample_axes
+    from mmgroup.tests.axes import beautify_axis
     sample_axes = get_sample_axes()
     for key in sample_axes:
         axis = sample_axes[key]
         v = V(*START_AXIS) * axis.g
+        assert v == axis.v15
         assert v.axis_type() == key
-        for i in range(20):
-             w = v * MM0('r', 'G_x0')
-             assert w.axis_type() == key
-             if (i > 5): continue
+        for i in range(5):
+             w = axis * MM0('r', 'G_x0')
+             assert w.v15.axis_type() == key
              e = randint(1,2)
              we =  w.axis_type(e) 
              assert isinstance(we, str)
+             if i < 3:
+                 w1 = beautify_axis(key, w.g)
+                 for tag in "ABC":
+                     assert (w1[tag] == v[tag]).all(), tag
 

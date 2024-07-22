@@ -35,6 +35,7 @@ from mmgroup.generators import gen_leech3_add
 from mmgroup.generators import gen_leech3_neg
 from mmgroup.generators import gen_leech3_op_vector_word
 from mmgroup.generators import gen_leech3_reduce_leech_mod3
+from mmgroup.generators import gen_leech2_reduce_type2
 from mmgroup.clifford12 import bitmatrix64_solve_equation
 from mmgroup.clifford12 import leech3matrix_kernel_image
 from mmgroup.clifford12 import leech3matrix_compress
@@ -105,6 +106,7 @@ def sym_part(v, part):
 class Axis:
     g_axis_start = g_axis
     v15_start = v_axis15
+    v15_start_name = V_AXIS
     g_central = g_central
     constant = False
     ERR1 = "This axis is constant and may not be changed"
@@ -178,7 +180,7 @@ class Axis:
     def axis_type(self, e = 0):
         return self.v15.axis_type(e) 
     def axis_in_space(self, space, *args):
-        all_args = args + (V_AXIS,)
+        all_args = args + (self.v15_start_name,)
         return space(*all_args) * self.g
     def display_sym(self, part = 'A', diff = 0, ind = None, text = "", end = ""):
         if text:
@@ -284,20 +286,34 @@ def find_guide(class_, axis):
     return 0
 
 
-def kernels(axis):
-    d = {}
-    for i in range(3):
-        #a = np.zeros(3 * 24, dtype = np.uint64)
-        #mm_op_load_leech3matrix(axis.p, axis.data, a)
-        a = axis.leech3matrix()
-        leech3matrix_sub_diag(a, i, 0)
-        leech3matrix_sub_diag(a, 2, 24)
-        x = leech3matrix_kernel_image(a)
-        leech3matrix_compress(a, a)
-        img, ker, isect = x & 255, (x >> 8) & 255, x >> 16
-        assert ker + img == 24
-        d[i] = ker, isect, a[:24], a[24:48]
-    return d
+
+def kernel_A(axis, d):
+    """Compute invariants of a matrix related to part 'A' of an axis.
+
+    Let 'A' be the symmetric 24 times 24 matrix corresponding to part
+    'A' of an axis, with entries taken modulo 3.
+
+    Put 'M' = 'A' - 'd' * 'E', where  'd' is a integer and 'E' is the
+    unit matrix. We return a tuple '(ker, isect, M_img, M_ker)', where
+    'ker' is the dimension of the kernel of 'M', 'isect' is the
+    dimension of the intersection of the kernel and the image
+    of 'M'; and 'M_img' and 'M_ker' are 24 times 24 matrices. Row 'i'
+    of matrix 'M_img' is the image of row 'i' of 'M_ker' under the
+    symmetric matrix 'M'. The first 'isect' rows of 'M_img' and
+    'M_ker' are equal; they are a basis of the intersection of the
+    kernel and the image of 'M'. The first '24 - ker' rows of 'M_img'
+    are a basis of the image of 'M' The last 'ker' rows of 'M_ker'
+    are a basis of the kernel of 'M'.
+    """
+    a = axis.leech3matrix()
+    leech3matrix_sub_diag(a, d, 0)
+    leech3matrix_sub_diag(a, 2, 24)
+    x = leech3matrix_kernel_image(a)
+    leech3matrix_compress(a, a)
+    img, ker, isect = x & 255, (x >> 8) & 255, x >> 16
+    assert ker + img == 24
+    return ker, isect, a[:24], a[24:48]
+
 
 def reduce_leech_mod_3(v):
     g = np.zeros(12, dtype = np.uint32)
@@ -307,39 +323,10 @@ def reduce_leech_mod_3(v):
     # print("v_reduced", hex(v_reduced))
     return MM0('a', g[:len_g])
 
-
-def from_subspace_mod3(a):
-    if len(a) == 1:
-       return leech3matrix_vmul(1, a)
-    if len(a) == 2:
-        result = 0
-        vl = [leech3matrix_vmul(v0, a) for v0 in [1, 2, 3, 0x1000002]]
-        for v in vl:
-            typev, v2 =  divmod(gen_leech3to2(v), 1 << 24)
-            if not 2 <= typev <= 4:
-                result = v
-        return result
-
-def longest_in_kernel(kernels):
-    a = None
-    for dim_ker, dim_isect, a_img, a_ker in kernels.values():
-        dim_img = 24 - dim_ker
-        if 0 < dim_ker <= 2:
-            a = a_ker[dim_img : dim_img + dim_ker]
-        elif 0 < dim_isect <= 2:
-            a = a_img[:dim_isect]
-        if a is None:
-            continue
-        # print("dim", len(a), dim_ker, dim_isect)
-        v = from_subspace_mod3(a)
-        if v:
-            return v 
-    return 0;      
-
-
-
-
-
+def get_v3_case_4A(axis):
+    ker, isect, _, a_ker = kernel_A(axis, 0)
+    assert ker == 1
+    return leech3matrix_vmul(1, a_ker[23:]) 
 
 def get_v3_case_6A(axis):
     rad  = axis.find_short(5, radical = 1)
@@ -351,6 +338,40 @@ def get_v3_case_6A(axis):
         if not 2 <= type_v <= 4:
             return v
     raise ValueError("Reduction for axis orbit 6A failed")
+
+def get_v3_case_10A(axis):
+    ker, isect, _, a_ker = kernel_A(axis, 0)
+    assert ker == 2
+    a = a_ker[22:]
+    vl = [leech3matrix_vmul(v0, a) for v0 in [1, 2, 3, 0x1000002]]
+    for v in vl:
+        typev, v2 =  divmod(gen_leech3to2(v), 1 << 24)
+        if not 2 <= typev <= 4:
+           return v
+    raise ValueError("Reduction for axis orbit 10A failed")
+
+ORBIT_MOD3_CASES = {
+    '4A' : get_v3_case_4A,
+    '6A' : get_v3_case_6A,
+    '10A' : get_v3_case_10A,
+}
+
+def do_get_v3_case_2A(axis):
+    if len(axis.g.mmdata) == 0:
+        return axis
+    ker, isect, a_img, _ = kernel_A(axis, 0)
+    assert ker == 23
+    v3 = leech3matrix_vmul(1, a_img)
+    typev, v2 =  divmod(gen_leech3to2(v3), 1 << 24)
+    assert typev == 2
+    g = np.zeros(6, dtype = np.uint32)
+    len_g = gen_leech2_reduce_type2(v2, g)
+    assert 0 <= len_g <= 6
+    axis *= MM0('a', g[:len_g])
+    if (axis['B', 2, 3] + 2) % 15:
+        axis *= MM0('x', 0x200)
+    assert axis.v15 ==  v_axis15 
+    return axis
 
 #################################################################
 # Final permutations and sign changes for beautifying an axis
@@ -630,8 +651,6 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
         return None
 
     axis = Axis(g)
-    if class_ == "2A":
-        return axis
     if verbose:
         print("\nOrbit" + class_)
     axis.rebase()
@@ -640,22 +659,16 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
     if verbose > 1:
         print("Input:")
         display_A(axis['A'])
-
+    if class_ == "2A":
+        return do_get_v3_case_2A(axis)
     if class_ in ['2B', '4B', '4C', '6C', '8B', '6F', '10B', '12C']:
         guide = find_guide(class_, axis)
         iclass, g2 = axis.central_involution(guide)
         axis *= g2
- 
-    if class_ in  ['4A', '10A', '6A']:
-        if class_ == '6A':
-            v3 = get_v3_case_6A(axis)
-        else:
-            d = kernels(axis)
-            v3 = longest_in_kernel(d)
+    if class_ in ORBIT_MOD3_CASES:
+        v3 = ORBIT_MOD3_CASES[class_](axis)
         axis *= reduce_leech_mod_3(v3) 
-
     axis = postpermute(class_, axis)
-    #print(axis.g)
     if verbose:
         for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
