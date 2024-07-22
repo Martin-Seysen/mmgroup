@@ -710,7 +710,7 @@ class MMVector(AbstractMmRepVector):
         tags 'B', 'C', 'T', 'X'. These entries correspond to 
         the short vectors of the Leech lattice.
 
-        The function returns a tuple of length ``p//2 + 1``, where
+        The function returns a tuple of length ``(p + 1)/2``, where
         ``p`` is the characteristic of the vector. Entry ``i`` of
         that tuple contains the number of entries of the monomial 
         part of the vector with absolute value ``i``. 

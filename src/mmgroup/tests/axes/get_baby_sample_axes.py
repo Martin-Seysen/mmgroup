@@ -261,7 +261,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
         try:
             if beautify:
                 axis = beautify_baby_axis(class_, g, _vb)
-                axis.rebase(reduce = True)          
+                axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:
             beautify = False
