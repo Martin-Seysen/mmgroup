@@ -266,7 +266,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
     # :math:`\Omega` also changes ``g`` to a simpler form.
     # Therefore we use the C function 
     # ``xsp2co1_elem_find_type4`` which also deals with ``guide``.
-    v4 = xsp2co1_elem_find_type4(elem, guide, 0)
+    v4 = xsp2co1_elem_find_type4(elem, guide)
     if (v4 < 0):
         # Abort if ``xsp2co1_elem_find_type4`` has failed
         raise ValueError("xsp2co1_elem_find_type4 failed")
@@ -328,7 +328,8 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
         # Here ``invol`` is of shape :math:`x_d x_\delta`. The
         # transformation ``a_1``computed by ``xsp2co1_conjugate_elem``
         # should be trivial here.
-        assert len_a == 0
+        if guide == 0:
+            assert len_a == 0
         # So we may obtain ``invol`` as an element ``vx``.
         vx = invol.get_q()
         # Let ``t`` be the type of ``vx`` in the Leech lattice mod 2.

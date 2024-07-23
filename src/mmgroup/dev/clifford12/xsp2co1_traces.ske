@@ -496,7 +496,7 @@ int32_t xsp2co1_elem_conjugate_involution_Gx0(uint64_t *elem, uint32_t guide, ui
     // in module ``mmgroup.tests.test_involutions.test_involution_Gx0``.
     // For details, we refer to the documentation of that function.
 
-    if ((v4 = xsp2co1_elem_find_type4(elem, guide, 0)) < 0) return v4;
+    if ((v4 = xsp2co1_elem_find_type4(elem, guide)) < 0) return v4;
     if ((len_a = gen_leech2_reduce_type4(v4, a)) < 0) return len_a;
     xsp2co1_copy_elem(elem, elem1);
     if ((res = xsp2co1_conjugate_elem(elem1, a, len_a)) < 0) return res;

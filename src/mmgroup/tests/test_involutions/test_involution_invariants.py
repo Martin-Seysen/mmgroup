@@ -179,7 +179,7 @@ def do_test_involution_invariants(g, ref_invariants, verbose = 0):
             11, " g_image[%d]" % i) 
     # test conjugation
     istate = invariant_status(ref_invariants)
-    v = xsp2co1_elem_find_type4(gg._data, 0, 0)
+    v = xsp2co1_elem_find_type4(gg._data, 0)
     if not errors:
         if ref_chi[0] in (196883, 275, 4371):
             # The g is of type 1A, 2B or 2A in the monster
