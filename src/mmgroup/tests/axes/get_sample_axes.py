@@ -778,6 +778,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:
             beautify = False
+            raise
         s_powers += '"' + AXIS_POWERS[class_] + '",\n'
         s_groups += '"' + AXIS_GROUPS[class_] + '",\n'
     if beautify:

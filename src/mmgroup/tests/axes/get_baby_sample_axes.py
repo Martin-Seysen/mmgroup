@@ -248,7 +248,8 @@ def write_axes(sample_list, beautify = True, verbose = False):
         from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     sample_list.sort(key = sample_list_sort_key)
-    s_samples, s_stages, s_marks = "", "", "" 
+    s_samples, s_stages, s_marks = "", "", ""
+    s_beautiful_samples = ""
     s_classes = ""
     for i, (stage, sample, mark) in enumerate(sample_list):
         g = sample.g.raw_str()
@@ -260,11 +261,12 @@ def write_axes(sample_list, beautify = True, verbose = False):
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
-                axis = beautify_baby_axis(class_, g, _vb)
+                axis = beautify_baby_axis(class_, g)
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:
             beautify = False
+            raise
     if beautify:
         s_samples = s_beautiful_samples
        

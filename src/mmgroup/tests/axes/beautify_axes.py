@@ -130,7 +130,6 @@ class Axis:
     g_central = g_central
     constant = False
     ERR1 = "This axis is constant and may not be changed"
-    """Models an axis modulo 15"""
     def __init__(self, g = 1):
         if isinstance(g, Axis):
             self.g1 = g.g
@@ -172,6 +171,9 @@ class Axis:
 
         For an instance ``a`` of class ``Axis`` we try to shorten the
         group element ``a.g`` with the full *mmgroup* functionality.
+        Here we may also change ``a.g`` to a shorter element mapping
+        the standard axis to the current axis.
+
         Class ``Axis`` will be used for proofs; so we always check
         the correctness of such operations with the methods of
         class ``MM0``.
@@ -186,14 +188,23 @@ class Axis:
         self.g0 *= self.g1
         self.g1 = MM0()
         try:
-            from mmgroup import MM
-            g0 = MM0(MM(self.g0).reduce())
+            #from mmgroup import MM
+            from mmgroup.mm_reduce import mm_reduce_vector_vp 
+            v0 = np.zeros(1, dtype = np.uint32)
+            v = self.v15.copy()
+            w = V15(0)
+            g = np.zeros(128, dtype = np.uint32)
+            l_g = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
+            assert 0 <= l_g < 128
+            g0 = MM0('a', g[:l_g]) ** -1
+            #g0 = MM0(MM(self.g0).reduce())
             assert self.v15_start * g0 == self.v15
             self.g0 = g0
         except:
             import warnings
             W = "Reducing an axis with mmgroup has failed"
             warnings.warn(W, UserWarning)
+            raise
         return self
     def central_involution(self, guide=0):
         """Return central involution of dihedral group

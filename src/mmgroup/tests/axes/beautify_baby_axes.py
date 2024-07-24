@@ -24,12 +24,14 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
-from mmgroup import mat24
+from mmgroup import mat24, Xsp2_Co1
 from mmgroup.mat24 import perm_from_dodecads
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup import mat24, GcVector, AutPL, Parity, GCode
 from mmgroup.generators import gen_leech2_op_atom, gen_leech2_op_word
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_op_word
+from mmgroup.generators import gen_leech2_reduce_type2_ortho
 from mmgroup.generators import gen_leech3to2
 from mmgroup.generators import gen_leech2to3_abs
 from mmgroup.generators import gen_leech3_add
@@ -59,63 +61,105 @@ from mmgroup.tests.axes.get_sample_axes import g_central
 from mmgroup.tests.axes.get_sample_axes import g_axis
 from mmgroup.tests.axes.get_sample_axes import g_axis_opp
 
-
-
 from mmgroup.tests.axes.beautify_axes import V15
 from mmgroup.tests.axes.beautify_axes import v_axis, v_axis_opp
 from mmgroup.tests.axes.beautify_axes import v_axis15, v_axis_opp15
 from mmgroup.tests.axes.beautify_axes import display_A
 from mmgroup.tests.axes.beautify_axes import sym_part
 from mmgroup.tests.axes.beautify_axes import Axis
+from mmgroup.tests.axes.beautify_axes import kernel_A
 
 #################################################################
 # Classes for modelling an axis
 #################################################################
 
 
-_COC = 0x200
+V_PLUS = 0x200
 
-def in_Baby(g):
+def in_Baby_direct(g):
     for x in g.mmdata:
         mask = (x >> 28) & 7
         if mask == 2:  # case x_pi
-            if gen_leech2_op_atom(_COC, x) != _COC:
-                return False
+            if gen_leech2_op_atom(V_PLUS, x) != V_PLUS:
+                return None
         if mask in [3,4] and x & 0x200:
-            return False
+            return None
         if mask == 7:
-            return false
-    return True
+            return None
+    return g
 
-
-
+H_AXES = [0x200, 0x1000000]
+def in_H(g):
+    mm, lmm = g.mmdata, len(g.mmdata)
+    if any([gen_leech2_op_word(x, mm, lmm) != x for x in H_AXES]):
+         return None
+    g1 = MM0(Xsp2_Co1(g))
+    assert in_Baby_direct(g1)
+    return g1
+ 
+def in_Baby(g):
+    if in_Baby_direct(g) is not None:
+        return g
+    return in_H(g)
 
 
 class BabyAxis(Axis):
     g_axis_start = g_axis_opp
     v15_start = v_axis_opp15
     constant = False
-    ERR_BABY = "Element %s is not in subgroup 2.B of Monster"
+    ERR_BABY = "Cannot map element %s to subgroup 2.B of Monster"
     """Models an axis modulo 15"""
     def __init__(self, g = 1):
+        if isinstance(g, Axis):
+            self.g1 = in_Baby(Axis.g)
+        else:
+            self.g1 = in_Baby(MM0(g))
+        if self.g1 is None:
+            raise ValueError(self.ERR_BABY % self.g1)
         self.g0 = MM0()
-        self.g1 = MM0(g)
-        if not in_Baby(self.g1):
-            raise ValueError(self.ERR_BABY % g)
-        self.v15 = v_axis_opp15 * self.g
+        self.v15 = self.v15_start * self.g
     def __imul__(self, g):
         if self.constant:
             raise TypeError(self.ERR1)
-        g = MM0(g)
-        if not in_Baby(g):
+        g = in_Baby(MM0(g))
+        if g is None:
             raise ValueError(self.ERR_BABY % g)
         self.g1 *= g
         self.v15 *= g
         return self
     def __mul__(self, g):
         return self.copy().__imul__(g)
-    def __getitem__(self, index):
-        return self.v15.__getitem__(index)
+    #def __getitem__(self, index):
+    #    return self.v15.__getitem__(index)
+    def rebase(self):
+        if self.constant:
+            raise TypeError(self.ERR1)
+        self.g0 *= self.g1
+        self.g1 = MM0()
+        if v_axis * self.g0 != v_axis:
+             ERR = "Involution of 2A axis is not in Baby Monster"
+             raise ValueError(ERR)
+        try:
+            #print("Rebasing axis in Baby Monster")
+            from mmgroup.mm_reduce import mm_reduce_vector_shortcut
+            from mmgroup.mm_reduce import mm_reduce_vector_vm
+            v0 = np.zeros(1, dtype = np.uint32)
+            v = self.v15.copy()
+            w = V15(0)
+            g = np.zeros(128, dtype = np.uint32)
+            l_g = mm_reduce_vector_shortcut(1, 1, V_PLUS, g)
+            assert 0 <= l_g < 128
+            l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
+            assert 0 <= l_g < 128, hex(l_g)
+            g0 = MM0('a', g[:l_g]) ** -1
+            assert self.v15_start * g0 == self.v15
+            self.g0 = g0
+        except:
+            import warnings
+            W = "Reducing an baby monster axis with mmgroup has failed"
+            warnings.warn(W, UserWarning)
+            raise
+        return self
     def axis_type(self, e = 0):
         at = self.v15.axis_type(e)
         if e:
@@ -128,46 +172,6 @@ class BabyAxis(Axis):
         return at + str(int(asub != 0)) 
 
 
-
-
-def find_short(v, value, radical = 0, verbose = 0):
-    """Return certain array of short vectors in Leech lattice mod 2
-
-    Let ``v`` be a vector in the rep of the moster mod 15.
-
-    The function returns the list of all vectors ``v2`` in the Leech
-    lattice mod 2 such that the absolute value of the entry of ``v``
-    corresponding a unit vector labelled by ``v2`` is equal to
-    ``value``. That list is returned as a numpy array.
-
-    If ``radical`` is 1 then the function returns a basis of the
-    radical of the space generated by the vectors described above.
-    If ``radical`` is 2 then the function returns the whole radical
-    as an array of vectors. 
-    """
-    MAXLEN = 1000
-    short = np.zeros(MAXLEN + 1, dtype = np.uint32)
-    l = mm_op_eval_X_find_abs(15, v.data, short, MAXLEN+1, value, 0)
-    if  l <= 0 or l > MAXLEN:
-        return short[:0]
-    short = short[:l]
-    basis = np.zeros(24, dtype = np.uint64)
-    dim = leech2_matrix_basis(short, l, basis, 24)
-    if  dim <= 0 or dim >= 24:
-        return short[:0]
-    if radical or verbose: 
-        basis_rad = np.zeros(24, dtype = np.uint64)
-        dim_rad = leech2_matrix_radical(short, l, basis_rad, 24)
-    if verbose:
-        print("The set S_%d has size %3d and dim %2d, radical dim %2d" %
-             (value, l, dim, dim_rad))
-    if radical == 1:
-        return basis_rad[:dim_rad]
-    if radical > 1:
-        rad = np.zeros(1 << dim_rad, dtype = np.uint32)
-        leech2_matrix_expand(basis_rad, dim_rad, rad)
-        return rad
-    return short
 
 
 
@@ -430,7 +434,27 @@ def postpermute(class_, axis):
         axis *= solve_gcode_diag(l, 'x')
     return axis
 
-    
+
+#################################################################
+# Cases 2A and 2B
+#################################################################
+
+def beautify_2A0(axis):
+    ker, isect, a_img, _ = kernel_A(axis, 0)
+    assert ker == 23
+    v3 = leech3matrix_vmul(1, a_img)
+    typev, v2 =  divmod(gen_leech3to2(v3), 1 << 24)
+    assert typev == 2
+    g = np.zeros(6, dtype = np.uint32)
+    len_g = gen_leech2_reduce_type2_ortho(v2, g)
+    assert 0 <= len_g <= 6
+    axis *= MM0('a', g[:len_g])
+    # Todo: 
+    if (axis['C', 2, 3] - 2) % 15:
+         # Todo: Change sign of axis!!!!!
+         pass
+    return axis
+
 
 #################################################################
 # Beautifying an axis
