@@ -188,15 +188,15 @@ class Axis:
         self.g0 *= self.g1
         self.g1 = MM0()
         try:
-            #from mmgroup import MM
+            from mmgroup import MM
             from mmgroup.mm_reduce import mm_reduce_vector_vp 
             v0 = np.zeros(1, dtype = np.uint32)
             v = self.v15.copy()
             w = V15(0)
             g = np.zeros(128, dtype = np.uint32)
-            l_g = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
-            assert 0 <= l_g < 128
-            g0 = MM0('a', g[:l_g]) ** -1
+            lg = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
+            assert 0 <= lg < 128
+            g0 = MM0(MM('a', g[:lg]) ** -1)
             #g0 = MM0(MM(self.g0).reduce())
             assert self.v15_start * g0 == self.v15
             self.g0 = g0
@@ -217,8 +217,7 @@ class Axis:
         """
         c = self.g_axis * g_central
         _, h = c.half_order()
-        result =  h.conjugate_involution_G_x0(guide)
-        return result
+        return h
     def find_short(self, value, radical = 0, verbose = 0):
         """Return array of short vectors in Leech lattice mod 2
 
@@ -580,7 +579,7 @@ def postpermute(class_, axis):
         for j in [10, 11, 17, 19, 21]:
             l += [(2, j, b[2,j] != 2)]
         axis *= solve_gcode_diag(l, 'x')
-        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
     if class_ == "10B":
         diag = np.diagonal(axis['A'])  % 3
         o = [None] * 2
@@ -609,9 +608,9 @@ def postpermute(class_, axis):
         b = axis['B'] % 3
         l = [(0, j, (b[0,j] - 1) & 1) for j in range(8, 24)]
         axis *= solve_gcode_diag(l, 'x')
-        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
     if class_ == "10A":
-        axis *= cond_swap_BC(axis['B', 0, 9] != axis['C', 0, 9])
+        axis *= cond_swap_BC(axis['B', 0, 9] == axis['C', 0, 9])
         b = axis['B'] % 3
         l = [(0, j, b[0,j] != 1) for j in range(9,24) if  b[0,j]]
         axis *= solve_gcode_diag(l, 'x')
@@ -621,7 +620,7 @@ def postpermute(class_, axis):
         #print(b)
         for i in range(9, 24):
             if b[i]:
-                axis *= cond_swap_BC(b[i] != c[i])
+                axis *= cond_swap_BC(b[i] == c[i])
                 #print(i)
                 break
         dest, src = find_perm_6F(i)             
@@ -648,7 +647,7 @@ def postpermute(class_, axis):
         a = axis['A'] % 3
         l = [(1, i, (a[1,i] - 2) & 1) for i in (2, 3)]
         axis *= solve_gcode_diag(l)
-        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
         b = axis['B', 0]
         x = sum((1 << i for i in range(8, 24) if b[i] != 9))
         try:
@@ -666,7 +665,7 @@ def postpermute(class_, axis):
         ind = dodecad.index(position)
         dodecad[0], dodecad[ind] = dodecad[ind], dodecad[0]
         axis *= permutation(perm_from_dodecads(dodecad, DODECAD_8F))
-        axis *= cond_swap_BC(axis['B', 0, 2] != axis['C', 0, 2])
+        axis *= cond_swap_BC(axis['B', 0, 2] == axis['C', 0, 2])
         #display_A(axis['B'] )
         b = axis['B', 0]
         l =  [(0, j, b[j] != 1) for j in range(1, 20) if b[j]]
@@ -681,7 +680,7 @@ def postpermute(class_, axis):
         else:
             image = [0, 1, 2, 3, 4]
         axis *= permutation(image, [0, 1, 2, 3, 4])
-        axis *= cond_swap_BC(axis['B', 1, 0] != axis['C', 1, 0])
+        axis *= cond_swap_BC(axis['B', 1, 0] == axis['C', 1, 0])
         b = axis['B', 1] % 3
         l =  [(1, j, b[j] != 1) for j in range(4, 24)]
         axis *= solve_gcode_diag(l, 'x')
@@ -706,7 +705,7 @@ def postpermute(class_, axis):
         l += [(8, j, b[j] != 1) for j in range(9, 24)]
         axis *= solve_gcode_diag(l, 'x')
     if class_ == "4C":
-        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
+        axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
         l = [(j, j+1, axis['B', j, j+1] % 3 != 1) for j in range(8, 24, 2)]
         b = axis['B', 8] % 3
         l +=  [(8, j, b[j] == 2) for j in range(8)]
@@ -733,7 +732,28 @@ def postpermute(class_, axis):
 #################################################################
 
 
-def beautify_axis(class_, g, verbose = 0, rand = 0):
+
+USE_CENTRAL_INVOLUTION = [
+    '2B', '4B', '4C', '6C', '8B', '6F', '10B', '12C'
+]
+
+def beautify_using_central_involution(class_, axis):
+    guide = find_guide(class_, axis)
+    zi = axis.central_involution(guide) * axis.g_central
+    _, h = zi.conjugate_involution_G_x0(guide)
+    axis *= h
+    return axis
+
+def central_involution_is_ok(class_, axis, verbose = 0):
+    g2 = axis.central_involution() * axis.g_central
+    cls_, h = g2.conjugate_involution_G_x0()
+    g_test = g2**-1 * g2**h
+    ok = g_test == MM0()
+    if verbose and not ok:
+        print("BAD case:", class_, cls_, g_test)
+    return ok
+
+def beautify_axis(class_, g, verbose = 0, rand = 0, check = False):
     if REF_CLASS and class_ != REF_CLASS:
         # for debugging only
         return None
@@ -748,15 +768,26 @@ def beautify_axis(class_, g, verbose = 0, rand = 0):
         print("Input:")
         display_A(axis['A'])
     if class_ == "2A":
-        return do_get_v3_case_2A(axis)
-    if class_ in ['2B', '4B', '4C', '6C', '8B', '6F', '10B', '12C']:
-        guide = find_guide(class_, axis)
-        iclass, g2 = axis.central_involution(guide)
-        axis *= g2
+        axis = do_get_v3_case_2A(axis)
+    if class_ in USE_CENTRAL_INVOLUTION:
+        beautify_using_central_involution(class_, axis)
+        axis = postpermute(class_, axis)
     if class_ in ORBIT_MOD3_CASES:
         v3 = ORBIT_MOD3_CASES[class_](axis)
         axis *= reduce_leech_mod_3(v3) 
-    axis = postpermute(class_, axis)
+        axis = postpermute(class_, axis)
+    if check:
+        if not central_involution_is_ok(class_, axis):
+            if class_ in USE_CENTRAL_INVOLUTION:
+                beautify_using_central_involution(class_, axis)
+                axis = postpermute(class_, axis)
+            if class_ in ORBIT_MOD3_CASES:
+                #v3 = ORBIT_MOD3_CASES[class_](axis)
+                #axis *= reduce_leech_mod_3(v3) 
+                #axis = postpermute(class_, axis)
+                pass
+        central_involution_is_ok(class_, axis, verbose = 1)
+
     if verbose:
         for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))

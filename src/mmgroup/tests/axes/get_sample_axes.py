@@ -773,7 +773,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
-                axis = beautify_axis(class_, g, _vb)
+                axis = beautify_axis(class_, g, _vb, check = True)
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:

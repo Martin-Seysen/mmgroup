@@ -488,7 +488,8 @@ def beautify_baby_axis(class_, g, verbose = 0, rand = 0):
         #print("ker", hex(v3))
         #print(class_, [(i, x[:2]) for i, x in d.items()])
     guide = find_guide(class_, axis)
-    iclass, g2 = axis.central_involution(guide)
+    zi = axis.central_involution(guide) * axis.g_central
+    iclass, g2 = zi.conjugate_involution_G_x0(guide)
     if verbose:
         print("guide =", hex(guide))
         print("iclass = ", iclass)
