@@ -44,10 +44,12 @@ def check_central_involution(axis):
 
 
 
+@pytest.mark.mmm
 @pytest.mark.axes
 def test_axes():
     from mmgroup.tests.axes import Axis, get_sample_axes
     from mmgroup.tests.axes import beautify_axis
+    from mmgroup.tests.axes import reduce_axis_G_x0
     sample_axes = get_sample_axes()
     for key in sample_axes:
         axis = sample_axes[key]
@@ -61,10 +63,13 @@ def test_axes():
              e = randint(1,2)
              we =  w.axis_type(e) 
              assert isinstance(we, str)
-             if i < 3:
+             if i < 2:
                  w1 = beautify_axis(key, w.g, check = 1)
                  for tag in "ABC":
                      if (w1[tag] != v[tag]).any():
                          S = "Orbit %s axes differ in tag %s!!!"
                          raise ValueError(S % (key, tag))
                  check_central_involution(w1)
+             if i < 2:
+                 g = reduce_axis_G_x0(w, check = False)
+                 assert (w * g).v15 == axis.v15

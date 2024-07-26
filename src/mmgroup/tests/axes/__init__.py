@@ -21,5 +21,6 @@ from mmgroup.tests.axes.beautify_axes import Axis
 from mmgroup.tests.axes.beautify_axes import beautify_axis
 from mmgroup.tests.axes.beautify_baby_axes import BabyAxis
 from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
+from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
 
 
