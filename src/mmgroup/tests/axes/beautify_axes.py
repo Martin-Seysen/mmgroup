@@ -77,7 +77,11 @@ v_axis_opp15 = V15(V_AXIS_OPP)
 def display_A(A):
    """Display a two-dimensional integer matrix A"""
    imax, jmax = A.shape
-   fmt = [4 if max(abs(A[:,j])) > 99 else 2 for j in range(jmax)]
+   fmt = []
+   for j in range(jmax):
+       lengths = [len(str(int(A[i,j]))) for i in range(imax)]
+       fmt.append(max(2, max(lengths)))
+   #fmt = max( (A[:,j]) for j in range(jmax)])
    for i in range(imax):
       print(" ", end = "")
       for j in range(jmax):
@@ -92,8 +96,11 @@ def sym_part(v, part):
     if isinstance(part, str) and part in 'ABC':
         return v[part]
     if  isinstance(part, Integral):
-        a = MMV(v.p)(0)
-        mm_op_t_A(v.p, v.data, part, a.data)
+        if isinstance(v, MMVector):
+            a = MMV(v.p)(0)
+            mm_op_t_A(v.p, v.data, part, a.data)
+        else:
+            a = deepcopy(v) * MM0('t', part)
         return a['A']
     ERR =  "Cannot display a part of % of a vector"
     raise TypeError(ERR % type(part))
@@ -259,9 +266,9 @@ class Axis:
         """Display part of axis as a symmetric 24 times 24 matrix
 
         if ``part`` is 'A', 'B', or 'C' then the matrix corresponding to
-        that part is displayed. If ``part`` is an integer the 'A' part
-        of the matrix (multiplied with group element ``MM('t', part)``)
-        is displayed.
+        that part (modulo 15) is displayed. If ``part`` is an integer
+        then the 'A' part of the matrix (multiplied with group element
+        ``MM('t', part)``) is displayed.
 
         If ``diff`` is is an instance of class ``Axis`` then ``diff``
         is subtracted from the axis. Parameter ``ind`` is an optional
@@ -279,8 +286,21 @@ class Axis:
             a = np.array([[a[i, j] for j in ind] for i in ind])
         display_A(a)
         print(end)
+    def display_sym_integral(self, part = 'A', text = "", end = ""):
+        """Display part of 256 * axis as a symmetric 24 times 24 matrix
 
+        Operaration and parameters are as in method ``display_sym``,
+        but the exact symmetric matrix (multiplied with 256)  is
+        displayed instead.
+        """
+        if text:
+            print(text)
+        v = self.axis_in_space(MMVectorCRT, 20) 
+        a = 256 * sym_part(v, part)
+        display_A(a)
+        print(end)
 
+   
 
 
 def find_short(v, value, radical = 0, verbose = 0):
@@ -668,7 +688,8 @@ def postpermute(class_, axis):
         axis *= cond_swap_BC(axis['B', 0, 2] == axis['C', 0, 2])
         #display_A(axis['B'] )
         b = axis['B', 0]
-        l =  [(0, j, b[j] != 1) for j in range(1, 20) if b[j]]
+        l =  [(0, j, b[j] != 1) for j in range(1, 24)
+             if b[j] and j != 12]
         axis *= solve_gcode_diag(l, 'x')
     if class_ == "6A":
         diag = np.diagonal(axis['A'])
@@ -790,8 +811,8 @@ def beautify_axis(class_, g, verbose = 0, rand = 0, check = False):
 
     if verbose:
         for e in range (3):
-            print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
-            display_A((axis * MM0('t', e))['A'])
+            print("Orbit of axis * t**%s is %s" % (e, axis.axis_type(e)))
+            axis.display_sym_integral(e)
     return axis
 
 
