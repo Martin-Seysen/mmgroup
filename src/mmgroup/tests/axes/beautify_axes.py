@@ -24,7 +24,7 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2, Parity, PLoop
-from mmgroup import mat24
+from mmgroup import mat24, mmv_scalprod
 from mmgroup.mat24 import perm_from_dodecads
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup import mat24, GcVector, AutPL, Parity, GCode
@@ -644,13 +644,10 @@ def postpermute(class_, axis):
                 #print(i)
                 break
         dest, src = find_perm_6F(i)             
-        #axis.display_sym('B', ind = range(8,24), text = 'axis B')
         axis *= permutation(dest, src)
-        if axis['B', 8, 9] % 3 != 1:
-            axis *= solve_gcode_diag([(8, i, 1) for i in range(9, 24, 2)])
-        #print(i, [axis.axis_type(e) for e in range(3)])
-        #axis.display_sym('B', ind = range(8,24), text = 'axis B')
-        #axis.display_sym('C', ind = range(8,24), text = 'axis C')
+        l = [(i, i+1, axis['C', i, i+1] % 3) for i in range(8, 24, 2)]
+        axis *= solve_gcode_diag(l, 'x')
+        #axis.display_sym('B', ind = range(8,12), text = 'orbit 6F, axis B')
     if class_ == "6C":
         diag = np.diagonal(axis['A'])  % 3
         head = []; tail = []
@@ -765,6 +762,8 @@ def beautify_using_central_involution(class_, axis):
     axis *= h
     return axis
 
+
+
 def central_involution_is_ok(class_, axis, verbose = 0):
     g2 = axis.central_involution() * axis.g_central
     cls_, h = g2.conjugate_involution_G_x0()
@@ -782,6 +781,8 @@ def beautify_axis(class_, g, verbose = 0, rand = 0, check = False):
     axis = Axis(g)
     if verbose:
         print("\nOrbit" + class_)
+        if not rand and mmv_scalprod(axis.v15, v_axis15) == 0:
+            print("Axis may also be used in Baby monster")
     axis.rebase()
     if rand:
         axis *= MM0('r', 'G_x0')
@@ -802,12 +803,7 @@ def beautify_axis(class_, g, verbose = 0, rand = 0, check = False):
             if class_ in USE_CENTRAL_INVOLUTION:
                 beautify_using_central_involution(class_, axis)
                 axis = postpermute(class_, axis)
-            if class_ in ORBIT_MOD3_CASES:
-                #v3 = ORBIT_MOD3_CASES[class_](axis)
-                #axis *= reduce_leech_mod_3(v3) 
-                #axis = postpermute(class_, axis)
-                pass
-        central_involution_is_ok(class_, axis, verbose = 1)
+        central_involution_is_ok(class_, axis, verbose)
 
     if verbose:
         for e in range (3):

@@ -21,17 +21,39 @@ V = MMV(15)
 
 START_AXIS =  ('I', 3, 2)
 
+CENTRAL_INVOLUTIONS_OK = [
+    MM0('x', x) for x in [0,  0x1000, 0x800, 0x1800]
+]
+def check_central_involution(axis):
+    g2 = axis.central_involution() * axis.g_central
+    cls_, h = g2.conjugate_involution_G_x0()
+    g_test = (g2**-1 * g2**h)
+    orbit = axis.axis_type()
+    if orbit == '8B':
+         ok = any(g_test == g for g in CENTRAL_INVOLUTIONS_OK)
+    elif orbit in ['6A', '10A']:
+         ok = any(g_test == g for g in CENTRAL_INVOLUTIONS_OK[:2])
+    else:
+         ok = g_test ==  CENTRAL_INVOLUTIONS_OK[0]
+    if not ok:
+        raise ValueError("BAD case: %s, %s, %s" % (orbit, cls_, g_test))
+
+
+
+
+
 
 
 @pytest.mark.axes
 def test_axes():
-    from mmgroup.tests.axes import get_sample_axes
+    from mmgroup.tests.axes import Axis, get_sample_axes
     from mmgroup.tests.axes import beautify_axis
     sample_axes = get_sample_axes()
     for key in sample_axes:
         axis = sample_axes[key]
         v = V(*START_AXIS) * axis.g
-        assert v == axis.v15
+        ref_axis = Axis(axis.g)
+        assert v == axis.v15 == ref_axis.v15
         assert v.axis_type() == key
         for i in range(5):
              w = axis * MM0('r', 'G_x0')
@@ -44,8 +66,5 @@ def test_axes():
                  for tag in "ABC":
                      if (w1[tag] != v[tag]).any():
                          S = "Orbit %s axes differ in tag %s!!!"
-                         if key == '6F':
-                             print(S % (key, tag))
-                         else:
-                             raise ValueError(S % (key, tag))
-
+                         raise ValueError(S % (key, tag))
+                 check_central_involution(w1)
