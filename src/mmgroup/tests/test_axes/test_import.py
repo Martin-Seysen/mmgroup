@@ -206,7 +206,7 @@ def test_2A_axes_classes(verbose = 0):
             powers = axis.powers
             s_powers = ", powers: " + powers if len(powers) else ""
             print(s_powers)
-            print("Automorphism group:", axis.group)
+            print("Automorphism group:", axis.auto_group)
             print(display_norm_A(axis), end = "")
             print("Eigenvalues", format_eigen_values(A))
             display_A(A)

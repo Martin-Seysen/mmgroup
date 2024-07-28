@@ -70,6 +70,43 @@ v_axis_opp = MMVectorCRT(16, V_AXIS_OPP)
 v_axis15 = V15(V_AXIS)
 v_axis_opp15 = V15(V_AXIS_OPP)
 
+
+MM_INITIALIZED = False
+G = MM0
+G_SHORTEN = False
+MM = None
+
+def set_axis_group(group = None, shorten = True):
+    """Set group acting on instances of class ``Axis``.
+
+    The ordinary user almost never has a reson to call this
+    function. Here parameter ``group`` should be ``None``
+    (default), or  one of classes ``MM`` or ``MM0`` defined 
+    im module ``mmgroup`. By default we use class ``MM`` if
+    present and class ``MM0`` otherwise.
+
+    More details about use cases for class ``MM0`` are yet
+    to be documented!
+    """ 
+    global G, G_SHORTEN, MM, MM_INITIALIZED, Axis
+    if shorten or group != MM0:
+        try:
+            from mmgroup import mm_reduce
+            from mmgroup import MM as original_MM
+            G_SHORTEN = True
+            MM = original_MM
+            G = MM0 if group == MM0 else original_MM
+        except:
+            if group not in [None, MM0]:
+                ERR = "Class MM is not implemented"
+                raise NotImplementedError(ERR)
+            G = MM0
+            G_SHORTEN = False
+            MM = None
+    Axis.group = G
+    MM_INITIALIZED = True
+
+
 #################################################################
 # Display a two-dimensional matrix
 #################################################################
@@ -100,7 +137,7 @@ def sym_part(v, part):
             a = MMV(v.p)(0)
             mm_op_t_A(v.p, v.data, part, a.data)
         else:
-            a = deepcopy(v) * MM0('t', part)
+            a = deepcopy(v) * G('t', part)
         return a['A']
     ERR =  "Cannot display a part of % of a vector"
     raise TypeError(ERR % type(part))
@@ -117,7 +154,7 @@ class Axis:
     Monster group with entries taken mod 15. Attribute ``a.v15`` of
     type ``|MMVector|`` is the vector in the representation of the
     Monster corrsponding to the axis. Apart from that vector we also
-    maintain an attribute ``a.g`` of class ``MM0`` such that the axis
+    maintain a property ``a.g`` of class ``MM0`` such that the axis
     is ``a.v15`` equal to the product ``a.v15_start * a.g``. Here
     ``a.v15_start`` is the standard 2A axis :math:`v^+` defined in
     :cite:`Seysen22`. One may multiply an axis with an element of
@@ -130,20 +167,47 @@ class Axis:
     Note that this way we cannot shorten the word ``a.g``
     representing an element of the Monster. On may use method
     ``rebase`` for shortening ``a.g``.
+
+    The constructor may of this class may be:
+
+    * An element :math:`g` of the Monster. Then we constuct the
+      axis c:math:`v^+ * g`.
+
+    * The string ``'i'`` followed by a 2A involution :math:`g` in
+      the Monster. Then we construct the axis corresponding
+      to :math:`g`.
+
+    * An instance of this class. Then we construct a copy of that
+      instance.
     """
-    g_axis_start = g_axis
     v15_start = v_axis15
-    v15_start_name = V_AXIS
-    g_central = g_central
+    v15_start_name = V_AXIS 
     constant = False
+    group = G
     ERR1 = "This axis is constant and may not be changed"
-    def __init__(self, g = 1):
+    def __init__(self, g = 1, invol = None):
         if isinstance(g, Axis):
-            self.g1 = g.g
+            self.g1 = G(g.g)
+        elif g == 'i':
+            from mmgroup import MM
+            g1 = MM(invol)
+            i, h = g1.conjugate_involution()
+            if i != 1:
+                ERR = "Element is not a 2A involution in the Monster"
+                raise ValueError(ERR)
+            self.g1 = G(h**-1)
         else:
-            self.g1 = MM0(g)
-        self.g0 = MM0()
+            self.g1 = G(g)
+        self.g0 = G()
         self.v15 = v_axis15 * self.g
+    @property
+    def g_central(self):
+        """Return central involution of the group ``G_x0``"""
+        return G(G_CENTRAL)
+    @property
+    def g_axis_start(self):
+        """Return the fixed 2A axis ``v^+``"""
+        return G(G_AXIS)
     @property
     def g(self):
         """Return ``g`` with ``a.v15 = a.v15_start * a.g``"""
@@ -152,6 +216,14 @@ class Axis:
     def g_axis(self):
         """Return the 2A involution corresponding to the 2A axis"""
         return self.g_axis_start ** self.g
+    @property
+    def group(self):
+        """Return class implementing the Monster group acting on axes
+
+        This is usually class |MM|, and need not be changed. One may
+        change this by calling function ``set_axis_group``.
+        """
+        return G
     @property
     def norm_A_mod15(self):
         """Return norm of part A of the axis (modulo 15)."""
@@ -165,7 +237,7 @@ class Axis:
     def __imul__(self, g):
         if self.constant:
             raise TypeError(self.ERR1)
-        g = MM0(g)
+        g = G(g)
         self.g1 *= g
         self.v15 *= g
         return self
@@ -193,7 +265,7 @@ class Axis:
         if self.constant:
             raise TypeError(self.ERR1)
         self.g0 *= self.g1
-        self.g1 = MM0()
+        self.g1 = G()
         try:
             from mmgroup import MM
             from mmgroup.mm_reduce import mm_reduce_vector_vp 
@@ -203,8 +275,7 @@ class Axis:
             g = np.zeros(128, dtype = np.uint32)
             lg = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
             assert 0 <= lg < 128
-            g0 = MM0(MM('a', g[:lg]) ** -1)
-            #g0 = MM0(MM(self.g0).reduce())
+            g0 = G(MM('a', g[:lg]) ** -1)
             assert self.v15_start * g0 == self.v15
             self.g0 = g0
         except:
@@ -222,7 +293,7 @@ class Axis:
         is the 2A involution corresponding to the axis, and
         ``a.g_central`` the central involution in :math:`G_{x0}`.
         """
-        c = self.g_axis * g_central
+        c = self.g_axis * self.g_central
         _, h = c.half_order()
         return h
     def find_short(self, value, radical = 0, verbose = 0):
@@ -344,6 +415,11 @@ def find_short(v, value, radical = 0, verbose = 0):
 
 
 
+
+if not MM_INITIALIZED:
+    set_axis_group()
+
+
 #################################################################
 # Auxiliary functions for beautifying an axis in Co_1
 #################################################################
@@ -428,7 +504,7 @@ def reduce_leech_mod_3(v):
     assert len_g >= 0
     v_reduced = gen_leech3_op_vector_word(v, g, len_g)
     # print("v_reduced", hex(v_reduced))
-    return MM0('a', g[:len_g])
+    return G('a', g[:len_g])
 
 def get_v3_case_4A(axis):
     ker, isect, _, a_ker = kernel_A(axis, 0)
@@ -474,9 +550,9 @@ def do_get_v3_case_2A(axis):
     g = np.zeros(6, dtype = np.uint32)
     len_g = gen_leech2_reduce_type2(v2, g)
     assert 0 <= len_g <= 6
-    axis *= MM0('a', g[:len_g])
+    axis *= G('a', g[:len_g])
     if (axis['B', 2, 3] + 2) % 15:
-        axis *= MM0('x', 0x200)
+        axis *= G('x', 0x200)
     assert axis.v15 ==  v_axis15 
     return axis
 
@@ -508,8 +584,8 @@ def solve_gcode_diag(l, generator = 'y'):
         check = hex(result.ord), hex(c.ord), k
         assert result & c == Parity(int(k)), check
     if generator == 'xy':
-        return MM0('x', result) * MM0('y', result)
-    return MM0(generator, result)
+        return G('x', result) * G('y', result)
+    return G(generator, result)
 
 
 
@@ -527,14 +603,14 @@ def permutation(image, preimage = None):
     group ``AutPL`` as an instance of class MM0.  
     """
     if preimage is None:
-        return MM0('p', AutPL(0, image))
+        return G('p', AutPL(0, image))
     else:
-        return MM0('p', AutPL(0, zip(preimage, image), unique=False))
+        return G('p', AutPL(0, zip(preimage, image), unique=False))
 
-SWAP = MM0('d', 0x800)
+SWAP = G('d', 0x800)
 
 def cond_swap_BC(condition):
-    return  SWAP if condition else MM0()
+    return  SWAP if condition else G()
 
 
 DODECAD_12C = [0, 1, 4, 5, 6, 7, 10, 11, 17, 19, 21, 22]
@@ -561,7 +637,7 @@ def debug_show_swapped(axis, swap = False, verbose = 1, submatrix = None):
              (axis.axis_type(1) , axis.axis_type(2)) )
        for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
-            display_A((axis * MM0('t', e))['A'])  
+            display_A((axis * G('t', e))['A'])
 
 
 REF_CLASS = None
@@ -668,7 +744,7 @@ def postpermute(class_, axis):
         b = axis['B', 0]
         x = sum((1 << i for i in range(8, 24) if b[i] != 9))
         try:
-            axis *= MM0('x', mat24.vect_to_gcode(x))
+            axis *= G('x', mat24.vect_to_gcode(x))
         except:
             pass
     if class_ == "8B":
@@ -768,7 +844,7 @@ def central_involution_is_ok(class_, axis, verbose = 0):
     g2 = axis.central_involution() * axis.g_central
     cls_, h = g2.conjugate_involution_G_x0()
     g_test = g2**-1 * g2**h
-    ok = g_test == MM0()
+    ok = g_test == G()
     if verbose and not ok:
         print("BAD case:", class_, cls_, g_test)
     return ok
@@ -785,7 +861,7 @@ def beautify_axis(class_, g, verbose = 0, rand = 0, check = False):
             print("Axis may also be used in Baby monster")
     axis.rebase()
     if rand:
-        axis *= MM0('r', 'G_x0')
+        axis *= G('r', 'G_x0')
     if verbose > 1:
         print("Input:")
         display_A(axis['A'])

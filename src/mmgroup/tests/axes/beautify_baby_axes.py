@@ -68,6 +68,9 @@ from mmgroup.tests.axes.beautify_axes import display_A
 from mmgroup.tests.axes.beautify_axes import sym_part
 from mmgroup.tests.axes.beautify_axes import Axis
 from mmgroup.tests.axes.beautify_axes import kernel_A
+from mmgroup.tests.axes.beautify_axes import G, G_SHORTEN, MM
+
+
 
 #################################################################
 # Classes for modelling an axis
@@ -93,7 +96,7 @@ def in_H(g):
     mm, lmm = g.mmdata, len(g.mmdata)
     if any([gen_leech2_op_word(x, mm, lmm) != x for x in H_AXES]):
          return None
-    g1 = MM0(Xsp2_Co1(g))
+    g1 = G(Xsp2_Co1(g))
     assert in_Baby_direct(g1)
     return g1
  
@@ -104,7 +107,6 @@ def in_Baby(g):
 
 
 class BabyAxis(Axis):
-    g_axis_start = g_axis_opp
     v15_start = v_axis_opp15
     constant = False
     ERR_BABY = "Cannot map element %s to subgroup 2.B of Monster"
@@ -113,15 +115,19 @@ class BabyAxis(Axis):
         if isinstance(g, Axis):
             self.g1 = in_Baby(Axis.g)
         else:
-            self.g1 = in_Baby(MM0(g))
+            self.g1 = in_Baby(G(g))
         if self.g1 is None:
             raise ValueError(self.ERR_BABY % self.g1)
-        self.g0 = MM0()
+        self.g0 = G()
         self.v15 = self.v15_start * self.g
+    @property
+    def g_axis_start(self):
+        """Return the fixed 2A axis ``v^-``"""
+        return G(G_AXIS_OPP)
     def __imul__(self, g):
         if self.constant:
             raise TypeError(self.ERR1)
-        g = in_Baby(MM0(g))
+        g = in_Baby(G(g))
         if g is None:
             raise ValueError(self.ERR_BABY % g)
         self.g1 *= g
@@ -135,7 +141,7 @@ class BabyAxis(Axis):
         if self.constant:
             raise TypeError(self.ERR1)
         self.g0 *= self.g1
-        self.g1 = MM0()
+        self.g1 = G()
         if v_axis * self.g0 != v_axis:
              ERR = "Involution of 2A axis is not in Baby Monster"
              raise ValueError(ERR)
@@ -151,7 +157,7 @@ class BabyAxis(Axis):
             assert 0 <= l_g < 128
             l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
             assert 0 <= l_g < 128, hex(l_g)
-            g0 = MM0('a', g[:l_g]) ** -1
+            g0 = G('a', g[:l_g]) ** -1
             assert self.v15_start * g0 == self.v15
             self.g0 = g0
         except:
@@ -219,7 +225,7 @@ def reduce_leech_mod_3(v):
     assert len_g >= 0
     v_reduced = gen_leech3_op_vector_word(v, g, len_g)
     # print("v_reduced", hex(v_reduced))
-    return MM0('a', g[:len_g])
+    return G('a', g[:len_g])
 
 
 def from_subspace_mod3(a, transformed = True):
@@ -281,7 +287,7 @@ def solve_gcode_diag(l, generator = 'y'):
     ``<x, Cocode([i0,i1])> = k``, where ``<.,.>`` is the scalar
     product. If a solution ``x`` exists then the function
     returns the element ``MM0('y', x)`` of the group ``AutPL``
-    as an instance of class MM0.
+    as an instance of class G.
     """ 
     a = np.zeros(len(l), dtype = np.uint64)
     for i, (i0, i1, k) in enumerate(l):
@@ -296,8 +302,8 @@ def solve_gcode_diag(l, generator = 'y'):
         check = hex(result.ord), hex(c.ord), k
         assert result & c == Parity(int(k)), check
     if generator == 'xy':
-        return MM0('x', result) * MM0('y', result)
-    return MM0(generator, result)
+        return G('x', result) * G('y', result)
+    return G(generator, result)
 
 
 
@@ -315,14 +321,14 @@ def permutation(image, preimage = None):
     group ``AutPL`` as an instance of class MM0.  
     """
     if preimage is None:
-        return MM0('p', AutPL(0, image))
+        return G('p', AutPL(0, image))
     else:
-        return MM0('p', AutPL(0, zip(preimage, image), unique=False))
+        return G('p', AutPL(0, zip(preimage, image), unique=False))
 
-SWAP = MM0('d', 0x800)
+SWAP = G('d', 0x800)
 
 def cond_swap_BC(condition):
-    return  SWAP if condition else MM0()
+    return  SWAP if condition else G()
 
 
 
@@ -343,7 +349,7 @@ def debug_show_swapped(axis, swap = False, verbose = 1, submatrix = None):
              (axis.axis_type(1) , axis.axis_type(2)) )
        for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
-            display_A((axis * MM0('t', e))['A'])  
+            display_A((axis * G('t', e))['A'])  
 
 
 REF_CLASS = None
@@ -376,7 +382,7 @@ def postpermute(class_, axis):
         b = axis['B', 0]
         x = sum((1 << i for i in range(8, 24) if b[i] != 9))
         try:
-            axis *= MM0('x', mat24.vect_to_gcode(x))
+            axis *= G('x', mat24.vect_to_gcode(x))
         except:
             pass
     if class_ == "6A":
@@ -448,7 +454,7 @@ def beautify_2A0(axis):
     g = np.zeros(6, dtype = np.uint32)
     len_g = gen_leech2_reduce_type2_ortho(v2, g)
     assert 0 <= len_g <= 6
-    axis *= MM0('a', g[:len_g])
+    axis *= G('a', g[:len_g])
     # Todo: 
     if (axis['C', 2, 3] - 2) % 15:
          # Todo: Change sign of axis!!!!!
@@ -475,7 +481,7 @@ def beautify_baby_axis(class_, g, verbose = 0, rand = 0):
         print("\nOrbit" + class_)
     axis.rebase()
     if rand:
-        axis *= MM0('r', 'G_x0')
+        axis *= G('r', 'G_x0')
     if verbose > 1:
         print("Input:")
         display_A(axis['A'])
@@ -495,19 +501,10 @@ def beautify_baby_axis(class_, g, verbose = 0, rand = 0):
         print("iclass = ", iclass)
         s = "" if in_Baby(g2) else " NOT"
         print("Central involution is%s in Baby Monster" % s)
-    """
-    #if v3 == 0 or 'o' in iclass:
-    #    axis *= g2
-    #    #print(iclass)
-    if v3 and class_ not in ["6C", "6F", "12C"]:
-        axis *= reduce_leech_mod_3(v3)
-    axis = postpermute(class_, axis)
-    """
-    #print(axis.g)
     if verbose > 1:
         for e in range (3):
             print("Orbit of axis * t**%d is %s" % (e, axis.axis_type(e)))
-            display_A((axis * MM0('t', e))['A'])
+            display_A((axis * G('t', e))['A'])
     return axis
 
 

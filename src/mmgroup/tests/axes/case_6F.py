@@ -100,7 +100,7 @@ def solve_special_equation_6F(axis):
     if not initialized:
         analyse_6F(verbose = 0)
     ax = axis.copy()
-    g0 = MM0(solve_6F(ax))
+    g0 = axis.group(solve_6F(ax))
     ax *= g0
     g1 = solve_Qx0_equations('6F', ax)
     ax *= g1

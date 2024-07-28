@@ -813,7 +813,7 @@ def get_axes_from_sample_axes(sample_axes):
         g_class = sample_axes.g_classes[i]
         axis.g_class = g_class
         axis.mark = sample_axes.g_marks[i]
-        axis.group = sample_axes.groups[i]
+        axis.auto_group = sample_axes.groups[i]
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
         axis.constant = True

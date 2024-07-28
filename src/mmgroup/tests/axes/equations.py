@@ -216,7 +216,7 @@ def solve_Qx0_equations(orbit, axis):
     g1 = solve_x_equations(axis, *X_EQUATIONS[orbit])
     ax = axis * g1
     g2 = solve_central_equations(ax, *CENTRAL_EQUATIONS[orbit])
-    return g1 * g2
+    return axis.group(g1 * g2)
 
 
 

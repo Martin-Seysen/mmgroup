@@ -14,16 +14,20 @@ from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech
+from mmgroup.tests.axes import Axis, get_sample_axes
+from mmgroup.tests.axes import beautify_axis
+from mmgroup.tests.axes import reduce_axis_G_x0
+
 V = MMV(15)
-
-
+G = Axis.group
 
 
 START_AXIS =  ('I', 3, 2)
 
 CENTRAL_INVOLUTIONS_OK = [
-    MM0('x', x) for x in [0,  0x1000, 0x800, 0x1800]
+    G('x', x) for x in [0,  0x1000, 0x800, 0x1800]
 ]
+
 def check_central_involution(axis):
     g2 = axis.central_involution() * axis.g_central
     cls_, h = g2.conjugate_involution_G_x0()
@@ -44,12 +48,8 @@ def check_central_involution(axis):
 
 
 
-@pytest.mark.mmm
 @pytest.mark.axes
 def test_axes():
-    from mmgroup.tests.axes import Axis, get_sample_axes
-    from mmgroup.tests.axes import beautify_axis
-    from mmgroup.tests.axes import reduce_axis_G_x0
     sample_axes = get_sample_axes()
     for key in sample_axes:
         axis = sample_axes[key]
@@ -58,7 +58,7 @@ def test_axes():
         assert v == axis.v15 == ref_axis.v15
         assert v.axis_type() == key
         for i in range(5):
-             w = axis * MM0('r', 'G_x0')
+             w = axis * G('r', 'G_x0')
              assert w.v15.axis_type() == key
              e = randint(1,2)
              we =  w.axis_type(e) 

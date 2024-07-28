@@ -25,7 +25,7 @@ def reduce_axis_G_x0(ax, check = True, verbose = False):
     g2 =  beautify_axis(ax.axis_type(), ax.g).g1    
     img_ax = ax * g2
     if orbit in ['2A', '2B']:
-        g3 = MM0()
+        g3 = ax.group()
     elif orbit == '6F':
         g3 = solve_special_equation_6F(img_ax)
     else:
