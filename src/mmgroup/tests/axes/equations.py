@@ -211,9 +211,9 @@ def compute_Qx0_equations_str(axis):
 
 
 def solve_Qx0_equations(orbit, axis):
-    if not orbit in EQUATION_ORBITS:
-        return MM0()
     if isinstance(orbit, str):
+        if not orbit in EQUATION_ORBITS:
+            return axis.group()
         from mmgroup.tests.axes import get_sample_axes
         equ = get_sample_axes()[orbit].Qx0_equations
     else:

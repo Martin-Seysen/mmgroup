@@ -761,6 +761,24 @@ def sample_list_sort_key(sample_entry):
      return stage, int(s_class[:-1]), s_class[-1:]
 
 
+def beautify_12C(sample_list):
+    from mmgroup.tests.axes.beautify_axes import beautify_axis
+    from mmgroup.tests.axes.equations import Axis
+    samples = {}
+    for stage, sample, mark in sample_list:
+        class_ = axis_type(sample.g)
+        if class_ in ['4B', '12C']:
+            g = sample.g.raw_str()
+            samples[class_] = beautify_axis(class_, g, check = True)
+    t, z = samples['12C'].g_axis, samples['12C'].g_central
+    old_4B = samples['4B']
+    new_4B = Axis('i', t * z * t * z * t)
+    for tag in 'ABC':
+        assert (old_4B[tag] == new_4B[tag]).all()
+    samples['4B'] = new_4B
+    return samples
+       
+
 def write_axes(sample_list, beautify = True, verbose = False):
     if beautify:
         from mmgroup.tests.axes.beautify_axes import beautify_axis
@@ -775,6 +793,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
     g_strings = [x[1].g for x in sample_list]
     g_classes = [axis_type(x[1].g) for x in sample_list]
     _vb = min(verbose, 1)
+    special_samples = beautify_12C(sample_list)
     for i, (stage, sample, mark) in enumerate(sample_list):
         g = sample.g.raw_str()
         s_samples += "\"" + g + "\",\n"
@@ -784,8 +803,13 @@ def write_axes(sample_list, beautify = True, verbose = False):
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
-                axis = beautify_axis(class_, g, _vb, check = True)
+                if class_ in special_samples:
+                    axis = special_samples[class_]
+                else:     
+                    axis = beautify_axis(class_, g, _vb, check = True)
                 axis.rebase()
+                if class_ == '4B':
+                    axis_4B =  axis.copy()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
                 s_equations += compute_Qx0_equations_str(axis)
         except:
