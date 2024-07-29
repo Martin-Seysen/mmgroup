@@ -13,10 +13,6 @@ from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 
 
 
-X_EQUATIONS = {}
-CENTRAL_EQUATIONS = {}
-
-
 
 #######################################################################
 # subroutines
@@ -53,7 +49,8 @@ def display_axis_equal_upto_sign(ax, orbit):
                      for i in range(759):
                          diff = abs_mod15(ax[e, i]) - abs_mod15(rep[e, i])
                          if (diff != 0).any():
-                              #print("Axes differ at part", e, ", row", i, hex(mat24.octad_to_vect(i)))
+                              #print("Axes differ at part", e, ", row", i,
+                              #         hex(mat24.octad_to_vect(i)))
                               #print(diff)
                               #break
                               pass   
@@ -199,23 +196,31 @@ EQUATION_ORBITS = [
 
 
 
+def compute_Qx0_equations(axis):
+    x_equ = x_equations(axis)
+    central_equ = central_equations(axis)
+    return x_equ + central_equ
 
-def load_Qx0_equations():
-    from mmgroup.tests.axes import get_sample_axes
-    AXES = get_sample_axes()
-    global X_EQUATIONS, CENTRAL_EQUATIONS
-    for orbit in EQUATION_ORBITS:
-        axis = AXES[orbit]
-        X_EQUATIONS[orbit] = x_equations(axis)
-        CENTRAL_EQUATIONS[orbit] = central_equations(axis)
+def compute_Qx0_equations_str(axis):
+    equ = compute_Qx0_equations(axis)
+    s = "(\n"
+    for a in equ:
+        s += "[" + ", ".join([hex(x) for x in a]) + "],\n"
+    return s + "),\n"
+
 
 
 def solve_Qx0_equations(orbit, axis):
     if not orbit in EQUATION_ORBITS:
         return MM0()
-    g1 = solve_x_equations(axis, *X_EQUATIONS[orbit])
+    if isinstance(orbit, str):
+        from mmgroup.tests.axes import get_sample_axes
+        equ = get_sample_axes()[orbit].Qx0_equations
+    else:
+        equ = orbit
+    g1 = solve_x_equations(axis, equ[0], equ[1])
     ax = axis * g1
-    g2 = solve_central_equations(ax, *CENTRAL_EQUATIONS[orbit])
+    g2 = solve_central_equations(ax, equ[2], equ[3])
     return axis.group(g1 * g2)
 
 

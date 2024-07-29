@@ -746,6 +746,15 @@ groups = [
 """
 
 
+Qx0_text = """
+
+Qx0_equations = [
+%s
+]
+
+"""
+
+
 def sample_list_sort_key(sample_entry):
      stage, sample, _ = sample_entry 
      s_class = axis_type(sample.g) 
@@ -755,12 +764,14 @@ def sample_list_sort_key(sample_entry):
 def write_axes(sample_list, beautify = True, verbose = False):
     if beautify:
         from mmgroup.tests.axes.beautify_axes import beautify_axis
+        from mmgroup.tests.axes.equations import compute_Qx0_equations_str
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", ""
     s_classes = ""
     s_beautiful_samples = ""
     s_powers = ""
     s_groups = ""
+    s_equations = ""
     g_strings = [x[1].g for x in sample_list]
     g_classes = [axis_type(x[1].g) for x in sample_list]
     _vb = min(verbose, 1)
@@ -776,6 +787,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
                 axis = beautify_axis(class_, g, _vb, check = True)
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
+                s_equations += compute_Qx0_equations_str(axis)
         except:
             beautify = False
             raise
@@ -787,8 +799,9 @@ def write_axes(sample_list, beautify = True, verbose = False):
     with open(PATH + ".py", "wt") as f:
         f.write(f_text % (G_CENTRAL, G_AXIS, V_AXIS,
             G_AXIS_OPP, V_AXIS_OPP,
-          s_samples, s_stages, s_classes, s_marks))
-
+            s_samples, s_stages, s_classes, s_marks))
+        if beautify:
+            f.write(Qx0_text % s_equations)
         f.write(axes_text % (s_powers, s_groups))
         
 
@@ -816,6 +829,9 @@ def get_axes_from_sample_axes(sample_axes):
         axis.auto_group = sample_axes.groups[i]
         axis.powers = sample_axes.powers[i]
         axis.stage = sample_axes.g_stages[i]
+        axis.Qx0_equations = [np.array(a, dtype = np.uint32)
+            for a in sample_axes.Qx0_equations[i]
+        ]
         axis.constant = True
         AXES[g_class] = axis
     return AXES

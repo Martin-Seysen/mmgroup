@@ -60,7 +60,6 @@ from mmgroup.tests.axes.get_sample_axes import g_axis
 from mmgroup.tests.axes.get_sample_axes import g_axis_opp
 
 
-
 V15 = MMV(15)
 
 
@@ -613,8 +612,11 @@ def cond_swap_BC(condition):
     return  SWAP if condition else G()
 
 
-DODECAD_12C = [0, 1, 4, 5, 6, 7, 10, 11, 17, 19, 21, 22]
-# print(GCode(DODECAD_12C).bit_list)
+L12C = [8, 9, 16, 18, 21, 22]  # [2,3] + L12C  is an octad
+DODECAD_12C = [0, 1, 4, 5, 6, 7] + L12C
+for s in (L12C, DODECAD_12C[:6]):
+    assert mat24.vect_to_octad(sum(1 << i for i in [2,3] + s))
+
 
 OCTAD_10B = [2, 3, 0, 1, 4, 5]
 
@@ -665,17 +667,18 @@ def postpermute(class_, axis):
         axis *= permutation(pi)
         a = axis['A'] % 3
         l = [(2, 3, a[2,3] != 2)]
-        for j in [11, 17, 19, 21, 22]:
-            l += [(10, j, a[10,j] != 1)]
+        L12C = [8, 9, 16, 18, 21, 22] # [2,3] + L12C  is an octad
+        for j in L12C[1:]:
+            l += [(L12C[0], j, a[L12C[0], j] != 1)]
         axis *= solve_gcode_diag(l, 'y')
         b = axis['B'] % 3
         l = []
         for j in [0,1,4,5,6,7]:
             l += [(2, j, b[2,j] != 2)]
-        for j in [10, 11, 17, 19, 21]:
+        for j in L12C[1:]:
             l += [(2, j, b[2,j] != 2)]
         axis *= solve_gcode_diag(l, 'x')
-        axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
+        axis *= cond_swap_BC(axis['B', 0, 8] != axis['C', 0, 8])
     if class_ == "10B":
         diag = np.diagonal(axis['A'])  % 3
         o = [None] * 2
@@ -791,7 +794,7 @@ def postpermute(class_, axis):
         # print(preimage, image)
         axis *= permutation(image, preimage)
         a = axis['A'] % 3
-        l = [(2, 3, (a[2, 3] - 1) & 1)]
+        l = [(2, 3, a[2, 3] == 1)]
         axis *= solve_gcode_diag(l)
         axis *= cond_swap_BC(axis['B', 1, 0] == axis['C', 1, 0])
         l = [(0, j, 0) for j in range(1, 8)]
