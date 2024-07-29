@@ -21,17 +21,7 @@ from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 from mmgroup.mm_crt_space import MMVectorCRT 
-
-"""
-from mmgroup.tests.test_axes.get_nice_sample_axes import import_sample_axes
-from mmgroup.tests.test_axes.get_sample_axes import do_test_sample_axes
-from mmgroup.tests.test_axes.get_baby_sample_axes import import_baby_sample_axes
-from mmgroup.tests.test_axes.get_baby_sample_axes import do_test_baby_sample_axes
-from mmgroup.tests.test_axes.beautify_axes import compute_beautifiers, beautify
-from mmgroup.tests.test_axes.beautify_axes import block_eigenvalues
-"""
-
-from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
+from mmgroup.axes import get_baby_sample_axes, get_sample_axes
 
 
 

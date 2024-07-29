@@ -763,7 +763,7 @@ def sample_list_sort_key(sample_entry):
 
 def beautify_12C(sample_list):
     from mmgroup.tests.axes.beautify_axes import beautify_axis
-    from mmgroup.tests.axes.equations import Axis
+    from mmgroup.tests.axes.beautify_axes import Axis
     samples = {}
     for stage, sample, mark in sample_list:
         class_ = axis_type(sample.g)

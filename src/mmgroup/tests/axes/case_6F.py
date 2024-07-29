@@ -1,7 +1,7 @@
 import numpy as np
 
 from mmgroup import MM0, mat24 
-from mmgroup.tests.axes import get_sample_axes, Axis
+from mmgroup.tests.axes.get_sample_axes import get_sample_axes
 
 from mmgroup.tests.axes.equations import solve_Qx0_equations
 

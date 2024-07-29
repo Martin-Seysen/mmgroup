@@ -1,9 +1,9 @@
 import numpy as np
 
 from mmgroup import MM0, XLeech2, leech2_orbits_raw, mat24, MM
-from mmgroup.tests.axes import get_sample_axes, Axis
-from mmgroup.tests.axes import g_central, g_axis
-from mmgroup.tests.axes import beautify_axis
+from mmgroup.axes import get_sample_axes, Axis
+from mmgroup.axes import g_central, g_axis
+from mmgroup.axes import beautify_axis
 from mmgroup.tests.axes.equations import solve_Qx0_equations
 from mmgroup.tests.axes.case_6F import solve_special_equation_6F
 from mmgroup.tests.axes.case_6F import analyse_6F

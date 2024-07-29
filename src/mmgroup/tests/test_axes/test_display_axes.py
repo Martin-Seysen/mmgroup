@@ -20,7 +20,7 @@ from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
 
-from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
+from mmgroup.axes import get_baby_sample_axes, get_sample_axes
 
 from mmgroup.tests.test_axes.test_import import display_A
 from mmgroup.tests.test_axes.test_import import display_norm_A
@@ -130,22 +130,22 @@ def test_display_axes(verbose = 0):
             print("Eigenvalues of A part of axis v:",
                 format_eigen_values(axis.axis_in_space(MMVectorCRT, 20)['A']))
         if verbose:
-            orb, c = axis.central_involution()
+            z_i = axis.central_involution()
+            orb, c = z_i.conjugate_involution_G_x0()
             print("central involution: ", c)
             if c: 
-                print("Character of central involution:",  c.chi_G_x0(),
+                print("Character of central involution z_i:",  c.chi_G_x0(),
                 ", class:", orb)
-                analyze_xy(c)
-            print("Axis type of axis v * MM('t',1):", axis.axis_type(1))
-            print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
-            print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))
+                print("Product of z_i and standard involution", z_i * z_i**c)
+            print("Axis type of axis v * MM('t',2):", axis.axis_type(2))
+            #print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
+            #print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))
             #print("Dim intersection with Q_z0:", 24 - len(x_equations(axis,2)))
-            opp_axis_type = axis.axis_type()
-            print("Image of opposite axis: ", opp_axis_type) 
+            #opp_axis_type = axis.axis_type()
+            #print("Image of opposite axis: ", opp_axis_type) 
             print("A part of axis v:")
-            display_A(axis['A'])
-            print("\nA part of axis v * MM('t', 1):")
-            display_A((axis * MM('t', 1))['A'])
+            axis.display_sym('A')
+            axis.display_sym(2)
         print("")
 
 

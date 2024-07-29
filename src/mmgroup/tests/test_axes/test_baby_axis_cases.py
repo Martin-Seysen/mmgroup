@@ -22,12 +22,12 @@ def import_all():
     global eval_A_vstart
     global get_baby_sample_axes, get_sample_axes
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    from mmgroup.axes import get_baby_sample_axes, get_sample_axes
     from mmgroup.generators import gen_leech2_reduce_type2_ortho
     from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
     from mmgroup.tests.test_axes.test_reduce_axis import leech_type
     from mmgroup.tests.test_axes.test_import import display_norm_A
     from mmgroup.tests.test_axes.test_reduce_axis import eval_A_vstart
-    from mmgroup.tests.axes import get_baby_sample_axes, get_sample_axes
 
 
 

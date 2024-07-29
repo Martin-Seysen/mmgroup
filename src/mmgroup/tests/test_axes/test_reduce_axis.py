@@ -43,8 +43,8 @@ def import_all():
     from mmgroup.mm_reduce import mm_reduce_vector_vp
     from mmgroup.mm_reduce import mm_reduce_vector_vm
     from mmgroup.mm_reduce import mm_reduce_vector_shortcut
-    from mmgroup.tests.axes import get_baby_sample_axes
-    from mmgroup.tests.axes import get_sample_axes
+    from mmgroup.axes import get_baby_sample_axes
+    from mmgroup.axes import get_sample_axes
 
 V = MMV(15)
 

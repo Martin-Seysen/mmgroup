@@ -3,8 +3,6 @@ import numpy as np
 
 from mmgroup import MM0, mat24, MMSpace 
 from mmgroup.mm_op import mm_op_compare_abs
-from mmgroup.tests.axes import get_sample_axes, Axis
-from mmgroup.tests.axes.beautify_axes import beautify_axis
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_prep_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
@@ -214,7 +212,7 @@ def solve_Qx0_equations(orbit, axis):
     if isinstance(orbit, str):
         if not orbit in EQUATION_ORBITS:
             return axis.group()
-        from mmgroup.tests.axes import get_sample_axes
+        from mmgroup.tests.axes.get_sample_axes import get_sample_axes
         equ = get_sample_axes()[orbit].Qx0_equations
     else:
         equ = orbit
