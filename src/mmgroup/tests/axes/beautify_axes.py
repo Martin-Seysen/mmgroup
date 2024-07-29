@@ -10,6 +10,7 @@ of the subgroup :math:`G_{x0}` (of structure
 import sys
 import os
 import time
+import operator
 from numbers import Integral
 from copy import deepcopy
 from math import floor, ceil
@@ -30,6 +31,7 @@ from mmgroup.mm_crt_space import MMVectorCRT
 from mmgroup import mat24, GcVector, AutPL, Parity, GCode
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech3to2
+from mmgroup.generators import gen_leech3to2_short
 from mmgroup.generators import gen_leech2to3_abs
 from mmgroup.generators import gen_leech3_add
 from mmgroup.generators import gen_leech3_neg
@@ -48,7 +50,9 @@ from mmgroup.clifford12 import bitmatrix64_solve_equation
 from mmgroup.mm_op import mm_op_load_leech3matrix
 from mmgroup.mm_op import mm_op_eval_X_find_abs
 from mmgroup.mm_op import mm_op_norm_A
+from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_t_A
+from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
 from mmgroup.tests.axes.get_sample_axes import G_CENTRAL
 from mmgroup.tests.axes.get_sample_axes import G_AXIS
@@ -106,6 +110,9 @@ def set_axis_group(group = None, shorten = True):
     MM_INITIALIZED = True
 
 
+
+
+
 #################################################################
 # Display a two-dimensional matrix
 #################################################################
@@ -128,6 +135,15 @@ def display_A(A):
               print("%*s" % (fmt[j], "."), end = " ")
       print("")
 
+
+def common_factor_v2(A):
+    z = reduce(__or__, np.array(A.ravel(), dtype = np.uint32), 0)
+    if z & 255 == 0:
+        return 256
+    if z & 15 == 0:
+        return 16
+    return 1
+
 def sym_part(v, part):
     if isinstance(part, str) and part in 'ABC':
         return v[part]
@@ -140,6 +156,38 @@ def sym_part(v, part):
         return a['A']
     ERR =  "Cannot display a part of % of a vector"
     raise TypeError(ERR % type(part))
+
+
+
+
+_NORM_TYPES = {2:"8B", 3:"4C", 5:"6C", 10:"12C", 13:"4B"}
+_RANK_TYPES = {(8, 8): "2B", (8, 24): "10B",
+               (14, 8): "6F", (14, 23): "4A"}
+def axis_type(v):
+    norm = mm_op_norm_A(15, v)
+    if norm in _NORM_TYPES:
+        return _NORM_TYPES[norm]
+    if norm == 4:
+        r =  mm_op_eval_A_rank_mod3(15, v, 2);
+        rank = r >> 48;
+        if rank == 2:
+            return "10A"
+        if rank == 23:
+            v2 = gen_leech3to2_short(r & 0xffffffffffff) & 0xffffff
+            val_A = mm_op_eval_A(15, v, v2);
+            if val_A == 4:
+                return "2A"
+            if val_A == 7:
+                return "6A"
+    rank = mm_op_eval_A_rank_mod3(15, v, 0) >> 48
+    try:
+        return _RANK_TYPES[(norm, rank)]
+    except:
+        ERR = "Vector is not a 2A axis"
+        raise valueError(ERR)
+
+
+
 
 #################################################################
 # Classes for modelling an axis
@@ -281,7 +329,6 @@ class Axis:
             import warnings
             W = "Reducing an axis with mmgroup has failed"
             warnings.warn(W, UserWarning)
-            raise
         return self
     def central_involution(self, guide=0):
         """Return central involution of dihedral group
@@ -323,7 +370,12 @@ class Axis:
         return a
     def axis_type(self, e = 0):
         """``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``"""
-        return self.v15.axis_type(e) 
+        e %= 3
+        v = self.v15.data
+        if e:
+            v = np.zeros(24*4, dtype = np.uint64)
+            mm_op_t_A(15, self.v15.data, e, v)
+        return axis_type(v)
     def axis_in_space(self, space, *args):
         """Return axis as an element of a ``space``
 
@@ -332,13 +384,18 @@ class Axis:
         """
         all_args = args + (self.v15_start_name,)
         return space(*all_args) * self.g
-    def display_sym(self, part = 'A', diff = 0, ind = None, text = "", end = ""):
+    def display_sym(self, part = 'A', mod = 0,
+            diff = 0, ind = None, text = "", end = ""):
         """Display part of axis as a symmetric 24 times 24 matrix
 
         if ``part`` is 'A', 'B', or 'C' then the matrix corresponding to
         that part (modulo 15) is displayed. If ``part`` is an integer
         then the 'A' part of the matrix (multiplied with group element
-        ``MM('t', part)``) is displayed.
+        ``MM('t', part)``) is displayed. Parmeter ``mod`` is 0 (default)
+        or an optional odd modulus. If ``mod`` is odd then entries are
+        displayed modulo ``mod``. If ``mod`` is negative then entries
+        displayed modulo ``abs(mod)`` with absolute value less than
+        ``mod / 2``. At present ``abs(mod)`` must be 3, 5, or 15.
 
         If ``diff`` is is an instance of class ``Axis`` then ``diff``
         is subtracted from the axis. Parameter ``ind`` is an optional
@@ -347,30 +404,71 @@ class Axis:
         ``text`` is an optional text to be displayed; ``end`` is an
         optional end mark.
         """
-        if text:
-            print(text)
-        a =  sym_part(self.v15, part)
-        if diff:
-            a = (a - sym_part(diff.v15, part)) % 15 
+        if isinstance(part, Integral):
+            part %= 3
+        if not text:
+            if not part:
+                part = 'A'
+            if part in [1, 2]:
+                text = "Axis part 'A' * t**%d" % part
+            elif part in "ABC":
+                text = "Axis part '%s'" % part
+        signed, mod = mod < 0, abs(mod)
+        if mod:
+            if mod not in [3, 5, 15]:
+                ERR = "Display modulus must be 3, 5, or 15"
+                raise ValueError(ERR)
+            a =  np.array(sym_part(self.v15, part), dtype = np.int32)
+            if diff:
+                a = (a - sym_part(diff.v15, part))
+            a = np.array(a % mod)
+            assert a.dtype == np.int32
+            if signed:
+                a = np.choose(a <= mod//2, [a - mod, a])
+            text += " (mod %d)" % mod
+        else:
+            if diff:
+                ERR = "Parameter 'diff' is illegal if mod is 0"
+                raise ValueError(ERR)
+            v = self.axis_in_space(MMVectorCRT, 20)
+            a = 256 * sym_part(v, part)
+            f = common_factor_v2(a)
+            a = a // f
+            text += " (multiplied by %d)" % (256 // f)
         if ind is not None:
             a = np.array([[a[i, j] for j in ind] for i in ind])
+        print(text)
         display_A(a)
         print(end)
-    def display_sym_integral(self, part = 'A', text = "", end = ""):
-        """Display part of 256 * axis as a symmetric 24 times 24 matrix
+    def kernel_A(self, d):
+        """Compute invariants of a matrix related to axis part 'A'
 
-        Operaration and parameters are as in method ``display_sym``,
-        but the exact symmetric matrix (multiplied with 256)  is
-        displayed instead.
+        Let 'A' be the symmetric 24 times 24 matrix corresponding to
+        part 'A' of the axis, with entries taken modulo 3.
+ 
+        Put 'M' = 'A' - 'd' * 'E', where  'd' is a integer and 'E' is
+        the unit matrix. We return a tuple '(ker, isect, M_img, M_ker)',
+        where 'ker' is the dimension of the kernel of 'M', 'isect' is
+        the dimension of the intersection of the kernel and the image
+        of 'M'; and 'M_img' and 'M_ker' are 24 times 24 matrices. Row
+        'i' of matrix 'M_img' is the image of row 'i' of 'M_ker' under
+        the symmetric matrix 'M'. The first 'isect' rows of 'M_img'
+        and 'M_ker' are equal; they are a basis of the intersection of
+        the kernel and the image of 'M'. The first '24 - ker' rows of
+        'M_img' are a basis of the image of 'M' The last 'ker' rows
+        of 'M_ker' are a basis of the kernel of 'M'.
         """
-        if text:
-            print(text)
-        v = self.axis_in_space(MMVectorCRT, 20) 
-        a = 256 * sym_part(v, part)
-        display_A(a)
-        print(end)
+        a = self.leech3matrix()
+        leech3matrix_sub_diag(a, d, 0)
+        leech3matrix_sub_diag(a, 2, 24)
+        x = leech3matrix_kernel_image(a)
+        leech3matrix_compress(a, a)
+        img, ker, isect = x & 255, (x >> 8) & 255, x >> 16
+        assert ker + img == 24
+        return ker, isect, a[:24], a[24:48]
 
-   
+    display_sym_integral = display_sym
+    """Deprecated!!!"""
 
 
 def find_short(v, value, radical = 0, verbose = 0):
@@ -469,34 +567,6 @@ def find_guide(class_, axis):
 
 
 
-def kernel_A(axis, d):
-    """Compute invariants of a matrix related to part 'A' of an axis.
-
-    Let 'A' be the symmetric 24 times 24 matrix corresponding to part
-    'A' of an axis, with entries taken modulo 3.
-
-    Put 'M' = 'A' - 'd' * 'E', where  'd' is a integer and 'E' is the
-    unit matrix. We return a tuple '(ker, isect, M_img, M_ker)', where
-    'ker' is the dimension of the kernel of 'M', 'isect' is the
-    dimension of the intersection of the kernel and the image
-    of 'M'; and 'M_img' and 'M_ker' are 24 times 24 matrices. Row 'i'
-    of matrix 'M_img' is the image of row 'i' of 'M_ker' under the
-    symmetric matrix 'M'. The first 'isect' rows of 'M_img' and
-    'M_ker' are equal; they are a basis of the intersection of the
-    kernel and the image of 'M'. The first '24 - ker' rows of 'M_img'
-    are a basis of the image of 'M' The last 'ker' rows of 'M_ker'
-    are a basis of the kernel of 'M'.
-    """
-    a = axis.leech3matrix()
-    leech3matrix_sub_diag(a, d, 0)
-    leech3matrix_sub_diag(a, 2, 24)
-    x = leech3matrix_kernel_image(a)
-    leech3matrix_compress(a, a)
-    img, ker, isect = x & 255, (x >> 8) & 255, x >> 16
-    assert ker + img == 24
-    return ker, isect, a[:24], a[24:48]
-
-
 def reduce_leech_mod_3(v):
     g = np.zeros(12, dtype = np.uint32)
     len_g = gen_leech3_reduce_leech_mod3(v, g) >> 48
@@ -506,7 +576,7 @@ def reduce_leech_mod_3(v):
     return G('a', g[:len_g])
 
 def get_v3_case_4A(axis):
-    ker, isect, _, a_ker = kernel_A(axis, 0)
+    ker, isect, _, a_ker = axis.kernel_A(0)
     assert ker == 1
     return leech3matrix_vmul(1, a_ker[23:]) 
 
@@ -522,7 +592,7 @@ def get_v3_case_6A(axis):
     raise ValueError("Reduction for axis orbit 6A failed")
 
 def get_v3_case_10A(axis):
-    ker, isect, _, a_ker = kernel_A(axis, 0)
+    ker, isect, _, a_ker = axis.kernel_A(0)
     assert ker == 2
     a = a_ker[22:]
     vl = [leech3matrix_vmul(v0, a) for v0 in [1, 2, 3, 0x1000002]]
@@ -541,7 +611,7 @@ ORBIT_MOD3_CASES = {
 def do_get_v3_case_2A(axis):
     if len(axis.g.mmdata) == 0:
         return axis
-    ker, isect, a_img, _ = kernel_A(axis, 0)
+    ker, isect, a_img, _ = axis.kernel_A(0)
     assert ker == 23
     v3 = leech3matrix_vmul(1, a_img)
     typev, v2 =  divmod(gen_leech3to2(v3), 1 << 24)

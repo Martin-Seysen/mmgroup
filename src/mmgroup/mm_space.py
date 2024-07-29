@@ -721,8 +721,8 @@ class MMVector(AbstractMmRepVector):
         Caution: The function is implemented for characteristic
         ``p = 15`` only!
         """
-        if import_pending:
-            complete_import()
+        #if import_pending:
+        #    complete_import()
         if self.p != 15:
             err = "Method supported for characteristic p = 15 only"
             raise ValueError(err)

@@ -67,7 +67,6 @@ from mmgroup.tests.axes.beautify_axes import v_axis15, v_axis_opp15
 from mmgroup.tests.axes.beautify_axes import display_A
 from mmgroup.tests.axes.beautify_axes import sym_part
 from mmgroup.tests.axes.beautify_axes import Axis
-from mmgroup.tests.axes.beautify_axes import kernel_A
 from mmgroup.tests.axes.beautify_axes import G, G_SHORTEN, MM
 
 
@@ -167,7 +166,7 @@ class BabyAxis(Axis):
             raise
         return self
     def axis_type(self, e = 0):
-        at = self.v15.axis_type(e)
+        at =  super(BabyAxis, self).axis_type(e)
         if e:
             vt = self.v15.copy()
             mm_op_t_A(15, self.v15.data, e % 3, vt.data)
@@ -446,7 +445,7 @@ def postpermute(class_, axis):
 #################################################################
 
 def beautify_2A0(axis):
-    ker, isect, a_img, _ = kernel_A(axis, 0)
+    ker, isect, a_img, _ = axis.kernel_A(0)
     assert ker == 23
     v3 = leech3matrix_vmul(1, a_img)
     typev, v2 =  divmod(gen_leech3to2(v3), 1 << 24)
