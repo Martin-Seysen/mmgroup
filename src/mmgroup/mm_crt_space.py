@@ -737,7 +737,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
         mm_crt_combine_bytes(d[7], d[31], d[127], d[255], l, a)
         a = np.array(a, dtype = float)
         af = np.array(a * v.factor,  dtype = float)
-        return af.reshape(shape) if len(shape) else float(af)
+        return af.reshape(shape) if len(shape) else float(af[0])
         
 
 

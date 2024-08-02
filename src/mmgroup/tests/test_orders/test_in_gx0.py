@@ -36,7 +36,7 @@ from mmgroup.mm_op import mm_op_watermark_A_perm_num
 # that has been used in the development phase.
 
 
-def import_all():
+def import_all_old():
     global get_order_vector
     global mm_order_check_in_Gx0
     global get_order_tag_vector
@@ -58,6 +58,16 @@ def import_all():
     ORDER_TAGS = get_order_tag_vector()
 
 
+
+def import_all():
+    global mm_order_check_in_Gx0
+    global OrderVectorMod15, ov
+    from mmgroup.mm_reduce import mm_order_check_in_Gx0
+    from mmgroup.dev.mm_reduce.order_vector import OrderVectorMod15
+    ov = OrderVectorMod15('C')
+
+
+
 err_in_g_x0_py = 0 
 err_in_g_x0_c = 0 
 
@@ -67,15 +77,13 @@ err_in_g_x0_c = 0
 
 def find_in_Q_x0(w):
     global err_in_g_x0_py
-    w_x = mm_aux_mmv_extract_sparse_signs(15, w, 
-        ORDER_TAGS[OFS_TAGS_X:], 24)
+    w_x = mm_aux_mmv_extract_sparse_signs(15, w, ov.TAGS_X, 24)
     if w_x < 0:
         err_in_g_x0_py = 7
         return None
-    x = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_X:], 24, w_x)
+    x = leech2matrix_solve_eqn(ov.SOLVE_X, 24, w_x)
     w_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800)
-    aa = np.array(ORDER_TAGS[OFS_TAG_SIGN:] ^ (w_sign << 14),
-        dtype = np.uint32)
+    aa = np.array([ov.TAG_SIGN ^ (w_sign << 14)], dtype = np.uint32)
     sign = mm_aux_mmv_extract_sparse_signs(15, w, aa, 1)
     if sign < 0:
         err_in_g_x0_py = 8
@@ -92,10 +100,10 @@ def find_in_G_x0(w):
     global err_in_g_x0_py
     g1i = np.zeros(11, dtype = np.uint32)
 
-    if mm_op_norm_A(15, w) != ORDER_TAGS[OFS_NORM_A]:
+    if mm_op_norm_A(15, w) != ov.NORM_A: # ORDER_TAGS[OFS_NORM_A]:
         err_in_g_x0_py = 1
         return None        
-    w3 = mm_op_eval_A_rank_mod3(15, w, ORDER_TAGS[OFS_DIAG_VA])
+    w3 = mm_op_eval_A_rank_mod3(15, w, 0)
     w3 &= 0xffffffffffff
     if w3 == 0: 
         err_in_g_x0_py = 2
@@ -109,8 +117,7 @@ def find_in_G_x0(w):
     assert 0 <= len_g1 <= 6 
     res = mm_op_word_tag_A(15, wA, g1i, len_g1, 1)
     assert res == 0
-    perm_num = mm_op_watermark_A_perm_num(
-        15, ORDER_TAGS[OFS_WATERMARK_PERM:], wA)
+    perm_num = mm_op_watermark_A_perm_num(15, ov.WATERMARK_PERM, wA)
     if perm_num < 0: 
         err_in_g_x0_py = 4
         return None
@@ -119,18 +126,17 @@ def find_in_G_x0(w):
         res = mm_op_word_tag_A(15, wA, g1i[len_g1:], 1, 1)
         assert res  == 0
         len_g1 += 1
-    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, 
-        ORDER_TAGS[OFS_TAGS_Y:], 11)
+    v_y = mm_aux_mmv_extract_sparse_signs(15, wA, ov.TAGS_Y, 11)
     if v_y < 0:
         err_in_g_x0_py = 5
         return None
-    y = leech2matrix_solve_eqn(ORDER_TAGS[OFS_SOLVE_Y:], 11, v_y)
+    y = leech2matrix_solve_eqn(ov.SOLVE_Y, 11, v_y)
     if y > 0:
         g1i[len_g1] = 0xC0000000 + y
         res = mm_op_word_tag_A(15, wA, g1i[len_g1:], 1, 1)
         assert res  == 0
         len_g1 += 1
-    if (wA != ORDER_VECTOR[:2*24]).all():
+    if (wA != ov.order_vector.data[:2*24]).all():
         err_in_g_x0_py = 6
         return None
     #print("g1i", g1i[:len_g1])
@@ -153,7 +159,7 @@ def py_check_mm_in_g_x0(g, mode = 0):
     global err_in_g_x0_py
     err_in_g_x0_py = 0
     assert isinstance(g, (MM0, MM))
-    v = ORDER_VECTOR
+    v = ov.order_vector.data
     w = mm_vector(15)
     work = mm_vector(15)
     mm_op_copy(15, v, w)
@@ -205,7 +211,7 @@ def check_mm_in_g_x0(g, mode = 0):
     w = mm_vector(15)
     work = mm_vector(15, 2).ravel()
     mode = (mode | 8) & ~2
-    v = ORDER_VECTOR
+    v = ov.order_vector.data
     mm_op_copy(15, v, w)
     res = mm_op_word(15, w, g.mmdata, len(g.mmdata), 1, work)
     assert res == 0
@@ -226,12 +232,12 @@ def check_mm_in_g_x0(g, mode = 0):
 
 
 def mm_order(g):
-    w, order = ORDER_VECTOR.copy(), 0
+    w, order = ov.order_vector.copy().data, 0
     work = mm_vector(15)
     while order < 120:
         mm_op_word(15, w, g.mmdata, len(g.mmdata), 1, work)
         order +=1
-        if mm_op_compare(15, w, ORDER_VECTOR) == 0:
+        if mm_op_compare(15, w, ov.order_vector.data) == 0:
             return order
     raise ValueError("Order computation failed")
     

@@ -28,7 +28,6 @@ from mmgroup.mm_op import mm_op_word
 from mmgroup.mm_reduce import mm_order_element_M
 from mmgroup.mm_reduce import mm_order_element_Gx0
 from mmgroup.mm_reduce import mm_order_load_vector
-from mmgroup.mm_reduce import mm_order_load_tag_data
 from mmgroup.mm_reduce import mm_reduce_M
 
 
@@ -38,18 +37,6 @@ MMV15 = MMV(15)
 MM = MM0  #  TODO: Fixme
 
 
-
-
-def get_order_vector(*args, **kwds):
-    v = mm_vector(15)
-    mm_order_load_vector(v.data)
-    return v
-
-def get_order_tag_vector(*args, **kwds):
-    a = np.zeros(97, dtype = np.uint32)
-    res = mm_order_load_tag_data(0, a, len(a))
-    assert res >= 0
-    return a[:res]
 
 
 ###########################################################################

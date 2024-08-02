@@ -3,6 +3,8 @@ import sys
 import time
 import numpy as np
 import re
+from copy import deepcopy
+from numbers import Integral
 from collections import OrderedDict
 
 from mmgroup.mat24 import vect_to_cocode
@@ -42,16 +44,6 @@ MM = MM0  #  TODO: Fixme
 
 ORDER_VECTOR = None
 ORDER_TAGS = None
-
-
-OFS_NORM_A = 0
-OFS_DIAG_VA = 1
-OFS_WATERMARK_PERM = 2
-OFS_TAGS_Y = 26
-OFS_SOLVE_Y = 37
-OFS_TAGS_X = 48
-OFS_SOLVE_X = 72
-OFS_TAG_SIGN = 96
 
 
 _DIR = os.path.split(find_order_vector.__file__)[0]
@@ -134,10 +126,12 @@ def make_order_vector_mod15(w71, s_g94, s_v94):
     return w
 
 
-def make_order_vector(s_g71, s_v71, s_gA, diag, s_g94, s_v94):
-    v3 = make_order_vector_mod3(s_g71, s_v71, s_gA, diag)
-    return make_order_vector_mod15(v3, s_g94, s_v94)
 
+
+def make_order_vector(d):
+    v3 = make_order_vector_mod3(
+        d["S_G71"], d["S_V71"], d["S_GA"], d["DIAG_VA"])
+    return make_order_vector_mod15(v3, d["S_G94"], d["S_V94"])
 
 
 
@@ -197,22 +191,52 @@ def make_order_tags(order_vector, tags_y, tags_x, tag_sign):
 
 
 
-def order_vector_from_dict(d):
-    S_G71, S_V71 = d["S_G71"], d["S_V71"]
-    S_GA, DIAG_VA = d["S_GA"], d["DIAG_VA"]
-    S_G94, S_V94 = d["S_G94"], d["S_V94"]
-    data1 = [S_G71, S_V71, S_GA, DIAG_VA, S_G94, S_V94]
-    ov = make_order_vector(*data1)
-    TAGS_Y, TAGS_X =  d["TAGS_Y"], d["TAGS_X"]
-    TAG_SIGN = d["TAG_SIGN"]
-    data2 = [TAGS_Y, TAGS_X, TAG_SIGN]
-    o_tag = make_order_tags(ov, *data2)
-    keys =  [
-      "S_G71", "S_V71", "S_GA", "DIAG_VA", "S_G94", "S_V94",
-      "TAGS_Y", "TAGS_X", "TAG_SIGN"
-    ]
-    d1 = {k: d[k] for k in keys}
-    return ov, o_tag, d1
+
+
+
+#######################################################################
+# Enhancing order vector tag dictionary
+#######################################################################
+
+
+
+
+def order_vector_from_data_dict(d):
+    ov = make_order_vector(d)
+    d = deepcopy(d)
+    d["NORM_A"] = mm_op_norm_A(15, ov.data)
+
+    #d["TAG_SIGN"] = np.array(tag_sign, dtype = np.uint32)
+
+    watermark_perm = np.zeros(24, dtype = np.uint32)
+    ok = mm_op_watermark_A(15, ov.data, watermark_perm)
+    assert ok >= 0
+    d["WATERMARK_PERM"] = watermark_perm
+
+    tags_y = np.array(d["TAGS_Y"], dtype = np.uint32)
+    solve_yt = np.zeros(11, dtype = np.uint64)
+    assert len(tags_y) == 11
+    nrows = 0
+    for y in tags_y:
+        eqn = map_y(y)
+        nrows += leech2matrix_add_eqn(solve_yt, nrows, 11, eqn)
+    assert nrows == 11, nrows
+    d["SOLVE_Y"] = list(bitmatrix64_t(solve_yt, 11))
+    assert len(d["SOLVE_Y"]) == 11
+    assert mm_aux_mmv_extract_sparse_signs(15, ov.data, tags_y, 11) == 0
+
+    tags_x = np.array(d["TAGS_X"], dtype = np.uint32)
+    solve_xt = np.zeros(24, dtype = np.uint64)
+    assert len(tags_x) == 24
+    nrows = 0
+    for i, x in enumerate(tags_x):
+        eqn =  map_x(x)
+        nrows += leech2matrix_add_eqn(solve_xt, nrows, 24, eqn)
+    assert nrows == 24, nrows
+    d["SOLVE_X"] = list(bitmatrix64_t(solve_xt, 24))
+    assert len(d["SOLVE_X"]) == 24
+    return d, ov
+
 
 
 
@@ -407,6 +431,64 @@ def write_order_vector(result):
 
 
 
+
+
+#######################################################################
+# Class implementing an order vector
+#######################################################################
+
+
+
+LEN_GV = 8
+LEN_GA = 10
+
+VECTOR_LENGTHS = OrderedDict({
+  "WATERMARK_PERM" : 24,
+  "TAGS_X" : 24,
+  "SOLVE_X" : 24,
+  "TAGS_Y" : 11,
+  "SOLVE_Y" : 11,
+  "TAG_SIGN" : 1,
+  "NORM_A" : 1,
+
+  "S_G71": LEN_GV,
+  "S_V71": LEN_GV,
+  "S_G94": LEN_GV,
+  "S_V94": LEN_GV,
+  "S_GA": LEN_GA,
+  "DIAG_VA": 1,
+})
+
+
+
+ENUM_COMMENTS = {
+    "NORM_A"   : r"Sum of the squares of the A part of \f$v_1\f$ (mod 15)",
+    "WATERMARK_PERM"   : r"Watermark of  the A part of \f$v_1\f$ (mod 15)",
+    "TAGS_Y"   : r"Entries of \f$v_1\f$ used for computing \f$y_e\f$",
+    "SOLVE_Y"  : r"Equation system used for computing  \f$y_e\f$",
+    "TAGS_X"   : r"Entries of \f$v_1\f$ used for computing \f$x_d\f$",
+    "SOLVE_X"  : r"Equation system used for computing  \f$x_d\f$",
+    "TAG_SIGN" : r"Entry of \f$v_1\f$ used for computing sign of \f$x_d\f$",
+}
+
+
+
+
+def flatten_order_vector_dict(d):
+    a = np.zeros(sum(VECTOR_LENGTHS.values()), dtype = np.uint32)
+    offset = 0
+    for key, length in VECTOR_LENGTHS.items():
+        data = d[key]
+        if isinstance(data, Integral):
+            data = [data]
+        assert len(data) <= length, (key, len(data), length)
+        a_data = np.array(data, dtype = np.uint32)
+        a[offset : offset + len(data)] = a_data
+        offset += length
+    return a
+
+
+
 def get_order_vector(recompute = False, verbose = 0):
     try:
         from mmgroup.dev.mm_reduce import order_vector_data
@@ -415,11 +497,83 @@ def get_order_vector(recompute = False, verbose = 0):
         result = find_order_vector(verbose)
         write_order_vector(result)
         from mmgroup.dev.mm_reduce import order_vector_data
-    ov, o_tag, data = order_vector_from_dict(order_vector_data.__dict__)
-    return ov, o_tag, data
+    return order_vector_data.__dict__
 
 
 
 
+class OrderVectorMod15:
+    """Yet to documented"""
+    LEN_TAG_DATA = 0
+    TAG_DATA = {}
+    for name, length in VECTOR_LENGTHS.items():
+        TAG_DATA[name] = (LEN_TAG_DATA, length)
+        LEN_TAG_DATA += length
+    _tag_dict = None
 
+    def __init__(self, order_vector_data, order_vector = None):
+        if order_vector_data == "recompute":
+            order_vector_data = get_order_vector(recompute = True)
+        elif order_vector_data == "py":
+            order_vector_data = get_order_vector()
 
+        if order_vector_data == "C":
+            from mmgroup.mm_reduce import mm_order_load_tag_data_new
+            from mmgroup.mm_reduce import mm_order_load_vector
+            a = np.zeros(256, dtype = np.uint32)
+            n = mm_order_load_tag_data_new(a, len(a))
+            assert 0 <= n < len(a)
+            self.tag_data = a[:n]
+            self.order_vector = MMVector(15, 0)
+            mm_order_load_vector(self.order_vector.data)
+        elif isinstance(order_vector_data, dict):
+            d = deepcopy(order_vector_data)
+            d, self.order_vector = order_vector_from_data_dict(d)
+            self.tag_data = flatten_order_vector_dict(d)
+        else:
+            a = np.array(order_vector_data, dtype = np.uint32)
+            assert len(a) > LEN_TAG_DATA
+            self.tag_data = a[:LEN_TAG_DATA]
+            if isinstance(order_vector, MM_Vector):
+                assert order_vector.p == 15
+                self.order_vector = order_vector.copy()
+            else:
+                self.order_vector = make_order_vector(self.tag_dict)
+
+    def tag_dict(self):
+        if self._tag_dict:
+             return self._tag_dict
+        self._tag_dict = {}
+        for name, (ofs, length) in self.TAG_DATA.items():
+             self._tag_dict[name] = self.tag_data[ofs : ofs + length]
+        return self._tag_dict
+
+    def __getattr__(self, name):
+        ofs, length = self.TAG_DATA[name]
+        attr =  self.tag_data[ofs : ofs + length]
+        return int(attr[0]) if len(attr) == 1 else attr
+
+    def __eq__(self, other):
+        assert isinstance(other, OrderVectorMod15)
+        equ = (self.tag_data == other.self.tag_data).all()
+        equ &= self.order_vector == other.order_vector
+        return equ
+
+    def check(self):
+        d0 = self.tag_dict()
+        d, order_vector = order_vector_from_data_dict(d0)
+        tag_data = flatten_order_vector_dict(d)
+        assert (self.tag_data == tag_data).all()
+        assert self.order_vector ==  order_vector
+
+    @classmethod
+    def enum_comments(cls, prefix = "OFS_"):
+        s = []
+        for name, (ofs, _) in cls.TAG_DATA.items():
+            if name in ENUM_COMMENTS:
+                s.append("%s%s = %d, /**< %s */" % (
+                    prefix, name, ofs, ENUM_COMMENTS[name]))
+        if len(s):
+            import string
+            s[-1] = s[-1].replace(",", " ", 1)
+        return "\n".join(s) + "\n"

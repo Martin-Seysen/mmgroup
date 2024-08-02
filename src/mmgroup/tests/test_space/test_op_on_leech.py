@@ -33,7 +33,7 @@ def check_abs_equal(v, v_ref):
         
 
 def do_test_leech_variants(v, v_leech):
-    index = MMSpace.tuple_to_index(v)
+    index = MMSpace.index_to_linear(v)
     v1 = MMSpace.index_to_short(index)
     check_abs_equal(v1, v_leech)
     tuple_= MMSpace.index_to_tuple(v)
