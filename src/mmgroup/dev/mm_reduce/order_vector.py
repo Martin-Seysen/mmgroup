@@ -311,17 +311,17 @@ def check_v(v, verbose = 0):
     if result_y is None:
         if verbose:
             print("Check Y failed")
-        return result
+        return None
     result_x = eqn_system(v, X_INDICES, map_x, 24)
     if result_x is None:
         if verbose:
             print("Check X failed")
-        return result
+        return None
     result_sign = eqn_sign(v)
     if result_sign is None:
         if verbose:
             print("Check for sign failed")
-        return result
+        return None
     results = [result_y, result_x, result_sign]
     return tuple([augment_v_data(v, data) for data in results])
     
@@ -550,6 +550,7 @@ class OrderVectorMod15:
         tag_data = flatten_order_vector_dict(d)
         assert (self.tag_data == tag_data).all()
         assert self.order_vector ==  order_vector
+        assert check_v(self.order_vector)
 
     @classmethod
     def enum_comments(cls, prefix = "OFS_"):
