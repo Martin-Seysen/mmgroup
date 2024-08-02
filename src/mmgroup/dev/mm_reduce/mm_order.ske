@@ -32,7 +32,7 @@
    module. That order vector can be obtained by calling
    function ``mm_order_load_vector`` in module ``mm_order_vector.c``.
    The data in the array ``TAG_VECTOR`` can be obtained by calling
-   function ``mm_order_load_tag_data_new`` in the same module.
+   function ``mm_order_load_tag_data`` in the same module.
 
    The purpose of the order vector \f$v_1\f$ is to identify an
    element \f$g\f$ of the subgroup \f$G_{x0}\f$ of the monster

@@ -61,12 +61,12 @@ const uint32_t MM_ORDER_VECTOR_TAG_DATA[] = {
 
 */
 // %%EXPORT px
-int32_t mm_order_load_tag_data_new(uint32_t *buf, uint32_t buf_size)
+int32_t mm_order_load_tag_data(uint32_t *buf, uint32_t buf_size)
 {
-     uint_fast32_t data_size;
+     uint_fast32_t data_size, i;
      data_size = sizeof(MM_ORDER_VECTOR_TAG_DATA) / sizeof(uint32_t);
      if (buf_size < data_size) return -1;
-     memcpy(buf, MM_ORDER_VECTOR_TAG_DATA, sizeof(MM_ORDER_VECTOR_TAG_DATA));
+     for (i = 0; i < data_size; ++i) buf[i] = MM_ORDER_VECTOR_TAG_DATA[i];
      return data_size;
 }
 

@@ -14,25 +14,13 @@ import_pending = True
 def import_all():
     global MMV15, import_pending
     global MM0,  MMV, MMVector, MMSpace
-   # global get_order_vector, order_vector_from_dict
     global OrderVectorMod15
     from mmgroup.structures.mm0_group import MM0
     from mmgroup.mm_space import MMV, MMVector, MMSpace
-  #  from mmgroup.dev.mm_reduce.order_vector import get_order_vector
-  #  from mmgroup.dev.mm_reduce.order_vector import order_vector_from_dict
     from mmgroup.dev.mm_reduce.order_vector import OrderVectorMod15
     MMV15 = MMV(15)
     import_pending = False
   
-
-NAMES = [
-   "TAG_DATA", 
-   "S_G71", "S_V71", "S_GA", "DIAG_VA", "S_G94", "S_V94",
-   "TAGS_Y", "TAGS_X", "TAG_SIGN"
-]
-
-
-
 
 
 def compress_order_vector_data(ov):
@@ -126,14 +114,11 @@ class OrderVectorTable:
         ov_hash = ov.hash()  
         a_ov =  compress_order_vector_data(ov)
         tag_data = ov_obj.tag_data
-      #  tag_indices = np.array([0,0], dtype = np.uint16)
         tlt_conversion = tlt_conversion_table()
         self.__class__.tables = {
             "ORDER_VECTOR_DATA": a_ov,
             "ORDER_VECTOR_TAG_ENUM_OFFSETS": ov_obj.enum_comments(),
             "ORDER_VECTOR_TAG_DATA": tag_data,
-         #   "ORDER_VECTOR_TAG_INDICES": tag_indices,
-         #   "ORDER_VECTOR_NUM_TAG_DATA": 1, # len(NAMES),
             "ORDER_VECTOR_HASH": ov_hash,
             "ORDER_VECTOR_TLT_CONVERSION": tlt_conversion,
             }
@@ -147,13 +132,10 @@ class Mockup_OrderVectorTable:
         pass
     a_ov =  np.array([0], dtype = np.uint32)
     tag_data = np.array([0], dtype = np.uint32)
- #   tag_indices = np.array([0,0], dtype = np.uint16)
     tables = {
         "ORDER_VECTOR_DATA": a_ov,
         "ORDER_VECTOR_TAG_ENUM_OFFSETS": "OFS_DUMMY : 0",
         "ORDER_VECTOR_TAG_DATA": tag_data,
-     #   "ORDER_VECTOR_TAG_INDICES": tag_indices,
-     #   "ORDER_VECTOR_NUM_TAG_DATA": 1,
         "ORDER_VECTOR_HASH": 0,
         "ORDER_VECTOR_TLT_CONVERSION": 0,
     }

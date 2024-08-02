@@ -8,26 +8,15 @@ from numbers import Integral
 from collections import OrderedDict
 
 from mmgroup.mat24 import vect_to_cocode
-from mmgroup.mat24 import ploop_theta
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
-from mmgroup.mm_op import mm_vector
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.structures.mm0_group import MM0
 from mmgroup.mm_space import MMV, MMVector, MMSpace
-from mmgroup.generators import mm_group_check_word_n
-from mmgroup.generators import mm_group_words_equ
-from mmgroup.generators import mm_group_n_mul_element
-from mmgroup.generators import mm_group_n_reduce_element 
 from mmgroup.generators import gen_leech3to2_type4
-from mmgroup.generators import gen_leech2_reduce_type4
-from mmgroup.clifford12 import chk_qstate12
-from mmgroup.clifford12 import uint64_parity
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_solve_eqn
 from mmgroup.clifford12 import bitmatrix64_t
-from mmgroup.clifford12 import xsp2co1_half_order_word
-from mmgroup.clifford12 import xsp2co1_power_word
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
 from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_watermark_A
@@ -40,10 +29,6 @@ from mmgroup.dev.mm_reduce.find_order_vector import find_vector_v94_mod5
 
 MMV3 = MMV(3)
 MMV15 = MMV(15)
-MM = MM0  #  TODO: Fixme
-
-ORDER_VECTOR = None
-ORDER_TAGS = None
 
 
 _DIR = os.path.split(find_order_vector.__file__)[0]
@@ -518,10 +503,10 @@ class OrderVectorMod15:
             order_vector_data = get_order_vector()
 
         if order_vector_data == "C":
-            from mmgroup.mm_reduce import mm_order_load_tag_data_new
+            from mmgroup.mm_reduce import mm_order_load_tag_data
             from mmgroup.mm_reduce import mm_order_load_vector
             a = np.zeros(256, dtype = np.uint32)
-            n = mm_order_load_tag_data_new(a, len(a))
+            n = mm_order_load_tag_data(a, len(a))
             assert 0 <= n < len(a)
             self.tag_data = a[:n]
             self.order_vector = MMVector(15, 0)
@@ -568,6 +553,7 @@ class OrderVectorMod15:
 
     @classmethod
     def enum_comments(cls, prefix = "OFS_"):
+        """Crreate a strin describing an enum in C"""
         s = []
         for name, (ofs, _) in cls.TAG_DATA.items():
             if name in ENUM_COMMENTS:
