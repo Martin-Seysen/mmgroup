@@ -6,6 +6,7 @@ from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mat24 import ploop_theta
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_vector
+from mmgroup.mm_op import mm_op_copy
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
 from mmgroup.structures.mm0_group import MM0Group, MM0
 from mmgroup.mm_group import MMGroup, MM
@@ -25,10 +26,20 @@ from mmgroup.clifford12 import xsp2co1_half_order_word
 from mmgroup.clifford12 import xsp2co1_power_word
 from mmgroup.mm_op import mm_op_compare
 from mmgroup.mm_op import mm_op_word
-from mmgroup.mm_reduce import mm_order_element_M
-from mmgroup.mm_reduce import mm_order_element_Gx0
-from mmgroup.mm_reduce import mm_order_load_vector
-from mmgroup.mm_reduce import mm_reduce_M
+
+try:
+    from mmgroup.mm_reduce import mm_order_element_M
+    from mmgroup.mm_reduce import mm_order_element_Gx0
+    from mmgroup.mm_reduce import mm_order_load_vector
+except (ImportError, ModuleNotFoundError):
+    from mmgroup.dev.mm_reduce.py_mm_order import ov
+    #from mmgroup.dev.mm_reduce.py_mm_order import py_order_check_in_g_x0
+    from mmgroup.dev.mm_reduce.py_mm_order import py_order_element_Gx0
+    from mmgroup.dev.mm_reduce.py_mm_order import py_order_element_M
+    def mm_order_load_vector(data):
+        mm_op_copy(15, ov.order_vector.data, data)
+     
+    
 
 
 
@@ -65,8 +76,8 @@ def check_mm_equal(g1, g2, mode = 0):
     if status < 2:
         return not status
     v = mm_vector(15)
-    mm_order_load_vector(v.data)
     work = mm_vector(15)
+    mm_order_load_vector(v.data)
     mm_op_word(15, v, g3, status - 2, 1, work)
     mm_order_load_vector(work.data)
     return not mm_op_compare(15, v, work)
@@ -96,8 +107,11 @@ def check_mm_order(g, max_order = 119):
     """
     assert isinstance(g, (MM0, MM))
     g.reduce()
-    o = mm_order_element_M(g._data, g.length, max_order)
-    return  chk_qstate12(o)
+    try:
+        o = mm_order_element_M(g._data, g.length, max_order)
+        return  chk_qstate12(o)
+    except:
+        return py_order_element_M(g, max_order)
 
 def check_mm_half_order(g, max_order = 119):
     """Return (halved) order of monster group element ``g``.
@@ -115,12 +129,18 @@ def check_mm_half_order(g, max_order = 119):
     assert isinstance(g, (MM0, MM))
     g.reduce()
     h = np.zeros(10, dtype = np.uint32)
-    o1 = mm_order_element_Gx0(g._data, g.length, h, max_order)
-    chk_qstate12(o1)
-    if o1 == 0:
-        return 0, None
-    h = h[:o1 & 0xff]
-    o1 >>= 8
+    try:
+        o1 = mm_order_element_Gx0(g._data, g.length, h, max_order)
+        chk_qstate12(o1)
+        if o1 == 0:
+            return 0, None
+        h = h[:o1 & 0xff]
+        o1 >>= 8
+    except:
+        o1, h = py_order_element_Gx0(g, max_order)
+        if not o1:
+            return 0, None
+        h = h.mmdata
     h2 = np.zeros(10, dtype = np.uint32)
     o2 = xsp2co1_half_order_word(h, len(h), h2)
     h2 = h2[:o2 & 0xff]
@@ -158,14 +178,20 @@ def check_mm_in_g_x0(g):
     ``g`` must be an instance of class 
     ``mmgroup.mm_group.MM``.
     """
-    g1 = np.zeros(10, dtype = np.uint32)
- 
-    res = chk_qstate12(mm_order_element_Gx0(g._data,  g.length, g1, 1))
-    #print("RES", hex(res))
-    if ((res >> 8) != 1):
-        return None 
-    length = res & 0xff
-    assert length <= 10
+    try:
+        g1 = np.zeros(10, dtype = np.uint32)
+        res = chk_qstate12(mm_order_element_Gx0(g._data,  g.length, g1, 1))
+        #print("RES", hex(res))
+        if ((res >> 8) != 1):
+            return None 
+        length = res & 0xff
+        assert length <= 10
+    except:
+        o1, g0 = py_order_element_Gx0(g, 1)
+        g1 = g0.mmdata
+        if o1 != 1:
+            return None
+        length = len(g1)
     g._extend(10)
     g._data[:length] = g1[:length]
     g.length = length

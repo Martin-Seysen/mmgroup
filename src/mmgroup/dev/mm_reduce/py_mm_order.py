@@ -178,28 +178,27 @@ def py_order_check_in_g_x0(g, mode = 0):
 
 
 def py_order_element_Gx0(g, o = 119):
-    o = max(1, min(0, 119))
+    o = max(1, min(o, 119))
     assert isinstance(g, AbstractMMGroupWord)
-    g1 = xsp2co1_check_word_g_x0(g.mmdata, len(g.mmdata));
-
-    if g1:
-        if len(g1.mmdata) == 0:
-            return 1, g1
+    status = xsp2co1_check_word_g_x0(g.mmdata, len(g.mmdata));
+    if status == 0:
+        if len(g.mmdata) == 0:
+            return 1, MM0()
         else:
             h = np.zeros(10, dtype = np.uint32)
             elem = np.zeros(26, dtype = np.uint64)
-            res = xsp2co1_set_elem_word(elem, g1.mmdata, len(g1.mmdata))
+            res = xsp2co1_set_elem_word(elem, g.mmdata, len(g.mmdata))
             assert res >= 0, res
             res = xsp2co1_elem_to_word(elem, h)
             assert res >= 0, res
             return 1, MM0('a', h[:res])
 
     w = ov.order_vector.copy()
-    for i in range(o + 1): 
+    for i in range(o): 
         w *= g
-        h = py_order_check_in_Gx0(w)
+        h = py_order_check_in_g_x0(w)
         if h:
-            return i, h
+            return i + 1, h
   
     return 0, None
   

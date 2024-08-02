@@ -540,14 +540,19 @@ def characteristics():
 import_pending = True
 
 def complete_import():
-    global mm_reduce_2A_axis_type
     global XLeech2 
     global std_q_element
-    from mmgroup.mm_reduce import mm_reduce_2A_axis_type 
     from mmgroup import XLeech2
     from mmgroup.structures.construct_mm import std_q_element
     import_pending = False    
 
+
+import_mm_reduce_pending = True
+
+def complete_import_mm_reduce():
+    global mm_reduce_2A_axis_type
+    from mmgroup.mm_reduce import mm_reduce_2A_axis_type
+    import_mm_reduce_pending = False
 
 
 
@@ -764,8 +769,8 @@ class MMVector(AbstractMmRepVector):
         if e:
             v = np.zeros(24*4, dtype = np.uint64)
             mm_op_t_A(self.p, self.data, e, v)     
-        if import_pending:
-            complete_import()
+        if import_mm_reduce_pending:
+            complete_import_mm_reduce()
         t = mm_reduce_2A_axis_type(v)
         if t == 0:
             return None
