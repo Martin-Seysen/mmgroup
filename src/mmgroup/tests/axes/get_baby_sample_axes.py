@@ -25,26 +25,19 @@ from mmgroup import GcVector, AutPL
 from mmgroup.bitfunctions import unnumpy
 
 
-from mmgroup.tests.axes.get_sample_axes import G_CENTRAL
-from mmgroup.tests.axes.get_sample_axes import G_AXIS_OPP
-from mmgroup.tests.axes.get_sample_axes import V_AXIS_OPP
-from mmgroup.tests.axes.get_sample_axes import g_axis, v_axis
-from mmgroup.tests.axes.get_sample_axes import g_axis_opp
-from mmgroup.tests.axes.get_sample_axes import v_axis_opp
 
-from mmgroup.tests.axes.get_sample_axes import g_central, GVector
+
+from mmgroup.tests.axes.axis import G # A Monster element is of type G
+from mmgroup.tests.axes.axis import V15, Axis, BabyAxis
+from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
+from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
+from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
+from mmgroup.tests.axes.axis import v_axis, v_axis_opp
+from mmgroup.tests.axes.axis import v_axis15, v_axis_opp15
+
+
 from mmgroup.tests.axes.get_sample_axes import next_generation_pool
-from mmgroup.tests.axes.get_sample_axes import axis_type
 
-
-########################################################################
-########################################################################
-# The group and the vector space to be used
-########################################################################
-########################################################################
-
-G = MM0                     # The monster group
-V15 = MMV(15)               # Its representation space
 
 PROCESSES = 0
 
@@ -109,9 +102,14 @@ def rand_Co_2():
 
 
 
+
+
+
 def spread(gv):
     g = rand_Co_2() * G('t','n')
-    return gv * g
+    g_new = gv * g
+    g_new.stage = gv.stage + 1
+    return g_new
 
 
 
@@ -122,11 +120,10 @@ def spread(gv):
 
 
 def mark(gv):
-    return (gv.baby_value_A(), gv.mark())
-
+    return  gv.v15.count_short(), gv.fixed_value(), gv.fixed_value('B')
 
 def score(gv):
-    return gv.count_zeros_in_A()
+    return 576 - np.count_nonzero(gv['A'])
 
 
 ########################################################################
@@ -149,7 +146,8 @@ def _show_sample(i, sample):
 
 def explore_axes(stages, n_spread, n_keep, verbose = 0):
     global all_samples
-    gv0 = GVector(opp = True)
+    gv0 = BabyAxis()
+    gv0.stage = 1
     gv_list = [gv0]
     m = mark(gv0)
     marks = set([m])
@@ -176,7 +174,7 @@ def explore_axes(stages, n_spread, n_keep, verbose = 0):
                     _show_sample(len(sample_list)-1, sample_list[-1])
         marks |= new_samples.keys()
         for v in gv_list:
-            m = v.mark()
+            m = mark(v)
             all_samples[m].append(str(v.g))
     num_samples = sum(len(x) for x in all_samples.values())
     print("Number of axes considered:", num_samples)
@@ -199,10 +197,10 @@ PATH = os.path.join(DIR, FILE)
 
 
 def baby_axis_type(gv):
-    at = axis_type(gv.g, gv.g0)
-    asub = int(gv.baby_value_A() != 0)
-    return at + str(asub) 
-
+    #at = axis_type(gv.g, gv.g0)
+    #asub = int(gv.baby_value_A() != 0)
+    #return at + str(asub) 
+    return gv.axis_type()
 
 
 
@@ -255,7 +253,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
         g = sample.g.raw_str()
         s_samples += "\"" + g + "\",\n"
         s_stages += str(stage) + ", "
-        s_marks += str(unnumpy(mark))  + ",\n"
+        s_marks +=   "%s,\n" % str(unnumpy(mark))
         class_ = baby_axis_type(sample)
         #print("class", class_)
         s_classes += '"' + class_ + '", '
@@ -291,9 +289,8 @@ def get_baby_axes_from_sample_axes(sample_axes):
     global BABY_AXES
     if len(BABY_AXES):
         return BABY_AXES
-    from mmgroup.tests.axes.beautify_baby_axes import BabyAxis
     for i, g1 in enumerate(sample_axes.g_strings):
-        g = MM0(g1)
+        g = G(g1)
         axis = BabyAxis(g)
         g_class = sample_axes.g_classes[i]
         axis.g_class = g_class
@@ -306,7 +303,7 @@ def get_baby_axes_from_sample_axes(sample_axes):
 
 
 def compute_and_write_baby_axes(beautify = True, verbose = 0):
-    v0 = GVector()
+    #v0 = GVector()
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     write_axes(sample_list, beautify, verbose)
     time.sleep(0.1)

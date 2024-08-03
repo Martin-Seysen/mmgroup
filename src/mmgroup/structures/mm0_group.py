@@ -586,7 +586,7 @@ class MM0(AbstractMMGroupWord):
         It returns a pair ``(iclass, a)`` such that
         :math:`h = a^{-1} g a` is a (fixed) representative of 
         the class of :math:`g` in the  group :math:`G_{x0}`. Here 
-        ``h`` is described by the integer ``iclass`` as documented 
+        ``h`` is described by the string ``iclass`` as documented 
         in the corresponding method mentioned above.
 
         If ``group`` is ``None`` (default) then ``a`` is an instance

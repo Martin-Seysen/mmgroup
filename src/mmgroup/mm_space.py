@@ -1387,11 +1387,13 @@ def order_vector():
     The properties required for such a vector :math:`v_1`
     are defined in :cite:`Seysen22`.
     """
-    from mmgroup.mm_reduce import mm_order_load_vector
     v = MMVector(15)
-    mm_order_load_vector(v.data)
+    try:
+        from mmgroup.mm_reduce import mm_order_load_vector
+        mm_order_load_vector(v.data)
+    except (ImportError, ModuleNotFoundError):     
+        from mmgroup.dev.mm_reduce.py_mm_order import ov
+        mm_op_copy(15, ov.order_vector.data, v.data)
     return v
-         
-    
 
 
