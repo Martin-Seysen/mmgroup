@@ -303,7 +303,6 @@ def get_baby_axes_from_sample_axes(sample_axes):
 
 
 def compute_and_write_baby_axes(beautify = True, verbose = 0):
-    #v0 = GVector()
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     write_axes(sample_list, beautify, verbose)
     time.sleep(0.1)

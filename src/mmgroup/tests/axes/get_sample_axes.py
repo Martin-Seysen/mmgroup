@@ -213,8 +213,6 @@ def next_generation_pool(
     The additional parameter ``processes`` specifies the 
     maximum number of processes to be started. ``processes = 0``
     (default) means to start as many processes as possible.
-
-    Not yet functional. Use function ``next_generation`` instead!
     """
     if processes == 1:
         return next_generation( obj_list, marks, f_spread,
@@ -253,95 +251,6 @@ def next_generation_pool(
     return new_obj_list,  samples
 
 
-########################################################################
-########################################################################
-# Compute axis type
-########################################################################
-########################################################################
-
-
-def axis_char(g0, axis = None):
-    """Compute type of a 2A axis
-
-    Let ``axis`` be a  2A-element  of the monster group, let ``g0`` 
-    be an arbitrary element of the monster group. Put
-    ``g = g0**(-1) * axis * g``. Let ``x`` be the central involution
-    of the subgroup :math:`G_{x0}` of the monster. ``axis``
-    defaults to the element ``MM0("d", Cocode([2,3]))``
-    
-    We want to classify the pair ``(g, x)`` of involutions. Put
-    ``h = g*x``. Then ``h`` is of even order ``o``. We try to
-    compute the character ``chi`` of ``h`` in the 196883-dimensional
-    representation of the monster. This can be done with our
-    capabilities if ``h**(o/2)`` is a '2B' involution; otherwise
-    we put ``chi = None``.
-
-    We return the pair ``(g, o)``. All computations are done in
-    the class ``mmgroup.MM0`` modelling the monster group, since
-    the class ``mmgroup.MM`` modelling the monster group (provided 
-    for the user) uses the results of such computations.
-
-    It turns out that the result of this function contains
-    sufficient information for obtaining the class of ``h``
-    in the monster group as given in |Nor98|.
-    """
-    g0 = MM0(g0)
-    axis = g_axis if axis is None else MM0(axis)
-    g = g0**(-1) * axis * g0 * g_central
-    o, h = g.half_order()
-    if h.chi_G_x0()[0] != 275:
-        return o, None  # The prod is a 2A involution
-    # Here prod is a 2B involution
-    itype, m = h.conjugate_involution()
-    assert itype == 2
-    chi = (g**m).chi_G_x0()[0]
-    return o, chi
-    
-
-
-"""Character of products of a 2A and a 2B involution
-
-From |Nor98| we see that such a product must be in one of the 
-following classes in the monster (in ATLAS notation):
-
-2AB, 4ABC, 6ACF, 8B, 10AB, 12C
-
-From the ATLAS we obtain the information about the characters of 
-these classes stored in the following dictionary AXES_PROD_CLASSES.
-In that dictionary we replace the character value of a class by 
-None whenever the corresponding class powers up to class 2A.
-"""
-
-AXES_PROD_CLASSES = {
-   2:  ("AB", [None, 275]),
-   4:  ("ABC", [275, None, 19]),
-   6:  ("ACF", [None, 14, -1]),
-   8:  ("B", [11]),
-  10:  ("AB", [None, 5]),
-  12:  ("C", [None]),
-}
-
-
-AXES_CLASSES_DICT = {}
-for number, (letters, characters) in AXES_PROD_CLASSES.items():
-    for letter, character in zip(letters, characters):
-        AXES_CLASSES_DICT[(number, character)] = str(number) + letter
-
-
-def axis_type(g0, axis = None):
-    """Compute type of a 2A axis
-
-    Let ``axis`` be a  2A-element  of the monster group, let ``g0`` 
-    be an arbitrary element of the monster group. Put
-    ``g = g0**(-1) * axis * g``. Let ``x`` be the central involution
-    of the subgroup :math:`G_{x0}` of the monster. ``axis``
-    defaults to the element ``MM0("d", Cocode([2,3]))``
-    
-    We return class of ``h = g*x`` in ATLAS notation as a string.
-    """
-    return AXES_CLASSES_DICT[axis_char(g0, axis)]
-
-
 
 ########################################################################
 ########################################################################
@@ -371,8 +280,8 @@ def spread(gv):
 
 
 def mark(gv):
-    #return gv.axis_type(), gv.axis_type_info(), gv.v15.count_short()
-    return gv.v15.count_short()
+    #return gv.axis_type(), gv.v15.count_short(), gv.axis_type_info()
+    return gv.axis_type(), gv.v15.count_short()
 
 def score(gv):
     return 576 - np.count_nonzero(gv['A'])
@@ -432,6 +341,62 @@ def explore_axes(gv0, stages, f_spread, f_mark, f_score, n_spread, n_keep, verbo
     print("Number of axes considered:", num_samples)
     assert len(sample_list) >= 12
     return sample_list
+
+
+
+
+########################################################################
+########################################################################
+# Matching the names of the axis orbits with those in |Nor98|
+########################################################################
+########################################################################
+
+
+"""Character of products of a 2A and a 2B involution
+
+From |Nor98| we see that such a product must be in one of the 
+following classes in the monster (in ATLAS notation):
+
+2AB, 4ABC, 6ACF, 8B, 10AB, 12C
+
+From the ATLAS we obtain the information about the characters of 
+these classes stored in the following dictionary AXES_PROD_CLASSES.
+In that dictionary we replace the character value of a class by 
+None whenever the corresponding class powers up to class 2A.
+"""
+
+AXES_PROD_CLASSES = {
+   2:  ("AB", [None, 275]),
+   4:  ("ABC", [275, None, 19]),
+   6:  ("ACF", [None, 14, -1]),
+   8:  ("B", [11]),
+  10:  ("AB", [None, 5]),
+  12:  ("C", [None]),
+}
+
+
+AXES_CLASSES_DICT = {}
+for number, (letters, characters) in AXES_PROD_CLASSES.items():
+    for letter, character in zip(letters, characters):
+        AXES_CLASSES_DICT[(number, character)] = str(number) + letter
+
+
+def compute_axis_type(axis, check = True):
+    """Compute type of a 2A axis from character information
+
+    Let ``g`` be a  2A-element  of the Monster group corresponding
+    to the given ``axis``, and let ``x`` be the central involution
+    of the subgroup :math:`G_{x0}` of the monster. We return the
+    class of the ``h = g*x`` in ATLAS notation as a string. Here we
+    assume that all possible classes are mentioned in |Nor98|   
+    """
+    o, chi, _ = axis.axis_type_info()
+    ax_type = AXES_CLASSES_DICT[o, chi]
+    expected_type = axis.axis_type()
+    if check:
+        assert ax_type == expected_type, (ax_type, expected_type)
+    return ax_type
+
 
 
 
@@ -531,8 +496,8 @@ Qx0_equations = [
 
 
 def sample_list_sort_key(sample_entry):
-     stage, sample, _ = sample_entry 
-     s_class = axis_type(sample.g) 
+     stage, axis, _ = sample_entry 
+     s_class = axis.axis_type() 
      return stage, int(s_class[:-1]), s_class[-1:]
 
 
@@ -540,10 +505,10 @@ def beautify_12C(sample_list):
     from mmgroup.tests.axes.beautify_axes import beautify_axis
     from mmgroup.tests.axes.beautify_axes import Axis
     samples = {}
-    for stage, sample, mark in sample_list:
-        class_ = axis_type(sample.g)
+    for stage, axis, mark in sample_list:
+        class_ = axis.axis_type()
         if class_ in ['4B', '12C']:
-            g = sample.g.raw_str()
+            g = axis.g.raw_str()
             samples[class_] = beautify_axis(class_, g, check = True)
     t, z = samples['12C'].g_axis, samples['12C'].g_central
     old_4B = samples['4B']
@@ -566,16 +531,15 @@ def write_axes(sample_list, beautify = True, verbose = False):
     s_powers = ""
     s_groups = ""
     s_equations = ""
-    g_strings = [x[1].g for x in sample_list]
-    g_classes = [axis_type(x[1].g) for x in sample_list]
+    axes = [x[1] for x in sample_list]
     _vb = min(verbose, 1)
     special_samples = beautify_12C(sample_list)
-    for i, (stage, sample, mark) in enumerate(sample_list):
-        g = sample.g.raw_str()
+    for i, (stage, axis, mark) in enumerate(sample_list):
+        g = axis.g.raw_str()
         s_samples += "\"" + g + "\",\n"
         s_stages += str(stage) + ", "
         s_marks += str(mark)  + ",\n"
-        class_ = axis_type(sample.g)
+        class_ = compute_axis_type(axis, check = True)
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
@@ -584,8 +548,6 @@ def write_axes(sample_list, beautify = True, verbose = False):
                 else:     
                     axis = beautify_axis(class_, g, _vb, check = True)
                 axis.rebase()
-                if class_ == '4B':
-                    axis_4B =  axis.copy()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
                 s_equations += compute_Qx0_equations_str(axis)
         except:
@@ -619,7 +581,6 @@ def get_axes_from_sample_axes(sample_axes):
     global AXES
     if len(AXES):
         return AXES
-    from mmgroup.tests.axes.beautify_axes import Axis
     for i, g1 in enumerate(sample_axes.g_strings):
         g = MM0(g1)
         axis = Axis(g)
