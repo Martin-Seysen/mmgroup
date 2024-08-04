@@ -883,8 +883,9 @@ static int32_t reduce_v_axis(
     uint_mmv_t *p_work
 )
 {
-    uint32_t len_r = 0, i, status, len_r1, v4, ax_type;
+    uint32_t len_r = 0, i, len_r1, v4, ax_type;
     uint32_t target_axes[2];
+	int32_t status;
 
     if (vt) return reduce_v_axis_final(vt, r, 0, std_axis);
 
@@ -1086,8 +1087,9 @@ static int32_t reduce_v_baby_axis(
     uint_mmv_t *p_work
 )
 {
-    uint32_t len_r = 0, i, status, len_r1, v4, ax_type;
+    uint32_t len_r = 0, i, len_r1, v4, ax_type;
     uint32_t target_axes[2];
+	int32_t status;
 
     if (vt) return reduce_v_baby_axis_final(axis, vt, r, len_r);
 
@@ -1109,6 +1111,7 @@ static int32_t reduce_v_baby_axis(
         }
 
         v4 = find_type4(p_ax, axis);
+        if (v4 == 0) return -20015;
         len_r1 = transform_v4(v, v4, target_axes, r + len_r, p_work);
         if (len_r1 < 0) return -23000 + len_r1;
         if (op_axis(&axis, r + len_r, len_r1)) return -20008;

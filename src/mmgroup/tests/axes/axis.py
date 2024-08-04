@@ -9,6 +9,7 @@ of the subgroup :math:`G_{x0}` (of structure
 
 import sys
 import os
+import warnings
 import time
 import operator
 from numbers import Integral
@@ -372,7 +373,8 @@ class Axis:
             self.g0 = g0
         except:
             import warnings
-            W = "Reducing an axis with mmgroup has failed"
+            W = "Reduction of Monster elements for mapping 2A axes "
+            W += "is not implemented"
             warnings.warn(W, UserWarning)
         return self
     def central_involution(self, guide=0):
@@ -549,6 +551,9 @@ class Axis:
 #################################################################
 
 
+#################################################################
+# Constructive membership test of Monster element in Baby Monster
+#################################################################
 
 
 
@@ -566,20 +571,72 @@ def in_Baby_direct(g):
             return None
     return g
 
-H_AXES = [0x200, 0x1000000]
 def in_H(g):
-    mm, lmm = g.mmdata, len(g.mmdata)
-    if any([gen_leech2_op_word(x, mm, lmm) != x for x in H_AXES]):
-         return None
-    g1 = G(Xsp2_Co1(g))
-    assert in_Baby_direct(g1)
-    return g1
+    try:
+        mm, lmm = g.mmdata, len(g.mmdata)
+        for x in [V_PLUS, 0x1000000]:
+            if gen_leech2_op_word(x, mm, lmm) != x:
+                return None
+        g1 = G(Xsp2_Co1(g))
+        return in_Baby_direct(g1)
+    except:
+        return None
  
 def in_Baby(g):
+    """Constructive membership test in Baby Monster ``2.B``
+
+    Given an element ``g`` of the Monster we try to find a word ``g1``
+    of generators of the Baby Monster with ``g == g1``. If  we can
+    find such a ``g1`` then we return ``g1`` as an instance of
+    class ``Axis.group``. Otherwise we return ``None``.
+    """
     if in_Baby_direct(g) is not None:
         return g
-    return in_H(g)
+    g1 = in_H(g)
+    if g1 is not None:
+        return g1
+    try:
+        from mmgroup import MM
+        g1 = G(MM(g).reduce())
+        if v_axis15 * g1 == v_axis15:
+            if v_axis_opp15 * g == v_axis_opp15 * g1:
+                return in_Baby_direct(g)
+        return None
+    except:
+        return None
 
+
+
+#################################################################
+# Constructive membership test of Monster element in Baby Monster
+#################################################################
+
+
+
+
+def rebase_vector_baby(v15):
+    try:
+        from mmgroup.mm_reduce import mm_reduce_vector_shortcut
+        from mmgroup.mm_reduce import mm_reduce_vector_vm
+        from mmgroup.mm_reduce import mm_reduce_vector_incomplete
+    except:
+        W = "Cannot not rebase a baby monster axis"
+        warnings.warn(W, UserWarning)
+        return None
+    v0 = np.zeros(1, dtype = np.uint32)
+    v = v15.copy()
+    w = V15(0)
+    g = np.zeros(256, dtype = np.uint32)
+    l_g = mm_reduce_vector_shortcut(1, 0, V_PLUS, g)
+    assert 0 <= l_g < 128
+    l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
+    assert 0 <= l_g < 128, hex(l_g)
+    g0 = G('a', g[:l_g]) ** -1
+    if v_axis15 * g0 != v_axis15 or v_axis_opp15 * g0 != v15:
+        W = "Rebasing of a baby monster axis has failed"
+        warnings.warn(W, UserWarning)
+        return None
+    return g0
 
 
 
@@ -598,8 +655,12 @@ class BabyAxis(Axis):
     ERR_BABY = "Cannot map element %s to subgroup 2.B of Monster"
     """Models an axis modulo 15"""
     def __init__(self, g = 1):
-        if isinstance(g, Axis):
-            self.g1 = in_Baby(Axis.g)
+        if isinstance(g, BabyAxis):
+            self.g1 = g.g
+        elif isinstance(g, Axis):
+            self.g1 = rebase_vector_baby(g.v15)
+        elif isinstance(g, MMVector) and g.p == 15:
+            self.g1 = rebase_vector_baby(g)
         else:
             self.g1 = in_Baby(G(g))
         if self.g1 is None:
@@ -628,6 +689,10 @@ class BabyAxis(Axis):
             raise TypeError(self.ERR1)
         self.g0 *= self.g1
         self.g1 = G()
+        g0 = rebase_vector_baby(self.v15)
+        if g0 is not None:
+            self.g0 = g0
+        """
         if v_axis * self.g0 != v_axis:
              ERR = "Involution of 2A axis is not in Baby Monster"
              raise ValueError(ERR)
@@ -651,6 +716,7 @@ class BabyAxis(Axis):
             W = "Reducing a baby monster axis with mmgroup has failed"
             warnings.warn(W, UserWarning)
             raise
+        """
         return self
     def fixed_value(self, part = 'A'):
         if part == 'A':
@@ -671,6 +737,22 @@ class BabyAxis(Axis):
         a = vt['A']
         asub = int(a[2,2] + a[2,3] - 2 * a[2,3]) % 15
         return at + str(int(asub != 0)) 
+    def axis_type_info_beta(self):
+        """Return information about a certain orbit of the axis
+
+        Let ``c = a.g_axis * a.g_central``; and let ``o`` be the (even)
+        order of ``c``. Let ``i = c**(o/2)``. Then the involution 
+        ``i1 = i * Axis.g_axis_start()`` is in  :math:`G_{x0}`.
+        We return the string ``s``  describing the class of
+        involution  ``i`` in :math:`G_{x0}`, as in method
+        ``conjugate_involution_G_x0`` of class``mmgroup.Xsp2_Co1``.
+        """
+        c = self.g_axis * self.g_central
+        o, i = c.half_order()
+        assert o & 1 == 0
+        i *= G(G_AXIS)
+        s, _ = i.conjugate_involution_G_x0()
+        return s
 
 
 

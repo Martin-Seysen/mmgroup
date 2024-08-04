@@ -39,7 +39,9 @@ MM = MM0 = G
 
 PROCESSES = 0
 
-
+# Use extended watermarking if the following variable is set.
+# If this is True then the calculation will take a long time!
+EXTENDED_WATERMARK = False
 
 ########################################################################
 ########################################################################
@@ -280,8 +282,11 @@ def spread(gv):
 
 
 def mark(gv):
-    #return gv.axis_type(), gv.v15.count_short(), gv.axis_type_info()
-    return gv.axis_type(), gv.v15.count_short()
+    return gv.axis_type(), gv.v15.count_short(), gv.axis_type_info()
+
+if not EXTENDED_WATERMARK:
+    def mark(gv):
+        return gv.axis_type(), gv.v15.count_short()
 
 def score(gv):
     return 576 - np.count_nonzero(gv['A'])
@@ -290,6 +295,9 @@ def score(gv):
 ########################################################################
 # Collect one sample axis for each class
 ########################################################################
+
+# Number of axis classes
+NUM_AXIS_CLASSES = 12
 
 # Here will be a large directory samples found so far, if anybody wants 
 # these samples. In that directory each key is a watermark, and each 
@@ -335,11 +343,13 @@ def explore_axes(gv0, stages, f_spread, f_mark, f_score, n_spread, n_keep, verbo
         for v in gv_list:
             m = f_mark(v)
             all_samples[m].append(str(v.g))
-        if len(sample_list) >= 12: 
+        if not EXTENDED_WATERMARK and len(sample_list) >= NUM_AXIS_CLASSES: 
             break
     num_samples = sum(len(x) for x in all_samples.values())
     print("Number of axes considered:", num_samples)
-    assert len(sample_list) >= 12
+    assert len(sample_list) == NUM_AXIS_CLASSES
+    mark_list = [mark[0] for stage, axis, mark in sample_list]
+    assert len(set(mark_list)) == NUM_AXIS_CLASSES
     return sample_list
 
 
@@ -612,7 +622,7 @@ def do_test_sample_axes(sample_axes):
     sax =  sample_axes
     l = [G(sax.g_central), G(sax.g_axis), MMVector(7, sax.v_start)]
     lg =  [G(x) for x in sax.g_strings]
-    assert len(lg) == 12
+    assert len(lg) == NUM_AXIS_CLASSES
 
 
 def get_sample_axes(calculate = False, beautify = True, verbose = 0):
