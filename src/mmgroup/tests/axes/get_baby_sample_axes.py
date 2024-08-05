@@ -38,7 +38,6 @@ from mmgroup.tests.axes.axis import v_axis15, v_axis_opp15
 
 from mmgroup.tests.axes.get_sample_axes import next_generation_pool
 
-
 PROCESSES = 0
 
 
@@ -114,13 +113,13 @@ def spread(gv):
 
 
 ########################################################################
-# Profiling an axis: count entries for tags B, C, T, X
+# Profiling an axis
 ########################################################################
 
 
 
 def mark(gv):
-    return  gv.v15.count_short(), gv.fixed_value(), gv.fixed_value('B')
+    return  gv.axis_type(), gv.fixed_value(), gv.fixed_value('B')
 
 def score(gv):
     return 576 - np.count_nonzero(gv['A'])
@@ -180,6 +179,59 @@ def explore_axes(stages, n_spread, n_keep, verbose = 0):
     print("Number of axes considered:", num_samples)
     #assert len(sample_list) == 10
     return sample_list
+
+
+
+
+########################################################################
+########################################################################
+# Tweak axes in the Monster so that they fit into the Baby Monster 
+########################################################################
+########################################################################
+
+PI = AutPL(0, zip(range(16), list(range(8,16)) + list(range(8))))
+
+TWEAKS = {
+    '2A' : [ [('x', 0x200)], [('y', 0x200)] ],
+    '2B' : [ [('p', PI)] ],
+    '4C' : [ [('p', PI)] ],
+}
+
+def parent_samples():
+    from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+    M1 = MM0(1)
+    for parent_orbit, parent_axis in get_sample_axes().items():
+        yield parent_orbit, parent_axis, M1
+        if parent_orbit in TWEAKS:
+            for g in TWEAKS[parent_orbit]:
+                 yield parent_orbit, parent_axis, MM0(g)
+
+
+
+
+def useful_baby_sample_axes():
+    """Tweak axes to fit into the Baby Monster
+
+    This function tries to tweak the (nice) standard 2A axes so that
+    we obtain a sample axis for each class of the Baby Monster axes.
+    The function returns a dictionary mapping the classes of 2A
+    axes to nice sample axes.
+    """
+    ref_axes = {}
+    for parent_orbit, parent_axis, g in parent_samples():
+        #print("case", parent_orbit, g)
+        try:
+            baby_axis = BabyAxis(parent_axis * g)
+        except:
+            baby_axis = None
+        if baby_axis:
+            baby_orbit = baby_axis.axis_type()
+            ref_axes[baby_orbit] = baby_axis
+            #print("Represetative for baby axis orbit %s is axis %s * %s" %
+            #    (baby_orbit, parent_orbit, g)
+            #)
+        #print("case", parent_orbit, "done")
+    return ref_axes
 
 
 
@@ -243,7 +295,7 @@ def sample_list_sort_key(sample_entry):
 
 def write_axes(sample_list, beautify = True, verbose = False):
     if beautify:
-        from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
+        ref_baby_axes = useful_baby_sample_axes()
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", ""
@@ -259,7 +311,8 @@ def write_axes(sample_list, beautify = True, verbose = False):
         s_classes += '"' + class_ + '", '
         try:
             if beautify:
-                axis = beautify_baby_axis(class_, g)
+                #axis = beautify_baby_axis(class_, g)
+                axis = ref_baby_axes[class_]
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
         except:

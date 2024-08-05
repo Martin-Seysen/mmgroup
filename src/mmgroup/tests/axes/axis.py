@@ -232,6 +232,35 @@ def find_short(v, value, radical = 0, verbose = 0):
     return short
 
 
+#################################################################
+# Rebase an axis in the Monster
+#################################################################
+
+
+
+
+def rebase_axis(v15):
+    try:
+        from mmgroup.mm_reduce import mm_reduce_vector_vp
+    except:
+        W = "Cannot not rebase a monster axis"
+        warnings.warn(W, UserWarning)
+        return None
+    v0 = np.zeros(1, dtype = np.uint32)
+    v = v15.copy()
+    w = V15(0)
+    g = np.zeros(256, dtype = np.uint32)
+    l_g = mm_reduce_vector_vp(v0, v.data, 0, g, w.data)
+    assert 0 <= l_g < 128, hex(l_g)
+    g0 = G('a', g[:l_g]) ** -1
+    if v_axis15 * g0 != v15:
+        W = "Rebasing of a monster axis has failed"
+        warnings.warn(W, UserWarning)
+        return None
+    return g0
+
+
+
 
 #################################################################
 #################################################################
@@ -270,27 +299,37 @@ class Axis:
       the Monster. Then we construct the axis corresponding
       to :math:`g`.
 
-    * An instance of this class. Then we construct a copy of that
+    * An instance of this class |MMVector| which is a 2A axis in
+      representation of the Monster (mod 15).
+
+    * An instance of class. Then we construct a copy of that
       instance.
     """
     v15_start = v_axis15
     v15_start_name = V_AXIS 
     constant = False
     group = G
-    ERR1 = "This axis is constant and may not be changed"
+    ERR_CONST = "This axis is constant and may not be changed"
+    ERR_MAP = "Could not map type %s object to a monster axis"
+    ERR_INVOL = "Type %s object is not a 2A involution in the Monster"
     def __init__(self, g = 1, invol = None):
+        t = g
         if isinstance(g, Axis):
             self.g1 = G(g.g)
+        elif isinstance(g, MMVector):
+            self.g1 = rebase_axis(g % 15)
         elif g == 'i':
+            t = invol
             from mmgroup import MM
             g1 = MM(invol)
             i, h = g1.conjugate_involution()
             if i != 1:
-                ERR = "Element is not a 2A involution in the Monster"
-                raise ValueError(ERR)
+                raise ValueError(ERR_INVOL % type(t))
             self.g1 = G(h**-1)
         else:
             self.g1 = G(g)
+        if self.g1 is None:
+            raise ValueError(self.ERR_MAP % type(t))
         self.g0 = G()
         self.v15 = v_axis15 * self.g
     @property
@@ -329,7 +368,7 @@ class Axis:
         return axis
     def __imul__(self, g):
         if self.constant:
-            raise TypeError(self.ERR1)
+            raise TypeError(self.ERR_CONST)
         g = G(g)
         self.g1 *= g
         self.v15 *= g
@@ -356,28 +395,14 @@ class Axis:
         and reduces ``a.g1`` using the features of class |MM|.
         """
         if self.constant:
-            raise TypeError(self.ERR1)
+            raise TypeError(self.ERR_CONST)
         self.g0 *= self.g1
         self.g1 = G()
-        try:
-            from mmgroup import MM
-            from mmgroup.mm_reduce import mm_reduce_vector_vp 
-            v0 = np.zeros(1, dtype = np.uint32)
-            v = self.v15.copy()
-            w = V15(0)
-            g = np.zeros(128, dtype = np.uint32)
-            lg = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
-            assert 0 <= lg < 128
-            g0 = G(MM('a', g[:lg]) ** -1)
-            assert self.v15_start * g0 == self.v15
+        g0 = rebase_axis(self.v15)
+        if g0 is not None:
             self.g0 = g0
-        except:
-            import warnings
-            W = "Reduction of Monster elements for mapping 2A axes "
-            W += "is not implemented"
-            warnings.warn(W, UserWarning)
         return self
-    def central_involution(self, guide=0):
+def central_involution(self, guide=0):
         """Return central involution of dihedral group
 
         The method returns the central involution of the dihedral
@@ -608,17 +633,17 @@ def in_Baby(g):
 
 
 #################################################################
-# Constructive membership test of Monster element in Baby Monster
+# Rebase an axis in the Baby Monster
 #################################################################
 
 
 
 
-def rebase_vector_baby(v15):
+def rebase_baby_axis(v15):
     try:
         from mmgroup.mm_reduce import mm_reduce_vector_shortcut
         from mmgroup.mm_reduce import mm_reduce_vector_vm
-        from mmgroup.mm_reduce import mm_reduce_vector_incomplete
+        from mmgroup import mmv_scalprod
     except:
         W = "Cannot not rebase a baby monster axis"
         warnings.warn(W, UserWarning)
@@ -632,7 +657,8 @@ def rebase_vector_baby(v15):
     l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
     g0 = G('a', g[:l_g]) ** -1
-    if v_axis15 * g0 != v_axis15 or v_axis_opp15 * g0 != v15:
+    if (v_axis15 * g0 != v_axis15 or v_axis_opp15 * g0 != v15 or
+        mmv_scalprod(v15, v_axis15) != 0):
         W = "Rebasing of a baby monster axis has failed"
         warnings.warn(W, UserWarning)
         return None
@@ -650,21 +676,40 @@ def rebase_vector_baby(v15):
 
 
 class BabyAxis(Axis):
+    """Model a 2A axis in the representation of the Baby Monster mod 15
+
+    The constructor and the methods of this class are as in the base
+    class ``Axis`` of this class. But we accept axes that are
+    orthogonal to axis ``Axis.v_start`` only. The centralizer
+    of axis ``Axis.v_start`` is a subgroup of structure `math:`2.B`
+    of the Monster.
+
+    In this class we have ``BabyAxis.v15_start = v_axis_opp15``, where
+    ``v_axis_opp15`` is the axis opposite to axis ``Baby.v15_start``.
+    For an axis ``a`` in this class we have
+    ``a.v15 = a.g * a.v15_start``.
+    """
     v15_start = v_axis_opp15
+    v15_start_name = V_AXIS_OPP
     constant = False
-    ERR_BABY = "Cannot map element %s to subgroup 2.B of Monster"
-    """Models an axis modulo 15"""
-    def __init__(self, g = 1):
+    ERR_BABY_G = "Type %s object is not in the baby monster group"
+    ERR_BABY = "Could not map type %s object to a baby monster axis"
+    def __init__(self, g = 1, invol = None):
+        t = g
         if isinstance(g, BabyAxis):
             self.g1 = g.g
         elif isinstance(g, Axis):
-            self.g1 = rebase_vector_baby(g.v15)
-        elif isinstance(g, MMVector) and g.p == 15:
-            self.g1 = rebase_vector_baby(g)
+            self.g1 = rebase_baby_axis(g.v15)
+        elif g == 'i':
+            v15 = Axis('i', invol).v15
+            self.g1 = rebase_baby_axis(v15)
+            t = invol
+        elif isinstance(g, MMVector):
+            self.g1 = rebase_baby_axis(g % 15)
         else:
             self.g1 = in_Baby(G(g))
         if self.g1 is None:
-            raise ValueError(self.ERR_BABY % self.g1)
+            raise ValueError(self.ERR_BABY % type(t))
         self.g0 = G()
         self.v15 = self.v15_start * self.g
     @property
@@ -673,50 +718,23 @@ class BabyAxis(Axis):
         return G(G_AXIS_OPP)
     def __imul__(self, g):
         if self.constant:
-            raise TypeError(self.ERR1)
+            raise TypeError(self.ERR_CONST)
         g = in_Baby(G(g))
         if g is None:
-            raise ValueError(self.ERR_BABY % g)
+            raise ValueError(self.ERR_BABY_G % type(g))
         self.g1 *= g
         self.v15 *= g
         return self
     def __mul__(self, g):
         return self.copy().__imul__(g)
-    #def __getitem__(self, index):
-    #    return self.v15.__getitem__(index)
     def rebase(self):
         if self.constant:
-            raise TypeError(self.ERR1)
+            raise TypeError(self.ERR_CONST)
         self.g0 *= self.g1
         self.g1 = G()
-        g0 = rebase_vector_baby(self.v15)
+        g0 = rebase_baby_axis(self.v15)
         if g0 is not None:
             self.g0 = g0
-        """
-        if v_axis * self.g0 != v_axis:
-             ERR = "Involution of 2A axis is not in Baby Monster"
-             raise ValueError(ERR)
-        try:
-            #print("Rebasing axis in Baby Monster")
-            from mmgroup.mm_reduce import mm_reduce_vector_shortcut
-            from mmgroup.mm_reduce import mm_reduce_vector_vm
-            v0 = np.zeros(1, dtype = np.uint32)
-            v = self.v15.copy()
-            w = V15(0)
-            g = np.zeros(128, dtype = np.uint32)
-            l_g = mm_reduce_vector_shortcut(1, 1, V_PLUS, g)
-            assert 0 <= l_g < 128
-            l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
-            assert 0 <= l_g < 128, hex(l_g)
-            g0 = G('a', g[:l_g]) ** -1
-            assert self.v15_start * g0 == self.v15
-            self.g0 = g0
-        except:
-            import warnings
-            W = "Reducing a baby monster axis with mmgroup has failed"
-            warnings.warn(W, UserWarning)
-            raise
-        """
         return self
     def fixed_value(self, part = 'A'):
         if part == 'A':
