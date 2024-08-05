@@ -402,7 +402,7 @@ class Axis:
         if g0 is not None:
             self.g0 = g0
         return self
-def central_involution(self, guide=0):
+    def central_involution(self, guide=0):
         """Return central involution of dihedral group
 
         The method returns the central involution of the dihedral
