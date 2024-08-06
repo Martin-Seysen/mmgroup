@@ -466,6 +466,11 @@ static inline int32_t analyze_axis(
    section *Description of the mmgroup.mm<p> extensions* in the
    description of the *C interface*.
 
+   We assume that ``v`` describes a 2A axis \f$v\f$.
+   The purpose of this function is to compute the list \f$U(v)\f$
+   of vectors in the Leech lattice mod 2 defined in [Sey22],
+   Section 8.4.
+
    If ``v`` is a 2A axis then the function analyzes the type
    of the 2A axis. Each 2A axis corresponds uniquely to a 2A
    involution \f$x\f$ in the monster. Let \f$z\f$ be the central
@@ -480,12 +485,34 @@ static inline int32_t analyze_axis(
    Buffer ``r`` should be at least 896 bytes long. It will 
    contain the result.
 
-   Details are yet to be documented!!!
+   The entries of buffer ``r`` are set as follows:
+
+      -  Entry 0: Axis type of axis ``v``.
+         This is an integer ``16 * n + k``. Here ``n`` is the number
+         of the class, e.g. ``n == 6`` for class 6C; and ``k`` encodes
+         the letter in the name of the class ('A' = 1, 'B' = 2, ...).
+      -  Entry 1: Axis type of a target axis, ecoded as entry 0.
+      -  Entry 2: Axis type of a target axis, ecoded as entry 0.
+      -  Entry 3: Number N of entries in the following List \f$U(v)\f$.
+      -  Entries 4, ..., N + 3:
+         Here each entry encodes a vector in the Leech lattice mod 2
+         in *Leech lattice encoding*.
+
+   Entries 2 and 3 of buffer ``r`` describe the Axis type to which
+   axis \f$v\f$ may be reduced by applying first an transformation
+   in \f$G_{x0}\f$ and then a power of the triality
+   element \f$G_{x0}\f$. Both entries are encoded in the same way as
+   Entry 1. So these two entries desribe the graph in [Sey22],
+   Figure 2. An unused entry is encoded as ``0xffffffff``.
+
+   If the axis type of \f$v\f$ is 2A then we define \f$U(v)\f$ to be
+   the singleton containing the short vector in the Leech lattice
+   corresponding to axis \f$v\f$.
 
    Caution:
 
-   This is a quick analyis of a 2A axis. The
-   function returns garbage if ``v`` is not  a 2A axis.
+   This is a quick analyis of a 2A axis. The  function may return
+   garbage if ``v`` is not  a 2A axis.
 
 */
 // %%EXPORT px
@@ -579,10 +606,6 @@ uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
 
 
 
-/////////////////////////////////////////////////////////////////////////
-// More auxiliary functions for Reducing a 2A axis 
-/////////////////////////////////////////////////////////////////////////
-
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -605,6 +628,58 @@ static inline uint32_t find_type4(axes_reduce_t *p_ax, uint32_t v2)
     }
     return  mm_reduce_find_type4(v, n, v2);
 }
+
+/// @endcond 
+
+
+
+/** Select a suitable type-4 vector ``w`` for *beautifyng* an axis
+
+This function combines the actions of
+functions ``mm_reduce_analyze_2A_axis`` and ``mm_reduce_find_type4``.
+Given a vector ``v`` ecoding an axis \f$v\f$, the function first
+computes the list \f$U(v)\f$ defined in
+function ``mm_reduce_analyze_2A_axis``. Then it uses
+function ``find_type4`` to find a type-4 vector ``w`` in that list.
+If parameter ``v2`` is nonzero then we look for vectors ``w``
+with ``type(w) = 4`` and ``type(w + v2) = 2`` only.
+Let ``axis_type`` be the type of axis \f$v\f$  as computed by
+function ``mm_reduce_analyze_2A_axis``.
+
+Then the function returns ``(axis_type << 24) + w``.
+
+The function may or may not detect that \f$v\f$ is not an axis.
+If the function detects this, it returns 0. If  \f$v\f$ is not
+an axis then the fuction may also return a valid ``axis_type``,
+and either a valid vector ``w``, or ``w = 0``.
+
+In the special case that the detected axis type of ``v`` is 2A
+(i.e. ``axis_type == 0x21``) we let ``w`` be the type-2 vector
+corresponding to axis ``v``, ignoring parameter ``v2``.
+
+We choose the vector ``w`` determistically; but the choice of ``w``
+is impelementation dependent.
+*/
+// %%EXPORT px
+uint32_t mm_reduce_find_type4_axis(uint_mmv_t *v, uint32_t v2)
+{
+axes_reduce_t ax;
+uint32_t w;
+if (analyze_axis(v, &ax) != 0 || ax.axis_type < 0x21) return 0;
+w = (ax.axis_type == 0x21) ?  ax.v_leech2[0] : find_type4(&ax, v2);
+if (ax.axis_type) return (w & 0xffffff) + (ax.axis_type << 24);
+return 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// More auxiliary functions for Reducing a 2A axis
+/////////////////////////////////////////////////////////////////////////
+
+
+
+/// @cond DO_NOT_DOCUMENT
 
 
 /**
