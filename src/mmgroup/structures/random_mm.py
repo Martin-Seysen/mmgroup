@@ -58,9 +58,10 @@ Bit Generators of :math:`Y_i`                                Dim Name(s)
 3   :math:`x_{\pm \Omega}, x_\delta, \delta\,` a union of      5 'G_5l'
     two sets in :math:`\{\{2i, 2i+1\}\mid 4 \leq i < 12\}`
 4   :math:`x_{\pm \Omega}, x_{\{0,1,2,3\}}`                    3 'G_3' 
-5   :math:`x_\delta, \delta \in \{\{1,2\},\{2,3\}\}`           2 '2E_6'
-6   Central involution :math:`x_{-1}` in :math:`G_{x0}`        1 'G_x0', 'G_1'
-7   :math:`x_{\pm\Omega}`                                      2 'N_0', 'G_2'
+5   :math:`x_{\pm \Omega}, x_{\{0,1,2,3\}},x_{\{0,1,4,5\}}`    2 'G_4'
+6   :math:`x_\delta, \delta \in \{\{1,2\},\{2,3\}\}`           2 '2E_6'
+8   Central involution :math:`x_{-1}` in :math:`G_{x0}`        1 'G_x0', 'G_1'
+9   :math:`x_{\pm\Omega}`                                      2 'N_0', 'G_2'
 === =======================================================  === =============
 
 Here :math:`\Omega` is the positive element in the Parker loop 
@@ -79,6 +80,9 @@ Bit  2: MAT24_RAND_t # fixes \{\{8i,\ldots,8i+7\} \mid i < 3 \}
 Bit  3: MAT24_RAND_s # fixes \{\{4i,\ldots,4i+3\} \mid i < 6 \}
 Bit  4: MAT24_RAND_l # fixes \{\{2i, 2i+1\} \mid  4 \leq i < 12 \}
 Bit  5: MAT24_RAND_3 # fixes \{1, 2, 3\}  
+Bit  7: MAT24_RAND_d # fixes \{\{2i, 2i+1\} \mid  i < 12 \}
+
+
 
 # Fix certain involutions
 Bit  8 : # fix x_{-1}
@@ -94,21 +98,23 @@ _NOT_FULL = 0x40000000
 
 
 SUBGOUP_MAP = {
-   'M':      0,   
-   'G_x0':   0x100,  'G_1': 0x100,
-   'N_0':    0x200,  'G_2': 0x200,
-   'G_3':    0x8      | _NO,
-   'G_5t':   0x4      | _NO,
-   'G_5l':   0x10     | _NO,
-   'G_10':   0x2      | _NO,
-   'B':      0x1      | _NOT_FULL,
-   '2E_6':   0x20     | _NO,
-   'H+'  :   0x41,
-   'N_0_e':  0x1000,
-   'N_x0':   0x300,
-   'N_x0_e': 0x1300,
-   'Q_x0':   0x4000    | _NO,
-   'AutPL':  0x2000    | _NO,
+   'M':       0,   
+   'G_x0':    0x100,  'G_1': 0x100,
+   'N_0':     0x200,  'G_2': 0x200,
+   'G_3':     0x8      | _NO,
+   'G_4':     0x40     | _NO,
+   'G_5t':    0x4      | _NO,
+   'G_5l':    0x10     | _NO,
+   'G_10':    0x2      | _NO,
+   'B':       0x1      | _NOT_FULL,
+   '2E_6':    0x20     | _NO,
+   'H+'  :    0x41,
+   'N_0_e':   0x1000,
+   'N_x0':    0x300,
+   'N_x0_e':  0x1300,
+   'Q_x0':    0x4000    | _NO,
+   'AutPL':   0x2000    | _NO,
+   'AutPL_e': 0x3000    | _NO,
    'quick':  0     # for future optimizations
 }
 
