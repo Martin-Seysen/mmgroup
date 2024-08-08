@@ -57,6 +57,7 @@ enum mat24_rand_flags {
   MAT24_RAND_s = 0x08, ///< fixes \f$\{\{4i,\ldots,4i+3\} \mid i < 6 \}\f$
   MAT24_RAND_l = 0x10, ///< fixes \f$\{\{2i, 2i+1\} \mid  4 \leq i < 12 \}\f$
   MAT24_RAND_3 = 0x20, ///< fixes \f$\{1, 2, 3\} \f$ 
+  MAT24_RAND_d = 0x40, ///< fixes \f$\{\{2i, 2i+1\} \mid  0 \leq i < 12 \}\f$
 };
 
 // %%GEN c
@@ -77,11 +78,41 @@ enum mat24_rand_flags {
 #define RAND_s MAT24_RAND_s
 #define RAND_l MAT24_RAND_l
 #define RAND_3 MAT24_RAND_3
+#define RAND_d MAT24_RAND_d
 
-#define RAND_ALL 0x3f
+#define RAND_ALL 0x7f
 /// @endcond 
 
 
+/// @cond DO_NOT_DOCUMENT 
+
+#define DEBUG_MAT24_RANDOM 
+// #undef DEBUG_MAT24_RANDOM 
+
+#ifdef DEBUG_MAT24_RANDOM
+   #define DEBUG_BUFFER_LEN 64
+
+   static uint32_t DEBUG_BUFFER[DEBUG_BUFFER_LEN];
+   
+   // %%EXPORT p
+   uint32_t mat24_perm_rand_debug_info(uint32_t *a, uint32_t len)
+   {
+       uint32_t i;
+       if (len > DEBUG_BUFFER_LEN) len = DEBUG_BUFFER_LEN;
+       for (i = 0; i < len; ++i) a[i] = DEBUG_BUFFER[i];
+       return len;
+   }
+#else
+   // %%EXPORT p
+   uint32_t mat24_perm_rand_debug_info(uint32_t *a, uint32_t len)
+   {
+       (void)(a);
+       return len = 0;
+   }
+#endif
+
+
+/// @endcond 
 
 
 /***********************************************************************
@@ -112,23 +143,45 @@ enum mat24_rand_flags {
  the group \f$H\f$ may be contained in more subgroups
  of \f$M_{24}\f$ encoded as bits of an integer of 
  type ``enum mat24_rand_flags``.
- This function sets all bits in ``u_mode`` corresponding to
- groups containing  \f$H\f$. Furthermore, the function clears
- all unused bits in parameter ``u_mode``.
+ This function (hopefully!) sets all bits in ``u_mode``
+ corresponding to groups containing  \f$H\f$. 
     
  The function returns the modified parameter ``u_mode``.
 */
 // %%EXPORT p
 uint32_t mat24_complete_rand_mode(uint32_t u_mode)
 {
-    subgroup(u_mode, RAND_l,  RAND_o);
-    subgroup(u_mode, RAND_l | RAND_2,  RAND_t);
-    subgroup(u_mode, RAND_t | RAND_2,  RAND_l | RAND_o);
-    subgroup(u_mode, RAND_3 | RAND_t,  RAND_o | RAND_s);
-    subgroup(u_mode, RAND_3 | RAND_l,  RAND_o | RAND_s);
-    subgroup(u_mode, RAND_3 | RAND_t | RAND_l,  RAND_o | RAND_2);
+    uint32_t mode_old = 0;
+    while (u_mode != mode_old) {
+        mode_old = u_mode;
+        subgroup(u_mode, RAND_d,  RAND_t); // [Iva09], Lemma 4.1.3
+        subgroup(u_mode, RAND_l,  RAND_o); // by definition
+        subgroup(u_mode, RAND_d | RAND_3, RAND_2); // by definition
+        subgroup(u_mode, RAND_l | RAND_t, RAND_d); // explained below
+        subgroup(u_mode, RAND_l | RAND_2, RAND_o | RAND_t); // (1)
+        subgroup(u_mode, RAND_t | RAND_2, RAND_o | RAND_l); // (1)
+        subgroup(u_mode, RAND_l | RAND_3, RAND_o | RAND_s); // (2)
+        subgroup(u_mode, RAND_t | RAND_3, RAND_o | RAND_s); // (2)
+    }    
     return u_mode;
+
+    // If octad ``o`` is fixed then the complement ``A16`` of ``o``
+    // is an affine space ``GF(2)^4``. Then ``RAND_l`` fixes a line,
+    // ``RAND_s`` fixes a plane, and ``RAND_t`` fixes a hyperplane
+    // in the linear space ``L16`` corresponding to ``A16``. We 
+    // identify ``RAND_l``, ``RAND_s``, and ``RAND_t`` with the
+    // corresponding subspaces of ``L16`` Then these three subspaces
+    // are incident. ``RAND_d`` corresponds to the (incomplete)
+    // flag (``RAND_l``, ``RAND_t``) in ``L16``.
+    // See [CS99], Ch. 11.10, and [Iva09], Ch. 4.1 for background.
+    // Rule (1): 
+    // ``RAND_2`` corresponds to a symplectic form in ``L16``; with
+    // this form ``RAND_l`` is the orthogonal complement of ``RAND_t``.
+    // Rule (2): 
+    // ``RAND_3`` corresponds to a complex structure on ``L16``; and 
+    // ``RAND_s`` is a complex one-dimensional space in that structure.
 }
+
 
 
 
@@ -189,8 +242,172 @@ int32_t mat24_perm_in_local(uint8_t *p1)
     if (check_in_set(p1, 8, 2)) mode |= RAND_l;
     if (check_in_set(p1, 0, 4)) mode |= RAND_s;
     if (check_in_set(p1, 0, 8)) mode |= RAND_t;
+    if (check_in_set(p1, 0, 2)) mode |= RAND_d;
     return mode;
 }
+
+
+
+/***********************************************************************
+** Structure 'rand_pi_type' for function mat24_perm_rand_local
+***********************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+typedef struct rand_pi_s{
+    uint32_t mode;     ///< describes the subgroup H to be generated
+    uint32_t rand[1];  ///< random generator, see function ``rand_int``
+    uint32_t bitmap;   ///< bit map of points in member h already computed
+    uint32_t mask_octad;  ///< bit map of feasible entries for h in steps < 6
+    uint32_t mask_tetrad; ///< bit map of feasible entries for h in steps < 4
+    uint32_t syn;      ///< syndrome of the first five entries of member h
+    int32_t error;     ///< here a nonzero value indicates an error  
+    uint8_t h[7];      ///< list of points defining the mapping H2 -> h 
+} rand_pi_type;
+
+/// @endcond 
+
+
+
+/***********************************************************************
+** initialize structure 'rand_pi_type'
+***********************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline
+/**
+ @brief Intialize a structure of type ``rand_pi_type``
+
+ Here parameter ``mode`` describes the sungroup of ``M_24`` to be used.
+ Parameter ``rand`` is taken as a *seed* for the (rather limited) 
+ random generator to be used by function ``add_mat24_point``. 
+*/
+void rand_pi_prepare(rand_pi_type *p_pi, uint32_t mode, uint32_t rand)
+{
+    p_pi->mode = mat24_complete_rand_mode(mode);
+    p_pi->rand[0] = rand;
+    p_pi->bitmap = 0;
+    p_pi->error = 0;
+ #ifdef DEBUG_MAT24_RANDOM
+    {
+        uint32_t i;
+        for (i = 0; i < DEBUG_BUFFER_LEN; ++i) DEBUG_BUFFER[i] = 0;
+        DEBUG_BUFFER[0] = mode;
+        DEBUG_BUFFER[1] = p_pi->rand[0];
+        DEBUG_BUFFER[2] = p_pi->mode;
+        DEBUG_BUFFER[3] = p_pi->error;
+    }
+ #endif
+}
+
+
+/// @endcond 
+
+
+
+/***********************************************************************
+** Set a single bit position in structure 'rand_pi_type'
+***********************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+
+/**
+ @brief Return a *random* integer ``0 <= i < n``
+
+ Pointer ``*p_r`` points to a single 32-bit integer ``r`` acting as a
+ random generator for generating a  *random* integer ``0 <= i < n``.
+ The function returns  ``i = r % n`` and puts ``*p_r = r / n``.
+*/
+static inline 
+uint8_t rand_int(uint32_t *p_r, uint32_t n)
+{
+    uint32_t r = *p_r / n, i = *p_r % n; 
+    *p_r = r;
+    return (uint8_t)i;
+}
+
+
+/**
+ @brief Add a 'random' cleared bit to a bit map
+
+ Let ``bitmap`` be the integer referred by ``*p_bitmap``, considered
+ as a bit map. Here the lowest 24 bits of bit map ``bitmap`` are valid
+ only. We want to add a random bit to the bit map ``bitmap``. This bit
+ must be taken from the bits being set in the bit map ``mask``.
+
+ The function selects a random position ``k`` of a suitable bit, adds
+ the bit at position ``k`` to the bit map, and returns the bit
+ position ``k``. So it puts ``*p_bitmap = bitmap | (1 << k)``. If no
+ suitable bit position ``k`` is available then the function
+ returns 24 and performs no further action.
+
+ Pointer ``*p_r`` points to a single 32-bit integer ``r`` acting as
+ a random generator for selecting the bit position ``k``, as in
+ function ``rand_int``. 
+*/
+static inline 
+uint8_t find_bit24(uint32_t *p_bitmap, uint32_t *p_r, uint32_t mask)
+{
+    uint32_t available, w, b, bmask;
+
+    available = ~*p_bitmap & mask & 0xffffffUL;
+    w = mat24_bw24(available);
+    if (w == 0) return 24;
+    b = rand_int(p_r, w);
+    bmask = mat24_spread_b24(1 << b, available);
+    *p_bitmap |= bmask;
+    return (uint8_t)(mat24_lsbit24(bmask));
+}
+
+
+
+
+/**
+ @brief Set a single bit position in structure ``rand_pi_type``
+
+ The function sets the bit postion at index ``index`` in the structure
+ of type ``rand_pi_type`` referred by the pointer ``p_pi``. Therefore
+ a bit position is selected from the mask ``mask``, excluding all
+ previously set bit positions. The bit position is selected at random
+ using the internal random generator ``p_pi->rand`` of the structure.
+
+ If no suitable bit position can be found then the function sets an
+ error flag in member ``p_pi->rand`` of the structure.
+*/
+static inline 
+void add_mat24_point(rand_pi_type *p_pi, uint32_t index, uint32_t mask)
+{
+    p_pi->error |= index >= 7;
+    if (p_pi->error) return;
+    p_pi->h[index] = find_bit24(&p_pi->bitmap, p_pi->rand, mask);
+    p_pi->error |= p_pi->h[index] >= 24;
+    if (p_pi->error) {
+        // Declare all points used; so subsequent steps won't crash
+        p_pi->mode = p_pi->mask_octad = p_pi->mask_tetrad = 0;
+        p_pi->bitmap = p_pi->syn = 0xffffff; 
+    }
+ #ifdef DEBUG_MAT24_RANDOM
+    {
+        if (index >= 0 && 4 * index + 4 <= DEBUG_BUFFER_LEN) {
+            DEBUG_BUFFER[4 * index + 0] = p_pi->bitmap;
+            DEBUG_BUFFER[4 * index + 1] = mask;
+            if (index >= 0 && index < 7)
+                DEBUG_BUFFER[4 * index + 2] = p_pi->h[index];
+            DEBUG_BUFFER[4 * index + 3] = p_pi->error;
+       }
+    }
+ #endif
+}
+
+/// @endcond 
+
 
 
 /***********************************************************************
@@ -199,182 +416,210 @@ int32_t mat24_perm_in_local(uint8_t *p1)
 
 /// @cond DO_NOT_DOCUMENT 
 
-/**
- @brief Select a 'random' cleared bit from a mask
-
- Let ``mask`` be the integer referred by ``*p_mask`` considered as 
- a bit mask. The function selects a cleared bit from that mask. Here 
- we consider the lowest 24 bits of parameter ``mask`` only. Let 
- ``r1 = r / w``, ``b = r % w``. Then the function returns the
- position ``k`` of the ``b``-th cleared bit in mask ``mask``.
- It also puts ``*p_mask = mask | (1 << k)`` and ``*p_r = r1``.
-
-*/
-static inline 
-uint8_t free_bit24(uint32_t *p_mask, uint32_t *p_r)
-{
-    uint32_t mask, w, r1, b, bmask;
-
-    mask = *p_mask & 0xffffff;
-    w = 24 - mat24_bw24(mask);
-    r1 = *p_r / w;  b = *p_r - r1 * w; *p_r = r1;
-    bmask = mat24_spread_b24(1 << b, 0xffffff & ~mask);
-    *p_mask = mask | bmask;
-    return (uint8_t)(mat24_lsbit24(bmask));
-}
-
 
 /**
- @brief Return a mask computed from array ``h2`` and mask ``new_mask``
+ @brief Compute affine closure in ``GF_2^3``
 
+ Let ``0 <= h1, h2, h3, < 8`` be integers. The set ``{0,...,7}`` has
+ a natural affine structure given by the binary representation of
+ these integers. We return the integer ``h4`` such that the quadruple
+ ``(h1, h2, h3, h4)`` is an affine plane in that structure. In other
+ words, we put ``h4 = h1 ^ h2 ^ h3``.
 
- The returned mask contains all bits in the array ``h2`` of
- length ``len_h2`` and also all bits not set in ``new_mask``. It 
- contains bits at positions less than 24 only.
+ This affine structure is related to the subgroup given by the
+ flag ``MAT24_RAND_t``.
 */
-static inline 
-uint32_t remask(uint8_t *h2, uint32_t len_h2, uint32_t new_mask)
-{
-    uint32_t mask = ~new_mask, i;
-    for (i = 0; i < len_h2; ++i) mask |= 1 << h2[i];
-    return mask & 0xffffff;
-}
-
-
-static uint8_t H1[7] = {3, 2, 1, 0, 5, 4, 8}; 
-
-
-
-/**
- @brief Complete image of subset of octad to an element of ``M_24``
-
- Let the array ``h2`` of length ``len_h2 <= 6`` be an image of 
- the prefix of the same length of the octad given by ``H1``.
- Then this function completes the mapping  from (a prefix of)
- ``H1`` to ``h2`` to a permutation in ``M_24`` and stores
- that permutation in the array referred by ``pi``.
-
- If necessary,  ``h1`` is first completed to an subset of an 
- octad of by selecting bits cleared in the mask ``mask``.
- We use function ``free_bit24`` for this purpose. Parameter ``r`` 
- in this function has the same meaning the parameter referred
- by ``p_r``as in function ``free_bit24`` .
-
- The function return 0 in case of success and -1 in case of failure.
-
- Array ``h2`` is modified and must have length at least 7.
-*/
-static inline 
-int32_t perm_from_suboctad(uint8_t *h2, uint32_t len_h2, 
-                          uint32_t mask, uint32_t r, uint8_t *pi)
-{
-    uint32_t mask_o = 0, i, syn, n_syn, res;
-    uint8_t b;
-    for (i = 0; i < len_h2; ++i) mask_o |= 1 << h2[i];
-    mask = (mask | mask_o) & 0xffffff;
-    while (len_h2 < 5) {
-        b = free_bit24(&mask, &r);
-        mask_o |= (uint32_t)1 << (uint32_t)b;
-        h2[len_h2++] = b;
-    }
-    syn = mat24_syndrome(mask_o, 24);
-    if (syn & ~0xffffff) return -1;
-    n_syn = ~syn;
-    if (len_h2 < 6) h2[5] = (uint8_t)(free_bit24(&n_syn, &r));
-    mask_o |= syn;
-    h2[6] = free_bit24(&mask_o, &r);
-    res = mat24_perm_from_heptads(H1, h2, pi);
-    return res ? -1 : 0;
-}
-
-
-
-
-static
+static inline
 uint8_t complete_aff_trio(uint32_t h1, uint32_t h2, uint32_t h3) 
 {
     return (uint8_t)(h1 ^ h2 ^ h3);
 }
 
-static uint8_t AL[8] = {0,1,2,3,4,5,7,6};
+/**
+ @brief Compute a special affine closure in ``GF_2^3``
 
-static 
+ Let ``0 <= h1, h2, h3, < 8`` be integers.  Similar to
+ function ``complete_aff_trio``, we return the integer ``h4`` such 
+ that the quadruple ``(h1, h2, h3, h4)`` is an plane in a certain
+ affine that structure. That affine structure is derived from the
+ standard affine structure in function ``complete_aff_trio`` by
+ exchanging entries ``6`` and ``7`` is the tuple  ``(0, ..., 7)``
+ of points.
+
+ This affine structure is related to the subgroup given by the
+ flag ``MAT24_RAND_l``.
+*/
+
+static inline
 uint8_t complete_aff_line(uint32_t h1, uint32_t h2, uint32_t h3)
 {
+    static uint8_t AL[8] = {0,1,2,3,4,5,7,6};
     uint32_t v = AL[h1 & 7] ^ AL[h2 & 7] ^ AL[h3 & 7];
     return AL[v];
 }
 
 
+/// @endcond 
+
+
+
+/***********************************************************************
+** Compute legal bit positions to be set in structure 'rand_pi_type'
+***********************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+
+
+/**********************************************************************
+
+We want to generate a (uniform) random element ``x`` in a subgroup
+``H`` of the Mathieu group ``M_24`` described by a parameter ``mode``
+as defined above. Let ``H2 = {3, 2, 1, 0, 5, 4, 8}`` be a fixed array
+of seven points of the set of size 24 on which ``M_24`` acts. Then the
+functio n``mat24_perm_rand_local`` computes an array ``h`` containing
+seven such points, so that the mapping ``H2 -> h`` defines a unique
+permutation in ``x`` in ``M_24``. Here we make sure that ``x`` is in
+also ``H``. Function ``mat24_perm_from_heptads`` may be used to
+compute the permutation ``x`` in ``M_24``  from ``H2`` and ``h``.
+
+We compute the points in the array ``h`` in natural order. In each
+step we determine the set of feasible values for the next point,
+depending on the parameter ``mode`` given above, and on the previously
+computed points. The function ``find_img_<i>``, where ``i`` is an
+integer 0 <= i < 7, returns the bitmap of the feasible values for the
+point ``h[i]``. Any of these functions has a single parameter ``p_pi``
+pointing to a structure of ``rand_pi_type`` that contains all the
+relevant information for computing the bitmap. We may use function
+``add_mat24_point`` to store a random point in that bitmap to ``h``.
+
+**********************************************************************/
+ 
+
+static inline 
+uint32_t find_img_0(rand_pi_type *p_pi) 
+{
+    uint32_t mode = p_pi->mode;
+    uint32_t fix = 0xffffff;
+    if (mode & RAND_o) fix &= 0xff;
+    if (mode & RAND_3) fix &= 0x0e;
+    if (mode & RAND_2) fix &= 0x0c;
+    return fix;
+}
+
+static inline 
+uint32_t find_img_1(rand_pi_type *p_pi) 
+{
+    uint32_t mode = p_pi->mode;
+    uint32_t fix = 0xffffff;
+    if (mode & RAND_t || mode & RAND_o) 
+        fix &= 0xff << (p_pi->h[0] & 0xf8);
+    p_pi->mask_octad = fix;
+    if (mode & RAND_s)
+        fix &= 15 << (p_pi->h[0] & 0xfc);
+    p_pi->mask_tetrad = fix;
+    if (mode & RAND_3) fix &= 0x0e;
+    if (mode & RAND_2) fix &= 0x0c;
+    if (mode & RAND_d) fix &= 1 << (p_pi->h[0] ^ 1);
+    return fix;
+}
+
+static inline 
+uint32_t find_img_2(rand_pi_type *p_pi) 
+{
+    uint32_t mode = p_pi->mode;
+    uint32_t fix = p_pi->mask_tetrad;
+    if (mode & RAND_3) fix &= 0x0e;
+    return fix;
+}
+
+static inline 
+uint32_t find_img_3(rand_pi_type *p_pi) 
+{
+    uint32_t mode = p_pi->mode;
+    uint32_t fix = p_pi->mask_tetrad;
+    uint8_t *h = p_pi->h;
+    if (mode & RAND_d) {
+        fix &= 1 << (h[2] ^ 1);
+    }
+    else if (mode & RAND_t) {
+        fix &= 1 << complete_aff_trio(h[0], h[1], h[2]);
+    }
+    else if (mode & RAND_l) {
+        fix &= 1 << complete_aff_line(h[0], h[1], h[2]);
+    }
+    return fix;
+}
+
+
+static inline 
+uint32_t find_img_4(rand_pi_type *p_pi) 
+{
+    return p_pi->mask_octad;
+}
+
+
+
+static inline 
+uint32_t find_img_5(rand_pi_type *p_pi) 
+{
+    uint32_t mode = p_pi->mode;
+    uint32_t fix = p_pi->syn = mat24_syndrome(p_pi->bitmap, 0);
+    uint8_t *h = p_pi->h;
+    if (mode & RAND_d) {
+        fix &= 1 << (p_pi->h[4] ^ 1);
+    }
+    else if (mode & RAND_t) {
+        fix &= 1 << complete_aff_trio(h[0], h[1], h[4]);
+    }
+    else if (mode & RAND_l) {
+        fix &= 1 << complete_aff_line(h[0], h[1], h[4]);
+    }
+    return fix;
+}
+
+
+static inline 
+uint32_t find_img_6(rand_pi_type *p_pi) 
+{
+    return ~(p_pi->syn) & 0xffffff;
+}
 
 
 /// @endcond 
 
 
+
 /***********************************************************************
-** Function  mat24_perm_rand_local
+**  The workhorse for function mat24_perm_rand_local
 ***********************************************************************/
 
 
 /// @cond DO_NOT_DOCUMENT 
 
-static inline
+
 int32_t complete_perm(uint32_t u_mode, uint32_t u_rand, uint8_t *p_out)
 {
-    uint32_t r =  u_rand, r1, mode = u_mode;
-    uint32_t mask, mask2, mask3, mask4, mask8;
-    uint8_t h2[7], b;
-    uint32_t len_h2 = 0, k;
-    uint8_t (*f)(uint32_t, uint32_t, uint32_t);
-
-
-    if (mode & RAND_o) mask8 = 0xff;
-    else if (mode & RAND_t) {
-        r1 = r/3; k = r - 3*r1; r = r1;
-        mask8 = 0xff << (8 * k);
-    }
-    else mask8 = 0xffffff;
-    mask2 = mask3 =  mask4 = mask8;
-    if (mode & (RAND_2 | RAND_3)) {
-        if (mode & RAND_s) mask4 = 0xf;
-        mask3 = mode & RAND_3 ? 0xe : mask4;
-        mask2 = mode & RAND_2 ? 0xc : mask3;
-    } else if (mode & RAND_s) {
-        mask = ~(mask8 & 0x111111) & 0xffffff;
-        b = free_bit24(&mask, &r);
-        mask2 = mask3 = mask4 = 15 << b;
-    }
-    mask = ~mask2; 
-
-    h2[len_h2++] = b = free_bit24(&mask, &r);
-    if ((mode & (RAND_t | RAND_l)) == (RAND_t | RAND_l)) {
-        h2[len_h2++] = b ^ 1;
-        mask = remask(h2, len_h2, mask3); 
-        h2[len_h2++] = b = free_bit24(&mask, &r); 
-        h2[len_h2++] = b ^ 1;
-        mask = remask(h2, len_h2, mask8);
-        h2[len_h2++] = b = free_bit24(&mask, &r);
-        h2[len_h2++] = b ^ 1;
-    } else {
-        h2[len_h2++] = b = free_bit24(&mask, &r);
-        mask = remask(h2, len_h2, mask3);
-        h2[len_h2++] = b = free_bit24(&mask, &r);
-        mask = remask(h2, len_h2, mask4);
-        if (mode & (RAND_t | RAND_l)) {
-            f = mode & RAND_t ? complete_aff_trio : complete_aff_line;
-            h2[len_h2++] = b = f(h2[0], h2[1], h2[2]);
-            mask = remask(h2, len_h2, mask8);
-            h2[len_h2++] = b = free_bit24(&mask, &r);
-            h2[len_h2++] = b = f(h2[0], h2[1], h2[4]);
-        } else {
-            h2[len_h2++] = b = free_bit24(&mask, &r);
-        }
-    }
-    
-    return perm_from_suboctad(h2, len_h2, ~mask8, r, p_out);
+    static uint8_t H1[7] = {3, 2, 1, 0, 5, 4, 8}; 
+    rand_pi_type s_pi;
+    int32_t mask;
+    rand_pi_prepare(&s_pi, u_mode, u_rand);
+    // %%FOR* i in range(7)
+    mask = find_img_%{i}(&s_pi); 
+    add_mat24_point(&s_pi, %{i}, mask);
+    // %%END FOR
+    if (s_pi.error) return -1;
+    return mat24_perm_from_heptads(H1, s_pi.h, p_out);
 }
 
+
+
 /// @endcond 
+
+
+
+/***********************************************************************
+** Function  mat24_perm_rand_local
+***********************************************************************/
 
 
 

@@ -689,6 +689,13 @@ def m24num_rand_adjust_xy(uint32_t u_mode, uint32_t v):
         raise ValueError(ERR_MAT24_RANDOM)
     return res
 
+def perm_rand_debug_info():
+    cdef uint32_t a[256]
+    cdef uint32_t length = mat24_perm_rand_debug_info(a, 256)
+    return [a[i] for i in range(min(256, length))]
+
+
+
 ########################################################################
 ########################################################################
 # The following stuff is experimental and not documented officially 

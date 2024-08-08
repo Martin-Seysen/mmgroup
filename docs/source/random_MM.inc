@@ -104,12 +104,13 @@ of the Monster:
     G_10           :math:`2^{10+16}.\Omega_{10}^+(2)`           :math:`x_d, y_d, x_{ij}, \quad 0 \leq i < j < 8,`  
                                                                                           :math:`d \in \{-1, \pm \Omega, d_8\}`              no
     B              :math:`2.B`                                  :math:`x_{\{2,3\}}`                                                          yes
-    2E_6           :math:`2^2.{}^2E_6(2):S_3`                   :math:`x_{\{2,3\}}, x_{\{2,4\}}, x_{\{3,4\}}`                                no
+    2E_6           :math:`2^2.{}^2E_6(2):S_3`                   :math:`x_{\{2,3\}}, x_{\{1,2\}}`                                             no
     ============== ============================================ ========================================================================== =========
 
 
 Notation is as in the previous section. Furthermore,
-:math:`d_8` is the standard octad :math:`\{0,1,2,3,4,5,6,7\}`.
+:math:`d_8` is (a preimage in the Parker loop of)
+the standard octad :math:`\{0,1,2,3,4,5,6,7\}`.
 :math:`\omega` is the element of the Golay cocode given by 
 the tetrad :math:`\{0,1,2,3\}` as in :cite:`Seysen20`. 
 

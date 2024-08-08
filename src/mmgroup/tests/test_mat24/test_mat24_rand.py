@@ -51,13 +51,14 @@ RAND_t = 4
 RAND_s = 8
 RAND_l = 16
 RAND_3 = 32
+RAND_d = 64
 
-RAND_FLAGS = [RAND_2, RAND_o, RAND_t, RAND_s, RAND_l, RAND_3]
+RAND_FLAGS = [RAND_2, RAND_o, RAND_t, RAND_s, RAND_l, RAND_3, RAND_d]
 assert reduce(__and__, RAND_FLAGS) == 0
 
 
 RAND_USED = reduce(__or__, RAND_FLAGS)
-
+assert RAND_USED == 127
 
 for letter, flag in zip("2otsl3", RAND_FLAGS):
     assert  mat24.MAT24_RAND[letter] == flag
@@ -78,45 +79,29 @@ def py_mat24_complete_rand_mode(mode):
     of subgroups of :math:`M_{24}`, the group :math:`H` may be 
     contained in more subgroups of :math:`M_{24}` encoded in the
     bits of ``mode``. This function sets all bits in ``mode``
-    corresponding to groups containing  :math:`H`. Furthermore,
-    the function clears all unused bits in parameter ``mode``.
-    
-    The function returns the modified parameter ``mode``.
+    corresponding to groups containing  :math:`H`. 
 
-    It computes precisely the implications shown in [1]. The main
-    test in this file contains a computational proof that all valid 
-    implications are consequences of the implications in [1].
+    Corresponding C function:  mat24_complete_rand_mode
     """
-
-    mode = subgroup(mode, RAND_l,  RAND_o)
-    mode = subgroup(mode, RAND_l | RAND_2,  RAND_t)
-    mode = subgroup(mode, RAND_t | RAND_2,  RAND_l | RAND_o)
-    mode = subgroup(mode, RAND_3 | RAND_t,  RAND_o | RAND_s)
-    mode = subgroup(mode, RAND_3 | RAND_l,  RAND_o | RAND_s)
-    mode = subgroup(mode, RAND_3 | RAND_t | RAND_l,  RAND_o | RAND_2)
-    return mode
-
-def py_mat24_complete_rand_mode_minimal(mode):
-    """Alternative implementation of ``py_mat24_complete_rand_mode``
-
-    This function is slower than ``py_mat24_complete_rand_mode``
-    but closer to the statement of the implications in [1]. The 
-    test below checks the equivalence of the two implementations-
-    """
-    for i in range(3):
-        mode = subgroup(mode, RAND_l,  RAND_o)
-        mode = subgroup(mode, RAND_l | RAND_2,  RAND_t)
-        mode = subgroup(mode, RAND_t | RAND_2,  RAND_o | RAND_l)
-        mode = subgroup(mode, RAND_3 | RAND_l,  RAND_s)
-        mode = subgroup(mode, RAND_3 | RAND_t,  RAND_o | RAND_s)
-        mode = subgroup(mode, RAND_3 | RAND_t | RAND_l, RAND_2)
+    mode &= RAND_USED 
+    mode_old = 0
+    while (mode != mode_old):
+        mode_old = mode;
+        mode = subgroup(mode, RAND_d,  RAND_t); # [Iva09], Lemma 4.1.3
+        mode = subgroup(mode, RAND_l,  RAND_o); # by definition
+        mode = subgroup(mode, RAND_d | RAND_3, RAND_2); # by definition
+        mode = subgroup(mode, RAND_l | RAND_t, RAND_d); 
+        mode = subgroup(mode, RAND_l | RAND_2, RAND_o | RAND_t); 
+        mode = subgroup(mode, RAND_t | RAND_2, RAND_o | RAND_l); 
+        mode = subgroup(mode, RAND_l | RAND_3, RAND_o | RAND_s); 
+        mode = subgroup(mode, RAND_t | RAND_3, RAND_o | RAND_s); 
     return mode
 
 
-# List of all intersections ofsubgroups not ccontained in any
+# List of all intersections of subgroups not contained in any
 # other subgroup.  
 SUBGROUPS = [
-    i for i in range(64) if py_mat24_complete_rand_mode(i) == i
+    i for i in range(128) if py_mat24_complete_rand_mode(i) == i
 ]
  
 
@@ -175,6 +160,8 @@ def py_mat24_perm_in_local(pi):
         mode |= RAND_s
     if check_in_set(pi, 0, 8):
         mode |= RAND_t
+    if check_in_set(pi, 0, 2):
+        mode |= RAND_d
     return mode
     
 
@@ -187,150 +174,174 @@ def py_mat24_perm_in_local(pi):
 
 
 
-
-def free_bit24(mask, r):
-    """Select a 'random' cleared bit from ``mask``
-
-    Here we consider the lowest 24 bits of parameter ``mask`` only.
-    Let ``w`` be the number of such cleared bits and put
-    ``r1 = r / w``, ``b = r % w``. Then the function computes the
-    position ``k`` of the ``b``-th cleared bit in mask ``mask``.
-    It returns the triple ``k, mask1, r1``, where ``mask1`` is
-    obtained from mask ``mask`` by setting bit ``k`` in the mask.
+class RandPiS:
+    """Equivalent to structure ``rand_pi_s`` in file ``mat24_random.c``
     """
-    # mask = bitmask, only a cleared bit may be returned
-    # r = random number
-    mask &= 0xffffff
-    w = 24 - mat24.bw24(mask)
-    r, k = divmod(r, w)
-    bmask = mat24.spread_b24(1 << k, 0xffffff & ~mask)
-    return mat24.lsbit24(bmask), mask | bmask, r
+    AL = [0,1,2,3,4,5,7,6]
+    H1 = [3, 2, 1, 0, 5, 4, 8]
+    def __init__(self, mode, rand):
+        """Corresponding C function:  rand_pi_prepare
+        """
+        self.mode = py_mat24_complete_rand_mode(mode);
+        self.rand = rand;
+        self.bitmap = 0;
+        self._debug = np.zeros(32, dtype = np.uint32)
+        self._debug[0] = mode;
+        self._debug[1] = self.rand;
+        self._debug[2] = self.mode;
+        self.h = [None] * 7
+
+    def rand_int(self, n):
+        """Corresponding C function:  rand_int
+        """
+        self.rand, i = divmod(self.rand, n)
+        return i
+
+    def add_mat24_point(self, index, mask):
+        """Corresponding C function:  add_mat24_point
+        """
+        available = ~self.bitmap & mask & 0xffffff;
+        w = mat24.bw24(available);
+        if (w == 0):
+            print(self.debug_info())
+            print("index: %d, mask: 0x%06x, mode: %02x, h: %s" % (
+                 index, mask, self.mode, self.h)) 
+            ERR = "Could not add a point to a class RandPiS object"
+            raise ValueError(ERR) 
+        b = self.rand_int(w);
+        bmask = mat24.spread_b24(1 << b, available);
+        self.bitmap |= bmask;
+        self.h[index] = b = mat24.lsbit24(bmask);
+        self._debug[4 * index + 4] = self.bitmap;
+        self._debug[4 * index + 5] = mask;
+        self._debug[4 * index + 6] = b;
+
+    @staticmethod
+    def complete_aff_trio(h1, h2, h3):
+        """Corresponding C function:  complete_aff_trio (roughly)
+        """
+        return h1 ^ h2 ^ h3
+
+    @staticmethod
+    def complete_aff_line(h1, h2, h3):
+        """Corresponding C function:  complete_aff_line (roughly)
+        """
+        AL = RandPiS.AL
+        return AL[AL[h1] ^ AL[h2] ^ AL[h3]]
+
+    def find_img_0(self): 
+        """Corresponding C function has same name 
+        """
+        fix = 0xffffff;
+        if (self.mode & RAND_o): fix &= 0xff;
+        if (self.mode & RAND_3): fix &= 0x0e;
+        if (self.mode & RAND_2): fix &= 0x0c;
+        return fix;
+
+    def find_img_1(self): 
+        """Corresponding C function has same name 
+        """
+        fix = 0xffffff;
+        if (self.mode & RAND_t or self.mode & RAND_o):
+            fix &= 0xff << (self.h[0] & 0xf8);
+        self.mask_octad = fix;
+        if (self.mode & RAND_s):
+           fix &= 15 << (self.h[0] & 0xfc);
+        self.mask_tetrad = fix;
+        if (self.mode & RAND_3): fix &= 0x0e;
+        if (self.mode & RAND_2): fix &= 0x0c;
+        if (self.mode & RAND_d): fix &= 1 << (self.h[0] ^ 1);
+        return fix;
+
+    def find_img_2(self): 
+        """Corresponding C function has same name 
+        """
+        fix = self.mask_tetrad;
+        if (self.mode & RAND_3): fix &= 0x0e;
+        return fix;
+
+    def find_img_3(self): 
+        """Corresponding C function has same name 
+        """
+        fix = self.mask_tetrad;
+        h = self.h
+        if (self.mode & RAND_d):
+            fix &= 1 << (self.h[2] ^ 1);
+        elif (self.mode & RAND_t):
+            fix &= 1 << self.complete_aff_trio(h[0], h[1], h[2]);
+        elif (self.mode & RAND_l):
+            fix &= 1 << self.complete_aff_line(h[0], h[1], h[2]);
+        return fix;
+
+    def find_img_4(self): 
+        """Corresponding C function has same name 
+        """
+        return self.mask_octad;
+
+    def find_img_5(self): 
+        """Corresponding C function has same name 
+        """
+        fix = self.syn = mat24.syndrome(self.bitmap, 0);
+        h = self.h
+        if (self.mode & RAND_d):
+            fix &= 1 << (self.h[4] ^ 1);
+        elif (self.mode & RAND_t):
+            fix &= 1 << self.complete_aff_trio(h[0], h[1], h[4]);
+        elif (self.mode & RAND_l):
+            fix &= 1 << self.complete_aff_line(h[0], h[1], h[4]);
+        return fix;
+
+    def find_img_6(self): 
+        """Corresponding C function has same name 
+        """
+        return ~(self.syn) & 0xffffff;
+
+    def complete_perm(self):
+        """Corresponding C function:  complete_perm
+        """
+        mask = self.find_img_0(); 
+        self.add_mat24_point(0, mask);
+        mask = self.find_img_1(); 
+        self.add_mat24_point(1, mask);
+        mask = self.find_img_2(); 
+        self.add_mat24_point(2, mask);
+        mask = self.find_img_3(); 
+        self.add_mat24_point(3, mask);
+        mask = self.find_img_4(); 
+        self.add_mat24_point(4, mask);
+        mask = self.find_img_5(); 
+        self.add_mat24_point(5, mask);
+        mask = self.find_img_6(); 
+        self.add_mat24_point(6, mask);
+        return mat24.perm_from_heptads(self.H1, self.h);
 
 
-def remask(h2, new_mask):
-    """Return amask computed from array ``h2`` and mask ``new_mask``
+    @staticmethod
+    def format_debug_info(data, as_str = True, source = None):
+        if not as_str:
+            return data
+        s = "Debug info for function complete_perm%s:\n" % (
+            " from " + str(source) if source else "")
+        if len(data) == 0:
+            return s + "(not available)\n"
+        for i, x in enumerate(data[:32]):
+            s += ("%08x%s" % (x, "\n" if i % 8 == 7 else " "))
+        return s + "\n"      
 
+    @staticmethod
+    def debug_info_C(as_str = True):
+        try:
+            from mmgroup.mat24 import perm_rand_debug_info
+            data = perm_rand_debug_info()
+        except:
+            data = []
+        return RandPiS.format_debug_info(data, as_str, source = 'C')
 
-    The returned mask contains all bits in the array ``h2`` and also
-    all bits not set in ``new_mask``. It contains bits at positions
-    less than 24 only.
-    """ 
-    mask = 0xffffff & ~new_mask
-    for b in h2:
-        mask |= 1 << b
-    return mask & 0xffffff;
+    def debug_info(self, as_str = True):
+        return self.format_debug_info(self._debug, as_str, "python")
 
-   
-H1 = [3, 2, 1, 0, 5, 4, 8] 
- 
-def perm_from_suboctad(h2, mask, r):
-    """Complete image of subset of octad to an element of ``M_24``
-
-    Let the array ``h2`` of length ``<= 6`` be an image of the
-    prefix of the same length of the octad given by ``H1``.
-    Then this function completes the mapping  from (a prefix of)
-    ``H1`` to ``h2`` to a permutation in ``M_24`` and returns
-    that permutation.
-
-    If necessary,  ``h1`` is first completed to a subset of an 
-    octad of size 6 of by selecting bits cleared in the mask 
-    ``mask``. We use function ``free_bit24`` for this purpose; 
-    and parameter ``r`` has the same meaning as in that function.
-    """
-    mask_o = 0
-    for b in h2:
-        mask_o |= 1 << b
-    mask = (mask | mask_o) & 0xffffff
-    while len(h2) < 5:
-        b, mask, r = free_bit24(mask, r)
-        mask_o |= 1 << b
-        h2.append(b)
-    syn = mat24.syndrome(mask_o, 24)
-    if len(h2) < 6:
-        b, _, r = free_bit24(~syn, r)
-        h2.append(b)
-    b, _, r = free_bit24(mask_o | syn, r)
-    h2.append(b)
-    return mat24.perm_from_heptads(H1, h2)
-
-
-
-
-def complete_aff_trio(h1, h2, h3):
-    return h1 ^ h2 ^ h3
-
-
-AL = [0,1,2,3,4,5,7,6]
-
-def complete_aff_line(h1, h2, h3):
-    v = AL[h1] ^ AL[h2] ^ AL[h3]
-    return AL[v]
-
-
-def complete_perm(mode, r, verbose = 0):
-    if mode & RAND_o:
-        mask8 = 0xff
-    elif mode & RAND_t:
-        r, k = divmod(r, 3)
-        mask8 = 0xff << (8 * k)
-    else:
-        mask8 = 0xffffff
-    mask2 = mask3 =  mask4 = mask8
-    if mode & (RAND_2 | RAND_3):
-        if mode & RAND_s:
-            mask4 = 0xf
-        mask3 = 0xe if mode & RAND_3 else mask4
-        mask2 = 0xc if mode & RAND_2 else mask3
-    elif mode & RAND_s:
-        mask = ~(mask8 & 0x111111) & 0xffffff
-        b, _, r = free_bit24(mask, r)
-        #print("mmm", hex(mask), b)
-        mask2 = mask3 = mask4 = 15 << b
-    if verbose > 2:
-        print("complete_perm, mode = 0x%02x, r = %d" % (mode, r))
-        print("  mask2-8: 0x%x 0x%x 0x%x 0x%x" % 
-            (mask2, mask3, mask4, mask8)) 
-    mask = ~mask2 
-
-    b, mask, r = free_bit24(mask, r)
-    h2 = [b]
-    if (mode & (RAND_t | RAND_l) == (RAND_t | RAND_l)):
-        h2 += [b ^ 1]
-        mask = remask(h2, mask3)
-        b, mask, r = free_bit24(mask, r) 
-        h2 += [b, b ^ 1]
-        mask = remask(h2, mask8)
-        b, mask, r = free_bit24(mask, r)
-        h2 += [b, b ^ 1]
-    else:
-        b, mask, r = free_bit24(mask, r)
-        h2 += [b]
-        mask = remask(h2, mask3)
-        b, mask, r = free_bit24(mask, r)
-        h2 += [b]
-        mask = remask(h2, mask4)
-        if (mode & (RAND_t | RAND_l)):
-            f = complete_aff_trio if mode & RAND_t else complete_aff_line
-            b = f(h2[0], h2[1], h2[2])
-            h2 += [b]
-            mask = remask(h2, mask8)
-            b, mask, r = free_bit24(mask, r)
-            h2 += [b]
-            b = f(h2[0], h2[1], h2[4])
-            h2 += [b]
-        else:
-            b, mask, r = free_bit24(mask, r)
-            h2 += [b]
-    if verbose > 2:
-        print("  h2 =", h2)
-    return perm_from_suboctad(h2, ~mask8, r)
-
-
-
-                 
-        
                 
-def py_mat24_perm_rand_local(mode, r, verbose = 0):
+def py_mat24_perm_rand_local(mode, u_rand, verbose = 0):
     """Generate random element of a subgroup :math:`M_{24}`
 
     The function generates an element of a subgroup :math:`H` of
@@ -347,10 +358,15 @@ def py_mat24_perm_rand_local(mode, r, verbose = 0):
     random number ``0 <= u_rand < MAT24_ORDER``, where ``MAT24_ORDER`` 
     is the order of the group :math:`M_{24}`.
     """
+    
     if (mode & RAND_USED) == 0:
-        return mat24.m24num_to_perm(r % MAT24_ORDER)       
-    mode = py_mat24_complete_rand_mode(mode)
-    return complete_perm(mode, r, verbose)
+        return mat24.m24num_to_perm(u_rand % MAT24_ORDER) 
+    p_i = RandPiS(mode, u_rand)
+    perm = p_i.complete_perm()     
+    if verbose:
+         print("vvv", verbose)
+         print(p_i.debug_info())
+    return perm
 
 
 
@@ -434,11 +450,10 @@ def check_transitivity(mode, transitivity_bitmaps):
  
 
 ####################################################################
-# Testing crreation of random elements of a subgroup
+# Testing creation of random elements of a subgroup
 ####################################################################
 
-       
-        
+
 def do_test_mat24_rand(mode, n, verbose = 0):
     """Test generation of random elements of subgroup given by ``mode``
  
@@ -468,9 +483,7 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     
     Apart from this we make a few further tests. For subgroups of
     ``M_24`` fixing a subset of ``0,...,23`` we check that 
-    transitivity of ``g`` is as expected. We also check that
-    ``py_mat24_complete_rand_mode(mode)`` is equal to
-    ``py_mat24_complete_rand_mode_minimal(mode)``. 
+    transitivity of ``g`` is as expected.  
 
     We also check that the C functions ``mat24.perm_rand_local``, 
     ``mat24.perm_in_local``,  and ``mat24.complete_rand_mode`` are 
@@ -479,7 +492,6 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     respecively.
     """
     super_mode = py_mat24_complete_rand_mode(mode)
-    assert py_mat24_complete_rand_mode_minimal(mode) == super_mode 
     assert py_mat24_complete_rand_mode(super_mode) == super_mode
     assert mat24.complete_rand_mode(mode) == super_mode
     generated = RAND_USED
@@ -491,7 +503,11 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     for i in range(n):
         r = randint(0, R_MAX)
         pi = py_mat24_perm_rand_local(mode, r, verbose)
-        pi_c = mat24.perm_rand_local(mode, r)
+        try:
+            pi_c = mat24.perm_rand_local(mode, r)
+        except:
+            print(RandPiS.debug_info_C())
+            raise
         assert pi_c == pi
         num_pi = mat24.perm_to_m24num(pi)
         assert mat24.m24num_rand_local(mode, r) == num_pi
@@ -499,7 +515,8 @@ def do_test_mat24_rand(mode, n, verbose = 0):
 
         sets.union_perm(pi)
         in_group =  py_mat24_perm_in_local(pi)
-        assert in_group == mat24.perm_in_local(pi)
+        in_group_C =  mat24.perm_in_local(pi)
+        assert in_group == in_group_C, (hex(in_group), hex(in_group_C))
         ok = (in_group & super_mode) == super_mode 
         generated &= in_group
         if verbose > 1 or not ok:
@@ -524,7 +541,7 @@ def do_test_mat24_rand(mode, n, verbose = 0):
 
 @pytest.mark.mat24
 def test_mat24_rand(verbose = 0):
-    for mode in range(64):
+    for mode in range(0x40):
         do_test_mat24_rand(mode, n = 40, verbose = verbose)
 
 ####################################################################
