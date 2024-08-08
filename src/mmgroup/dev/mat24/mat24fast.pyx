@@ -644,6 +644,7 @@ def op_all_cocode(c1):
 cdef extern from "mat24_functions.h":
     uint32_t  MAT24_RAND_2, MAT24_RAND_o, MAT24_RAND_t
     uint32_t  MAT24_RAND_s, MAT24_RAND_l, MAT24_RAND_3
+    uint32_t  MAT24_RAND_d
 
 MAT24_RAND = {
     '2' : MAT24_RAND_2,
@@ -652,6 +653,7 @@ MAT24_RAND = {
     's' : MAT24_RAND_s,
     'l' : MAT24_RAND_l,
     '3' : MAT24_RAND_3,
+    'd' : MAT24_RAND_d,
 }
 
 def complete_rand_mode(uint32_t u_mode):

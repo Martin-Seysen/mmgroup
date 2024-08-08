@@ -60,7 +60,7 @@ assert reduce(__and__, RAND_FLAGS) == 0
 RAND_USED = reduce(__or__, RAND_FLAGS)
 assert RAND_USED == 127
 
-for letter, flag in zip("2otsl3", RAND_FLAGS):
+for letter, flag in zip("2otsl3d", RAND_FLAGS):
     assert  mat24.MAT24_RAND[letter] == flag
 
 
@@ -95,6 +95,7 @@ def py_mat24_complete_rand_mode(mode):
         mode = subgroup(mode, RAND_t | RAND_2, RAND_o | RAND_l); 
         mode = subgroup(mode, RAND_l | RAND_3, RAND_o | RAND_s); 
         mode = subgroup(mode, RAND_t | RAND_3, RAND_o | RAND_s); 
+        mode = subgroup(mode, RAND_o | RAND_t | RAND_d, RAND_l);
     return mode
 
 
@@ -154,7 +155,7 @@ def py_mat24_perm_in_local(pi):
     s |= (1 << pi[6]) | (1 << pi[7]) 
     if (s == 0xff):
         mode |= RAND_o
-    if check_in_set(pi, 8, 2):
+    if check_in_set(pi, 8, 2) and mode & RAND_o:
         mode |= RAND_l
     if check_in_set(pi, 0, 4):
         mode |= RAND_s
@@ -500,6 +501,7 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     if verbose:
         print("Testing mode 0x%02x, super = 0x%02x" % (mode, super_mode))
     
+    pi_list = []
     for i in range(n):
         r = randint(0, R_MAX)
         pi = py_mat24_perm_rand_local(mode, r, verbose)
@@ -526,12 +528,22 @@ def do_test_mat24_rand(mode, n, verbose = 0):
             if not ok:
                 err = "Permutation is not in expected subgroup"
                 raise ValueError(err)
+        if i < 20:
+            pi_list.append(pi) 
     ok = generated == super_mode
     transitivity_bitmaps = sets.bitmaps()
     check_transitivity(mode, transitivity_bitmaps)
-    if verbose:
+    if verbose or not ok:
         print("Transitivity:", [hex(x) for x in transitivity_bitmaps])
     if verbose > 1 or not ok:
+        if not ok:
+            print(RandPiS.debug_info_C())
+            print("  mode = 0x%02x, super = 0x%02x, generates 0x%02x" %
+                    (mode, super_mode, generated))
+            print('Some ermutations:')
+            for i, pi in enumerate(pi_list):
+                for j, x in enumerate(pi):
+                    print("%2d%s" % (x, "\n" if j == 23 else " "), end = "")
         print("Super = 0x%02x, generates 0x%02x" % (super_mode, generated))
         if not ok:
             err = "Permutations do not generate the expected subgroup"
@@ -541,7 +553,7 @@ def do_test_mat24_rand(mode, n, verbose = 0):
 
 @pytest.mark.mat24
 def test_mat24_rand(verbose = 0):
-    for mode in range(0x40):
+    for mode in range(0x80):
         do_test_mat24_rand(mode, n = 40, verbose = verbose)
 
 ####################################################################

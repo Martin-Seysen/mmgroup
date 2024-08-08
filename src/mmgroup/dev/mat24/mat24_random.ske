@@ -162,6 +162,7 @@ uint32_t mat24_complete_rand_mode(uint32_t u_mode)
         subgroup(u_mode, RAND_t | RAND_2, RAND_o | RAND_l); // (1)
         subgroup(u_mode, RAND_l | RAND_3, RAND_o | RAND_s); // (2)
         subgroup(u_mode, RAND_t | RAND_3, RAND_o | RAND_s); // (2)
+        subgroup(u_mode, RAND_o | RAND_t | RAND_d, RAND_l); // exlained below
     }    
     return u_mode;
 
@@ -239,7 +240,7 @@ int32_t mat24_perm_in_local(uint8_t *p1)
     s |= (1 << p1[0]) | (1 << p1[4]) | (1 << p1[5])
                       | (1 << p1[6]) | (1 << p1[7]);
     if (s == 0xff) mode |= RAND_o;
-    if (check_in_set(p1, 8, 2)) mode |= RAND_l;
+    if (check_in_set(p1, 8, 2) && mode & RAND_o) mode |= RAND_l;
     if (check_in_set(p1, 0, 4)) mode |= RAND_s;
     if (check_in_set(p1, 0, 8)) mode |= RAND_t;
     if (check_in_set(p1, 0, 2)) mode |= RAND_d;
