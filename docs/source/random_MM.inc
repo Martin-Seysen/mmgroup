@@ -91,12 +91,12 @@ Large 2-local subgroups of the Monster
 We have implemented (or will implement) a number of 2-local subgroups
 of the Monster. Each of these has a name *G* as shown in the following
 table. The group is defined as the normalizer of an elementary Abelian
-2 group  *Z* = *Z(G)*. In the following table we will list one or
-more names for such a group, and the structure of that group, if known.
-We also display a generating system for the group *Z(G)* and the
-exponent ``e`` of the order :math:`2^e`of  *Z(G)* . The basic reference
-for the constrution of these 2-local subgroups is :cite:`Iva09`; but we
-also support the names of thise groups geven in  :cite:`Con85`
+2 group  *Z* depending on *G*. In the following table we will list one
+or more names for such a group, and the structure of that group, if
+known. We also display a generating system for the group *Z* and the
+exponent ``e`` of the order :math:`2^e` of  *Z* . The basic reference
+for the construction of these 2-local subgroups is :cite:`Iva09`; but we
+also support the names of these groups given in  :cite:`Con85`.
  
 The implementation of these large 2-local subgroup is yet experimental!  
 
@@ -116,7 +116,7 @@ The implementation of these large 2-local subgroup is yet experimental!
     G_5l           ?                                            :math:`x_{-1}, x_{\pm \Omega}, x_\omega, x_{\{0,1,4,5\}}, x_{\{0,2,4,7\}}`   5   no
     G_10           :math:`2^{10+16}.\Omega_{10}^+(2)`           :math:`x_d, y_d, x_{ij}, \quad 0 \leq i < j < 8,`  
                                                                 :math:`d \in \{-1, \pm \Omega, d_8\}`                                       10   no
-    B              :math:`2.B`                                  :math:`x_{\{2,3\}}`                                                          1  yes
+    B              :math:`2.B`                                  :math:`x_{\{2,3\}}`                                                          1  full
     2E_6           :math:`2^2.{}^2E_6(2):S_3`                   :math:`x_{\{2,3\}}, x_{\{1,2\}}`                                             2   no
     ============== ============================================ ========================================================================== === ======
 
@@ -129,11 +129,16 @@ the tetrad :math:`\{0,1,2,3\}` as in :cite:`Seysen20`.
 
 
 The names *G_x0* and *N_0* are adopted from :cite:`Con85`. The names and
-structures of *G_1, G_2, G_3, G_5t, G_5l* and *G_10* are taken from
+structures of *G_1, G_2, G_3, G_4, G_5t, G_5l* and *G_10* are taken from
 :cite:`Iva09`, Chapter 4.1 et seq. We have *G_1 = G_x0* and
 *G_2 = N_0*. The other names indicate the large simple subgroups
-involved in that group. Note that all these subgroups are
-maximal in the Monster, except for *G_4* and *G_5l*. 
+involved in that group. We have the inclusions *G_4 < G_5t* and
+*G_5l < G_10*; the other large 2-local subgroups in the table
+are maximal in the Monster. We obtain all seven maximal 2-local
+subgroup of the Monster in that way. 
+We remark that the coset geometry associated with the amalgam
+*{G_1, G_2, G_3, G_4, G_5t}* is the Tilde geometry defined in
+:cite:`Iva99` and :cite:`Iva09`. 
 
 
 Our chosen generating system of the Monster contains two generators
@@ -156,7 +161,7 @@ factor groups have been deacribed in considerable detail in
 :math:`M_{24}` can be described by its action on the set
 :math:`\Omega` on which :math:`M_{24}` acts naturally. In the
 following table we characterise the groups  :math:`H` by the
-subsets (or partitions) of :math:`\Omega` fixed by the group. 
+subsets (or partitions) of :math:`\Omega` fixed by these groups. 
 
 
 
@@ -174,6 +179,5 @@ subsets (or partitions) of :math:`\Omega` fixed by the group.
     B      :math:`M_{22}:2`                     duad :math:`\{2,3\}`  
     2E_6   :math:`L_3(4):S_3`                   triad :math:`\{1,2,3\}` 
     ====== ==================================== ==========================================================================================================
-
 
 

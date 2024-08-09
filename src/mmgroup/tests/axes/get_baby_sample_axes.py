@@ -49,59 +49,16 @@ PROCESSES = 0
 
 
 ########################################################################
-# Generate a random element of Co_2
+# Generate a random element of the subgroup 2^{2+22}.Co_2 of G_x0
 ########################################################################
 
-FIXED_PAIR = [3,2]
-FIXED_TUPLE = ("I", 3, 2)
-
-
-PI22 = [0,1] + list(range(4,24))
-PI7 = [2,3,0,1,4,5,8]
-
-StdCocodeVector = Cocode(FIXED_PAIR)
-EvenGCodeMask = None
-for i in range(12):
-    if (PLoop(1 << i) & StdCocodeVector).ord:
-        assert EvenGCodeMask == None
-        EvenGCodeMask = 0xfff ^ (1 << i)
-assert EvenGCodeMask is not None
-
-
-
-
-def rand_pi_m22():
-    r = randint(0,1)
-    img = [2+r, 3-r] + sample(PI22, 3)
-    syn = GcVector(img).syndrome_list()
-    compl = list(set(range(24)) - set(img + syn))
-    img += sample(syn, 1) + sample(compl, 1)
-    result =  AutPL('r', zip(PI7,img))
-    return result
-
-def rand_xy():
-    return randint(0, 0xfff) & EvenGCodeMask
-
-
-
 def rand_Co_2():
-    m = G()
-    for i in range(3):
-        m *= G(rand_pi_m22())
-        m *=  G('l', "n")
-    for tag in "xy":
-        m *= G(tag, rand_xy())
-    assert v_axis * m == v_axis
-    return m
+    return G('r', 'B & G_x0')
 
 
 ########################################################################
 # Next generation of axes
 ########################################################################
-
-
-
-
 
 
 def spread(gv):

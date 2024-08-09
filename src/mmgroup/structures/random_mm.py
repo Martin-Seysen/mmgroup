@@ -106,7 +106,7 @@ SUBGOUP_MAP = {
    'G_5t':    0x4      | _NO,
    'G_5l':    0x10     | _NO,
    'G_10':    0x2      | _NO,
-   'B':       0x1      | _NOT_FULL,
+   'B':       0x1,
    '2E_6':    0x20     | _NO,
    'H+'  :    0x41,
    'N_0_e':   0x1000,
