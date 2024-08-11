@@ -76,7 +76,7 @@ def eqn_x(tag, i, j):
     #v2 = mm_aux_index_sparse_to_leech2(x_index)
     v = MMSpace.index_to_short_mod2(tag, i, j)
     #assert v == v2
-    assert v > 0
+    assert v > 0 
     return ((v & 0xfff) << 12) + ((v >> 12) & 0xfff) 
 
 
@@ -92,7 +92,7 @@ def display_equations(text, eqn):
     print("AL", "".join([str((al >> i) & 1) for i in range(24)]))
 
 
-def x_equations(ref_axis):
+def x_equations(ref_axis, baby = False):
     v = ref_axis.v15.copy()
     nrows = 0
     solve_t = np.zeros(24, dtype = np.uint64)
@@ -101,6 +101,8 @@ def x_equations(ref_axis):
     for tag in TAGS:
         a = v[tag]
         for i, row in enumerate(a):
+            if (row == 0).all():
+                continue
             for j, entry in enumerate(row):
                 if entry != 0:
                     eqn = eqn_x(tag, i, j)
@@ -109,18 +111,23 @@ def x_equations(ref_axis):
                         sp = MMSpace.index_to_sparse(tag, i, j)
                         sp_values.append(sp)
                         nrows += n
+    if baby:
+        eqn = eqn_x('B', 2, 3)
+        nrows += leech2matrix_add_eqn(solve_t, nrows, 24, eqn)
     sp_values = augment_v_data(v, sp_values)
     #print("SOLVE_X", [hex(x) for x in sp_values])
-    assert mm_aux_mmv_extract_sparse_signs(15, v.data, sp_values, nrows) == 0
+    lsp = len(sp_values)
+    ok = mm_aux_mmv_extract_sparse_signs(15, v.data, sp_values, lsp) == 0
+    assert ok
     equations = np.zeros(nrows, dtype = np.uint32)
-    assert leech2matrix_prep_eqn(solve_t, nrows, 24, equations) == 0
+    ok = leech2matrix_prep_eqn(solve_t, nrows, 24, equations) == 0
+    assert ok
     #print("Ax_x", ref_axis.g_class, nrows)
     #display_equations("x equations", equations)
-    #print([hex(x) for x in sp_values])
     return sp_values, equations
 
 
-
+   
 
 
 def solve_x_equations(axis, sp_values, equations):
@@ -129,9 +136,7 @@ def solve_x_equations(axis, sp_values, equations):
     if w < 0:
         raise ValueError("Equation has no solution_")
     x = leech2matrix_solve_eqn(equations, len(equations), w)
-    g = MM0('x', (x >> 12) & 0xfff) * MM0('d', (x >> 0) & 0xfff)
-    return g
-
+    return MM0('q', x & 0xffffff)
 
 
 
@@ -193,9 +198,16 @@ EQUATION_ORBITS = [
 ]
 
 
+BABY_EQUATION_ORBITS = [
+   '2B1', '2B0', '4A1', '4B1', '4C1', '6A1', '6C1', '10A1'
+]
+
+
+
 
 def compute_Qx0_equations(axis):
-    x_equ = x_equations(axis)
+    baby = axis.axis_class == "baby"
+    x_equ = x_equations(axis, baby)
     central_equ = central_equations(axis)
     return x_equ + central_equ
 
@@ -210,10 +222,14 @@ def compute_Qx0_equations_str(axis):
 
 def solve_Qx0_equations(orbit, axis):
     if isinstance(orbit, str):
-        if not orbit in EQUATION_ORBITS:
+        if orbit in EQUATION_ORBITS:
+            from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+            equ = get_sample_axes()[orbit].Qx0_equations
+        elif orbit in BABY_EQUATION_ORBITS:
+            from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
+            equ = get_baby_sample_axes()[orbit].Qx0_equations
+        else:
             return axis.group()
-        from mmgroup.tests.axes.get_sample_axes import get_sample_axes
-        equ = get_sample_axes()[orbit].Qx0_equations
     else:
         equ = orbit
     g1 = solve_x_equations(axis, equ[0], equ[1])

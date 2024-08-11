@@ -211,7 +211,7 @@ uint32_t leech2matrix_solve_eqn(uint32_t *b, uint32_t nrows, uint64_t v)
         w ^=  (v & mask) ? b[row] : 0; 
         mask <<= 1;
     }
-    return  (uint32_t)(w & (mask - 1));     
+    return  (uint32_t)(w);
 }
 
 

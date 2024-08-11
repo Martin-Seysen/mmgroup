@@ -243,6 +243,16 @@ g_marks = [
 """
 
 
+Qx0_text = """
+
+Qx0_equations = [
+%s
+]
+
+"""
+
+
+
 
 def sample_list_sort_key(sample_entry):
      stage, sample, _ = sample_entry 
@@ -253,11 +263,13 @@ def sample_list_sort_key(sample_entry):
 def write_axes(sample_list, beautify = True, verbose = False):
     if beautify:
         ref_baby_axes = useful_baby_sample_axes()
+        from mmgroup.tests.axes.equations import compute_Qx0_equations_str
     sample_list = explore_axes(5, 40, 30, verbose = verbose)
     sample_list.sort(key = sample_list_sort_key)
     s_samples, s_stages, s_marks = "", "", ""
     s_beautiful_samples = ""
     s_classes = ""
+    s_equations = ""
     for i, (stage, sample, mark) in enumerate(sample_list):
         g = sample.g.raw_str()
         s_samples += "\"" + g + "\",\n"
@@ -270,8 +282,10 @@ def write_axes(sample_list, beautify = True, verbose = False):
             if beautify:
                 #axis = beautify_baby_axis(class_, g)
                 axis = ref_baby_axes[class_]
+                assert isinstance(axis, BabyAxis)
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
+                s_equations += compute_Qx0_equations_str(axis)
         except:
             beautify = False
             raise
@@ -282,6 +296,8 @@ def write_axes(sample_list, beautify = True, verbose = False):
         f.write(f_text % (G_CENTRAL,  
             G_AXIS_OPP, V_AXIS_OPP, 
           s_samples, s_stages, s_classes, s_marks))
+        if beautify:
+            f.write(Qx0_text % s_equations)
 
 
 
@@ -306,6 +322,9 @@ def get_baby_axes_from_sample_axes(sample_axes):
         axis.g_class = g_class
         axis.mark = sample_axes.g_marks[i]
         axis.stage = sample_axes.g_stages[i]
+        axis.Qx0_equations = [np.array(a, dtype = np.uint32)
+            for a in sample_axes.Qx0_equations[i]
+        ]
         axis.constant = True
         BABY_AXES[g_class] = axis
     return BABY_AXES

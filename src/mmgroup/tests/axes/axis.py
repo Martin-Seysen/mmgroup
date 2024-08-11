@@ -312,6 +312,7 @@ class Axis:
     ERR_CONST = "This axis is constant and may not be changed"
     ERR_MAP = "Could not map type %s object to a monster axis"
     ERR_INVOL = "Type %s object is not a 2A involution in the Monster"
+    axis_class = "standard"
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, Axis):
@@ -694,6 +695,7 @@ class BabyAxis(Axis):
     constant = False
     ERR_BABY_G = "Type %s object is not in the baby monster group"
     ERR_BABY = "Could not map type %s object to a baby monster axis"
+    axis_class = "baby"
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, BabyAxis):

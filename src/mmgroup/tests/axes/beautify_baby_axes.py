@@ -346,7 +346,6 @@ def beautify_2A0(axis):
 #################################################################
 
 
-# Yet under construction!!!
 
 def beautify_baby_axis(class_, g, verbose = 0, rand = 0):
     if REF_CLASS and class_ != REF_CLASS:

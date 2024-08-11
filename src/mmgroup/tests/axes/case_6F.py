@@ -103,9 +103,7 @@ def solve_special_equation_6F(axis):
     g0 = axis.group(solve_6F(ax))
     ax *= g0
     g1 = solve_Qx0_equations('6F', ax)
-    ax *= g1
-    g2 = solve_Qx0_equations('6F', ax)
-    return g0 * g1 * g2
+    return g0 * g1
 
 
 def test_find_6F(verbose = 0):
