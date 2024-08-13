@@ -228,8 +228,8 @@ These orbits are described in [CS99], Ch. 10.2.6.
 
 Here the case that the support of \f$v\f$ is an *umbral undecad*
 (in the sense of  [CS99], Ch. 10.2.6) requires special attention.
-Then we have to map \f$v\f$ to a non-umbral octad (i.e. to a vector
-of the same weight in a different \f$2^{11}.\mbox{M}_{24}\f$
+Then we have to map \f$v\f$ to a non-umbral undecad (i.e. to a
+vector of the same weight in a different \f$2^{11}.\mbox{M}_{24}\f$
 orbit), before we can reduce the weight of \f$v\f$ any further.
 
 After applying a suitable sequence of such transformation steps,
@@ -534,7 +534,7 @@ uint32_t find_tetrad_16_large(uint32_t gc, uint32_t sub)
 
     This function is not for public use!
     It tries to find tetrad suitable for reducing a
-    vector in the Leech lattice mod 3
+    vector in the Leech lattice mod 3.
 
     Let ``a`` be a vector in the Leech lattice mod 3 given in
     Leech lattice mod 3 encoding. Let the ``v`` be the support

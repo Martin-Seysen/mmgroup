@@ -313,10 +313,11 @@ class Axis:
     ERR_MAP = "Could not map type %s object to a monster axis"
     ERR_INVOL = "Type %s object is not a 2A involution in the Monster"
     axis_class = "standard"
+    g_map_vstart = G()
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, Axis):
-            self.g1 = G(g.g)
+            self.g1 = G(g.g_map_vstart) * G(g.g)
         elif isinstance(g, MMVector):
             self.g1 = rebase_axis(g % 15)
         elif g == 'i':
@@ -696,6 +697,8 @@ class BabyAxis(Axis):
     ERR_BABY_G = "Type %s object is not in the baby monster group"
     ERR_BABY = "Could not map type %s object to a baby monster axis"
     axis_class = "baby"
+    g_map_vstart = G('x', 0x200)
+    assert Axis.v15_start * g_map_vstart == v15_start
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, BabyAxis):
