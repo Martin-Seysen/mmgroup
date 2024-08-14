@@ -114,7 +114,7 @@ def test_find_6F(verbose = 0):
         if verbose > 1:
             print("Test case", n) 
         ax = ref_axis * MM0('r', 'G_x0')
-        ax =  beautify_axis(ax.axis_type(), ax.g)
+        ax =  beautify_axis(ax.copy())
         g = solve_special_equation_6F(ax)
         ax *= g
         if verbose > 2:

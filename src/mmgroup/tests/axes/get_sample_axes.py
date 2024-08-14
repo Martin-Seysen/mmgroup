@@ -518,8 +518,7 @@ def beautify_12C(sample_list):
     for stage, axis, mark in sample_list:
         class_ = axis.axis_type()
         if class_ in ['4B', '12C']:
-            g = axis.g.raw_str()
-            samples[class_] = beautify_axis(class_, g, check = True)
+            samples[class_] = beautify_axis(axis.copy(), check = True)
     t, z = samples['12C'].g_axis, samples['12C'].g_central
     old_4B = samples['4B']
     new_4B = Axis('i', t * z * t * z * t)
@@ -556,7 +555,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
                 if class_ in special_samples:
                     axis = special_samples[class_]
                 else:     
-                    axis = beautify_axis(class_, g, _vb, check = True)
+                    axis = beautify_axis(Axis(g), False, True, _vb)
                 axis.rebase()
                 s_beautiful_samples += '"' + axis.g.raw_str() + '",\n'
                 s_equations += compute_Qx0_equations_str(axis)

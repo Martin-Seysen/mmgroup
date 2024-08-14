@@ -64,7 +64,7 @@ def test_axes():
              we =  w.axis_type(e) 
              assert isinstance(we, str)
              if i < 2:
-                 w1 = beautify_axis(key, w.g, check = 1)
+                 w1 = beautify_axis(w.copy(), check = 1)
                  for tag in "ABC":
                      if (w1[tag] != v[tag]).any():
                          S = "Orbit %s axes differ in tag %s!!!"
