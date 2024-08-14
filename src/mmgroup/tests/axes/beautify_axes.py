@@ -452,7 +452,7 @@ USE_CENTRAL_INVOLUTION = [
 
 def beautify_using_central_involution(class_, axis):
     guide = find_guide(class_, axis)
-    zi = axis.central_involution(guide) * axis.g_central
+    zi = axis.central_involution() * axis.g_central
     _, h = zi.conjugate_involution_G_x0(guide)
     axis *= h
     return axis

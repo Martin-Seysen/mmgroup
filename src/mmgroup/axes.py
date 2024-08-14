@@ -17,6 +17,6 @@ from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
 from mmgroup.tests.axes.axis import v_axis, v_axis_opp
 from mmgroup.tests.axes.axis import Axis, BabyAxis, set_axis_group
 from mmgroup.tests.axes.beautify_axes import beautify_axis
-from mmgroup.tests.axes.beautify_baby_axes import beautify_baby_axis
 from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
+from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
 

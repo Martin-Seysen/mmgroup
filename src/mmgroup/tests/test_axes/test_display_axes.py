@@ -128,7 +128,7 @@ def test_display_axes(verbose = 0):
         print(display_norm_A(axis), end = "")
         if verbose:
             print("Eigenvalues of A part of axis v:",
-                format_eigen_values(axis.axis_in_space(MMVectorCRT, 20)['A']))
+                format_eigen_values(axis.in_space(MMVectorCRT, 20)['A']))
         if verbose:
             z_i = axis.central_involution()
             orb, c = z_i.conjugate_involution_G_x0()

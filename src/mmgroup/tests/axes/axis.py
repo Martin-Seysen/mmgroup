@@ -25,6 +25,7 @@ from functools import reduce
 if __name__ == "__main__":
     sys.path.append("../../../")
 
+import mmgroup
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2
 from mmgroup.mm_crt_space import MMVectorCRT 
 from mmgroup.generators import gen_leech3to2
@@ -269,6 +270,14 @@ def rebase_axis(v15):
 #################################################################
 
 
+class classproperty(property):
+    def __get__(self, obj, objtype=None):
+        return super(classproperty, self).__get__(objtype)
+    def __set__(self, obj, value):
+        super(classproperty, self).__set__(type(obj), value)
+    def __delete__(self, obj):
+        super(classproperty, self).__delete__(type(obj))
+
 class Axis:
     """Model a 2A axis in the representation of the Monster mod 15
 
@@ -293,7 +302,7 @@ class Axis:
     The constructor may of this class may be:
 
     * An element :math:`g` of the Monster. Then we constuct the
-      axis c:math:`v^+ * g`.
+      axis :math:`v^+ * g`.
 
     * The string ``'i'`` followed by a 2A involution :math:`g` in
       the Monster. Then we construct the axis corresponding
@@ -302,7 +311,7 @@ class Axis:
     * An instance of this class |MMVector| which is a 2A axis in
       representation of the Monster (mod 15).
 
-    * An instance of class. Then we construct a copy of that
+    * An instance of class Axis. Then we construct a copy of that
       instance.
     """
     v15_start = v_axis15
@@ -334,14 +343,18 @@ class Axis:
             raise ValueError(self.ERR_MAP % type(t))
         self.g0 = G()
         self.v15 = v_axis15 * self.g
-    @property
-    def g_central(self):
+    @classproperty
+    def g_central(cls):
         """Return central involution of the group ``G_x0``"""
         return G(G_CENTRAL)
-    @property
-    def g_axis_start(self):
-        """Return the fixed 2A axis ``v^+``"""
+    @classproperty
+    def g_axis_start(cls):
+        """Return the fixed 2A involution :math:`\beta^+`"""
         return G(G_AXIS)
+    @classproperty
+    def representatives(cls):
+        """Dictionary mapping names of orbits to their representatives"""
+        return mmgroup.tests.axes.get_sample_axes.get_sample_axes()
     @property
     def g(self):
         """Return ``g`` with ``a.v15 = a.v15_start * a.g``"""
@@ -377,6 +390,11 @@ class Axis:
         return self
     def __mul__(self, g):
         return self.copy().__imul__(g)
+    def __eq__(self, other):
+        if not isinstance(other, Axis):
+            ERR = "Cannot compare %s object with %s object"
+            raise TypeError(ERR % (self.__class__, other.__class__))
+        return self.v15 == other.v15
     def __getitem__(self, index):
         return self.v15.__getitem__(index)
     def rebase(self):
@@ -404,7 +422,7 @@ class Axis:
         if g0 is not None:
             self.g0 = g0
         return self
-    def central_involution(self, guide=0):
+    def central_involution(self):
         """Return central involution of dihedral group
 
         The method returns the central involution of the dihedral
@@ -477,7 +495,7 @@ class Axis:
             v = np.zeros(24*4, dtype = np.uint64)
             mm_op_t_A(15, self.v15.data, e, v)
         return axis_type(v)
-    def axis_in_space(self, space, *args):
+    def in_space(self, space, *args):
         """Return axis as an element of a ``space``
 
         The function returns the axis as an element of the space given
@@ -531,7 +549,7 @@ class Axis:
             if diff:
                 ERR = "Parameter 'diff' is illegal if mod is 0"
                 raise ValueError(ERR)
-            v = self.axis_in_space(MMVectorCRT, 20)
+            v = self.in_space(MMVectorCRT, 20)
             a = 256 * sym_part(v, part)
             f = common_factor_v2(a)
             a = a // f
@@ -567,9 +585,15 @@ class Axis:
         img, ker, isect = x & 255, (x >> 8) & 255, x >> 16
         assert ker + img == 24
         return ker, isect, a[:24], a[24:48]
+    def reduce_G_x0(self):
+        """Compute a group element reducing the axis
 
-
-
+        The function returns an element of the subgroup
+        :math:`G_{x0}` of the Monster that maps the axis to the
+        representative of its :math:`G_{x0}` orbit.
+        """
+        from mmgroup.axes import reduce_axis_G_x0
+        return reduce_axis_G_x0(self)
 
 #################################################################
 #################################################################
@@ -717,9 +741,13 @@ class BabyAxis(Axis):
             raise ValueError(self.ERR_BABY % type(t))
         self.g0 = G()
         self.v15 = self.v15_start * self.g
+    @classproperty
+    def representatives(cls):
+        """Dictionary mapping names of orbits to their representatives"""
+        return mmgroup.tests.axes.get_baby_sample_axes.get_baby_sample_axes()
     @property
     def g_axis_start(self):
-        """Return the fixed 2A axis ``v^-``"""
+        """Return the fixed 2A involution :math:`v^-`"""
         return G(G_AXIS_OPP)
     def __imul__(self, g):
         if self.constant:
@@ -776,6 +804,17 @@ class BabyAxis(Axis):
         i *= G(G_AXIS)
         s, _ = i.conjugate_involution_G_x0()
         return s
+    def reduce_G_x0(self):
+        """Compute a group element reducing the axis
+
+        Let :math:`H^+` be the the intersection of the centralizer of
+        the standard 2A axis :math:`v^+` (of structure :math:`2.B`)
+        with the subgroup :math:`G_{x0}` of the Monster. 
+        The function returns an element of :math:`H^+` that maps the
+        axis to the representative of its :math:`H^+` orbit.
+        """
+        from mmgroup.axes import reduce_baby_axis_G_x0
+        return reduce_baby_axis_G_x0(self)
 
 
 

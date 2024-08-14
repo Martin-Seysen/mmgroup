@@ -183,7 +183,7 @@ def test_2A_axes_classes(verbose = 0):
     assert len(sample_axes) == 12
     for orbit, axis in sample_axes.items():
         g = axis.g
-        v =  axis.axis_in_space(MMVectorCRT, 20)
+        v =  axis.in_space(MMVectorCRT, 20)
         #g1 = MM0(sample_axes.g_beautifiers[i])
         #v *= g1
         Afloat = 256 * v["A"]
