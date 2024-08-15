@@ -308,7 +308,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
 
 
 
-BABY_AXES= {}
+BABY_AXES= OrderedDict()
 
 def get_baby_axes_from_sample_axes(sample_axes):
     global BABY_AXES

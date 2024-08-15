@@ -69,7 +69,7 @@ G_AXIS_OPP = "x_1000h * d_200h"
 # Central involution in the subgroup G_x0 of the monster
 G_CENTRAL = "x_1000h"
 
-# Group element mapping v^+ to v^-
+# Group element mapping v^+ to v^- and vice versa
 G_MAP_STD_OPP = "x_200h"
 
 
@@ -78,20 +78,6 @@ G_MAP_STD_OPP = "x_200h"
 G = MM0
 G_SHORTEN = False
 MM = None
-
-# The following constants will be set by function set_axis_group
-
-# The central involution in the subgroup ``G_x0``-
-# g_central = G(G_CENTRAL)  
-
-# The standard 2A element in the monster group
-# g_axis = G(G_AXIS)
-
-# The opposite standard 2A element in the monster group
-# g_axis_opp = G(G_AXIS_OPP)
-
-# Element mapping the standard axis to its opposite axis
-# g_map_std_opp = G(G_MAP_STD_OPP)
 
 
 
@@ -265,39 +251,25 @@ def rebase_axis(v15):
 #################################################################
 
 
-class classproperty(property):
-    def __get__(self, obj, objtype=None):
-        return super(classproperty, self).__get__(objtype)
-    def __set__(self, obj, value):
-        super(classproperty, self).__set__(type(obj), value)
-    def __delete__(self, obj):
-        super(classproperty, self).__delete__(type(obj))
-
 class Axis:
     """Model a 2A axis in the representation of the Monster mod 15
 
     An instance of this class is an arbitrary 2A axis ``a`` of the
-    Monster group with entries taken mod 15. Attribute ``a.v15`` of
-    type ``|MMVector|`` is the vector in the representation of the
+    Monster group with entries taken modulo 15. Attribute ``a.v15``
+    of type |MMVector| is the vector in the representation of the
     Monster corrsponding to the axis. Apart from that vector we also
-    maintain a property ``a.g`` of class ``MM0`` such that the axis
+    maintain a property ``a.g`` of class |MM| such that the axis
     is ``a.v15`` equal to the product ``a.v15_start * a.g``. Here
     ``a.v15_start`` is the standard 2A axis :math:`v^+` defined in
     :cite:`Seysen22`. One may multiply an axis with an element of
     the Monster group. One may abbreviate ``a.v15[x]`` to ``a[x]``
     for any value ``x``.
 
-    This class is also used for proofs. Therefore compute in the
-    Monster using instances of class ``MM0``. That class implements
-    operations of the Monster defined in :cite:`Seysen20` only.
-    Note that this way we cannot shorten the word ``a.g``
-    representing an element of the Monster. On may use method
-    ``rebase`` for shortening ``a.g``.
 
     The constructor may of this class may be:
 
     * An element :math:`g` of the Monster. Then we constuct the
-      axis :math:`v^+ * g`.
+      axis :math:`v^+ \cdot g`.
 
     * The string ``'i'`` followed by a 2A involution :math:`g` in
       the Monster. Then we construct the axis corresponding
@@ -343,28 +315,43 @@ class Axis:
         return MMV(15)(V_AXIS)
     @property
     def v15_start(cls):
-        r"""Return the start axis vector of this class (mod 15)"""
+        r"""Return the start axis vector of this class (mod 15)
+
+        For an instance ``a`` of this class we have
+        ``a.v15_start`` ==  ``a.v_axis15`` ==  :math:`v^+`. 
+        """
         return MMV(15)(cls.v15_start_name)
     @property
     def g_central(cls):
-        r"""Return central involution of the group ``G_x0``"""
+        r"""Return central involution :math:`x_{-1}` of the group :math:`G_{x0}`"""
         return G(G_CENTRAL)
     @property
     def g_axis_start(cls):
-        r"""Return the fixed 2A involution :math:{`\beta}^+` """
+        r"""Return the fixed 2A involution :math:`\beta^+`."""
         return G(G_AXIS)
     @property
     def g_map_vstart(cls):
-        r"""Group element mapping :math:`v^+` to start axis"""
+        r"""Group element mapping :math:`v^+` to start axis
+
+        For this class the neutral element of the group is returned.
+        """
         return G(g_map_vstart_name)
     @classmethod
     def representatives(cls):
-        r"""Dictionary mapping names of orbits to their representatives"""
+        r"""Map names :math:`G_{x0}` orbits of axes to their representatives
+
+        The method returns an (ordered) dictionary that maps the names
+        of the :math:`G_{x0}` orbits of the axes to the representatives
+        of the orbits.
+        """
         from mmgroup.tests.axes.get_sample_axes import get_sample_axes
         return get_sample_axes()
     @property
     def g(self):
-        r"""Return ``g`` with ``a.v15 = a.v15_start * a.g``"""
+        r"""Group element mapping the start axis to the current axis 
+
+        The function returns ``g`` with ``a.v15 = a.v15_start * a.g``.
+        """
         return self.g0 * self.g1
     @property
     def g_axis(self):
@@ -413,8 +400,7 @@ class Axis:
         the standard axis to the current axis.
 
         Class ``Axis`` will be used for proofs; so we always check
-        the correctness of such operations with the methods of
-        class ``MM0``.
+        the correctness of such an operation.
 
         We store ``a.g`` as a product ``a.g1 * a.g2``. Construction of
         ``a`` and multiplication of ``a`` with a group element affects
@@ -435,24 +421,24 @@ class Axis:
         The method returns the central involution of the dihedral
         group generated by ``a.g_axis`` and ``a.g_central``. For an
         instance ``a`` of this class, the group element ``a.g_axis``
-        is the 2A involution corresponding to the axis, and
-        ``a.g_central`` the central involution in :math:`G_{x0}`.
+        is the 2A involution corresponding to the axis; and
+        ``a.g_central`` is the central involution in :math:`G_{x0}`.
         """
         c = self.g_axis * self.g_central
         _, h = c.half_order()
         return h
     def axis_type_info(self):
-        r"""Return information about the math:`G_{x0}` orbit of axis
+        r"""Return information about the :math:`G_{x0}` orbit of axis
 
         Let ``c = a.g_axis * a.g_central``. The method returns a triple
         ``(o, chi, s)``, where ``o`` is the (even) order of ``c``; and
-        ``chi`` is the character of ``c`` in the rep of the Monster of
-        dimension 196883. We cannot compute character ``chi`` if the
-        involution ``i = c**(o/2)`` is a 2A involution in the Monster;
-        so we put ``chi = None`` in this case. The string ``s`` of the
-        triple describes the class of involution ``i`` in :math:`G_{x0}`
-        as in method ``conjugate_involution_G_x0`` of class
-        ``mmgroup.Xsp2_Co1``.
+        ``chi`` is the character of ``c`` in the representation of the
+        Monster of dimension 196883. We cannot compute character ``chi``
+        if the involution ``i = c**(o/2)`` is a 2A involution in the
+        Monster; so we put ``chi = None`` in this case. The string ``s``   
+        of the triple describes the class of involution ``i`` in
+        :math:`G_{x0}` as in method ``conjugate_involution_G_x0`` of
+        class ``mmgroup.Xsp2_Co1``.
 
         This information is sufficient to match the :math:`G_{x0}`
         orbit of an axis with one of the orbits given in
@@ -476,7 +462,8 @@ class Axis:
         class.  The function returns the list of all vectors ``v2`` in
         the Leech lattice mod 2 such that the absolute value of the
         entry of ``v`` corresponding a unit vector labelled by ``v2``
-        is equal to ``value``. That list is returned as a numpy array.
+        is equal to ``value``. That list is returned as a numpy array
+        with entries given in *Leech lattice encoding*.
 
         If ``radical`` is 1 then the function returns a basis of the
         radical of the space generated by the vectors described above.
@@ -496,7 +483,10 @@ class Axis:
         mm_op_load_leech3matrix(self.v15.p, self.v15.data, a)
         return a
     def axis_type(self, e = 0):
-        r"""``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``"""
+        r"""Return the :math:`G_{x0}` orbit of axis as a string
+
+        ``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``
+        """
         e %= 3
         v = self.v15.data
         if e:
@@ -504,9 +494,9 @@ class Axis:
             mm_op_t_A(15, self.v15.data, e, v)
         return axis_type(v)
     def in_space(self, space, *args):
-        r"""Return axis as an element of a ``space``
+        r"""Return axis as an element of a vector space ``space``
 
-        The function returns the axis as an element of the space given
+        The function returns the axis as an element of the class given
         by ``space(*args)``.
         """
         all_args = args + (self.v15_start_name,)
@@ -518,13 +508,13 @@ class Axis:
         if ``part`` is 'A', 'B', or 'C' then the matrix corresponding to
         that part (modulo 15) is displayed. If ``part`` is an integer
         then the 'A' part of the matrix (multiplied with group element
-        ``MM('t', part)``) is displayed. Parmeter ``mod`` is 0 (default)
+        ``MM('t', part)``) is displayed. Parameter ``mod`` is 0 (default)
         or an optional odd modulus. If ``mod`` is odd then entries are
         displayed modulo ``mod``. If ``mod`` is negative then entries
         displayed modulo ``abs(mod)`` with absolute value less than
         ``mod / 2``. At present ``abs(mod)`` must be 3, 5, or 15.
 
-        If ``diff`` is is an instance of class ``Axis`` then ``diff``
+        If ``diff`` is an instance of class ``Axis`` then ``diff``
         is subtracted from the axis. Parameter ``ind`` is an optional
         subset of the indices of entries of part ``A`` of the axis.
 
@@ -570,20 +560,21 @@ class Axis:
     def kernel_A(self, d):
         r"""Compute invariants of a matrix related to axis part 'A'
 
-        Let 'A' be the symmetric 24 times 24 matrix corresponding to
-        part 'A' of the axis, with entries taken modulo 3.
+        Let ``A`` be the symmetric 24 times 24 matrix corresponding
+        to part 'A' of the axis, with entries taken modulo 3.
  
-        Put 'M' = 'A' - 'd' * 'E', where  'd' is a integer and 'E' is
-        the unit matrix. We return a tuple '(ker, isect, M_img, M_ker)',
-        where 'ker' is the dimension of the kernel of 'M', 'isect' is
-        the dimension of the intersection of the kernel and the image
-        of 'M'; and 'M_img' and 'M_ker' are 24 times 24 matrices. Row
-        'i' of matrix 'M_img' is the image of row 'i' of 'M_ker' under
-        the symmetric matrix 'M'. The first 'isect' rows of 'M_img'
-        and 'M_ker' are equal; they are a basis of the intersection of
-        the kernel and the image of 'M'. The first '24 - ker' rows of
-        'M_img' are a basis of the image of 'M' The last 'ker' rows
-        of 'M_ker' are a basis of the kernel of 'M'.
+        Put ``M = A - d * E``, where  ``d`` is a integer and ``E`` is
+        the unit matrix. We return a tuple ``(ker, isect, M_img, M_ker)``,
+        where ``ker`` is the dimension of the kernel of ``M``, ``isect``
+        is the dimension of the intersection of the kernel and the image
+        of ``M``; and ``M_img`` and ``M_ker`` are 24 times 24 matrices.
+        Row ``i`` of matrix ``M_img`` is the image of row ``i`` of
+        ``M_ker`` under the symmetric matrix ``M``. The first ``isect``
+        rows of ``M_img`` and ``M_ker`` are equal; they are a basis of
+        the intersection of the kernel and the image of ``M``. The first
+        ``24 - ker`` rows of ``M_img`` are a basis of the image of ``M``.
+        The last ``ker`` rows of ``M_ker`` are a basis of the
+        kernel of ``M``.
         """
         a = self.leech3matrix()
         leech3matrix_sub_diag(a, d, 0)
@@ -726,10 +717,10 @@ class BabyAxis(Axis):
     orthogonal to axis :math:`v^+` only. The centralizer of that
     axis is a subgroup of structure `math:`2.B`   of the Monster.
 
-    In this class we have ``BabyAxis.v15_start = v_axis_opp15``, where
-    ``v_axis_opp15`` is the axis opposite to axis ``Baby.v15_start``.
-    For an axis ``a`` in this class we have
-    ``a.v15 = a.g * a.v15_start``.
+    For an instance ``a`` of this class we have
+    ``a.v15 = a.v15_start * a.g``, where ``a.v15_start`` is the
+    (fixed) axis :math:`v^-` opposite to the start axis :math:`v^+`
+    of class ``Axis``.
     """
     v15_start_name = V_AXIS_OPP
     g_map_vstart_name = 'x_0x200'
@@ -755,14 +746,28 @@ class BabyAxis(Axis):
             raise ValueError(self.ERR_BABY % type(t))
         self.g0 = G()
         self.v15 = self.v15_start * self.g
+    @property
+    def g_map_vstart(cls):
+        r"""Group element mapping :math:`v^+` to the start axis
+
+        For this class the start axis is :math:`v^-`.
+        """
+        return G(g_map_vstart_name)
     @classmethod
     def representatives(cls):
-        r"""Dictionary mapping names of orbits to their representatives"""
+        r"""Map names :math:`H` orbits of axes to their representatives
+
+        The method returns an (ordered) dictionary that maps the names
+        of the :math:`H` orbits of the axes to the representatives
+        of the orbits. Here :math:`H = G_{x0} \cap H^+`, where
+        :math:`H^+` is (of structure :math:`2.B`) is the centralizer
+        of the standard axis :math:`v^+`.
+        """
         from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
         return get_baby_sample_axes()
     @property
     def g_axis_start(self):
-        r"""Return the fixed 2A involution :math:`v^-` """
+        r"""Return the fixed 2A involution :math:`\beta^-` """
         return G(G_AXIS_OPP)
     def __imul__(self, g):
         if self.constant:
@@ -822,11 +827,11 @@ class BabyAxis(Axis):
     def reduce_G_x0(self):
         r"""Compute a group element reducing the axis
 
-        Let :math:`H^+` be the the intersection of the centralizer of
+        Let :math:`H` be the the intersection of the centralizer of
         the standard 2A axis :math:`v^+` (of structure :math:`2.B`)
         with the subgroup :math:`G_{x0}` of the Monster. 
-        The function returns an element of :math:`H^+` that maps the
-        axis to the representative of its :math:`H^+` orbit.
+        The function returns an element of :math:`H` that maps the
+        axis to the representative of its :math:`H` orbit.
         """
         from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
         return reduce_baby_axis_G_x0(self)
@@ -854,6 +859,14 @@ def set_axis_group(group = None, shorten = True):
 
     More details about use cases for class ``MM0`` are yet
     to be documented!
+
+    Classes ``Axis`` and ``BabyAxis`` are used for proofs. Therefore
+    it may be useful to compute in the Monster using instances of class
+    ``MM0`` instead of class |MM|. Class ``MM0`` implements operations
+    of the Monster defined in :cite:`Seysen20` only. Note that in class
+    ``MM0`` we cannot shorten the word representing an element of the
+    Monster. One may use method ``rebase`` of class ``Axis`` for
+    shortening the word representing a group element in the axis.
 
     If users need this function they should call it once and
     for all before dealing with any 2A axes.

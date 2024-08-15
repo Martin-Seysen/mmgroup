@@ -383,7 +383,7 @@ AXES_PROD_CLASSES = {
 }
 
 
-AXES_CLASSES_DICT = {}
+AXES_CLASSES_DICT = OrderedDict()
 for number, (letters, characters) in AXES_PROD_CLASSES.items():
     for letter, character in zip(letters, characters):
         AXES_CLASSES_DICT[(number, character)] = str(number) + letter
@@ -582,7 +582,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
 
 
 
-AXES= {}
+AXES = OrderedDict()
 
 def get_axes_from_sample_axes(sample_axes):
     global AXES
