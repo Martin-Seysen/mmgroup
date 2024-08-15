@@ -360,7 +360,8 @@ class Axis:
     @classmethod
     def representatives(cls):
         r"""Dictionary mapping names of orbits to their representatives"""
-        return mmgroup.tests.axes.get_sample_axes.get_sample_axes()
+        from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+        return get_sample_axes()
     @property
     def g(self):
         r"""Return ``g`` with ``a.v15 = a.v15_start * a.g``"""
@@ -757,7 +758,8 @@ class BabyAxis(Axis):
     @classmethod
     def representatives(cls):
         r"""Dictionary mapping names of orbits to their representatives"""
-        return mmgroup.tests.axes.get_baby_sample_axes.get_baby_sample_axes()
+        from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
+        return get_baby_sample_axes()
     @property
     def g_axis_start(self):
         r"""Return the fixed 2A involution :math:`v^-` """
