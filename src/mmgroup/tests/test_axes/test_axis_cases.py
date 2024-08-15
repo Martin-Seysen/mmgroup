@@ -19,12 +19,13 @@ def import_all():
     global short, span, radical
     global leech_type
     global display_norm_A
-    global get_baby_sample_axes, get_sample_axes
+    global get_sample_axes
     from mmgroup.mm_reduce import mm_reduce_2A_axis_type
-    from mmgroup.axes import get_baby_sample_axes, get_sample_axes
+    from mmgroup.tests.axes.get_sample_axes import get_sample_axes
     from mmgroup.tests.test_axes.test_reduce_axis import short, span, radical
     from mmgroup.tests.test_axes.test_reduce_axis import leech_type
     from mmgroup.tests.test_axes.test_import import display_norm_A
+
 
 V = MMV(15)
 

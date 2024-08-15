@@ -53,15 +53,14 @@ from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_t_A
 from mmgroup.mm_reduce import mm_reduce_find_type4_axis
 
-from mmgroup.axes import Axis, BabyAxis
-from mmgroup.axes import get_baby_sample_axes
-G = Axis.group
-
+from mmgroup.tests.axes.axis import Axis, BabyAxis
+from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
 from mmgroup.tests.axes.equations import solve_Qx0_equations
 from mmgroup.tests.axes.beautify_axes import get_v3_case_10A
 from mmgroup.tests.axes.beautify_axes import get_v3_case_6A
 from mmgroup.tests.axes.beautify_axes import get_v3_case_4A
 from mmgroup.tests.axes.beautify_axes import solve_gcode_diag
+G = Axis.group
 
 
 Q_AXIS_OPP = 0x1000200

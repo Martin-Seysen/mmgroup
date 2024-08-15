@@ -20,11 +20,14 @@ from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
 
-from mmgroup.axes import get_baby_sample_axes, get_sample_axes
 
 from mmgroup.tests.test_axes.test_import import display_A
 from mmgroup.tests.test_axes.test_import import display_norm_A
 from mmgroup.tests.test_axes.test_import import format_eigen_values
+from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
+from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+
+
 
 HEADER = r"""Classes of 2A axes
 

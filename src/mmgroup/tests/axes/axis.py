@@ -248,7 +248,8 @@ def rebase_axis(v15):
     l_g = mm_reduce_vector_vp(v0, v.data, 0, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
     g0 = G('a', g[:l_g]) ** -1
-    if Axis.v_axis15 * g0 != v15:
+    v_axis15 = Axis().v15
+    if v_axis15 * g0 != v15:
         W = "Rebasing of a monster axis has failed"
         warnings.warn(W, UserWarning)
         return None
@@ -597,8 +598,13 @@ class Axis:
         :math:`G_{x0}` of the Monster that maps the axis to the
         representative of its :math:`G_{x0}` orbit.
         """
-        from mmgroup.axes import reduce_axis_G_x0
+        from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
         return reduce_axis_G_x0(self)
+
+
+
+
+
 
 #################################################################
 #################################################################
@@ -715,9 +721,8 @@ class BabyAxis(Axis):
 
     The constructor and the methods of this class are as in the base
     class ``Axis`` of this class. But we accept axes that are
-    orthogonal to axis ``Axis.v_start`` only. The centralizer
-    of axis ``Axis.v_start`` is a subgroup of structure `math:`2.B`
-    of the Monster.
+    orthogonal to axis :math:`v^+` only. The centralizer of that
+    axis is a subgroup of structure `math:`2.B`   of the Monster.
 
     In this class we have ``BabyAxis.v15_start = v_axis_opp15``, where
     ``v_axis_opp15`` is the axis opposite to axis ``Baby.v15_start``.
@@ -820,7 +825,7 @@ class BabyAxis(Axis):
         The function returns an element of :math:`H^+` that maps the
         axis to the representative of its :math:`H^+` orbit.
         """
-        from mmgroup.axes import reduce_baby_axis_G_x0
+        from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
         return reduce_baby_axis_G_x0(self)
 
 
@@ -851,7 +856,6 @@ def set_axis_group(group = None, shorten = True):
     for all before dealing with any 2A axes.
     """ 
     global G, G_SHORTEN, MM, MM_INITIALIZED, Axis
-    global g_central, g_axis, g_axis_opp, g_map_std_opp
     if shorten or group != MM0:
         try:
             from mmgroup import mm_reduce
@@ -866,23 +870,7 @@ def set_axis_group(group = None, shorten = True):
             G = MM0
             G_SHORTEN = False
             MM = None
-    Axis.group = G
-
-    # The central involution in the subgroup ``G_x0``-
-    #g_central = G(G_CENTRAL)  
-
-    # The standard 2A element in the monster group
-    #g_axis = G(G_AXIS)
-
-    # The opposite standard 2A element in the monster group
-    #g_axis_opp = G(G_AXIS_OPP)
-
-    # Element mapping the standard axis to its opposite axis
-    #g_map_std_opp = G(G_MAP_STD_OPP)
-
-    #assert g_axis ** g_map_std_opp == g_axis_opp
-    #assert v_axis15 * g_map_std_opp == v_axis_opp15
- 
+    Axis.group = G 
     MM_INITIALIZED = True
 
 

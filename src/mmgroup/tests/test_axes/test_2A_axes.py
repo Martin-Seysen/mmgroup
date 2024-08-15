@@ -14,10 +14,14 @@ from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech
-from mmgroup.axes import Axis, get_sample_axes
-from mmgroup.axes import BabyAxis, get_baby_sample_axes
-from mmgroup.axes import beautify_axis
-from mmgroup.axes import reduce_axis_G_x0
+
+from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
+from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+from mmgroup.tests.axes.axis import Axis, BabyAxis
+from mmgroup.tests.axes.beautify_axes import beautify_axis
+from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
+from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
+
 
 V = MMV(15)
 G = Axis.group

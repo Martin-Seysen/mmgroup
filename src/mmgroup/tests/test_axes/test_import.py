@@ -21,7 +21,9 @@ from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 from mmgroup.mm_crt_space import MMVectorCRT 
-from mmgroup.axes import get_baby_sample_axes, get_sample_axes
+from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
+from mmgroup.tests.axes.get_sample_axes import get_sample_axes
+
 
 
 
