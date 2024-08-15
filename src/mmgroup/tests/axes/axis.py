@@ -75,8 +75,6 @@ G_MAP_STD_OPP = "x_200h"
 
 
 V15 = MMV(15)
-v_axis = MMVectorCRT(16, V_AXIS)
-v_axis_opp = MMVectorCRT(16, V_AXIS_OPP)
 v_axis15 = V15(V_AXIS)
 v_axis_opp15 = V15(V_AXIS_OPP)
 
@@ -874,7 +872,7 @@ def set_axis_group(group = None, shorten = True):
     g_map_std_opp = G(G_MAP_STD_OPP)
 
     assert g_axis ** g_map_std_opp == g_axis_opp
-    assert v_axis * g_map_std_opp == v_axis_opp
+    assert v_axis15 * g_map_std_opp == v_axis_opp15
  
     MM_INITIALIZED = True
 

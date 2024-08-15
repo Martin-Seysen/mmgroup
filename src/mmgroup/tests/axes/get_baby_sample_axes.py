@@ -32,8 +32,7 @@ from mmgroup.tests.axes.axis import V15, Axis, BabyAxis
 from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
 from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
 from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
-from mmgroup.tests.axes.axis import v_axis, v_axis_opp
-from mmgroup.tests.axes.axis import v_axis15, v_axis_opp15
+from mmgroup.tests.axes.axis import v_axis15
 
 
 from mmgroup.tests.axes.get_sample_axes import next_generation_pool
@@ -375,7 +374,7 @@ if __name__ == "__main__":
     axes = get_baby_sample_axes(calculate = 1, beautify = 1, verbose = 1)
     for orbit, axis in axes.items():
         assert orbit == axis.axis_type()
-        assert v_axis * axis.g == v_axis
+        assert v_axis15 * axis.g == v_axis15
         # print(orbit, axis.axis_type())
 
 

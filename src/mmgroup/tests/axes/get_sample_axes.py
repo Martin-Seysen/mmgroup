@@ -32,8 +32,6 @@ from mmgroup.tests.axes.axis import G, V15, Axis, BabyAxis
 from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
 from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
 from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
-from mmgroup.tests.axes.axis import v_axis, v_axis_opp
-from mmgroup.tests.axes.axis import v_axis15, v_axis_opp15
 
 MM = MM0 = G
 

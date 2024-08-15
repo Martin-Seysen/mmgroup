@@ -54,9 +54,6 @@ from mmgroup.mm_op import mm_op_t_A
 from mmgroup.mm_reduce import mm_reduce_find_type4_axis
 
 from mmgroup.axes import Axis, BabyAxis
-from mmgroup.axes import g_central, g_axis, g_axis_opp
-from mmgroup.axes import v_axis, v_axis_opp
-#from mmgroup.axes import v_axis15, v_axis_opp15
 from mmgroup.axes import get_baby_sample_axes
 G = Axis.group
 
