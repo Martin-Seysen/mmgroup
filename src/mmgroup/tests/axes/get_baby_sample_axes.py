@@ -28,11 +28,11 @@ from mmgroup.bitfunctions import unnumpy
 
 
 from mmgroup.tests.axes.axis import G # A Monster element is of type G
-from mmgroup.tests.axes.axis import V15, Axis, BabyAxis
+from mmgroup.tests.axes.axis import Axis, BabyAxis
 from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
-from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
 from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
-from mmgroup.tests.axes.axis import v_axis15
+
+V15 = MMV(15)
 
 
 from mmgroup.tests.axes.get_sample_axes import next_generation_pool
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     axes = get_baby_sample_axes(calculate = 1, beautify = 1, verbose = 1)
     for orbit, axis in axes.items():
         assert orbit == axis.axis_type()
-        assert v_axis15 * axis.g == v_axis15
+        assert axis.v_axis15 * axis.g == axis.v_axis15
         # print(orbit, axis.axis_type())
 
 

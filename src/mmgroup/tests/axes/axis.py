@@ -74,10 +74,6 @@ G_MAP_STD_OPP = "x_200h"
 
 
 
-V15 = MMV(15)
-v_axis15 = V15(V_AXIS)
-v_axis_opp15 = V15(V_AXIS_OPP)
-
 
 G = MM0
 G_SHORTEN = False
@@ -247,12 +243,12 @@ def rebase_axis(v15):
         return None
     v0 = np.zeros(1, dtype = np.uint32)
     v = v15.copy()
-    w = V15(0)
+    w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
     l_g = mm_reduce_vector_vp(v0, v.data, 0, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
     g0 = G('a', g[:l_g]) ** -1
-    if v_axis15 * g0 != v15:
+    if Axis.v_axis15 * g0 != v15:
         W = "Rebasing of a monster axis has failed"
         warnings.warn(W, UserWarning)
         return None
@@ -312,15 +308,14 @@ class Axis:
     * An instance of class Axis. Then we construct a copy of that
       instance.
     """
-    v15_start = v_axis15
     v15_start_name = V_AXIS 
+    g_map_vstart_name = 1
     constant = False
     group = G
     ERR_CONST = "This axis is constant and may not be changed"
     ERR_MAP = "Could not map type %s object to a monster axis"
     ERR_INVOL = "Type %s object is not a 2A involution in the Monster"
     axis_class = "standard"
-    g_map_vstart = G()
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, Axis):
@@ -340,7 +335,15 @@ class Axis:
         if self.g1 is None:
             raise ValueError(self.ERR_MAP % type(t))
         self.g0 = G()
-        self.v15 = v_axis15 * self.g
+        self.v15 = self.v_axis15 * self.g
+    @classproperty
+    def v_axis15(cls):
+        """Return the fixed vector :math:`v^+` (mod 15)"""
+        return MMV(15)(V_AXIS)
+    @classproperty
+    def v15_start(cls):
+        """Return the start axis vector of this class (mod 15)"""
+        return MMV(15)(cls.v15_start_name)
     @classproperty
     def g_central(cls):
         """Return central involution of the group ``G_x0``"""
@@ -349,6 +352,10 @@ class Axis:
     def g_axis_start(cls):
         """Return the fixed 2A involution :math:`\beta^+`"""
         return G(G_AXIS)
+    @classproperty
+    def g_map_vstart(cls):
+        """Group element mapping :math:`\v^+` to start axis"""
+        return G(g_map_vstart_name)
     @classproperty
     def representatives(cls):
         """Dictionary mapping names of orbits to their representatives"""
@@ -646,6 +653,8 @@ def in_Baby(g):
         return g1
     try:
         from mmgroup import MM
+        v_axis15 = Axis().v15
+        v_axis_opp15 = BabyAxis().v15
         g1 = G(MM(g).reduce())
         if v_axis15 * g1 == v_axis15:
             if v_axis_opp15 * g == v_axis_opp15 * g1:
@@ -674,13 +683,15 @@ def rebase_baby_axis(v15):
         return None
     v0 = np.zeros(1, dtype = np.uint32)
     v = v15.copy()
-    w = V15(0)
+    w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
     l_g = mm_reduce_vector_shortcut(1, 0, V_PLUS, g)
     assert 0 <= l_g < 128
     l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
     g0 = G('a', g[:l_g]) ** -1
+    v_axis15 = Axis().v15
+    v_axis_opp15 = BabyAxis().v15
     if (v_axis15 * g0 != v_axis15 or v_axis_opp15 * g0 != v15 or
         mmv_scalprod(v15, v_axis15) != 0):
         W = "Rebasing of a baby monster axis has failed"
@@ -713,14 +724,12 @@ class BabyAxis(Axis):
     For an axis ``a`` in this class we have
     ``a.v15 = a.g * a.v15_start``.
     """
-    v15_start = v_axis_opp15
     v15_start_name = V_AXIS_OPP
+    g_map_vstart_name = 'x_0x200'
     constant = False
     ERR_BABY_G = "Type %s object is not in the baby monster group"
     ERR_BABY = "Could not map type %s object to a baby monster axis"
     axis_class = "baby"
-    g_map_vstart = G('x', 0x200)
-    assert Axis.v15_start * g_map_vstart == v15_start
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, BabyAxis):
@@ -860,19 +869,19 @@ def set_axis_group(group = None, shorten = True):
     Axis.group = G
 
     # The central involution in the subgroup ``G_x0``-
-    g_central = G(G_CENTRAL)  
+    #g_central = G(G_CENTRAL)  
 
     # The standard 2A element in the monster group
-    g_axis = G(G_AXIS)
+    #g_axis = G(G_AXIS)
 
     # The opposite standard 2A element in the monster group
-    g_axis_opp = G(G_AXIS_OPP)
+    #g_axis_opp = G(G_AXIS_OPP)
 
     # Element mapping the standard axis to its opposite axis
-    g_map_std_opp = G(G_MAP_STD_OPP)
+    #g_map_std_opp = G(G_MAP_STD_OPP)
 
-    assert g_axis ** g_map_std_opp == g_axis_opp
-    assert v_axis15 * g_map_std_opp == v_axis_opp15
+    #assert g_axis ** g_map_std_opp == g_axis_opp
+    #assert v_axis15 * g_map_std_opp == v_axis_opp15
  
     MM_INITIALIZED = True
 

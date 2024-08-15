@@ -54,12 +54,11 @@ from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_t_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
 
-from mmgroup.tests.axes.axis import G, V15, Axis
+from mmgroup.tests.axes.axis import G, Axis
 from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
 from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
-from mmgroup.tests.axes.axis import v_axis15
 
-
+V15 = MMV(15)
 
 #################################################################
 # Auxiliary functions for beautifying an axis in Co_1
@@ -166,7 +165,7 @@ def do_get_v3_case_2A(axis):
     axis *= G('a', g[:len_g])
     if (axis['B', 2, 3] + 2) % 15:
         axis *= G('x', 0x200)
-    assert axis.v15 ==  v_axis15 
+    assert axis.v15 ==  axis.v_axis15 
     return axis
 
 #################################################################
@@ -528,7 +527,7 @@ def beautify_axis(axis, rand = 0, check = False, verbose = 0):
         for e in range (3):
             print("Orbit of axis * t**%s is %s" % (e, axis.axis_type(e)))
             axis.display_sym(e)
-        if not rand and mmv_scalprod(axis.v15, v_axis15) == 0:
+        if not rand and mmv_scalprod(axis.v15, axis.v_axis15) == 0:
             print("Axis may also be used for the Baby monster\n")
     return axis
 

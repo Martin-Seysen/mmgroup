@@ -28,12 +28,12 @@ if __name__ == "__main__":
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2
 
 
-from mmgroup.tests.axes.axis import G, V15, Axis, BabyAxis
+from mmgroup.tests.axes.axis import G, Axis, BabyAxis
 from mmgroup.tests.axes.axis import G_CENTRAL, G_AXIS, G_AXIS_OPP
-from mmgroup.tests.axes.axis import g_central, g_axis, g_axis_opp
 from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
 
 MM = MM0 = G
+V15 = MMV(15)
 
 PROCESSES = 0
 
