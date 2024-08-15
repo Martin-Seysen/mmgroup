@@ -58,7 +58,7 @@ def check_central_involution(axis):
 @pytest.mark.axes
 def test_axes():
     sample_axes = get_sample_axes()
-    assert sample_axes == Axis.representatives
+    assert sample_axes == Axis.representatives()
     for key in sample_axes:
         axis = sample_axes[key]
         v = V(*START_AXIS) * axis.g
@@ -87,7 +87,7 @@ def test_axes():
 @pytest.mark.axes
 def test_baby_axes():
     sample_axes = get_baby_sample_axes()
-    assert sample_axes == BabyAxis.representatives
+    assert sample_axes == BabyAxis.representatives()
     for key in sample_axes:
         axis = sample_axes[key]
         assert type(axis) == BabyAxis
