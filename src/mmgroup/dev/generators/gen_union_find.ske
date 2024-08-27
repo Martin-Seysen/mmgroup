@@ -17,6 +17,7 @@ lattice mod 2 under the action of a group.
 #include "mat24_functions.h"
 #define MMGROUP_GENERATORS_INTERN
 #include "mmgroup_generators.h"
+#include "clifford12.h"
 /// @endcond 
 
 
@@ -443,7 +444,7 @@ cleanup:
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
-#define MAT_BLOCKSIZE 7  // must divide LEECH2_SIZE
+#define MAT_BLOCKSIZE 7
 
 static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 // Multiply 32-bit vector with 32 times 32 bit matrix v.
@@ -461,90 +462,153 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 
 
 
-/** @brief Perform affine union operations in the union-find algorithm
+/** @brief Perform union-find algorithm in ``GF(2)^n``
 
-Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
-and let a partition of ``S(length)`` be stored in the array ``table``
-(of size ``length``) as described in function ``gen_ufind_init``.
+Let ``S(n)`` be the set of integers ``v`` with ``0 <= v < 1 << n``;
+and let a partition of ``S(n)`` be stored in the array ``table``
+(of size ``1 << n``) as described in function ``gen_ufind_init``.
 
-In this function the entries of ``S(length)`` are interpreted as bit
-vectors. The function joins the set containing ``i`` with the set
-containg ``i * M + v`` for all ``i``. Here ``M`` the bit matrix
-over GF(2) referred by ``m``  with ``len_m`` rows,  and ``v`` a
-bit vector. All bit vector arithmetic is done over GF(2).
+In this function the entries of ``S(n)`` are interpreted as bit
+vectors. The function joins the set containing ``v`` with the set
+containing ``v * G[i]`` for all ``v`` in ``S(n)``, and
+for  ``0 <= i < l_g``. Here ``G[i]`` is an ``n`` times ``n`` bit
+matrix over GF(2) stored in the array referred by ``g``. Row ``j``
+of bit matrix ``G[i]`` is stored in ``g[i * n + j]`` as an integer
+encoding a bit vector. All bit vector arithmetic is done over GF(2).
+
+Thus the array referred by ``table`` must have length ``1 << n``;
+and the array referred by ``g`` must have length ``len_g * n``.
+
+The function returns 0 in case of success and -1 in case of error.
 */
 // %%EXPORT px
-void gen_ufind_union_affine(uint32_t *table, uint32_t length, uint32_t *m, uint32_t len_m, uint32_t v)
+int32_t gen_ufind_union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
 {
-     uint32_t i, j, lg_k, k, a[1UL << MAT_BLOCKSIZE], w;
+     uint32_t i, j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
+     uint32_t t_length = 1UL << n;
+     uint32_t mask = t_length - 1;
 
-     if (length > 0x40000000UL || length == 0) return;
-     len_m = len_m < 30 ? len_m : 30;
-     while ((1UL << len_m) >= 2 * length && len_m) --len_m;
-     lg_k = (len_m + 1) >> 1;
-     lg_k = lg_k < MAT_BLOCKSIZE ? lg_k : MAT_BLOCKSIZE;
-     k = 1UL << lg_k;
-     for (j = 0; j < k; ++j) a[j] = v ^ vmatmul(j, m);
-     for (i = 0; i < (1UL << len_m); i += k) {
-         w = vmatmul(i >> lg_k, m + lg_k);
-         for (j = 0; j < k; ++j) {
-             gen_ufind_union(table, length, i ^ j, w ^ a[j]);
+     if (n > 30 || n == 0) return -1;
+     lg_bl = (n + 1) >> 1;
+     lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
+     bl = 1UL << lg_bl;
+     for (i = 0; i < l_g; ++i) {
+         for (j1 = 0; j1 < bl; ++j1) a[j1] = vmatmul(j1, g) & mask;
+         for (j0 = 0; j0 < t_length; j0 += bl) {
+             w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
+             for (j1 = 0; j1 < bl; ++j1) {
+                 gen_ufind_union(table, t_length, j0 ^ j1, w ^ a[j1]);
+             }
          }
+         g += n;
      }
+     return 0;
+
 }
+
+
 
 
 
 
 /************************************************************************
-* Join orbits of the Leech lattice mod 2
+* Augment table by generators for mapping
 ************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
 
 
-/** @brief Join orbits of the Leech lattice mod 2.
+static inline uint32_t 
+store_gen(uint32_t *m, uint32_t dim, uint32_t start, uint32_t maxlen, uint32_t *a)
+{
+    uint32_t i, mask;
+    *a = 0;
+    if (start >= dim) return 0;
+    if (start + maxlen > dim) maxlen = dim - start;
+    mask = (1UL << dim) - 1;
+    m += start;    
+    for (i = 0; i < 1UL << maxlen; ++i) a[i] = vmatmul(i, m) & mask;
+    return maxlen;
+}
 
- The Conway group \f$\mbox{Co}_1\f$ has a natural action on
- on \f$\Lambda / 2 \Lambda\f$, i.e. on  the Leech lattice mod 2.
- The subgroup \f$G_{x0}\f$ of the Monster (of
- structure \f$2^{1+24}.\mbox{Co}_1\f$) has the same action on
- on \f$\Lambda / 2 \Lambda\f$.
+static inline int32_t 
+mat_inverse(uint32_t *m, uint32_t l_m, uint32_t *m_inv)
+{
+    uint64_t a[24];
+    uint32_t i, mask = (1UL << l_m) - 1;
+    if (l_m == 0 || l_m > sizeof(a) / sizeof(uint64_t)) return -1;
+    for(i = 0; i < l_m; ++i) a[i] = m[i];
+    if (bitmatrix64_inv(a, l_m)) return -1;
+    for (i = 0; i < l_m; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
+    return 0;
+}
 
- In this function we assume that the array ``table`` contains a partition
- of the set \f$\{i \mid 0 \leq i < 2^{24}\}\f$ as described in
- function ``gen_ufind_init``. In that function the array ``table``
- should have been initialized with a length of \f$2^{24}\f$.
 
- Here each integer \f$i\f$ is interpreted as an element
- of \f$\Lambda / 2 \Lambda\f$ in *Leech lattice encoding*, as
- described in the document *The C interface of the mmgroup project*,
- section *Description of the mmgroup.generators extension*.
+/// @endcond
 
- Let \f$g \in G_{x0}\f$ be stored in the array referred
- by ``g`` as a word of generators of the subgroup \f$G_{x0}\f$
- of the  monster. Here \f$g\f$ is given as a word of generators
- of length ``len_g`` in the array ``g``. Each atom of the
- word \f$g\f$ is encoded as defined in the header
- file ``mmgroup_generators.h``.
 
- Then the function joins the set containing \f$i\f$ with the
- set containing \f$i \cdot g\f$ for all \f$i\f$, using the
- union-find algorithm.
 
- The function returns 0 in case of success and a negative value
- in case of failure (e.g. if \f$g\f$ is not in \f$G_{x0}\f$).
+/** @brief Yet to be tested and documented!
 
 */
 // %%EXPORT px
-int32_t  gen_ufind_union_leech2(uint32_t *table, uint32_t *g, uint32_t len_g)
+int32_t gen_ufind_add_generators(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
 {
-     uint32_t m[24];
-     int32_t res = gen_leech2_op_word_matrix24(g, len_g, 0, m);
-     if (res < 0) return res;
-     gen_ufind_union_affine(table, 0x1000000, m, 24, 0);
-     return 0;
-}
+    uint32_t *p_start, *p_end, *p_g, *p_overflow;
+    uint32_t i, j, g_inv[24], mask = (1UL << n) - 1;
+    if  (n > 24) return -2;
+    if  (l_g > 120) return -3;
+    p_start = malloc(((1UL << n) + l_g*2*3*256) * sizeof(uint32_t));
+    if (p_start == NULL) return -1;
+    p_end = p_start;
+    p_overflow = p_start + ((size_t)1UL << n);
+    p_g = p_start + ((size_t)1UL << n);
 
+    // Load generator matrices
+    for (i = 0; i < l_g; ++i) {
+        if (mat_inverse(g, n, g_inv)) return -4;
+        for (j = 0; j < 24; j += 8) {
+            store_gen(g_inv, n, j, 8, p_g);
+            p_g += 256;
+        }
+        for (j = 0; j < 24; j += 8) {
+            store_gen(g, n, j, 8, p_g);
+            p_g += 256;
+        }
+        g += n;
+    }
+
+    // Initialize table and load start vectors
+    for (i = 0; i < 1UL << n; ++i) {
+        uint32_t data = table[i] & mask;
+        uint32_t is_start = data == i;
+        table[i] = (data | 0xff000000UL) & ~(is_start << 24);
+        if (is_start) *p_end++ = data;
+    }
+
+    // Compute and store generators
+    while (p_start < p_end) {
+        uint32_t data = *p_start++, *pg;
+        pg = p_g;
+        for (i = 0; i < 2*l_g; ++i) {
+            uint32_t img = pg[data & 0xff]
+                         ^ pg[256 + ((data >> 8) & 0xff)]
+                         ^ pg[512 + ((data >> 16) & 0xff)];
+            if ((table[img] | 0xffffffUL) == 0xffffffffUL) {
+                table[img] &= i << 24;
+                *p_end++ = img;
+                if (p_end == p_overflow) {
+                    free(p_start);
+                    return -5;
+                }
+            }
+            pg += 3*256;
+        }
+    }
+
+    free(p_start);
+    return 0;
+}
 
 
 

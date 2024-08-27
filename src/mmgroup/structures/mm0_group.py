@@ -257,11 +257,13 @@ Xsp2_Co1 = None
 xsp2co1_to_mm = None
 mm_conjugate_involution = None
 reduce_via_power = None
-
+mm_group_n_mul_word_scan = None
+m24num_to_perm = None
 
 def import_Xsp2_Co1():
     global Xsp2_Co1, xsp2co1_to_mm, mm_conjugate_involution
     global reduce_via_power
+    global mm_group_n_mul_word_scan, m24num_to_perm
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
     Xsp2_Co1 = f
     from mmgroup.structures.xsp2_co1 import Xsp2_Co1 as f
@@ -270,6 +272,11 @@ def import_Xsp2_Co1():
     mm_conjugate_involution = f    
     from mmgroup.structures.involutions import reduce_via_power as f
     reduce_via_power = f
+    from mmgroup.generators import mm_group_n_mul_word_scan as f
+    mm_group_n_mul_word_scan = f
+    from mmgroup.mat24 import m24num_to_perm as f
+    m24num_to_perm = f
+
 
 
 ###########################################################################
@@ -535,7 +542,29 @@ class MM0(AbstractMMGroupWord):
             if (atom & 0x70000000) not in [0x10000000,  0x30000000]:
                 return False
         return True
-             
+
+    def as_M24_permutation(self):
+        r"""Map element of the subgroup :math:`N_0` to a permutation
+
+        The function maps an element of the subgroup :math:`N_0` of
+        structure :math:`2^{2+11+22}.\mbox{M}_{24}` of the Monster to
+        a permutation in the group :math:`\mbox{M}_{24}`. The resulting
+        permutation is returned of a list of length 24 mapping the set
+        :math:`\{0,\ldots,23\}` to itself. That list is returned as
+        described in section :ref:`parker-loop-label`.
+
+        The function raises ``ValueError`` if the element of the
+        Monster is not in :math:`N_0`.
+        """
+        if Xsp2_Co1 is None:
+            import_Xsp2_Co1()
+        self.reduce()
+        g = np.zeros(5, dtype = np.uint32)
+        n = mm_group_n_mul_word_scan(g, self.mmdata, len(self.mmdata))
+        if n != len(self.mmdata):
+            ERR = "Monster group element is not in the subgroup N_0"
+            raise ValueError(ERR)
+        return m24num_to_perm(g[4])
 
     def conjugate_involution(self, check=True, ntrials=40, verbose=0):
         r"""Find an element conjugating an involution into the centre

@@ -729,15 +729,18 @@ add_to_embedded_classes(XLeech2)
 
 gen_ufind_init = None
 def _import_ufind():
-    global gen_ufind_init, gen_ufind_union_leech2
+    global gen_ufind_init
     global gen_ufind_find_all_min, gen_ufind_partition
     global gen_ufind_make_map 
+    global gen_leech2_op_word_matrix24
+    global gen_ufind_union_linear
     global ERR_L2_ORB_G, ERR_L2_ORB_INT
     from mmgroup.generators import gen_ufind_init
-    from mmgroup.generators import gen_ufind_union_leech2
     from mmgroup.generators import gen_ufind_find_all_min
     from mmgroup.generators import gen_ufind_partition
     from mmgroup.generators import gen_ufind_make_map
+    from mmgroup.generators import gen_leech2_op_word_matrix24
+    from mmgroup.generators import gen_ufind_union_linear
     ERR_L2_ORB_G = "Entry is not in the subgroup G_x0 of the Monster"
     ERR_L2_ORB_INT = "Internal error in function leech2_orbits_raw"
 
@@ -787,12 +790,15 @@ def leech2_orbits_raw(g_list, map = False):
     L_DATA = 0x1000000
     data = np.zeros(L_DATA, dtype = np.uint32)
     gen_ufind_init(data, L_DATA)
-    for g in g_list:
+    ag = np.zeros(len(g_list) * 24, dtype = np.uint32)
+    for i, g in enumerate(g_list):
         if not isinstance(g, (AbstractMMGroupWord, XLeech2)):
             raise ValueError(ERR_L2_ORB_G)
-        mmd = g.mmdata
-        if gen_ufind_union_leech2(data, mmd, len(mmd)) < 0:
+        md = g.mmdata
+        res = gen_leech2_op_word_matrix24(md, len(md), 0, ag[24 * i:])
+        if res < 0:
             raise ValueError(ERR_L2_ORB_G)
+    gen_ufind_union_linear(data, 24, ag, len(g_list))
     n_sets = gen_ufind_find_all_min(data, L_DATA)
     if n_sets < 1:
         raise ValueError(ERR_L2_ORB_INT)

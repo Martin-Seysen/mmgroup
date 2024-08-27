@@ -37,8 +37,7 @@ from mmgroup.generators import gen_ufind_find
 from mmgroup.generators import gen_ufind_union
 from mmgroup.generators import gen_ufind_find_all_min
 from mmgroup.generators import gen_ufind_partition
-from mmgroup.generators import gen_ufind_union_affine
-from mmgroup.generators import gen_ufind_union_leech2
+from mmgroup.generators import gen_ufind_union_linear
 
 #####################################################################
 # Define 8 times 8 bit batrices M7, M2, MT generating the group H
@@ -108,20 +107,19 @@ def table_as_llist(w):
 
 
 
-def union_affine(w, m, v):
-    """Test function for debugging, which is now deprecated!
-
-    Equivalent to gen_ufind_union_affine(w, len(w), m, len(m), v)
+def union_linear(w, m):
+    """Equivalent to gen_ufind_union_linear(w, len(m), m, 1)
     """
     def vmatmul(v, m):
         v1 = 0;
         for j, x in enumerate(m):
             if (v >> j) & 1: v1 ^= x
         return v1
-            
+
+    t_len = 1 << len(m)
+    assert len(w) >= t_len and len(m) <= 30
     for i in range(len(w)):
-        im = v ^ vmatmul(i, m)
-        gen_ufind_union(w, len(w), i, im)
+        gen_ufind_union(w, t_len, i, vmatmul(i, m))
 
 
 #####################################################################
@@ -178,8 +176,8 @@ def test_ufind_L3_2(verbose = 0):
     gen_ufind_init(w, len(w))
     w_copy = deepcopy(w)
     for m in (M2, M7, MT):
-        gen_ufind_union_affine(w, len(w), m, len(m), 0)
-        union_affine(w_copy, m, 0)
+        gen_ufind_union_linear(w, len(m), m, 1)
+        union_linear(w_copy, m)
     assert (w == w_copy).all()
     ref_llist = table_as_llist(w)
     if verbose:

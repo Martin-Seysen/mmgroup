@@ -208,7 +208,7 @@ Python classes implementing the Monster group
               half_order, in_G_x0, chi_G_x0, in_N_x0, in_Q_x0,
               half_order_chi, chi_powers, conjugate_involution,
               conjugate_involution_G_x0, as_int,
-              as_Co1_bitmatrix
+              as_Co1_bitmatrix, as_M24_permutation
 
 
 Functions dealing with elements of the Monster group
