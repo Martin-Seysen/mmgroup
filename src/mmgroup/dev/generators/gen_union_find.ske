@@ -291,9 +291,10 @@ int32_t gen_ufind_make_map(uint32_t *table, uint32_t length, uint32_t *map)
     for (n = 0; n < length; ++n) {            
         p = table[n];
         if (p & 0x80000000) {
-           map[n] = n;
+            map[n] = n;
         } else if (p >= length) {
-            map[n] = 0xffffffffUL;
+            // map[n] = 0xffffffffUL;
+            return -3;
         } else { 
             if (p >= n) return -4;
             if ((table[p] & 0x80000000) == 0) return -5;
@@ -310,28 +311,29 @@ int32_t gen_ufind_make_map(uint32_t *table, uint32_t length, uint32_t *map)
 
 /** @brief Output the partition computed by the union-find algorithm
 
-Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
-and let a partition of ``S(length)`` be stored in the array ``table``
-(of size ``length``) as described in function ``gen_ufind_init``.
+Let ``S(l_t)`` be the set of integers ``i`` with ``0 <= i < l_t``;
+and let a partition of ``S(l_T)`` be stored in the array ``table``
+(of size ``l_t``) as described in function ``gen_ufind_init``.
 
 We assume that the partition stored in the array ``table``
-contains ``n_sets`` sets. Then we overwrite the array ``table``
-with a list of lists, where each list corresponds to a set in
+contains ``n_sets`` sets. Then we store a list of lists in the
+array ``map``, where each list corresponds to a set in
 the partition. We write some index infomation for interpreting
-these lists into the array ``ind`` of length ``len_ind``.
+these lists into the array ``ind`` of l ``l_ind``.
 
-Array ``table`` will contain the ``length`` elements of the
-set ``S(length)`` in such a way that for ``0 <= i < n_sets``
+Array ``map`` will contain the ``l_t`` elements of the
+set ``S(l_t)`` in such a way that for ``0 <= i < n_sets``
 the ``i``-th set in the partition is equal to the set of
-integers given by ``table[ind[i]], ...,  table[ind[i+1] - 1]``.
+integers given by ``map[ind[i]], ...,  map[ind[i+1] - 1]``.
 
 So the array ``ind`` must have size at least ``n_sets + 1``;
-i.e. we must have ``len_ind > n_sets``.
+i.e. we must have ``l_ind > n_sets``. Array ``map`` must have
+size ``l_t``; it may overlap with array ``table``.
 Function ``gen_ufind_find_all_min`` must be called before calling
 this function. Note that function ``gen_ufind_find_all_min``
 returns ``n_sets`` in case of success.
 
-The entries ``table[ind[i]], ...,  table[ind[i+1] - 1]``
+The entries ``map[ind[i]], ...,  map[ind[i+1] - 1]``
 corresponding to set in the partition are sorted. The sets of
 the partition are sorted by their smallest elements.
 
@@ -339,16 +341,16 @@ The function returns ``n_set`` in case of success and a negative
 value in case of failure.
 */
 // %%EXPORT px
-int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uint32_t len_ind)
+int32_t gen_ufind_partition(uint32_t *table, uint32_t l_t, uint32_t *map, uint32_t *ind, uint32_t l_ind)
 {
     uint32_t *next, n, p, i=0, j, last, fst;
     int32_t status = -1;
 
-    if (length > 0x40000000UL) return -1;
-    next = malloc(sizeof(uint32_t) * (length + len_ind));
+    if (l_t > 0x40000000UL) return -1;
+    next = malloc(sizeof(uint32_t) * (l_t + l_ind));
     if (next == NULL) return -1;
 
-    // Here ``next`` is an array of length ``length + i.`` index ``i``
+    // Here ``next`` is an array of l_t ``l_t + i.`` index ``i``
     // is incremented whenever we see a new set of the partition while
     // iterating though the ``table``. Eventually, ``i`` will be the
     // number of sets in the partition.
@@ -365,24 +367,24 @@ int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uin
     // reachable from the index ``j`` of the set  {x_1, ..., x_m}.
     
     //
-    //  ind:     +-----------------------j
-    //           |                       ^
-    //           |                       |                             
-    //           v                       v
-    //  next:   x_m  -->  x_1  -->  j + length  -->  x_2 --> x_3
-    //           ^                                            |
-    //           |_____________ ............ _________________|
+    //  ind:     +--------------------j
+    //           |                    ^
+    //           |                    |
+    //           v                    v
+    //  next:   x_m  -->  x_1  -->  j + l_t  -->  x_2 --> x_3
+    //           ^                                         |
+    //           |____________ ............ _______________|
 
-    for (n = 0; n < length; ++n) {            
-        p = table[n];                        // In case m = 1 we put:
-        if (p & 0x80000000) {                //   ind:            +-----i
-            status = -2;                     //                   |     |
-            if (i >= len_ind) goto cleanup;  //                   v     |
-            ind[i] = next[n] = length + i;   //   next: x_1  -->  i + length
-            next[length + i] = n;            //          ^              |
-            ++i;                             //          |______________|  
+    for (n = 0; n < l_t; ++n) {
+        p = table[n];                     // In case m = 1 we put:
+        if (p & 0x80000000) {             //   ind:            +----i
+            status = -2;                  //                   |    |
+            if (i >= l_ind) goto cleanup; //                   v    |
+            ind[i] = next[n] = l_t + i;   //   next: x_1  -->  i + l_t
+            next[l_t + i] = n;            //          ^             |
+            ++i;                          //          |_____________|
         } else {
-            if (p >= length) continue; 
+            if (p >= l_t) continue;
             // Now ``n`` is the entry to be appended to the set with 
             // index ``j``; and  ``p`` is the first element of that set
             // (corresponding to ``x_1`` in the figure above).
@@ -390,7 +392,7 @@ int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uin
             if (p >= n) goto cleanup;
             status = -5;
             if ((table[p] & 0x80000000) == 0) goto cleanup;
-            j = next[p] - length; // index of the set
+            j = next[p] - l_t; // index of the set
             status = -6;
             if (j >= i) goto cleanup;
             last = ind[j];        // old ``x_m`` in the figure above
@@ -402,34 +404,33 @@ int32_t gen_ufind_partition(uint32_t *table, uint32_t length, uint32_t *ind, uin
         }
     }
 
-    // Store the number of the sets in ``len_ind``.
+    // Store the number of the sets in ``l_ind``.
     status = -8;
-    if (i >= len_ind) goto cleanup;
-    len_ind = i;
+    if (i >= l_ind) goto cleanup;
+    l_ind = i;
 
-    // Copy the elements of the sets from array ``next`` back
-    // tp the array ``table``, so the elements of the same set are
-    // adjacent. Store index information for these sets in the
-    // array ``ind``.
+    // Copy the elements of the sets from array ``next`` back to the
+    // array ``map``, so the elements of the same set are adjacent.
+    // Store index information for these sets in the array ``ind``.
     n = 0;
-    for (i = 0; i < len_ind; ++i) {
+    for (i = 0; i < l_ind; ++i) {
         last = ind[i];        // Last element of the set
         ind[i] = n;           // Store index of the beginning of the set
-        table[n++] = fst = next[last]; // store 1st element of the set
-        p = next[length + i]; // 2nd element of the set or end marker
+        map[n++] = fst = next[last]; // store 1st element of the set
+        p = next[l_t + i];    // 2nd element of the set or end marker
         while (p != fst) {    // Here  ``fst`` will be the end marker
-            table[n++] = p;   // Fill ``table`` until end marker found
+            map[n++] = p;     // Fill ``map`` until end marker found
             p = next[p];
         } 
     }
 
-    // Store total number of elements all sets in ``ind[len_ind]``.
-    // Thus for ``0 <= j < len_ind``the j-th set contains the
-    // elements ``table[k]``, for ``ind[j] <= k < ind[j+1].
-    status = -8;
-    if (n > length) goto cleanup;
-    ind[len_ind] = n;
-    status = len_ind;      // return the number of the sets
+    // Store total number of elements all sets in ``ind[l_ind]``.
+    // Thus for ``0 <= j < l_ind``the j-th set contains the
+    // elements ``map[k]``, for ``ind[j] <= k < ind[j+1].
+    status = -9;
+    if (n > l_t) goto cleanup;
+    ind[l_ind] = n;
+    status = l_ind;      // return the number of the sets
     
 cleanup:
     free(next);
@@ -440,7 +441,14 @@ cleanup:
 
 
 /************************************************************************
-* Unite node i with node A * i + v, with A a matrix over GF(2)
+*************************************************************************
+*** Compute orbits of a group acting on a vector space over GF(2)
+*************************************************************************
+************************************************************************/
+
+
+/************************************************************************
+* Unite node i with node A * i, with A a matrix over GF(2)
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
@@ -458,7 +466,6 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
     return w;
 } 
 
-/// @endcond
 
 
 
@@ -481,8 +488,8 @@ and the array referred by ``g`` must have length ``len_g * n``.
 
 The function returns 0 in case of success and -1 in case of error.
 */
-// %%EXPORT px
-int32_t gen_ufind_union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
+static inline
+union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
 {
      uint32_t i, j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
      uint32_t t_length = 1UL << n;
@@ -508,28 +515,69 @@ int32_t gen_ufind_union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_
 
 
 
+/// @endcond
 
 
 
 /************************************************************************
-* Augment table by generators for mapping
+* Initialize array dealing with a subgroup of SL_2(n) given by generators 
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 
-static inline uint32_t 
-store_gen(uint32_t *m, uint32_t dim, uint32_t start, uint32_t maxlen, uint32_t *a)
+typedef struct {
+   uint32_t status;
+   uint32_t n;
+   uint32_t n_g;
+   uint32_t n_orbits;
+   uint32_t *p_t;
+   uint32_t *p_o;
+   uint32_t *p_g;
+} lin2_type;
+
+#define LIN2_MAX_STATUS  2UL
+#define LIN2_MAX_N      24UL
+#define LIN2_MAX_N_G   126UL
+
+
+
+static inline void load_lin2_info(uint32_t *a, lin2_type *ps)
 {
-    uint32_t i, mask;
-    *a = 0;
-    if (start >= dim) return 0;
-    if (start + maxlen > dim) maxlen = dim - start;
-    mask = (1UL << dim) - 1;
-    m += start;    
-    for (i = 0; i < 1UL << maxlen; ++i) a[i] = vmatmul(i, m) & mask;
-    return maxlen;
+    ps->status = a[0];
+    ps->n = a[1];
+    ps->n_g = a[2];
+    ps->n_orbits = a[3];
+    ps->p_t = a + 4;
+    ps->p_o = ps->p_t + ((size_t)1UL << ps->n);
+    ps->p_g = ps->p_o + ((size_t)1UL << ps->n);
 }
+
+static inline int32_t lin2_error(uint32_t *a, int32_t error)
+{
+    a[0] = (uint32_t)(error);
+    return error;
+}
+
+
+
+/// @endcond
+
+/**  Size of a structure for finding orbits in ``GF(2)^n``.
+
+For details we refer to function ``gen_ufind_lin2_init``.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_size(uint32_t n, uint32_t k)
+{
+    if (n == 0 || n > LIN2_MAX_N || k > LIN2_MAX_N_G) return -1;
+    return 4 + (2UL << n) + 2 * n * k;
+}
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
 
 static inline int32_t 
 mat_inverse(uint32_t *m, uint32_t l_m, uint32_t *m_inv)
@@ -544,73 +592,550 @@ mat_inverse(uint32_t *m, uint32_t l_m, uint32_t *m_inv)
 }
 
 
+
+
+static inline void
+write_length_info(uint32_t *a, uint32_t length)
+{
+    uint32_t x;
+    x = 0x80 | ((length > 0x3f) << 6) | (length & 0x3f);
+    *a++ = (*a & 0x00ffffffUL) | (x << 24);
+    length >>= 6;
+    while (length) {
+        x = ((length > 0x3f) << 6) | (length & 0x3f);
+        *a++ = (*a & 0x00ffffffUL) | (x << 24);
+        length >>= 6;
+    }
+}
+
+
+static inline int32_t
+read_length_info(uint32_t *a)
+{
+    uint32_t x, length = 0, sh = 0;
+    x = (*a++ >> 24) & 0xff;
+    if ((x & 0x80) == 0) return -1;
+    length = x & 0x3f;
+    for (sh = 6; (sh < 24) && (x & 0x40); sh += 6) {
+        x = (*a++ >> 24) & 0xff;
+        if (x & 0x80) return -1;
+        length += (x & 0x3f) << sh;
+    }
+    return length;
+}
+
 /// @endcond
 
+
+
+/**  @brief Compute orbits of a group acting on ``GF(2)^n``
+
+Let \f$G\f$ be a group acting on acting on a vector
+space \f$V = \mbox{GF}_2^n\f$. That group is generated by
+generators \f$g_i, 0 \leq i < k\f$. We store the group (given by
+its generators) in an opaque array ``a``.
+This module provides functions for computing orbits on \f$V\f$
+under the action of the group \f$G\f$ from the information stored
+in the array ``a``. It also provides a function for finding an
+element of \f$G\f$ that maps a vector in \f$V\f$ to a (chosen)
+representative of its orbit.
+
+The ``k`` generators ``g_i, 0 <= i < k`` of the group must given
+as ``n`` times ``n`` bit matrices acting on \f$V\f$ by right
+multiplication. Here a row of a bit matrix must be encoded as a bit
+vector in an integer in the usual way. The integer corresponding to
+row ``j`` of matrix ``g_i`` must be stored in the entry ``i * n + j``
+of the input array referred by parameter ``g``.
+
+Thus the array referred by ``g`` must have length ``k * n``. The
+internal structure of the output array ``a`` is undocumented.
+The required length of the array ``a`` is computed by calling
+function ``gen_ufind_lin2_size(n, k)``. At present the length of
+of ``a`` is approximately ``2 << n`` plus the space for storing
+the generators of the group and their inverses. Limitations
+are ``n <= 24`` and ``k <= 126``.
+
+The function returns 0 in case of success and a negative value
+in case of error.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_init(uint32_t *a, uint32_t l_a, uint32_t n, uint32_t *g, uint32_t k)
+{
+    int32_t l_t_expected, status;
+    uint32_t i, j, *p_gin, *p_gout, mask = (1UL << n) - 1;
+    uint32_t *p_ind = NULL;
+    lin2_type s;
+
+    l_t_expected = gen_ufind_lin2_size(n, k);
+    if (l_t_expected < 0 || l_t_expected > (int32_t)l_a) {
+        if (a != NULL && l_a > 0) return lin2_error(a, -2);
+        return -2;
+    }
+    a[0] = 0;
+    a[1] = n;
+    a[2] = k;
+    a[3] = 0;
+    load_lin2_info(a, &s);
+
+    // Perform union-find algorithm on orbits in main table s.p_t
+    if (gen_ufind_init(s.p_t, 1UL << n) < 0) return lin2_error(a, -3);
+    if (union_linear(s.p_t, n, g, k) < 0) return lin2_error(a, -4);
+    status = gen_ufind_find_all_min(s.p_t, 1UL << n);
+    if  (status < 1) return lin2_error(a, -5);
+    a[3] = s.n_orbits = status;
+
+    // load bit matrices and their inverses to s.p_g
+    p_gin = g;
+    p_gout = s.p_g;
+    for (i = 0; i < k; ++i) {
+        for (j = 0; j < n; ++j) p_gout[j] = p_gin[j] & mask;
+        if (mat_inverse(p_gin, n, p_gout + n)) return lin2_error(a, -5);
+        p_gin += n;
+        p_gout += 2 * n;
+    }
+
+    // Store orbit information in table s.p_o.
+    // Allocate memory an compute teporary orbit index table
+    p_ind = malloc((s.n_orbits + 1) * sizeof(uint32_t));
+    if (p_ind == NULL) return lin2_error(a, -6);
+    status = gen_ufind_partition(s.p_t, 1UL << s.n, s.p_o, p_ind,
+         s.n_orbits + 1);
+    if (status < 0) goto done;
+
+    // Complete map in main table
+    for (i = 0; i < (1UL << n); ++i) { 
+        uint32_t entry = s.p_t[i];
+        if (entry & 0x80000000UL) {
+            s.p_t[i] = 0xfe000000UL;
+        } else {
+            status = -7;
+            if (entry >= i) goto done;
+            status = -8;
+            if (((s.p_t[entry] >> 24) & 0xffUL) != 0xfeUL) goto done;
+            s.p_t[i] = entry | 0xff000000UL;
+        }
+    }
+
+    // Copy length information from table in p_ind to orbit information
+    // table s.p_o. Store pointers to table s.p_o in main table s.p_t.
+    for (i = 0; i < s.n_orbits; ++i) {
+        uint32_t index = p_ind[i] & mask;
+        uint32_t rep = s.p_o[index] & mask;
+        status = -99;
+        if (((s.p_t[rep] >> 24) & 0xff) != 0xfe) goto done;
+        s.p_t[rep] |= index;
+        write_length_info(s.p_o + index, p_ind[i+1] - p_ind[i]);
+    }
+    status = 1;
+
+done:
+    if (p_ind) free(p_ind);
+    a[0] = (uint32_t)(status);
+    return (status < 0) ? status : 0;
+}
+
+
+
+/************************************************************************
+* Obtaining information from array dealing with a subgroup of SL_2(n)
+************************************************************************/
+
+
+
+
+/** @brief Return dimension ``n`` of ``GF(2)^n``
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_dim(uint32_t *a)
+{
+    if (a == NULL || a[0] > 1) return -1;
+    return a[1];
+}
+
+
+/** @brief Return number of generators of the group
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_n_gen(uint32_t *a)
+{
+    if (a == NULL || a[0] > LIN2_MAX_STATUS) return -1;
+    return a[2];
+}
+
+
+/** @brief Return number of orbits of the group
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_n_orbits(uint32_t *a)
+{
+    if (a == NULL || a[0] > LIN2_MAX_STATUS) return -1;
+    return a[3];
+}
+
+
+/** @brief Check status of orbit map ``a``
+
+A negative value indicates an error.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_check(uint32_t *a, uint32_t len_a)
+{
+    lin2_type s;
+    int32_t a_size;
+    if (a == NULL) return -1001;
+    if (len_a < 6) return -1002;
+    if (a[0] > LIN2_MAX_STATUS) {
+        if ((int32_t)(a[0]) < 0) return (int32_t)(a[0]);
+        return lin2_error(a, -1003);
+    }
+    load_lin2_info(a, &s);
+    if  (s.n > LIN2_MAX_N) return lin2_error(a, -1004);
+    if  (s.n_g > LIN2_MAX_N_G) return lin2_error(a, -1005);
+    a_size = gen_ufind_lin2_size(s.n, s.n_g);
+    if (a_size < 0) return lin2_error(a, -1006);
+    if ((uint32_t)a_size > len_a) return lin2_error(a, -1006); 
+    return a[0];
+}
+
+
+
+/************************************************************************
+* Finding orbits and their representatives;
+************************************************************************/
+
+
+/** @brief Return representative of orbit of bit vector ``v``
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_rep_v(uint32_t *a, uint32_t v)
+{
+    lin2_type s;
+    uint32_t mask, entry;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] < 1) return -1;
+    load_lin2_info(a, &s);
+    mask = (1UL << s.n) - 1;
+    v &= mask;
+    entry = s.p_t[v];
+    return (((entry >> 24) & 0xff) == 0xfe) ? v : entry & mask;
+}
+
+
+/** @brief Return length of orbit of bit vector ``v``
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
+{
+    lin2_type s;
+    uint32_t mask, rep, index_o;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] < 1) return -1;
+    load_lin2_info(a, &s);
+    mask = (1UL << s.n) - 1;
+    rep = gen_ufind_lin2_rep_v(a, v);
+    index_o = s.p_t[rep] & mask;
+    return read_length_info(s.p_o + index_o);
+}
+
+
+/** @brief Return orbit of bit vector ``v`` as an array
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t len_r)
+{
+    lin2_type s;
+    uint32_t mask, rep, index_o, *p_o;
+    int32_t length, i;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] < 1) return -1;
+    load_lin2_info(a, &s);
+    mask = (1UL << s.n) - 1;
+    rep = gen_ufind_lin2_rep_v(a, v);
+    index_o = s.p_t[rep] & mask;
+    if (index_o < 0) return index_o;
+    p_o = s.p_o + index_o;
+    length = read_length_info(s.p_o + index_o);
+    if (len_r < (uint32_t)length) return -1;
+    for (i = 0; i < length; ++i) {
+        r[i] = p_o[i] & mask;
+    }
+    return length;
+}
+
+
+
+/** @brief Return orbit of bit vector ``v`` as an array
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_representatives(uint32_t *a, uint32_t *r, uint32_t len_r)
+{
+    lin2_type s;
+    uint32_t mask, index_o = 0, l_r = len_r;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] < 1) return -1;
+    load_lin2_info(a, &s);
+    mask = (1UL << s.n) - 1;
+
+    while (index_o < (1UL << s.n)) {
+        uint32_t d = read_length_info(s.p_o + index_o);
+        if (d < 0) return -2;
+        if (l_r-- == 0) return -3;
+        *r++ = s.p_o[index_o] & mask;
+        index_o += d;
+    }
+    return len_r - l_r;
+}
+
+
+
+
+
+
+
+
+
+
+/************************************************************************
+* Add orbit map and operation of geneators to table
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline uint32_t
+store_gen(uint32_t *g, uint32_t n, uint32_t start, uint32_t maxlen, uint32_t *a)
+{
+    uint32_t i, mask;
+    *a = 0;
+    if (start >= n) return 0;
+    if (start + maxlen > n) maxlen = n - start;
+    mask = (1UL << n) - 1;
+    g += start;
+    for (i = 0; i < 1UL << maxlen; ++i) a[i] = vmatmul(i, g) & mask;
+    return maxlen;
+}
 
 
 /** @brief Yet to be tested and documented!
 
 */
-// %%EXPORT px
-int32_t gen_ufind_add_generators(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
+static inline int32_t add_generators(uint32_t *a)
 {
-    uint32_t *p_start, *p_end, *p_g, *p_overflow;
-    uint32_t i, j, g_inv[24], mask = (1UL << n) - 1;
-    if  (n > 24) return -2;
-    if  (l_g > 120) return -3;
-    p_start = malloc(((1UL << n) + l_g*2*3*256) * sizeof(uint32_t));
-    if (p_start == NULL) return -1;
+    uint32_t *p_start = NULL, *p_end, *p_overflow, *p_g, *p_g1, *p_b;
+    uint32_t i, j, mask, l_b;
+    int32_t error = 0;
+    lin2_type s;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS) return -1;
+    if (a[0] >= 2) return 0;
+    load_lin2_info(a, &s);
+    if  (s.n > LIN2_MAX_N) return lin2_error(a, -22);
+    if  (s.n_g > LIN2_MAX_N_G) return lin2_error(a, -23);
+
+
+    // Allocate work buffer and set pointer to queue in work buffer
+    l_b = (s.n > 10) ? (1UL << (s.n - 5)) : 32;
+    p_start = malloc(((1UL << s.n) + s.n_g*2*3*256 + l_b) * sizeof(uint32_t));
+    if (p_start == NULL) return lin2_error(a, -21);
     p_end = p_start;
-    p_overflow = p_start + ((size_t)1UL << n);
-    p_g = p_start + ((size_t)1UL << n);
+    p_overflow = p_start + ((size_t)1UL << s.n);
+
 
     // Load generator matrices
-    for (i = 0; i < l_g; ++i) {
-        if (mat_inverse(g, n, g_inv)) return -4;
+    p_g1 = p_g = p_overflow;
+    for (i = 0; i < 2 * s.n_g; ++i) {
         for (j = 0; j < 24; j += 8) {
-            store_gen(g_inv, n, j, 8, p_g);
-            p_g += 256;
+            store_gen(s.p_g, s.n, j, 8, p_g1);
+            p_g1 += 256;
         }
-        for (j = 0; j < 24; j += 8) {
-            store_gen(g, n, j, 8, p_g);
-            p_g += 256;
-        }
-        g += n;
+        s.p_g += s.n;
     }
 
+    // Initialize bitmap table
+    p_b = p_g + s.n_g*2*3*256;
+    memset(p_b, 0, l_b * sizeof(uint32_t));
+
     // Initialize table and load start vectors
-    for (i = 0; i < 1UL << n; ++i) {
-        uint32_t data = table[i] & mask;
+    mask = (1UL << s.n) - 1;
+    for (i = 0; i < 1UL << s.n; ++i) {
+        uint32_t data = a[i] & mask;
         uint32_t is_start = data == i;
-        table[i] = (data | 0xff000000UL) & ~(is_start << 24);
+        a[i] = (data | 0xff000000UL) & ~(is_start << 24);
         if (is_start) *p_end++ = data;
     }
 
     // Compute and store generators
+    error = -25;
     while (p_start < p_end) {
-        uint32_t data = *p_start++, *pg;
-        pg = p_g;
-        for (i = 0; i < 2*l_g; ++i) {
-            uint32_t img = pg[data & 0xff]
-                         ^ pg[256 + ((data >> 8) & 0xff)]
-                         ^ pg[512 + ((data >> 16) & 0xff)];
-            if ((table[img] | 0xffffffUL) == 0xffffffffUL) {
-                table[img] &= i << 24;
-                *p_end++ = img;
-                if (p_end == p_overflow) {
-                    free(p_start);
-                    return -5;
-                }
-            }
-            pg += 3*256;
+        uint32_t data = *p_start++ & mask;
+        p_g1 = p_g;
+        for (i = 0; i < 2 * s.n_g; ++i) {
+            uint32_t img = p_g1[data & 0xff]
+                         ^ p_g1[256 + ((data >> 8) & 0xff)]
+                         ^ p_g1[512 + ((data >> 16) & 0xff)];
+            p_g1 += 3*256;
+            if (p_b[img >> 5] & (1UL << (img & 31))) continue;
+
+            p_b[img >> 5] |= 1UL << (img & 31);
+            a[img] &= ((i ^ 1) << 24) | 0xffffffUL;
+            *p_end++ = img;
+            if (p_end > p_overflow) goto done;
         }
     }
-
-    free(p_start);
+    a[0] = 1;
+    error = 0;
+done:
+    if (p_start) free(p_start);
+    if (error < 0) return lin2_error(a, error);
     return 0;
 }
 
 
+
+
+/// @endcond
+
+
+
+/** @brief Compute all possible information about orbits
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_finalize(uint32_t *a)
+{
+    return add_generators(a);
+}
+
+
+
+
+/** @brief Return group element mapping ``v`` to orbit representative
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
+{
+    lin2_type s;
+    uint32_t mask, w, l_b1; 
+
+    int32_t status = add_generators(a);
+    if (status < 0) return status;
+ 
+    load_lin2_info(a, &s);
+    mask = (1UL << s.n) - 1;
+    v &= mask;
+    w = s.p_t[v] & mask;
+    l_b1 = l_b;
+    while (1) {
+        uint32_t gen = s.p_t[v];
+        if ((gen & mask) != w) return -6;
+        gen = (gen >> 24) & 0xff;
+        if (gen == 0xfe) return l_b - l_b1;
+        if (gen >= 2 * s.n_g) return -7;
+        if (l_b1-- == 0) return -8;
+        *b++ = (uint8_t)gen;
+        v = vmatmul(v, s.p_g + (size_t)(gen * s.n));
+    }
+    return -11;
+}
+
+
+
+
+
+/// @endcond
+
+
+
+/************************************************************************
+* Compatibility to older versions
+************************************************************************/
+
+
+/** @brief Output mapping computed by the union-find algorithm
+
+Details are yet to be documented! 
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_get_map(uint32_t *a, uint32_t *map, uint32_t l_map)
+{
+    lin2_type s;
+    uint32_t i;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] == 0) return -11;
+    load_lin2_info(a, &s);
+    if (l_map < (1UL << s.n)) return -13;
+    for (i = 0; i < (1UL << s.n); ++i) {
+        uint32_t v = s.p_t[i];
+        map[i] = ((v & 0xff000000UL) == 0xfe000000UL) ? i : v & 0xffffffUL;
+    }
+    return 1UL << s.n;
+}
+
+
+
+/** @brief Output the partition computed by the union-find algorithm
+
+
+Details are yet to be documented! 
+
+Assume that ``table`` is a table generated with the union-find algorithm
+corresponding to the table in the array ``a`` generated by
+function ``gen_ufind_lin2_init``.  We also assume the the length of
+that table is ``l_t = 1 << gen_ufind_lin2_dim(a)``, and that the length
+of the array ``map`` is ``l_map = l_t`.
+
+Then ``gen_ufind_lin2_orbits(a, map, l_map, ind, l_ind)`` is equivalent
+to ``gen_ufind_partition(table, l_t, map, ind, l_ind)``
+
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_orbits(uint32_t *a, uint32_t *t, uint32_t l_t, uint32_t *x, uint32_t l_x)
+{
+    lin2_type s;
+    uint32_t i;
+
+    if (a == NULL || a[0] > LIN2_MAX_STATUS || a[0] == 0) return -11;
+    load_lin2_info(a, &s);
+    if (l_t < (1UL << s.n)) return -13;
+    if (l_x < s.n_orbits + 1) return -14;
+    /* Ye olde way to do the worke
+    memcpy(t, s.p_t, sizeof(uint32_t) <<  s.n);
+    for (i = 0; i < (1UL << s.n); ++i) {
+        uint32_t v = t[i];
+        if ((v & 0xff000000UL) == 0xfe000000UL) v == 0x80000000UL;
+        else v &= 0xffffffUL;
+        t[i] = v;
+    }
+    return gen_ufind_partition(t, 1UL << s.n, t, x, s.n_orbits + 1);
+    */
+    for (i = 0; i < (1UL << s.n); ++i)  t[i] = s.p_o[i] & 0xffffff;
+    x[0] = 0;
+    for (i = 0; i < s.n_orbits; ++i) {
+        int32_t d = read_length_info(s.p_o + x[i]);
+        if (d < 0) return -15;
+        x[i+1] = x[i] + d;
+    }
+    if (x[s.n_orbits] != (1UL << s.n)) return -16;
+    return s.n_orbits;
+}
 
 
 //  %%GEN h

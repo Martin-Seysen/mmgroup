@@ -727,22 +727,22 @@ class XLeech2(AbstractGroupWord):
 add_to_embedded_classes(XLeech2)
 
 
-gen_ufind_init = None
+gen_ufind_lin2_init = None
 def _import_ufind():
-    global gen_ufind_init
-    global gen_ufind_find_all_min, gen_ufind_partition
-    global gen_ufind_make_map 
+    global gen_ufind_lin2_init
+    global gen_ufind_lin2_size
+    global gen_ufind_lin2_dim
+    global gen_ufind_lin2_n_orbits
+    global gen_ufind_lin2_orbits
+    global gen_ufind_lin2_get_map
     global gen_leech2_op_word_matrix24
-    global gen_ufind_union_linear
-    global ERR_L2_ORB_G, ERR_L2_ORB_INT
-    from mmgroup.generators import gen_ufind_init
-    from mmgroup.generators import gen_ufind_find_all_min
-    from mmgroup.generators import gen_ufind_partition
-    from mmgroup.generators import gen_ufind_make_map
+    from mmgroup.generators import gen_ufind_lin2_init
+    from mmgroup.generators import gen_ufind_lin2_size
+    from mmgroup.generators import gen_ufind_lin2_dim
+    from mmgroup.generators import gen_ufind_lin2_n_orbits
+    from mmgroup.generators import gen_ufind_lin2_orbits
+    from mmgroup.generators import gen_ufind_lin2_get_map
     from mmgroup.generators import gen_leech2_op_word_matrix24
-    from mmgroup.generators import gen_ufind_union_linear
-    ERR_L2_ORB_G = "Entry is not in the subgroup G_x0 of the Monster"
-    ERR_L2_ORB_INT = "Internal error in function leech2_orbits_raw"
 
 def leech2_orbits_raw(g_list, map = False):
     r"""Compute orbits of the Conway group on the Leech lattice mod 2
@@ -785,11 +785,8 @@ def leech2_orbits_raw(g_list, map = False):
     :math:`\Lambda / 2 \Lambda` to the smallest vector in
     its orbit  under the action of  :math:`H`.
     """
-    if gen_ufind_init is  None:
+    if gen_ufind_lin2_init is None:
         _import_ufind()
-    L_DATA = 0x1000000
-    data = np.zeros(L_DATA, dtype = np.uint32)
-    gen_ufind_init(data, L_DATA)
     ag = np.zeros(len(g_list) * 24, dtype = np.uint32)
     for i, g in enumerate(g_list):
         if not isinstance(g, (AbstractMMGroupWord, XLeech2)):
@@ -798,19 +795,21 @@ def leech2_orbits_raw(g_list, map = False):
         res = gen_leech2_op_word_matrix24(md, len(md), 0, ag[24 * i:])
         if res < 0:
             raise ValueError(ERR_L2_ORB_G)
-    gen_ufind_union_linear(data, 24, ag, len(g_list))
-    n_sets = gen_ufind_find_all_min(data, L_DATA)
-    if n_sets < 1:
-        raise ValueError(ERR_L2_ORB_INT)
-    if map:
-        mapping = np.zeros(L_DATA, dtype = np.uint32)
-        if gen_ufind_make_map(data, L_DATA, mapping) < 0:
-            raise ValueError(ERR_L2_ORB_INT)
+    len_a = gen_ufind_lin2_size(24, len(g_list))
+    a = np.zeros(len_a, dtype = np.uint32)
+    status = gen_ufind_lin2_init(a, len_a, 24, ag, len(g_list))
+    assert status >= 0, (1, status)
+    l_data = 1 << gen_ufind_lin2_dim(a)
+    n_sets = gen_ufind_lin2_n_orbits(a)
+    data = np.zeros(l_data, dtype = np.uint32)
     indices = np.zeros(n_sets + 1, dtype = np.uint32)
-    n_sets1 = gen_ufind_partition(data, L_DATA, indices, n_sets + 1)
-    if n_sets1 != n_sets:
-        raise ValueError(ERR_L2_ORB_INT)
+    status = gen_ufind_lin2_orbits(a, data, l_data, indices, n_sets + 1)
+    assert status >= 0, (2, status, l_data, n_sets)
+    result = n_sets, indices, data
     if map:
-        return n_sets, indices, data, mapping
-    else:
-        return n_sets, indices, data
+        map = np.zeros(l_data, dtype = np.uint32)
+        status = gen_ufind_lin2_get_map(a, map, len(map))
+        assert status == len(map), status
+        result += (map,)
+    del a
+    return result

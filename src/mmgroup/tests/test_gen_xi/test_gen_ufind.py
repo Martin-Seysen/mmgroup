@@ -37,7 +37,15 @@ from mmgroup.generators import gen_ufind_find
 from mmgroup.generators import gen_ufind_union
 from mmgroup.generators import gen_ufind_find_all_min
 from mmgroup.generators import gen_ufind_partition
-from mmgroup.generators import gen_ufind_union_linear
+
+from mmgroup.generators import gen_ufind_lin2_init
+from mmgroup.generators import gen_ufind_lin2_size
+from mmgroup.generators import gen_ufind_lin2_dim
+from mmgroup.generators import gen_ufind_lin2_n_orbits
+from mmgroup.generators import gen_ufind_lin2_orbits
+from mmgroup.generators import gen_ufind_lin2_get_map
+from mmgroup.generators import gen_ufind_make_map
+
 
 #####################################################################
 # Define 8 times 8 bit batrices M7, M2, MT generating the group H
@@ -83,43 +91,68 @@ def partition_as_llist(ind, data):
 
 
 
-def table_as_llist(w):
-    """Convert internal union-find data structure to partition
-
-    The union-find algorithm works with an internal data structure w
-    created by function gen_ufind_init(). This function returns
-    the partition encoded in data structure w in the same format
-    as function partition_as_llist().
-    """
-    w = deepcopy(w)
-    d = defaultdict(list)
-    lw = len(w)
-    for i in range(lw):
-        f = gen_ufind_find(w, lw, i)
-        if (f >= 0):
-            d[f].append(i)
-    lst = []
-    for l1 in d.values():
-        lst.append(l1)
-    lst.sort()
-    return lst
 
 
 
-
-def union_linear(w, m):
-    """Equivalent to gen_ufind_union_linear(w, len(m), m, 1)
-    """
+def union_linear_low_level(generators):
     def vmatmul(v, m):
         v1 = 0;
         for j, x in enumerate(m):
             if (v >> j) & 1: v1 ^= x
         return v1
 
-    t_len = 1 << len(m)
-    assert len(w) >= t_len and len(m) <= 30
-    for i in range(len(w)):
-        gen_ufind_union(w, t_len, i, vmatmul(i, m))
+    gen = np.array(generators, dtype = np.uint32)
+    n_gen, dim = gen.shape
+    t_len = 1 << dim
+    t =  np.zeros(t_len, dtype = np.uint32)
+    map =  np.zeros(t_len, dtype = np.uint32)
+    data =  np.zeros(t_len, dtype = np.uint32)
+    gen_ufind_init(t, t_len)
+    for m in gen:
+        for i in range(t_len):
+            gen_ufind_union(t, t_len, i, vmatmul(i, m))
+    n_orbits = gen_ufind_find_all_min(t, t_len)
+    assert n_orbits > 0   
+    ind = np.zeros(n_orbits + 1, dtype = np.uint32)
+    n_o1 = gen_ufind_partition(t, t_len, data, ind, n_orbits + 1)
+    assert n_o1 == n_orbits
+    assert gen_ufind_make_map(t, t_len, map) == 0
+    del t
+    return n_orbits, ind, data, map
+
+
+def union_linear_high_level(generators):
+    gen = np.array(generators, dtype = np.uint32)
+    n_gen, dim = gen.shape
+    len_a = gen_ufind_lin2_size(dim, n_gen)
+    assert len_a > 0
+    a = np.zeros(len_a, dtype = np.uint32)
+    status = gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen)
+    assert status >= 0, (1, status)
+    t_len = 1 << gen_ufind_lin2_dim(a)
+    n_orbits = gen_ufind_lin2_n_orbits(a)
+    data = np.zeros(t_len, dtype = np.uint32)
+    ind = np.zeros(n_orbits + 1, dtype = np.uint32)
+    status = gen_ufind_lin2_orbits(a, data, t_len, ind, n_orbits + 1)
+    assert status >= 0, (2, status, t_len, n_orbits)
+    map = np.zeros(t_len, dtype = np.uint32) 
+    assert gen_ufind_lin2_get_map(a, map, t_len) == t_len
+    del a
+    return n_orbits, ind, data, map
+
+
+
+def equ_union_linear(u1, u2):
+    """assert that two functions return equal data
+
+    Here we check that the return values ``u1`` and ``u2`` of
+    two calls to functions ``union_linear_high_level`` (or
+    ``union_linear_low_level`) are equal.`  
+    """
+    assert u1[0] == u2[0]
+    for a1, a2 in zip(u1[1:], u2[1:]):
+        assert a1.shape == a2.shape
+        assert (a1 == a2).all()
 
 
 #####################################################################
@@ -159,6 +192,7 @@ def check_orbits_H(llist):
         all_ |= current
     assert all_ == set(range(256))
 
+
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
@@ -172,26 +206,15 @@ def test_ufind_L3_2(verbose = 0):
     Then it checks some well-known properties of these orbits.
     """
     print("Testing C functions for union-find algorithm")
-    w = np.zeros(256, dtype = np.uint32)
-    gen_ufind_init(w, len(w))
-    w_copy = deepcopy(w)
-    for m in (M2, M7, MT):
-        gen_ufind_union_linear(w, len(m), m, 1)
-        union_linear(w_copy, m)
-    assert (w == w_copy).all()
-    ref_llist = table_as_llist(w)
-    if verbose:
-        for x in ref_llist:
-            print(len(x), [hex(y) for y in x])
-    gen_ufind_find_all_min(w, len(w))
-    llist1 = table_as_llist(w)
-    assert llist1 == ref_llist
-    indices = np.zeros(11, dtype = np.uint32)
-    n_sets = gen_ufind_partition(w, len(w), indices, len(indices))
+
+    generators = (M2, M7, MT)
+    gen_hi = union_linear_high_level(generators)
+    gen_lo = union_linear_low_level(generators)
+    equ_union_linear(gen_hi, gen_lo)
+    n_sets, ind, data, map = gen_hi
     assert n_sets == 10
-    llist2 = partition_as_llist(indices, w)
-    assert llist2 == ref_llist
-    check_orbits_H(ref_llist)
+    llist = partition_as_llist(ind, data)
+    check_orbits_H(llist)
 
 #####################################################################
 #  testing function eech2_orbits_raw()
