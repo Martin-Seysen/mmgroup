@@ -455,8 +455,8 @@ cleanup:
 #define MAT_BLOCKSIZE 7
 
 static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
-// Multiply 32-bit vector with 32 times 32 bit matrix v.
-// Zero high bits of v to multiply with matrix with less than 32 rows!
+// Multiply 32-bit vector with 32 times 32 bit matrix v. You may zero
+// high bits of v to multiply with matrix with less than 32 rows.
 {
     uint32_t w = 0;
     while (v) {
@@ -526,19 +526,21 @@ union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
 /// @cond DO_NOT_DOCUMENT 
 
 
+// A structure for the data in the array ``a`` in function
+// ``gen_ufind_lin2_init``
 typedef struct {
-   uint32_t status;
-   uint32_t n;
-   uint32_t n_g;
-   uint32_t n_orbits;
-   uint32_t *p_t;
-   uint32_t *p_o;
-   uint32_t *p_g;
+   uint32_t status;    // Status of the array
+   uint32_t n;         // dimenstion ``n`` of ``GF(2)^n``
+   uint32_t n_g;       // Number of generators of the group ``G``
+   uint32_t n_orbits;  // No of ``G`` orbits in ``GF(2)^n``
+   uint32_t *p_t;      // Pointer to main table ``t`` inside ``a``
+   uint32_t *p_o;      // Pointer to main table ``map`` inside ``a``
+   uint32_t *p_g;      // Pointer to list of generators of group in ``a``
 } lin2_type;
 
-#define LIN2_MAX_STATUS  2UL
-#define LIN2_MAX_N      24UL
-#define LIN2_MAX_N_G   126UL
+#define LIN2_MAX_STATUS  2UL  // Maximum good status
+#define LIN2_MAX_N      24UL  // Maximum dimension n of GF(2)^n
+#define LIN2_MAX_N_G   126UL  // Maximum No n_g of generators of group
 
 
 
@@ -580,14 +582,16 @@ int32_t gen_ufind_lin2_size(uint32_t n, uint32_t k)
 
 
 static inline int32_t 
-mat_inverse(uint32_t *m, uint32_t l_m, uint32_t *m_inv)
+mat_inverse(uint32_t *m, uint32_t n, uint32_t *m_inv)
+// Store inverse of the ``n`` times ``n`` bit matrix ``m`` in the
+// array ``m_inv``. Return 0 if inverse can be computed and -1 if not.
 {
     uint64_t a[24];
-    uint32_t i, mask = (1UL << l_m) - 1;
-    if (l_m == 0 || l_m > sizeof(a) / sizeof(uint64_t)) return -1;
-    for(i = 0; i < l_m; ++i) a[i] = m[i];
-    if (bitmatrix64_inv(a, l_m)) return -1;
-    for (i = 0; i < l_m; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
+    uint32_t i, mask = (1UL << n) - 1;
+    if (n == 0 || n > sizeof(a) / sizeof(uint64_t)) return -1;
+    for(i = 0; i < n; ++i) a[i] = m[i];
+    if (bitmatrix64_inv(a, n)) return -1;
+    for (i = 0; i < n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
     return 0;
 }
 
@@ -787,6 +791,36 @@ int32_t gen_ufind_lin2_n_orbits(uint32_t *a)
     if (a == NULL || a[0] > LIN2_MAX_STATUS) return -1;
     return a[3];
 }
+
+
+/** @brief Return a generator of a group acting on ``GF(2)^n``
+
+Let ``a`` be an array that stores a group acting on a vector space as
+described in function ``gen_ufind_lin2_init``. The function stores a
+(possibly inverted) generator of the group into the array ``g`` of
+length ``l_g``. On input ``i = 2 * k`` it stores generator ``k``; on
+input ``i = 2 * k + 1`` it stores the inverted generator ``k``.
+Here ``0 <= k < gen_ufind_lin2_n_gen(a)`` must hold.
+
+The generator is returned as an integer array of length ``n``,
+with ``n = gen_ufind_lin2_dim(a)``, encoded as an ``n`` times ``n``
+bit matrix as specified in function ``gen_ufind_lin2_init``.
+
+The function returns ``n`` in case of success and a negative value
+in case of error; e.g. if the array ``g`` is too short.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_gen(uint32_t *a, int32_t i, uint32_t *g, uint32_t l_g)
+{
+    lin2_type s;
+    if (a == NULL || a[0] > LIN2_MAX_STATUS) return -1;
+    load_lin2_info(a, &s);
+    if (l_g < s.n) return -2;
+    if (i >= 2 * s.n_g) return -3;
+    memcpy(g, s.p_g + i * s.n, s.n * sizeof(uint32_t));
+    return s.n;
+}
+
 
 
 /** @brief Check an array representing a group acting on ``GF(2)^n``
