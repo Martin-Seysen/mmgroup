@@ -61,6 +61,27 @@ from mmgroup.generators import gen_ufind_lin2_representatives
 # Bit matrix operations
 #####################################################################
 
+
+def chk(res, expected = None):
+    """Check result 'res' of a C function
+
+    If ``expected`` is None, the result ``res`` must be a nonnegative
+    number. Otherwise ``res`` must be equal to ``expected``.
+    """
+    ok = (expected is None and res >= 0) or  res == expected
+    if ok:
+        return res
+    if not ok:
+        if expected is None:
+            err = "Result of C function is %d" % res
+        else:
+            err = "Result obtained: %d, expected: %d" % (res, expected)
+        raise ValueError(err)
+
+#####################################################################
+# Bit matrix operations
+#####################################################################
+
 def vmatmul(v, m, n):
     """Multiply bit vector v with n times n bit matrix m"""
     w = 0
@@ -78,10 +99,10 @@ def is_inv(m, mi, n):
 
 def v_mul_g(a, v, g):
     """Multiply vector v with group word g stored in a"""
-    n = gen_ufind_lin2_dim(a)
+    n = chk(gen_ufind_lin2_dim(a))
     m = np.zeros(n, dtype = np.uint32)
     for i in g:
-        gen_ufind_lin2_gen(a, i, m, n)
+        chk(gen_ufind_lin2_gen(a, i, m, n))
         vmatmul(v, m, n)
     return v
 
@@ -143,16 +164,16 @@ def union_linear_low_level(generators):
     t =  np.zeros(t_len, dtype = np.uint32)
     map =  np.zeros(t_len, dtype = np.uint32)
     data =  np.zeros(t_len, dtype = np.uint32)
-    gen_ufind_init(t, t_len)
+    chk(gen_ufind_init(t, t_len))
     for m in gen:
         for i in range(t_len):
-            gen_ufind_union(t, t_len, i, vmatmul(i, m))
-    n_orbits = gen_ufind_find_all_min(t, t_len)
+           gen_ufind_union(t, t_len, i, vmatmul(i, m))
+    n_orbits = chk(gen_ufind_find_all_min(t, t_len))
+    chk(n_orbits)
     assert n_orbits > 0   
     ind = np.zeros(n_orbits + 1, dtype = np.uint32)
-    n_o1 = gen_ufind_partition(t, t_len, data, ind, n_orbits + 1)
-    assert n_o1 == n_orbits
-    assert gen_ufind_make_map(t, t_len, map) == 0
+    chk(gen_ufind_partition(t, t_len, data, ind, n_orbits + 1), n_orbits)
+    chk(gen_ufind_make_map(t, t_len, map), 0)
     del t
     return n_orbits, ind, data, map
 
@@ -160,16 +181,15 @@ def union_linear_low_level(generators):
 def union_linear_high_level(generators):
     gen = np.array(generators, dtype = np.uint32)
     n_gen, dim = gen.shape
-    len_a = gen_ufind_lin2_size(dim, n_gen)
-    assert len_a > 0
+    len_a = chk(gen_ufind_lin2_size(dim, n_gen))
+    assert len_a > 0, len_a
     a = np.zeros(len_a, dtype = np.uint32)
-    status = gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen)
-    assert status >= 0, (1, status)
-    t_len = 1 << gen_ufind_lin2_dim(a)
-    n_orbits = gen_ufind_lin2_n_orbits(a)
+    chk(gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen))
+    t_len = 1 << chk(gen_ufind_lin2_dim(a))
+    n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)
     ind = np.zeros(n_orbits + 1, dtype = np.uint32)
-    status = gen_ufind_lin2_orbits(a, data, t_len, ind, n_orbits + 1)
+    status = chk(gen_ufind_lin2_orbits(a, data, t_len, ind, n_orbits + 1))
     assert status >= 0, (2, status, t_len, n_orbits)
     map = np.zeros(t_len, dtype = np.uint32) 
     assert gen_ufind_lin2_get_map(a, map, t_len) == t_len
@@ -209,11 +229,11 @@ def check_properties_a(a, generators):
     for i in range(n_gen):
         m = np.zeros(dim, dtype = np.uint32)
         mi = np.zeros(dim, dtype = np.uint32)
-        gen_ufind_lin2_gen(a, 2*i, m, dim)
-        gen_ufind_lin2_gen(a, 2*i + 1, mi, dim)
+        chk(gen_ufind_lin2_gen(a, 2*i, m, dim))
+        chk(gen_ufind_lin2_gen(a, 2*i + 1, mi, dim))
         assert (m == gen[i]).all()
         assert is_inv(m, mi, dim)
-    assert gen_ufind_lin2_check(a, len(a)) >= 0
+    chk(gen_ufind_lin2_check(a, len(a)))
 
 
 def check_properties_a_llist(a, llist):
@@ -267,10 +287,9 @@ def check_orbits_H(llist):
 def check_properties_a_group(a, llist):
     g0 = np.zeros(30, dtype = np.uint8)
     #print([hex(x) for x in a[:20]])
-    assert gen_ufind_lin2_finalize(a) >= 0
+    chk(gen_ufind_lin2_finalize(a))
     assert a[0] == 2, a[0]
     print("aaa", a[len(a) - 2])
-    assert gen_ufind_lin2_check_finalized(a, len(a)) == len(a)
 
     n_orbits = gen_ufind_lin2_n_orbits(a)
     assert n_orbits > 0, n_orbits
@@ -278,8 +297,8 @@ def check_properties_a_group(a, llist):
     assert n_orbits == gen_ufind_lin2_representatives(a, r, len(r))
     reps = set(r)
     table = a[4:]  # main table in internal structure
-    n = gen_ufind_lin2_dim(a)
-    n_gen = gen_ufind_lin2_n_gen(a)
+    n = chk(gen_ufind_lin2_dim(a))
+    n_gen = chk(gen_ufind_lin2_n_gen(a))
     #print(a[0], n, n_gen, n_orbits)
 
     map_v_tmp = np.zeros(n, dtype = np.uint32)
@@ -299,9 +318,10 @@ def check_properties_a_group(a, llist):
         else:
             assert g < 2 * n_gen, (v, g)
             group_elem = np.zeros(n, dtype = np.uint32)
-            gen_ufind_lin2_gen(a, g, group_elem, n)
+            chk(gen_ufind_lin2_gen(a, g, group_elem, n))
             w = vmatmul(v, group_elem, n)
-            assert gen_ufind_lin2_rep_v(a, w) == gen_ufind_lin2_rep_v(a, v)
+            ref = chk(gen_ufind_lin2_rep_v(a, v))
+            assert gen_ufind_lin2_rep_v(a, w) == ref
 
     a_g = np.zeros(20, dtype = np.uint8)
     for orbit in llist:
@@ -309,21 +329,25 @@ def check_properties_a_group(a, llist):
         v_set = sample(orbit, min(2, len(orbit)))
         for v in v_set:
             w = v
-            g0 = gen_ufind_lin2_map_v_gen(a, v)
+            g0 = chk(gen_ufind_lin2_map_v_gen(a, v))
             #print(v,g0)
             while g0 < 0xfe:
-                gen_ufind_lin2_gen(a, g0, m, n)
+                chk(gen_ufind_lin2_gen(a, g0, m, n))
                 w = vmatmul(w, m, n)
-                g0 = gen_ufind_lin2_map_v_gen(a, w)
+                g0 = chk(gen_ufind_lin2_map_v_gen(a, w))
             #print(v, w)
-            assert w == gen_ufind_lin2_rep_v(a, v)
+            assert w == chk(gen_ufind_lin2_rep_v(a, v))
 
-            l_g = gen_ufind_lin2_map_v(a, v, a_g, len(a_g))
+            l_g = chk(gen_ufind_lin2_map_v(a, v, a_g, len(a_g)))
             assert l_g >= 0, (v, l_g, a_g[:10])
             a_g0 = a_g[:l_g]
             w = v_mul_g(a, w, a_g0)
             #print(v, w, orbit[0], a_g0)
             assert w == orbit[0], ("error", v, w, orbit[0], a_g0)
+
+    assert gen_ufind_lin2_check_finalized(a, len(a)) == len(a)
+
+
 
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
