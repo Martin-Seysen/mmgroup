@@ -56,6 +56,7 @@ from mmgroup.generators import gen_ufind_lin2_map_v
 from mmgroup.generators import gen_ufind_lin2_finalize
 from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
+from mmgroup.generators import gen_ufind_lin2_get_table
 
 #####################################################################
 # Bit matrix operations
@@ -296,8 +297,10 @@ def check_properties_a_group(a, llist):
     r = np.zeros(n_orbits, dtype = np.uint32)
     assert n_orbits == gen_ufind_lin2_representatives(a, r, len(r))
     reps = set(r)
-    table = a[4:]  # main table in internal structure
     n = chk(gen_ufind_lin2_dim(a))
+    table =np.zeros(1 << n, dtype = np.uint32)
+    # Copy main table from internal structure ``a`` to ``table``
+    chk(gen_ufind_lin2_get_table(a, table, len(table)))
     n_gen = chk(gen_ufind_lin2_n_gen(a))
     #print(a[0], n, n_gen, n_orbits)
 
