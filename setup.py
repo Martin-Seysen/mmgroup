@@ -288,6 +288,7 @@ GENERATORS_SOURCES = '''
    gen_leech_reduce_22.c
    gen_leech_reduce_n.c gen_random.c
    gen_union_find.c
+   gen_ufind_lin2.c
    gen_leech_reduce_mod3.c
 '''
 

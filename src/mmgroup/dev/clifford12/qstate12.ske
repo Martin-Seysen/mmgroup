@@ -149,7 +149,7 @@ typedef struct {
   @brief Error codes for functions in this module
 
   Unless otherwise stated, the functions in modules ``qstate.c``, 
-  ``qmatrix.c``, and ``xsp2co1.c``  return nonnegative 
+  ``qmatrix.c``, and ``xsp2co1.c``  return nonnegative values 
   in case of success and negative values in case of failure. 
   Negative return values mean error codes as follows:
 */

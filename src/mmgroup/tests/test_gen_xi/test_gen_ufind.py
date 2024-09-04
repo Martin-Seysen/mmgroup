@@ -58,6 +58,9 @@ from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
 
+
+a = None
+
 #####################################################################
 # Bit matrix operations
 #####################################################################
@@ -73,6 +76,10 @@ def chk(res, expected = None):
     if ok:
         return res
     if not ok:
+        if isinstance(a, np.ndarray):
+            a0 = int(a[0])
+            a0 = a0 if a0 < 0x80000000 else a0 - 0x100000000
+            print("Dump of array a", a[:6], ", a[0] =",  a0)
         if expected is None:
             err = "Result of C function is %d" % res
         else:
@@ -184,8 +191,10 @@ def union_linear_high_level(generators):
     n_gen, dim = gen.shape
     len_a = chk(gen_ufind_lin2_size(dim, n_gen))
     assert len_a > 0, len_a
+    global a
     a = np.zeros(len_a, dtype = np.uint32)
     chk(gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen))
+    print("iii", a[:6], len(a), n_gen)
     t_len = 1 << chk(gen_ufind_lin2_dim(a))
     n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)
@@ -352,6 +361,7 @@ def check_properties_a_group(a, llist):
 
 
 
+@pytest.mark.mmm
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
@@ -365,8 +375,9 @@ def test_ufind_L3_2(verbose = 0):
     Then it checks some well-known properties of these orbits.
     """
     print("Testing C functions for union-find algorithm")
-
+    
     generators = (M2, M7, MT, M_UNIT8)
+    global a
     gen_hi, a = union_linear_high_level(generators)
     gen_lo = union_linear_low_level(generators)
     equ_union_linear(gen_hi, gen_lo)
