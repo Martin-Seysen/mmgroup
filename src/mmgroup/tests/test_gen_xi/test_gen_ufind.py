@@ -57,7 +57,7 @@ from mmgroup.generators import gen_ufind_lin2_finalize
 from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
-
+from mmgroup.generators import gen_ufind_lin2_add
 
 a = None
 
@@ -193,11 +193,14 @@ def union_linear_high_level(generators):
     assert len_a > 0, len_a
     global a
     a = np.zeros(len_a, dtype = np.uint32)
-    chk(gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen))
+    chk(gen_ufind_lin2_init(a, len_a, dim, n_gen))
+    for g in gen:
+        chk(gen_ufind_lin2_add(a, g, dim, 1))
     t_len = 1 << chk(gen_ufind_lin2_dim(a))
     n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)
     ind = np.zeros(n_orbits + 1, dtype = np.uint32)
+    print("ooo", n_orbits)
     status = chk(gen_ufind_lin2_orbits(a, data, t_len, ind, n_orbits + 1))
     assert status >= 0, (2, status, t_len, n_orbits)
     map = np.zeros(t_len, dtype = np.uint32) 

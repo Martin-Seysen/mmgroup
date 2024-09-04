@@ -736,6 +736,7 @@ def _import_ufind():
     global gen_ufind_lin2_orbits
     global gen_ufind_lin2_get_map
     global gen_leech2_op_word_matrix24
+    global gen_ufind_lin2_add 
     from mmgroup.generators import gen_ufind_lin2_init
     from mmgroup.generators import gen_ufind_lin2_size
     from mmgroup.generators import gen_ufind_lin2_dim
@@ -743,6 +744,7 @@ def _import_ufind():
     from mmgroup.generators import gen_ufind_lin2_orbits
     from mmgroup.generators import gen_ufind_lin2_get_map
     from mmgroup.generators import gen_leech2_op_word_matrix24
+    from mmgroup.generators import gen_ufind_lin2_add
 
 def leech2_orbits_raw(g_list, map = False):
     r"""Compute orbits of the Conway group on the Leech lattice mod 2
@@ -787,18 +789,19 @@ def leech2_orbits_raw(g_list, map = False):
     """
     if gen_ufind_lin2_init is None:
         _import_ufind()
-    ag = np.zeros(len(g_list) * 24, dtype = np.uint32)
+    len_a = gen_ufind_lin2_size(24, len(g_list))
+    a = np.zeros(len_a, dtype = np.uint32)
+    status = gen_ufind_lin2_init(a, len_a, 24, len(g_list))
+    assert status >= 0, (1, status)
+    ag = np.zeros(24, dtype = np.uint32)
     for i, g in enumerate(g_list):
         if not isinstance(g, (AbstractMMGroupWord, XLeech2)):
             raise ValueError(ERR_L2_ORB_G)
         md = g.mmdata
-        res = gen_leech2_op_word_matrix24(md, len(md), 0, ag[24 * i:])
+        res = gen_leech2_op_word_matrix24(md, len(md), 0, ag)
         if res < 0:
             raise ValueError(ERR_L2_ORB_G)
-    len_a = gen_ufind_lin2_size(24, len(g_list))
-    a = np.zeros(len_a, dtype = np.uint32)
-    status = gen_ufind_lin2_init(a, len_a, 24, ag, len(g_list))
-    assert status >= 0, (1, status)
+        assert gen_ufind_lin2_add(a, ag, len(ag), 1) >= 0 
     l_data = 1 << gen_ufind_lin2_dim(a)
     n_sets = gen_ufind_lin2_n_orbits(a)
     data = np.zeros(l_data, dtype = np.uint32)
