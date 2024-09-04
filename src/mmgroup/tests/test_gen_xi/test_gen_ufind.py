@@ -194,7 +194,6 @@ def union_linear_high_level(generators):
     global a
     a = np.zeros(len_a, dtype = np.uint32)
     chk(gen_ufind_lin2_init(a, len_a, dim, gen.ravel(), n_gen))
-    print("iii", a[:6], len(a), n_gen)
     t_len = 1 << chk(gen_ufind_lin2_dim(a))
     n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)
@@ -299,7 +298,6 @@ def check_properties_a_group(a, llist):
     #print([hex(x) for x in a[:20]])
     chk(gen_ufind_lin2_finalize(a))
     assert a[0] == 2, a[0]
-    print("aaa", a[len(a) - 2])
 
     n_orbits = gen_ufind_lin2_n_orbits(a)
     assert n_orbits > 0, n_orbits
@@ -361,7 +359,6 @@ def check_properties_a_group(a, llist):
 
 
 
-@pytest.mark.mmm
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H

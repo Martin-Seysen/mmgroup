@@ -77,7 +77,7 @@ check_out_buf32(uint32_t *p_buf, uint32_t len, uint32_t min_len)
 // A structure for the data in the array ``a`` in function
 // ``gen_ufind_lin2_init``
 typedef struct {
-   uint32_t status;    // Status of the array
+   int32_t status;     // Status of the array
    uint32_t n;         // dimenstion ``n`` of ``GF(2)^n``
    uint32_t n_max_g;   // Maximum No of generators of the group ``G``
    uint32_t n_g;       // Number of generators of the group ``G``
@@ -93,9 +93,10 @@ typedef struct {
 
 
 
-static inline void load_lin2_info(uint32_t *a, lin2_type *ps)
+static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
 {
-    ps->status = a[0];
+    if (a == NULL) return ERR_GEN_UFIND_INT_LIN2 - 1;
+    ps->status = (int32_t)a[0];
     ps->n = a[1];
     ps->n_max_g = a[2];
     ps->n_g = a[3];
@@ -103,17 +104,20 @@ static inline void load_lin2_info(uint32_t *a, lin2_type *ps)
     ps->p_t = a + 5;
     ps->p_o = ps->p_t + ((size_t)1UL << ps->n);
     ps->p_g = ps->p_o + ((size_t)1UL << ps->n);
+    return ps->status;
 }
 
 
 static inline int32_t store_lin2_info(lin2_type *ps, uint32_t *a)
 {
-    a[0] = ps->status;
+    if (a == NULL) return ERR_GEN_UFIND_INT_LIN2 - 1;
+    if ((int32_t)a[0] < 0) return (int32_t)a[0];
+    a[0] = (uint32_t)ps->status;
     a[1] = ps->n;
     a[2] = ps->n_max_g;
     a[3] = ps->n_g;
     a[4] = ps->n_orbits;
-    return (int32_t) a[0];
+    return ps->status;
 }
 
 
@@ -122,8 +126,9 @@ static inline int32_t lin2_error(uint32_t *a, int32_t status)
 {
     int32_t status_a;
     if (status >= 0) return status;
-    status_a = (int32_t)(a[0]);
-    if (status_a >= 0) a[0] = (uint32_t)(status);
+    if (a != NULL) {
+        if ((int32_t)(a[0]) >= 0) a[0] = (uint32_t)(status);
+    }
     return status;
 }
 
@@ -241,9 +246,9 @@ mat_inverse(uint32_t *m, uint32_t n, uint32_t *m_inv)
 // Store inverse of the ``n`` times ``n`` bit matrix ``m`` in the
 // array ``m_inv``. Return 0 if inverse can be computed and -1 if not.
 {
-    uint64_t a[24];
+    uint64_t a[LIN2_MAX_N];
     uint32_t i, mask = (1UL << n) - 1;
-    if (n == 0 || n > sizeof(a) / sizeof(uint64_t)) return -1;
+    if (n == 0 || n > LIN2_MAX_N) return ERR_GEN_UFIND_INVERSE;
     for (i = 0; i < n; ++i) a[i] = m[i];
     if (bitmatrix64_inv(a, n)) return ERR_GEN_UFIND_INVERSE;
     for (i = 0; i < n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
@@ -322,21 +327,16 @@ done:
 
 
 
-static inline int32_t finalize_initalization(uint32_t *a)
+static inline 
+int32_t finalize_initalization(uint32_t *a, lin2_type *ps)
 {
     lin2_type s;
-    int32_t status;
+    int32_t status = load_lin2_info(a, ps);
     uint32_t i, mask, *p_ind = NULL;
 
-    if (a == NULL) return  ERR_GEN_UFIND_INT_LIN2 - 11;
-    if (a[0] > 0 && a[0] <= LIN2_MAX_STATUS) return a[0];
-    
+    if (status != 0) return status;
     load_lin2_info(a, &s);
-    if (a[0] > LIN2_MAX_STATUS) {
-        if ((int32_t)(a[0]) < 0) return (int32_t)(a[0]);
-        status = ERR_GEN_UFIND_INT_LIN2 - 12;
-        goto done;
-    }
+
     // Finalize union-find algorithm on orbits in main table s.p_t
     status = gen_ufind_find_all_min(s.p_t, 1UL << s.n);
     if  (status < 1) {
@@ -383,7 +383,7 @@ static inline int32_t finalize_initalization(uint32_t *a)
     
 done:
     if (p_ind) free(p_ind);
-    s.status = (uint32_t)(status);
+    ps->status = s.status = (uint32_t)(status);
     store_lin2_info(&s, a);
     return status;
 }
@@ -439,8 +439,8 @@ in case of error.
 int32_t gen_ufind_lin2_init(uint32_t *a, uint32_t l_a, uint32_t n, uint32_t *g, uint32_t k)
 {
     int32_t l_a_expected, status;
-    uint32_t i, *p_ind = NULL;
     lin2_type s;
+    uint32_t i;
 
     status = l_a_expected = gen_ufind_lin2_size(n, k);
     if (status < 0) goto done;
@@ -451,21 +451,23 @@ int32_t gen_ufind_lin2_init(uint32_t *a, uint32_t l_a, uint32_t n, uint32_t *g, 
     s.n_max_g = k;
     s.n_g = 0;
     s.n_orbits = 0;
+
+    if (status < 0) goto done;
     store_lin2_info(&s, a);
-    load_lin2_info(a, &s);
+    status = load_lin2_info(a, &s);
 
     // Perform union-find algorithm on orbits in main table s.p_t
     status = gen_ufind_init(s.p_t, 1UL << n);
     if (status < 0) goto done;
-    store_lin2_info(&s, a);
+
+    // Perform union-find algorithm on orbits in main table s.p_t
     for (i = 0; i < k; ++i) {
         status = load_bitmatrix(a, g + i * s.n, s.n, 1);
-        if (status < 0) {status -= 1000; goto done;}
+        if (status < 0) goto done;
     }
-    status = finalize_initalization(a);
+    status = finalize_initalization(a, &s);
 
 done:
-    if (p_ind) free(p_ind);
     return lin2_error(a, status);
 }
 
@@ -474,22 +476,6 @@ done:
 /************************************************************************
 * Obtaining information from array dealing with a subgroup of SL_2(n)
 ************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT
-
-static inline int32_t
-check_a_fast(uint32_t *a)
-{
-    if (a == NULL) return  ERR_GEN_UFIND_INT_LIN2 - 11;
-    if (a[0] > LIN2_MAX_STATUS || a[0] == 0) {
-        if ((int32_t)a[0] < 0) return (int32_t)a[0];
-        a[0] = (uint32_t)(ERR_GEN_UFIND_INT_LIN2 - 12);
-        return (int32_t)a[0];
-    }
-    return 0;
-}
-
-/// @endcond
 
 
 
@@ -502,8 +488,9 @@ returns the dimension of the vector space.
 // %%EXPORT px
 int32_t gen_ufind_lin2_dim(uint32_t *a)
 {
-    int32_t status = check_a_fast(a);
-    return status < 0 ? status : a[1];
+    lin2_type s;
+    int32_t status = load_lin2_info(a, &s);
+    return status < 0 ? status : s.n;
 }
 
 
@@ -516,8 +503,9 @@ returns the number of generators of the group.
 // %%EXPORT px
 int32_t gen_ufind_lin2_n_gen(uint32_t *a)
 {
-    int32_t status = check_a_fast(a);
-    return status < 0 ? status : a[3];
+    lin2_type s;
+    int32_t status = load_lin2_info(a, &s);
+    return status < 0 ? status : s.n_g;
 }
 
 
@@ -531,8 +519,9 @@ of the group.
 // %%EXPORT px
 int32_t gen_ufind_lin2_n_orbits(uint32_t *a)
 {
-    int32_t status = check_a_fast(a);
-    return status < 0 ? status : a[4];
+    lin2_type s;
+    int32_t status = finalize_initalization(a, &s);
+    return status < 0 ? status : s.n_orbits;
 }
 
 
@@ -556,9 +545,8 @@ in case of error; e.g. if the array ``g`` is too short.
 int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
 {
     lin2_type s;
-    int32_t status = check_a_fast(a);
+    int32_t status = load_lin2_info(a, &s);
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     if (i >= 2 * s.n_g) return ERR_GEN_UFIND_IN_LARGE;
     if (check_out_buf32(g, l_g, s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     memcpy(g, s.p_g + i * s.n, s.n * sizeof(uint32_t));
@@ -581,14 +569,15 @@ may not be used!
 int32_t gen_ufind_lin2_check(uint32_t *a, uint32_t len_a)
 {
     lin2_type s;
-    int32_t a_size, status = check_a_fast(a);
-    if (status < 0) return status;
+    int32_t a_size, status;
     if (len_a < 6) return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 13);
-    load_lin2_info(a, &s);
+    status = load_lin2_info(a, &s);
+    if (status < 0) return status;
     a_size = status = gen_ufind_lin2_size(s.n, s.n_g);
     if (status < 0) return lin2_error(a, status);
-    if ((uint32_t)a_size > len_a) return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 14);
-    return a[0];
+    if ((uint32_t)a_size > len_a) return 
+        lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 14);
+    return status;
 }
 
 
@@ -615,10 +604,9 @@ int32_t gen_ufind_lin2_rep_v(uint32_t *a, uint32_t v)
 {
     lin2_type s;
     uint32_t mask, entry;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
     v &= mask;
     entry = s.p_t[v];
@@ -642,10 +630,9 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
 {
     lin2_type s;
     uint32_t mask, rep, index_o;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
     rep = gen_ufind_lin2_rep_v(a, v);
     index_o = s.p_t[rep] & mask;
@@ -673,10 +660,9 @@ int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_
     lin2_type s;
     uint32_t mask, rep, index_o, *p_o;
     int32_t length, i;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
     rep = status = gen_ufind_lin2_rep_v(a, v);
     if (status < 0) return status;
@@ -711,10 +697,9 @@ int32_t gen_ufind_lin2_representatives(uint32_t *a, uint32_t *r, uint32_t l_r)
 {
     lin2_type s;
     uint32_t mask, index_o = 0, l_r1 = l_r, d;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
 
     while (index_o < (1UL << s.n)) {
@@ -759,16 +744,19 @@ store_gen(uint32_t *g, uint32_t n, uint32_t start, uint32_t maxlen, uint32_t *o)
 /** @brief Yet to be tested and documented!
 
 */
-static inline int32_t add_generators(uint32_t *a)
+static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
 {
     uint32_t *p_alloc = NULL;
     uint32_t *p_start, *p_end, *p_overflow, *p_g, *p_s_g, *p_g1, *p_b;
     uint32_t i, j, l_b;
-    int32_t status = gen_ufind_lin2_check(a, 0x7ffffffUL);
     lin2_type s;
+    int32_t status = finalize_initalization(a, p_s);
 
     if (status < 0) return status;
-    if (a[0] >= 2) return 0;
+    if (a[0] >= 2) {
+        a[0] = 2;
+        return 0;
+    }
     load_lin2_info(a, &s);
 
     // Allocate work buffer and set pointer to queue in work buffer
@@ -829,12 +817,11 @@ static inline int32_t add_generators(uint32_t *a)
             *p_end++ = img;
         }
     }
-    a[0] = 2;  // update main status
-    status = 0;
+    status = a[0] = p_s->status = 2;  // update main status
 done:
     if (p_alloc) free(p_alloc);
     if (status < 0) return lin2_error(a, status);
-    return 0;
+    return status;
 }
 
 
@@ -854,10 +841,9 @@ Details are yet to be documented!
 int32_t gen_ufind_lin2_map_v_gen(uint32_t *a, uint32_t v)
 {
     uint32_t mask;
-    int32_t status = add_generators(a);
     lin2_type s;
+    int32_t status = add_generators(a, &s);
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
     return (s.p_t[v & mask] >> 24) & 0xff;
 }
@@ -874,11 +860,10 @@ Details are yet to be documented!
 // %%EXPORT px
 int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 {
-    lin2_type s;
     uint32_t mask, w, l_b1, entry;
-    int32_t status = add_generators(a);
+    lin2_type s;
+    int32_t status = add_generators(a, &s);
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     mask = (1UL << s.n) - 1;
     v &= mask;
     entry = s.p_t[v];
@@ -936,10 +921,8 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
     lin2_type s;
     int32_t status, a_length, i;
     uint32_t a_sum = 0;
-    if ((status = add_generators(a)) != 0) return status;
-    load_lin2_info(a, &s);
-    if (s.status != LIN2_MAX_STATUS) 
-        return status < 0 ? status :  ERR_GEN_UFIND_INT_LIN2 - 41;
+    status = add_generators(a, &s);
+    if (status < 0) return status;
     a_length =  gen_ufind_lin2_size(s.n, s.n_g);
     a[a_length - 2] = magic_content(&s);
     for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
@@ -962,10 +945,11 @@ int32_t gen_ufind_lin2_check_finalized(uint32_t *a, uint32_t len_a)
     lin2_type s;
     int32_t status, a_length, i;
     uint32_t a_sum = 0;
+    status = load_lin2_info(a, &s);
+    if (status < 0) return status;
+
     if ((status = gen_ufind_lin2_check(a, len_a)) < 0) return status;
-    load_lin2_info(a, &s);
-    if (s.status != LIN2_MAX_STATUS)
-        return status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 43;
+    if (status < LIN2_MAX_STATUS) return ERR_GEN_UFIND_INT_LIN2 - 43;
     a_length =  gen_ufind_lin2_size(s.n, s.n_g);
     if (a_length <= 0) return ERR_GEN_UFIND_INT_LIN2 - 44;;
     if (a[a_length - 2] != magic_content(&s)) return ERR_GEN_UFIND_INT_LIN2 - 45;
@@ -1002,7 +986,7 @@ int32_t gen_ufind_lin2_get_map(uint32_t *a, uint32_t *map, uint32_t l_map)
 {
     lin2_type s;
     uint32_t i;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
     load_lin2_info(a, &s);
@@ -1030,10 +1014,9 @@ in case of failure, e.g. if the array ``t`` is too short.
 int32_t gen_ufind_lin2_get_table(uint32_t *a, uint32_t *t, uint32_t l_t)
 {
     lin2_type s;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     if (check_out_buf32(t, l_t, 1UL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     memcpy(t, s.p_t, sizeof(uint32_t) << s.n);
     return 1UL << s.n;
@@ -1067,10 +1050,9 @@ int32_t gen_ufind_lin2_orbits(uint32_t *a, uint32_t *t, uint32_t l_t, uint32_t *
 {
     lin2_type s;
     uint32_t i;
-    int32_t status = check_a_fast(a);
+    int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    load_lin2_info(a, &s);
     if (check_out_buf32(t, l_t, 1UL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     if (check_out_buf32(x, l_x, s.n_orbits + 1)) return ERR_GEN_UFIND_OUT_SHORT;
     /* Ye olde waye to do the worke
