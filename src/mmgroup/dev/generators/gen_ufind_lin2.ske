@@ -776,6 +776,42 @@ store_gen(uint32_t *g, uint32_t n, uint32_t start, uint32_t maxlen, uint32_t *o)
 }
 
 
+static inline void
+store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
+// Put mask = (1 << n) - 1, and
+// g[j] = ((uint64_t)(g1[j] & mask) << 32) + (g1[j] & mask).
+// Let G be the bit matrix with row vectors g[0], ..., g[n-1].
+// Put byte(k, i) =  (i >> (8 * k)) & 0xff.
+// Then we compute o[0x100 * k + i] = (byte[k, i] << 8 * k) (*) G.
+// Here (*) is the matrix product of a bit row vector with a bit matrix.
+// For n <= 24, output array  o  must have length 0x300.
+// In this case we will have:
+// v (*) G = o[byte(0, v)] ^ o[0x100 + byte(1, v)] ^ o[0x200 + byte(2, v)].
+// We set the entries of  o used for computing v (*) G in this case only.
+{
+    uint32_t i, jmax, j, j_hi;
+    uint64_t mask, g_hi;
+    memset(o, 0, 0x300 * sizeof(uint64_t));
+    mask = (1UL << n) - 1;
+    mask = (mask << 32ULL) + mask;
+    for (i = 0; i < 24; i += 8) {
+        if (n > i) {
+            g_hi = 0; j_hi = 0;
+            jmax = n - i;
+            if (jmax > 8) jmax = 8;
+            for (j = 1; j < (1UL << jmax); ++j) {
+                if ((j & (j - 1)) == 0) { // is j a power of 2?
+                    g_hi = *g1++;
+                    g_hi = ((g_hi << 32ULL) + *g0++) & mask;
+                    j_hi = j;
+                }
+                o[j] = g_hi ^ o[j - j_hi];
+            }
+        }
+        o += 0x100;
+    }
+}
+
 
 
 
@@ -786,8 +822,9 @@ store_gen(uint32_t *g, uint32_t n, uint32_t start, uint32_t maxlen, uint32_t *o)
 static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
 {
     uint32_t *p_alloc = NULL;
-    uint32_t *p_start, *p_end, *p_overflow, *p_g, *p_s_g, *p_g1, *p_b;
-    uint32_t i, j, l_b;
+    uint32_t *p_start, *p_end, *p_overflow, *p_g, *p_b;
+    uint32_t i, l_b;
+    uint64_t *p64_g;
 
     lin2_type s;
     int32_t status = finalize_initalization(a, p_s);
@@ -800,31 +837,23 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
     load_lin2_info(a, &s);
 
     // Allocate work buffer and set pointer to queue in work buffer
-    l_b = (s.n > 5) ? (1UL << (s.n - 5)) : 1;
-    p_alloc = malloc(((1UL << s.n) + s.n_g*2*3*256 + l_b) * sizeof(uint32_t));
+    l_b = (s.n > 6) ? (1UL << (s.n - 5)) : 2;
+    p_alloc = malloc(((1UL << s.n) + s.n_g * 0x600 + l_b) * sizeof(uint32_t));
     if (p_alloc == NULL) return lin2_error(a, ERR_GEN_UFIND_MEM);
     p_end = p_start = p_alloc;
     p_g = p_overflow = p_start + ((size_t)1UL << s.n);
     p_b = p_g + s.n_g*2*3*256;
 
     // Load generator matrices
-    memset(p_g, 0, s.n_g*2*3*256 * sizeof(uint32_t));
-    p_g1 = p_g;
-    p_s_g = s.p_g;
-    for (i = 0; i < 2 * s.n_g; ++i) {
-        for (j = 0; j < 24; j += 8) {
-            store_gen(p_s_g, s.n, j, 8, p_g1);
-            p_g1 += 256;
-        }
-        p_s_g += s.n;
+    p64_g = (uint64_t*) p_g;
+    for (i = 0; i < s.n_g; ++i) {
+        store64_gen(p64_g + 0x300 * i, s.n, s.p_g + 2 * i * s.n, 
+            s.p_g + (2 * i + 1) * s.n);
     }
-    status = ERR_GEN_UFIND_INT_LIN2 - 21;
-    if (p_g1 != p_b) goto done;
-    status = ERR_GEN_UFIND_INT_LIN2 - 22;
-    if (p_s_g != s.p_g + 2 * s.n_g * s.n) goto done;
 
     // Initialize bitmap table
-    memset(p_b, 0, l_b * sizeof(uint32_t));
+    memset(p_b, 0xff, l_b * sizeof(uint32_t));
+
 
     // Load start vectors to queue and mark them in bitmap table
     status = gen_ufind_lin2_representatives(a, p_start, 1UL << s.n);
@@ -835,29 +864,40 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
     p_end = p_start + s.n_orbits;
     for (i = 0; i < s.n_orbits; ++i) {
         uint32_t data = p_start[i];
-        p_b[data >> 5] |= 1UL << (data & 31);
+        p_b[data >> 5] &= ~(1UL << (data & 0x1f));
     }
 
     // Compute and store generators
     status = ERR_GEN_UFIND_INT_LIN2 - 25;
     while (p_start < p_end) {
-        uint32_t data = *p_start++;
-        p_g1 = p_g;
-        for (i = 0; i < 2 * s.n_g; ++i) {
-            uint32_t img = p_g1[data & 0xff]
-                         ^ p_g1[256 + ((data >> 8) & 0xff)]
-                         ^ p_g1[512 + ((data >> 16) & 0xff)];
-            img &= (0x1UL << s.n) - 1;
-            p_g1 += 3*256;
-            if (p_b[img >> 5] & (1UL << (img & 31))) continue;
-
-            p_b[img >> 5] |= 1UL << (img & 31);
-            s.p_t[img] &= ((i ^ 1) << 24) | 0xffffffUL;
-            if (p_end >= p_overflow) goto done;
-            *p_end++ = img;
+        uint_fast32_t data = *p_start++, d0, d1, d2;
+        uint64_t *p64_g1 = p64_g, v64;
+        d0 = data & 0xff;
+        d1 = ((data >> 8) & 0xff) + 0x100;
+        d2 = ((data >> 16) & 0xff) + 0x200;
+        for (i = 0; i < s.n_g; ++i) {
+            uint_fast32_t img0, img1, mask0, mask1;
+            v64 = p64_g1[d0] ^ p64_g1[d1] ^ p64_g1[d2];
+            img0 =  (uint32_t)(v64 & 0xffffffffUL);
+            img1 =  (uint32_t)(v64 >> 32);
+            mask0 = 1UL << (img0 & 0x1f);
+            mask1 = 1UL << (img1 & 0x1f);
+            p64_g1 += 0x300;
+            if (p_b[img0 >> 5] & mask0) {
+                s.p_t[img0] &= (i << 25) | 0x01ffffffUL;
+                p_b[img0 >> 5] ^= mask0;
+                if (p_end >= p_overflow) goto done;
+                *p_end++ = img0;
+            }
+            if (p_b[img1 >> 5] & mask1) {
+                s.p_t[img1] &= (i << 25) | 0x00ffffffUL;
+                p_b[img1 >> 5] ^= mask1;
+                if (p_end >= p_overflow) goto done;
+                *p_end++ = img1;
+            }
         }
     }
-    status = a[0] = p_s->status = 2;  // update main status
+    status = a[0] = 2;  // update main status
 done:
     if (p_alloc) free(p_alloc);
     if (status < 0) return lin2_error(a, status);

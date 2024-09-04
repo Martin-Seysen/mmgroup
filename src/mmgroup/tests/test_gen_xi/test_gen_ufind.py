@@ -200,7 +200,6 @@ def union_linear_high_level(generators):
     n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)
     ind = np.zeros(n_orbits + 1, dtype = np.uint32)
-    print("ooo", n_orbits)
     status = chk(gen_ufind_lin2_orbits(a, data, t_len, ind, n_orbits + 1))
     assert status >= 0, (2, status, t_len, n_orbits)
     map = np.zeros(t_len, dtype = np.uint32) 
