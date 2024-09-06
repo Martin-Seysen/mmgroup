@@ -149,7 +149,7 @@ def str_basis(text, letter, basis):
 
 
 def Octad(octad):
-    """Return a (signed) octad as an element of the Parker loop. 
+    r"""Return a (signed) octad as an element of the Parker loop. 
 
     :param octad:  the value of the octad to be returned. 
     :type octad: see table below for legal types
@@ -228,7 +228,7 @@ def Octad(octad):
 #######################################################################
 
 def octad_entries(octad):
-    """Return list of entries of an octad
+    r"""Return list of entries of an octad
 
     Here parameter ``octad`` describes an octad as in function
     ``Octad``. That octad is a sum of eight basis vectors of
@@ -256,7 +256,7 @@ def octad_entries(octad):
 
 
 def SubOctad(octad, suboctad = 0):
-    """Creates a suboctad as instance of class |XLeech2|
+    r"""Creates a suboctad as instance of class |XLeech2|
 
     :param octad:
 
