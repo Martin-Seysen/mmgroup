@@ -43,11 +43,15 @@ try:
 except:
     # Reprogram (slow) low-level functions if fast versions not present
     def uint64_to_bitlist(n):
+        n = int(n)
         return [i for i in range(64) if (n >> i) & 1]
     def uint64_bit_weight(n):
+        n = int(n)
         return sum([(n >> i) & 1 for i in range(64)])
     def uint64_low_bit(n):
-        n |= 1 << 64
+        n = int(n) & 0xffffffffffffffff
+        if n == 0:
+            return 64
         return (n & -n).bit_length() - 1
 
 # Some error messages
