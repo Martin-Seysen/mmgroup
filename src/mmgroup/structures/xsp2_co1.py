@@ -12,6 +12,7 @@ from numbers import Integral
 
 from mmgroup import mat24
 from mmgroup.generators import gen_leech2_type
+from mmgroup.generators import gen_leech2_op_word_matrix24
 from mmgroup.clifford12 import xsp2co1_elem_to_qs_i, xsp2co1_elem_to_qs 
 from mmgroup.clifford12 import xsp2co1_qs_to_elem_i 
 from mmgroup.clifford12 import xsp2co1_chain_short_3 
@@ -177,7 +178,6 @@ class Xsp2_Co1(AbstractMMGroupWord):
     def order(self, max_order = 119):
         """Return the order of the element of the monster group
 
-
         If the argument ``max_order`` is present then the order of the 
         element is checked up to (and including) ``max_order`` only.  
         Then the function returns ``0`` if the order is greater than 
@@ -220,6 +220,22 @@ class Xsp2_Co1(AbstractMMGroupWord):
         length = chk_qstate12(bitmatrix64_to_numpy(m, 24, 24, bm))
         assert length == 576
         return bm.reshape((24,24))
+
+    def as_compressed_Co1_bitmatrix(self):
+        """Convert element to a compressed 24 times 24 bit matrix
+
+        This method computes the same bit matrix as method
+        ``as_Co1_bitmatrix``; but it returns the bit matrix as a
+        one-dimensional numpy array of 32-bit integers of length 24.
+        Here bit ``j`` (of valence ``2**j``) of entry ``i`` of that
+        array corresponds to entry ``(i, j)`` of the bit matrix.
+        """
+        a = np.zeros(24, dtype = np.uint32)
+        mm = self.mmdata
+        if gen_leech2_op_word_matrix24(mm, len(mm), 0, a) < 0:
+            ERR = "Cannot convert group element to 24 times 24 bit matrix"
+            raise ValueError(ERR)
+        return a
 
     as_Q_x0_atom = as_xsp
 

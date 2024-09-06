@@ -508,7 +508,23 @@ class MM0(AbstractMMGroupWord):
         elem = Xsp2_Co1(self)
         return elem.as_Co1_bitmatrix()
 
-       
+
+    def as_compressed_Co1_bitmatrix(self):
+        """Convert element to a compressed 24 times 24 bit matrix
+
+        This method computes the same bit matrix as method
+        ``as_Co1_bitmatrix``; but it returns the bit matrix as a
+        one-dimnsional numpy array of 32-bit integers of length 24.
+        Here bit ``j`` (of valence ``2**j``) of entry ``i`` of that
+        array corresponds to entry ``(i, j)`` of the bit matrix.
+        """
+        if Xsp2_Co1 is None:
+            import_Xsp2_Co1()
+        elem = Xsp2_Co1(self)
+        return elem.as_compressed_Co1_bitmatrix()
+  
+
+     
     def in_N_x0(self):
         r"""Check if the element is in the subgroup :math:`N_{x0}`
 

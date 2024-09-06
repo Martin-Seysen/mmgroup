@@ -182,14 +182,12 @@ class Orbit_Lin2:
     def pickle(self):
         r"""Save the information stored in the object
 
-        The function returns an (opaque) array of 32-bit integers
-        containing the complete information stored in this object.
-        This may may e.g. be written to a file.
+        The function returns an (opaque) object containing the complete
+        information stored in this object.
 
-        if ``data`` is an array returned by this method then 
-        calling the constructor of this class with
-        ``Orbit_Lin2('a', data)`` creates a clone of the current
-        object.
+        if ``data`` is an array returned by this method then calling the
+        constructor of this class with ``Orbit_Lin2(data)`` creates a
+        clone of the current object.
         """
         self.finalize()
         gen = self.pickle_gen(self.gen)
@@ -249,6 +247,7 @@ class Orbit_Lin2:
         """
         return chk(gen_ufind_lin2_rep_v(self.a, v))
     def orbit_size(self, v):
+        """Return the size of th orbit of the vector ``v``"""
         return chk(gen_ufind_lin2_len_orbit_v(self.a, v))
     def orbit(self, v):
         o = np.zeros(self.orbit_size(v), dtype = np.uint32)
