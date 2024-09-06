@@ -59,6 +59,7 @@ from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_add
 
+from mmgroup.structures.orbit_lin2 import Orbit_Lin2
 a = None
 
 #####################################################################
@@ -360,6 +361,15 @@ def check_properties_a_group(a, llist):
     assert gen_ufind_lin2_check_finalized(a, len(a)) == len(a)
 
 
+def check_orbits_py_class(generators, llist):
+    orbits = Orbit_Lin2()
+    for gen in generators:
+        orbits.add_generator(gen)
+    reps, lengths = orbits.representatives()
+    for i, o in enumerate(llist):
+        orbit = orbits.orbit(o[0])
+        assert list(orbit) == list(o)
+
 
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
@@ -387,6 +397,7 @@ def test_ufind_L3_2(verbose = 0):
     check_orbits_H(llist)
     check_properties_a_llist(a, llist)
     check_properties_a_group(a, llist)
+    check_orbits_py_class(generators, llist)
 
 #####################################################################
 #  testing function eech2_orbits_raw()
