@@ -136,7 +136,8 @@ reduce_targets = {
 def test_cases(verbose = 0):
     import_all()
     s = "For an axis let A be the symmetric matrix corresponding to part 300x"
-    print(s,"\n")
+    if verbose:
+        print("\n%s\n" % s)
     for axis_type, axis in get_sample_axes().items():
         if verbose:
             print("\nTest reduction of axis type %s" % axis_type)

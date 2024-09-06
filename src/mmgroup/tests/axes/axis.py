@@ -174,7 +174,7 @@ def axis_type(v):
 
 
 def find_short(v, value, radical = 0, verbose = 0):
-    """Return certain array of short vectors in Leech lattice mod 2
+    r"""Return certain array of short vectors in Leech lattice mod 2
 
     Let ``v`` be a vector in the rep of the moster mod 15.
 
@@ -252,7 +252,7 @@ def rebase_axis(v15):
 
 
 class Axis:
-    """Model a 2A axis in the representation of the Monster mod 15
+    r"""Model a 2A axis in the representation of the Monster mod 15
 
     An instance of this class is an arbitrary 2A axis ``a`` of the
     Monster group with entries taken modulo 15. Attribute ``a.v15``

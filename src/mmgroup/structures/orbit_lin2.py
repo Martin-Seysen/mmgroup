@@ -93,8 +93,9 @@ class Orbit_Lin2:
     for elements of :math:`G` is that they can be multiplied and
     raised to the power of -1 (for inversion), 0, and 1.
 
-    A generator of the group can be added with method
-    ``add_generator``. Then the dimension :math:`n` of :math:`V`
+    A list of generators of the group can be passed with parameter
+    ``generators`` of the constructor. A generator may also be added
+    with method ``add_generator``. The dimension :math:`n` of :math:`V`
     is obtained automatically by applying the function ``map`` given
     in the constructor to the first group element added by method
     ``add_generator``. Here  ``1 <= n <= 24`` must hold. So we may e.g.
@@ -116,7 +117,7 @@ class Orbit_Lin2:
     """
     ERR_PIC = "Internal error %d in pickled data for class Orbit_Lin2"
     MAX_N_GEN = 127
-    def __init__(self, map = None):
+    def __init__(self, map = None, generators = []):
         if map is None:
             map = lambda x : x
         if isinstance(map, Callable):
@@ -126,6 +127,8 @@ class Orbit_Lin2:
             self.map = map
             self.pickle_gen = lambda x : x
             self.unpickle_gen = lambda x : x
+            for g in generators:
+                self.add_generator(g)
         else:
             a, gen, map_gen, map_, pickle, unpickle = map
             l_a = chk(gen_ufind_lin2_check_finalized(a, len(a)))
@@ -135,14 +138,16 @@ class Orbit_Lin2:
             self.map = map_
             self.pickle_gen = pickle
             self.unpickle_gen = unpickle
+            self.m_size = min(256, 1 << self.dim)
     def finalize(self):
         if self.a is None:
             ERR = "No generators present in Orbit_Lin2 object"
             raise ValueError(ERR)
         chk(gen_ufind_lin2_finalize(self.a))
         try:
-            self.a.flags.writeable = False
-            self.map_gen.flags.writeable = False
+            #self.a.flags.writeable = False
+            #self.map_gen.flags.writeable = False
+            pass
         except:
             pass
         self.gen_inverse = [x ** -1 for x in self.gen]
@@ -253,7 +258,7 @@ class Orbit_Lin2:
         self.finalize()
         while 1:
             g = np.zeros(self.m_size, dtype = np.uint8)
-            res = gen_ufind_lin2_map_v(a, v, g, self.m_size)
+            res = gen_ufind_lin2_map_v(self.a, v, g, self.m_size)
             if res >= 0:
                 g =  g[:res]
                 break
@@ -274,8 +279,8 @@ class Orbit_Lin2:
     def map_v_G(self, v, image = None):
         w0 = self._map_v_word_a(v, image = None)
         g = self.gen_neutral
-        gg = [self.gen, gen_inverse]
+        gg = [self.gen, self.gen_inverse]
         for w in w0:
-            g *= gg[w & 1, w >> 1]
+            g *= gg[w & 1][w >> 1]
         return g
 

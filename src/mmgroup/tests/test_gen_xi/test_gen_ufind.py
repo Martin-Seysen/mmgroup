@@ -24,10 +24,11 @@ the orbits on 2**A8 under the action of H.
 """
 
 from collections import defaultdict
+from numbers import Integral
 import pytest
 import numpy as np
 from copy import deepcopy
-from random import sample
+from random import sample, randint
 
 from mmgroup import Cocode, XLeech2, PLoop, Xsp2_Co1
 from mmgroup import leech2_orbits_raw
@@ -87,6 +88,8 @@ def chk(res, expected = None):
             err = "Result obtained: %d, expected: %d" % (res, expected)
         raise ValueError(err)
 
+
+
 #####################################################################
 # Bit matrix operations
 #####################################################################
@@ -114,6 +117,34 @@ def v_mul_g(a, v, g):
         chk(gen_ufind_lin2_gen(a, i, m, n))
         vmatmul(v, m, n)
     return v
+
+class BitMatrix:
+    def __init__(self, matrix):
+        self.matrix = matrix
+    def __mul__(self, other):
+        if isinstance(other, BitMatrix):
+            m = other.matrix
+            return BitMatrix([vmatmul(v, m, len(m)) for v in self.matrix])
+        return NotImplemented
+    def __pow__(self, e):
+        if e > 1:
+           sqr = self ** (e // 2)
+           return sqr * sqr * self if e & 1 else sqr * sqr
+        if e == 1:
+           return self
+        if e == 0:
+           return BitMatrix([1 << i for i in range(len(self.matrix))])
+        if e == -1:
+           from mmgroup.clifford12 import bitmatrix64_inv
+           return BitMatrix([int(x) for x in bitmatrix64_inv(self.matrix)])
+        if e < -1:
+           return (self ** -1) ** e
+        return NotImplemented
+    def __rmul__(self, other):
+        if isinstance(other, Integral):
+            return int(vmatmul(other, self.matrix, len(self.matrix)))
+        return NotImplemented
+
 
 #####################################################################
 # Define 8 times 8 bit batrices M7, M2, MT generating the group H
@@ -361,14 +392,38 @@ def check_properties_a_group(a, llist):
     assert gen_ufind_lin2_check_finalized(a, len(a)) == len(a)
 
 
-def check_orbits_py_class(generators, llist):
-    orbits = Orbit_Lin2()
-    for gen in generators:
-        orbits.add_generator(gen)
+def check_orbit_object(orbits, generators, llist):
     reps, lengths = orbits.representatives()
+    assert orbits.dim == len(generators[0])
+    assert orbits.n_gen == len(generators)
+    assert orbits.n_orbits() == len(llist)
+
     for i, o in enumerate(llist):
         orbit = orbits.orbit(o[0])
         assert list(orbit) == list(o)
+    for n in range(10):
+        v = randint(0, (1 << orbits.dim) - 1)
+        w = sample(list(orbits.orbit(v)), 1)
+        g = orbits.map_v_G(v, w)
+    for lst in llist:
+        for v in sample(lst, min(2, len(lst))):
+            assert orbits.orbit_size(v) == len(lst)
+            assert list(orbits.orbit(v)) == lst
+            assert orbits.orbit_rep(v) == lst[0]
+    rep, lengths = orbits.representatives()
+    assert len(rep) == len(lengths) == len(llist)
+    for i, lst in enumerate(llist):
+        assert rep[i] == lst[0]
+        assert lengths[i] == len(lst)
+
+
+def check_orbits_py_class(generators, llist):
+    orbits = Orbit_Lin2(lambda g : g.matrix,
+                            [BitMatrix(g) for g in generators])
+    check_orbit_object(orbits, generators, llist)
+    pic = orbits.pickle()
+    new_orbits = Orbit_Lin2(pic)
+    check_orbit_object(new_orbits, generators, llist)
 
 
 @pytest.mark.gen_xi
