@@ -421,8 +421,8 @@ def check_orbits_py_class(generators, llist):
     orbits = Orbit_Lin2(lambda g : g.matrix,
                             [BitMatrix(g) for g in generators])
     check_orbit_object(orbits, generators, llist)
-    pic = orbits.pickle()
-    new_orbits = Orbit_Lin2(pic)
+    data, functions = orbits.pickle()
+    new_orbits = Orbit_Lin2(data, functions)
     check_orbit_object(new_orbits, generators, llist)
 
 

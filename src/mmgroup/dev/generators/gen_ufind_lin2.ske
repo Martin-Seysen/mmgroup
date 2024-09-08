@@ -255,6 +255,22 @@ int32_t gen_ufind_lin2_n_gen(uint32_t *a)
 }
 
 
+/** @brief Return max number of generators of a group acting on ``GF(2)^n``
+
+Let ``a`` be an array that stores a group acting on a vector space
+as described in function ``gen_ufind_lin2_init``. The function
+returns the maximum number of generators of the group that can be
+stored in array ``a``.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_n_max_gen(uint32_t *a)
+{
+    lin2_type s;
+    int32_t status = load_lin2_info(a, &s);
+    return status < 0 ? status : s.n_max_g;
+}
+
+
 /** @brief Increase max number of generators of a group acting on ``GF(2)^n``
 
 The function tries to pad an array ``a`` that stores a group acting on
@@ -948,6 +964,7 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
 done:
     if (p_alloc) free(p_alloc);
     if (status < 0) return lin2_error(a, status);
+    load_lin2_info(a, p_s);
     return status;
 }
 
@@ -1050,12 +1067,18 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
     uint32_t a_sum = 0;
     status = add_generators(a, &s);
     if (status < 0) return status;
+	s.n_max_g = s.n_g;
+	store_lin2_info(&s, a);
     a_length =  gen_ufind_lin2_size(s.n, s.n_g);
     a[a_length - 2] = magic_content(&s);
     for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
     a[a_length -1] = 0 - a_sum;
     return a_length;
 }
+
+
+
+
 
 /** @brief Check if an orbit array has been finalized
 

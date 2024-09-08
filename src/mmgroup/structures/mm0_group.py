@@ -514,7 +514,7 @@ class MM0(AbstractMMGroupWord):
 
         This method computes the same bit matrix as method
         ``as_Co1_bitmatrix``; but it returns the bit matrix as a
-        one-dimnsional numpy array of 32-bit integers of length 24.
+        one-dimensional numpy array of 32-bit integers of length 24.
         Here bit ``j`` (of valence ``2**j``) of entry ``i`` of that
         array corresponds to entry ``(i, j)`` of the bit matrix.
         """

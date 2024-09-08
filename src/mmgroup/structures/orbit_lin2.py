@@ -26,6 +26,7 @@ from mmgroup.generators import gen_ufind_lin2_add
 from mmgroup.generators import gen_ufind_lin2_size
 from mmgroup.generators import gen_ufind_lin2_dim
 from mmgroup.generators import gen_ufind_lin2_n_gen
+from mmgroup.generators import gen_ufind_lin2_n_max_gen
 from mmgroup.generators import gen_ufind_lin2_gen
 from mmgroup.generators import gen_ufind_lin2_n_orbits
 from mmgroup.generators import gen_ufind_lin2_orbits
@@ -42,7 +43,7 @@ from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_orbit_lengths
-
+from mmgroup.clifford12 import bitmatrix64_vmul
 
 ERRORS = {
 -1 : "Out of memory",
@@ -125,20 +126,21 @@ class Orbit_Lin2:
             self.gen = []
             self.map_gen = None
             self.map = map
-            self.pickle_gen = lambda x : x
-            self.unpickle_gen = lambda x : x
             for g in generators:
                 self.add_generator(g)
         else:
-            a, gen, map_gen, map_, pickle, unpickle = map
-            l_a = chk(gen_ufind_lin2_check_finalized(a, len(a)))
-            self.a = a[:l_a]
-            self.gen = unpickle(gen)
-            self.map_gen = map_gen
-            self.map = map_
-            self.pickle_gen = pickle
-            self.unpickle_gen = unpickle
-            self.m_size = min(256, 1 << self.dim)
+            # Abuse arguments of constructor for passing a pickled object
+            a, gen = map   # pickled data
+            self.a = a
+            self.map, unpickle = generators  # pickled functions
+            if self.a is None:
+                self.gen = []
+                self.map_gen = None
+            else:
+                len_a = chk(gen_ufind_lin2_check_finalized(a, len(a)))
+                self.map_gen = a[len_a:]
+                self.gen = gen if unpickle is None else unpickle(gen)
+        self.m_size = 32
     def finalize(self):
         if self.a is None:
             ERR = "No generators present in Orbit_Lin2 object"
@@ -152,54 +154,93 @@ class Orbit_Lin2:
             pass
         self.gen_inverse = [x ** -1 for x in self.gen]
         self.gen_neutral = self.gen[0] ** 0
+        return self
+    def _size_a_buf(self, n_gen, dim):
+        """Size of main buffer for given No of generators an dimension"""
+        return chk(gen_ufind_lin2_size(dim, n_gen)) + n_gen
+    def _init_a_buf(self, dim = None):
+        """Initialize main buffer for a given dimension"""
+        assert self.a is None
+        max_n_gen = min(4 * dim, self.MAX_N_GEN)
+        a_size = self._size_a_buf(max_n_gen, dim)
+        self.a = np.zeros(a_size, dtype = np.uint32)
+        chk(gen_ufind_lin2_init(self.a, len(self.a), dim, max_n_gen))
+        self.map_gen = np.zeros(max_n_gen, dtype = np.uint32)
+    def _extend_a_buf(self, n_more = 1):
+        """Extend main buffers for more generators
+
+        The function tries to extend the buffers so that they can store
+        up to ``n_more`` more generators. It raises ``ValueError``
+        if this is not possible. The function returns the current
+        number of generators.
+        """
+        assert self.a is not None
+        n_gen = chk(gen_ufind_lin2_n_gen(self.a))
+        n_max_gen = chk(gen_ufind_lin2_n_max_gen(self.a))
+        new_n_gen = n_gen + n_more
+        if new_n_gen > n_max_gen:
+            new_n_max_gen = max(2 * n_max_gen, new_n_gen)
+            new_n_max_gen = min(new_n_max_gen, self.MAX_N_GEN)
+            if new_n_max_gen < new_n_gen:
+                chk(ERR_GEN_UFIND_LIN2_GEN)
+            new_a_size = self._size_a_buf(new_n_max_gen, self.dim)
+            self.a = np.pad(self.a, (0, new_a_size - len(self.a)))
+            chk(gen_ufind_lin2_pad(self.a, new_a_size, new_n_max_gen))
+            pad_map_gen = (0, new_n_max_gen - n_max_gen)
+            self.map_gen = np.pad(self.map_gen, pad_map_gen)
+        return n_gen
     def add_generator(self, g, use = True):
+        """Add generator ``g`` to the object
+
+        Parameter ``use`` should usually be ``True``
+
+        Todo: document parameter ``use``
+        """
         rep = np.array(self.map(g), dtype = np.uint32)
         if self.a is None:
-            dim = len(rep)
-            max_n_gen = 32 if dim <= 16 else self.MAX_N_GEN
-            a_size = chk(gen_ufind_lin2_size(dim, max_n_gen))
-            self.a = np.zeros(a_size, dtype = np.uint32)
-            chk(gen_ufind_lin2_init(self.a, len(self.a), dim, max_n_gen))
-            self.map_gen = np.zeros(max_n_gen, dtype = np.uint32)
-            self.m_size = min(256, 1 << self.dim)
-        num_gen = len(self.gen)
-        num_gen_a = gen_ufind_lin2_n_gen(self.a)
-        status = gen_ufind_lin2_add(self.a, rep, len(rep), use)
-        dim = chk(gen_ufind_lin2_dim(self.a))
-        if len(rep) != dim:
+            self._init_a_buf(len(rep))
+        n_gen = self._extend_a_buf(1)
+        if len(rep) != chk(gen_ufind_lin2_dim(self.a)):
             ERR = "Representations of generators are incompatible"
             raise valueError(ERR)
-        if status == ERR_GEN_UFIND_LIN2_GEN:
-            newsize = chk(gen_ufind_lin2_size(dim, self.MAX_N_GEN))
-            np.pad(self.a, (0, newsize - len(self.a)))
-            chk(gen_ufind_lin2_pad(self.a, newsize, self.MAX_N_GEN))
-            np.pad(self.map_gen, (0, self.MAX_N_GEN - len(self.map_gen)))
-            status = gen_ufind_lin2_add(self.a, rep, len(rep), use)
-        chk(status)
-        self.gen.append(g)
+        status = chk(gen_ufind_lin2_add(self.a, rep, len(rep), use))
         if status > 0:
-            self.map_gen[num_gen_a] = num_gen
-    def pickle(self):
+            self.map_gen[n_gen] = len(self.gen)
+        self.gen.append(g)
+    def pickle(self, f_pickle_gen = None, f_unpickle_gen = None):
         r"""Save the information stored in the object
 
-        The function returns an (opaque) object containing the complete
-        information stored in this object.
+        The function returns an pair ``(data, functions)``. Here
+        ``data`` is a tuple of data that may be written to a file
+        or a shelve. ``functions`` is a tuple of functions.
 
-        if ``data`` is an array returned by this method then calling the
-        constructor of this class with ``Orbit_Lin2(data)`` creates a
-        clone of the current object.
+        Caling the constructor ``Orbit_Lin2(data, functions)`` creates
+        a copy of the current object. Before copying the object it is
+        finalized if any generators have been added.
+
+        Argument ``f_pickle_gen`` if an optional argument for pickling
+        the list of generators of the group. If this is set then
+        argument ``f_unpickle_gen`` should be a function that reverses
+        the effect of functzion ``f_pickle_gen``.
         """
+        if self.a is None:
+            return (None, None), (self.map, f_unpickle_gen)
         self.finalize()
-        gen = self.pickle_gen(self.gen)
-        return (self.a, gen, self.map_gen, self.map,
-            self.pickle_gen, self.unpickle_gen)
+        len_a = chk(gen_ufind_lin2_check_finalized(self.a, len(self.a)))
+        self.a[len_a : len_a + len(self.map_gen)] = self.map_gen
+        len_a += len(self.map_gen)
+        g = self.gen if f_pickle_gen is None else f_pickle_gen(self.gen)
+        return (self.a[:len_a], g), (self.map, f_unpickle_gen)
     @property
     def dim(self):
         r"""Return dimension ``n`` of the vector space over ``GF(2)``"""
         return chk(gen_ufind_lin2_dim(self.a))
     @property
     def n_gen(self):
-        r"""Return number of generators of the group"""
+        r"""Return number of generators of the group
+
+        Deprecated!!!!!
+        """
         return chk(gen_ufind_lin2_n_gen(self.a))
     def n_orbits(self):
         r"""Return number of orbits on the vector space
@@ -211,6 +252,8 @@ class Orbit_Lin2:
     def gen(self, i, inverse = False):
         r"""Return the i-th generator of the group
 
+        Deprecated!!!!
+
         The generator is returned as an ``n`` times ``n`` bit matrix
         in an array of ``n`` 32-bit integers a desribed in the
         constructor of this class.
@@ -220,6 +263,9 @@ class Orbit_Lin2:
         """
         g = np.zeros(self.dim, dtype = np.uint32)
         return chk(gen_ufind_lin2_gen(self.a, 2*i + bool(inverse)))
+    def generators(self):
+        """Return list of generators of the group"""
+        return self.gen
     def representatives(self):
         r"""Return representatives of orbits on the vector space
 
@@ -283,3 +329,76 @@ class Orbit_Lin2:
             g *= gg[w & 1][w >> 1]
         return g
 
+    def mul_v_g(self, v, g):
+        rep = np.array(self.map(g), dtype = np.uint64)
+        return bitmatrix64_vmul(v, rep, self.dim)
+
+    def rand_stabilizer(self, v, size, r, n, history = False):
+        if history:
+             raise NotImplementedError("History isnot implemented")
+        rg = Random_Subgroup(self.gen, r, n, history)
+        gen = []
+        for i in range(size):
+            g = rg()
+            img_v = self.mul_v_g(v, g)
+            g1 = self.map_v_word_G(img_v, v)
+            gen.append(g * g1)
+
+class Random_Subgroup:
+    r"""Generate random elements in a group given by generators
+
+    We follow :math:`HE05`, Section 3.2. The constructor of this
+    class corresponds to Algorithm ``PrInitialize`` in that section;
+    and the main method ``rand`` of this class corresponds to
+    Algorithm ``PrRandom`` in that section. Method ``rand``
+    returns a ramdom element of the group.
+
+    The constructor takes a set ``generators`` of generators of the
+    group. Parameters ``r`` and ``n`` specify the number of group
+    elements kept internally and the number of initialization
+    steps, repectively, as in Algorithm  ``PrInitialize``.
+
+    According math:`HE05`, ``r`` should be greater than 10, and
+    ``n`` should be much greater than 50.
+
+    If parameter ``history`` is ``True`` then we record the history
+    of the random generator for future use. In principle this allows
+    to represent the generated random elements as words in the
+    original generators.
+    """
+    def __init__(self, generators, r, n, history = False):
+        generators = list(generators)
+        self.n_gen = len(generators)
+        q, r = divmod(max(r, self.n_gen), self.n_gen)
+        neutral = generators[0] ** 0
+        self.x = [neutral] + generators * q  + generators[:r]
+        self.history = None
+        if history:
+            assert len(self.x) < 0x8000
+            self.nsteps = 0
+            self.history = np.zeros((512, 2), dtype = np.uint16)
+        for i in range(n):
+            self.step()
+
+    def rand(self):
+        """Return a random element of the group"""
+        rmax = 2 * len(self.x) - 1
+        s = randint(2, rmax)
+        t = randint(2, rmax - 2)
+        if (t >= s):
+            t += 2
+        if self.history is not None:
+            if self.nsteps >= len(self.history):
+                self.history = np.pad(self.history,
+                    ((0, self.nsteps), (0,0)))
+            self.history[nsteps] = s, t
+            nsteps += 1
+        e = -1 ** t
+        s1, t1 = s >> 1, t >> 1
+        if s & 1:
+            self.x[s1] = self.x[s1] * self.x[t1] ** e
+            self.x[0] = self.x[0] * self.x[s1]
+        else:
+            self.x[s1] = self.x[t1] ** e * self.x[s1]
+            self.x[0] = self.x[s1] * self.x[0]
+        return self.x[0]
