@@ -373,9 +373,22 @@ Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 
 
 
+..
+  Computations in general groups
+  =============================================================
+
+  .. autoclass:: mmgroup.structures.orbit_lin2.Orbit_Lin2
+   :members: dim, finalize, add_generator, pickle, n_orbits,
+             generators, representatives, orbit_rep, 
+             orbit_size, orbit, map_v_word_G, map_v_G,
+             mul_v_g, rand_stabilizer
+
+  .. autoclass:: mmgroup.structures.orbit_lin2.Random_Subgroup
+   :members: rand 
+
+
 
 .. _y555_label:
-
 
 The Coxeter group :math:`Y_{555}` and the Bimonster
 =============================================================

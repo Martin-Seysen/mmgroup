@@ -395,7 +395,7 @@ def check_properties_a_group(a, llist):
 def check_orbit_object(orbits, generators, llist):
     reps, lengths = orbits.representatives()
     assert orbits.dim == len(generators[0])
-    assert orbits.n_gen == len(generators)
+    assert len(orbits.generators()) == len(generators)
     assert orbits.n_orbits() == len(llist)
 
     for i, o in enumerate(llist):
