@@ -87,7 +87,7 @@ loop that can be constructed as a double cover of the Golay code
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of automorphisms of
 :math:`\mathcal{P}`, which has structure 
 :math:`2^{12}.M_{24}`. Here the normal subgroup of 
-:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` or order :math:`2^{12}`
+:math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` of order :math:`2^{12}`
 is isomorphic to the Golay cocode  :math:`\mathcal{C^*}`.
 
 Another important ingredient of the construction of the Monster

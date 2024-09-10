@@ -416,7 +416,7 @@ class Orbit_Elem2:
             self.m = np.zeros(self.NROWS, dtype = np.uint64)
             self.map_gen = np.zeros(self.NROWS + 1, dtype = np.uint8)
             self.map = map
-            self.exp = 0
+            self._exp = 0
             self.solver = None
             for g in generators:
                 self.add_generator(g)
@@ -426,7 +426,7 @@ class Orbit_Elem2:
     @property
     def exp(self):
         r"""Return exponent of elementary Abelian 2 group"""
-        return self.exp
+        return self._exp
     def add_generator(self, g):
         v = int(self.map(g))
         if (v & -0x100000000):
@@ -434,8 +434,8 @@ class Orbit_Elem2:
         status = leech2matrix_add_eqn(self.m, self.exp, self.NCOLS, v)
         if status < 0 or status > 2:
             chk(-1001)
-        self.map_gen[exp] = len(self.gen)
-        self.exp += status
+        self.map_gen[self._exp] = len(self.gen)
+        self._exp += status
         self.gen.append(g)
     def generators(self):
         """Return the list of the generators of the group"""
@@ -452,7 +452,7 @@ class Orbit_Elem2:
         w = self._map_v_word_a(v, img)
         return [(self.gen[k], 1) for i, k in enumerate(self.map_gen)
             if (w >> i) & 1]
-    def map_v_G(self, v, img = None):
+    def map_v_G(self, v, img = 0):
         r"""Find group element transforming a vector inside an orbit
 
         let ``v`` and ``img``  be vectors of the representation in the
@@ -466,7 +466,7 @@ class Orbit_Elem2:
             return self.generators()[0] ** 0
         data = [self.gen[k] for i, k in enumerate(self.map_gen)
              if (w >> i) & 1]
-        return reduce(__mul__, g)
+        return reduce(__mul__, data)
     def rand_kernel(self, size, r, n, history = False):
         r"""Return generators for kernel of rep
 
