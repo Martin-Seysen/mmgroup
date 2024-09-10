@@ -967,13 +967,14 @@ int32_t bitmatrix64_inv(uint64_t *m, uint32_t i)
   in the array ``m`` in the usual way. Let ``v`` be the column bit 
   vector stored in column ``j`` of the array ``m``.
 
-  Then the function tries to solve the equation ``transpose(v) * m = x``
-  If such a solution ``x`` exists then the function returns the transposed
-  vector of the column vector ``x`` as a nonnegative integer.
+  Then the function tries to solve the equation ``m * x = v`` for
+  a column vector ``x``. If such a solution ``x`` exists then the
+  function  returns the transposed vector of the column vector ``x``
+  as a nonnegative integer.
   
   The function returns ``ERR_QSTATE12_MATRIX_INV`` if no solution ``x``
   exists. As a side effect, it echelonizes the lowest ``j + 1`` columns
-  of matrix ``m`` with function ``bitmatrix64_echelon_h``.
+  of matrix ``m`` with function ``bitmatrix64_echelon_l``.
 */
 // %%EXPORT px
 int64_t bitmatrix64_solve_equation(uint64_t *m, uint32_t i, uint32_t j)

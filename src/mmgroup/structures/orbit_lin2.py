@@ -11,6 +11,9 @@ from copy import deepcopy
 from random import randint, shuffle, sample
 from collections import defaultdict, OrderedDict
 from collections.abc import Iterable
+from operator import __mul__
+from functools import reduce
+
 import numpy as np
 
 if __name__ == "__main__":
@@ -44,6 +47,12 @@ from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_orbit_lengths
 from mmgroup.clifford12 import bitmatrix64_vmul
+from mmgroup.clifford12 import bitmatrix64_echelon_h
+from mmgroup.clifford12 import bitmatrix64_t
+from mmgroup.clifford12 import leech2matrix_add_eqn
+from mmgroup.clifford12 import leech2matrix_subspace_eqn
+
+
 
 ERRORS = {
 -1 : "Out of memory",
@@ -59,6 +68,8 @@ ERRORS = {
 }
 
 
+
+ERR_GEN_UFIND_LIN2_DIM   = -7
 ERR_GEN_UFIND_LIN2_GEN   = -8
 
 
@@ -257,7 +268,7 @@ class Orbit_Lin2:
     def map_v_word_G(self, v, img = None):
         r"""Yet to be documented!"""
         w0 = self._map_v_word_a(v, img = None)
-        return [(self.map_gen(x) >> 1, -1 ** x) for x in w0]
+        return [(self.map_gen[x] >> 1, -1 ** x) for x in w0]
     def map_v_G(self, v, img = None):
         r"""Find group element transforming a vector inside an orbit
 
@@ -288,10 +299,11 @@ class Orbit_Lin2:
         rg = Random_Subgroup(self.gen, r, n, history)
         gen = []
         for i in range(size):
-            g = rg()
+            g = rg.rand()
             img_v = self.mul_v_g(v, g)
-            g1 = self.map_v_word_G(img_v, v)
+            g1 = self.map_v_G(img_v, v)
             gen.append(g * g1)
+        return gen
     def _map_v_word_a(self, v, img = None):
         self.finalize()
         while 1:
@@ -345,6 +357,133 @@ class Orbit_Lin2:
             self.map_gen = np.pad(self.map_gen, pad_map_gen)
         return n_gen
 
+
+
+class Orbit_Elem2:
+    r"""Model orbits of a group acting on an elementary Abelian 2 group
+
+    Let :math:`G` be a any group and let :math:`H` be an elementary
+    Abelian 2 group. Furthermore, let :math:`\rho` be a homomporphism
+    from :math:`G` to :math:`H`. An instance of this class models the
+    homomorphism :math:`\rho`.
+
+
+    ????
+
+    action of the group
+    :math:`G` as a permutation group on the vector space :math:`V`
+    via the homomorphism :math:`\rho`.
+
+    In the constructor of this class we just have to enter a callable
+    function ``map`` that maps an element of  :math:`G`  to the
+    :math:`n \times n` bit matrix :math:`\rho(G)`. Here a bit vector
+    in :math:`V` is implemented as an integer :math:`v`, where the bit
+    of valence :math:`2^i` in the binary representation of :math:`v`
+    is bit :math:`i` of the vector. An :math:`n \times n` bit matrix
+    is implemented as an array of :math:`n` integers, with each entry
+    corresponding to a row vector of the matrix. The only requirement
+    for elements of :math:`G` is that they can be multiplied and
+    raised to the power of -1 (for inversion), 0, and 1.
+
+    A list of generators of the group :math:`G` can be passed with
+    parameter ``generators`` of the constructor. A generator may also
+    be added with method ``add_generator``. The dimension :math:`n`
+    of :math:`V` is obtained automatically by applying the function
+    ``map`` given in the constructor to the first generator of the
+    group. Here  ``1 <= n <= 24`` must hold. So we may e.g. compute
+    orbits in the Leech lattice mod 2 under the action of the
+    Conway group  :math:`\mbox{Co}_1`.
+
+    There are methods for obtaining the orbits of :math:`V` under the
+    action of :math:`G`, and for finding an element of :math:`G` that
+    maps an element of :math:`V` to a given element in its orbit.
+
+    After adding all generators, and before retriving any information
+    about orbits, a set of Schreier vectors is computed (and stored
+    inside an instance of this class) as described in :cite:`HE05`,
+    Section 4.1. This can be done manually via method ``finalize``. It
+    is done automatically by calling any methods obtaining infomration
+    about orbits. After computing the Schreier vectors, no more
+    generators can be added.
+    """
+    NROWS = 32
+    NCOLS = 32
+    def __init__(self, map = None, generators = []):
+        if map is None:
+            map = lambda x : x
+        if isinstance(map, Callable):
+            self.gen = []
+            self.m = np.zeros(self.NROWS, dtype = np.uint64)
+            self.map_gen = np.zeros(self.NROWS + 1, dtype = np.uint8)
+            self.map = map
+            self.exp = 0
+            self.solver = None
+            for g in generators:
+                self.add_generator(g)
+        else:
+            ERR = "Bad mapping function for class Orbit_Elem2"
+            raise TypeError(ERR)
+    @property
+    def exp(self):
+        r"""Return exponent of elementary Abelian 2 group"""
+        return self.exp
+    def add_generator(self, g):
+        v = int(self.map(g))
+        if (v & -0x100000000):
+            chk(ERR_GEN_UFIND_LIN2_DIM)
+        status = leech2matrix_add_eqn(self.m, self.exp, self.NCOLS, v)
+        if status < 0 or status > 2:
+            chk(-1001)
+        self.map_gen[exp] = len(self.gen)
+        self.exp += status
+        self.gen.append(g)
+    def generators(self):
+        """Return the list of the generators of the group"""
+        return self.gen
+    def _map_v_word_a(self, v, img = 0):
+        v ^= img
+        w = leech2matrix_subspace_eqn(self.m, self.exp, self.NCOLS, v)
+        if w < 0:
+            ERR = "Preimage and image vector are not in the same orbit"
+            raise ValueError(ERR)
+        return w
+    def map_v_word_G(self, v, img = 0):
+        r"""Yet to be documented!"""
+        w = self._map_v_word_a(v, img)
+        return [(self.gen[k], 1) for i, k in enumerate(self.map_gen)
+            if (w >> i) & 1]
+    def map_v_G(self, v, img = None):
+        r"""Find group element transforming a vector inside an orbit
+
+        let ``v`` and ``img``  be vectors of the representation in the
+        same orbit under the action of the group, encoded as integers.
+        The function returns a group element mapping ``v`` to ``img``.
+        Parameter ``img`` defaults to the standard representative of
+        the orbit.
+        """
+        w = self._map_v_word_a(v, img)
+        if w == 0:
+            return self.generators()[0] ** 0
+        data = [self.gen[k] for i, k in enumerate(self.map_gen)
+             if (w >> i) & 1]
+        return reduce(__mul__, g)
+    def rand_kernel(self, size, r, n, history = False):
+        r"""Return generators for kernel of rep
+
+        Details are yet to be documented!
+        """
+        if history:
+             raise NotImplementedError("History isnot implemented")
+        rg = Random_Subgroup(self.gen, r, n, history)
+        gen = []
+        for i in range(size):
+            g = rg.rand()
+            v = self.map(g)
+            g1 = self.map_v_G(v)
+            gen.append(g * g1)
+        return gen
+
+
 class Random_Subgroup:
     r"""Generate random elements in a group given by generators
 
@@ -379,7 +518,7 @@ class Random_Subgroup:
             self.nsteps = 0
             self.history = np.zeros((512, 2), dtype = np.uint16)
         for i in range(n):
-            self.step()
+            self.rand()
 
     def rand(self):
         """Return a random element of the group"""

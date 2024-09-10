@@ -66,9 +66,8 @@ extern "C" {
  that ``T * A[:rnows]`` is in reduced echelon form. We also
  perform the same row operations on the ``nrows`` times ``nrows``
  unit matrix to obtain ``T``. We store ``T[:rnows]`` in
- columns ``0,...,ncols-1`` of matrix ``M``,
- and ``T*A[:rnows]`` in columns ``ncols,...,ncols + nrows - 1``
- of matrix ``M``.
+ columns ``0,...,ncols-1`` of matrix ``M``, and ``T*A[:rnows]``
+ in columns ``ncols,...,ncols + nrows - 1`` of matrix ``M``.
  
  One may use functions ``leech2matrix_prep_eqn``
  and ``leech2matrix_solve_eqn`` for solving a
@@ -157,16 +156,15 @@ int32_t leech2matrix_add_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64
  The function computes an ``nrows`` times ``ncols`` bit matrix ``B``
  and stores that matrix in the array ``b``.  Then ``x = v * B`` is
  a solution of the equation given above. That solution  can be
- computed with function ``leech2matrix_solve_eqn``
+ computed with function ``leech2matrix_solve_eqn``.
  Output array ``b`` must have size at least ``nrows``.
 
- Matrix ``B`` is essentially the transposed matrix of the matrix ``T``
- computed by function ``leech2matrix_add_eqn``. If the leading
- coefficient of row ``i`` of the echelonized matrix ``T * A``
- computed by function ``leech2matrix_add_eqn`` is in column ``j``
- then column ``j`` of matrix ``B`` is equal to column ``i``
- of the transposed matrix ``T^T`` of ``T``. Columns of matrix ``B``
- that cannot be obtained in this way are zero.  
+ Matrix ``B`` is essentially the matrix of the matrix ``T`` computed
+ by function ``leech2matrix_add_eqn``. If the leading coefficient of
+ row ``i`` of the echelonized matrix ``T * A`` computed by
+ function ``leech2matrix_add_eqn`` is in column ``j`` then column ``j``
+ of matrix ``B`` is equal to column ``i`` of matrix ``T``. Columns of
+ matrix ``B`` that cannot be obtained in this way are zero.
 */
 // %%EXPORT px
 int32_t leech2matrix_prep_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint32_t *b)
@@ -190,10 +188,10 @@ int32_t leech2matrix_prep_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint3
 
 
 /**
- @brief Solve a system of linear bit equations
+ @brief  Solve a  system of linear bit equations
  
  The function returns the product ``v * b``, where ``v`` is a
- bit vector of length ``nrows``; and ``b`` is an ``nrows`` 
+ bit vector of length ``nrows``; and ``b`` is an ``nrows``
  times ``ncols`` bit matrix.  
  
  This function can be used for solving linear bit equations.
@@ -208,7 +206,7 @@ uint32_t leech2matrix_solve_eqn(uint32_t *b, uint32_t nrows, uint64_t v)
     uint64_t mask = ONE, w = 0;
     
     for (row = 0; row < nrows; ++row) {
-        w ^=  (v & mask) ? b[row] : 0; 
+        w ^=  (v & mask) ? b[row] : 0;
         mask <<= 1;
     }
     return  (uint32_t)(w);
@@ -216,6 +214,59 @@ uint32_t leech2matrix_solve_eqn(uint32_t *b, uint32_t nrows, uint64_t v)
 
 
 
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+/**
+ @brief compare the least significant bits set in two integers
+
+ The function compares the positions of the least significant
+ bits set in the integers ``a`` and ``b``. It
+ returns ``(uint64_t)(-1ULL)`` if these two bit positions are
+ the same and 0 otherwise.
+*/
+static inline uint64_t same_lsbit(uint64_t a, uint64_t b)
+{
+    uint64_t r = (a & (0 - a)) == (b & (0 - b));
+    return 0ULL - r;
+}
+
+/// @endcond
+
+
+
+/**
+ @brief Check if a bit vector is in a certain space
+
+ Let ``m`` be a bit matrix encoding a set of linear independent
+ bit vectors as returned by function ``leech2matrix_add_eqn``.
+ Let ``A`` be the ``nrows`` times ``ncols`` matrix with row
+ vectors equal to these independent bit vectors, as in
+ function ``leech2matrix_add_eqn``.
+
+ The function checks if bit vector ``v`` is in the space spanned
+ by these vectors. If this is the case then the function returns
+ a bit vector ``x`` with ``x * A  = v``. Otherwise it returns a
+ negative value.
+ */
+// %%EXPORT px
+int64_t leech2matrix_subspace_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64_t v)
+{
+    uint_fast32_t i;
+    uint64_t mask = (0 - ONE) << ncols, w = v << ncols;
+
+    if (ncols > 32 || nrows > ncols) return ERR_QSTATE12_BUFFER_OVFL;
+    for (i = 0; i < nrows; ++i) {
+        w ^= m[i] & same_lsbit(w & mask, m[i] & mask);
+    }
+    if ((w >> ncols) && ((ONE << ncols) - 1)) {
+        return ERR_QSTATE12_MATRIX_INV;
+    }
+    return w & ~mask;
+}
 
 
 
