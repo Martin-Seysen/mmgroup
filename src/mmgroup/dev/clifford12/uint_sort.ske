@@ -306,9 +306,53 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 }
 
 
+/*************************************************************************
+** Binary search in a list of  %{N}-bit integers
+*************************************************************************/
+
+/** @brief Binary search in a sorted array of type ``uint%{N}_t[]``
+
+    Here ``a`` is a sorted array of ``n`` integers of
+    type ``uint%{N}_t``.
+
+    Given a vector ``v`` to be searched in the array ``a``, the
+    function returns the highest index ``i`` with ``0 <= i < n``
+    such that ``v >= a[i]`` holds.  The function returns ``0``
+    in case ``v < a[0]``.  The case ``n = 0`` is illegal.
+
+    This function can e.g. be used for searching in an array where
+    a key  is stored in the high bits, and the value for that key
+    is stored in the low bits of an entry of the (sorted) array:
+
+    @code
+    uint%{N}_t key; // Key to search in array ``a`` of length ``n``
+    #define V_BITS 8 // Lower 8 bits are value, upper bits are key
+    uint%{N}_t x = a[bitvector%{N}_bsearch(a, n, key << V_BITS)];
+    if ((x >> V_BITS) == key)
+      print("value for key %d is %d", key, x & ((1 << V_BITS) - 1));
+    else
+      print("key %d not found", key);
+    @endcode
+*/
+// %%EXPORT px
+uint32_t bitvector%{N}_bsearch(uint%{N}_t *a, uint32_t n, uint%{N}_t v)
+{
+     uint%{N}_t *a1 = a;
+     while (n > 1) {
+         uint32_t mid = n >> 1;
+         if (v >= a1[mid]) {
+             a1 += mid;
+             mid = n - mid;
+         }
+         n = mid;
+     }
+     return a1 - a;
+}
+
+
 
 /*************************************************************************
-*** End of of C code
+*** End of of C code for %{N}-bit integers
 *************************************************************************/
 
 // %%END FOR 

@@ -285,14 +285,13 @@ the group. It returns a negative value in case of a error.
 int32_t gen_ufind_lin2_pad(uint32_t *a, uint32_t len_a, uint32_t n_max_g)
 {
     lin2_type s;
-    uint32_t a_size;
     int32_t status = load_lin2_info(a, &s);
     if (status < 0) return status;
     if (status >= 2) return ERR_GEN_UFIND_STATE;
     if (n_max_g > LIN2_MAX_N_G) return ERR_GEN_UFIND_LIN2_GEN;
     n_max_g = n_max_g < s.n_max_g ? s.n_max_g : n_max_g;
-    if (len_a < gen_ufind_lin2_size(s.n, n_max_g))
-        return ERR_GEN_UFIND_OUT_SHORT;
+    if ((status = gen_ufind_lin2_size(s.n, n_max_g)) < 0) return status;
+    if (len_a < (uint32_t)(status)) return ERR_GEN_UFIND_OUT_SHORT;
     s.n_max_g = n_max_g;
     store_lin2_info(&s, a);
     return  n_max_g;
@@ -832,10 +831,25 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
 
 
 /************************************************************************
-* Add orbit map and operation of generators to table
+* Compute a Schreier vector
 ************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
+
+
+// Store a Schreier vector for one or more orbits of a group acting on
+// a vector space \f$V = \mbox{GF}_2^n\f$. Such a group is represented
+// in a an (opaque) array as in function ``gen_ufind_lin2_init``
+typedef struct {
+   uint32_t *p_alloc;    // pointer to allocatd memory
+   uint32_t *p_start;    // start of queue
+   uint32_t *p_end;      // end of queue
+   uint32_t *p_overflow; // physical end of queue
+   uint32_t *p_g;        // pointer to (expanded) generators
+   uint32_t *p_b;        // pointer to bitmap of vectors already done
+   uint32_t n;           // diemension ``n`` of representation
+   uint32_t n_g;         // number of generators
+} schreierv_type;
 
 
 
@@ -875,70 +889,71 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
     }
 }
 
-
-
-
-
-/** @brief Yet to be documented!
-
-*/
-static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
+static inline int32_t
+schreier_vector_alloc(schreierv_type *p_s, uint32_t *a, uint32_t max_entries)
 {
-    uint32_t *p_alloc = NULL;
-    uint32_t *p_start, *p_end, *p_overflow, *p_g, *p_b;
-    uint32_t i, l_b;
+    uint32_t buf_size, l_b, g_start, i;
     uint64_t *p64_g;
-
+    int32_t status;
     lin2_type s;
-    int32_t status = finalize_initalization(a, p_s);
-
-    if (status < 0) return status;
-    if (a[0] >= 2) {
-        a[0] = 2;
-        return 0;
-    }
-    load_lin2_info(a, &s);
-
-    // Allocate work buffer and set pointer to queue in work buffer
-    l_b = (s.n > 6) ? (1UL << (s.n - 5)) : 2;
-    p_alloc = malloc(((1UL << s.n) + s.n_g * 0x600 + l_b) * sizeof(uint32_t));
-    if (p_alloc == NULL) return lin2_error(a, ERR_GEN_UFIND_MEM);
-    p_end = p_start = p_alloc;
-    p_g = p_overflow = p_start + ((size_t)1UL << s.n);
-    p_b = p_g + s.n_g*2*3*256;
+    p_s->p_alloc = NULL;
+    if ((status = load_lin2_info(a, &s)) < 0) return status;
+    p_s->n = s.n;
+    p_s->n_g = s.n_g;
+    // Allocate work buffer and set pointers in structure
+    l_b = (p_s->n > 6) ? (1UL << (p_s->n - 5)) : 2;
+    g_start = (max_entries + 1) & 0xfffffffeUL;
+    buf_size = g_start + p_s->n_g * 0x600 + l_b;
+    p_s->p_alloc = malloc(buf_size * sizeof(uint32_t));
+    if (p_s->p_alloc == NULL) return ERR_GEN_UFIND_MEM;
+    p_s->p_end = p_s->p_start = p_s->p_alloc;
+    p_s->p_overflow = p_s->p_alloc + max_entries;
+    p_s->p_g = p_s->p_alloc + g_start;
+    p_s->p_b = p_s->p_g + p_s->n_g * 0x600;
 
     // Load generator matrices
-    p64_g = (uint64_t*) p_g;
-    for (i = 0; i < s.n_g; ++i) {
-        store64_gen(p64_g + 0x300 * i, s.n, s.p_g + 2 * i * s.n, 
-            s.p_g + (2 * i + 1) * s.n);
+    p64_g = (uint64_t*) p_s->p_g;
+    for (i = 0; i < p_s->n_g; ++i) {
+        store64_gen(p64_g + 0x300 * i, p_s->n, s.p_g + 2 * i * p_s->n,
+            s.p_g + (2 * i + 1) * p_s->n);
     }
 
     // Initialize bitmap table
-    memset(p_b, 0xff, l_b * sizeof(uint32_t));
+    memset(p_s->p_b, 0xff, l_b * sizeof(uint32_t));
+    return 0;
+}
 
 
-    // Load start vectors to queue and mark them in bitmap table
-    status = gen_ufind_lin2_representatives(a, p_start, 1UL << s.n);
-    if (status != (int32_t)s.n_orbits) {
-        status = status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 23;
-        goto done;
-    }
-    p_end = p_start + s.n_orbits;
-    for (i = 0; i < s.n_orbits; ++i) {
-        uint32_t data = p_start[i];
-        p_b[data >> 5] &= ~(1UL << (data & 0x1f));
-    }
+static inline int32_t
+schreier_vector_addv(schreierv_type *p_s, uint32_t *p_v, uint32_t n)
+{
+    uint32_t i, mask = (1UL << p_s->n) - 1, entry;
+    uint32_t *p_0 = p_s->p_end, *p_b = p_s->p_b;
+    if (n > p_s->p_overflow - p_0) return ERR_GEN_UFIND_IN_LARGE;
+    for (i = 0; i < n; ++i) {
+        entry = p_v[i] & mask;
+        p_b[entry >> 5] &= ~(1UL << (entry & 0x1f));
+        p_0[i] = entry | 0xfe000000UL;
+   }
+   p_s->p_end += n;
+   return 0;
+}
 
-    // Compute and store generators
-    status = ERR_GEN_UFIND_INT_LIN2 - 25;
+
+static inline int32_t
+schreier_vector_compute(schreierv_type *p_s)
+{
+    uint32_t n_g = p_s->n_g, *p_b = p_s->p_b, i;
+    uint32_t *p_start = p_s->p_start, *p_end = p_s->p_end;
+    uint32_t *p_overflow = p_s->p_overflow;
+
     while (p_start < p_end) {
         uint_fast32_t data = *p_start++, d0, d1, d2;
-        uint64_t *p64_g1 = p64_g, v64;
+        uint64_t *p64_g1 = (uint64_t*)(p_s->p_g), v64;
         d0 = data & 0xff;
         d1 = ((data >> 8) & 0xff) + 0x100;
         d2 = ((data >> 16) & 0xff) + 0x200;
-        for (i = 0; i < s.n_g; ++i) {
+        for (i = 0; i < n_g; ++i) {
             uint_fast32_t img0, img1, mask0, mask1;
             v64 = p64_g1[d0] ^ p64_g1[d1] ^ p64_g1[d2];
             img0 =  (uint32_t)(v64 & 0xffffffffUL);
@@ -947,22 +962,86 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
             mask1 = 1UL << (img1 & 0x1f);
             p64_g1 += 0x300;
             if (p_b[img0 >> 5] & mask0) {
-                s.p_t[img0] &= (i << 25) | 0x01ffffffUL;
                 p_b[img0 >> 5] ^= mask0;
-                if (p_end >= p_overflow) goto done;
-                *p_end++ = img0;
+                if (p_end >= p_overflow) return ERR_GEN_UFIND_INT_LIN2 - 25;
+                *p_end++ = img0 | (i << 25) | 0x01000000UL;
             }
             if (p_b[img1 >> 5] & mask1) {
-                s.p_t[img1] &= (i << 25) | 0x00ffffffUL;
                 p_b[img1 >> 5] ^= mask1;
-                if (p_end >= p_overflow) goto done;
-                *p_end++ = img1;
+                if (p_end >= p_overflow) return ERR_GEN_UFIND_INT_LIN2 - 25;
+                *p_end++ = img1 | (i << 25);
             }
         }
     }
+    p_s->p_start = p_s->p_alloc;
+    p_s->p_end = p_end;
+    return (uint32_t)(p_end - p_s->p_start);
+}
+
+
+
+static inline void
+schreier_vector_dealloc(schreierv_type *p_s)
+{
+    if (p_s->p_alloc != NULL) free(p_s->p_alloc);
+}
+
+
+/// @endcond
+
+
+/************************************************************************
+* Add orbit map and operation of generators to table
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+
+/** @brief Yet to be documented!
+
+*/
+static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
+{
+    schreierv_type sv;
+    lin2_type s;
+    int32_t status = finalize_initalization(a, p_s);
+    uint32_t i, mask;
+
+    if (status < 0) return status;
+    if (a[0] >= 2) {
+        a[0] = 2;
+        return 0;
+    }
+    load_lin2_info(a, &s);
+
+    status = schreier_vector_alloc(&sv, a, 1UL << s.n);
+    if (status < 0) goto done;
+
+    // Load start vectors to queue and mark them in bitmap table
+    status = gen_ufind_lin2_representatives(a, sv.p_start, 1UL << s.n);
+    if (status != (int32_t)s.n_orbits) {
+        status = status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 23;
+        goto done;
+    }
+    status = schreier_vector_addv(&sv, sv.p_start, s.n_orbits);
+    if (status < 0) goto done;
+    status = schreier_vector_compute(&sv);
+    if (status != (int32_t)(1L << s.n)) {
+        status = status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 24;
+        goto done;
+    }
+    mask = (1UL << s.n) - 1;
+    for (i = 0; i < 1UL << s.n; ++i) {
+        uint32_t entry = sv.p_start[i];
+        s.p_t[entry & mask] &= mask;
+        s.p_t[entry & mask] |= (entry & 0xff000000UL);
+    }
+
     status = a[0] = 2;  // update main status
 done:
-    if (p_alloc) free(p_alloc);
+    schreier_vector_dealloc(&sv);
     if (status < 0) return lin2_error(a, status);
     load_lin2_info(a, p_s);
     return status;
