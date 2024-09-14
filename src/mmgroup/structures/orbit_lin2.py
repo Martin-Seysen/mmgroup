@@ -65,6 +65,7 @@ ERRORS = {
 -8 : "Too many generators for subgroup of SL_2(2)^n",
 -9 : "Generator matrix is not invertible",
 -10: "Object is not in correct state for this method",
+-11: "Duplicate entry in union-find table",
 }
 
 
