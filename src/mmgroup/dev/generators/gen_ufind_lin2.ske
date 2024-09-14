@@ -82,15 +82,18 @@ typedef struct {
    uint32_t n_max_g;   // Maximum No of generators of the group ``G``
    uint32_t n_g;       // Number of generators of the group ``G``
    uint32_t n_orbits;  // No of ``G`` orbits in ``GF(2)^n``
+   uint32_t n_vectors; // No ov vectrs, usually 1 << n
    uint32_t *p_t;      // Pointer to main table ``t`` inside ``a``
    uint32_t *p_o;      // Pointer to main table ``map`` inside ``a``
    uint32_t *p_g;      // Pointer to list of generators of group in ``a``
 } lin2_type;
 
+#define LIN2_LEN_HEADER  6UL  // Length of header of structrue above
 #define LIN2_MAX_STATUS  2UL  // Maximum good status
 #define LIN2_MAX_N      24UL  // Maximum dimension n of GF(2)^n
 #define LIN2_MAX_N_G   127UL  // Maximum No n_g of generators of group
 
+#define LIN2_COMPRESSED 0x10UL  // Status indicating a compressed orbit array
 
 
 static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
@@ -101,7 +104,8 @@ static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
     ps->n_max_g = a[2];
     ps->n_g = a[3];
     ps->n_orbits = a[4];
-    ps->p_t = a + 5;
+    ps->n_vectors = a[5];
+    ps->p_t = a + LIN2_LEN_HEADER;
     ps->p_o = ps->p_t + ((size_t)1UL << ps->n);
     ps->p_g = ps->p_o + ((size_t)1UL << ps->n);
     return ps->status;
@@ -117,6 +121,7 @@ static inline int32_t store_lin2_info(lin2_type *ps, uint32_t *a)
     a[2] = ps->n_max_g;
     a[3] = ps->n_g;
     a[4] = ps->n_orbits;
+    a[5] = ps->n_vectors;
     return ps->status;
 }
 
@@ -147,7 +152,7 @@ int32_t gen_ufind_lin2_size(uint32_t n, uint32_t k)
 {
     if (n == 0 || n > LIN2_MAX_N) return ERR_GEN_UFIND_LIN2_DIM;
     if(k > LIN2_MAX_N_G) return ERR_GEN_UFIND_LIN2_GEN;
-    return 5 + (2UL << n) + 2 * n * k + 2;
+    return LIN2_LEN_HEADER + (2UL << n) + 2 * n * k + 2;
 }
 
 
@@ -205,6 +210,7 @@ int32_t gen_ufind_lin2_init(uint32_t *a, uint32_t l_a, uint32_t n, uint32_t n_g)
     s.n_max_g = n_g;
     s.n_g = 0;
     s.n_orbits = 0;
+    s.n_vectors = 1UL << n;
 
     if (status < 0) goto done;
     store_lin2_info(&s, a);
@@ -327,31 +333,6 @@ int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
 }
 
 
-
-/** @brief Check an array representing a group acting on ``GF(2)^n``
-
-Let ``a`` be an array that stores a group acting on a vector space
-as described in function ``gen_ufind_lin2_init``. The function
-performs some checks on the array ``a``. It returns an nonnegative
-value (indicating the amount of information present in ``a``)
-if the data in ``a`` appear to be consistent, and negative value
-otherwise. In case of a negative return value the array ``a``
-may not be used!
-*/
-// %%EXPORT px
-int32_t gen_ufind_lin2_check(uint32_t *a, uint32_t len_a)
-{
-    lin2_type s;
-    int32_t a_size, status;
-    if (len_a < 6) return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 13);
-    status = load_lin2_info(a, &s);
-    if (status < 0) return status;
-    a_size = status = gen_ufind_lin2_size(s.n, s.n_g);
-    if (status < 0) return lin2_error(a, status);
-    if ((uint32_t)a_size > len_a) return 
-        lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 14);
-    return status;
-}
 
 
 
@@ -635,9 +616,17 @@ done:
 
 
 
+/************************************************************************
+* Finding orbits representatives via Schreier vector;
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
 
 
+// Yet to be done!!!!
 
+
+/// @endcond
 
 
 
@@ -684,6 +673,10 @@ int32_t gen_ufind_lin2_rep_v(uint32_t *a, uint32_t v)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
     v &= mask;
     entry = s.p_t[v];
@@ -710,6 +703,10 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
     rep = gen_ufind_lin2_rep_v(a, v);
     index_o = s.p_t[rep] & mask;
@@ -740,6 +737,10 @@ int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
     rep = status = gen_ufind_lin2_rep_v(a, v);
     if (status < 0) return status;
@@ -777,6 +778,10 @@ int32_t gen_ufind_lin2_representatives(uint32_t *a, uint32_t *r, uint32_t l_r)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
 
     while (index_o < (1UL << s.n)) {
@@ -811,6 +816,10 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     while (index_o < (1UL << s.n)) {
         d = status = read_length_info(s.p_o + index_o);
         if (status < 0) return -status;
@@ -1011,7 +1020,6 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
 
     if (status < 0) return status;
     if (a[0] >= 2) {
-        a[0] = 2;
         return 0;
     }
     load_lin2_info(a, &s);
@@ -1067,6 +1075,10 @@ int32_t gen_ufind_lin2_map_v_gen(uint32_t *a, uint32_t v)
     lin2_type s;
     int32_t status = add_generators(a, &s);
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
     return (s.p_t[v & mask] >> 24) & 0xff;
 }
@@ -1087,6 +1099,10 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
     lin2_type s;
     int32_t status = add_generators(a, &s);
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         // Yet to be done!!!!!
+         ERR_GEN_UFIND_STATE;
+    }
     mask = (1UL << s.n) - 1;
     v &= mask;
     entry = s.p_t[v];
@@ -1112,7 +1128,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 
 
 /************************************************************************
-* Flinalize the computation of all data in an array of orbits
+* Finalize the computation of all data in an array of orbits
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT
@@ -1120,10 +1136,11 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 
 #define LIN2_AMUL 0x5ac83257UL
 
-static inline uint32_t magic_content(lin2_type * p_s)
+static inline uint32_t magic_content(uint32_t *a)
 {
-    return (uint32_t)(LIN2_MAGIC + p_s->n_orbits +
-            ((p_s->n * LIN2_AMUL) + p_s->n_g) * LIN2_AMUL);
+    uint32_t s = LIN2_MAGIC, i;
+    for (i = 0; i < LIN2_LEN_HEADER; ++i) s = s * LIN2_AMUL + a[i];
+    return s;
 }
 
 
@@ -1148,13 +1165,171 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
     if (status < 0) return status;
 	s.n_max_g = s.n_g;
 	store_lin2_info(&s, a);
+    if (status == LIN2_COMPRESSED) return 0;
     a_length =  gen_ufind_lin2_size(s.n, s.n_g);
-    a[a_length - 2] = magic_content(&s);
+    a[a_length - 2] = magic_content(a);
     for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
     a[a_length -1] = 0 - a_sum;
     return a_length;
 }
 
+
+
+
+
+
+/************************************************************************
+* Compress an orbit
+************************************************************************/
+
+/** @brief yet to be documented
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
+{
+    lin2_type s;
+    uint32_t i, mask;
+    uint64_t v_sum = 0, o_len;
+    int32_t status = finalize_initalization(a, &s);
+    if (status < 0) return status;
+
+    mask = (1UL << s.n) - 1;
+    for (i = 0; i < l_o; ++i) {
+         v_sum += gen_ufind_lin2_len_orbit_v(a, o[i] & mask);
+         if (v_sum > (1ULL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
+    }
+    o_len = LIN2_LEN_HEADER + 2 * l_o + v_sum + 2 * s.n_g * s.n + 2;
+    if ((uint64_t)l_o > o_len) return ERR_GEN_UFIND_OUT_SHORT;
+    return (uint32_t)o_len; 
+}
+
+
+/** @brief yet to be documented
+
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *c, uint32_t l_c)
+{
+    lin2_type s, sc;
+    schreierv_type sv;
+    uint32_t i, mask, c_size, c_sum = 0;
+    int32_t status = finalize_initalization(a, &s);
+    if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT; 
+    if (status < 0) return status;
+    c_size = status = gen_ufind_lin2_compressed_size(a, o, l_o);
+    if (status < 0) return status;
+    if (l_c > c_size) return ERR_GEN_UFIND_OUT_SHORT;
+
+    mask = (1UL << s.n) - 1;
+    memcpy(&sc, &s, sizeof(sc));
+    sc.status = LIN2_COMPRESSED;
+    sc.n_vectors = 0;
+    sc.n_orbits = l_o;
+    c[l_o] = 0xffffffffUL;
+    for (i = 0; i < l_o; ++i) {
+        c[i] = gen_ufind_lin2_rep_v(a, o[i]);
+        sc.n_vectors += gen_ufind_lin2_len_orbit_v(a, o[i]);
+    }
+    bitvector32_sort(c, l_o); 
+    for (i = 0; i < l_o; ++i) {
+        if (c[i] == c[i+1]) return ERR_GEN_UFIND_DUPL;
+    }
+    sc.p_t = c + LIN2_LEN_HEADER;
+    sc.p_o = sc.p_t + (size_t)2 * l_o;
+    sc.p_g = sc.p_o + (size_t)sc.n_vectors;
+    for (i = 0; i < l_o; ++i) sc.p_t[i] = o[i] & mask;
+    bitvector32_sort(sc.p_t, l_o); 
+    for (i = 0; i < l_o; ++i) {
+        sc.p_t[i + l_o] = gen_ufind_lin2_len_orbit_v(a, sc.p_t[i]);
+    }
+    memcpy(sc.p_g, s.p_g, 2 * s.n_g * s.n * sizeof(uint32_t));
+    status = schreier_vector_alloc(&sv, a, sc.n_vectors);
+    if (status < 0) goto done;
+    status = schreier_vector_addv(&sv, sc.p_t, l_o);
+    if (status < 0) goto done;
+    status = schreier_vector_compute(&sv);
+    if (status < 0) goto done;
+    for (i = 0; i < sc.n_vectors; ++i) {
+        uint32_t entry = sv.p_start[i];
+        sc.p_o[i] = (entry >> 24) | (entry << 8);
+    }
+    bitvector32_sort(sc.p_o, sc.n_vectors);
+    c[c_size - 2] = magic_content(c);
+    for (i = 0; i < c_size - 1; ++i) c_sum += c[i];
+    c[c_size - 1] = 0 - c_sum;
+    status = 0;
+done:  
+    schreier_vector_dealloc(&sv); 
+    if (status == 0)  store_lin2_info(&sc, c);
+    return status;   
+}
+
+
+
+
+/************************************************************************
+* Check if an orbit array has been finalized
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+static int32_t lin2_check(uint32_t *a, uint32_t len_a, uint32_t chksum)
+{
+    lin2_type s;
+    int32_t status;
+    uint32_t a_sum = 0;
+    uint64_t i, a_size;
+    if (len_a <= LIN2_LEN_HEADER) {
+        return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 13);
+    }
+    status = load_lin2_info(a, &s);
+    if (status < 0) return status;
+    if (s.n == 0 || s.n > LIN2_MAX_N) return ERR_GEN_UFIND_LIN2_DIM;
+    if (s.n_g > LIN2_MAX_N_G) return ERR_GEN_UFIND_LIN2_GEN;
+    if (status == LIN2_COMPRESSED) {
+        a_size = LIN2_LEN_HEADER + 2 * s.n_orbits + s.n_vectors 
+                   + 2 * s.n_g * s.n + 2;
+    } else {
+        a_size = LIN2_LEN_HEADER + (2UL << s.n) 
+                   + 2 * s.n_g * s.n + 2;
+    }
+    if (a_size > (uint64_t)len_a) {
+        return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 15);
+    }
+    if (chksum == 0) return (uint32_t)a_size;
+
+    if (status < LIN2_MAX_STATUS) {
+         return ERR_GEN_UFIND_INT_LIN2 - 43;
+    }
+    if (a[a_size - 2] != magic_content(a)) {
+         return ERR_GEN_UFIND_INT_LIN2 - 45;
+    }
+    for (i = 0; i < a_size; ++i) a_sum += a[i];
+    if (a_sum) return ERR_GEN_UFIND_INT_LIN2 - 46;
+    return (uint32_t)a_size;
+}
+
+
+/// @endcond
+
+
+/** @brief Check an array representing a group acting on ``GF(2)^n``
+
+Let ``a`` be an array that stores a group acting on a vector space
+as described in function ``gen_ufind_lin2_init``. The function
+performs some checks on the array ``a``. It returns an nonnegative
+value (indicating the amount of information present in ``a``)
+if the data in ``a`` appear to be consistent, and negative value
+otherwise. In case of a negative return value the array ``a``
+may not be used!
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_check(uint32_t *a, uint32_t len_a)
+{
+    return lin2_check(a, len_a, 0);
+}
 
 
 
@@ -1171,20 +1346,7 @@ otherwise. Note the a finalized array contains an internal checksum.
 // %%EXPORT px
 int32_t gen_ufind_lin2_check_finalized(uint32_t *a, uint32_t len_a)
 {
-    lin2_type s;
-    int32_t status, a_length, i;
-    uint32_t a_sum = 0;
-    status = load_lin2_info(a, &s);
-    if (status < 0) return status;
-
-    if ((status = gen_ufind_lin2_check(a, len_a)) < 0) return status;
-    if (status < LIN2_MAX_STATUS) return ERR_GEN_UFIND_INT_LIN2 - 43;
-    a_length =  gen_ufind_lin2_size(s.n, s.n_g);
-    if (a_length <= 0) return ERR_GEN_UFIND_INT_LIN2 - 44;;
-    if (a[a_length - 2] != magic_content(&s)) return ERR_GEN_UFIND_INT_LIN2 - 45;
-    for (i = 0; i < a_length; ++i) a_sum += a[i];
-    if (a_sum) return ERR_GEN_UFIND_INT_LIN2 - 46;
-    return a_length;
+    return lin2_check(a, len_a, 1);
 }
 
 
@@ -1218,6 +1380,9 @@ int32_t gen_ufind_lin2_get_map(uint32_t *a, uint32_t *map, uint32_t l_map)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         ERR_GEN_UFIND_STATE;
+    }
     load_lin2_info(a, &s);
     if (check_out_buf32(map, l_map, 1UL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     for (i = 0; i < (1UL << s.n); ++i) {
@@ -1246,6 +1411,9 @@ int32_t gen_ufind_lin2_get_table(uint32_t *a, uint32_t *t, uint32_t l_t)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         ERR_GEN_UFIND_STATE;
+    }
     if (check_out_buf32(t, l_t, 1UL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     memcpy(t, s.p_t, sizeof(uint32_t) << s.n);
     return 1UL << s.n;
@@ -1282,6 +1450,9 @@ int32_t gen_ufind_lin2_orbits(uint32_t *a, uint32_t *t, uint32_t l_t, uint32_t *
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    if (status == LIN2_COMPRESSED) {
+         ERR_GEN_UFIND_STATE;
+    }
     if (check_out_buf32(t, l_t, 1UL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     if (check_out_buf32(x, l_x, s.n_orbits + 1)) return ERR_GEN_UFIND_OUT_SHORT;
     /* Ye olde waye to do the worke

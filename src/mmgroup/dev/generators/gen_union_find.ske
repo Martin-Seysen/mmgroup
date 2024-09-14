@@ -60,6 +60,7 @@ ERR_GEN_UFIND_LIN2_DIM   = -7, ///< Dimension n of GF(2)^n is 0 or too large
 ERR_GEN_UFIND_LIN2_GEN   = -8, ///< Too many generators for subgroup of SL_2(2)^n
 ERR_GEN_UFIND_INVERSE    = -9, ///< Generator matrix is not invertible
 ERR_GEN_UFIND_STATE     = -10, ///< Main buffer is not in correct state for this function
+ERR_GEN_UFIND_DUPL      = -11, ///< Duplicate entry in union-find table
 
 ERR_GEN_UFIND_INT_TABLE = -100, ///< -100 .. -199 are internal errors in module gen_union_find.c
 ERR_GEN_UFIND_INT_LIN2  = -200, ///< -200 .. -299 are internal errors in module gen_ufind_lin2.c
