@@ -57,6 +57,7 @@ from mmgroup.generators import gen_ufind_lin2_map_v
 from mmgroup.generators import gen_ufind_lin2_finalize
 from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
+from mmgroup.generators import gen_ufind_lin2_orbit_lengths
 from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_add
 
@@ -115,7 +116,7 @@ def v_mul_g(a, v, g):
     m = np.zeros(n, dtype = np.uint32)
     for i in g:
         chk(gen_ufind_lin2_gen(a, i, m, n))
-        vmatmul(v, m, n)
+        v = vmatmul(v, m, n)
     return v
 
 class BitMatrix:
@@ -381,11 +382,12 @@ def check_properties_a_group(a, llist):
                 g0 = chk(gen_ufind_lin2_map_v_gen(a, w))
             #print(v, w)
             assert w == chk(gen_ufind_lin2_rep_v(a, v))
+            assert w == orbit[0], ("error", v, w, orbit[0], a_g0)
 
             l_g = chk(gen_ufind_lin2_map_v(a, v, a_g, len(a_g)))
             assert l_g >= 0, (v, l_g, a_g[:10])
             a_g0 = a_g[:l_g]
-            w = v_mul_g(a, w, a_g0)
+            w = v_mul_g(a, v, a_g0)
             #print(v, w, orbit[0], a_g0)
             assert w == orbit[0], ("error", v, w, orbit[0], a_g0)
 
@@ -426,6 +428,54 @@ def check_orbits_py_class(generators, llist):
     check_orbit_object(new_orbits, generators, llist)
 
 
+
+def check_properties_a_group_compressed(a):
+     from mmgroup.bitfunctions import bitweight
+     from mmgroup.generators import gen_ufind_lin2_compressed_size
+     from mmgroup.generators import gen_ufind_lin2_compress
+     def gen_weight4():
+         for i in range(256):
+             if bitweight(i) == 4:
+                 yield i
+
+     o = np.array([0x0f, 0x17], dtype = np.uint32)
+     sizes = {0x0f : 14, 0x17 : 56}
+     l_o = len(o)
+     l_c = gen_ufind_lin2_compressed_size(a, o, l_o)
+     c = np.zeros(l_c, dtype = np.uint32)
+     status = gen_ufind_lin2_compress(a, o, l_o, c, l_c)
+     chk(status)
+     chk(gen_ufind_lin2_check_finalized(c, l_c))
+     dim = gen_ufind_lin2_dim(a)
+     assert gen_ufind_lin2_dim(c) == dim
+     n_gen = gen_ufind_lin2_n_gen(c)
+     assert n_gen == gen_ufind_lin2_n_gen(a)
+     assert gen_ufind_lin2_n_orbits(c) == len(o)
+     q = np.zeros(len(o), dtype = np.uint32)
+     gen_ufind_lin2_representatives(c, q, len(q))
+     assert list(q) == list(o)
+     gen_ufind_lin2_orbit_lengths(c, q, len(q))
+     assert list(q) == [sizes[x] for x in o]
+     for i in range(n_gen):
+          g = np.zeros((dim,2), dtype = np.uint32)
+          chk(gen_ufind_lin2_gen(a, i, g[0], dim))
+          chk(gen_ufind_lin2_gen(c, i, g[1], dim))
+          assert (g[0] == g[1]).all()
+     #print(c[:10])
+     #print("cccc", c[10:26])
+     for i, v in enumerate(gen_weight4()):
+         w = chk(gen_ufind_lin2_rep_v(c, v))
+         assert w == gen_ufind_lin2_rep_v(a, v)
+         size = chk(gen_ufind_lin2_len_orbit_v(c, v))
+         #print(hex(v), hex(w), size, sizes[w])
+         assert size == sizes[w], (hex(v), hex(w), size, sizes[w])
+         if i & 3 == 0:
+            b = np.zeros(50, dtype = np.uint8)
+            lb = chk(gen_ufind_lin2_map_v(c, v, b, len(b)))
+            w1 = v_mul_g(c, v, b[:lb])
+            #print("bbbb", b[:lb], hex(w), hex(w1))
+            assert w1 == w
+
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
@@ -453,6 +503,9 @@ def test_ufind_L3_2(verbose = 0):
     check_properties_a_llist(a, llist)
     check_properties_a_group(a, llist)
     check_orbits_py_class(generators, llist)
+    check_properties_a_group_compressed(a)
+
+
 
 #####################################################################
 #  testing function eech2_orbits_raw()

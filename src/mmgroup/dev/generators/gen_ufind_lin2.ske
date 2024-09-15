@@ -503,14 +503,8 @@ int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
     lin2_type s;
     int32_t status;
     uint32_t j, *p_gout, mask;
-    if (a == NULL) return ERR_GEN_UFIND_INT_LIN2 - 11;
-    if (a[0] != 0) {
-        if ((int32_t)(a[0]) < 0) return (int32_t)(a[0]);
-        if (a[0] > LIN2_MAX_STATUS) status = ERR_GEN_UFIND_INT_LIN2 - 12;
-        else status = ERR_GEN_UFIND_STATE;
-        goto done;
-    }
-    load_lin2_info(a, &s);
+    status = load_lin2_info(a, &s);
+    if (status != 0) return status < 0 ? status : ERR_GEN_UFIND_STATE;
     mask =   (1UL << s.n) - 1;
     status = check_out_buf32(g, l_g, s.n);
     if  (status < 0) goto done;
@@ -665,30 +659,33 @@ done:
 
 
 static int32_t
-find_scheier(uint32_t *a, uint32_t *v, uint8_t *b, uint32_t l_b)
+find_schreier(uint32_t *a, uint32_t *p_v, uint8_t *b, uint32_t l_b)
 {
     lin2_type s;
     int32_t status = load_lin2_info(a, &s);
-    uint32_t mask, x, g, l_b_start;
+    uint32_t mask, x, g, l_b_start, v = *p_v;
 
     if (status < 0) return status;
     if (status != LIN2_COMPRESSED) return ERR_GEN_UFIND_STATE;
     mask = (1UL << s.n) - 1;
-    l_b = l_b < s.n_vectors ? l_b : s.n_vectors;
+    // l_b = l_b < s.n_vectors ? l_b : s.n_vectors;
     l_b_start = l_b;
 
     while (1) {
-        *v &= mask;
-        x = bitvector32_bsearch(s.p_o, s.n_vectors, *v << 8);
+        v &= mask;
+        x = s.p_o[bitvector32_bsearch(s.p_o, s.n_vectors, v << 8)];
         g = x & 0xff;
         x >>= 8;
-        if (x ^ *v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
-        if (g == 0xfe) return l_b_start - l_b;
-        if (b != NULL) {
-            if (l_b--) *b++ = (uint8_t)(x & 0xff);
-            else return ERR_GEN_UFIND_OUT_SHORT;
+        if (x ^ v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
+        if (g == 0xfe) {
+            *p_v = v;
+            return l_b_start - l_b;
         }
-        *v = vmatmul(*v, s.p_g + g * s.n);
+        if (b != NULL) {
+            if (l_b-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
+            *b++ = (uint8_t)(g);
+        }
+        v = vmatmul(v, s.p_g + g * s.n);
     }
 }
 
@@ -741,7 +738,7 @@ int32_t gen_ufind_lin2_rep_v(uint32_t *a, uint32_t v)
 
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         status = find_scheier(a, &v, NULL, 0);
+         status = find_schreier(a, &v, NULL, 0);
          return status < 0 ? status : v;
     }
     mask = (1UL << s.n) - 1;
@@ -771,11 +768,11 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
 
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         rep = status = find_scheier(a, &v, NULL, 0);
+         status = find_schreier(a, &v, NULL, 0);
          if (status < 0) return status;
-         index_o = bitvector32_bsearch(s.p_t, s.n_orbits, rep);
-         if (rep != index_o) return ERR_GEN_UFIND_INT_LIN2 - 35;
-         return s.p_t[s.n_orbits + rep];
+         index_o = bitvector32_bsearch(s.p_t, s.n_orbits, v);
+         if (v != s.p_t[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
+         return s.p_t[s.n_orbits + index_o];
     }
     mask = (1UL << s.n) - 1;
     rep = gen_ufind_lin2_rep_v(a, v);
@@ -1093,10 +1090,7 @@ static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
     int32_t status = finalize_initalization(a, p_s);
     uint32_t i, mask;
 
-    if (status < 0) return status;
-    if (a[0] >= 2) {
-        return 0;
-    }
+    if (status < 0 || status >= 2) return status;
     load_lin2_info(a, &s);
 
     status = schreier_vector_alloc(&sv, a, 1UL << s.n);
@@ -1187,7 +1181,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
     int32_t status = add_generators(a, &s);
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         return find_scheier(a, &v, b, l_b);
+         return find_schreier(a, &v, b, l_b);
     }
     mask = (1UL << s.n) - 1;
     v &= mask;
@@ -1282,7 +1276,7 @@ int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
     uint64_t v_sum = 0, o_len;
     int32_t status = finalize_initalization(a, &s);
     if (status < 0) return status;
-
+    if (status == LIN2_COMPRESSED) return ERR_GEN_UFIND_STATE;
     mask = (1UL << s.n) - 1;
     for (i = 0; i < l_o; ++i) {
          v_sum += gen_ufind_lin2_len_orbit_v(a, o[i] & mask);
@@ -1315,16 +1309,16 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
     sc.status = LIN2_COMPRESSED;
     sc.n_vectors = 0;
     sc.n_orbits = l_o;
-    c[l_o] = 0xffffffffUL;
+    sc.p_t = c + LIN2_LEN_HEADER;
+    sc.p_t[l_o] = 0xffffffffUL;
     for (i = 0; i < l_o; ++i) {
-        c[i] = gen_ufind_lin2_rep_v(a, o[i]);
+        sc.p_t[i] = gen_ufind_lin2_rep_v(a, o[i]);
         sc.n_vectors += gen_ufind_lin2_len_orbit_v(a, o[i]);
     }
-    bitvector32_sort(c, l_o); 
+    bitvector32_sort(sc.p_t, l_o);
     for (i = 0; i < l_o; ++i) {
-        if (c[i] == c[i+1]) return ERR_GEN_UFIND_DUPL;
+        if (sc.p_t[i] == sc.p_t[i+1]) return ERR_GEN_UFIND_DUPL;
     }
-    sc.p_t = c + LIN2_LEN_HEADER;
     sc.p_o = sc.p_t + (size_t)2 * l_o;
     sc.p_g = sc.p_o + (size_t)sc.n_vectors;
     for (i = 0; i < l_o; ++i) sc.p_t[i] = o[i] & mask;
@@ -1344,13 +1338,13 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
         sc.p_o[i] = (entry >> 24) | (entry << 8);
     }
     bitvector32_sort(sc.p_o, sc.n_vectors);
+    status = c[0] = 0;
+    store_lin2_info(&sc, c);
     c[c_size - 2] = magic_content(c);
     for (i = 0; i < c_size - 1; ++i) c_sum += c[i];
     c[c_size - 1] = 0 - c_sum;
-    status = 0;
 done:  
     schreier_vector_dealloc(&sv); 
-    if (status == 0)  store_lin2_info(&sc, c);
     return status;   
 }
 

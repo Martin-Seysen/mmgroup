@@ -316,9 +316,9 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
     type ``uint%{N}_t``.
 
     Given a vector ``v`` to be searched in the array ``a``, the
-    function returns the highest index ``i`` with ``0 <= i < n``
-    such that ``v >= a[i]`` holds.  The function returns ``0``
-    in case ``v < a[0]``.  The case ``n = 0`` is illegal.
+    function returns the lowest index ``i`` with ``0 <= i < n``
+    such that ``v <= a[i]`` holds.  The function returns ``n-1``
+    in case ``v > a[n-1]``.  It returns ``0`` in case ``n = 0``.
 
     This function can e.g. be used for searching in an array where
     a key  is stored in the high bits, and the value for that key
@@ -340,7 +340,7 @@ uint32_t bitvector%{N}_bsearch(uint%{N}_t *a, uint32_t n, uint%{N}_t v)
      uint%{N}_t *a1 = a;
      while (n > 1) {
          uint32_t mid = n >> 1;
-         if (v >= a1[mid]) {
+         if (v > a1[mid - 1]) {
              a1 += mid;
              mid = n - mid;
          }
