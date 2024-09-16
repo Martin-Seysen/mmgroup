@@ -163,7 +163,7 @@ def do_get_v3_case_2A(axis):
     len_g = gen_leech2_reduce_type2(v2, g)
     assert 0 <= len_g <= 6
     axis *= G('a', g[:len_g])
-    if (axis['B', 2, 3] + 2) % 15:
+    if (int(axis['B', 2, 3]) + 2) % 15:
         axis *= G('x', 0x200)
     assert axis.v15 ==  axis.v_axis15 
     return axis
@@ -273,7 +273,7 @@ def postpermute(class_, axis):
         diag = np.diagonal(axis['A'])  % 3
         # print(diag)
         preimg = [i for i, x in enumerate(diag[:8]) if x == 2]
-        preimg += [i + 8 for i, x in enumerate(diag[8:]) if x == 1]
+        preimg += [int(i) + 8 for i, x in enumerate(diag[8:]) if x == 1]
         # print("preimage bits", GCode(preimg).bit_list)
         # print("DODECAD", GCode(DODECAD_12C).bit_list)
         pi = perm_from_dodecads(preimg, DODECAD_12C)
@@ -303,13 +303,13 @@ def postpermute(class_, axis):
         axis *= permutation(OCTAD_10B, o[:6])
         #debug_show_swapped(axis, 0, 1)
         c = axis['C'] % 3
-        swaptest =  c[12,13] * c[12,14] * c[13,14] % 3
+        swaptest =  int(c[12,13] * c[12,14] * c[13,14] % 3)
         # print("swaptest", swaptest)
         axis *= cond_swap_BC(swaptest  == 2 )      
 
         a = axis['A'] % 3
-        l = [ (2, 3, (a[2,3] - 2) & 1)]
-        l += [(0, j, (a[0,j] - 1) & 1) for j in [1, 4, 5, 6, 7]]
+        l = [ (2, 3, (int(a[2,3]) - 2) & 1)]
+        l += [(0, j, (int(a[0,j]) - 1) & 1) for j in [1, 4, 5, 6, 7]]
         axis *= solve_gcode_diag(l)
         #display_A(axis['A'] )
         a = axis['A'] % 3
@@ -318,7 +318,7 @@ def postpermute(class_, axis):
         axis *= permutation(range(6), l)
         #display_A(axis['A'] )
         b = axis['B'] % 3
-        l = [(0, j, (b[0,j] - 1) & 1) for j in range(8, 24)]
+        l = [(0, j, (int(b[0,j]) - 1) & 1) for j in range(8, 24)]
         axis *= solve_gcode_diag(l, 'x')
         axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
     if class_ == "10A":
@@ -354,7 +354,7 @@ def postpermute(class_, axis):
         axis *=permutation(image, preimage)
         #display_A(axis['A'] )
         a = axis['A'] % 3
-        l = [(1, i, (a[1,i] - 2) & 1) for i in (2, 3)]
+        l = [(1, i, (int(a[1,i]) - 2) & 1) for i in (2, 3)]
         axis *= solve_gcode_diag(l)
         axis *= cond_swap_BC(axis['B', 0, 8] == axis['C', 0, 8])
         b = axis['B', 0]

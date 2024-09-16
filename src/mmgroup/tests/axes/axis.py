@@ -792,7 +792,7 @@ class BabyAxis(Axis):
     def fixed_value(self, part = 'A'):
         if part == 'A':
             a = self['A']
-            return int(a[2,2] + a[2,3] - 2 * a[2,3]) % 15
+            return (int(a[2,2]) + int(a[2,3]) - 2 * int(a[2,3])) % 15
         elif part == 'B':
             return int(self['B', 2, 3])
         else:
@@ -806,7 +806,7 @@ class BabyAxis(Axis):
         else:
             vt = self.v15
         a = vt['A']
-        asub = int(a[2,2] + a[2,3] - 2 * a[2,3]) % 15
+        asub = (int(a[2,2]) + int(a[2,3]) - 2 * int(a[2,3])) % 15
         return at + str(int(asub != 0)) 
     def axis_type_info_beta(self):
         r"""Return information about a certain orbit of the axis
