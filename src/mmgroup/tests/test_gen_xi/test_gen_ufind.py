@@ -646,9 +646,22 @@ def check_properties_a_py_compressed(a_py, c):
     ref_sizes_a = [a_py.orbit_size(v) for v in orbits]
     ref_sizes_c = [c_py.orbit_size(v) for v in orbits]
     assert sizes == ref_sizes_a == ref_sizes_c
+    v1 = 0
     # Actual test is yet to be implemented!
-    pass
- 
+    for i, v in enumerate(gen_weight4()):
+        if i % 3 != 2:
+            continue
+        w = a_py.orbit_rep(v)
+        assert  w == c_py.orbit_rep(v)
+        assert a_py.orbit_size(v) == c_py.orbit_size(v)
+        # print(v, w, orbits[1], v1)
+        if w == orbits[1] and v1:
+            assert a_py.map_v_word_G(v, v1) == c_py.map_v_word_G(v, v1)
+            assert a_py.map_v_G(v, v1) == c_py.map_v_G(v, v1)
+        if w == orbits[1]:
+            v1 = v
+
+
 
 
 #####################################################################

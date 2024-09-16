@@ -269,7 +269,7 @@ class Orbit_Lin2:
     def map_v_word_G(self, v, img = None):
         r"""Yet to be documented!"""
         w0 = self._map_v_word_a(v, img)
-        return [(self.map_gen[x >> 1], (-1) ** x) for x in w0]
+        return [(self.map_gen[x >> 1], (-1) ** int(x)) for x in w0]
     def map_v_G(self, v, img = None):
         r"""Find group element transforming a vector inside an orbit
 
