@@ -279,7 +279,7 @@ M_UNIT8 = [1 << x for x in range(8)]
 
 
 def generate_main_orbit_array(generators):
-    """Return main orbit array and orbits of group H
+    r"""Return main orbit array and orbits of group H
 
     Given a list of generators of the group ``H`` described above, the
     function returns a pair ``(a, llist)``. Here ``a`` is an (opaque)
@@ -560,8 +560,15 @@ def gen_weight4():
 
 
 def check_properties_a_group_compressed(a):
-     """Yet to be docuemnted!!!
+     """Check a compressed version of the main orbit array ``a``
 
+     Function ``gen_ufind_lin2_compress`` computes a compressed
+     version of the main orbit array ``a`` that may contain fewer
+     orbits the the original array. This function computes such a
+     comprressed orbit array ``c`` for the group ``H`` containing
+     orbits of vectors of bit weight 4 only. This function tests
+     the functions in module ``gen_ufind_lin2.c`` acting on the
+     compressed array ``c``.
      """
      from mmgroup.bitfunctions import bitweight
      from mmgroup.generators import gen_ufind_lin2_compressed_size
@@ -612,6 +619,27 @@ def check_properties_a_group_compressed(a):
 
 
 def check_properties_a_group_compressed(a):
+    """Check Orbit_Lin2 object corresponding to compressed orbit array
+
+    Let ``c`` be the compressed orbit array defined in function
+    ``check_properties_a_group_compressed``. This function constructs
+    a python object of class ``Orbit_Lin2`` corresponding to the
+    compressed orbit array ``c`` using method ``compress`` of class
+    ``Orbit_Lin2``. It tests the methods of that python  objects
+    against the corresponding functions in module ``gen_ufind_lin2.c``
+    acting on the compressed array ``c``.
+    """
+    orbits = [0x0f, 0x17]
+    c = a.compress(orbits)
+    assert c.dim == a.dim
+    assert c.n_orbits() == len(orbits)
+    assert (c.generators() == a.generators())
+    reps, sizes = [list(x) for x in c.representatives()]
+    assert reps == orbits
+    ref_sizes_a = [a.orbit_size(v) for v in orbits]
+    ref_sizes_c = [c.orbit_size(v) for v in orbits]
+    assert sizes == ref_sizes_a == ref_sizes_c
+    # Actual test is yet to be impemented!
     pass
 
 
@@ -620,6 +648,7 @@ def check_properties_a_group_compressed(a):
 #####################################################################
 
 
+#@pytest.mark.mmm
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H

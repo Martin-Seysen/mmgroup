@@ -364,7 +364,7 @@ class Orbit_Lin2:
         n_gen = chk(gen_ufind_lin2_n_gen(self.a))
         o = np.array(orbits, dtype = np.uint32)
         l_c = chk(gen_ufind_lin2_compressed_size(self.a, o, len(o)))
-        c = np.zeros(l_c + self.n_gen, dtype = np.uint32)
+        c = np.zeros(l_c + n_gen, dtype = np.uint32)
         l_c = chk(gen_ufind_lin2_compress(self.a, o, len(o), c, l_c))
         c[l_c : l_c + n_gen] = self.map_gen[:n_gen]
         pickled = (c[:l_c + n_gen], self.gen), (self.map, None)
