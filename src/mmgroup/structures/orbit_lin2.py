@@ -46,13 +46,13 @@ from mmgroup.generators import gen_ufind_lin2_check_finalized
 from mmgroup.generators import gen_ufind_lin2_representatives
 from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_orbit_lengths
+from mmgroup.generators import gen_ufind_lin2_compressed_size
+from mmgroup.generators import gen_ufind_lin2_compress
 from mmgroup.clifford12 import bitmatrix64_vmul
 from mmgroup.clifford12 import bitmatrix64_echelon_h
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_subspace_eqn
-
-
 
 ERRORS = {
 -1 : "Out of memory",
@@ -268,8 +268,8 @@ class Orbit_Lin2:
         return o
     def map_v_word_G(self, v, img = None):
         r"""Yet to be documented!"""
-        w0 = self._map_v_word_a(v, img = None)
-        return [(self.map_gen[x] >> 1, -1 ** x) for x in w0]
+        w0 = self._map_v_word_a(v, img)
+        return [(self.map_gen[x >> 1], (-1) ** x) for x in w0]
     def map_v_G(self, v, img = None):
         r"""Find group element transforming a vector inside an orbit
 
@@ -279,7 +279,7 @@ class Orbit_Lin2:
         Parameter ``img`` defaults to the standard representative of
         the orbit.
         """
-        w0 = self._map_v_word_a(v, img = None)
+        w0 = self._map_v_word_a(v, img)
         g = self.gen_neutral
         gg = [self.gen, self.gen_inverse]
         for w in w0:
@@ -318,10 +318,10 @@ class Orbit_Lin2:
             self.m_size <<= 1
         if img is None:
             return g
-        if self.rep(v) != self.rep(img):
+        if self.orbit_rep(v) != self.orbit_rep(img):
             ERR = "Preimage and image vector are not in the same orbit"
             raise ValueError(ERR)
-        g1 = self.map_v(img)
+        g1 = self._map_v_word_a(img)
         return np.concatenate((g, np.flip(g1) ^ 1))
     def _size_a_buf(self, n_gen, dim):
         """Size of main buffer for given No of generators an dimension"""
@@ -357,8 +357,18 @@ class Orbit_Lin2:
             pad_map_gen = (0, new_n_max_gen - n_max_gen)
             self.map_gen = np.pad(self.map_gen, pad_map_gen)
         return n_gen
+    def compress(self, orbits):
+        """Yet to be documented!!!
 
-
+        """
+        n_gen = chk(gen_ufind_lin2_n_gen(self.a))
+        o = np.array(orbits, dtype = np.uint32)
+        l_c = chk(gen_ufind_lin2_compressed_size(self.a, o, len(o)))
+        c = np.zeros(l_c + self.n_gen, dtype = np.uint32)
+        l_c = chk(gen_ufind_lin2_compress(self.a, o, len(o), c, l_c))
+        c[l_c : l_c + n_gen] = self.map_gen[:n_gen]
+        pickled = (c[:l_c + n_gen], self.gen), (self.map, None)
+        return Orbit_Lin2(*pickled)
 
 class Orbit_Elem2:
     r"""Model orbits of a group acting on an elementary Abelian 2 group
@@ -369,9 +379,11 @@ class Orbit_Elem2:
     homomorphism :math:`\rho`.
 
 
-    ????
+    More details are yert to be documented!!!
 
-    action of the group
+    This is yet a stub!!!
+
+    Consider the action of the group
     :math:`G` as a permutation group on the vector space :math:`V`
     via the homomorphism :math:`\rho`.
 

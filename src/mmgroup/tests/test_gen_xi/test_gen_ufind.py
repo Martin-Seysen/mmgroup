@@ -1,26 +1,23 @@
 """Test C functions for the union-find algorithm.
 
-In this module we test the python function leech2_orbits_raw() in
-module mmgroup.structures.xleech2, and the low-level C functions
-in file gen_union_find.c used by that python function.
-
-Function leech2_orbits_raw() deals with a huge data set; so we'd
-better test the C functions used by that function on a smaller data
-set first.
+In this module we test the C functions in module ``gen_ufind_lin2.c``
+using their python wrappers in the ``mmgroup.generators`` extension.
+In that file we define an *orbit array* containing orbits of the
+action of a group on a linear space GF(2)^n. We also test the python
+class ``Orbit_Lin2`` for wrapping such an orbit array. On the way we
+also test the C functions in module ``gen_ufind_lin2.c`` implementing
+a union-find algorithm used by the functions in ``gen_ufind_lin2.c``.
 
 For testing the C functions we deal with the affine group H of
 structure 2^8.L_3(2) acting naturally as a permutation group on the
-affine space A8 correspondng to the linear space GF(2)^3. A8 has
-size 8. Let 2**A8 be the power set of A8. For testing the C functions
-we want to compute the orbits on the power set 2**A8 of A8 under the
-action of H. Therefore we use the union-find algorithm implemented in
-file gen_union_find.c.
-
-These orbits are well known, so that that we can check the correctness
-of the union-find algorithm. We generate H as a group of permutation
-matrices acting the set GF(2)^8, which is isomorphic to 2**A8. Using
-the union-find algorithm over the set 2**A8 of size 256, we obtain
-the orbits on 2**A8 under the action of H.
+affine space A8 corresponding to the linear space GF(2)^3. A8 has
+size 8. Let P := 2**A8 be the power set of A8. P has a natural
+structure an a vector space GF(2)^8. For our tests we compute the
+orbits on the space P under the action of H using the functions in
+module ``gen_ufind_lin2.c`` and also the python class ``Orbit_Lin2``.
+These orbits are well known, so that that we can check the
+correctness of the functions to be tested. We generate H as a
+group of permutation matrices acting the vector space P.
 """
 
 from collections import defaultdict
@@ -65,7 +62,7 @@ from mmgroup.structures.orbit_lin2 import Orbit_Lin2
 a = None
 
 #####################################################################
-# Bit matrix operations
+# Check result of a C function
 #####################################################################
 
 
@@ -111,7 +108,7 @@ def is_inv(m, mi, n):
     return acc == 0
 
 def v_mul_g(a, v, g):
-    """Multiply vector v with group word g stored in a"""
+    """Multiply vector v with group word g stored in orbit array a"""
     n = chk(gen_ufind_lin2_dim(a))
     m = np.zeros(n, dtype = np.uint32)
     for i in g:
@@ -121,7 +118,7 @@ def v_mul_g(a, v, g):
 
 class BitMatrix:
     def __init__(self, matrix):
-        self.matrix = matrix
+        self.matrix = np.array(matrix, dtype = np.uint32)
     def __mul__(self, other):
         if isinstance(other, BitMatrix):
             m = other.matrix
@@ -145,29 +142,20 @@ class BitMatrix:
         if isinstance(other, Integral):
             return int(vmatmul(other, self.matrix, len(self.matrix)))
         return NotImplemented
-
-
-#####################################################################
-# Define 8 times 8 bit batrices M7, M2, MT generating the group H
-#####################################################################
-
-def make_L3_2_matrix(t):
-    data = [0, t[0], t[1], t[0] ^ t[1]]
-    data += [t[2] ^ x  for x in data]
-    return np.array([1 << x for x in data], dtype = np.uint32)
-
-# Elements M2 and M7 generate the linear subgroup of H
-M7 = make_L3_2_matrix([2,4,3])   # M7 is of order 7
-M2 = make_L3_2_matrix([1,2,5])   # M7 is of order 7
-
-# define a translation MT in the affine group h
-MT = np.array([1 << (x ^ 1) for x in range(8)],  dtype = np.uint32)
-
-# 8 times 8 unit bit matrix
-M_UNIT8 = [1 << x for x in range(8)]
-
-#print(M2, M7, MT)
-
+    def __len__(self):
+        return len(self.matrix)
+    def __eq__(self, other):
+        assert isinstance(other, BitMatrix)
+        n = len(self)
+        if len(other) != n:
+            return False
+        return (self.matrix == other.matrix).all()
+    def __str__(self):
+        try:
+            return "<BitMatrix " + str(self.matrix) + ">"
+        except:
+            return str(self)
+    __repr__ = __str__
 
 #####################################################################
 # Functions for converting internal data structures to a partition
@@ -256,44 +244,66 @@ def equ_union_linear(u1, u2):
 
 
 #####################################################################
+# Generate the main orbit array 'a' for a certain group H
+#####################################################################
+
+"""Bit matrices generating a group H
+
+For testing the C functions we deal with the affine group H of
+structure 2^8.L_3(2) acting naturally as a permutation group on the
+affine space A8 correspondng to the linear space GF(2)^3. A8 has
+size 8. Let P := 2**A8 be the power set of A8. P has a natural
+structure an a vector space GF(2)^8. H has a natural action on
+as a linear group on the vector space P. In this section we define
+8 times 8 bit matrices M2, M7, MT (acting on P by right
+multiplication) that generate the group H.
+"""
+
+def make_L3_2_matrix(t):
+    data = [0, t[0], t[1], t[0] ^ t[1]]
+    data += [t[2] ^ x  for x in data]
+    return np.array([1 << x for x in data], dtype = np.uint32)
+
+# Elements M2 and M7 generate the linear subgroup of H
+M7 = make_L3_2_matrix([2,4,3])   # M7 is of order 7
+M2 = make_L3_2_matrix([1,2,5])   # M2 is of order 7
+
+# define a translation MT in the affine group h
+MT = np.array([1 << (x ^ 1) for x in range(8)],  dtype = np.uint32)
+
+# 8 times 8 unit bit matrix
+M_UNIT8 = [1 << x for x in range(8)]
+
+#print(M2, M7, MT)
+
+
+
+def generate_main_orbit_array(generators):
+    """Return main orbit array and orbits of group H
+
+    Given a list of generators of the group ``H`` described above, the
+    function returns a pair ``(a, llist)``. Here ``a`` is an (opaque)
+    **orbit array** for the group H and its natural action on
+    :math:`\mbox{GF}_2^3` as desribed in file ``gen_ufind_lin2.c``.
+    Object ``llist`` is a list of lists describing these orbits.
+
+    The function makes some checks that are specific for the
+    group ``H``.
+    """
+    global a
+    gen_hi, a = union_linear_high_level(generators)
+    gen_lo = union_linear_low_level(generators)
+    equ_union_linear(gen_hi, gen_lo)
+    n_sets, ind, data, map = gen_hi
+    assert n_sets == 10
+    llist = partition_as_llist(ind, data)
+    return a, llist
+
+
+#####################################################################
 # Check the orbits of GF(2)^8 under the action of H
 #####################################################################
 
-def check_properties_a(a, generators):
-    """Check array ``a`` generated by ``gen_ufind_lin2_init``
-
-    The function check some elementary properties of the array ``a``
-    obtained by applying function ``gen_ufind_lin2_init`` to the
-    set ``generators`` of geneators of a group.
-    """
-    gen = np.array(generators, dtype = np.uint32)
-    n_gen, dim = gen.shape
-    assert gen_ufind_lin2_n_gen(a) == n_gen
-    assert gen_ufind_lin2_dim(a) == dim
-    for i in range(n_gen):
-        m = np.zeros(dim, dtype = np.uint32)
-        mi = np.zeros(dim, dtype = np.uint32)
-        chk(gen_ufind_lin2_gen(a, 2*i, m, dim))
-        chk(gen_ufind_lin2_gen(a, 2*i + 1, mi, dim))
-        assert (m == gen[i]).all()
-        assert is_inv(m, mi, dim)
-    chk(gen_ufind_lin2_check(a, len(a)))
-
-
-def check_properties_a_llist(a, llist):
-    for orbit in llist:
-        v_set = sample(orbit, min(2, len(orbit)))
-        for v in v_set:
-            o = np.zeros(len(orbit), dtype = np.uint32)
-            l_o = gen_ufind_lin2_len_orbit_v(a, v)
-            assert l_o == len(orbit)
-            assert gen_ufind_lin2_orbit_v(a, v, o, len(o)) == l_o
-            assert list(o) == list(orbit), (l_o, len(orbit), len(o))
-            assert gen_ufind_lin2_rep_v(a, v) == orbit[0]
-    n_orbits = len(llist)
-    r = np.zeros(n_orbits, dtype = np.uint32)
-    assert n_orbits == gen_ufind_lin2_representatives(a, r, len(r))
-    assert [x[0] for x in llist] == list(r)
 
 def check_orbits_H(llist):
     """Check orbits on GF(2)^8 under the action of H
@@ -328,7 +338,75 @@ def check_orbits_H(llist):
         all_ |= current
     assert all_ == set(range(256))
 
-def check_properties_a_group(a, llist):
+#####################################################################
+# Check the main orbit array ``a`` for the group H
+#####################################################################
+
+
+def check_properties_a(a, generators):
+    """Check orbit array ``a`` generated by ``generate_main_orbit_array``
+
+    The function check some elementary properties of the array ``a``
+    obtained by applying function ``gen_ufind_lin2_init`` to the
+    set ``generators`` of geneators of a group.
+    """
+    gen = np.array(generators, dtype = np.uint32)
+    n_gen, dim = gen.shape
+    assert gen_ufind_lin2_n_gen(a) == n_gen
+    assert gen_ufind_lin2_dim(a) == dim
+    for i in range(n_gen):
+        m = np.zeros(dim, dtype = np.uint32)
+        mi = np.zeros(dim, dtype = np.uint32)
+        chk(gen_ufind_lin2_gen(a, 2*i, m, dim))
+        chk(gen_ufind_lin2_gen(a, 2*i + 1, mi, dim))
+        assert (m == gen[i]).all()
+        assert is_inv(m, mi, dim)
+    chk(gen_ufind_lin2_check(a, len(a)))
+
+
+def check_properties_a_llist(a, llist):
+    """Check orbits in the orbit array ``a``
+
+    This function checks the orbits in the orbit array ``a`` generated
+    by  function ``generate_main_orbit_array``. That function also
+    generates a list ``llist`` of these orbits. Function
+    ``check_properties_a_llist`` check the orbits stored in the
+    array ``a`` against the orbits o ``llist``.
+    """
+    for orbit in llist:
+        v_set = sample(orbit, min(2, len(orbit)))
+        for v in v_set:
+            o = np.zeros(len(orbit), dtype = np.uint32)
+            l_o = gen_ufind_lin2_len_orbit_v(a, v)
+            assert l_o == len(orbit)
+            assert gen_ufind_lin2_orbit_v(a, v, o, len(o)) == l_o
+            assert list(o) == list(orbit), (l_o, len(orbit), len(o))
+            assert gen_ufind_lin2_rep_v(a, v) == orbit[0]
+    n_orbits = len(llist)
+    r = np.zeros(n_orbits, dtype = np.uint32)
+    assert n_orbits == gen_ufind_lin2_representatives(a, r, len(r))
+    assert [x[0] for x in llist] == list(r)
+
+
+#####################################################################
+# Check the Schreier vector in the main orbit array ``a``
+#####################################################################
+
+
+
+def check_Schreier_vector(a, llist):
+    """Check Schreier vectors in the orbit array ``a``
+
+    This function checks the Schreier vectors in the orbit array
+    ``a`` generated  by  function ``generate_main_orbit_array``.
+    There are functions in module ``gen_ufind_lin2_c`` that use a
+    Schreier vector in the orbit array ``a`` for the group ``H``
+    for finding an element of ``H`` that maps an arbitrary vector
+    in an orbit the representative of that orbit stored in ``a``.
+
+    This function tests these C functions in
+    module ``gen_ufind_lin2_c``.
+    """
     g0 = np.zeros(30, dtype = np.uint8)
     #print([hex(x) for x in a[:20]])
     chk(gen_ufind_lin2_finalize(a))
@@ -394,10 +472,26 @@ def check_properties_a_group(a, llist):
     assert gen_ufind_lin2_check_finalized(a, len(a)) == len(a)
 
 
-def check_orbit_object(orbits, generators, llist):
+
+#####################################################################
+# Check the Python class ``Orbit_Lin2`` for wrapping an orbit array
+#####################################################################
+
+
+def mul_v_word_G(orbits, v, word):
+    gen = orbits.generators()
+    for i, e in word:
+        v *= gen[i] ** e
+    return v
+
+def check_orbit_object(orbits, generators, a, llist):
     reps, lengths = orbits.representatives()
-    assert orbits.dim == len(generators[0])
+    assert orbits.dim == gen_ufind_lin2_dim(a)
     assert len(orbits.generators()) == len(generators)
+    #print(orbits.generators())
+    py_generators = [BitMatrix(g) for g in generators]
+    #print(py_generators)
+    assert orbits.generators() == py_generators
     assert orbits.n_orbits() == len(llist)
 
     for i, o in enumerate(llist):
@@ -405,8 +499,20 @@ def check_orbit_object(orbits, generators, llist):
         assert list(orbit) == list(o)
     for n in range(10):
         v = randint(0, (1 << orbits.dim) - 1)
-        w = sample(list(orbits.orbit(v)), 1)
+        w = orbits.orbit_rep(v)
+        assert w == gen_ufind_lin2_rep_v(a, v)
+        g = orbits.map_v_G(v)
+        assert w == v * g, (v, w)
+        g_list = [2 * g + int(s < 0) for g, s in orbits.map_v_word_G(v)]
+        b = np.zeros(50, dtype = np.uint8)
+        lb = chk(gen_ufind_lin2_map_v(a, v, b, len(b)))
+        assert g_list == list(b[:lb])
+        w = sample(list(orbits.orbit(v)), 1)[0]
         g = orbits.map_v_G(v, w)
+        assert w == v * g, (v, w)
+        assert w == orbits.mul_v_g(v, g)
+        word = orbits.map_v_word_G(v, w)
+        assert w == mul_v_word_G(orbits, v, word)
     for lst in llist:
         for v in sample(lst, min(2, len(lst))):
             assert orbits.orbit_size(v) == len(lst)
@@ -419,24 +525,47 @@ def check_orbit_object(orbits, generators, llist):
         assert lengths[i] == len(lst)
 
 
-def check_orbits_py_class(generators, llist):
+def check_orbits_py_class(generators, a, llist):
+    """Return Orbit_Lin2 object corresponding to main orbit array ``a``
+
+    Given a list ``generators`` of the group ``H``, the function
+    returns ob object ``orbits`` of class ``Orbit_Lin2`` containing
+    the orbit array for the action of the group ``H`` on the vector
+    space ``P``.
+
+    Arguments ``a`` and ``llist`` must be provided as returned by
+    function ``generate_main_orbit_array(generators)``. This test
+    function also tests the returned python object ``orbits``
+    against the orbit array ``a`` and the list ``llist`` of orbits.
+    """
     orbits = Orbit_Lin2(lambda g : g.matrix,
                             [BitMatrix(g) for g in generators])
-    check_orbit_object(orbits, generators, llist)
+    check_orbit_object(orbits, generators, a, llist)
     data, functions = orbits.pickle()
     new_orbits = Orbit_Lin2(data, functions)
-    check_orbit_object(new_orbits, generators, llist)
+    check_orbit_object(new_orbits, generators, a, llist)
+    return orbits
+
+#####################################################################
+# Check a compressed version of  orbit array ``a``
+#####################################################################
+
+
+def gen_weight4():
+    """Genereate integers 0 <= i < 256 of bit weight 4"""
+    for i in range(256):
+        if bitweight(i) == 4:
+            yield i
 
 
 
 def check_properties_a_group_compressed(a):
+     """Yet to be docuemnted!!!
+
+     """
      from mmgroup.bitfunctions import bitweight
      from mmgroup.generators import gen_ufind_lin2_compressed_size
      from mmgroup.generators import gen_ufind_lin2_compress
-     def gen_weight4():
-         for i in range(256):
-             if bitweight(i) == 4:
-                 yield i
 
      o = np.array([0x0f, 0x17], dtype = np.uint32)
      sizes = {0x0f : 14, 0x17 : 56}
@@ -476,6 +605,21 @@ def check_properties_a_group_compressed(a):
             #print("bbbb", b[:lb], hex(w), hex(w1))
             assert w1 == w
 
+
+#####################################################################
+# Check a compressed version of Python class ``Orbit_Lin2``
+#####################################################################
+
+
+def check_properties_a_group_compressed(a):
+    pass
+
+
+#####################################################################
+# Main test function
+#####################################################################
+
+
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
@@ -484,39 +628,19 @@ def test_ufind_L3_2(verbose = 0):
     vectors of GF(2)^8 as described in the documentation string
     of this file.
 
-    This function computes the orbits of GF(2)^8 under the action
-    of H using the C functions in file gen_union_find.c.
-    Then it checks some well-known properties of these orbits.
+    This function tests the functions in module ``gen_ufind_lin2.c``
+    and also the python class ``Orbit_Lin2`` with the action of
+    the group H on the vector space GF(2)^8.
     """
-    print("Testing C functions for union-find algorithm")
-    
+    print("Testing C functions in module gen_ufind_lin2.c")
+    # Generators for the group H
     generators = (M2, M7, MT, M_UNIT8)
-    global a
-    gen_hi, a = union_linear_high_level(generators)
-    gen_lo = union_linear_low_level(generators)
-    equ_union_linear(gen_hi, gen_lo)
-    n_sets, ind, data, map = gen_hi
-    assert n_sets == 10
-    llist = partition_as_llist(ind, data)
-    check_properties_a(a, generators)
+    a, llist = generate_main_orbit_array(generators)
     check_orbits_H(llist)
+    check_properties_a(a, generators)
     check_properties_a_llist(a, llist)
-    check_properties_a_group(a, llist)
-    check_orbits_py_class(generators, llist)
-    check_properties_a_group_compressed(a)
+    check_Schreier_vector(a, llist)
+    orbits = check_orbits_py_class(generators, a, llist)
+    check_properties_a_group_compressed(orbits)
 
 
-
-#####################################################################
-#  testing function eech2_orbits_raw()
-#####################################################################
-
-
-# This test is yet under construction!
-
-@pytest.mark.gen_xi
-def test_ufind_leech2(verbose = 0):
-     g_list = [Xsp2_Co1('r', 'G_x0') for i in range(4)]
-     n_sets, indices, data, mapping  = leech2_orbits_raw(g_list, map=True)
-     lengths = [indices[i+1] - indices[i] for i in range(n_sets)]
-     
