@@ -1,6 +1,54 @@
-r"""Yet to be documented
+r"""We support abtract groups acting on certain sets.
 
+Let :math:`G` be a finite group and :math:`V` be a set. An action
+of :math:`G` on :math:`V` is a mapping :math:`\rho` from :math:`G`
+into the symmetric permutation group of the set :math:`V`. The
+current version support actions on sets :math:`V` with a certain
+structure only. Here :math:`V` may be
 
+- A vector space :math:`V = \mbox{GF}_2^n, n \leq 24`, with  :math:`G`
+  acting as a group of linear transformations on :math:`V`.
+  Such an action is modelled by class ``Orbit_Lin2``.
+
+- An elementary Abelian 2 group :math:`V` of structure
+  :math:`2^n, n \leq 32`, with :math:`G` acting on :math:`V` via a
+  homomorphism from :math:`G` to :math:`V`.
+  Such an action is modelled by class ``Orbit_Elem2``.
+
+In both cases a group is given by a set of generators
+:math:`(g_{0} \ldots g_{k-1})` and a mapping :math:`\rho` that
+maps each of these generators to an element of :math:`V`. The only
+requirements for the elements :math:`g_{i}` are that they support
+multiplication (for the group operation) and exponentiation with
+an integer exponent (e.g. for computing inverses an the neutral
+element). The mapping :math:`\rho` must be implemented as a
+function taking a single roup element :math:`g_{i}` and returning
+:math:`\rho(g_{i})` as an element of :math:`V`. The encoding of
+elemnts of :math:`V` is is described in the doccumentation of the
+corresponding class.
+
+The methods of these classes allow the computation of orbits of
+:math:`V` under the action of :math:`G`. We also may compute
+Schreier vectors on an orbits of :math:`V` (under the action of
+:math:`G`), as described in :cite:`HE05`, Section 4.1. If :math:`G`
+is acting on an elementary Abelian 2 group :math:`V`, we may
+compute the kernel of that action instead.
+
+The two types of action actions mentioned above are desigend to
+compute in the managable 2-local subgroups of the Monster, especially
+in the groups :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1`,
+and in the group :math:`N_{0}` of structure
+:math:`2^{2+11+22}.(\mbox{M}_{24} \times \mbox{S}_{3})`.
+
+In principle the functionality in this module can be used for
+computing the order of a subgroup of such a managable subgroup,
+or to perform a constructive membership test for such a subgroup.
+The current implementation should be considered as
+*under construction* and may be extended in future versions.
+
+Class ``Random_Subgroup`` in this module implements a simple
+random generator for generating pseudorandom elements of a
+group given by generators.
 """
 
 import sys
@@ -16,14 +64,9 @@ from functools import reduce
 
 import numpy as np
 
-if __name__ == "__main__":
-    sys.path.append("../../../")
-
 import mmgroup
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup import Xsp2_Co1
-
-
 from mmgroup.generators import gen_ufind_lin2_init
 from mmgroup.generators import gen_ufind_lin2_add
 from mmgroup.generators import gen_ufind_lin2_size
@@ -65,7 +108,7 @@ ERRORS = {
 -8 : "Too many generators for subgroup of SL_2(2)^n",
 -9 : "Generator matrix is not invertible",
 -10: "Object is not in correct state for this method",
--11: "Duplicate entry in union-find table",
+-11: "Duplicate entry in orbit list",
 }
 
 
@@ -85,7 +128,7 @@ def chk(error):
    
 
 class Orbit_Lin2:
-    r"""Model orbits of a group acting on the vector space GF(2)^n
+    r"""Model orbits of a group acting on the vector space :math:`GF(2)^n`
 
     Let :math:`G` be a any group and let :math:`H` be a  group of
     :math:`n \times n` bit matrices acting on the vector space
@@ -171,7 +214,7 @@ class Orbit_Lin2:
         self.gen_neutral = self.gen[0] ** 0
         return self
     def add_generator(self, g, use = True):
-        """Add generator ``g`` to the object
+        r"""Add generator ``g`` to the object
 
         Parameter ``use`` should usually be ``True``
 
@@ -230,7 +273,7 @@ class Orbit_Lin2:
         """
         return chk(gen_ufind_lin2_n_orbits(self.a))
     def generators(self):
-        """Return the list of the generators of the group"""
+        r"""Return the list of the generators of the group"""
         return self.gen
     def representatives(self):
         r"""Return representatives of orbits on the vector space
@@ -262,7 +305,7 @@ class Orbit_Lin2:
         r"""Return the size of the orbit of the vector ``v``"""
         return chk(gen_ufind_lin2_len_orbit_v(self.a, v))
     def orbit(self, v):
-        """Return orbit of the vector ``v`` as an array of integers"""
+        r"""Return orbit of the vector ``v`` as an array of integers"""
         o = np.zeros(self.orbit_size(v), dtype = np.uint32)
         chk(gen_ufind_lin2_orbit_v(self.a, v, o, len(o)))
         return o
@@ -358,7 +401,7 @@ class Orbit_Lin2:
             self.map_gen = np.pad(self.map_gen, pad_map_gen)
         return n_gen
     def compress(self, orbits):
-        """Yet to be documented!!!
+        r"""Yet to be documented!!!
 
         """
         n_gen = chk(gen_ufind_lin2_n_gen(self.a))
@@ -373,51 +416,25 @@ class Orbit_Lin2:
 class Orbit_Elem2:
     r"""Model orbits of a group acting on an elementary Abelian 2 group
 
-    Let :math:`G` be a any group and let :math:`H` be an elementary
-    Abelian 2 group. Furthermore, let :math:`\rho` be a homomporphism
-    from :math:`G` to :math:`H`. An instance of this class models the
-    homomorphism :math:`\rho`.
-
-
-    More details are yert to be documented!!!
-
-    This is yet a stub!!!
-
-    Consider the action of the group
-    :math:`G` as a permutation group on the vector space :math:`V`
-    via the homomorphism :math:`\rho`.
-
-    In the constructor of this class we just have to enter a callable
-    function ``map`` that maps an element of  :math:`G`  to the
-    :math:`n \times n` bit matrix :math:`\rho(G)`. Here a bit vector
-    in :math:`V` is implemented as an integer :math:`v`, where the bit
+    Let :math:`G` be a any group given by generators and let :math:`V`
+    be an elementary Abelian 2 group. Furthermore, let :math:`\rho` be
+    a homomporphism from :math:`G` to :math:`V`. An instance of this
+    class models the mapping from :math:`G` to :math:`V` via the
+    homomorphism :math:`\rho`. A function ``map`` mapping a generator
+    :math:`g` of the group :math:`G` to the element :math:`\rho(g)` of
+    :math:`V` must be given in the constructor for  this class.
+    Elements of :math:`V` are implemented as unsigend 32-bit integers.
+    Here an integer :math:`v` stands for a bit vector, where the bit
     of valence :math:`2^i` in the binary representation of :math:`v`
-    is bit :math:`i` of the vector. An :math:`n \times n` bit matrix
-    is implemented as an array of :math:`n` integers, with each entry
-    corresponding to a row vector of the matrix. The only requirement
-    for elements of :math:`G` is that they can be multiplied and
-    raised to the power of -1 (for inversion), 0, and 1.
+    is bit :math:`i` of the bit vector.
 
     A list of generators of the group :math:`G` can be passed with
-    parameter ``generators`` of the constructor. A generator may also
-    be added with method ``add_generator``. The dimension :math:`n`
-    of :math:`V` is obtained automatically by applying the function
-    ``map`` given in the constructor to the first generator of the
-    group. Here  ``1 <= n <= 24`` must hold. So we may e.g. compute
-    orbits in the Leech lattice mod 2 under the action of the
-    Conway group  :math:`\mbox{Co}_1`.
+    parameter ``generators`` of the constructor. The dimension
+    :math:`n` of :math:`V` is obtained automatically by applying
+    the function ``map`` given in the constructor to the all
+    generators of the group.
 
-    There are methods for obtaining the orbits of :math:`V` under the
-    action of :math:`G`, and for finding an element of :math:`G` that
-    maps an element of :math:`V` to a given element in its orbit.
-
-    After adding all generators, and before retriving any information
-    about orbits, a set of Schreier vectors is computed (and stored
-    inside an instance of this class) as described in :cite:`HE05`,
-    Section 4.1. This can be done manually via method ``finalize``. It
-    is done automatically by calling any methods obtaining infomration
-    about orbits. After computing the Schreier vectors, no more
-    generators can be added.
+    More details are yet to be documented!
     """
     NROWS = 32
     NCOLS = 32
@@ -451,7 +468,7 @@ class Orbit_Elem2:
         self._exp += status
         self.gen.append(g)
     def generators(self):
-        """Return the list of the generators of the group"""
+        r"""Return the list of the generators of the group"""
         return self.gen
     def _map_v_word_a(self, v, img = 0):
         v ^= img
@@ -481,7 +498,7 @@ class Orbit_Elem2:
              if (w >> i) & 1]
         return reduce(__mul__, data)
     def rand_kernel(self, size, r, n, history = False):
-        r"""Return generators for kernel of rep
+        r"""Return generators for the kernel of the homomorphism :math:`\rho`
 
         Details are yet to be documented!
         """
@@ -504,7 +521,7 @@ class Random_Subgroup:
     class corresponds to Algorithm ``PrInitialize`` in that section;
     and the main method ``rand`` of this class corresponds to
     Algorithm ``PrRandom`` in that section. Method ``rand``
-    returns a ramdom element of the group.
+    returns a random element of the group.
 
     The constructor takes a set ``generators`` of generators of the
     group. Parameters ``r`` and ``n`` specify the number of group
@@ -517,7 +534,7 @@ class Random_Subgroup:
     If parameter ``history`` is ``True`` then we record the history
     of the random generator for future use. In principle this allows
     to represent the generated random elements as words in the
-    original generators.
+    original generators; but at present this feature is not supported.
     """
     def __init__(self, generators, r, n, history = False):
         generators = list(generators)

@@ -615,29 +615,11 @@ def check_properties_a_compressed(a):
             assert w1 == w
      return c
 
-
 #####################################################################
 # Check a compressed version of Python class ``Orbit_Lin2``
 #####################################################################
 
-
-def check_properties_a_py_compressed(a_py, c):
-    """Check Orbit_Lin2 object corresponding to compressed orbit array
-
-    Let ``a_py`` be an object of class ``Orbit_Lin2`` corresponding
-    to the main orbit array ``a`` for the group ``H``; and let ``c``
-    be the compresses orbit array returned by function
-    ``check_properties_a_group_compressed``.
-
-    This function computes a python object ``c_py`` of class
-    ``Orbit_Lin2`` corresponding to the compressed orbit array ``c``.
-    Therefore it uses method ``compress`` of class ``Orbit_Lin2``. It
-    tests the methods of the python  object ``c_py`` against the
-    corresponding functions in module ``gen_ufind_lin2.c`` acting
-    on the compressed array ``c``.
-    """
-    orbits = [0x0f, 0x17]
-    c_py = a_py.compress(orbits)
+def check_compressed(c_py, a_py, c, orbits):
     assert c_py.dim == a_py.dim
     assert c_py.n_orbits() == len(orbits)
     assert (c_py.generators() == a_py.generators())
@@ -657,19 +639,40 @@ def check_properties_a_py_compressed(a_py, c):
         # print(v, w, orbits[1], v1)
         if w == orbits[1] and v1:
             assert a_py.map_v_word_G(v, v1) == c_py.map_v_word_G(v, v1)
-            assert a_py.map_v_G(v, v1) == c_py.map_v_G(v, v1)
+            g = a_py.map_v_G(v, v1)
+            assert g == c_py.map_v_G(v, v1)
+            assert c_py.mul_v_g(v, g) == v1 
         if w == orbits[1]:
             v1 = v
 
+def check_properties_a_py_compressed(a_py, c):
+    """Check Orbit_Lin2 object corresponding to compressed orbit array
 
+    Let ``a_py`` be an object of class ``Orbit_Lin2`` corresponding
+    to the main orbit array ``a`` for the group ``H``; and let ``c``
+    be the compresses orbit array returned by function
+    ``check_properties_a_group_compressed``.
 
+    This function computes a python object ``c_py`` of class
+    ``Orbit_Lin2`` corresponding to the compressed orbit array ``c``.
+    Therefore it uses method ``compress`` of class ``Orbit_Lin2``. It
+    tests the methods of the python  object ``c_py`` against the
+    corresponding functions in module ``gen_ufind_lin2.c`` acting
+    on the compressed array ``c``.
+    """
+    orbits = [0x0f, 0x17]
+    c_py = a_py.compress(orbits)
+    check_compressed(c_py, a_py, c, orbits)
+    data, functions = c_py.pickle()
+    new_c_py = Orbit_Lin2(data, functions)
+    check_compressed(new_c_py, a_py, c, orbits)
+    return c_py
 
 #####################################################################
 # Main test function
 #####################################################################
 
 
-# @pytest.mark.mmm
 @pytest.mark.gen_xi
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
