@@ -584,6 +584,7 @@ int32_t finalize_initalization(uint32_t *a, lin2_type *ps)
 
     if (status != 0) return status;
     load_lin2_info(a, &s);
+    s.n_max_g = s.n_g;
 
     // Finalize union-find algorithm on orbits in main table s.p_t
     status = gen_ufind_find_all_min(s.p_t, 1UL << s.n);
@@ -1245,9 +1246,9 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
     uint32_t a_sum = 0;
     status = add_generators(a, &s);
     if (status < 0) return status;
-	s.n_max_g = s.n_g;
-	store_lin2_info(&s, a);
     if (status == LIN2_COMPRESSED) return 0;
+    s.n_max_g = s.n_g;
+    store_lin2_info(&s, a);
     a_length =  gen_ufind_lin2_size(s.n, s.n_g);
     a[a_length - 2] = magic_content(a);
     for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
@@ -1296,7 +1297,7 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
 {
     lin2_type s, sc;
     schreierv_type sv;
-    uint32_t i, mask, c_size, c_sum = 0;
+    uint32_t i, mask, c_size, c_sum = 0, c_size_new;
     int32_t status = finalize_initalization(a, &s);
     if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT; 
     if (status < 0) return status;
@@ -1338,12 +1339,18 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
         sc.p_o[i] = (entry >> 24) | (entry << 8);
     }
     bitvector32_sort(sc.p_o, sc.n_vectors);
+    c_size_new = LIN2_LEN_HEADER + 2 * sc.n_orbits + sc.n_vectors
+                   + 2 * sc.n_g * sc.n + 2;
+    if (c_size_new > c_size) {
+        status = ERR_GEN_UFIND_INT_LIN2 - 47;
+        goto done;
+    }
     c[0] = 0;
     store_lin2_info(&sc, c);
-    c[c_size - 2] = magic_content(c);
-    for (i = 0; i < c_size - 1; ++i) c_sum += c[i];
-    c[c_size - 1] = 0 - c_sum;
-    status = c_size;
+    c[c_size_new - 2] = magic_content(c);
+    for (i = 0; i < c_size_new - 1; ++i) c_sum += c[i];
+    c[c_size_new - 1] = 0 - c_sum;
+    status = c_size_new;
 done:  
     schreier_vector_dealloc(&sv); 
     return status;   

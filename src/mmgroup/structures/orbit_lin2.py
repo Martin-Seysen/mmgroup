@@ -204,12 +204,6 @@ class Orbit_Lin2:
             ERR = "No generators present in Orbit_Lin2 object"
             raise ValueError(ERR)
         chk(gen_ufind_lin2_finalize(self.a))
-        try:
-            #self.a.flags.writeable = False
-            #self.map_gen.flags.writeable = False
-            pass
-        except:
-            pass
         self.gen_inverse = [x ** -1 for x in self.gen]
         self.gen_neutral = self.gen[0] ** 0
         return self
