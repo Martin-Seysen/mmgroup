@@ -231,7 +231,7 @@ def rebase_axis(v15):
     v = v15.copy()
     w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
-    l_g = mm_reduce_vector_vp(v0, v.data, 0, g, w.data)
+    l_g = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
     g0 = G('a', g[:l_g]) ** -1
     v_axis15 = Axis().v15
@@ -684,7 +684,7 @@ def rebase_baby_axis(v15):
     v = v15.copy()
     w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
-    l_g = mm_reduce_vector_shortcut(1, 0, V_PLUS, g)
+    l_g = mm_reduce_vector_shortcut(1, 1, V_PLUS, g)
     assert 0 <= l_g < 128
     l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
     assert 0 <= l_g < 128, hex(l_g)
