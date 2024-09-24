@@ -435,13 +435,12 @@ class NonMonomialOp_t:
     mat3 = [None, mat3_e1 , mat3_e2]
     diag64 = pm_diag_from_function(m24.suboctad_weight, 64)
     sym64 = pm_mat_from_function(m24.suboctad_scalar_prod, 64)
-    mat64_e1 = sym64.dot(diag64)
-    mat64_e2 = diag64.dot(sym64)
-    # TODO: explain why mat64_e1, mat64_e2 are not assigned vice versa!!!
+    mat64_e1 = sym64 @ diag64
+    mat64_e2 = diag64 @ sym64
     mat64 = [None, mat64_e1, mat64_e2] 
     for m in mat64[1:]:
-        assert (m.dot(m).dot(m) == 512 * np.identity(64)).all()
-    assert (mat64_e1.dot(mat64_e2) == 64* np.identity(64)).all()
+        assert (m @ m @ m == 512 * np.identity(64)).all()
+    assert (mat64_e1 @ mat64_e2 == 64* np.identity(64)).all()
  
 
     def __init__(self, p, exp):
@@ -472,7 +471,7 @@ class NonMonomialOp_t:
         m = self.mat3[self.exp]
         for (i,j), v in self.d_ABC.items():
             assert i > j, ("* ", v, (i,j))
-            v = np.dot(v, m) * self.half % self.p
+            v = (v @ m) * self.half % self.p
             if v[0]: yield A, i, j, int(v[0])      
             if v[1]: yield B, i, j, int(v[1])      
             if v[2]: yield C, i, j, int(v[2])      
@@ -480,7 +479,7 @@ class NonMonomialOp_t:
     def op_T(self):
         m = self.mat64[self.exp]
         for oct, v in self.d_T.items():
-            v = np.dot(v, m) * self.eighth % self.p
+            v = (v @ m) * self.eighth % self.p
             for i in range(64):
                 if v[i]: yield T, oct, i, int(v[i]) 
 
@@ -555,7 +554,7 @@ class NonMonomialOp_l:
         m = self.mat64[self.exp]
         cyc3 = self.cycles3[self.exp]
         for (ih, jh), v in self.d_YZ.items():
-            v = np.dot(v, m) * self.eighth % self.p
+            v = (v @ m) * self.eighth % self.p
             k_hi = cyc3[ih >> 10]
             ih = ((k_hi) << 10) + (ih & 0x3ff)
             tag = Z + (ih >> 11)
@@ -568,7 +567,7 @@ class NonMonomialOp_l:
     def op_A(self):
         m = self.mat16[self.exp]
         for (ih, jh), v in self.d_A.items():
-            v = np.dot(v, m) * self.quater % self.p
+            v = (v @ m) * self.quater % self.p
             assert ih >= jh
             if ih > jh:
                for il in range(4):

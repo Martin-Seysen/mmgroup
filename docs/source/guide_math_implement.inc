@@ -228,10 +228,10 @@ in :cite:`Seysen20`, Section 8, we obtain for :math:`i \neq j`:
   X^+_{d,\delta}
   & \stackrel{\tau}{\longrightarrow} &
   \textstyle\frac{1}{8} 
-  \sum_\epsilon \textstyle{(-)_{\delta,\epsilon}} X^+_{d,\delta}
+  \sum_\epsilon \textstyle{(-)_{\epsilon,\delta}} X^+_{d,\epsilon}
   & \stackrel{\tau}{\longrightarrow} &
   \textstyle\frac{1}{8} 
-  \sum_\epsilon \textstyle{(-)_{\epsilon,\delta}} X^+_{d,\delta}
+  \sum_\epsilon \textstyle{(-)_{\delta,\epsilon}} X^+_{d,\epsilon}
   & \stackrel{\tau}{\longrightarrow} &
   X^+_{d,\delta} \, .
   \end{array}
@@ -255,9 +255,9 @@ be written as
 .. math::
      X^+_{d} 
      \stackrel{\tau}{\longrightarrow} 
-     \textstyle\frac{1}{8} X^+_{d} \cdot D \cdot H
+     \textstyle\frac{1}{8} X^+_{d} \cdot H \cdot D
      \stackrel{\tau}{\longrightarrow} 
-     \textstyle\frac{1}{8}  X^+_{d} \cdot H \cdot D
+     \textstyle\frac{1}{8}  X^+_{d} \cdot D \cdot H
      \stackrel{\tau}{\longrightarrow} 
      X^+_{d} \; .
 
