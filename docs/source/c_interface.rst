@@ -439,7 +439,7 @@ generated from the ``.ske```files in the ``src/mmgroup/dev/mm_op``
 directory for each modulus ``p`` supported. Here corresponding
 ``.c`` files for different moduli are generated from the same 
 source file with extension ``.ske``. The ``.c`` functions in 
-modulea ``mm_op_p_vector.c`` and ``mm_op_p_axis.c``contain 
+modules ``mm_op_p_vector.c`` and ``mm_op_p_axis.c``contain 
 automatically-generated ``case`` statements that call the working
 functions for the appropriate modulus ``p``. Any of these ``.c``
 functions takes the modulus ``p`` as its first argument, and 

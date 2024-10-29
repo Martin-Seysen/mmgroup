@@ -1,5 +1,11 @@
 r"""We support abtract groups acting on certain sets.
 
+.. warning::
+
+  The functions in this module are yet experimental and subject to
+  change in the future. We recommend to contact the author  before
+  using them in research projects.
+
 Let :math:`G` be a finite group and :math:`V` be a set. An action
 of :math:`G` on :math:`V` is a mapping :math:`\rho` from :math:`G`
 into the symmetric permutation group of the set :math:`V`. The
@@ -315,6 +321,9 @@ class Orbit_Lin2:
         The function returns a group element mapping ``v`` to ``img``.
         Parameter ``img`` defaults to the standard representative of
         the orbit.
+
+        Internally, a Schreier vector is used for computing the
+        group element.
         """
         w0 = self._map_v_word_a(v, img)
         g = self.gen_neutral

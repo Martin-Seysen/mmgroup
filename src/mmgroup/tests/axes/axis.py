@@ -483,9 +483,12 @@ class Axis:
         mm_op_load_leech3matrix(self.v15.p, self.v15.data, a)
         return a
     def axis_type(self, e = 0):
-        r"""Return the :math:`G_{x0}` orbit of axis as a string
+        r"""Return the :math:`G_{x0}` orbit of the axis as a string
 
-        ``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``
+        ``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``.
+
+        The list of possible axis types is obtained by calling
+        ``Axis.representatives().keys()``
         """
         e %= 3
         v = self.v15.data
@@ -799,6 +802,13 @@ class BabyAxis(Axis):
             E = "Illegal argument for method fix_value of class BabyAxis"
             raise ValueError(E)
     def axis_type(self, e = 0):
+        r"""Return the :math:`G_{x0}` orbit of the axis as a string
+
+        ``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``.
+
+        The list of possible axis types is obtained by calling
+        ``BabyAxis.representatives().keys()``
+        """
         at =  super(BabyAxis, self).axis_type(e)
         if e:
             vt = self.v15.copy()
@@ -816,7 +826,7 @@ class BabyAxis(Axis):
         ``i1 = i * Axis.g_axis_start()`` is in  :math:`G_{x0}`.
         We return the string ``s``  describing the class of
         involution  ``i`` in :math:`G_{x0}`, as in method
-        ``conjugate_involution_G_x0`` of class``mmgroup.Xsp2_Co1``.
+        ``conjugate_involution_G_x0`` of class ``mmgroup.Xsp2_Co1``.
         """
         c = self.g_axis * self.g_central
         o, i = c.half_order()

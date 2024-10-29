@@ -127,19 +127,19 @@ def test_display_axes(verbose = 0):
     for cl, axis in  get_sample_axes().items():
         print("Class:", axis.g_class, ", stage =", axis.stage, 
                 ", powers:", axis.powers)
-        print("Automorphism group:", axis.group)
+        print("Automorphism group:", axis.auto_group)
         print(display_norm_A(axis), end = "")
         if verbose:
-            print("Eigenvalues of A part of axis v:",
-                format_eigen_values(axis.in_space(MMVectorCRT, 20)['A']))
+            print("Eigenvalues of 256 * A part of axis v:",
+                format_eigen_values(axis.in_space(MMVectorCRT, 20)['A'] * 256))
         if verbose:
             z_i = axis.central_involution()
             orb, c = z_i.conjugate_involution_G_x0()
-            print("central involution: ", c)
+            print("central involution: ", z_i)
             if c: 
-                print("Character of central involution z_i:",  c.chi_G_x0(),
+                print("Character of central involution z_i:",  z_i.chi_G_x0(),
                 ", class:", orb)
-                print("Product of z_i and standard involution", z_i * z_i**c)
+                #print("Product of z_i and standard involution", z_i * z_i**c)
             print("Axis type of axis v * MM('t',2):", axis.axis_type(2))
             #print("Dim intersection with Q_x0:", 24 - len(x_equations(axis,0)))
             #print("Dim intersection with Q_y0:", 24 - len(x_equations(axis,1)))

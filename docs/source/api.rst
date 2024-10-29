@@ -373,6 +373,21 @@ Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 
 
 
+
+
+
+Axes of 2A involutions in the Monster
+========================================
+
+.. automodule:: mmgroup.axes
+
+.. autoclass:: mmgroup.axes.Axis
+   :members: 
+
+.. autoclass:: mmgroup.axes.BabyAxis
+   :members: 
+
+
 ..
 
   Computations in general groups
