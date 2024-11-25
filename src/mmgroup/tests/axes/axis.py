@@ -243,6 +243,25 @@ def rebase_axis(v15):
 
 
 
+#################################################################
+# Sizes of G_x0 orbits on the axes in the Monster
+#################################################################
+
+
+AXIS_ORBIT_SIZES = {
+'2A' : 196560,
+'2B' : 11935123200,
+'4A' : 1630347264000,
+'4B' : 1466587938816000,
+'4C' : 6599645724672000,
+'6A' : 1896194506752000,
+'6C' : 438020931059712000,
+'8B' : 8601138282627072000,
+'6F' : 1501786049347584000,
+'10A' : 786389785840189440,
+'10B' : 37845008443559116800,
+'12C' : 48057153579122688000,
+}
 
 #################################################################
 #################################################################
@@ -346,6 +365,16 @@ class Axis:
         """
         from mmgroup.tests.axes.get_sample_axes import get_sample_axes
         return get_sample_axes()
+    @classmethod
+    def orbit_sizes(cls):
+        r"""Return sizes of the :math:`G_{x0}` orbits of axes
+
+        The method returns dictionary that maps the names
+        of the :math:`G_{x0}` orbits of the axes to their sizes.
+
+        These orbit sizes are taken from :cite:`Nor98`.
+        """
+        return  AXIS_ORBIT_SIZES
     @property
     def g(self):
         r"""Group element mapping the start axis to the current axis 
@@ -701,7 +730,22 @@ def rebase_baby_axis(v15):
         return None
     return g0
 
+#################################################################
+# Sizes of G_x0 \cap 2.B orbits on the axes in the Baby Monster
+#################################################################
 
+BABY_AXIS_ORBIT_SIZES = {
+'2A1' : 1,
+'2A0' : 93150,
+'2B1' : 7286400,
+'2B0' : 262310400,
+'4A1' : 4196966400,
+'4B1' : 470060236800,
+'4C1' : 537211699200,
+'6A1' : 9646899200,
+'6C1' : 6685301145600,
+'10A1' : 4000762036224,
+}
 
 #################################################################
 #################################################################
@@ -763,11 +807,24 @@ class BabyAxis(Axis):
         The method returns an (ordered) dictionary that maps the names
         of the :math:`H` orbits of the axes to the representatives
         of the orbits. Here :math:`H = G_{x0} \cap H^+`, where
-        :math:`H^+` is (of structure :math:`2.B`) is the centralizer
+        :math:`H^+` (of structure :math:`2.B`) is the centralizer
         of the standard axis :math:`v^+`.
         """
         from mmgroup.tests.axes.get_baby_sample_axes import get_baby_sample_axes
         return get_baby_sample_axes()
+    @classmethod
+    def orbit_sizes(cls):
+        r"""Return sizes of the :math:`H` orbits of axes
+
+        The method returns dictionary that maps the names
+        of the :math:`H` orbits of the axes to their sizes.
+        Here :math:`H = G_{x0} \cap H^+`, where :math:`H^+` 
+        (of structure :math:`2.B`) is the centralizer
+        of the standard axis :math:`v^+`.
+
+        These orbit sizes are taken from :cite:`Mue08`.
+        """
+        return BABY_AXIS_ORBIT_SIZES
     @property
     def g_axis_start(self):
         r"""Return the fixed 2A involution :math:`\beta^-` """

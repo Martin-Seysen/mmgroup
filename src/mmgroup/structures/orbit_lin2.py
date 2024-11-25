@@ -28,7 +28,7 @@ requirements for the elements :math:`g_{i}` are that they support
 multiplication (for the group operation) and exponentiation with
 an integer exponent (e.g. for computing inverses an the neutral
 element). The mapping :math:`\rho` must be implemented as a
-function taking a single roup element :math:`g_{i}` and returning
+function taking a single group element :math:`g_{i}` and returning
 :math:`\rho(g_{i})` as an element of :math:`V`. The encoding of
 elemnts of :math:`V` is is described in the doccumentation of the
 corresponding class.
@@ -40,7 +40,7 @@ Schreier vectors on an orbits of :math:`V` (under the action of
 is acting on an elementary Abelian 2 group :math:`V`, we may
 compute the kernel of that action instead.
 
-The two types of action actions mentioned above are desigend to
+The two types of actions mentioned above are desigend to
 compute in the managable 2-local subgroups of the Monster, especially
 in the groups :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1`,
 and in the group :math:`N_{0}` of structure

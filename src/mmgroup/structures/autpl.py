@@ -86,8 +86,8 @@ element of  :math:`M_{24}`, and the number ``244823039`` is
 assigned to the permutation ``p`` with ``l_p`` =
 
 
-    :math:`\small [ 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 
-    11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7 ]`
+    :math:`\textstyle [ 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 
+    11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7 ]` .
 
 These numbers are used for addressing the corresponding standard 
 representatives in the subgroup 
