@@ -71,4 +71,5 @@ def test_scalprod(ntests=10):
             v1, v2 = dense_v(p), dense_v(p)  
             prod = mmv_scalprod(v1, v2)
             ref_prod = py_scalprod(v1, v2)
+            assert prod == ref_prod, p
 
