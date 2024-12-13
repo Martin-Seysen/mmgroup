@@ -57,7 +57,7 @@ def feasible_axis_testdata(NTESTS = 3):
         # Construct an axis v of the given axis type
         v = V_BABY_START * Mm(g_str)
         for i in range(NTESTS):
-            yield v * Mm('r', 'H+'), axis_type
+            yield v * Mm('r', 'B'), axis_type
         n_types += 1
     assert n_types == 10
 

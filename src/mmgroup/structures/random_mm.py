@@ -108,7 +108,7 @@ SUBGOUP_MAP = {
    'G_10':    0x2      | _NO,
    'B':       0x1,
    '2E_6':    0x20     | _NO,
-   'H+'  :    0x41,
+ #  'H+'  :    0x1,   # deprecated and erroneous in older versions!!
    'N_0_e':   0x1000,
    'N_x0':    0x300,
    'N_x0_e':  0x1300,
