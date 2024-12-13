@@ -679,7 +679,7 @@ def MM_from_int(n):
     a[1] = (n >> 64) & _MASK64
     a[2] = (n >> 128) & _MASK64
     a[3] = (n >> 192) & _MASK64
-    status = mm_compress_pc_expand_int(a, g)
+    status = mm_compress_pc_expand_int(a, g, len(g))
     if (status < 0):
         err = "There is no element of the Monster with that number"
         raise ValueError(err)

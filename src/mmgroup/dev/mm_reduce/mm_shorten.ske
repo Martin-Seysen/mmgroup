@@ -1209,7 +1209,7 @@ int32_t gt_word_to_mm_compress(gt_word_type *p_gt, mm_compress_type *p_c)
     uint32_t  *p_data, n;
     int32_t status;
 
-    mm_compress_pc_init(p_c, 0);
+    mm_compress_pc_init(p_c);
     if ((status = gt_word_reduce(p_gt)) < 0) return status;
     p_fst = p_cur = p_gt->p_end->p_next;
     for ( ; p_cur->eof == 0; p_cur = p_cur->p_next) {
