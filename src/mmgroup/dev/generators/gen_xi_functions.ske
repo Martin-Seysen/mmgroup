@@ -236,7 +236,7 @@ uint32_t gen_xi_leech_to_short(uint32_t x)
         box = 4 + (code >> 15);
         code &= 0x7fff;
     } else {       // case even cocode
-        uint_fast32_t  c, y1, y2;
+        uint_fast32_t  y1, y2;
         switch (w) {
             case 4:
             case 2:
@@ -326,7 +326,7 @@ uint32_t gen_xi_short_to_leech(uint32_t x)
     }
     if (octad < 48576) {
         // 48756 = 759 * 64 
-        uint_fast32_t cc, w, gcodev;
+        uint_fast32_t w;
         gcode = MAT24_OCT_DEC_TABLE[octad >> 6] & 0xfff;
         cocode = mat24_inline_suboctad_to_cocode(octad & 0x3f, octad >> 6);
         w = mat24_def_suboctad_weight(octad & 0x3f);

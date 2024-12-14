@@ -360,7 +360,8 @@ int32_t gen_ufind_make_map(uint32_t *table, uint32_t length, uint32_t *map)
             return ERR_GEN_UFIND_INT_TABLE - 11;
         } else { 
             if (p >= n) return ERR_GEN_UFIND_INT_TABLE - 12;
-            if ((table[p] & 0x80000000) == 0) ERR_GEN_UFIND_INT_TABLE - 13;
+            if ((table[p] & 0x80000000) == 0)
+                return ERR_GEN_UFIND_INT_TABLE - 13;
             map[n] = p;
         }
     }

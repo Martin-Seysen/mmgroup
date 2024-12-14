@@ -548,11 +548,13 @@ write_length_info(uint32_t *a, uint32_t length)
 {
     uint32_t x;
     x = 0x80 | ((length > 0x3f) << 6) | (length & 0x3f);
-    *a++ = (*a & 0x00ffffffUL) | (x << 24);
+    *a = (*a & 0x00ffffffUL) | (x << 24);
+    ++a;
     length >>= 6;
     while (length) {
         x = ((length > 0x3f) << 6) | (length & 0x3f);
-        *a++ = (*a & 0x00ffffffUL) | (x << 24);
+        *a = (*a & 0x00ffffffUL) | (x << 24);
+        ++a;
         length >>= 6;
     }
 }

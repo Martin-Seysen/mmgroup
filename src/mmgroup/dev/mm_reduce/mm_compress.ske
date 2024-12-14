@@ -374,7 +374,7 @@ extract_int256(uint64_t *p_n, uint32_t nbits, uint32_t pos)
 
 */
 // %%EXPORT p
-int32_t mm_compress_pc_init(mm_compress_type *pc)
+void mm_compress_pc_init(mm_compress_type *pc)
 {
     uint32_t i;
     pc->nx = pc->cur =  0;

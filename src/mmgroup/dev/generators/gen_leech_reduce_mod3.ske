@@ -921,9 +921,11 @@ uint32_t neg_dodecad(uint32_t v, uint32_t syn, uint32_t neg)
     word. The function returns a suitable Golay code wort ``gc`` (as
     a bit vector) such that flipping the signs in ``w`` corresponding
     to the bits in ``gc`` makes all entries of ``w`` nonegative. 
-    */  
-    uint32_t neg1 = mat24_cocode_as_subdodecad(
-        mat24_vect_to_cocode(neg = neg &= v),
+    */ 
+    uint32_t neg1;
+    neg = neg & v;  
+    neg1 = mat24_cocode_as_subdodecad(
+        mat24_vect_to_cocode(neg),
         mat24_vect_to_gcode(0xffffff & ~(v | syn)),
         mat24_lsbit24(syn)
     );

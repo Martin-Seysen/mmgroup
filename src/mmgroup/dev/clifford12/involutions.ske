@@ -902,7 +902,7 @@ int32_t xsp2co1_elem_conj_G_x0_to_Q_x0(uint64_t *elem, uint32_t *a, uint32_t bab
 
    // Compute \f$a_1\f$ from \f$v_1\f$ and store \f$a_1\f$ as a word of
    // generators of the monster of length ``len`` in the array ``a``. 
-   if (baby) gen_leech2_reduce_type2_ortho(v, a);
+   if (baby) len = gen_leech2_reduce_type2_ortho(v, a);
    else len = gen_leech2_reduce_type4(v, a);
    if (len < 0) return ERR_QSTATE12_GX0_BAD_ELEM;
 
