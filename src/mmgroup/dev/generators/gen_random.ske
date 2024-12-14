@@ -777,6 +777,78 @@ uint64_t gen_rng_bitfields_modp(uint64_t p, uint32_t d, uint64_t *seed)
 }
 
 
+/**
+  @brief Return a uniform random number 0 <= x < 1.
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been created by function ``gen_rng_seed_rnd``
+  or by a similar function.
+*/
+// %%EXPORT px
+double gen_rng_uniform(uint64_t *seed)
+{
+    // Here is 2**-63:
+    double f = 1.08420217248550443400745280086994171142578125e-19;
+    uint64_t r;
+    double result;
+  again:
+    r = xoro_next(seed) >> 1ULL;
+    result = (double)((int64_t)r) * f;
+    if (result >= 1.0) goto again; // this 'ardly ever 'appens
+    return result;
+}
+
+
+
+/**
+  @brief Convert real number to an index with a given distibution.
+
+  Given a uniform random number ``0 <= x < 1``, the function returns
+  an integer ``0 <= i <= n`` with a distribution specifed by
+  parameter ``dist``. Here ``dist`` must be an array of length ``n``,
+  where ``dist[j]`` is the probability that ``i > j`` holds.  Thus
+  the sequence of the entries of array ``dist`` must be increasing.
+*/
+// %%EXPORT px
+uint32_t gen_rng_uniform_to_dist(double x, uint32_t n, double *dist)
+{
+    uint32_t res = 0;
+    while (n > 1) {
+        uint32_t k = n >> 1;
+        if (x >= dist[k]) {
+            res += k;
+            dist += k;
+            n = n - k;
+        } else {
+            n = k;
+        }
+    }
+    if (n > 0) res += (x >= dist[0]);
+    return res;
+}
+
+
+
+/**
+  @brief Sample array of integers according to a given distibution.
+
+  Let ``a`` be an array of integers of length ``l_a``. The function
+  fills the array ``a`` with random integers ``0 <= i <= n``
+  according to a given distibution. That destribution is described
+  by parameters ``dist`` and ``n`` in the same way as in
+  function ``gen_rng_uniform_to_dist``.
+*/
+// %%EXPORT px
+void gen_rng_int_dist(uint64_t *seed, uint32_t n, double *dist, uint32_t *a, uint32_t l_a)
+{
+    uint32_t i;
+    for (i = 0; i < l_a; ++i) {
+        double x = gen_rng_uniform(seed);
+        a[i] = gen_rng_uniform_to_dist(x, n, dist);
+    }
+}
+
+
 
 //  %%GEN h
 /// @endcond 
