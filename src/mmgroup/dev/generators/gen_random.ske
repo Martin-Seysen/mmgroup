@@ -834,9 +834,13 @@ uint32_t gen_rng_uniform_to_dist(double x, uint32_t n, double *dist)
 
   Let ``a`` be an array of integers of length ``l_a``. The function
   fills the array ``a`` with random integers ``0 <= i <= n``
-  according to a given distibution. That destribution is described
+  according to a given distibution. That distribution is described
   by parameters ``dist`` and ``n`` in the same way as in
   function ``gen_rng_uniform_to_dist``.
+
+  Parameter ``seed`` points to the seed for the random generator.
+  That seed must have been created by function ``gen_rng_seed_rnd``
+  or by a similar function.
 */
 // %%EXPORT px
 void gen_rng_int_dist(uint64_t *seed, uint32_t n, double *dist, uint32_t *a, uint32_t l_a)
