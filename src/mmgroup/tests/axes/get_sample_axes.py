@@ -35,7 +35,13 @@ from mmgroup.tests.axes.axis import V_AXIS, V_AXIS_OPP
 MM = MM0 = G
 V15 = MMV(15)
 
-PROCESSES = 0
+
+try:
+    import  mmgroup.tests.axes.sample_axes
+    PROCESSES = 0
+except:
+    # No multiprocessing before all data have been calculated
+    PROCESSES = 1
 
 # Use extended watermarking if the following variable is set.
 # If this is True then the calculation will take a long time!
@@ -202,7 +208,7 @@ def next_generation_pool(
         f_score,    # function, returns a score of an object
         n_spread,   # No of objects to generate from each object
         n_keep,     # No of objects to be kept for each watermark
-        processes=0, # No of processes
+        processes=PROCESSES, # No of processes
         verbose=0
         ):
     """Multitasking version of function ``next_generation``
@@ -329,7 +335,7 @@ def explore_axes(gv0, stages, f_spread, f_mark, f_score, n_spread, n_keep, verbo
            f_score = f_score, 
            n_spread = n_spread, 
            n_keep = n_keep, 
-           processes = PROCESSES,
+           processes = 1,
            verbose = verbose,
         )
         for m in sorted(new_samples):
