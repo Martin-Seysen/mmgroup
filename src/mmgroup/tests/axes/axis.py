@@ -762,7 +762,7 @@ class BabyAxis(Axis):
     The constructor and the methods of this class are as in the base
     class ``Axis`` of this class. But we accept axes that are
     orthogonal to axis :math:`v^+` only. The centralizer of that
-    axis is a subgroup of structure `math:`2.B`   of the Monster.
+    axis is a subgroup of structure math:`2.B` of the Monster.
 
     For an instance ``a`` of this class we have
     ``a.v15 = a.v15_start * a.g``, where ``a.v15_start`` is the

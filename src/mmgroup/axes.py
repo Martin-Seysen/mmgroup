@@ -15,6 +15,14 @@ the Baby Monster is also provided.
 
 """
 
-
 from mmgroup.tests.axes.axis import Axis, BabyAxis, set_axis_group
+
+try:
+    from mmgroup.tests.axes.random_axis import RandomAxis
+    from mmgroup.tests.axes.random_axis import RandomBabyAxis
+    from mmgroup.tests.axes.random_axis import rand_mm_element
+    RANDOM_AXES_SUPPORTED = True
+except:
+    RANDOM_AXES_SUPPORTED = False
+    raise
 

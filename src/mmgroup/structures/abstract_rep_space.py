@@ -111,7 +111,7 @@ class AbstractRepVector(object):
         return not self.__eq__(other)
 
     def copy(self):
-        """Return deep copy of vector 'self'"""
+        """Return deep copy of the vector"""
         return self.space.copy_vector(self)
 
     def __imul__(self, other):

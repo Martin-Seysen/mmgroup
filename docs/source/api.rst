@@ -249,7 +249,7 @@ Python classes implementing the representation of the Monster group
 
 .. autoclass:: mmgroup.MMVector
    :members:  as_sparse, as_tuples, projection,
-              mul_exp, count_short, axis_type
+              mul_exp, count_short, axis_type, copy
 
 .. autoclass:: mmgroup.MMSpace
    :members:  index_to_linear, index_to_tuple, index_to_short,
@@ -379,6 +379,8 @@ Class ``Xsp2_Co1`` modelling an element of the group :math:`G_{x0}`
 Axes of 2A involutions in the Monster
 ========================================
 
+
+
 .. automodule:: mmgroup.axes
 
 .. autoclass:: mmgroup.axes.Axis
@@ -386,6 +388,21 @@ Axes of 2A involutions in the Monster
 
 .. autoclass:: mmgroup.axes.BabyAxis
    :members: 
+
+
+Fast generation of random axes
+-------------------------------
+
+.. automodule:: mmgroup.tests.axes.random_axis
+
+
+
+.. autoclass:: mmgroup.axes.RandomAxis
+   :members: 
+
+.. autoclass:: mmgroup.axes.RandomBabyAxis
+
+.. autofunction:: mmgroup.axes.rand_mm_element 
 
 
 
