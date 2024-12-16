@@ -30,7 +30,11 @@ import numpy as np
 import mmgroup
 from mmgroup import MM0, MM, MMV, MMVector, Cocode, XLeech2
 from mmgroup import MAT24_ORDER, Xsp2_Co1, characteristics
-from mmgroup.mat24 import m24num_rand_local
+try:
+   from mmgroup import mat24
+except (ImportError, ModuleNotFoundError):
+   from mmgroup.dev.mat24.mat24_ref import Mat24
+   mat24 = Mat24
 from mmgroup.generators import gen_rng_uniform_to_dist
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_reduce_type4
@@ -123,7 +127,7 @@ def rand_G_x0_baby(num = None):
         v2 = mm_aux_index_sparse_to_leech2(vs) 
         v4 = v2 ^ BETA
         assert gen_leech2_type(v4) == 4
-    pi = m24num_rand_local(MODE_MAT22, p)
+    pi = mat24.m24num_rand_local(MODE_MAT22, p)
     a[0] =  0x40000000 + (y & ~BETA)  # tag y
     a[1] =  0x30000000 + (x & ~BETA)  # tag x
     a[2] =  0x10000000 + d  # tag d
