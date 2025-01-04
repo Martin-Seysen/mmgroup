@@ -36,6 +36,16 @@ from mmgroup.clifford12 import xsp2co1_rand_word_G_x0
 from mmgroup.clifford12 import xsp2co1_rand_word_N_0
 from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+rand_mm_element = None
+
+
+def import_rand_mm_element():
+    global rand_mm_element
+    if rand_mm_element is None:
+        try:
+            from mmgroup.axes import rand_mm_element
+        except:
+            rand_mm_element = False
 
 
 r"""Bit semantics
@@ -239,9 +249,23 @@ def _iter_coset_G_x0(flags):
 # A representative (e,f) means \tau**e * \xi**f.        
 G3_COSETS = [(0,0), (1,0), (2,0), (1,1), (1,2), (2,2), (2,2)] 
 
+
+RAND_FAST_DICT = {
+   0: 'M', 1: 'B', 0x100: 'G_x0', 0x101: 'H'
+}
+
+
 def _iter_rand_mm_(flags, n_rounds = 0):
     # Natural embedding of small int large subgroups
+    global rand_mm_element
     flags = _embded_small_into_large(flags)
+    if flags & 0x101 == flags and n_rounds == 0:
+        if rand_mm_element is None:
+            import_rand_mm_element()
+        if rand_mm_element:
+            mm = rand_mm_element(RAND_FAST_DICT[flags], 'a')
+            yield from mm
+            return
     # A subgroup H of the monster is given by argument ``flags``
     # Generate an element of H_0 =  N_x0 \cap H 
     yield from _iter_tags_yxdp(flags)

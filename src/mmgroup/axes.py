@@ -24,5 +24,6 @@ try:
     RANDOM_AXES_SUPPORTED = True
 except:
     RANDOM_AXES_SUPPORTED = False
+    rand_mm_element = None
     raise
 

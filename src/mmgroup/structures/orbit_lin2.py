@@ -8,9 +8,9 @@ r"""We support abtract groups acting on certain sets.
 
 Let :math:`G` be a finite group and :math:`V` be a set. An action
 of :math:`G` on :math:`V` is a mapping :math:`\rho` from :math:`G`
-into the symmetric permutation group of the set :math:`V`. The
-current version support actions on sets :math:`V` with a certain
-structure only. Here :math:`V` may be
+into a permutation group of the set :math:`V`. The current version
+supports actions on sets :math:`V` with a certain structure only.
+Here :math:`V` may be
 
 - A vector space :math:`V = \mbox{GF}_2^n, n \leq 24`, with  :math:`G`
   acting as a group of linear transformations on :math:`V`.
@@ -30,7 +30,7 @@ an integer exponent (e.g. for computing inverses an the neutral
 element). The mapping :math:`\rho` must be implemented as a
 function taking a single group element :math:`g_{i}` and returning
 :math:`\rho(g_{i})` as an element of :math:`V`. The encoding of
-elemnts of :math:`V` is is described in the doccumentation of the
+elements of :math:`V` is is described in the documentation of the
 corresponding class.
 
 The methods of these classes allow the computation of orbits of
