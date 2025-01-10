@@ -271,7 +271,7 @@ AXIS_ORBIT_SIZES = {
 
 
 class Axis:
-    r"""Model a 2A axis in the representation of the Monster mod 15
+    r"""Model a 2A axis in the representation of the Monster
 
     An instance of this class is an arbitrary 2A axis ``a`` of the
     Monster group with entries taken modulo 15. Attribute ``a.v15``
@@ -757,12 +757,12 @@ BABY_AXIS_ORBIT_SIZES = {
 
 
 class BabyAxis(Axis):
-    r"""Model a 2A axis in the representation of the Baby Monster mod 15
+    r"""Model a 2A axis in the representation of the Baby Monster
 
     The constructor and the methods of this class are as in the base
     class ``Axis`` of this class. But we accept axes that are
     orthogonal to axis :math:`v^+` only. The centralizer of that
-    axis is a subgroup of structure math:`2.B` of the Monster.
+    axis is a subgroup of structure :math:`2.B` of the Monster.
 
     For an instance ``a`` of this class we have
     ``a.v15 = a.v15_start * a.g``, where ``a.v15_start`` is the
@@ -859,7 +859,12 @@ class BabyAxis(Axis):
             E = "Illegal argument for method fix_value of class BabyAxis"
             raise ValueError(E)
     def axis_type(self, e = 0):
-        r"""Return the :math:`G_{x0}` orbit of the axis as a string
+        r"""Return the :math:`H` orbit of the axis as a string
+
+
+        Here :math:`H = G_{x0} \cap H^+`, where  :math:`H^+` (of
+        structure :math:`2.B`) is the centralizer of the standard
+        axis :math:`v^+`.
 
         ``a.axis_type(e)`` is equivalent to ``a.v15.axis_type(e)``.
 
