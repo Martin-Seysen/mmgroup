@@ -64,7 +64,7 @@ from mmgroup.generators import gen_ufind_lin2_compress
 
 
 
-from mmgroup.structures.orbit_lin2 import Orbit_Lin2
+from mmgroup.general import Orbit_Lin2
 a = None
 
 #####################################################################
