@@ -9,6 +9,7 @@ import sys
 import re
 import os
 import shutil
+import glob
 import warnings
 from io import IOBase
 import argparse
@@ -84,7 +85,7 @@ def generate_code_parser():
         action = 'extend', default = [],
         help = "Copy FILE to directory set by parameter '--out-dir'. "
                "Each FILE is searched in the path set by parameter "
-               "'--source-path'."
+               "'--source-path'. Wildcards in FILE are allowed."
     )
 
     parser.add_argument('--pxd', 
@@ -254,6 +255,49 @@ def set_real_out_header(instance):
     real_header = os.path.join(dir, os.path.normpath(header))
     setattr(instance, 'real_out_header', real_header) 
      
+
+def search_files(patterns, directories):
+    """Search files matching given wildcard patterns in given directories.
+
+    Args:
+        patterns (list): List of wildcard patterns (e.g., ['*.txt', '*.py'])
+        directories (list): List of directories to search in.
+
+    Returns:
+        list: List of tuples (directory, relative file path).
+    """
+    result = []
+    for pattern in patterns:
+        for directory in directories:
+            dir = os.path.normpath(directory)
+            search_path = os.path.join(dir, pattern)
+            for match in glob.glob(search_path, recursive=True):
+                relative_path = os.path.relpath(match, dir)
+                result.append((dir, relative_path))
+    return result
+
+
+def copy_files_with_dirs(src_pattern, src_dirs, dest_dir, verbose = 0):
+    """ Copy a source files to a destination path.
+
+    Args:
+        src_pattern (list): List of wildcard patterns for source files.
+        src_dir (list): List of directories to search for source files.
+        dest_dir (str): directory where to store the copied files
+    """
+    result = search_files(src_pattern, src_dirs)
+    dest_dir =  os.path.normpath(dest_dir)
+    for src_dir, relative_path in  result:
+        src = os.path.join(src_dir, relative_path)
+        dest = os.path.join(dest_dir, relative_path)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy2(src, dest)
+        if verbose:
+           print(f"Copied '{src}' to '{dest}'")
+
+
+
+
 
 class ActivatedPythonPath:
     """Add a list of paths to the path where python finds scripts
@@ -721,13 +765,8 @@ class CodeGenerator:
             self.h_prefix = ""
 
     def copy_files(self):
-        for file in self.s.copy:
-            src_path = self.find_file(file)
-            dest_path = os.path.join(self.s.out_dir, file)
-            dest_dir = os.path.split(dest_path)[0]
-            if len(dest_dir):
-                os.makedirs(dest_dir, exist_ok=True)
-            shutil.copyfile(src_path, dest_path)
+        copy_files_with_dirs(self.s.copy, self.s.source_path,
+            self.s.out_dir, self.s.verbose)
 
     def generate_c(self, src_name, dest_name, n, h_prefix=""):
         src_file_name = self.find_file(src_name)

@@ -301,6 +301,7 @@ GENERATORS_GENERATE = GENERATE_START + '''
           mmgroup.dev.generators.gen_xi_ref
           mmgroup.dev.generators.gen_leech_22
           mmgroup.dev.generators.gen_leech_reduce_mod3
+ --copy gen_ufind_lin2*.h
  --sources mmgroup_generators.h
  --sources 
 '''.format(**DIR_DICT) + GENERATORS_SOURCES + '''

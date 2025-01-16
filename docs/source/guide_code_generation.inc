@@ -55,13 +55,18 @@ In the following table we list the options available in the
                         SOURCE with extension '.c' a '.c' file is
                         generated from a file with the same name and
                         extension '.ske'. A SOURCE with extension '.h' is
-                        copied into the common header file. Each SOURCE
-                        is seached in the path set by parameter '--
-                        source-path'. Output is written to the directory
-                        set by parameter '--out-dir'.
-  --out-header HEADER   Set name of output header file to HEADER. By
+                        copied into the common header file. Each SOURCE is
+                        seached in the path set by parameter '--source-
+                        path'. Output is written to the directory set by
+                        parameter '--out-dir'.
+  --out-header [HEADER ...]
+                        Set name of output header file to HEADER. By
                         default we take the first file with extension .h
                         in the list given in the argument '--sources'.
+  --copy [FILE ...]     Copy FILE to directory set by parameter '--out-
+                        dir'. Each FILE is searched in the path set by
+                        parameter '--source-path'. Wildcards in FILE are
+                        allowed.
   --pxd PXD             Set input '.pxd' file PXD for generating '.pxd'
                         file with same name from that input file and from
                         the generated header.
@@ -85,11 +90,10 @@ In the following table we list the options available in the
                         generated file by SUBSTITUTION for obtaining the
                         name of that source. The part "(?P<p>[0-9]+)"
                         creates a variable 'p' that takes the decimal
-                        string following the intial letters 'mm' in the
-                        file name. Then variable 'p' will be passed to
-                        the table classes used for code generation.
-                        PATTERN must be given in python regular
-                        expression syntax.
+                        string following the initial letters 'mm' in the
+                        file name. Then variable 'p' will be passed to the
+                        table classes used for code generation. PATTERN
+                        must be given in python regular expression syntax.
   --source-path [PATHS ...]
                         Set list of PATHS for finding source files to be
                         used for generation process.
@@ -97,19 +101,23 @@ In the following table we list the options available in the
                         Set list of PATHS for finding python scripts
   --out-dir DIR         Store output files with extensions .c and .h in
                         directory DIR.
-  --out-pxd-dir DIR     Store output files with extensions .pxd, .pxi,
-                        and .pyx in directory DIR.
+  --out-pxd-dir DIR     Store output files with extensions .pxd, .pxi, and
+                        .pyx in directory DIR.
   --dll DLL_NAME        Generate code for exporting C functions to a DLL
                         or to a shared library with name DLL_NAME.
                         Parameter DLL_NAME must be the same for all
                         generated C files to be placed into the same DLL.
                         This parameter is not used for any other
-                        purposes.
+                        purposes.'--dll None' generates code for static
+                        linking.
   --nogil               Optional, declare functions from .pxi file as
                         'nogil' when set.
   --mockup              Use tables and directives for Sphinx mockup if
                         present
+  --library-path [PATHS ...]
+                        Set list of PATHS for finding shared libraries
   -v, --verbose         Verbose operation
+
 
 
 Python modules used for code generation

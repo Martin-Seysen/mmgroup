@@ -569,7 +569,7 @@ def check_properties_a_compressed(a):
      """Check a compressed version of the main orbit array ``a``
 
      Function ``gen_ufind_lin2_compress`` returns a compressed
-     version of ``c`` the main orbit array ``a`` that contains fewer
+     version ``c`` of the main orbit array ``a`` that contains fewer
      orbits the the original array. This function computes such a
      comprressed orbit array ``c`` for the group ``H`` containing
      orbits of vectors of bit weight 4 only. This function tests
