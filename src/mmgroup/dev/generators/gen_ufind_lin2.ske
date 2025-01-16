@@ -13,8 +13,8 @@ Function ``gen_ufind_lin2_init`` creates an (opaque) array ``a``
 that will be used for storing information about the action of a group
 on a vector space  \f$V = \mbox{GF}_2^n\f$. Such an array will be
 called an *orbit array*. If a function uses an orbit array, this will
-always be the first parameter of the funtion; and that parameter
-will have the name ``a``. Ther user may add generators of the
+always be the first parameter of the function; and that parameter
+will have the name ``a``. The user may add generators of the
 group \f$G\f$ to orbit array ``a`` by calling
 function ``gen_ufind_lin2_add``.
 
@@ -98,11 +98,11 @@ check_out_buf32(uint32_t *p_buf, uint32_t len, uint32_t min_len)
 // ``gen_ufind_lin2_init``
 typedef struct {
    int32_t status;     // Status of the array
-   uint32_t n;         // dimenstion ``n`` of ``GF(2)^n``
+   uint32_t n;         // dimension ``n`` of ``GF(2)^n``
    uint32_t n_max_g;   // Maximum No of generators of the group ``G``
    uint32_t n_g;       // Number of generators of the group ``G``
    uint32_t n_orbits;  // No of ``G`` orbits in ``GF(2)^n``
-   uint32_t n_vectors; // No ov vectrs, usually 1 << n
+   uint32_t n_vectors; // No of vectors, usually 1 << n
    uint32_t *p_t;      // Pointer to main table ``t`` inside ``a``
    uint32_t *p_o;      // Pointer to main table ``map`` inside ``a``
    uint32_t *p_g;      // Pointer to list of generators of group in ``a``
@@ -931,7 +931,7 @@ typedef struct {
    uint32_t *p_overflow; // physical end of queue
    uint32_t *p_g;        // pointer to (expanded) generators
    uint32_t *p_b;        // pointer to bitmap of vectors already done
-   uint32_t n;           // diemension ``n`` of representation
+   uint32_t n;           // dimension ``n`` of representation
    uint32_t n_g;         // number of generators
 } schreierv_type;
 
