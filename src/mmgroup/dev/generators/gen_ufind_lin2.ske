@@ -281,19 +281,6 @@ int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
 /// @cond DO_NOT_DOCUMENT 
 #define MAT_BLOCKSIZE 7
 
-static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
-// Multiply 32-bit vector with 32 times 32 bit matrix v. You may zero
-// high bits of v to multiply with matrix with less than 32 rows.
-{
-    uint32_t w = 0;
-    while (v) {
-       w ^= *m++ & (0UL - (v & 1UL));
-       v >>= 1;
-    }
-    return w;
-} 
-
-
 
 
 /** @brief Perform union-find algorithm in ``GF(2)^n``
@@ -354,20 +341,6 @@ union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
 
 /// @cond DO_NOT_DOCUMENT 
 
-
-static inline int32_t 
-mat_inverse(uint32_t *m, uint32_t n, uint32_t *m_inv)
-// Store inverse of the ``n`` times ``n`` bit matrix ``m`` in the
-// array ``m_inv``. Return 0 if inverse can be computed and -1 if not.
-{
-    uint64_t a[LIN2_MAX_N];
-    uint32_t i, mask = (1UL << n) - 1;
-    if (n == 0 || n > LIN2_MAX_N) return ERR_GEN_UFIND_INVERSE;
-    for (i = 0; i < n; ++i) a[i] = m[i];
-    if (bitmatrix64_inv(a, n)) return ERR_GEN_UFIND_INVERSE;
-    for (i = 0; i < n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
-    return 0;
-}
 
 
 /// @endcond
@@ -453,39 +426,6 @@ done:
 
 
 
-
-
-static inline void
-write_length_info(uint32_t *a, uint32_t length)
-{
-    uint32_t x;
-    x = 0x80 | ((length > 0x3f) << 6) | (length & 0x3f);
-    *a = (*a & 0x00ffffffUL) | (x << 24);
-    ++a;
-    length >>= 6;
-    while (length) {
-        x = ((length > 0x3f) << 6) | (length & 0x3f);
-        *a = (*a & 0x00ffffffUL) | (x << 24);
-        ++a;
-        length >>= 6;
-    }
-}
-
-
-static inline int32_t
-read_length_info(uint32_t *a)
-{
-    uint32_t x, length = 0, sh = 0;
-    x = (*a++ >> 24) & 0xff;
-    if ((x & 0x80) == 0) return -1;
-    length = x & 0x3f;
-    for (sh = 6; (sh < 24) && (x & 0x40); sh += 6) {
-        x = (*a++ >> 24) & 0xff;
-        if (x & 0x80) return ERR_GEN_UFIND_INT_LIN2 - 1;
-        length += (x & 0x3f) << sh;
-    }
-    return length;
-}
 
 
 
