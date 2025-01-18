@@ -11,7 +11,7 @@ The functions in file ``gen_ufind_lin2.c`` deal with the operation
 of a group \f$G\f$ as a permutation group on the vector
 space \f$V = \mbox{GF}_2^n\f$ for \f$n \leq 24\f$. The information
 about the group \f$G\f$ is stored in an opaque array ``a``. The
-internal structure of array ``a`` is documented in this haedar file.
+internal structure of array ``a`` is documented in this headar file.
 */
 
 
@@ -92,9 +92,16 @@ Structure ``s`` contains an entry ``p_o`` pointing to a table ``map``.
  
 Structure ``s`` has an entry ``p_g`` pointing to generators of \f$G\f$.
 
-  Generator ``j`` of the group \f$G\f$ is stored in
-  entries ``s.p_g[2*j * s.n] ,...,  s.p_g[2*j * s.n + s.n - 1]``.
-  Here generator ``j = 2*m + 1`` is the inverse of generator  ``2*m``.
+  This array has ``lin2_generator_size(p_g->n, p_g->n_max_g)`` entries.
+  Here ``p_g->n`` is the dimension of the space \f$V\f$,
+  and ``p_g->n_max_g`` is the maximum number of generators that may be
+  stored in the array.  ``p_g->n_g`` is the number of generators
+  actually stored in the array.
+
+  Function ``lin2_generator(&s, 2*i)`` returns a pointer to
+  the ``i`` -th   generator. Function ``lin2_generator(&s, 2*i + 1)``
+  returns a pointer to the inverse of that generator.
+
   Generators are stored in the order as they are entered (and accepted)
   by function ``gen_ufind_lin2_add``.
 
@@ -131,6 +138,14 @@ typedef struct {
 /************************************************************************
 *  Auxiliary functions manipulating stuctures for orbit arrays
 ************************************************************************/
+
+
+static inline uint32_t lin2_generator_size(uint32_t n, uint32_t k)
+// Return number of 32-bit integers required to store ``k`` generators
+// of a group acting on a vector space over GF(2) of dimension ``n``.
+{
+    return 2 * (n + 0) * k;
+}
 
 static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
 // Copy header and pointer to data from an opaque array ``a``
@@ -233,6 +248,75 @@ mat_inverse(uint32_t *m, uint32_t n, uint32_t *m_inv)
     for (i = 0; i < n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
     return 0;
 }
+
+
+
+/************************************************************************
+* Return pointer to i-th generator in a structure of type lin2_type
+************************************************************************/
+
+static inline uint32_t*
+// Return pointer to the ``i``-th generator in a structure of
+// type ``lin2_type`` referred by pointer ``ps``.
+lin2_generator(lin2_type *ps, uint32_t i)
+{
+    return ps->p_g + (size_t)(i * ps->n);
+}
+
+/************************************************************************
+* Unite vector v with vector A * v, for a matrix A over GF(2)
+************************************************************************/
+
+#define MAT_BLOCKSIZE 7
+
+
+
+/** @brief Perform union-find algorithm in ``GF(2)^n``
+
+Let ``S(n)`` be the set of integers ``v`` with ``0 <= v < 1 << n``;
+and let a partition of ``S(n)`` be stored in the array ``table``
+(of size ``1 << n``) as described in function ``gen_ufind_init``.
+
+In this function the entries of ``S(n)`` are interpreted as bit
+vectors. The function joins the set containing ``v`` with the set
+containing ``v * g`` for all ``v`` in ``S(n)``. Here ``g`` is an
+``n`` times ``n`` bit matrix over GF(2) stored in the array referred
+by ``g``. Row ``j`` of bit matrix ``g`` is stored in ``g[j]`` as
+an integer encoding a bit vector. All bit vector arithmetic is done
+over GF(2).
+
+Thus the array referred by ``table`` must have length ``1 << n``;
+and the array referred by ``g`` must have length ``len_g * n``.
+
+The function returns 0 in case of success and -1 in case of error.
+*/
+static inline int32_t
+union_linear(uint32_t *table, uint32_t n, uint32_t *g)
+{
+     uint32_t j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
+     uint32_t t_length = 1UL << n;
+     uint32_t mask = t_length - 1;
+     uint32_t status = 0;
+
+     if (n > LIN2_MAX_N || n == 0) return ERR_GEN_UFIND_LIN2_GEN;
+     lg_bl = (n + 1) >> 1;
+     lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
+     bl = 1UL << lg_bl;
+     for (j1 = 0; j1 < bl; ++j1) a[j1] = vmatmul(j1, g) & mask;
+     for (j0 = 0; j0 < t_length; j0 += bl) {
+         w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
+         for (j1 = 0; j1 < bl; ++j1) {
+             status |=
+                gen_ufind_union(table, t_length, j0 ^ j1, w ^ a[j1]);
+         }
+     }
+     return (status & 0x80000000UL) ? ERR_GEN_UFIND_INT_LIN2 - 7 : status;
+}
+
+
+
+
+
 
 /************************************************************************
 *  Store length information in an array of 24-bit integers

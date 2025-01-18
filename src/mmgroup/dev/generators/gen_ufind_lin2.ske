@@ -27,6 +27,10 @@ a \f$g \in G\f$ with \f$v g = w\f$.
 The functions in this module may be used e.g. for computing the orbits
 of the Leech lattice mod 2 under the action of (a subgroup of) the
 Conway group \f$\mbox{Co}_1\f$.
+
+The internal structure of the opaque array ``a`` is not described in
+the public documentation. For details we refer to the explanations in
+file ``gen_ufind_lin2_aux.h``.
 */
 
 
@@ -87,7 +91,8 @@ int32_t gen_ufind_lin2_size(uint32_t n, uint32_t k)
 {
     if (n == 0 || n > LIN2_MAX_N) return ERR_GEN_UFIND_LIN2_DIM;
     if(k > LIN2_MAX_N_G) return ERR_GEN_UFIND_LIN2_GEN;
-    return LIN2_LEN_HEADER + (2UL << n) + 2 * n * k + 2;
+    return LIN2_LEN_HEADER + (2UL << n) +
+         lin2_generator_size(n, k) + 2;
 }
 
 
@@ -264,7 +269,7 @@ int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
     if (status < 0) return status;
     if (i >= 2 * s.n_g) return ERR_GEN_UFIND_IN_LARGE;
     if (check_out_buf32(g, l_g, s.n)) return ERR_GEN_UFIND_OUT_SHORT;
-    memcpy(g, s.p_g + i * s.n, s.n * sizeof(uint32_t));
+    memcpy(g, lin2_generator(&s, i), s.n * sizeof(uint32_t));
     return s.n;
 }
 
@@ -273,65 +278,6 @@ int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
 
 
 
-
-/************************************************************************
-* Unite vector v with vector A * v, for a matrix A over GF(2)
-************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT 
-#define MAT_BLOCKSIZE 7
-
-
-
-/** @brief Perform union-find algorithm in ``GF(2)^n``
-
-Let ``S(n)`` be the set of integers ``v`` with ``0 <= v < 1 << n``;
-and let a partition of ``S(n)`` be stored in the array ``table``
-(of size ``1 << n``) as described in function ``gen_ufind_init``.
-
-In this function the entries of ``S(n)`` are interpreted as bit
-vectors. The function joins the set containing ``v`` with the set
-containing ``v * G[i]`` for all ``v`` in ``S(n)``, and
-for  ``0 <= i < l_g``. Here ``G[i]`` is an ``n`` times ``n`` bit
-matrix over GF(2) stored in the array referred by ``g``. Row ``j``
-of bit matrix ``G[i]`` is stored in ``g[i * n + j]`` as an integer
-encoding a bit vector. All bit vector arithmetic is done over GF(2).
-
-Thus the array referred by ``table`` must have length ``1 << n``;
-and the array referred by ``g`` must have length ``len_g * n``.
-
-The function returns 0 in case of success and -1 in case of error.
-*/
-static inline int32_t
-union_linear(uint32_t *table, uint32_t n, uint32_t *g, uint32_t l_g)
-{
-     uint32_t i, j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
-     uint32_t t_length = 1UL << n;
-     uint32_t mask = t_length - 1;
-     uint32_t status = 0;
-
-     if (n > LIN2_MAX_N || n == 0) return ERR_GEN_UFIND_LIN2_GEN;
-     lg_bl = (n + 1) >> 1;
-     lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
-     bl = 1UL << lg_bl;
-     for (i = 0; i < l_g; ++i) {
-         for (j1 = 0; j1 < bl; ++j1) a[j1] = vmatmul(j1, g) & mask;
-         for (j0 = 0; j0 < t_length; j0 += bl) {
-             w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
-             for (j1 = 0; j1 < bl; ++j1) {
-                 status |= 
-                    gen_ufind_union(table, t_length, j0 ^ j1, w ^ a[j1]);
-             }
-         }
-         g += n;
-     }
-     return (status & 0x80000000UL) ? ERR_GEN_UFIND_INT_LIN2 - 7 : status;
-
-}
-
-
-
-/// @endcond
 
 
 
@@ -387,7 +333,7 @@ int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
 {
     lin2_type s;
     int32_t status;
-    uint32_t j, *p_gout, mask;
+    uint32_t j, *p_gout, *p_gout_inv, mask;
     status = load_lin2_info(a, &s);
     if (status != 0) return status < 0 ? status : ERR_GEN_UFIND_STATE;
     mask =   (1UL << s.n) - 1;
@@ -395,11 +341,12 @@ int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
     if  (status < 0) goto done;
     status = ERR_GEN_UFIND_LIN2_GEN;
     if (s.n_g >= s.n_max_g) goto done;
-    p_gout = s.p_g + 2 * s.n_g * s.n;
+    p_gout = lin2_generator(&s, 2 * s.n_g);
     for (j = 0; j < s.n; ++j) p_gout[j] = g[j] & mask;
     status = ERR_GEN_UFIND_INVERSE;
-    if (mat_inverse(g, s.n, p_gout + s.n)) goto done;
-    status = union_linear(s.p_t, s.n, p_gout, 1);
+    p_gout_inv = lin2_generator(&s, 2 * s.n_g + 1);
+    if (mat_inverse(p_gout, s.n, p_gout_inv)) goto done;
+    status = union_linear(s.p_t, s.n, p_gout);
     if (status < 0) goto done; 
     status =  (status | use) != 0;
     s.n_g += status;
@@ -540,7 +487,7 @@ find_schreier(uint32_t *a, uint32_t *p_v, uint8_t *b, uint32_t l_b)
             if (l_b-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
             *b++ = (uint8_t)(g);
         }
-        v = vmatmul(v, s.p_g + g * s.n);
+        v = vmatmul(v, lin2_generator(&s, g));
     }
 }
 
@@ -850,8 +797,8 @@ schreier_vector_alloc(schreierv_type *p_s, uint32_t *a, uint32_t max_entries)
     // Load generator matrices
     p64_g = (uint64_t*) p_s->p_g;
     for (i = 0; i < p_s->n_g; ++i) {
-        store64_gen(p64_g + 0x300 * i, p_s->n, s.p_g + 2 * i * p_s->n,
-            s.p_g + (2 * i + 1) * p_s->n);
+        store64_gen(p64_g + 0x300 * i, p_s->n, lin2_generator(&s, 2 * i),
+            lin2_generator(&s, 2 * i + 1));
     }
 
     // Initialize bitmap table
@@ -1052,7 +999,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
         if (l_b1-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
         *b++ = (uint8_t)gen;
         if (gen >= 2 * s.n_g) return ERR_GEN_UFIND_INT_LIN2 - 32;
-        v = vmatmul(v, s.p_g + (size_t)(gen * s.n));
+        v = vmatmul(v, lin2_generator(&s, gen));
         entry = s.p_t[v];
     }
     return ERR_GEN_UFIND_INT_LIN2 - 33;
@@ -1181,7 +1128,7 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
     for (i = 0; i < l_o; ++i) {
         sc.p_t[i + l_o] = gen_ufind_lin2_len_orbit_v(a, sc.p_t[i]);
     }
-    memcpy(sc.p_g, s.p_g, 2 * s.n_g * s.n * sizeof(uint32_t));
+    memcpy(sc.p_g, s.p_g, lin2_generator_size(s.n, s.n_g) * sizeof(uint32_t));
     status = schreier_vector_alloc(&sv, a, sc.n_vectors);
     if (status < 0) goto done;
     status = schreier_vector_addv(&sv, sc.p_t, l_o);
