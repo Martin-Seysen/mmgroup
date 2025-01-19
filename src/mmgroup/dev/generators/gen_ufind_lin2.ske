@@ -1084,7 +1084,8 @@ int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
          v_sum += gen_ufind_lin2_len_orbit_v(a, o[i] & mask);
          if (v_sum > (1ULL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     }
-    o_len = LIN2_LEN_HEADER + 2 * l_o + v_sum + 2 * s.n_g * s.n + 2;
+    o_len = LIN2_LEN_HEADER + 2 * l_o + v_sum;
+    o_len +=  lin2_generator_size(s.n, s.n_g) + 2;
     if ((uint64_t)l_o > o_len) return ERR_GEN_UFIND_OUT_SHORT;
     return (uint32_t)o_len; 
 }
@@ -1141,7 +1142,7 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
     }
     bitvector32_sort(sc.p_o, sc.n_vectors);
     c_size_new = LIN2_LEN_HEADER + 2 * sc.n_orbits + sc.n_vectors
-                   + 2 * sc.n_g * sc.n + 2;
+                   + lin2_generator_size(sc.n, sc.n_g) + 2;
     if (c_size_new > c_size) {
         status = ERR_GEN_UFIND_INT_LIN2 - 47;
         goto done;
@@ -1172,7 +1173,7 @@ static int32_t lin2_check(uint32_t *a, uint32_t len_a, uint32_t chksum)
 {
     lin2_type s;
     int32_t status;
-    uint32_t a_sum = 0;
+    uint32_t a_sum = 0, gen_size;
     uint64_t i, a_size;
     if (len_a <= LIN2_LEN_HEADER) {
         return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 13);
@@ -1181,12 +1182,12 @@ static int32_t lin2_check(uint32_t *a, uint32_t len_a, uint32_t chksum)
     if (status < 0) return status;
     if (s.n == 0 || s.n > LIN2_MAX_N) return ERR_GEN_UFIND_LIN2_DIM;
     if (s.n_g > LIN2_MAX_N_G) return ERR_GEN_UFIND_LIN2_GEN;
+    gen_size = lin2_generator_size(s.n, s.n_g);
     if (status == LIN2_COMPRESSED) {
         a_size = LIN2_LEN_HEADER + 2 * s.n_orbits + s.n_vectors 
-                   + 2 * s.n_g * s.n + 2;
+                   + gen_size + 2;
     } else {
-        a_size = LIN2_LEN_HEADER + (2UL << s.n) 
-                   + 2 * s.n_g * s.n + 2;
+        a_size = LIN2_LEN_HEADER + (2UL << s.n)  + gen_size + 2;
     }
     if (a_size > (uint64_t)len_a) {
         return lin2_error(a, ERR_GEN_UFIND_INT_LIN2 - 15);

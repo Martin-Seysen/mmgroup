@@ -144,7 +144,7 @@ static inline uint32_t lin2_generator_size(uint32_t n, uint32_t k)
 // Return number of 32-bit integers required to store ``k`` generators
 // of a group acting on a vector space over GF(2) of dimension ``n``.
 {
-    return 2 * (n + 0) * k;
+    return 2 * (n + 1) * k;
 }
 
 static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
@@ -260,7 +260,7 @@ static inline uint32_t*
 // type ``lin2_type`` referred by pointer ``ps``.
 lin2_generator(lin2_type *ps, uint32_t i)
 {
-    return ps->p_g + (size_t)(i * ps->n);
+    return ps->p_g + (size_t)(i * (ps->n + 1));
 }
 
 /************************************************************************
