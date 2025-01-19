@@ -232,20 +232,44 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 }
 
 /************************************************************************
-*  Invert a bit matrix
+*  Affine operation on GF(2)**n
 ************************************************************************/
 
+// Let \f$V = GF_2^n\f$. We store an affine mapping \f$V \rightarrow V\f$
+// given by \f$v \mapsto v \cdot A + b, v, b \in V\f$, \f$A\f$ an
+// \f$n \times n\f$ bit matrix, in an array ``m`` of \f$n + 1\n\f$
+// unsigned 32-bit integers as follows.
+// Row ``i`, ``0 <= i < n`` of matrix \f$A\f$ is stored in ``m[i]`` as
+// a bit vector; bit vector ``b`` is stored in  ``m[n]``.
+
+
+// Transform a vector with an affine transformation as given above 
 static inline int32_t
-mat_inverse(uint32_t *m, uint32_t n, uint32_t *m_inv)
-// Store inverse of the ``n`` times ``n`` bit matrix ``m`` in the
-// array ``m_inv``. Return 0 if inverse can be computed and -1 if not.
+vmatmul_aff(uint32_t v, uint32_t *m, uint32_t n)
 {
-    uint64_t a[LIN2_MAX_N];
+    uint32_t w = m[n], i;
+    for (i = 0; i < n; ++i) w ^= *m++ & (0UL - ((v >> i) & 1UL));
+    return w & ((1UL << n) - 1);
+}
+
+
+
+// Invert an affine transformation as given above
+static inline int32_t
+mat_inverse_aff(uint32_t *m, uint32_t n, uint32_t *m_inv)
+// The function computes the inverse of the affine transformation
+// on \f$GF_2^n\f$ given by the array ``m``. It stores the inverse
+// in the array ``m_inv``.  Here ``m`` and ``m_inv`` are encoded as
+// arrays of lengeh ``n + 1`` as described above.
+// The function returns 0 if inverse can be computed and -1 if not.
+{
+    uint64_t a[LIN2_MAX_N + 1];
     uint32_t i, mask = (1UL << n) - 1;
     if (n == 0 || n > LIN2_MAX_N) return ERR_GEN_UFIND_INVERSE;
-    for (i = 0; i < n; ++i) a[i] = m[i];
-    if (bitmatrix64_inv(a, n)) return ERR_GEN_UFIND_INVERSE;
-    for (i = 0; i < n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
+    for (i = 0; i <= n; ++i) a[i] = m[i] & mask;
+    a[n] |= (uint64_t)1ULL << n;
+    if (bitmatrix64_inv(a, n + 1)) return ERR_GEN_UFIND_INVERSE;
+    for (i = 0; i <= n; ++i) m_inv[i] = (uint32_t)(a[i] & mask);
     return 0;
 }
 
@@ -294,7 +318,7 @@ static inline int32_t
 union_linear(uint32_t *table, uint32_t n, uint32_t *g)
 {
      uint32_t j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
-     uint32_t t_length = 1UL << n;
+     uint32_t t_length = 1UL << n, aff;
      uint32_t mask = t_length - 1;
      uint32_t status = 0;
 
@@ -302,7 +326,8 @@ union_linear(uint32_t *table, uint32_t n, uint32_t *g)
      lg_bl = (n + 1) >> 1;
      lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
      bl = 1UL << lg_bl;
-     for (j1 = 0; j1 < bl; ++j1) a[j1] = vmatmul(j1, g) & mask;
+     aff = g[n];
+     for (j1 = 0; j1 < bl; ++j1) a[j1] = (vmatmul(j1, g) ^ aff) & mask;
      for (j0 = 0; j0 < t_length; j0 += bl) {
          w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
          for (j1 = 0; j1 < bl; ++j1) {
@@ -382,6 +407,54 @@ read_length_info(uint32_t *a)
     return length;
 }
 
+
+
+/************************************************************************
+*  Expand a pair of a generator and its inverse for fast processing
+************************************************************************/
+
+static inline void
+store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
+// Put mask = (1 << n) - 1, and
+// g[j] = ((uint64_t)(g1[j] & mask) << 32) + (g1[j] & mask).
+// Let G be the bit matrix with row vectors g[0], ..., g[n-1].
+// Put byte(k, i) =  (i >> (8 * k)) & 0xff.
+// Then we compute o[0x100 * k + i] = (byte[k, i] << 8 * k) (*) G.
+// Here (*) is the matrix product of a bit row vector with a bit matrix.
+// For n <= 24, output array  o  must have length 0x300.
+// In this case we will have:
+// v (*) G = o[byte(0, v)] ^ o[0x100 + byte(1, v)] ^ o[0x200 + byte(2, v)].
+// We set the entries of  o used for computing v (*) G in this case only.
+{
+    uint32_t i, jmax, j, j_hi;
+    uint64_t mask, g_hi, aff;
+    memset(o, 0, 0x300 * sizeof(uint64_t));
+    mask = (1UL << n) - 1;
+    mask = (mask << 32ULL) + mask;
+    aff = ((uint64_t)g1[n] << 32ULL) ^ (uint64_t)g0[n];
+    for (i = 0; i < 24; i += 8) {
+        if (n > i) {
+            g_hi = 0; j_hi = 0;
+            jmax = n - i;
+            if (jmax > 8) jmax = 8;
+            for (j = 1; j < (1UL << jmax); ++j) {
+                if ((j & (j - 1)) == 0) { // is j a power of 2?
+                    g_hi = *g1++;
+                    g_hi = ((g_hi << 32ULL) + *g0++) & mask;
+                    g_hi ^= aff;
+                    j_hi = j;
+                }
+                o[j] = g_hi ^ o[j - j_hi];
+                aff = 0;
+            }
+        }
+        o += 0x100;
+    }
+}
+
+/************************************************************************
+*  End of header file
+************************************************************************/
 
 
 /// @endcond

@@ -204,6 +204,11 @@ class Orbit_Lin2:
         is returned as usual. In this case component ``functions`` of
         that pair is not data dependent and may be used for unpickling
         similar pickled objects.
+
+        Warning:
+
+        Pickled data returned by this method may differ between
+        versions of the mmgroup package!
         """
         if self.a is None:
             return (None, None), (self.map, f_unpickle_gen)

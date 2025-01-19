@@ -202,7 +202,7 @@ def remove_extensions(extension_list, verbose):
 
 
 def main():
-    usage = "usage: %prog [options]"
+    usage = "%prog [options]"
     parser = ArgumentParser(usage)
     parser.add_argument("-p",  dest="del_pyc", action="store_true",
         help="Delete intermediate python files (.pyc)")
