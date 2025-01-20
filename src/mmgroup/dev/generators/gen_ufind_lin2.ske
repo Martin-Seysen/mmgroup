@@ -659,6 +659,8 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
+    mask = (1UL << s.n) - 1;
+    v &= mask;    
     if (status == LIN2_COMPRESSED) {
         status = v = compressed_lin2_rep_v(a, v);
         if (status < 0) return status;
@@ -666,7 +668,6 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
         if (v != s.p_t[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
         return s.p_t[s.n_orbits + index_o];
     }
-    mask = (1UL << s.n) - 1;
     rep = gen_ufind_lin2_rep_v(a, v);
     index_o = s.p_t[rep] & mask;
     return read_length_info(s.p_o + index_o);
@@ -1144,7 +1145,7 @@ static inline uint32_t magic_content(uint32_t *a)
 
 
 
-// @endcond
+/// @endcond
 
 /** @brief Compute all possible information about orbits
 
@@ -1181,30 +1182,77 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
 *************************************************************************
 ************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT
+
+static inline uint32_t
+sort_remove_duplicates(uint32_t *a, uint32_t  l_a)
+// Sort an arbitrary array ``a`` of length ``l_a`` and remove
+// duplicate entries. This is done in place. The function returns
+// the length of ``a`` after removing duplicates.
+{
+    uint32_t *b = a, *p_b = a, i;
+    if (l_a == 0) return 0;
+    bitvector32_sort(a, l_a);
+    *p_b++ = a[0];
+    for (i = 1; i < l_a; ++i) {
+        if (a[i] != a[i-1]) *p_b++ = a[i];
+    }
+    return (int32_t)(p_b - b);
+}
+
+
+static inline int32_t
+sort_orbit_reps(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *reps)
+// Let ``o`` be an array of bit vectors of length ``l_o``.
+// The function stores the of list of the representatives of these
+// bit vectors in in the array ``reps``. The list of representatives
+// is sorted and duplicates are removed. Orbit array ``a`` is used
+// to find the representative of an orbit.
+// The function returns the length of the array ``reps``.
+{
+    uint32_t i;
+    int32_t status;
+    for (i = 0; i < l_o; ++i) {
+        reps[i] = status = gen_ufind_lin2_rep_v(a, o[i]);
+        if (status < 0) return status;
+    }
+    return sort_remove_duplicates(reps, l_o);
+}
+
+/// @endcond
 
 
 
 /** @brief yet to be documented
+
 
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
 {
     lin2_type s;
-    uint32_t i, mask;
-    uint64_t v_sum = 0, o_len;
+    uint32_t i, *reps = NULL;
+    uint64_t v_sum = 0, l_o0, l_o1, o_len;
     int32_t status = finalize_initalization(a, &s);
+    l_o0 = LIN2_LEN_HEADER + (uint64_t)l_o;
     if (status < 0) return status;
-    if (status == LIN2_COMPRESSED) return ERR_GEN_UFIND_STATE;
-    mask = (1UL << s.n) - 1;
-    for (i = 0; i < l_o; ++i) {
-         v_sum += gen_ufind_lin2_len_orbit_v(a, o[i] & mask);
-         if (v_sum > (1ULL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
+    if (status > 2) return ERR_GEN_UFIND_STATE;
+    reps = malloc(l_o * sizeof(uint32_t));
+    if (reps == NULL) return ERR_GEN_UFIND_MEM;
+    l_o1 = status = sort_orbit_reps(a, o, l_o, reps);
+    if (status < 0) goto done;
+    v_sum = 0;
+    for (i = 0; i < l_o1; ++i) {
+        v_sum += gen_ufind_lin2_len_orbit_v(a, reps[i]);
     }
-    o_len = LIN2_LEN_HEADER + 2 * l_o + v_sum;
-    o_len += lin2_generator_size(s.n, s.n_g) + 2;
-    if ((uint64_t)l_o > o_len) return ERR_GEN_UFIND_OUT_SHORT;
-    return (uint32_t)o_len;
+    o_len = LIN2_LEN_HEADER + 2 * l_o1 + v_sum
+             + lin2_generator_size(s.n, s.n_g) + 2;
+    o_len = o_len > l_o0 ? o_len : l_o0;
+    if (o_len > 0x7fffffffULL) return ERR_GEN_UFIND_OUT_SHORT;
+    status = (int32_t)o_len;
+  done:
+    if (reps != NULL) free(reps);
+    return status;
 }
 
 
@@ -1217,37 +1265,26 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
 {
     lin2_type s, sc;
     schreierv_type sv;
-    uint32_t i, mask, c_size, c_sum = 0, c_size_new;
+    uint32_t i, c_sum = 0, c_size_new;
     int32_t status = finalize_initalization(a, &s);
-    if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT; 
+    if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT;
+    sc.p_t = c + LIN2_LEN_HEADER; 
+    l_o = status = sort_orbit_reps(a, o, l_o, sc.p_t);
     if (status < 0) return status;
 
-    c_size = status = gen_ufind_lin2_compressed_size(a, o, l_o);
-    if (status < 0) return status;
-    if (l_c > c_size) return ERR_GEN_UFIND_OUT_SHORT;
-    mask = (1UL << s.n) - 1;
-    memcpy(&sc, &s, sizeof(sc));
+    memcpy(&sc, &s, LIN2_LEN_HEADER * sizeof(uint32_t));
     sc.status = LIN2_COMPRESSED;
-    sc.n_vectors = 0;
-    sc.n_orbits = l_o;
     sc.p_t = c + LIN2_LEN_HEADER;
-    sc.p_t[l_o] = 0xffffffffUL;
-    for (i = 0; i < l_o; ++i) {
-        sc.p_t[i] = gen_ufind_lin2_rep_v(a, o[i]);
-        sc.n_vectors += gen_ufind_lin2_len_orbit_v(a, o[i]);
-    }
-    bitvector32_sort(sc.p_t, l_o);
-    for (i = 0; i < l_o; ++i) {
-        if (sc.p_t[i] == sc.p_t[i+1]) return ERR_GEN_UFIND_DUPL;
-    }
-    sc.p_o = sc.p_t + (size_t)2 * l_o;
-    sc.p_g = sc.p_o + (size_t)sc.n_vectors;
-    for (i = 0; i < l_o; ++i) sc.p_t[i] = o[i] & mask;
-    bitvector32_sort(sc.p_t, l_o); 
+    if (l_c < l_o + LIN2_LEN_HEADER) return ERR_GEN_UFIND_OUT_SHORT;
+    sc.n_orbits = l_o = status = sort_orbit_reps(a, o, l_o, sc.p_t);
+    if (status < 0) return status;
+    sc.n_vectors = 0;
     for (i = 0; i < l_o; ++i) {
         sc.p_t[i + l_o] = gen_ufind_lin2_len_orbit_v(a, sc.p_t[i]);
+        sc.n_vectors += sc.p_t[i + l_o];
     }
-    memcpy(sc.p_g, s.p_g, lin2_generator_size(s.n, s.n_g) * sizeof(uint32_t));
+    sc.p_o = sc.p_t + (size_t)(2 * l_o);
+    sc.p_g = sc.p_o + (size_t)sc.n_vectors;
     status = schreier_vector_alloc(&sv, a, sc.n_vectors);
     if (status < 0) goto done;
     status = schreier_vector_addv(&sv, sc.p_t, l_o);
@@ -1258,13 +1295,15 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
         uint32_t entry = sv.p_start[i];
         sc.p_o[i] = (entry >> 24) | (entry << 8);
     }
+    memcpy(sc.p_g, s.p_g, lin2_generator_size(s.n, s.n_g) * sizeof(uint32_t));
     bitvector32_sort(sc.p_o, sc.n_vectors);
     c_size_new = LIN2_LEN_HEADER + 2 * sc.n_orbits + sc.n_vectors
                    + lin2_generator_size(sc.n, sc.n_g) + 2;
-    if (c_size_new > c_size) {
-        status = ERR_GEN_UFIND_INT_LIN2 - 47;
+    if (l_c < c_size_new) {
+        status = ERR_GEN_UFIND_OUT_SHORT;
         goto done;
     }
+  
     c[0] = 0;
     store_lin2_info(&sc, c);
     c[c_size_new - 2] = magic_content(c);

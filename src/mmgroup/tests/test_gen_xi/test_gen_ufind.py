@@ -579,7 +579,7 @@ def check_properties_a_compressed(a):
      o = np.array([0x0f, 0x17], dtype = np.uint32)
      sizes = {0x0f : 14, 0x17 : 56}
      l_o = len(o)
-     l_c = gen_ufind_lin2_compressed_size(a, o, l_o)
+     l_c = chk(gen_ufind_lin2_compressed_size(a, o, l_o))
      c = np.zeros(l_c, dtype = np.uint32)
      status = gen_ufind_lin2_compress(a, o, l_o, c, l_c)
      chk(status)
