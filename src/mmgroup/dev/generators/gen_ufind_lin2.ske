@@ -379,6 +379,47 @@ done:
 
 
 /************************************************************************
+* Transform a vector by a group element
+************************************************************************/
+
+
+
+/** @brief Transform a vector by a group element
+
+Here ``a`` refers to an orbit array ``a`` encoding a group \f$G\f$
+(given by generators) acting on a space of bit vectors. A group
+element \f$g\f$ is stored as a word of generators of \f$G\f$
+of length ``l_b`` in the array referred by ``b``. An entry ``i``
+in the array ``b`` corresponds to the generator given
+by ``gen_ufind_lin2_gen(a, i, ...)``.
+
+The function returns the bit vector ``v`` transformed by the group
+element \f$g\f$.
+
+A negative return value indicates an error.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_transform_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
+{
+    lin2_type s;
+    uint32_t i;
+    int32_t status = load_lin2_info(a, &s);
+    if (status < 0) return status;
+    v &= (1UL << s.n) - 1;
+    for (i = 0; i < l_b; ++i) {
+        if (b[i] >= 2 * s.n_g) {
+            if (b[i] == 0xfe) continue;
+            return ERR_GEN_UFIND_INT_LIN2 - 32;
+        }
+        v = vmatmul_aff(v, lin2_generator(&s, b[i]), s.n);
+    }
+    return v;
+}
+
+
+
+
+/************************************************************************
 * Finalize initialization of structure 
 ************************************************************************/
 
@@ -476,7 +517,7 @@ done:
 
 
 /************************************************************************
-* Finding orbits representatives via Schreier vector;
+* Finding orbits of representatives via a Schreier vector
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT
@@ -664,8 +705,9 @@ int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_
         if (check_out_buf32(r, l_r, s.n_vectors))
             return ERR_GEN_UFIND_OUT_SHORT;
         for (i = 0; i < s.n_vectors; ++i) {
-            r[i] = s.p_t[i] & 0xffffffUL;
+            r[i] = s.p_t[i] >> 8;
         }
+        return s.n_vectors;
     }
     mask = (1UL << s.n) - 1;
     rep = status = gen_ufind_lin2_rep_v(a, v);
@@ -785,7 +827,7 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
 // The following strcture is temporarily used for computing a
 // Schreier vector.
 typedef struct {
-   uint32_t *p_alloc;    // pointer to allocatd memory
+   uint32_t *p_alloc;    // pointer to allocated memory
    uint32_t *p_start;    // start of queue
    uint32_t *p_end;      // end of queue
    uint32_t *p_overflow; // physical end of queue
@@ -797,9 +839,14 @@ typedef struct {
 
 
 
-
 static inline int32_t
 schreier_vector_alloc(schreierv_type *p_s, uint32_t *a, uint32_t max_entries)
+// Allocate space for a structure of type ``schreierv_type``
+// The function stores a pointer to s structure of
+// type ``schreierv_type`` in the pointer ``p_s`` that can be used
+// for computing a Schreier vector in an orbit array ``a``.
+// parameter ``max_entries`` is the number of bit vectors stored
+// in array ``a``, which is usually ``1 << gen_ufind_lin2_dim(a)``.
 {
     uint32_t buf_size, l_b, g_start, i;
     uint64_t *p64_g;
@@ -835,6 +882,11 @@ schreier_vector_alloc(schreierv_type *p_s, uint32_t *a, uint32_t max_entries)
 
 static inline int32_t
 schreier_vector_addv(schreierv_type *p_s, uint32_t *p_v, uint32_t n)
+// Add list of start vectors to a structure of type ``schreierv_type``
+// Let ``v_list`` be a list of bit vectors of length ``n`` referred
+// by ``p_v``. The function marks all these vectors as start vectors
+// in the structure of type ``schreierv_type`` referred by ``p_s``.
+// See function ``gen_ufind_lin2_map_v_gen`` for background.
 {
     uint32_t i, mask = (1UL << p_s->n) - 1, entry;
     uint32_t *p_0 = p_s->p_end, *p_b = p_s->p_b;
@@ -851,6 +903,17 @@ schreier_vector_addv(schreierv_type *p_s, uint32_t *p_v, uint32_t n)
 
 static inline int32_t
 schreier_vector_compute(schreierv_type *p_s)
+// Compute Schreier vector in a structure of type ``schreierv_type``
+// After allcoating such a structure referred by ``p_s`` with
+// function ``schreier_vector_alloc`` and setting the start vectors
+// with function ``schreier_vector_addv`` the function computes a
+// Schreier vector in that structure.
+// The array referred by ``p_s->p_start`` of
+// length ``p_s->p_end - p_s->p_start`` contains the mapping
+// corresponding the Schreier vector as an unordered list.
+// Bits 0,...,23 of an entry of that array contain the bit vector
+// being mapped. Bits 24,...,31 contain the Schreier vector image
+// as described in function ``gen_ufind_lin2_map_v_gen``.
 {
     uint32_t n_g = p_s->n_g, *p_b = p_s->p_b, i;
     uint32_t *p_start = p_s->p_start, *p_end = p_s->p_end;
@@ -891,6 +954,9 @@ schreier_vector_compute(schreierv_type *p_s)
 
 static inline void
 schreier_vector_dealloc(schreierv_type *p_s)
+// Deallocate the space for a structure of type ``schreierv_type``
+// referred by ``p_s``. This reverser the effect of
+// function ``schreier_vector_alloc``.
 {
     if (p_s->p_alloc != NULL) free(p_s->p_alloc);
 }
@@ -970,9 +1036,23 @@ done:
 
 /** @brief Return entry of Schreier vector for bit vector ``v``
 
-This function is yet under construction. Do not use!
+A Schreier vector is a (partial) mapping from a space \f$V\$
+of bit vectors associated with an orbit array ``a`` to the
+set of generators stored in that array. The image of a bit
+vector may also be ``NUL``, indicating that the bit vector is
+the representative of its orbit. For background we refer to
+[HEOBrien05], Section 4.1.1.
 
-Details are yet to be documented!
+A return value ``i < 0xfe`` refers to the generator given by
+``gen_ufind_lin2_gen(a, i, ...)``.
+
+Return value ``0xfe`` means that ``NUL``, i.e. input ``v`` is
+the representative of its orbit.
+
+Return value ``0xff`` means that the Schreier vector for ``v``
+has not been computed.
+
+A negative return value indicates an error.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_map_v_gen(uint32_t *a, uint32_t v)
@@ -997,9 +1077,17 @@ int32_t gen_ufind_lin2_map_v_gen(uint32_t *a, uint32_t v)
 
 /** @brief Return group element mapping ``v`` to orbit representative
 
-Thus function is yet under construction. Do not use!
+Here ``a`` refers to an orbit array ``a`` encoding a group \f$G\f$
+(given by generators) acting on a space \f$V\f$ of bit vectors.
+The function computes an element \f$g\f$ of \f$G\f$ that maps
+the bit vector ``v`` to the representative of its orbit.
 
-Details are yet to be documented! 
+Element \f$g\f$ is computed as a word of generators of \f$G\f$
+of length ``l_b`` and stored in the array referred by ``b``.
+An entry ``i`` in the array ``b`` to the generator given by
+``gen_ufind_lin2_gen(a, i, ...)``.
+
+A negative return value indicates an error.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
@@ -1047,6 +1135,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 #define LIN2_AMUL 0x5ac83257UL
 
 static inline uint32_t magic_content(uint32_t *a)
+// Return hash value over the header of the orbit array ``a``
 {
     uint32_t s = LIN2_MAGIC, i;
     for (i = 0; i < LIN2_LEN_HEADER; ++i) s = s * LIN2_AMUL + a[i];
@@ -1063,7 +1152,7 @@ Let ``a`` be an array that stores a group acting on a vector space
 as described in function ``gen_ufind_lin2_init``. Some information
 to be stored in ``a`` is computed on demand only. Before writing the
 array ``a`` to a file, it may be useful to store the maximum possible
-amount of infomation in ``a``. This function perform that task.
+amount of infomation in ``a``. This function performs that task.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_finalize(uint32_t *a)
@@ -1093,6 +1182,8 @@ int32_t gen_ufind_lin2_finalize(uint32_t *a)
 ************************************************************************/
 
 
+
+
 /** @brief yet to be documented
 
 */
@@ -1111,10 +1202,11 @@ int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
          if (v_sum > (1ULL << s.n)) return ERR_GEN_UFIND_OUT_SHORT;
     }
     o_len = LIN2_LEN_HEADER + 2 * l_o + v_sum;
-    o_len +=  lin2_generator_size(s.n, s.n_g) + 2;
+    o_len += lin2_generator_size(s.n, s.n_g) + 2;
     if ((uint64_t)l_o > o_len) return ERR_GEN_UFIND_OUT_SHORT;
-    return (uint32_t)o_len; 
+    return (uint32_t)o_len;
 }
+
 
 
 /** @brief yet to be documented
@@ -1129,10 +1221,10 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
     int32_t status = finalize_initalization(a, &s);
     if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT; 
     if (status < 0) return status;
+
     c_size = status = gen_ufind_lin2_compressed_size(a, o, l_o);
     if (status < 0) return status;
     if (l_c > c_size) return ERR_GEN_UFIND_OUT_SHORT;
-
     mask = (1UL << s.n) - 1;
     memcpy(&sc, &s, sizeof(sc));
     sc.status = LIN2_COMPRESSED;
