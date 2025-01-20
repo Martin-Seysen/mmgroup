@@ -394,6 +394,12 @@ done:
 
 static inline 
 int32_t finalize_initalization(uint32_t *a, lin2_type *ps)
+// Upgrade the status of the orbit array ``a`` from 0 to 1.
+// A status different from 0 is not changed. The function also loads
+// the header and the pointers to the data in the upgraded array ``a``
+// into the structure of type ``lin2_typ`` referred by ``ps``. Such
+// a structure is described in file ``gen_ufind_lin2_aux.h``.
+// The function returns the (upgraded) status.
 {
     lin2_type s;
     int32_t status = load_lin2_info(a, ps);
@@ -476,17 +482,21 @@ done:
 /// @cond DO_NOT_DOCUMENT
 
 
+
+
+
 static int32_t
-find_schreier(uint32_t *a, uint32_t *p_v, uint8_t *b, uint32_t l_b)
+compressed_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
+// This is equivalent to function ``gen_ufind_lin2_map_v``
+// if ``a.status == LIN2_COMPRESSED``.
 {
     lin2_type s;
     int32_t status = load_lin2_info(a, &s);
-    uint32_t mask, x, g, l_b_start, v = *p_v;
+    uint32_t mask, x, g, l_b_start;
 
     if (status < 0) return status;
     if (status != LIN2_COMPRESSED) return ERR_GEN_UFIND_STATE;
     mask = (1UL << s.n) - 1;
-    // l_b = l_b < s.n_vectors ? l_b : s.n_vectors;
     l_b_start = l_b;
 
     while (1) {
@@ -495,17 +505,41 @@ find_schreier(uint32_t *a, uint32_t *p_v, uint8_t *b, uint32_t l_b)
         g = x & 0xff;
         x >>= 8;
         if (x ^ v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
-        if (g == 0xfe) {
-            *p_v = v;
-            return l_b_start - l_b;
-        }
-        if (b != NULL) {
-            if (l_b-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
-            *b++ = (uint8_t)(g);
-        }
-        v = vmatmul(v, lin2_generator(&s, g));
+        if (g == 0xfe)  return l_b_start - l_b;
+        if (l_b-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
+        *b++ = (uint8_t)(g);
+        v = vmatmul_aff(v, lin2_generator(&s, g), s.n);
     }
 }
+
+static int32_t
+compressed_lin2_rep_v(uint32_t *a, uint32_t v)
+// This is equivalent to function ``gen_ufind_lin2_rep_v``
+// if ``a.status == LIN2_COMPRESSED``.
+{
+    lin2_type s;
+    int32_t status = load_lin2_info(a, &s);
+    uint32_t mask, x, g, l_b;
+
+    if (status < 0) return status;
+    if (status != LIN2_COMPRESSED) return ERR_GEN_UFIND_STATE;
+    mask = (1UL << s.n) - 1;
+    l_b = s.n_vectors;  // We don't want an infinite loop
+
+    while (--l_b) {
+        v &= mask;
+        x = s.p_o[bitvector32_bsearch(s.p_o, s.n_vectors, v << 8)];
+        g = x & 0xff;
+        x >>= 8;
+        if (x ^ v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
+        if (g == 0xfe)  return v;
+        v = vmatmul_aff(v, lin2_generator(&s, g), s.n);
+    }
+    return ERR_GEN_UFIND_OUT_SHORT;
+}
+
+
+
 
 
 /// @endcond
@@ -556,8 +590,7 @@ int32_t gen_ufind_lin2_rep_v(uint32_t *a, uint32_t v)
 
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         status = find_schreier(a, &v, NULL, 0);
-         return status < 0 ? status : v;
+         return compressed_lin2_rep_v(a, v);
     }
     mask = (1UL << s.n) - 1;
     v &= mask;
@@ -586,11 +619,11 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
 
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         status = find_schreier(a, &v, NULL, 0);
-         if (status < 0) return status;
-         index_o = bitvector32_bsearch(s.p_t, s.n_orbits, v);
-         if (v != s.p_t[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
-         return s.p_t[s.n_orbits + index_o];
+        status = v = compressed_lin2_rep_v(a, v);
+        if (status < 0) return status;
+        index_o = bitvector32_bsearch(s.p_t, s.n_orbits, v);
+        if (v != s.p_t[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
+        return s.p_t[s.n_orbits + index_o];
     }
     mask = (1UL << s.n) - 1;
     rep = gen_ufind_lin2_rep_v(a, v);
@@ -612,18 +645,27 @@ The function returns the length of the orbit in case of success. It
 returns a negative value in case of failure, e.g. if the array ``r``
 is too short. One may use function ``gen_ufind_lin2_len_orbit_v``
 for determining the length of the orbit in advance.
+
+If orbit array ``a`` has been compressed with
+function ``gen_ufind_lin2_compress`` then this function fails if
+array ``a```contains more than one orbit.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_r)
 {
     lin2_type s;
-    uint32_t mask, rep, index_o, *p_o;
-    int32_t length, i;
+    uint32_t mask, rep, index_o, *p_o, i;
+    int32_t length;
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         return ERR_GEN_UFIND_STATE;
+        if (s.n_orbits != 1) return ERR_GEN_UFIND_STATE;
+        if (check_out_buf32(r, l_r, s.n_vectors))
+            return ERR_GEN_UFIND_OUT_SHORT;
+        for (i = 0; i < s.n_vectors; ++i) {
+            r[i] = s.p_t[i] & 0xffffffUL;
+        }
     }
     mask = (1UL << s.n) - 1;
     rep = status = gen_ufind_lin2_rep_v(a, v);
@@ -632,7 +674,7 @@ int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_
     p_o = s.p_o + index_o;
     length = read_length_info(s.p_o + index_o);
     if (check_out_buf32(r, l_r, length)) return ERR_GEN_UFIND_OUT_SHORT;
-    for (i = 0; i < length; ++i) {
+    for (i = 0; i < (uint32_t)length; ++i) {
         r[i] = p_o[i] & mask;
     }
     return length;
@@ -738,7 +780,10 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
 
 // Store a Schreier vector for one or more orbits of a group acting on
 // a vector space \f$V = \mbox{GF}_2^n\f$. Such a group is represented
-// in a an (opaque) array as in function ``gen_ufind_lin2_init``
+// in a an (opaque) array as in function ``gen_ufind_lin2_init``.
+
+// The following strcture is temporarily used for computing a
+// Schreier vector.
 typedef struct {
    uint32_t *p_alloc;    // pointer to allocatd memory
    uint32_t *p_start;    // start of queue
@@ -923,9 +968,9 @@ done:
 
 
 
-/** @brief Return group element mapping ``v`` to orbit representative
+/** @brief Return entry of Schreier vector for bit vector ``v``
 
-Thus function is yet under construction. Do not use!
+This function is yet under construction. Do not use!
 
 Details are yet to be documented!
 */
@@ -964,7 +1009,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
     int32_t status = add_generators(a, &s);
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
-         return find_schreier(a, &v, b, l_b);
+        return compressed_lin2_map_v(a, v, b, l_b);
     }
     mask = (1UL << s.n) - 1;
     v &= mask;
@@ -980,7 +1025,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
         if (l_b1-- == 0) return ERR_GEN_UFIND_OUT_SHORT;
         *b++ = (uint8_t)gen;
         if (gen >= 2 * s.n_g) return ERR_GEN_UFIND_INT_LIN2 - 32;
-        v = vmatmul(v, lin2_generator(&s, gen));
+        v = vmatmul_aff(v, lin2_generator(&s, gen), s.n);
         entry = s.p_t[v];
     }
     return ERR_GEN_UFIND_INT_LIN2 - 33;

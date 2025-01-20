@@ -27,10 +27,11 @@ internal structure of array ``a`` is documented in this headar file.
 
 /*********************************************************************
 A function in module ``gen_ufind_lin2.c`` deals with a group \f$G\f$,
-and stores the relevant information in an array ``a``, which is usually
-the first parameter of such a function. This makes the interface to
-the outside world simple; but it slightly complicates the internal
-operation of a function in module ``gen_ufind_lin2.c``.
+acting on a linear or affine space \f$V = GF_2^n\f$ and stores the
+relevant information in an array ``a``, which is usually the first
+parameter of such a function. This makes the interface to the outside
+world simple; but it slightly complicates the internal operation of a
+function in module ``gen_ufind_lin2.c``.
 
 An array ``a`` must be generated with function ``gen_ufind_lin2_init``.
 Any function dealing with that array should first call the (fast)
@@ -105,10 +106,27 @@ Structure ``s`` has an entry ``p_g`` pointing to generators of \f$G\f$.
   Generators are stored in the order as they are entered (and accepted)
   by function ``gen_ufind_lin2_add``.
 
+Entries ``s.p_t`` and ``s.p_o`` in case ``s.status = LIN2_COMPRESSED``
 
-If ``s.status`` is LIN2_COMPRESSED then entries ``s.p_t`` and ``s.p_o``
-contain different data. Details will be explained in a future version!
+  If ``s.status`` is LIN2_COMPRESSED then entries ``s.p_t``
+  and ``s.p_o`` contain different data as described in the sequel.
 
+  In this case a subset of \f$V\f$ equal to a union of orbits is
+  stored in the corresponding tables.
+
+  Entry ``s.p_t`` points to a table ``t`` of length ``ps->n_vectors``
+  containing a sorted list of all elements of \f$V\f$ stored in the
+  compressed array. An entry in that table stores the corresponding
+  element of f$V\f$ in bits 8,...,31. Bits 0,...,7 of that entry is
+  the number ``k`` of a generator ``g`` of the group \f$G\f$; these
+  bits encode a Schreier vector as descibed above.
+
+  Entry ``s.p_o`` contains a table of length ``2 * ps->n_orbits``,
+  where ``ps->n_orbits`` is the the number of orbits of \f$G\f$
+  on \f$V\f$ contained in the compressed array. Entry ``i`` of
+  that table is an index of an entry in the table ``t`` containing
+  the first element of that orbit.  Entry ``i + ps->n_orbits`` of
+  that table is the length of that orbit.
 
 *********************************************************************/
 
