@@ -255,7 +255,7 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 
 // Let \f$V = GF_2^n\f$. We store an affine mapping \f$V \rightarrow V\f$
 // given by \f$v \mapsto v \cdot A + b, v, b \in V\f$, \f$A\f$ an
-// \f$n \times n\f$ bit matrix, in an array ``m`` of \f$n + 1\n\f$
+// \f$n \times n\f$ bit matrix, in an array ``m`` of \f$n + 1\f$
 // unsigned 32-bit integers as follows.
 // Row ``i`, ``0 <= i < n`` of matrix \f$A\f$ is stored in ``m[i]`` as
 // a bit vector; bit vector ``b`` is stored in  ``m[n]``.

@@ -69,6 +69,28 @@ extern "C" {
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
 
+/************************************************************************
+* Auxiliary functions
+************************************************************************/
+
+
+
+/** Transform a vector with an affine transformation
+
+Let \f$V = GF_2^n\f$. We store an affine mapping \f$V \rightarrow V\f$
+given by \f$v \mapsto v \cdot A + b, v, b \in V\f$, \f$A\f$
+an \f$n \times n\f$ bit matrix, in an array ``m`` of \f$n + 1\f$
+unsigned 32-bit integers as follows.
+Row ``i``, ``0 <= i < n`` of matrix \f$A\f$ is stored in ``m[i]`` as
+a bit vector; bit vector ``b`` is stored in  ``m[n]``.
+
+The function returns the bit vector \f$v \cdot A + b\f$.
+*/
+// %%EXPORT px
+uint32_t gen_ufind_lin2_mul_affine(uint32_t v, uint32_t *m, uint32_t n)
+{
+    return vmatmul_aff(v, m, n);
+}
 
 
 
@@ -977,7 +999,7 @@ schreier_vector_orbit(schreierv_type *p_s, uint32_t v)
             p64_g1 += 0x300;
             if (p_b[img0 >> 5] & mask0) {
                 p_b[img0 >> 5] ^= mask0;
-                if (p_end >= p_overflow) return ERR_GEN_UFIND_INT_LIN2 - 25;
+                if (p_end >= p_overflow) return ERR_GEN_UFIND_OUT_SHORT;
                 *p_end++ = img0;
             }
         }
@@ -1013,7 +1035,7 @@ static int32_t
 compute_orbit(uint32_t *a, uint32_t v, uint32_t *o, uint32_t l_o)
 // Compute the orbit of vector ``v`` using the group generators
 // in the orbit array ``a`` only;
-// and store the orbit in an array ``o`` of length ``l_o``.
+// and store the sorted orbit in the array ``o`` of length ``l_o``.
 {
     schreierv_type sv;
     lin2_type s;

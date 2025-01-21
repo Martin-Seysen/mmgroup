@@ -21,6 +21,7 @@ import numpy as np
 import mmgroup
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
 from mmgroup import Xsp2_Co1
+from mmgroup.generators import gen_ufind_lin2_mul_affine
 from mmgroup.generators import gen_ufind_lin2_init
 from mmgroup.generators import gen_ufind_lin2_add
 from mmgroup.generators import gen_ufind_lin2_size
@@ -123,8 +124,15 @@ class Orbit_Lin2:
     is done automatically by calling any methods obtaining infomration
     about orbits. After computing the Schreier vectors, no more
     generators can be added.
+
+    We also support an affine operation of :math:`G` on :math:`V`.
+    For an affine operation of an element ``g`` of  :math:`G` the
+    function ``map(g)`` must return a pair ``(a, b)``, with ``a`` an
+    :math:`n \times n` bit matrix as above, and ``b`` a bit vector.
+    Such a pair encodes the mapping :math:`v \mapsto v \cdot a + b`.  
     """
     ERR_PIC = "Internal error %d in pickled data for class Orbit_Lin2"
+    ERR_GEN = "Cannot convert %d object to an affine group operation"
     MAX_N_GEN = 127
     def __init__(self, map = None, generators = []):
         if map is None:
@@ -161,6 +169,20 @@ class Orbit_Lin2:
         self.gen_inverse = [x ** -1 for x in self.gen]
         self.gen_neutral = self.gen[0] ** 0
         return self
+    def _map_generator(self, g):
+        r"""Map generator to (affine) bit matrix"""
+        img = self.map(g)
+        try:
+           a, b = np.array(img, dtype = np.uint32), 0
+        except:
+           raise TypeError("WTF")
+           try:
+               a, b = np.array(img[0], dtype = np.uint32), img[1]
+           except:
+               raise TypeError(ERR_GEN % type(img))
+        if len(a.shape) != 1 or not isinstance(b, Integral):
+            raise TypeError(ERR_GEN % type(img))
+        return np.append(a, np.uint32(b & 0xffffffff))
     def add_generator(self, g, use = True):
         r"""Add generator ``g`` to the object
 
@@ -168,14 +190,14 @@ class Orbit_Lin2:
 
         Todo: document parameter ``use``
         """
-        rep = np.array(self.map(g), dtype = np.uint32)
+        a = self._map_generator(g)
         if self.a is None:
-            self._init_a_buf(len(rep))
-        n_gen = self._extend_a_buf(1)
-        if len(rep) != chk(gen_ufind_lin2_dim(self.a)):
+            self._init_a_buf(len(a) - 1)
+        elif len(a) != self.dim + 1:
             ERR = "Representations of generators are incompatible"
-            raise valueError(ERR)
-        status = chk(gen_ufind_lin2_add(self.a, rep, len(rep), use))
+            raise ValueError(ERR)
+        n_gen = self._extend_a_buf(1)
+        status = chk(gen_ufind_lin2_add(self.a, a, self.dim, use))
         if status > 0:
             self.map_gen[n_gen] = len(self.gen)
         self.gen.append(g)
@@ -286,8 +308,9 @@ class Orbit_Lin2:
         return g
     def mul_v_g(self, v, g):
         r"""Return product of vector ``v`` with group element ``g``"""
+        a = self._map_generator(g)
         rep = np.array(self.map(g), dtype = np.uint64)
-        return bitmatrix64_vmul(v, rep, self.dim)
+        return gen_ufind_lin2_mul_affine(v, a, self.dim)
 
     def rand_stabilizer(self, v, size, r, n, history = False):
         r"""Return generators for stabilizer of vector ``v``
