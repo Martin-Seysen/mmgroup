@@ -132,7 +132,7 @@ class Orbit_Lin2:
     Such a pair encodes the mapping :math:`v \mapsto v \cdot a + b`.  
     """
     ERR_PIC = "Internal error %d in pickled data for class Orbit_Lin2"
-    ERR_GEN = "Cannot convert %d object to an affine group operation"
+    ERR_GEN = "Cannot convert %s object to an affine group operation"
     MAX_N_GEN = 127
     def __init__(self, map = None, generators = []):
         if map is None:
@@ -175,13 +175,12 @@ class Orbit_Lin2:
         try:
            a, b = np.array(img, dtype = np.uint32), 0
         except:
-           raise TypeError("WTF")
            try:
                a, b = np.array(img[0], dtype = np.uint32), img[1]
            except:
-               raise TypeError(ERR_GEN % type(img))
+               raise TypeError(self.ERR_GEN % type(img))
         if len(a.shape) != 1 or not isinstance(b, Integral):
-            raise TypeError(ERR_GEN % type(img))
+            raise TypeError(self.ERR_GEN % type(img))
         return np.append(a, np.uint32(b & 0xffffffff))
     def add_generator(self, g, use = True):
         r"""Add generator ``g`` to the object

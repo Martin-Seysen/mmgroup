@@ -32,10 +32,11 @@ markers = r"""
    build:      tests to be done after build process (very few tests)
    compiler:   test requires a C compiler 
    demo:       test demonstration code for reduction algorithm
-   extremely_slow:  even slower than very slow 
+   extremely_slow:  marks tests as even slower than very slow
    hadamard:   test exection of code generated for hadamard matrices
    involution: test module involution.c
    gen_xi:     test for functions gen_XXX in the generators module
+   general:    test general group operations and union-find algorithm
    mat24:      test for the mat24 module
    mm:         test high-level group operation
    mm_op:      test group operation on vector space in mmgroup.mm_space

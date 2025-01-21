@@ -673,7 +673,7 @@ def check_properties_a_py_compressed(a_py, c):
 #####################################################################
 
 
-@pytest.mark.gen_xi
+@pytest.mark.general
 def test_ufind_L3_2(verbose = 0):
     r"""Test the union-find algorithm on the goup H
 
