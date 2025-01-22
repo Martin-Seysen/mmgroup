@@ -65,7 +65,7 @@ from mmgroup.generators import gen_ufind_lin2_compress
 
 
 from mmgroup.general import Orbit_Lin2
-from mmgroup.tests.general.bitmatrix import chk, BitMatrix
+from mmgroup.tests.test_general.bitmatrix import chk, BitMatrix
 
 
 

@@ -19,7 +19,7 @@ from mmgroup.clifford12 import bitmatrix64_inv
 
 from mmgroup.general import Orbit_Lin2
 
-from mmgroup.tests.general.bitmatrix import chk, BitMatrix
+from mmgroup.tests.test_general.bitmatrix import chk, BitMatrix
 
 
 
