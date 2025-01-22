@@ -65,32 +65,11 @@ from mmgroup.generators import gen_ufind_lin2_compress
 
 
 from mmgroup.general import Orbit_Lin2
+from mmgroup.tests.general.bitmatrix import chk, BitMatrix
+
+
+
 a = None
-
-#####################################################################
-# Check result of a C function
-#####################################################################
-
-
-def chk(res, expected = None):
-    """Check result 'res' of a C function
-
-    If ``expected`` is None, the result ``res`` must be a nonnegative
-    number. Otherwise ``res`` must be equal to ``expected``.
-    """
-    ok = (expected is None and res >= 0) or  res == expected
-    if ok:
-        return res
-    if not ok:
-        if isinstance(a, np.ndarray):
-            a0 = int(a[0])
-            a0 = a0 if a0 < 0x80000000 else a0 - 0x100000000
-            print("Dump of array a", a[:6], ", a[0] =",  a0)
-        if expected is None:
-            err = "Result of C function is %d" % res
-        else:
-            err = "Result obtained: %d, expected: %d" % (res, expected)
-        raise ValueError(err)
 
 
 
@@ -121,47 +100,6 @@ def v_mul_g(a, v, g):
         chk(gen_ufind_lin2_gen(a, i, m, n))
         v = vmatmul(v, m, n)
     return v
-
-class BitMatrix:
-    def __init__(self, matrix):
-        self.matrix = np.array(matrix, dtype = np.uint32)
-    def __mul__(self, other):
-        if isinstance(other, BitMatrix):
-            m = other.matrix
-            return BitMatrix([vmatmul(v, m, len(m)) for v in self.matrix])
-        return NotImplemented
-    def __pow__(self, e):
-        if e > 1:
-           sqr = self ** (e // 2)
-           return sqr * sqr * self if e & 1 else sqr * sqr
-        if e == 1:
-           return self
-        if e == 0:
-           return BitMatrix([1 << i for i in range(len(self.matrix))])
-        if e == -1:
-           from mmgroup.clifford12 import bitmatrix64_inv
-           return BitMatrix([int(x) for x in bitmatrix64_inv(self.matrix)])
-        if e < -1:
-           return (self ** -1) ** e
-        return NotImplemented
-    def __rmul__(self, other):
-        if isinstance(other, Integral):
-            return int(vmatmul(other, self.matrix, len(self.matrix)))
-        return NotImplemented
-    def __len__(self):
-        return len(self.matrix)
-    def __eq__(self, other):
-        assert isinstance(other, BitMatrix)
-        n = len(self)
-        if len(other) != n:
-            return False
-        return (self.matrix == other.matrix).all()
-    def __str__(self):
-        try:
-            return "<BitMatrix " + str(self.matrix) + ">"
-        except:
-            return str(self)
-    __repr__ = __str__
 
 #####################################################################
 # Functions for converting internal data structures to a partition
