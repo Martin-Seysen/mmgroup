@@ -20,10 +20,11 @@ from mmgroup.clifford12 import bitmatrix64_inv
 from mmgroup.general import Orbit_Lin2
 
 from mmgroup.tests.test_general.bitmatrix import chk, BitMatrix
+from mmgroup.tests.test_general.bitmatrix import PermBitMatrix
+from mmgroup.tests.test_general.bitmatrix import RandBitmatrix
 
 
-
-def PermBitMatrix(perm, b = 0):
+def ___PermBitMatrix(perm, b = 0):
     return BitMatrix([1 << i for i in perm], b)
 
 def map_bitmatrix(g):
@@ -69,6 +70,12 @@ def test_affine(verbose = 0):
     and also the python class ``Orbit_Lin2`` with the action of
     the group H on the vector space GF(2)^8.
     """
+    # General test stuff
+    for i in range(1000):
+        g = RandBitmatrix(20, affine = True)
+        assert g * g**(-1) == g**0
+
+    # test the group G cestrcted by make_affine_group()
     G = make_affine_group()
 
 

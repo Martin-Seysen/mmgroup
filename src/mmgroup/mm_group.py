@@ -498,6 +498,8 @@ class MM(MM0):
         element of the Monster group. This integer is unique for
         each element of the Monster, so that it can be used e.g. for
         storing large subsets of the Monster in a hash table.
+        Also, this allows us to print an element of the Monster
+        in a single line.
 
         Function ``MM_from_int`` reconstructs the element of the
         Monster from the number returned by this function.
@@ -505,9 +507,9 @@ class MM(MM0):
         Warning:
 
         The numbering used here is not contiguous and not portable
-        between difffernt versions of the ``mmgroup`` package!
+        between differnt versions of the ``mmgroup`` package!
 
-        For writing a element to a file, you should convert
+        For storing a element permanently, you should convert
         it to a string instead!
         """
         if GtWord is None:

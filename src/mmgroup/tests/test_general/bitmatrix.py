@@ -1,28 +1,15 @@
-"""Test C functions for the union-find algorithm.
+"""Auxilary class an functions for testing the union-find algorithm.
 
-In this module we test the C functions in module ``gen_ufind_lin2.c``
-using their python wrappers in the ``mmgroup.generators`` extension.
-In that file we define an *orbit array* containing orbits of the
-action of a group on a linear space GF(2)^n. We also test the python
-class ``Orbit_Lin2`` for wrapping such an orbit array. On the way we
-also test the C functions in module ``gen_ufind_lin2.c`` implementing
-a union-find algorithm used by the functions in ``gen_ufind_lin2.c``.
-
-For testing the C functions we deal with the affine group H of
-structure 2^8.L_3(2) acting naturally as a permutation group on the
-affine space A8 corresponding to the linear space GF(2)^3. A8 has
-size 8. Let P := 2**A8 be the power set of A8. P has a natural
-structure an a vector space GF(2)^8. For our tests we compute the
-orbits on the space P under the action of H using the functions in
-module ``gen_ufind_lin2.c`` and also the python class ``Orbit_Lin2``.
-These orbits are well known, so that that we can check the
-correctness of the functions to be tested. We generate H as a
-group of permutation matrices acting the vector space P.
 """
 
 from collections import defaultdict
 from numbers import Integral
+from random import randint
 import numpy as np
+
+from mmgroup.generators import gen_ufind_lin2_dim
+from mmgroup.generators import gen_ufind_lin2_gen
+
 from mmgroup.clifford12 import bitmatrix64_vmul
 from mmgroup.clifford12 import bitmatrix64_mul
 from mmgroup.clifford12 import bitmatrix64_inv
@@ -79,16 +66,43 @@ def is_inv(m, mi, n):
     return acc == 0
 
 def v_mul_g(a, v, g):
-    """Multiply vector v with group word g stored in orbit array a"""
+    """Multiply vector v with group word g stored in orbit array a
+
+    This is a low-level function
+    """
+    if isinstance(a, Orbit_Lin2):
+        a = a.a
     n = chk(gen_ufind_lin2_dim(a))
-    m = np.zeros(n, dtype = np.uint32)
+    m = np.zeros(n + 1, dtype = np.uint32)
     for i in g:
         chk(gen_ufind_lin2_gen(a, i, m, n))
-        v = vmatmul(v, m, n)
+        v = vmatmul(v, m, n) ^ m[n]
     return v
 
+def rand_bitmatrix(n):
+    """Return an invertible n-dimensional random bit matrix"""
+    assert 1 <= n <= 24
+    mask = (1 << n) - 1
+    while(1):
+        a = np.array([randint(0, mask) for i in range(n)],
+            dtype = np.uint32)
+        a1 = np.array(a, dtype = np.uint64)
+        try:
+            bitmatrix64_inv(a1)
+            return a
+        except:
+            continue
+
+
+
+#####################################################################
+# BitMatrix
+#####################################################################
+
+
+
 class BitMatrix:
-    """Model an affine operation on a vector space.
+    r"""Model an affine operation on a vector space.
 
     The constructor takes two parameters ``a``, ``b``, with ``a``
     :math:`n \times n` bit matrix given as an array of ``n`` bit
@@ -171,4 +185,20 @@ class BitMatrix:
         except:
             return str(self)
     __repr__ = __str__
+
+
+#####################################################################
+# Function constructing instances of class BitMatrix
+#####################################################################
+
+
+def PermBitMatrix(perm, b = 0):
+    return BitMatrix([1 << i for i in perm], b)
+
+
+def RandBitmatrix(dim, affine):
+    a = rand_bitmatrix(dim)
+    b = randint(0, (1 << dim) - 1) if affine else 0
+    return BitMatrix(a, b)
+
 

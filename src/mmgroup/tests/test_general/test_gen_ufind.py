@@ -66,6 +66,8 @@ from mmgroup.generators import gen_ufind_lin2_compress
 
 from mmgroup.general import Orbit_Lin2
 from mmgroup.tests.test_general.bitmatrix import chk, BitMatrix
+from mmgroup.tests.test_general.bitmatrix import vmatmul, is_inv
+from mmgroup.tests.test_general.bitmatrix import  v_mul_g
 
 
 
@@ -73,33 +75,6 @@ a = None
 
 
 
-#####################################################################
-# Bit matrix operations
-#####################################################################
-
-def vmatmul(v, m, n):
-    """Multiply bit vector v with n times n bit matrix m"""
-    w = 0
-    for i in range(n):
-        if (v >> i) & 1:
-            w ^= m[i]
-    return w & ((1 << n) - 1)
-
-def is_inv(m, mi, n):
-    """Return True if mi is the inverse of the n times n bit matrix m"""
-    acc = 0
-    for i in range(n):
-        acc |= vmatmul(m[i], mi, n) ^ (1 << i)
-    return acc == 0
-
-def v_mul_g(a, v, g):
-    """Multiply vector v with group word g stored in orbit array a"""
-    n = chk(gen_ufind_lin2_dim(a))
-    m = np.zeros(n, dtype = np.uint32)
-    for i in g:
-        chk(gen_ufind_lin2_gen(a, i, m, n))
-        v = vmatmul(v, m, n)
-    return v
 
 #####################################################################
 # Functions for converting internal data structures to a partition

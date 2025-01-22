@@ -7,7 +7,7 @@ code :math:`\mathcal{C}` when  factoring out the elements
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` be the 
 group of standard automorphisms of  :math:`\mathcal{P}`. We 
 embed :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`
-into :math:`{\mathbb{M}}` as in :cite:`Con85`. 
+into the Monster :math:`{\mathbb{M}}` as in :cite:`Con85`.
 In ATLAS notation, see :cite:`Atlas`, that group has structure
 
 .. math::
@@ -38,14 +38,14 @@ Since the extension :math:`2^{12} . M_{24}` does not split,
 there is no canonical embedding of :math:`M_{24}` into 
 :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`. For practical 
 purposes we need such an embedding. We choose a basis
-:math:`b_1,\ldots,b_{11}` of the Golay code :math:`\mathcal{C}`,
+:math:`b_0,\ldots,b_{11}` of the Golay code :math:`\mathcal{C}`,
 see section :ref:`basis-golay-label`. Let :math:`a_i` be
 the positive element of the Parker loop :math:`\mathcal{P}`
 corresponding  to  :math:`b_i`. For any 
 :math:`\tilde{g} \in M_{24}` we let :math:`g` be the unique 
 element of :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}` with
 :math:`g \mathcal{C}^* = \tilde{g}` 
-that maps all elements :math:`a_1,\ldots,a_{11}` of
+that maps all elements :math:`a_0,\ldots,a_{11}` of
 :math:`\mathcal{P}` to positive elements of :math:`\mathcal{P}`.
 We call :math:`g` the *standard representative* of 
 :math:`\tilde{g}` in :math:`{{\rm Aut}_{{\rm St}} \mathcal{P}}`. 

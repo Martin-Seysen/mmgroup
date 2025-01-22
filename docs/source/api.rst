@@ -21,14 +21,15 @@ That construction has been simplified by Conway :cite:`Con85`.
 For more information about the Monster group we refer to
 :cite:`wiki:monster`.
 
-The **mmgroup** package is a Python implementation of Conway's 
-construction :cite:`Con85` of the Monster group :math:`\mathbb{M}`. 
+The **mmgroup** package is a Python implementation of Conway's
+construction :cite:`Con85` of the Monster group :math:`\mathbb{M}`.
 Its is the first implementation of the Monster group where arbitrary
-operations in that group can effectively be performed. On the author's 
-PC (Intel i7-8750H at 4 GHz running on 64-bit Windows) 
-the group multiplication in :math:`\mathbb{M}` takes less than 30 ms.
-This is more than five orders of magnitude faster than estimated 
-in 2013 in :cite:`Wilson13`.
+operations in that group can effectively be performed. On the author's
+PC (Intel i7-8750H at 4 GHz running on 64-bit Windows) the group
+multiplication in :math:`\mathbb{M}` takes less than 30 ms. This
+is more than five orders of magnitude faster than estimated in 2013
+in :cite:`Wilson13`. An element of the Monster group
+:math:`\mathbb{M}` is represented as an instance of class |MM|.
 
 The Monster group :math:`\mathbb{M}` has a rational representation 
 :math:`\rho` of dimension  :math:`196884`, see :cite:`Con85`. In that 
@@ -40,8 +41,8 @@ of two. So reducing these coefficients modulo a small odd prime
 The *mmgroup* package uses highly optimized C programs for 
 calculating in such representations :math:`\rho_p` of the Monster
 :math:`\mathbb{M}`. The main ingredient for speeding up the
-computation in :math:`\mathbb{M}` is the calculation and the
-analysis of the images of certain vectors in :math:`\rho_p`
+computation in :math:`\mathbb{M}` is the analysis of the operation
+of :math:`\mathbb{M}` on certain vectors in :math:`\rho_p`
 that are called 2A axes in :cite:`Con85`.
 
 In the description of the **mmgroup** package we use the notation
