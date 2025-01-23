@@ -70,7 +70,7 @@ ERRORS = {
 
 ERR_GEN_UFIND_LIN2_DIM   = -7
 ERR_GEN_UFIND_LIN2_GEN   = -8
-
+ERR_GEN_UFIND_OUT_SHORT  = -4
 
 def chk(error):
     if error >= 0:
@@ -196,7 +196,7 @@ class Orbit_Lin2:
             ERR = "Representations of generators are incompatible"
             raise ValueError(ERR)
         n_gen = self._extend_a_buf(1)
-        status = chk(gen_ufind_lin2_add(self.a, a, self.dim, use))
+        status = chk(gen_ufind_lin2_add(self.a, a, self.dim + 1, use))
         if status > 0:
             self.map_gen[n_gen] = len(self.gen)
         self.gen.append(g)
@@ -334,7 +334,7 @@ class Orbit_Lin2:
             if res >= 0:
                 g =  g[:res]
                 break
-            if res != ERR_OUT_SHORT or self.m_size >= 1 << self.dim:
+            if res != ERR_GEN_UFIND_OUT_SHORT or self.m_size >= 1 << self.dim:
                 chk(res)
             self.m_size <<= 1
         if img is None:

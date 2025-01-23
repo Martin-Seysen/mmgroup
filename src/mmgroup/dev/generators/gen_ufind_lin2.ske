@@ -431,7 +431,7 @@ int32_t gen_ufind_lin2_transform_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t
     for (i = 0; i < l_b; ++i) {
         if (b[i] >= 2 * s.n_g) {
             if (b[i] == 0xfe) continue;
-            return ERR_GEN_UFIND_INT_LIN2 - 32;
+            return ERR_GEN_UFIND_INT_LIN2 - 36;
         }
         v = vmatmul_aff(v, lin2_generator(&s, b[i]), s.n);
     }

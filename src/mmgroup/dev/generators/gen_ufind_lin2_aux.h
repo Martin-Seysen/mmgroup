@@ -344,7 +344,7 @@ union_linear(uint32_t *table, uint32_t n, uint32_t *g)
      lg_bl = (n + 1) >> 1;
      lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
      bl = 1UL << lg_bl;
-     aff = g[n];
+     aff = g[n] & mask;
      for (j1 = 0; j1 < bl; ++j1) a[j1] = (vmatmul(j1, g) ^ aff) & mask;
      for (j0 = 0; j0 < t_length; j0 += bl) {
          w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
@@ -445,11 +445,12 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
 // We set the entries of  o used for computing v (*) G in this case only.
 {
     uint32_t i, jmax, j, j_hi;
-    uint64_t mask, g_hi, aff;
+    uint64_t mask, g_hi;
     memset(o, 0, 0x300 * sizeof(uint64_t));
     mask = (1UL << n) - 1;
     mask = (mask << 32ULL) + mask;
-    aff = ((uint64_t)g1[n] << 32ULL) ^ (uint64_t)g0[n];
+    o[0] = g1[n];            // enter constant term of affine operation
+    o[0] = ((o[0] << 32ULL) + g0[n]) & mask; // the other constant term
     for (i = 0; i < 24; i += 8) {
         if (n > i) {
             g_hi = 0; j_hi = 0;
@@ -459,11 +460,9 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
                 if ((j & (j - 1)) == 0) { // is j a power of 2?
                     g_hi = *g1++;
                     g_hi = ((g_hi << 32ULL) + *g0++) & mask;
-                    g_hi ^= aff;
                     j_hi = j;
                 }
                 o[j] = g_hi ^ o[j - j_hi];
-                aff = 0;
             }
         }
         o += 0x100;

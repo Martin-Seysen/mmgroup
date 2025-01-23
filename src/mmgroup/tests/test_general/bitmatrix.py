@@ -4,11 +4,18 @@
 
 from collections import defaultdict
 from numbers import Integral
+from copy import deepcopy
 from random import randint
 import numpy as np
 
 from mmgroup.generators import gen_ufind_lin2_dim
 from mmgroup.generators import gen_ufind_lin2_gen
+from mmgroup.generators import gen_ufind_lin2_n_orbits
+from mmgroup.generators import gen_ufind_lin2_orbits
+from mmgroup.generators import gen_ufind_lin2_n_gen
+from mmgroup.generators import gen_ufind_lin2_representatives
+from mmgroup.generators import gen_ufind_lin2_map_v_gen
+
 
 from mmgroup.clifford12 import bitmatrix64_vmul
 from mmgroup.clifford12 import bitmatrix64_mul
@@ -65,19 +72,6 @@ def is_inv(m, mi, n):
         acc |= vmatmul(m[i], mi, n) ^ (1 << i)
     return acc == 0
 
-def v_mul_g(a, v, g):
-    """Multiply vector v with group word g stored in orbit array a
-
-    This is a low-level function
-    """
-    if isinstance(a, Orbit_Lin2):
-        a = a.a
-    n = chk(gen_ufind_lin2_dim(a))
-    m = np.zeros(n + 1, dtype = np.uint32)
-    for i in g:
-        chk(gen_ufind_lin2_gen(a, i, m, n))
-        v = vmatmul(v, m, n) ^ m[n]
-    return v
 
 def rand_bitmatrix(n):
     """Return an invertible n-dimensional random bit matrix"""
@@ -200,5 +194,207 @@ def RandBitmatrix(dim, affine):
     a = rand_bitmatrix(dim)
     b = randint(0, (1 << dim) - 1) if affine else 0
     return BitMatrix(a, b)
+
+def BitMatrix_from_Orbit_Lin2(a, i):
+    """Return i-th generator from orbit array as Bitmatrix
+
+    This is a low-level function
+    """
+    if isinstance(a, Orbit_Lin2):
+        a = a.a
+    n = chk(gen_ufind_lin2_dim(a))
+    m = np.zeros(n + 1, dtype = np.uint32)
+    chk(gen_ufind_lin2_gen(a, i, m, n + 1))
+    return BitMatrix(m[:n], m[n])
+
+
+#####################################################################
+# Functions dealing with orbits
+#####################################################################
+
+
+def v_mul_g(a, v, g):
+    """Multiply vector v with group word g stored in orbit array a
+
+    This is a low-level function
+    """
+    if isinstance(a, Orbit_Lin2):
+        a = a.a
+    n = chk(gen_ufind_lin2_dim(a))
+    m = np.zeros(n + 1, dtype = np.uint32)
+    for i in g:
+        chk(gen_ufind_lin2_gen(a, i, m, n))
+        v = vmatmul(v, m, n) ^ m[n]
+    return v
+
+
+def rand_pair_orbit(a):
+    """Return pair of random vectors in the same orbit
+
+    Here ``a`` must be an instance of class Orbit_Lin2.
+    This will fail for a compressed orbit array ``a``,
+    and for an array where all orbits have length 1.
+    """
+    assert isinstance(a, Orbit_Lin2)
+    mask = (1 << a.dim) - 1
+    d = {}
+    for _ in range(max(100, mask)):
+        v = randint(0, mask)
+        rep = a.orbit_rep(v)
+        if rep in d and d[rep] != v:
+            return v, d[rep]
+        d[rep] = v
+    raise ValueError("No pair in same orbit found")
+        
+
+#####################################################################
+# Test the Schreier vector in an orbit array
+#####################################################################
+
+
+def do_test_scheierv(orbit, verbose = 1):
+    """Test Schreier vector in instance ``orbit`` of ``Orbit_Lin2``"""
+    ERR_NREP = "Schreier vectors ends at a non-representative "
+    ERR_ILLEG = "Illegal Schreier vector entry at "
+    ERR_CYCLE = "Schreier vector has a cycle containing "
+    def test_v(v):
+        """Return None if test done or a new vector to be tested""" 
+        if v in tested:
+             return None
+        g = chk(gen_ufind_lin2_map_v_gen(a, v))
+        if g >= 2 * n_gen:
+            if g == 0xfe:
+                if v in reps:
+                    tested.add(v)
+                    return None
+                raise ValueError(ERR_NREP + hex(v))  
+            else:
+                raise ValueError(ERR_ILLEG + hex(v))
+        tested.add(v) 
+        return v * gen[g]
+
+    assert isinstance(orbit, Orbit_Lin2)
+    a = orbit.a
+    if a[0] != 2:
+        raise ValueError("Orbit has bad status", a[0])
+    n = orbit.dim
+    n_gen = len(orbit.generators())
+    if verbose:
+        print("\nCkecking Schreier vector, dim = %d, %d generators" %
+             (n, n_gen))
+    gen = [BitMatrix_from_Orbit_Lin2(a, i) for i in range(2 * n_gen)]
+    reps = orbit.representatives()[0]
+    tested = set()
+    for v in range(1 << n):
+        v1 = v
+        for i in range(1 << n):
+            v1 = test_v(v1)
+            if v1 is None:
+                break
+        if i >= (1 << n) - 1:
+            raise ValueError(ERR_CYCLE + hex(v))
+    if verbose:
+        print("passed")  
+
+#####################################################################
+# Test the orbit decomposition in an orbit array
+#####################################################################
+
+
+
+def lin2_orbits_raw(a, check_orbits = True, verbose = 0):
+    r"""Store orbits of a given orbit array ``a``
+
+    Here ``a`` should be be an instance of class ``Orbit_Lin2``.
+    The function returns a (sorted) list of lists that defines the
+    partition of the vectors into orbits.
+
+    If ``check_orbits`` is True the correctness of the returned result
+    is checked. This may take a long time.
+    """
+    if isinstance(a, Orbit_Lin2):
+        a = a.a
+    l_data = 1 << chk(gen_ufind_lin2_dim(a))
+    n_sets = gen_ufind_lin2_n_orbits(a)
+    data = np.zeros(l_data, dtype = np.uint32)
+    indices = np.zeros(n_sets + 1, dtype = np.uint32)
+    status = gen_ufind_lin2_orbits(
+        a, data, l_data, indices, n_sets + 1)
+    assert status >= 0, (2, status, l_data, n_sets)
+    assert indices[n_sets] == l_data, "Bad orbit partition"
+    assert set(data) == set(range(l_data)), "Bad orbit partition"
+    result = []
+    for i in range(n_sets):
+        result.append(data[indices[i] : indices[i+1]])
+    if verbose:
+        print("Orbit array contains %d orbits:" % len(result))
+        for data in result:
+            print(data)
+    if check_orbits:
+        gen = [BitMatrix_from_Orbit_Lin2(a, i) for i in range(
+            0, 2*gen_ufind_lin2_n_gen(a), 2)]
+        for orbit in result:
+            s, s_new = set(), set([orbit[0]])
+            while len(s_new):
+                v = s_new.pop()
+                s.add(v)
+                for g in gen:
+                    v_new = v * g
+                    if not (v_new in (s | s_new)):
+                        s_new.add(v_new)
+            assert s == set(orbit), "Orbits are wrong"
+
+    reps = [o[0] for o in result]
+    a_rep = np.zeros(l_data, dtype = np.uint32)
+    l = gen_ufind_lin2_representatives(a, a_rep, len(a_rep))
+    assert (reps == a_rep[:l]).all()
+  
+    return result
+
+
+
+
+#####################################################################
+# Test the orbit decomposition in an orbit array
+#####################################################################
+
+
+def do_test_orbit_array(g, g_list = None, chk = 0, verbose = 0):
+    r"""Test orbits and Schreier vector for orbit array ``g``
+
+    ``g`` must be an instance of class ``Orbit_Lin2``.
+
+    if ``g_list`` is a list of instances of class ``BitMatrix``
+    the we check if this is equal to the list of generators
+    stored in ``g``. Otherwise ``g_list`` must be None.
+
+    If ``check_orbits`` is True the the correctness of the orbit
+    decomposition is checked. This may take a long time.
+    """
+    # General test stuff
+    assert isinstance(g, Orbit_Lin2) 
+    dim = g.dim
+    if g_list:
+        generators = g.generators()
+        assert len(g_list) == len(generators)
+        for i, gen in enumerate(generators):
+            gen_i = gen**(-1)
+            assert gen == g_list[i]
+            assert gen * gen_i == gen**0
+            assert BitMatrix_from_Orbit_Lin2(g, 2*i) == gen
+            assert BitMatrix_from_Orbit_Lin2(g, 2*i+1) == gen_i
+    g1 = deepcopy(g)
+    if chk:
+        lin2_orbits_raw(g1, True, verbose)
+    g1.finalize()
+    do_test_scheierv(g1, verbose = verbose)
+
+    mask = (1 << dim) - 1
+    for i in range(3):
+        v1, v2 = rand_pair_orbit(g1)
+        g_t = g1.map_v_G(v1, v2)
+        assert v1 * g_t == v2 ,(i, v1, v2)
+
+
 
 
