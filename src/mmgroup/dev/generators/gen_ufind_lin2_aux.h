@@ -305,58 +305,6 @@ lin2_generator(lin2_type *ps, uint32_t i)
     return ps->p_g + (size_t)(i * (ps->n + 1));
 }
 
-/************************************************************************
-* Unite vector v with vector A * v, for a matrix A over GF(2)
-************************************************************************/
-
-#define MAT_BLOCKSIZE 7
-
-
-
-/** @brief Perform union-find algorithm in ``GF(2)^n``
-
-Let ``S(n)`` be the set of integers ``v`` with ``0 <= v < 1 << n``;
-and let a partition of ``S(n)`` be stored in the array ``table``
-(of size ``1 << n``) as described in function ``gen_ufind_init``.
-
-In this function the entries of ``S(n)`` are interpreted as bit
-vectors. The function joins the set containing ``v`` with the set
-containing ``v * g`` for all ``v`` in ``S(n)``. Here ``g`` is an
-``n`` times ``n`` bit matrix over GF(2) stored in the array referred
-by ``g``. Row ``j`` of bit matrix ``g`` is stored in ``g[j]`` as
-an integer encoding a bit vector. All bit vector arithmetic is done
-over GF(2).
-
-Thus the array referred by ``table`` must have length ``1 << n``;
-and the array referred by ``g`` must have length ``len_g * n``.
-
-The function returns 0 in case of success and -1 in case of error.
-*/
-static inline int32_t
-union_linear(uint32_t *table, uint32_t n, uint32_t *g)
-{
-     uint32_t j0, j1, lg_bl, bl, w, a[1UL << MAT_BLOCKSIZE];
-     uint32_t t_length = 1UL << n, aff;
-     uint32_t mask = t_length - 1;
-     uint32_t status = 0;
-
-     if (n > LIN2_MAX_N || n == 0) return ERR_GEN_UFIND_LIN2_GEN;
-     lg_bl = (n + 1) >> 1;
-     lg_bl = lg_bl < MAT_BLOCKSIZE ? lg_bl : MAT_BLOCKSIZE;
-     bl = 1UL << lg_bl;
-     aff = g[n] & mask;
-     for (j1 = 0; j1 < bl; ++j1) a[j1] = (vmatmul(j1, g) ^ aff) & mask;
-     for (j0 = 0; j0 < t_length; j0 += bl) {
-         w = vmatmul(j0 >> lg_bl, g + lg_bl) & mask;
-         for (j1 = 0; j1 < bl; ++j1) {
-             status |=
-                gen_ufind_union(table, t_length, j0 ^ j1, w ^ a[j1]);
-         }
-     }
-     return (status & 0x80000000UL) ? ERR_GEN_UFIND_INT_LIN2 - 7 : status;
-}
-
-
 
 
 

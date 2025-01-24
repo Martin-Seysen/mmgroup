@@ -384,7 +384,7 @@ int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
     status = ERR_GEN_UFIND_INVERSE;
     p_gout_inv = lin2_generator(&s, 2 * s.n_g + 1);
     if (mat_inverse_aff(p_gout, s.n, p_gout_inv)) goto done;
-    status = union_linear(s.p_t, s.n, p_gout);
+    status = gen_ufind_union_affine(s.p_t, s.n, p_gout, p_gout[s.n]);
     if (status < 0) goto done; 
     status =  (status | use) != 0;
     s.n_g += status;
