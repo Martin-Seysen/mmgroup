@@ -135,7 +135,7 @@ def union_linear_high_level(generators):
     a = np.zeros(len_a, dtype = np.uint32)
     chk(gen_ufind_lin2_init(a, len_a, dim, n_gen))
     for g in gen:
-        chk(gen_ufind_lin2_add(a, g, dim, 1))
+        chk(gen_ufind_lin2_add(a, g, dim))
     t_len = 1 << chk(gen_ufind_lin2_dim(a))
     n_orbits = chk(gen_ufind_lin2_n_orbits(a))
     data = np.zeros(t_len, dtype = np.uint32)

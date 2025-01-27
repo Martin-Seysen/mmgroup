@@ -46,8 +46,7 @@ A structure ``s`` of type ``lin2_type`` contains an entry ``status``
 which is  interpreted as follows.
 
   0: Initial status, generators of the group may be added.
-  1: No more generators may be added, orbit information is available.
-     E.g. function ``gen_ufind_lin2_n_orbits`` upgrades to status 1
+  1: Deprecated, and no longer in use.
   2: A Schreier vector has been computed
      E.g. function ``gen_ufind_lin2_finalize`` upgrades to status 2
   LIN2_COMPRESSED: Array ``a`` has been compressed
@@ -154,6 +153,38 @@ typedef struct {
 
 
 /************************************************************************
+*  Find index of next bit set in a bitmap
+************************************************************************/
+
+
+
+
+static inline
+uint32_t find_next_bit_set(uint64_t *bitmap, uint32_t start_index)
+// Return index of lowest bit in bitmap given by ``bitmap`` set to one.
+// We start searching the bitmap at index ``start_index``.
+// Caution: 
+// At least one bit in the bitmap with index >= ``start_index`` must
+// be set. Otherwise buffer overflow occurs!
+{
+     uint64_t v, *pb = bitmap + (start_index >> 6);
+     uint32_t index;
+     v = *pb & (0ULL - ((uint64_t)1ULL << (uint64_t)(start_index & 63)));
+     while (v == 0) v = *++pb;
+     index = (uint32_t)(pb - bitmap) << 6 ;      
+     // Return index + (position of least significant bit of v)
+     // Use a deBruijn sequence to locate the least significant bit
+     v &= 0ULL - v;
+     v = (uint64_t)(v * UINT64T_LOWBIT_MULTIPLIER);
+     return index + UINT64T_LOWBIT_TABLE[v >> 57]; 
+}
+
+#define get_bitmap(j) (uint32_t)((bitmap[(j) >> 6] >> ((j) & 63)) & 1UL)
+#define set_bitmap(j) bitmap[(j) >> 6] |= ((uint64_t)1ULL << ((j) & 63))
+
+
+
+/************************************************************************
 *  Auxiliary functions manipulating stuctures for orbit arrays
 ************************************************************************/
 
@@ -180,8 +211,8 @@ static inline int32_t load_lin2_info(uint32_t *a, lin2_type *ps)
     ps->n_vectors = a[5];
     ps->p_t = a + LIN2_LEN_HEADER;
     if (ps->status == LIN2_COMPRESSED) {
-        ps->p_o = ps->p_t + 2 * ps->n_orbits;
-        ps->p_g = ps->p_o + ps->n_vectors;
+        ps->p_o = ps->p_t + ps->n_vectors;
+        ps->p_g = ps->p_o + 2 * ps->n_orbits;
    } else {
         ps->p_o = ps->p_t + ((size_t)1UL << ps->n);
         ps->p_g = ps->p_o + ((size_t)1UL << ps->n);
@@ -416,6 +447,152 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
         o += 0x100;
     }
 }
+
+
+/************************************************************************
+*  Compute the partition into the orbits
+************************************************************************/
+
+/** @brief Compute the partition into the orbits
+
+Dcumentation yet to be adapted!!!!
+
+Let ``S(l_t)`` be the set of integers ``i`` with ``0 <= i < l_t``;
+and let a partition of ``S(l_T)`` be stored in the array ``table``
+(of size ``l_t``) as described in function ``gen_ufind_init``.
+
+We assume that the partition stored in the array ``table``
+contains ``n_sets`` sets. Then we store a list of lists in the
+array ``map``, where each list corresponds to a set in
+the partition. We write some index infomation for interpreting
+these lists into the array ``ind`` of l ``l_ind``.
+
+Array ``map`` will contain the ``l_t`` elements of the
+set ``S(l_t)`` in such a way that for ``0 <= i < n_sets``
+the ``i``-th set in the partition is equal to the set of
+integers given by ``map[ind[i]], ...,  map[ind[i+1] - 1]``.
+
+So the array ``ind`` must have size at least ``n_sets + 1``;
+i.e. we must have ``l_ind > n_sets``. Array ``map`` must have
+size ``l_t``; it may overlap with array ``table``.
+Function ``gen_ufind_find_all_min`` must be called before calling
+this function. Note that function ``gen_ufind_find_all_min``
+returns ``n_sets`` in case of success.
+
+The entries ``map[ind[i]], ...,  map[ind[i+1] - 1]``
+corresponding to set in the partition are sorted. The sets of
+the partition are sorted by their smallest elements.
+
+The function returns ``n_set`` in case of success and a negative
+value in case of failure.
+*/
+
+static inline int32_t
+compute_partition(uint32_t *table, uint32_t dim, uint32_t *map, uint32_t l_ind)
+{
+    uint32_t l_t = 1UL << dim; // length of the table
+    uint32_t mask = l_t - 1;
+    uint32_t *next, *ind, n, last_n, p, i=0, j, last, fst;
+    int32_t status = -1;
+
+    if (dim > 24) return ERR_GEN_UFIND_LIN2_DIM;
+    next = malloc(sizeof(uint32_t) * (l_t + 2 * l_ind));
+    if (next == NULL) return ERR_GEN_UFIND_MEM;
+    ind = next + l_t + l_ind;
+
+    // Here ``next`` is an array of l_t ``l_t + i.``; and ``ind``
+    // is an array of length ``i``; with i <= l_ind. Index ``i``
+    // is incremented whenever we see a new set of the partition while
+    // iterating thtough the ``table``. Eventually, ``i`` will be the
+    // number of sets in the partition.
+
+    // We will store the set {x_1, ..., x_m} with index ``j`` in the
+    // arrays ``ind`` and ``next`` as shown in the following figure.
+    // This peculiar scheme is dictated by the fact that array ``next``
+    // is usually much larger than array ``ind``. Note that the original
+    // information about the set is copied from ``table`` to ``ind``
+    // and ``next``. In the ``table`` the enties ``x_i, i > 1`` contain
+    // a pointer to ``x_1``; thus index ``j`` must be reachable from
+    // the entry ``x_1`` stored in the array ``next``. Also we want 
+    // the first entry ``x_1`` and the last entry ``x_m`` to be
+    // reachable from the index ``j`` of the set  {x_1, ..., x_m}.
+    
+    //
+    //  ind:     +--------------------j
+    //           |                    ^
+    //           |                    |
+    //           v                    v
+    //  next:   x_m  -->  x_1  -->  j + l_t  -->  x_2 --> x_3
+    //           ^                                         |
+    //           |____________ ............ _______________|
+
+    for (n = 0; n < l_t; ++n) {
+        p = table[n];                         // In case m = 1 we put:
+        if ((p >> 24) == 0xfe) {              //   ind:            +----i 
+            status = ERR_GEN_UFIND_INT_TABLE-21; //                |    |
+            if (i >= l_ind) goto cleanup;     //                   v    |
+            ind[i] = next[n] = l_t + i;       //   next: x_1  -->  i + l_t
+            next[l_t + i] = n;                //          ^             |
+            ++i;                              //          |_____________|
+        } else {
+            p &= mask;
+            // Now ``n`` is the entry to be appended to the set with 
+            // index ``j``; and  ``p`` is the first element of that set
+            // (corresponding to ``x_1`` in the figure above).
+            if ((table[p] >> 24) != 0xfe) {
+                status = ERR_GEN_UFIND_INT_TABLE - 23;
+                goto cleanup;
+            }
+            j = next[p] - l_t; // index of the set
+            if (j >= i) {
+                status = ERR_GEN_UFIND_INT_TABLE - 24;
+                goto cleanup;
+            }
+            last = ind[j];        // old ``x_m`` in the figure above
+            if (next[last] != p) {
+                status = ERR_GEN_UFIND_INT_TABLE - 25;
+                goto cleanup;
+            }
+            // append ``n`` to the list [x_1, ..., x_m]
+            ind[j] = next[last] = n;   
+            next[n] = p;          // let ``n`` point to the 1st element       
+        }
+    }
+
+    // Store the number of the sets in ``l_ind``.
+    l_ind = i;
+
+    // Copy the elements of the sets from array ``next`` back to the
+    // array ``map``, so the elements of the same set are adjacent.
+    // Store length information for these sets in the array ``map``.
+    n = 0;
+    for (i = 0; i < l_ind; ++i) {
+        last_n = n;
+        last = ind[i];               // Last element of the set
+        map[n++] = fst = next[last]; // store 1st element of the set
+        table[fst] = last_n | 0xfe000000UL;  
+                                     // Let table entry point to index
+        p = next[l_t + i];           // 2nd element of set or end marker
+        while (p != fst) {           // Here  ``fst`` will be end marker
+            map[n++] = p;            // Fill ``map`` until end marker found
+            p = next[p];
+        }
+        write_length_info(map + last_n, n - last_n);
+    }
+
+    status = ERR_GEN_UFIND_INT_TABLE - 26;
+    if (n != l_t) goto cleanup;
+    status = l_ind;      // return the number of the sets
+    
+cleanup:
+    free(next);
+    return status;
+
+} 
+
+
+
+
 
 /************************************************************************
 *  End of header file

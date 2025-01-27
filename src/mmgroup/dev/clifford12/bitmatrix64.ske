@@ -90,6 +90,16 @@ uint32_t bitmatrix64_error_pool(uint64_t *dest, uint32_t length)
 *** Static auxuliary functions
 *************************************************************************/
 
+
+// %%GEN h
+// Multiplier for finding high bit with table UINT64T_HIGHBIT_TABLE
+#define UINT64T_HIGHBIT_MULTIPLIER %{hex:BIT64_HIGH_MULTIPLIER}ULL
+// Multiplier for finding low bit with table UINT64T_LOWBIT_TABLE
+#define UINT64T_LOWBIT_MULTIPLIER %{hex:BIT64_LOW_MULTIPLIER}ULL
+// %%GEN c
+
+
+
 /// @cond DO_NOT_DOCUMENT 
 
 /**

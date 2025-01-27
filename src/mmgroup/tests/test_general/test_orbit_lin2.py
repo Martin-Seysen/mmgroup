@@ -100,3 +100,24 @@ def test_affine(verbose = 0):
 def test_affine_slow(verbose = 0):
    do_test_affine(17, n_gen = 2, aff = 1, verbose = verbose)
 
+
+"""Deprecated benchmark, do not use!!!
+
+# @pytest.mark.mmm
+def test_find_bit():
+    print("")
+    import time
+    from mmgroup.generators import gen_ufind_lin2_find_next_bit_set
+    def do_test_find_bit(n, bits):
+        q, r = divmod(bits, 64)
+        a = np.zeros(q + 1, dtype = np.uint64)
+        a[q] = 1 << r
+        t_start = time.process_time()
+        res = gen_ufind_lin2_find_next_bit_set(n, a, 0)
+        t = (time.process_time() - t_start) / n
+        assert res == n * bits
+        print("Bitmap search time for %d bits: %.5f us" %
+            (bits, 1000000.0*t))
+    do_test_find_bit(1 << 10, 1 << 24)
+    do_test_find_bit(1 << 28, 1)
+"""

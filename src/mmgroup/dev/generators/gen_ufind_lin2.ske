@@ -70,7 +70,9 @@ extern "C" {
 //  %%GEN c
 
 /************************************************************************
+*************************************************************************
 * Auxiliary functions
+*************************************************************************
 ************************************************************************/
 
 
@@ -96,11 +98,15 @@ uint32_t gen_ufind_lin2_mul_affine(uint32_t v, uint32_t *m, uint32_t n)
 
 /************************************************************************
 *************************************************************************
-*** Compute orbits of a group acting on a vector space over GF(2)
+*** Creating an orbit array and obtaining information from it
 *************************************************************************
 ************************************************************************/
 
 
+
+/************************************************************************
+* Initialization of an orbit array 
+************************************************************************/
 
 
 
@@ -119,11 +125,6 @@ int32_t gen_ufind_lin2_size(uint32_t n, uint32_t k)
 
 
 
-
-
-/************************************************************************
-* Initialization of an orbit array 
-************************************************************************/
 
 
 
@@ -177,9 +178,6 @@ int32_t gen_ufind_lin2_init(uint32_t *a, uint32_t l_a, uint32_t n, uint32_t n_g)
     if (status < 0) goto done;
     store_lin2_info(&s, a);
     status = load_lin2_info(a, &s);
-
-    // intialize union-find algorithm on orbits in main table s.p_t
-    status = gen_ufind_init(s.p_t, 1UL << n);
 
 done:
     return lin2_error(a, status);
@@ -313,11 +311,6 @@ int32_t gen_ufind_lin2_gen(uint32_t *a, uint32_t i, uint32_t *g, uint32_t l_g)
 * Add a generator to the group stored in the structure
 ************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
-
-
-
-/// @endcond
 
 
 
@@ -354,18 +347,11 @@ after initialization. Any function retrieving orbit information
 from that array may trigger a lengthy calculation that makes adding
 more generators impossible.
 
-Parameter ``use`` should usually be 1. In the special case ``use = 0``
-we consider \f$g\f$ as a generator for the group when computing
-orbits; but \f$g\f$ will be dropped from the list of generators stored
-in the array ``a`` if it does not increase any orbit in the
-space \f$V\f$.
-
-The function returns 1 if generator \f$g\f$ is kept, 0 if \f$g\f$ is
-dropped, and a negative value in case of error. An error occurs e.g.
-if the generator is not invertible.
+The function returns 0 in case of success, and a negative value in
+case of error. An error occurs e.g. if the generator is not invertible.
 */
 // %%EXPORT px
-int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
+int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g)
 {
     lin2_type s;
     int32_t status;
@@ -384,11 +370,9 @@ int32_t gen_ufind_lin2_add(uint32_t *a, uint32_t *g, uint32_t l_g, uint32_t use)
     status = ERR_GEN_UFIND_INVERSE;
     p_gout_inv = lin2_generator(&s, 2 * s.n_g + 1);
     if (mat_inverse_aff(p_gout, s.n, p_gout_inv)) goto done;
-    status = gen_ufind_union_affine(s.p_t, s.n, p_gout, p_gout[s.n]);
-    if (status < 0) goto done; 
-    status =  (status | use) != 0;
-    s.n_g += status;
+    s.n_g += 1;
     store_lin2_info(&s, a);
+    return 0;
 
 done:
     if (status < 0) a[0] = (uint32_t)status;
@@ -442,88 +426,162 @@ int32_t gen_ufind_lin2_transform_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t
 
 
 /************************************************************************
-* Finalize initialization of structure 
+*************************************************************************
+*** Finalize the initialization of an orbit array
+*************************************************************************
 ************************************************************************/
 
 
 
 
+
+/************************************************************************
+* Compute  Schreier vector
+************************************************************************/
+
+
 /// @cond DO_NOT_DOCUMENT
 
 
-
-
-
-
-static inline 
-int32_t finalize_initalization(uint32_t *a, lin2_type *ps)
-// Upgrade the status of the orbit array ``a`` from 0 to 1.
-// A status different from 0 is not changed. The function also loads
-// the header and the pointers to the data in the upgraded array ``a``
-// into the structure of type ``lin2_typ`` referred by ``ps``. Such
-// a structure is described in file ``gen_ufind_lin2_aux.h``.
-// The function returns the (upgraded) status.
+static inline int32_t
+compute_schreier_vector(lin2_type *p_s)
 {
-    lin2_type s;
-    int32_t status = load_lin2_info(a, ps);
-    uint32_t i, mask, *p_ind = NULL;
+    uint_fast32_t n_size = 1UL << p_s->n;
+    uint_fast32_t n_g = p_s->n_g;
+    uint_fast32_t n_orbits = 0;
+    uint_fast32_t current = 0;
+    uint_fast32_t rep = 0;
+    uint_fast32_t i;
+    uint32_t *p_t = p_s->p_t;
+    uint32_t *p_start = p_s->p_o;
+    uint32_t *p_end = p_start;
+    uint32_t *p_overflow = p_start + n_size;
+    uint64_t *bitmap = (uint64_t*)(p_s->p_t);
+    uint64_t *g = NULL;
 
-    if (status != 0) return status;
-    load_lin2_info(a, &s);
-    s.n_max_g = s.n_g;
-
-    // Finalize union-find algorithm on orbits in main table s.p_t
-    status = gen_ufind_find_all_min(s.p_t, 1UL << s.n);
-    if  (status < 1) {
-        if (status == 0) status = ERR_GEN_UFIND_INT_LIN2 - 2;
-        goto done;
+    if (p_s->status != 0) return ERR_GEN_UFIND_STATE;
+    memset(bitmap, 0xff, ((n_size >> 6) + 1)  * sizeof(uint64_t));
+    g = malloc(n_g * 0x300 * sizeof(uint64_t));
+    if (g == NULL) return ERR_GEN_UFIND_MEM;
+    for (i = 0; i < n_g; ++i) {
+        store64_gen(g + 0x300 * i, p_s->n, lin2_generator(p_s, 2 * i),
+            lin2_generator(p_s, 2 * i + 1));
     }
-    s.n_orbits = status;
-    mask =   (1UL << s.n) - 1;
 
-    // Store orbit information in table s.p_o.
-    // Allocate memory an compute teporary orbit index table
-    p_ind = malloc((s.n_orbits + 1) * sizeof(uint32_t));
-    status = ERR_GEN_UFIND_MEM;
-    if (p_ind == NULL) goto done;
-    status = gen_ufind_partition(s.p_t, 1UL << s.n, s.p_o, p_ind,
-         s.n_orbits + 1);
-    if (status < 0) goto done;
+    while ((current = find_next_bit_set(bitmap, current)) < n_size) {
+        n_orbits += 1;
+        if (p_start >= p_overflow) goto error_overflow;
+        *p_start = current | 0xfe000000UL;
+        p_end = p_start + 1;
+        bitmap[current >> 6] ^= (uint64_t)1ULL << (current & 0x3f);
+        current += 1;
 
-    // Complete map in main table
-    for (i = 0; i < (1UL << s.n); ++i) { 
-        uint32_t entry = s.p_t[i];
-        if (entry & 0x80000000UL) {
-            s.p_t[i] = 0xfe000000UL;
-        } else {
-            status = ERR_GEN_UFIND_INT_LIN2 - 3;
-            if (entry >= i) goto done;
-            status = ERR_GEN_UFIND_INT_LIN2 - 4;
-            if (((s.p_t[entry] >> 24) & 0xffUL) != 0xfeUL) goto done;
-            s.p_t[i] = entry | 0xff000000UL;
+        while (p_start < p_end) {
+            uint_fast32_t data = *p_start++, d0, d1, d2;
+            uint64_t *p_g = g, v64, mask0, mask1, img0, img1;
+            d0 = data & 0xff;
+            d1 = ((data >> 8) & 0xff) + 0x100;
+            d2 = ((data >> 16) & 0xff) + 0x200;
+            for (i = 0; i < n_g; ++i) {
+                v64 = p_g[d0] ^ p_g[d1] ^ p_g[d2];
+                img0 =  v64 & 0xffffffffUL;
+                img1 =  v64 >> 32;
+                mask0 = (uint64_t)1ULL << (img0 & 0x3f);
+                mask1 = (uint64_t)1ULL << (img1 & 0x3f);
+                p_g += 0x300;
+                if (bitmap[img0 >> 6] & mask0) {
+                    bitmap[img0 >> 6] ^= mask0;
+                    if (p_end >= p_overflow) goto error_overflow;
+                    *p_end++ = (uint32_t)img0 | (i << 25) | 0x01000000UL;
+                }
+                if (bitmap[img1 >> 6] & mask1) {
+                    bitmap[img1 >> 6] ^= mask1;
+                    if (p_end >= p_overflow) goto error_overflow;
+                    *p_end++ = (uint32_t)img1 | (i << 25);
+                }
+            }
         }
     }
 
-    // Copy length information from table in p_ind to orbit information
-    // table s.p_o. Store pointers to table s.p_o in main table s.p_t.
-    status = ERR_GEN_UFIND_INT_LIN2 - 5;
-    for (i = 0; i < s.n_orbits; ++i) {
-        uint32_t index = p_ind[i] & mask;
-        uint32_t rep = s.p_o[index] & mask;
-        if (((s.p_t[rep] >> 24) & 0xff) != 0xfe) goto done;
-        s.p_t[rep] |= index;
-        write_length_info(s.p_o + index, p_ind[i+1] - p_ind[i]);
-    }
-    status = 1;
-    
-done:
-    s.status = status;
-    if (p_ind) free(p_ind);
-    ps->status = s.status = (uint32_t)(status);
-    store_lin2_info(&s, a);
-    load_lin2_info(a, ps);
+    if (g != NULL) free(g);
+    p_start = p_s->p_o;
+    for (i = 0; i < n_size; ++i) {
+        uint_fast32_t v = p_start[i];
+        uint_fast32_t rg = v & 0xff000000UL;
+        uint_fast32_t ind = v & 0xffffffUL;
+        if (rg == 0xfe000000UL) rep = ind;
+        p_t[ind] = rg | rep;
+    }    
+    return n_orbits;
+
+error_overflow:
+    if (g != NULL) free(g);
+    return ERR_GEN_UFIND_INT_LIN2 - 25;
+}
+
+
+/// @endcond
+
+
+
+
+/************************************************************************
+* Finalize the initalization of an orbit array
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+#define LIN2_MAGIC 0x1fecd173UL
+
+#define LIN2_AMUL 0x5ac83257UL
+
+static inline uint32_t magic_content(uint32_t *a)
+// Return hash value over the header of the orbit array ``a``
+{
+    uint32_t s = LIN2_MAGIC, i;
+    for (i = 0; i < LIN2_LEN_HEADER; ++i) s = s * LIN2_AMUL + a[i];
+    return s;
+}
+
+
+
+
+static inline int32_t finalize_initalization(uint32_t *a, lin2_type *p_s)
+// Upgrade the status of the orbit array ``a`` to 2; and
+// store header information and pointers in structure ``p_s``.
+// The function return the length of the updated array ``a``
+{
+
+    int32_t status;
+    uint32_t a_length, a_sum = 0, i;
+    status = load_lin2_info(a, p_s);
+    if (status == 2 || status == LIN2_COMPRESSED || status < 0) 
+         return status;
+    if (status != 0) return ERR_GEN_UFIND_STATE;
+    // Compute Scheier vector in p_s->p_t
+    status = compute_schreier_vector(p_s);
+    if (status < 0) return lin2_error(a, status);
+    p_s->n_orbits = status;
+    // Compute orbit partition  in p_s->p_o
+    status = compute_partition(p_s->p_t, p_s->n, p_s->p_o, p_s->n_orbits);
+    if (status < 0) return lin2_error(a, status);
+    // Set status of orbit array
+    p_s->status = 2;
+    p_s->n_max_g = p_s->n_g;
+    status = store_lin2_info(p_s, a);
+    if (status < 0) lin2_error(a, status);
+    // Compute checkum in orbit array
+    a_length =  gen_ufind_lin2_size(p_s->n, p_s->n_g);
+    a[a_length - 2] = magic_content(a);
+    for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
+    a[a_length - 1] = 0 - a_sum;
     return status;
 }
+
+
+
 
 
 /// @endcond
@@ -532,9 +590,274 @@ done:
 
 /************************************************************************
 *************************************************************************
-*** Finding representatives of and sizes of an orbit
+*** Compress an orbit array
 *************************************************************************
 ************************************************************************/
+
+
+/** @brief Compute size of buffer for compressing an orbit array
+
+We may compress an orbit array ``a`` to an orbit array ``c``
+containing not all orbits of array ``a``, by calling
+function ``gen_ufind_lin2_compress(a, o, l_o, c, l_c)``.
+Hier ``o`` is a list of ``l_o`` bit vectors, such that the
+orbits of these vectors will be added to the orbit
+array ``c``.
+Function ``gen_ufind_lin2_compress_size(a, o, l_o)``
+returns the number ``l_c`` of entries required for the
+array ``c``.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
+{
+    lin2_type s;
+    int32_t status = finalize_initalization(a, &s);
+    uint64_t *bitmap = NULL;
+    uint32_t bitmap_size;
+    uint32_t n_entries = 0;
+    uint32_t n_orbits = 0;
+    uint32_t mask; 
+    uint32_t i;
+
+    if (status != 2) return status < 0 ? status : ERR_GEN_UFIND_STATE;
+    bitmap_size = ((1UL << s.n) >> 6) + 1;
+    bitmap = malloc(bitmap_size << 3);
+    if (bitmap == NULL) return ERR_GEN_UFIND_MEM;
+    memset(bitmap, 0, bitmap_size << 3);
+    set_bitmap(1UL << s.n);
+    mask = (1UL << s.n) - 1;
+
+    for (i = 0; i < l_o; ++i) {
+         uint32_t v = o[i] & mask, w, l_orbit;
+         w = s.p_t[v];
+         if ((w >> 24) != 0xfe) {
+             v = s.p_t[v] & mask; w = s.p_t[v];
+         }
+         // v is represetative of the orbit of o[i]
+         if (get_bitmap(v)) continue;
+         set_bitmap(v); 
+         w &= mask;  
+         // w is index of v into table s.p_o
+         l_orbit = status = read_length_info(s.p_o + w);
+         if (status < 0) goto done;
+         n_orbits += 1;
+         n_entries += l_orbit;
+    }
+
+done:
+    if (bitmap) free(bitmap);
+    if (status < 0) return status;
+    return  LIN2_LEN_HEADER + n_entries + 2 * n_orbits +
+        lin2_generator_size(s.n, s.n_g) + 2;
+}
+     
+
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+static inline uint32_t make_compressed(
+uint32_t *a, uint64_t *bitmap, uint32_t n_entries, uint32_t n_orbits, uint32_t *c, uint32_t l_c)
+{
+    lin2_type s, sc;
+    int32_t status = load_lin2_info(a, &s);
+    uint32_t v = 0, vmax = 1UL << s.n, c_size;
+    uint32_t entries_found = 0, orbits_found = 0, i, c_sum = 0;
+    uint32_t mask = vmax - 1;
+
+    if (status != 2) return status < 0 ? status : ERR_GEN_UFIND_STATE;
+    memcpy(&sc, &s, LIN2_LEN_HEADER * sizeof(uint32_t));
+    sc.status = LIN2_COMPRESSED;
+    sc.n_vectors = n_entries;
+    sc.n_orbits = n_orbits;
+    c_size = LIN2_LEN_HEADER + sc.n_vectors + 2 * sc.n_orbits +
+        lin2_generator_size(sc.n, sc.n_g) + 2;
+    if (l_c < c_size) return ERR_GEN_UFIND_OUT_SHORT;
+    sc.p_t = c + LIN2_LEN_HEADER; 
+    sc.p_o = sc.p_t + (size_t)sc.n_vectors;
+    sc.p_g = sc.p_o + (size_t)(2 * sc.n_orbits);
+    memcpy(sc.p_g, s.p_g, lin2_generator_size(s.n, s.n_g) * sizeof(uint32_t));
+
+    while ((v = find_next_bit_set(bitmap, v)) < vmax) {
+        uint32_t w = s.p_t[v];
+        uint32_t g = w >> 24;  // Schreier vector entry for v
+        if (g == 0xfe) {
+            uint32_t len_o = read_length_info(s.p_o + (w & mask));
+            sc.p_o[orbits_found] = v;
+            sc.p_o[orbits_found + n_orbits] = len_o;
+            ++orbits_found;
+        }
+        sc.p_t[entries_found++] = (v << 8) + g;
+        ++v;
+    }
+    if (orbits_found != n_orbits) 
+        return (int32_t)ERR_GEN_UFIND_INT_LIN2 - 64;
+    if (entries_found != n_entries) 
+        return (int32_t)ERR_GEN_UFIND_INT_LIN2 - 65;
+
+    c[0] = 0;
+    store_lin2_info(&sc, c);
+    c[c_size - 2] = magic_content(c);
+    for (i = 0; i < c_size - 1; ++i) c_sum += c[i];
+    c[c_size - 1] = 0 - c_sum;
+    return c_size;
+}
+
+/// @endcond
+
+
+/** @brief Compress an orbit array.
+
+Let ``a`` be an array that stores a group acting on a vector space
+as described in function ``gen_ufind_lin2_init``. Here orbit
+array ``a`` encodes a group \f$G\f$ acting on a space \f$V\f$ of
+bit vectors. This function extracts a set of orbits of \f$G\f$
+on \f$V\f$ and stores the orbit array containing these orbits in
+the buffer ``c`` of length ``l_c``. Most of the functions in
+this module can be applied to the orbit array ``c`` in the same
+way as to orbit array ``a``. An error occurs if the buffer
+is too short. The required buffer length can be computed with
+function ``gen_ufind_lin2_compressed_size``. Array ``o`` of
+length ``l_o`` is a list of vectors in \f$V\f$. The orbits
+of the vectors in that list will be stored in the buffer ``c``.
+
+A typical use case is the action of a group on the Leech lattice
+mod 2. The functions in this module may compute orbits and
+Schreier vectors for that group. If we are only interested in
+the action of the group on short vectors only, then we might
+restrict the orbit array of orbits  short vectors. This will
+save space.
+*/
+// %%EXPORT px
+int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *c, uint32_t l_c)
+{
+    lin2_type s;
+    int32_t status = finalize_initalization(a, &s);
+    uint64_t *bitmap = NULL;
+    uint32_t bitmap_size;
+    uint32_t n_entries = 0;
+    uint32_t n_orbits = 0;
+    uint32_t mask; 
+    uint32_t i;
+    if (status != 2) return status < 0 ? status : ERR_GEN_UFIND_STATE;
+    if (c == NULL) return ERR_GEN_UFIND_OUT_SHORT;
+    else *c = (uint32_t)(ERR_GEN_UFIND_INT_LIN2 - 61);
+    bitmap_size = ((1UL << s.n) >> 6) + 1;
+    bitmap = malloc(bitmap_size << 3);
+    if (bitmap == NULL) return ERR_GEN_UFIND_MEM;
+    memset(bitmap, 0, bitmap_size << 3);
+    set_bitmap(1UL << s.n);
+    mask = (1UL << s.n) - 1;
+
+    for (i = 0; i < l_o; ++i) {
+         uint32_t v = o[i] & mask, w, l_orbit, j;
+         w = s.p_t[v];
+         if ((w >> 24) != 0xfe) {
+             v = s.p_t[v] & mask; w = s.p_t[v];
+             if ((w >> 24) != 0xfe) {
+                 status = ERR_GEN_UFIND_INT_LIN2 - 62;
+                 goto done;
+             }
+         }
+         // v is represetative of the orbit of o[i]
+         if (get_bitmap(v)) continue; 
+         w &= mask;  
+         // w is index of v into table s.p_o
+         l_orbit = status = read_length_info(s.p_o + w);
+         if (status < 0) goto done;
+         n_orbits += 1;
+         n_entries += l_orbit;
+         if ((s.p_o[w] & mask) != v) {
+             status = ERR_GEN_UFIND_INT_LIN2 - 63;
+             goto done;
+         }           
+         for (j = w; j < w + l_orbit; ++j) {
+             set_bitmap(s.p_o[j] & mask); 
+         }
+    }
+    status = make_compressed(a, bitmap, n_entries, n_orbits, c, l_c);
+
+done:
+    if (bitmap) free(bitmap);
+    if (c != NULL && status < 0)  *c = (uint32_t)status;
+    return status;
+}
+
+
+
+
+
+/************************************************************************
+*************************************************************************
+***  Compute representatives of an orbit in a compressed orbit array
+*************************************************************************
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+
+static inline int32_t
+compute_group_orbit_new(lin2_type *p_s, uint32_t *a, uint32_t len_a)
+// Compute the orbit of a[0] and store it in array a of length len_a
+// Details are yet to be documented!!!
+{
+    uint_fast32_t n_size = 1UL << p_s->n;
+    uint_fast32_t n_g = p_s->n_g;
+    uint_fast32_t i;
+    uint32_t bitmap_size = (n_size >> 6) + 1;
+    uint32_t *p_start = a;
+    uint32_t *p_end = a + 1;
+    uint32_t *p_overflow = a + len_a;
+    uint64_t *bitmap = NULL;
+    uint64_t *g = NULL;
+
+    if (p_s->status < 0) return ERR_GEN_UFIND_STATE;
+    if (len_a == 0) return ERR_GEN_UFIND_INT_LIN2 - 25;
+    bitmap = malloc((bitmap_size + n_g * 0x300) * sizeof(uint64_t));
+    if (bitmap == NULL) return ERR_GEN_UFIND_MEM;
+    memset(bitmap, 0xff, bitmap_size * sizeof(uint64_t));
+    g = bitmap + bitmap_size;
+    for (i = 0; i < n_g; ++i) {
+        store64_gen(g + 0x300 * i, p_s->n, lin2_generator(p_s, 2 * i),
+            lin2_generator(p_s, 2 * i + 1));
+    }
+    bitmap[a[0] >> 6] ^= (uint64_t)1ULL << (a[0] & 0x3f);
+
+    while (p_start < p_end) {
+        uint_fast32_t data = *p_start++, d0, d1, d2;
+        uint64_t *p_g = g, v64, mask0, img0;
+        d0 = data & 0xff;
+        d1 = ((data >> 8) & 0xff) + 0x100;
+        d2 = ((data >> 16) & 0xff) + 0x200;
+        for (i = 0; i < n_g; ++i) {
+            v64 = p_g[d0] ^ p_g[d1] ^ p_g[d2];
+            img0 =  v64 & 0xffffffffUL;
+            mask0 = (uint64_t)1ULL << (img0 & 0x3f);
+            p_g += 0x300;
+            if (bitmap[img0 >> 6] & mask0) {
+                bitmap[img0 >> 6] ^= mask0;
+                if (p_end >= p_overflow) goto error_overflow;
+                *p_end++ = (uint32_t)img0 | (i << 25) | 0x01000000UL;
+            }
+        }
+    }
+    return (uint32_t)(p_end - p_start);
+
+error_overflow:
+    if (bitmap != NULL) free(bitmap);
+    return ERR_GEN_UFIND_INT_LIN2 - 25;
+}
+
+
+
+/// @endcond
+
+
+
 
 
 
@@ -564,7 +887,7 @@ compressed_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 
     while (1) {
         v &= mask;
-        x = s.p_o[bitvector32_bsearch(s.p_o, s.n_vectors, v << 8)];
+        x = s.p_t[bitvector32_bsearch(s.p_t, s.n_vectors, v << 8)];
         g = x & 0xff;
         x >>= 8;
         if (x ^ v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
@@ -591,7 +914,7 @@ compressed_lin2_rep_v(uint32_t *a, uint32_t v)
 
     while (--l_b) {
         v &= mask;
-        x = s.p_o[bitvector32_bsearch(s.p_o, s.n_vectors, v << 8)];
+        x = s.p_t[bitvector32_bsearch(s.p_t, s.n_vectors, v << 8)];
         g = x & 0xff;
         x >>= 8;
         if (x ^ v || g > 0xfe) return ERR_GEN_UFIND_ENTRY_UF;
@@ -606,6 +929,14 @@ compressed_lin2_rep_v(uint32_t *a, uint32_t v)
 
 
 /// @endcond
+
+
+
+/************************************************************************
+*************************************************************************
+*** Finding representatives of and sizes of an orbit
+*************************************************************************
+************************************************************************/
 
 
 
@@ -686,9 +1017,9 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
     if (status == LIN2_COMPRESSED) {
         status = v = compressed_lin2_rep_v(a, v);
         if (status < 0) return status;
-        index_o = bitvector32_bsearch(s.p_t, s.n_orbits, v);
-        if (v != s.p_t[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
-        return s.p_t[s.n_orbits + index_o];
+        index_o = bitvector32_bsearch(s.p_o, s.n_orbits, v);
+        if (v != s.p_o[index_o]) return ERR_GEN_UFIND_INT_LIN2 - 35;
+        return s.p_o[s.n_orbits + index_o];
     }
     rep = gen_ufind_lin2_rep_v(a, v);
     index_o = s.p_t[rep] & mask;
@@ -696,13 +1027,6 @@ int32_t gen_ufind_lin2_len_orbit_v(uint32_t *a, uint32_t v)
 }
 
 
-/// @cond DO_NOT_DOCUMENT
-
-// forward declaration
-static int32_t 
-compute_orbit(uint32_t *a, uint32_t v, uint32_t *o, uint32_t l_o);
- 
-/// @endcond
 
 /** @brief Return orbit of bit vector ``v`` as an array
 
@@ -727,8 +1051,12 @@ int32_t gen_ufind_lin2_orbit_v(uint32_t *a, uint32_t v, uint32_t *r, uint32_t l_
     int32_t status = finalize_initalization(a, &s);
 
     if (status < 0) return status;
-    if (status == LIN2_COMPRESSED) return compute_orbit(a, v, r, l_r);
     mask = (1UL << s.n) - 1;
+    if (status == LIN2_COMPRESSED) {
+        if (l_r == 0) return  ERR_GEN_UFIND_OUT_SHORT;
+        r[0] = v & mask;
+        return compute_group_orbit_new(&s, r, l_r);
+    }
     rep = status = gen_ufind_lin2_rep_v(a, v);
     if (status < 0) return status;
     index_o = s.p_t[rep] & mask;
@@ -766,7 +1094,7 @@ int32_t gen_ufind_lin2_representatives(uint32_t *a, uint32_t *r, uint32_t l_r)
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
         if (s.n_orbits >  l_r) return ERR_GEN_UFIND_OUT_SHORT;
-        memcpy(r, s.p_t, s.n_orbits * sizeof(uint32_t));
+        memcpy(r, s.p_o, s.n_orbits * sizeof(uint32_t));
         return s.n_orbits;
     }
     mask = (1UL << s.n) - 1;
@@ -805,7 +1133,7 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
          if (s.n_orbits >  l_r) return ERR_GEN_UFIND_OUT_SHORT;
-         memcpy(r, s.p_t + s.n_orbits, s.n_orbits * sizeof(uint32_t));
+         memcpy(r, s.p_o + s.n_orbits, s.n_orbits * sizeof(uint32_t));
          return s.n_orbits;
     }
     while (index_o < (1UL << s.n)) {
@@ -818,307 +1146,6 @@ int32_t gen_ufind_lin2_orbit_lengths(uint32_t *a, uint32_t *r, uint32_t l_r)
     return l_r - l_r1;
 }
 
-
-
-
-/************************************************************************
-*************************************************************************
-***  Computing Schreier vectors
-*************************************************************************
-************************************************************************/
-
-
-
-
-
-
-/************************************************************************
-* Compute a Schreier vector
-************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT
-
-
-// Store a Schreier vector for one or more orbits of a group acting on
-// a vector space \f$V = \mbox{GF}_2^n\f$. Such a group is represented
-// in a an (opaque) array as in function ``gen_ufind_lin2_init``.
-
-// The following strcture is temporarily used for computing a
-// Schreier vector.
-typedef struct {
-   uint32_t *p_alloc;    // pointer to allocated memory
-   uint32_t *p_start;    // start of queue
-   uint32_t *p_end;      // end of queue
-   uint32_t *p_overflow; // physical end of queue
-   uint32_t *p_g;        // pointer to (expanded) generators
-   uint32_t *p_b;        // pointer to bitmap of vectors already done
-   uint32_t n;           // dimension ``n`` of representation
-   uint32_t n_g;         // number of generators
-} schreierv_type;
-
-
-
-static inline int32_t
-schreier_vector_alloc(schreierv_type *p_s, uint32_t *a, uint32_t max_entries)
-// Allocate space for a structure of type ``schreierv_type``
-// The function stores a pointer to s structure of
-// type ``schreierv_type`` in the pointer ``p_s`` that can be used
-// for computing a Schreier vector in an orbit array ``a``.
-// parameter ``max_entries`` is the number of bit vectors stored
-// in array ``a``, which is usually ``1 << gen_ufind_lin2_dim(a)``.
-{
-    uint32_t buf_size, l_b, g_start, i;
-    uint64_t *p64_g;
-    int32_t status;
-    lin2_type s;
-    p_s->p_alloc = NULL;
-    if ((status = load_lin2_info(a, &s)) < 0) return status;
-    p_s->n = s.n;
-    p_s->n_g = s.n_g;
-    // Allocate work buffer and set pointers in structure
-    l_b = (p_s->n > 6) ? (1UL << (p_s->n - 5)) : 2;
-    g_start = (max_entries + 1) & 0xfffffffeUL;
-    buf_size = g_start + p_s->n_g * 0x600 + l_b;
-    p_s->p_alloc = malloc(buf_size * sizeof(uint32_t));
-    if (p_s->p_alloc == NULL) return ERR_GEN_UFIND_MEM;
-    p_s->p_end = p_s->p_start = p_s->p_alloc;
-    p_s->p_overflow = p_s->p_alloc + max_entries;
-    p_s->p_g = p_s->p_alloc + g_start;
-    p_s->p_b = p_s->p_g + p_s->n_g * 0x600;
-
-    // Load generator matrices
-    p64_g = (uint64_t*) p_s->p_g;
-    for (i = 0; i < p_s->n_g; ++i) {
-        store64_gen(p64_g + 0x300 * i, p_s->n, lin2_generator(&s, 2 * i),
-            lin2_generator(&s, 2 * i + 1));
-    }
-
-    // Initialize bitmap table
-    memset(p_s->p_b, 0xff, l_b * sizeof(uint32_t));
-    return 0;
-}
-
-
-static inline int32_t
-schreier_vector_addv(schreierv_type *p_s, uint32_t *p_v, uint32_t n)
-// Add list of start vectors to a structure of type ``schreierv_type``
-// Let ``v_list`` be a list of bit vectors of length ``n`` referred
-// by ``p_v``. The function marks all these vectors as start vectors
-// in the structure of type ``schreierv_type`` referred by ``p_s``.
-// See function ``gen_ufind_lin2_map_v_gen`` for background.
-{
-    uint32_t i, mask = (1UL << p_s->n) - 1, entry;
-    uint32_t *p_0 = p_s->p_end, *p_b = p_s->p_b;
-    if (n > p_s->p_overflow - p_0) return ERR_GEN_UFIND_IN_LARGE;
-    for (i = 0; i < n; ++i) {
-        entry = p_v[i] & mask;
-        p_b[entry >> 5] &= ~(1UL << (entry & 0x1f));
-        p_0[i] = entry | 0xfe000000UL;
-   }
-   p_s->p_end += n;
-   return 0;
-}
-
-
-static inline int32_t
-schreier_vector_compute(schreierv_type *p_s)
-// Compute Schreier vector in a structure of type ``schreierv_type``
-// After allcoating such a structure referred by ``p_s`` with
-// function ``schreier_vector_alloc`` and setting the start vectors
-// with function ``schreier_vector_addv`` the function computes a
-// Schreier vector in that structure.
-// The array referred by ``p_s->p_start`` of
-// length ``p_s->p_end - p_s->p_start`` contains the mapping
-// corresponding the Schreier vector as an unordered list.
-// Bits 0,...,23 of an entry of that array contain the bit vector
-// being mapped. Bits 24,...,31 contain the Schreier vector image
-// as described in function ``gen_ufind_lin2_map_v_gen``.
-{
-    uint32_t n_g = p_s->n_g, *p_b = p_s->p_b, i;
-    uint32_t *p_start = p_s->p_start, *p_end = p_s->p_end;
-    uint32_t *p_overflow = p_s->p_overflow;
-
-    while (p_start < p_end) {
-        uint_fast32_t data = *p_start++, d0, d1, d2;
-        uint64_t *p64_g1 = (uint64_t*)(p_s->p_g), v64;
-        d0 = data & 0xff;
-        d1 = ((data >> 8) & 0xff) + 0x100;
-        d2 = ((data >> 16) & 0xff) + 0x200;
-        for (i = 0; i < n_g; ++i) {
-            uint_fast32_t img0, img1, mask0, mask1;
-            v64 = p64_g1[d0] ^ p64_g1[d1] ^ p64_g1[d2];
-            img0 =  (uint32_t)(v64 & 0xffffffffUL);
-            img1 =  (uint32_t)(v64 >> 32);
-            mask0 = 1UL << (img0 & 0x1f);
-            mask1 = 1UL << (img1 & 0x1f);
-            p64_g1 += 0x300;
-            if (p_b[img0 >> 5] & mask0) {
-                p_b[img0 >> 5] ^= mask0;
-                if (p_end >= p_overflow) return ERR_GEN_UFIND_INT_LIN2 - 25;
-                *p_end++ = img0 | (i << 25) | 0x01000000UL;
-            }
-            if (p_b[img1 >> 5] & mask1) {
-                p_b[img1 >> 5] ^= mask1;
-                if (p_end >= p_overflow) return ERR_GEN_UFIND_INT_LIN2 - 25;
-                *p_end++ = img1 | (i << 25);
-            }
-        }
-    }
-    p_s->p_start = p_s->p_alloc;
-    p_s->p_end = p_end;
-    return (uint32_t)(p_end - p_s->p_start);
-}
-
-
-
-static inline int32_t
-schreier_vector_orbit(schreierv_type *p_s, uint32_t v)
-// Compute orbit of ``v`` in a structure of type ``schreierv_type``
-// After allcoating such a structure referred by ``p_s`` with
-// function ``schreier_vector_alloc``  the function computes the
-// orbit of vector ``v`` in that structure. The array referred
-// by ``p_s->p_start`` of length ``p_s->p_end - p_s->p_start``
-// contains the orbit as an unordered list.
-{
-    uint32_t n_g = p_s->n_g, *p_b = p_s->p_b, i;
-    uint32_t *p_start = p_s->p_alloc, *p_end = p_s->p_alloc + 1;
-    uint32_t *p_overflow = p_s->p_overflow;
-    
-    *p_start = v & ((1UL << p_s->n) - 1);
-    while (p_start < p_end) {
-        uint_fast32_t data = *p_start++, d0, d1, d2;
-        uint64_t *p64_g1 = (uint64_t*)(p_s->p_g), v64;
-        d0 = data & 0xff;
-        d1 = ((data >> 8) & 0xff) + 0x100;
-        d2 = ((data >> 16) & 0xff) + 0x200;
-        for (i = 0; i < n_g; ++i) {
-            uint_fast32_t img0, mask0;
-            v64 = p64_g1[d0] ^ p64_g1[d1] ^ p64_g1[d2];
-            img0 =  (uint32_t)(v64 & 0xffffffffUL);
-            mask0 = 1UL << (img0 & 0x1f);
-            p64_g1 += 0x300;
-            if (p_b[img0 >> 5] & mask0) {
-                p_b[img0 >> 5] ^= mask0;
-                if (p_end >= p_overflow) return ERR_GEN_UFIND_OUT_SHORT;
-                *p_end++ = img0;
-            }
-        }
-    }
-    p_s->p_start = p_s->p_alloc;
-    p_s->p_end = p_end;
-    return (uint32_t)(p_end - p_s->p_start);
-}
-
-
-
-
-static inline void
-schreier_vector_dealloc(schreierv_type *p_s)
-// Deallocate the space for a structure of type ``schreierv_type``
-// referred by ``p_s``. This reverser the effect of
-// function ``schreier_vector_alloc``.
-{
-    if (p_s->p_alloc != NULL) free(p_s->p_alloc);
-}
-
-
-/// @endcond
-
-
-/************************************************************************
-* compute orbit of a vector
-************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT
-
-static int32_t 
-compute_orbit(uint32_t *a, uint32_t v, uint32_t *o, uint32_t l_o)
-// Compute the orbit of vector ``v`` using the group generators
-// in the orbit array ``a`` only;
-// and store the sorted orbit in the array ``o`` of length ``l_o``.
-{
-    schreierv_type sv;
-    lin2_type s;
-    int32_t status = finalize_initalization(a, &s);
-
-    if (status < 0) return status;
-    status = schreier_vector_alloc(&sv, a, l_o);
-    if (status < 0) goto done;
-    // compute the orbit
-    status = schreier_vector_orbit(&sv, v);
-    if (status < 0)  goto done;
-    if (check_out_buf32(o, l_o, (uint32_t)status)) {
-        status = ERR_GEN_UFIND_OUT_SHORT;
-        goto done;
-    }
-    // Copy orbit to destination and sort it
-    l_o = (uint32_t)status;
-    memcpy(o, sv.p_start, l_o * sizeof(uint32_t));
-    bitvector32_sort(o, l_o);
-done:
-    schreier_vector_dealloc(&sv);
-    return status;
-}
-
-/// @endcond
-
-
-/************************************************************************
-* Add orbit map and operation of generators to table
-************************************************************************/
-
-
-/// @cond DO_NOT_DOCUMENT
-
-
-
-static inline int32_t add_generators(uint32_t *a, lin2_type *p_s)
-// Upgrade the status of the orbit array ``a`` to 2; and
-// store header information and pointers in structure ``p_s``.
-{
-    schreierv_type sv;
-    lin2_type s;
-    int32_t status = finalize_initalization(a, p_s);
-    uint32_t i, mask;
-
-    if (status < 0 || status >= 2) return status;
-    load_lin2_info(a, &s);
-
-    status = schreier_vector_alloc(&sv, a, 1UL << s.n);
-    if (status < 0) goto done;
-
-    // Load start vectors to queue and mark them in bitmap table
-    status = gen_ufind_lin2_representatives(a, sv.p_start, 1UL << s.n);
-    if (status != (int32_t)s.n_orbits) {
-        status = status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 23;
-        goto done;
-    }
-    status = schreier_vector_addv(&sv, sv.p_start, s.n_orbits);
-    if (status < 0) goto done;
-    status = schreier_vector_compute(&sv);
-    if (status != (int32_t)(1L << s.n)) {
-        status = status < 0 ? status : ERR_GEN_UFIND_INT_LIN2 - 24;
-        goto done;
-    }
-    mask = (1UL << s.n) - 1;
-    for (i = 0; i < 1UL << s.n; ++i) {
-        uint32_t entry = sv.p_start[i];
-        s.p_t[entry & mask] &= mask;
-        s.p_t[entry & mask] |= (entry & 0xff000000UL);
-    }
-
-    status = a[0] = 2;  // update main status
-done:
-    schreier_vector_dealloc(&sv);
-    if (status < 0) return lin2_error(a, status);
-    load_lin2_info(a, p_s);
-    return status;
-}
-
-
-
-
-/// @endcond
 
 
 
@@ -1156,7 +1183,7 @@ int32_t gen_ufind_lin2_map_v_gen(uint32_t *a, uint32_t v)
 {
     uint32_t mask, x, g;
     lin2_type s;
-    int32_t status = add_generators(a, &s);
+    int32_t status = finalize_initalization(a, &s);
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
         x = bitvector32_bsearch(s.p_o, s.n_vectors, v << 8);
@@ -1191,7 +1218,7 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 {
     uint32_t mask, w, l_b1, entry;
     lin2_type s;
-    int32_t status = add_generators(a, &s);
+    int32_t status = finalize_initalization(a, &s);
     if (status < 0) return status;
     if (status == LIN2_COMPRESSED) {
         return compressed_lin2_map_v(a, v, b, l_b);
@@ -1226,22 +1253,6 @@ int32_t gen_ufind_lin2_map_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t l_b)
 
 
 
-/// @cond DO_NOT_DOCUMENT
-#define LIN2_MAGIC 0x1fecd173UL
-
-#define LIN2_AMUL 0x5ac83257UL
-
-static inline uint32_t magic_content(uint32_t *a)
-// Return hash value over the header of the orbit array ``a``
-{
-    uint32_t s = LIN2_MAGIC, i;
-    for (i = 0; i < LIN2_LEN_HEADER; ++i) s = s * LIN2_AMUL + a[i];
-    return s;
-}
-
-
-
-/// @endcond
 
 /** @brief Compute all possible information about orbits
 
@@ -1255,187 +1266,11 @@ amount of infomation in ``a``. This function performs that task.
 int32_t gen_ufind_lin2_finalize(uint32_t *a)
 {
     lin2_type s;
-    int32_t status, a_length, i;
-    uint32_t a_sum = 0;
-    status = add_generators(a, &s);
-    if (status < 0) return status;
-    if (status == LIN2_COMPRESSED) return 0;
-    s.n_max_g = s.n_g;
-    store_lin2_info(&s, a);
-    a_length =  gen_ufind_lin2_size(s.n, s.n_g);
-    a[a_length - 2] = magic_content(a);
-    for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
-    a[a_length -1] = 0 - a_sum;
-    return a_length;
+    return finalize_initalization(a, &s);
+
 }
 
 
-
-
-/************************************************************************
-*************************************************************************
-***  compress an orbit array
-*************************************************************************
-************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT
-
-static inline uint32_t
-sort_remove_duplicates(uint32_t *a, uint32_t  l_a)
-// Sort an arbitrary array ``a`` of length ``l_a`` and remove
-// duplicate entries. This is done in place. The function returns
-// the length of ``a`` after removing duplicates.
-{
-    uint32_t *b = a, *p_b = a, i;
-    if (l_a == 0) return 0;
-    bitvector32_sort(a, l_a);
-    *p_b++ = a[0];
-    for (i = 1; i < l_a; ++i) {
-        if (a[i] != a[i-1]) *p_b++ = a[i];
-    }
-    return (int32_t)(p_b - b);
-}
-
-
-static inline int32_t
-sort_orbit_reps(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *reps)
-// Let ``o`` be an array of bit vectors of length ``l_o``.
-// The function stores the of list of the representatives of these
-// bit vectors in in the array ``reps``. The list of representatives
-// is sorted and duplicates are removed. Orbit array ``a`` is used
-// to find the representative of an orbit.
-// The function returns the length of the array ``reps``.
-{
-    uint32_t i;
-    int32_t status;
-    for (i = 0; i < l_o; ++i) {
-        reps[i] = status = gen_ufind_lin2_rep_v(a, o[i]);
-        if (status < 0) return status;
-    }
-    return sort_remove_duplicates(reps, l_o);
-}
-
-/// @endcond
-
-
-
-/** @brief Compute size of buffer for compressing an orbit array
-
-We may compress an orbit array ``a`` to an orbit array ``c``
-containing not all orbits of array ``a``, by calling
-function ``gen_ufind_lin2_compress(a, o, l_o, c, l_c)``.
-Hier ``o`` is a list of ``l_o`` bit vectors, such that the
-orbits of these vectors will be added to the orbit
-array ``c``.
-Function ``gen_ufind_lin2_compress_size(a, o, l_o)``
-returns the number ``l_c`` of entries required for the
-array ``c``.
-*/
-// %%EXPORT px
-int32_t gen_ufind_lin2_compressed_size(uint32_t *a, uint32_t *o, uint32_t l_o)
-{
-    lin2_type s;
-    uint32_t i, *reps = NULL;
-    uint64_t v_sum = 0, l_o0, l_o1, o_len;
-    int32_t status = finalize_initalization(a, &s);
-    l_o0 = LIN2_LEN_HEADER + (uint64_t)l_o;
-    if (status < 0) return status;
-    if (status > 2) return ERR_GEN_UFIND_STATE;
-    reps = malloc(l_o * sizeof(uint32_t));
-    if (reps == NULL) return ERR_GEN_UFIND_MEM;
-    l_o1 = status = sort_orbit_reps(a, o, l_o, reps);
-    if (status < 0) goto done;
-    v_sum = 0;
-    for (i = 0; i < l_o1; ++i) {
-        v_sum += gen_ufind_lin2_len_orbit_v(a, reps[i]);
-    }
-    o_len = LIN2_LEN_HEADER + 2 * l_o1 + v_sum
-             + lin2_generator_size(s.n, s.n_g) + 2;
-    o_len = o_len > l_o0 ? o_len : l_o0;
-    if (o_len > 0x7fffffffULL) return ERR_GEN_UFIND_OUT_SHORT;
-    status = (int32_t)o_len;
-  done:
-    if (reps != NULL) free(reps);
-    return status;
-}
-
-
-
-/** @brief Compress an orbit array.
-
-Let ``a`` be an array that stores a group acting on a vector space
-as described in function ``gen_ufind_lin2_init``. Here orbit
-array ``a`` encodes a group \f$G\f$ acting on a space \f$V\f$ of
-bit vectors. This function extracts a set of orbits of \f$G\f$
-on \f$V\f$ and stores the orbit array containing these orbits in
-the buffer ``c`` of length ``l_c``. Most of the functions in
-this module can be applied to the orbit array ``c`` in the same
-way as to orbit array ``a``. An error occurs if the buffer
-is too short. The required buffer length can be computed with
-function ``gen_ufind_lin2_compressed_size``. Array ``o`` of
-length ``l_o`` is a list of vectors in \f$V\f$. The orbits
-of the vectors in that list will be stored in the buffer ``c``.
-
-A typical use case is the action of a group on the Leech lattice
-mod 2. The functions in this module may compute orbits and
-Schreier vectors for that group. If we are only interested in
-the action of the group on short vectors only, then we might
-restrict the orbit array of orbits  short vectors. This will
-save space.
-*/
-// %%EXPORT px
-int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *c, uint32_t l_c)
-{
-    lin2_type s, sc;
-    schreierv_type sv;
-    uint32_t i, c_sum = 0, c_size_new;
-    int32_t status = finalize_initalization(a, &s);
-    if (c) c[0] = (uint32_t)ERR_GEN_UFIND_OUT_SHORT;
-    sc.p_t = c + LIN2_LEN_HEADER; 
-    l_o = status = sort_orbit_reps(a, o, l_o, sc.p_t);
-    if (status < 0) return status;
-
-    memcpy(&sc, &s, LIN2_LEN_HEADER * sizeof(uint32_t));
-    sc.status = LIN2_COMPRESSED;
-    sc.p_t = c + LIN2_LEN_HEADER;
-    if (l_c < l_o + LIN2_LEN_HEADER) return ERR_GEN_UFIND_OUT_SHORT;
-    sc.n_orbits = l_o = status = sort_orbit_reps(a, o, l_o, sc.p_t);
-    if (status < 0) return status;
-    c_size_new = LIN2_LEN_HEADER + 2 * sc.n_orbits;
-    if (l_c < c_size_new) return ERR_GEN_UFIND_OUT_SHORT;
-    sc.n_vectors = 0;
-    for (i = 0; i < l_o; ++i) {
-        sc.p_t[i + l_o] = gen_ufind_lin2_len_orbit_v(a, sc.p_t[i]);
-        sc.n_vectors += sc.p_t[i + l_o];
-    }
-    c_size_new += sc.n_vectors + lin2_generator_size(sc.n, sc.n_g) + 2;
-    if (l_c < c_size_new) return ERR_GEN_UFIND_OUT_SHORT;
-
-    sc.p_o = sc.p_t + (size_t)(2 * l_o);
-    sc.p_g = sc.p_o + (size_t)sc.n_vectors;
-    status = schreier_vector_alloc(&sv, a, sc.n_vectors);
-    if (status < 0) goto done;
-    status = schreier_vector_addv(&sv, sc.p_t, l_o);
-    if (status < 0) goto done;
-    status = schreier_vector_compute(&sv);
-    if (status < 0) goto done;
-    for (i = 0; i < sc.n_vectors; ++i) {
-        uint32_t entry = sv.p_start[i];
-        sc.p_o[i] = (entry >> 24) | (entry << 8);
-    }
-    memcpy(sc.p_g, s.p_g, lin2_generator_size(s.n, s.n_g) * sizeof(uint32_t));
-    bitvector32_sort(sc.p_o, sc.n_vectors);
-  
-    c[0] = 0;
-    store_lin2_info(&sc, c);
-    c[c_size_new - 2] = magic_content(c);
-    for (i = 0; i < c_size_new - 1; ++i) c_sum += c[i];
-    c[c_size_new - 1] = 0 - c_sum;
-    status = c_size_new;
-done:  
-    schreier_vector_dealloc(&sv); 
-    return status;   
-}
 
 
 
@@ -1643,6 +1478,24 @@ int32_t gen_ufind_lin2_orbits(uint32_t *a, uint32_t *t, uint32_t l_t, uint32_t *
     if (x[s.n_orbits] != (1UL << s.n)) return ERR_GEN_UFIND_INT_LIN2 - 52;
     return s.n_orbits;
 }
+
+
+
+
+/****************************************
+// Deprecated benchmark, do not use!
+
+uint64_t gen_ufind_lin2_find_next_bit_set(uint32_t n, uint64_t *bitmap, uint32_t start_index)
+{
+    uint64_t res = 0;
+    volatile uint32_t i = start_index;  // trick the compiler optimization
+    volatile uint64_t *b = bitmap; 
+    while (n--) res += find_next_bit_set(b, i);
+    return res;
+}
+
+***************************************/
+
 
 
 //  %%GEN h

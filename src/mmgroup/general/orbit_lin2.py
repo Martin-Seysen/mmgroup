@@ -182,12 +182,9 @@ class Orbit_Lin2:
         if len(a.shape) != 1 or not isinstance(b, Integral):
             raise TypeError(self.ERR_GEN % type(img))
         return np.append(a, np.uint32(b & 0xffffffff))
-    def add_generator(self, g, use = True):
+    def add_generator(self, g):
         r"""Add generator ``g`` to the object
 
-        Parameter ``use`` should usually be ``True``
-
-        Todo: document parameter ``use``
         """
         a = self._map_generator(g)
         if self.a is None:
@@ -196,9 +193,8 @@ class Orbit_Lin2:
             ERR = "Representations of generators are incompatible"
             raise ValueError(ERR)
         n_gen = self._extend_a_buf(1)
-        status = chk(gen_ufind_lin2_add(self.a, a, self.dim + 1, use))
-        if status > 0:
-            self.map_gen[n_gen] = len(self.gen)
+        status = chk(gen_ufind_lin2_add(self.a, a, self.dim + 1))
+        self.map_gen[n_gen] = len(self.gen)
         self.gen.append(g)
     def pickle(self, f_pickle_gen = None, f_unpickle_gen = None):
         r"""Save the information stored in the object for pickling
