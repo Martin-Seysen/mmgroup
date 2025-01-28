@@ -442,7 +442,34 @@ int32_t gen_ufind_lin2_transform_v(uint32_t *a, uint32_t v, uint8_t *b, uint32_t
 
 /// @cond DO_NOT_DOCUMENT
 
+/** @brief Compute a Schreier vector
 
+Let parameter ``p_s`` refer to an orbit array as descrbed in
+file ``gen_ufind2_lin2_aux.h``. We assume that the orbit array has
+status 0.
+The this function computes a Scheier vector from the group \f$G\f$
+encoded in that orbit array. It stores the Schreier vevtor in
+the array of size ``1 << p_s->n`` referred by ``p_s->p_t``. The
+data stored in that array will be as described in the header of
+file ``gen_ufind2_lin2_aux.h`` for status 2.
+
+Internally, the function uses a bitmap, where all ``1 << p_s->n``
+bits are initially set. For computing the Schreier vector, it takes
+a bit vector with its corresponding bit in the bit map still set,
+and clears that bit. Let  \f$g\f$ be the set of the generators
+of \f$G\f$ and their inverses. The function recursively computes
+the tree of images of that vector under all elements of \f$g\f$ with
+breadth first search. It clears the bits for these images in the
+bitmap, and stores that tree in a queue. After computing the first
+tree, we look for a new root element in the bit map; and we compute
+the next tree from that root. So, eventually we will obtain the
+set of all orbits as forest. From such a forest we can easily
+compute a Schreier vector, encoded as in the description of
+array ``p_s->p_t`` in file ``gen_ufind2_lin2_aux.h``.
+
+The function returns the number of orbits found in case of success,
+and a neagtive value in case of failure.
+*/
 static inline int32_t
 compute_schreier_vector(lin2_type *p_s)
 {
@@ -660,6 +687,18 @@ done:
 
 static inline uint32_t make_compressed(
 uint32_t *a, uint64_t *bitmap, uint32_t n_entries, uint32_t n_orbits, uint32_t *c, uint32_t l_c)
+// Auxiliary function for function ``gen_ufind_lin2_compress``
+//
+// As in that function, parameter ``a`` refers to an orbit array,
+// and array ``c`` of length ``l_c```is a compressed orbit array
+// to be computed. Before calling this function, the
+// function  ``gen_ufind_lin2_compress`` computes a bitmap marking
+// all bit vector to be stored in array ``c``. Parameter ``bitmap``
+// must point to this bitmap. Paraeters ``n_entries`` and ``n_orbits``
+// must be the numbers of bit vectors and orbits to be stored  in
+// the orbit array ``c``.
+//
+// Return value is as in function ``gen_ufind_lin2_compress``
 {
     lin2_type s, sc;
     int32_t status = load_lin2_info(a, &s);
@@ -729,6 +768,9 @@ Schreier vectors for that group. If we are only interested in
 the action of the group on short vectors only, then we might
 restrict the orbit array of orbits  short vectors. This will
 save space.
+
+The function returns the actual length of the computed array ``c``
+in case of success, and a negative value in case of an error.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t *c, uint32_t l_c)
@@ -751,6 +793,11 @@ int32_t gen_ufind_lin2_compress(uint32_t *a, uint32_t *o, uint32_t l_o, uint32_t
     set_bitmap(1UL << s.n);
     mask = (1UL << s.n) - 1;
 
+    // Next set all bits in the bitmap corresponding bit vectors in
+    // the orbit array ``a`` that will be copied to orbit array ``c``.
+    // Compute the number of orbits to be stored in ``c`` in
+    // variable ``n_orbits``, and the number of bit vectors to be
+    // stored in ``c`` in variable ``n_entries``.
     for (i = 0; i < l_o; ++i) {
          uint32_t v = o[i] & mask, w, l_orbit, j;
          w = s.p_t[v];
@@ -803,7 +850,7 @@ done:
 static inline int32_t
 compute_group_orbit_new(lin2_type *p_s, uint32_t *a, uint32_t len_a)
 // Compute the orbit of a[0] and store it in array a of length len_a
-// Details are yet to be documented!!!
+// This is a simplified version of function ``compute_schreier_vector``.
 {
     uint_fast32_t n_size = 1UL << p_s->n;
     uint_fast32_t n_g = p_s->n_g;

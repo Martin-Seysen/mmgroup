@@ -60,7 +60,7 @@ Structure ``s`` has an entry ``n`` which is the dimension of \f$V\f$.
 
 Structure ``s`` contains an entry ``p_t`` pointing to a table ``t``.
 
-  In case ``0 <= status <= 2`` this table has length ``1 << s.n``,
+  In case `status == 2`` this table has length ``1 << s.n``,
   where ``s.n`` is the dimension of the vector space \f$V\f$.
   Entry ``i`` in that table corresponds to vector ``i`` in \f$V\f$.
   The union-find algorithm in module ``gen_union_find.c`` is executed
@@ -70,18 +70,17 @@ Structure ``s`` contains an entry ``p_t`` pointing to a table ``t``.
   Bits 0,...,23 of entry ``i`` of array ``t`` is an index ``j``
   referring to table ``map`` referred by ``s.p_o``. Entry ``map[j]``
   describes the orbit of entry ``i``, as explained in the description
-  of entry ``p_o``. This is valid if the status is 1 or 2.
+  of entry ``p_o``. This is valid if the status is 2.
 
   Bits 24,...,31 of entry ``i`` of array ``t`` is the number ``k`` of
   a generator ``g`` of the group \f$G\f$. Here a Schreier vector is a
   mapping of the vectors in  \f$V\f$ to the union of set of the
   generators of the group \f$G\f$ with the neutral element of \f$G\f$.
   The neutral element of \f$G\f$ is encoded as ``k = 0xfe``.
-  This is valid if the status 2.
 
 Structure ``s`` contains an entry ``p_o`` pointing to a table ``map``.
  
-  In case ``1 <= status <= 2`` this table has length ``1 << s.n``. It
+  In case ``status == 2`` this table has length ``1 << s.n``. It
   contains a partition of the vectors of \f$V\f$ into orbits under the
   action of the group \f$G\f$. The entries of each orbit are ordered.
   All orbits are stored contiguously in the table ``map``, ordered by
@@ -455,38 +454,30 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
 
 /** @brief Compute the partition into the orbits
 
-Dcumentation yet to be adapted!!!!
+Let ``S(l_t)`` be the set of integers ``i`` with ``0 <= i < l_t``,
+where ``l_t = 1 << dim``. Let a partition of ``S(l_T)`` into orbits
+be stored in the array ``table`` (of size ``l_t``) in the same way
+as in the description of the array referred by entry ``p_t`` of a
+structure of tye ``lin2_type``. Here we refer to the description of
+that structure in the header of this file in case of ``status == 2``.
 
-Let ``S(l_t)`` be the set of integers ``i`` with ``0 <= i < l_t``;
-and let a partition of ``S(l_T)`` be stored in the array ``table``
-(of size ``l_t``) as described in function ``gen_ufind_init``.
+We store the partition of the set `S(l_t)`` into orbits as a list of
+lists in the array ``map``. The structure of the array ``map`` is as
+in the description of the array referred by entry ``p_o`` of a
+structure of type ``lin2_type``, in case of ``status == 2``.
 
-We assume that the partition stored in the array ``table``
-contains ``n_sets`` sets. Then we store a list of lists in the
-array ``map``, where each list corresponds to a set in
-the partition. We write some index infomation for interpreting
-these lists into the array ``ind`` of l ``l_ind``.
+Parameter ``l_ind`` must be an upper bound for the number of
+orbits contained in the array ``table``; this is used for
+allocating temporary storage.
 
-Array ``map`` will contain the ``l_t`` elements of the
-set ``S(l_t)`` in such a way that for ``0 <= i < n_sets``
-the ``i``-th set in the partition is equal to the set of
-integers given by ``map[ind[i]], ...,  map[ind[i+1] - 1]``.
+The function returns the actual number of orbits stored in the
+array ``table`` in case of success, and a negative number in case
+of failure.
 
-So the array ``ind`` must have size at least ``n_sets + 1``;
-i.e. we must have ``l_ind > n_sets``. Array ``map`` must have
-size ``l_t``; it may overlap with array ``table``.
-Function ``gen_ufind_find_all_min`` must be called before calling
-this function. Note that function ``gen_ufind_find_all_min``
-returns ``n_sets`` in case of success.
-
-The entries ``map[ind[i]], ...,  map[ind[i+1] - 1]``
-corresponding to set in the partition are sorted. The sets of
-the partition are sorted by their smallest elements.
-
-The function returns ``n_set`` in case of success and a negative
-value in case of failure.
+This function is coded along the lines of
+function ``gen_ufind_partition`` in file ``gen_union_find.c``, which
+perfoms a similar task.
 */
-
 static inline int32_t
 compute_partition(uint32_t *table, uint32_t dim, uint32_t *map, uint32_t l_ind)
 {

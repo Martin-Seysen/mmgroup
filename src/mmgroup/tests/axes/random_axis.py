@@ -56,7 +56,7 @@ VV = MMV(15)
 #############################################################
 
 MAX_LEN_G_x0 = 10
-MAX_NUM_G_x0 = MAT24_ORDER << 36
+MAX_NUM_G_x0 = MAT24_ORDER << (25 + 11 + 23)
 
 def rand_G_x0(num = None):
     r"""Generate Random element of G_x0 as array of 32-bit integers
@@ -280,7 +280,7 @@ class RandomAxis:
     Method ``number`` returns the number of an axis. 
     """
     axis_class = Axis
-    MAX_N_G_x0 = MAX_NUM_H
+    MAX_N_G_x0 = MAX_NUM_G_x0
     v15_start_name = V_AXIS_OPP 
     involution_start_name = G_AXIS_OPP
     indices, data, prob =  None, None, None
