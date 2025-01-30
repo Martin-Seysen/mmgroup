@@ -852,7 +852,7 @@ class BabyAxis(Axis):
     def fixed_value(self, part = 'A'):
         if part == 'A':
             a = self['A']
-            return (int(a[2,2]) + int(a[2,3]) - 2 * int(a[2,3])) % 15
+            return (int(a[2,2]) + int(a[3,3]) - 2 * int(a[2,3])) % 15
         elif part == 'B':
             return int(self['B', 2, 3])
         else:

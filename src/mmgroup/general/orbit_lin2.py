@@ -301,6 +301,25 @@ class Orbit_Lin2:
         for w in w0:
             g *= gg[w & 1][w >> 1]
         return g
+    def map_v_G_transform(self, obj, v, img = None):
+        r"""Apply a group element transforming a vector to an object
+
+        Let ``a`` be an instance of this class. Let ``v`` and ``img``
+        be vectors of the representation as in method ``map_v_G``. Let
+        ``obj`` be any object on that the group :math:`G` (endoded in
+        ``a``) acts by right multiplication .
+       
+        Then ``a.map_v_G_transform(obj, v, img)`` is equivalent to
+        ``obj * a.map_v_word_G(v, img)``, but may be faster. The
+        reason is that method ``map_v_G`` computes an element of
+        :math:`G`; but method ``map_v_G_transform`` lets generators
+        of :math:`G` act on ``obj`` one after the other.
+        """
+        w0 = self._map_v_word_a(v, img)
+        gg = [self.gen, self.gen_inverse]
+        for g in w0:
+            obj = obj * gg[w & 1][w >> 1]
+        return obj
     def mul_v_g(self, v, g):
         r"""Return product of vector ``v`` with group element ``g``"""
         a = self._map_generator(g)
