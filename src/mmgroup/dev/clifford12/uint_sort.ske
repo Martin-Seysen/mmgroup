@@ -58,6 +58,29 @@
         }                                           \
     }
 
+
+/** @brief Shellsort step for an array ``a`` of length ``n`` with ``gap``
+
+    Type of array ``a`` is given by ``num_type``.
+    Here ``gap = 1`` is equivalent to insert sort.
+    The shellsort step is done in place.
+*/
+#define bitvector_shellsort_step(a, n, gap, num_type) do { \
+    uint_fast32_t _i, _j;  \
+    for (_i = gap; _i < n; _i += 1) { \
+        num_type _tmp = (a)[_i]; \
+        for (_j = _i; _j >= gap && (a)[_j - gap] > _tmp; _j -= gap) { \
+            (a)[_j] = (a)[_j - gap]; \
+        } \
+        (a)[_j] = _tmp; \
+    } \
+} while(0)
+
+#define bitvector_insertsort(a, n, num_type) \
+    bitvector_shellsort_step(a, n, 1, num_type)
+
+
+
 // %%GEN ch
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +103,8 @@ extern "C" {
 // Exchange entry a[i] with a[j]. This requires an auxiliary
 // variable ``temp`` of the same type as ``a[0]``.
 #define xchg(a, i, j)  temp = a[i]; a[i] = a[j]; a[j] = temp
+
+
 
 /// @endcond 
 
@@ -189,29 +214,6 @@ void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
 ** Insert sort for unsigned  %{N}-bit integers
 *************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
-
-
-/** @brief Sort an array ``a`` of length ``n`` with insert sort
-
-    Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
-    The array is sorted in place.
-*/
-static inline void insertsort%{N}(uint%{N}_t *a, uint32_t n)
-{
-    uint_fast32_t i, j;
-    uint%{N}_t temp;
-
-    for (i = 1; i < n; i += 1) {
-        temp = a[i];
-        for (j = i; j >= 1 && a[j - 1] > temp; --j) a[j] = a[j - 1];
-        a[j] = temp;
-    }
-}
-
-
-/// @endcond 
-
 
 /*************************************************************************
 ** The final sorting algorithm for unsigned  %{N}-bit integers
@@ -236,7 +238,7 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 
     // Use insertion sort for small arrays
     if (n < MIN_QS) {
-        insertsort%{N}(a, n);
+        bitvector_insertsort(a, n, uint%{N}_t);
         return;
     }  
 
@@ -265,7 +267,10 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
         l = sp[0], r = sp[1]; // get min and max index from stack
         if (r - l < MIN_QS) {
             // Use insertion sort for small arrays
-            insertsort%{N}(a + l, r - l + 1);
+            uint_fast32_t l1 = r - l + 1;
+            uint%{N}_t *a1 = a + l;
+            // if (l1 >= 12) bitvector_shellsort_step(a1, l1, 4, uint%{N}_t);
+            bitvector_insertsort(a1, l1, uint%{N}_t);
         } else if (sp[2]) {
             // Use quicksort until max recursion depth reached. We
             // compute the partiton as in the English Wikipedia article.

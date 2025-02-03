@@ -308,6 +308,7 @@ class Axis:
     ERR_MAP = "Could not map type %s object to a monster axis"
     ERR_INVOL = "Type %s object is not a 2A involution in the Monster"
     axis_class = "standard"
+    default_profile_hashmode = 0
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, Axis):
@@ -625,6 +626,56 @@ class Axis:
         """
         from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
         return reduce_axis_G_x0(self)
+    def profile_Nx0(self, t = None, mode = None):
+        r"""Return invariant under the even part of :math:`N_{x0}`
+
+        Let :math:`N_{xyz}` (of structure :math:`2^{2+11+22}.M_{24}`)
+        be the unique subgroup of index 2 of :math:`N_{x0}`. The
+        function computes a certain :math:`24 \times 24` matrix ``M``
+        from the parts 'A', 'B', and 'C' of the axis modulo 3. Matrix
+        ``M`` is invariant under the action of the normal subgroup
+        :math:`2^{2+11+22}` of :math:`N_{xyz}`.
+
+        The function also computes a matrix ``H`` corrsponding to the
+        matrix ``M`` sorted in a  suitable way such that the sorted
+        matrix ``H`` is invariant under :math:`N_{xyz}`. The function
+        returns the triple ``(M, h, H)`` where the 64-bit integer ``h``
+        is a hash value over ``H``.
+
+        If parameter ``t`` is a tuple ``(e, f)`` then the same
+        calculation is done with axis
+        :math:`a \cdot \tau^e x_\delta^f` instead of the axis
+        :math:`a` in this instance. Here :math:`\delta` may by any
+        odd Golay cocode word. Note that
+        :math:`\langle N_{xyz}, \tau^e, x_\delta^f
+        \mid e=0,1,2; f=0,1 \rangle`
+        is the group :math:`N_{0}` of structure
+        :math:`2^{2+11+22}.(S_3 \times M_{24})`.
+
+        Parameter ``mode``  allows to specify a subgroup :math:`N'` of
+        :math:`N_{xyz}`, such that the computed matrix ``H`` will be
+        inviarant under  :math:`N'` only. Legal modes are:
+
+        ``mode == 0``:  :math:`N'` =   :math:`N_{xyz}`
+
+        More possibilities may bea added in future versions!
+        """
+        from mmgroup.mm_reduce import mm_profile_mod3_load
+        from mmgroup.mm_reduce import mm_profile_mod3_hash
+        if isinstance(t, tuple):
+            t = (t[0] % 3) * 2 + (t[1] & 1)
+        else:
+            t = 0
+        if mode is None:
+            mode = self.default_profile_hashmode
+        a = np.zeros(72, dtype = np.uint64)
+        b = np.zeros(2*576, dtype = np.uint8)
+        assert  mm_profile_mod3_load(15, self.v15.data, a, t) == 0
+        h = int(mm_profile_mod3_hash(a, b, mode))
+        assert h >= 0
+        b = b.reshape((2,24,24))
+        #print(b)
+        return b[0], h, b[1]
 
 
 
@@ -775,6 +826,7 @@ class BabyAxis(Axis):
     ERR_BABY_G = "Type %s object is not in the baby monster group"
     ERR_BABY = "Could not map type %s object to a baby monster axis"
     axis_class = "baby"
+    default_profile_hashmode = 1
     def __init__(self, g = 1, invol = None):
         t = g
         if isinstance(g, BabyAxis):

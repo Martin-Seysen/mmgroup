@@ -1,0 +1,367 @@
+/** @file mm_profile_abc_mod3.c
+
+File ``mm_profile_abc_mod3`` contains functions for profling
+the parts 'A', 'B', 'C' of a vector in the representation of the 
+Monster, using the vector entries module 3. In a future version
+this might be useful to detect the orbit of a 2A axis under the
+action of the subgroup \f$N_{xyz}\f$ of the Monster.
+
+Details are yet to be documented!
+*/
+
+/// @cond DO_NOT_DOCUMENT
+#include <string.h>
+
+#include "mat24_functions.h"
+#include "mm_basics.h"
+#include "mm_op_p.h"
+#include "mmgroup_generators.h"
+#include "clifford12.h"
+#include "mm_reduce.h"   
+/// @endcond
+
+   
+
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+/************************************************************************
+** Auxiliary functions
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+/** 
+  @brief Reduce dibits in the array ``a`` of length 72 modulo 3.
+*/
+static inline void _reduce(uint64_t *a) {
+    uint64_t w, i;
+    for (i = 0; i < 72; ++i) { 
+        w = (a[i] & (a[i] >> 1)) & 0x5555555555555555ULL;
+        a[i] = (a[i] ^ w ^ (w << 1)) & 0xffffffffffffULL;
+    }
+}
+
+
+
+/** 
+  @brief Re-encode dibits in the 64-bit integer ``w``.
+
+  Dibits are mapped as 00 -> 00, 01 -> 01, 10 -> 11, 11 -> 00.
+  Thus, modulo 3, the low bit acts as a 'nonzero' flag, and the
+  high bit acts as a 'negative' flag. 
+
+  The macro uses a temporary 64-bit integer ``t``.
+*/
+#define adjust_sign(w, t) \
+    t = w & (w << 1) & 0xaaaaaaaaaaaaaaaaULL; \
+    w = w ^ ((w >> 1) & 0x5555555555555555ULL) ^ t  
+
+
+
+/** 
+  @brief Load parts ABC of representation of Monster modulo 3
+
+  Let ``v`` point to a vector of the representation \f$\rho_{p}\f$
+  of the Monster, with \f$p\f$ given by parameter ``p``. The function
+  load parts `A`, `B`, and `C` of that vector (in that order) into
+  the vector of length 3 * 24 referred by ``a``. Entries of
+  vector ``a`` are encoded as in representation  \f$\rho_{3}\f$.
+  The function returns 0 in case of success and -1 in case of failure.
+ 
+*/
+static inline int32_t
+mm_profile_mod3_load_abc(uint32_t p, uint_mmv_t *v, uint64_t *a)
+{
+    uint64_t m[3*24], i, len24 = mm_aux_v24_ints(p);
+    if (len24 == 0 || len24 > 4) return -1;
+    for (i = 0; i < 3 * 24; i += 24) {
+        if (mm_op_load_leech3matrix(p, v + i*len24, m) < 0) return -2;
+        leech3matrix_compress(m, m);
+        memcpy(a + i, m, 24 * sizeof(uint64_t));
+    }
+    _reduce(a);
+    return 0;
+}
+
+
+
+
+/// @endcond 
+
+/************************************************************************
+** Load part A, B, C mod 3 from vector of representation of Monster
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** 
+  @brief Load parts A * tau**e of representation of Monster modulo 3
+
+  Let ``v`` point to a vector of the representation \f$\rho_{p}\f$
+  of the Monster, with \f$p\f$ given by parameter ``p``. The function
+  load parts `A` * \f$\tau^e\f$,  \f$e = 0, 1, 2\f$ of that vector
+  (in that order) into the vector of length 3 * 24 referred by ``a``.
+  Entries of  vector ``a`` are encoded as in
+  representation  \f$\rho_{3}\f$.
+  The function returns 0 in case of success and -1 in case of failure.
+
+  A nonzero value ``t`` is interpreted as follows:
+  Before loading the vector ``v``, multiply it with \f$\tau^f\f$,
+  where \f$f\f$ is ``(t / 2) & 3``. If ``t`` is odd then multiply ``v``
+  with \f$x_\delta\f$ afterwards, where  \f$\delta\f$ is any odd
+  Golay cocode element. All these multiplications are done
+  internally, without changing the input vector ``v``.
+ 
+*/
+// %%EXPORT px
+int32_t mm_profile_mod3_load(uint32_t p, uint_mmv_t *v, uint64_t *a, uint32_t t)
+{
+    uint64_t m[72], e = (t >> 1) & 3;
+    if (mm_profile_mod3_load_abc(p, v, m) < 0)  return -1;
+
+    memcpy(a + 24 * ((3 - e) % 3), m, 24 * sizeof(uint64_t));
+    mm_op3_t_ABC(m, 1);
+    memcpy(a + 24 * ((4 - e) % 3), m, 24 * sizeof(uint64_t));
+    mm_op3_t_ABC(m, 1);
+    memcpy(a + 24 * ((5 - e) % 3), m, 24 * sizeof(uint64_t));
+    if (t & 1) {
+        memcpy(m, a+24, 24 * sizeof(uint64_t));
+        memcpy(a+24, a+48, 24 * sizeof(uint64_t));
+        memcpy(a+48, m, 24 * sizeof(uint64_t));
+    }
+    _reduce(a);
+    return 0;
+}
+
+/// @endcond DO_NOT_DOCUMENT 
+
+
+/************************************************************************
+** adjust signs for our profiling
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** @brief yet to be documented 
+*/
+static inline void block_mod3_to_profile(uint64_t *a, uint8_t *b)
+{
+    uint64_t i, j, t0, t1, t2, x;
+    for (i = 0; i < 24; ++i) {
+        t0 = a[i]; adjust_sign(t0, x);
+        t1 = a[i+24]; adjust_sign(t1, x);
+        t2 = a[i+48]; adjust_sign(t2, x);
+        for (j = 0; j < 24; ++j) {
+            x = (((t0 ^ t1 ^ t2) >> 1) & t0 & t1 & t2 & 1) << 3;
+            x += (t0 & 1) + ((t1 & 1) << 1) + ((t2 & 1) << 2);
+            b[j] = (uint8_t)(x);
+            t0 >>= 2; t1 >>= 2; t2 >>= 2;
+        }
+        b[i] = (uint8_t)((a[i] >> (2*i)) & 3);
+        b += 24;
+    } 
+}
+
+
+static inline void block_mod3_augment(uint64_t *a, uint8_t *b, uint32_t i, uint32_t j)
+{
+    uint64_t t0, t1, t2, x;
+    t0 = (a[i] >> 2*j) & 3; adjust_sign(t0, x);
+    t1 = (a[i+24] >> 2*j) & 3; adjust_sign(t1, x);
+    t2 = (a[i+48] >> 2*j) & 3; adjust_sign(t2, x);
+    x = t0 + (t1 << 2) + (t2 << 4) + 0x40;
+    b[24*i + j] = b[24*j + i] = (uint8_t)x;
+}
+
+
+
+
+/// @endcond 
+
+
+
+
+
+
+/************************************************************************
+** Load part A, B, C mod 3 from vector of representation
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline void
+mm_profile_mod3_sort(uint8_t *h, uint8_t start, uint8_t *diag)
+{
+    uint8_t b1[576], *row;
+    uint_fast8_t stage, i, j;
+    uint_fast64_t ind[24], tmp, ind_last, head, sh;
+    uint32_t n_sort = 23 - start;
+
+    memcpy(b1, h, 576 * sizeof(uint8_t)); 
+    // Augment rows and sort each row, result in b1[]
+    for (i = 0; i < 24; ++i) diag[i] = (b1[25*i] & 3) << 4;
+    row = b1;
+    for (i = 0; i < start; ++i) {
+        for (j = start; j < 24; ++j) ind[j] = (row[j] & 0xf) | diag[j];
+        // bitvector_shellsort_step(ind + start + 1, 23, 3, uint64_t);
+        bitvector_insertsort(ind + start, n_sort + 1, uint64_t);
+        for (j = start; j < 24; ++j) row[j] = (uint8_t)ind[j];
+        row += 24;
+    }
+    for (i = start; i < 24; ++i) {
+        for (j = start; j < 24; ++j) ind[j] = (row[j] & 0xf) | diag[j];
+        tmp = ind[i] & 3; ind[i] = ind[start]; ind[start] = tmp;
+        // bitvector_shellsort_step(ind + start + 1, 23, 3, uint64_t);
+        bitvector_insertsort(ind + start + 1, n_sort, uint64_t);
+        for (j = start; j < 24; ++j) row[j] = (uint8_t)ind[j];
+        row += 24;
+    }
+
+    // Sort rows, index list in ind[]
+    for (i = 0; i < 24; ++i) ind[i] = i;
+    for (stage = 0; stage < 24; stage += 8) {
+        for (i = start; i < 24; ++i) {
+            row = b1 + 24 * (ind[i] & 0x3fULL) + stage;
+            for (sh = 8 * 6; sh >= 1 * 6; sh -= 6) {
+                ind[i] |= (uint64_t)(*row++ & 0x3f) << sh;
+            }
+        }
+        bitvector_insertsort(ind, 24, uint64_t);
+        ind_last = ind[0]; head = 0;
+        for (i = start; i < 24; ++i) {
+            if ((ind_last ^ ind[i]) & 0xffffffffffffffc0ULL) {
+                ind_last = ind[i];
+                head += (uint64_t)1ULL << (uint64_t)(9 * 6);
+            }
+            ind[i] = (ind[i] & 0x3fULL) | head;
+        }
+    }
+    
+    // Copy sorted rows to h[] and compute hash value of sorted matrix
+    memset(h, 0xff, 576 * sizeof(uint8_t)); // for debugging
+    for (i = 0; i < 24; ++i) {
+        memcpy(h + i*24, b1 + (ind[i] & 0x3f)*24, 24*sizeof(uint8_t));
+        diag[ind[i] & 0x3f] = (uint8_t)(ind[i] >> 9 * 6) & 0x3f;
+    }
+}
+
+
+/// @endcond 
+
+
+
+/************************************************************************
+** Support for Baby Monster axes
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline void xchg_uint8_row_col(uint8_t *b, uint32_t i1, uint32_t i2)
+{
+    uint8_t t, *pi1 = b + 24*i1, *pi2 = b + 24*i2;
+    uint_fast32_t j;
+    for (j = 0; j < 24; ++j) {
+        t = pi1[j]; pi1[j] = pi2[j]; pi2[j] = t;
+    }
+    pi1 = b + i1; pi2 = b + i2; 
+    for (j = 0; j < 24*24; j += 24) {
+        t = pi1[j]; pi1[j] = pi2[j]; pi2[j] = t;
+    }
+}
+
+
+static inline uint32_t compare_row_col_01(uint8_t *b)
+{
+    uint8_t *p1 = b + 24;
+    uint_fast32_t j;
+    if (b[0] != p1[1]) return b[0] < p1[1];
+    for (j = 2; j < 24; ++j) if (b[j] != p1[j]) return b[j] < p1[j];
+    return 0;
+}
+
+
+
+/// @endcond 
+
+
+
+/************************************************************************
+** Sort and hash
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+#define HASH_MULTIPLIER  ((uint64_t)0x4f1bbcdcbfa53ffbULL)
+
+/// @endcond 
+
+
+
+
+
+/** @brief yet to be documented 
+
+   ``b`` must have size 2 * 24 * 24
+*/
+// %%EXPORT px
+int64_t mm_profile_mod3_hash(uint64_t *a, uint8_t *b, uint32_t mode)
+{
+    uint8_t diag[24], *h = b + 576, start = 0;
+    uint64_t hash = 0ULL, j;
+    block_mod3_to_profile(a, b);
+    switch(mode) {
+        case 2:
+            block_mod3_augment(a, b, 1, 2);
+            block_mod3_augment(a, b, 1, 3);
+        case 1:
+            block_mod3_augment(a, b, 2, 3);
+        default:
+            break;
+    }
+    memcpy(h, b, 576 * sizeof(uint8_t)); 
+    switch(mode) {
+        case 0:   // standard mode
+            start = 0;
+            break;
+        case 1:   // for axes in Baby Monster
+            xchg_uint8_row_col(h, 0, 2);
+            xchg_uint8_row_col(h, 1, 3);
+            if (compare_row_col_01(h)) xchg_uint8_row_col(h, 0, 1);
+            start = 2;
+            break;
+        case 2:   // for axes in 2.E_6(2)  (???)
+            xchg_uint8_row_col(h, 0, 2);
+            start = 3;
+            break;
+        default:
+            return -1;
+    } 
+    mm_profile_mod3_sort(h, start, diag);
+    for (j = 0; j < 576; ++j)  hash = (hash * HASH_MULTIPLIER + h[j]);
+    return (int64_t)(hash & 0x7fffffffffffffffULL);
+}
+
+
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c

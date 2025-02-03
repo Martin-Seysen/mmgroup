@@ -433,6 +433,7 @@ uint32_t mm_aux_int_fields(uint32_t p)
 
   The function returns 0 if ``p`` is illegal modulus.
 */
+// %%EXPORT p
 uint32_t mm_aux_v24_ints(uint32_t p)
 {
     uint_fast32_t tbl;

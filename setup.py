@@ -586,6 +586,7 @@ MM_REDUCE_SOURCES = '''
    mm_suborbit.c
    mm_shorten.c
    mm_vector_v1_mod3.c
+   mm_profile_abc_mod3.c
 '''
 
 MM_REDUCE_GENERATE = GENERATE_START + '''

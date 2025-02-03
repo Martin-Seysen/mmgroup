@@ -685,7 +685,7 @@ done:
 /// @cond DO_NOT_DOCUMENT
 
 
-static inline uint32_t make_compressed(
+static inline int32_t make_compressed(
 uint32_t *a, uint64_t *bitmap, uint32_t n_entries, uint32_t n_orbits, uint32_t *c, uint32_t l_c)
 // Auxiliary function for function ``gen_ufind_lin2_compress``
 //
