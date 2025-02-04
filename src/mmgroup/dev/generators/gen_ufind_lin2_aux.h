@@ -23,7 +23,7 @@ internal structure of array ``a`` is documented in this headar file.
 *  Stuctures for orbit arrays
 ************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
 
 /*********************************************************************
 A function in module ``gen_ufind_lin2.c`` deals with a group \f$G\f$,

@@ -415,8 +415,6 @@ C interface for file mm_op_p_axis.c
 .. doxygenfile:: mm_op_p_axis.c
 
 
-
-
 Internal operation
 ------------------
 
@@ -582,6 +580,12 @@ C interface for file mm_vector_v1_mod3.c
 -----------------------------------------
 
 .. doxygenfile:: mm_vector_v1_mod3.c
+
+
+C interface for file mm_profile_abc_mod3.c
+---------------------------------------------
+
+.. doxygenfile::  mm_profile_abc_mod3.c
 
 
 
