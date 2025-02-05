@@ -7,13 +7,45 @@ if __name__ == "__main__":
     sys.path.append("../../../")
 
 
-from mmgroup import MM0, MMV
+from mmgroup import MM0, MMV, AutPL
 V = MMV(255)
+PI_XCHG_23 = MM0(AutPL(0, {1:1, 2:3, 3:2}, False))
+MODE_GROUPS = {0: 'M', 1: 'B', 2: 'B & 2E_6'}
+
 
 def import_all():
     global Axis, mm_profile_mod3_permute24
     from mmgroup.axes import Axis
     from mmgroup.mm_reduce import mm_profile_mod3_permute24
+
+def rand_Nx0_e(mode = 0):
+    r"""Return random *even* element of the group :math:`N_{x0}`
+
+    The function returns a random even element :math:`g` of the group
+    :math:`N_{x0}` as an instance of class `MM0`. Element :math:`g`
+    also fixes a certain set :math:`\{x_\delta \mid \delta \in S\}` of
+    2A involutions pointwise, where :math:`S` is a set of Golay cocode
+    words depending of parameter ``mode``. Legal values for ``mode``
+    are:
+
+    === ====================================
+     0  :math:`S = \{ \}` 
+     1  :math:`S = \{ [2,3] \}`
+     2  :math:`S = \{ [1,2], [2,3] \}`
+    === ====================================
+    """
+    g = MM0('r', 'N_x0_e & %s' % MODE_GROUPS[mode])
+    if mode == 2:
+        # Permution pi in M_24 corresponding to g fixes 1; but it may 
+        # either fix or exchange 2 and 3. Change g so that pi fixes
+        # 2 and 3, if necessary. 
+        pi = g.as_M24_permutation()
+        assert pi[1] == 1
+        if pi[2] == 3:
+            g *= PI_XCHG_23
+            pi = g.as_M24_permutation()
+        assert pi[1:4] == [1,2,3]
+    return g
 
 def display_hash_A(h, show_sort = False):
     _, hash, a = h
@@ -93,7 +125,6 @@ def do_test_mm_profile_mod3_permute24(verbose = 0):
         assert (m1 == m2).all()  
 
 
-MODE_GROUPS = {0: 'M', 1: 'B', 2: 'B & 2E_6'}
 
 def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
     ax = Axis('r')
@@ -101,7 +132,7 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
     for j in range(2):
         if verbose:
             print("\nTest N_x0_e", j, ", mode =", mode)
-        g = MM0('r', 'N_x0_e & %s' % MODE_GROUPS[mode])
+        g = rand_Nx0_e(mode)
         ax1 = ax * g
         ax1_hash = ax1.profile_Nx0(mode = mode)
         #ax1_hash[0][13,17] += 1 # cause a bug
@@ -111,16 +142,15 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
         equ = ax_hash_equal(ax1_hash, ax_hash, verbose)
         assert equ
         assert (ax1_hash[0] == permute_matrix24(ax_hash[0], g)).all()
-    if not test_S3:
-        return
-    for e in range(3):
-        for f in range(2):
-            if verbose:
-                print("\nTest S_3, mode =", mode, ", S_3=", e, f)
-            h1 = ax1.profile_Nx0((e,f), mode = mode)
-            ax_m = ax * MM0([('t',e), ('d', 0x800 & -f)])
-            h2 = ax_m.profile_Nx0(mode = mode)
-            assert ax_hash_equal(h1, h2, verbose)
+    if test_S3:
+        for e in range(3):
+            for f in range(2):
+                if verbose:
+                    print("\nTest S_3, mode =", mode, ", S_3=", e, f)
+                h1 = ax1.profile_Nx0((e,f), mode = mode)
+                ax_m = ax * MM0([('t',e), ('d', 0x800 & -f)])
+                h2 = ax_m.profile_Nx0(mode = mode)
+                assert ax_hash_equal(h1, h2, verbose)
 
 
 
@@ -128,14 +158,14 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
 
 
 @pytest.mark.axes
-def test_axis_profile(n_axes = 10, verbose = 0):
+def test_axis_profile(n_axes = 5, verbose = 0):
     import_all()
     do_test_mm_profile_mod3_permute24(verbose)
     for i in range(n_axes):
-        for mode in [0, 1]: # mode 2 yet buggy!!!
+        for mode in [0, 1, 2]:
             if verbose:
                 print("\nTest", i+1, ", mode =", mode)
-                one_test_axis_profile(mode, i < 3, verbose = verbose)
+            one_test_axis_profile(mode, i < 3, verbose = verbose)
            
             
  
