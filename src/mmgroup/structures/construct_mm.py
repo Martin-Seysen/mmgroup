@@ -103,9 +103,9 @@ def _iter_d(tag, d):
     elif isinstance(d, str):
         cocode = randint(d == 'n', 0xfff) 
         if d == "o":
-            cocode |= 1 
+            cocode |= 0x800 
         elif d == "e":
-            cocode &= ~1
+            cocode &= ~0x800
         if  len(d) == 1 and d in "rnoe":
             yield 0x10000000 + (cocode & 0xfff)
         else:
