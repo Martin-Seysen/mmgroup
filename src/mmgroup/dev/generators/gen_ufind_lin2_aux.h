@@ -60,7 +60,7 @@ Structure ``s`` has an entry ``n`` which is the dimension of \f$V\f$.
 
 Structure ``s`` contains an entry ``p_t`` pointing to a table ``t``.
 
-  In case `status == 2`` this table has length ``1 << s.n``,
+  In case ``status == 2`` this table has length ``1 << s.n``,
   where ``s.n`` is the dimension of the vector space \f$V\f$.
   Entry ``i`` in that table corresponds to vector ``i`` in \f$V\f$.
   The union-find algorithm in module ``gen_union_find.c`` is executed
@@ -287,7 +287,7 @@ static inline uint32_t vmatmul(uint32_t v, uint32_t *m)
 // given by \f$v \mapsto v \cdot A + b, v, b \in V\f$, \f$A\f$ an
 // \f$n \times n\f$ bit matrix, in an array ``m`` of \f$n + 1\f$
 // unsigned 32-bit integers as follows.
-// Row ``i`, ``0 <= i < n`` of matrix \f$A\f$ is stored in ``m[i]`` as
+// Row ``i``, ``0 <= i < n`` of matrix \f$A\f$ is stored in ``m[i]`` as
 // a bit vector; bit vector ``b`` is stored in  ``m[n]``.
 
 
@@ -448,6 +448,7 @@ store64_gen(uint64_t *o, uint32_t n, uint32_t *g0, uint32_t *g1)
 }
 
 
+
 /************************************************************************
 *  Compute the partition into the orbits
 ************************************************************************/
@@ -461,7 +462,7 @@ as in the description of the array referred by entry ``p_t`` of a
 structure of tye ``lin2_type``. Here we refer to the description of
 that structure in the header of this file in case of ``status == 2``.
 
-We store the partition of the set `S(l_t)`` into orbits as a list of
+We store the partition of the set ``S(l_t)`` into orbits as a list of
 lists in the array ``map``. The structure of the array ``map`` is as
 in the description of the array referred by entry ``p_o`` of a
 structure of type ``lin2_type``, in case of ``status == 2``.

@@ -653,7 +653,7 @@ class Axis:
         structure :math:`2^{2+11+22}.(S_3 \times M_{24})`.
 
         Parameter ``mode``  allows to specify a subgroup :math:`N'` of
-        :math:`N_{xyz}`, such that the computed matrix ``H`` will be
+        :math:`N_{xyz}`, such that the computed matrix ``M`` will be
         inviarant under  :math:`N'` only. Here :math:`N'` is the
         subgroup of :math:`N` centralizing a set
         :math:`\{x_\delta \mid \delta \in S\}` of 2A involutions
