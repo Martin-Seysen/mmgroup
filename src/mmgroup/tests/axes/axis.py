@@ -639,7 +639,7 @@ class Axis:
         The function also computes a matrix ``H`` corrsponding to the
         matrix ``M`` sorted in a  suitable way such that the sorted
         matrix ``H`` is invariant under :math:`N_{xyz}`. The function
-        returns the triple ``(M, h, H)`` where the 64-bit integer ``h``
+        returns the triple ``(M, h, H)`` where the 63-bit integer ``h``
         is a hash value over ``H``.
 
         If parameter ``t`` is a tuple ``(e, f)`` then the same
@@ -649,16 +649,28 @@ class Axis:
         odd Golay cocode word. Note that
         :math:`\langle N_{xyz}, \tau^e, x_\delta^f
         \mid e=0,1,2; f=0,1 \rangle`
-        is the group :math:`N_{0}` of structure
-        :math:`2^{2+11+22}.(S_3 \times M_{24})`.
+        is the maximal subgroup :math:`N_{0}` of the Monster of
+        structure :math:`2^{2+11+22}.(S_3 \times M_{24})`.
 
         Parameter ``mode``  allows to specify a subgroup :math:`N'` of
         :math:`N_{xyz}`, such that the computed matrix ``H`` will be
-        inviarant under  :math:`N'` only. Legal modes are:
+        inviarant under  :math:`N'` only. Here :math:`N'` is the
+        subgroup of :math:`N` centralizing a set
+        :math:`\{x_\delta \mid \delta \in S\}` of 2A involutions
+        pointwise, where :math:`S` is a set of Golay cocode words
+        depending of parameter ``mode``. Legal values for ``mode`` are:
 
-        ``mode == 0``:  :math:`N'` =   :math:`N_{xyz}`
+       .. table:: Subgroups :math:`N'` of :math:`N_{xyz}` supported
+         :widths: 15 85
 
-        More possibilities may bea added in future versions!
+         ==== =============================================================
+         mode :math:`N'` centralizes :math:`\{x_\delta \mid \delta \in S\}`
+         ==== =============================================================
+          0   :math:`S = \{ \}`, i.e. :math:`N' = N_{xyz}`
+          1   :math:`S = \{ [2,3] \}`
+          2   :math:`S = \{ [1,2], [2,3] \}`
+         ==== =============================================================
+
         """
         from mmgroup.mm_reduce import mm_profile_mod3_load
         from mmgroup.mm_reduce import mm_profile_mod3_hash

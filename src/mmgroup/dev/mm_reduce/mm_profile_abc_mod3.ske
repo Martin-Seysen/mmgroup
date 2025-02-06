@@ -1,6 +1,6 @@
 /** @file mm_profile_abc_mod3.c
 
-Basic operation of this module
+* **Basic operation of this module**
 
 The centralizer of the
 fourgroup \f$V_4 = \{1, x_{-1}, x_{\Omega}, x_{-\Omega}\}\f$ in the
@@ -71,19 +71,52 @@ computes the matrices \f$M(v)\f$ and \f$H(v)\f$ from that triple.
 It also computes a 63-bit hash value over the matrix \f$H(v)\f$.
 
 
-Extensions
+* **Extensions**
 
 From \f$v\f$ we may compute \f$M(w)\f$ and \f$H(w)\f$ for 
 \f$w = v \cdot \tau^e x_\delta^f\f$, for any
-odd cocode element \f$x_\delta\f$, withour comuting \f$w\f$.
+odd cocode element \f$x_\delta\f$, without computing \f$w\f$.
 (These matrices are invariant
 under \f$x_\delta\f$ for \f$\delta\f$ even).
 
 We may also watermark orbits of \f$v\f$ under the action of a
-few fixed subgroups of \f$N_{xyz}\f$. 
+few fixed subgroups \f$N'\f$ of \f$N_{xyz}\f$.
+Parameter ``mode`` of function ``mm_profile_mod3_hash``
+allows to specify a subgroup  \f$N'\f$ of
+\f$N_{xyz}\f$, such that the computed matrix ``M`` will be
+inviarant under  \f$N'\f$ only. Here \f$N'\f$ is the
+subgroup of \f$N\f$ centralizing a set
+\f$\{x_\delta \mid \delta \in S\}\f$ of 2A involutions
+pointwise, where \f$S\f$ is a set of Golay cocode words
+depending of parameter ``mode``. Legal values for ``mode`` are:
+
+<table>
+<caption>
+Subgroups \f$N'\f$ of \f$N_{xyz}\f$ supported
+</caption>
+<tr>
+   <th> mode
+   <th> \f$N'\f$ centralizes \f$\{x_\delta \mid \delta \in S\}\f$
+</tr>
+<tr>
+   <td> 0
+   <td> \f$S = \{ \}\f$, i.e. \f$N' = N_{xyz}\f$
+</tr>
+<tr>
+   <td> 1
+   <td> \f$S = \{ [2,3] \}\f$
+</tr>
+<tr>
+   <td> 2
+   <td> \f$S = \{ [1,2], [2,3] \}\f$
+</tr>
+</table>
 
 
-Warning
+
+
+
+* **Warning**
  
 The functions in this module may differ between versions!
 
@@ -227,8 +260,8 @@ mm_profile_mod3_load_abc(uint32_t p, uint_mmv_t *v, uint64_t *a)
 
   Let ``v`` point to a vector of the representation \f$\rho_{p}\f$
   of the Monster, with \f$p\f$ given by parameter ``p``. The function
-  load  triple of the parts ('A', 'B+C', 'B-C')  of that vector into
-  the array length 72 referred by ``a``, as described in the
+  loads the triple of the parts ('A', 'B+C', 'B-C')  of that vector
+  into the array of length 72 referred by ``a``, as described in the
   header of this file.
   The function returns 0 in case of success and -1 in case of failure.
   Legal values for \f$p\f$ are 3 and 15.
@@ -239,7 +272,6 @@ mm_profile_mod3_load_abc(uint32_t p, uint_mmv_t *v, uint64_t *a)
   with \f$x_\delta\f$ afterwards, where  \f$\delta\f$ is any odd
   Golay cocode element. All these multiplications are done
   internally, without changing the input vector ``v``.
- 
 */
 // %%EXPORT px
 int32_t mm_profile_mod3_load(uint32_t p, uint_mmv_t *v, uint64_t *a, uint32_t t)
@@ -504,9 +536,30 @@ static inline void sort_col_01(uint8_t *b)
 
 
 
-/** @brief yet to be documented 
+/** @brief Watermark orbit of a vector in the representation of the Monster
 
-   Output array ``b`` must have size 2 * 24 * 24
+Let ``a`` refer to an array of length 72 containing the output of
+function `` mm_profile_mod3_load``. That output is a triple of the
+parts (‘A’, ‘B+C’, ‘B-C’) of a vector \f$v\f$ in the representation
+of the Monster (modulo 3), as described in the documentation in
+the header of this file.
+
+From this input the function computes the matrices ``M`` and ``H``,
+as described in the header of this file. The function returns a
+63-bit hash value of matrix ``H`` in case of success and a negative
+value in case of failure. The matrix ``H`` and its hash value may be
+used to watermark the orbit of \f$v\f$ under the action of the
+group \f$N_{xyz}\f$.
+
+Output array ``b`` must have size 2 * 24 * 24. Entry ``i, j`` of
+matrix ``M`` is stored in ``b[24 * i + j]``.  Entry ``i, j`` of
+matrix ``H`` is stored in ``b[24*24 + 24 * i + j]``.
+
+If is ``mode`` is zero then the computed matrix ``H`` watermarks the
+orbit of \f$v\f$ under the action of \f$N_{xyz}\f$. In case
+``mode = 1, 2`` the matrix ``H`` watermarks the orbit of \f$v\f$ under
+the action of a subgroup of \f$N_{xyz}\f$, as described in the
+header of this file.
 */
 // %%EXPORT px
 int64_t mm_profile_mod3_hash(uint64_t *a, uint8_t *b, uint32_t mode)
@@ -584,11 +637,11 @@ int64_t mm_profile_mod3_hash(uint64_t *a, uint8_t *b, uint32_t mode)
     Permute the rows and columns of the 24 times 24 matrix ``b``
     with permutation ``p`` and store result in buffer ``b1``.
     Entry ``i, j`` of a matrix is stored at index ``24 * i + j``.
-    Buffer ``b`` and ``b1`` have size 24* 24.
+    Buffers ``b`` and ``b1`` have size 24 * 24; these buffers
+    may overlap.
 
     The function returns 0 in case of success and a negative value
     in case of failure, e.g. if ``p`` is not a legal permutation.
-    Buffers ``b`` and ``b1`` may overlap.
 */
 // %%EXPORT px
 int32_t mm_profile_mod3_permute24(uint8_t *b, uint8_t *p, uint8_t *b1)
