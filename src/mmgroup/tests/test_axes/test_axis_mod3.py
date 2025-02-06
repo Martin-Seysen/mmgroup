@@ -36,9 +36,9 @@ def rand_Nx0_e(mode = 0):
     """
     g = MM0('r', 'N_x0_e & %s' % MODE_GROUPS[mode])
     if mode == 2:
-        # Permution pi in M_24 corresponding to g fixes 1; but it may 
-        # either fix or exchange 2 and 3. Change g so that pi fixes
-        # 2 and 3, if necessary. 
+        # Permutation pi in M_24 corresponding to g fixes 1; but it may
+        # either fix or exchange 2 and 3. Change g so that pi fixes 2
+        # and 3, if necessary.
         pi = g.as_M24_permutation()
         assert pi[1] == 1
         if pi[2] == 3:

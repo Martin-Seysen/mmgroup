@@ -78,6 +78,8 @@ From \f$v\f$ we may compute \f$M(w)\f$ and \f$H(w)\f$ for
 odd cocode element \f$x_\delta\f$, without computing \f$w\f$.
 (These matrices are invariant
 under \f$x_\delta\f$ for \f$\delta\f$ even).
+Here the arguments \f$e\f$ and \f$f\f$ are passed to
+function ``mm_profile_mod3_load``.
 
 We may also watermark orbits of \f$v\f$ under the action of a
 few fixed subgroups \f$N'\f$ of \f$N_{xyz}\f$.
@@ -125,36 +127,10 @@ They are desigend for the internal needs of the *mmgroup* package.
 
 
 
-/// @cond DO_NOT_DOCUMENT
-#include <string.h>
-
-#include "mat24_functions.h"
-#include "mm_basics.h"
-#include "mm_op_p.h"
-#include "mmgroup_generators.h"
-#include "clifford12.h"
-#include "mm_reduce.h"   
-/// @endcond
-
-   
-
-
-
-
-//  %%GEN h
-/// @cond DO_NOT_DOCUMENT 
-//  %%GEN c
-
-
 
 
 /************************************************************************
-** Loading parts of a vector with function ``mm_profile_mod3_load`` 
-************************************************************************/
-
-/// @cond DO_NOT_DOCUMENT
-
-/************************************************************************
+Internal structure of array loaded by function ``mm_profile_mod3_load``
 
 Function ``mm_profile_mod3_load`` loads entries of a vector \f$v\f$ of
 the representation of the Monster into an array ``a`` of length 72. For
@@ -178,10 +154,27 @@ entry ``i,j`` of  ``A[e;]``.
 In the block ``a`` the entry ``A[e;i,j]``is stored in bits
 ``(2*j+1, 2*j)`` of entry ``a[24*e + i]``. Such an entry is also
 called a *dibit*.
-/
-************************************************************************
+************************************************************************/
 
-/// @endcond 
+
+
+
+/// @cond DO_NOT_DOCUMENT
+#include <string.h>
+
+#include "mat24_functions.h"
+#include "mm_basics.h"
+#include "mm_op_p.h"
+#include "mmgroup_generators.h"
+#include "clifford12.h"
+#include "mm_reduce.h"
+/// @endcond
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT
+//  %%GEN c
 
 
 /************************************************************************
@@ -300,7 +293,7 @@ int32_t mm_profile_mod3_load(uint32_t p, uint_mmv_t *v, uint64_t *a, uint32_t t)
 ************************************************************************/
 
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
 
 
 /** @brief Compute profile from result of function ``mm_profile_mod3_load``
@@ -308,9 +301,7 @@ int32_t mm_profile_mod3_load(uint32_t p, uint_mmv_t *v, uint64_t *a, uint32_t t)
 In this function parameter ``a`` must must be an array of length 72, 
 containg a block for a vector \f$v \in \rho_{3}\f$, as computed by
 function ``mm_profile_mod3_load``. We take notation from the comment
-on blocks at the beginning of this file. Let ``A[e;i,j]`` be as in
-that comment.
-
+at the beginning of this file. Let ``A[e;i,j]`` be as in that comment.
 
 From that block the function computes a *basic profile* of the block
 stores it in the buffer referred by ``b``.
@@ -348,6 +339,22 @@ static inline void block_mod3_to_profile(uint64_t *a, uint8_t *b)
 }
 
 
+/** @brief Compute profile from result of function ``mm_profile_mod3_load``
+
+Let parameter ``a`` be as obtained from function ``block_mod3_to_profile``;
+and take notation from the comment at the beginning of this file.
+
+After calling function ``block_mod3_to_profile``, the entry ``b[i,j]``
+is constructed from entries ``A[e;i,j]``, ``e = 0, 1, 2`` by stripping
+off some sign information from these enries. In some cases we want to
+profile an orbit under a subgroup \f$N'\f$ of \f$N_{xyz}\f$, as
+indicated by parameter ``mode`` in function ``mm_profile_mod3_hash``.
+In such a case it might not be necessary to strip off any signs for
+constructing entry ``b[i,j]`` for keeping invariance of the vector
+under the action \f$N'\f$. Here this function can be used to restore
+the full information obtained from entries  ``A[e;i,j]`` for all ``e``
+in entry ``b[i,j]``.
+*/
 static inline void block_mod3_augment(uint64_t *a, uint8_t *b, uint32_t i, uint32_t j)
 {
     uint64_t t0, t1, t2, x;
@@ -359,12 +366,7 @@ static inline void block_mod3_augment(uint64_t *a, uint8_t *b, uint32_t i, uint3
 }
 
 
-
-
-/// @endcond 
-
-
-
+/// @endcond
 
 
 

@@ -115,7 +115,7 @@ Entries ``s.p_t`` and ``s.p_o`` in case ``s.status = LIN2_COMPRESSED``
   Entry ``s.p_t`` points to a table ``t`` of length ``ps->n_vectors``
   containing a sorted list of all elements of \f$V\f$ stored in the
   compressed array. An entry in that table stores the corresponding
-  element of f$V\f$ in bits 8,...,31. Bits 0,...,7 of that entry is
+  element of \f$V\f$ in bits 8,...,31. Bits 0,...,7 of that entry is
   the number ``k`` of a generator ``g`` of the group \f$G\f$; these
   bits encode a Schreier vector as descibed above.
 
