@@ -9,29 +9,28 @@ Let \f$N_2 := O_2(N_{xyz})\f$ be the normal subgroup of \f$N_{xyz}\f$
 of structure \f$2^{2+11+22}\f$.
 Let \f$\rho_3\f$ be the standard 196884-dimensional rational
 representation \f$\rho\f$ of the Monster with entries taken modulo 3.
-We mainly deal with \f$v \in \rho_3\f$ as that are 2A axes in the
-Monster. The purpose of this module is to watermark the orbits
-of 2A axes under the action of the group \f$N_{xyz}\f$. We may also
-watermark orbits under the action of a few specific subgroups
-of \f$N_{xyz}\f$
+We mainly deal with vectors \f$v \in \rho_3\f$ as that are 2A axes.
+The purpose of this module is to watermark the orbits of 2A axes under
+the action of the group \f$N_{xyz}\f$. We may also watermark orbits
+under the action of a few specific subgroups of \f$N_{xyz}\f$.
 
 Given a vector \f$v\f$ as above, the functions in this module first
 compute a symmetric \f$24 \times 24\f$ matrix \f$M = M(v)\f$ that is
 invariant under the centralizer of \f$v\f$ in \f$N_{xyz}\f$, and also 
 under \f$N_2\f$. Here the factor group \f$M_{24} = N_{xyz} / N_2\f$
-acts naturally on the space of symmetric \f$24 \times 24\f$ matrices as
-a permutation group. As a first step, information from the 
+acts naturally on the space of symmetric \f$24 \times 24\f$ matrices
+as a permutation group. As a first step, information from the 
 parts 'A', 'B', 'C' of a vector \f$v \in \rho_3\f$ is used to
-obtain \f$M(v)\f$. These parts of a vector are described in Section
-*The representation of the Monster group* in the *API reference*.
-Note that these parts are already symmetric \f$24 \times 24\f$ 
-matrices. The group \f$N_{2}\f$ acts on the
-triple  ('A', 'B' + 'C', 'B' - 'C') by sign changes; and the factor
-group \f$M_{24}\f$ acts on each entry of that triple naturally as a
-permutation group on 24 elements, up to sign. By stripping off
+obtain \f$M(v)\f$. These parts of a vector are described in
+Section *The representation of the Monster group* in 
+the *API reference*. Note that these parts are already 
+symmetric \f$24 \times 24\f$  matrices. The group \f$N_{2}\f$ acts
+on the triple  ('A', 'B' + 'C', 'B' - 'C') by sign changes; and the
+factor group \f$M_{24}\f$ acts on each entry of that triple naturally
+as a permutation group on 24 elements, up to sign. By stripping off
 sign information and merging the corresponing entries of these matrices
 we obtain a first approximation \f$M_0 = M_0(v)\f$ of \f$M(v)\f$ that
-is invariant under \f$N_{2}\f$.  By construction \f$M_0(v)\f$ is also
+is invariant under \f$N_{2}\f$.  By construction, \f$M_0(v)\f$ is also
 invariant under the centralizer of  \f$v\f$. 
 
 Matrix \f$M_0\f$ can be considered as an undirected
@@ -59,7 +58,7 @@ multisets of colours of the incident vertices depends on the
 isomorphism type of the graph only. Since the isomorphism type of the
 graph \f$M(v)\f$ depends on the orbit of \f$v\f$ only, the 
 mapping \f$H\f$ can be used as a watermark for the orbit of \f$v\f$.
-It turs out that the mapping \f$M(v)\f$ can be stored in a
+It turns out that the mapping \f$M(v)\f$ can be stored in a
 \f$24 \times 24\f$ matrices matrix.
 Here details are out of the scope of this documentation. 
 
@@ -86,8 +85,8 @@ few fixed subgroups \f$N'\f$ of \f$N_{xyz}\f$.
 Parameter ``mode`` of function ``mm_profile_mod3_hash``
 allows to specify a subgroup  \f$N'\f$ of
 \f$N_{xyz}\f$, such that the computed matrix ``M`` will be
-inviarant under  \f$N'\f$ only. Here \f$N'\f$ is the
-subgroup of \f$N\f$ centralizing a set
+invariant under the centralizer of \f$v\f$ in \f$N'\f$ only.
+Here \f$N'\f$ is the subgroup of \f$N\f$ centralizing a set
 \f$\{x_\delta \mid \delta \in S\}\f$ of 2A involutions
 pointwise, where \f$S\f$ is a set of Golay cocode words
 depending of parameter ``mode``. Legal values for ``mode`` are:
@@ -260,6 +259,7 @@ mm_profile_mod3_load_abc(uint32_t p, uint_mmv_t *v, uint64_t *a)
   Legal values for \f$p\f$ are 3 and 15.
 
   A nonzero value ``t`` is interpreted as follows:
+
   Before loading the vector ``v``, multiply it with \f$\tau^f\f$,
   where \f$f\f$ is ``(t / 2) & 3``. If ``t`` is odd then multiply ``v``
   with \f$x_\delta\f$ afterwards, where  \f$\delta\f$ is any odd
@@ -289,7 +289,7 @@ int32_t mm_profile_mod3_load(uint32_t p, uint_mmv_t *v, uint64_t *a, uint32_t t)
 
 
 /************************************************************************
-** adjust signs for our profiling
+** Adjust signs for our profiling
 ************************************************************************/
 
 
@@ -305,8 +305,8 @@ at the beginning of this file. Let ``A[e;i,j]`` be as in that comment.
 
 From that block the function computes a *basic profile* of the block
 stores it in the buffer referred by ``b``.
-The basic profile is a 24 time 24 matrix, where each entry is computed
-from the correponding three entries of 'A' * \f$\tau^e\f$. 
+The basic profile is a 24 time 24 matrix ``b``, where each entry is
+computed from the correponding three entries of ``A[e;]``, e = 0, 1, 2. 
 In case ``i != j`` we store 1 in bit ``e`` of ``b[i,j]``
 if ``A[e;i,j] != 0`` and 0 otherwise. We put ``b[i,i] = A[e;i,i]``. We
 remark that entries ``A[e;i,i]`` are equal for all ``e``.
@@ -316,6 +316,8 @@ otherwise. So that bit encodes the sign
 of ``A[0;i,j] * A[1;i,j] * A[2;i,j]`` (modulo 3), if all three
 factors of that product are nonzero.
 All other bits of the entries ``b[i,j]`` are set to 0.
+From the operation of \f$N_2\f$ on \f$\rho\f$ we may deduce that
+matrix ``b`` is invariant under the action of \f$N_2\f$.
  
 Buffer ``b`` must have size 24 * 24, with entry ``i, j`` of 
 matrix ``b`` stored in ``b[24] * i + j``.
@@ -339,7 +341,7 @@ static inline void block_mod3_to_profile(uint64_t *a, uint8_t *b)
 }
 
 
-/** @brief Compute profile from result of function ``mm_profile_mod3_load``
+/** @brief Refine profile from function ``mm_profile_mod3_load``
 
 Let parameter ``a`` be as obtained from function ``block_mod3_to_profile``;
 and take notation from the comment at the beginning of this file.
@@ -371,12 +373,61 @@ static inline void block_mod3_augment(uint64_t *a, uint8_t *b, uint32_t i, uint3
 
 
 /************************************************************************
-** Load part A, B, C mod 3 from vector of representation
+** Sort rows and columns of matrix computed by ``block_mod3_to_profile`` 
+************************************************************************/
+
+
+
+/************************************************************************
+Let matrix be as ``b`` as computed by function ``block_mod3_to_profile``.
+Then ``b`` corresponds to the matrix \f$M_0(v)\f$ computed for a
+vector \f$v \in \rho_3\f$, as described in the header of this file.
+This matrix can also be interpreted as a labelling of the vertices
+and edges of a graph.
+
+From ``b`` we will compute a matrix ``h`` representing the isomorphism
+type of the (labelled) graph given by matrix ``b``. Therefore we will
+first sort the entries inside each row of ``b`` indepenently, with the
+special rule that the diagonal element of each row is moved to the
+leftmost column. This is done by function ``sort_columns_inside_row``.
+After searching the entries inside each row (independent of the other
+rows) we sort all rows lexicographically using
+function ``mm_profile_mod3_sort``.
+This way we obtain a matrix ``h`` that depends on the isomorphism
+type of the graph corresponding to ``b`` only. Thus the matrix ``h``
+obtained in this way can be used to watermark the orbit of the
+vector ``v`` under the action of the group  \f$N_{xyz}\f$.
+
+Next we will discuss a few refinements of this procedure.
+
+Before sorting the entries ``b[i,j]`` inside row ``j``, we may
+add an information about the diagonal  element ``b[j,j]`` to each
+off-diagonal element ``b[i,j]``. This operation does not disturb the
+invariance of the final matrix  ``h``.
+Function ``spread_diagonal_to_column`` performs this operation. An
+original diagonal element is 2 bits long; and an original off-diagonal
+element is 4-bit long. Function ``spread_diagonal_to_column`` moves
+the to lowest bits of entry ``b[j,j]`` to the bits 5 and 4 of the
+off-diagonal element ``b[i,j]``, and sets bit 6 of ``b[i,j]``.
+
+In some cases we want to compute the orbit of the vector ``v`` under
+the action of a subgroup \fN'\f$ of  \f$N_{xyz}\f$  that fixes the
+first few rows and columms of a 24 times 24 matrix (either pointwise
+or as a set). We assume that subgroup  \fN'\f$ fixes the  rows and
+columns with index less than ``start``.  The three functions described
+in this comment ignore the rows and columns with index the the
+value given by the argument ``start```. 
+Function ``sort_columns_inside_row`` sorts columns ``start,...,23``
+inside all rows.
+
+During its operation the function ``mm_profile_mod3_sort`` will detect
+equivalence classes of equal rows of the computed matrix ``h``. It will
+also compute a vector ``diag`` of length 24 that labels the rows, such
+that rows obtain the same label if and only if they are equal.
 ************************************************************************/
 
 
 /// @cond DO_NOT_DOCUMENT 
-
 
 
 static inline void spread_diagonal_to_column(uint8_t *h, uint32_t start)
@@ -409,8 +460,6 @@ static inline void sort_columns_inside_row(uint8_t *h, uint8_t start)
         row += 23;
     }
 }
-
-
 
 
 static inline void
@@ -454,7 +503,11 @@ mm_profile_mod3_sort(uint8_t *h, uint8_t start, uint8_t *diag)
 
 
 /************************************************************************
-** Support for Baby Monster axes
+** Support for Baby Monster axes, i.e. case mode = 1
+************************************************************************/
+
+/************************************************************************
+Functions in this paragraph are yet to be documented!
 ************************************************************************/
 
 
@@ -473,24 +526,6 @@ static inline void xchg_uint8_row_col(uint8_t *b, uint32_t i1, uint32_t i2)
         t = pi1[j]; pi1[j] = pi2[j]; pi2[j] = t;
     }
 }
-
-
-static inline void augment_diag(uint8_t *b, uint64_t i, uint64_t value)
-{
-     b[25*i] = (b[25*i] & 3) | (uint8_t)((value & 0x1f) << 2);
-}
-
-
-
-/// @endcond
-
-
-/************************************************************************
-** compare first two rows of matrix
-************************************************************************/
-
-
-/// @cond DO_NOT_DOCUMENT
 
 
 
@@ -520,6 +555,32 @@ static inline void sort_col_01(uint8_t *b)
          row += 24;
     }
 }
+
+
+
+/// @endcond
+
+
+/************************************************************************
+** Feed information about rows in matrix ``h`` back to matrix ``b``
+************************************************************************/
+
+
+/************************************************************************
+Functions in this paragraph are yet to be documented!
+************************************************************************/
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
+static inline void augment_diag(uint8_t *b, uint64_t i, uint64_t value)
+{
+     b[25*i] = (b[25*i] & 3) | (uint8_t)((value & 0x1f) << 2);
+}
+
+
+
 
 /// @endcond
 
@@ -609,13 +670,13 @@ int64_t mm_profile_mod3_hash(uint64_t *a, uint8_t *b, uint32_t mode)
             start_diag = 4;
             augment_diag(b, 0, diag[2]);
             augment_diag(b, 1, diag[3]);
-            augment_diag(b, 2, 22 + (equ01 == -1));
-            augment_diag(b, 3, 22 + (equ01 == 1));
+            augment_diag(b, 2, 24 + (equ01 == -1));
+            augment_diag(b, 3, 24 + (equ01 == 1));
             break;
         case 2:   // for axes in 2.E_6(2)  (???)
             start_diag = 4;
             augment_diag(b, 0, diag[3]);
-            for (j = 1; j < 3; ++j) augment_diag(b, j, j+20);
+            for (j = 1; j < 3; ++j) augment_diag(b, j, j+23);
             break;
         default:
             break;

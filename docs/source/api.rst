@@ -34,7 +34,7 @@ in :cite:`Wilson13`. An element of the Monster group
 The Monster group :math:`\mathbb{M}` has a rational representation 
 :math:`\rho` of dimension  :math:`196884`, see :cite:`Con85`. In that 
 representation the denominators of the matrix coefficients are powers 
-of two. So reducing these coefficients modulo a small odd prime 
+of two. So reducing these coefficients modulo a small odd number 
 :math:`p` leads to a representation :math:`\rho_p` of 
 :math:`\mathbb{M}` over the finite field :math:`\mathbb{F}_p`. 
  
