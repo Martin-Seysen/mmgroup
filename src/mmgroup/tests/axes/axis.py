@@ -660,17 +660,16 @@ class Axis:
         pointwise, where :math:`S` is a set of Golay cocode words
         depending of parameter ``mode``. Legal values for ``mode`` are:
 
-       .. table:: Subgroups :math:`N'` of :math:`N_{xyz}` supported
-         :widths: 15 85
+        .. table:: Subgroups :math:`N'` of :math:`N_{xyz}` supported
+          :widths: 15 85
 
-         ==== =============================================================
-         mode :math:`N'` centralizes :math:`\{x_\delta \mid \delta \in S\}`
-         ==== =============================================================
-          0   :math:`S = \{ \}`, i.e. :math:`N' = N_{xyz}`
-          1   :math:`S = \{ [2,3] \}`
-          2   :math:`S = \{ [1,2], [2,3] \}`
-         ==== =============================================================
-
+          ==== =============================================================
+          mode :math:`N'` centralizes :math:`\{x_\delta \mid \delta \in S\}`
+          ==== =============================================================
+           0   :math:`S = \{ \}`, i.e. :math:`N' = N_{xyz}`
+           1   :math:`S = \{ [2,3] \}`
+           2   :math:`S = \{ [1,2], [2,3] \}`
+          ==== =============================================================
         """
         from mmgroup.mm_reduce import mm_profile_mod3_load
         from mmgroup.mm_reduce import mm_profile_mod3_hash
@@ -681,7 +680,7 @@ class Axis:
         if mode is None:
             mode = self.default_profile_hashmode
         a = np.zeros(72, dtype = np.uint64)
-        b = np.zeros(2*576, dtype = np.uint8)
+        b = np.zeros(2*576, dtype = np.uint16)
         assert  mm_profile_mod3_load(15, self.v15.data, a, t) == 0
         h = int(mm_profile_mod3_hash(a, b, mode))
         assert h >= 0

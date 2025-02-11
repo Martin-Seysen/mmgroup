@@ -19,7 +19,7 @@ For Windows 64:
    pip install pytest
    python -m pytest --pyargs mmgroup -m "not slow"
 
-For Linux and macOS with a 64-bit x64 CPU:
+For Linux and macOS with a 64-bit x86 CPU:
 
 .. code-block::
 

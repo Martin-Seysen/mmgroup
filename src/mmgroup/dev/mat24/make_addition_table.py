@@ -51,7 +51,7 @@ def small_addition_tree(data):
     data1 = []   # list of entries yet to be processed
     for x in data:
         if bitweight(x) > 1 and not x in data1:
-             data1.append(x)
+             data1.append(int(x))
     # Done if the list ``data1`` is empty.
     if len(data1) == 0:
         return {}

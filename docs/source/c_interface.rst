@@ -588,6 +588,12 @@ C interface for file mm_profile_abc_mod3.c
 .. doxygenfile::  mm_profile_abc_mod3.c
 
 
+C interface for file mm_profile_graph24.c
+---------------------------------------------
+
+.. doxygenfile::  mm_profile_graph24.c
+
+
 
 
 Shared libraries and dependencies between Cython extensions

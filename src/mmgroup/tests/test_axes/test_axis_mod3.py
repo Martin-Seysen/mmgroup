@@ -47,20 +47,6 @@ def rand_Nx0_e(mode = 0):
         assert pi[1:4] == [1,2,3]
     return g
 
-def display_hash_A(h, show_sort = False):
-    _, hash, a = h
-    for i in range(24):
-        print("%1d:" % (i % 8), end = " ") 
-        for j in range(24): 
-            print("%02x" % int(a[i,j]), end = " ")
-            if j & 7 == 7: print("", end = " ")
-        if i > 0 and show_sort and list(a[i])  < list(a[i-1]):
-            for k in range(24):
-                if a[i, k] < a[i-1, k]:
-                    break
-            print("f%d" % k, end = "")
-        print("")
-    print("hash = %016x" % hash)
 
 
 def display_matrix(m, text = "", skip_zero = False):
@@ -69,12 +55,19 @@ def display_matrix(m, text = "", skip_zero = False):
         print("%1d:" % (j1 % 8), end = " ") 
         for j2 in range(24):           
             if skip_zero and m[j1, j2] == 0:
-                print(" .", end = " ")
+                print("  .", end = " ")
             else:
-                print("%02x" % m[j1, j2],  end = " ")
+                print("%03x" % m[j1, j2],  end = " ")
             if j2 & 7 == 7: print("", end = " ")
         print("")
     print("")
+
+def display_hash_A(h, show_sort = False):
+    _, hash, a = h
+    display_matrix(a)
+    print("hash = %016x" % hash)
+
+
 
 def ax_hash_equal(hash1, hash2, verbose = 0):
     mat1, mat2 = hash1[2], hash2[2]
@@ -98,13 +91,13 @@ def ax_hash_equal(hash1, hash2, verbose = 0):
 
 
 def permute_matrix24(b, g):
-    b1 = np.zeros(576, dtype = np.uint8)
+    b1 = np.zeros(576, dtype = np.uint16)
     try:
         g = np.array(g.as_M24_permutation(), dtype = np.uint8) 
     except:
         g = np.array(g, dtype = np.uint8)
     pi = np.array(g, dtype = np.uint8)
-    b = np.array(b,  dtype = np.uint8)
+    b = np.array(b,  dtype = np.uint16)
     assert b.shape in [(576,), (24,24)]
     assert mm_profile_mod3_permute24(b.ravel(), pi, b1) == 0
     return b1.reshape((24,24))
@@ -141,7 +134,16 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
             print(g.as_M24_permutation())
         equ = ax_hash_equal(ax1_hash, ax_hash, verbose)
         assert equ
-        assert (ax1_hash[0] == permute_matrix24(ax_hash[0], g)).all()
+        permuted = permute_matrix24(ax_hash[0], g)
+        if not (ax1_hash[0] == permuted).all():
+            err = "Hash value is not permutation invariant"
+            print(err)
+            display_matrix(ax1_hash[0], "Matrix")
+            print("Permutation\n", g.as_M24_permutation())
+            display_matrix(permuted, "Permuted")
+            display_matrix(ax1_hash[0] ^ permuted, "Diff", True)
+            raise ValueError(err)
+
     if test_S3:
         for e in range(3):
             for f in range(2):

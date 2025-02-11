@@ -1,0 +1,445 @@
+/** @file mm_profile_graph24.c
+
+* **Functions exported from this module**
+
+The function ``mm_profile_graph24`` exported by this file is an
+auxiliary funtion of function ``mm_profile_mod3_hash`` in
+file ``mm_profile_abc_mod3.c``. 
+
+* **Basic operation of this module**
+
+Here we assume that the Mathieu group \f$M_{24}\f$ (as a subgroup of
+the symmetric permutation group \f$S_{24}\f$) acts naturally on the
+space of symmetric \f$24 \times 24\f$ matrices by a permutation of
+the rows and the columns of such a matrix. Let \f$A\f$ be a
+symmetric \f$24 \times 24\f$ matrix. We want to watermark the
+orbit of \f$A\f$ under the action of \f$M_{24}\f$, or at least
+of  \f$S_{24}\f$. The current version in this file deals
+with \f$S_{24}\f$ only. Such a symmtric matrix \f$A\f$ occurs e.g.
+when dealing with 2A axes in the representation of the Monster.
+
+Therefore we consider matrix \f$A\f$ as an undirected labelled graph,
+with vertices labelled by the diagonal elements and edges labelled by
+off-diagonal elements of \f$A\f$. Let \f$C_S(A)\f$ be the isomorphism
+group of \f$A\f$ under the action of \f$S_{24}\f$. Then \f$C_S(A)\f$
+is the isomrhism group of the labelled graph corrsponding to \f$A\f$.
+We may refine the given labelling of \f$A\f$ in a suitable way
+by assigning new labels without changing \f$C_S(A)\f$. E.g. we may
+augment the label of a vertex with information about the labels of
+the edges incident with that vertex, and vice versa. In priciple,
+the process may be iterated; but this will take too much time. For
+our purposes we first augment the labels of the edges with the labels
+of the incident vertices. Then we augment the labels of the vertices
+with the labels of the incident edges, and stop the process afterwards. 
+This way we compute a matrix \f$B = B(A)\f$ that refines the
+labelling given by \f$A\f$. Details are out of the scope of this
+documentation; but one may check the documentation of the subfunctions
+in this module for more information.
+
+We use a two-dimensional array of 16-bit integers of shape ``(24, 24)``
+to store the matrices \f$A\f$ and \f$B\f$. The original labels of
+matrix \f$A\f$ are stored in the lower 6 bits of the entries.
+Matrix \f$B\f$ is obained from \f$A\f$ by refining the labels
+corresponding to the original entries of \f$A\f$. In matrix \f$B\f$
+the original entry taken from \f$A\f$ is stored in the lower 6 bits
+of an entry; and the refined part of a label is stored in the upper
+10 bits of an entry. 
+
+From \f$B\f$ we also want to compute a data structure \f$H = H(B)\f$
+that watermarks the orbit of \f$B\f$ under the action of \f$C_S(A)\f$.
+Therefore we first sort the entries each row of \f$B\f$ separately,
+putting the diagonal entry of each row at the first place. Then we
+sort the rows. The sorted matrix \f$H\f$ depends on the orbit of
+\f$B\f$ under \f$S_{24}\f$ only. Also, by construction, it depends
+on the orbit of \f$A\f$ under \f$S_{24}\f$ only. Our construction
+also ensures that renaming the labels in \f$A\f$ leads to a renaming
+of the labels in \f$H\f$. The keys used for sorting in the computation
+of matrix \f$H\f$ are implementation dependent and undocumented.
+ 
+
+* **Warning**
+ 
+The functions in this module may differ between versions!
+
+They are desigend for the internal needs of the *mmgroup* package.
+*/
+
+
+
+
+/// @cond DO_NOT_DOCUMENT
+#include <string.h>
+
+#include "mat24_functions.h"
+#include "mm_basics.h"
+#include "mm_op_p.h"
+#include "mmgroup_generators.h"
+#include "clifford12.h"
+#include "mm_reduce.h"
+/// @endcond
+
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT
+//  %%GEN c
+
+
+
+
+
+/************************************************************************
+** Definitions 
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+/*
+An entry of a matrix \f$A\f$, \f$B\f$, or \f$C\f$ corresponds to a
+lebel of 16 bits length. Here the lower 6 bits of such an entry are
+called the *primary* label; these bits are never changed. The upper
+10 bits  of such an entry are called the *secondary* label; they may
+be changed in order to reduce the size of a label.
+*/
+
+#define ENTRY_BITS 16U  // No of bits encoded in an entry of the array
+#define DIM 24U         // dimension of array
+#define IND_BITS 5U     // No of bits to store array index
+#define PRIMARY_BITS 6U // No of primary bits in entry 
+#define SECONDARY_BITS (ENTRY_BITS - PRIMARY_BITS) 
+                        // No of secondary bits in entry 
+#define MASK_IND_BITS ((1U << IND_BITS) - 1U)    // MASK for index
+#define MASK_PRIMARY ((1U << PRIMARY_BITS) - 1U) // MASK for primary bits 
+#define MASK_SECONDARY ((1U << ENTRY_BITS) - (1U << PRIMARY_BITS))
+                                                 // MASK for secondary bits
+#define DIAG_ENTRY(b, i) ((b)[(DIM + 1U) * (i)]) // This is b[i,i]
+#define ENTRY(b, i, j) ((b)[DIM * (i) + (j)])    // This is b[i,j]
+
+
+/// @endcond
+
+
+/************************************************************************
+** Simplify secondary label in diagonal 
+************************************************************************/
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+  
+/** 
+  @brief Simplify secondary label in diagonal.
+
+  The secondary parts of the labels of the diagonal element are
+  changed, so that all secondary parts of these labels are >= 0
+  and < DIM.
+ 
+  Buffer ``work`` must have size (DIM + 1) / 2
+*/
+static inline void simplify_diag(uint16_t *b, uint64_t *work)
+{
+    uint32_t *d = (uint32_t*)work;
+    uint_fast32_t i, last, ind;
+    uint16_t *p_diag, new_secondary = 0;
+    for (i = 0; i < DIM; ++i) {
+        d[i] = (((uint32_t)DIAG_ENTRY(b, i)) << IND_BITS) + i;
+    }
+    bitvector_insertsort(d, DIM, uint32_t);
+    last = d[0] & ~MASK_IND_BITS;
+    for (i = 0; i < DIM; ++i) {
+        if ((d[i] & ~MASK_IND_BITS) != last) {
+            last = d[i] & ~MASK_IND_BITS;
+            new_secondary += 1 << PRIMARY_BITS;
+        }
+        ind = d[i] & MASK_IND_BITS;
+        p_diag = b + ind * (DIM + 1);
+        *p_diag  = (*p_diag & MASK_PRIMARY) | new_secondary;  
+    }  
+}
+
+/// @endcond
+
+
+/************************************************************************
+** Augment off-diagonal elements with information from diagonal 
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+/** 
+  @brief Augment off-diagonal labels with information from diagonal.
+
+  We assemble a list of the off-diagonal labels of matrix \f$A\f$,
+  where each entry contains its label, and an (unordered) pair of
+  the labels of the incident diagonal labels, and a pointer to the
+  corresponding entry of \f$A\f$. Then we sort this list, so that
+  the set of augmented off-diagonal labels (including the incident
+  diagonal labels) becomes visible. Finally, we update the secondary 
+  labels of the off-diagonal elements, so that they will be refined.
+
+  Function ``simplify_diag`` may be called before calling this
+  function in order to ensure that all secondary diagonal
+  labes are >= 0 and < DIM.  
+ 
+  Buffer ``work`` must have size (DIM * (DIM - 1)) >> 1
+*/
+static inline void augment_off_diag(uint16_t *b, uint64_t *work)
+{
+    uint64_t *p1, x, t0, t1, last;
+    uint16_t *row = b, secondary;
+    uint_fast32_t i, j, k;
+    p1 = work;
+    for (i = 0; i < DIM - 1; ++i) {
+        t0 = (DIAG_ENTRY(b, i) >> PRIMARY_BITS) & MASK_IND_BITS;
+        for (j = i + 1; j < DIM; ++j) {
+            t1 = (DIAG_ENTRY(b, j) >> PRIMARY_BITS) & MASK_IND_BITS;
+            if (t0 < t1)  x = (t1 << IND_BITS) + t0;
+            else x = (t0 << IND_BITS) + t1;
+            *p1++ = ((uint64_t)(row[j]) << (4 * IND_BITS)) 
+                  + (x << (2 * IND_BITS)) + (i << IND_BITS) + j;
+        }
+        row += DIM;
+    }
+    bitvector64_sort(work, (DIM * (DIM - 1)) >> 1);
+    p1 = work;
+    #define MASK_VALUE (0ULL - ((uint64_t)1ULL << 2*IND_BITS))
+    last = *p1 & MASK_VALUE;
+    secondary = 0;
+    for (k = 0; k < (DIM * (DIM - 1)) >> 1; ++k) {
+        x = *p1++;
+        if ((x & MASK_VALUE) != last) {
+            last = x & MASK_VALUE;
+            secondary += 1 << PRIMARY_BITS;
+        }
+        i = ((uint_fast32_t)x >> IND_BITS) & MASK_IND_BITS;
+        j = (uint_fast32_t)x & MASK_IND_BITS;
+        ENTRY(b, j, i) = ENTRY(b, i, j) = 
+            (ENTRY(b, i, j) &  MASK_PRIMARY) | secondary; 
+    }
+}
+
+
+/// @endcond 
+
+
+
+/************************************************************************
+** Sort columns inside row 
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** 
+  @brief Sort columns of a matrix inside a row.
+
+  When computing matrix \f$H\f$  from matrix \f$A\f$ or \f$B\f$,
+  as documented at the beginning of this file, the first step is
+  to sort the entries of each row. Here we sort the enties of each
+  row separately, putting the diagonal entry at the leftmost column. 
+  The sorting is done in place.
+ 
+  Buffer ``work`` must have size (DIM * (DIM - 1)) >> 1
+*/
+static inline void sort_columns_inside_row(uint16_t *h)
+{
+    uint16_t *row = h, tmp;
+    uint_fast32_t i;
+    for (i = 0; i < DIM; ++i) {
+        tmp = row[0]; row[0] = row[i]; row[i] = tmp;
+        ++row;
+        bitvector_insertsort(row, DIM - 1, uint16_t);
+        row += DIM - 1;
+    }
+}
+
+
+/// @endcond 
+
+
+/************************************************************************
+** Sort rows 
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// Multiplier for an internal hash function used for sorting rows
+#define HASH_MULT \
+ (((uint32_t)(0.6180339887 * (1UL << (32 - 2*IND_BITS))) & 0xfffffff8UL) | 3)
+
+
+
+
+
+/** @brief Compute sorted rows of DIM times DIM matrix h
+
+The function sorts the rows of the matrix ``h`` and stores the indices
+of the sorted rows in array ``s``. The indices of the sorted rows 
+are ``s[0], ..., s[DIM-1] ``. The key for sorting rows is unpublished.
+Matrix ``h`` is not changed.
+*/
+static inline void sort_rows(uint16_t *h, uint8_t *s)
+{
+    uint16_t *row = h, *h_i, *h_j;
+    uint_fast32_t i, j, k, leq, tmp, hash_i;
+    uint32_t hash[DIM], hashv;
+
+    // Store a pair ``(h[i,0], f(h[i]), i)`` in ``hash[i]``. Here ``f``
+    // is a hash function acting on a row of a matrix, excluding the
+    // leftmost column. 
+    for (i = 0; i < DIM; ++i) {
+        hashv = 0;
+        for (j = 1; j < DIM; ++j) hashv = hashv * HASH_MULT + row[j]; 
+        hash[i] = i + ((hashv << (2* IND_BITS)) >> IND_BITS)
+            + (((uint32_t)(row[0]) >> PRIMARY_BITS) << (32 - IND_BITS));
+        row += DIM;
+    }
+        
+    // Sort hash values of indices to rows in the array ``hash``.
+    bitvector_insertsort(hash, DIM, uint32_t);
+
+    // Sort hash values in array ``hash``, comparing also the
+    // rows in ``h`` referrred by the entries of ``hash``.
+    for (i = 1; i < DIM; ++i) {
+        tmp = hash[i];
+        hash_i = tmp & ~MASK_IND_BITS;
+        h_i = h + DIM * (tmp & MASK_IND_BITS); 
+        for (j = i; j > 0; --j)  {
+            if ((hash[j - 1] & ~MASK_IND_BITS)  < hash_i)  break;
+            h_j = h + DIM * (hash[j - 1] & MASK_IND_BITS);
+            leq = 1;
+            for (k = 1; k < DIM; ++k) {
+                leq = h_j[k] <= h_i[k]; 
+                if (h_j[k] != h_i[k]) break; 
+            }
+            if (leq) break;
+            hash[j] = hash[j - 1];
+        } 
+        hash[j] = tmp;           
+    }
+
+    // Store sorting information in vector ``s``
+    for (i = 0; i < DIM; ++i) s[i] = (uint8_t)(hash[i] & MASK_IND_BITS);
+}
+
+/// @endcond 
+
+
+
+/************************************************************************
+** Augment diagonal elements with information from ``sort_rows`` 
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+/** @brief Process information obtained from function ``sort_rows``.
+
+Function ``sort_rows`` sorts the rows of a matrix ``h`` and stores
+the indices of the sorted rows in array ``s``, without changing ``h``.
+
+This function copies the sorted rows from ``h`` to ``h_out``;
+i.e. it puts ``h_out[i,j] = h[s[i],j]``. Furthermore, it augments
+the secondary labels of the diagonal elements by adding information
+about the incident off-diagonal labels. The augmented label for a
+diagonal element is given by the information in the row corresponding
+to that element. After sorting ``h``, equal augmented labels are
+adjacent, so that compressed secondary labels for diagonal elements
+can be computed. These secondary labels are written back into the
+diagonal entries of the original matrix ``b_out``, from which ``h``
+has been computed; and also into the sorted matrix ``h_out``
+obtained from ``h``.
+*/
+static inline void
+augment_diag(uint16_t *h, uint8_t *s, uint16_t *h_out, uint16_t *b_out)
+{
+    uint16_t *p_src, *p_dest = h_out, *p_last = NULL, i_dia = 0;
+    uint_fast32_t i, j;
+    for (i = 0; i < DIM; ++i) {
+        uint_fast16_t uneq = 0;
+        j = s[i];
+        p_src = h + DIM * j;
+        memcpy(p_dest, p_src, DIM * sizeof(uint16_t));
+        if (i > 0) {
+            for (j = 0; j < DIM; ++j) {
+                uneq |= p_dest[j] ^ p_last[j];
+            }
+        }
+        i_dia += (uint16_t)(uneq != 0) << PRIMARY_BITS;
+        p_dest[0] = (p_dest[0] & MASK_PRIMARY) | i_dia;
+        b_out[j * (DIM+1)] = p_dest[0];
+        p_last = p_dest;
+        p_dest += DIM;
+    }
+}
+/// @endcond 
+
+
+
+
+/************************************************************************
+** Sort and hash
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+/** @brief Align pointer to sizeof(sizeof(uint64_t)) byte boundary
+
+*/
+static inline uint64_t* ptr_to_ptr64(void *p) {
+    uintptr_t adr = (uintptr_t)p;
+    adr = (adr + (sizeof(uint64_t) - 1)) & ~(sizeof(uint64_t) - 1);
+    return (uint64_t *)adr;
+}
+
+/// @endcond 
+
+
+/** @brief Watermark orbit of a symmetric \f$24 \times 24\f$ matrix
+
+Let \f$A\f$ be a symmetric \f$24 \times 24\f$ matrix. We compute a
+(usually non-symmetric)  \f$24 \times 24\f$ matrix \f$H\f$ that
+watermarks the orbit of matrix \f$A\f$ under the action of the
+symmetric permutation group \f$S_{24}\f$. Here \f$S_{24}\f$ naturally
+by permuting the rows and columns of a symmetric matrix.
+
+For this purpose it is natural to consider the entries of
+matrix \f$H\f$ as labels. Before computing \f$H\f$, we first compute
+a matrix \f$B\f$ containing a refinement of the labelling given by
+matrix \f$A\f$ as described in the comment at the beginning of this
+file. We compute \f$B\f$ from \f$A\f$ in place. Here we do not
+change the lower 6 bits of an entry of \f$A\f$. The upper bits of
+an entry will contain a refinement of an original lable. Such 
+upper bit in matrix \f$A\f$ will be considered, but may be changed.
+
+Buffer ``b`` must have size ``2 * 24 * 24``. Entry ``(i,j)`` of
+matrix \f$A\f$, and also of the output matrix \f$B\f$, is stored
+in ``b[24*i + j]``.  Entry ``(i,j)`` of the output matrix \f$H\f$
+is stored in ``b[24*24 + 24*i + j]``. 
+*/
+// %%EXPORT px
+void mm_profile_graph24(uint16_t *b)
+{
+    uint8_t s[DIM];
+    uint64_t *work = ptr_to_ptr64(b);
+    uint16_t p1[DIM * DIM], *h = b + DIM * DIM;
+    memcpy(p1, b, DIM * DIM * sizeof(uint16_t));
+    simplify_diag(p1, work);
+    augment_off_diag(p1, work);
+    memcpy(b, p1, DIM * DIM * sizeof(uint16_t));
+    sort_columns_inside_row(p1);
+    sort_rows(p1, s);
+    augment_diag(p1, s, h, b);
+}
+
+
+
+
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
