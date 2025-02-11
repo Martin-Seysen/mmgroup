@@ -1,6 +1,6 @@
 """Test C functions for the union-find algorithm.
 
-In this module we test the classe and functin in module
+In this module we test the classes and function in module
 ``mmgroup.general``
 """
 

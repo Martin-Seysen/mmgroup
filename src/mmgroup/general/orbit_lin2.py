@@ -130,6 +130,8 @@ class Orbit_Lin2:
     ERR_PIC = "Internal error %d in pickled data for class Orbit_Lin2"
     ERR_GEN = "Cannot convert %s object to an affine group operation"
     MAX_N_GEN = 127
+    random_parameters = None
+    random_generator = None
     def __init__(self, map = None, generators = []):
         if map is None:
             map = lambda x : x
@@ -319,22 +321,44 @@ class Orbit_Lin2:
         a = self._map_generator(g)
         rep = np.array(self.map(g), dtype = np.uint64)
         return gen_ufind_lin2_mul_affine(v, a, self.dim)
+    def set_rand_parameters(self, *args, **kwds):
+        r"""Set parameters for random generator for the group
 
-    def rand_stabilizer(self, v, size, r, n, history = False):
-        r"""Return generators for stabilizer of vector ``v``
+        These parameters are passed to the constuctor of class
+        ``Random_Subgroup``, for constructing random elements of the
+        group  :math:`G` given by this instance.
 
-        Details are yet to be documented!
+        It is not necessary to call this function, when the default
+        parameterization for the random generator is sufficient.
         """
-        if history:
-             raise NotImplementedError("History isnot implemented")
-        rg = Random_Subgroup(self.gen, r, n, history)
-        gen = []
-        for i in range(size):
-            g = rg.rand()
-            img_v = self.mul_v_g(v, g)
-            g1 = self.map_v_G(img_v, v)
-            gen.append(g * g1)
-        return gen
+        if self.random_generator is not None:
+            del self.random_generator
+            self.random_generator = None
+            self.random_parameters = (args, kwds)
+    def rand(self):
+        r"""Return a random element of the group
+
+        The function returns a random element of the group :math:`G`
+        given by this instance.
+        """
+        if self.random_generator is None:
+            if self.random_parameters is None:
+                r = max(10, 2 * self.dim)
+                n = 5 * r
+                self.random_parameters = (), {'r': r, 'n': n}
+            self.random_generator = Random_Subgroup(self.gen,
+              *self.random_parameters[0], **self.random_parameters[1])
+        return self.random_generator.rand()
+    def rand_stabilizer(self, v):
+        r"""Return random element of the stabilizer of vector ``v``
+
+        The function returns a random element of the group :math:`G`
+        given by this instance, that stabilizes the vector ``v`` in
+        :math:`\mbox{GF}_2^n`.
+        """
+        g = self.rand()
+        img_v = self.mul_v_g(v, g)
+        return g * self.map_v_G(img_v, v)
     def _map_v_word_a(self, v, img = None):
         self._finalize()
         while 1:

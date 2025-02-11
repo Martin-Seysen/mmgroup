@@ -417,8 +417,9 @@ Computations in general groups
    :members: dim, pickle, n_orbits, generators,
              representatives, orbit_rep, orbit_size,
              orbit, map_v_word_G, map_v_G,
-             map_v_G_transform, mul_v_g, rand_stabilizer,
-             compress
+             map_v_G_transform, mul_v_g,
+             compress, rand, rand_stabilizer,
+             set_rand_parameters
 
 .. autoclass:: mmgroup.general.Orbit_Elem2
    :members: exp, generators, map_v_word_G,
