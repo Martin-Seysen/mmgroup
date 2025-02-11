@@ -334,7 +334,7 @@ class Orbit_Lin2:
         if self.random_generator is not None:
             del self.random_generator
             self.random_generator = None
-            self.random_parameters = (args, kwds)
+        self.random_parameters = (args, kwds)
     def rand(self):
         r"""Return a random element of the group
 
@@ -343,7 +343,7 @@ class Orbit_Lin2:
         """
         if self.random_generator is None:
             if self.random_parameters is None:
-                r = max(10, 2 * self.dim)
+                r = max(10, self.dim + 3, 2 * len(self.gen))
                 n = 5 * r
                 self.random_parameters = (), {'r': r, 'n': n}
             self.random_generator = Random_Subgroup(self.gen,
@@ -449,6 +449,8 @@ class Orbit_Elem2:
     """
     NROWS = 32
     NCOLS = 32
+    random_parameters = None
+    random_generator = None
     def __init__(self, map = None, generators = []):
         if map is None:
             map = lambda x : x
@@ -508,22 +510,45 @@ class Orbit_Elem2:
         data = [self.gen[k] for i, k in enumerate(self.map_gen)
              if (w >> i) & 1]
         return reduce(__mul__, data)
-    def rand_kernel(self, size, r, n, history = False):
-        r"""Return generators for the kernel of the homomorphism :math:`\rho`
+    def set_rand_parameters(self, *args, **kwds):
+        r"""Set parameters for random generator for the group
 
-        Details are yet to be documented!
+        These parameters are passed to the constuctor of class
+        ``Random_Subgroup``, for constructing random elements of the
+        group  :math:`G` given by this instance.
+
+        It is not necessary to call this function, when the default
+        parameterization for the random generator is sufficient.
         """
-        if history:
-             raise NotImplementedError("History isnot implemented")
-        rg = Random_Subgroup(self.gen, r, n, history)
-        gen = []
-        for i in range(size):
-            g = rg.rand()
-            v = self.map(g)
-            g1 = self.map_v_G(v)
-            gen.append(g * g1)
-        return gen
+        if self.random_generator is not None:
+            del self.random_generator
+            self.random_generator = None
+        self.random_parameters = (args, kwds)
+    def rand(self):
+        r"""Return a random element of the group
 
+        The function returns a random element of the group :math:`G`
+        given by this instance.
+        """
+        if self.random_generator is None:
+            if self.random_parameters is None:
+                r = max(10, self.exp + 10, 2 * len(self.gen))
+                n = 5 * r
+                self.random_parameters = (), {'r': r, 'n': n}
+            self.random_generator = Random_Subgroup(self.gen,
+              *self.random_parameters[0], **self.random_parameters[1])
+        return self.random_generator.rand()
+    def rand_kernel(self):
+        r"""Return random element of the kernel of the homomorphism
+
+        The function returns a random element of the kernel of the
+        homomorphism :math:`\rho` from :math:`G` to :math:`V`
+        described in the constructor of this class.
+        """
+        g = self.rand()
+        v = self.map(g)
+        g1 = self.map_v_G(v)
+        return g * g1
 
 class Random_Subgroup:
     r"""Generate random elements in a group given by generators
