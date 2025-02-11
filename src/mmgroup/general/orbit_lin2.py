@@ -105,25 +105,21 @@ class Orbit_Lin2:
     raised to the power of -1 (for inversion), 0, and 1.
 
     A list of generators of the group :math:`G` can be passed with
-    parameter ``generators`` of the constructor. A generator may also
-    be added with method ``add_generator``. The dimension :math:`n`
-    of :math:`V` is obtained automatically by applying the function
-    ``map`` given in the constructor to the first generator of the
-    group. Here  ``1 <= n <= 24`` must hold. So we may e.g. compute
-    orbits in the Leech lattice mod 2 under the action of the
-    Conway group  :math:`\mbox{Co}_1`.
+    parameter ``generators`` of the constructor. The dimension
+    :math:`n` of :math:`V` is obtained automatically by applying the
+    function ``map`` given in the constructor to the first generator
+    of the group. Here  ``1 <= n <= 24`` must hold. So we may e.g.
+    compute orbits in the Leech lattice mod 2 under the action of
+    the Conway group  :math:`\mbox{Co}_1`.
 
     There are methods for obtaining the orbits of :math:`V` under the
     action of :math:`G`, and for finding an element of :math:`G` that
     maps an element of :math:`V` to a given element in its orbit.
 
-    After adding all generators, and before retriving any information
+    After setting all generators, and before retriving any information
     about orbits, a set of Schreier vectors is computed (and stored
     inside an instance of this class) as described in :cite:`HE05`,
-    Section 4.1. This can be done manually via method ``finalize``. It
-    is done automatically by calling any methods obtaining infomration
-    about orbits. After computing the Schreier vectors, no more
-    generators can be added.
+    Section 4.1.
 
     We also support an affine operation of :math:`G` on :math:`V`.
     For an affine operation of an element ``g`` of  :math:`G` the
@@ -143,7 +139,7 @@ class Orbit_Lin2:
             self.map_gen = None
             self.map = map
             for g in generators:
-                self.add_generator(g)
+                self._add_generator(g)
         else:
             # Abuse arguments of constructor for passing a pickled object
             a, gen = map   # pickled data
@@ -161,7 +157,7 @@ class Orbit_Lin2:
     def dim(self):
         r"""Return dimension ``n`` of the vector space over ``GF(2)``"""
         return chk(gen_ufind_lin2_dim(self.a))
-    def finalize(self):
+    def _finalize(self):
         if self.a is None:
             ERR = "No generators present in Orbit_Lin2 object"
             raise ValueError(ERR)
@@ -182,7 +178,7 @@ class Orbit_Lin2:
         if len(a.shape) != 1 or not isinstance(b, Integral):
             raise TypeError(self.ERR_GEN % type(img))
         return np.append(a, np.uint32(b & 0xffffffff))
-    def add_generator(self, g):
+    def _add_generator(self, g):
         r"""Add generator ``g`` to the object
 
         """
@@ -203,8 +199,7 @@ class Orbit_Lin2:
         ``data`` is a tuple of data that may be written to a file or
         a shelve; and ``functions`` is a tuple of functions used for
         reconstructing the object from ``data``. This process is called
-        *pickling*. Note that this method finalizes an object before
-        pickling it.
+        *pickling*.
 
         Calling the constructor ``Orbit_Lin2(data, functions)`` creates
         a copy of the pickled object.
@@ -216,11 +211,10 @@ class Orbit_Lin2:
 
         Note that pickling a function (e.g. for storing it in a shelve)
         in python is sometimes difficult. If you create and pickle an
-        instance of this class without any generators then that
-        instance is not finalized, and a pair ``(data, functions)``
-        is returned as usual. In this case component ``functions`` of
-        that pair is not data dependent and may be used for unpickling
-        similar pickled objects.
+        instance of this class without any generators then a pair
+        ``(data, functions)`` is returned as usual. In this case
+        component ``functions`` of that pair is not data dependent
+        and may be used for unpickling similar pickled objects.
 
         Warning:
 
@@ -229,7 +223,7 @@ class Orbit_Lin2:
         """
         if self.a is None:
             return (None, None), (self.map, f_unpickle_gen)
-        self.finalize()
+        self._finalize()
         len_a = chk(gen_ufind_lin2_check_finalized(self.a, len(self.a)))
         self.a[len_a : len_a + len(self.map_gen)] = self.map_gen
         len_a += len(self.map_gen)
@@ -342,7 +336,7 @@ class Orbit_Lin2:
             gen.append(g * g1)
         return gen
     def _map_v_word_a(self, v, img = None):
-        self.finalize()
+        self._finalize()
         while 1:
             g = np.zeros(self.m_size, dtype = np.uint8)
             res = gen_ufind_lin2_map_v(self.a, v, g, self.m_size)
@@ -442,7 +436,7 @@ class Orbit_Elem2:
             self._exp = 0
             self.solver = None
             for g in generators:
-                self.add_generator(g)
+                self._add_generator(g)
         else:
             ERR = "Bad mapping function for class Orbit_Elem2"
             raise TypeError(ERR)
@@ -450,7 +444,7 @@ class Orbit_Elem2:
     def exp(self):
         r"""Return exponent of elementary Abelian 2 group"""
         return self._exp
-    def add_generator(self, g):
+    def _add_generator(self, g):
         v = int(self.map(g))
         if (v & -0x100000000):
             chk(ERR_GEN_UFIND_LIN2_DIM)

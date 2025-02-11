@@ -386,7 +386,7 @@ def do_test_orbit_array(g, g_list = None, chk = 0, verbose = 0):
     g1 = deepcopy(g)
     if chk:
         lin2_orbits_raw(g1, True, verbose)
-    g1.finalize()
+    g1._finalize()
     do_test_scheierv(g1, verbose = verbose)
 
     mask = (1 << dim) - 1

@@ -414,14 +414,14 @@ Computations in general groups
 .. automodule:: mmgroup.general
 
 .. autoclass:: mmgroup.general.Orbit_Lin2
-   :members: dim, finalize, add_generator, pickle, n_orbits,
-             generators, representatives, orbit_rep, 
-             orbit_size, orbit, map_v_word_G, map_v_G,
+   :members: dim, pickle, n_orbits, generators,
+             representatives, orbit_rep, orbit_size,
+             orbit, map_v_word_G, map_v_G,
              map_v_G_transform, mul_v_g, rand_stabilizer,
              compress
 
 .. autoclass:: mmgroup.general.Orbit_Elem2
-   :members: exp, add_generator, generators,  map_v_word_G,
+   :members: exp, generators, map_v_word_G,
              map_v_G, rand_kernel
 
 .. autoclass:: mmgroup.general.Random_Subgroup

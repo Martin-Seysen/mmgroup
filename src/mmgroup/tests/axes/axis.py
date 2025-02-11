@@ -626,8 +626,8 @@ class Axis:
         """
         from mmgroup.tests.axes.reduce_axis import reduce_axis_G_x0
         return reduce_axis_G_x0(self)
-    def profile_Nx0(self, t = None, mode = None):
-        r"""Return invariant under the even part of :math:`N_{x0}`
+    def profile_Nxyz(self, t = None, mode = None):
+        r"""Return invariant of the axis under the group :math:`N_{xxz}`
 
         Let :math:`N_{xyz}` (of structure :math:`2^{2+11+22}.M_{24}`)
         be the unique subgroup of index 2 of :math:`N_{x0}`. The

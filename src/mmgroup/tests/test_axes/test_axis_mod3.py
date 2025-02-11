@@ -18,7 +18,7 @@ def import_all():
     from mmgroup.axes import Axis
     from mmgroup.mm_reduce import mm_profile_mod3_permute24
 
-def rand_Nx0_e(mode = 0):
+def rand_Nxyz(mode = 0):
     r"""Return random *even* element of the group :math:`N_{x0}`
 
     The function returns a random even element :math:`g` of the group
@@ -121,13 +121,13 @@ def do_test_mm_profile_mod3_permute24(verbose = 0):
 
 def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
     ax = Axis('r')
-    ax_hash = ax.profile_Nx0(mode = mode)
+    ax_hash = ax.profile_Nxyz(mode = mode)
     for j in range(2):
         if verbose:
-            print("\nTest N_x0_e", j, ", mode =", mode)
-        g = rand_Nx0_e(mode)
+            print("\nTest N_xyz", j, ", mode =", mode)
+        g = rand_Nxyz(mode)
         ax1 = ax * g
-        ax1_hash = ax1.profile_Nx0(mode = mode)
+        ax1_hash = ax1.profile_Nxyz(mode = mode)
         #ax1_hash[0][13,17] += 1 # cause a bug
         if verbose:
             print("g =", g)
@@ -149,9 +149,9 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
             for f in range(2):
                 if verbose:
                     print("\nTest S_3, mode =", mode, ", S_3=", e, f)
-                h1 = ax1.profile_Nx0((e,f), mode = mode)
+                h1 = ax1.profile_Nxyz((e,f), mode = mode)
                 ax_m = ax * MM0([('t',e), ('d', 0x800 & -f)])
-                h2 = ax_m.profile_Nx0(mode = mode)
+                h2 = ax_m.profile_Nxyz(mode = mode)
                 assert ax_hash_equal(h1, h2, verbose)
 
 
@@ -171,3 +171,25 @@ def test_axis_profile(n_axes = 5, verbose = 0):
            
             
  
+@pytest.mark.slow
+@pytest.mark.bench
+@pytest.mark.axes
+def test_bechmark_axis_profile():
+    import_all()
+    import time
+    NTESTS = 10000
+    from mmgroup.mm_reduce import mm_profile_mod3_load
+    from mmgroup.mm_reduce import mm_profile_mod3_hash
+    a = np.zeros((64,72), dtype = np.uint64)
+    b = np.zeros(2*24*24, dtype = np.uint16) 
+    for i in range(len(a)):
+        mm_profile_mod3_load(15, Axis('r').v15.data, a[i], 0)
+    t_start = time.process_time()
+    for i in range(NTESTS):
+        mm_profile_mod3_hash(a[i & 63], b, 0)
+    t = time.process_time() - t_start
+    print("\nRunime for watermarking N_x0 orbit of axis: %.4f ms" %
+        (t * 1000.0 / NTESTS))
+ 
+
+
