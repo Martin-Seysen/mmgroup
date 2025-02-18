@@ -42,6 +42,7 @@
 
 
 /// @cond DO_NOT_DOCUMENT 
+#include <string.h>
 #include <stdlib.h>
 #include "clifford12.h"
 #include "mm_basics.h"
@@ -1241,91 +1242,72 @@ int32_t mm_aux_get_mmv_leech2(uint32_t p, uint_mmv_t *mv, uint32_t v2)
 
 
 #define CH 0x9e3779b97f4a7c15ULL // close to 2**63 * (sqrt(5)-1)
-#define HASH_MAX_NOTZERO 2
-#define LOG2_NHASH 3
-#define HASH_MIN_GAP 512
+
+
+#if (defined(__GNUC__) || defined(__clang__)) && (%{INT_BITS} == 64)
+#define GCC_INTRINSIC
+// #include <immintrin.h>
+typedef uint64_t v64ui __attribute__((vector_size(32)));
+#else
+typedef uint64_t v64ui[4];
+#endif
 
 /**
   @brief Compute hash value of vector of given length
 
   The  function returns a hash value of the  vector ``mv`` with 
-  modulus ``p``. Here ``mv`` has ``n`` entries of type ``uint_mmv_t``.
-  Parameter ``mask_1`` must have the value ``1`` in ech bit field
-  of an integer of type ``uint_mmv_t``.
+  modulus ``p``. Here ``mv`` has ``4 * n`` entries of
+  type ``uint_mmv_t``. Parameter ``mask_1`` must have the value ``1``
+  in each bit field  of an integer of type ``uint_mmv_t``.
 
-  The value of parameter ``hash`` (e.g. from a previously computed 
+  The value of parameter ``hash`` (e.g. from a previously computed
   hash value) will enter into the returned hash value.
-
-  We first scan over blocks of four integers of type ``uint_mmv_t``
-  until a such a block with at least one nonzero is found.
-  The we enter the index of that block and the four entires of
-  the block into the hash value. After having 
-  found ``HASH_MAX_NOTZERO`` such blocks, we will hash 
-  over ``1 << LOG2_NHASH`` more integers of type ``uint_mmv_t``,
-  at fixed positions in the remaining part of the vector.
-  We hash over the remaining part of the vector only if it
-  contains at least ``HASH_MIN_GAP`` integers.
-   
-  Note that ``n`` might be rounded up to a multiple of four.
-  This is no problem if a possible slack is still within 
-  the original vector to be hashed. 
 */
-static inline uint64_t do_hash(
+static inline void do_hash(
     uint_mmv_t *mv,
     uint32_t n,
     uint32_t p,
     uint_mmv_t mask_1,
-    uint64_t hash
+    uint64_t *hash
 )
 {
-    uint_mmv_t *m_end = mv + ((n + 3) & (0 - 4ULL));
     uint_mmv_t mask_p = (uint_mmv_t)(p) * mask_1;
     uint_mmv_t mask_ph = (mask_p & ~mask_1) >> 1;
-    uint_mmv_t v, w;
-    int32_t k = 0, j, d;
-
-    while (mv < m_end) {
-        w = mv[0];
-        v = w ^ (w >> 1);
-        w = mv[1];
-        v |= w ^ (w >> 1);
-        w = mv[2];
-        v |= w ^ (w >> 1);
-        w = mv[3];
-        v |= w ^ (w >> 1);
-        if (v & mask_ph) {
-            hash = hash * CH + (uint64_t)(m_end - mv);
-            for (j = 0; j < 4; ++j) {
-                v = mv[j] & mask_p;
-                v ^= (v >> 1) & mask_ph;    // map 11..1 to 10..0
-                w = (v & mask_ph) + mask_1; // high bit is 0 iff v = x0..0
-                v &= w | mask_ph;           // map 10..0 to 00..0
-                hash = hash * CH + (uint64_t)v;
-            }
-            if (++k >= HASH_MAX_NOTZERO) {
-                mv += 4;
-                break;
-            }
+    v64ui v, w, h;
+  #ifdef GCC_INTRINSIC
+    memcpy(&h, hash, 4*sizeof(uint64_t));
+    do {
+        memcpy(&v, mv, 4*sizeof(uint64_t));
+        v &= mask_p;
+        v ^= (v  >> 1) & mask_ph;    // map 11..1 to 10..0
+        w = (v & mask_ph) + mask_ph; // high bit is 0 iff v = x0..0
+        v &= w | mask_ph;            // map 10..0 to 00..0
+        h = (h >> 19) | (h << (64 - 19));
+        h += (h << 11) + (h << 1) + v;
+        mv += 4;
+    } while (--n);
+    memcpy(hash, &h, 4*sizeof(uint64_t));
+  #else
+    uint_fast32_t j;
+    for (j = 0; j < 4; ++j) h[j] = hash[j];
+    do {
+        for (j = 0; j < 4; ++j) {
+            v[j] =  mv[j] & mask_p;
+            v[j] ^= (v[j]  >> 1) & mask_ph;    // map 11..1 to 10..0
+            w[j] = (v[j] & mask_ph) + mask_ph; // high bit is 0 iff v = x0..0
+            v[j] &= w[j] | mask_ph;            // map 10..0 to 00..0
+            h[j] = (h[j] >> 19) | (h[j] << (64 - 19));
+            h[j] += (h[j] << 11) + (h[j] << 1) + v[j];
         }
         mv += 4;
-    }
-    hash = hash * CH + (uint64_t)(m_end + 1 - mv);
-    d = (int32_t)(m_end - mv);
-    if (d < HASH_MIN_GAP) return hash;
-    d = (d >> LOG2_NHASH) - ((d & 1) ^ 1);
-    for (j = d >> 1; j < d << LOG2_NHASH; j += d) {
-        v = mv[j] & mask_p;
-        v ^= (v >> 1) & mask_ph;
-        w = (v & mask_ph) + mask_1;
-        v &= w | mask_ph;
-        hash = hash * CH + (uint64_t)v;   
-    }
-    return hash;
+    } while (--n);
+    for (j = 0; j < 4; ++j) hash[j] = h[j];
+  #endif
 }
 
-static uint32_t HASH_SECTIONS[6] = {
-        MM_AUX_OFS_A,  MM_AUX_OFS_B, MM_AUX_OFS_T,
-        MM_AUX_OFS_X, MM_AUX_OFS_Z, MM_AUX_LEN_V
+static uint32_t HASH_SECTIONS[8] = {
+        MM_AUX_OFS_A, MM_AUX_OFS_B, MM_AUX_OFS_C, MM_AUX_OFS_T,
+        MM_AUX_OFS_X, MM_AUX_OFS_Z, MM_AUX_OFS_Y, MM_AUX_LEN_V
 };  
 
 
@@ -1337,18 +1319,24 @@ static uint32_t HASH_SECTIONS[6] = {
   @brief Compute hash value of vector in internal
 
   The  function returns a hash value of the  vector ``mv`` with
-  modulus ``p``. It also tries to distinguish between different
-  sparse vectors. Therefore it tries to hash over about 100 nonzero
-  integers of type ``uint_mmv_t``. So if ``mv`` is sparse then the
-  function might have to scan considerably  more zero entries.
+  modulus ``p``.
+
+  Parameter ``skip`` should usually be zero. If bit ``i`` of
+  parameter ``skip`` is set, then entries with  the ``i``-th tag
+  in the string ``'ABCTXZY'`` are ignored. So in case ``skip == 4``
+  the tag ``'C'``is ignored.
 */
 // %%EXPORT px
-uint64_t mm_aux_hash(uint32_t p, uint_mmv_t *mv)
+uint64_t mm_aux_hash(uint32_t p, uint_mmv_t *mv, uint32_t skip)
 {
 
     uint_fast32_t i, p_bits, l_if;
-    uint_mmv_t mask_1; 
-    uint64_t hash = p; 
+    uint_mmv_t mask_1, buf[4];
+    uint64_t h[4];
+    h[0] = CH + (p << 4) + ((skip & 0x7f) << 12);
+    h[1] = h[0] * CH;
+    h[2] = h[1] * CH;
+    h[3] = h[2] * CH;
 
     if (mm_aux_bad_p(p)) return 0;
     // %%MMV_LOAD_CONST  p, i
@@ -1356,14 +1344,22 @@ uint64_t mm_aux_hash(uint32_t p, uint_mmv_t *mv)
     l_if = %{MMV_CONST:LOG_INT_FIELDS, i};   // This is LOG_INT_FIELDS
     mask_1 =  MM_AUX_TBL_REDUCE[2*p_bits-4];
 
-    for (i = 0; i < 5; ++i) hash = do_hash(
-        mv + (HASH_SECTIONS[i] >> l_if),
-        (HASH_SECTIONS[i+1] - HASH_SECTIONS[i]) >> l_if,
-        p,
-        mask_1,
-        hash
-    );
-    return hash;
+    for (i = 0; i < 7; ++i) if (((skip >> i) & 1) == 0) {
+        do_hash(
+            mv + (HASH_SECTIONS[i] >> l_if),
+            (HASH_SECTIONS[i+1] - HASH_SECTIONS[i]) >> (l_if + 2),
+            p,
+            mask_1,
+            h
+        );
+        if (i == 3 && p == 3) {  // last row of tag T has 2 integers
+             buf[0] = mv[(HASH_SECTIONS[4] >> 5) - 2];
+             buf[1] = mv[(HASH_SECTIONS[4] >> 5) - 1];
+             buf[2] = buf[3] = 0;
+             do_hash(buf, 1, 3, mask_1, h);
+        }
+    }
+    return h[0] + h[1] + h[2] + h[3];
 }
 
 

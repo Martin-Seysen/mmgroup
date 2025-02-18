@@ -554,6 +554,8 @@ class Axis:
         ``text`` is an optional text to be displayed; ``end`` is an
         optional end mark.
         """
+        if part.isdigit():
+            part = int(part)
         if isinstance(part, Integral):
             part %= 3
         if not text:

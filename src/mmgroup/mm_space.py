@@ -643,7 +643,7 @@ class MMVector(AbstractMmRepVector):
 
        
     def mul_exp(self, g, e = 1, break_g = False):
-        """Multiply the vector with ``g ** e`` inplace
+        r"""Multiply the vector with ``g ** e`` inplace
 
         Here ``g`` is an element of the monster group represented
         as an instance of class |MM| and ``e`` is an integer.
@@ -661,7 +661,7 @@ class MMVector(AbstractMmRepVector):
         return self.space.vector_mul_exp(self, g, e, break_g)
  
     def eval_A(self, v2, e = 0):
-        """Internal method, not for public use
+        r"""Internal method, not for public use
 
         The part of this vector with tag 'A' corresponds to  a
         symmetric 24 times 24 matrix :math:`A`. 
@@ -777,9 +777,19 @@ class MMVector(AbstractMmRepVector):
         s = str((t >> 28) & 15) + "?ABCDEFGHIJKLMNO"[(t >> 24) & 15]
         return s
 
-    def hash(self):
-        """Return a hash value of the vector"""
-        return int(mm_aux_hash(self.p, self.data))
+    def hash(self, tags = None):
+        r"""Return a hash value of the vector
+
+        If parameter ``tag`` is set then it must be a string containing
+        some of the letters ``ABCTXZY``. Then the hash value is computed
+        over entries with a tag contained in that string only.
+        """
+        skip = 0
+        if tags is not None:
+            for i, t in emumerate("ABCTXZY"):
+                if t not in tags:
+                     skip |= 1 << i
+        return int(mm_aux_hash(self.p, self.data, skip))
 
 
 

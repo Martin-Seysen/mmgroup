@@ -250,12 +250,13 @@ Python classes implementing the representation of the Monster group
 
 .. autoclass:: mmgroup.MMVector
    :members:  as_sparse, as_tuples, projection,
-              mul_exp, count_short, axis_type, copy
+              mul_exp, count_short, axis_type, copy, hash,
+              eval_A
+
 
 .. autoclass:: mmgroup.MMSpace
    :members:  index_to_linear, index_to_tuple, index_to_short,
-              index_to_sparse, index_to_short_mod2
-
+              index_to_sparse, index_to_short_mod2,
 
 
 
