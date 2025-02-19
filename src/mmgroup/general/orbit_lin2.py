@@ -49,6 +49,8 @@ from mmgroup.generators import gen_ufind_lin2_compress
 from mmgroup.generators import gen_ufind_lin2_pad
 from mmgroup.clifford12 import bitmatrix64_vmul
 from mmgroup.clifford12 import bitmatrix64_echelon_h
+from mmgroup.clifford12 import bitmatrix64_echelon_l
+from mmgroup.clifford12 import bitmatrix64_mask_rows
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_subspace_eqn
@@ -673,6 +675,40 @@ class Orbit_Elem2:
         v = self.map(g)
         g1 = self.map_v_G(v)
         return g * g1
+    def structure_2(self, fields):
+        r"""Compute a 2 structure of the group
+
+        let :math:`V` be an elementary Abelian 2 group as described in
+        the documentation of this class. An element :math:`b` of
+        :math:`V` has a natural description as a bit vector
+        :math:`b = (\ldots,b_2,b_1,b_0)`.
+        We want to present :math:`V` as  a group
+        :math:`V_0.V_1. \, \ldots \, .V_{k-1}`, where the exponent of
+        :math:`V_i` is :math:`e_i`. Then the function returns the list
+        :math:`[e_1, e_2, \ldots, e_{k-1}]`. Here the groups :math:`V_i`
+        are given by parameter ``fields``, which is a list of length
+        :math:`k` of pairs of integers :math:`(m,n), m \leq n`. An
+        entry :math:`(m,n)` of parameter ``fields`` describes the
+        subgroup :math:`V(m,n)` of :math:`V` contaning all bit vectors
+        :math:`b`, where at most the bits with index :math:`\geq m` and
+        :math:`<n` are set. This way the list ``fields`` describes a
+        list :math:`V_0.V_1. \,\ldots \, .V_{k-1}` of subgroups of :math:`V`.
+
+        Warning: this function has not yet neen tested!
+        """
+        exponents = []
+        a = self.m[:self._exp].copy()
+        bitmatrix64_mask_rows(a, 0xffffffff)
+        for start, stop in reversed(fields):
+            assert stop >= start
+            n = 0
+            if len(a):
+                n = bitmatrix64_echelon_l(a, len(a), start, stop - start)
+                assert n >= 0
+                a = a[n:]
+            exponents.append(n)
+        return list(reversed(exponents))
+
 
 class Random_Subgroup:
     r"""Generate random elements in a group given by generators

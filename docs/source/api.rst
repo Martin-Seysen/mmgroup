@@ -427,7 +427,7 @@ Computations in general groups
 .. autoclass:: mmgroup.general.Orbit_Elem2
    :members: exp, generators, map_v_word_G,
              map_v_G, rand, rand_kernel,
-             set_rand_parameters
+             set_rand_parameters, structure_2
 
 
 .. autoclass:: mmgroup.general.Random_Subgroup
