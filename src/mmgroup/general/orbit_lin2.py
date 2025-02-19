@@ -46,6 +46,7 @@ from mmgroup.generators import gen_ufind_lin2_get_table
 from mmgroup.generators import gen_ufind_lin2_orbit_lengths
 from mmgroup.generators import gen_ufind_lin2_compressed_size
 from mmgroup.generators import gen_ufind_lin2_compress
+from mmgroup.generators import gen_ufind_lin2_pad
 from mmgroup.clifford12 import bitmatrix64_vmul
 from mmgroup.clifford12 import bitmatrix64_echelon_h
 from mmgroup.clifford12 import bitmatrix64_t
@@ -81,6 +82,21 @@ def chk(error):
     ERR = "Internal error %d in class  Orbit_Lin2"
     raise ValueError(ERR % error)
    
+
+
+def _best_index(arr, max_descent):
+    if max_descent:
+        return np.argmax(arr)
+    else:
+        # Get indices where the array is greater than 1
+        valid_indices = np.where(arr > 1)[0]
+        # Check if there are any valid values
+        if valid_indices.size == 0:
+            return 0
+        # Find the index of the minimal valid value
+        min_index = valid_indices[np.argmin(arr[valid_indices])]
+        return min_index
+
 
 class Orbit_Lin2:
     r"""Model orbits of a group acting on the vector space :math:`GF(2)^n`
@@ -134,7 +150,9 @@ class Orbit_Lin2:
     random_generator = None
     def __init__(self, map = None, generators = []):
         if map is None:
-            map = lambda x : x
+            map = lambda x : x    # identity map
+        elif map == 1:
+            map = lambda x : [1]  # the trivial representation
         if isinstance(map, Callable):
             self.a = None
             self.gen = []
@@ -335,6 +353,19 @@ class Orbit_Lin2:
             del self.random_generator
             self.random_generator = None
         self.random_parameters = (args, kwds)
+    def _get_rand_parameters(self):
+        r"""Return parameters for random generator for the group
+
+        The method returns parameters ``(args, kwds)`` as given
+        by a previous call to method ``set_rand_parameters``. If
+        that method has not been called then a default pair
+        ``(args, kwds)`` is returned.
+        """
+        if self.random_parameters is None:
+            r = max(10, self.dim + 3, 2 * len(self.gen))
+            n = 5 * r
+            self.random_parameters = (), {'r': r, 'n': n}
+        return self.random_parameters
     def rand(self):
         r"""Return a random element of the group
 
@@ -342,12 +373,9 @@ class Orbit_Lin2:
         given by this instance.
         """
         if self.random_generator is None:
-            if self.random_parameters is None:
-                r = max(10, self.dim + 3, 2 * len(self.gen))
-                n = 5 * r
-                self.random_parameters = (), {'r': r, 'n': n}
+            random_parameters =  self._get_rand_parameters()
             self.random_generator = Random_Subgroup(self.gen,
-              *self.random_parameters[0], **self.random_parameters[1])
+              *random_parameters[0], **random_parameters[1])
         return self.random_generator.rand()
     def rand_stabilizer(self, v):
         r"""Return random element of the stabilizer of vector ``v``
@@ -359,6 +387,102 @@ class Orbit_Lin2:
         g = self.rand()
         img_v = self.mul_v_g(v, g)
         return g * self.map_v_G(img_v, v)
+    def stabilizer(self, v, n_gen = None, map = None, compress = False):
+        r"""Return stabilizer of vector ``v``
+
+        The function returns tries to compute the stabilizer of
+        vector ``v`` and returns the result as an instance of class
+        ``Orbit_Lin2``. There is a small probability that a proper
+        subgroup of the stabilizer is returned, e.g. if not enough
+        generators of the stabilizer are given.
+
+        If parameter ``n_gen`` is set then this will be the number
+        of generators of the stabilizer; otherwise a default value
+        is taken. The result will be compressed of parameter
+        ``compress`` is ``True`` (default is ``False``). The optional
+        parameter ``map`` may specify a mapping from the stabilizator
+        to the affine group of a vector space over :math:`\mbox{GF}_2`.
+        (default is the original mapping of this instance). Here
+        ``map = 1`` specifies the trivial mapping.
+        """
+        if n_gen is None:
+            n_gen = max(10, self.dim + 5, 3 * len(self.gen) // 2)
+        n_gen = min(126, n_gen)
+        generators = [self.rand_stabilizer(v) for i in range(n_gen)]
+        map = self.map if map is None else map
+        res =  Orbit_Lin2(map, generators)
+        if self.random_parameters is not None:
+            res.random_parameters = self.random_parameters
+        if compress:
+            res = self.compress([v])
+        return res
+    def stabilizer_chain(self, v_list = [],
+            max_descent = True, n_gen = None, compress = False):
+        r"""Return chain of stabilizers
+
+        The function returns a list of pairs ``(H[i], v[i])``, where
+        each entry ``v[i]`` is e vector in the representation of the
+        group  ``G`` given by this instance, and ``H[i]`` is the
+        subgroup stabilizing the vectors  ``v[j], j < i``. We have
+        ``H[0] == G``. Let  ``(H[-1], v[-1])`` be the last entry
+        of the list. Then ``H[-1]`` stabilizes all vectors of the
+        representation of ``G`` pointwise; and we put ``v[-1] = 0``
+
+        Parameter ``v_list`` is a list of perferred candidates
+        used as vectors ``v[i]``. If no suitable candidate is in
+        that list then we select an arbitary candidate ``v[i]``.
+        If ``max_descent`` = True (default) then we select a
+        candidate in a largest orbit; otherwise we select a
+        candidate in a smallest orbit.
+
+        If parameter ``n_gen`` is set then this will be the number
+        of generators of the stabilizers of  the groups
+        ``H[i], i > 0``; otherwise a default value is taken. The
+        groups ``H[i], i > 0`` will be compressed if parameter
+        ``compress`` is ``True`` (default is ``False``).
+        """
+        if n_gen is None:
+            n_gen = max(10, self.dim + 5, 3 * len(self.gen) // 2)
+        n_gen = min(126, n_gen)
+        res, H = [], self
+        while 1:
+            o = 1
+            for i, v in enumerate(v_list):
+                o = H.orbit_size(v)
+                if o > 1:
+                   v_list = v_list[i+1:]
+                   break
+            if o == 1:
+                 reps, sizes = H.representatives()
+                 i = _best_index(sizes, max_descent)
+                 if sizes[i] == 1:
+                     H_new = Orbit_Lin2(1, H.generators())
+                     return res + [(H_new, 0)]
+                 v = reps[i]
+            H_new = H.stabilizer(v, n_gen, compress = False)
+            if compress and len(res):
+                 H = H.compress()
+            res.append((H, v))
+            H = H_new
+    def order_kernel(self, n_gen = None):
+        r"""Return order and kernel of representation
+
+        The function returns pair ``(o, K)``, where ``o`` is
+        the order the  group  ``G`` given by this instance,
+        modulo the kernel of the linear (or affine) representation
+        of ``G``. Output ``K`` is a list of generators of that
+        kernel. There is a small probability that ``o`` or ``K``
+        are too small, e.g. if not enough generators are
+        computed.
+
+        If parameter ``n_gen`` is set then this will be the number of
+        generators of the kernel; otherwise a default value is taken.
+        """
+        chain = self.stabilizer_chain(v_list = [0], n_gen = n_gen)
+        o = 1
+        for stab, v in chain[:-1]:
+            o *= int(stab.orbit_size(v))
+        return o, (chain[-1][0]).generators()
     def _map_v_word_a(self, v, img = None):
         self._finalize()
         while 1:

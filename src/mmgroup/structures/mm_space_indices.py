@@ -145,7 +145,7 @@ def index_iterable(index, max_index, tag, pos):
     to the tag to which the indes belong, an to the position of
     the indes (0 for the 1st, 1 for the 2nd index).  
     """
-    if not all(isinstance(item, Integer) for item in index):
+    if not all(isinstance(item, Integral) for item in index):
         err = "All MM vector indices in a list must be integers"
         raise TypeError(err)
     if not all(0 <= item < max_index for item in index):

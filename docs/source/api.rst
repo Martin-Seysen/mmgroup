@@ -420,6 +420,8 @@ Computations in general groups
              orbit, map_v_word_G, map_v_G,
              map_v_G_transform, mul_v_g,
              compress, rand, rand_stabilizer,
+             stabilizer, stabilizer_chain,
+             order_kernel,
              set_rand_parameters
 
 .. autoclass:: mmgroup.general.Orbit_Elem2
