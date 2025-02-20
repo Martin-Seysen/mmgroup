@@ -159,8 +159,8 @@ int32_t leech2matrix_add_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64
  computed with function ``leech2matrix_solve_eqn``.
  Output array ``b`` must have size at least ``nrows``.
 
- Matrix ``B`` is essentially the matrix of the matrix ``T`` computed
- by function ``leech2matrix_add_eqn``. If the leading coefficient of
+ Matrix ``B`` is essentially the matrix ``T`` computed by 
+ function ``leech2matrix_add_eqn``. If the leading coefficient of
  row ``i`` of the echelonized matrix ``T * A`` computed by
  function ``leech2matrix_add_eqn`` is in column ``j`` then column ``j``
  of matrix ``B`` is equal to column ``i`` of matrix ``T``. Columns of
@@ -212,6 +212,29 @@ uint32_t leech2matrix_solve_eqn(uint32_t *b, uint32_t nrows, uint64_t v)
     return  (uint32_t)(w);
 }
 
+
+
+
+
+/**
+ @brief Store echelonized matrix of linear bit equations
+
+ Let ``m``, ``nrows``, ``ncols`` be as in the description of
+ function ``leech2matrix_echelon_eqn``; and let ``A`` and ``T`` be
+ as in that description. Then ``T * A`` is the reduced echelon
+ form of the matrix ``A`` of all previously accepted equations.
+ Function ``leech2matrix_echelon_eqn`` stores that
+ matrix ``T * A`` in the buffer ``m1`` of length ``nrows``.
+*/
+// %%EXPORT px
+void leech2matrix_echelon_eqn(uint64_t *m, uint32_t nrows, uint32_t ncols, uint64_t *m1)
+{
+    uint_fast32_t row;
+    uint64_t mask = (ONE << ncols) - 1;
+    for (row = 0; row < nrows; ++row) {
+        m1[row] = (m[row] >> ncols) & mask;
+    }
+}
 
 
 

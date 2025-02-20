@@ -54,6 +54,7 @@ from mmgroup.clifford12 import bitmatrix64_mask_rows
 from mmgroup.clifford12 import bitmatrix64_t
 from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.clifford12 import leech2matrix_subspace_eqn
+from mmgroup.clifford12 import leech2matrix_echelon_eqn
 
 ERRORS = {
 -1 : "Out of memory",
@@ -692,13 +693,17 @@ class Orbit_Elem2:
         subgroup :math:`V(m,n)` of :math:`V` contaning all bit vectors
         :math:`b`, where at most the bits with index :math:`\geq m` and
         :math:`<n` are set. This way the list ``fields`` describes a
-        list :math:`V_0.V_1. \,\ldots \, .V_{k-1}` of subgroups of :math:`V`.
+        list :math:`V_0.V_1. \,\ldots \, .V_{k-1}` of subgroups of
+        :math:`V`. The intervals  :math:`[m,n)` specified by parameter 
+        ``fields`` must be mutually disjoint; they must comprise the
+        positions of all bits that may be set by the mapping function.
 
         Warning: this function has not yet neen tested!
         """
         exponents = []
-        a = self.m[:self._exp].copy()
-        bitmatrix64_mask_rows(a, 0xffffffff)
+        l_a = self._exp
+        a = np.zeros(l_a, dtype = np.uint64)
+        leech2matrix_echelon_eqn(self.m, l_a, self.NCOLS, a)
         for start, stop in reversed(fields):
             assert stop >= start
             n = 0
