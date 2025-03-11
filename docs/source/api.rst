@@ -590,6 +590,10 @@ Version history
      - 2024-07-09
      - Computation of sample 2A axes improved
 
+   * - 1.0.4
+     - 2025-03-11
+     - Algorithms for computing in general groups added 
+
 
 .. only:: html
 
