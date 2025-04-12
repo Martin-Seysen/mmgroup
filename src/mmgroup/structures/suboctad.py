@@ -247,7 +247,6 @@ def octad_entries(octad):
     if import_pending:
         complete_import()
     o = Octad(octad).octad
-    print("o=", o)
     return mat24.octad_entries(o)
 
 #######################################################################

@@ -131,7 +131,7 @@ def sym_part(v, part):
         else:
             a = deepcopy(v) * G('t', part)
         return a['A']
-    ERR =  "Cannot display a part of % of a vector"
+    ERR =  "Cannot display a part of %s of a vector"
     raise TypeError(ERR % type(part))
 
 
@@ -554,7 +554,7 @@ class Axis:
         ``text`` is an optional text to be displayed; ``end`` is an
         optional end mark.
         """
-        if part.isdigit():
+        if isinstance(part, str) and part.isdigit():
             part = int(part)
         if isinstance(part, Integral):
             part %= 3

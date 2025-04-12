@@ -376,6 +376,8 @@ class PLoopIntersection(Cocode):
     parity = 0
 
     def __init__(self, v1, v2):
+        if import_pending:
+            complete_import()
         assert isinstance(v1, GCode) and isinstance(v2, GCode) 
         self.v1, self.v2 = v1.value, v2.value
         self.value = mat24.ploop_cap(self.v1, self.v2)
