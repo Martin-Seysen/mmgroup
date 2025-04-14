@@ -73,6 +73,7 @@ import numpy as np
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_aux_index_extern_to_sparse
 from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
+from mmgroup.mm_op import mm_aux_index_sparse_to_extern
 
 from mmgroup.structures.abstract_group import AbstractGroupWord
 from mmgroup.structures.abstract_group import AbstractGroup
@@ -148,7 +149,7 @@ def import_mm_order_functions():
 #######################################################################
 
 
-ERR_XL_TUPLE = "Cannot convert tuple to XLeech2 object"
+ERR_XL_STR = "Cannot convert string '%s' to XLeech2 object"
 
 ERR_XL_IN_Q = "Monster group element is not in subgroup Q_x0"
 
@@ -223,16 +224,21 @@ def value_from_ploop(ploop=0, cocode = None, *args):
             if d:
                 return d
         if ploop == "r":
-             if cocode is None:
-                 return randint(0, 0x1ffffff)
-             elif cocode in [0,2,3,4]:
-                 return  rand_xleech2_type(cocode)
+            if cocode is None:
+                return randint(0, 0x1ffffff)
+            elif cocode in [0,2,3,4]:
+                return  rand_xleech2_type(cocode)
+        if ploop == "short":
+            if 0 <= cocode < 98280:
+                vs = mm_aux_index_extern_to_sparse(cocode + 300)
+                return mm_aux_index_sparse_to_leech2(vs)
+            raise ERR_XL_SHORT
         try:
             return std_q_element("q", ploop) 
         except:
-            raise ValueError(ERR_XL_TUPLE)            
+            raise ValueError(ERR_XL_STR % ploop)            
     else:
-        return TypeError(ERR_XL_TYPE % type(ploop))
+        raise TypeError(ERR_XL_TYPE % type(ploop))
     return d ^ c
 
         
@@ -298,9 +304,9 @@ class XLeech2(AbstractGroupWord):
     .. table:: Legal types for constructor of class ``XLeech2``
       :widths: 25 75
 
-      ====================== ================================================
+      ====================== =================================================
       type of ``value``      Evaluates to
-      ====================== ================================================
+      ====================== =================================================
       ``int``                Here the code word with number ``value`` is
                              returned.  ``0 <= value < 0x2000000`` must hold.
                               
@@ -323,6 +329,12 @@ class XLeech2(AbstractGroupWord):
       ``'r'``                Create random element depending on the string,
                              see explanation below.
 
+      ``'short'``            If ``value`` is the string ``'short'`` then we
+                             create the  :math:`i`-th (positive) short element
+                             of :math:`Q_{x0}`. Here  :math:`0 \leq i < 98280`
+                             is the parameter following parameter ``value``.
+                             See method ``as_short`` for background.
+
       A letter ``BCTXE``     If ``value`` is a single capital letter in
                              ``BCTXE`` then we create an element
                              corresponding to a unit vector 
@@ -330,7 +342,7 @@ class XLeech2(AbstractGroupWord):
 
       Any other string ``s`` This is intepreted as the element ``MM('q', s)``
                              of the Monster group.
-      ====================== ================================================
+      ====================== =================================================
 
     If value is of one of the type listed above then the following
     parameter is converted to an element of the Golay cocode (as in
@@ -388,7 +400,7 @@ class XLeech2(AbstractGroupWord):
     """
     __slots__ = "value",
  
-    def __init__(self, ploop = 0, cocode = 0, *args):
+    def __init__(self, ploop = 0, cocode = None, *args):
         if import_pending:
             complete_import()
         self.value = value_from_ploop(ploop, cocode, *args)
@@ -672,6 +684,45 @@ class XLeech2(AbstractGroupWord):
         x, d = self.isplit()
         o_sub = mat24.cocode_to_suboctad(d, x, bool(strict))
         return o_sub >> 6, o_sub & 0x3f
+
+    def as_short(self):
+        r"""Convert element to index of short Leech lattice vector
+
+        The function returns a pair ``(sign, num)`` if the element of
+        :math:`Q_{x0}` is short, i.e. corresponding to a shortest
+        nonzero vector in the Leech lattice modulo 2. Otherwise it
+        raises ``ValueError``. In case of success ``sign = +-1`` is
+        the sign of the element and ``0 <= num < 98280`` is the number
+        of the corresponding short vector. The ordering of the short
+        vectors is not documented here. But it is equal to the ordering
+        in the constructor when parameter ``value`` is equal to
+        ``'short'``, and also to the ordering of the basis vectors of
+        the representation :math:`\rho` corresponding to short vectors.
+
+        For a short instance ``x`` of this class we have:
+
+        ``x == x.as_short()[0] * XLeech2('short', x.as_short()[1])``.
+
+
+        We may enumerate the 98280 positive short elements of
+        :math:`Q_{x0}` as follows:
+
+        .. code-block:: python
+
+            for i in range(98280):
+                x = XLeech2('short', i)  # i-th short element of Q_x0
+                sign, num = x.as_short() # get number of short vector
+                assert num == i          # check that number
+                yield x
+
+        """
+        v = self.value
+        vs = mm_aux_index_leech2_to_sparse(v & 0xffffff)
+        i = mm_aux_index_sparse_to_extern(vs)
+        if 300 <= i < 98580:
+            return (-1) ** (v >> 24), i - 300
+        raise ValueError(ERR_XL_SHORT)
+
 
     @classmethod
     def gen_type(cls, vtype = 2, positive = True):

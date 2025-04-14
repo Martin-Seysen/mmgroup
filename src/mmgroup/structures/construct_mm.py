@@ -421,7 +421,7 @@ def iter_mm(group, tag = None, atom = None, in_G_x0 = False):
         if tag == 1:
             return
         elif tag == -1 and in_G_x0:
-            yield 0x31000000
+            yield 0x30001000
             return
         err = "Cannot convert integer to monster group element"
         raise ValueError(err)

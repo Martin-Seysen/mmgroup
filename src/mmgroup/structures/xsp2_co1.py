@@ -169,7 +169,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
 
     def __neg__(self):
         neg = Xsp2_Co1(self)
-        xsp2co1_neg_elem(self._data)
+        xsp2co1_neg_elem(neg._data)
         return neg
 
     def __pos__(self):
