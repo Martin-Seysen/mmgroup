@@ -616,7 +616,7 @@ class MMVector(AbstractMmRepVector):
     in a one-dimensional ``numpy`` array.
 
     An instance ``x`` of class ``XLeech2`` correponding to a short
-    vector in the Leech lattice is mapped to a (possible negated)
+    vector in the Leech lattice is mapped to a (possibly negated)
     basis vector of :math:`\rho_p`. In this case ``v[x]`` is
     the co-ordinate of ``v`` with respect to that basis vector.
 
