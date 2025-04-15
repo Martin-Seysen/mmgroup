@@ -55,8 +55,12 @@ ERR_MM_LIN = "Linear access to MM vectors not supported"
 
 try:
     from mmgroup.mm_op import mm_aux_array_extern_to_sparse
+    from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 except (ImportError, ModuleNotFoundError):
     mmgroup._warn(ERR_MM_LIN)
+    def mm_aux_array_extern_to_sparse(*args, **kwds):
+        raise NotImplementedError(ERR_MM_LIN)
+    mm_aux_index_leech2_to_sparse =  mm_aux_array_extern_to_sparse
 
 
 ERR_MM_SPARSE = "Sparse representation of MM vectors not supported"
@@ -588,10 +592,7 @@ def gen_unit_numeric(p, scalar, tag, i0 = 'r', i1 = None):
     if index_type0 & INDEX_IS_SLICE:
         raise TypeError(INDEX_ERROR_SLICE)
     a = np.array([i0], dtype = U32)
-    try:
-        mm_aux_array_extern_to_sparse(a, 1)
-    except NameError:
-        raise NotImplementedError(ERR_MM_LIN)   
+    mm_aux_array_extern_to_sparse(a, 1)
     a[0] += scalar % p
     return a
     
@@ -874,10 +875,7 @@ def numeric_index_to_sparse(p, tag, i0 = SLICE):
     else:
         shape = (len(a0),)
         a_out = a0
-    try:
-        mm_aux_array_extern_to_sparse(a_out, len(a_out))
-    except NameError:
-        raise NotImplementedError(ERR_MM_LIN)   
+    mm_aux_array_extern_to_sparse(a_out, len(a_out))
     return shape, a_out
 
 
@@ -894,6 +892,19 @@ indices_to_sparse_functions = {
     'D': D_index_to_sparse,
     'E': numeric_index_to_sparse,
 }
+
+
+
+def xleech2_to_sparse(p, x):
+    """Convert instance of class XLeech2 to to sparse representation
+    """
+    v = x.value
+    vs = mm_aux_index_leech2_to_sparse(v & 0xffffff)
+    if vs:
+        vs += -(v >> 24) & p
+        return (), np.array([vs], dtype=U32)
+    E = "Index of type XLeech2 is not short in Leech lattice mod 2"
+    raise ValueError(E)
 
 
 def sparse_from_indices(p, tag, *indices):
@@ -931,6 +942,9 @@ def sparse_from_indices(p, tag, *indices):
     """
     if isinstance(tag, str):
         return indices_to_sparse_functions[tag](p, tag, *indices)
+    from mmgroup.structures.xleech2 import XLeech2
+    if isinstance(tag, XLeech2):
+        return xleech2_to_sparse(p, tag)
     return numeric_index_to_sparse(p, 'E', tag, *indices)
 
 

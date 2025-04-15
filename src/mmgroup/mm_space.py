@@ -615,6 +615,11 @@ class MMVector(AbstractMmRepVector):
     ``i`` may also be a slice of integers in the same way as
     in a one-dimensional ``numpy`` array.
 
+    An instance ``x`` of class ``XLeech2`` correponding to a short
+    vector in the Leech lattice is mapped to a (possible negated)
+    basis vector of :math:`\rho_p`. In this case ``v[x]`` is
+    the co-ordinate of ``v`` with respect to that basis vector.
+
     The internal representation of a vector ``v`` in this class
     is not part of the public interface. Use ``v['E']`` to 
     convert ``v`` to an one-dimensional array of ``8``-bit 
