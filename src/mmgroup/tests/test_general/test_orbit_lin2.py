@@ -103,7 +103,6 @@ def test_affine_slow(verbose = 0):
 
 """Deprecated benchmark, do not use!!!
 
-# @pytest.mark.mmm
 def test_find_bit():
     print("")
     import time

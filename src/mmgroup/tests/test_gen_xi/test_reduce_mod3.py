@@ -134,6 +134,10 @@ class RandomVectorPoolMod3:
             ar[i] = self.rand()
         return ar
 
+
+
+
+
 @pytest.mark.bench
 @pytest.mark.gen_xi
 def test_bench_reduce_leech_mod3():
@@ -144,30 +148,28 @@ def test_bench_reduce_leech_mod3():
     a = rng.rand_array(LEN)
     g = np.zeros(12, dtype = np.uint32)
 
-    t_start = time.process_time()
+    t_start = time.perf_counter()
     N = 1000000
     for i in range(N):
         v = a[i & MASK]
-    t = time.process_time() - t_start
+    t = time.perf_counter() - t_start
     t0 = t * 1.0e6 / N
     print("\n" + S % ("<empty>", t0))
 
     N = 200000
-    t_start = time.process_time()
+    t_start = time.perf_counter()
     for i in range(N):
-        v = a[i & MASK]
-        gen_leech3_reduce_leech_mod3(v, g)
-    t = time.process_time() - t_start
+        gen_leech3_reduce_leech_mod3(a[i & MASK], g)
+    t = time.perf_counter() - t_start
     t1 = t * 1.0e6 / N  - t0
     print(S % ("gen_leech3_reduce_leech_mod3", t1))
 
     N = 1000000
-    t_start = time.process_time()
+    t_start = time.perf_counter()
     for i in range(N):
         v = a[i & MASK]
         u = gen_leech3to2(v)
-    t = time.process_time() - t_start
+    t = time.perf_counter() - t_start
     t1 = t * 1.0e6 / N - t0
     print(S % ("gen_leech3to2", t1))
-
 

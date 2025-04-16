@@ -75,9 +75,6 @@ def test_sorters(verbose = 0):
 
 def do_test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
     from mmgroup.clifford12 import bitmatrix32_test_sort
-    if alg in (1,2):
-        print("Runtime %ssort in micoroseconds, %d 32-bit integers, %s samples"
-        % ("heap" if alg == 2 else "", n, nsamples))
     a = np.random.randint(0, 0xffffffff, n * nsamples, dtype=np.uint32)
     a = a.reshape((nsamples, n))
     #print(a)
@@ -85,31 +82,32 @@ def do_test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
     t_empty = bitmatrix32_test_sort(0, a[0], n_repeat)
     for i in range(nsamples):
         t1 = bitmatrix32_test_sort(alg, a[i], n_repeat)
-        timings.append(1.0e6 * (t1 - t_empty) /  n_repeat)
+        timings.append(1.0e3 * (t1 - t_empty) /  n_repeat)
     #print(timings)
     t_min, t_max = min(timings), max(timings)
     t_ave = sum(timings) / nsamples
     t_sigma = (sum((t - t_ave)**2 for t in timings) / (nsamples - 1)) ** 0.5
-    print("ave: %.3f +- %.3f, min: %.3f, max: %.3f" % (
-        t_ave, t_sigma, t_min, t_max))
-
+    print("%7d  %10.5f +- %8.5f  %10.5f %10.5f    %s" % (
+        n, t_ave, t_sigma, t_min, t_max, "?SH"[alg] ))
 
 @pytest.mark.bench
 @pytest.mark.qstate
 @pytest.mark.slow
 def test_benchmark_sort(verbose = 0):
-    print("")
-    do_test_benchmark_sort(100, 100, 100, 1)
-    do_test_benchmark_sort(100, 100, 100, 2)
-    do_test_benchmark_sort(1000, 100, 100, 1)
-    do_test_benchmark_sort(1000, 100, 100, 2)
-    do_test_benchmark_sort(10000, 100, 10, 1)
-    do_test_benchmark_sort(10000, 100, 10, 2)
-    do_test_benchmark_sort(100000, 100, 1, 1)
-    do_test_benchmark_sort(100000, 100, 1, 2)
-    do_test_benchmark_sort(1000000, 10, 1, 1)
-    do_test_benchmark_sort(1000000, 10, 1, 2)
-
+    CASES = [
+       (100, 100, 100), (1000, 100, 100),
+       #(5000, 100, 50), (6000, 100, 16), (7000, 100, 14), (8000, 100, 12),
+       (10000, 100, 10),
+       #(20000, 100, 5), (50000, 100, 2),
+       (100000, 100, 1), (1000000, 10, 1)
+    ]
+    print("""
+Run time for sorting N 32-bit integers in ms
+      N     average                     min        max  alg""")
+    for  n, nsamples, n_repeat in CASES:
+        for alg in (1, 2):
+           do_test_benchmark_sort(n, nsamples, n_repeat, alg)
+    print("S = implemented sort, H = heap sort")
 
 
 
