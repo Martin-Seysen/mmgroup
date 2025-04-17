@@ -640,6 +640,8 @@ uint32_t xsp2co1_check_word_g_x0(uint32_t *w, uint32_t n)
 /**
 @brief Compute maximal isotropic space corresponding to a type-4 vector
 
+This function is deprecated and will be removed!!
+
 Any type-4 vector in the Leech lattice mod 2 corrsponds to a unique
 maximal isotropic space (of dimension 12) in the Leech lattice mod 2.
 E.g. the standard type-4 vector \f$\Omega\f$ corresponds to the
@@ -669,9 +671,10 @@ int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
     int32_t m, res, i;
     uint64_t iso[12];
     uint32_t a[6], q[11], len_a;
+    v &= 0xffffff;
     len_a = res =  gen_leech2_reduce_type4(v, a);
-    if (res < 0) return len_a; // v is not of type 4
-	if (res > 6) return -11;
+    if (res < 0) return -10; // v is not of type 4
+    if (res > 6) return -11;
     if (n == 0) return 0;        // Nothing to do
     // Now the word in A of length len_A maps v to Omega.
     // Next we'll invert that word
@@ -690,8 +693,8 @@ int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
         n = bitmatrix64_echelon_h(pB, n, 24, 24);
         // Compute intersection of spaces spanned by B and iso
         m = bitmatrix64_cap_h(pB, iso, n, 12, 24, 24);
-        if (m < 0) return m;
-		if (m > n) return -4;
+        if (m < 0) return -5;
+        if (m > n) return -4;
         // Intersection is now in the upper m rows of array B
         // Copy upper rows of B to lower m rows of B.
         for (i = 0; i < m; ++i) pB[i] = pB[i + n - m];
@@ -701,6 +704,98 @@ int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
         return 12;
     }
 }
+
+/// @cond DO_NOT_DOCUMENT
+
+/**
+@brief Orthognal complement of 23 dim. subspace of Leech lattice mode 2
+
+If the buffer referred by ``pB`` contains the a basis of a
+23-dimensional subspace of the Leech lattice mod 2 in reduced echelon
+form then the function returns the unique nonzero vector in the Leech
+lattice mod 2 orthogonal to that space.
+
+Otherwise the function returns garbage.
+
+The basis of the subspace should have beem reduced with
+function ``bitmatrix64_echelon_l``.
+*/
+static inline uint32_t _ortho23(uint32_t *pB)
+{
+     uint32_t i = 23, j, w;
+     for (j = 0; j < 23; ++j) {
+         if (((pB[j] >> j) & 1) == 0) {
+              i = j;
+              break;
+         }
+     }
+     w = 1UL << i;
+     for (j = 0; j < i; ++j) w |= ((pB[j] >> i) & 1UL) << j;
+     return ((w >> 12) & 0xfffUL) | ((w & 0xfffUL) << 12);
+}
+
+/// @endcond
+
+
+
+/**
+@brief Compute maximal isotropic space corresponding to a type-4 vector
+
+Any type-4 vector \f$v\f$ in the Leech lattice mod 2 corresponds to a
+unique maximal isotropic space \f$v^{(\perp)}\f$ (of dimension 12) in
+the Leech lattice mod 2. E.g. the standard type-4 vector \f$\Omega\f$
+corresponds to the space spanned by \f$\Omega\f$ and (the images in
+the Leech lattice mod 2 of) all even Golay cocode words.
+
+Given a type-4 vector \f$v\f$ in *Leech lattice encoding*, we want to
+find the space \f$Y\f$ spanned by the isotropic space \f$v^{(\perp)}\f$
+and a given linear subspace \f$X\f$ of the Leech lattice mod 2.
+Let \f$X\f$ be the space spanned by the vectors \f$b_0,...,b_{n-1}\f$
+in the array ``B`` referred by ``pB`` of size ``n``. Here ``n`` may be
+at most 24. In any case, the buffer referred by ``pB`` must have size 24.
+
+The function modifies the basis in the array ``B``, so that it will be
+a basis of the space \f$Y\f$ in reduced echelon form. The function
+returns the dimension ``m`` of that space in case of success and a
+negative value in case of failure. The function fails if \f$v\f$ is
+not of type 4.
+
+If the space \f$Y\f$ has dimension ``n = 23`` then the function also
+computes the unique nonzero vector \f$w\f$ in the Leech lattice mod 2
+orthogonal to \f$Y\f$, and returns ``0x100 * w + n`` instead of ``n``.
+*/
+// %%EXPORT px
+int64_t xsp2co1_isotropic_type4_span(uint32_t v, uint32_t *pB, int32_t n)
+{
+    int32_t res, i;
+    uint64_t iso[36];
+    int64_t n_out;
+    uint32_t a[6], q[11], len_a;
+    v &= 0xffffff;
+    len_a = res =  gen_leech2_reduce_type4(v, a);
+    if (res < 0) return len_a; // v is not of type 4
+    if (res > 6) return -11;
+    if (n > 24) return -12;    // Space X is too large
+    // Now the word in A of length len_A maps v to Omega.
+    // Next we'll invert that word
+    mm_group_invert_word(a, len_a);
+    // Compute the images of the first 11 basis vectors of
+    // the Leech lattice mod 2 under (the inverted) word A.
+    for (i = 0; i < 11; ++i) q[i] = 0x400 >> i;
+    if (gen_leech2_op_word_many(q, 11, a, len_a) != len_a) return -2;
+    // Copy these images and v to array iso
+    for (i = 0; i < 11; ++i) iso[i] = q[i];
+    iso[11] = v;
+    // Append basis of X to the array iso
+    for (i = 0; i < n; ++i) iso[i+12] = pB[i];
+    // Echelonize and output this array
+    n_out = bitmatrix64_echelon_l(iso, n + 12, 0, 24);
+    if (n_out > 24 || n_out < 0) return -3;
+    for (i = 0; i < n_out; ++i) pB[i] = (uint32_t)(iso[i] & 0xffffffUL);
+    if (n_out == 23) n_out += (int64_t)(_ortho23(pB)) << 8;
+    return n_out;
+}
+
 
 
 /*************************************************************************
@@ -820,8 +915,11 @@ int32_t xsp2co1_elem_row_mod3(uint64_t *elem, uint32_t column, uint64_t *v)
 *** Read entry of a transformed vector of the monster rep modulo 3
 *************************************************************************/
 
+
+
+
 /**
-@brief Read entry of a transfromed vector of the monster rep modulo 3
+@brief Read entry of a transformed vector of the monster rep modulo 3
 
 Let \f$g \in G_{x0}\f$ be stored in the array ``elem``. Let \f$v\f$
 be the vector of the representation  \f$4096_x \otimes 24_x\f$

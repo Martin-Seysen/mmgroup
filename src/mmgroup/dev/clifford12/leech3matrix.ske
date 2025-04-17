@@ -922,7 +922,7 @@ int32_t leech3matrix_prep_type4(uint64_t *a, uint32_t n, uint64_t *w, uint64_t *
 int32_t leech3matrix_rand_type4(uint64_t *w, uint32_t n, uint32_t trials, uint64_t *seed)
 {
      uint64_t v, k, t = 0;
-     uint_fast32_t i, i1;
+     uint_fast32_t i, i1, wt;
      int32_t res;
      for (i = 0; i < trials ; ++i) {
          k = res = gen_rng_modp(n, seed);
@@ -932,6 +932,8 @@ int32_t leech3matrix_rand_type4(uint64_t *w, uint32_t n, uint32_t trials, uint64
          if (res < 0) return -1;
          v = w[k >> 1] ^ (0 - (k & 1));
          w[n - 1] = v = gen_leech3_add(w[n - 1], v);
+         wt = mat24_bw24((uint32_t)(v ^ (v >> 24)));
+         if (((0x492492UL >> wt) & 1) == 0) continue;
          t = gen_leech3to2(v);
          if ((t >> 24) == 4) {
              t  &= 0xffffff;
