@@ -15,7 +15,7 @@ import time
 import numpy as np
 import pytest
 
-#from mmgroup import XLeech2, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
+from mmgroup import XLeech2 #, Xsp2_Co1, PLoop, GCode, AutPL, Cocode, GcVector
 
 from mmgroup import mat24
 
@@ -31,6 +31,7 @@ from mmgroup.generators import gen_leech3_reduce_leech_mod3
 from mmgroup.generators import gen_leech3_reduce
 from mmgroup.generators import gen_leech3_add, gen_leech3_neg
 from mmgroup.generators import gen_leech3to2
+from mmgroup.generators import gen_leech2_reduce_type4
 
 #####################################################################
 # Test function gen_leech3_find_tetrad_leech_mod3
@@ -173,3 +174,15 @@ def test_bench_reduce_leech_mod3():
     t1 = t * 1.0e6 / N - t0
     print(S % ("gen_leech3to2", t1))
 
+    LEN = 0x1000
+    MASK = LEN - 1
+    for i in range(LEN):
+         a[i] = XLeech2('r', 4).ord
+    N = 200000
+    t_start = time.perf_counter()
+    for i in range(N):
+        v = a[i & MASK]
+        u = gen_leech2_reduce_type4(v, g)
+    t = time.perf_counter() - t_start
+    t1 = t * 1.0e6 / N - t0
+    print(S % ("gen_leech2_reduce_type4", t1))

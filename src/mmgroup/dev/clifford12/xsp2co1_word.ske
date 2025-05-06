@@ -682,7 +682,7 @@ int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
     // Compute the images of the first 11 basis vectors of
     // the Leech lattice mod 2 under (the inverted) word A
     for (i = 0; i < 11; ++i) q[i] = 0x400 >> i;
-    if (gen_leech2_op_word_many(q, 11, a, len_a) != len_a) return -2;
+    if (gen_leech2_op_word_leech2_many(q, 11, a, len_a, 0) != 0) return -2;
     // Copy these images and v to array iso
     for (i = 0; i < 11; ++i) iso[i] = q[i];
     iso[11] = v;
@@ -782,7 +782,7 @@ int64_t xsp2co1_isotropic_type4_span(uint32_t v, uint32_t *pB, int32_t n)
     // Compute the images of the first 11 basis vectors of
     // the Leech lattice mod 2 under (the inverted) word A.
     for (i = 0; i < 11; ++i) q[i] = 0x400 >> i;
-    if (gen_leech2_op_word_many(q, 11, a, len_a) != len_a) return -2;
+    if (gen_leech2_op_word_leech2_many(q, 11, a, len_a, 0) != 0) return -2;
     // Copy these images and v to array iso
     for (i = 0; i < 11; ++i) iso[i] = q[i];
     iso[11] = v;

@@ -205,9 +205,10 @@ conditions on the scalar product of  :math:`|d|` and
 
 The table provides enough information for effectively computing
 the subtype of an element :math:`\lambda_d + \lambda_\delta` from
-:math:`d` and :math:`\delta`. Function ``gen_leech2_type`` in file 
+:math:`d` and :math:`\delta`. Function ``gen_leech2_subtype`` in file
 ``gen_leech.c`` computes that subtype. It returns e.g. the subtype
-46 as the hexadecimal number 0x46.
+46 as the hexadecimal number 0x46. Property ``subtype`` of class
+``XLeech2`` also returns that subtype.
 
 The following table may be helpful for memorizing the second digit
 of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
