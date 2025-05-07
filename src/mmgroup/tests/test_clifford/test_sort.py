@@ -8,6 +8,7 @@ from mmgroup.clifford12 import bitvector32_heapsort
 from mmgroup.clifford12 import bitvector64_heapsort
 from mmgroup.clifford12 import bitvector32_sort
 from mmgroup.clifford12 import bitvector64_sort
+from mmgroup.clifford12 import bitvector32_copy
 
 dtypes = {
   32 : np.uint32, 64 : np.uint64
@@ -72,31 +73,69 @@ def test_sorters(verbose = 0):
         do_test_sort(dtype, verbose)
 
 
+def display_stat(stat, n, samples):
+    if stat[0] == 0:
+        return ""
+    factors = [n * samples, n * samples, n * samples, samples]
+    lst = [(int(stat[i]) + 0.0) / factors[i] for i in range(4)]
+    return "%4.1f %5.3f %5.3f %.2f" % tuple(lst)
+    
+
+def do_test_benchmark_np_sort(n, nsamples = 100, n_repeat = 100):
+    a = np.random.randint(0, 0xffffffff, n * nsamples, dtype=np.uint32)
+    a = a.reshape((nsamples, n))
+    b = np.zeros(n, dtype=np.uint32) 
+    timings = []
+    t_start = time.process_time()
+    for j in range(n_repeat):
+        bitvector32_copy(a[0], n, b)
+    t_empty = time.process_time() - t_start
+    for i in range(nsamples):
+        t_start = time.process_time()
+        for j in range(n_repeat):
+            bitvector32_copy(a[i], n, b)
+            np.sort(b)
+        t = time.process_time() - t_start
+        timings.append(1.0e3 * (t - t_empty) /  n_repeat)
+    return timings
+
+
 
 def do_test_benchmark_sort(n, nsamples = 100, n_repeat = 100, alg = 1):
     from mmgroup.clifford12 import bitmatrix32_test_sort
-    a = np.random.randint(0, 0xffffffff, n * nsamples, dtype=np.uint32)
-    a = a.reshape((nsamples, n))
+    from mmgroup.clifford12 import bitvector_sort_stat
     #print(a)
-    timings = []  #time of experiment in microseconds
-    t_empty = bitmatrix32_test_sort(0, a[0], n_repeat)
-    for i in range(nsamples):
-        t1 = bitmatrix32_test_sort(alg, a[i], n_repeat)
-        timings.append(1.0e3 * (t1 - t_empty) /  n_repeat)
+    if alg < 3:
+        a = np.random.randint(0, 0xffffffff, n * nsamples, dtype=np.uint32)
+        a = a.reshape((nsamples, n))
+        stat = np.zeros(4, dtype = np.uint64)
+        timings = []  #time of experiment in microseconds
+        t_empty = bitmatrix32_test_sort(0, a[0], n_repeat)
+        bitvector_sort_stat(stat, len(stat))
+        for i in range(nsamples):
+            t1 = bitmatrix32_test_sort(alg, a[i], n_repeat)
+            timings.append(1.0e3 * (t1 - t_empty) /  n_repeat)
+        bitvector_sort_stat(stat, len(stat))
+        stat = display_stat(stat, n, nsamples * n_repeat)
+    else:
+        timings = do_test_benchmark_np_sort(n, nsamples, n_repeat)
+        stat = ""
     #print(timings)
     t_min, t_max = min(timings), max(timings)
     t_ave = sum(timings) / nsamples
     t_sigma = (sum((t - t_ave)**2 for t in timings) / (nsamples - 1)) ** 0.5
-    print("%7d  %10.5f +- %8.5f  %10.5f %10.5f    %s" % (
-        n, t_ave, t_sigma, t_min, t_max, "?SH"[alg] ))
+    #print(n, nsamples, n_repeat, n_qsort)
+    print("%7d  %10.5f +- %8.5f  %10.5f %10.5f    %s  %s" % (
+        n, t_ave, t_sigma, t_min, t_max, "?SHN"[alg], stat ))
 
 @pytest.mark.bench
 @pytest.mark.qstate
 @pytest.mark.slow
 def test_benchmark_sort(verbose = 0):
     CASES = [
+       #(63, 100, 100), (64, 100, 100),
        (100, 100, 100), (1000, 100, 100),
-       #(5000, 100, 50), (6000, 100, 16), (7000, 100, 14), (8000, 100, 12),
+       #(2000, 100, 50), (4000, 100, 25), (5000, 100, 20), (6000, 100, 16), (7000, 100, 14), (8000, 100, 12),
        (10000, 100, 10),
        #(20000, 100, 5), (50000, 100, 2),
        (100000, 100, 1), (1000000, 10, 1)
@@ -105,9 +144,9 @@ def test_benchmark_sort(verbose = 0):
 Run time for sorting N 32-bit integers in ms
       N     average                     min        max  alg""")
     for  n, nsamples, n_repeat in CASES:
-        for alg in (1, 2):
+        for alg in (1, 2, 3):
            do_test_benchmark_sort(n, nsamples, n_repeat, alg)
-    print("S = implemented sort, H = heap sort")
+    print("S = implemented sort, H = heap sort, N = numpy sort")
 
 
 

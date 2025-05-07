@@ -95,19 +95,64 @@ extern "C" {
 /// @cond DO_NOT_DOCUMENT 
 
 
-// Treshold for quicksort. an array with less than 33 entries
+// Treshold for quicksort. An array with less than MIN_QS entries
 // is sorted with insertsort.
-#define MIN_QS 32  //  Treshold for quicksort
+#define MIN_QS 32 //  Treshold for quicksort
+
+// Treshold for quicksort. For an array with at least MIN_MEDIAN9
+// entries the pivoting element is coputed as the median of 9 samples.
+#define MIN_MEDIAN9 128  // Treshold for better median detection
+
 
 
 // Exchange entry a[i] with a[j]. This requires an auxiliary
 // variable ``temp`` of the same type as ``a[0]``.
 #define xchg(a, i, j)  temp = a[i]; a[i] = a[j]; a[j] = temp
 
+// Exchange entry a[i] with a[j] if a[i] > a[j] using marco xchg
+#define swap(a, i, j) if (a[i] > a[j])  {xchg(a, i, j);}
+
+// Exchange a[i], a[j], a[k], such tha ta[i] <= a[j] <= a[k] holds
+#define swap3(a, i, j, k) swap(a, i, j) swap(a, j, k) swap(a, i, j)
+
+
 
 
 /// @endcond 
 
+
+/*************************************************************************
+** Output statistics information for sorting algorithms
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+#define BITVECTOR_SORT_STAT
+#undef BITVECTOR_SORT_STAT
+
+#ifdef BITVECTOR_SORT_STAT
+static uint64_t _bitvector_sort_stat[4];
+#endif
+
+// %%EXPORT px
+void bitvector_sort_stat(uint64_t* out, uint32_t len_out)
+{
+#ifdef BITVECTOR_SORT_STAT
+uint32_t i;
+memset(out, 0, len_out * sizeof(uint64_t));
+if (len_out > 4) len_out = 4;
+for (i = 0; i < len_out; ++i) out[i] = _bitvector_sort_stat[i];
+memset(_bitvector_sort_stat, 0, sizeof(_bitvector_sort_stat));
+#else
+memset(out, 0, len_out * sizeof(uint64_t));
+#endif
+}
+
+/// @endcond 
+
+/*************************************************************************
+** Generate sorting algorithms for unsigned 32-bit and 64-bit integers
+*************************************************************************/
 
 
 // %%FOR N in [32, 64]
@@ -211,13 +256,45 @@ void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
 
 
 /*************************************************************************
-** Insert sort for unsigned  %{N}-bit integers
+** Median of nine %{N} bit integers
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT 
+
+static inline uint%{N}_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
+// Return approximate median of the list a of length n >= 32,
+// based on the median of 9 entries in the list.
+// We also change the list such that a[0] <= median and a[n-1] >= median.
+{
+    uint%{N}_t m[9], temp;
+    m[0] = a[0]; m[1] = a[n >> 3]; m[2] = a[n >> 2];
+    m[3] = a[3 * (n >> 3)]; m[4] = a[n >> 1]; m[5] = a[5 * (n >> 3)];
+    m[6] = a[n - 1 - (n >> 2)]; m[7] = a[n - 1 - (n >> 3)]; m[8] = a[n - 1];
+    // Pruned network from Fig. 49 in  Donald E. Knuth, The Art of Computer
+    // Programming, Volume 3: Sorting and Searching, Ch. 5.3.4.
+    swap3(m, 0, 1, 2)
+    swap3(m, 3, 4, 5)
+    swap3(m, 6, 7, 8)
+
+    swap3(m, 0, 3, 6)
+    swap3(m, 1, 4, 7)
+    swap3(m, 2, 5, 8)
+
+    swap(m, 1, 3) swap(m, 5, 7) swap(m, 2, 6)
+    swap(m, 4, 6) swap(m, 2, 4)
+
+    a[0] = m[0]; a[n >> 3] = m[1]; a[n >> 2] = m[2];
+    a[3 * (n >> 3)] = m[3]; a[n >> 1] = m[4]; a[5 * (n >> 3)] = m[5];
+    a[n - 1 - (n >> 2)] = m[6]; a[n - 1 - (n >> 3)] = m[7]; a[n - 1] = m[8];
+    return  m[4];
+}
+
+/// @endcond 
 
 /*************************************************************************
 ** The final sorting algorithm for unsigned  %{N}-bit integers
 *************************************************************************/
+
 
 
 /** @brief Sort an array ``a`` of type ``uint%{N}_t[]`` of length ``n``
@@ -238,6 +315,7 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 
     // Use insertion sort for small arrays
     if (n < MIN_QS) {
+        // if (l1 >= 12) bitvector_shellsort_step(a1, l1, 4, uint%{N}_t);
         bitvector_insertsort(a, n, uint%{N}_t);
         return;
     }  
@@ -255,7 +333,7 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
     // depth decreased by one. If that depth reaches 0 then
     // we switch to heap sort.
     sp = stack + 3; stack[0] = 0; stack[1] = n - 1;
-    j = n;  stack[2] = 1;
+    j = n;  stack[2] = 2;
     while (j >= MIN_QS) {
         j >>= 1; stack[2] += 2;
     }
@@ -271,20 +349,31 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
             uint%{N}_t *a1 = a + l;
             // if (l1 >= 12) bitvector_shellsort_step(a1, l1, 4, uint%{N}_t);
             bitvector_insertsort(a1, l1, uint%{N}_t);
+            #ifdef BITVECTOR_SORT_STAT
+            _bitvector_sort_stat[2] += 1;
+            #endif
         } else if (sp[2]) {
             // Use quicksort until max recursion depth reached. We
             // compute the partiton as in the English Wikipedia article.
 
-            // Sort the first, midlle and last element of array a.
-            i = l + ((r - l) >> 1);  // index of the middle element of a
-            // Sort a such that a[l] <= a[i] <= a[r] and use a[i] as pivot
-            if (a[l] > a[i]) {xchg(a, l, i);}
-            if (a[i] > a[r]) {xchg(a, i, r);}
-            if (a[l] > a[i]) {xchg(a, l, i);}
-            piv = a[i];        // pivot with middle element after sorting
-            // Partition array a[l],...,a[r] using the pivot element a[i]
-            // We compute j such that that partitions will be
-            // a[l],...,a[j]  and   a[j],...,a[r].
+            #ifdef BITVECTOR_SORT_STAT
+            _bitvector_sort_stat[0] += r - l;
+            _bitvector_sort_stat[1] += 1;
+            #endif
+
+            if (r - l < MIN_MEDIAN9) {
+                // Sort the first, middle and last element of array a.
+                i = l + ((r - l) >> 1);  // index of the middle element of a
+                // Sort a such that a[l] <= a[i] <= a[r] and use a[i] as pivot
+                swap3(a, l, i, r)
+                piv = a[i];        // pivot with middle element after sorting
+            } else {
+                // find pivot as median of 9 entries of the list
+                piv = median_9_%{N}(a + l, r - l + 1);
+            }
+            // Partition array a[l],...,a[r] using the pivot element piv
+            // We compute j such that partitions will be
+            // a[l],...,a[j-1]  and   a[j+1],...,a[r].
             i = l; // 1st element is already done
             j = r; // last element is already done
             do {
@@ -299,12 +388,15 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
             // push a[l,...,i-1] for next round onto the stack
             sp[3] = l;
             sp[4] = j;
-            // decrement recursion depth couter for next round
+            // decrement recursion depth counter for next round
             sp[5] = sp[2] = sp[2] - 1;
             sp += 6;  // increment stack pointer by two levels
         } else {
             // Use heapsort if max recursion depth exceeded 
             bitvector%{N}_heapsort(a + l, r - l + 1);
+            #ifdef BITVECTOR_SORT_STAT
+            _bitvector_sort_stat[3] += r - l + 1;
+            #endif
         }
     } while (sp != stack);
      

@@ -210,7 +210,7 @@ the subtype of an element :math:`\lambda_d + \lambda_\delta` from
 46 as the hexadecimal number 0x46. Property ``subtype`` of class
 ``XLeech2`` also returns that subtype.
 
-The following table may be helpful for memorizing the second digit
+The following table may help to remember the second digit
 of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
 
 .. math::
@@ -218,24 +218,24 @@ of a subtype of a vector in :math:`\Lambda / 2 \Lambda`.
     \hline 
     \mbox{Subtype} & \mbox{Description}  \\
     \hline 
-    x0 & \mbox{Contains a vector $\lambda_d+\lambda_\delta$ with $d=0$;
-    $\delta$ even} \\ 
+    x0 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 0, 24$,
+    $|\delta|$ even; not of subtype $x8$} \\
     \hline 
-    x1 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|\delta|=1$} \\ 
+    x1 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|\delta|=1$} \\
     \hline 
-    x2 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$; 
-    and  $\delta \subset d \Omega^{1 + |d|/8}$, $|\delta|$ even}\\ 
+    x2 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$,
+    $|\delta|$ even; and  $\delta \subset d \Omega^{1 + |d|/8}$}\\
     \hline 
-    x3 & \mbox{Vector $\lambda_d+\lambda_\delta$ with $|\delta|=3$} \\ 
+    x3 & \mbox{Vector $\lambda_d+\lambda_\delta$ with $|\delta|=3$} \\
     \hline 
-    x4 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$;
-    not of subtype $x2$, $|\delta|$ even} \\ 
+    x4 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 8, 16$,
+    $|\delta|$ even; not of subtype $x2$} \\
     \hline 
     x6 & \mbox{Vectors $\lambda_d+\lambda_\delta$ with $|d| = 12$; 
-    $|\delta|$ even} \\ 
+    $|\delta|$ even} \\
     \hline 
-    x8 & \mbox{The vector $\lambda_d+\lambda_\delta$ with $|d| = 24$; 
-    $\delta = 0$} \\ 
+    x8 & \mbox{The vector $\lambda_d+\lambda_\delta$ with $|d| = 24$,
+    $\delta = 0$} \\
     \hline 
     \end{array}
 
