@@ -352,7 +352,7 @@ class MMVectorCRT(AbstractMmRepVector):
                     raise ValueError(ERR_OVERFLOW)
                 self.data_int <<= sh  
                 self._inorm *= 4**sh            
-            for d in self.data.values:
+            for d in self.data.values():
                 d <<= sh
             self._v2 += sh            
         elif sh < 0:

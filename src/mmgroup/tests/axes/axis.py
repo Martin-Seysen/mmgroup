@@ -864,7 +864,7 @@ class BabyAxis(Axis):
 
         For this class the start axis is :math:`v^-`.
         """
-        return G(g_map_vstart_name)
+        return G(cls.g_map_vstart_name)
     @classmethod
     def representatives(cls):
         r"""Map names :math:`H` orbits of axes to their representatives
