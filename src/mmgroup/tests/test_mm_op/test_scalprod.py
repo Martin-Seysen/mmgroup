@@ -10,7 +10,8 @@ import pytest
 
 from mmgroup.mm_space import characteristics
 from mmgroup import MMV, MM0, MMVector, mmv_scalprod
-
+from mmgroup.mm_op import mm_aux_mmv_size, mm_aux_index_mmv
+from mmgroup.mm_op import mm_op_scalprod_ind
 
 
 PRIMES = characteristics()
@@ -49,6 +50,7 @@ def dense_v(p):
 
 
 
+
 @pytest.mark.mm_op
 def test_scalprod(ntests=10):
     """Test function mmgroup.mmv_scalprod()"""
@@ -56,6 +58,9 @@ def test_scalprod(ntests=10):
     def rand_g():
         return RAND_G[randint(0, len(RAND_G)-1)]
     for p in PRIMES:
+        ind_buf = None
+        if p in [3, 15]:
+            ind_buf = np.zeros(mm_aux_mmv_size(p) + 1, dtype = np.uint16)
         V = MMV(p)
         for i in range(ntests):
             v1, v2 = V('R'), V('R') 
@@ -72,4 +77,8 @@ def test_scalprod(ntests=10):
             prod = mmv_scalprod(v1, v2)
             ref_prod = py_scalprod(v1, v2)
             assert prod == ref_prod, p
-
+            if ind_buf is not None:
+                st = mm_aux_index_mmv(p, v1.data, ind_buf, len(ind_buf))
+                assert st > 0
+                prod = mm_op_scalprod_ind(p, v1.data, v2.data, ind_buf)
+                assert prod == ref_prod, p

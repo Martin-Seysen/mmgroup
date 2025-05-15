@@ -11,7 +11,19 @@ from mmgroup.generate_c import UserDirective, EmptyUserDirective
 # Computing scalar product (mod p) of vector in the rep of the monster
 ###########################################################################
 
-def gen_scalprod_mod3(mv1, mv2, length, is24):
+
+def gen_scalprod_mod3_snippet(is24):
+    """Scalar multiplication mod 3
+
+    Return a code snipped the computes "_ac1", "_ac2" with
+    2 * "_ac2" + "_ac1" = scalar_product("_v1", "_v2") where "_v1",
+    "_v2" are 64-bit integers containing a vector of 32 integers mod 3.
+    Up to 0x7fff such values can be summed up without intermediate
+    reduction. If is24 is True then "_v1", "_v2" are 64-bit integers
+    containing a vector of 24 integers mod 3. The function uses a
+    temporary 64-bit integer "_t". The names of the variables cannot
+    be changed.
+    """
     if  is24:
         lowmask = 0x555555555555
         tvalue =  '_t'
@@ -19,19 +31,41 @@ def gen_scalprod_mod3(mv1, mv2, length, is24):
         lowmask =  0x5555555555555555
         tvalue = '(_t >> 32) + (_t & 0xffffffffULL)'
     highmask = 2*lowmask
-    return f"""uint_mmv_t _v1, _v2, _t, _ac1 = 0, _ac2 = 0;
-do {{
-    _v1 = *{mv1}++;
-    _v2 = *{mv2}++;
-    _t = _v1 & 0x{lowmask:x}ULL;
+    return f"""    _t = _v1 & 0x{lowmask:x}ULL;
     _t = (_t + _t + _t) & _v2;
     _ac1 += {tvalue};
     _t = _v1 & 0x{highmask:x}ULL;
     _t = (_t + (_t >> 1)) & _v2;
-    _ac2 += {tvalue};
+    _ac2 += {tvalue};"""
+
+
+def gen_scalprod_mod3(mv1, mv2, length, is24):
+    scalprod = gen_scalprod_mod3_snippet(is24)
+    return f"""uint_mmv_t _v1, _v2, _t, _ac1 = 0, _ac2 = 0;
+do {{
+    _v1 = *{mv1}++;
+    _v2 = *{mv2}++;
+{scalprod}
 }} while (--{length});
 return (uint32_t)((_ac2 + _ac2 + _ac1) % 3);
+"""
+
+
+def gen_scalprod_mod3_index(mv1, mv2, ind, imax):
+    scalprod = gen_scalprod_mod3_snippet(False)
+    return f"""uint_mmv_t _v1, _v2, _t, _ac1 = 0, _ac2 = 0;
+uint32_t _i;
+while(1) {{
+    _i = *((*{ind})++);
+    if (_i >= {imax}) break;
+    _v1 = {mv1}[_i];
+    _v2 = {mv2}[_i];
+{scalprod}
+}}
+--(*{ind});
+return (uint32_t)((_ac2 + _ac2 + _ac1) % 3);
 """ 
+
 
 
 def gen_extract(v1, v2, res, width, bit):
@@ -47,6 +81,15 @@ def gen_extract(v1, v2, res, width, bit):
 
 
 def gen_adddown(v1, width, cy=False):
+    """Put v1 =  v1_odd + v1_even
+
+    Here the 64-bit integer v1 is considered as an array of integers
+    of with ``width``, indexed from 0 to 64 / width -1.
+    The function adds the entries with index 2*i and 2*i + 1 and
+    stores the result at entry 2*i, with the sum possibly one bit
+    longer. If ``cy`` is set to 0 then some masking is saved; details
+    are hairy! If in doubt, set ``cy = 1``.
+    """
     if width == 32:
        return f"    {v1} = ({v1} >> 32) + ({v1} & 0xffffffffULL);\n"
     m = 0xffffffffffffffff // ((1 << (2*width)) - 1)
@@ -126,6 +169,23 @@ do {{
     f"}} while (--{length});\n",
     "return (uint32_t)(_res % 15);\n"
 ]) 
+
+
+def gen_scalprod_mod15_index(mv1, mv2, ind, imax):
+    scalprod = gen_add_scal_mod15_snippet('_v1', '_v2', '_res')
+    return f"""uint_mmv_t _v1, _v2, _res = 0, _t1, _t2;
+uint32_t _i;
+while(1) {{
+    _i = *((*{ind})++);
+    if (_i >= {imax}) break;
+    _v1 = {mv1}[_i];
+    _v2 = {mv2}[_i];
+{scalprod} }}
+--(*{ind});
+return (uint32_t)(_res % 15);
+"""
+
+
 
 
 
@@ -212,6 +272,8 @@ class Tables: #(MM_Op):
         self.directives = {
             "SCALPROD_MOD_P_32" : UserDirective(self.scalprod_32, "sss"),
             "SCALPROD_MOD_P_24" : UserDirective(self.scalprod_24, "sss"),
+            "SCALPROD_MOD_P_INDEX" :
+                              UserDirective(self.scalprod_index, "ssss"),
         }
 
     def scalprod_32(self, mv1, mv2, length):
@@ -234,6 +296,15 @@ class Tables: #(MM_Op):
         else:
             return gen_add_scal_mod_large_24(self.pbits, mv1, mv2, length)
 
+    def scalprod_index(self, mv1, mv2, ind, imax):
+        if self.p == 3:
+            return gen_scalprod_mod3_index(mv1, mv2, ind, imax)
+        elif self.p == 15:
+            return gen_scalprod_mod15_index(mv1, mv2, ind, imax)
+        ERR = "Modulus %d not supported for directive SCALPROD_MOD_P_INDEX"
+        raise ValueError(ERR % self.p)
+
+
 
 class MockupTables:
     tables = {
@@ -242,6 +313,7 @@ class MockupTables:
     directives = {
         "SCALPROD_MOD_P_32" : EmptyUserDirective,
         "SCALPROD_MOD_P_24" : EmptyUserDirective,
+        "SCALPROD_MOD_P_INDEX" : EmptyUserDirective,
     }
     def __init__(self, **kwds):
         pass

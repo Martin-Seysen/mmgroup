@@ -690,6 +690,46 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
     return check_mmv_buffer(p, mv, buffer);
 }
 
+
+/**********************************************************************
+*** Indexing a vector in R_p
+**********************************************************************/
+
+
+/**
+  @brief Index a vector in internal representation
+
+  The function computes an array ``a`` of all indices ``i`` such that
+  entry ``mv[i]`` of the vector  ``mv`` with  modulus ``p`` in
+  internal representation contains a nonzero component of the vector.
+
+  Array ``a`` is computed in the buffer of length ``l`` referred by
+  parameter ``a``.  Array ``a`` will contain a sorted list of the
+  relevant indices terminated by an entry ``0xffff`.
+
+  The function returns the length of the computed index array ``a``
+  or a negative value in case of error. The required length ``l`` of
+  index array ``a`` is at most ``mm_aux_mmv_size(p) + 1``.
+*/
+// %%EXPORT px
+int32_t mm_aux_index_mmv(uint32_t p, uint_mmv_t *mv, uint16_t *a, uint32_t l)
+{
+    int32_t status = mm_aux_reduce_mmv(p, mv);
+    uint32_t n_max = mm_aux_mmv_size(p), n, i = 0;
+
+    if (status < 0) return status;
+    if (l == 0) return -3;
+    for (n = 0; n < n_max; ++n) if (mv[n]) {
+        a[i++] = (uint16_t)(n);
+        if (i >= l) return -3;
+    }
+    a[i++] = (uint16_t)(0xffff);
+    return i;
+}
+
+
+
+
 /**********************************************************************
 *** Low-level functions supporting external rep of vectors in R_p
 **********************************************************************/

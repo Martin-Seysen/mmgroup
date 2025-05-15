@@ -46,7 +46,7 @@ static inline int32_t scalprod32(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t leng
 static inline int32_t scalprod24(uint_mmv_t *mv1, uint_mmv_t *mv2, uint32_t length)
 {
   // %%IF* GENERATE_CODE
-  // %%SCALPROD_MOD_P_32 mv1, mv2, length
+  // %%SCALPROD_MOD_P_24 mv1, mv2, length
   // %%END IF # GENERATE_CODE
 }
 // %%ELSE
@@ -79,6 +79,48 @@ int32_t mm_op%{P}_scalprod(uint_mmv_t *mv1, uint_mmv_t *mv2)
 
 
 
+// %%IF  %{P} in [3, 15]
+
+/// @cond DO_NOT_DOCUMENT
+
+static inline int32_t
+scalprod_index(uint_mmv_t *mv1, uint_mmv_t *mv2, uint16_t **pa, uint32_t max_a)
+{
+  // %%IF* GENERATE_CODE
+  // %%SCALPROD_MOD_P_INDEX mv1, mv2, pa, max_a
+  // %%END IF # GENERATE_CODE
+}
+
+/// @endcond
+
+
+/**
+  @brief Return scalar product of vectors ``mv1, mv2`` in \f$\rho_%{P}\f$
+
+  Special version for sparse vectors. Here only entries of ``mv1`` and
+  ``mv2`` with an index in the table ``ind`` are used as terms for the
+  scalar product.  The table ``ind`` must have been computed with
+  function ``mm_aux_index_mmv``; otherwise the function will crash!
+
+  If e.g. ``mv1`` is sparse then we may call
+  ``mm_aux_index_mmv(p, mv1, ind, len)`` to fill an array ``ind`` of
+  length ``len`` with suitable index information.
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_scalprod_ind(uint_mmv_t *mv1, uint_mmv_t *mv2, uint16_t *ind)
+{
+    int32_t res;
+    uint16_t *ind1 = ind;
+    res = scalprod_index(mv1, mv2, &ind1, MM_OP%{P}_OFS_B );
+    res += %{int:(P+1) >> 1} *
+           scalprod_index(mv1, mv2, &ind1, MM_OP%{P}_OFS_T);
+    res += scalprod_index(mv1, mv2, &ind1, MM_OP%{P}_LEN_V);
+    return res % %{P};
+}
+
+
+
+// %%END IF
 
 
 //  %%GEN h

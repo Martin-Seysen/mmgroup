@@ -12,7 +12,7 @@
 
  An element of \f$\rho_{%{P}}\f$ is implemented as an array
  of integers of type ``uint_mmv_t`` as described in
- section **Description of the mmgroup.mm extension**
+ section **Description of the mmgroup.mm_op extension**
  in this document.
 
  Unless otherwise stated, functions exported from this module return 0. 
