@@ -14,8 +14,8 @@ MODE_GROUPS = {0: 'M', 1: 'B', 2: 'B & 2E_6'}
 
 
 def import_all():
-    global Axis, mm_profile_mod3_permute24
-    from mmgroup.axes import Axis
+    global Axis, BabyAxis, mm_profile_mod3_permute24
+    from mmgroup.axes import Axis, BabyAxis
     from mmgroup.mm_reduce import mm_profile_mod3_permute24
 
 def rand_Nxyz(mode = 0):
@@ -169,7 +169,31 @@ def test_axis_profile(n_axes = 5, verbose = 0):
                 print("\nTest", i+1, ", mode =", mode)
             one_test_axis_profile(mode, i < 3, verbose = verbose)
            
-            
+
+# Axis().g_axis * Axis(MM(AX_4B)).g_axis  is of class 4B
+AX_4B = "y_324h*x_17c8h*d_122h*p_69815652*l_1*p_2027520*l_1*p_593649*l_1*t_1*l_2*p_2956800*l_1*p_21507363*l_2*t_2*l_2*p_1985280*l_1*p_85374263*l_1*p_11616000"
+
+@pytest.mark.axes
+def test_axis_product_class(n_axes = 5, verbose = 0):
+    import_all()
+    SQ_DICT = {
+    "2A":"1A", "2B":"1A", "4A":"2B", "4B":"2A", "4C":"2B", "6A":"3A",
+    "6C":"3A", "6F":"3C", "8B":"4A", "10A":"5A", "10B":"5A", "12C":"6A"
+    }
+    x = MM0('x', 0x1000)
+    return
+    for cl, ax in {**Axis.representatives(), **BabyAxis.representatives()}.items():
+        if cl[-1:].isdigit(): cl = cl[:-1]
+        sp = ax.product_class(ax * x)
+        assert sp == SQ_DICT[cl], (cl, sp, SQ_DICT)
+        ax1 = ax.copy()
+        sp1 = ax.product_class(ax * x, sparse = True)
+        assert sp1 == sp
+
+    assert Axis().product_class(Axis(MM(AX_4B))) == "4B"
+
+
+
  
 @pytest.mark.slow
 @pytest.mark.bench

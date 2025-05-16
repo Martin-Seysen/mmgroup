@@ -705,7 +705,7 @@ int32_t mm_aux_check_mmv(uint32_t p, uint_mmv_t *mv)
 
   Array ``a`` is computed in the buffer of length ``l`` referred by
   parameter ``a``.  Array ``a`` will contain a sorted list of the
-  relevant indices terminated by an entry ``0xffff`.
+  relevant indices terminated by an entry ``0xffff``.
 
   The function returns the length of the computed index array ``a``
   or a negative value in case of error. The required length ``l`` of
@@ -751,7 +751,6 @@ int32_t mm_aux_index_mmv(uint32_t p, uint_mmv_t *mv, uint16_t *a, uint32_t l)
   Function ``mm_aux_write_mmv24`` can be used to write the data
   from the array ``b_dest`` to the initial segment of the internal
   representation of a vector.
-  
 */
 // %%EXPORT px
 void mm_aux_small24_expand(uint8_t *b_src, uint8_t *b_dest)

@@ -43,6 +43,8 @@ from mmgroup.mm_op import mm_op_norm_A
 from mmgroup.mm_op import mm_op_eval_A
 from mmgroup.mm_op import mm_op_t_A
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3
+from mmgroup.mm_op import mm_aux_mmv_size, mm_aux_index_mmv
+from mmgroup.mm_op import mm_op_scalprod, mm_op_scalprod_ind
 
 
 
@@ -263,6 +265,40 @@ AXIS_ORBIT_SIZES = {
 '12C' : 48057153579122688000,
 }
 
+
+
+#################################################################
+# Map scalar product of axes (mod 15) to product class
+#################################################################
+
+try:
+   INDEX_BUFSIZE = mm_aux_mmv_size(15) // 2
+except:
+   INDEX_BUFSIZE = None
+
+PROD_CLASSES = {
+    8 : "1A",  1 : "2A",  14 : "3A",  4: "4A",  3 : "5A",
+    10 : "6A",  0 : "2B",  2 : None
+}
+
+PROD_CLASSES_SQ = {1 : "4B", 2 : "3C"}
+
+
+
+#################################################################
+# Support for random axes
+#################################################################
+
+RandomAxis = None
+RandomBabyAxis = None
+
+def import_random_axis():
+    global RandomAxis, RandomBabyAxis
+    try:
+        from mmgroup.tests.axes.random_axis import RandomAxis, RandomBabyAxis
+    except:
+        RandomAxis = RandomBabyAxis = None
+
 #################################################################
 #################################################################
 # Class Axis for modelling a 2A axis in the Monster
@@ -310,6 +346,8 @@ class Axis:
     axis_class = "standard"
     default_profile_hashmode = 0
     def __init__(self, g = 1, invol = None):
+        self.g0 = G()
+        self.index_buf = None
         t = g
         if isinstance(g, Axis):
             self.g1 = G(g.g_map_vstart) * G(g.g)
@@ -323,12 +361,21 @@ class Axis:
             if i != 1:
                 raise ValueError(ERR_INVOL % type(t))
             self.g1 = G(h**-1)
+        elif g == 'r' and invol is None:
+            # Not necessary, but much faster than the standard way
+            if RandomAxis is None:
+                import_random_axis()
+            if RandomAxis is not None:
+                ax = RandomAxis()
+                self.g1 = G('a', ax.g('a'))
+                self.v15 = ax.v15()
+                return
+            self.g1 = G('r')   # the standard way should still work
         else:
             self.g1 = G(g)
         if self.g1 is None:
             raise ValueError(self.ERR_MAP % type(t))
-        self.g0 = G()
-        self.v15 = self.v_axis15 * self.g
+        self.v15 = self.v_axis15 * self.g1
     @property
     def v_axis15(cls):
         r"""Return the fixed vector :math:`v^+` (mod 15)"""
@@ -411,6 +458,7 @@ class Axis:
         g = G(g)
         self.g1 *= g
         self.v15 *= g
+        self.index_buf = None
         return self
     def __mul__(self, g):
         return self.copy().__imul__(g)
@@ -689,10 +737,45 @@ class Axis:
         b = b.reshape((2,24,24))
         #print(b)
         return b[0], h, b[1]
+    def scalprod15(self, axis, sparse = False):
+        r"""Scalar product of two axes (modulo 15)
 
+        This is an auxiliary method for method ``product_class``. It
+        returns the scalar product of this axis and another axis given
+        by parameter ``axis`` (modulo 15). Parameter ``sparse`` is as
+        in method ``product_class``.
+        """
+        v1 = self.v15.data
+        v2 = axis.v15.data
+        if sparse and self.index_buf is None:
+            buf = np.zeros(INDEX_BUFSIZE, dtype = np.uint16)
+            n1 = mm_aux_index_mmv(15, v1, buf, INDEX_BUFSIZE)
+            self.index_buf = buf[:n1].copy() if n1 > 0 else False
+        if isinstance(self.index_buf, np.ndarray):
+            res = mm_op_scalprod_ind(15, v1, v2, self.index_buf)
+        else:
+            res = mm_op_scalprod(15, v1, v2)
+        assert res >= 0
+        return res
+    def product_class(self, axis, sparse = False):
+        r"""Conjugation class of product of this axis with another axis
 
+        The method returns the conjugation class of the product of
+        the involution corresponding to this axis with the involution
+        corresponding to another axis given by parameter ``axis``.
+        This conjugation class (in the Monster) is one of the strings
+        '1A', '2A', '2B', '3A', '3C', '4A', '4B', '5A', or '6A'. It
+        is computed using scalar products of axes, see e.g.
+        :cite:`Con85`, Fig. 3.
 
-
+        If parameter ``sparse`` is ``True`` then some optimizations
+        are made for the case that this axis is a sparse vector.
+        """
+        cl = PROD_CLASSES[self.scalprod15(axis, sparse)]
+        if cl is None:
+            v = self * axis.g_axis
+            cl = PROD_CLASSES_SQ[self.scalprod15(v)]
+        return cl
 
 
 #################################################################
@@ -841,6 +924,8 @@ class BabyAxis(Axis):
     axis_class = "baby"
     default_profile_hashmode = 1
     def __init__(self, g = 1, invol = None):
+        self.g0 = G()
+        self.index_buf = None
         t = g
         if isinstance(g, BabyAxis):
             self.g1 = g.g
@@ -852,11 +937,20 @@ class BabyAxis(Axis):
             t = invol
         elif isinstance(g, MMVector):
             self.g1 = rebase_baby_axis(g % 15)
+        elif g == 'r' and invol is None:
+            # Not necessary, but much faster than the standard way
+            if RandomBabyAxis is None:
+                import_random_axis()
+            if RandomBabyAxis is not None:
+                ax = RandomBabyAxis()
+                self.g1 = G('a', ax.g('a'))
+                self.v15 = ax.v15()
+                return
+            self.g1 = G('r', 'B') # the standard way should still work
         else:
             self.g1 = in_Baby(G(g))
         if self.g1 is None:
             raise ValueError(self.ERR_BABY % type(t))
-        self.g0 = G()
         self.v15 = self.v15_start * self.g
     @property
     def g_map_vstart(cls):
@@ -972,6 +1066,8 @@ class BabyAxis(Axis):
         """
         from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
         return reduce_baby_axis_G_x0(self)
+
+
 
 
 
