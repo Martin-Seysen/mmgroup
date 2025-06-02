@@ -2,7 +2,8 @@
 # History
 ####################################################################
 
-VERSION = '1.0.4' # 2025-03-11. Algorithms for computing in general groups added 
+VERSION = '1.0.5' # 2025-06-02. Algorithms for computing with axes improved 
+# VERSION = '1.0.4' # 2025-03-11. Algorithms for computing in general groups added 
 # VERSION = '1.0.3' # 2024-07-09. Computation of sample 2A axes improved
 # VERSION = '1.0.2' # 2024-02-27. Changes in build system regarding shared libraries
 # VERSION = '1.0.1' # 2024-02-23. Support for exporting C functions from libraries

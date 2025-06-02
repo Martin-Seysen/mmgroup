@@ -594,6 +594,11 @@ Version history
      - 2025-03-11
      - Algorithms for computing in general groups added 
 
+   * - 1.0.5
+     - 2025-06-02
+     - Algorithms for computing with axes improved 
+
+
 
 .. only:: html
 
