@@ -361,18 +361,17 @@ augment_diag(uint16_t *h, uint8_t *s, uint16_t *h_out, uint16_t *b_out)
     uint_fast32_t i, j;
     for (i = 0; i < DIM; ++i) {
         uint_fast16_t uneq = 0;
-        j = s[i];
-        p_src = h + DIM * j;
+        p_src = h + DIM * s[i];
         memcpy(p_dest, p_src, DIM * sizeof(uint16_t));
         if (i > 0) {
             for (j = 0; j < DIM; ++j) {
-                uneq |= p_dest[j] ^ p_last[j];
+                uneq |= p_src[j] ^ p_last[j];
             }
         }
         i_dia += (uint16_t)(uneq != 0) << PRIMARY_BITS;
         p_dest[0] = (p_dest[0] & MASK_PRIMARY) | i_dia;
-        b_out[j * (DIM+1)] = p_dest[0];
-        p_last = p_dest;
+        b_out[s[i] * (DIM+1)] = p_dest[0];
+        p_last = p_src;
         p_dest += DIM;
     }
 }

@@ -135,14 +135,17 @@ def one_test_axis_profile(mode = 0, test_S3 = True, verbose = 1):
         equ = ax_hash_equal(ax1_hash, ax_hash, verbose)
         assert equ
         permuted = permute_matrix24(ax_hash[0], g)
-        if not (ax1_hash[0] == permuted).all():
+        ok = (ax1_hash[0] == permuted).all()
+        if verbose or not ok:
             err = "Hash value is not permutation invariant"
             print(err)
+            display_matrix(ax1_hash[2], "Hash")
             display_matrix(ax1_hash[0], "Matrix")
             print("Permutation\n", g.as_M24_permutation())
             display_matrix(permuted, "Permuted")
             display_matrix(ax1_hash[0] ^ permuted, "Diff", True)
-            raise ValueError(err)
+            if not ok:
+                raise ValueError(err)
 
     if test_S3:
         for e in range(3):

@@ -480,10 +480,10 @@ class Axis:
         Class ``Axis`` will be used for proofs; so we always check
         the correctness of such an operation.
 
-        We store ``a.g`` as a product ``a.g1 * a.g2``. Construction of
+        We store ``a.g`` as a product ``a.g0 * a.g1``. Construction of
         ``a`` and multiplication of ``a`` with a group element affects
-        ``a.g2`` only. This method puts ``a.g1 = a.g`` and ``a.g2 = 1``
-        and reduces ``a.g1`` using the features of class |MM|.
+        ``a.g1`` only. This method puts ``a.g0 = a.g`` and ``a.g1 = 1``
+        and reduces ``a.g0`` using the features of class |MM|.
         """
         if self.constant:
             raise TypeError(self.ERR_CONST)
