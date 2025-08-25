@@ -27,6 +27,7 @@ from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.abstract_rep_space import AbstractRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_rep_space import AbstractRepSpace
+from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepSpace
 #from mmgroup.structures.mm_space_indices import sparse_to_tuples
 
 
@@ -246,7 +247,7 @@ class Xsp2_Co1_Space(AbstractRepSpace):
     ### Extra methods ##################################################
 
     def as_mmspace_vector(self, v1):
-        vm = self.mmspace(0)
+        vm = MMV(3)()
         assert v1.qs.shape == (12,12) 
         if INT_BITS == 64:
             START = 116416//32
