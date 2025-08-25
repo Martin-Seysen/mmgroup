@@ -255,6 +255,7 @@ def map_xi(v_in, e, v_out):
 from mmgroup.mm_op import mm_aux_index_extern_to_intern
 from mmgroup.mm_op import mm_aux_index_intern_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
+from mmgroup.mm_op import mm_aux_index_intern_to_leech2
 from mmgroup.mm_op import mm_aux_index_leech2_to_sparse
 from mmgroup.mm_op import mm_aux_index_sparse_to_intern
 from mmgroup.generators import gen_xi_op_xi
@@ -278,8 +279,9 @@ def demo_xi_test_indices():
 
 
 def map_xi_intern(x, e):
-    x = mm_aux_index_sparse_to_leech2(mm_aux_index_intern_to_sparse(x))
-    y = gen_xi_op_xi(x & 0xffffff, e)
+    x1 = mm_aux_index_sparse_to_leech2(mm_aux_index_intern_to_sparse(x))
+    assert x1 == mm_aux_index_intern_to_leech2(x)
+    y = gen_xi_op_xi(x1 & 0xffffff, e)
     sign = (-1) ** (y >> 24)
     y = mm_aux_index_sparse_to_intern(mm_aux_index_leech2_to_sparse(y))
     return y, sign

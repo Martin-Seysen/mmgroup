@@ -162,8 +162,7 @@ static int32_t find_short_all(
     i = (uint32_t)(f.pstart - p_out) + i;
 
     for (j = 0; j < i; ++j) {
-        tmp = mm_aux_index_intern_to_sparse(p_out[j] & 0xffffffUL);
-        tmp = mm_aux_index_sparse_to_leech2(tmp);
+        tmp = mm_aux_index_intern_to_leech2(p_out[j] & 0xffffffUL);
         p_out[j] = (p_out[j] & 0xff000000UL) | (tmp & 0xffffffUL);
     }
     return i;

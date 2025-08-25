@@ -462,6 +462,72 @@ int32_t mm_aux_index_extern_to_intern(uint32_t i)
 
 
 
+/**********************************************************************
+*** Convert index from internal rep to vector in leech lattice mod 2
+**********************************************************************/
+
+/**
+  @brief Convert an index from internal to Leech 2 representation
+
+  The function converts an index ``i`` for the internal representation 
+  of a vector to a vector ``v`` in the Leech lattice mod 2. This 
+  conversion  is successful if ``i`` denotes a legal index for one of 
+  the tags``B, C, T, X``. The function returns a short Leech 
+  lattice vector modulo 2, encoded in **Leech lattice encoding**, as
+  described in 
+  section **Description of the mmgroup.generators extension**. 
+
+  The function returns 0 in case of failure.
+*/
+// %%EXPORT px
+uint32_t mm_aux_index_intern_to_leech2(uint32_t i)
+// Convert internal index i to sparse index.
+// Return 0 if index i is bad
+{
+    uint32_t t, i0, i1, tmp, v;
+
+    if (i <  MM_AUX_OFS_T) {
+        // Tags B, C
+        // put t =  (i / 0x300); assuming 0 <= i < 0x900 
+        t = (0x2A540 >> ((i >> 8) << 1)) & 3;
+        i0 = i - t * 0x300;
+        i1 = i0 & 31;
+        i0 >>= 5;
+        if (t == 0 || i0 == i1 || i1 > 24) return 0;
+        v = MAT24_RECIP_BASIS[i0] ^ MAT24_RECIP_BASIS[i1];
+        return (v & 0xfff)  + ((t - 1) << 23);
+   } else if (i < MM_AUX_OFS_X) {
+        // Tag T
+        uint_fast32_t gcode, cocode;
+        i -=  MM_AUX_OFS_T;
+        i0 = i >> 6;
+        i1 = i & 0x3f;
+        cocode = mat24_inline_suboctad_to_cocode(i1, i0);
+        gcode = MAT24_OCT_DEC_TABLE[i0] & 0xfff;
+        gcode ^= mat24_def_suboctad_weight(i1) << 11;
+        cocode ^= MAT24_THETA_TABLE[gcode & 0x7ff] & 0xfff;
+        return (gcode << 12) + cocode;
+   } else if (i < MM_AUX_OFS_Z) {
+        uint_fast32_t w, gcode, cocode, theta;
+        i -=  MM_AUX_OFS_X;
+        i0 = i >> 5;
+        i1 = i & 0x1f;
+        if (i1 > 24) return 0;
+        cocode = mat24_vect_to_cocode(1 << i1);
+        theta = MAT24_THETA_TABLE[i0 & 0x7ff];
+        w = ((theta >> 12) & 1) ^ (i0 & cocode);
+        mat24_def_parity12(w);
+        gcode = i0 ^ (w << 11); 
+        cocode ^= theta & 0xfff;
+        return (gcode << 12) + cocode;
+   } else return 0;
+}
+
+
+
+
+
+
 /************************************************************************
 *** Check index in internal rep of vectors in R_p
 ************************************************************************/
