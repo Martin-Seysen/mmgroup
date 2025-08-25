@@ -25,6 +25,7 @@ from mmgroup.structures.xsp2_co1 import get_error_pool
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_xsp2_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
 from mmgroup.structures.abstract_rep_space import AbstractRepVector
+from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_rep_space import AbstractRepSpace
 #from mmgroup.structures.mm_space_indices import sparse_to_tuples
 
@@ -84,7 +85,7 @@ def obj_to_qstate(obj):
 # Modelling a vector
 ######################################################################
 
-class Xsp2_Co1_Vector(AbstractRepVector):
+class Xsp2_Co1_Vector(AbstractMmRepVector):
     def __init__(self, space):
         __slots__ = 'space', '_data', 'is_zero'
         self.space = space
