@@ -57,6 +57,11 @@ Installation and test
 .. include:: installation.inc
 
 
+A brief description of the Monster group
+=========================================
+
+
+.. include:: description_MM.inc
 
 
 
