@@ -54,8 +54,9 @@ such that for all :math:`a, b \in G` we have
 
    \varphi(a \cdot b) = \varphi(a)  \cdot  \varphi(b).
   
-
-Here we call :math:`H` a **homomorphic image** of the group :math:`G`.
+If every element of :math:`H` is an image of an element of :math:`G`
+under the homomorphism :math:`\varphi` then we call :math:`H`
+a **homomorphic image** of the group :math:`G`.
 A homomorphism :math:`\varphi : G \to H` is an **isomorphism**
 if it is invertible; i.e. there exist a homomorphism
 :math:`\varphi^{-1} : H \to G` such that the composition of
@@ -67,8 +68,8 @@ determine the structure of a group up to isomorphism.
 
 A **simple group** is a group :math:`G` with :math:`|G| > 1` such that
 every homomorphic image :math:`H` of :math:`G` satisfies either
-:math:`|H| = |G|` or :math:`|H| = 1`. In other words, a simple group
-has no nontrivial normal subgroups.
+:math:`|H| = |G|` or :math:`|H| = 1`. In other words, a group is simple
+if it has no nontrivial normal subgroups.
 
 Every group can be built as a composition of simple groups. Omitting
 the technical details, this construction is analogous to building a
@@ -117,16 +118,16 @@ efficient implementation of the Monster group, based on Conway's construction
 implementation is slower and not publicly accessible.
 
 
-Understanding the construction of the Monster 
-----------------------------------------------
+Introduction to the construction of the Monster 
+-------------------------------------------------
 
-The Python class |MM| supports the construction of random elements of the
-Monster and computations with them. This can be done without a deep
-understanding of the Monster's definition. However, our construction of the
-Monster is similar to that in :cite:`Con85`. Understanding this construction
-enables the user to perform considerably more sophisticated computations
-within the Monster. We do not provide the full construction here, but we give
-references for studying the basic structures it relies on.
+The Python class |MM| in the *mmgroup* package supports the construction of
+random elements of the Monster and computations with them. This can be done
+without a deep understanding of the Monster's definition. However, our
+construction of the Monster is similar to that in :cite:`Con85`. Understanding
+this construction enables the user to perform considerably more sophisticated
+computations within the Monster. We do not provide the full construction here,
+but we give references for studying the basic structures it relies on.
 
 
 1. The Mathieu group :math:`M_{24}`, the binary Golay code, and its cocode
