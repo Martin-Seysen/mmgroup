@@ -230,7 +230,7 @@ class MM(MM0):
     :var tag:
         In the simplest case, parameter ``tag`` is a string of length 
         ``1`` that determines the type of the atomic group element. 
-        There are also some special cases for parameter ``tag `` as
+        There are also some special cases for parameter ``tag`` as
         indicated below. If ``tag`` is not given or equal to ``1`` 
         then  the neutral element of the monster group is constructed.
 
@@ -507,7 +507,7 @@ class MM(MM0):
         Warning:
 
         The numbering used here is not contiguous and not portable
-        between differnt versions of the ``mmgroup`` package!
+        between different versions of the ``mmgroup`` package!
 
         For storing a element permanently, you should convert
         it to a string instead!
