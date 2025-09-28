@@ -668,6 +668,9 @@ DLL_HEADER_PREFIX = """
 #if defined _WIN32 || defined __CYGWIN__
   #define {0}_DLL_IMPORT __declspec(dllimport)
   #define {0}_DLL_EXPORT __declspec(dllexport)
+#elif defined __GNUC__ || defined __clang__
+  #define {0}_DLL_IMPORT __attribute__((noinline,optimize("no-tree-vectorize"),visiblity("default")))
+  #define {0}_DLL_EXPORT __attribute__((noinline,optimize("no-tree-vectorize"),visiblity("default")))
 #else
   #define {0}_DLL_IMPORT
   #define {0}_DLL_EXPORT

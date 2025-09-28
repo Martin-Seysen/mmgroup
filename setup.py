@@ -105,6 +105,8 @@ STATIC_LIB = False
 NPROCESSES = 16
 COMPILER = None
 CFLAGS = None
+MARCH = None
+CFLAGS_AVX512HI = None
 MOCKUP = False
 VERBOSE = False
 # Parse a global option '--stage=i', '--compiler=c', and set variable 
@@ -122,6 +124,13 @@ for i, s in enumerate(sys.argv[1:]):
     elif s.startswith('--cflags='):
         CFLAGS = s[9:]
         sys.argv[i+1] = None
+    elif s.startswith('--march='):
+        MARCH = s[1:]
+        sys.argv[i+1] = None
+    elif s == '--ffixed-xmmhi':
+        # Do not use the AVX512 registers zmm16,...,zmm31
+        CFLAGS_AVX512HI = ",".join(["-ffixed-xmm%d" % x for x in range(16,32)])
+        sys.argv[i+1] = None
     elif s.startswith('--static'):
         STATIC_LIB = True
         sys.argv[i+1] = None
@@ -138,6 +147,11 @@ while None in sys.argv:
 
 if COMPILER and COMPILER not in ['unix','msvc', 'mingw32']:
     raise ValueError("Unknown compiler '%s'" % COMPILER)
+
+
+CFLAGS_LIST = [x for x in [CFLAGS, MARCH, CFLAGS_AVX512HI ] if x is not None]
+CFLAGS = ",".join(CFLAGS_LIST)
+
 
 
 ####################################################################
