@@ -177,16 +177,23 @@ class AbstractRepVector(object):
     def __iadd__(self, other):
         if other in self.space:
             return self.space.iadd(self, other)
+        elif isinstance(other, Integral) and other==0:
+            return self
         raise TypeError("Vectors must be in the same vector space")
 
     def __add__(self, other):
         return self.copy().__iadd__(other)
+
+    __radd__ = __add__
 
     def __isub__(self, other):
         return self.__iadd__(self, other.__neg__())
 
     def __sub__(self, other):
         return self.copy().__iadd__(other.__neg__())
+
+    def __rsub__(self, other):
+        return self.__neg__.__iadd__(other)
 
     def __getitem__(self, index):
         return self.space.vector_get_item(self, index) 

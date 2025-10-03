@@ -1,0 +1,323 @@
+/** @file mm%{P}_op_std_axis.c
+
+ File ``mm%{P}_op_xy.c`` implements the operation of the standard
+ axis on a vector in the representation \f$\rho_{%{P}}\f$ of the
+ monster.
+
+ More details are yet to be documented
+*/
+
+
+#include <string.h>
+#include "mm_op_sub.h"   
+   
+
+
+//  %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// macros
+//////////////////////////////////////////////////////////////////////////////
+
+/// @cond DO_NOT_DOCUMENT 
+
+// Macro FORCE_INLINE tries to force inlining of a function
+#if defined(_MSC_VER)
+  #define FORCE_INLINE __forceinline  
+#elif defined(__GNUC__) || defined(__clang__)
+  #define FORCE_INLINE inline __attribute__((always_inline)) inline  
+#else
+  #define FORCE_INLINE inline
+#endif
+
+
+// Return 4 * (a - b) (mod %{P}) for vectors a, b of integers mod %{P} 
+static FORCE_INLINE
+uint_mmv_t sub_mmv_quadruple(uint_mmv_t a, uint_mmv_t b)
+{
+ // %%IF*  FIELD_BITS == P_BITS 
+    uint_mmv_t r0, t0;
+    #define HMASK %{smask:P, 0x555555555}
+    b = ~b;
+    t0 = ((a >> %{FIELD_BITS}) & HMASK) + ((b >> %{FIELD_BITS}) & HMASK);
+    t0 = ((t0 & HMASK) + (t0 >> %{P_BITS})) & HMASK;
+    r0 = (a & HMASK) + (b & HMASK);
+    r0 = ((r0 & HMASK) + (r0 >> %{P_BITS})) & HMASK;
+    r0 = r0 + (t0 << %{FIELD_BITS});
+    #undef HMASK
+  // %%ELSE 
+    uint_mmv_t r0;
+    #define SMASK %{smask:P, -1} 
+    #define SMASK1 %{smask:1, -1} 
+    r0 = (a & SMASK) + (~b & SMASK);
+    r0 = (r0 & SMASK) + ((r0 >> %{P_BITS}) & SMASK1);
+    #undef SMASK1
+    #undef SMASK
+  // %%END IF
+  // %%IF* P != 3 
+    r0 =(((r0 >> %{int:P_BITS-2}) & %{smask:3, -1}) \
+        + ((r0 & %{smask:P//4, -1}) << 2));
+  // %%END IF
+    return r0; 
+}
+
+
+// Return 4 * (a - b)  (mod  %{P}) for vectors a, b of integers mod %{P},
+// and zero entries given by the mask. The mask must set precisely
+// the valid bits of entries to be kept, and zero all valid
+// bit of the entries to be zeroed, and also the invalid entries.
+// Caution:
+// Two entries to be kept may not be adjacent; and the index of
+// an entry to be kept must not be 7 (mod 8).
+static FORCE_INLINE
+uint_mmv_t sub_mmv_quadruple_mask(uint_mmv_t a, uint_mmv_t b, uint_mmv_t mask)
+{ 
+    uint_mmv_t r0 = (a & mask) + (~b & mask);
+    r0 = ((r0 & mask) + (r0 >> %{P_BITS})) & mask;
+ // %%IF* P != 3 
+    r0 = ((r0 >> %{int:P_BITS-2}) + (r0 << 2)) & mask;
+ // %%END IF
+    return r0; 
+}
+
+
+
+/// @endcond 
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Do part ABC
+//////////////////////////////////////////////////////////////////////////////
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+// Let v point to a k times 24 matrix A, organized as a vector of
+// integers mod %{P} in the representation of the monster. The
+// function A[row, col]
+static FORCE_INLINE 
+uint32_t get_entry(uint_mmv_t *v, uint32_t row, uint32_t col)
+{
+     uint32_t i = (row << %{LOG_V24_INTS}) + (col >> %{LOG_INT_FIELDS});
+     uint32_t sh = (col & %{hex:INT_FIELDS-1}) << %{LOG_FIELD_BITS};
+     return (uint32_t)((v[i] >> sh) & %{P});
+}
+
+// Let v point to a 2 times 24 matrix A, organized as a vector of
+// integers mod %{P} in the representation of the monster. The
+// function replaces A[0,j], A[1,j] by 4 * (A[0,j] - A[1,j]) and
+// by -4 * (A[0,j] - A[1,j]).
+// Then it stores diag[0], diag[1] in entries A[0,2], A[0,3] and
+// diag[1], diag[2] in entries A[1,2], A[1,3].
+// 0 <=  diag[j] <9  %{P} must hold.   
+static inline 
+void sub_next_row(uint_mmv_t *v, uint32_t *diag)
+{
+    uint32_t i;
+    uint_mmv_t r0;
+    for (i = 0; i < %{V24_INTS}; ++i ) {
+        r0 = sub_mmv_quadruple(v[0], v[%{V24_INTS}]);
+        v[0] = r0;
+        v[%{V24_INTS}] = r0 ^ %{smask:P, -1};
+        ++v;
+    }
+    #define DMASK %{smask:P, [2,3]}
+    r0 = (diag[1] << (2 * %{FIELD_BITS})) + (diag[2] << (3 * %{FIELD_BITS}));
+    v[0] ^= (r0 ^ v[0]) & DMASK;
+    v -= %{V24_INTS};
+    r0 = (r0 << (1 * %{FIELD_BITS})) + (diag[0] << (2 * %{FIELD_BITS}));
+    v[0] ^= (r0 ^ v[0]) & DMASK;
+    #undef DMASK
+}
+
+// Let v point to a 1 times 24 matrix A, organized as a vector of
+// integers mod %{P} in the representation of the monster. The
+// function puts A[0,2] = value, A[0,3] = - value, and zeros the
+// other entries of A. Here 0 <= value <= %{P} must hold.
+static FORCE_INLINE
+void set_col_2_3(uint_mmv_t *v, uint32_t value)
+{
+    memset(v, 0, %{V24_INTS} * sizeof(uint_mmv_t));
+    v[0] = (value << (2 * %{FIELD_BITS}))
+         + ((value ^ %{P}) << (3 * %{FIELD_BITS}));
+}
+
+
+
+
+
+static inline void do_ABC(uint_mmv_t *v)
+{
+  // %%IF* GENERATE_CODE
+    uint32_t mat, row, diag[3][4];
+    uint_mmv_t *v_row2;
+    int32_t a16 = 4 * (get_entry(v,2,2) + get_entry(v,3,3))
+              - 8 * (get_entry(v,2,3) + get_entry(v,24+2,3));
+    int32_t a4 = 4 * (get_entry(v,2,2) - get_entry(v,3,3));
+    memset(diag, 0, sizeof(diag));
+    #define P_MUL %{hex:P*0x100} // a large multiple of %{P}       
+    diag[0][0] = (P_MUL + a16 + a4) %  %{P};
+    diag[0][1] = (P_MUL - a16) %  %{P};
+    diag[0][2] = (P_MUL + a16 - a4) %  %{P};
+    diag[1][1] = (P_MUL - 2 * a16) %  %{P};    
+    #undef P_MUL
+    // Do the following for the 24 x 24 matrices A, B, and C
+    for (mat = 0; mat < 3; ++mat) {
+        // v_row2 points to row 2 of current matrix
+        v_row2 = v + 2 * %{V24_INTS};
+        // process rows 2 and 3 of current matrix
+        sub_next_row(v_row2, diag[mat]);
+        // for all rows of current matrix do:
+        for (row = 0; row < 24; ++row) {
+            // skip rows 2 and 3 (they are already done)
+            if ((row >> 1) != 1) {
+                // copy A[row,j] to A[j,row] for j = 2,3;
+                // and zero the other entries of the row
+                set_col_2_3(v, get_entry(v_row2, 0, row));
+            }
+            // point to next row
+            v +=  %{V24_INTS};
+        }
+    }
+  // %%END IF # GENERATE_CODE
+}
+
+/// @endcond 
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Do part T
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static FORCE_INLINE
+void do_T_case_pos6(uint_mmv_t *v)
+{
+    uint32_t i;
+    #define SMASK %{smask:P, [2,3,10,11, 18,19,26,27]} 
+    for (i = 0; i < %{V64_INTS}; ++i ) {
+        uint64_t r0 = *v;
+        r0 = sub_mmv_quadruple(r0, r0 >> %{int:2*FIELD_BITS}) & SMASK;
+        *v++ = r0 + ((r0 ^ SMASK) << %{int:2*FIELD_BITS});
+    }
+    #undef SMASK
+}
+
+
+static FORCE_INLINE
+void do_T_case_pos1(uint_mmv_t *v)
+{
+    uint32_t i;
+    for (i = 0; i < %{V64_INTS}; ++i ) {
+        #define SMASK0 %{smask:P, [0,6,10,12, 18,20,24,30]} 
+        #define SMASK1 %{smask:P, [2,4, 8,14, 16,22,26,28]} 
+        uint_mmv_t r0, mask = ((0x96 >> i) & 1) ? SMASK0 : SMASK1;
+        #undef SMASK0
+        #undef SMASK1
+        r0 = *v;
+        r0 = sub_mmv_quadruple_mask(r0, r0 >> %{FIELD_BITS}, mask);
+        *v++ = r0 + ((r0 ^ mask) << %{FIELD_BITS});
+    }
+}
+
+
+
+
+static inline void do_T(uint_mmv_t *v)
+{
+  uint32_t o;
+  // %%IF* GENERATE_CODE
+  v +=  MM_OP%{P}_OFS_T;
+  for (o = 0; o < 759; ++o) {
+      uint64_t c = TABLE_OCTAD_TO_STD_AX_OP[o >> 5] >> (2 * (o & 31));
+      switch(c & 3) {
+          case 0:
+             memset(v, 0, %{V64_INTS} * sizeof(uint_mmv_t));
+             break;
+          case 1:
+             break;
+          case 2:
+             do_T_case_pos1(v);
+             break;
+          case 3:
+             do_T_case_pos6(v);
+             break;
+      }
+      v += %{V64_INTS};      
+  }
+  // %%END IF # GENERATE_CODE
+}
+
+
+
+
+/// @endcond
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Do part XYZ
+//////////////////////////////////////////////////////////////////////////////
+
+/// @cond DO_NOT_DOCUMENT 
+
+
+static inline void do_XYZ(uint_mmv_t *v)
+{
+  // %%IF* GENERATE_CODE
+    #define SMASK  %{smask:P,[2]}
+    uint32_t i, j;
+    v +=  MM_OP%{P}_OFS_X;
+    for (i = 0; i < 6; ++i) {
+       for (j = 0; j < 0x200; ++j) {
+           uint_mmv_t r0 = v[0];
+           memset(v, 0,  %{V24_INTS} * sizeof(uint_mmv_t));
+           r0 = sub_mmv_quadruple_mask(r0, r0 >> %{FIELD_BITS}, SMASK);
+           v[0] = r0 | ((r0 ^ SMASK) << %{FIELD_BITS});
+           v += %{V24_INTS};
+       }
+       v += 0x200 * %{V24_INTS};
+    }    
+    #undef SMASK 
+  // %%END IF # GENERATE_CODE
+}
+
+/// @endcond
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Do operation of axis
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+/**
+  @brief  Griess algebra multiplication by the standard axis
+
+  Not yet tesetd; yet to be documented!
+*/
+// %%EXPORT px
+int32_t mm_op%{P}_mul_std_axis(uint_mmv_t *v)
+{
+  // %%IF* GENERATE_CODE
+    do_ABC(v);
+    do_T(v);
+    do_XYZ(v);
+    return 0;
+  // %%END IF   # GENERATE_CODE
+}
+
+//  %%GEN h
+/// @endcond 
+//  %%GEN c
+

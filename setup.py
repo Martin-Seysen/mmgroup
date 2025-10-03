@@ -459,6 +459,7 @@ MM_GENERATE = GENERATE_START + '''
           mmgroup.dev.mm_basics.mm_aux
           mmgroup.dev.mm_basics.mm_tables
           mmgroup.dev.mm_basics.mm_crt
+          mmgroup.dev.mm_basics.mm_table_std_axis
  --sources mm_basics.h
  --sources
 '''.format(**DIR_DICT) + MM_SOURCES + '''
@@ -478,6 +479,7 @@ for p in [3, 7, 15, 31, 127, 255]:
       mm{p}_op_xi.c
       mm{p}_op_word.c
       mm{p}_op_scalprod.c
+      mm{p}_op_std_axis.c
       '''.format(p=p)
 
 for p in [3, 15]:

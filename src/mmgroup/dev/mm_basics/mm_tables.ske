@@ -19,6 +19,10 @@
  a certain set of these automorphisms in the same way as the
  elements of the Mathieu group \f$M_{24}\f$. We denote
  such an automorphism  \f$\pi\f$ by its number.
+
+ Apart from that, this file contains a small table for supporting
+ the Griess algebra multiplication of a vector in represention
+ \f$\rho_p\f$ by the standard axis \f$v^+\f$. 
 */
 #include <stdlib.h>
 #include <stdint.h>
@@ -605,6 +609,36 @@ void  mm_sub_test_prep_xy(uint32_t f, uint32_t e, uint32_t eps, uint32_t n, uint
             break;
     } 
 }
+
+/// @endcond 
+
+
+/********************************************************************
+** Support for Griess algebra multiplication by the standard axis
+*********************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+// Yet to be documented
+// %%EXPORT_TABLE
+uint64_t TABLE_OCTAD_TO_STD_AX_OP[] = {
+    // %%TABLE TABLE_OCTAD_TO_STD_AX_OP, uint64
+};
+
+
+/**
+  @brief Return entry of table TABLE_OCTAD_TO_STD_AX_OP for octad ``o`` 
+*/
+// %%EXPORT px
+int32_t mm_sub_table_octad_to_std_ax_op(uint32_t o)
+{
+     if (o >= 759) return -1;
+     return (int32_t)(
+        (TABLE_OCTAD_TO_STD_AX_OP[o >> 5] >> (2 * (o & 31))) & 3
+     );
+}
+
+
 
 /// @endcond 
 
