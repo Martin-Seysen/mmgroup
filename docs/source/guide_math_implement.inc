@@ -553,3 +553,131 @@ where :math:`\tilde{x}_d = x_d x_{\theta(d)}`,  with :math:`y_e`. We have
 
 
 
+The Griess algebra product of a vector and an axis
+--------------------------------------------------
+
+The Griess algebra is an algebra on the representation :math:`\rho`
+of the Monster :math:`\mathbb{M}` invariant under the action of
+:math:`\mathbb{M}`. It has been introduced by Griess :cite:`Gri82`,
+and later been simplified by Conway :cite:`Con85`. Due to subtle
+differences in sign conventions and scaling, we use :cite:`Seysen20`
+as the definitive reference for the Griess algebra. The structure
+constants of the Griess algebra are all in
+:math:`\mathbb{Z}[\frac{1}{2}]`.
+
+Ideally, we would like to implement the Griess algebra product
+(denoted by :math:`a * b`) of two vectors :math:`a, b` in the
+representation :math:`\rho` of the Monster. But a general
+implementation of the Griess algebra would be extremely
+complicated. For :math:`a \in \rho` we define the operator
+:math:`\mathop{\rm ad} a: \rho \rightarrow \rho` by
+:math:`x \mapsto a * x`. At present we implement
+:math:`\mathop{\rm ad} a` for certain fixed vectors :math:`a` only.
+
+Each 2A involution in the Monster has an axis in :math:`\rho`,
+see e.g. :cite:`Con85` for details. For any axis of a 2A
+involution we can efficiently find an element of the Monster
+transformig that axis to the  standard axis :math:`v^+`.
+Thus for computing the Griess algebra product of a 2A axis
+and an arbitrary vector in :math:`\rho`, it suffices to
+implement :math:`\mathop{\rm ad} v^+`. According to
+:cite:`Con85`, the operator :math:`\mathop{\rm ad} v^+` has
+eigenvalues 64, 16, 2, and 0. The scaling of the highest eigenvalue
+differs between authors; it is 64 in :cite:`Con85`, 1 in
+:cite:`Iva99`, and 16 in :cite:`Seysen22` and the *mmgroup* package.
+With the scaling in the *mmgroup* package we have:
+
+.. math::
+
+   v^+ = (ii)_1 + (jj)_1 - (ij)_1 - 2 X_{ij} \, , \qquad
+   \mbox{for} \; i=2, \, j = 3 \,.
+
+
+In the C function for computing :math:`\mathop{\rm ad} v^+` we scale
+the highest eigenvalue to 32. Then the lowest nonzero eigenvalue
+is 1; and about 95% of the entries of a vector in :math:`\rho` are
+either unchanged or set to zero by the action of
+:math:`\mathop{\rm ad} v^+`. Function ``mm_op_mul_std_axis`` in file
+``mm_op_p_vector.c`` computes :math:`\mathop{\rm ad} v^+` in the
+spaces :math:`\rho_p`, for the supported values of :math:`p`.
+The scaling in the Python interface is discussed in the documentation
+of that interface. 
+
+The operation of :math:`\mathop{\rm ad} v^+` can be constructed from
+:cite:`Con85`, Appendix 6.
+In the sequel we describe the operation of :math:`\mathop{\rm ad} v^+`
+on :math:`\rho`, with its largest eigenvalue scaled to 32. We have:
+ 
+.. math::
+
+    \alpha_{22} (2,2)_1 + \alpha_{33} (3,3)_1 + \alpha_{23}  (2,3)_1 
+        + \lambda_{23}  X_{\{2,3\}} \qquad   \mapsto \\
+     (\mu + \nu) (2,2)_1 +  (\mu - \nu)  (3,3)_1 -  \mu  (2,3)_1 
+       - 2 \mu  X_{\{2,3\}}  \, , \\
+
+with 
+:math:`\mu = 4 (\alpha_{22} + \alpha_{33}) - 8 (\alpha_{23} + \lambda_{23})`,
+:math:`\, \nu = 4(\alpha_{22} - \alpha_{33})`.
+Here we write e.g. :math:`(2,3)_1` for the basis vector  :math:`(ij)_1`
+in case :math:`i=2, j=3`.
+
+The operation of :math:`\mathop{\rm ad} v^+` on the other basis vectors is
+much simpler. Let :math:`B_{i,j}` be one of the basis vectors
+:math:`(ij)_1`, :math:`X_{ij}`, or :math:`X^+_{ij}`. Then we have:
+
+.. math::
+   \begin{array}{cccl}
+    X^+_{\{2,3\}}   & \mapsto  &  0  ,    \\
+   \alpha_2 B_{2,j} + \alpha_3 B_{3,j} 
+   & \; \mapsto  \; &  \mu  B_{2,j} - \mu B_{3,j}, & \;
+   \mu = 4 (\alpha_2 - \alpha_3), \; j \notin \{2,3\} , \\
+   B_{ij},   & \mapsto  &  0,  &  i, j \notin \{2,3\} \, . 
+   \end{array}
+      
+Put :math:`\beta = \{2,3\}`. For an octad :math:`d`, and
+:math:`\delta \subset d` even we have:
+
+.. math::
+
+   X^+_{d \cdot \delta}   \quad \mapsto  \quad 
+   \left \{
+   \begin{array}{cl}
+   4 X^+_{d \cdot \delta} - 4 X^+_{d \cdot \delta\beta} &
+   \mbox{if} \; \beta \subset d, \, |\beta \cap \delta| \; \mbox{odd} \\
+   0 &
+   \mbox{if} \; \beta \subset d, \, |\beta \cap \delta| \; \mbox{even} \\
+   X^+_{d \cdot \delta} &
+   \mbox{if} \; |\beta \cap d| = 1 \\ 
+   0 &
+   \mbox{if} \; |\beta \cap d| = 0  \\ 
+   \end{array}
+   \right .
+   \quad .
+
+
+
+Let :math:`W_{d \cdot i}` be one of the basis vectors
+:math:`X^+_{d \cdot i}`, :math:`\, d^+ \otimes_1 i`, or
+:math:`d^- \otimes_1 i`. Then:
+
+
+.. math::
+   \begin{array}{cccl}
+   \alpha_2 W_{d \cdot 2} + \alpha_3 W_{d \cdot 3} 
+   & \; \mapsto  \; &
+   \mu W_{d \cdot 2} - \mu W_{d \cdot 3} ,
+   & \mu = 4 (\alpha_2 - \alpha_3), \quad 
+   \mbox{if} \; |d \cap \beta| \; \mbox{even}, \\
+   W_{d \cdot j} & \; \mapsto  \; & 0, &  
+   \mbox{if} \; |d \cap \beta| \; \mbox{even}, \, j \notin \{2,3\},\\
+   W_{d \cdot j} & \; \mapsto  \; & W_{d \cdot j}, & 
+   \mbox{if} \; |d \cap \beta| \; \mbox{odd} \, . 
+   \end{array}
+
+
+For the 759 octads :math:`d` we precompute the values
+:math:`|\beta \cap d|`; and in case :math:`\beta \subset d` we also
+precompute the index of :math:`\beta` as a suboctad of octad
+:math:`d`, as defined in Section :ref:`octads_label`. Since only a few
+indices are possible, we may write a little program for each of them. 
+  
