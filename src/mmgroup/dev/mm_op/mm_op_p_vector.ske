@@ -529,15 +529,14 @@ int32_t mm_op_scalprod_ind(uint32_t p, uint_mmv_t *v1, uint_mmv_t *v2, uint16_t 
   The function replaces the vector \f$v\f$ by the
   vector \f$v * v^+\f$. Here \f$'*'\f$ is the Griess algebra product.
   The vector \f$v^+\f$ in \f$\rho_p\f$ is the axis corresponding to
-  the standard 2A involution \f$x_\delta\f$ of the Monster,
-  where \f$\delta\f$ is the Golay cocode element ``[2,3]``.
+  the standard 2A involution \f$x_\beta\f$ of the Monster,
+  where \f$\beta\f$ is the Golay cocode element ``[2,3]``.
 
   Axis \f$v^+\f$ is scaled so that the eigenvalues of the
-  operator \f$\mathop{ad} v^+\f$ are 0, 1, 8, and 32. This scaling
-  is non-standard, but is has the advantage that about 95% of the
-  entries of vector \f$v\f$ ae either unchanged or set to zero.
- 
-  The function is yet under development!!
+  operator \f$\mathop{ad} v^+\f$ are 0, 1, 8, and 32. For details
+  we refer to
+  Section *The Griess algebra product of a vector and an axis*
+  in *The mmgroup guide for developers*.
 */
 // %%EXPORT px
 int32_t mm_op_mul_std_axis(uint32_t p, uint_mmv_t *v)

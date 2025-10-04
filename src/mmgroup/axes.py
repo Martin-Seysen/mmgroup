@@ -27,3 +27,12 @@ except:
     rand_mm_element = None
     raise
 
+
+try:
+    from mmgroup.tests.axes.griess import product_axis_2A
+except:
+    pass
+    #raise
+
+
+

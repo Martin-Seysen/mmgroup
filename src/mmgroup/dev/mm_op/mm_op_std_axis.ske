@@ -1,10 +1,11 @@
 /** @file mm%{P}_op_std_axis.c
 
- File ``mm%{P}_op_xy.c`` implements the operation of the standard
- axis on a vector in the representation \f$\rho_{%{P}}\f$ of the
- monster.
+ File ``mm%{P}_op_xy.c`` implements function ``mm_op%{P}_mul_std_axis``,
+ which performs the operation of the standard axis on a vector in the
+ representation \f$\rho_{%{P}}\f$ of the  monster.
 
- More details are yet to be documented
+ See Section *The Griess algebra product of a vector and an axis*
+ in *The mmgroup guide for developers* for details.
 */
 
 
@@ -302,9 +303,20 @@ static inline void do_XYZ(uint_mmv_t *v)
 
 
 /**
-  @brief  Griess algebra multiplication by the standard axis
+  @brief Griess algebra product with standard axis \f$v^+\f$
 
-  Not yet tesetd; yet to be documented!
+  Let \f$v\f$ be a vector of the representation \f$\rho_%{P}\f$ of
+  the Monster group stored in the array referred by ``v``.
+
+  The function replaces the vector \f$v\f$ by the
+  vector \f$v * v^+\f$. Here \f$'*'\f$ is the Griess algebra product.
+  The vector \f$v^+\f$ in \f$\rho_p\f$ is the axis corresponding to
+  the standard 2A involution \f$x_\beta\f$ of the Monster,
+  where \f$\beta\f$ is the Golay cocode element ``[2,3]``.
+
+  For details we refer to
+  Section *The Griess algebra product of a vector and an axis*
+  in *The mmgroup guide for developers*.
 */
 // %%EXPORT px
 int32_t mm_op%{P}_mul_std_axis(uint_mmv_t *v)

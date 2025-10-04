@@ -187,7 +187,7 @@ class AbstractRepVector(object):
     __radd__ = __add__
 
     def __isub__(self, other):
-        return self.__iadd__(self, other.__neg__())
+        return self.__iadd__(other.__neg__())
 
     def __sub__(self, other):
         return self.copy().__iadd__(other.__neg__())
