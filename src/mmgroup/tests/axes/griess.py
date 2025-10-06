@@ -112,6 +112,7 @@ def product_axis_2A(ax1, ax2):
 
 
 def adjust_vector_p(vector, p):
+    """Adjust a vector to modulus ``p``, if possible"""
     if p == vector.p:
         return vector
     elif vector.p % p == 0:
@@ -122,20 +123,42 @@ def adjust_vector_p(vector, p):
 
 
 def auto_modulus(a):
+    """Extract modulus from Griess algebra product expression
+
+    Here ``a`` is an entry.
+    An entry is either a tuple of entries or an atom.
+    A atom is anything that is not a tuple.
+
+    A atom ``a```with is an instance of class  ``MMVector`` has
+    modulus ``MMVector.p``. Any other atom has moduli ``None``,
+    meaning 'undefined'.
+
+    The function searches recursively for a defined modulus ``p``.
+    It returns ``p`` if this is the only defined modulus found,
+    and ``None`` if no defined modulus has been found. It raises
+    ValueError if different defined moduli have been found.
+    """
     if isinstance(a, MMVector):
         return a.p
-    if isinstance(a, tuple) and len(a) == 2:
-        p0, p1 = auto_modulus(a[0]), auto_modulus(a[1])
-        if p0 == p1 or p1 is None:
-            return p0
-        elif p0 == None:
-            return p1
-        ERR = "Incompatible moduli of representation vectors"
-        raise ValueError(ERR)
+    if isinstance(a, tuple):
+        p = None
+        for x in a:
+            p1 = auto_modulus(x)
+            if p1 is None:
+                p = p1
+            elif p1 != p:
+                ERR = "Incompatible moduli of representation vectors"
+                raise ValueError(ERR)
     return None
 
 
 def mul_axis_vector(axis, vector):
+    """Return Griess product of a 2A axis by a vector
+
+    ``axis`` must be an instance of class Axis, and ``vector``
+    must be an instance of class ``MMVector``. The result is
+    returned as an instance of class ``MMVector``.
+    """
     g_data = axis._fast_g_mmdata()
     res = vector.copy()
     _fast_mul_v15(res, g_data, -1)
@@ -145,40 +168,18 @@ def mul_axis_vector(axis, vector):
 
 
 
-def mul_ax_ax(ax1, ax2):
-    p = ax1.p
-    assert p == ax2.p
-    if ax1.tag == "ax":
-        if ax2.tag == "ax":
-            v1, v2 = ax1.value, ax2.value
-            assert isinstance(v1, Axis), type(v1)
-            assert isinstance(v2, Axis)
-            if v1.scalprod15(v2, None) == 0:
-                return GriessIntermediate(0, p)
-            res = ax2.as_vector()
-            if res.tag == '1':
-                assert res.value == 0
-                return res
-            g_data = v1._fast_g_mmdata()
-            v2res = ax2.as_vector().value
-            _fast_mul_v15(v2res, g_data, -1)
-            mm_op_mul_std_axis(15, v2res.data)
-            _fast_mul_v15(v2res, g_data)
-            result = GriessIntermediate(v2res, p)
-            result.n_axes =  ax1.n_axes + ax2.n_axes
-            result.n_axes =  ax1.factor * ax2.factor
-            return result
-    ERR = "Griess algebra product is to complicated"
-    raise ValueError(ERR)
-
 class GriessIntermediate:
     TYPE_DICT = {
         "v": MMVector, "ax": Axis, "1": Integral 
     }
     COMPLEXITY = {
-        "1": 0, "ax":1, "v":2
+        "1": 0, "ax":1, "v":3
     }
-    def __init__(self, a, p):
+    PAIR_COMPLEXITY = {
+        "2A": 2, None:4
+    }
+
+    def __init__(self, a, p, lazy=False):
         self.p = p
         if isinstance(a, Axis):
             self.set_axis(a)
@@ -187,41 +188,46 @@ class GriessIntermediate:
         elif isinstance(a, Integral):
             self.set_int(a)
         elif isinstance(a, GriessIntermediate):
-            self.set_mul_int(a)
+            self.set_instance(a)
         elif isinstance(a, tuple):
             if len(a) != 2:
                 ERR = "Griess algebra product must have 2 factors"
                 raise ValueError(ERR)
             a, b = a
             if not isinstance(a, GriessIntermediate):
-                a = GriessIntermediate(a, p)
+                a = GriessIntermediate(a, p, lazy)
                 a.check()
             if not isinstance(b, GriessIntermediate):
-                b = GriessIntermediate(b, p)
+                b = GriessIntermediate(b, p, lazy)
                 b.check()
             ca, cb = a.complexity(), b.complexity()
             if cb > ca:
                 a, b = b, a
             if a.tag == "1":
-                self.set_mul_int(b, a.factor)
+                self.set_instance(b, a.factor)
             elif cb > 1:
-                if ca > 1:
-                    error_complicated()
-                vb = b.as_vector_out()
-                v = self.mul_ax_vect(a, vb)
-                self.set_vector(v, a.factor * b.factor,
-                    a.n_axes + b.n_axes)
+                if ca > 2:
+                    self.set_pair_lazy(a, b, lazy)
+                if b.to_vector() == 0:
+                    self.set_int(0)
+                else:
+                    v = self.set_mul_axis_vector(a, b)
+                    self.set_vector(v, a.factor * b.factor,
+                        a.n_axes + b.n_axes)
             elif a.tag == b.tag == "ax":
                 self.set_mul_ax_ax(a, b)
             else:
-                error_complicated()
+                self.set_pair_lazy(a, b, lazy)
         else:
             ERR = "Cannot convert %s object to representation vector"
             raise ValueError(ERR % type(a))
 
     def complexity(self):
+        if self.tag == "pair":
+            return self.HINT_COMPLEXITY[self.hint]
         return self.COMPLEXITY[self.tag]
 
+    @staticmethod
     def error_complicated():
         ERR = "Expression to complicated for Griess algebra"
         raise ValueError(ERR)
@@ -229,8 +235,13 @@ class GriessIntermediate:
     def check(self):
         assert self.p & 1
         assert isinstance(self.factor, Integral)
-        assert self.tag in self.TYPE_DICT, (self.tag)
-        assert isinstance(self.value,  self.TYPE_DICT[self.tag])
+        if self.tag == "pair":
+            assert self.hint in self.PAIR_COMPLEXITY
+            assert isinstance(self.value[0], GriessIntermediate)
+            assert isinstance(self.value[1], GriessIntermediate)
+        else:
+            assert self.tag in self.TYPE_DICT, (self.tag)
+            assert isinstance(self.value,  self.TYPE_DICT[self.tag])
 
     def set_int(self, value):
         self.tag = "1"
@@ -238,17 +249,19 @@ class GriessIntermediate:
         self.value = 1
         self.n_axes = 0
         self.check()
+        return self.factor
 
-    def set_mul_int(self, other, factor=1):
-        assert self.p == other.p
-        if factor * other.factor == 0:
+    def set_instance(self, node, factor=1):
+        assert isinstance(node, GriessIntermediate)
+        assert self.p == node.p
+        if factor * node.factor == 0:
             self.set_int(0)
         else:
-            other.check()
-            self.tag = other.tag
-            self.factor = factor * other.factor
-            self.value = other.value
-            self.n_axes = other.n_axes
+            node.check()
+            self.tag = node.tag
+            self.factor = factor * node.factor
+            self.value = node.value
+            self.n_axes = node.n_axes
             self.check()
 
     def set_axis(self, axis, factor = 1):
@@ -260,54 +273,148 @@ class GriessIntermediate:
         self.check()
 
     def set_vector(self, vector, factor = 1, n_axes = 0):
-        assert isinstance(vector, MMVector)
-        self.tag = "v"
-        self.factor = int(factor)
-        self.value = adjust_vector_p(vector, self.p)
-        self.n_axes = 0
-        self.check()
+        self.n_axes = n_axes
+        if vector == 0 or factor == 0:
+            set_int(self, 0)
+        else:
+            self.tag = "v"
+            self.factor = int(factor)
+            self.value = adjust_vector_p(vector, self.p)
+            self.check()
+
+    def set_pair(self, node1, node2, hint = None):
+        """Set this node to a the pair ``(node1, node2)``.
+
+        This means that the node should compute the Griess algebra
+        product  ``node1`` * ``node2``.
+
+        Caution: This function modifies ``node1`` and ``node2``!
+
+        ``node1`` and ``node2`` will have members ``factor = 1``
+        and ``n_axes = 0``.
+
+        An option ``hint`` for the evaluating the pair
+        ``(node1, node2)`` can be given.
+
+        Valid hints are:
+
+        "2A" : This indicates a product of two 2A axes, such that the
+        product of the corresponding involutions is in class 2A.
+
+        None :  Nothing is known about the entries of a pair.
+        """
+        assert isinstance(node1, GriessIntermediate)
+        assert isinstance(node2, GriessIntermediate)
+        assert hint in self.PAIR_COMPLEXITY
+        assert self.p == node1.p == node2.p
+        self.tag = "pair"
+        self.factor = node1.factor * node2.factor
+        self.n_axes = node1.n_axes + node2.n_axes
+        if self.factor == 0:
+            return set_int(self, value)
+        node1.factor = node2.factor = 1
+        node1.n_axes = node2.n_axes = 0
+        self.value = (node1, node2)
+        self.hint = hint
+
+    def set_pair_if_lazy(self, node1, node2, lazy):
+        """Set this node to a the pair ``(node1, node2)``
+
+        if ``lazy`` is True and fail otherwise.
+        """
+        if not lazy:
+            self.error_complicated()
+        set_pair(self, node1, node2)
 
     def set_mul_ax_ax(self, ax1, ax2):
+        assert ax1.tag ==  ax2.tag == "ax"
         factor = ax1.factor * ax2.factor
         n_axes = ax1.n_axes + ax2.n_axes
-        assert ax1.tag ==  ax2.tag == "ax"
         a1, a2 = ax1.value, ax2.value
         scalprod = a1.scalprod15(a2, None)
-        if scalprod == 0:
+        if scalprod == 0 :
             self.set_int(0)
+        elif scalprod == 1:
+           self.set_pair(ax1, ax2, hint = '2A')
         else:
-            v = mul_axis_vector(a1, ax2.as_vector())
-            self.set_vector(v, factor, n_axes)
-
-    def set_mul_ax_vect(self, ax1, v):
-        factor = ax1.factor * ax2.factor
-        n_axes = ax1.n_axes + ax2.n_axes
-        if ax1.tag == 'ax':
-            v = mul_axis_vector(ax1.value, ax2.as_vector())
-            self.set_vector(v, factor, n_axes)
-        else:
-            error_complicated()
-
-    def as_vector(self, factor = 1):
-        self.check()
-        p = self.p
-        factor = self.factor
-        if self.tag == "ax":
-            if p in [3, 15]:
-                v = (self.value.v15).copy() % p
+            if ax2.to_vector() == 0:
+                self.set_int(0)
             else:
-                v = self.value.in_space(MMV, p)
-        elif self.tag == "v":
-            v = self.value
+                v = mul_axis_vector(a1, ax2.value)
+                self.set_vector(v, factor, n_axes)
+
+    @staticmethod
+    def set_mul_axis_vector(ax, v):
+        """Return ``ax * v`` for an node ``ax`` and a vector ``v``.
+
+        ``ax`` must of type ``GriessIntermediate``. Here ``ax.factor``
+        is ignored.
+        """
+        if ax.tag == 'ax':
+            return mul_axis_vector(ax.value, v)
+        if ax.tag == 'pair':
+            if ax.hint == "2A":
+                ax1, ax2 = ax.value
+                ax1, ax2 = ax1.value, ax2.value
+                ax3 = product_axis_2A(ax1, ax2)
+                v1, v2, v3 = [a * v for a in [ax1, ax2, ax3]]
+                return 4 * (v1 + v2 - v3)
+            else:
+                self.error_complicated()
+        else:
+            self.error_complicated()
+
+    def axis_to_vector(self, axis):
+        """Convert an axis to a vector"""
+        p = self.p
+        if p in [3, 15]:
+            return (axis.v15).copy() % p
+        else:
+            return axis.in_space(MMV, p)
+
+    def pair_to_vector(self):
+        assert self.tag == "pair"
+        a, b = self.value[0], self.value[1]
+        if self.hint == "2A":
+            assert a.tag == b.tag == "ax"
+            v = mul_axis_vector(a.value, self.axis_to_vector(b.value))
+            self.set_vector(v, self.factor, self.n_axes)
+        else:
+            a, b = self.value
+            res = GriessIntermediate((a,b), self.p, lazy=False)
+            res.to_vector()
+            self.set_instance(res, self.factor * res.factor,
+                self.n_axes * res.factor)
+        return self
+
+
+    def to_vector(self):
+        """Change intermedate node to a vector
+
+        The function changes the node so that it is either a
+        vector (with tag "v") or zero.
+
+        It either returns the modified node itself or zero.
+        """
+        self.check()
+        factor = self.factor
+        if factor == 0:
+            return self.set_int(0)
+        if self.tag == "v":
+            return self
+        p = self.p
+        if self.tag == "ax":
+            v = self.axis_to_vector(self.value)
         elif self.tag == "1":
-            if factor == 0:
-                return MMVector(p, 0)
             v = MMVector(p, 'U' )
             factor *= (p + 1) >> 2
+        elif self.tag == "pair":
+            return self.pair_to_vector()
         else:
             ERR = "Griess algebra product is to complicated"
             raise ValueError(ERR)
-        return v * factor
+        self.set_vector(v, factor)
+        return self
 
     @staticmethod
     def n2_ax_to_factor(n2_ax, n_axes, p=0):
@@ -323,11 +430,11 @@ class GriessIntermediate:
         return pow(2, exp, p) if p else pow(2, exp)
 
 
-    def as_vector_out(self, n2_ax = 8):
-        if self.factor == 0:
+    def vector_out(self, n2_ax = 8):
+        if self.to_vector() == 0:
             return MMV(self.p)
         factor = self.n2_ax_to_factor(n2_ax, self.n_axes, self.p)
-        return self.as_vector(factor)
+        return (factor * self.factor) * self.value
 
 
 
@@ -338,4 +445,4 @@ def Griess(a, b, **kwds):
         if p is None:
             p = 15
     result = GriessIntermediate((a, b), p)
-    return result.as_vector_out(getattr(kwds, 'n', 32))
+    return result.vector_out(getattr(kwds, 'n', 32))
