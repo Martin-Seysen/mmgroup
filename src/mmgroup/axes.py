@@ -29,7 +29,7 @@ except:
 
 
 try:
-    from mmgroup.tests.axes.griess import product_axis_2A
+    from mmgroup.tests.axes.griess import product_axis_2A, Griess
 except:
     pass
     #raise

@@ -27,7 +27,8 @@ if __name__ == "__main__":
 
 import mmgroup
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2
-from mmgroup.mm_crt_space import MMVectorCRT 
+from mmgroup.mm_crt_space import MMVectorCRT
+from mmgroup.generators import mm_group_invert_word
 from mmgroup.generators import gen_leech3to2
 from mmgroup.generators import gen_leech3to2_short
 from mmgroup.generators import gen_leech2_op_atom, gen_leech2_op_word
@@ -371,6 +372,10 @@ class Axis:
                 self.v15 = ax.v15()
                 return
             self.g1 = G('r')   # the standard way should still work
+        elif g == 'a':
+            # Undocumented function:  Axis('a', data) is equivalent
+            # to  Axis(self.group('a', data)), but faster.
+            self.g1 = G('a', invol)
         else:
             self.g1 = G(g)
         if self.g1 is None:
@@ -776,6 +781,17 @@ class Axis:
             v = self * axis.g_axis
             cl = PROD_CLASSES_SQ[self.scalprod15(v)]
         return cl
+    def _fast_g_mmdata(self, e = 1):
+        r"""Equivalent to (self.g**e).mmdata for e = +-1
+
+        This is faster than the standard procedure and makes
+        no attempt to reduce the returnd data.
+        """
+        assert abs(e) == 1
+        data = np.concatenate((self.g0.mmdata, self.g1.mmdata))
+        if e == -1:
+            mm_group_invert_word(data, len(data))
+        return data
 
 
 #################################################################
@@ -1066,7 +1082,6 @@ class BabyAxis(Axis):
         """
         from mmgroup.tests.axes.reduce_baby_axis import reduce_baby_axis_G_x0
         return reduce_baby_axis_G_x0(self)
-
 
 
 
