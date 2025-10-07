@@ -1,4 +1,4 @@
-"""We implement soe simple cases of the Griess algebra.
+"""We implement some simple cases of the Griess algebra.
  
 """
 
@@ -169,13 +169,13 @@ def mul_axis_vector(axis, vector):
 
 
 class GriessIntermediate:
-    TYPE_DICT = {
+    TYPE_DICT = {   # Expected data type of a node given by its tag
         "v": MMVector, "ax": Axis, "1": Integral 
     }
-    COMPLEXITY = {
+    COMPLEXITY = {  # complexity of a node given by its tag
         "1": 0, "ax":1, "v":3
     }
-    PAIR_COMPLEXITY = {
+    PAIR_COMPLEXITY = {  # complexity of a pair given attribute 'hint'
         "2A": 2, None:4
     }
 
@@ -223,6 +223,18 @@ class GriessIntermediate:
             raise ValueError(ERR % type(a))
 
     def complexity(self):
+        """Return the complxity of this node
+
+        0: an ineger
+
+        1: a 2A axis
+
+        2: an expression of 2A axes that can be multiplied b a vector
+
+        3: a vector
+
+        4: an expression of unknown complexity
+        """
         if self.tag == "pair":
             return self.HINT_COMPLEXITY[self.hint]
         return self.COMPLEXITY[self.tag]
@@ -244,6 +256,7 @@ class GriessIntermediate:
             assert isinstance(self.value,  self.TYPE_DICT[self.tag])
 
     def set_int(self, value):
+        """Set this node to an integer value"""
         self.tag = "1"
         self.factor = int(value)
         self.value = 1
@@ -252,6 +265,10 @@ class GriessIntermediate:
         return self.factor
 
     def set_instance(self, node, factor=1):
+        """Set this node to a value given by another ``node``
+
+        This node is set to ``factor`` * ``node``
+        """
         assert isinstance(node, GriessIntermediate)
         assert self.p == node.p
         if factor * node.factor == 0:
@@ -265,6 +282,10 @@ class GriessIntermediate:
             self.check()
 
     def set_axis(self, axis, factor = 1):
+        """Set this node to a value given by the 2A axis ``axis``
+
+        This node is set to ``factor`` * ``axis``
+        """
         assert isinstance(axis, Axis)
         self.tag = "ax"
         self.factor = int(factor)
@@ -273,6 +294,10 @@ class GriessIntermediate:
         self.check()
 
     def set_vector(self, vector, factor = 1, n_axes = 0):
+        """Set this node to a value given by the vector ``vector``
+
+        This node is set to ``factor`` * ``vector``
+        """
         self.n_axes = n_axes
         if vector == 0 or factor == 0:
             set_int(self, 0)
@@ -327,6 +352,21 @@ class GriessIntermediate:
         set_pair(self, node1, node2)
 
     def set_mul_ax_ax(self, ax1, ax2):
+        """Set this node to a the Griess algebra product of two axes
+
+        This node is set Griess algebra product ``ax1`` * ``ax2``.
+        Here ``ax1`` and ``ax2`` must be nodes with tag "ax"
+        representing axes.
+
+        The result in this node is usually stored as a vector.
+        Depending on the class of the product of these two axes there
+        are case where we can do better.
+
+        Case 2A: The product is a linear combination of axes,
+        encoded as a pair of two axes with the hint "2A".
+
+        Case 2B: The product is 0.
+        """
         assert ax1.tag ==  ax2.tag == "ax"
         factor = ax1.factor * ax2.factor
         n_axes = ax1.n_axes + ax2.n_axes
@@ -373,6 +413,11 @@ class GriessIntermediate:
             return axis.in_space(MMV, p)
 
     def pair_to_vector(self):
+        """Auxiary function for member function ``to_vector``
+
+        The function performs the action of funtion ``to_vector``
+        in the case that this node is a pair of nodes.
+        """
         assert self.tag == "pair"
         a, b = self.value[0], self.value[1]
         if self.hint == "2A":
@@ -389,12 +434,13 @@ class GriessIntermediate:
 
 
     def to_vector(self):
-        """Change intermedate node to a vector
+        """Change this node to a vector
 
         The function changes the node so that it is either a
         vector (with tag "v") or zero.
 
         It either returns the modified node itself or zero.
+        It fails if that conversion is not possible.
         """
         self.check()
         factor = self.factor
@@ -439,10 +485,48 @@ class GriessIntermediate:
 
 
 def Griess(a, b, **kwds):
+    r"""Compute the Griess algebra product of two vectors in some cases
+
+    The function returns the Griess algebra product of two vectors
+    ``a`` and ``b``  of the representation :math:`\rho` of the Monster.
+    Here any of the arguments ``a`` and ``b`` may be:
+
+    #. a vector given as an instance of class ``MMVector``
+
+    #. a 2A axis given as an instance of class ``Axis``
+
+    #. an integer representing a multiple of the unit of the algebra
+
+    #. a pair of any of these two objects representing their
+       Griess algebra product
+
+    The result is returned as an instance of class ``MMVector``
+
+    The function also takes the following keyword arguments:
+
+    ``'p'``: Modulus for the returned vector. This must be one of the
+    valid moduli for vectors or ``None``. If this is ``None`` and
+    all arguments of type ``MMVector`` have the same modulus then
+    this modulus is taken.
+    If no valid modulus is given then it defaults to 15. The moduli
+    of the input vectors must be compatible the the chosen value ``p``.
+
+    ``'n'``: The assumed norm of a 2A axis. This must be an odd power
+    of two. In the *mmgroup* package this defaults to 8.
+    Conway :cite:`Con85` assumes n = 128.
+
+    Our capabibilty of comupting the Griess agebra product is limited.
+    Call an argument simple if it is a 2A axis, an integer, or
+    a pair of 2A axes such that the product of their corresponding
+    involutions is in class 2A or 2B.
+
+    Then a Griess algebra product can be computed only if at least
+    one of its factors in simple.
+    """
     p = getattr(kwds, 'p', None)
     if p is None:
         p = auto_modulus((a,b))
         if p is None:
             p = 15
     result = GriessIntermediate((a, b), p)
-    return result.vector_out(getattr(kwds, 'n', 32))
+    return result.vector_out(getattr(kwds, 'n', 8))

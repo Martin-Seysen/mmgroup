@@ -411,7 +411,16 @@ Fast generation of random axes
 
 .. autofunction:: mmgroup.axes.rand_mm_element 
 
+A step towards the Griess algebra
+----------------------------------
 
+Warning! The functions in this subsection have not yet been tested!
+
+
+The following function provides limited support for the computation
+of the Griess algebra.
+
+.. autofunction:: mmgroup.axes.Griess 
 
 
 Computations in general groups
