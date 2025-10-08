@@ -417,10 +417,14 @@ A step towards the Griess algebra
 Warning! The functions in this subsection have not yet been tested!
 
 
-The following function provides limited support for the computation
+The following functions provide limited support for the computation
 of the Griess algebra.
 
 .. autofunction:: mmgroup.axes.Griess 
+
+.. autofunction:: mmgroup.axes.Griess_scalar 
+
+.. autofunction:: mmgroup.axes.product_axis_2A
 
 
 Computations in general groups
