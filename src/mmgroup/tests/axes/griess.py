@@ -501,7 +501,7 @@ class GriessIntermediate:
         computes a compensation factor for the case that this squared
         norm is ``n`` and that ``n_axes`` axes occur in the product.
         """
-        ok = n > 0 and (n & (n -1)) == 0
+        ok = n > 0 and (n & (n - 1)) == 0
         if ok:
             log_n =  n.bit_length() - 1
             ok = ok and log_n & 1
@@ -509,6 +509,7 @@ class GriessIntermediate:
             ERR = "Squared norm of an axis must be an odd power of 2"
             raise ValueError(ERR)
         shift = (log_n - 5) >> 1
+        #print("scale", n, n_axes, p, shift)
         exp = shift * n_axes
         return pow(2, exp, p) if p else pow(2, exp)
 
@@ -549,7 +550,7 @@ def Griess(a, b, **kwds):
 
     The result is returned as an instance of class ``MMVector``
 
-    The function also takes the following keyword arguments:
+    The function also takes the following optional keyword arguments:
 
     ``p``: Modulus for the returned vector. This must be one of the
     valid moduli for vectors or ``None``. If this is ``None`` and
@@ -579,7 +580,7 @@ def Griess(a, b, **kwds):
         if p is None:
             p = 15
     result = GriessIntermediate((a, b), p)
-    return result.vector_out(getattr(kwds, 'n', 8))
+    return result.vector_out(n)
 
 
 
@@ -618,6 +619,7 @@ def Griess_scalar(a, b, c = None, **kwds):
     data = [x for x in [a,b,c] if x is not None]
     assert 2 <= len(data) <= 3
     p = kwds.get('p', None)
+    n = kwds.get('n', 8)
     if p is None:
         p = auto_modulus(tuple(map(auto_modulus, data)))
         if p is None:
@@ -633,5 +635,6 @@ def Griess_scalar(a, b, c = None, **kwds):
     b_tuple = b.components()
     if len(b_tuple) == 2:
        a, b = GriessIntermediate((a, b_tuple[0]), p=p), b_tuple[1]
-    va, vb = a.vector_out(8),  b.vector_out(8)
+    va, vb = a.vector_out(n),  b.vector_out(n)
     return mmv_scalprod(va, vb)
+

@@ -1,6 +1,7 @@
-
+import math
 from random import randint, shuffle, sample
 import numpy as np
+
 
 import datetime
 import time
@@ -102,6 +103,13 @@ def trilinear_testcases():
     for d in DATA:
         yield d[:-1] + (par(*d[-1]),)
 
+
+def isqrt(x):
+    w = math.sqrt(x)
+    w0 = int(round(w))
+    assert abs(w - w0) < 1.0e-6
+    return w0
+
 @pytest.mark.axes
 def test_trilinear(verbose = 0):
     import_all()
@@ -115,7 +123,31 @@ def test_trilinear(verbose = 0):
         n_old = PAR['n']
         n_axes = PAR['n_axes']
         if n_axes is not None:
-            PAR['n'] = 2
+            factor = 2 ** randint(1,3)
+            PAR['n'] = PAR['n'] * factor**2
             s12 = Griess_scalar(a1, b1, c1, **PAR)
-            assert s12 == s1 * n_axes**(n_old // 2)
+            scale = factor ** n_axes
+            p = PAR['p']
+            assert s12 ==  (scale * s2) % p, (PAR, scale, n_old, n_axes)
+
+
+@pytest.mark.axes
+def test_axes_product_pairs():
+    import_all()
+    AX1 = Axis('i', MM('d', [2,3]))
+    AX2 = Axis('i', MM('d', [1,2]))
+    PAR_DAT = [
+        (15, 8, 32), (127, 8, 8),  (255, 8, 128), (31, 32, 128)
+    ]
+
+    for  p, n1, n2 in PAR_DAT:
+        assert n2 % n1 == 0
+        r12, r34 = MM('r'), MM('r')
+        ax1, ax2 = AX1 * r12, AX2 * r12
+        ax3, ax4 = AX1 * r34, AX2 * r34
+        v1 = Griess((ax1, ax2), (ax3, ax4), p=p, n=n1)
+        v2 = Griess((ax4, ax3), (ax2, ax1), p=p, n=n2)
+        ok = v2 == v1 * isqrt(n2/n1)**4
+        assert ok
+
 
