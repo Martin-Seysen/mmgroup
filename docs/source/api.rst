@@ -616,6 +616,11 @@ Version history
      - 2025-06-02
      - Algorithms for computing with axes improved 
 
+   * - 1.0.6
+     - 2025-10-27
+     - Some support for the Griess algebra added 
+
+
 
 
 .. only:: html

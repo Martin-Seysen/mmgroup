@@ -2,7 +2,8 @@
 # History
 ####################################################################
 
-VERSION = '1.0.5' # 2025-06-02. Algorithms for computing with axes improved 
+VERSION = '1.0.6' # 2025-10-27. Some support for the Griess algebra added 
+# VERSION = '1.0.5' # 2025-06-02. Algorithms for computing with axes improved 
 # VERSION = '1.0.4' # 2025-03-11. Algorithms for computing in general groups added 
 # VERSION = '1.0.3' # 2024-07-09. Computation of sample 2A axes improved
 # VERSION = '1.0.2' # 2024-02-27. Changes in build system regarding shared libraries
