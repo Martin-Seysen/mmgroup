@@ -190,11 +190,11 @@ def build_shared_lib_parser():
         help = 'Set directory DIR for storing shared libraries.'
     )
 
-    #parser.add_argument('--lflags',
-    #    nargs = '*',  metavar='ARGS',
-    #    action = 'extend', default = [],
-    #    help = 'Add extra arguments given by the list ARGS for the linker.'
-    #    )
+    parser.add_argument('--lflags',
+        metavar='FLAGS', action = 'store', default = '',
+        help = "Add extra arguments FLAGS for the linker. E.g. "
+               "'--lflags=-g' adds arguments '-g'."
+        )
 
     parser.add_argument('--static', nargs='?', const=1, default=0, type=int,
          help = 'Create static instead of shared library. '
@@ -376,6 +376,7 @@ def make_dll_nt_msvc(cmdline_args):
         lcmd =  ["lib"] + objects + ["/OUT:" + lib ]
     else:
         lcmd = ["link", "/DLL"] + objects
+        lcmd += process_flags(cmdline_args.lflags)
         lcmd += linker_library_args(cmdline_args)
         lcmd += ["/OUT:" + lib ]
         lcmd += [ "/IMPLIB:" + implib]
@@ -410,6 +411,7 @@ def make_so_posix_gcc(cmdline_args):
         lcmd =  ["ar", "rcs", lib ] + objects
     else:
         lcmd = ["cc", "-shared",  "-Wall"]
+        lcmd += process_flags(cmdline_args.lflags)
         lcmd += objects + linker_library_args(cmdline_args)
         lcmd += ["-o", lib ]
     lcmd += set_ld_library_path_args(cmdline_args)
@@ -445,6 +447,7 @@ def make_dll_nt_mingw32(cmdline_args):
         lcmd =  ["ar", "rcs", lib ] + objects
     else:
         lcmd = ["gcc"] +  objects
+        lcmd += process_flags(cmdline_args.lflags)
         lcmd += linker_library_args(cmdline_args)
         lcmd +=  ["-o",  lib, "-s", "-shared"]
         lcmd += ["-Wl,--subsystem,windows,--out-implib," + implib]
