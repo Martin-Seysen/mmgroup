@@ -21,7 +21,7 @@ cimport generators as gen
 cimport mm_reduce as mr
 
 ctypedef gt_word_type *p_gt_word_type
-ctypedef gt_subword_type *p_gt_subword_type
+# ctypedef gt_subword_type *p_gt_subword_type
 
 
 cdef uint32_t[:] mm_as_array_view(a):
@@ -173,37 +173,29 @@ cdef class GtWord():
 
     @cython.boundscheck(False)    
     def subwords(self):
-        cdef p_gt_subword_type ptr = self.p_gt.p_end.p_next
-        assert ptr.p_prev == self.p_gt.p_end
-        cdef p_gt_subword_type p_node = self.p_gt.p_node
-        cdef uint32_t i
-        cdef uint32_t[:] a_view
-        cdef uint32_t[:] src_view
-        cdef uint32_t length
-        cdef int32_t maxlength = mr.MAX_GT_WORD_DATA
-        subword_list = []
+        cdef int32_t maxlength = mr.gt_word_len_pickle(self.p_gt)
+        assert maxlength > 0
+        buf = np.zeros(maxlength, dtype = np.uint32)
+        cdef uint32_t[:] b_view = buf
+        cdef int32_t length = mr.gt_word_pickle(
+            self.p_gt, &b_view[0], maxlength)
+        assert length > 0
+        cdef uint32_t n = b_view[1], i, a_len, tmp
         cdef int32_t fpos = -1
-        while not ptr.eof:
+        subword_list = []
+        for i in range(n):
+            a = buf[buf[i+2]:]
             sub = GtSubWord()
-            sub.data = np.zeros(maxlength, dtype = np.uint32)
-            a_view = sub.data
-            src_view = ptr.data
-            length = ptr.length
-            for i in range(length):
-                a_view[i] = src_view[i]
-            sub.data = sub.data[:length]
-            sub.length = length
-            sub.t_exp = ptr.t_exp
-            sub.img_Omega = ptr.img_Omega
-            sub.reduced = ptr.reduced
+            if a[0]:
+                fpos = i
+            sub.img_Omega = tmp = a[1]
+            sub.t_exp = tmp = a[2]
+            sub.reduced = tmp = a[3]
+            sub.length = a_len = a[4]
+            sub.data = a[5 : 5 + a_len]
             subword_list.append(sub)
-            if ptr == p_node:
-                fpos = len(subword_list) - 1
-            assert ptr == ptr.p_next.p_prev
-            ptr = ptr.p_next
         return fpos, subword_list
-
-
+  
     @cython.boundscheck(False)
     def as_int(self):
         self.reduce()

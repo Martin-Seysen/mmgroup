@@ -552,7 +552,7 @@ uint64_t gen_leech3to2(uint64_t v3)
             gcodev = h ^ syn;
             cocodev = syn | (v3 & ~syn & 0xffffff);
             w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
+            if (w1 & 1)  return vtype;
             omega = (w1 >> 1) + parity24(syn & v3) + w;
             vtype = 4;
             break; 
@@ -602,18 +602,18 @@ uint64_t gen_leech3to2(uint64_t v3)
             syn = mat24_syndrome(h, 0);
             cocodev = v3 & 0xffffff;
             w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
+            if (w1 & 1)  return vtype;
             omega = (w1 >> 1) + 1;
             vtype = 3;
             break; 
         case 9:
             // type (4**1, 2**8, 0**15)
             syn = mat24_syndrome(h, 0);
-            if ((h & syn) != syn) return 0;                  
+            if ((h & syn) != syn) return vtype;
             gcodev = h ^ syn;
             cocodev = syn | (v3 & ~syn & 0xffffff);
             w1 = mat24_bw24(cocodev);
-            if (w1 & 1)  return 0;
+            if (w1 & 1)  return vtype;
             omega = (w1 >> 1) + parity24(syn & v3);
             vtype = 3;
             break; 

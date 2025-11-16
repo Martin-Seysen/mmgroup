@@ -736,7 +736,7 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
     // sub is too large
     if (w > 4) return 0;
     // Upgrade sub to bit weight 1. Upgrade sub to weight 3
-    // if sub has weight 2 and v has weight <= 4.
+    // if sub has weight 2 and (v2 & ~o) has weight <= 4.
     // Store upgraded weight of sub in w.
     if (w == 0 || (w == 2 && w_up <= 2)) {
         uint_fast32_t b = o & ~sub;
