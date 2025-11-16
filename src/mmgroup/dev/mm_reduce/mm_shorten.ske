@@ -1304,7 +1304,7 @@ int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1max, u
 static inline int32_t pickle_subword(
     gt_subword_type *p_sub, uint32_t cur, uint32_t *buf, uint32_t maxlen)
 {
-    uint32_t len = LEN_PICKLE_REC_HD + p_sub->length;
+    uint32_t len = LEN_PICKLE_REC_HD + p_sub->length, i;
     if (maxlen < len) _ERROR(9, 5);
     if (p_sub->p_next == NULL || p_sub->p_prev == NULL)
         return _ERROR(9, 6);
@@ -1315,7 +1315,7 @@ static inline int32_t pickle_subword(
     *buf++ = p_sub->t_exp;
     *buf++ = p_sub->reduced;
     *buf++ = p_sub->length;
-    memcpy(buf, p_sub->data, p_sub->length * sizeof(uint32_t));
+    for (i = 0; i < p_sub->length; ++i) buf[i] = p_sub->data[i];
     return len;
 }
 
@@ -1323,7 +1323,7 @@ static inline int32_t pickle_subword(
 
 
 /**
-@brief Pickle data from a structure of type ``p_gt``
+@brief Pickle data from a structure of type ``gt_word_type``
 
 The function copies the relevant data from the structure referred
 by ``p_gt`` into the linear array ``buf`` of length ``maxlen``.
