@@ -547,7 +547,8 @@ uint64_t gen_leech3to2(uint64_t v3)
             // type (4**1, 2**12, 0**11)
         case 10:
             // type (4**2, 2**8, 0**14)
-            syn = mat24_syndrome(h & 0xffffff, 0);
+            syn = mat24_syndrome(h & 0xffffff, 24);
+            if (syn & 0xff000000UL) return vtype;
             if ((h & syn) != syn) return vtype;                  
             gcodev = h ^ syn;
             cocodev = syn | (v3 & ~syn & 0xffffff);

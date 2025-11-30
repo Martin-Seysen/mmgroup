@@ -24,7 +24,7 @@ from multiprocessing import Pool, TimeoutError
 import numpy as np
 import pytest
 
-from mmgroup import MM0
+from mmgroup import MM0, Xsp2_Co1
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
 from mmgroup.mat24 import bw24 as mat24_bw24
 from mmgroup.generators import gen_leech3to2
@@ -256,3 +256,35 @@ def test_chisq_type3(verbose = 0):
 
 
 
+#####################################################################
+# Test that gen_leech3to2 detect vector not of type 0,...,4
+#####################################################################
+
+
+# Vectors in Leech lattice mod 3 that do not map to a vector of
+# type <= 4.  Source: Docmentation of the C interface, Section
+# "C interface for file gen_leech_reduce_mod3.c".
+VECTORS_MOD3_LARGE = [
+  0x10001ff, 0x111111, 0xe, 0x1f3, 0xf1, 0xeee000
+]
+
+def rand_Co1(n_xi):
+   """Return Random element of Co_2 as word of generators of G_x0
+
+   0 <= n_ni < 4 is the number of genetors "xi" in that element
+   """
+   g = Xsp2_Co1('r', 'N_x0')
+   for i in range(n_xi):
+       g *= Xsp2_Co1([('l', randint(1,2)), ('p', 'r')])
+   return g.mmdata
+
+@pytest.mark.gen_xi
+def test_v3_type_gt_4(ntests = 20):
+    """Ckeck that gen_leech3to2() detects vectors of type > 4"""
+    FAIL = 2**64 - 1
+    for v in VECTORS_MOD3_LARGE:
+        for n_xi in range(4):
+            for n in range(ntests):
+                g = rand_Co1(n_xi)
+                v1 = gen_leech3_op_vector_word(v, g,len(g))
+                assert gen_leech3to2(v1) == FAIL

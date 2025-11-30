@@ -126,6 +126,21 @@
 
 
 /** 
+  @def mat24_def_vect_to_cocode(v1)
+  @brief Return Golay cocode element corresponding to a bit vector
+  in ``GF(2)^24``.
+
+  Macro version of function ``mat24_vect_to_cocode``.
+
+*/
+#define mat24_def_vect_to_cocode(v1) \
+    ((MAT24_ENC_TABLE0[(v1) & 0xff] \
+    ^ MAT24_ENC_TABLE1[((v1) >> 8) & 0xff] \
+    ^ MAT24_ENC_TABLE2[((v1) >> 16) & 0xff]) & 0xfff)
+
+
+
+/** 
   @def  mat24_def_syndrome_from_table(t)
   @brief Convert entry ``t`` of table ``MAT24_SYNDROME_TABLE`` to syndrome
 
