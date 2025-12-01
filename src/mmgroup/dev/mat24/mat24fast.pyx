@@ -3,6 +3,7 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
+cimport cython
 from libc.stdint cimport uint32_t, uint16_t, uint8_t, int32_t;
 
 
@@ -198,10 +199,17 @@ def cocode_to_sextet(uint32_t  c1):
     return list(data[:24])
 
 def intersect_octad_tetrad(uint32_t v1, uint32_t v2):
-    cdef uint32_t res
+    cdef uint32_t result
     result =  mat24_intersect_octad_tetrad(v1, v2)
     if result == 0xffffffff:
         raise ValueError("No vector intersecting octad in tetrad found")
+    return result
+
+def vect_type(uint32_t v1):
+    cdef int32_t res
+    result =  mat24_vect_type(v1)
+    if result < 0:
+        raise ValueError("Error in function mat24_vect_type")
     return result
 
 ############################################################################
@@ -704,6 +712,8 @@ def perm_rand_debug_info():
 ########################################################################
 ########################################################################
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef uint32_t Mat24Sub_vtype(uint32_t x):
     """returns type of bit vector in GF(2)**24. 
 
@@ -740,15 +750,47 @@ cpdef uint32_t Mat24Sub_vtype(uint32_t x):
             rest &= ~s
     return ( (w << 5 ) + (d << 2) + y )
 
-def Mat24Sub_count_vtypes():
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def Mat24Sub_count_vtypes(uint32_t verbose = 0):
+     """Test function mat24_vect_type against Mat24Sub_vtype"""
      cdef uint32_t a[8000]
-     cdef uint32_t n
+     cdef uint32_t map_c_pyx[0x100]
+     cdef uint32_t n, c, vt, map_c_value
+     cdef uint32_t EMPTY = 0xffeeddcc
      for n in range(8000):
          a[n] = 0 
+     for n in range(0x100):
+         map_c_pyx[n] = EMPTY;
      for n in range(0x1000000):
-         a[Mat24Sub_vtype(n)] += 1     
+         vt = Mat24Sub_vtype(n)
+         a[vt] += 1
+         c = mat24_vect_type(n)
+         c &= 0xff
+         map_c_value = map_c_pyx[c]
+         if map_c_value == EMPTY:
+             map_c_pyx[c] = vt
+             if verbose:
+                 data_vt = (vt>>5, (vt>>2) & 7, vt & 3)
+                 data_c = divmod(c, 32)
+                 print(hex(n), data_vt, data_c)
+         elif map_c_value != vt:
+             data_vt = (vt>>5, (vt>>2) & 7, vt & 3)
+             data_c = divmod(c, 32)
+             print(hex(n), data_vt, data_c, "failed")
+             raise ValueError("Function mat24_vect_type has failed")
      d =  {}
+     cdef uint32_t n_d = 0
+     cdef uint32_t n_dc = 0
      for n in range(8000):
-        if a[n] > 0:
-            d[ (n>>5, (n>>2) & 7, n & 3) ] = a[n]
-     return d
+         if a[n] > 0:
+             d[ (n>>5, (n>>2) & 7, n & 3) ] = a[n]
+             n_d += 1
+     dc =  {}
+     for n in range(0x100):
+         if map_c_pyx[n] != EMPTY:
+             dc[n] = map_c_pyx[n]
+             n_dc += 1
+     if n_d != n_dc:
+         raise ValueError("Function mat24_vect_type has failed")
+     return d,  dc

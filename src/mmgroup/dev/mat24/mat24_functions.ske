@@ -772,6 +772,77 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
 
 
 
+
+/**
+  @brief Compute the type of a vector ``v`` in \f$\mathbb{F}_2^{24}\f$
+
+  Here the type of a vector ``v`` is its orbit under the action of
+  the Mathieu group \f$M_{24}\f$. These orbits are denoted as in
+  Figure 10.1 in [CS99], Ch. 10.2.6. An orbit of weight <= 12 is
+
+  * Special (coded as 0) if in contains or is contained in a octad
+
+  * Umbral (coded as 1) if in contains or is contained in a dodecad
+
+  * Transversal (coded as 2) otherwise
+
+  A vector of weight > 12 is special, umbral, or transversal, if its
+  complement has that property.
+
+  A vector of weight 12  is extraspecial (coded as 3) if it contains
+  three octads, and penumbral (coded as 4) if it has Hamming distance
+  two from a dodecad.
+
+  The function returns the value ``32 * c + w``, where ``w`` is  the
+  weight of the vector ``v``, and ``c`` is the code for its type,
+  as described above.
+*/
+// %%EXPORT p
+int32_t mat24_vect_type(uint32_t v1)
+{
+    #define VT(weight, type_) (((type_) << 5) + (weight))
+    uint32_t w = mat24_bw24(v1), w1, w_syn, syn, i;
+    if (w == 12) {
+        uint32_t synd[6], n = 0;
+        i = mat24_all_syndromes(v1, synd);
+        if (i == 1) {
+            return synd[0] ? VT(12, 4) : VT(12, 1);
+        } else {
+            static int8_t DODECADE_TYPES[7] = {
+                VT(12, 2), VT(12, 0), -1, VT(12, 3), -1, -1, -1
+            };
+            for (i = 0; i < 6; ++i) n += (v1 & synd[i]) == synd[i];
+            return DODECADE_TYPES[n];
+        }
+    }
+    w1 = (w > 12) ?  24 - w : w;
+    if (w1 <= 5) return  VT(w, 0);
+    syn = mat24_syndrome(v1, 0);
+    w_syn = mat24_bw24(syn);
+    if (w_syn & 3) w_syn += mat24_bw24(syn ^ v1) & 4;
+    #define A_BAD {0xff, 0xff}
+    static uint8_t A_WSYN[6][3][2] = {
+    // special  umbral  transversal
+       {{2, 0}, {4, 1}, A_BAD},    // hexad
+       {{1, 0}, {3, 1}, A_BAD},    // heptad
+       {{0, 0}, {4, 1}, {2, 2}},   // octad
+       {{1, 0}, {7, 1}, {3, 2}},   // nonad
+       {{2, 0}, {6, 1}, {4, 2}},   // decad
+       {{3, 0}, {5, 1}, {7, 2}},   // undecad
+    };
+    uint8_t (*p_syn)[2] = A_WSYN[w1 - 6];
+    for (i = 0; i < 3; ++i) {
+        if (p_syn[i][0] == w_syn) return VT(w, p_syn[i][1]);
+    }
+    return -1;
+    #undef A_BAD
+    #undef VT
+}
+
+
+
+
+
 /*************************************************************************
 *** Scalar product of Golay code and cocode
 *************************************************************************/

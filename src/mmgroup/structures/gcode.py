@@ -662,6 +662,7 @@ class GcVector:
     __slots__ = "value", "bit_list_", "bit_vector"
     parity_class = True
     sign = 1
+    STR_VT = ["S%d","U%d","T%d","S%d+","U%d-"] 
 
     def __init__(self, value):
         if import_pending:
@@ -909,6 +910,42 @@ class GcVector:
         return [j for j in range(24) if (1 << j) & syn]
 
 
+    def vtype(self, as_int = False):
+        """Compute type of a bit vector ``v`` in :math:`\mathbb{F}_2^{24}`
+
+        Here the type of a vector ``v`` is its orbit under the action
+        of the Mathieu group :math:`M_{24}`. These orbits are denoted
+        as in Figure 10.1 in :cite:`CS99`, Ch. 10.2.6. An orbit of
+        weight <= 12 is
+
+        * Special [S] if it contains or is contained in a octad (i.e
+          in a Golay code word of weight 8),
+
+        * Umbral [U] if it is not special and contains or is contained
+          in a dodecad (i.e. in a Golay code word of weight 12),
+
+        * Transversal [T] otherwise.
+
+        A vector of weight > 12 is special, umbral, or transversal,
+        if its complement has that property.
+
+        A vector of weight 12  is extraspecial [S12+] if it contains
+        three octads, and penumbral [U12-] if it has Hamming
+        distance two from a dodecad.
+
+        The type is returned as a string as in :cite:`CS99`, e.g.
+        'U7' means an umbral heptad, 'T8' means a transversal octad,
+        'S12+' means an extraspecial, and 'U12-' means a penumbral
+        dodecad.
+
+        If the argument ``as_int`` of this funtion is ``True`` then
+        the type is returned as an integer as in the C function
+        ``mat24_vect_type`` in file ``mat24_functions.c``.
+        """
+        vt = mat24.vect_type(self.value)
+        if as_int:
+            return vt
+        return self.STR_VT[vt >> 5] % (vt & 31)
 
     def str(self):
         return "<GcVector_%s>" % ihex(self.value & 0xffffff, 6)
