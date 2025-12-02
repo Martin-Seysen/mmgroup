@@ -933,10 +933,11 @@ class GcVector:
         three octads, and penumbral [U12-] if it has Hamming
         distance two from a dodecad.
 
-        The type is returned as a string as in :cite:`CS99`, e.g.
-        'U7' means an umbral heptad, 'T8' means a transversal octad,
-        'S12+' means an extraspecial, and 'U12-' means a penumbral
-        dodecad.
+        The type is returned as a string as in :cite:`CS99`. E.g. 'U7'
+        means an umbral vector of weight 7, and 'S19' means a special
+        vector of weight 19. 'T12', 'S12+', and 'U12-' means a
+        transversal, extraspecial, and penumbral vector of weight 12,
+        respectively.
 
         If the argument ``as_int`` of this funtion is ``True`` then
         the type is returned as an integer as in the C function

@@ -753,20 +753,26 @@ cpdef uint32_t Mat24Sub_vtype(uint32_t x):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def Mat24Sub_count_vtypes(uint32_t verbose = 0):
-     """Test function mat24_vect_type against Mat24Sub_vtype"""
-     cdef uint32_t a[8000]
+     """Test function mat24_vect_type against Mat24Sub_vtype
+
+     The function tests function mat24_vect_type() against a Cython
+     implementation of that function for all 2**24 bit vectors.
+
+     It returns a dictionary mapping the possible results of function
+     mat24_vect_type() to the sizes of the corresponding Mat24 orbits.
+     """
+     ERR = "Error %d in testing function mat24_vect_type"
+     cdef uint32_t a[0x100]
      cdef uint32_t map_c_pyx[0x100]
      cdef uint32_t n, c, vt, map_c_value
      cdef uint32_t EMPTY = 0xffeeddcc
-     for n in range(8000):
-         a[n] = 0 
      for n in range(0x100):
+         a[n] = 0
          map_c_pyx[n] = EMPTY;
      for n in range(0x1000000):
-         vt = Mat24Sub_vtype(n)
-         a[vt] += 1
          c = mat24_vect_type(n)
-         c &= 0xff
+         vt = Mat24Sub_vtype(n)
+         a[c] += 1
          map_c_value = map_c_pyx[c]
          if map_c_value == EMPTY:
              map_c_pyx[c] = vt
@@ -778,19 +784,9 @@ def Mat24Sub_count_vtypes(uint32_t verbose = 0):
              data_vt = (vt>>5, (vt>>2) & 7, vt & 3)
              data_c = divmod(c, 32)
              print(hex(n), data_vt, data_c, "failed")
-             raise ValueError("Function mat24_vect_type has failed")
+             raise ValueError(ERR % 1)
      d =  {}
-     cdef uint32_t n_d = 0
-     cdef uint32_t n_dc = 0
-     for n in range(8000):
-         if a[n] > 0:
-             d[ (n>>5, (n>>2) & 7, n & 3) ] = a[n]
-             n_d += 1
-     dc =  {}
      for n in range(0x100):
-         if map_c_pyx[n] != EMPTY:
-             dc[n] = map_c_pyx[n]
-             n_dc += 1
-     if n_d != n_dc:
-         raise ValueError("Function mat24_vect_type has failed")
-     return d,  dc
+         if a[n]:
+             d[n] = a[n]
+     return d

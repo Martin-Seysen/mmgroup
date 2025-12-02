@@ -798,9 +798,9 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
   as described above.
 */
 // %%EXPORT p
-int32_t mat24_vect_type(uint32_t v1)
+uint8_t mat24_vect_type(uint32_t v1)
 {
-    #define VT(weight, type_) (((type_) << 5) + (weight))
+    #define VT(weight, type_) (uint8_t)(((type_) << 5) + (weight))
     uint32_t w = mat24_bw24(v1), w1, w_syn, syn, i;
     if (w == 12) {
         uint32_t synd[6], n = 0;
@@ -808,8 +808,8 @@ int32_t mat24_vect_type(uint32_t v1)
         if (i == 1) {
             return synd[0] ? VT(12, 4) : VT(12, 1);
         } else {
-            static int8_t DODECADE_TYPES[7] = {
-                VT(12, 2), VT(12, 0), -1, VT(12, 3), -1, -1, -1
+            static uint8_t DODECADE_TYPES[7] = {
+                VT(12, 2), VT(12, 0), 255, VT(12, 3), 255, 255, 255
             };
             for (i = 0; i < 6; ++i) n += (v1 & synd[i]) == synd[i];
             return DODECADE_TYPES[n];
@@ -834,7 +834,7 @@ int32_t mat24_vect_type(uint32_t v1)
     for (i = 0; i < 3; ++i) {
         if (p_syn[i][0] == w_syn) return VT(w, p_syn[i][1]);
     }
-    return -1;
+    return 255;
     #undef A_BAD
     #undef VT
 }
