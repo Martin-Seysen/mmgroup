@@ -10,7 +10,7 @@ on:
   #  branches: [ "master" ]
 
 jobs:
-  build_wheels:
+  build_wheels_linux:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
@@ -19,9 +19,9 @@ jobs:
         CIBW_BUILD_VERBOSITY: 1
     timeout-minutes: 120
     strategy:
-     fail-fast: false
-     matrix:
-        os: [ubuntu-latest,  macOS-14]
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
@@ -32,6 +32,43 @@ jobs:
       - uses: actions/setup-python@v5
         with:
             python-version: '3.11'
+     
+      - name: Install cibuildwheel
+        run: python3 -m pip install --upgrade pip cibuildwheel
+               
+      - name: Build wheels
+        run: python3 -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+          overwrite: true
+
+jobs:
+  build_wheels_macOS:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+        CIBW_ARCHS_MACOS: "arm64"
+        CIBW_SKIP: "pp* *musllinux*"
+        CIBW_BUILD_VERBOSITY: 1
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-14]
+
+    steps:
+      # A reasonable refernce for the current checkout and python version is:
+      # https://github.com/actions/setup-python
+      - uses: actions/checkout@v4
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+            architecture: arm64
      
       - name: Install cibuildwheel
         run: python3 -m pip install --upgrade pip cibuildwheel
