@@ -26,6 +26,7 @@ if __name__ == "__main__":
 
 
 from mmgroup import MM0, MMV, MMVector, Cocode, XLeech2
+from mmgroup.bitfunctions import unnumpy
 
 
 from mmgroup.tests.axes.axis import G, Axis, BabyAxis
@@ -551,7 +552,7 @@ def write_axes(sample_list, beautify = True, verbose = False):
         g = axis.g.raw_str()
         s_samples += "\"" + g + "\",\n"
         s_stages += str(stage) + ", "
-        s_marks += str(mark)  + ",\n"
+        s_marks += str(unnumpy(mark))  + ",\n"
         class_ = compute_axis_type(axis, check = True)
         s_classes += '"' + class_ + '", '
         try:
