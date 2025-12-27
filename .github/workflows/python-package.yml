@@ -14,15 +14,14 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
-        CIBW_ARCHS_MACOS: native
+        CIBW_ARCHS_MACOS: "x86_64 arm64"
+        CIBW_SKIP: "pp* *musllinux*"
+        CIBW_BUILD_VERBOSITY: 1
     timeout-minutes: 120
     strategy:
-      matrix:
-        # os: [flyci-macos-large-latest-m1] not working
-        # os: [ubuntu-latest,  macOS-latest, macos-12-large]
-        os: [ubuntu-latest,  macOS-13, macOS-14]
-        # Since about April 2024 macOS-latest default to macOS-14;
-        # and macOS-14 support an arm-based architecture only.
+     fail-fast: false
+     matrix:
+        os: [ubuntu-latest,  macOS-14]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
@@ -35,7 +34,7 @@ jobs:
             python-version: '3.11'
      
       - name: Install cibuildwheel
-        run: python3 -m pip install cibuildwheel
+        run: python3 -m pip install --upgrade pip cibuildwheel
                
       - name: Build wheels
         run: python3 -m cibuildwheel --output-dir wheelhouse
