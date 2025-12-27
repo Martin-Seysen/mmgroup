@@ -13,12 +13,14 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+        CIBW_ARCHS_MACOS: native
     timeout-minutes: 120
     strategy:
       matrix:
         # os: [flyci-macos-large-latest-m1] not working
         # os: [ubuntu-latest,  macOS-latest, macos-12-large]
-        os: [ubuntu-latest,  macOS-13]
+        os: [ubuntu-latest,  macOS-13, macOS-14]
         # Since about April 2024 macOS-latest default to macOS-14;
         # and macOS-14 support an arm-based architecture only.
 
