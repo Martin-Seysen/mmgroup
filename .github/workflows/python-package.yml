@@ -53,6 +53,8 @@ jobs:
         CIBW_SKIP: "pp* *musllinux*"
         CIBW_BUILD_VERBOSITY: 1
         ARCHFLAGS: "-arch arm64"
+        CFLAGS: "-arch arm64"
+        LDFLAGS: "-arch arm64"
     timeout-minutes: 120
     strategy:
       fail-fast: false
