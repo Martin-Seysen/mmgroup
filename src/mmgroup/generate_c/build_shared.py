@@ -243,6 +243,23 @@ def build_shared_lib_parser():
 COMPILER_ERROR = "Don't know how to deal with %s compiler"
 
 
+def get_environment(name):
+    data = []
+    try:
+        value = os.environ[name]
+        values = value.split()
+        for s in values:
+            s = s.strip()
+            if s.isspace():
+                continue
+            if s[0] == s[-1] == '"':
+                s = s[1:-1]  
+            data.append(s)  
+    except KeyError:
+        pass
+    return data
+
+
 def c_define_args(cmdline_args):
     compiler = cmdline_args.compiler
     cargs = []
@@ -390,7 +407,9 @@ def make_dll_nt_msvc(cmdline_args):
 
 def make_so_posix_gcc(cmdline_args):
     """Create a posix shared library with gcc"""
-    compile_args = ["cc", "-c", "-O3", "-Wall"]
+    compile_args = ["cc"]
+    compile_args += get_environment("CFLAGS")
+    compile_args += ["-c", "-O3", "-Wall"]
     compile_args += process_flags(cmdline_args.cflags)
     for ipath in cmdline_args.include_path:
         compile_args += ["-I", os.path.realpath(ipath)]
@@ -408,9 +427,12 @@ def make_so_posix_gcc(cmdline_args):
     # Link
     lib, implib = output_names(cmdline_args)
     if cmdline_args.static:
-        lcmd =  ["ar", "rcs", lib ] + objects
+        lcmd =  ["ar"]
+        lcmd +=  ["rcs", lib ] + objects
     else:
-        lcmd = ["cc", "-shared",  "-Wall"]
+        lcmd = ["cc"]
+        lcmd += get_environment("LDFLAGS")
+        lcmd += ["-shared",  "-Wall"]
         lcmd += process_flags(cmdline_args.lflags)
         lcmd += objects + linker_library_args(cmdline_args)
         lcmd += ["-o", lib ]
@@ -422,7 +444,9 @@ def make_so_posix_gcc(cmdline_args):
 
 def make_dll_nt_mingw32(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
-    compile_args = ["gcc", "-c", "-O3", "-Wall", "-DMS_WIN64"]
+    compile_args = ["gcc"]
+    compile_args += get_environment("CFLAGS")
+    compile_args = ["-c", "-O3", "-Wall", "-DMS_WIN64"]
     if cmdline_args.static:
          compile_args.append("-mno-stack-arg-probe")
     # Option  "-mno-stack-arg-probe" prevents the linker error
@@ -446,7 +470,9 @@ def make_dll_nt_mingw32(cmdline_args):
     if cmdline_args.static:
         lcmd =  ["ar", "rcs", lib ] + objects
     else:
-        lcmd = ["gcc"] +  objects
+        lcmd = ["gcc"] 
+        lcmd += get_environment("LDFLAGS")
+        lcmd += objects
         lcmd += process_flags(cmdline_args.lflags)
         lcmd += linker_library_args(cmdline_args)
         lcmd +=  ["-o",  lib, "-s", "-shared"]
