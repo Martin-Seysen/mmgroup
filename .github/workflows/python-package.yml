@@ -45,7 +45,6 @@ jobs:
           path: ./wheelhouse/*.whl
           overwrite: true
 
-jobs:
   build_wheels_macOS:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
