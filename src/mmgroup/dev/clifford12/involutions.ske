@@ -150,7 +150,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
 
    In this function we require that the image of \f$g\f$ in the
    factor group  \f$\mbox{Co}_1\f$ of  \f$G_{x0}\f$ has order
-   1 or 2; othereise the function fails. That condition is
+   1 or 2; otherwise the function fails. That condition is
    equivalent to \f$A^2 = 1\f$, and also to \f$A_1^2 = 0\f$. If
    this is the case then we have:
 

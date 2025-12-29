@@ -256,7 +256,7 @@ ERR_TAG_A = "Atom for tag 'a' must be a list of unsigend 32-bit integers"
 def _iter_a(tag, a):
     try:
         for x in a:
-            yield x & 0xffffffff
+            yield int(x) & 0xffffffff
     except:
         raise TypeError(ERR_TAG_A)
        

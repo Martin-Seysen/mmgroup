@@ -446,7 +446,7 @@ def make_dll_nt_mingw32(cmdline_args):
     """Create a Windows DLL with the mingw compiler"""
     compile_args = ["gcc"]
     compile_args += get_environment("CFLAGS")
-    compile_args = ["-c", "-O3", "-Wall", "-DMS_WIN64"]
+    compile_args += ["-c", "-O3", "-Wall", "-DMS_WIN64"]
     if cmdline_args.static:
          compile_args.append("-mno-stack-arg-probe")
     # Option  "-mno-stack-arg-probe" prevents the linker error
