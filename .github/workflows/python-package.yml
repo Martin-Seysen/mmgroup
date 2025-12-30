@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-14]
+        os: [ubuntu-latest]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
@@ -45,8 +45,46 @@ jobs:
           path: ./wheelhouse/*.whl
           overwrite: true
 
-  build_wheels_macOS:
-    name: Build wheels on ${{ matrix.os }} for arm64
+  build_wheels_macOS_x86_64:
+    name: Build wheels on ${{ matrix.os }} for x86_64
+    runs-on: ${{ matrix.os }}
+    env:
+        CIBW_ARCHS_MACOS: "x86_64"
+        CIBW_SKIP: "pp* *musllinux*"
+        CIBW_BUILD_VERBOSITY: 1
+        ARCHFLAGS: "-arch x86_64 -arch arm64"
+        CIBW_ENVIRONMENT: "CFLAGS='-arch x86_64 -arch arm64' LDFLAGS='-arch x86_64 -arch arm64'"
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-14]
+
+    steps:
+      # A reasonable refernce for the current checkout and python version is:
+      # https://github.com/actions/setup-python
+      - uses: actions/checkout@v4
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+            architecture: x86_64
+     
+      - name: Install cibuildwheel
+        run: python -m pip install --upgrade pip cibuildwheel
+               
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-arm64
+          path: ./wheelhouse/*.whl
+          overwrite: true
+          
+ build_wheels_macOS_arm64:
+    name: Build wheels on ${{ matrix.os }} for x86-64
     runs-on: ${{ matrix.os }}
     env:
         CIBW_ARCHS_MACOS: "arm64"
