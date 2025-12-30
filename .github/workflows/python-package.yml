@@ -14,14 +14,14 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
-        CIBW_ARCHS_MACOS: "x86_64 arm64"
+        CIBW_ARCHS_MACOS: "x86_64"
         CIBW_SKIP: "pp* *musllinux*"
         CIBW_BUILD_VERBOSITY: 1
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macOS-14]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
