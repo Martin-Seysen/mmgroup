@@ -83,7 +83,7 @@ jobs:
           path: ./wheelhouse/*.whl
           overwrite: true
           
- build_wheels_macOS_arm64:
+  build_wheels_macOS_arm64:
     name: Build wheels on ${{ matrix.os }} for x86-64
     runs-on: ${{ matrix.os }}
     env:
