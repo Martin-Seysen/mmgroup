@@ -79,7 +79,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-arm64
+          name: wheels-${{ matrix.os }}-x64
           path: ./wheelhouse/*.whl
           overwrite: true
           
