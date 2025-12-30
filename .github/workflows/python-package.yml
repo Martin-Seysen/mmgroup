@@ -84,7 +84,7 @@ jobs:
           overwrite: true
           
   build_wheels_macOS_arm64:
-    name: Build wheels on ${{ matrix.os }} for x86-64
+    name: Build wheels on ${{ matrix.os }} for arm64
     runs-on: ${{ matrix.os }}
     env:
         CIBW_ARCHS_MACOS: "arm64"
