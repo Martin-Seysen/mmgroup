@@ -46,7 +46,7 @@ jobs:
           overwrite: true
 
   build_wheels_macOS:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} for arm64
     runs-on: ${{ matrix.os }}
     env:
         CIBW_ARCHS_MACOS: "arm64"
@@ -79,7 +79,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.os }}-arm64
           path: ./wheelhouse/*.whl
           overwrite: true
 
