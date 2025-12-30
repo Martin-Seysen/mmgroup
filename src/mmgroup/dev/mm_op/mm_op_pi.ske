@@ -483,7 +483,7 @@ int32_t mm_op%{P}_delta(uint_mmv_t *v_in, uint32_t delta, uint_mmv_t * v_out)
         v_out += MM_OP%{P}_OFS_T;
         for (i = 0; i < 759; ++i) {
             uint_mmv_t sign = mat24_def_octad_to_gcode(i) & delta;
-            mat24_def_parity12(sign);
+            sign = mat24_def_parity12(sign);
             sign = 0 - sign;
             sign &= %{smask:P};
             // %%FOR i in range(%{V64_INTS})

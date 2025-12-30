@@ -117,8 +117,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
 {
     uint64_t x = v;
     x &= (x >> 12);
-    mat24_def_parity12(x);
-    return x;
+    return mat24_def_parity12(x);
 }
 
 /// @endcond 
@@ -207,7 +206,7 @@ static inline uint64_t leech_type_mod2(uint64_t v)
 
 
    Parameter ``invar`` must be an array of length 12. Zero lines
-   are appeded to that array so that its length will be 12.
+   are appended to that array so that its length will be 12.
 
    The function returns the dimension ``k`` of the computed basis,
    and a negative value in case of error. The return value

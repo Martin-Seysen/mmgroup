@@ -271,8 +271,8 @@ uint64_t gen_leech2to3_short(uint64_t v2)
         cocodev = mat24_cocode_syndrome((uint32_t)(v2 ^ theta), 0);    
         if (cocodev & (cocodev - 1)) return 0;
         // Put scalar = scalar product (code, cocode)
-        scalar = (v2 >> 12) &  v2 & 0xfff;
-        mat24_def_parity12(scalar);
+        scalar = (v2 >> 12) &  v2;
+        scalar = mat24_def_parity12(scalar);
         if (scalar & 1) return 0;
         result = (gcodev ^ ((gcodev ^ 0xffffff) << 24))
                & ~(cocodev | (cocodev << 24));
@@ -332,8 +332,8 @@ uint64_t gen_leech2to3_abs(uint64_t v2)
     uint64_t  gcodev, theta, cocodev, w, single, result;
 
     // Put scalar = scalar product (code, cocode)
-    scalar = (uint32_t)((v2 >> 12) &  v2 & 0xfff);
-    mat24_def_parity12(scalar);
+    scalar = (uint32_t)((v2 >> 12) &  v2);
+    scalar = mat24_def_parity12(scalar);
     // use function gen_leech2to3_short is scalar is 0
     if ((scalar & 1) == 0) return gen_leech2to3_short(v2);
 
@@ -463,8 +463,7 @@ uint64_t gen_leech3to2_short(uint64_t v3)
 */
 static inline uint32_t parity12(uint64_t x)
 {
-    mat24_def_parity12(x);
-    return (uint32_t)x;
+    return mat24_def_parity12(x);
 }
 
 
@@ -474,8 +473,7 @@ static inline uint32_t parity12(uint64_t x)
 static inline uint32_t parity24(uint64_t x)
 {
     x ^= x >> 12; 
-    mat24_def_parity12(x);
-    return (uint32_t)x;
+    return mat24_def_parity12(x);
 }
 
 

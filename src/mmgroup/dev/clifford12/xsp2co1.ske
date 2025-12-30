@@ -169,7 +169,7 @@ static inline uint32_t conv_pauli_vector_xspecial(uint32_t x)
     x ^= (t << 12) ^ t;  
     // Compute parity of (x & (x >> 12) & 0x7ff) in t    
     t = x & (x >> 12) & 0x7ff;
-    mat24_def_parity12(t);
+    t = mat24_def_parity12(t);
     // Change sign of x if the parity t is odd
     x ^= t << 24;
     return x;
@@ -1157,7 +1157,7 @@ int32_t set_qs_y(qstate12_type *pqs, uint32_t y)
         d = ONE << i;
         theta_d = MAT24_THETA_TABLE[d & 0x7ff];
         s =  theta_d & y;
-        mat24_def_parity12(s);
+        s = mat24_def_parity12(s);
         assoc = MAT24_THETA_TABLE[(d ^ y) & 0x7ff] ^ theta_d ^ theta_y;
         data[i+1] = d + (s << 12) + ((assoc & 0x7ff) << 13);
     } 

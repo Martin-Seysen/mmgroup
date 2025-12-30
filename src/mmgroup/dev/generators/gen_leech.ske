@@ -51,7 +51,7 @@ extern "C" {
 */
 #define gen_leech2_def_mul(x1, x2, result) \
     result = ((x2) >> 12) & (x1); \
-    mat24_def_parity12(result); \
+    result = mat24_def_parity12(result); \
     result = ((result) << 24) ^ (x1) ^(x2); 
 
 
@@ -93,8 +93,8 @@ uint32_t gen_leech2_pow(uint32_t x1, uint32_t e)
     uint_fast32_t scalar = 0; 
     x1 &= 0x1ffffff;
     if (e & 2) {
-        scalar = (x1 >> 12) &  x1 & 0xfff;
-        mat24_def_parity12(scalar);
+        scalar = (x1 >> 12) &  x1;
+        scalar = mat24_def_parity12(scalar);
         scalar <<= 24;
     }
     return (e & 1) ? x1 ^ scalar : scalar;
@@ -115,8 +115,7 @@ uint32_t gen_leech2_scalprod(uint32_t x1, uint32_t x2)
 {
     uint_fast32_t scalar; 
     scalar = (((x1 >> 12) & x2) ^ ((x2 >> 12) & x1)) & 0xfff; 
-    mat24_def_parity12(scalar);
-    return scalar;
+    return mat24_def_parity12(scalar);
 }
 
 
@@ -154,7 +153,7 @@ uint32_t op_x_d_delta(uint32_t q0, uint32_t d, uint32_t delta)
     uint32_t s;
     delta ^= MAT24_THETA_TABLE[d & 0x7ff];
     s = ((q0 >> 12) & delta) ^ (q0 & d);
-    mat24_def_parity12(s);
+    s = mat24_def_parity12(s);
     return q0 ^ (s << 24);
 }
 
@@ -266,10 +265,10 @@ uint32_t op_y(uint32_t q0, uint32_t d)
     theta_q0 = MAT24_THETA_TABLE[(q0 >> 12) & 0x7ff];
     theta_y = MAT24_THETA_TABLE[d & 0x7ff];
     s =  (theta_q0 & d) ^ (~odd &  q0 & d); 
-    mat24_def_parity12(s);
+    s = mat24_def_parity12(s);
     o = (theta_y & (q0 >> 12)) ^ (q0 & d);
     o ^= (theta_y >> 12) & 1 & odd;
-    mat24_def_parity12(o);
+    o = mat24_def_parity12(o);
     eps = theta_q0 ^ (theta_y & ~odd) 
            ^  MAT24_THETA_TABLE[((q0 >> 12) ^ d) & 0x7ff]; 
     q0 ^= (eps & 0xfff) ^ ((d << 12) & 0x1fff000 & odd);
@@ -589,7 +588,7 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
     theta_y = MAT24_THETA_TABLE[d & 0x7ff];
     o = (theta_y & (q0 >> 12)) ^ (q0 & d);
     o ^= (theta_y >> 12) & 1 & odd;
-    mat24_def_parity12(o);
+    o = mat24_def_parity12(o);
     eps = theta_q0 ^ (theta_y & ~odd) 
            ^  MAT24_THETA_TABLE[((q0 >> 12) ^ d) & 0x7ff]; 
     q0 ^= (eps & 0xfff) ^ ((d << 12) & 0xfff000 & odd);

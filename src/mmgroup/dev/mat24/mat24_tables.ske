@@ -68,18 +68,15 @@
  @def mat24_def_parity12(v1) 
  @brief Parity of vector ``v1`` of 12 bits length.
 
- Generate a sequence of statements that replaces ``v1`` by
- the bit parity of ``v1 & 0xfff``. 
+ Return the bit parity of ``v1 & 0xfff``. 
 */
-#define mat24_def_parity12(v1)   v1 ^= v1 >> 6; \
-   v1 ^= v1 >> 3; \
-   v1 = (0x96 >> (v1 & 7)) & 1;
-
+#define mat24_def_parity12(v1) \
+   ((uint32_t)(((uint64_t)0x6996966996696996ULL >> (((v1) ^ ((v1) >> 6)) & 0x3f)) & 1))
 
 
 /**
   @def mat24_def_octad_to_gcode(o)
-  @brief Eqivalent to ``mat24_def_octad_to_gcode(o)``
+  @brief Eqivalent to ``mat24_octad_to_gcode(o)``
 
   ``mat24_def_octad_to_gcode(o)`` returns the  number 
   of the Golay code word corresponding to octad ``o``. 
@@ -90,7 +87,7 @@
 
 /**
   @def  mat24_def_gcode_to_octad(v)
-  @brief Eqivalent to ``mat24_def_gcode_to_octad(v)``
+  @brief Eqivalent to ``mat24_gcode_to_octad(v)``
 
   ``mat24_def_gcode_to_octad(v)`` returns the  number of the
   octad corresponding to Golay code vector ``v``, with ``v``

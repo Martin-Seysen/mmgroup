@@ -860,8 +860,7 @@ uint8_t mat24_vect_type(uint32_t v1)
 uint32_t mat24_scalar_prod(uint32_t v1, uint32_t c1)
 {
     v1 &= c1;
-    mat24_def_parity12(v1);
-    return v1;
+    return mat24_def_parity12(v1);
 }
 
 
@@ -1169,8 +1168,7 @@ uint32_t mat24_ploop_cocycle(uint32_t v1, uint32_t v2)
 {
     uint_fast32_t s;
     s = MAT24_THETA_TABLE[v1 & 0x7ff] & v2 & 0xfff;
-    mat24_def_parity12(s);
-    return s; 
+    return mat24_def_parity12(s);
 }
 
 /** 
@@ -1232,8 +1230,7 @@ uint32_t mat24_ploop_comm(uint32_t v1, uint32_t v2)
     uint_fast32_t r;
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v2)
       ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v1);
-    mat24_def_parity12(r);
-    return r;      
+    return mat24_def_parity12(r);
 } 
 
 
@@ -1274,8 +1271,7 @@ uint32_t mat24_ploop_assoc(uint32_t v1, uint32_t v2, uint32_t v3)
     r = (MAT24_THETA_TABLE[v1 & 0x7ff] & v3)
       ^ (MAT24_THETA_TABLE[v2 & 0x7ff] & v3)
       ^ (MAT24_THETA_TABLE[(v1 ^ v2) & 0x7ff] & v3);
-    mat24_def_parity12(r);
-    return r;
+    return mat24_def_parity12(r);
 }
 
 

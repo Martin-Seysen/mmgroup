@@ -157,8 +157,8 @@ uint32_t gen_leech2_subtype(uint64_t v2)
     // put syn = syndrome table[cocode word]
     coc = (v2 ^ theta) & 0xfff;
     // Put scalar = scalar product (code, cocode)
-    scalar = (v2 >> 12) &  v2 & 0xfff;
-    mat24_def_parity12(scalar);
+    scalar = (v2 >> 12) &  v2;
+    scalar = mat24_def_parity12(scalar);
 
     syn =  MAT24_SYNDROME_TABLE[coc & 0x7ff];
 
@@ -223,7 +223,7 @@ uint32_t gen_leech2_type(uint64_t v2)
 
     // Return 3 if scalar product <code, cocode> is odd
     scalar = (uint32_t)((v2 >> 12) &  v2);
-    mat24_def_parity12(scalar);
+    scalar = mat24_def_parity12(scalar);
     if (scalar) return 3;
 
     // Deal with odd cocode words
@@ -491,7 +491,7 @@ int32_t gen_leech2_start_type4(uint32_t v)
     }
     // Compute type of v (mod 2) in scalar; return -3 if this is odd
     scalar = (v >> 12) &  v & 0xfff;
-    mat24_def_parity12(scalar);
+    scalar = mat24_def_parity12(scalar);
     if (scalar) return -3;
 
     // Let syn be the syndrome table entry for the cocode part

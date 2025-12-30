@@ -265,8 +265,8 @@ int32_t mm_compress_type4(uint32_t i)
         if (i & 0x800000) j ^= COCODE_01;
         // Compute type of Leech vector j (mod 2) in b
         b = j & (j >> 12);
-        mat24_def_parity12(b); // b = bit_parity(b) = type(j) mod 2
-        j ^= b << 23;          // make type of Leech vector j even
+        b = mat24_def_parity12(b); // b = bit_parity(b) = type(j) mod 2
+        j ^= b << 23;              // make type of Leech vector j even
         i = j;
     }
     return compress_24_23(i);
