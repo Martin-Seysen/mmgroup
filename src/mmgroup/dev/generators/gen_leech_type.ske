@@ -31,15 +31,47 @@ extern "C" {
 // %%GEN c
 
 
-//  %%GEN h
+
+// %%GEN h
+/// @cond DO_NOT_DOCUMENT 
+//  %%GEN c
+
+
+
+/*************************************************************************
+*** Auxiliary functions for computing subtype of vector
+*************************************************************************/
 
 
 // %%GEN h
+#ifdef MMGROUP_GENERATORS_INTERN
+
+/**
+  @brief inline version of function ``gen_leech2_coarse_subtype``
+*/
+static inline uint32_t gen_leech2_coarse_subtype_inline(uint32_t v2)
+{
+    uint32_t scalar = (v2 >> 12) &  v2;
+    scalar = mat24_def_parity12(scalar);    // norm of v2 mod 2
+
+    if (v2 & 0x800) {
+        return scalar ? 8 : 5;
+    } else {
+        uint32_t w = MAT24_THETA_TABLE[(v2 >> 12) & 0x7ff] & 0x1000;
+                     // parity of weight of Golay code part / 4
+        if (w) {
+            return scalar ? 7 : 4;
+        } else {
+            if (v2 & 0x7ff000UL) return scalar ? 6 : 3;
+            else if (v2 & 0x7ff) return 2;
+            else return (v2 & 0x800000) ? 1 : 0;
+        }
+    }
+}
+
+#endif
 
 
-
-
-/// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
 
 
@@ -200,6 +232,34 @@ uint32_t gen_leech2_subtype(uint64_t v2)
             return (0x44444222 >> (8*w)) & 0xff;
     }
 }
+
+
+/*************************************************************************
+***  Fast and coarse version of function gen_leech2_subtype
+*************************************************************************/
+
+/**
+  @brief A fast, but coarser version of function gen_leech2_subtype
+
+  Let t = gen_leech2_subtype(v2). Then this function returns
+
+  0 if t = 0x00\n
+  1 if t = 0x48\n
+  2 if t = 0x20, 0x40\n
+  3 if t = 0x22, 0x42, 0x44\n
+  4 if t = 0x46\n
+  5 if t = 0x21, 0x43\n
+  6 if t = 0x34\n
+  7 if t = 0x36\n
+  8 if t = 0x31, 0x33\n
+*/
+// %%EXPORT px
+uint32_t gen_leech2_coarse_subtype(uint32_t v2)
+{
+    return gen_leech2_coarse_subtype_inline(v2);
+}
+
+
 
 
 

@@ -29,6 +29,7 @@ import pytest
 from mmgroup import Xsp2_Co1, PLoop, AutPL, Cocode, MM0, MM, XLeech2
 from mmgroup.generators import gen_leech2_type
 from mmgroup.generators import gen_leech2_subtype
+from mmgroup.generators import gen_leech2_coarse_subtype
 from mmgroup.generators import gen_leech2_type2
 from mmgroup.generators import gen_leech2_count_type2
 from mmgroup.generators import gen_leech2_op_word
@@ -81,6 +82,28 @@ TYPE_DATA = [
     (OCTAD, [8,9], 0x44),
     (DODECAD, [0,1], 0x46),
 ]
+
+
+COARSE_TYPE_DATA = {
+    0 : [0x00],
+    1 : [0x48],
+    2 : [0x20, 0x40],
+    3 : [0x22, 0x42, 0x44],
+    4 : [0x46],
+    5 : [0x21, 0x43],
+    6 : [0x34],
+    7 : [0x36],
+    8 : [0x31, 0x33],
+}
+
+def make_coarse_type_dict():
+    d = {}
+    for c, lst in COARSE_TYPE_DATA.items():
+        for t in lst:
+            d[t] = c
+    return d
+
+COARSE_TYPE_DICT = make_coarse_type_dict()
 
 
 def rand_n_elem():
@@ -172,6 +195,8 @@ def check_leech2_subtype(x, t_expected):
     if not is_type2:
        assert not  found_type2 
     assert gen_leech2_type(x) == t >> 4
+    ct = gen_leech2_coarse_subtype(x)
+    assert ct ==  COARSE_TYPE_DICT[t], (ct, t)
   
 
 @pytest.mark.gen_xi
