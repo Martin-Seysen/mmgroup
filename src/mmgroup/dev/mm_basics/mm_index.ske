@@ -276,7 +276,7 @@ uint32_t mm_aux_index_sparse_to_leech2(uint32_t i)
 /**
   @brief Convert short vector in the Leech lattice mod 2 to sparse rep
 
-  The function converts an value ``v2`` representing a vector in
+  The function converts a value ``v2`` representing a vector in
   the Leech lattice mod 2 to a sparse index and returns that sparse
   index. It returns 0 if ``v2`` is not a short Leech lattice vector.
 */
@@ -333,6 +333,69 @@ uint32_t mm_aux_index_leech2_to_sparse(uint32_t v2)
     if (res == 0xffffffff) return 0;
     return 0x8000000 + (res << 8);
 }
+
+
+
+/**
+  @brief Convert short vector in the Leech lattice mod 2 to internal rep
+
+  The function converts a value ``v2`` representing a vector in the
+  Leech lattice mod 2 to an index in internal representation and
+  returns that index. It returns garbage if ``v2`` is not a short
+  Leech lattice vector.
+
+  If ``v`` is a vector of type ``uint_mmv_t``, and ``v2`` is
+  not a short Leech lattice vector, then the
+  value ``mm_aux_get_mmv(v, mm_aux_index_leech2_to_intern_fast(v2))``
+  is invalid, but reading that value does not cause buffer overflow.
+*/
+// %%EXPORT px
+uint32_t mm_aux_index_leech2_to_intern_fast(uint32_t v2)
+{
+    uint_fast32_t gc, theta, syn, res, oct, j, c, sub;
+    gc = (v2 >> 12) & 0x7ff;
+
+    // We proceed as in function ``mm_aux_index_leech2_to_sparse``,
+    // dropping some of the checks.
+
+    // Deal with odd cocode words
+    if (v2 & 0x800) {   // Deal with odd cocode words
+         theta = MAT24_THETA_TABLE[gc];
+         // Let syn be the syndrome table entry for the cocode part
+         syn = MAT24_SYNDROME_TABLE[(theta ^ v2) & 0x7ff];
+         return MM_AUX_OFS_X + (gc << 5) + (syn & 0x1f);
+    }
+    // Deal with Golay code word 0
+    if (gc == 0) {
+         // Compute cocode entries of v2
+         syn = MAT24_SYNDROME_TABLE[(v2 ^ MAT24_RECIP_BASIS[23]) & 0x7ff];
+         syn &= 0x3ff;
+         // Bits 9..5 and bits 4..0 contain high and low cocode bit index.
+         // Change a high cocode bit index 24 to 23.
+         syn -= ((syn + 0x100) & 0x400) >> 5;
+         // Return sparse vector with tag B if bit 23 of v2 is 0
+         // and with tag C otherwise.
+         res = v2 & 0x800000 ? MM_AUX_OFS_C : MM_AUX_OFS_B;
+         return res + (syn & 0x3ff);
+    }
+
+    // Deal with octads (and suboctads)
+    oct = MAT24_OCT_ENC_TABLE[gc] >> 1;
+    if (oct >= 759) return 0;             // Error detected!
+    const uint8_t *p_oct = MAT24_OCTAD_ELEMENT_TABLE + (oct << 3);
+    theta = MAT24_THETA_TABLE[gc];
+    j =  p_oct[7];
+    c = MAT24_SYNDROME_TABLE[(theta ^ v2 ^ MAT24_RECIP_BASIS[j]) & 0x7ff];
+    syn = mat24_def_syndrome_from_table(c);
+    sub = (syn >> j) & 1 ? 0 : 0x3f;
+  // %%FOR* i in range(6)
+    sub ^= ((syn >> p_oct[%{int:i+1}]) & 1UL) << %{i};
+  // %%END FOR
+    return MM_AUX_OFS_T + (oct << 6) + sub;
+}
+
+
+
 
 
 
@@ -484,7 +547,7 @@ uint32_t mm_aux_index_intern_to_leech2(uint32_t i)
 // Convert internal index i to sparse index.
 // Return 0 if index i is bad
 {
-    uint32_t t, i0, i1, tmp, v;
+    uint32_t t, i0, i1, v;
 
     if (i <  MM_AUX_OFS_T) {
         // Tags B, C
