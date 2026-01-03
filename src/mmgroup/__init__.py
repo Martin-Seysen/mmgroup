@@ -126,3 +126,10 @@ except:
     _warn(w)
 
 
+try:
+    from mmgroup.generators import gen_rng_seed_init
+    gen_rng_seed_init()
+except:
+    w =  "The random generator of this package is not functional!"
+    _warn(w)
+

@@ -292,7 +292,6 @@ def map_xi_intern(x, e):
 
 
 
-@pytest.mark.mmm
 @pytest.mark.mm_op
 def test_demo_xi_monomimal():
     load_tables()
