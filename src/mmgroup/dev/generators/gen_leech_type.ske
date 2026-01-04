@@ -279,7 +279,7 @@ uint32_t gen_leech2_coarse_subtype(uint32_t v2)
 // %%EXPORT px
 uint32_t gen_leech2_type(uint64_t v2)
 {
-    uint_fast32_t theta, syn, scalar, w, coc, octad;
+    uint_fast32_t theta, syn, scalar, w, coc, cw, octad, lsb, ccv;
 
     // Return 3 if scalar product <code, cocode> is odd
     scalar = (uint32_t)((v2 >> 12) &  v2);
@@ -321,13 +321,23 @@ uint32_t gen_leech2_type(uint64_t v2)
     // Put w = 1 if v2 is an octad and w = 0 otherwise.
     w = ((theta >> 13) ^ (v2 >> 23)) & 1;
     // XOR v2 with Omega if it has weight 16
-    v2 ^= (1 - w) << 23;
     // Let coc be the cocode part of v2 (this is even)
     coc = (v2 ^ theta) & 0x7ff;
-    // Compute subtype with function suboctad_type() 
-    // return 0 if result of that function 0 and 1 otherwise
+    // Put cw = 1 if coc has weight 2 and cw = 0 otherwise
+    cw = MAT24_SYNDROME_TABLE[coc & 0x7ff] >> 15;
+    if (cw == w) return 4;
+    // Here v2 corresponds to a (possibly complemented) octad.
+    // Let ``octad`` be that non-complemented octad in vector rep.
+    v2 ^= (1 - w) << 23;
     octad = mat24_def_gcode_to_vect(v2 >> 12); 
-    return suboctad_type(octad, w, coc) ? 4 : 2;
+    // Put ccw = cocode word of v (in vector rep), such that
+    // the cocode word is a suboctad of the octad if possible.
+    lsb = mat24_def_lsbit24(octad);
+    coc ^= MAT24_RECIP_BASIS[lsb];
+    syn = MAT24_SYNDROME_TABLE[coc & 0x7ff];
+    ccv = mat24_def_syndrome_from_table(syn) ^ (1UL << lsb);
+    // Type is 2 if ccv is a subset of octad and 4 otherwise.
+    return ((octad & ccv) ^ ccv) ? 4 : 2;
 }
 
 /*************************************************************************
