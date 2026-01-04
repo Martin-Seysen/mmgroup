@@ -284,7 +284,7 @@ def map_xi_intern(x, e):
     assert x1 == mm_aux_index_intern_to_leech2(x)
     x2 = mm_aux_index_leech2_to_intern_fast(x1)
     assert x == x2, (hex(x), hex(x1), hex(x2))
-    print(hex(x), hex(x1))
+    # print(hex(x), hex(x1))
     y = gen_xi_op_xi(x1 & 0xffffff, e)
     sign = (-1) ** (y >> 24)
     y = mm_aux_index_sparse_to_intern(mm_aux_index_leech2_to_sparse(y))
