@@ -620,7 +620,9 @@ Version history
      - 2025-10-27
      - Some support for the Griess algebra added 
 
-
+   * - 1.0.7
+     - 2026-01-05
+     - Experimental support for macOS on Apple silicon
 
 
 .. only:: html
