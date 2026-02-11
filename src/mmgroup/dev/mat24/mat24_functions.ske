@@ -2521,7 +2521,7 @@ void mat24_perm_to_autpl(uint32_t c1, uint8_t *p1, uint32_t *m_out)
   elements only.
   
   The resulting automorphism is stored in ``m_out`` in the same 
-  way as in function mat24_cocode_to_autpl().
+  way as in function mat24_perm_to_autpl().
     
   If ``p0`` is an array representing the neutral element of the
   group ``Mat24`` then ``mat24_cocode_to_autpl(cl, m_out)`` is 

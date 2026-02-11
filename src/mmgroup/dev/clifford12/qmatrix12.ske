@@ -1045,10 +1045,10 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
   @brief Perform a special reduction on a quadratic state matrix
   
   This function performs a special reduction on the quadratic state
-  matrix ``qs`` referred by ``pqs``, as described in the
-  **API reference**, section **Reducing a quadratic state matrix**.
+  matrix ``qs`` referred by ``pqs``, as described in
+  the **API reference**, section **Reducing a quadratic state matrix**.
   
-  This kind of reduction is differnt from the reduction in function
+  This kind of reduction is different from the reduction in function
   qstate12_reduce(). It is used internally for computing traces and
   norms of matrices. It is also used in function
   qstate12_pauli_conjugate().

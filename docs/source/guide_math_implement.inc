@@ -33,7 +33,7 @@ on the Golay code satisfying
 for any :math:`(d, \lambda) \in  \mathcal{P}`. So the image
 :math:`(d, \lambda) \cdot \pi` can be computed if :math:`q_\pi(d)`
 can be computed. A functional value of :math:`q_\pi(d)` can easily be 
-computed from the associated bilinear from :math:`\theta_\pi`` if 
+computed from the associated bilinear from :math:`\theta_\pi` if 
 the values :math:`q_\pi(b_i)` are known for all basis vectors 
 :math:`b_i`. The values :math:`q_\pi(b_i)` can be computed 
 from the sign bits of the images if the basis vectors.

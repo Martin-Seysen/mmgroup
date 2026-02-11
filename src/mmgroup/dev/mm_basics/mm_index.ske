@@ -1,7 +1,7 @@
 /** @file mm_index.c
 
  File ``mm_index.c`` provides the basic functions for converting 
- an index of a vector of the 196884-diemnsional representation
+ an index of a vector of the 196884-dimensional representation
  of the monster between internal, external, and sparse notation.
 
 
