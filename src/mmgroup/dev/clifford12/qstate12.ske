@@ -890,14 +890,14 @@ int32_t qstate12_xch_bits(qstate12_type *pqs, uint32_t sh, uint64_t mask)
 
 
 /*************************************************************************
-*** Pivoting and reducing a state
+*** Pivoting state
 *************************************************************************/
 
 
 
 
 /**
-  @brief Auxiliary function for function qstate12_reduce().
+  @brief Pivot rows of a state matrix.
   
   Let ``M`` be the bit matrix stored in  ``pqs->data``. The pivoting
   process is controlled by the bit vector ``v``. If ``k < i`` and
@@ -947,6 +947,48 @@ void qstate12_pivot(qstate12_type *pqs, uint32_t i, uint64_t v)
         m[0] ^= m[i];
     }
 }
+
+
+
+/**
+  @brief Rotate some rows of a state matrix down by one step
+
+  Let ``M`` be the bit matrix stored in  ``pqs->data``. We move
+  row ``i`` of the bit matrix ``M`` to row ``i + 1``
+  for ``fst <= i < last``; and we move row ``last`` to row ``fst``.
+  The columns of the  part ``Q`` of ``M``are also
+  adjusted. ``1 <= fst <= last < pqs->nrows`` must hold. This
+  rotation does not change the state. 
+
+  For internal use only. Input conditions are not checked.
+*/
+// %%EXPORT p
+void qstate12_pivot_rot_rows(qstate12_type *pqs, uint32_t fst, uint32_t last)
+{
+    uint64_t *m = pqs->data, tmp, MASK_SHL, MASK_SHR, MASK_KEEP;
+    uint32_t i;
+    if (fst >= last || fst == 0 || last >= pqs->nrows) return;
+    pqs->reduced = 0;
+    tmp = m[last];
+    for (i = last; i > fst; --i) m[i] = m[i-1];
+    m[fst] = tmp;
+    tmp = ONE << pqs->ncols;
+    MASK_SHL = (tmp << last) - (tmp << fst);
+    MASK_SHR = (tmp << last);
+    MASK_KEEP=  ~(MASK_SHL | MASK_SHR);
+    for (i = 0; i < pqs->nrows; ++i) {
+        tmp = m[i];
+        m[i] = (tmp & MASK_KEEP) | ((tmp & MASK_SHL) << 1) 
+             | ((tmp & MASK_SHR) >> (last - fst)); 
+    }
+}
+
+
+
+
+/*************************************************************************
+*** Reducing a state
+*************************************************************************/
 
 
 
@@ -1232,9 +1274,50 @@ int32_t qstate12_row_table(qstate12_type *pqs, uint8_t *row_table)
 }
 
 
+/*************************************************************************
+*** Joining diagonal entries quadratic form in a state
+*************************************************************************/
+
+/**
+  @brief Join diagonal nonzero entries quadratic form in a state
+
+  Nonzero diagonal entries in the quadratic form ``Q`` of a state
+  indicate that there are entries in the state with an imaginary
+  ratio. If there are several nonzero diagonal entries in ``Q``
+  then this situation my be difficult to handle in some cases.
+
+  After calling this function, matrix ``Q`` will have at most one
+  nonzero diagonal entry in row 1. The function returns 1 if ``Q``
+  has a nonzero diagonal entry in that row and 0 otherwise.
+ 
+  If the function returns 1 then the state may not be reduced.
+  If it returns 0 then the state is reduced.
+*/
+// %%EXPORT p
+int32_t qstate12_join_imaginary(qstate12_type *pqs)
+{
+    int32_t status = qstate12_reduce(pqs), i, row = 0;
+    if (status < 0) return status;
+    uint64_t  *m = pqs->data, M = ONE << pqs->ncols, v = 0;
+    for (i = pqs->nrows - 1; i > 0; --i) {
+        if (m[i] & (M << i)) {
+            row = i;
+            goto process_imaginary;
+        }
+    }
+    return 0;
+  process_imaginary:
+    --i;
+    for ( ; i > 0; --i) v |= (m[i] & (M << i));
+    v >>= pqs->ncols;
+    qstate12_pivot(pqs, row, v);
+    qstate12_pivot_rot_rows(pqs, 1, row);
+    return 1;
+}
+
 
 /*************************************************************************
-*** Checking equality of two states state
+*** Checking equality of two states
 *************************************************************************/
 
 /** 

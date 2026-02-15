@@ -410,7 +410,7 @@ class QStateMatrix(QState12):
         super(QStateMatrix, m).extend_zero(j, nqb) 
         return m   
 
-    def extend(self, j,nqb, copy = True):    
+    def extend(self, j, nqb, copy = True):
         r"""Insert ``nqb`` qubits at position ``j``. . 
               
         Let ``qs`` be the state of shape ``(n0+n1)``, and let 
@@ -475,7 +475,7 @@ class QStateMatrix(QState12):
         super(QStateMatrix, m).restrict(j, nqb) 
         return m   
 
-    def sumup(self, j,nqb, copy = True):    
+    def sumup(self, j, nqb, copy = True):
         r"""Sum up ``nqb`` qubits  starting at position ``j``. 
         
         Let ``qs`` be the state of shape ``(n0+n1)``, and let 

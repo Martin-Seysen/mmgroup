@@ -40,9 +40,186 @@ extern "C" {
 
 
 // %%GEN h
+
+#define QSTATE_SUPPORT_MAXCOLS 30
+
+
+/**
+  @brief Structure ``qstate12_support_type`` for reading data a state
+
+  More details are yet to be documented.
+*/
+typedef struct {
+   uint32_t size;        ///< Total size of state; a power of 2
+   uint32_t weight;      ///< No of nonzero entries of of matrix; 0 or a power of 2
+   int32_t factor;       ///< Scalar factor, encoded as in the structure ``qstate12``
+   uint32_t factor_new;  ///< 1 if factor has changed, 0 otherwise
+   uint32_t batchlength; ///< Size of a batch; 0 or a power of 2
+   uint32_t n_batches;   ///< Total number of batches
+   uint32_t indices[64]; ///< Indices contained in the current batch
+   uint8_t signs[64];    ///< Signs of entries of the current batch
+   // Internal data
+   uint32_t lb_batchlength; ///< binary logarithm of member batchlength
+   qstate12_type qs;     ///< Copy of state to be processed
+   uint64_t buf[QSTATE_SUPPORT_MAXCOLS + 1];  ///< Buffer for member pqs
+   uint64_t qf;          ///< Current value of high part of quadratic form
+   uint64_t assoc;       ///< Current value of linear part for quadratic form
+   uint32_t i;           ///< Current (high) index of iterator
+   uint32_t c_weight;    ///< Value of i where to switch imaginary part
+} qstate12_support_type;
+
 /// @cond DO_NOT_DOCUMENT 
+
+
 // %%GEN c
 
+
+
+
+/*************************************************************************
+***  Iterating through the support of a state
+*************************************************************************/
+
+
+
+
+
+/**
+  @brief Initialize structure ``qstate12_support_type`` for reading a state
+
+  The function initializes a stucture of type ``qstate12_support_type``
+  from a state of type ``pqs``. Then the nonzero matrix entries of
+  that state may be obtained by subsequent calls to 
+  function ``qstate12_support_next``.
+*/
+// %%EXPORT p
+int32_t qstate12_support_init(qstate12_type *pqs,  qstate12_support_type *psup)
+{
+    int32_t status;
+    if ((status = qstate12_reduce(pqs)) < 0) return status;
+    if (psup == NULL) return ERR_QSTATE12_PARAM;
+    if (pqs->ncols > QSTATE_SUPPORT_MAXCOLS
+       || pqs->nrows > (QSTATE_SUPPORT_MAXCOLS + 1)) return ERR_QSTATE12_TOOLARGE;
+    status = qstate12_copy_alloc(pqs, &(psup->qs), psup->buf,
+        QSTATE_SUPPORT_MAXCOLS + 1);
+    if (status < 0) return status;
+    pqs = &(psup->qs);
+
+    psup->size = 1UL << pqs->ncols;
+    psup->i = 0;
+    if (pqs->nrows == 0) {
+        psup->c_weight = psup->weight = 0;
+        psup->factor = 0x0;
+        psup->batchlength = 0;
+        psup-> n_batches = 1;
+        return 0;
+    }
+    psup->c_weight = psup->weight = 1UL << (pqs->nrows - 1);
+    psup->lb_batchlength = (pqs->nrows < 7) ? (pqs->nrows - 1) : 6;
+    status = qstate12_join_imaginary(pqs);
+    if (status < 0) return status;
+    if (status > 0 ) {
+        if (psup->lb_batchlength == (pqs->nrows - 1))
+           --psup->lb_batchlength;
+        psup->c_weight >>= 1;
+    }
+    psup->batchlength = 1UL << psup->lb_batchlength;
+    psup->n_batches = 1UL << (pqs->nrows - 1 - psup->lb_batchlength);
+    psup->factor = pqs->factor;
+    psup->assoc = pqs->data[0];
+    psup->qf = 0;
+    if (psup->factor & 4) {
+        psup->factor ^= 4;
+        psup->qf ^=  1;
+    }
+    return 0;
+}
+
+
+
+
+
+/// @cond DO_NOT_DOCUMENT
+
+
+// qstate12_lsbtab[i] is the position of least significant bit of i | 0x40
+const uint8_t qstate12_lsbtab[64] = {
+    6,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0,
+    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0,
+    5,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0,
+    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0
+};
+
+/// @endcond
+
+
+
+/**
+  @brief Read nonzero entries of a state in batches
+
+  We assume that a structure of type ``qstate12_support_type`` has been
+  initialized from a state by function ``qstate12_support_init``.  Then
+  batches of nonzero values of that state are obtained by repeated
+  calls to this function.
+
+  Each call to this function returns a batch of pairs ``(index, value)``
+  of length ``psup->batchlength``. Altogether there
+  are ``psup->n_batches`` of these batches. Indices are given as
+  integer indices of a column vector, ignoring the shape of the state
+  matrix. The i-th index if a batch is contained in ``psup->indices[i]``.
+
+  The value of the i-th index is obtained as
+
+  ``factor *  (-1) ** psup->signs[i]`` .
+
+  Here the factor is encoded in ``psup->sfactor`` as described in
+  the C function ``qstate12_factor_to_complex``. That factor
+  must be (re-)calculated if ``psup->factor_new`` is nonzero;
+  otherwise the factor from the previous batch can be capt.
+*/
+// %%EXPORT p
+int32_t qstate12_support_next(qstate12_support_type *psup)
+{
+    qstate12_type *pqs = &(psup->qs);
+    psup->factor_new = 0;
+    if ((psup->i & ~psup->c_weight) == 0) {
+        psup->factor_new = 1;
+        if (psup->i == psup->weight || psup->batchlength == 0) {
+            psup->batchlength = 0;
+            return 0;
+        }
+        if (psup->i == psup->c_weight)
+            psup->factor = (psup->factor + 2) & (~8);
+    }
+    uint64_t *m_end = pqs->data + pqs->nrows - 1;
+    uint64_t mask = (ONE << pqs->ncols) - 1;
+    uint64_t nrc = pqs->ncols + pqs->nrows - 1;
+    uint64_t assoc = psup->assoc;
+    uint64_t qf = psup->qf;
+    uint64_t d, d1;
+    uint64_t i = 0;
+    while (1) {
+        psup->indices[i] = (uint32_t)(assoc & mask);
+        psup->signs[i] = (uint8_t)(qf & 1);
+        if (++i == psup->batchlength) break;
+        d = qstate12_lsbtab[i];
+        qf += assoc >> (nrc - d);
+        assoc ^= m_end[0-d];
+    }
+    psup->i += psup->batchlength;
+    d = psup->lb_batchlength;
+    i = psup->i >> d;
+    while (1) {
+        d1 = qstate12_lsbtab[i & 63];
+        d += d1;
+        if (d1 < 6) break;
+        i >>= d1;
+        if (i == 0) return -1;
+    };
+    psup->qf = qf + (assoc >> (nrc - d));
+    psup->assoc = assoc ^= m_end[0-d];
+    return psup->batchlength;
+}
 
 
 
@@ -85,15 +262,6 @@ static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
 {
      return (qf_all & 1 && res < 4) ? 4 : res;
 }
-
-
-// qstate12_lsbtab[i] is the position of least significant bit of i | 0x40
-const uint8_t qstate12_lsbtab[64] = {
-    6,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    5,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0, 
-    4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0 
-};
 
 
 /// @endcond

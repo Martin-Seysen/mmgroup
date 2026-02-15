@@ -800,6 +800,7 @@ uint32_t mat24_intersect_octad_tetrad(uint32_t v1, uint32_t v2)
 // %%EXPORT p
 uint8_t mat24_vect_type(uint32_t v1)
 {
+/// @cond DO_NOT_DOCUMENT 
     #define VT(weight, type_) (uint8_t)(((type_) << 5) + (weight))
     uint32_t w = mat24_bw24(v1), w1, w_syn, syn, i;
     if (w == 12) {
@@ -837,6 +838,7 @@ uint8_t mat24_vect_type(uint32_t v1)
     return 255;
     #undef A_BAD
     #undef VT
+/// @endcond 
 }
 
 

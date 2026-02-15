@@ -8,7 +8,7 @@ from __future__ import  unicode_literals
 
 from collections.abc import Iterable
 from numbers import Integral, Complex
-import math, cmath, time
+import builtins, math, cmath, time
 
 import numpy as np
 from libc.stdint cimport uint64_t, uint32_t, int32_t, uint8_t, int8_t
@@ -77,6 +77,79 @@ cpdef int32_t chk_qstate12(int32_t code) except -1:
     if code >= 0:
         return code
     raise ValueError(error_string(code))
+
+####################################################################
+# Convert entry to a number
+####################################################################
+
+
+cdef uint32_t _PMAX = 257
+
+cdef int32_t _root_mod_p(uint32_t a, uint32_t p):
+    if p > _PMAX:
+        return -1
+    cdef uint32_t i
+    for i in range((p >> 1) + 1):
+        if (i * i) % p == a:
+            return i
+    return -1
+
+_ROOTS_MOD_P = {}
+
+cdef _roots_mod_p(uint32_t p):
+     global _ROOTS_MOD_P
+     cdef int32_t u4, u8, r2, badmask
+     if p not in _ROOTS_MOD_P:
+         u4 = _root_mod_p(p-1, p)
+         u8 = _root_mod_p(u4, p)
+         r2 = _root_mod_p(2, p)
+         badmask = 16 * (r2 < 0) + 2 *(u4 < 0) + (u8 < 0)
+         _ROOTS_MOD_P[p] = u4, u8, r2, badmask
+     return _ROOTS_MOD_P[p]
+
+cdef int32_t _conv_entry_mod_p(int32_t factor, uint32_t p):
+    if factor & 8:
+        return 0
+    res = pow(2, factor >> 5, p)
+    if factor & 4:
+        res = -res % p
+    if factor & 0x13 == 0:
+        return res
+    cdef uint32_t u4, u8, r2, badmask
+    u4, u8, r2, badmask = _roots_mod_p(p)
+    if (factor & badmask):
+        ERR = "Root of unity or square root of 2 not found"
+        raise ValueError(ERR)
+    for mask, value in [(16, r2), (2, u4), (1, u8)]:
+        if factor & mask:
+            res *= value
+    return res   
+
+cdef conv_entry(int32_t factor, mod=builtins.complex):
+    a = np.zeros(2, dtype = np.float64)
+    cdef double[:] a_view = a
+    cdef int32_t ftype = chk_qstate12(
+        cl.qstate12_factor_to_complex(factor, &a_view[0]))
+    cdef int32_t value
+    if mod == builtins.complex:
+        return builtins.complex(a[0], a[1])
+    elif mod == builtins.float:
+        if ftype > 3:
+            ERR = "QStateMatrix is not a real matrix"
+            raise ValueError(ERR)
+        return builtins.float(a[0])
+    elif mod == int:
+        ftype = chk_qstate12(
+            cl.qstate12_factor_to_int32(factor, &value))
+        return value
+    elif isinstance(mod, int):
+        if (mod <= 0 or (mod & 1) == 0):
+            ERR = "Modulus for QStateMatrix must be positive and odd"
+            raise ValueError(ERR)
+        return _conv_entry_mod_p(factor, mod)
+    else:
+        ERR = "Cannot convert QStateMatrix entry to %s object"
+        raise TypeError(ERR % type(mod))
 
 
 ####################################################################
@@ -411,7 +484,41 @@ cdef class QState12(object):
         cdef uint32_t j
         return [ row_table[j] for j in range(i) ]
 
- 
+    def iter_support(self, dtype = builtins.complex):
+        """Iterate through the support of the state
+
+        The function iterates through the support of the state (i.e.
+        through the set of its nonzero entries). It yields pairs
+        ``(index, value)``, where ``index`` is the index and ``value``
+        is the value of a nonzero entry. The index of an entry of a
+        state ``a`` is given as:
+
+        2 ** a.shape[1] * row_index  + column_index ,
+
+        as usual. The value is given as an instance of class ``dtype``,
+        where ``dtype`` may be complex (default), float,  or int.
+
+        If ``dtype`` is an odd integer ``1 < p <= 257`` then the value
+        is reduced modulo ``p``.  Here we try to calculate fractions,
+        square roots, and roots of unity mod ``p``, if possible.
+        """
+        cdef qstate12_support_type supp
+        cdef int32_t status
+        status = cl.qstate12_support_init(&self.qs,  &supp)
+        assert status >= 0, ("support_init", status)
+        x = [None, None]
+        for _ in range(supp.n_batches):
+            status = cl.qstate12_support_next(&supp)
+            assert status >= 0, ("support_next", status)
+            if supp.batchlength <= 0:
+                return
+            if supp.factor_new:
+                x[0] = conv_entry(supp.factor, dtype)
+                x[1] = -x[0]
+                if isinstance(dtype, int):
+                    x[1] %= dtype
+            for i in range(supp.batchlength):
+                yield supp.indices[i], x[supp.signs[i]]
                 
 
     #########################################################################
@@ -505,6 +612,28 @@ cdef class QState12(object):
         a = np.empty(1 << self.ncols, dtype = np.int32)
         cdef int32_t[:] a_view = a
         chk_qstate12(cl.qstate12_int32(&self.qs, &a_view[0]))
+        return a.reshape((1 << n0, 1 << n1))
+
+    def matrix(self, dtype = builtins.complex):
+        """Convert the state to a matrix
+
+        The matrix is returned as a two-dimensional numpy array.
+        Parameter ``dtype`` determines the type of the matrix, which
+        may be ``complex`` (default), ``float``, or ``int``.
+
+        If ``dtype`` is an odd integer ``1 < p <= 257`` then the matrix
+        is reduced modulo ``p``.  Here we try to calculate fractions,
+        square roots, and roots of unity mod ``p``, if possible.
+
+        Integer matrices are returned as numpy arrays of
+        dtype ``np.int32``.
+        """
+        dt = dtype if dtype in [float, complex] else np.int32
+        cdef uint32_t n0, n1
+        n0, n1 = self.shape
+        a = np.zeros(1 << self.ncols, dtype = dt)
+        for index, value in self.iter_support(dtype):
+            a[index] = value
         return a.reshape((1 << n0, 1 << n1))
 
     #########################################################################
@@ -796,6 +925,24 @@ cdef class QState12(object):
         """
         return chk_qstate12(
             cl.qstate12_to_symplectic_row(&self.qs, row))
+
+
+    #########################################################################
+    # Some internal checks functions
+
+    def check_join_imaginary(self, output = False):
+        clone = self.copy()
+        cdef p_qstate12_type pqs = pqs12(clone)
+        cl.qstate12_join_imaginary(pqs)
+        result = clone.copy() if output else None
+        a = clone.raw_data
+        cdef uint32_t i, nrows = clone.nrows, ncols = clone.ncols
+        for i in range(2, nrows):
+            assert ((a[i] >> (ncols + i)) & 1) == 0
+        assert self == clone
+        del a
+        del clone
+        return result 
 
 
 ####################################################################

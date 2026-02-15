@@ -36,7 +36,7 @@
 
  A vector modulo ``p`` is organized in rows of 32 entries. In many rows
  only 24 of the 32 bits are used; but in some all 32 bit are used. 
- Dtails are given in the *API reference* of the project. 
+ Details are given in the *API reference* of the project. 
 */
 
 

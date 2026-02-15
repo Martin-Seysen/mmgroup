@@ -84,7 +84,7 @@ def slow_complex(m):
     The function returns a complex ``numpy`` array of appropriate
     shape containing the matrix represented by the input ``m``.
     
-    This is a pathon implementation for testing the fast
+    This is a python implementation for testing the fast
     method ``m.complex()``    
     """
     # Compute the complex scalar factor ``f``  from ``m.factor``.
@@ -211,14 +211,16 @@ def check_complex(m):
     """Check conversion of ``QStateMatrix`` to complex matrix
     
     It test the methods for conversion of a matrix to a 
-    complex matrix 8with and without previous reduction) against
+    complex matrix (with and without previous reduction) against
     the python function ````QStateMatrix()``.    
     """
     c0 = slow_complex(m)
     c1 = m.copy().complex()
     err = "Complex matrix from unreduced state"
     compare_complex(c0, c1, err, m)
-
+    c2 = m.matrix(complex)
+    err = "Complex matrix new(!) method"
+    compare_complex(c0, c2, err, m)
 
 #####################################################################
 # Create radnom indices
@@ -277,6 +279,7 @@ def create_display_testvectors():
                 
 
 
+#@pytest.mark.mmm
 @pytest.mark.qstate
 def test_qs_matrix(verbose = 0):
     """Basic test for class ``QStateMatrix`` 
