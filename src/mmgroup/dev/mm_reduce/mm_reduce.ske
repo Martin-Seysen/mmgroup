@@ -1522,14 +1522,9 @@ int32_t mm_reduce_vector_incomplete(uint32_t *r)
         return res;
     }
 
-
     res = -((int)(r[1]));
     if (r[0] == MM_REDUCE_MARK_ERROR && res < 0) return res;
     return -0x20000;
-
-
-
-
 }
 
 
@@ -1635,7 +1630,6 @@ static inline int32_t reduction_strategy(uint32_t *a,  uint32_t n)
     1 = A partially reduced expression is in buffer ``p_work->buf``
 
     2 = No (partial) reduction has been done
-
 */
 static inline
 int32_t prereduce(uint32_t *a,  uint32_t n, t_work *p_work)

@@ -629,11 +629,29 @@ cdef class QState12(object):
         dtype ``np.int32``.
         """
         dt = dtype if dtype in [float, complex] else np.int32
+        a = np.zeros(1 << self.ncols, dtype = dt)
+        x = np.zeros(2, dtype = dt)
+        cdef qstate12_support_type supp
+        chk_qstate12(cl.qstate12_support_init(&self.qs,  &supp))
+        cdef uint32_t n_batches = supp.n_batches
+        cdef uint32_t batchlength = supp.batchlength
+        cdef uint32_t [:] indices = supp.indices
+        cdef uint8_t [:] signs = supp.signs
+        cdef uint32_t j, i
+        for j in range(n_batches):
+            chk_qstate12(cl.qstate12_support_next(&supp))
+            if supp.factor_new:
+                x[0] = conv_entry(supp.factor, dtype)
+                x[1] = -x[0]
+                if isinstance(dtype, int):
+                    x[1] %= dtype
+            #for i in range(batchlength):
+            #   a[indices[i]] = x[signs[i]]
+            ## This is (hopefully) faster:
+            a[indices[:batchlength]] = x[signs[:batchlength]]
+
         cdef uint32_t n0, n1
         n0, n1 = self.shape
-        a = np.zeros(1 << self.ncols, dtype = dt)
-        for index, value in self.iter_support(dtype):
-            a[index] = value
         return a.reshape((1 << n0, 1 << n1))
 
     #########################################################################
