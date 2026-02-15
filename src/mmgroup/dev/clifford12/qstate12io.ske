@@ -4,10 +4,10 @@
 
 
 /** @file qstate12io.c
+
   File ``qstate12io.c`` contains  functions for converting quadratic
   state matrices as described in the *API reference* in 
   section **Computation in the Clifford group** to complex numbers.
-
 
   The function in this module are coded according the conventions
   in  module  ``qstate12.c``.
@@ -170,12 +170,16 @@ const uint8_t qstate12_lsbtab[64] = {
 
   The value of the i-th index is obtained as
 
-  ``factor *  (-1) ** psup->signs[i]`` .
+  ``psup->factor *  (-1) ** psup->signs[i]`` .
 
   Here the factor is encoded in ``psup->sfactor`` as described in
   the C function ``qstate12_factor_to_complex``. That factor
   must be (re-)calculated if ``psup->factor_new`` is nonzero;
-  otherwise the factor from the previous batch can be capt.
+  otherwise the factor from the previous batch can be kept.
+
+  After calling this function ``psup->n_batches`` times with the
+  argument ``psup``, the data in this structure are used up and
+  should be considered as garbage.
 */
 // %%EXPORT p
 int32_t qstate12_support_next(qstate12_support_type *psup)
@@ -220,6 +224,80 @@ int32_t qstate12_support_next(qstate12_support_type *psup)
     psup->assoc = assoc ^= m_end[0-d];
     return psup->batchlength;
 }
+
+
+
+/**
+  @brief Check and adjust structure of type ``qstate12_support_type``
+
+  We assume that a structure of type ``qstate12_support_type`` has been
+  initialized from a state by function ``qstate12_support_init`` and not
+  yet been used by function ``qstate12_support_next``. So it encodes a
+  certain quadratic state ``qs``.
+
+  Then this function checks the data in the structure for certain
+  properties (possibly modifying the data), depending of the  bits of
+  parameter ``flags`` as follws:
+
+  Bit 0 set: Return an error if not all entries of ``qs`` are real.
+
+  Bit 1 set: Return an error if not all entries of ``qs`` are rational.
+
+  Bit 2 set: Return an error if not all entries of ``qs`` are integral
+  and fit into an integer of type ``int32_t``.
+
+  Bit 3 set: Reduce all rational entries of ``qs`` modulo 3 and return
+  an error if any of them is not rational. 
+
+  Depending on parameter ``flags``, we assert the following in case
+  of success: 
+
+  In any of the bits 0, 1, 2, 3 has been set then ``psup->factor`` is
+  positive and will not be changed by function ``qstate12_support_next``.
+
+  If bit 3 has been set then ``psup->factor`` is equal to 1. 
+
+  The function returns 0 in case of success and a negative value in 
+  case of failure.
+*/
+// %%EXPORT p
+int32_t qstate12_support_adjust(qstate12_support_type *psup, uint32_t flags)
+{
+    if (flags & 0xf) {
+         // Error if any entry is not real 
+         if (psup->factor & 0x3 || psup->c_weight != psup->weight)
+             return ERR_QSTATE12_DOMAIN;
+         // Make the factor positive
+         if (psup->factor & 0x4) {
+             psup->factor ^= 0x4;
+             psup->qf ^= 0x1;
+         }
+    }
+    if (flags & 0xe) {
+        // Error if any entry is not rational 
+        if (psup->factor & 0x10) return ERR_QSTATE12_DOMAIN;
+    }
+    if (flags & 0x8) {
+        // Reduce all entries mod 3: 
+        // All integral powers of 4 are equal to 1 (mod 3)
+        psup->factor &= ~0x3f;
+        // 2 is equal to -1 (mod 3)
+        if (psup->factor & 0x20) {
+            psup->qf ^= 0x1;
+            psup->factor ^= 0x20;
+        }
+    }
+    if (flags & 0x4) {
+        // Entry must be an integer
+        if (psup->factor < 0) return ERR_QSTATE12_SCALAR_INT;
+        // Absolute value of an entry may be at most 2**30
+        if (psup->factor > 0x3c0) return ERR_QSTATE12_SCALAR_OVFL;
+    }
+    return 0;
+}
+
+
+
 
 
 
@@ -512,6 +590,21 @@ int32_t qstate12_int32(qstate12_type *pqs,  int32_t *pi)
 *************************************************************************/
 
 
+static int32_t subbatch_length(qstate12_support_type *psup)
+{
+    if (psup->batchlength < 2) return psup->batchlength;
+    qstate12_type *pqs = &(psup->qs);
+    uint64_t *m_mid, *m_end, mask, *m = pqs->data;
+    m_mid = m_end = m + pqs->nrows - 1;
+    mask = ((ONE << pqs->ncols) - 1) & ~0x1f;
+    while (m_mid > m && (*m_mid & mask) == 0) --m_mid;
+    uint32_t d_mid = (uint32_t)(m_end - m_mid), batchlength;
+    batchlength = 1UL << d_mid;
+    if (batchlength > psup->batchlength) return ERR_QSTATE12_INCONSISTENT;
+    return batchlength;
+}
+
+
 
 
 
@@ -530,73 +623,35 @@ int32_t qstate12_int32(qstate12_type *pqs,  int32_t *pi)
 */
 // %%EXPORT p
 int32_t qstate12_to_signs(qstate12_type *pqs,  uint64_t *bmap)
-{    
-    uint64_t qf;     // current value of quadratic form Q[i]
-    uint64_t *m;     // pointer to pqs->data
-    uint64_t *m_mid; // equal to m or pointer to highest pqs->data + i,
-                     // 1 <= i < pqs->nrows such that part A of
-                     // *pqs has entries != 0 in column >= 5
-    uint64_t *m_end; // pointer to pqs->data + pqs->nrows - 1
-    uint64_t d_mid;  // equal to m_end - m_mid
-    uint64_t ncols;  // equal to pqs->ncols
-    uint32_t n_out;  // number of entries of output bmap
-    uint64_t nrc;    // equal to pqs->ncols + pqs->nrows - 2 
-    uint64_t i_it;   // equal to 1 << (m_mid - m - 1)
-    uint64_t j_it;   // equal to 1 << (m_end - m_mid)
-                     // bmap has 1 << (i_it+j_it) nonzero entries
-    uint64_t mask;   // eventually: mask = (1 << ncols) - 1 
-    uint64_t lmask;  // ((1 << ncols) - 1) & 0x1f 
-    uint64_t assoc;  // Current value of row  A[i] and Q[i]
-    uint64_t i;      // Index for m_end[-i], 0 <= i < i_it
-    uint64_t j;      // Index for m_mid[-j], 0 <= i < j_it
-    uint64_t v;      // 
-    int32_t res;     // Return value of subroutines
-
-    if ((res = qstate12_reduce(pqs)) < 0) return res;
-    ncols = pqs->ncols; 
-    n_out = 1 << (ncols < 5 ? 0 : ncols - 5);
+{
+    qstate12_support_type sup;
+    int32_t status = qstate12_support_init(pqs, &sup);
+    if (status < 0) return status;
+    status =  qstate12_support_adjust(&sup, 1);
+    if (status < 0) return status;
+    uint32_t subbatch_len = status = subbatch_length(&sup);
+    if (status < 0) return status;
+    uint32_t n_out = sup.size >> 5;
+    if (n_out == 0) ++n_out;
+    uint32_t i, j, k, addr = 0;
     for (i = 0; i < n_out; ++i) bmap[i] = 0;
-    if (pqs->nrows == 0) return 0;
-    if (pqs->factor & 3) return ERR_QSTATE12_DOMAIN;
-    m = pqs->data;
-    mask = 0;
-    for (i = 1; i < pqs->nrows; ++i) mask |= m[i] >> i;
-    if ((mask >> ncols) & 1) return ERR_QSTATE12_DOMAIN; 
+    if (subbatch_len == 0) return 0;
 
-    m_mid = m_end = m + pqs->nrows - 1;
-    mask = ((ONE << ncols) - 1) & ~0x1f;
-    while (m_mid > m && (*m_mid & mask) == 0) --m_mid;
-    d_mid = m_end - m_mid;
-    nrc = ncols + pqs->nrows - 2; 
-    j_it = ONE << d_mid; 
-    i_it = ONE << (m_mid - m); 
-    mask = (ONE << ncols) - 1; 
-    lmask = mask & 0x1f; 
-    assoc = m[0]; 
-    qf = ((pqs->factor >> 1) & 2) + 1;
-   
-    for (i = 1; i <= i_it; ++i) {
-        uint64_t i1;
-        int64_t d, d1;
-        v = qf << ((assoc & lmask) << 1);
-        for (j = 1; j < j_it; ++j) {
-            d = qstate12_lsbtab[j];
-            qf ^= (assoc >> (nrc - d)) & 2;
-            assoc ^= m_end[-d];
-            v |=  qf << ((assoc & lmask) << 1);
+    for (i = 0; i < sup.n_batches; ++i) {
+        status = qstate12_support_next(&sup);
+        if (status < 0) return status;
+        for (j = 0; j < sup.batchlength; j += subbatch_len) {
+            uint64_t v = 0;
+            for (k = 0; k < subbatch_len; ++k) {
+                 addr = sup.indices[j + k];
+                 uint64_t sign = sup.signs[j + k];
+                 uint64_t sh = ((addr & 0x1f) << 1);
+                 v |= (ONE << sh) | (sign << (sh + 1));
+            }
+            bmap[addr >> 5] = v;
         }
-        bmap[(assoc & mask) >> 5] = v;
-        d1 = d = qstate12_lsbtab[(i1 = i) & 63];
-        while (d1 == 6) {
-            i1 >>= 6;
-            d1 = qstate12_lsbtab[i1 & 63];
-            d += d1;
-        }
-        d += d_mid; 
-        qf ^= (assoc >> (nrc - d)) & 2;
-        assoc ^= m_end[-d];
     }
-    return 0; 
+    return 0;
 }
 
 
@@ -949,7 +1004,7 @@ int32_t _fill_affine(uint64_t *bmap, qstate12_type *pqs)
   Then ``bmap`` may correspond to a quadratic state vector
   with entries 0, 1, and -1.
 
-  If these enrties correspond to a quadratic state vector ``V``
+  If these entries correspond to a quadratic state vector ``V``
   (with entries 0, 1, and -1) then the function stores ``V`` in
   the quadratic state vector ``qs`` referred by ``pqs`` and
   returns 0. The returned state ``qs`` is a (column) vector of
