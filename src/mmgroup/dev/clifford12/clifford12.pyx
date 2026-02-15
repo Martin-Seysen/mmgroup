@@ -122,7 +122,7 @@ cdef int32_t _conv_entry_mod_p(int32_t factor, uint32_t p):
         raise ValueError(ERR)
     for mask, value in [(16, r2), (2, u4), (1, u8)]:
         if factor & mask:
-            res *= value
+            res = (res * value) % p
     return res   
 
 cdef conv_entry(int32_t factor, mod=builtins.complex):
@@ -657,9 +657,10 @@ cdef class QState12(object):
             chk_qstate12(cl.qstate12_support_next(&supp))
             if supp.factor_new:
                 x[0] = conv_entry(supp.factor, dtype)
-                x[1] = -x[0]
                 if isinstance(dtype, int):
-                    x[1] %= dtype
+                    x[1] = (dtype - x[0]) % dtype
+                else:
+                    x[1] = -x[0]
             if is_complex:
                 for i in range(supp.batchlength):
                     p_cc_a[p_indices[i]] = p_cc_x[p_signs[i]]
