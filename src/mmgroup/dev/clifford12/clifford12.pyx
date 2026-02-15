@@ -152,6 +152,10 @@ cdef conv_entry(int32_t factor, mod=builtins.complex):
         raise TypeError(ERR % type(mod))
 
 
+
+
+
+
 ####################################################################
 # Class QStateMatrix 
 ####################################################################
@@ -614,6 +618,8 @@ cdef class QState12(object):
         chk_qstate12(cl.qstate12_int32(&self.qs, &a_view[0]))
         return a.reshape((1 << n0, 1 << n1))
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def matrix(self, dtype = builtins.complex):
         """Convert the state to a matrix
 
@@ -628,27 +634,40 @@ cdef class QState12(object):
         Integer matrices are returned as numpy arrays of
         dtype ``np.int32``.
         """
-        dt = dtype if dtype in [float, complex] else np.int32
+        dt = dtype if dtype in [float, builtins.complex] else np.int32
+        cdef uint32_t is_complex = dtype ==  builtins.complex
         a = np.zeros(1 << self.ncols, dtype = dt)
         x = np.zeros(2, dtype = dt)
         cdef qstate12_support_type supp
         chk_qstate12(cl.qstate12_support_init(&self.qs,  &supp))
-        cdef uint32_t n_batches = supp.n_batches
-        cdef uint32_t batchlength = supp.batchlength
+
         cdef uint32_t [:] indices = supp.indices
         cdef uint8_t [:] signs = supp.signs
+        cdef uint32_t *p_indices = &indices[0]
+        cdef uint8_t *p_signs = &signs[0]
+        cdef complex[:] cc_a, cc_x
+        cdef complex *p_cc_a, *p_cc_x
+        if is_complex: # Then we play some tricks for speeding it up
+            cc_a = a
+            cc_x = x
+            p_cc_a = &cc_a[0]
+            p_cc_x = &cc_x[0]
         cdef uint32_t j, i
-        for j in range(n_batches):
+        for j in range(supp.n_batches):
             chk_qstate12(cl.qstate12_support_next(&supp))
             if supp.factor_new:
                 x[0] = conv_entry(supp.factor, dtype)
                 x[1] = -x[0]
                 if isinstance(dtype, int):
                     x[1] %= dtype
-            #for i in range(batchlength):
-            #   a[indices[i]] = x[signs[i]]
-            ## This is (hopefully) faster:
-            a[indices[:batchlength]] = x[signs[:batchlength]]
+            if is_complex:
+                for i in range(supp.batchlength):
+                    p_cc_a[p_indices[i]] = p_cc_x[p_signs[i]]
+            else:
+                for i in range(supp.batchlength):
+                    a[p_indices[i]] = x[p_signs[i]]
+                ## This may or may not be faster:
+                # a[p_indices[:batchlength]] = x[p_signs[:batchlength]]
 
         cdef uint32_t n0, n1
         n0, n1 = self.shape
