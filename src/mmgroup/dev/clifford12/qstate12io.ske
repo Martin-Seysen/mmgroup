@@ -204,7 +204,11 @@ const uint8_t qstate12_lsbtab[64] = {
     4,0,1,0,2,0,1,0, 3,0,1,0,2,0,1,0
 };
 
+#define QSTATE12_SUPPORT_MULTIPLE_STEP
+
 /// @endcond
+
+
 
 
 
@@ -253,17 +257,56 @@ int32_t qstate12_support_next(qstate12_support_type *psup)
     uint64_t mask = (ONE << pqs->ncols) - 1;
     uint64_t nrc = pqs->ncols + pqs->nrows - 1;
     uint64_t assoc = psup->assoc;
-    uint64_t qf = psup->qf;
+    uint64_t qf = psup->qf & 1;
     uint64_t d, d1;
     uint64_t i = 0;
+  #ifndef QSTATE12_SUPPORT_MULTIPLE_STEP
+    // This is the simpler code
     while (1) {
+        psup->signs[i] = (uint8_t)(qf);
         psup->indices[i] = (uint32_t)(assoc & mask);
-        psup->signs[i] = (uint8_t)(qf & 1);
         if (++i == psup->batchlength) break;
         d = qstate12_lsbtab[i];
-        qf += assoc >> (nrc - d);
+        qf ^= (assoc >> (nrc - d)) & 1;
         assoc ^= m_end[0-d];
     }
+  #else
+    // This is the faster code
+    uint64_t m_end_0 =  m_end[0];
+    if (psup->batchlength >= 4) {
+        uint64_t m_end_1 =  m_end[-1];
+        while (1) {
+            psup->signs[i] = (uint8_t)(qf);
+            psup->indices[i] = (uint32_t)(assoc & mask);
+            qf ^= (assoc >> nrc) & 1;
+            assoc ^= m_end_0;
+            psup->signs[i+1] = (uint8_t)(qf);
+            psup->indices[i+1] = (uint32_t)(assoc & mask);
+            qf ^= (assoc >> (nrc - 1)) & 1;
+            assoc ^= m_end_1;
+            psup->signs[i+2] = (uint8_t)(qf);
+            psup->indices[i+2] = (uint32_t)(assoc & mask);
+            qf ^= (assoc >> nrc) & 1;
+            assoc ^= m_end_0;
+            psup->signs[i+3] = (uint8_t)(qf);
+            psup->indices[i+3] = (uint32_t)(assoc & mask);
+            i += 4;
+            if (i >= psup->batchlength) break;
+            d = qstate12_lsbtab[i];
+            qf ^= (assoc >> (nrc - d)) & 1;
+            assoc ^= m_end[0-d];
+        }
+    } else {
+        psup->indices[0] = (uint32_t)(assoc & mask);
+        psup->signs[0] = (uint8_t)(qf & 1);
+        if (psup->batchlength >= 2) {
+            qf ^= (assoc >> nrc) & 1;
+            assoc ^= m_end_0;
+            psup->signs[1] = (uint8_t)(qf);
+            psup->indices[1] = (uint32_t)(assoc & mask);
+        }
+    }
+  #endif
     psup->i += psup->batchlength;
     d = psup->lb_batchlength;
     i = psup->i >> d;
@@ -274,7 +317,7 @@ int32_t qstate12_support_next(qstate12_support_type *psup)
         i >>= d1;
         if (i == 0) return -1;
     };
-    psup->qf = qf + (assoc >> (nrc - d));
+    psup->qf = (qf + (assoc >> (nrc - d))) & 1;
     psup->assoc = assoc ^= m_end[0-d];
     return psup->batchlength;
 }
