@@ -85,11 +85,11 @@ def test_qs_matrix(verbose = 0):
         if verbose:
             print("TEST %s" % (ntest+1))
             print(m.copy().reshape((sum(m.shape), 0)))
-        ac = m.complex()
+        ac = m.matrix()
         a = ac.real.ravel()
         fr, fphi = m.factor
         if 0 <= fr < 62 and fr & 1 == 0 and fphi & 3 == 0:
-            assert (ac == m.int32()).all()
+            assert (ac == m.matrix(int)).all()
         b = [0 if x == 0 else int(1 + ((x < 0) << 1)) for x in a]
         bm = m.to_signs()
         blist = [((int(bm[i >> 5])) >> ((i & 31) << 1)) & 3
@@ -180,14 +180,14 @@ def mul_a_w(a, w, max_check = 3):
     aw = [((x ^ w_xor) & w_and) % 3 for x in a]
     for i in range(min(max_check, len(a))):
         assert aw[i] == scalar_prod_mod3_uint64(a[i], w)
-    return np.array(aw, dtype = np.int32)
+    return np.array(aw, dtype = np.matrix)
 
 
 def mul_m_a_w(m, a, w):
     f, phi = m.factor
     assert phi & 3 == 0 and f & 1 == 0
     m1 = m.copy().mul_scalar(-(f & -16) + 16)
-    return m1.int32().ravel() @ mul_a_w(a, w)
+    return m1.matrix(int).ravel() @ mul_a_w(a, w)
           
 @pytest.mark.qstate
 def test_qstate12_mul_matrix_mod3(verbose = 0):

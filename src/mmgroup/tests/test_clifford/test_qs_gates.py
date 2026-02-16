@@ -57,7 +57,7 @@ def test_gate_not(verbose = 0):
             print(m)
             print("m.shape=", m.shape, "v=", hex(v))
         m1 = m.copy().gate_not(v) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel()
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel()
         c1_ref = complex_gate_not(c, v)   
         if verbose:
             print("output")
@@ -118,7 +118,7 @@ def test_gate_ctrl_not(verbose = 0):
             print("vc=", hex(vc))
             print("v=", hex(v))
         m1 = m.copy().gate_ctrl_not(vc, v) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel()
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel()
         c1_ref = complex_gate_ctrl_not(c, vc, v)    
         if verbose:
             print("output")
@@ -168,7 +168,7 @@ def test_gate_phi(verbose = 0):
             print("v=", hex(v))
             print("phi=", phi & 3)
         m1 = m.copy().gate_phi(v, phi) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel()
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel()
         c1_ref = complex_gate_phi(c, v, phi)   
         if verbose:
             print("output")
@@ -224,7 +224,7 @@ def test_gate_ctrl_phi(verbose = 0):
             print("v1=", hex(v1))
             print("v2=", hex(v2))
         m1 = m.copy().gate_ctrl_phi(v1, v2) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel()
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel()
         c1_ref = complex_gate_ctrl_phi(c, v1, v2)   
         if verbose:
             print("output")
@@ -287,7 +287,7 @@ def test_gate_h(verbose = 0):
             print(m)
             print("v=", hex(v))
         m1 = m.copy().gate_h(v) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel()
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel()
         c1_ref = complex_gate_h(c, v)   
         if verbose:
             print("output")

@@ -6,6 +6,7 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
+import warnings
 from collections.abc import Iterable
 from numbers import Integral, Complex
 import builtins, math, cmath, time
@@ -79,7 +80,7 @@ cpdef int32_t chk_qstate12(int32_t code) except -1:
     raise ValueError(error_string(code))
 
 ####################################################################
-# Convert entry to a number
+# Convert entry to a number of a given array type
 ####################################################################
 
 
@@ -125,19 +126,26 @@ cdef int32_t _conv_entry_mod_p(int32_t factor, uint32_t p):
             res = (res * value) % p
     return res   
 
-cdef conv_entry(int32_t factor, mod=builtins.complex):
+cdef complain_bad_type(mod):
+    if not isinstance(mod, type):
+        mod = type(mod)
+    ERR = "Cannot convert QStateMatrix entry to %s object"
+    raise TypeError(ERR % mod)
+
+
+cdef conv_entry(int32_t factor, mod = complex):
     a = np.zeros(2, dtype = np.float64)
     cdef double[:] a_view = a
     cdef int32_t ftype = chk_qstate12(
         cl.qstate12_factor_to_complex(factor, &a_view[0]))
     cdef int32_t value
-    if mod == builtins.complex:
-        return builtins.complex(a[0], a[1])
-    elif mod == builtins.float:
+    if mod == complex:
+        return complex(a[0], a[1])
+    elif mod == float:
         if ftype > 3:
             ERR = "QStateMatrix is not a real matrix"
             raise ValueError(ERR)
-        return builtins.float(a[0])
+        return float(a[0])
     elif mod == int:
         ftype = chk_qstate12(
             cl.qstate12_factor_to_int32(factor, &value))
@@ -148,12 +156,21 @@ cdef conv_entry(int32_t factor, mod=builtins.complex):
             raise ValueError(ERR)
         return _conv_entry_mod_p(factor, mod)
     else:
-        ERR = "Cannot convert QStateMatrix entry to %s object"
-        raise TypeError(ERR % type(mod))
+        complain_bad_type(mod)
 
 
+def _array_type_no(mod = complex):
+    if mod == complex:
+        return 0
+    elif mod == float:
+        return 1
+    elif mod == int or isinstance(mod, int):
+        return 2
+    else:
+        complain_bad_type(mod)
 
-
+_ARRAY_TYPES = [complex, np.double, np.int32]
+_SCALAR_TYPES = [complex, float, int]
 
 
 ####################################################################
@@ -488,41 +505,6 @@ cdef class QState12(object):
         cdef uint32_t j
         return [ row_table[j] for j in range(i) ]
 
-    def iter_support(self, dtype = builtins.complex):
-        """Iterate through the support of the state
-
-        The function iterates through the support of the state (i.e.
-        through the set of its nonzero entries). It yields pairs
-        ``(index, value)``, where ``index`` is the index and ``value``
-        is the value of a nonzero entry. The index of an entry of a
-        state ``a`` is given as:
-
-        2 ** a.shape[1] * row_index  + column_index ,
-
-        as usual. The value is given as an instance of class ``dtype``,
-        where ``dtype`` may be complex (default), float,  or int.
-
-        If ``dtype`` is an odd integer ``1 < p <= 257`` then the value
-        is reduced modulo ``p``.  Here we try to calculate fractions,
-        square roots, and roots of unity mod ``p``, if possible.
-        """
-        cdef qstate12_support_type supp
-        cdef int32_t status
-        status = cl.qstate12_support_init(&self.qs,  &supp)
-        assert status >= 0, ("support_init", status)
-        x = [None, None]
-        for _ in range(supp.n_batches):
-            status = cl.qstate12_support_next(&supp)
-            assert status >= 0, ("support_next", status)
-            if supp.batchlength <= 0:
-                return
-            if supp.factor_new:
-                x[0] = conv_entry(supp.factor, dtype)
-                x[1] = -x[0]
-                if isinstance(dtype, int):
-                    x[1] %= dtype
-            for i in range(supp.batchlength):
-                yield supp.indices[i], x[supp.signs[i]]
                 
 
     #########################################################################
@@ -596,10 +578,21 @@ cdef class QState12(object):
         return self
         
     #########################################################################
-    # Conversion of a state matrix to a complex or integer vector
+    # Conversion of a state matrix to a complex, real, or integer vector
         
     def complex(self):
         """Convert the state to a complex vector"""
+        warnings.warn(f"Method 'complex' of class {self.__class__} is "
+            "deprecated. Use method 'matrix' instead!",
+            UserWarning)
+        return self.matrix()
+
+    def _as_complex(self):
+        """For tests only!
+
+        The function returns the same result as ``self.matrix(complex)``,
+        uing a differnt mtod for the calculation.
+        """
         cdef uint32_t n0, n1
         n0, n1 = self.shape
         a = np.empty(2 << self.ncols, dtype = np.double)
@@ -611,31 +604,30 @@ cdef class QState12(object):
 
     def int32(self):
         """Convert the state to a vector of 32-bit integers"""
-        cdef uint32_t n0, n1
-        n0, n1 = self.shape
-        a = np.empty(1 << self.ncols, dtype = np.int32)
-        cdef int32_t[:] a_view = a
-        chk_qstate12(cl.qstate12_int32(&self.qs, &a_view[0]))
-        return a.reshape((1 << n0, 1 << n1))
+        warnings.warn(f"Method 'int32' of class {self.__class__} is "
+            "deprecated. Use method 'matrix' instead!",
+            UserWarning)
+        return self.matrix(int)
+
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
-    def matrix(self, dtype = builtins.complex):
+    def matrix(self, mod = builtins.complex):
         """Convert the state to a matrix
 
         The matrix is returned as a two-dimensional numpy array.
-        Parameter ``dtype`` determines the type of the matrix, which
+        Parameter ``mod`` determines the type of the matrix, which
         may be ``complex`` (default), ``float``, or ``int``.
 
-        If ``dtype`` is an odd integer ``1 < p <= 257`` then the matrix
+        If ``mod`` is an odd integer ``1 < p <= 257`` then the matrix
         is reduced modulo ``p``.  Here we try to calculate fractions,
-        square roots, and roots of unity mod ``p``, if possible.
+        square roots, and roots of unity mod ``p``, if requested.
 
         Integer matrices are returned as numpy arrays of
         dtype ``np.int32``.
         """
-        dt = dtype if dtype in [float, builtins.complex] else np.int32
-        cdef uint32_t is_complex = dtype ==  builtins.complex
+        cdef uint32_t type_no = _array_type_no(mod)
+        dt = _ARRAY_TYPES[type_no]
         a = np.zeros(1 << self.ncols, dtype = dt)
         x = np.zeros(2, dtype = dt)
         cdef qstate12_support_type supp
@@ -646,29 +638,45 @@ cdef class QState12(object):
         cdef uint32_t *p_indices = &indices[0]
         cdef uint8_t *p_signs = &signs[0]
         cdef complex[:] cc_a, cc_x
-        cdef complex *p_cc_a, *p_cc_x
-        if is_complex: # Then we play some tricks for speeding it up
-            cc_a = a
-            cc_x = x
-            p_cc_a = &cc_a[0]
-            p_cc_x = &cc_x[0]
+        cdef complex *p_cc_a
+        cdef complex *p_cc_x
+        cdef double[:] fp_a, fp_x
+        cdef double *p_fp_a
+        cdef double *p_fp_x
+        cdef int32_t[:] i32_a, i32_x
+        cdef int32_t *p_i32_a
+        cdef int32_t *p_i32_x
+        # Here we play some tricks for speeding it up
+        if type_no == 0: 
+            cc_a, cc_x = a, x
+            p_cc_a, p_cc_x = &cc_a[0], &cc_x[0]
+        elif type_no == 1: 
+            fp_a, fp_x = a, x
+            p_fp_a, p_fp_x = &fp_a[0], &fp_x[0]
+        elif type_no == 2: 
+            i32_a, i32_x = a, x
+            p_i32_a, p_i32_x = &i32_a[0], &i32_x[0]
         cdef uint32_t j, i
         for j in range(supp.n_batches):
             chk_qstate12(cl.qstate12_support_next(&supp))
             if supp.factor_new:
-                x[0] = conv_entry(supp.factor, dtype)
-                if isinstance(dtype, int):
-                    x[1] = (dtype - x[0]) % dtype
+                x[0] = conv_entry(supp.factor, mod)
+                if isinstance(mod, int):
+                    x[1] = (mod - x[0]) % mod
                 else:
                     x[1] = -x[0]
-            if is_complex:
+            if type_no == 0:
                 for i in range(supp.batchlength):
                     p_cc_a[p_indices[i]] = p_cc_x[p_signs[i]]
+            elif type_no == 1:
+                for i in range(supp.batchlength):
+                    p_fp_a[p_indices[i]] = p_fp_x[p_signs[i]]
+            elif type_no == 2:
+                for i in range(supp.batchlength):
+                    p_i32_a[p_indices[i]] = p_i32_x[p_signs[i]]
             else:
                 for i in range(supp.batchlength):
                     a[p_indices[i]] = x[p_signs[i]]
-                ## This may or may not be faster:
-                # a[p_indices[:batchlength]] = x[p_signs[:batchlength]]
 
         cdef uint32_t n0, n1
         n0, n1 = self.shape

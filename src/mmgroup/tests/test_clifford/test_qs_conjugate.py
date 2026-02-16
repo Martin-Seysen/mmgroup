@@ -308,7 +308,7 @@ def ref_power(m, e):
     
 
 def ref_trace(m):
-    mc = m.complex()
+    mc = m.matrix()
     norm = np.amax(abs(mc))
     tr = np.trace(mc)
     if norm > 0 and abs(tr / norm) < 1.0e-8:
@@ -350,7 +350,7 @@ def test_matrix_power(verbose = 0):
             if not ok:
                 print("m =", m.reduce())
                 if nqb < 3:
-                    print("m =\n", m.complex())
+                    print("m =\n", m.matrix())
                 print("\nTrace expected:",  tr_ref)
                 s, f = m._trace_factor()
                 print("Low level trace result:", s, hex(f))

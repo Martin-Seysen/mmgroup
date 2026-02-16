@@ -58,7 +58,7 @@ def test_rot(verbose = 0):
             print(m)
             print("rot=", rot, ", nrot =", nrot, ", n0 =", n0)
         m1 = m.copy().rot_bits(rot, nrot, n0) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = np.copy(c)
         for i, x in enumerate(c):
             c1_ref[rot_index(i, m.ncols, rot, nrot, n0)] = x
@@ -113,7 +113,7 @@ def test_xch_bits(verbose = 0):
             print(m)
             print("sh=", sh, ", mask =", mask)
         m1 = m.copy().xch_bits(sh, mask) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = np.copy(c)
         for i, x in enumerate(c):
             c1_ref[xch_bits_index(i, m.ncols, sh, mask)] = x
@@ -173,7 +173,7 @@ def test_extend(verbose = 0):
             print(m)
             print("j=", j, ", nqb =", nqb)
         m1 = m.copy().extend(j, nqb) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = extend_complex(c, j, nqb)
         if verbose:
             print("output after extend")
@@ -182,7 +182,7 @@ def test_extend(verbose = 0):
         compare_complex(c1_ref, c1, err)            
 
         m1 = m.copy().extend_zero(j, nqb) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = extend_complex(c, j, nqb, zero = True)
         if verbose:
             print("output after extend_zero")
@@ -244,7 +244,7 @@ def test_restrict(verbose = 0):
             print(m)
             print("j=", j, ", nqb =", nqb)
         m1 = m.copy().restrict(j, nqb) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = restrict_complex(c, j, nqb)
         if verbose:
             print("output after restrict")
@@ -253,7 +253,7 @@ def test_restrict(verbose = 0):
         compare_complex(c1_ref, c1, err)            
 
         m1 = m.copy().restrict_zero(j, nqb) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = restrict_complex(c, j, nqb, zero = True)
         if verbose:
             print("output after restrict_zero")
@@ -263,7 +263,7 @@ def test_restrict(verbose = 0):
 
 
         m1 = m.copy().sumup(j, nqb) 
-        c, c1 = m.complex().ravel(), m1.complex().ravel() 
+        c, c1 = m.matrix().ravel(), m1.matrix().ravel() 
         c1_ref = sumup_complex(c, j, nqb)
         if verbose:
             print("output after sumup")

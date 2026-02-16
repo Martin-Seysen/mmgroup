@@ -85,7 +85,7 @@ def slow_complex(m):
     shape containing the matrix represented by the input ``m``.
     
     This is a python implementation for testing the fast
-    method ``m.complex()``    
+    method ``m.matrix(complex)``    
     """
     # Compute the complex scalar factor ``f``  from ``m.factor``.
     e, phi = m.factor 
@@ -167,8 +167,8 @@ def check_eq_qstate(m1, m2, text = None):
     ``text`` is an optional text to be displayed in case of
     an error.    
     """
-    c1 = m1.copy().complex()
-    c2 = m2.copy().complex()
+    c1 = m1.copy().matrix()
+    c2 = m2.copy().matrix()
     eq = np.amax(abs(c1 - c2), initial = 0.0) < EPS
     if not eq:
         err = "Error in comparing instances of QStateMatrix"
@@ -215,11 +215,11 @@ def check_complex(m):
     the python function ````QStateMatrix()``.    
     """
     c0 = slow_complex(m)
-    c1 = m.copy().complex()
+    c1 = m.copy().matrix(complex)
     err = "Complex matrix from unreduced state"
     compare_complex(c0, c1, err, m)
-    c2 = m.matrix(complex)
-    err = "Complex matrix new(!) method"
+    c2 = m.copy()._as_complex()
+    err = "Complex matrix, old method"
     compare_complex(c0, c2, err, m)
 
 #####################################################################
@@ -319,7 +319,7 @@ def test_getitem(verbose = 0):
         if verbose:
             print("TEST %s" % (ntest+1))
             print(m)
-        c = m.complex()
+        c = m.matrix()
         f0, t0, d0 = random_slice(1 << m.shape[0])
         f1, t1, d1 = random_slice(1 << m.shape[1])
         c1_ref = c[f0:t0:d0, f1:t1:d1] 

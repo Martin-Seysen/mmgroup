@@ -129,8 +129,8 @@ def test_qs_prep_mul(verbose = 0):
             print(m1a)
             print(m2a)
         check_eq_cols(m1a, m2a, nqb)
-        c1 = qs_complex_prod(m1.complex(), m2.complex(), nqb, 0)
-        c1a = qs_complex_prod(m1a.complex(), m2a.complex(), nqb, 0)
+        c1 = qs_complex_prod(m1.matrix(), m2.matrix(), nqb, 0)
+        c1a = qs_complex_prod(m1a.matrix(), m2a.matrix(), nqb, 0)
         try:
             err = "Function prep_mul() has failed"
             #compare_complex(c1, c1a, err)
@@ -169,7 +169,7 @@ def test_qs_product(verbose = 0):
             qm1.qstate12_product(qm2, nqb, nc)
             print(m1); print(m2); 
             raise      
-        c1, c2, c3 = m1.complex(), m2.complex(), m3.complex()
+        c1, c2, c3 = m1.matrix(), m2.matrix(), m3.matrix()
         c3_ref = qs_complex_prod(c1, c2, nqb, nc)
         try:
             err = "Function flat_product() has failed"
@@ -212,8 +212,8 @@ def test_matmul(verbose = 0):
             print(m1)
             print(m2)
         m3 = m1 @ m2
-        c1, c2 = m1.complex(), m2.complex()
-        c3 = m3.complex()
+        c1, c2 = m1.matrix(), m2.matrix()
+        c3 = m3.matrix()
         c3_ref = c1 @ c2        
         err = "Matrix multiplcation has failed"
         compare_complex(c3_ref, c3, err)

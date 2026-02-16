@@ -497,6 +497,28 @@ class QStateMatrix(QState12):
         super(QStateMatrix, m).sumup(j, nqb) 
         return m   
 
+
+    #########################################################################
+    # Conversion of a state matrix to a complex, real, or integer vector
+        
+    def matrix(self, mod = complex):
+        """Convert the state to a matrix
+
+        The matrix is returned as a two-dimensional numpy array.
+        Parameter ``mod`` determines the type of the matrix, which
+        may be ``complex`` (default), ``float``, or ``int``.
+
+        If ``mod`` is an odd integer ``1 < p <= 257`` then the matrix
+        is reduced modulo ``p``.  Here we try to calculate fractions,
+        square roots, and roots of unity mod ``p``, if requested.
+
+        Integer matrices are returned as numpy arrays of
+        dtype ``np.int32``.
+        """
+        return super(QStateMatrix, self).matrix(mod)
+
+
+
     #########################################################################
     # Matrix operations
     
@@ -712,7 +734,7 @@ class QStateMatrix(QState12):
         a0, f0 = _as_index_array(item[0], self.shape[0]) 
         a1, f1 = _as_index_array(item[1], self.shape[1])
         if f0 & f1:
-            return self.complex()
+            return self.matrix(complex)
         a0 = a0 << self.shape[1]
         shape_ =  a0.shape + a1.shape 
         a = np.ravel(a0)[:, np.newaxis] + np.ravel(a1)[ np.newaxis, :] 

@@ -357,7 +357,7 @@ Class ``QStateMatrix`` modelling a quadratic state matrix
 
 .. autoclass:: mmgroup.structures.qs_matrix.QStateMatrix
    :members: conjugate, T, H, shape, reshape, copy,
-             rot_bits, xch_bits,
+             rot_bits, xch_bits, matrix,
              gate_not, gate_ctrl_not, gate_phi, gate_ctrl_phi, gate_h,
              extend_zero, extend, restrict_zero, restrict, sumup,
              lb_rank, lb_norm2, inv, power, order, to_symplectic,
