@@ -330,7 +330,6 @@ static inline
 int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
 {
     int32_t res, res1, len_a = 0, x;
-    
     // Compute image of \Omega under conjugation and store
     // the result in img_omega, if ``img_omega`` is zero.
     // If ``img_omega`` != 0 just take the image from there.
@@ -338,13 +337,14 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     if (img_omega == 0) {
         img_omega = res = xsp2co1_xspecial_img_omega(elem);
         if (res < 0) return res;
-    } 
+    }
     // Compute a word w0 of generators of G_{x0} that maps
     // img_omega to Omega (by conjugation) and store the result 
     // in a. We store the length of the word w0 in len_a.
     if (img_omega != 0x800000UL) {
         res = gen_leech2_reduce_type4((uint32_t)img_omega, a);
         if (res < 0) return res;
+        if (res > 6) return ERR_QSTATE12_LEECH_OP;
         len_a = res;
         // Compute g * w0 in ``elem``. Then ``elem``
         // stabilizes \Omega. Hence ``elem`` is monomial
@@ -356,6 +356,7 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // ``elem * w1`` is in Q_{x0}; append ``w1`` to ``w0``.
     res = xsp2co1_elem_monomial_to_xsp(elem, a + len_a);
     if (res < 0) return res;
+    if (res > 2) return ERR_QSTATE12_LEECH_OP;
     // Multiply ``elem`` with the word ``w1``
     res1 =  xsp2co1_mul_elem_word(elem, a + len_a, res);
     if (res1 < 0) return res1;
@@ -403,11 +404,12 @@ assert that the number of entries with tag ``l`` is minimal.
 // %%EXPORT px
 int32_t xsp2co1_elem_to_word(uint64_t *elem, uint32_t *a)
 {
-    uint32_t res;
+    int32_t res;
     uint64_t elem_reduced[26];
     xsp2co1_copy_elem(elem, elem_reduced);
     res = elem_to_word(elem_reduced, a, 0);
     if (res < 0) return res;
+    if (res > 10) return ERR_QSTATE12_LEECH_OP;
     mm_group_invert_word(a, res);
     return res;
 }

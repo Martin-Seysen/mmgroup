@@ -383,7 +383,8 @@ int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
 }
 
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
+
 /**
 @brief Simplified version of function ``xsp2co1_qs_to_elem_i``.
 
@@ -593,7 +594,7 @@ int32_t xsp2co1_elem_to_bitmatrix(uint64_t *elem, uint64_t *pA)
 *** Multiplication and inversion in the group G_{x0}
 *************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
 
 /**
    @brief Image of short vector in Leech lattice under \f$G_{x0}\f$.
@@ -601,7 +602,7 @@ int32_t xsp2co1_elem_to_bitmatrix(uint64_t *elem, uint64_t *pA)
    Let ``pqs`` point to a quadratic state matrix ``qs`` that 
    corresponds to an element \f$g\f$ of the factor \f$4096_x\f$
    the representation  \f$24_x \otimes 4096_x\f$ of \f$G_{x0}\f$.
-   Note that the operation of f$g\f$ on the Leech lattice
+   Note that the operation of \f$g\f$ on the Leech lattice
    (by conjugation) is determined up to sign only.
 
    Assuming that ``qs`` maps the short vector ``src1`` in the Leech
@@ -639,7 +640,7 @@ static inline int64_t map_short3(
      return adest[2];
 }
 
-/// @endcond 
+/// @endcond  
 
 
 /**
@@ -1040,7 +1041,7 @@ uint32_t xsp2co1_is_unit_elem(uint64_t *elem)
 The function multiplies the element \f$x_g\f$ of \f$G(4096_x)\f$ 
 (stored in the structure ``qs`` referred by ``pqs``) by the element 
 \f$x\f$ of \f$Q_{x0}\f$ and stores the result in ``qs``.
-Element f$x\f$ is encoded in **Leech lattice encoding**.
+Element \f$x\f$ is encoded in **Leech lattice encoding**.
 */ 
 static inline 
 int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
@@ -1265,30 +1266,47 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 
 
 /*************************************************************************
-*** Multiply an element of G_{x0} by a word of generators of G_{x0}
+***  Multiply decomposed element of G_{x0} by word of generators of G_{x0}
 *************************************************************************/
 
-
-/// @cond DO_NOT_DOCUMENT 
 
 /**
 @brief Auxiliary function for function ``xsp2co1_mul_elem_word``
 
-Function ``_mul_set_elem_word_scan(elem, a, n, s)`` multiplies
-the element ``elem`` of the group \f$G_{x0}\f$ with the longest
+Function ``_mul_set_qs_v3_word(pqs, pv3, a, n, s)`` multiplies
+the element \f$g\f$ of the group \f$G_{x0}\f$ with the longest
 possible prefix of the word ``a`` of generators of the monster group.
-If ``s = 1`` then ``elem`` is set to the neutral element before the
-multiplication starts. The function stops if an atom in ``a`` is
-not in \f$G_{x0}\f$. It returns the number ``k`` of atoms of
-``a`` that have been processed.
 
-The data in the array ``elem`` are stored in **G_x0 representation**.
+Element \f$g\f$ of \f$G_{x0}\f$ is represented as a pair ``(qs, v3)``,
+where ``qs`` is a quadratic state matrix of shape (12, 12) referred by
+parameter ``pqs``, and ``v3`` is a vector in the Leech lattice mod 3
+referred by parameter ``pv3``. Here ``v3`` must be given
+in *Leech lattice mod 3* encoding. The objects ``qs`` and ``v3`` are
+multiplied by \f$g\f$ in place.
 
-The function returns the number of the processed atoms of the
-word ``a``. In case of failure it returns a negative value.
+If ``s`` is nonzero then ``qs`` is set to the quadratic state unit
+matrix of shape (12, 12), and ``v3`` is set to the standard vector
+(0, 1, -1, 0, ..., 0) in the Leech lattice mod 3, before the
+multiplication starts.
+
+The function stops if an atom in array ``a`` is not in \f$G_{x0}\f$.
+It returns the number ``k`` of atoms of ``a`` that have been processed.
+In case of failure it returns a negative value.
+
+Remarks
+
+The function also works correctly for any quadratic state matrix of
+shape (n, 12) for any n. A pair ``(qs1, v3)`` with ``qs1`` a quadratic
+state matrix of shape (1,12), and ``v3`` as above, has a natural
+interpretation a vector in the representation of \f$G_{x0}\f$ called
+
+\f$24_x \otimes 4096_x\f$
+
+in [CS99]. So we may also use this function for computations in
+that representation of \f$G_{x0}\f$.
 */
-static int32_t 
-_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
+// %%EXPORT p
+int32_t xsp2co1_mul_qs_v3_word(qstate12_type *pqs, uint64_t *pv3, uint32_t *a, uint32_t n, uint32_t s)
 {
     uint_fast32_t tag, i, x = 0, v, multiply;
     uint8_t perm[24], perm_i[24];
@@ -1296,22 +1314,22 @@ _mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
     int32_t res;
     qstate12_type qs, qs_atom, *p_atom;
     uint64_t v3, data[MAXROWS_ELEM], data_atom[MAXROWS_ELEM];
+    uint32_t maxrows = pqs->ncols + 1 > 14 ? pqs->ncols + 1 : 14;
+    maxrows = maxrows < MAXROWS_ELEM ? maxrows : MAXROWS_ELEM;
 
     res = qstate12_set_mem(&qs, data, MAXROWS_ELEM);
     if (res < 0) return res;
-    if (set_one)  {
+    res = qstate12_set_mem(&qs_atom, data_atom, MAXROWS_ELEM);
+    if (res < 0) return res;
+    if (s) {
         if ((res = qstate12_unit_matrix(&qs, 12)) < 0) return res;
         v3 = STD_V3;
         p_atom = &qs;
     } else {
-        if ((res = xsp2co1_elem_to_qs_i(elem, &qs_atom)) < 0) return res;
-        if ((res = qstate12_copy(&qs_atom, &qs)) < 0) return res;
-        v3 = elem[0];
+        if ((res = qstate12_copy(pqs, &qs)) < 0) return res;
+        v3 = *pv3;
         p_atom = &qs_atom;
     }
-    res = qstate12_set_mem(&qs_atom, data_atom, MAXROWS_ELEM);
-    if (res < 0) return res;
-    
 
     for (i = 0; i < n; ++i) {
         v = a[i];
@@ -1381,14 +1399,52 @@ _mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
         }
         res = 0;
         if (multiply) res = qstate12_matmul(&qs_atom, &qs, &qs);
-        else if (qs.nrows > 25) res = qstate12_reduce(&qs);
+        else if (qs.nrows > maxrows) res = qstate12_reduce(&qs);
         if (res < 0) return res;
         p_atom = &qs_atom;
     }
-  final:   
-    res = xsp2co1_qs_to_elem_i(&qs, v3, elem);
-    if (res < 0) return res;
+ 
+  final:
+    if ((res = qstate12_reduce(&qs)) < 0) return res;
+    if ((res = qstate12_copy(&qs, pqs)) < 0) return res;
+    *pv3 = v3;
     return i;
+}
+
+/*************************************************************************
+*** Multiply an element of G_{x0} by a word of generators of G_{x0}
+*************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT
+
+/**
+@brief Auxiliary function for function ``xsp2co1_mul_elem_word``
+
+Function ``_mul_set_elem_word_scan(elem, a, n, s)`` multiplies
+the element ``elem`` of the group \f$G_{x0}\f$ with the longest
+possible prefix of the word ``a`` of generators of the monster group.
+If ``s = 1`` then ``elem`` is set to the neutral element before the
+multiplication starts. The function stops if an atom in ``a`` is
+not in \f$G_{x0}\f$. It returns the number ``k`` of atoms of
+``a`` that have been processed.
+
+The data in the array ``elem`` are stored in **G_x0 representation**.
+
+The function returns the number of the processed atoms of the
+word ``a``. In case of failure it returns a negative value.
+*/
+static int32_t
+_mul_set_elem_word(uint64_t *elem, uint32_t *a, uint32_t n, uint32_t set_one)
+{
+    int32_t res, k;
+    qstate12_type qs;
+    if ((res = xsp2co1_elem_to_qs_i(elem, &qs)) < 0) return res;
+    k = res = xsp2co1_mul_qs_v3_word(&qs, elem, a, n, set_one);
+    if (res < 0) return res;
+    res = xsp2co1_qs_to_elem_i(&qs, elem[0], elem);
+    if (res < 0) return res;
+    return (uint32_t) k;
 }
 
 /// @endcond  
