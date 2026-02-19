@@ -342,6 +342,11 @@ C functions in ``xsp2co1_map.c``
 
    .. doxygenfile:: xsp2co1_map.c
 
+C functions in ``xsp2co1_rep_mod3.c``
+--------------------------------------
+
+   .. doxygenfile:: xsp2co1_rep_mod3.c
+
 
 
 

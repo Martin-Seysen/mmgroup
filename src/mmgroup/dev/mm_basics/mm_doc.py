@@ -175,7 +175,7 @@ in the following table.
      27..25   ``Tag``: 
               ``A = 1``, ``B = 2``, ``C = 3``, ``T = 4``,
               ``X = 5``, ``Z = 6``, ``Y = 7``
-     24..15   Index ``i0``
+     24..14   Index ``i0``
      13.. 8   Index ``i1``
       7.. 0   The ``value`` of the coordinate of the basis vector;  
               if the modulus ``p`` is ``2**k - 1``  then only 

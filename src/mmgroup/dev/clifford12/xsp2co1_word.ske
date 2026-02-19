@@ -44,7 +44,7 @@ extern "C" {
 
 
 /**
-@brief Auxiliary function for function ``xsp2co1_add_short_3_leech``
+@brief Convert vector from *Leech lattice mod 3* to ``mmgroup.mm_op`` encoding
 
 The function converts a vector in \f$\Lambda / 3\Lambda\f$ 
 from **Leech lattice mod 3** encoding to the encoding to the 
@@ -938,6 +938,8 @@ In case ``column = 24`` the function returns the
 value ``(v'[row,2] - v'[row,3]) mod 3``.  In case of success the 
 return value is a nonnegative integer less than 3. A negative return
 value indicates failure.
+
+This function is deprecated and will be removed!
 */
 // %%EXPORT px
 int32_t xsp2co1_elem_read_mod3(uint64_t *v, uint64_t *elem, uint32_t row, uint32_t column)

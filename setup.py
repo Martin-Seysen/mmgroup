@@ -68,7 +68,7 @@ sys.path.append(SRC_DIR)
 
 
 ####################################################################
-# Print patform and command line arguments (if desired)
+# Print platform and command line arguments (if desired)
 ####################################################################
 
 
@@ -335,7 +335,7 @@ CLIFFORD12_SOURCES = '''
   xsp2co1_word.c 
   leech2matrix.c leech3matrix.c xsp2co1_elem.c
   involutions.c xsp2co1_traces.c
-  xsp2co1_map.c
+  xsp2co1_map.c xsp2co1_rep_mod3.c
 '''
 
 

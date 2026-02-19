@@ -594,7 +594,6 @@ int32_t xsp2co1_elem_to_bitmatrix(uint64_t *elem, uint64_t *pA)
 *** Multiplication and inversion in the group G_{x0}
 *************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT
 
 /**
    @brief Image of short vector in Leech lattice under \f$G_{x0}\f$.
@@ -618,12 +617,8 @@ int32_t xsp2co1_elem_to_bitmatrix(uint64_t *elem, uint64_t *pA)
    If ``dest1`` is not a valid image of ``src1`` then the result is
    undefined. The function may or may not detect such an error.
 */
-static inline int64_t map_short3(
-     qstate12_type *pqs,
-     uint64_t src1,
-     uint64_t dest1,
-     uint64_t src2
-)
+// %%EXPORT p
+int64_t xsp2co1_map_short3(qstate12_type *pqs, uint64_t src1,  uint64_t dest1, uint64_t src2)
 {
      uint64_t asrc[3], adest[3];
      int32_t res;
@@ -640,7 +635,6 @@ static inline int64_t map_short3(
      return adest[2];
 }
 
-/// @endcond  
 
 
 /**
@@ -671,7 +665,7 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     res = qstate12_matmul(&qs2, &qs1, &qs3);
     if (res < 0) return res;
 
-    v = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
+    v = xsp2co1_map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
     if (v < 0) return (int32_t) v;
     res = xsp2co1_qs_to_elem_i_noreduce(&qs3, v, elem3);
     return res;
@@ -704,7 +698,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
     res = qstate12_mat_inv(&qs2);
     if (res < 0) return res;
 
-    v = map_short3(&qs2, elem1[0], STD_V3, STD_V3);
+    v = xsp2co1_map_short3(&qs2, elem1[0], STD_V3, STD_V3);
     if (v < 0) return (int32_t) v;
     res = xsp2co1_qs_to_elem_i_noreduce(&qs2, v, elem2);
     return res;
@@ -750,13 +744,13 @@ int32_t xsp2co1_conj_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
     if (res < 0) return res;
 
     // Compute image of STD_V3 under qs3
-    v2 = map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
+    v2 = xsp2co1_map_short3(&qs2, STD_V3, elem2[0], elem1[0]);
     if (v2 < 0) return (int32_t) v2;
     // Now elem2 maps elem1[0] to v2. Note that 
     // (elem2**(-1) * elem1)  maps elem2[0] to elem1[0].
     // Thus the result  elem3 = (elem2**(-1) * elem1 * elem2)
     // maps elem2[0] to v2.
-    v = map_short3(&qs3, elem2[0], v2, STD_V3);
+    v = xsp2co1_map_short3(&qs3, elem2[0], v2, STD_V3);
     // Now elem3 maps STD_V3 to v.
     if (v < 0) return (int32_t) v;
 
@@ -916,7 +910,7 @@ int32_t xsp2co1_elem_check_fix_short(uint64_t *elem1, uint32_t v)
     // Let ``v3_img `` be the image of ``v3`` under ``g`` 
     // in ``Lambda``. Here the operations of ``g`` on ``Lambda``
     // and on ``4096_x`` multiply up to the correct tensor product.
-    v3_img = res = map_short3(&qs1, STD_V3, elem1[0], v3);
+    v3_img = res = xsp2co1_map_short3(&qs1, STD_V3, elem1[0], v3);
     if (res < 0) return (int32_t) res;  // abort in case of error
     v3_img = short_3_reduce(v3_img);
 
@@ -1274,8 +1268,8 @@ int32_t mul_qs_xi(qstate12_type *pqs, uint32_t e_minus_1)
 @brief Auxiliary function for function ``xsp2co1_mul_elem_word``
 
 Function ``_mul_set_qs_v3_word(pqs, pv3, a, n, s)`` multiplies
-the element \f$g\f$ of the group \f$G_{x0}\f$ with the longest
-possible prefix of the word ``a`` of generators of the monster group.
+the element \f$g\f$ of the group \f$G_{x0}\f$ with an element
+\f$h\f$ of that group and replaces \f$g\f$ by \f$g \cdot h\f$.
 
 Element \f$g\f$ of \f$G_{x0}\f$ is represented as a pair ``(qs, v3)``,
 where ``qs`` is a quadratic state matrix of shape (12, 12) referred by
@@ -1284,9 +1278,12 @@ referred by parameter ``pv3``. Here ``v3`` must be given
 in *Leech lattice mod 3* encoding. The objects ``qs`` and ``v3`` are
 multiplied by \f$g\f$ in place.
 
+Element \f$h\f$ is given as a word of generators of the monster group
+of length ``n`` stored in the array ``a`` .
+
 If ``s`` is nonzero then ``qs`` is set to the quadratic state unit
 matrix of shape (12, 12), and ``v3`` is set to the standard vector
-(0, 1, -1, 0, ..., 0) in the Leech lattice mod 3, before the
+(0, 0, 1, -1, 0, ..., 0) in the Leech lattice mod 3, before the
 multiplication starts.
 
 The function stops if an atom in array ``a`` is not in \f$G_{x0}\f$.
@@ -1295,15 +1292,21 @@ In case of failure it returns a negative value.
 
 Remarks
 
-The function also works correctly for any quadratic state matrix of
-shape (n, 12) for any n. A pair ``(qs1, v3)`` with ``qs1`` a quadratic
-state matrix of shape (1,12), and ``v3`` as above, has a natural
-interpretation a vector in the representation of \f$G_{x0}\f$ called
+As documented in function ``xsp2co1_elem_to_qs_i``, we actually store
+the inverse of a the group element \f$g\f$ in an array representing an
+element \f$G_{x0}\f$. For compatibility with that function we actually
+replace the element \f$g^{-1}\f$ stored in the structure  ``qs``
+by \f$(g h)^{-1}\f$. In other words, we left-multiply the value stored
+in ``qs`` by \f$h^{-1}\f$. Note that \f$h^{-1} = h^{\top}\f$ holds for
+an orthogonal matrix \f$h\f$.
 
-\f$24_x \otimes 4096_x\f$
-
-in [CS99]. So we may also use this function for computations in
-that representation of \f$G_{x0}\f$.
+The function also works correctly for any quadratic state matrix``qs1``
+of  shape (12, 0) stored in the structure referred by ``pqs``. A
+pair ``(qs1, v3)`` with ``qs1``a quadratic state of shape (12,0),
+and ``v3`` as above, has a natural interpretation a vector in the
+representation of \f$G_{x0}\f$ called \f$24_x \otimes 4096_x\f$
+in [CS99], with entries taken modulo 3. So we may also use this
+function for computations in that representation of \f$G_{x0}\f$.
 */
 // %%EXPORT p
 int32_t xsp2co1_mul_qs_v3_word(qstate12_type *pqs, uint64_t *pv3, uint32_t *a, uint32_t n, uint32_t s)

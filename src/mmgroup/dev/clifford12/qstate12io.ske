@@ -101,24 +101,34 @@ extern "C" {
 /**
   @brief Structure ``qstate12_support_type`` for reading data a state
 
-  More details are yet to be documented.
+  This structure is created by function ``qstate12_support_init`` in
+  file ``qstateio.c`` for traversing the support (i.e. the set of
+  nonzero entries) of a quadratic state. For details we refer to the
+  documentation of file ``qstateio.c``.
 */
 typedef struct {
-   uint32_t size;        ///< Total size of state; a power of 2
+   uint32_t size;        ///< Total size of the quadratic state; a power of 2
    uint32_t weight;      ///< No of nonzero entries of of matrix; 0 or a power of 2
-   int32_t factor;       ///< Scalar factor, encoded as in the structure ``qstate12``
+   int32_t factor;       ///< Scalar factor, encoded as in the structure ``qstate12_type``
    uint32_t factor_new;  ///< 1 if factor has changed, 0 otherwise
    uint32_t batchlength; ///< Size of a batch; 0 or a power of 2
    uint32_t n_batches;   ///< Total number of batches
    uint32_t indices[64]; ///< Indices contained in the current batch
    uint8_t signs[64];    ///< Signs of entries of the current batch
    // Internal data
+   /** @private */
    uint32_t lb_batchlength; ///< binary logarithm of member batchlength
+   /** @private */
    qstate12_type qs;     ///< Copy of state to be processed
+   /** @private */
    uint64_t buf[QSTATE_SUPPORT_MAXCOLS + 1];  ///< Buffer for member pqs
+   /** @private */
    uint64_t qf;          ///< Current value of high part of quadratic form
+   /** @private */
    uint64_t assoc;       ///< Current value of linear part for quadratic form
+   /** @private */
    uint32_t i;           ///< Current (high) index of iterator
+   /** @private */
    uint32_t c_weight;    ///< Value of i where to switch imaginary part
 } qstate12_support_type;
 
@@ -1064,6 +1074,9 @@ int32_t qstate12_from_signs(uint64_t *bmap, int32_t n, qstate12_type *pqs)
 
 
 
+
+
+
 /**
   @brief Compute a certain product modulo 3 with a state matrix
 
@@ -1081,6 +1094,8 @@ int32_t qstate12_from_signs(uint64_t *bmap, int32_t n, qstate12_type *pqs)
   Then the function returns the matrix product ``q * M * v``
   (modulo 3) as a nonnegative integer less than 3. It returns a 
   negative value in case of error, e.g. if ``qs`` is not rational.
+
+  This function is deprecated and will be removed!
 */
 // %%EXPORT p
 int32_t qstate12_mul_matrix_mod3(qstate12_type *pqs, uint64_t *v, uint64_t w)
