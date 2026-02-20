@@ -54,6 +54,7 @@ QSTATE12_ERROR_STRINGS = {
  -203: "Element of G_x0 is not in subroup 2^{1+24}",
  -204: "Bad tag for atom in group G_x0", 
  -205: "Bad element of the group G_x0", 
+ -206: "Vector in Leech lattice must be short", 
 
 }
 
@@ -591,7 +592,7 @@ cdef class QState12(object):
         """For tests only!
 
         The function returns the same result as ``self.matrix(complex)``,
-        uing a differnt mtod for the calculation.
+        using a different metod for the calculation.
         """
         cdef uint32_t n0, n1
         n0, n1 = self.shape
@@ -974,7 +975,7 @@ cdef class QState12(object):
 
 
     #########################################################################
-    # Some internal checks functions
+    # Some wrappers for C functions for internal use
 
     def check_join_imaginary(self, output = False):
         clone = self.copy()
@@ -989,6 +990,13 @@ cdef class QState12(object):
         del a
         del clone
         return result 
+
+    def _xsp2co1_rep_mod3_from_qs(self, uint64_t v3):
+        a = np.zeros(14, dtype = np.uint64)
+        cdef uint64_t[:] a_view = a
+        chk_qstate12(
+            cl.xsp2co1_rep_mod3_from_qs(&self.qs, v3, &a_view[0]))
+        return a
 
 
 ####################################################################

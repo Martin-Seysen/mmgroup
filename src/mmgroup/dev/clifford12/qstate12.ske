@@ -182,7 +182,8 @@ enum qstate12_error_type
     ERR_QSTATE12_REP_GX0 = -202,   ///< Error in operation of group 2^{1+24}.Co_1
     ERR_QSTATE12_NOTIN_XSP = -203, ///< Element of G_x0 not in 2^{1+24}
     ERR_QSTATE12_GX0_TAG = -204,   ///< Bad tag for atom in group G_x0 
-    ERR_QSTATE12_GX0_BAD_ELEM = -205 ///< Bad element of group G_x0 
+    ERR_QSTATE12_GX0_BAD_ELEM = -205, ///< Bad element of group G_x0 
+    ERR_QSTATE12_LEECH_SHORT = -206  ///< Vector in Leech lattice must be short
 
 };
 

@@ -113,7 +113,7 @@ void xsp2co1_rep_mod3_unit_vector(uint32_t i, uint64_t v3, uint64_t *p_rep)
     uint32_t k;
     p_rep[0] = v3 = gen_leech3_reduce(v3);
     p_rep[1] = v3 ? (i & 0xfff) : 0;
-    for (k = 2; k < 14; ++i) p_rep[k] = 0;
+    for (k = 2; k < 14; ++k) p_rep[k] = 0;
 }
 
 
@@ -182,6 +182,10 @@ vector ``v`` with the element \f$g\f$ of the group \f$G_{x0}\f$ and
 replaces the vector ``v`` by that product. Here the group
 element \f$g\f$ is stored in the array referred by ``elem``
 in **G_x0 representation**.
+
+This function suceeds only if the factor of the tensor
+product ``v`` in  \f$24_x\f$ is a short vector (i.e. a vector of
+type 2) in the Leech lattice mod 3.
 */
 // %%EXPORT px
 int32_t xsp2co1_rep_mod3_mul_elem(uint64_t *p_rep, uint64_t *elem)
@@ -193,6 +197,7 @@ int32_t xsp2co1_rep_mod3_mul_elem(uint64_t *p_rep, uint64_t *elem)
 
     res = xsp2co1_rep_mod3_as_qs(p_rep, &qs1, &v3);
     if (res < 0) return res;
+    if (gen_leech3to2_short(v3) == 0) return ERR_QSTATE12_LEECH_SHORT;
     res = xsp2co1_elem_to_qs_i(elem, &qs2);
     if (res < 0) return res;
     res = qstate12_matmul(&qs2, &qs1, &qs1);
@@ -256,7 +261,7 @@ int32_t xsp2co1_rep_mod3_mul_word(uint64_t *p_rep, uint32_t *a, uint32_t n)
   This works only if the data type ``uint_mmv_t`` used for storing
   vectors in \f$\rho_3\f$ is equal to ``uint64_t``.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t xsp2co1_rep_mod3_conv_mm_op(uint64_t *p_rep, uint64_t *p_wz)
 { 
     qstate12_type qs;
@@ -305,7 +310,7 @@ int32_t xsp2co1_rep_mod3_conv_mm_op(uint64_t *p_rep, uint64_t *p_wz)
   This works only if the data type ``uint_mmv_t`` used for storing
   vectors in \f$\rho_3\f$ is equal to ``uint64_t``.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t xsp2co1_rep_mod3_scalprod_mm_op(uint64_t *p_rep, uint64_t *p_wz)
 { 
     qstate12_type qs;
@@ -361,7 +366,7 @@ int32_t xsp2co1_rep_mod3_scalprod_mm_op(uint64_t *p_rep, uint64_t *p_wz)
   ``(0x6 << 25) + (i << 14) + (j << 8) + x`` ,
 
   which is compatible with the *sparse representation* of a vector
-  in  \f$\rho_3 \f$ in the ``mmgroup.mm_op`` package.
+  in  \f$\rho_3\f$ in the ``mmgroup.mm_op`` package.
     
   In case of failure (e.g. if ``v`` is zero) the function returns
   a negative value.
@@ -369,7 +374,7 @@ int32_t xsp2co1_rep_mod3_scalprod_mm_op(uint64_t *p_rep, uint64_t *p_wz)
   This function is useful for determining the sign of a 
   vector ``v`` that is already known up to sign.
 */
-// %%EXPORT p
+// %%EXPORT px
 int32_t xsp2co1_rep_mod3_find_nonzero(uint64_t *p_rep)
 {
     uint64_t supp = (p_rep[0] ^ (p_rep[0] >> 24)) & 0xffffffUL;

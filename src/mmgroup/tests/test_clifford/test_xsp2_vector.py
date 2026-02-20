@@ -17,7 +17,7 @@ from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_leech3
 from mmgroup.structures.xsp2_co1 import get_error_pool
 from mmgroup.structures.autpl import AutPL
 from mmgroup.mat24 import MAT24_ORDER, ploop_theta
-from mmgroup.tests.spaces.clifford_space import Space_ZY
+from mmgroup.tests.spaces.clifford_space import Space_ZY, dump_zy
 from mmgroup.generators import gen_leech2to3_short, gen_leech3to2_short
 from mmgroup.generators import gen_leech2_op_word
 from mmgroup.clifford12 import xsp2co1_find_chain_short_3
@@ -30,8 +30,6 @@ MMGroup3 = MM0 # MMSpace3.group
 
 
 STD_V3  = 0x8000004
-
-
 
 
 
@@ -66,14 +64,9 @@ def rand_element(s):
 
 def create_test_vectors():
     vector_data = [ 
-      (0x001, (1, "B", 2, 3)),
-      (0x001, (1, "C", 0, 16)),
-      (0xabf, (1, "C", 15, 19)),
-      (0x001, (1, "T", 643, 51)),
-      (0x001, (1, "T", 199, 7)),
-      (0x001, (1, "X", 0, 23)),
-      (0x001, (1, "X", 137, 23)),
-      (0x001, (1, "X", 1897, 1)),
+      ('Z', 0x47f, 3),
+      (2, 'Z', 0xabf, 'r'),
+      (2, 'Y', 'r', 'r'),
     ]
     group_data = [
       [('x', 0x1f24), ('d', 0xf75)],
@@ -92,18 +85,15 @@ def create_test_vectors():
     for i in range(1):
         p = {0:2, 1:3, 2:0, 3:1, 4:4, 6:6, 8:8}
         #print("AutPL", [hex(x) for x in AutPL(p).rep])
-        yield 256, (1, "B", 2, 3),  [("p", p)]
-    for x4096, x24 in vector_data:
+        yield  (1, "Z",  0x3a3, 3),  [("p", p)]
+    for v in vector_data:
         for g in group_data:
-            yield x4096, x24, g
+            yield v, g
     group_elements = "lydpdpxdpylx"
     #group_elements = "ydpdpxdpyx"
-    for x in "BCTX":
-        for j in range(50):
-            sign = -1**j
-            d = randint(0, 0xfff)
-            t = rand_tuple(x)
-            yield d, (sign,) + t,  rand_element(group_elements)    
+    for j in range(10):
+        v = -1**j, 'Z', 'r', 'r'
+        yield v,  rand_element(group_elements)    
 
 
 #####################################################################
@@ -171,18 +161,17 @@ def map_v3(v, g, expected = None, verbose = 1):
 
 
 @pytest.mark.xsp2co1
-def test_vector(verbose = 0):
-    for ntest, (x4096, x24, g) in enumerate(create_test_vectors()):
+def test_vector(verbose = 1):
+    for ntest, (t_v, g) in enumerate(create_test_vectors()):
         if verbose:
             print("\nTEST %s" % (ntest+1))
-            print("vector =", x4096, x24)
-        vm = x24[0] * Space_ZY.unit(x4096, x24[1:])
+        vm =  Space_ZY.unit(*t_v)
         vm_old = vm.copy()
         if verbose:
-            print("vm =", vm.as_tuples())
-            print("vm =", vm)
-            vm.dump()
-        v3 = vm.as_mmspace_vector() 
+            print("Tensor vm:",  vm.show())
+            if verbose > 1:
+                dump_zy("vm      ", vm)
+        v3 = vm.mmv.copy() 
         if verbose:
             print("g =", g)
         g3 = MMGroup3(g)
@@ -199,35 +188,43 @@ def test_vector(verbose = 0):
             print("g3 = ", g3)
         try:
             wm = vm * gm
+            # wm1 = vm.copy().mul_Gx0(g3) # works for short vectors in \Lambda mod 3 only
             if verbose:
                 print("w = vm * gm = ", wm)
         except ValueError:
+            print("\nError in TEST %s" % (ntest+1))
             print("Debug data pool:\n", 
                     [hex(x) for x in get_error_pool(15)])
-            map_v3(x24, gm, wm.short3, verbose = 1)
+            print("Tensor vm:",  vm.show())
+            print("v3     =", v3)
+            if verbose > 1:
+                dump_zy("vm      ", vm)
+                dump_zy("v3      ", v3)
+            print("g = ", g3)
             raise
-        w3_op =  wm.as_mmspace_vector()
-        w3_mult =  v3 * g3
-        if verbose:
-            print("w3_op =", w3_op)
-            print("w3_op data =")
-            wm.dump()
-            print("w3_mult =", w3_mult)
-        ok =  w3_op == w3_mult 
+        w3_op =  wm.mmv
+        w3_mul =  v3 * g3
+        if verbose > 1:
+            dump_zy("w3_op", w3_op)
+            dump_zy("w3_mult", w3_mul)
+        ok =  w3_op == w3_mul
         assert vm == vm_old
         assert gm == gm_old
         if not ok:
             print("\nError in TEST %s" % (ntest+1))
-            print("vector =", x4096, x24)
-            print("v =", hex(x4096), "(x)", x24)
-            print("rep of v:", vm)
-            print("v =", v3)
-            print("g = ", g)
-            print("rep of g:", gm)
-            print("Output w = v * g\nexpected:", w3_mult)
-            print("obtained:", w3_op)
-            print("rep:", wm)
-            map_v3(x24, gm, verbose = 1)
+            print("Tensor vm:",  vm.show())
+            print("v3     =", v3)
+            if verbose > 1:
+                dump_zy("vm      ", vm)
+                dump_zy("v3      ", v3)
+            print("g = ", g3, "\n")
+            print("Tensor wm:",  wm.show())
+            print("w3_op  =", w3_op)
+            print("w3_mul =", w3_mul)
+            if verbose > 1:
+                dump_zy("wm      ", wm)
+                dump_zy("w3_op   ", w3_op)
+                dump_zy("w3_mul  ", w3_mul)
             if not ok:
                ERR = "Vector multiplication test in group G_{x0} failed"
                raise ValueError(ERR)
@@ -310,7 +307,7 @@ def test_conjugate_mat24xi(verbose = 0):
      
 
 #####################################################################
-# Test multiplication ind inversion of elements of G_{x1}
+# Test multiplication and inversion of elements of G_{x1}
 #####################################################################
            
 

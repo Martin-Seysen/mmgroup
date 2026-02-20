@@ -557,7 +557,7 @@ int32_t _sort_matrix(uint64_t *a, uint8_t *marker, uint32_t n)
 }
 
 
-/** @brief Reeturn rank of matrix of integers mod 3
+/** @brief Return rank of matrix of integers mod 3
 */
 static inline
 uint32_t _rank_matrix(uint64_t *a)

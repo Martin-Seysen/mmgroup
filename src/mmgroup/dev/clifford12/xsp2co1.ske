@@ -1045,10 +1045,15 @@ int32_t mul_qs_xspecial(qstate12_type *pqs, uint32_t x)
     x = conv_pauli_vector_xspecial(x);
     if  ((res =  qstate12_reduce(pqs)) < 0) return res;
     // Apply phase pi gate to rows i = 0,...,11 if bit i of x is 1.
-    if ((res =  qstate12_gate_phi(pqs, (x & 0xfff) << 12, 2)) < 0) 
+    // Note that row i in structure ``qs`` corresponds to column
+    // (i + pqs->shape1) in the array ``pqs->data``. So we must shift
+    // the row indices left by ``sh = pqs->shape1`` before applying
+    // them to the rows of the state as gates.
+    uint32_t sh = pqs->shape1;
+    if ((res =  qstate12_gate_phi(pqs, (x & 0xfff) << sh, 2)) < 0)
         return res;
     // Apply not gate to rows i = 0,...,11 if bit i+12 of x is 1.
-    if ((res =  qstate12_gate_not(pqs,  x & 0xfff000)) < 0)
+    if ((res =  qstate12_gate_not(pqs, ((x >> 12) & 0xfff) << sh)) < 0)
         return res;
     // Negate element if bit 24 of x is set
     pqs->factor ^= (x >> 22) & 4;
@@ -1190,13 +1195,14 @@ static inline
 int32_t mul_qs_xi1(qstate12_type *pqs)
 {
     int32_t res;
-    res = qstate12_gate_not(pqs, 0x400 << 12);
+    uint32_t sh = pqs->shape1; // see comment in function mul_qs_xspecial
+    res = qstate12_gate_not(pqs, 0x400 << sh);
     if (res < 0) return res;
-    res = qstate12_gate_ctrl_not(pqs, 0x800 << 12, 0x400 << 12);
+    res = qstate12_gate_ctrl_not(pqs, 0x800 << sh, 0x400 << sh);
     if (res < 0) return res;
-    res = qstate12_gate_ctrl_not(pqs, 0xf << 12, 0xf << 12);
+    res = qstate12_gate_ctrl_not(pqs, 0xf << sh, 0xf << sh);
     if (res < 0) return res;
-    return qstate12_gate_h(pqs, 0xf << 12);
+    return qstate12_gate_h(pqs, 0xf << sh);
 }
 
 /** Auxiliary function for function ``mul_qs_xi``
@@ -1215,13 +1221,14 @@ static inline
 int32_t mul_qs_xi2(qstate12_type *pqs)
 {
     int32_t res;
-    res = qstate12_xch_bits(pqs, 1, 0x400 << 12);
+    uint32_t sh = pqs->shape1; // see comment in function mul_qs_xspecial
+    res = qstate12_xch_bits(pqs, 1, 0x400 << sh);
     if (res < 0) return res;
-    res = qstate12_gate_ctrl_phi(pqs, 8 << 12, 7 << 12);
+    res = qstate12_gate_ctrl_phi(pqs, 8 << sh, 7 << sh);
     if (res < 0) return res;
-    res = qstate12_gate_ctrl_phi(pqs, 4 << 12, 3 << 12);
+    res = qstate12_gate_ctrl_phi(pqs, 4 << sh, 3 << sh);
     if (res < 0) return res;
-    return qstate12_gate_ctrl_phi (pqs, 2 << 12, 1 << 12);
+    return qstate12_gate_ctrl_phi (pqs, 2 << sh, 1 << sh);
 }
 
 /** Auxiliary function for function ``xsp2co1_mul_set_elem_word``

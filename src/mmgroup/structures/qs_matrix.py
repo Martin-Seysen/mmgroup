@@ -749,19 +749,23 @@ class QStateMatrix(QState12):
     #########################################################################
     # Formatting a quadratic state matrix
 
-    def show(self, reduced = True):
+    def show(self, reduced = True, header = True):
         """Return a state as a string.
         
         If ``reduced`` is True (default) then the reduced representation
         of the state is displayed. Otherwise the state is displayed 
-        'as is'.         
+        'as is'.
+
+        If ``header`` is True (default) then a header containing
+        information about the state is displayed; otherwise the header is
+        dropped.
          
         The standard conversion of a state to a string, i.e. method
         ``__str__()``, is equivalent to method ``show()``.         
         """
         if reduced:
             self.reduce()
-        return _format_state(self, reduced)
+        return _format_state(self, reduced, header)
 
 
     def __str__(self):
@@ -861,7 +865,7 @@ STATE_TYPE = { (0,0) : ("QState scalar"),
 }    
         
     
-def _format_state(q, reduced = False):
+def _format_state(q, reduced = False, header = True):
     """Return  a ``QStateMatrix`` object as a string."""
     rows, cols = q.shape
     try:
@@ -875,11 +879,14 @@ def _format_state(q, reduced = False):
     str_e = _format_scalar(*e) if len (data) else "0"
     str_data = _format_data(data, rows, cols, reduced)   
     qtype = STATE_TYPE[bool(rows), bool(cols)]
-    s = "<%s %s" % (qtype, str_e)
-    if len(str_data):
-       s += " *\n" + str_data 
-    s += ">\n"                  
-    return s
+    if header:
+        s = "<%s %s" % (qtype, str_e)
+        if len(str_data):
+           s += " *\n" + str_data
+        s += ">\n"
+        return s
+    else:
+        return str_data
 
 def _format_state_raw(q):
     s = ("QStateMatrix, shape = %s, factor = %s, nrows = %s, cols = %s\n"
