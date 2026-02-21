@@ -181,7 +181,7 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
 
     @property
     def is_zero(self):
-        v3 = self._data[0]
+        v3 = int(self._data[0])
         return not bool((v3 ^ (v3 >> 24)) & 0xffffff)
 
     def check(self):
