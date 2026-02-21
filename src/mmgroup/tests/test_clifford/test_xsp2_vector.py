@@ -66,7 +66,8 @@ def create_test_vectors():
     vector_data = [ 
       ('Z', 0x47f, 3),
       (2, 'Z', 0xabf, 'r'),
-      (2, 'Y', 'r', 'r'),
+      (2, 'Y', 'r', 'r3'),
+      (1, 'Z', 'r', 's3'),
     ]
     group_data = [
       [('x', 0x1f24), ('d', 0xf75)],
@@ -161,7 +162,7 @@ def map_v3(v, g, expected = None, verbose = 1):
 
 
 @pytest.mark.xsp2co1
-def test_vector(verbose = 1):
+def test_vector(verbose = 0):
     for ntest, (t_v, g) in enumerate(create_test_vectors()):
         if verbose:
             print("\nTEST %s" % (ntest+1))
@@ -188,7 +189,6 @@ def test_vector(verbose = 1):
             print("g3 = ", g3)
         try:
             wm = vm * gm
-            # wm1 = vm.copy().mul_Gx0(g3) # works for short vectors in \Lambda mod 3 only
             if verbose:
                 print("w = vm * gm = ", wm)
         except ValueError:
@@ -228,6 +228,9 @@ def test_vector(verbose = 1):
             if not ok:
                ERR = "Vector multiplication test in group G_{x0} failed"
                raise ValueError(ERR)
+        if t_v[-1] == 's_2':
+            wm1 = vm.copy().mul_Gx0(g3)
+            assert wm2 == wm
             
             
             

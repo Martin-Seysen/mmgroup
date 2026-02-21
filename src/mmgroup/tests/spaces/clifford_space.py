@@ -13,10 +13,11 @@ from random import randint
 
 
 #from mmgroup.mm import mm_aux_index_sparse_to_leech2
-from mmgroup import MMV, MMVector, Xsp2_Co1
+from mmgroup import MMV, MMVector, Xsp2_Co1, XLeech2 
 from mmgroup.mm_op import INT_BITS, PROTECT_OVERFLOW
 
 from mmgroup.generators import gen_leech3_neg, gen_leech3_reduce
+from mmgroup.generators import gen_leech2to3_short
 from mmgroup.clifford12 import error_string, chk_qstate12
 from mmgroup.clifford12 import xsp2co1_rep_mod3_conv_mm_op
 from mmgroup.clifford12 import xsp2co1_rep_mod3_unit_vector
@@ -42,8 +43,18 @@ MMSpace3 =  MMV(3)
 ERR_QSTATE_SHAPE = "QStateMatrix object must have shape (0,12) here"
 
 def obj_to_leech_mod3(obj, unit):
-    if obj == 'r':
-        obj = [randint(0, 2) for i in range(24)]
+    if isinstance(obj, str):
+        if obj == 'r':
+            return 1 << randint(0, 23)
+        elif obj == 'r3':
+            obj = [randint(0, 2) for i in range(24)]
+        elif obj == 's3':
+            v2 = XLeech2('r', 2).ord
+            v3 = gen_leech2to3_short(v2 & 0xffffff)
+            assert v3 > 0
+            if v2 & 0x1000000:
+                v3 = gen_leech3_neg(v3)
+            return v3
     elif isinstance(obj, dict):
         ll = [0] * 24
         for key, value in obj.items():
@@ -141,6 +152,8 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
     ``Xsp2_Co1_Vector('X', i + 2048, j)``. Any tags different
     from 'X' and 'Y' represent unit vectors in :math:`\rho_3` that
     are not in :math:`4096_x \otimes 24_x`; so they are illegal here.
+    If argument ``i`` of ``j`` is equal to 'r' then a random index
+    is generated.
  
     We may also construct a tensor product in this class from an
     element ``q`` of :math:`4096_x` and a vector ``v3`` in
@@ -157,7 +170,23 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
     preceded by an (optional) integer argument, which will be
     interpreted as a scalar factor, if present.
 
-    More options for parameter ``v3`` are yet t0 be documented!
+ 
+    The argument ``j`` or ``v3`` may also be as follows:
+
+    =========  ===========================================================
+    Argument   Vector in :math:`\mbox{GF_3}^{24}`
+    =========  ===========================================================
+    'r':       random unit vector
+
+    'r3':      random vector in :math:`\mbox{GF_3}^{24}`
+
+    's3':      random short vector of type 2 in :math:`\mbox{GF_3}^{24}`
+
+    ``list``   co-ordinates of vector, given as a lsit of length 24
+
+    ``dict``   mapping of indices to co-ordinates.
+    =========  ===========================================================
+
     """
     __slots__ = '_data', 'space', '_mmv'
     def __init__(self, space):
