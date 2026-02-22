@@ -12,7 +12,7 @@ from mmgroup.bitfunctions import lrange, lmap, bitlen, v2
 from mmgroup.bitfunctions import bit_mat_orthogonal_complement
 from mmgroup.bitfunctions import bit_mat_transpose
 from mmgroup.bitfunctions import bit_mat_iszero
-
+from mmgroup.tests.chisquare import chisquare
 
  
 def inverse_testcases():
@@ -28,8 +28,9 @@ def inverse_testcases():
     for j in range(200): yield  bit_mat_random(10, 10)
 
 
+@pytest.mark.mmm
 @pytest.mark.bitfunc
-def test_inverse():
+def test_inverse(verbose = 0):
     print( "Testing matrix inversion ..." )
     MAXDIM_INVERSE_TEST = 20
     NSIGMA = 4.0
@@ -57,18 +58,26 @@ def test_inverse():
             prod = bit_mat_mul(a, inv) 
             assert prod == unit, (lmap(hex,a), lmap(hex,inv), lmap(hex,prod))
     cases_displayed = [10]
-    for n in range(1,MAXDIM_INVERSE_TEST):
-        if n_cases[n] > 10:
-            import math
+    FMT = "dim = %s, N = %03d, fraction = %.5f, chisqu = %.2f, p = %.2f"
+    W = "Warning: Too many degenerate bit matrices in dimension %d"
+    W += " with probability %.3f"
+    for n in range(2, MAXDIM_INVERSE_TEST):
+        if n_cases[n] > 40:
             N, N_ok = n_cases[n], n_ok[n]
             p = 1.0
-            for i in range(1,n+1): p *= 1.0 - 0.5**i
-            mu =  N * p
-            sigma = math.sqrt(N * p * (1.0 - p))
-            if n in cases_displayed:
-                print("Dim. %d, %d cases, ratio of invertibles: %.3f, expected: %.3f+-%.3f"  %(
-                     n, N, N_ok/N, p, sigma/N))
-            assert   abs(mu - N_ok) < NSIGMA *sigma, (n,p,mu,sigma,N,N_ok)
+            for i in range(1,n+1):
+                p *= 1.0 - 0.5**i
+            f_opt = [N_ok, N - N_ok]
+            f_exp = [p, 1 - p]
+            chisq, p1 = chisquare(f_opt, f_exp)
+            if verbose:
+                print(FMT % (n, N, p, chisq, p1))
+            if p1 > 0.99:
+                print(W % (n, p1))
+            if p1 > 1.0 - 1.0e-6:
+                ERR = "Too many degenerate bit matrices in dimension %d"
+                ERR += " with probability 1 - %g"
+                raise ValueError(ERR % (n, 1 - p1))
     print("Matrix inversion test passed")
 
 
