@@ -180,14 +180,21 @@ int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
     if (y > 0) g[len++] = 0xC0000000 + y;
 
     for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
-    res = xsp2co1_set_elem_word(elem_g_i, g_inv, len);
+
+    uint32_t q[24];
+    res =  mm_aux_leech2_op_word_sparse(
+        V1_MOD3_TAG_DATA + OFS3_TAGS_X, 24, g_inv, len, q);
     if (res < 0) return _VAR_ERROR(8, res);
-    v_x = mm_aux_mmv_extract_x_signs(3, v, elem_g_i, 
-        V1_MOD3_TAG_DATA + OFS3_TAGS_X, 24);
-    if (v_x < 0) return  _VAR_ERROR(9, v_x);
+    v_x = mm_aux_mmv_extract_sparse_signs(3, v, q, 24);
+    v_x ^= 0xffffff;  // histocial encoding; could be removed in future versions
+    if (v_x < 0) return  _VAR_ERROR(10, v_x);
     x = leech2matrix_solve_eqn(V1_MOD3_TAG_DATA + OFS3_SOLVE_X, 24, v_x);
     v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
+
+    res = xsp2co1_set_elem_word(elem_g_i, g_inv, len);
+    if (res < 0) return _VAR_ERROR(11, res);
     aa = xsp2co1_elem_read_mod3(v + OFS3_Z, elem_g_i, v_sign, 24); 
+
     sign = aa - 1;
     if (sign & 0xfffffffe) return -0x104;
     sign ^= uint64_parity(x & (x >> 12) & 0x7ff);

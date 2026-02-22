@@ -561,8 +561,8 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 The function maps the element of \f$G_{x0}\f$  stored in  
-the array ``elem`` (in **G_x0 representation**) to a
-\f$24 \times 24\f$ bit matrix \f$A\f$, which will be stored in
+the array ``elem`` (in **G_x0 representation**) to
+a \f$24 \times 24\f$ bit matrix \f$A\f$, which will be stored in
 the array referred by ``pA``.  Bit matrix \f$A\f$ operates on a
 vector on the Leech lattice modulo 2 (in Leech lattice encoding)
 by right multiplication.

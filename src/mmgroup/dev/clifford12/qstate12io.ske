@@ -456,25 +456,24 @@ static inline int32_t qf_result_type(int32_t res, uint64_t qf_all)
 /**
   @brief Expand a state to an array of complex numbers
   
-  Expand the state ``qs`` referred by ``pqs`` to the array
-  referred by the pointer ``pc``. The real part of ``qs[i]`` is
-  stored in ``pc[2*i]`` and the imaginary part of ``qs[i]`` is
-  stored in ``pc[2*i+1]``. The function reduces ``qs``. Here the
-  integer ``i`` is interpreted as a bit vector as usual.
+  Expand the state ``qs`` referred by ``pqs`` to the array referred
+  by the pointer ``pc``. The real part of ``qs[i]`` is stored
+  in ``pc[2*i]`` and the imaginary part of ``qs[i]`` is stored 
+  in ``pc[2*i+1]``. The function reduces ``qs``. Here the integer ``i``
+  is interpreted as a bit vector as usual.
   
-  ``pqs->shape1`` is ignored. The user has to care for the
-  shape of the returned array. The state ``qs`` is reduced.
+  Member ``pqs->shape1`` is ignored. The user has to care for the shape
+  of the returned array. The state ``qs`` is reduced.
 
-  Caution: The function sets ``2 * 2**pqs->ncols`` entries
-  in the array ``pc``.
+  Caution: The function sets ``2 * 2**pqs->ncols`` entries in the
+  array ``pc``.
 
   Return value is as in function ``qstate12_entries``.
 
   This function traverses the support of a state without using a
-  structure of type ``qstate12_support_type``, which is now deprecated.
-  Here we keep this function for testing newer functions dealing with
-  that structure.
-  
+  structure of type ``qstate12_support_type``. Such kind of a traversal
+  is now deprecated. Here we keep this function for testing newer
+  functions dealing with  that structure ``qstate12_type``.
 */
 // %%EXPORT p
 int32_t qstate12_complex(qstate12_type *pqs,  double *pc)

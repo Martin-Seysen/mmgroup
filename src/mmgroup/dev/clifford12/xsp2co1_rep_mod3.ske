@@ -371,7 +371,7 @@ int32_t xsp2co1_rep_mod3_scalprod_mm_op(uint64_t *p_rep, uint64_t *p_wz)
   In case of failure (e.g. if ``v`` is zero) the function returns
   a negative value.
 
-  This function is useful for determining the sign of a 
+  This function is useful for determining the sign of a
   vector ``v`` that is already known up to sign.
 */
 // %%EXPORT px

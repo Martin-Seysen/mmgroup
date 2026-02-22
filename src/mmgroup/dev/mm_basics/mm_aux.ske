@@ -1107,9 +1107,56 @@ int32_t mm_aux_mmv_extract_sparse_signs(uint32_t p, uint_mmv_t *mv, uint32_t *sp
 
 
 
+/**
+  @brief Perform operation \f$G_{x0}\f$ of on elements of \f$Q_{x0}\f$
+
+  This is a variant of function ``gen_leech2_op_word_many`` in
+  file ``gen_leech.c``.
+
+  Let ``q`` be an array of ``m`` elements \f$q_j\f$ of the
+  group \f$Q_{x0}\f$ in **Leech lattice encoding**. Let \f$g\f$
+  be an element of the group \f$G_{x0}\f$ encoded in the array ``g``
+  of length ``n`` as in function ``gen_leech2_op_word``.
+
+  The function computes the elements \f$q'_j = g^{-1} q_j g\f$
+  for \f$0 \leq j < m\f$ and stores \f$q'_j\f$ in ``qg[j]``.
+  The data in array ``qg`` are stored in *sparse representation*.
+  Here the idea is that the data in array ``qg`` can be passed
+  directly to functions like  ``mm_aux_mmv_extract_sparse_signs``.
+  Array ``q`` is not changed.
+
+  The value of an entry in array ``qg`` (which is always 1 or -1) is
+  encoded as 0x01 for 1, and 0xfe for -1, in the lower 8 bits of the
+  entry. This in compatible to encoding a number
+  modulo \f$2^k-1, k \leq 8\f$ in one's complement, and also to
+  function ``mm_aux_mmv_extract_sparse_signs``.
+
+  The function returns a negative value in case of failure, e.g. if
+  any entry in array ``q`` is not of type 2, or if any generator of
+  in the array ``g`` is not in \f$G_{x0}\f$.
+*/
+// %%EXPORT px
+int32_t mm_aux_leech2_op_word_sparse(uint32_t *q, uint32_t m, uint32_t *g, uint32_t n, uint32_t *qg)
+{
+    uint32_t i;
+    int32_t n1;
+    for (i = 0; i < m; ++i) qg[i] = q[i];
+    n1 = gen_leech2_op_word_many(qg, m, g, n);
+    if (n1 < 0) return n1;
+    if (n1 != (int32_t)n) return -10002L;
+    for (i = 0; i < m; ++i) {
+        uint32_t sign = 0 - ((qg[i] >> 24) & 1);
+        qg[i] = mm_aux_index_leech2_to_sparse(qg[i]) & 0xffffff00UL;
+        if (qg[i] == 0) return -10003L;
+        qg[i] ^= (sign & 0xfd) + 1;
+    }
+    return 0;
+}
 
 /**
   @brief Extract some bits of a vector in internal representation
+
+  This function is deprecated and will be removed in future versions!
 
   The function extracts the least significant bits of certain entries
   of the vector ``mv`` depending on the vector ``a``. Vector ``mv`` is

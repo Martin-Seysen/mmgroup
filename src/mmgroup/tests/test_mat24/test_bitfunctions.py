@@ -28,7 +28,6 @@ def inverse_testcases():
     for j in range(200): yield  bit_mat_random(10, 10)
 
 
-@pytest.mark.mmm
 @pytest.mark.bitfunc
 def test_inverse(verbose = 0):
     print( "Testing matrix inversion ..." )

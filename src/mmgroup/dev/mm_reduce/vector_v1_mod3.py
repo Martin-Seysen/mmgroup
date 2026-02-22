@@ -43,7 +43,10 @@ def import_all():
     global  mm_op_watermark_A_perm_num
     global  mm_op_word_tag_A
     global  mm_op_checkzero
+    global  mm_aux_leech2_op_word_sparse
 
+    import mmgroup
+    from mmgroup import mat24
     from mmgroup import MMV, MMVector, Xsp2_Co1
     from mmgroup.mat24 import vect_to_cocode
     from mmgroup.mat24 import ploop_theta
@@ -67,6 +70,7 @@ def import_all():
     from mmgroup.mm_op import mm_op_watermark_A_perm_num
     from mmgroup.mm_op import mm_op_word_tag_A
     from mmgroup.mm_op import mm_op_checkzero
+    from mmgroup.mm_op import mm_aux_leech2_op_word_sparse
 
     MMV3 = MMV(3)
 
@@ -419,11 +423,17 @@ def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
 
     gi = Xsp2_Co1('a',g1[:len_g1]) ** -1
 
-    v_x = mm_aux_mmv_extract_x_signs(3, v.data, gi._data, 
-        v1_mod3_tags[OFS3_TAGS_X:], 24) 
-    assert v_x >= 0, v_x
-    x = leech2matrix_solve_eqn(v1_mod3_tags[OFS3_SOLVE_X:], 24, v_x)
+    g_inv = gi.mmdata
+    q = np.zeros(24, dtype = np.uint32);
+    res =  mm_aux_leech2_op_word_sparse(
+        v1_mod3_tags[OFS3_TAGS_X:], 24, g_inv, len(g_inv), q);
+    assert res >= 0, res
+    v_x = mm_aux_mmv_extract_sparse_signs(3, v.data, q, 24);
+    v_x ^= 0xffffff;  # histocial encoding; could be removed in future versions
+    assert (v_x >= 0), hex(v_x)
+    x = leech2matrix_solve_eqn(v1_mod3_tags[OFS3_SOLVE_X:], 24, v_x);
     v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
+
     aa = xsp2co1_elem_read_mod3(v.data[OFS3_Z:], gi._data, v_sign, 24) 
     sign = aa - 1
     assert 0 <= sign <= 1
