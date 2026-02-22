@@ -17,7 +17,7 @@ from mmgroup.structures.qs_matrix import qs_column_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_row_monomial_matrix
 from mmgroup.structures.qs_matrix import qs_from_signs
 from mmgroup.structures.qs_matrix import FORMAT_REDUCED
-from mmgroup.structures.qs_matrix import qstate12_mul_matrix_mod3
+from mmgroup.clifford12 import qstate12_mul_matrix_mod3
 
 
 #####################################################################
