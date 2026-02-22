@@ -25,6 +25,7 @@ from mmgroup.clifford12 import xsp2co1_rep_mod3_mul_word
 from mmgroup.clifford12 import xsp2co1_rep_mod3_mul_elem
 from mmgroup.clifford12 import xsp2co1_to_vect_mod3
 from mmgroup.clifford12 import xsp2co1_rep_mod3_scalprod_mm_op
+from mmgroup.clifford12 import xsp2co1_rep_mod3_find_nonzero
 from mmgroup.structures.xsp2_co1 import get_error_pool
 from mmgroup.structures.xsp2_co1 import str_xsp2_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
@@ -32,7 +33,6 @@ from mmgroup.structures.abstract_rep_space import AbstractRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractMmRepVector
 from mmgroup.structures.abstract_mm_rep_space import AbstractRepSpace
 from mmgroup.structures.abstract_mm_group import AbstractMMGroupWord
-
 MMSpace3 =  MMV(3)
 
 
@@ -286,8 +286,32 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
             assert x >= 0
             return x
         else:
-            ERR = "Cannot compute scalar product of %s and %s object"    
+            ERR = "Cannot compute scalar product of %s and %s object"
             raise ValueError(ERR % (type(self), type(v)))
+
+    def nonzero_entry(self):
+        """Return index and value of a nonzero entry of the vector
+
+        The function returns a pair (``index``, ``value``) for a
+        nonzero entry of the vector if present. Here ``index``
+        is a triple ``('Z', i, j)`` or ``('Y', i, j)``, and value
+        is eqial to 1 or 2.
+    
+        The function fails if ``v`` is zero.
+
+        This function is useful for determining the sign of a 
+        vector ``v`` that is already known up to sign.  
+        """
+        res = xsp2co1_rep_mod3_find_nonzero(self._data)
+        if res <= 0:
+            ERR = "Object of type Xsp2_Co1_Vector is zero"
+            raise ValueError(ERR)
+        tag = "ZY"[(res >> 25) & 1]
+        i = (res >> 14) & 0x7ff
+        j = (res >> 8) & 0x3f
+        value = res & 0xff
+        #print("entry", hex(res), tag, hex(i), j, value)
+        return (tag, i, j), value
 
     def show(self):
         if self.is_zero:

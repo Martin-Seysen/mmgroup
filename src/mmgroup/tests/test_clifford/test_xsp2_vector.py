@@ -161,7 +161,6 @@ def map_v3(v, g, expected = None, verbose = 1):
 #####################################################################
 
 
-@pytest.mark.mmm
 @pytest.mark.xsp2co1
 def test_vector(verbose = 0):
     for ntest, (t_v, g) in enumerate(create_test_vectors()):
@@ -233,8 +232,12 @@ def test_vector(verbose = 0):
             wm1 = vm.copy().mul_Gx0(g3)
             assert wm2 == wm
         y3 = MMV(3)('R')
-        scalprod =  vm.scalar_product(y3)
-        assert mmv_scalprod(v3, y3) == scalprod
+        scalprod =  wm.scalar_product(y3)
+        assert mmv_scalprod(w3_op, y3) == scalprod
+        if not wm.is_zero:
+            (tag, i, j), value = wm.nonzero_entry()
+            assert w3_op[tag, i, j] == value
+            
             
             
             
