@@ -11,7 +11,7 @@ from numbers import Integral
 import numpy as np
 import pytest
 
-from mmgroup import MM0
+from mmgroup import MM0, MMV, mmv_scalprod
 from mmgroup.structures.qs_matrix import qs_pauli_matrix
 from mmgroup.structures.xsp2_co1 import Xsp2_Co1, str_leech3
 from mmgroup.structures.xsp2_co1 import get_error_pool
@@ -161,6 +161,7 @@ def map_v3(v, g, expected = None, verbose = 1):
 #####################################################################
 
 
+@pytest.mark.mmm
 @pytest.mark.xsp2co1
 def test_vector(verbose = 0):
     for ntest, (t_v, g) in enumerate(create_test_vectors()):
@@ -231,8 +232,9 @@ def test_vector(verbose = 0):
         if t_v[-1] == 's_2':
             wm1 = vm.copy().mul_Gx0(g3)
             assert wm2 == wm
-            
-            
+        y3 = MMV(3)('R')
+        scalprod =  vm.scalar_product(y3)
+        assert mmv_scalprod(v3, y3) == scalprod
             
             
             

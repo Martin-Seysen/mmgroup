@@ -24,6 +24,7 @@ from mmgroup.clifford12 import xsp2co1_rep_mod3_unit_vector
 from mmgroup.clifford12 import xsp2co1_rep_mod3_mul_word
 from mmgroup.clifford12 import xsp2co1_rep_mod3_mul_elem
 from mmgroup.clifford12 import xsp2co1_to_vect_mod3
+from mmgroup.clifford12 import xsp2co1_rep_mod3_scalprod_mm_op
 from mmgroup.structures.xsp2_co1 import get_error_pool
 from mmgroup.structures.xsp2_co1 import str_xsp2_co1
 from mmgroup.structures.qs_matrix import QStateMatrix
@@ -255,6 +256,13 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
         return v1
 
     def factors(self):
+        """Decompose tensor product into factors
+
+        The function returns a pair ``(qs, v3)``, where ``qs`` is a
+        quadratic state matrix of type ``QStateMatrix`` and shape
+        (0, 12), and ``v3`` is an integer representing a vector in
+        the Leech lattice mod 3 in *Leech lattice mod 3 encoding*.
+        """
         if self.is_zero:
             return  QStateMatrix(), 0
         aq = self._data[1:14]
@@ -264,6 +272,22 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
         qs = QStateMatrix(0, 12, aq[:n], 0)
         v3 = gen_leech3_reduce(int(self._data[0]))
         return qs, v3
+
+    def scalar_product(self, v):
+        """Scalar product with a vector
+
+        The function returns the scalar product of this vector and a
+        vector ``v`` of the representation :math:`\rho_3` given as an
+        object of class ``MMVector`` with ``p = 3``.
+        """
+        if isinstance(v, MMVector) and v.p == 3:
+            x = xsp2co1_rep_mod3_scalprod_mm_op(self._data,
+                 v.data [3638:])
+            assert x >= 0
+            return x
+        else:
+            ERR = "Cannot compute scalar product of %s and %s object"    
+            raise ValueError(ERR % (type(self), type(v)))
 
     def show(self):
         if self.is_zero:
