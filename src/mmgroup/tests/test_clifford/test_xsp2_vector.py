@@ -237,6 +237,7 @@ def test_vector(verbose = 0):
         if not wm.is_zero:
             (tag, i, j), value = wm.nonzero_entry()
             assert w3_op[tag, i, j] == value
+            assert 1 <= value <= 2
             
             
             

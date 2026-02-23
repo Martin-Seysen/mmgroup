@@ -173,7 +173,7 @@ def make_v1_mod3(verbose = 0):
        eqn_indices, more_indices = A_indices()
        x_indices = X_indices()
        all_indices = eqn_indices + x_indices + more_indices
-       all_indices += rand_indices()
+       # all_indices += rand_indices()
        v3 = MMV3(all_indices)
        if not check_v1_mod3(v3):
            continue
