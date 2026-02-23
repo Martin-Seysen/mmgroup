@@ -30,7 +30,6 @@ def import_all():
     global  leech2matrix_add_eqn
     global  bitmatrix64_t
     global  leech2matrix_solve_eqn
-    global  xsp2co1_elem_read_mod3
     global  uint64_parity
     global  gen_leech2_reduce_type4
     global  mm_aux_mmv_extract_sparse_signs
@@ -44,6 +43,7 @@ def import_all():
     global  mm_op_word_tag_A
     global  mm_op_checkzero
     global  mm_aux_leech2_op_word_sparse
+    global  Space_ZY
 
     import mmgroup
     from mmgroup import mat24
@@ -57,7 +57,6 @@ def import_all():
     from mmgroup.clifford12 import leech2matrix_add_eqn
     from mmgroup.clifford12 import bitmatrix64_t
     from mmgroup.clifford12 import leech2matrix_solve_eqn
-    from mmgroup.clifford12 import xsp2co1_elem_read_mod3
     from mmgroup.clifford12 import uint64_parity
     from mmgroup.generators import gen_leech2_reduce_type4
     from mmgroup.mm_op import mm_aux_mmv_extract_sparse_signs
@@ -71,6 +70,7 @@ def import_all():
     from mmgroup.mm_op import mm_op_word_tag_A
     from mmgroup.mm_op import mm_op_checkzero
     from mmgroup.mm_op import mm_aux_leech2_op_word_sparse
+    from mmgroup.tests.spaces.clifford_space import Space_ZY
 
     MMV3 = MMV(3)
 
@@ -371,6 +371,17 @@ def do_check_sample(V1_MOD3, v):
     assert mm_op_checkzero(3, v.data) == 0
 
 
+def invert_g(g, len_g = None):
+    """invert word of generators of the Monster"""
+    if len_g is None:
+        len_g = len(g)
+    else:
+        len_g = min(len_g, len(g))
+    gi = np.zeros(len_g, dtype = np.uint32)
+    for i in range(len_g):
+        gi[i] = g[len_g - 1 - i] ^ 0x80000000
+    return gi
+
 def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
     w03 = mm_op_eval_A_rank_mod3(3, v1.data, 0)
     assert w03 >> 48 == 23 and w03 & 0xffffffffffff != 0, hex(w03)
@@ -413,46 +424,36 @@ def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
         res = mm_op_word_tag_A(3, work_A, g1[len_g1:], 1, 1);
         assert res >= 0, res;
         len_g1 += 1;
-    g_x = Xsp2_Co1(g * MM0('a',g1[:len_g1]))
     if verbose:
+        g_x = Xsp2_Co1(g * MM0('a',g1[:len_g1]))
         print("g product intermediate =", g_x)
-    #g_x *= Xsp2_Co1('p', 1) # This generates an error in next statemnt
-    g_x.as_Q_x0_atom()  # check that g_x is in Q_x0
 
-    # Reduction in Q_x0 yet to be done!!!!!!!!
-
-    gi = Xsp2_Co1('a',g1[:len_g1]) ** -1
-
-    g_inv = gi.mmdata
+    # Finally, do reduction in Q_x0!
+    g_inv = invert_g(g1, len_g1)
     q = np.zeros(24, dtype = np.uint32);
     res =  mm_aux_leech2_op_word_sparse(
         v1_mod3_tags[OFS3_TAGS_X:], 24, g_inv, len(g_inv), q);
-    assert res >= 0, res
     v_x = mm_aux_mmv_extract_sparse_signs(3, v.data, q, 24);
     v_x ^= 0xffffff;  # histocial encoding; could be removed in future versions
-    assert (v_x >= 0), hex(v_x)
     x = leech2matrix_solve_eqn(v1_mod3_tags[OFS3_SOLVE_X:], 24, v_x);
-    v_sign = ((x >> 12) & 0x7ff) ^ (x & 0x800);
-
-    aa = xsp2co1_elem_read_mod3(v.data[OFS3_Z:], gi._data, v_sign, 24) 
-    sign = aa - 1
-    assert 0 <= sign <= 1
-    sign ^= uint64_parity(x & (x >> 12) & 0x7ff);
-    x ^= sign << 24
-
     x ^= ploop_theta(x >> 12);
-    if x & 0xfff:
-        g1[len_g1] = 0x90000000 + (x & 0xfff); 
+    if (x & 0xfff):
+        g1[len_g1] = 0x90000000 + (x & 0xfff);
         len_g1 += 1
-    xx = (x >> 12) & 0x1fff;
-    if xx:
-        g1[len_g1] = 0xB0000000 + xx;
-        len_g1 += 1
-    g_sign = Xsp2_Co1(g * MM0('a',g1[:len_g1]))
-    if verbose:
-        print("g product final =", g_sign)
-    assert Xsp2_Co1(g * MM0('a',g1[:len_g1])) == Xsp2_Co1()
-    g_inv = Xsp2_Co1('a', g1[:len_g1])
+    x = (x >> 12) & 0x1fff;
+    g1[len_g1] = 0xB0000000 + x;
+    len_g1 += 1
+    g_inv = invert_g(g1, len_g1)
+    rep = Space_ZY.unit('Z', 0, {2:1, 3:2})
+    rep *= MM0('a', g_inv)
+    (tag, i, j), value1 = rep.nonzero_entry()
+    value2 = v[tag, i, j]
+    assert 1 <= value2 <= 2
+    if value1 != value2:
+        g1[len_g1 - 1] ^= 0x1000
+    if (g1[len_g1 - 1] & 0x1fff) == 0:
+        len_g1 -= 1
+
     if test_C:
        from mmgroup.mm_reduce import mm_order_find_Gx0_via_v1_mod3
        a_gi = np.zeros(10, dtype = np.uint32)
@@ -461,8 +462,6 @@ def do_test_sample(v1, v1_mod3_tags, g, test_C, verbose = 0):
        g_inv_C = Xsp2_Co1('a', a_gi[:l])
        assert g_inv_C == g_inv
     return g_inv
-
-
     
     
 def test_samples(V1_MOD3, v1_mod3_tags, ntests=1, test_C=0, verbose=0):
