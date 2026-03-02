@@ -155,6 +155,16 @@ def test_reduce(ncases = 10, verbose = 0):
 
 
 #####################################################################################
+# Internal test for reduction with function mm_order_find_Gx0_via_v1_mod3
+#####################################################################################
+
+@pytest.mark.mmgroup
+def test_mm_order_find_Gx0_via_v1_mod3_intern(ntests = 10, verbose = 0):
+    from mmgroup.dev.mm_reduce.vector_v1_mod3 import py_test_Gx0
+    py_test_Gx0(ntests, test_C = True, verbose = verbose)
+
+
+#####################################################################################
 # Test fast reduction with function  mm_order_find_Gx0_via_v1_mod3
 #####################################################################################
 

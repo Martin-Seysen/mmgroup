@@ -12,9 +12,6 @@ try:
     from mmgroup.generators import gen_leech2_reduce_type4
     from mmgroup.generators import gen_leech2_op_word_many
     from mmgroup.generators import gen_leech3to2_type4
-    from mmgroup.clifford12 import bitmatrix64_mul
-    from mmgroup.clifford12 import bitmatrix64_vmul
-    from mmgroup.clifford12 import bitmatrix64_mul
     from mmgroup.clifford12 import leech2matrix_add_eqn
     from mmgroup.clifford12 import bitmatrix64_t
     from mmgroup.clifford12 import leech2matrix_solve_eqn
@@ -43,7 +40,7 @@ if mmgroup_present:
 
 ####################################################################
 ####################################################################
-# Creating the vector v_0 (mod 3)
+# Creating the vector v_1 (mod 3)
 ####################################################################
 ####################################################################
 
@@ -53,7 +50,7 @@ if mmgroup_present:
 
 
 ####################################################################
-# Part A of vector v_0
+# Part A of vector v_1
 ####################################################################
 
 
@@ -164,11 +161,11 @@ def process_A24(A24, verbose = 0):
 
 def display_part_A(cls):
     print("Data related to part 'A' of the Griess algebra")
-    print("Submatrix A12 of part A of vector v_0:")
+    print("Submatrix A12 of part A of vector v_1:")
     print(cls.A12)
     print("Determinant of A12 is %.3f" % np.linalg.det(A12))
 
-    print("Part A of vector v_0 (modulo 3):")
+    print("Part A of vector v_1 (modulo 3):")
     print(cls.A24)
     A23 = np.copy(cls.A24)
     A23 = np.delete(A23, 7, 0)
@@ -223,7 +220,7 @@ def map_y(y):
     return np.array(solve_y, dtype = np.uint32)
 
 ####################################################################
-# Parts BCTX of the vector v_0
+# Parts BCTX of the vector v_1
 ####################################################################
 
 
@@ -270,7 +267,7 @@ def map_x(eval_x):
 
 
 ####################################################################
-# Parts Z of the vector v_0
+# Parts Z of the vector v_1
 ####################################################################
 
 def process_Z():
@@ -280,7 +277,7 @@ def process_Z():
 
 
 ####################################################################
-# Assembling the parts of the vector v_0
+# Assembling the parts of the vector v_1
 ####################################################################
 
 
@@ -354,7 +351,7 @@ class MockupTables:
 
 ####################################################################
 ####################################################################
-# Using the vector v_0 (mod 3)
+# Using the vector v_1 (mod 3)
 ####################################################################
 ####################################################################
 
@@ -364,7 +361,7 @@ class MockupTables:
 
 
 
-def process_v_0():
+def process_v_1():
     state = 1
     len_data = 1
     data = np.zeros(24, dtype = np.uint32)
@@ -373,12 +370,12 @@ def process_v_0():
     yield state, len_data, data, g[:len_g]
 
     # Here data[0] should contain the kernel of part 'A' of vector
-    # v_0 (which is of type 4) as a vector in the Leech lattice
+    # v_1 (which is of type 4) as a vector in the Leech lattice
     # mod 2 in *Leech lattice encoding*.
     g = np.zeros(12, dtype = np.uint32)
     len_g = gen_leech2_reduce_type4(data[0], g);
     if len_g < 0 or len_g > 6:
-        ERR = "Kernel of part A of of vector v_0 is not of type 4"
+        ERR = "Kernel of part A of of vector v_1 is not of type 4"
         raise ValueError(ERR)
     np.copyto(data[:len_g], g[:len_g])
     state = 2
@@ -526,8 +523,8 @@ def watermark_row(a, i):
     s += s >> 32
     return (d << 8) + (s & 0x1f)
 
-def py_reduce_v_0(v3, g = None, verbose = 0):
-    st = process_v_0()
+def py_reduce_v_1(v3, g = None, verbose = 0):
+    st = process_v_1()
     state, length, data, h = next(st)
     w3 = mm_op_eval_A_rank_mod3(3, v3.data, 0)
     data[0] = gen_leech3to2_type4(w3)
@@ -556,7 +553,7 @@ def py_reduce_v_0(v3, g = None, verbose = 0):
     assert id == id.__class__()
     return h
 
-def C_reduce_v_0(v3):
+def C_reduce_v_1(v3):
     h = np.zeros(12, dtype = np.uint32)
     res = mm_order_find_Gx0_via_v1_mod3(v3.data,  h)
     assert res >= 0, (res, hex(res))
@@ -564,13 +561,13 @@ def C_reduce_v_0(v3):
 
 ####################################################################
 ####################################################################
-# Creating the vector v_0 (mod 3)
+# Creating the vector v_1 (mod 3)
 ####################################################################
 ####################################################################
 
 
 
-def py_v_0_mod3():
+def py_v_1_mod3():
     v3 = MMV(3)()
     mm_aux_mmv_add_sparse(3, ReduceGx0Data.SP[1:],
         ReduceGx0Data.SP[0], v3.data)
@@ -593,12 +590,12 @@ W_no_C = "C function mm_order_find_Gx0_via_v1_mod3 not implemented"
 
 def one_py_test_reduce_Gx0(g, test_C = True, verbose = 0):
     global W_no_C
-    v3 = py_v_0_mod3()
+    v3 = py_v_1_mod3()
     v3 *= g
-    h = py_reduce_v_0(v3, g)
+    h = py_reduce_v_1(v3, g)
     if test_C:
         if mmgroup_reduce_present:
-            hc = C_reduce_v_0(v3)
+            hc = C_reduce_v_1(v3)
             if not (h == hc).all():
                 print("Expected:", [hex(x) for x in h])
                 print("Obtained:", [hex(x) for x in hc])
