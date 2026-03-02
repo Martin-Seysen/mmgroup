@@ -32,23 +32,16 @@
 
 
 /************************************************************************
-** order vector tag table
+** order vector table
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
 
 static  uint32_t V1_MOD3_DATA[] = {
-// %%TABLE V1_MOD3_DATA, uint32
+ // %%TABLE V1_MOD3_VECTOR, uint32
 };
 
 
-static  uint32_t V1_MOD3_TAG_DATA[] = {
-// %%TABLE V1_MOD3_TAG_DATA, uint32
-};
-
-
-// Length of table V1_MOD3_DATA
-#define LEN_V1_MOD3  %{int:len(V1_MOD3_DATA)}
 
 /// @endcond 
 
@@ -60,22 +53,7 @@ static  uint32_t V1_MOD3_TAG_DATA[] = {
 ** load order vector
 ************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
 
-
-
-// Offsets in order vector stored in the table
-#define OFS3_WATERMARK_PERM  0
-#define OFS3_TAGS_Y          9
-#define OFS3_SOLVE_Y        20
-#define OFS3_TAGS_X         31
-#define OFS3_SOLVE_X        55
-
-#define OFS3_Z  (116416 >> 5)
-
-
-
-/// @endcond 
 
 /** 
   @brief Load order vector from tables to a buffer
@@ -89,7 +67,7 @@ static  uint32_t V1_MOD3_TAG_DATA[] = {
 void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
 {
     mm_aux_zero_mmv(3, p_dest);
-    mm_aux_mmv_add_sparse(3, V1_MOD3_DATA, %{int:len(V1_MOD3_DATA)}, p_dest);
+    mm_aux_mmv_add_sparse(3, V1_MOD3_DATA + 1, V1_MOD3_DATA[0], p_dest);
 }
 
 
@@ -113,20 +91,24 @@ void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
 */
 // %%EXPORT px
 int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
-{  
-    uint32_t a[LEN_V1_MOD3];
-    uint32_t i;
-    for (i = 0; i < LEN_V1_MOD3; ++i) {
-        a[i] = V1_MOD3_DATA[i] ^3;
+{
+  /// @cond DO_NOT_DOCUMENT 
+    #define MAXLEN_DATA 64
+    uint32_t length = V1_MOD3_DATA[0], i, a[MAXLEN_DATA];
+    if (length > MAXLEN_DATA) return -1;
+    #undef MAXLEN_DATA
+    for (i = 0; i < length; ++i) {
+        a[i] = V1_MOD3_DATA[i+1] ^3;
     }
-    mm_aux_mmv_add_sparse(3, a, LEN_V1_MOD3, v);
+    mm_aux_mmv_add_sparse(3, a, length, v);
     return mm_op3_checkzero(v);
+  /// @endcond 
 }
 
 
 
 /************************************************************************
-** Find an element of G_x0
+** Error handling
 ************************************************************************/
 
 
@@ -139,6 +121,147 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 /// @endcond 
 
 
+/************************************************************************
+** Auxiliary functions
+************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void watermark_A(uint64_t *A, uint32_t wm[24])
+{
+    uint64_t d, s;
+    uint32_t i;
+    for (i = 0; i < 24; ++i) {
+        s = A[i];
+        d = (s >> (2*i)) & 3;
+        s = (s ^ (s >> 1)) & 0x555555555555;
+        s = (s + (s >> 2)) & 0x333333333333;
+        s = (s + (s >> 4)) & 0x0F0F0F0F0F0F;
+        s += s >> 8;
+        s += s >> 16;
+        s += s >> 32;
+        wm[i] = (uint32_t)((d << 8) + (s & 0x1f));
+    }
+}
+
+
+static inline
+int32_t watermark_to_perm(uint32_t wm[24], uint32_t y_sp[11])
+{
+   static  uint8_t WM[2][8] = {
+       // %%TABLE V1_MOD3.HASH_A, uint8
+   };
+   static  uint8_t Y[11][2] = {
+       // %%TABLE V1_MOD3.EVAL_Y, uint8
+   };
+   uint8_t pi[25], i;
+   uint32_t m;
+   for (i = 0; i < 24; ++i) pi[i] = 24;
+   for (i = 0; i < 24; ++i) {
+        m = wm[i];
+        if ((m & ~0x107) == 0)  pi[WM[m >> 8][m & 7]] = i;
+   }
+   for (i = 0; i <= 10; ++i) if (pi[i] >= 24) return -2;
+   if (pi[12] >= 24 || pi[16] >= 24) return -2;
+   for (i = 0; i < 11; ++i) {
+       y_sp[i] =  0x2000000 + (pi[Y[i][0]] << 14) + (pi[Y[i][1]] << 8);
+   }
+   if (mat24_perm_complete_heptad(pi) != 0) return -3;
+   return mat24_perm_to_m24num(pi);
+}
+
+
+static inline
+int32_t solve_y(uint32_t *data)
+{
+    static  uint32_t EQU_Y[11] = {
+       // %%TABLE V1_MOD3.EQU_Y, uint32
+    };
+    uint32_t err = 2, v_y = 0, k, y;
+    for (k = 0; k < 11; ++k) {
+        err &= data[k] + 1,
+        v_y |= (data[k] & 2) << k;
+    }
+    if (err != 2) return -4;
+    v_y >>= 1;
+    y = leech2matrix_solve_eqn(EQU_Y, 11, v_y);
+    return y;
+}
+
+static inline
+int32_t prep_x(uint32_t *g, uint32_t len_g, uint32_t data[24])
+{
+    static  uint32_t X[24] = {
+       // %%TABLE V1_MOD3.EVAL_X, uint32
+    };
+    uint32_t g_inv[12], i, signs = 0;
+    int32_t res;
+    for (i = 0; i < 24; ++i)  data[i] = X[i];
+    if (len_g > 12) return -5;
+    for (i = 0; i < len_g; ++i) g_inv[i] = g[len_g - 1 - i] ^ 0x80000000UL;
+    res = gen_leech2_op_word_many(data, 24, g_inv, len_g);
+    if (res < 0) return res;
+    if ((uint32_t)res != len_g) return -5;
+    for (i = 0; i < 24; ++i) {
+        signs += ((data[i] >> 24) & 1) << i;
+        data[i] = res = mm_aux_index_leech2_to_sparse(data[i]) & 0xffffff00;
+        if (res <= 0) return res ? res : -6;
+    }
+    return signs;
+}
+
+static inline
+int32_t solve_x(uint32_t *data, uint32_t signs)
+{
+    static  uint32_t EQU_X[24] = {
+       // %%TABLE V1_MOD3.EQU_X, uint32
+    };
+    uint32_t err = 2, v_x = 0, k, x;
+    for (k = 0; k < 24; ++k) {
+        err &= data[k] + 1,
+        v_x |= (data[k] & 2) << k;
+    }
+    if (err != 2) return -4;
+    v_x >>= 1;
+    v_x ^= signs;
+    x = leech2matrix_solve_eqn(EQU_X, 24, v_x);
+    return x;
+}
+
+
+static inline
+int32_t prep_sign(uint32_t *g, uint32_t len_g, uint32_t data[])
+{
+    uint32_t g_inv[12], i, signs = 0;
+    int32_t res;
+    if (len_g > 12) return -5;
+    for (i = 0; i < len_g; ++i) g_inv[i] = g[len_g-1-i] ^ 0x80000000;
+    uint64_t rep[14];
+    xsp2co1_rep_mod3_unit_vector(0, 1, rep);
+    res = xsp2co1_rep_mod3_mul_word(rep, g_inv, len_g);
+    if (res < 0) return -11;
+    res = xsp2co1_rep_mod3_find_nonzero(rep);
+    if (res < 0) return res;
+    signs = (res >> 1) & 1;
+    data[0] = res & 0xffffff00;
+    return signs;
+}
+
+static inline
+int32_t solve_sign(uint32_t *data, uint32_t signs)
+{
+    if (((data[0] + 1) & 2) != 2) return -4;
+    return ((data[0] >> 1) ^ signs) & 1;
+}
+
+/// @endcond 
+
+
+
+/************************************************************************
+** Find element of G_x0 from image of vector v_0 (mod 3)
+************************************************************************/
+
 
 /** 
   @brief Find an element \f$g\f$ of the subgroup \f$G_{x0}\f$ 
@@ -150,61 +273,46 @@ int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
 {
     uint64_t w3 = mm_op3_eval_A_rank_mod3(v, 0);
     uint32_t w_type4 = (uint32_t)(gen_leech3to2_type4(w3));
-    int32_t len, i, res, v_y, y, v_x, x;
-    uint64_t A[24], elem_g_i[26];
-    uint32_t perm_num, g_inv[12], v_sign, aa, sign;
+    int32_t len_g, i, res, y, x;
+    uint64_t A[24];
+    uint32_t perm_num, signs, sign, data[24], y_sp[11];
 
-    if ((w3 >> 48) != 23 || (w3 & 0xffffffffffffULL) == 0) return -0x101;
-    if (w_type4 == 0) return -0x102;
-    len = gen_leech2_reduce_type4(w_type4, g);
-    if (len < 0) return _VAR_ERROR(2, len);
+    if ((w3 >> 48) != 23 || (w3 & 0xffffffffffffULL) == 0)
+         return _VAR_ERROR(1, -11);
+    if (w_type4 == 0) return _VAR_ERROR(1, -12);
+    len_g = gen_leech2_reduce_type4(w_type4, g);
+    if (len_g < 0) return _VAR_ERROR(2, len_g);
     for (i = 0; i < 24; ++i) A[i] = v[i];
-    res = mm_op3_word_tag_A(A, g, len, 1);
+    res = mm_op3_word_tag_A(A, g, len_g, 1);
     if (res < 0) return _VAR_ERROR(3, res);
-    res =  mm_op3_watermark_A_perm_num(
-        V1_MOD3_TAG_DATA +  OFS3_WATERMARK_PERM, A);
-    if (res < 0) return _VAR_ERROR(4, res);
-    perm_num = res;
-    if (perm_num) {
-        g[len] = 0xA0000000UL + perm_num;
-        res = mm_op3_word_tag_A(A, g + len, 1, 1);
-        if (res < 0) return _VAR_ERROR(5, res);
-        len += 1;
-    }
-    v_y = mm_aux_mmv_extract_sparse_signs(3, A, 
-        V1_MOD3_TAG_DATA + OFS3_TAGS_Y, 11);
-    if (v_y < 0) return  _VAR_ERROR(6, v_y);
-    y = leech2matrix_solve_eqn(
-        V1_MOD3_TAG_DATA + OFS3_SOLVE_Y, 11, v_y);
-    if (y > 0) g[len++] = 0xC0000000 + y;
 
-    for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
-    uint32_t q[24];
-    res =  mm_aux_leech2_op_word_sparse(
-        V1_MOD3_TAG_DATA + OFS3_TAGS_X, 24, g_inv, len, q);
-    if (res < 0) return _VAR_ERROR(8, res);
-    v_x = mm_aux_mmv_extract_sparse_signs(3, v, q, 24);
-    if (v_x < 0) return _VAR_ERROR(10, v_x);
-    v_x ^= 0xffffff; // histocial encoding; may be removed in future versions
-    x = leech2matrix_solve_eqn(V1_MOD3_TAG_DATA + OFS3_SOLVE_X, 24, v_x);
+    watermark_A(A, data);
+    perm_num = res = watermark_to_perm(data, y_sp);
+    if (res < 0) return _VAR_ERROR(4, res);
+    if (perm_num) g[len_g++] = 0xA0000000UL + perm_num;
+    for(i = 0; i < 11; ++i) data[i] = y_sp[i];
+    mm_aux_mmv_extract_sparse(3, A, data, 11);
+    y = res = solve_y(data);
+    if (res < 0) return _VAR_ERROR(5, res);
+    if (y > 0) g[len_g++] = 0xC0000000 + y;
+
+    signs = res = prep_x(g, len_g, data);
+    if (res < 0) return _VAR_ERROR(6, res);
+    mm_aux_mmv_extract_sparse(3, v, data, 24);
+    x = res = solve_x(data, signs);
+    if (res < 0) return _VAR_ERROR(7, res);
     x ^= mat24_ploop_theta(x >> 12);
-    if (x & 0xfff)  g[len++] = 0x90000000 + (x & 0xfff);
+    if (x & 0xfff)  g[len_g++] = 0x90000000 + (x & 0xfff);
     x = (x >> 12) & 0x1fff;
-    g[len++] = 0xB0000000 + x;
-    for (i = 0; i < len; ++i) g_inv[i] = g[len-1-i] ^ 0x80000000;
-    uint64_t rep[14];
-    xsp2co1_rep_mod3_unit_vector(0, 0x4000008ULL, rep);
-    res = xsp2co1_rep_mod3_mul_word(rep, g_inv, len);
-    if (res < 0) return _VAR_ERROR(11, res);
-    uint32_t s1, s2;
-    s1 = res = xsp2co1_rep_mod3_find_nonzero(rep);
-    if (res < 0) return _VAR_ERROR(12, res);
-    s2 = res = mm_aux_mmv_get_sparse(3, v, s1 & 0xffffff00UL);
-    if (res < 0) return _VAR_ERROR(13, res);
-    if ((s2 & 3) == 0) return -104;
-    g[len-1] ^= ((s1 ^ s2) & 1) << 12;
-    if ((g[len-1] & 0x1fff) == 0) --len;
-    return len;
+    g[len_g++] = 0xB0000000 + x;
+    signs = res = prep_sign(g, len_g, data);
+    if (res < 0) return _VAR_ERROR(8, res);
+    mm_aux_mmv_extract_sparse(3, v, data, 1);
+    sign = res = solve_sign(data, signs);
+    if (res < 0) return _VAR_ERROR(9, res);
+    g[len_g-1] ^= sign << 12;
+    if ((g[len_g-1] & 0x1fff) == 0) --len_g;
+    return len_g;
 }
 
 
