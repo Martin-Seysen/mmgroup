@@ -1,6 +1,6 @@
 /** @file mm_vector_v1_mod3.c
 
- File ``mm_vector_v1_mod3`` contains a precomuted vector ``v_1``
+ File ``mm_vector_v1_mod3`` contains a precomputed vector ``v_1``
  (with entries taken modulo 3) of the representation of the Monster.
  Then the vector ``v = v_1 * g`` can be used for identifying an
  unknown element ``g`` of the subgroup \f$G_{x0}\f$ of the Monster.
@@ -45,7 +45,7 @@ mm_order_find_Gx0_v1_mod3_state(&s, 0);
 
 // Compute the kernel of part 'A' of vector v. That kernel is of
 // dimension 1 and spanned by a type-4 vector w3 in the Leech lattice
-// mod 3. Convert w3 to the corrsponding vector w2 of type 4 in the
+// mod 3. Convert w3 to the corresponding vector w2 of type 4 in the
 // Leech lattice mod 2, using function gen_leech3to2_type4().
 // Store w2 in s.data[0].
 
@@ -75,14 +75,14 @@ mm_order_find_Gx0_v1_mod3_state(&s, 5);
 
 Remarks
 
-Part 'A' of vector ``v`` has a natural interpreation of a 24 times 24
+Part 'A' of vector ``v`` has a natural interpretation of a 24 times 24
 matrix acting on the Leech lattice mod 3.
 
 Watermark of row ``i`` is a pair ``(d, w)``, where ``d`` is the value
 of the diagonal entry of the row; and ``w`` is the weight of the row,
 i.e. the number of its nonzero entries. Here we have to
 store ``0x100 * d + w`` in ``s.data[i]``. This watermarking is
-coarser than the corresponding watermaking in [Sey22], Section 6.
+coarser than the corresponding watermarking in [Sey22], Section 6.
 But it still allows us to identify a sufficient number of rows
 of matrix 'A'. A value ``d = 3`` is interpreted as ``d = 0``.
 
@@ -109,7 +109,7 @@ in ``s.data`` are given in *sparse representation*.
    @brief Structure for state machine for finding an element of \f$G_{x0}\f$
 
    This structure is used in file ``mm_vector_v1_mod3.c``. For details
-   we rerfer to the documentation of that file.
+   we refer to the documentation of that file.
 
 */
 typedef struct mm_order_find_Gx0_s {
@@ -157,7 +157,7 @@ typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
  The following table contains a suitable vector \f$v_1\f$
  in *sparse representation*, preceded by a length indicator. Thus
  the length ``n`` of that representation is stored in entry 0 of
- the table, and and the sparse representation of \f$v_1\f$ is
+ the table, and the sparse representation of \f$v_1\f$ is
  stored in entries 1,...,n.
 */
 // %%EXPORT_TABLE p
@@ -207,7 +207,7 @@ void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
   
   The function compares the vector \f$v\f$ in the
   representation \f$\rho_{3}\f$ of the monster group referred
-  by ``v`` with the precomuted vector ``v_1``.
+  by ``v`` with the precomputed vector ``v_1``.
 
   The function returns 0 in case of equality and 1 otherwise.
   It destroys the vector in the buffer ``v``.
@@ -486,7 +486,7 @@ static inline void watermark_A(uint64_t *A, uint32_t wm[24])
   Monster as in the description of the ``mmgroup.mm_op`` extension.
   The element ``g**-1`` is returned as a word of generators in the
   array ``g`` as  described in file ``mmgroup_generators.h``. The
-  function retuns the  length of element ``g**-1`` in case of success,
+  function returns the  length of element ``g**-1`` in case of success,
   and a negative value in case failure.
 
   Buffer ``g`` must have length at least 10.
