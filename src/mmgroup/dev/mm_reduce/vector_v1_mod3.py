@@ -514,6 +514,7 @@ def mul_g_data(g, data, verbose = 0):
     return gh
 
 def watermark_row(a, i):
+    a = int(a)  # numpy problem
     d = (a >> (2*i)) & 3
     s = (a ^ (a >> 1)) & 0x555555555555
     s = (s + (s >> 2)) & 0x333333333333

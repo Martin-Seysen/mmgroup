@@ -84,7 +84,7 @@ const  uint32_t MM_VECTOR_V1_MOD3_TABLE[] = {
 void mm_order_load_vector_v1_mod3(uint_mmv_t *p_dest)
 {
     mm_aux_zero_mmv(3, p_dest);
-    mm_aux_mmv_add_sparse(3, MM_VECTOR_V1_MOD3_TABLE + 1,
+    mm_aux_mmv_add_sparse(3, (uint32_t *)MM_VECTOR_V1_MOD3_TABLE + 1,
          MM_VECTOR_V1_MOD3_TABLE[0], p_dest);
 }
 
@@ -134,7 +134,7 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 // #define _ERROR(source, error) (0 - (source << 16) - error)
 #define _VAR_ERROR(source, res) \
-    (0 - (((source)+1) << 24) + ((uint32_t)res & 0xffffffUL))
+    ((int32_t)(0 - (((source)+1) << 24) + ((int32_t)(res) & 0xffffffL)))
 
 /// @endcond 
 
@@ -276,9 +276,15 @@ int32_t solve_sign(uint32_t *data, uint32_t signs)
 
 
 
+
+
+
 /************************************************************************
 ** Find element of G_x0 from image of vector v_0 (mod 3)
 ************************************************************************/
+
+
+
 
 
 /** 
