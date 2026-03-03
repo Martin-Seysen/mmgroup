@@ -62,9 +62,9 @@
 
 
 
-/////////////////////////////////////////////////////////////////////////
-// Definitions of internally-used structures
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+** Definitions of internally-used structures
+************************************************************************/
 
 
 //  %%GEN h
@@ -203,9 +203,12 @@ extern "C" {
 //  %%GEN c
 
 
-/////////////////////////////////////////////////////////////////////////
-// Definitions in the C file
-/////////////////////////////////////////////////////////////////////////
+
+/************************************************************************
+** Definitions in the C file
+************************************************************************/
+
+
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -222,11 +225,10 @@ extern "C" {
 /// @endcond  
 
 
+/************************************************************************
+** Memory management
+************************************************************************/
 
-
-/////////////////////////////////////////////////////////////////////////
-// Memory management
-/////////////////////////////////////////////////////////////////////////
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -289,13 +291,13 @@ _gt_word_init(gt_word_type *p_gt, size_t bytesize)
    return 0;
 }
 
-/* @brief Create entry for the linked list in ``gt_word_type `` object
+/* @brief Create entry for the linked list in ``gt_word_type`` object
 
 The function returns a new entry of type ``gt_subword_type`` to be
 used in the circular doubly linked list stored in the bufter of
 type ``gt_word_type`` referred by ``p_gt``. Such an entry can be used
 in the linked list associated with ``p_gt`` only. The function returns
-a pointer to the new entry in case of success and ``NULL`in case of
+a pointer to the new entry in case of success and ``NULL`` in case of
 failure.
 
 In order to reduce the calls to the function ``malloc``, we maintain
@@ -354,12 +356,11 @@ _gt_word_delete_all_subwords(gt_word_type *p_gt)
 /// @endcond  
 
 
-/////////////////////////////////////////////////////////////////////////
-// Creating and manipulating the doubly linked list
-/////////////////////////////////////////////////////////////////////////
 
 
-
+/************************************************************************
+** Creating and manipulating the doubly linked list
+************************************************************************/
 
 
 
@@ -435,7 +436,7 @@ length. This mode is faster than ``mode = 1``.
 
 
 This function returns ``NULL`` in case of failure, e.g. if the C
-function ``malloc```fails to allocate memory.
+function ``malloc`` fails to allocate memory.
 */
 // %%EXPORT p
 gt_word_type *gt_word_alloc(uint32_t mode, void *p_buffer, size_t nbytes)
@@ -608,17 +609,11 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
 
 
 
+/************************************************************************
+** Append part of a monster group element to a subword
+************************************************************************/
 
 
-
-/////////////////////////////////////////////////////////////////////////
-// Append part of a monster group element to a subword
-/////////////////////////////////////////////////////////////////////////
-
-/// @cond DO_NOT_DOCUMENT 
-#define MAX_INTERN_WORD_DATA (MAX_GT_WORD_DATA+40)
-
-/// @endcond
 
 
 
@@ -626,16 +621,17 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
 
 
 /**
-@brief Low-level function
+  @brief Low-level function
 
-Try to append a prefix of word 'a' of length 'n' to the current subword.
-Return number of atoms of 'a' sucessfully appended to that word.
-A negative return value inducates an error.
+  Try to append a prefix of word 'a' of length 'n' to the current subword.
+  Return number of atoms of 'a' sucessfully appended to that word.
+  A negative return value inducates an error.
 */
 // %%EXPORT p
 int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
 {
-    
+  /// @cond DO_NOT_DOCUMENT 
+    #define MAX_INTERN_WORD_DATA (MAX_GT_WORD_DATA+40)   
     gt_subword_type *p_cur = p_gt->p_node;
     uint32_t i = 0, ulen = 0, img_omega_len = 0, j, e, v;
     uint32_t reduced = p_cur->reduced;
@@ -688,28 +684,29 @@ int32_t gt_word_append_sub_part(gt_word_type *p_gt, uint32_t *a,  uint32_t n)
     p_cur->reduced = reduced;
     for (j = 0; j < ulen; ++j) p_cur->data[j] = w[j];
     return i;
+    #undef MAX_INTERN_WORD_DATA  
+  /// @endcond 
 }
 
 
 
 
 
-
-/////////////////////////////////////////////////////////////////////////
-// Reduce a subword
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+** Reduce a subword
+************************************************************************/
 
 
 /// @cond DO_NOT_DOCUMENT 
 
 /**
-@brief Low-level function
+  @brief Low-level function
 
-Compute 'complexity' of an element \f$g\f$ of \f$G_{x0}\f$ from
-the image of \f$\Omega\f$  under \f$g\f$ .
+  Compute 'complexity' of an element \f$g\f$ of \f$G_{x0}\f$ from
+  the image of \f$\Omega\f$  under \f$g\f$ .
 
-Here the complexity of \f$g\f$ is the minimum number of atoms
-of tag ``l`` required to represent \f$g\f$.
+  Here the complexity of \f$g\f$ is the minimum number of atoms
+  of tag ``l`` required to represent \f$g\f$.
 */
 static inline uint32_t complexity(uint32_t img_omega)
 {
@@ -721,14 +718,14 @@ static inline uint32_t complexity(uint32_t img_omega)
 }
 
 /**
-@brief Low-level function
+  @brief Low-level function
 
-Return True if an element  \f$g\f$ of \f$G_{x0}\f$ stored in the
-array of ``a`` of length ``n`` is so complex that lazy reduction
-is worth the effort.
+  Return True if an element  \f$g\f$ of \f$G_{x0}\f$ stored in the
+  array of ``a`` of length ``n`` is so complex that lazy reduction
+  is worth the effort.
 
-Here Parameter ``l_weight`` is the output of function ``complexity``
-applied to \f$g\f$.
+  Here Parameter ``l_weight`` is the output of function ``complexity``
+  applied to \f$g\f$.
 */
 static inline 
 uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
@@ -752,17 +749,17 @@ uint32_t over_complex(uint32_t *a, uint32_t n, uint32_t l_weight)
 
 
 /**
-@brief Low-level function
+  @brief Low-level function
 
-Reduce current subword
+  Reduce current subword
 
-sub_mode = 0: lazy reduction (just some word shortening)
+  sub_mode = 0: lazy reduction (just some word shortening)
 
-sub_mode = 1: standard reduction
+  sub_mode = 1: standard reduction
 
-sub_mode = 2: as sub_mode 0, but move also prefix in N_x0 to previous subword
+  sub_mode = 2: as sub_mode 0, but move also prefix in N_x0 to previous subword
 
-sub_mode = 3: as sub_mode 1, but move also prefix in N_x0 to previous subword
+  sub_mode = 3: as sub_mode 1, but move also prefix in N_x0 to previous subword
 */
 // %%EXPORT p
 int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
@@ -805,10 +802,9 @@ int32_t gt_word_reduce_sub(gt_word_type *p_gt, uint32_t sub_mode)
 }
 
 
-/////////////////////////////////////////////////////////////////////////
-// Join a subword with its predecessors if possible
-/////////////////////////////////////////////////////////////////////////
-
+/************************************************************************
+** Join a subword with its predecessors if possible
+************************************************************************/
 
 
 /**
@@ -870,11 +866,10 @@ int32_t gt_word_rule_join(gt_word_type *p_gt)
 }
 
 
+/************************************************************************
+**  Replace t^e xi^f t^g g by xi^e' t^f' xi^g'
+************************************************************************/
 
-
-/////////////////////////////////////////////////////////////////////////
-// Replace t^e xi^f t^g g by xi^e' t^f' xi^g' 
-/////////////////////////////////////////////////////////////////////////
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -991,9 +986,11 @@ int32_t gt_word_rule_t_xi_t(gt_word_type *p_gt)
 
 
 
-/////////////////////////////////////////////////////////////////////////
-// Reduce a word
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+**  Reduce a word
+************************************************************************/
+
+
 
 
 /// @cond DO_NOT_DOCUMENT 
@@ -1020,9 +1017,9 @@ int32_t gt_word_reduce_input(gt_word_type *p_gt)
 /// @endcond 
 
 
-/////////////////////////////////////////////////////////////////////////
-// Append element of the monster group to a word
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+**  Append element of the monster group to a word
+************************************************************************/
 
 
 /**
@@ -1056,10 +1053,9 @@ int32_t gt_word_append(gt_word_type *p_gt, uint32_t *a, uint32_t n)
     return 0;    
 }
 
-
-/////////////////////////////////////////////////////////////////////////
-// Store a word or a subword as an array of atoms
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+**  Store a word or a subword as an array of atoms
+************************************************************************/
 
 
 /**
@@ -1190,10 +1186,9 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////
-// Compress a fully reduced word into a 256-bit integer
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+**  Compress a fully reduced word into a 256-bit integer
+************************************************************************/
 
 
 /**
@@ -1232,10 +1227,9 @@ int32_t gt_word_to_mm_compress(gt_word_type *p_gt, mm_compress_type *p_c)
 
 
 /**
-@brief Compress word in ``*p_gt`` to a 256-bit integer``
+@brief Compress word in ``*p_gt`` to a 256-bit integer
 
 Yet to be tested and documented!!!
-
 */
 // %%EXPORT p
 int32_t gt_word_compress(gt_word_type *p_gt, uint64_t *p_n)
@@ -1246,9 +1240,10 @@ int32_t gt_word_compress(gt_word_type *p_gt, uint64_t *p_n)
 }
 
 
-/////////////////////////////////////////////////////////////////////////
-// Exported functions for shortening a word
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+** Exported functions for shortening a word
+************************************************************************/
+
 
 /**
 @brief Reduce a word of generators of the Monster group
@@ -1264,7 +1259,6 @@ it is specified as in function ``gt_word_alloc``.
 
 The function returns a negative value in case of failure, e.g.
 if ``n1 > n1max ``.
-
 */
 // %%EXPORT px
 int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1max, uint32_t mode)
@@ -1294,9 +1288,10 @@ int32_t gt_word_shorten(uint32_t *g, uint32_t n, uint32_t *g1, uint32_t n1max, u
 }
 
 
-/////////////////////////////////////////////////////////////////////////
-// Pickle a structur to an array of 32-bit integers
-/////////////////////////////////////////////////////////////////////////
+/************************************************************************
+** Pickle a structure to an array of 32-bit integers
+************************************************************************/
+
 
 /// @cond DO_NOT_DOCUMENT
 #define LEN_PICKLE_REC_HD 5  // length of the header of a pickled record

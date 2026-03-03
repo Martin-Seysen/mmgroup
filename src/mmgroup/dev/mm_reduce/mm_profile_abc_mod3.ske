@@ -128,7 +128,7 @@ the representation of the Monster into an array ``a`` of length 72. For
 the end user the structure of the array is opaque and hence undocumented.
 The information loaded from vector \f$v\f$ corresponds to the 
 triple  ('A', 'B' + 'C', 'B' - 'C') , where 'A', 'B' and 'C' are
-24 times 24 subarrays of vector `\f$v\f$ as documented in Section
+24 times 24 subarrays of vector \f$v\f$ as documented in Section
 *The representation of the Monster group* in the *API reference*.
 All entries are stored modulo 3.
 
@@ -142,7 +142,7 @@ abbreviate the part 'A' of  \f$v \cdot\tau^e\f$ stored in a block
 referred by ``a`` to ``A[e;]``. We write ``A[e;i,j]`` for
 entry ``i,j`` of  ``A[e;]``.
 
-In the block ``a`` the entry ``A[e;i,j]``is stored in bits
+In the block ``a`` the entry ``A[e;i,j]`` is stored in bits
 ``(2*j+1, 2*j)`` of entry ``a[24*e + i]``. Such an entry is also
 called a *dibit*.
 ************************************************************************/

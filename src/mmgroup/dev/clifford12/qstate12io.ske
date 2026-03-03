@@ -95,6 +95,10 @@ extern "C" {
 
 // %%GEN h
 
+/**
+  @def QSTATE_SUPPORT_MAXCOLS
+  @brief Max No of columns allowed for matrix in struct qstate12_support_type   
+*/
 #define QSTATE_SUPPORT_MAXCOLS 30
 
 

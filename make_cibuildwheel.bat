@@ -1,1 +1,1 @@
-python -m cibuildwheel  --output-dir wheelhouse --only cp311-win_amd64
+python -m cibuildwheel  --output-dir wheelhouse --only cp314-win_amd64

@@ -268,7 +268,7 @@ uint32_t uint64_to_bitarray(uint64_t v, uint8_t *bl)
 
   Here bit matrix ``m`` has ``i`` rows.
   
-  We add one to all entries  ``m[k, j+k]`` for `0 <= k < i``.
+  We add one to all entries  ``m[k, j+k]`` for ``0 <= k < i``.
 
 */
 // %%EXPORT px
@@ -573,7 +573,7 @@ int32_t bitmatrix64_xch_bits(uint64_t *m, uint32_t i, uint32_t sh, uint64_t mask
   The function reverses ``n`` columns of the bit matrix ``m`` 
   starting at column ``n0``. So it exchanges bit ``m[k, n0 + j]`` 
   with bit ``m[k, n0 + n - 1 - j]`` for ``0 <= j < n``
-  and `0 <= k < i``.
+  and ``0 <= k < i``.
   
   The function returns 0 in case of success and a negative
   value if any column with index >= 64 is involved in the
@@ -767,7 +767,7 @@ static int32_t restore_cap_h(uint64_t *ma, uint64_t *m,
    ``m2`` only. These rows are changed in such a way that the last
    ``n_cap`` of these rows of the two matrices are equal in columns
    ``j0-1,...,j0-n``. So these last rows contain the intersection of
-   the row spaces of ``m1`` and `m2``, ignoring all columns but   
+   the row spaces of ``m1`` and ``m2``, ignoring all columns but   
    ``j0-1,...,j0-n``.
    
    Parameters ``j0`` and ``n`` must be the same  in this function, and 
@@ -792,7 +792,7 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     uint64_t rows_used1 = 0;   // bit list of used rows in ``m1a``
     uint64_t rows_used2 = 0;   // bit list of used rows in ``m2a``
     uint64_t rows_equ = 0;     // bit list indicating rows that are
-                               // equal in  ``m1a```and ``m2a``
+                               // equal in  ``m1a`` and ``m2a``
     int_fast32_t col;          // current column processed in the main loop
     int_fast32_t row_pos1 = 0; // row of ``m1``  being processed
     int_fast32_t row_pos2 = 0; // row of ``m2``  being processed
@@ -902,8 +902,8 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     // Now ``m1a`` is a matrix obtained from ``m1`` by row operations.
     // Only the rows of ``m1a`` which are marked in the array 
     // ``rows_used1`` are in use. A similar statement holds if 
-    // (``m1a``, ``m1`,  ``rows_used1``) is replaced by
-    // (``m2a``, ``m2`,  ``rows_used2``).
+    // (``m1a``, ``m1``,  ``rows_used1``) is replaced by
+    // (``m2a``, ``m2``,  ``rows_used2``).
     // Bit array ``rows_equ`` marks the rows in ``m1a`` and ``m2a``
     // that are equal in columns ``j0-1,...,j0-n``.
     
