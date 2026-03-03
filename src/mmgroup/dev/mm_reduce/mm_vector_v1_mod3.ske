@@ -27,12 +27,41 @@
 
 
 //  %%GEN h
+
+
+/**
+   @brief Structure for state machine for finding an element of \f$G_{x0}\f$
+
+   Yet to be documented!!
+
+*/
+typedef struct mm_order_find_Gx0_s {
+    int32_t state;      ///< State of state machine
+    uint32_t length;    ///< Number of entries in component ``data``
+    uint32_t data[24];  ///< Interface to caller
+    // Internal data
+    /** @private */
+    uint32_t len_g;     ///< Length of group element g
+    /** @private */
+    uint32_t g[12];     ///< Group element g computed so far
+    /** @private */
+    uint32_t signs;     ///< For internal use
+};
+
+
+/**
+   @brief typedef for structure ``struct mm_order_find_Gx0_s``
+*/
+typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
+
+
+
 /// @cond DO_NOT_DOCUMENT 
 //  %%GEN c
 
 
 /************************************************************************
-** order vector table
+** Order vector table
 ************************************************************************/
 
 
@@ -67,7 +96,7 @@ const  uint32_t MM_VECTOR_V1_MOD3_TABLE[] = {
 
 
 /************************************************************************
-** load order vector
+** Load order vector
 ************************************************************************/
 
 
@@ -125,6 +154,7 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 
 
+
 /************************************************************************
 ** Error handling
 ************************************************************************/
@@ -140,33 +170,16 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 
 /************************************************************************
-** Auxiliary functions
+** Auxiliary functions for state machine
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT 
-
-static inline void watermark_A(uint64_t *A, uint32_t wm[24])
-{
-    uint64_t d, s;
-    uint32_t i;
-    for (i = 0; i < 24; ++i) {
-        s = A[i];
-        d = (s >> (2*i)) & 3;
-        s = (s ^ (s >> 1)) & 0x555555555555;
-        s = (s + (s >> 2)) & 0x333333333333;
-        s = (s + (s >> 4)) & 0x0F0F0F0F0F0F;
-        s += s >> 8;
-        s += s >> 16;
-        s += s >> 32;
-        wm[i] = (uint32_t)((d << 8) + (s & 0x1f));
-    }
-}
 
 
 static inline
 int32_t watermark_to_perm(uint32_t wm[24], uint32_t y_sp[11])
 {
-   static  uint8_t WM[2][8] = {
+   static  uint8_t WM[4][8] = {
        // %%TABLE V1_MOD3.HASH_A, uint8
    };
    static  uint8_t Y[11][2] = {
@@ -177,7 +190,7 @@ int32_t watermark_to_perm(uint32_t wm[24], uint32_t y_sp[11])
    for (i = 0; i < 24; ++i) pi[i] = 24;
    for (i = 0; i < 24; ++i) {
         m = wm[i];
-        if ((m & ~0x107) == 0)  pi[WM[m >> 8][m & 7]] = i;
+        if ((m & ~0x307) == 0) pi[WM[m >> 8][m & 7]] = i;
    }
    for (i = 0; i <= 10; ++i) if (pi[i] >= 24) return -2;
    if (pi[12] >= 24 || pi[16] >= 24) return -2;
@@ -278,66 +291,156 @@ int32_t solve_sign(uint32_t *data, uint32_t signs)
 
 
 
+/************************************************************************
+** State machine for finding element of G_x0 from a vector v_0
+************************************************************************/
+
+
+
+/** 
+  @brief State machine for finding an element of the group \f$G_{x0}\f$ 
+
+  Yet to be documented!!!
+*/
+
+int32_t mm_order_find_Gx0_v1_mod3_state( mm_order_find_Gx0_type *st, int32_t state)
+{
+    int32_t res;
+    uint32_t y, x, i;
+    switch(state) {
+        case 0:
+            st->length = st->len_g = 0;
+            st->state = 1;
+            return 0;
+        case 1:
+            if (state != st->state) return (st->state = _VAR_ERROR(1, -1));
+            st->len_g = res = gen_leech2_reduce_type4(st->data[0], st->g);
+            if (res < 0) return  (st->state = _VAR_ERROR(2, res));
+            st->length = st->len_g;
+            st->state = 2;
+            return 0;
+        case 2:
+            if (state != st->state) return (st->state = _VAR_ERROR(1, -2));
+            uint32_t perm_num = res = watermark_to_perm(st->data, st->data);
+            if (res < 0) return  (st->state =_VAR_ERROR(3, res));
+            if (perm_num) st->g[st->len_g++] = 0xA0000000UL + perm_num;
+            st->length = 11;
+            st->state = 3;
+            return 0;
+        case 3:
+            if (state != st->state) return (st->state = _VAR_ERROR(1, -3));
+            y = res = solve_y(st->data);
+            if (res < 0) return _VAR_ERROR(4, res);
+            if (y > 0) st->g[st->len_g++] = 0xC0000000 + y;
+            st->signs = res = prep_x(st->g, st->len_g, st->data);
+            if (res < 0) return _VAR_ERROR(5, res);
+            st->length = 24;
+            st->state = 4;
+            return 0;
+        case 4:
+            if (state != st->state) return (st->state = _VAR_ERROR(1, -4));
+            x = res = solve_x(st->data, st->signs);
+            if (res < 0) return _VAR_ERROR(7, res);
+            x ^= mat24_ploop_theta(x >> 12);
+            if (x & 0xfff)  st->g[st->len_g++] = 0x90000000 + (x & 0xfff);
+            x = (x >> 12) & 0x1fff;
+            st->g[st->len_g++] = 0xB0000000 + x;
+            st->signs = res = prep_sign(st->g, st->len_g, st->data);
+            if (res < 0) return _VAR_ERROR(8, res);
+            st->length = 1;
+            st->state = 5;
+            return 0;
+        case 5:
+            if (state != st->state) return (st->state = _VAR_ERROR(1, -5));
+            st->signs = res = solve_sign(st->data, st->signs);
+            if (res < 0) return _VAR_ERROR(9, res);
+            st->g[st->len_g - 1] ^= st->signs << 12;
+            if ((st->g[st->len_g - 1] & 0x1fff) == 0) --st->len_g;
+            for (i = 0; i < st->len_g; ++i) st->data[i] = st->g[i];
+            st->length = st->len_g;
+            st->state = 6;
+            return 0;
+        default:
+            if (st->state < 0) return st->state;
+            return (st->state = _VAR_ERROR(1, -6));
+    }
+}
+
+
+
+/************************************************************************
+** Auxiliary functions for function mm_order_find_Gx0_via_v1_mod3
+************************************************************************/
+
+
+/// @cond DO_NOT_DOCUMENT 
+
+static inline void watermark_A(uint64_t *A, uint32_t wm[24])
+{
+    uint64_t d, s;
+    uint32_t i;
+    for (i = 0; i < 24; ++i) {
+        s = A[i];
+        d = (s >> (2*i)) & 3;
+        s = (s ^ (s >> 1)) & 0x555555555555;
+        s = (s + (s >> 2)) & 0x333333333333;
+        s = (s + (s >> 4)) & 0x0F0F0F0F0F0F;
+        s += s >> 8;
+        s += s >> 16;
+        s += s >> 32;
+        wm[i] = (uint32_t)((d << 8) + (s & 0x1f));
+    }
+}
+
+/// @endcond
 
 /************************************************************************
 ** Find element of G_x0 from image of vector v_0 (mod 3)
 ************************************************************************/
 
 
-
-
-
 /** 
-  @brief Find an element \f$g\f$ of the subgroup \f$G_{x0}\f$ 
+  @brief Find an element \f$g\f$ of the group \f$G_{x0}\f$ 
 
   Yet to be documented!!!
 */
 // %%EXPORT px
 int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
 {
+    mm_order_find_Gx0_type s;
+    int32_t res;
+
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 0)) < 0) return res;
     uint64_t w3 = mm_op3_eval_A_rank_mod3(v, 0);
-    uint32_t w_type4 = (uint32_t)(gen_leech3to2_type4(w3));
-    int32_t len_g, i, res, y, x;
-    uint64_t A[24];
-    uint32_t perm_num, signs, sign, data[24], y_sp[11];
-
     if ((w3 >> 48) != 23 || (w3 & 0xffffffffffffULL) == 0)
-         return _VAR_ERROR(1, -11);
-    if (w_type4 == 0) return _VAR_ERROR(1, -12);
-    len_g = gen_leech2_reduce_type4(w_type4, g);
-    if (len_g < 0) return _VAR_ERROR(2, len_g);
+         return _VAR_ERROR(10, -11);
+    s.data[0] = (uint32_t)(gen_leech3to2_type4(w3));
+    if (s.data[0] == 0) return _VAR_ERROR(10, -12);
+
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 1)) < 0) return res;
+    uint64_t A[24];
+    uint32_t i;
     for (i = 0; i < 24; ++i) A[i] = v[i];
-    res = mm_op3_word_tag_A(A, g, len_g, 1);
-    if (res < 0) return _VAR_ERROR(3, res);
+    res = mm_op3_word_tag_A(A, s.g, s.len_g, 1);
+    if (res < 0) return _VAR_ERROR(11, res);
+    watermark_A(A, s.data);
 
-    watermark_A(A, data);
-    perm_num = res = watermark_to_perm(data, y_sp);
-    if (res < 0) return _VAR_ERROR(4, res);
-    if (perm_num) g[len_g++] = 0xA0000000UL + perm_num;
-    for(i = 0; i < 11; ++i) data[i] = y_sp[i];
-    mm_aux_mmv_extract_sparse(3, A, data, 11);
-    y = res = solve_y(data);
-    if (res < 0) return _VAR_ERROR(5, res);
-    if (y > 0) g[len_g++] = 0xC0000000 + y;
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 2)) < 0) return res;
+    mm_aux_mmv_extract_sparse(3, A, s.data, s.length);
 
-    signs = res = prep_x(g, len_g, data);
-    if (res < 0) return _VAR_ERROR(6, res);
-    mm_aux_mmv_extract_sparse(3, v, data, 24);
-    x = res = solve_x(data, signs);
-    if (res < 0) return _VAR_ERROR(7, res);
-    x ^= mat24_ploop_theta(x >> 12);
-    if (x & 0xfff)  g[len_g++] = 0x90000000 + (x & 0xfff);
-    x = (x >> 12) & 0x1fff;
-    g[len_g++] = 0xB0000000 + x;
-    signs = res = prep_sign(g, len_g, data);
-    if (res < 0) return _VAR_ERROR(8, res);
-    mm_aux_mmv_extract_sparse(3, v, data, 1);
-    sign = res = solve_sign(data, signs);
-    if (res < 0) return _VAR_ERROR(9, res);
-    g[len_g-1] ^= sign << 12;
-    if ((g[len_g-1] & 0x1fff) == 0) --len_g;
-    return len_g;
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 3)) < 0) return res;
+    mm_aux_mmv_extract_sparse(3, v, s.data, s.length);
+
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 4)) < 0) return res;
+    mm_aux_mmv_extract_sparse(3, v, s.data, s.length);
+
+    if ((res = mm_order_find_Gx0_v1_mod3_state(&s, 5)) < 0) return res;
+    for (i = 0; i < s.length; ++i) g[i] = s.data[i];
+    return s.length;
 }
+
+
+
 
 
 

@@ -280,6 +280,12 @@ def process_Z():
 # Assembling the parts of the vector v_1
 ####################################################################
 
+def make_hash_a(hash):
+    hash_a = np.full((4, 8), 24,  dtype = np.uint8)
+    for (d, w), i in hash.items():
+        hash_a[d, w] = i
+    hash_a[3] = hash_a[0]
+    return hash_a
 
 class ReduceGx0Data:
     A12 = A12
@@ -292,9 +298,7 @@ class ReduceGx0Data:
         SP_Z = process_Z()
         SP = SP_Y + SP_X + SP_Z
         SP = np.array([len(SP)] + SP, dtype = np.uint32)
-        HASH_A = np.full((2,8), 24,  dtype = np.uint8)
-        for (d, w), i in HASH.items():
-            HASH_A[d, w] = i
+        HASH_A = make_hash_a(HASH)
 
     @classmethod
     def display(cls):
