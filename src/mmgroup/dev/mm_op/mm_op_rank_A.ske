@@ -134,7 +134,7 @@ int32_t mm_op%{P}_load_leech3matrix(uint_mmv_t *v, uint64_t *a)
 
    Let ``a`` be the symmetric 24 times matrix corresponding to the part 
    with  tag 'A' of a input vector ``v`` in the representation of 
-   the  monster  modulo `%{P}. Let  ``b = a - d * 1``, for an integer
+   the  monster  modulo %{P}. Let  ``b = a - d * 1``, for an integer
    input `d`, where ``1`` is the unit matrix. 
 
    Let ``r`` be the rank of matrix ``b`` with entries taken modulo 3.

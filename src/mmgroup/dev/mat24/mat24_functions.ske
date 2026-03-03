@@ -1685,7 +1685,7 @@ static inline void extend_umbral_hexad(
   If the return value is greater then zero then a suitable permutation
   in ``Mat24`` is returned in the array referred by ``p_out``. The
   function computes the lowest permutation (in lexical order) that 
-  maps ``h1`` to ``h2`.
+  maps ``h1`` to ``h2``.
 
   Caution:
 

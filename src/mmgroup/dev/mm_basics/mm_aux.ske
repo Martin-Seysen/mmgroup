@@ -858,7 +858,7 @@ void mm_aux_mmv_to_bytes(uint32_t p, uint_mmv_t *mv, uint8_t *b)
 /**
   @brief Convert vector from external to internal representation
 
-  Read all entries of the array ```b`` (of length 196884, containing 
+  Read all entries of the array ``b`` (of length 196884, containing 
   a vector in external representation) and store these entries the 
   vector ``mv``. Here ``mv`` is a vector stored in internal
   representation with modulus ``p``. 
@@ -1408,9 +1408,9 @@ static uint32_t HASH_SECTIONS[8] = {
   modulus ``p``.
 
   Parameter ``skip`` should usually be zero. If bit ``i`` of
-  parameter ``skip`` is set, then entries with  the ``i``-th tag
+  parameter ``skip`` is set, then entries with  the ``i`` -th tag
   in the string ``'ABCTXZY'`` are ignored. So in case ``skip == 4``
-  the tag ``'C'``is ignored.
+  the tag ``'C'`` is ignored.
 */
 // %%EXPORT px
 uint64_t mm_aux_hash(uint32_t p, uint_mmv_t *mv, uint32_t skip)

@@ -1010,14 +1010,14 @@ uint32_t mm_group_check_word_n(uint32_t *w1, uint32_t l1, uint32_t *g_out)
 /**
  @brief Check if two word of generators of the monster are equal.
 
- We check if the word ``w1`` of length `l1` of generators of the 
- monster group is equal to the word  ``w2`` of length `l2`  of
+ We check if the word ``w1`` of length ``l1`` of generators of the 
+ monster group is equal to the word  ``w2`` of length ``l2``  of
  generators. The function returns the following status information:
 
 
  0: ``w1`` == ``w2``
 
- 1: ``w1`` != ``w2`
+ 1: ``w1`` != ``w2``
 
  Greater than 1: equality of ``w1`` and ``w2`` is not known 
 

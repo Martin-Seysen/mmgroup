@@ -592,7 +592,7 @@ void gen_rng_seed(uint64_t *seed)
   These random integers are written to the array referred by ``out``.
 
   Parameter ``seed`` points to the seed for the random generator.
-  That seed must have been  created by function `gen_rng_seed_rnd``
+  That seed must have been  created by function ``gen_rng_seed_rnd``
   or by a similar function.
   
   The function returns zero in case of success and a nonzero value

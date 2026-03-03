@@ -169,10 +169,10 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
   monster, the part with tags ``A``, ``B``, ``C`` of the 
   vector \f$v \cdot g\f$ can be computed quickly. 
 
-  The function returns a bits ``b0``in bit 8 the return value, and
+  The function returns a bits ``b0`` in bit 8 the return value, and
   the length of the output in buffer ``a`` in bits 7,...,0 of the 
   return value. It returns a negative value in case of failure.
-  Buffer ``a´` should have length at least 11.
+  Buffer ``a`` should have length at least 11.
 
   If the bit ``b0`` is set then we have \f$g \in N_0\f$, and \f$g\f$
   is stored as a word of length at most 5 with possible tags 'tyxdp' 
@@ -180,7 +180,7 @@ uint32_t  mm_group_iter_next(mm_group_iter_t *pit)
 
   if the bit ``b1`` is cleared then we may have \f$g \notin N_0\f$
   and \f$g\f$ is stored as a word of generators of \f$G_{x0}\f$,
-  possibly followed by a single atom with tag `t`. Here \f$g\f$
+  possibly followed by a single atom with tag ``t``. Here \f$g\f$
   in stored in buffer ``a``: it may or not be equal to the input
   value \f$g\f$.
 */
