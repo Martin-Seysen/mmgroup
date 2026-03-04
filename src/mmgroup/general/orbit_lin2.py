@@ -497,10 +497,10 @@ class Orbit_Lin2:
         g1 = self._map_v_word_a(img)
         return np.concatenate((g, np.flip(g1) ^ 1))
     def _size_a_buf(self, n_gen, dim):
-        """Size of main buffer for given No of generators an dimension"""
+        r"""Size of main buffer for given No of generators an dimension"""
         return chk(gen_ufind_lin2_size(dim, n_gen)) + n_gen
     def _init_a_buf(self, dim = None):
-        """Initialize main buffer for a given dimension"""
+        r"""Initialize main buffer for a given dimension"""
         assert self.a is None
         max_n_gen = min(4 * dim, self.MAX_N_GEN)
         a_size = self._size_a_buf(max_n_gen, dim)
@@ -508,7 +508,7 @@ class Orbit_Lin2:
         chk(gen_ufind_lin2_init(self.a, len(self.a), dim, max_n_gen))
         self.map_gen = np.zeros(max_n_gen, dtype = np.uint32)
     def _extend_a_buf(self, n_more = 1):
-        """Extend main buffers for more generators
+        r"""Extend main buffers for more generators
 
         The function tries to extend the buffers so that they can store
         up to ``n_more`` more generators. It raises ``ValueError``
@@ -744,7 +744,7 @@ class Random_Subgroup:
             self.rand()
 
     def rand(self):
-        """Return a random element of the group"""
+        r"""Return a random element of the group"""
         rmax = 2 * len(self.x) - 1
         s = randint(2, rmax)
         t = randint(2, rmax - 2)

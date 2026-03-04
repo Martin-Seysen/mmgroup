@@ -295,7 +295,7 @@ def find_cross(points):
     Any set of 6 or more points contains a cross.
     """
     def common(x1, x2):
-        """Return list of all points on line through x1 and x2"""
+        r"""Return list of all points on line through x1 and x2"""
         blist = uint64_to_bitlist(INCIDENCES[x1] & INCIDENCES[x2])
         assert len(blist) == 1
         return int(INCIDENCES[blist[0]])
@@ -707,7 +707,7 @@ assert len(Y_NAMES) == len(set(Y_NAMES.values())) == 26
 
 
 def p3_mapping(src = None, random = False):
-    """Implements the constructor of class AutP3, standard cases"""
+    r"""Implements the constructor of class AutP3, standard cases"""
     if src is None:
         if not random:
             return list(range(13))
@@ -895,7 +895,7 @@ class AutP3(AbstractGroupWord):
 
 @singleton
 class AutP3Group(AbstractGroup):
-    """Auxilary class for class ``AutP3``
+    r"""Auxilary class for class ``AutP3``
 
     This makes the methods in class ``AbstractGroup`` available to
     instancs of class ``AutP3``.
@@ -928,7 +928,7 @@ class AutP3Group(AbstractGroup):
         return g1.perm == g2.perm
 
     def str_word(self, g):
-        """Convert group atom g to a string
+        r"""Convert group atom g to a string
 
         """
         return "AutP3" + str(tuple(g.perm))

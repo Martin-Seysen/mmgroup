@@ -186,7 +186,7 @@ class BiMM(AbstractGroupWord):
  
 @singleton
 class BiMMGroup(AbstractGroup):
-    """Auxilary class for class ``BiMM`` 
+    r"""Auxilary class for class ``BiMM`` 
 
     This makes the methods in class ``AbstractGroup`` available to
     instancs of class ``BiMM``.
@@ -270,7 +270,7 @@ PL_DATA = None
 MAXLEN_PL_DATA = 0
 
 def precompute_points_lines_list():
-    """Perform the precomputations required for this module.
+    r"""Perform the precomputations required for this module.
 
     The function sets the values ``PL_DATA`` and ``ALPHA`` as
     defined above. We map the point ``P_i`` to 

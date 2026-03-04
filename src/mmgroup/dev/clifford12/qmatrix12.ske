@@ -156,7 +156,7 @@ int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb)
    
       Q(v1, v2) = Q(v2, v1),  Q(v1, v1) = 0,  and
  
-      Q(1 << i, 1 << j) =  a[i + 1, j + nqb + 1]``,  
+      Q(1 << i, 1 << j) =  a[i + 1, j + nqb + 1],  
       for ``0 <= j < i < nqb``.
  
 */

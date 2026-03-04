@@ -71,7 +71,7 @@ extern "C" {
   The function converts an index ``i`` for the external representation 
   of a vector to an index for the sparse representation of a vector
   and returns the converted index. The function returns 0 in case
-  ``i >= 196884```. 
+  ``i >= 196884``. 
 
   Indices for the sparse representation are defined as 
   in ``enum MM_SPACE_TAG`` in file ``mm_basics.h``.

@@ -330,7 +330,7 @@ int32_t mm_op_omega(uint32_t p, uint_mmv_t *v, uint32_t d)
 
 
 /**
-  @brief Compute part A of operation of \f$\tau^e\f$ on vector``
+  @brief Compute part A of operation of \f$\tau^e\f$ on vector
 
   Function ``mm_op_t_A`` computes a the operation of the 
   monster group element \f$\tau^e\f$ on a vector ``v_in`` 
