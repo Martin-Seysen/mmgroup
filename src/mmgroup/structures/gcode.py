@@ -911,7 +911,7 @@ class GcVector:
 
 
     def vtype(self, as_int = False):
-        """Compute type of a bit vector ``v`` in :math:`\mathbb{F}_2^{24}`
+        r"""Compute type of a bit vector ``v`` in :math:`\mathbb{F}_2^{24}`
 
         Here the type of a vector ``v`` is its orbit under the action
         of the Mathieu group :math:`M_{24}`. These orbits are denoted

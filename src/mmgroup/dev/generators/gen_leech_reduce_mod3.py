@@ -683,7 +683,7 @@ def reduce_final_perm(r):
 
 
 def reduce_leech_mod3(a, verbose = 0):
-    """Find orbit of a vector in the Leech lattice mod 3
+    r"""Find orbit of a vector in the Leech lattice mod 3
     
     This function maps a vector ``v3`` in the Leech lattice (given
     in **Leech lattice mod 3 encoding**) to the representative ``v3'``

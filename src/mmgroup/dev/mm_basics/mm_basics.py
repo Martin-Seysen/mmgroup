@@ -185,7 +185,7 @@ def shl_fix(data, i):
 
 
 class MM_Basics(object):
-    """The basic table-providing class for vectors in :math:`\rho_p` 
+    r"""The basic table-providing class for vectors in :math:`\rho_p` 
 
     This class provides the constants given in the table above.
     It is an abstract class. Subclasses of this class  may provide

@@ -399,7 +399,7 @@ def rand_v24():
     return np.random.randint(3, size=24, dtype=np.uint8)
 
 def leech3matrix_vmul_testdata():
-    """Yield test data for function leech3matrix_vmul()
+    r"""Yield test data for function leech3matrix_vmul()
 
     The function yields pairs (v, m), where v is a numpy array of
     24 integers between 0 and 23. m is a random vector in the rep

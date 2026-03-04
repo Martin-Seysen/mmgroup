@@ -626,7 +626,7 @@ def split_header(file):
 
 
 def open_for_write(dir, filename):
-    """Open file ``dir\filename`` for output""" 
+    r"""Open file ``dir\filename`` for output""" 
     if not filename:
         return NullOutputFile
     pathname = os.path.join(dir, filename)

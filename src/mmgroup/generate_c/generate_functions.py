@@ -940,7 +940,7 @@ def direct_single_arg(expression, kwd = ""):
     
 
 def eval_codegen_join(tables, expression):
-    """Evaluate 'expression' in a 'JOIN' directive.
+    r"""Evaluate 'expression' in a 'JOIN' directive.
 
     Here 'expression'  must be a string of the form 
 

@@ -1,4 +1,4 @@
-REM @ECHO OFF
+@ECHO OFF
 SETLOCAL
 
 pushd "%~dp0"

@@ -52,7 +52,7 @@ def parity(a):
 
 
 def exp4(i):
-    """returns \eps**i in GF(4), coded as 2,3,1 for i=0,1,2"""
+    r"""returns \eps**i in GF(4), coded as 2,3,1 for i=0,1,2"""
     return 1 + i%3
 
 
@@ -251,7 +251,7 @@ def iter_content(length=6, content = [1,2,3]):
 
 
 def trace3(a,b,c):
-    """return trace(a*b*c), a,b,c \in GF(4)"""
+    r"""return trace(a*b*c), a,b,c \in GF(4)"""
     return mul4(a,mul4(b,c)) >> 1
 
 def trilinear(a,b,c):

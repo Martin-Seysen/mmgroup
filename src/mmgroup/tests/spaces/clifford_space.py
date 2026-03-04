@@ -274,7 +274,7 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
         return qs, v3
 
     def scalar_product(self, v):
-        """Scalar product with a vector
+        r"""Scalar product with a vector
 
         The function returns the scalar product of this vector and a
         vector ``v`` of the representation :math:`\rho_3` given as an

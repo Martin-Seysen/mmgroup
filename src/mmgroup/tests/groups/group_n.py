@@ -1,4 +1,4 @@
-"""Wrapper for module mm_group_n.c for the subgroup N_0 of the monster
+r"""Wrapper for module mm_group_n.c for the subgroup N_0 of the monster
 
  TODO: adjust documentation to new version
 
