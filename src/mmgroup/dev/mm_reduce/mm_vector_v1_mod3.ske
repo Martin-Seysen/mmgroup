@@ -112,7 +112,7 @@ in ``s.data`` are given in *sparse representation*.
    we refer to the documentation of that file.
 
 */
-typedef struct mm_order_find_Gx0_s {
+struct mm_order_find_Gx0_s {
     int32_t state;      ///< State of state machine
     uint32_t length;    ///< Number of entries in component ``data``
     uint32_t data[24];  ///< Interface to caller
@@ -379,7 +379,7 @@ int32_t solve_sign(uint32_t *data, uint32_t signs)
   The operation of the state machine is documented in the header
   of this file.
 */
-
+// %%EXPORT
 int32_t mm_order_find_Gx0_v1_mod3_state( mm_order_find_Gx0_type *st, int32_t state)
 {
     int32_t res;
@@ -393,6 +393,7 @@ int32_t mm_order_find_Gx0_v1_mod3_state( mm_order_find_Gx0_type *st, int32_t sta
             if (state != st->state) return (st->state = _VAR_ERROR(1, -1));
             st->len_g = res = gen_leech2_reduce_type4(st->data[0], st->g);
             if (res < 0) return  (st->state = _VAR_ERROR(2, res));
+            for (i = 0; i < st->len_g; ++i) st->data[i] = st->g[i];
             st->length = st->len_g;
             st->state = 2;
             return 0;
@@ -508,7 +509,7 @@ int32_t mm_order_find_Gx0_via_v1_mod3(uint_mmv_t *v,  uint32_t *g)
     uint64_t A[24];
     uint32_t i;
     for (i = 0; i < 24; ++i) A[i] = v[i];
-    res = mm_op3_word_tag_A(A, s.g, s.len_g, 1);
+    res = mm_op3_word_tag_A(A, s.data, s.length, 1);
     if (res < 0) return _VAR_ERROR(11, res);
     watermark_A(A, s.data);
 
