@@ -631,7 +631,7 @@ class Xsp2_Co1_Group(AbstractMMGroup):
     def _equal_words(self, g1, g2):
         chk_qstate12(xsp2co1_reduce_elem(g1._data))
         chk_qstate12(xsp2co1_reduce_elem(g2._data))
-        return (g1._data == g2._data).all()
+        return bool((g1._data == g2._data).all())
 
     def _embed_number(self, n):
         w = self.word_type()

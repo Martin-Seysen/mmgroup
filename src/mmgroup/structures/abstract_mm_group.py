@@ -64,17 +64,7 @@ class AbstractMMGroupWord(AbstractGroupWord):
     def __init__(self, tag = None, atom = None):
         self.from_data(self.group, tag, atom)
   
-
-    def __eq__(self, other):
-        if not isinstance(other, AbstractMMGroupWord):
-            return False
-        if self.group == other.group:
-            return self.group._equal_words(self, other)
-        if MasterMMGroup:
-            g1, g2 = MasterMMGroup(self), MasterMMGroup(other)
-            return MasterMMGroup._equal_words(g1, g2)
-        return NotImplemented
-        
+       
     def reduce(self):
         """Reduce a group element
 
@@ -308,34 +298,4 @@ class AbstractMMGroup(AbstractGroup):
 
 AbstractMMGroupWord.group = AbstractMMGroup
 
-
-####################################################################
-### The MasterMMGroup 
-###
-### There are diffenent subclasses of class AbstractMMGroup
-### implementing the Monster group or a subgroup of it. 
-### When objects of differnet subclasses are compared then we do
-### that operation in the most flexible subclass of class
-### AbstractMMGroup, which is class MasterMMGroup (default = None).
-###
-### MasterMMGroup may be set to the value 'group' with function 
-###
-### setMasterMMGroup(group, stage)
-###
-### This function changes MasterMMGroup if parameter 'stage' is
-### greater than in any previous call to that function.
-###
-### In a future version, the group operation may also be
-### implemented in that way.
-####################################################################
-
-
-
-MasterMMGroup = None
-MasterMMGroupStage = -1
-
-def setMasterMMGroup(group, stage):
-    global MasterMMGroup, MasterMMGroupStage
-    if stage > MasterMMGroupStage:
-        MasterMMGroup, MasterMMGroupStage = group, stage
 

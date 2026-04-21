@@ -953,6 +953,22 @@ class MM0Group(AbstractMMGroup):
                  return True
             raise ValueError("Don't know if monster group elements are equal")
 
+    @staticmethod
+    def _to_group(g):
+        """Convert g to instance of class MM0
+
+        This must be overwritten in each subclass of MM0
+        """
+        if g.__class__ == MM0:
+            return g
+        if g == 1:
+            return MM0()
+        if Xsp2_Co1 is None:
+            import_Xsp2_Co1()
+        if g.__class__ == Xsp2_Co1:
+            return MM0(g)
+        err = "Cannot convert type '%s' object to group element"
+        raise TypeError(err % type(g))
 
 
 StdMM0Group = MM0Group()

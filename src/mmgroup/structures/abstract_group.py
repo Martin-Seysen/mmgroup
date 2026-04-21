@@ -62,17 +62,12 @@ class AbstractGroupWord(object):
     def __eq__(self, other):
         if not isinstance(other, AbstractGroupWord):
             return False    
+        g = self.group
         try:
-            g = self.group
             other1 = g._to_group(other)
-            return g._equal_words(self, other1)
         except TypeError:
-            try:
-                g = other.group
-                self1 = g._to_group(self)
-                return g._equal_words(self1, other)
-            except TypeError:
-                return False 
+            return NotImplemented
+        return g._equal_words(self, other1)
 
     def __ne__(self, other): 
         return not self.__eq__(other)
@@ -127,6 +122,10 @@ class AbstractGroupWord(object):
         except TypeError:
             return NotImplemented 
         return g._mul(other1, g._invert(self))
+
+    def __invert__(self):
+        return self.group._invert(self)
+
       
     def __pow__(self, exp):
         """Implementation of the power operation

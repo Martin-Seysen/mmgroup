@@ -158,6 +158,7 @@ from random import randint, sample
 from sys import getrefcount
 
 from mmgroup.structures.mm0_group import MM0
+from mmgroup.structures.xsp2_co1 import Xsp2_Co1
 from mmgroup.structures.abstract_group import singleton
 from mmgroup.structures.abstract_mm_group import AbstractMMGroup
 from mmgroup.structures.construct_mm import load_group_name     
@@ -217,7 +218,8 @@ class MM(MM0):
     elements of the monster group.  Then
     ``g1 * g2``  means group multiplication, and ``g1 ** n`` means
     exponentiation of ``g1`` with the integer ``n``. ``g1 ** (-1)`` 
-    is the inverse of ``g``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
+    is the inverse of ``g``. We may also write ``~g1`` for the
+    inverse of ``g1``. ``g1 / g2`` means ``g1 * g2 ** (-1)``.
     We have ``1 * g1 == g1 * 1 == g1`` and ``1 / g1 == g1 ** (-1)``.
 
     ``g1 ** g2`` means ``g2**(-1) * g1 * g2``.   
@@ -584,7 +586,6 @@ class MMGroup(AbstractMMGroup):
     word_type = MM
     group_name = "M"
 
-
     def __init__(self):
         """ TODO: Yet to be documented     
 
@@ -645,6 +646,22 @@ class MMGroup(AbstractMMGroup):
             if (g1.mmdata == g2.mmdata).all():
                  return True
             raise ValueError("Don't know if monster group elements are equal")
+
+    @staticmethod
+    def _to_group(g):
+        """Convert g to instance of class MM
+
+        This must be overwritten in each subclass of MM
+        """
+        if g.__class__ == MM:
+            return g
+        if g == 1:
+            return MM()
+        if g.__class__ in (MM0, Xsp2_Co1):
+            return MM(g)
+        err = "Cannot convert type '%s' object to group element"
+        raise TypeError(err % type(g))
+        
 
     def str_word(self, g):
         try:
