@@ -59,11 +59,20 @@ class AbstractGroupWord(object):
     # You should overwrite the corresonding methods in the
     # subclasses of class AbstractGroup insead.
  
-    def __eq__(self, other):    
-        return( isinstance(other, AbstractGroupWord) 
-            and  self.group == other.group
-            and  self.group._equal_words(self, other)
-        )
+    def __eq__(self, other):
+        if not isinstance(other, AbstractGroupWord):
+            return False    
+        try:
+            g = self.group
+            other1 = g._to_group(other)
+            return g._equal_words(self, other1)
+        except TypeError:
+            try:
+                g = other.group
+                self1 = g._to_group(self)
+                return g._equal_words(self1, other)
+            except TypeError:
+                return False 
 
     def __ne__(self, other): 
         return not self.__eq__(other)
@@ -72,43 +81,27 @@ class AbstractGroupWord(object):
         """Return a deep copy of the group element"""
         return self.group.copy_word(self)
 
-    def __imul__(self, other):
-        """Implementation of the group multiplication"""
-        g = self.group
-        return g._imul(self, g._to_group(other))
 
     def __mul__(self, other):
         """Implementation of the group multiplication"""
         g = self.group
         try:
-            return g._imul(g.copy_word(self), g._to_group(other))
-        except (TypeError, NotImplementedError) as exc:
-            try:
-                myself = other.group._to_group(self)
-                return myself.__imul__(other)
-            except:
-                raise exc
+            other1 = g._to_group(other)
+        except TypeError:
+            return NotImplemented 
+        return g._mul(self, other1)
+
     def __rmul__(self, other):
         """Implementation of the reverse group multiplication"""
         g = self.group
         if isinstance(other, Parity):
             return other
         try:
-            return g._imul(g._to_group(other), self)
-        except (TypeError, NotImplementedError) as exc:
-            try:
-                myself = other.group._to_group(self)
-                return other.__imul__(myself)
-            except:
-                raise exc
+            other1 = g._to_group(other)
+        except TypeError:
+             return NotImplemented 
+        return g._mul(other1, self)
 
-    def __itruediv__(self, other):
-        """Implementation of the group division
-
-        Here self / other    means    self * other**(-1) .
-        """
-        g = self.group
-        return g._imul(self, g._invert(g._to_group(other)))
 
     def __truediv__(self, other):
         """Implementation of the group division
@@ -116,7 +109,12 @@ class AbstractGroupWord(object):
         Here self / other    means    self * other**(-1) .
         """
         g = self.group
-        return g._imul(g.copy_word(self), g._invert(g._to_group(other)))
+        try:
+            other1 = g._to_group(other)
+        except TypeError:
+            return NotImplemented 
+        return g._mul(self, g._invert(other1))
+
 
     def __rtruediv__(self, other):
         """Implementation of the reverse group division
@@ -124,7 +122,11 @@ class AbstractGroupWord(object):
         Here self / other    means    self * other**(-1) .
         """
         g = self.group
-        return g._imul(g.copy_word(g._to_group(other)), g._invert(self))
+        try:
+            other1 = g._to_group(other)
+        except TypeError:
+            return NotImplemented 
+        return g._mul(other1, g._invert(self))
       
     def __pow__(self, exp):
         """Implementation of the power operation
@@ -143,14 +145,17 @@ class AbstractGroupWord(object):
                 start, exp = g._invert(self), -exp
                 res = g.copy_word(start) 
             for i in range(int(exp).bit_length() - 2, -1, -1):
-                res = g._imul(res, res)
+                res = g._mul(res, res)
                 if exp & (1 << i):
-                    res = g._imul(res, start) 
+                    res = g._mul(res, start) 
                 res.reduce()
             return res      
         elif isinstance(exp, AbstractGroupWord):
-            e = self.group._to_group(exp) 
-            return g._imul(g._imul(g._invert(e), self), e)
+            try:
+                e = self.group._to_group(exp) 
+            except TypeError:
+                return NotImplemented 
+            return g._mul(g._mul(g._invert(e), self), e)
         elif isinstance(exp, Parity):
             one = self.group.neutral()
             if self * self == one:
@@ -227,15 +232,14 @@ class AbstractGroup(object):
 
 
 
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
         """Return product g1 * g2 of group elements g1 and g2.
 
-        g1 may be destroyed but not g2.
-
         This method is called for elements g1 and g2 of the group
-        'self' only. It should return the reduced product.
+        'self' only. It should return a new object equal to the
+        product g1 * g2.
         """
-        raise NotImplementedError("No multiplication in abstract group")
+        return NotImplemented
 
 
     def _invert(self, g1):
@@ -246,7 +250,7 @@ class AbstractGroup(object):
         This method is called for elements g1 of the group
         'self' only. It should return the reduced inverse.
         """
-        raise NotImplementedError("No inversion in abstract group")
+        return NotImplemented
         
     ### The following methods should be overwritten ###################
 
@@ -281,7 +285,7 @@ class AbstractGroup(object):
         We assume that the representation of a group element
         is not always given in a unique form.
 
-        Assueme that ``g`` can be converted to a unique form (or  
+        Assume that ``g`` can be converted to a unique form (or  
         at least to a sufficiently simple form) that we will call 
         a **reduced** form.  This method tries to achieve this goal. 
 

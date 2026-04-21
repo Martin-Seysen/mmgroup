@@ -914,7 +914,7 @@ class AutP3Group(AbstractGroup):
         raise AttributeError(err)
 
     @staticmethod
-    def _imul(g1, g2):
+    def _mul(g1, g2):
         return AutP3('p', mul_perm_P3(g1.perm, g2.perm))
 
     @staticmethod

@@ -254,6 +254,19 @@ class Xsp2_Co1(AbstractMMGroupWord):
         return gen_leech2_type(v)
 
     def xsp_conjugate(self, v, sign = True):
+        r"""Conjugate elements of the group :math:`Q_{x0}`
+
+        Let ``v`` be an integer or a list of integers representing one
+        or more elements of :math:`Q_{x0}`, as described in the
+        documenation of class ``XLeech2``. The function conjugates all
+        these elements of :math:`Q_{x0}` with this element of
+        :math:`G_{x0}` and returns the list of the elements, (or a
+        single element, depending on the input). Here conjugated
+        elements are returned as integers.
+
+        If ``sign`` is 0 then the signs of the conjugated elements
+        are not computed and set to zero.
+        """
         v = np.array(v, dtype = np.uint64, copy=True)
         shape = v.shape
         assert len(shape) <= 1
@@ -266,6 +279,11 @@ class Xsp2_Co1(AbstractMMGroupWord):
             return int(v[0])
 
     def mul_data(self, data):
+        """Low-level function
+
+        This function replaces the object ``self``
+        by ``self * Xsp2_Co1('a', data)``.
+        """
         a_atoms = np.array(data, dtype = np.uint32)
         xsp2co1_mul_elem_word(self._data, a_atoms, len(a_atoms))
         return self
@@ -591,9 +609,10 @@ class Xsp2_Co1_Group(AbstractMMGroup):
     def atom(self, tag = None, i = "r"):
         return self.word_type(tag, i)
 
-    def _imul(self, g1, g2):
-        chk_qstate12(xsp2co1_mul_elem(g1._data, g2._data, g1._data))
-        return g1
+    def _mul(self, g1, g2):
+        w = self.word_type()
+        chk_qstate12(xsp2co1_mul_elem(g1._data, g2._data, w._data))
+        return w
 
     def _invert(self, g1):
         w = self.word_type()

@@ -338,7 +338,7 @@ class AutoGroup(AbstractGroup):
         return len(g1) == len(g2) and all(equ)
 
 
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
         """Return product g1*g2 of group elements g1 and g2.
 
         g1 may be destroyed but not g2.
@@ -347,8 +347,9 @@ class AutoGroup(AbstractGroup):
         'self' only.
         """
         assert g1.group == g2.group == self, (g1.group, g2.group)
-        g1.seq += g2.seq[:]
-        return self.reduce(g1)
+        w = self.copy_word(g1)
+        w.seq += g2.seq[:]
+        return self.reduce(w)
 
 
     def iter_inv(self, generator):

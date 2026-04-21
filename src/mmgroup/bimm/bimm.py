@@ -205,12 +205,7 @@ class BiMMGroup(AbstractGroup):
    
 
     @staticmethod
-    def _imul(g1, g2):
-        # Beware of imumutability:
-        # If actually only one copy of g1 exits then we have g1,
-        # a call to g1.__mul__, to cls. _imul, and to getrefcount
-        if getrefcount(g1) > 4:
-            g1 = BiMM(g1.m1, g1.m2, g1.alpha)
+    def _mul(g1, g2):
         if g1.alpha & 1:
             m1, m2 = g1.m1 * g2.m2, g1.m2 * g2.m1
         else:

@@ -611,10 +611,11 @@ class AutPlGroup(AbstractGroup):
         err = "Class AutPlGroup has no attribute 'atom'"
         raise AttributeError(err)
 
-    def _imul(self, g1, g2):
-        g1.rep = mat24.mul_autpl(g1.rep, g2.rep)
-        g1._compute_from_rep()
-        return g1    
+    def _mul(self, g1, g2):
+        res = AutPL()
+        res.rep = mat24.mul_autpl(g1.rep, g2.rep)
+        res._compute_from_rep()
+        return res    
 
     def _invert(self, g1):
         res = AutPL()

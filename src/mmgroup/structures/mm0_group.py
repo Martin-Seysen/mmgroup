@@ -915,14 +915,16 @@ class MM0Group(AbstractMMGroup):
         return g1
 
         
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
+        w = self.word_type()
+        w._setdata(g1.mmdata)
         l1, l2 = g1.length, g2.length
+        w._extend(2*(l1 + l2) + 1)
         if not 0 <= g1.reduced <= l1:
-            g1.reduced = 0
-        g1._extend(2*(l1 + l2) + 1)
-        g1._data[l1 : l1 + l2] = g2._data[:l2]
-        g1.length = l1 + l2
-        return self.reduce(g1)
+            w.reduced = 0
+        w._data[l1 : l1 + l2] = g2._data[:l2]
+        w.length = l1 + l2
+        return self.reduce(w)
 
     def _invert(self, g1):
         w = self.word_type()

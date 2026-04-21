@@ -34,6 +34,8 @@ from mmgroup.structures.construct_mm import iter_tuples_from_atoms
 ####################################################################
 
 
+
+
 class AbstractMMGroupWord(AbstractGroupWord):
     """Model an element of an abstract group.
 
@@ -63,7 +65,16 @@ class AbstractMMGroupWord(AbstractGroupWord):
         self.from_data(self.group, tag, atom)
   
 
-
+    def __eq__(self, other):
+        if not isinstance(other, AbstractMMGroupWord):
+            return False
+        if self.group == other.group:
+            return self.group._equal_words(self, other)
+        if MasterMMGroup:
+            g1, g2 = MasterMMGroup(self), MasterMMGroup(other)
+            return MasterMMGroup._equal_words(g1, g2)
+        return NotImplemented
+        
     def reduce(self):
         """Reduce a group element
 
@@ -154,7 +165,7 @@ class AbstractMMGroup(AbstractGroup):
         """
         raise NotImplementedError("No atoms defined in abtract group")  
 
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
         """Return product g1 * g2 of group elements g1 and g2.
 
         g1 may be destroyed but not g2.
@@ -162,7 +173,7 @@ class AbstractMMGroup(AbstractGroup):
         This method is called for elements g1 and g2 of the grou 'self'
         only. It should return the (possibly unreduced) reduced product.
         """
-        raise NotImplementedError("No multiplication in abstract group")
+        return NotImplemented
 
     def _invert(self, g1):
         """Return inverse g1**(-1) of group element g1.
@@ -172,7 +183,7 @@ class AbstractMMGroup(AbstractGroup):
         This method is called for elements g1 of the group 'self' only. 
         It should return the (possibly unreduced) inverse.
         """
-        raise NotImplementedError("No inversion in abstract group")
+        return NotImplemented
         
     ### The following methods should be overwritten ###################
 
@@ -296,4 +307,35 @@ class AbstractMMGroup(AbstractGroup):
 
 
 AbstractMMGroupWord.group = AbstractMMGroup
+
+
+####################################################################
+### The MasterMMGroup 
+###
+### There are diffenent subclasses of class AbstractMMGroup
+### implementing the Monster group or a subgroup of it. 
+### When objects of differnet subclasses are compared then we do
+### that operation in the most flexible subclass of class
+### AbstractMMGroup, which is class MasterMMGroup (default = None).
+###
+### MasterMMGroup may be set to the value 'group' with function 
+###
+### setMasterMMGroup(group, stage)
+###
+### This function changes MasterMMGroup if parameter 'stage' is
+### greater than in any previous call to that function.
+###
+### In a future version, the group operation may also be
+### implemented in that way.
+####################################################################
+
+
+
+MasterMMGroup = None
+MasterMMGroupStage = -1
+
+def setMasterMMGroup(group, stage):
+    global MasterMMGroup, MasterMMGroupStage
+    if stage > MasterMMGroupStage:
+        MasterMMGroup, MasterMMGroupStage = group, stage
 

@@ -237,9 +237,10 @@ class GroupN(AbstractMMGroup):
     ####################################################################
 
         
-    def _imul(self, g1, g2):
-        mm_group_n_mul_element(g1.data, g2.data, g1.data)
-        return g1
+    def _mul(self, g1, g2):
+        g3 = GroupN_Word(group=self)
+        mm_group_n_mul_element(g1.data, g2.data, g3.data)
+        return g3
 
     def _invert(self, g1):
         g2 = GroupN_Word(group=self)

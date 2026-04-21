@@ -607,20 +607,16 @@ class MMGroup(AbstractMMGroup):
         return g1
 
         
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
         l1, l2 = g1.length, g2.length
-        # Beware of imumutability:
-        # If actually only one copy of g1 exits then we have g1,
-        # a call to g1.__mul__, to self._imul, and to getrefcount
-        if getrefcount(g1) > 4:
-            g1 = self.copy_word(g1)
-        g1._extend(l1 + l2)
-        g1.reduced = (g1.reduced and l2 == 0) or (g2.reduced and l1 == 0)
-        g1._data[l1 : l1 + l2] = g2._data[:l2]
-        g1.length = l1 + l2
-        if g1.length > MAX_WORDLEN:
-            g1.reduce()
-        return g1
+        w = self.copy_word(g1)
+        w._extend(l1 + l2)
+        w.reduced = (g1.reduced and l2 == 0) or (g2.reduced and l1 == 0)
+        w._data[l1 : l1 + l2] = g2._data[:l2]
+        w.length = l1 + l2
+        if w.length > MAX_WORDLEN:
+            w.reduce()
+        return w
 
     def _invert(self, g1):
         w = self.word_type()

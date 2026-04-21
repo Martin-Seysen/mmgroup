@@ -198,7 +198,7 @@ class MmGroup(AbstractMMGroup):
     def reduce(self, g1):
         return g1          
         
-    def _imul(self, g1, g2):
+    def _mul(self, g1, g2):
         l1, l2 = g1.length, g2.length
         g1._extend(l1 + l2)
         g1._data[l1 : l1 + l2] = g2._data[:l2]
