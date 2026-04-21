@@ -217,7 +217,7 @@ def test_monomial_to_word(ntests = 10, verbose = 0):
                 print("Result is:", hex(x))
             print("Test %d ok" % (i+1))
         data_C = monomial_to_word_C(elem)
-        assert (data_C == data_i).all(), (data_C, data_i)
+        assert list(data_C) == list(data_i), (data_C, data_i)
 
 
 #######################################################################
@@ -243,7 +243,7 @@ def test_elem_to_word(ntests = 50, verbose = 0):
         elem_1 = Xsp2_Co1('a', word)
         if verbose:
             print("Recomputed element\n%s" % elem_1)
-        ok = (elem == elem_1).all()
+        ok = elem == elem_1
         if verbose or not ok:
             if not ok:
                 print("Instead of to 1, the element reduces to:")
@@ -253,7 +253,7 @@ def test_elem_to_word(ntests = 50, verbose = 0):
         word_C = elem_to_word_C(elem)
         assert (word_C == word).all(), (word_C, word)
         word1_C = reduce_word_C(m.mmdata)
-        assert (word1_C == word).all(), (word1_C, word)
+        assert  (word1_C == word).all(), (word1_C, word)
             
 
 
