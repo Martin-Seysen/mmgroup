@@ -72,8 +72,10 @@ In the following table we list the options available in the
                         the generated header.
   --pxi                 Generate '.pxi' file from '.pxd' file if this
                         option is set.
-  --pyx PYX             Copy input '.pyx' file PYX from source path to
-                        output directory.
+  --pyx [FILE ...]      Copy FILE to directory set by parameter
+                        '--out-pxd-dir'. Each FILE is searched in the path
+                        set by parameter '--source-path'. Wildcards in
+                        FILE are allowed.
   --tables [TABLES ...]
                         Add list TABLES of table classes to the tables to
                         be used for code generation.

@@ -101,9 +101,11 @@ def generate_code_parser():
     )
 
     parser.add_argument('--pyx', 
-        metavar='PYX',
-        action='store', default = None,
-        help="Copy input '.pyx' file PYX from source path to output directory."
+        nargs = '*',  metavar='FILE',
+        action = 'extend', default = [],
+        help = "Copy FILE to directory set by parameter '--out-pxd-dir'. "
+               "Each FILE is searched in the path set by parameter "
+               "'--source-path'. Wildcards in FILE are allowed."
     )
 
  

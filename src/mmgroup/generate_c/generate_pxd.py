@@ -23,6 +23,7 @@ from mmgroup.generate_c.generate_code import import_tables
 from mmgroup.generate_c.generate_code import StringOutputFile
 from mmgroup.generate_c.generate_code import ActivatedPythonPath
 from mmgroup.generate_c.generate_code import open_for_write
+from mmgroup.generate_c.generate_code import copy_files_with_dirs
 from mmgroup.generate_c.make_pxd import pxd_from_h
 from mmgroup.generate_c.make_pxi import pxd_to_pxi
 
@@ -76,11 +77,8 @@ def make_pxd(s, table_generator):
             pxi_file.write(pxi_content)
             pxi_file.close()
 
-    pyx = getattr(s, "pyx", None)
-    if pyx:
-       pyx_in = find_file(s.source_path, pyx)
-       pyx_out = os.path.normpath(os.path.join(pxd_dir, pyx))
-       shutil.copy(pyx_in, pyx_out)
+    copy_files_with_dirs(s.pyx,s.source_path, s.out_pxd_dir, s.verbose)
+
          
 
 
