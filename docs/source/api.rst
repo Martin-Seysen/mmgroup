@@ -624,6 +624,10 @@ Version history
      - 2026-01-05
      - Experimental support for macOS on Apple silicon
 
+   * - 1.0.8
+     - 2026-05-13
+     - Fixes and internal changes
+
 
 .. only:: html
 
