@@ -23,14 +23,20 @@ class ``MM`` requires the existence of an order vector.
 """
 
 import os
+import sys
 from random import randint
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from multiprocessing import Pool, TimeoutError, Lock
 
 import numpy as np
 
+
+if __name__ == "__main__":
+    sys.path.append(os.path.join("..", "..", ".."))
+
 import mmgroup
 from mmgroup import structures, MM0, MMV
+from mmgroup.mat24 import syndrome, bw24
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
@@ -139,6 +145,97 @@ def par_search(trials, f, *args, **kwds):
 
 
 #######################################################################
+# Check if a symmetric 24 times 24 matrix can be hashed nicely
+#######################################################################
+
+
+
+
+def hash_mat24(m, verbose = 1):
+    """Compute the hash value described in function ``nicely_hashable``
+
+    The function returns the list ``hlist`` of the hash values of the
+    24 rows of the 24 times 24 matrix ``a`` whose entries are integers
+    mod 3.
+    """
+    hlist = []
+    if verbose:
+        print("Absolute values of matrix A, diagonal entry, count")
+    for i in range(24):
+        v = m[i] % 3
+        diag = v[i]
+        s1 = np.sum(v != 0)
+        if verbose:
+            print([int(x) for x in v], diag, s1)
+        s = 32 * diag +  s1
+        hlist.append(int(s))
+    return hlist
+
+def hash_unique(hlist):
+    """Select unique hash values from result of ``hash_mat24()``
+
+    Let ``hlist`` be the list of the 24 hash values computed by
+    function ``hash_mat24``. The function returns a dictionary
+    mapping these hash values to the corresponding row indices.
+    Duplicate entries occuring in that list are dropped.
+    """
+    num = defaultdict(int)
+    index = {}
+    for i, h in enumerate(hlist):
+        num[h] += 1
+        index[h] = i
+    hdict = {}
+    for h, n in num.items():
+        if n == 1:
+            hdict[h] = index[h]
+    return hdict
+
+
+def nicely_hashable(a, verbose = 0):
+    """Checks if a nice hash value of a matrix can be computed
+
+    Here ``a`` is a 24 times 24 matrix of integers modulo 3 that
+    corresponds to part 'A' of of a vector in the Griess alebra.
+    For row ``i`` of ``a`` we compute the hash value:
+
+    h[i] = a[i,i] + (number of nonzero entries in row a[i]) .
+
+    So the h[i] are invariant under the subgroup 2^(1+24+11)
+    acting on part 'A' of the Griess algebra. They are permuted
+    according to the factor group M_24 of the group
+
+    N_x0 = 2^(1+24+11).Mat_24
+
+    acting on 'A'. So the h[i] can be used to detect tha action of
+    the factor group Mat_24, privided that the are sufficiently
+    disjoint. More specifically, there must be an *umbral heptad*,
+    which is a subset of size 7 of the set {0,...,23} of which M_24
+    acts, that is not contained in an octad.
+
+    The hash value for any row in that umbral heptad must be unique
+    among the hash values of all rows.
+
+    The function returns ``True`` if a suitable heptad can be found.
+    """
+    #return 1
+    hlist = hash_mat24(a, verbose = verbose)
+    hdict = hash_unique(hlist)
+    lh = len(hdict)
+    if verbose:
+        print("No of good hashes:", lh,", list of hashes:")
+        print(sorted(hlist))
+        print("Matrix A:", "kernel diagonal")
+        print(a)
+    if lh < 7:
+        return False
+    if lh > 8:
+        return True
+    gc_vector = sum(1 << i for i in hdict.values())
+    synd = syndrome(gc_vector, 0)
+    return bw24(synd) >= 2
+
+
+#######################################################################
 # Find an element of the monster of a given order
 #######################################################################
 
@@ -198,15 +295,13 @@ def rand_elem_of_order(factors, elem_size):
 def find_element_of_order(order, minsize = 1, verbose = 0):
     """Return an element ``g`` the monster of order ``order``.
 
-    We ``g`` that check acts as an element of given ``order`` on a
-    vector ``v`` in characteristic ``p``.  So ``g`` has that order
-    with a very high probability, if ``v`` is selected at random.
-    But, theoretically, the order of ``g`` may be a multiple of 
-    ``order``. ``v`` should be specified as a list of tuples or set 
-    to set to zero for generating a random vector.
+    We compute an element ``g`` of the Moster that acts as an element
+    of given ``order`` on a random vector ``v`` in characteristic
+    ``p``.  So ``g`` has that order with a very high probability.
+    But, theoretically, the order of ``g`` may be
+    a multiple of  ``order``.
 
-    ``g`` is returned as an element of the standard instance of
-    class  ``mmroup.MMGroup``.
+    ``g`` is returned as a string in standard mmgroup notation.
 
     Parameter ``minsize`` specifies a measure for requested word 
     length of ``g``.  If no element ``g`` of the requested size
@@ -282,96 +377,104 @@ def gA_from_type4(v_type4):
     gA = MM0('a', g_data[:len_g])
     return str(gA)
 
-def make_v71_sample(g71):
-    r"""Compute a vector stabilized by a group element of order 71
+def make_v_p_sample(p, g_p):
+    r"""Compute a vector stabilized by a group element of order p
     
-    Let ``g71`` be an element of the monster group of order 71. The
-    function generates  a random vector ``v71`` in the representation
+    Let ``g_p`` be an element of the monster group of order ``p``. The
+    function generates  a random vector ``v_p`` in the representation
     of the monster modulo 3 and computes the vector
-    ``w = sum(v71 * g71**i for i in range(71))``. ``w`` is
-    stabilized by ``g71``. 
+    ``w = sum(v_p * g_p**i for i in range(p))``. ``w`` is
+    stabilized by ``g_p``.
     
-    The function returns triple containing ``v71`` if ``w`` is 
+    The function returns triple containing ``v_p`` if ``w`` is
     non-trivial and ``w`` satisfies an additional property
     described below. Otherwise the function returns ``None``. The 
-    function succeeds with probability about 1/700; so it must be 
+    function succeeds with small probability; so it must be 
     repeated several times.
     
     The part of the vector ``w`` labelled with the tag ``A`` 
     corresponds to a symmetric bilinear form over the Leech lattice
     modulo 3. The function succeeds if that bilinear form corresponding
-    to ``w`` has a one-dimensional eigenspace with the eigenvalue 
-    ``diag`` containing a type-4 eigenvector in the Leech lattice. 
+    to ``w`` has a one-dimensional eigenspace with the eigenvalue 0
+    containing a type-4 eigenvector in the Leech lattice.
     
-    In case of success we return the triple ``(v71, gA, diag)``. Here 
+    In case of success we return the triple ``(v_p, gA)``. Here
     ``gA`` is an element  of the subgroup :math:`G_{x0}` of the 
     monster group such that the bilinear form on the Leech lattice 
     corresponding  to `w * gA`` has a type-4 eigenvector in the 
     standard frame math:`\Omega`. 
 
-    The values ``v71`` and ``gA`` are returned as strings. ``diag``
-    is returned as an integer.        
+    The values ``v_p`` and ``gA`` are returned as strings.
     """
     r1 = [("s", x, "r") for x in "XTXTX"]
-    g71 = MM0(g71)
-    v71 = MMV3(r1)
-    w71 = stabilizer_vector(v71, g71, 71)
-    if not w71:
+    g_p = MM0(g_p)
+    v_p = MMV3(r1)
+    w_p = stabilizer_vector(v_p, g_p, p)
+    if not w_p:
         return None
-    for diag in range(3):
-        v3 = mm_op_eval_A_rank_mod3(3, w71.data, diag) & 0xffffffffffff
-        if v3:
-            v_type4 = gen_leech3to2_type4(v3)
-            if v_type4:
-                return str(v71), gA_from_type4(v_type4), diag               
+    v3 = mm_op_eval_A_rank_mod3(3, w_p.data, 0) & 0xffffffffffff
+    if v3:
+         v_type4 = gen_leech3to2_type4(v3)
+         if v_type4:
+            gA = gA_from_type4(v_type4)
+            w_p_A = (w_p * MM0(gA))['A']
+            if nicely_hashable(w_p_A):
+                return str(v_p), gA
     return None 
 
 
-def find_vector_71_mod3(verbose = 0):
-    r"""Compute a vector stabilized by a group element of order 71
+def find_vector_p_mod3(p, verbose = 0):
+    r"""Compute a vector stabilized by a group element of order p
 
-    The function computes an element ``g71`` of order 71 of the
-    monster and a vector ``v71``  in the representation of the 
+    The function computes an element ``g_p`` of order ``p`` of the
+    monster and a vector ``v_p``  in the representation of the
     monster modulo 3, such that the vector
-    ``w = sum(v71 * g71**i for i in range(71))`` is not trivial. 
-    Then ``w`` is stabilized by ``g71``. More precisely, the 
+    ``w = sum(v_p * g_p**i for i in range(_p))`` is not trivial.
+    Then ``w`` is stabilized by ``g_p``. More precisely, the
     projection of ``w`` onto the 196883-dimensional irreducible
-    representation of the monster is not trivial.
+    representation of the Mnster is not trivial.
     
     The vector ``w`` satisfies the following additional property:
     
     The part of a vector ``w`` labelled with the tag ``A`` always
     corresponds to a symmetric bilinear form over the Leech lattice
     modulo 3. The bilinear form corresponding to the computed vector
-    ``w`` has a one-dimensional eigenspace with the eigenvalue 
-    ``diag`` containing a type-4 eigenvector in the Leech lattice.
+    ``w`` has a one-dimensional eigenspace with the eigenvalue 0
+    containing a type-4 eigenvector in the Leech lattice.
+
+    Furthermore, vector ``w`` is nicely hashable, as described in
+    function ``nicely_hashable``.
 
     Such a vector ``w`` satisfies the requirements for the
-    vector :math:`v_{71} \in \rho_3` in :cite:`Seysen22`. 
+    vector :math:`v_{_p} \in \rho_3` in :cite:`Seysen22`.
     
     The function also computes an element ``gA`` of the subgroup 
     :math:`G_{x0}` of the monster  group such that the bilinear 
     form on the Leech lattice  corresponding  to ``w * gA`` has a 
     type-4 eigenvector in the standard frame math:`\Omega`. 
     
-    The function returns the tuple ``(g71, v71, gA, diag)``. 
+    The function returns the tuple ``(g_p, v_p, gA, diag)``.
     Here ``diag`` is returned as an integer; the other components  
-    are returned as strings.
+    are returned as strings. Here we e always return ``diag = 0``.
     """    
-    s_g71 = find_element_of_order(71, verbose = 1)
-    assert isinstance(s_g71, str)
-    g71 = MM0(s_g71)
+    s_g_p = find_element_of_order(p, verbose = 1)
+    assert isinstance(s_g_p, str)
+    g_p = MM0(s_g_p)
     if verbose:
-        print("Find vector stabilized by g71") 
-    s_v71, s_gA, diag = par_search(2.0e5, make_v71_sample, s_g71, 
+        print("Find vector stabilized by g_p")
+    s_v_p, s_gA = par_search(2.0e5, make_v_p_sample, p, s_g_p,
         verbose = 1, chunksize = 300)
     if verbose:
-        print("g71 =", s_g71)
-        print("v71 =", s_v71, "# (mod 3)")
+        print("g_p =", s_g_p)
+        print("v_p =", s_v_p, "# (mod 3)")
         print("gA =", s_gA)
-        print("kernel_diagonal =", diag, "# (mod 3)" )
-    return s_g71, s_v71, s_gA, diag
+    return s_g_p, s_v_p, s_gA, 0
 
+
+def find_vector_71_mod3(verbose = 0):
+    r"""Special case of function ``find_vector_p_mod3`` for ``p=71``.
+    """
+    return find_vector_p_mod3(71, verbose = verbose)
 
 #######################################################################
 # Obtaining a vector mod 15 stable under an element of order 94
@@ -455,6 +558,13 @@ def find_vector_v94_mod5(verbose = 0):
     return s_g94, s_v94
 
 
+
+if __name__ == "__main__":
+    s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose = 0)
+    print("Group element g of order 71 is:\n" + s_g71)
+    print("Seed vector (mod3) is:\n" + s_v71)
+    print("Group element for adjustng eigenvector is:\n" + s_gA)
+    print("kernel_diagonal is:", diag)
 
 
 
