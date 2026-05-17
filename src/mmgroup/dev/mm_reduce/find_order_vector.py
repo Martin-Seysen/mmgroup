@@ -35,8 +35,7 @@ if __name__ == "__main__":
     sys.path.append(os.path.join("..", "..", ".."))
 
 import mmgroup
-from mmgroup import structures, MM0, MMV
-from mmgroup.mat24 import syndrome, bw24
+from mmgroup import structures, mat24, MM0, MMV
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
@@ -151,12 +150,13 @@ def par_search(trials, f, *args, **kwds):
 
 
 
-def hash_mat24(m, verbose = 1):
+def hash_mat24(m, verbose = 0):
     """Compute the hash value described in function ``nicely_hashable``
 
     The function returns the list ``hlist`` of the hash values of the
     24 rows of the 24 times 24 matrix ``a`` whose entries are integers
-    mod 3.
+    mod 3. The hash value of the row is the number of its nonzero
+    entries plus 32 times the diagonal entry.
     """
     hlist = []
     if verbose:
@@ -191,6 +191,53 @@ def hash_unique(hlist):
     return hdict
 
 
+
+def find_umbral_heptad(ilist):
+    """Find umbral heptad in a list ``ilist`` of indices
+
+    Given a list ``ilist`` of indices of a Golay code vectors, the
+    function tries to find an umbral heptad contained in that list.
+    In case of success it computes an element of the Mathieu group
+    M_24 that transforms an umbral heptad in that list to the
+    standard umbral heptad [0,1,2,3,4,5,8]. Then it returns an
+    integer ``x`` so that ``MM0('a', x)`` performs this permutation.
+    In case of failure the function returns 0.
+    """
+    if len(ilist) < 7:
+        return 0;
+    if len(ilist) != len(set(ilist)):
+        raise ValueError("Internal error") 
+    ilist = sorted(ilist)[:9]
+
+
+    v = sum(1 << i for i in ilist)
+    bw = mat24.bw24(v)
+    while bw > 7:                      # try to delete bits from v
+        v_tl = v                       # until v has weight 7
+        while v_tl:
+            v_hd = v_tl & -v_tl        # get next bit v_hd of v
+            v_dec = v ^ v_hd           # v_dec = v \setminus v_hd
+            syn = mat24.syndrome(v_dec, 0)
+            if syn & v_dec != syn:     # if syndrom of v_dec is not
+               v = v_dec               # a subset of v_dec then
+               bw -= 1                 # delete bit v_dec from v
+               break
+            v_tl ^= hd
+        if v_tl == 0:                  # abort if no bits v_hd remain
+            return 0
+    assert mat24.bw24(v) == 7          # v should be an umbral heptad
+    special = v & mat24.syndrome(v, 0) # special entry of heptad v
+    v &= ~special                      # the other six entries of v
+    # Let heptad be the selected heptad as a list of indices
+    heptad = mat24.vect_to_list(v, 6) + mat24.vect_to_list(special, 1)
+    assert len(heptad) == 7
+    pi = mat24.perm_from_heptads(heptad, [0,1,2,3,4,5,8])
+    a =  mat24.perm_to_m24num(pi)
+    return 0x20000000 + a
+       
+
+          
+
 def nicely_hashable(a, verbose = 0):
     """Checks if a nice hash value of a matrix can be computed
 
@@ -218,21 +265,24 @@ def nicely_hashable(a, verbose = 0):
     The function returns ``True`` if a suitable heptad can be found.
     """
     #return 1
-    hlist = hash_mat24(a, verbose = verbose)
+    hlist = hash_mat24(a)
     hdict = hash_unique(hlist)
-    lh = len(hdict)
     if verbose:
-        print("No of good hashes:", lh,", list of hashes:")
+        print("No of good hashes:", len(hdict), ", list of hashes:")
         print(sorted(hlist))
         print("Matrix A:", "kernel diagonal")
         print(a)
+    return find_umbral_heptad(hdict.values())
+
+
+    lh = len(hdict)
     if lh < 7:
-        return False
+        return False # This case should be done fast
     if lh > 8:
         return True
     gc_vector = sum(1 << i for i in hdict.values())
-    synd = syndrome(gc_vector, 0)
-    return bw24(synd) >= 2
+    synd = mat24.syndrome(gc_vector, 0)
+    return mat24.bw24(synd) >= 2
 
 
 #######################################################################
@@ -370,12 +420,11 @@ def gA_from_type4(v_type4):
     in **Leech lattice encoding**.  The function returns an element
     ``g`` of the subgroup :math:`G_{x0}` of the monster that maps
     `v_type_4`` to the standard frame :math:`\Omega`. The group
-    element ``g`` is returned as a string.   
+    element ``g`` is returned as an instance of class ``MM0``.   
     """
     g_data = np.zeros(10, dtype = np.uint32)
     len_g = gen_leech2_reduce_type4(v_type4, g_data)
-    gA = MM0('a', g_data[:len_g])
-    return str(gA)
+    return MM0('a', g_data[:len_g])
 
 def make_v_p_sample(p, g_p):
     r"""Compute a vector stabilized by a group element of order p
@@ -386,7 +435,7 @@ def make_v_p_sample(p, g_p):
     ``w = sum(v_p * g_p**i for i in range(p))``. ``w`` is
     stabilized by ``g_p``.
     
-    The function returns triple containing ``v_p`` if ``w`` is
+    The function returns a triple containing ``v_p`` if ``w`` is
     non-trivial and ``w`` satisfies an additional property
     described below. Otherwise the function returns ``None``. The 
     function succeeds with small probability; so it must be 
@@ -417,9 +466,10 @@ def make_v_p_sample(p, g_p):
          v_type4 = gen_leech3to2_type4(v3)
          if v_type4:
             gA = gA_from_type4(v_type4)
-            w_p_A = (w_p * MM0(gA))['A']
-            if nicely_hashable(w_p_A):
-                return str(v_p), gA
+            w_p_A = (w_p * gA)['A']
+            perm_num = nicely_hashable(w_p_A)            
+            if perm_num:
+                return str(v_p), str(gA * MM0('a', [perm_num]))
     return None 
 
 
@@ -429,33 +479,28 @@ def find_vector_p_mod3(p, verbose = 0):
     The function computes an element ``g_p`` of order ``p`` of the
     monster and a vector ``v_p``  in the representation of the
     monster modulo 3, such that the vector
-    ``w = sum(v_p * g_p**i for i in range(_p))`` is not trivial.
-    Then ``w`` is stabilized by ``g_p``. More precisely, the
-    projection of ``w`` onto the 196883-dimensional irreducible
-    representation of the Mnster is not trivial.
-    
-    The vector ``w`` satisfies the following additional property:
-    
-    The part of a vector ``w`` labelled with the tag ``A`` always
-    corresponds to a symmetric bilinear form over the Leech lattice
-    modulo 3. The bilinear form corresponding to the computed vector
-    ``w`` has a one-dimensional eigenspace with the eigenvalue 0
-    containing a type-4 eigenvector in the Leech lattice.
+    ``w0 = sum(v_p * g_p**i for i in range(p))`` is not trivial.
+    Then ``w0`` is stabilized by ``g_p``. More precisely, the
+    projection of ``w0`` onto the 196883-dimensional irreducible
+    representation of the Monster is not trivial.
 
-    Furthermore, vector ``w`` is nicely hashable, as described in
-    function ``nicely_hashable``.
+    The function also computes an element ``gA`` of the subgroup 
+    :math:`G_{x0}` such that the vector ``w = w0 * gA`` has the
+    following additional properties. 
+    
+    The part ``w['A']`` of a vector ``w`` labelled with tag ``A``
+    is always a symmetric bilinear form over the Leech lattice
+    modulo 3. The bilinear form ``w['A']`` has a one-dimensional
+    kernel spanned by a basis vector of the Leech lattice.
+
+    Furthermore, the hash values for the rows of matrix ``w['A']``
+    computed by function ``hash_mat24`` are unique among hash
+    values for rows 0,1,2,3,4,5,8.
 
     Such a vector ``w`` satisfies the requirements for the
     vector :math:`v_{_p} \in \rho_3` in :cite:`Seysen22`.
     
-    The function also computes an element ``gA`` of the subgroup 
-    :math:`G_{x0}` of the monster  group such that the bilinear 
-    form on the Leech lattice  corresponding  to ``w * gA`` has a 
-    type-4 eigenvector in the standard frame math:`\Omega`. 
-    
-    The function returns the tuple ``(g_p, v_p, gA, diag)``.
-    Here ``diag`` is returned as an integer; the other components  
-    are returned as strings. Here we e always return ``diag = 0``.
+    The function returns the tuple ``(g_p, v_p, gA)``.
     """    
     s_g_p = find_element_of_order(p, verbose = 1)
     assert isinstance(s_g_p, str)
@@ -468,13 +513,9 @@ def find_vector_p_mod3(p, verbose = 0):
         print("g_p =", s_g_p)
         print("v_p =", s_v_p, "# (mod 3)")
         print("gA =", s_gA)
-    return s_g_p, s_v_p, s_gA, 0
+    return s_g_p, s_v_p, s_gA
 
 
-def find_vector_71_mod3(verbose = 0):
-    r"""Special case of function ``find_vector_p_mod3`` for ``p=71``.
-    """
-    return find_vector_p_mod3(71, verbose = verbose)
 
 #######################################################################
 # Obtaining a vector mod 15 stable under an element of order 94
@@ -558,16 +599,48 @@ def find_vector_v94_mod5(verbose = 0):
     return s_g94, s_v94
 
 
+def assemble_vector_mod3(p, s_g, s_v, s_gA):
+    """Compute order vector from output of ``find_vector_p_mod3``
+
+    The function computes the order vector ``v`` from the input ``p``
+    passed to function ``find_vector_p_mod3`` and the results
+    ``s_g, s_v, s_gA`` returnd by that function. It returns ``v`` if
+    ``v`` has the properties stated in function ``find_vector_p_mod3``
+    and fails if this is not the case.
+    """
+    g = MM0(s_g) 
+    v = MMV3(s_v)
+    v1 = MMV3(s_v)
+    for i in range(1, p):
+        v1 *= g
+        v += v1
+    assert v1 * g == MMV3(s_v)
+    v *= MM0(s_gA)
+    v3 = mm_op_eval_A_rank_mod3(3, v.data, 0)
+    assert v3 >> 48 == 23
+    v_type4 = gen_leech3to2_type4(v3)
+    assert v_type4 == 0x800000
+    hashes = hash_mat24(v["A"])
+    num_h = defaultdict(int)
+    for h in hashes:
+        num_h[h] += 1
+    for i in [0,1,2,3,4,5,8]:
+        assert num_h[hashes[i]] == 1
+    return v
 
 if __name__ == "__main__":
-    s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose = 0)
+    s_g71, s_v71, s_gA = find_vector_p_mod3(71, verbose = 0)
     print("Group element g of order 71 is:\n" + s_g71)
     print("Seed vector (mod3) is:\n" + s_v71)
-    print("Group element for adjustng eigenvector is:\n" + s_gA)
-    print("kernel_diagonal is:", diag)
-
-
-
+    print("Group element for adjusting eigenvector is:\n" + s_gA)
+    v = assemble_vector_mod3(71, s_g71, s_v71, s_gA,)
+    print("Part 'A' of order vector (mod 3)")
+    print(v['A']) 
+    print("Hash values of rows of part 'A'")
+    hashes = hash_mat24(v['A'], verbose = 0)
+    for i in range(24):
+       print(" %02d" % hashes[i], end = " " * (i==7))
+    print()
 
 
 

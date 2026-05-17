@@ -23,7 +23,7 @@ from mmgroup.mm_op import mm_op_watermark_A
 
 from mmgroup.dev.mm_reduce import find_order_vector
 from mmgroup.dev.mm_reduce.find_order_vector import stabilizer_vector
-from mmgroup.dev.mm_reduce.find_order_vector import find_vector_71_mod3
+from mmgroup.dev.mm_reduce.find_order_vector import find_vector_p_mod3
 from mmgroup.dev.mm_reduce.find_order_vector import find_vector_v94_mod5
 
 
@@ -84,16 +84,13 @@ def identity_vector(factor):
 
 
    
-def make_order_vector_mod3(s_g71, s_v71, s_gA, diag):
+def make_order_vector_mod3(s_g71, s_v71, s_gA):
     v71 = vector_from_data(10, s_v71)
     g71 = mm_element_from_data(s_g71)
     w71 = stabilizer_vector(v71, g71, 71)
     assert w71 is not None
     w71 *= mm_element_from_data(s_gA)
-    if not isinstance(diag, int): diag = diag[0]
-    w71 += identity_vector(5 * diag % 15)
-    diag = 0
-    v3 = mm_op_eval_A_rank_mod3(15, w71.data, diag) & 0xffffffffffff
+    v3 = mm_op_eval_A_rank_mod3(15, w71.data, 0) & 0xffffffffffff
     assert v3 != 0
     v_type4 = gen_leech3to2_type4(v3)
     assert v_type4 == 0x800000
@@ -115,7 +112,7 @@ def make_order_vector_mod15(w71, s_g94, s_v94):
 
 def make_order_vector(d):
     v3 = make_order_vector_mod3(
-        d["S_G71"], d["S_V71"], d["S_GA"], d["DIAG_VA"])
+        d["S_G71"], d["S_V71"], d["S_GA"])
     return make_order_vector_mod15(v3, d["S_G94"], d["S_V94"])
 
 
@@ -365,8 +362,8 @@ def find_order_vector(verbose = 0):
     if verbose:
         print("Trying to find a vector of order 71")
     for trials in range(200,-1,-1):
-        s_g71, s_v71, s_gA, diag = find_vector_71_mod3(verbose)
-        v3 = make_order_vector_mod3(s_g71, s_v71, s_gA, diag)
+        s_g71, s_v71, s_gA = find_vector_p_mod3(71, verbose)
+        v3 = make_order_vector_mod3(s_g71, s_v71, s_gA)
         tag_data_mod3 = check_v(v3 % 3, verbose=verbose)
         if tag_data_mod3 is not None:
             if verbose:
@@ -390,8 +387,8 @@ def find_order_vector(verbose = 0):
     if not trials:
         err = "No suitable vector in the monster representation found"
         raise ValueError(err) 
-    v_data =  s_g71, s_v71, s_gA, diag, s_g94, s_v94
-    V_NAMES =  ["S_G71", "S_V71", "S_GA", "DIAG_VA", "S_G94", "S_V94"]
+    v_data =  s_g71, s_v71, s_gA, s_g94, s_v94
+    V_NAMES =  ["S_G71", "S_V71", "S_GA", "S_G94", "S_V94"]
     TAG_NAMES =  [ "TAGS_Y", "TAGS_X", "TAG_SIGN"]   
     if verbose:        
         for text, data in zip(TAG_NAMES, tag_data):
@@ -514,6 +511,7 @@ class OrderVectorMod15:
         elif isinstance(order_vector_data, dict):
             d = deepcopy(order_vector_data)
             d, self.order_vector = order_vector_from_data_dict(d)
+            d["DIAG_VA"] = 0 # compatibilty with old stuff
             self.tag_data = flatten_order_vector_dict(d)
         else:
             a = np.array(order_vector_data, dtype = np.uint32)
