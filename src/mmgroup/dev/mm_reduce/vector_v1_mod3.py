@@ -280,12 +280,25 @@ def process_Z():
 # Assembling the parts of the vector v_1
 ####################################################################
 
-def make_hash_a(hash):
+def make_hash_a_old(hash):
     hash_a = np.full((4, 8), 24,  dtype = np.uint8)
     for (d, w), i in hash.items():
         hash_a[d, w] = i
     hash_a[3] = hash_a[0]
     return hash_a
+
+def make_hash_a(hash):
+    hashvalues = [0,1,2,3,4,5,8]
+    for h in hashvalues:
+        assert h in hash.values()
+    a_hash = [None]*9
+    for (d, w), i in hash.items():
+        if i < 9:
+            a_hash[i] = 32*d + w
+    a_hash[6] = a_hash[8]
+    return a_hash[:7]    
+
+
 
 class ReduceGx0Data:
     A12 = A12
@@ -306,7 +319,7 @@ class ReduceGx0Data:
 
 
 class MockupReduceGx0Data:
-    HASH_A = [[0,0]]
+    HASH_A = [0]
     EVAL_Y = [0]
     EQU_Y = SP = EVAL_X = EQU_X = EVAL_Y
 

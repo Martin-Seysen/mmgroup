@@ -255,25 +255,29 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 static inline
 int32_t watermark_to_perm(uint32_t wm[24], uint32_t y_sp[11])
 {
-   static  uint8_t WM[4][8] = {
+   static  uint8_t WM[7] = {
        // %%TABLE V1_MOD3.HASH_A, uint8
    };
    static  uint8_t Y[11][2] = {
        // %%TABLE V1_MOD3.EVAL_Y, uint8
    };
-   uint8_t pi[25], i;
+   uint8_t pi[32], i, j, acc = 0;
    uint32_t m;
-   for (i = 0; i < 24; ++i) pi[i] = 24;
+   for (j = 0; j < 7; ++j) (pi[j] = 0xff);
    for (i = 0; i < 24; ++i) {
-        m = wm[i];
-        if ((m & ~0x307) == 0) pi[WM[m >> 8][m & 7]] = i;
+       m = wm[i];
+       m = m >= 0x60 ? m - 0x60 : m;
+       for (j = 0; j < 7; ++j) {
+           if (m == WM[j]) pi[j] = i; 
+       }
    }
-   for (i = 0; i <= 10; ++i) if (pi[i] >= 24) return -2;
-   if (pi[12] >= 24 || pi[16] >= 24) return -2;
+   pi[8] = pi[6];
+   for (j = 0; j < 7; ++j) acc |= pi[j];
+   if(acc & 0x80) return -2;
+   if (mat24_perm_complete_heptad(pi) != 0) return -3;
    for (i = 0; i < 11; ++i) {
        y_sp[i] =  0x2000000 + (pi[Y[i][0]] << 14) + (pi[Y[i][1]] << 8);
    }
-   if (mat24_perm_complete_heptad(pi) != 0) return -3;
    return mat24_perm_to_m24num(pi);
 }
 
@@ -466,7 +470,7 @@ static inline void watermark_A(uint64_t *A, uint32_t wm[24])
         s += s >> 8;
         s += s >> 16;
         s += s >> 32;
-        wm[i] = (uint32_t)((d << 8) + (s & 0x1f));
+        wm[i] = (uint32_t)((d << 5) + (s & 0x1f));
     }
 }
 
