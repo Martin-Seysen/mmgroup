@@ -164,8 +164,8 @@ typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
    structure \f$2^{1+24}\f$.  In the sequel
    we assume that ``v`` is in that group.
 
-   Part ``X`` contains a list of 24 entries of ``v1`` (in sparse
-   notation) that are used to determine a
+   Part ``X`` contains a list of 24 entries of ``v1`` (in Leech
+   lattice encoding) that are used to determine a
    transformation ``x_r = x_d * x_delta`` that transforms ``v`` to a
    vector in ``v`` * \f$x_{\pm 1}\f$. As above, a bit
    vector is computed from these 24 entries. The product of that bit
@@ -442,7 +442,7 @@ int32_t solve_sign(uint32_t *data, uint32_t signs)
 
 
 /************************************************************************
-** State machine for finding element of G_x0 from a vector v_0
+** State machine for finding element of G_x0 from a vector v_1
 ************************************************************************/
 
 
@@ -521,6 +521,32 @@ int32_t mm_order_find_Gx0_v1_mod3_state( mm_order_find_Gx0_type *st, int32_t sta
 }
 
 
+/************************************************************************
+** Initialize state machine for a different vector v_1
+************************************************************************/
+
+/** 
+  @brief Initialize state machine for a different vector ``v_1``
+ 
+
+  In case ``pdata == NULL`` this function is equivalent
+  to ``mm_order_find_Gx0_v1_mod3_state(st, 0)``. In future extensions,
+  the same calculation as in the state machine operated by
+  function ``mm_order_find_Gx0_v1_mod3_state`` may also be performed
+  for a vector ``v_2`` instead of a vector ``v_1``. Then the user must
+  call ``mm_order_find_Gx0_v1_mod3_init(st, &data)`` instead of
+  of ``mm_order_find_Gx0_v1_mod3_state(st, 0)`` for initializing the
+  state machine. Here ``data`` must be a structure  of
+  type ``mm_order_data_Gx0_type`` that is suitable for dealing
+  with ``v_2`` instead of ``v_1``.
+*/
+// %%EXPORT
+void mm_order_find_Gx0_v1_mod3_init( mm_order_find_Gx0_type *st, mm_order_data_Gx0_type *pdata)
+{
+     st->length = st->len_g = 0;
+     st->state = 1;
+     st->pdata = (pdata == NULL) ? &ORDER_DATA_STD : pdata;
+}
 
 /************************************************************************
 ** Auxiliary functions for function mm_order_find_Gx0_via_v1_mod3
