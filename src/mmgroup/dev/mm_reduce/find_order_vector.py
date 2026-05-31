@@ -233,6 +233,7 @@ def find_umbral_heptad(ilist):
     heptad = mat24.vect_to_list(v, 6) + mat24.vect_to_list(special, 1)
     assert len(heptad) == 7
     pi = mat24.perm_from_heptads(heptad, [0,1,2,3,4,5,8])
+    mat24.perm_check(pi)
     a =  mat24.perm_to_m24num(pi)
     return 0x20000000 + a
        
@@ -275,15 +276,6 @@ def nicely_hashable(a, verbose = 0):
         print(a)
     return find_umbral_heptad(hdict.values())
 
-
-    lh = len(hdict)
-    if lh < 7:
-        return False # This case should be done fast
-    if lh > 8:
-        return True
-    gc_vector = sum(1 << i for i in hdict.values())
-    synd = mat24.syndrome(gc_vector, 0)
-    return mat24.bw24(synd) >= 2
 
 
 #######################################################################
@@ -558,11 +550,12 @@ def make_v_p_sample(p, g_p):
             w_p_all = w_p * gA
             w_p_A = w_p_all['A']
             perm_num = nicely_hashable(w_p_A)            
-            if perm_num:
+            if perm_num > 0:
                 try:
+                    w_p_all = w_p_all * MM0('a', [perm_num])
                     yx = check_v(w_p_all)
                 except:
-                    raise
+                    #raise
                     return None
                 gA1 = gA * MM0('a', [perm_num])
                 return str(v_p), str(gA1), yx
