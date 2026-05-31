@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
 import mmgroup
 from mmgroup import structures, mat24, MM0, MMV
+from mmgroup.mat24 import vect_to_cocode
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
@@ -405,11 +406,99 @@ def stabilizer_vector(v, g, n):
         return None
     return w
 
+
+####################################################################
+## Compute entries of order vector s59 for finding 2-group
+####################################################################
+
+
+def map_y(y_index):
+    i, j = (y_index >> 14) & 0x1f, (y_index >> 8) & 0x1f
+    vect = (1 << i) + (1 << j)
+    gc = vect_to_cocode(vect)
+    assert 0 <= gc < 0x800
+    return gc 
+    
+    
+def map_x(x_index):
+    v2 = mm_aux_index_sparse_to_leech2(x_index) 
+    return ((v2 & 0xfff) << 12) | ((v2 >> 12) & 0xfff)    
+
+
+def eqn_system(vector, tag_indices, map_f, n, error_msg):
+    entries = [vector[index] for index in tag_indices]
+    indices = [MMSpace.index_to_sparse(*x) for x in tag_indices]
+    matrix= np.zeros(24, dtype = np.uint64)
+    rows, cols = 0, n
+    out_indices = []
+    for (entry, index) in zip(entries, indices):
+        if entry == 1:
+            eqn = map_f(index)
+            new_rows = leech2matrix_add_eqn(matrix, rows, cols, eqn)
+            if new_rows:
+                out_indices.append(index)
+                rows += new_rows
+                if rows == n:
+                    return out_indices
+    raise ValueError("Check %s failed, %d rows found" % (error_msg, rows)) 
+
+
+def eqn_sign(vector):
+    for i in range(100):
+        for j in range(24):
+            if vector["Z", i, j] == 1:
+                return [ MMSpace.index_to_sparse("Z", i, j) ]
+    raise ValueError("Check for sign failed") 
+
+
+def check_v(v):
+    r"""Return list of entries uses for obtaining 2-subgroup of G_x0
+
+    Let math:`Q_{x0}` be the subgroup  of structure math:`2^{1+24}`
+    of math:`N_{x0}` (of structure math:`2^{1+24+11}.M_{24}`) as
+    usual; and let math:`N_2` be the subgroup of math:`N_{x0}` of
+    structure math:`2^{1+24+11}`.
+
+    Here input ``v`` must be a vector in the rep of the Monster mod 3.
+    The function returns a list ``sp`` of 11+24+1 coordinate positions
+    of ``v`` that can be used to determine a ``g`` in math:`N_2` from 
+    ``v * g``. The returned list of  coordinate positions is given in
+    sparse notation. vector ``v`` has coordinate 1 at all these
+    positions.
+
+    The first 11 positions in ``sp`` are at part 'A' of the vector.
+    They are independent in the sense that they uniquely determine
+    an ``y_d``, with ``d`` in the Parker loop (modulo its centre),
+    such that ``y_d`` transforms any ``v * g`` to  ``v * h``,
+    for ``g`` in  math:`N_2` and ``h`` math:`Q_{x0}`.
+
+    The next 24 positions in ``sp`` are at parts 'BCTX' of the
+    vector. They are independent in the sense that they uniquely
+    determine an element ``r`` of the Leech lattice mod 2, such that
+    ``x_r`` transforms any ``v * g`` to  ``v * :math:`x_{\pm 1}`,
+    for ``g`` in  math:`Q_{x0}`.
+
+    Finally, the last entry of ``sp`` is a coordinate position in
+    part 'ZY' that can be used to  obtain the sign
+    in  ``v1`` * :math:`x_{\pm 1}`.
+    """
+    Y_INDICES = [("A",i,j) for i in range(10) for j in range(i+1, 24)]
+    X_INDICES = [("B",i,j) for i in range(10) for j in range(i+1, 24)]
+    X_INDICES += [("C",0,j)  for j in range(1, 24)]
+    BASIS = [0] + [1 << i for i in range(11)]
+    X_INDICES += [("X",i,j) for j in range(0, 24)  for i in  BASIS]
+    result_y = eqn_system(v, Y_INDICES, map_y, 11, "Y")
+    result_x = eqn_system(v, X_INDICES, map_x, 24, "X")
+    result_sign = eqn_sign(v)
+    result = result_y + result_x + result_sign
+    return [int(x) for x in result]
+    
+
+
+
 #######################################################################
 # Obtaining a vector mod 3 stable under an element of order 71
 #######################################################################
-
-
 
 
     
@@ -465,11 +554,18 @@ def make_v_p_sample(p, g_p):
     if v3:
          v_type4 = gen_leech3to2_type4(v3)
          if v_type4:
-            gA = gA_from_type4(v_type4)
-            w_p_A = (w_p * gA)['A']
+            gA = gA_from_type4(v_type4)      
+            w_p_all = w_p * gA
+            w_p_A = w_p_all['A']
             perm_num = nicely_hashable(w_p_A)            
             if perm_num:
-                return str(v_p), str(gA * MM0('a', [perm_num]))
+                try:
+                    yx = check_v(w_p_all)
+                except:
+                    raise
+                    return None
+                gA1 = gA * MM0('a', [perm_num])
+                return str(v_p), str(gA1), yx
     return None 
 
 
@@ -500,20 +596,24 @@ def find_vector_p_mod3(p, verbose = 0):
     Such a vector ``w`` satisfies the requirements for the
     vector :math:`v_{_p} \in \rho_3` in :cite:`Seysen22`.
     
-    The function returns the tuple ``(g_p, v_p, gA)``.
+    The function returns the tuple ``(g_p, v_p, gA, yx)``.
+
+    Here ``yx`` is a list of entries of vector ``w`` (in sparse
+    notation) that can be used to idetify a ``g`` in math:`G_{x0}`
+    from ``v * v``, see function ``check_v``.
     """    
     s_g_p = find_element_of_order(p, verbose = 1)
     assert isinstance(s_g_p, str)
     g_p = MM0(s_g_p)
     if verbose:
         print("Find vector stabilized by g_p")
-    s_v_p, s_gA = par_search(2.0e5, make_v_p_sample, p, s_g_p,
+    s_v_p, s_gA, yx = par_search(2.0e5, make_v_p_sample, p, s_g_p,
         verbose = 1, chunksize = 300)
     if verbose:
         print("g_p =", s_g_p)
         print("v_p =", s_v_p, "# (mod 3)")
         print("gA =", s_gA)
-    return s_g_p, s_v_p, s_gA
+    return s_g_p, s_v_p, s_gA, yx
 
 
 
@@ -629,17 +729,19 @@ def assemble_vector_mod3(p, s_g, s_v, s_gA):
     return v
 
 if __name__ == "__main__":
-    s_g71, s_v71, s_gA = find_vector_p_mod3(71, verbose = 0)
+    s_g71, s_v71, s_gA, yx = find_vector_p_mod3(71, verbose = 0)
     print("Group element g of order 71 is:\n" + s_g71)
     print("Seed vector (mod3) is:\n" + s_v71)
     print("Group element for adjusting eigenvector is:\n" + s_gA)
-    v = assemble_vector_mod3(71, s_g71, s_v71, s_gA,)
+    v = assemble_vector_mod3(71, s_g71, s_v71, s_gA)
     print("Part 'A' of order vector (mod 3)")
     print(v['A']) 
     print("Hash values of rows of part 'A'")
     hashes = hash_mat24(v['A'], verbose = 0)
     for i in range(24):
        print(" %02d" % hashes[i], end = " " * (i==7))
+    vhex = np.vectorize(hex)
+    print("\nyx  =\n%s" % vhex(np.array(yx)))
     print()
 
 

@@ -362,7 +362,7 @@ def find_order_vector(verbose = 0):
     if verbose:
         print("Trying to find a vector of order 71")
     for trials in range(200,-1,-1):
-        s_g71, s_v71, s_gA = find_vector_p_mod3(71, verbose)
+        s_g71, s_v71, s_gA, yx = find_vector_p_mod3(71, verbose)
         v3 = make_order_vector_mod3(s_g71, s_v71, s_gA)
         tag_data_mod3 = check_v(v3 % 3, verbose=verbose)
         if tag_data_mod3 is not None:
@@ -389,7 +389,8 @@ def find_order_vector(verbose = 0):
         raise ValueError(err) 
     v_data =  s_g71, s_v71, s_gA, s_g94, s_v94
     V_NAMES =  ["S_G71", "S_V71", "S_GA", "S_G94", "S_V94"]
-    TAG_NAMES =  [ "TAGS_Y", "TAGS_X", "TAG_SIGN"]   
+    TAG_NAMES =  ["YX",  "TAGS_Y", "TAGS_X", "TAG_SIGN"]
+    tag_data = (yx,) + tag_data   
     if verbose:        
         for text, data in zip(TAG_NAMES, tag_data):
             print(str_data(text, data))
