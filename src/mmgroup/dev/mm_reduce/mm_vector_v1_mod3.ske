@@ -199,24 +199,14 @@ typedef struct mm_order_data_Gx0_s  mm_order_data_Gx0_type;
 ** Tge structure for interpreting the standard oder vector
 ************************************************************************/
 
+
 static mm_order_data_Gx0_type ORDER_DATA_STD = {
     {
        // %%TABLE V1_MOD3.HASH_A, uint8
     },
-    {
-       // %%TABLE V1_MOD3.EVAL_Y, uint8
-    },
-    {
-       // %%TABLE V1_MOD3.EQU_Y, uint32
-    },
-    {
-       // %%TABLE V1_MOD3.EVAL_X, uint32
-    },
-    {
-       // %%TABLE V1_MOD3.EQU_X, uint32
-    },
-    0x0c000001UL 
+    // %%TABLE V1_MOD3.TABLE2
 };
+
 
 
 /************************************************************************

@@ -108,7 +108,7 @@ def make_A24():
 def process_A24(A24, verbose = 0):
     """Compute a certain 24 times 24 matrix
 
-    The function returns a quadruple ``(A, sp, h, eval_y)``
+    The function returns a quadruple ``(A, sp, h, eval_v_y)``
 
     Here ``A`` is a symmetric 24 times 24 Matrix with entries 0, 1, 2
     to be interpreted as integers modulo 3. The kernel of ``A``
@@ -123,18 +123,19 @@ def process_A24(A24, verbose = 0):
     ``i`` is  uniquely defined by ``h(i, A)``. This works for
     ``0 <= i <= 10`` and ``i = 12, 16``.
 
-    The return value ``eval_y`` is a list of pairs ``(i, j)`` with
+    The return value ``eval_v_y`` is a list of pairs ``(i, j)`` with
     ``0 <= j < i < 24`` such that  ``A[i, j] = 1``, and the Golay
     cocode elements corresponding the the pairs [i,j] in that
     list are a basis of the even part of the Golay cocode.
+    The entries of the list are encoded as sparse vectors.
     """
-    sp, eval_y = [], []
+    sp, eval_v_y = [], []
     for x, tag, i, j in data_A24():
         if tag == "A":
            sp.append(MMSpace.index_to_sparse(tag, i, j) + (x & 3))
            if i < j and (i == 0 or j == 16):
                assert x == 1
-               eval_y.append([j, i])
+               eval_v_y.append(MMSpace.index_to_sparse('A', j, i))
     assert (A24[7] == 0).all()
     A23 = np.copy(A24)
     A23 = np.delete(A23, 7, 0)
@@ -154,8 +155,8 @@ def process_A24(A24, verbose = 0):
     assert set(h.values()) == set(MAP_A12) | set(KER_A12)
     assert len(h) + n == 24
     sp.sort()
-    eval_y.sort()
-    return sp, h, eval_y
+    eval_v_y.sort()
+    return sp, h, eval_v_y
 
 
 
@@ -206,18 +207,22 @@ def display_part_A(cls):
     print()
 
 
-def map_y(y):
+def map_y(eval_v_y):
     solve_yt = np.zeros(11, dtype = np.uint64)
-    assert len(y) == 11
+    assert len(eval_v_y) == 11
     nrows = 0
-    for i, j in y:
+    eval_y = []
+    for y in eval_v_y:
+        i, j = (y >> 14) & 0x1f, (y >> 8) & 0x1f
         eqn = mat24.vect_to_cocode((1 << i) + (1 << j))
         s = leech2matrix_add_eqn(solve_yt, nrows, 11, eqn)
         assert s == 1
         nrows += 1
+        eval_y.append([i,j])
     solve_y = list(int(x) for x in bitmatrix64_t(solve_yt, 11))
     assert len(solve_y) == 11
-    return np.array(solve_y, dtype = np.uint32)
+    eval_y = np.array(eval_y, dtype = np.uint8)
+    return eval_y, np.array(solve_y, dtype = np.uint32)
 
 ####################################################################
 # Parts BCTX of the vector v_1
@@ -229,7 +234,7 @@ def leech2_covector(v2):
 
 
 
-def data_BCTX():
+def tuple_data_BCTX():
     for i in range(1,12):
         yield (1, 'B', MAP_A12[0], MAP_A12[i])
     yield (1, 'C', 2, 3)
@@ -239,28 +244,30 @@ def data_BCTX():
     yield (1, 'X', 0, 0)
 
 
-def process_X():
-    sp, eval_x = [], []
-    for x, tag, i, j in data_BCTX():
-       sparse = MMSpace.index_to_sparse(tag, i, j)
-       sp.append(sparse + (x & 3))
-       leech2 = mm_aux_index_sparse_to_leech2(sparse)
-       eval_x.append(leech2)
-    eval_x = np.array(eval_x, dtype = np.uint32)
-    return sp, eval_x
+def data_BCTX():
+    sp_x = []
+    for x, tag, i, j in tuple_data_BCTX():
+        sp = MMSpace.index_to_sparse(tag, i, j)
+        assert sp > 0
+        sp_x.append(sp + (x & 3))
+    return sp_x
 
 
-def map_x(eval_x):
+def map_x(eval_v_x):
+    eval_x = []
     solve_xt = np.zeros(24, dtype = np.uint64)
-    assert len(eval_x) == 24
     nrows = 0
-    for i, v2 in enumerate(eval_x):
-        co_v2 = leech2_covector(v2)
+    for v_x in eval_v_x:
+        leech2 = mm_aux_index_sparse_to_leech2(v_x)
+        eval_x.append(leech2)
+        co_v2 = leech2_covector(leech2)
         assert leech2matrix_add_eqn(solve_xt, nrows, 24, co_v2) == 1
         nrows += 1
+    assert len(eval_x) == 24
     assert nrows == 24, nrows
+    eval_x = np.array(eval_x, dtype = np.uint32)
     solve_x = list(bitmatrix64_t(solve_xt, 24))
-    return np.array(solve_x, dtype = np.uint32)
+    return eval_x, np.array(solve_x, dtype = np.uint32)
 
 
 
@@ -276,16 +283,64 @@ def process_Z():
     return [sparse + (x & 3)]
 
 
+
+
+####################################################################
+# obtain dict of constantans for compute 2-subgroup of Co_1
+####################################################################
+
+def get_eval_dict(sp):
+    """Return a dictionary ``d`` for obtaining 2-subgroup of G_x0
+
+    Input ``sp`` is a list of 11+24+1 coordinate positions of an
+    order vector ``v1`` in the rep of the Monster mod 3. The order
+    vector ``v1``  must have value 1 at all these positions.
+
+    Let math:`Q_{x0}` be the subgroup  of structure math:`2^{1+24}`
+    of math:`N_{x0}` (of structure math:`2^{1+24+11}.M_{24}`) as
+    usual; and let math:`N_2` be the subgroup of math:`N_{x0}` of
+    structure math:`2^{1+24+11}`. Let ``v1`` be an order vector and
+    ``v`` the the order vector transformed by an element of math:`N_2`.
+
+    The first 11 positions in ``sp`` must be at part 'A' of the
+    vector. They must be independent in the sense that they uniquely
+    determine an ``y_d``, with ``d`` in the Parker loop (modulo its
+    centre),  such that ``y_d`` transforms ``v`` to a vector
+    in ``v1`` * math:`Q_{x0}`. Output d["EVAL_Y"] is a list of
+    11 pairs (i,j) corresponding to the positions of the entries in
+    part 'A' given by the 11 postions in ``sp``. Output d["EQU_Y"] 
+    is an 11 times 11 bit matrix. Multiplying the vector of the signs
+    of the 11 entries described above by that matrix yields ``d``.
+
+    in the sequel we assume that ``v`` is in ``v1`` * math:`Q_{x0}`.  
+    The next 24 positions in ``sp`` must be at parts 'BCTX' of the
+    vector. They must be independent in the sense that they uniquely
+    determine an element ``r`` of the Leech lattice mod 2, such that
+    ``x_r`` transforms ``v`` to a vector  ``v1`` * :math:`x_{\pm 1}`.
+    Output d["EVAL_X"] contains these 24 position in Leech lattice
+    encoding.  Output d["EQU_Y"]  is a 24 times 24 bit matrix.
+    Multiplying the vector of the signs of the 24 entries described
+    above by that matrix yields ``r``.
+
+    Finally, d["SP_Z"][0] equal to the last entry in the list ``sp``.
+    This is a coordinate position in party 'ZY' that can be used to
+    obtain the sign of a ``v`` in  ``v1`` * :math:'x_{\pm 1}``.
+    """
+    d = {}
+    d["EVAL_Y"], d["EQU_Y"]  =  map_y(sp[:11])
+    d["EVAL_X"], d["EQU_X"]  =  map_x(sp[11:11+24])
+    d["SP_Z"] = sp[35:36] 
+    return d
+
+def table_from_eval_dict(d):
+    NAMES =  ["EVAL_Y", "EQU_Y", "EVAL_X", "EQU_X", "SP_Z"]
+    return [d[x] for x in NAMES]
+    
+
 ####################################################################
 # Assembling the parts of the vector v_1
 ####################################################################
 
-def make_hash_a_old(hash):
-    hash_a = np.full((4, 8), 24,  dtype = np.uint8)
-    for (d, w), i in hash.items():
-        hash_a[d, w] = i
-    hash_a[3] = hash_a[0]
-    return hash_a
 
 def make_hash_a(hash):
     hashvalues = [0,1,2,3,4,5,8]
@@ -304,24 +359,36 @@ class ReduceGx0Data:
     A12 = A12
     A24 = make_A24()
     if mmgroup_present:
-        SP_Y, HASH, EVAL_Y = process_A24(A24)
-        EQU_Y = map_y(EVAL_Y)
-        SP_X, EVAL_X = process_X()
-        EQU_X = map_x(EVAL_X)
+        SP_Y, HASH, EVAL_V_Y = process_A24(A24)
+        #EVAL_Y, EQU_Y = map_y(EVAL_V_Y)
+        SP_X = data_BCTX()
+        #EVAL_X, EQU_X = map_x(SP_X)
         SP_Z = process_Z()
         SP = SP_Y + SP_X + SP_Z
         SP = np.array([len(SP)] + SP, dtype = np.uint32)
         HASH_A = make_hash_a(HASH)
+        D =  get_eval_dict(EVAL_V_Y + SP_X + SP_Z)
+        TABLE2 = table_from_eval_dict(D)
 
     @classmethod
     def display(cls):
         return display_part_A(cls)
 
+    @classmethod
+    def set_class_attr(cls, name, value):
+        setattr(cls, name, value)
+
+
+
+if mmgroup_present:
+     d = ReduceGx0Data.D
+     for name in ["EVAL_Y", "EQU_Y", "EVAL_X", "EQU_X", "SP_Z"]:
+         ReduceGx0Data.set_class_attr(name, d[name])
+
 
 class MockupReduceGx0Data:
-    HASH_A = [0]
-    EVAL_Y = [0]
-    EQU_Y = SP = EVAL_X = EQU_X = EVAL_Y
+    SP = HASH_A = [0]
+    TABLE2 = [[0,0]]
 
 
 
@@ -378,7 +445,11 @@ class MockupTables:
 
 
 
-def process_v_1():
+def process_v_1(hash_a = None, d = None):
+    if hash_a is None:
+       hash_a = ReduceGx0Data.HASH_A
+    if d is None:
+       d = ReduceGx0Data.D
     state = 1
     len_data = 1
     data = np.zeros(24, dtype = np.uint32)
@@ -406,25 +477,23 @@ def process_v_1():
     # Let 'Ah' be part 'A' of the input axis transformed by h.
     # Here data[i], 0 <= i < 24 should contain the following
     # information about the rows of matrix 'Ah':
-    # data[i] = 0x100 * Ah[i,i] + w(i, Ah).
+    # data[i] = 32 * Ah[i,i] + w(i, Ah).
     # Here w(i, Ah) is the weight of row i of Ah, i.e. the number
     # of its nonzero entries.  Ah[i,i] must be 0, 1, or 2.
-    # The value w(i, Ah) is ingored in case Ah[i,i] == 2.
     pi = np.zeros(24, dtype = np.uint8)
     pi.fill(24)
     for i in range(24):
-        d, w = divmod(data[i], 0x100)
-        if (d, w) in ReduceGx0Data.HASH:
-            j = ReduceGx0Data.HASH[(d,w)]
-            pi[j] = i
-
-    state = 3
-    len_data = len(ReduceGx0Data.EVAL_Y)
-    for n, (i, j) in enumerate(ReduceGx0Data.EVAL_Y):
-        data[n] = 0x2000000 + (int(pi[i]) << 14) + (int(pi[j]) << 8)
+        for j in range(7):
+            if data[i] == hash_a[j]:
+                pi[j] = i
+    pi[8], pi[6] = pi[6], 24
     res = mat24.perm_complete_heptad(pi)
     assert res == 0
     mat24.perm_check(pi)
+    state = 3
+    len_data = len(d["EVAL_Y"])
+    for n, (i, j) in enumerate(d["EVAL_Y"]):
+        data[n] = 0x2000000 + (int(pi[i]) << 14) + (int(pi[j]) << 8)
     pi_num = mat24.perm_to_m24num(pi)
     if pi_num:
         g[len_g] = 0xA0000000 + pi_num
@@ -445,7 +514,7 @@ def process_v_1():
         v_y |= (data[k] & 2) << k
     assert err == 2, err
     v_y >>= 1
-    y = leech2matrix_solve_eqn(ReduceGx0Data.EQU_Y, 11, v_y)
+    y = leech2matrix_solve_eqn(d["EQU_Y"], 11, v_y)
     assert y >= 0
     if y > 0:
         g[len_g] = 0xC0000000 + y
@@ -453,7 +522,7 @@ def process_v_1():
 
     # Now we are in the group Q_x0.
     for i in range(24):
-        data[i] = ReduceGx0Data.EVAL_X[i]
+        data[i] = d["EVAL_X"][i]
     g_inv = np.zeros(12, dtype = np.uint32)
     for i in range(len_g):
         g_inv[i] = g[len_g - 1 - i] ^ 0x80000000
@@ -480,7 +549,7 @@ def process_v_1():
     assert err == 2, err
     v_x >>= 1
     v_x ^= signs
-    x = leech2matrix_solve_eqn(ReduceGx0Data.EQU_X, 24, v_x)
+    x = leech2matrix_solve_eqn(d["EQU_X"], 24, v_x)
     x ^= mat24.ploop_theta((x >> 12) & 0xfff)
     if (x & 0xfff):
         g[len_g] = 0x90000000 + (x & 0xfff)
@@ -489,12 +558,15 @@ def process_v_1():
     g[len_g] = 0xB0000000 + x
     len_g += 1
     rep = np.zeros(14, dtype = np.uint64)
-    xsp2co1_rep_mod3_unit_vector(0, 1, rep)
+    v_z = d["SP_Z"][0]
+    i1, j1 = (v_z >> 14) & 0xfff, (v_z >> 8) & 0x1f
+    sign = (v_z & 2) >> 1
+    xsp2co1_rep_mod3_unit_vector(i1, 1 << (j1 + 32*sign), rep)
     for i in range(len_g):
         g_inv[i] = g[len_g - 1 - i] ^ 0x80000000
     res = xsp2co1_rep_mod3_mul_word(rep, g_inv, len_g)
     assert res >= 0
-    # Now ever<thng is fine up to sign
+    # Now everythng is fine up to sign
     res = xsp2co1_rep_mod3_find_nonzero(rep);
     assert res >= 0
     signs = (res >> 1) & 1
@@ -539,7 +611,7 @@ def watermark_row(a, i):
     s += s >> 8
     s += s >> 16
     s += s >> 32
-    return (d << 8) + (s & 0x1f)
+    return (d << 5) + (s & 0x1f)
 
 def py_reduce_v_1(v3, g = None, verbose = 0):
     st = process_v_1()
