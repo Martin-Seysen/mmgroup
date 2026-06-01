@@ -141,6 +141,9 @@ typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
    structure are used to compute an element of the group \f$N_{x0}\f$
    of structure \f$2^{1+24+11}.M_{24}\f$ that transforms the a given
    vector ``v`` to the standard order vector ``v1``.
+
+   Part ``HA`` contains the hash values of the rows of part 'A' of
+   the order vector ``v1``. 
    
    Part ``WM`` contains hash values of rows of part 'A' of ``v1``.
    The hash value of a row is the sum of the absolute values of the
@@ -176,6 +179,7 @@ typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
    part ``Z`` (im sparse notation).
 */
 struct mm_order_data_Gx0_s {
+    uint8_t HA[24];    ///< hash values for part 'A' of order vector
     uint8_t WM[7];     ///< hash table for part 'A' of vector
     uint8_t Y[11][2];  ///< (Y[k,0],Y[k,1]) refers to 'A'[Y[k,0],Y[k,1]]
     uint32_t EQU_Y[11]; ///< matrix to solve equation for y_e
@@ -201,9 +205,8 @@ typedef struct mm_order_data_Gx0_s  mm_order_data_Gx0_type;
 
 
 static mm_order_data_Gx0_type ORDER_DATA_STD = {
-    {
-       // %%TABLE V1_MOD3.HASH_A, uint8
-    },
+    // %%TABLE V1_MOD3.TABLE1
+    ,
     // %%TABLE V1_MOD3.TABLE2
 };
 
@@ -326,14 +329,14 @@ int32_t mm_order_compare_v1_mod3(uint_mmv_t *v)
 
 static inline
 int32_t watermark_to_perm(
-    uint32_t wm[24], uint32_t y_sp[11], uint8_t wm_ref[7], uint8_t y[11][2])
+    uint32_t wm[24], uint32_t y_sp[11], uint8_t wm_ref[7], uint8_t y[11][2], uint8_t ha[24])
 {
    uint8_t pi[32], i, j, acc = 0;
    uint32_t m;
    for (j = 0; j < 7; ++j) (pi[j] = 0xff);
    for (i = 0; i < 24; ++i) {
        m = wm[i];
-       m = m >= 0x60 ? m - 0x60 : m;
+       wm[i] = m = m >= 0x60 ? m - 0x60 : m;
        for (j = 0; j < 7; ++j) {
            if (m == wm_ref[j]) pi[j] = i; 
        }
@@ -342,6 +345,9 @@ int32_t watermark_to_perm(
    for (j = 0; j < 7; ++j) acc |= pi[j];
    if(acc & 0x80) return -2;
    if (mat24_perm_complete_heptad(pi) != 0) return -3;
+   for (i = 0; i < 24; ++i) {
+       if (ha[i] != wm[pi[i]]) return -4;
+   }
    for (i = 0; i < 11; ++i) {
        y_sp[i] =  0x2000000 + (pi[y[i][0]] << 14) + (pi[y[i][1]] << 8);
    }
@@ -357,7 +363,7 @@ int32_t solve_y(uint32_t *data, uint32_t *equ_y)
         err &= data[k] + 1,
         v_y |= (data[k] & 2) << k;
     }
-    if (err != 2) return -4;
+    if (err != 2) return -5;
     v_y >>= 1;
     y = leech2matrix_solve_eqn(equ_y, 11, v_y);
     return y;
@@ -373,11 +379,11 @@ int32_t prep_x(uint32_t *g, uint32_t len_g, uint32_t data[24], uint32_t *eval_x)
     for (i = 0; i < len_g; ++i) g_inv[i] = g[len_g - 1 - i] ^ 0x80000000UL;
     res = gen_leech2_op_word_many(data, 24, g_inv, len_g);
     if (res < 0) return res;
-    if ((uint32_t)res != len_g) return -5;
+    if ((uint32_t)res != len_g) return -6;
     for (i = 0; i < 24; ++i) {
         signs += ((data[i] >> 24) & 1) << i;
         data[i] = res = mm_aux_index_leech2_to_sparse(data[i]) & 0xffffff00;
-        if (res <= 0) return res ? res : -6;
+        if (res <= 0) return res ? res : -7;
     }
     return signs;
 }
@@ -390,7 +396,7 @@ int32_t solve_x(uint32_t *data, uint32_t signs, uint32_t *equ_x)
         err &= data[k] + 1,
         v_x |= (data[k] & 2) << k;
     }
-    if (err != 2) return -4;
+    if (err != 2) return -8;
     v_x >>= 1;
     v_x ^= signs;
     x = leech2matrix_solve_eqn(equ_x, 24, v_x);
@@ -464,8 +470,8 @@ int32_t mm_order_find_Gx0_v1_mod3_state( mm_order_find_Gx0_type *st, int32_t sta
             return 0;
         case 2:
             if (state != st->state) return (st->state = _VAR_ERROR(1, -2));
-            uint32_t perm_num = res = watermark_to_perm(
-                 st->data, st->data, st->pdata->WM, st->pdata->Y);
+            uint32_t perm_num = res = watermark_to_perm(st->data, st->data,
+                st->pdata->WM, st->pdata->Y, st->pdata->HA);
             if (res < 0) return  (st->state =_VAR_ERROR(3, res));
             if (perm_num) st->g[st->len_g++] = 0xA0000000UL + perm_num;
             st->length = 11;

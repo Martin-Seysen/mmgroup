@@ -156,55 +156,44 @@ def process_A24(A24, verbose = 0):
     assert len(h) + n == 24
     sp.sort()
     eval_v_y.sort()
-    return sp, h, eval_v_y
+    return sp, eval_v_y
 
 
 
-def display_part_A(cls):
-    print("Data related to part 'A' of the Griess algebra")
-    print("Submatrix A12 of part A of vector v_1:")
-    print(cls.A12)
-    print("Determinant of A12 is %.3f" % np.linalg.det(A12))
-
-    print("Part A of vector v_1 (modulo 3):")
-    print(cls.A24)
-    A23 = np.copy(cls.A24)
-    A23 = np.delete(A23, 7, 0)
-    A23 = np.delete(A23, 7, 1)
-    print("Determinant of image of that part is %.3f"
-             % np.linalg.det(A23))
-    if not mmgroup_present:
-        s = "Cannot display more data, since mmgroup is not avialable"
-        print(s)
-        return
-
-    print("Hash values for part A:")
-    for i, (key, value) in enumerate(cls.HASH.items()):
-        print("%s: %2d," % (key, value),
-            end = "\n" if i % 5 == 4 else " ")
-    print()
-
-    print("Matrix SP in sparse notation (hex):")
-    for i, e in enumerate(cls.SP):
-        print("%07x" % e, end = "\n" if i % 8 == 7 else " ")
-    print()
 
 
-    print("Values of part A for determining generator y:")
-    for i, d in enumerate(cls.EVAL_Y):
-        print("%7s, " % (d,), end = "\n" if i % 6 == 5 else " ")
-    print()
-    print("Matrix for solving y (hex):")
-    for d in cls.EQU_Y:
-        print("%03x, " % d, end = "")
-    print()
-    print("Leech2 values of parts BCTX for finding generator x (hex):")
-    for i, d in enumerate(cls.EVAL_X):
-        print("%06x" % d, end = "\n" if i % 8 == 7 else " ")
-    print("Matrix for solving x (hex):")
-    for i, d in enumerate(cls.EQU_X):
-        print("%06x" % d, end = "\n" if i % 8 == 7 else " ")
-    print()
+def make_hash_a(A24):
+    a = np.array(A24, dtype = np.int32) % 3
+    n_hashes, ha = defaultdict(int), []
+    for i in range(24):
+        hash = 32 * int(a[i,i]) + int(np.count_nonzero(a[i]))
+        ha.append(hash)
+        n_hashes[hash] += 1
+    HASHED = [0,1,2,3,4,5,8]
+    hash_table = []
+    for i, entry in enumerate(HASHED):
+        hv = ha[entry]
+        assert n_hashes[hv] == 1
+        hash_table.append(hv)
+    return ha, hash_table
+
+
+
+
+
+####################################################################
+####################################################################
+# Compute data for obtaining the 2-subgroup 2^{1+24+11} of N_x0
+####################################################################
+####################################################################
+
+
+
+
+####################################################################
+# Compute y_d from part A of the vector v_1
+####################################################################
+
 
 
 def map_y(eval_v_y):
@@ -225,7 +214,7 @@ def map_y(eval_v_y):
     return eval_y, np.array(solve_y, dtype = np.uint32)
 
 ####################################################################
-# Parts BCTX of the vector v_1
+#  Compute x_r from parts BCTX of the vector v_1
 ####################################################################
 
 
@@ -274,7 +263,7 @@ def map_x(eval_v_x):
 
 
 ####################################################################
-# Parts Z of the vector v_1
+# Compute sign from parts ZY of the vector v_1
 ####################################################################
 
 def process_Z():
@@ -338,20 +327,62 @@ def table_from_eval_dict(d):
     
 
 ####################################################################
-# Assembling the parts of the vector v_1
+####################################################################
+# Class ReduceGx0Data, for assembling the parts of the vector v_1
+####################################################################
 ####################################################################
 
 
-def make_hash_a(hash):
-    hashvalues = [0,1,2,3,4,5,8]
-    for h in hashvalues:
-        assert h in hash.values()
-    a_hash = [None]*9
-    for (d, w), i in hash.items():
-        if i < 9:
-            a_hash[i] = 32*d + w
-    a_hash[6] = a_hash[8]
-    return a_hash[:7]    
+
+
+
+def display_part_A(cls):
+    print("Data related to part 'A' of the Griess algebra")
+    print("Submatrix A12 of part A of vector v_1:")
+    print(cls.A12)
+    print("Determinant of A12 is %.3f" % np.linalg.det(A12))
+
+    print("Part A of vector v_1 (modulo 3):")
+    print(cls.A24)
+    A23 = np.copy(cls.A24)
+    A23 = np.delete(A23, 7, 0)
+    A23 = np.delete(A23, 7, 1)
+    print("Determinant of image of that part is %.3f"
+             % np.linalg.det(A23))
+    if not mmgroup_present:
+        s = "Cannot display more data, since mmgroup is not avialable"
+        print(s)
+        return
+
+    print("Hash values for part A:")
+    for i, (key, value) in enumerate(cls.HASH.items()):
+        print("%s: %2d," % (key, value),
+            end = "\n" if i % 5 == 4 else " ")
+    print()
+
+    print("Matrix SP in sparse notation (hex):")
+    for i, e in enumerate(cls.SP):
+        print("%07x" % e, end = "\n" if i % 8 == 7 else " ")
+    print()
+
+
+    print("Values of part A for determining generator y:")
+    for i, d in enumerate(cls.EVAL_Y):
+        print("%7s, " % (d,), end = "\n" if i % 6 == 5 else " ")
+    print()
+    print("Matrix for solving y (hex):")
+    for d in cls.EQU_Y:
+        print("%03x, " % d, end = "")
+    print()
+    print("Leech2 values of parts BCTX for finding generator x (hex):")
+    for i, d in enumerate(cls.EVAL_X):
+        print("%06x" % d, end = "\n" if i % 8 == 7 else " ")
+    print("Matrix for solving x (hex):")
+    for i, d in enumerate(cls.EQU_X):
+        print("%06x" % d, end = "\n" if i % 8 == 7 else " ")
+    print()
+
+
 
 
 
@@ -359,15 +390,16 @@ class ReduceGx0Data:
     A12 = A12
     A24 = make_A24()
     if mmgroup_present:
-        SP_Y, HASH, EVAL_V_Y = process_A24(A24)
+        SP_Y,  EVAL_V_Y = process_A24(A24)
         #EVAL_Y, EQU_Y = map_y(EVAL_V_Y)
         SP_X = data_BCTX()
         #EVAL_X, EQU_X = map_x(SP_X)
         SP_Z = process_Z()
         SP = SP_Y + SP_X + SP_Z
         SP = np.array([len(SP)] + SP, dtype = np.uint32)
-        HASH_A = make_hash_a(HASH)
+        HASH, HASH_A = make_hash_a(A24)
         D =  get_eval_dict(EVAL_V_Y + SP_X + SP_Z)
+        TABLE1 = [HASH, HASH_A]
         TABLE2 = table_from_eval_dict(D)
 
     @classmethod
@@ -380,14 +412,14 @@ class ReduceGx0Data:
 
 
 
-if mmgroup_present:
+if 0 and mmgroup_present:
      d = ReduceGx0Data.D
      for name in ["EVAL_Y", "EQU_Y", "EVAL_X", "EQU_X", "SP_Z"]:
          ReduceGx0Data.set_class_attr(name, d[name])
 
 
 class MockupReduceGx0Data:
-    SP = HASH_A = [0]
+    TABLE1 = [[0]]
     TABLE2 = [[0,0]]
 
 

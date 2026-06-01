@@ -35,8 +35,7 @@ if __name__ == "__main__":
     sys.path.append(os.path.join("..", "..", ".."))
 
 import mmgroup
-from mmgroup import structures, mat24, MM0, MMV
-from mmgroup.mat24 import vect_to_cocode
+from mmgroup import structures, MM0, MMV
 from mmgroup.mm_space import MMSpace, MMVector
 from mmgroup.generators import gen_leech3to2_type4
 from mmgroup.generators import gen_leech2_reduce_type4
@@ -44,6 +43,25 @@ from mmgroup.clifford12 import leech2matrix_add_eqn
 from mmgroup.mm_op import mm_aux_index_sparse_to_leech2
 from mmgroup.mm_op import mm_aux_mmv_extract_sparse
 from mmgroup.mm_op import mm_op_eval_A_rank_mod3 
+
+
+import_pending = True
+
+
+
+def complete_import():
+    """Internal function of this module
+
+    If you need any of the objects declared above, do the following:
+
+    if import_pending:
+        complete_import()
+    """
+    global import_pending, mat24
+    from mmgroup import mat24
+    import_pending = False
+
+    
 
 
 
@@ -204,6 +222,8 @@ def find_umbral_heptad(ilist):
     integer ``x`` so that ``MM0('a', x)`` performs this permutation.
     In case of failure the function returns 0.
     """
+    if import_pending:
+        complete_import()
     if len(ilist) < 7:
         return 0;
     if len(ilist) != len(set(ilist)):
@@ -405,9 +425,11 @@ def stabilizer_vector(v, g, n):
 
 
 def map_y(y_index):
+    if import_pending:
+        complete_import()
     i, j = (y_index >> 14) & 0x1f, (y_index >> 8) & 0x1f
     vect = (1 << i) + (1 << j)
-    gc = vect_to_cocode(vect)
+    gc = mat24.vect_to_cocode(vect)
     assert 0 <= gc < 0x800
     return gc 
     
@@ -594,7 +616,9 @@ def find_vector_p_mod3(p, verbose = 0):
     Here ``yx`` is a list of entries of vector ``w`` (in sparse
     notation) that can be used to idetify a ``g`` in math:`G_{x0}`
     from ``v * v``, see function ``check_v``.
-    """    
+    """
+    if import_pending:
+        complete_import()
     s_g_p = find_element_of_order(p, verbose = 1)
     assert isinstance(s_g_p, str)
     g_p = MM0(s_g_p)
