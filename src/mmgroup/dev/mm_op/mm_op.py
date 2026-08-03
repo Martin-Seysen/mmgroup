@@ -140,7 +140,7 @@ class MM_Op(MM_Basics):
         bit i of 'src' is one and to 0 otherwise.
 
         Bit field i of 'dest' is set to  'value' if bit i of 'src' is 
-        one. 0 <= 'value' <= self.p must hold. 'value' dafaults to
+        one. 0 <= 'value' <= self.p must hold. 'value' defaults to
         self.p
         """ 
         msize = 1 << (self.INT_BITS >> 1)
@@ -186,4 +186,3 @@ class Mockup_MM_Op(MM_Op):
 
 Tables = MM_Op
 MockupTables = Mockup_MM_Op
-

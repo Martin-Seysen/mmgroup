@@ -89,7 +89,7 @@ def partition_as_llist(ind, data):
     (n_sets, ind, data) that describes a partition of a set of
     integers. This function takes the pair (ind, data) from that
     output and converts it to a list of list of integers
-    decribing a partition of a set of integers. Here each list
+    describing a partition of a set of integers. Here each list
     of integers is sorted; and the list of lists is sorted
     by the smallest elements of the lists of integers.
     """
@@ -203,7 +203,7 @@ def generate_main_orbit_array(generators):
     Given a list of generators of the group ``H`` described above, the
     function returns a pair ``(a, llist)``. Here ``a`` is an (opaque)
     **orbit array** for the group H and its natural action on
-    :math:`\mbox{GF}_2^3` as desribed in file ``gen_ufind_lin2.c``.
+    :math:`\mbox{GF}_2^3` as described in file ``gen_ufind_lin2.c``.
     Object ``llist`` is a list of lists describing these orbits.
 
     The function makes some checks that are specific for the
@@ -267,7 +267,7 @@ def check_properties_a(a, generators):
 
     The function check some elementary properties of the array ``a``
     obtained by applying function ``gen_ufind_lin2_init`` to the
-    set ``generators`` of geneators of a group.
+    set ``generators`` of generators of a group.
     """
     gen = np.array(generators, dtype = np.uint32)
     n_gen, dim = gen.shape
@@ -471,7 +471,7 @@ def check_orbits_py_class(generators, a, llist):
 
 
 def gen_weight4():
-    """Genereate integers 0 <= i < 256 of bit weight 4"""
+    """Generate integers 0 <= i < 256 of bit weight 4"""
     for i in range(256):
         if bitweight(i) == 4:
             yield i
@@ -588,7 +588,7 @@ def check_properties_a_py_compressed(a_py, c):
 
 @pytest.mark.general
 def test_ufind_L3_2(verbose = 0):
-    r"""Test the union-find algorithm on the goup H
+    r"""Test the union-find algorithm on the group H
 
     Here the group H is acting as a permutation group of the basis
     vectors of GF(2)^8 as described in the documentation string
@@ -609,4 +609,3 @@ def test_ufind_L3_2(verbose = 0):
     a_py = check_orbits_py_class(generators, a, llist)
     c = check_properties_a_compressed(a)
     check_properties_a_py_compressed(a_py, c)
-

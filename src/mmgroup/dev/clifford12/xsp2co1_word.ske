@@ -370,7 +370,7 @@ int32_t elem_to_word(uint64_t *elem, uint32_t *a, uint64_t img_omega)
     // representing the result in the array ``a``. We will use   
     // ``len_a`` for recording the length of the stored word.
     x ^= mat24_ploop_theta(x >> 12);  // apply cocycle to get x_delta
-    // First store invers of the  word representing ``x`` in ``a``.
+    // First store inverse of the  word representing ``x`` in ``a``.
     if (x & 0xfff) a[len_a++] = 0x90000000 + (x & 0xfff); // x_delta
     if (x & 0x1fff000) a[len_a++] = 0xB0000000 + (x >> 12); // x_d
     // Return length of the final word a
@@ -644,7 +644,7 @@ uint32_t xsp2co1_check_word_g_x0(uint32_t *w, uint32_t n)
 
 This function is deprecated and will be removed!!
 
-Any type-4 vector in the Leech lattice mod 2 corrsponds to a unique
+Any type-4 vector in the Leech lattice mod 2 corresponds to a unique
 maximal isotropic space (of dimension 12) in the Leech lattice mod 2.
 E.g. the standard type-4 vector \f$\Omega\f$ corresponds to the
 space spanned by \f$\Omega\f$ and (the images in the Leech lattice
@@ -710,7 +710,7 @@ int32_t xsp2co1_isotropic_type4(uint32_t v, uint64_t *pB, int32_t n)
 /// @cond DO_NOT_DOCUMENT
 
 /**
-@brief Orthognal complement of 23 dim. subspace of Leech lattice mode 2
+@brief Orthogonal complement of 23 dim. subspace of Leech lattice mode 2
 
 If the buffer referred by ``pB`` contains the a basis of a
 23-dimensional subspace of the Leech lattice mod 2 in reduced echelon
@@ -822,7 +822,7 @@ The function reduces the coordinates of \f$y\f$ modulo
 3 and stores the result in the array ``v`` in a format
 compatible the format used in the ``mmgroup.mm_op`` extension.
 
-Right multiplcation of \f$g\f$ by \f$G_{x0}\f$ commutes
+Right multiplication of \f$g\f$ by \f$G_{x0}\f$ commutes
 with left multiplication of \f$g\f$ by \f$\Pi\f$, so that we
 can test the right multiplication by \f$G_{x0}\f$
 implemented in this module against the corresponding
@@ -844,7 +844,7 @@ Remark:
 
 The result is an array with 4096 entries corresponding
 to the entries with tags ``Z`` and ``Y`` of a vector
-in the represention \f$\rho_3\f$,  as described in
+in the representation \f$\rho_3\f$,  as described in
 section **The Representation of the Monster Group**
 of the **API reference**.
 
@@ -987,7 +987,5 @@ int32_t xsp2co1_elem_read_mod3(uint64_t *v, uint64_t *elem, uint32_t row, uint32
 #ifdef __cplusplus
 }
 #endif
-
-
 
 

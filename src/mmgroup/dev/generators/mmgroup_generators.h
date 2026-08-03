@@ -56,7 +56,7 @@
  A tag with tag number 0 is interpreted as the neutral element.
  A tag with tag number 7 is illegal (and reserved for future use).
  
- Tags with other letters occuring in the constructor of class ``MM`` 
+ Tags with other letters occurring in the constructor of class ``MM`` 
  are converted to a word of atoms with tags taken from the table 
  above.
 
@@ -110,4 +110,3 @@ enum MMGROUP_ATOM_TAG_ {
 // %%GEN h
 #endif // ifndef MMGROUP_GENERATORS_H
 // %%GEN c
-

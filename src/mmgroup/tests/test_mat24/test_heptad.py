@@ -230,7 +230,7 @@ def perm_from_map_testdata(ntests=10):
 
     Also, function perm_from_map() should return the value
     ``ref_res``. If ``ref_p`` is not None then the permutation
-    returnd by function perm_from_map() should be equal
+    returned by function perm_from_map() should be equal
     to ``ref_p``.    
     """
     Id = list(range(24))
@@ -321,7 +321,7 @@ def test_perm_from_map(verbose = 0):
 
 
 #########################################################################
-# Test lexical peroperty of function  mat24_perm_from_map()
+# Test lexical property of function  mat24_perm_from_map()
 #########################################################################
 
  

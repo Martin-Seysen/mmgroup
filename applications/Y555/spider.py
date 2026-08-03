@@ -40,7 +40,7 @@ Here the names of the generators of the Bimonster are as in the Atlas."""
     # Check that Spider1 has order 10 in the Bimonster
     assert Spider1.order() == 10
 
-    print("The spider relation has been checked sucessfully")
+    print("The spider relation has been checked successfully")
     
 
 

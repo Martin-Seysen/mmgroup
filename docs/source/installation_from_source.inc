@@ -10,7 +10,7 @@ https://github.com/Martin-Seysen/mmgroup .
 
 We use the python package ``cibuildwheel`` to build several wheels on
 these operating systems. The GitHub repository of the project contains
-actions to build the corrsponding python wheels. The program code for 
+actions to build the corresponding python wheels. The program code for 
 the GitHub actions is stored in subdirectory ``.github/workflows``.
 More details about the build process are given in
 section :ref:`build-process-label`.
@@ -34,7 +34,7 @@ revision control system are installed on your platform.
 We describe the build process on a unix-like platform.
 
 Depending on your platform, you might have to install additional tools.
-For details we refer to the cibuildwheel docmentation
+For details we refer to the cibuildwheel documentation
 https://cibuildwheel.readthedocs.io/en/stable/
 
 Any previously installed version of the ``mmgroup`` package must
@@ -140,7 +140,7 @@ also install the following programs:
   Perl       Documentation  https://www.perl.org/get.html
   doxygen    Documentation  https://www.doxygen.nl/download.html
              of C files
-  Ghostcript Documentation: https://ghostscript.com/releases/gsdnld.html
+  Ghostscript Documentation: https://ghostscript.com/releases/gsdnld.html
              using TikZ in    
              Sphinx
   ========== ============== ======================================================
@@ -220,4 +220,3 @@ Here the path my be different on the user's Windows system.
 
 
     
-

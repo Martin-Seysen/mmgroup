@@ -15,7 +15,7 @@ corresponding subgroup.
 For mathematical background see [1]
 
 
-[1] **The mmgroup guide for deveolpers**, section 
+[1] **The mmgroup guide for developers**, section 
     **Subgroups of the Mathieu group :math:`M_{24}`**.
 
 """
@@ -458,7 +458,7 @@ def check_transitivity(mode, transitivity_bitmaps):
 def do_test_mat24_rand(mode, n, verbose = 0):
     """Test generation of random elements of subgroup given by ``mode``
  
-    We generate ``n`` random elemnts ``g``  of the subgroup ``H`` of
+    We generate ``n`` random elements ``g``  of the subgroup ``H`` of
     ``M_24`` using function  ``py_mat24_perm_rand_local``. Then we 
     test if ``g`` is actually in the required subgroup using function
     ``py_mat24_perm_in_local``.
@@ -490,7 +490,7 @@ def do_test_mat24_rand(mode, n, verbose = 0):
     ``mat24.perm_in_local``,  and ``mat24.complete_rand_mode`` are 
     equivalent to the  functions ``py_mat24_perm_rand_local``,
     ``py_mat24_perm_in_local``, and ``py_mat24_complete_rand_mode``,
-    respecively.
+    respectively.
     """
     super_mode = py_mat24_complete_rand_mode(mode)
     assert py_mat24_complete_rand_mode(super_mode) == super_mode
@@ -580,4 +580,3 @@ if __name__ == "__main__":
  
 
              
-

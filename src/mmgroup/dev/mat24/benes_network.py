@@ -114,7 +114,7 @@ def build_benes24(perm):
         for i in range(24):  # Looping step for Benes network
             j = i            # j is a node not yet processed
             while not (done & (1 << j)): # while node j not done
-                done |= 1 << j         # delare node j done
+                done |= 1 << j         # declare node j done
                 j = p[j]               # j := permutation result p[j]
                 # route node p[j] thru '0' part of inner Benes network
                 # so we do: if (j & d): res1 |=  1 << (j & ~d)

@@ -146,7 +146,7 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
 
     ``Xsp2_Co1_Vector(tag, i, j)`` ,
 
-    where tag is 'X' or 'Y' contructs the same unit vector as
+    where tag is 'X' or 'Y' constructs the same unit vector as
     calling  ``MMV(3, tag, i, j)``, for 0 <= i < 2048, 0 <= j < 24.
     But in this class there is a wraparound so that
     ``Xsp2_Co1_Vector('Y', i, j)`` is equivalent to
@@ -183,9 +183,9 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
 
     's3':      random short vector of type 2 in :math:`\mbox{GF_3}^{24}`
 
-    ``list``   co-ordinates of vector, given as a lsit of length 24
+    ``list``   coordinates of vector, given as a list of length 24
 
-    ``dict``   mapping of indices to co-ordinates.
+    ``dict``   mapping of indices to coordinates.
     =========  ===========================================================
 
     """
@@ -217,7 +217,7 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
     def check(self):
         """Check if the vector is correct
 
-        Raise ValueError if the vector is errorneous.
+        Raise ValueError if the vector is erroneous.
         """
         self.space.check(self)
 
@@ -243,7 +243,7 @@ class Xsp2_Co1_Vector(AbstractMmRepVector):
         return self.mmv.as_tuples()
 
     def mul_Gx0(self, g):
-        r"""Alternative implementation of multiplcation with group element
+        r"""Alternative implementation of multiplication with group element
 
         The function replaces the the tensor ``v`` in this object
         by ``v * g`` for an element ``g`` of :math:`G_{x0}`. This
@@ -392,7 +392,7 @@ class Xsp2_Co1_Space(AbstractRepSpace):
         return v1.mmv[index]
 
     def vector_set_item(self, v1, index, value) :
-        ERR = "Item assigment not supported in this vector space"
+        ERR = "Item assignment not supported in this vector space"
         raise TypeError(ERR)
 
     def equal_vectors(self, v1, v2):
@@ -488,4 +488,3 @@ def dump_zy(text, v):
         n += 1
     if (n & 1):
         print()
-

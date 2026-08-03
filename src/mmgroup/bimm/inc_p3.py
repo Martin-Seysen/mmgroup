@@ -66,7 +66,7 @@ ERR_P_ALL = "P3 nodes in %s must all be points"
 # Names of nodes in the projective plane P3
 #####################################################################
 
-# Dictionary ``P3_OBJ`` maps integers and string corrsponding to
+# Dictionary ``P3_OBJ`` maps integers and string corresponding to
 # number or names of nodes in the projective
 P3_OBJ = dict(zip(range(26), range(26)))
 for x in range(26):
@@ -258,7 +258,7 @@ def _remaining_nodes(x1, x2):
         rem = int(INCIDENCES[blist[0]]) & ~((1 << x1) | (1 << x2))
         return uint64_to_bitlist(rem)
     if len(blist):
-        s = "Arguments in P3_remaining_nodes() must be differnt"
+        s = "Arguments in P3_remaining_nodes() must be different"
     else:
         s = ERR_PL_ALL % 'P3_remaining_nodes()'
     raise ValueError(s)
@@ -302,7 +302,7 @@ def find_cross(points):
 
     # Four different points x1, x2, x3, x4 form a cross if the inter-
     # section of the line through x1 and x2, and the line through
-    # x3 and x4, contains a point differnt from x1, x2, x3, x4.
+    # x3 and x4, contains a point different from x1, x2, x3, x4.
     if len(set(points)) < len(points):
         raise ValueError(ERR_DUPL)
     if not 0 <= min(points) <= max(points) < 13:
@@ -516,7 +516,7 @@ def line_map_from_map(perm):
     list is the image of line  ``i``. Here all line numbers are 
     reduced modulo 13.
 
-    Due to the symmetry between the point numering and the line 
+    Due to the symmetry between the point numbering and the line 
     numbering, this function may also be used to convert mapping of 
     lines of P3 to a mapping of points.
     """
@@ -799,7 +799,7 @@ class AutP3(AbstractGroupWord):
     If parameter ``mapping`` is the string ``'r'``, then an optional
     parameter ``data`` of type ``dict`` or ``zip`` that describes a 
     partial mapping of points or lines may follow. In this case we 
-    construct a random  automorphism of ``P3`` satifying the 
+    construct a random  automorphism of ``P3`` satisfying the 
     constraints of the mapping given by parameter ``data``, if present.
     Such a random automorphism  is chosen from a uniform distribution 
     of all possible cases.
@@ -895,7 +895,7 @@ class AutP3(AbstractGroupWord):
 
 @singleton
 class AutP3Group(AbstractGroup):
-    r"""Auxilary class for class ``AutP3``
+    r"""Auxiliary class for class ``AutP3``
 
     This makes the methods in class ``AbstractGroup`` available to
     instancs of class ``AutP3``.
@@ -943,4 +943,3 @@ AutP3.group = StdAutP3Group
 
 
          
-

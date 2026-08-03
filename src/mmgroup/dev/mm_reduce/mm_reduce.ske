@@ -50,7 +50,7 @@
      uint32_t a[256];                 // buffer containing element ``g``
      uint32_t n;                      // length of data in buffer ``a``
 
-     // The folling buffers will contain the reduced element ``g``
+     // The following buffers will contain the reduced element ``g``
      uint32_t r[256];                 // buffer for reduced element ``g``
      uint32_t len;                    // length of data in buffer ``r``
 
@@ -502,7 +502,7 @@ static inline int32_t analyze_axis(
    axis \f$v\f$ may be reduced by applying first an transformation
    in \f$G_{x0}\f$ and then a power of the triality
    element \f$G_{x0}\f$. Both entries are encoded in the same way as
-   Entry 1. So these two entries desribe the graph in [Sey22],
+   Entry 1. So these two entries describe the graph in [Sey22],
    Figure 2. An unused entry is encoded as ``0xffffffff``.
 
    If the axis type of \f$v\f$ is 2A then we define \f$U(v)\f$ to be
@@ -511,7 +511,7 @@ static inline int32_t analyze_axis(
 
    Caution:
 
-   This is a quick analyis of a 2A axis. The  function may return
+   This is a quick analysis of a 2A axis. The  function may return
    garbage if ``v`` is not  a 2A axis.
 
 */
@@ -545,12 +545,12 @@ int32_t mm_reduce_analyze_2A_axis(uint_mmv_t *v, uint32_t * r)
   modulo 2 in Leech lattice encoding.
 
   If parameter ``v2`` is 0 then the function returns the least
-  vector of type 4 in the list ``v`` with repect to a certain
+  vector of type 4 in the list ``v`` with respect to a certain
   ordering. If list ``v`` contains no vector of type 4 then the
   function returns 0.
 
   Here subtypes are ordered as follows: ``[48, 40, (42, 44), 46, 43]``.
-  So e.g. a vector of subtype ``40`` is selected in favor of a vactor
+  So e.g. a vector of subtype ``40`` is selected in favor of a vector
   of subtype ``46``. We do not distinguish between substypes ``42``
   and ``44``. From all vectors of the same subtype (equalizing
   subtypes ``42`` and ``44``) we return the smallest vector in
@@ -615,14 +615,14 @@ uint32_t mm_reduce_find_type4(uint32_t *v, uint32_t n, uint32_t v2)
 
   This is equivalent 
   to ``mm_reduce_find_type4(p_ax->v_leech2, p_ax->v_leech2, v2)``.
-  But here the initial segement of entries of ``p_ax->v_leech2``,
+  But here the initial segment of entries of ``p_ax->v_leech2``,
   where bit 26 of the entry is set, is ignored. 
 */
 static inline uint32_t find_type4(axes_reduce_t *p_ax, uint32_t v2)
 {
     uint32_t *v = p_ax->v_leech2,  n = p_ax->n_leech2;
 
-    // Delete initial segement of marked entries
+    // Delete initial segment of marked entries
     while (n && (v[0] & 0x2000000)) {
         --n; ++v;
     }
@@ -650,15 +650,15 @@ Then the function returns ``(axis_type << 24) + w``.
 
 The function may or may not detect that \f$v\f$ is not an axis.
 If the function detects this, it returns 0. If  \f$v\f$ is not
-an axis then the fuction may also return a valid ``axis_type``,
+an axis then the function may also return a valid ``axis_type``,
 and either a valid vector ``w``, or ``w = 0``.
 
 In the special case that the detected axis type of ``v`` is 2A
 (i.e. ``axis_type == 0x21``) we let ``w`` be the type-2 vector
 corresponding to axis ``v``, ignoring parameter ``v2``.
 
-We choose the vector ``w`` determistically; but the choice of ``w``
-is impelementation dependent.
+We choose the vector ``w`` deterministically; but the choice of ``w``
+is implementation dependent.
 */
 // %%EXPORT px
 uint32_t mm_reduce_find_type4_axis(uint_mmv_t *v, uint32_t v2)
@@ -774,7 +774,7 @@ static inline int32_t transform_v4(
   function ``gen_leech2_reduce_type4``.
 
   In the next step this function tries to apply the
-  transfomations \f$\tau^e\f$ for \f$e = 1,2\f$
+  transformations \f$\tau^e\f$ for \f$e = 1,2\f$
   (in that order) until the type of the axis \f$v g \tau^e\f$
   is in a set of types given by parameter ``target_axes``.
   Here ``target_axes`` must be an array of length 2 containing
@@ -1619,7 +1619,7 @@ static inline int32_t reduction_strategy(uint32_t *a,  uint32_t n)
 
     The function also requires a work buffer of type ``t_work``
     referred by parameter ``p_work``. If a (partial) reduction
-    has been acomplished then the reduced word is storoed in
+    has been accomplished then the reduced word is storoed in
     in buffer ``p_work->buf`` and the length of that word is
     stored in ``p_work->len_buf``.
 
@@ -1839,7 +1839,7 @@ int32_t mm_reduce_M(uint32_t *a, uint32_t n, uint32_t mode, uint32_t *r)
   maps \f$v_1\f$ to the same vector as the original
   element \f$g\f$ does.
 
-  This gives a tester the capability to do long calcuations in the
+  This gives a tester the capability to do long calculations in the
   Monster group that will be verified by using classical results
   without referring to the theory developed in [Sey22].
 

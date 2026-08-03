@@ -279,7 +279,7 @@ find_in_Qx0(uint_mmv_t *v, uint32_t *g, uint64_t *work)
   The function may return 0, 1, or a negative value. If it returns 0
   then \f$g\f$ is not in \f$G_{x0}\f$. If it returns 1 then \f$g\f$ is
   in \f$G_{x0}\f$ with an error probability that is negligible for
-  all practial purposes. A negative return value indicates an error.
+  all practical purposes. A negative return value indicates an error.
 */
 // %%EXPORT px
 int32_t mm_order_check_in_Gx0_fast(uint_mmv_t *v)

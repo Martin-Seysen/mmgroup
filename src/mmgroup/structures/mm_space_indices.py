@@ -17,7 +17,7 @@ of 32-bit integer containing suitable bit fields for its
 component scalar, tag, i0, i1. This conversion is done by the 
 functions in this module. Indices i0, i1 may also be slices as 
 used in numpy. They may also be elements of the Golay code, the 
-Parker loop, or the Golay cocode, where appropiate. Furthermore,
+Parker loop, or the Golay cocode, where appropriate. Furthermore,
 an index may be "r" or "n", denoting an index selected at
 random.
 
@@ -146,8 +146,8 @@ def index_iterable(index, max_index, tag, pos):
     given order.
 
     'tag' and 'pos' are used in error messages only. They refer 
-    to the tag to which the indes belong, an to the position of
-    the indes (0 for the 1st, 1 for the 2nd index).  
+    to the tag to which the index belong, an to the position of
+    the index (0 for the 1st, 1 for the 2nd index).  
     """
     if not all(isinstance(item, Integral) for item in index):
         err = "All MM vector indices in a list must be integers"
@@ -166,7 +166,7 @@ def a_slice(i_slice, max_index):
     returns the indices contained in that slice when applied
     to a one-dimensional numpy array.
 
-    The function returns a numpy arrray of shape np.uint32.
+    The function returns a numpy array of shape np.uint32.
     """
     return np.arange(*i_slice.indices(max_index), dtype = U32)
 
@@ -188,13 +188,13 @@ def index_I(tag, i, pos = 2):
     
     If index_type & INDEX_IS_SLICE is zero 'i' specifies a
     single index, and the numpy array 'a_indices' of length 1
-    contains that indes.
+    contains that index.
 
     'sign' is always 0. It is for compatibility with functions 
     converting e.g. a Parker loop element (which comes with
     a natural sign) to a possible negated unit vector.
     
-    'pos' ist used in error messages only. It denotes the 
+    'pos' is used in error messages only. It denotes the 
     position of the index (0 for the 1st, 1 for the 2nd index).
 
     Both indices of tags A, B, and C are of this type and also 
@@ -254,7 +254,7 @@ def index_T(tag, i):
     have the same sign.
 
     The first index of tag T is of this type. Parameter 'tag' is
-    for compatibility with similar functions; ist must be 'T'.	 
+    for compatibility with similar functions; it must be 'T'.	 
     """
     if isinstance(i, Integral):
         if 0 <= i < 759:
@@ -341,8 +341,8 @@ def index_ploop(tag, i):
     elements, with the first 2**11 elements being a transversal 
     of the quotient of the Parker Loop by its center. Flipping 
     bit 12 in the number of a Parker loop element always negates 
-    the unit vector adressed by that element. Flipping bit 11 may
-    either negate or keep that unit vetor, depending on the tag.
+    the unit vector addressed by that element. Flipping bit 11 may
+    either negate or keep that unit vector, depending on the tag.
     In any case there are 2**11 positive and 2**11 negative unit 
     vectors to be distinguished, and an integer  0 <= 'i' < 2**11
     refers to a positive unit vector.
@@ -361,7 +361,7 @@ def index_ploop(tag, i):
 
     If 'i' is of type PLoop, corresponding  to a Parker loop 
     element, then the correct (positive or negative) unit vector
-    is chosen, and we return 'sign' = 0 for a positve and 
+    is chosen, and we return 'sign' = 0 for a positive and 
     'sign' = 1 for a negative vector. Note that slices of Parker 
     loop  elements and integers >= 2**11 are illegal, so all 
     entries of the array 'a_indices' have the same sign.
@@ -394,7 +394,7 @@ def index_numeric(tag, i):
     """Convert an numeric index of a vector of the representation
 
     A vector in the monster group representation may also be 
-    adressed by a numeric  index in the same way as a one-
+    addressed by a numeric  index in the same way as a one-
     dimensional numpy array of length 196884.
 
     The function returns the triple
@@ -464,7 +464,7 @@ def gen_unit_A(p, scalar, tag, i0 = 'r', i1 = 'r'):
 
     This function deals with tag 'A'. So 'tag' must be 'A'.
 
-    It implements the case for tag "A" where the tag is followd
+    It implements the case for tag "A" where the tag is followed
     by two indices i0, i1. The function returns a numpy array 
     of shape np.uint32 with a single entry:
 
@@ -559,7 +559,7 @@ def gen_unit_XYZ(p, scalar, tag, i0 = 'r', i1 = 'r'):
 
     This function deals with tags 'X', 'Y' and 'Z'. It is 
     implemented in the same fashion as function gen_unit_A(). 
-    Here parameter 'i0' and 'i1' are idependent.
+    Here parameter 'i0' and 'i1' are independent.
     """
     if i0 == 'r' and i1 == None:
         i1 ='r'
@@ -575,8 +575,8 @@ def gen_unit_XYZ(p, scalar, tag, i0 = 'r', i1 = 'r'):
 def gen_unit_numeric(p, scalar, tag, i0 = 'r', i1 = None):
     """Auxiliary function for function tuple_to_sparse()
 
-    It deals with tag 'E'. So 'tag' should aways be 'E'. Tag 'E'
-    means that 'i0' is interpreted as an index adressing a numpy 
+    It deals with tag 'E'. So 'tag' should always be 'E'. Tag 'E'
+    means that 'i0' is interpreted as an index addressing a numpy 
     array of shape (196884,) in the same way as in the C version 
     of the representation of the monster group. 'i0' may be as
     slice in the same way as in a numpy array.
@@ -682,13 +682,13 @@ def tuple_to_sparse(p, *data):
 
     This function maps a tuple to the sparse representation of an
     MM vector, which is (usually) a unit vector. The tuple is 
-    preceeded by the first argument p, which is a modulus. 
+    preceded by the first argument p, which is a modulus. 
  
     The general format of such a tuple is 
 
        (scalar, tag, i0, i1,..)
 
-    Here the 'tag' is a captial letter describing the unit vector,
+    Here the 'tag' is a capital letter describing the unit vector,
     i0, i1, ... are indices which are specifying the unit vector,
     depending on the tag. The optional 'scalar' is an integer,
     which is reduced modulo p. It defaults to 1. The 'scalar' may
@@ -737,7 +737,7 @@ PLOOP_SIGN_ERROR = "Negative Parker loop elements not allowed as indices"
 def indices_to_sparse(p, tag, type0, i0, type1, i1, sign = 0):
     """Auxiliary function for function sparse_from_indices()
 
-    The function deals with adressing a vector v of the monster
+    The function deals with addressing a vector v of the monster
     group representation  in the form v[tag, i0, i1]. Here
     tag, i0, and i1 refer to the index of a (possible negated) 
     component of v. i0 and i1 may also refer to slices of such
@@ -746,7 +746,7 @@ def indices_to_sparse(p, tag, type0, i0, type1, i1, sign = 0):
     A function like index_ploop() or index_I() returns a triple
     (index_type, a_indices, sign) describing the information
     contained in a single index. Here 'index_type' is a bit field
-    contaning the following information:
+    containing the following information:
 
       - Does the index describe a single value or a slice?
       - Has the index been generated at random?  
@@ -770,7 +770,7 @@ def indices_to_sparse(p, tag, type0, i0, type1, i1, sign = 0):
     the expected shape of the array v[tag, i0, i1], with 
     shape = () if v[tag, i0, i1] is a scalar. 
     
-    a_out is the flattened array contructed from arrays i0 and
+    a_out is the flattened array constructed from arrays i0 and
     i1 containing the indices (j0, j1) for all j0 in i0 and
     j1 in sparse representation. 
 
@@ -859,7 +859,7 @@ def D_index_to_sparse(p, tag, i0 = SLICE):
 def numeric_index_to_sparse(p, tag, i0 = SLICE):
     """Auxiliary function for function sparse_from_indices()
 
-    It deals with tag 'E' which interpretes a single index as
+    It deals with tag 'E' which interprets a single index as
     in the C version of the rep of the monster group.
 
     Therefore we use function

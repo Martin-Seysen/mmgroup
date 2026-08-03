@@ -376,7 +376,7 @@ int32_t xsp2co1_Co1_matrix_to_word(uint32_t *m, uint32_t *g)
 
    Let \f$g \in G_{x0}\f$ be given by parameter ``elem`` as usual. Then
    the function returns the character  \f$\rho_{98280\f$ of \f$g\f$.
-   IN case of failure it retunrs the special value ``CHI_24_4096_BAD``.
+   IN case of failure it returns the special value ``CHI_24_4096_BAD``.
 
    Array ``g`` must have length at least 10.
 */
@@ -479,4 +479,3 @@ int32_t xsp2co1_elem_from_mapping(uint32_t *m1, uint32_t *m2, uint32_t *g)
 #ifdef __cplusplus
 }
 #endif
-

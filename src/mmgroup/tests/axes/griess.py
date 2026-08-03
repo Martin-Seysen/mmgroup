@@ -185,7 +185,7 @@ class GriessIntermediate:
     compute the Griess algebra product ``a2 * a1`` we let ``a`` be
     the pair ``(a1, a2)``.
 
-    Apart from that argument we have the follwing keyword arguments.
+    Apart from that argument we have the following keyword arguments.
 
     Parameter ``p`` in the constructor specifies the modulus used for
     the computation in the Griess algebra as in function ``Griess``.
@@ -438,7 +438,7 @@ class GriessIntermediate:
     def pair_to_vector(self):
         """Auxiliary function for member function ``to_vector``
 
-        The function performs the action of funtion ``to_vector``
+        The function performs the action of function ``to_vector``
         in the case that this node is a pair of nodes.
         """
         assert self.tag == "pair"
@@ -546,7 +546,7 @@ def Griess(a, b, **kwds):
        Griess algebra product
 
     An entry of a pair may also be a pair; so, in principle, recursion
-    is suported.
+    is supported.
 
     The result is returned as an instance of class ``MMVector``
 
@@ -637,4 +637,3 @@ def Griess_scalar(a, b, c = None, **kwds):
        a, b = GriessIntermediate((a, b_tuple[0]), p=p), b_tuple[1]
     va, vb = a.vector_out(n),  b.vector_out(n)
     return mmv_scalprod(va, vb)
-

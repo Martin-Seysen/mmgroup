@@ -25,7 +25,7 @@ def import_all():
     from mmgroup.tests.test_axes.test_reduce_axis import g_complexity
 
 #####################################################################################
-# Auxiliary fuctions
+# Auxiliary functions
 #####################################################################################
 
 MM_TAGS = dict(enumerate(" dpxyTl?"))
@@ -138,7 +138,7 @@ def single_test_reduce(ncases, verbose = 0):
      return POOL_MAGIC 
 
 
-# The final test programm
+# The final test program
 @pytest.mark.mmgroup 
 def test_reduce(ncases = 10, verbose = 0):
     import_all()
@@ -309,7 +309,5 @@ def test_benchmark_mul_G_x0(ncases = 5000, verbose = 0):
     s = "\nRuntime of multiplication in subgroup G_x0 in class MM,"
     s += " %d tests: %.3f us" 
     print(s % (ncases, 1.0e6*t/ncases))
-
-
 
 

@@ -12,7 +12,7 @@ number.
 A standard Hadamard matrix H is defined by H[i,j] = -1**parity(i & j).
 
 It turns out that all non-monomial blocks (except for one 3 times 3 
-block) occuring in the representation of the Monster group are 
+block) occurring in the representation of the Monster group are 
 parity-adjusted 2**n Hadamard matrices of size 4, 6 or 64; or they 
 are Kronecker products (i.e. tensor products) of two such matrices.
 
@@ -79,6 +79,5 @@ def parity_hadamard_matrix(lg_n):
 msym16 = NonMonomialOp_l.MSYM16
 mdiag16 = NonMonomialOp_l.MDIAG16
 mat_l_16 =  mdiag16 @ msym16 @ mdiag16 
-
 
 

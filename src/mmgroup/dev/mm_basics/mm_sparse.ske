@@ -59,7 +59,7 @@ uint32_t mm_sparse_purge(uint32_t *sp, uint32_t length)
             case 2:  // tag B
             case 3:  // tag C
                 if (i == j) continue;
-                // Fall trough to case tag A
+                // Fall through to case tag A
             case 1:  // tag A
                 if (i >= 24 || j >= 24) continue;
                 if (i < j) v = (v & 0xE0000FF) + (j << 14) + (i << 8);
@@ -138,7 +138,7 @@ uint32_t mm_sparse_bitsort(uint32_t *a, uint32_t len, uint32_t mask)
                 hi0 |= a_hi; hi1 &= a_hi; // adjust and/or sum
                 continue;
             }
-            // a_lo and a_hi  are unorderd: exchange them!
+            // a_lo and a_hi  are unordered: exchange them!
             *p0 = a_hi; *p1 = a_lo; ++p0; 
             lo0 |= a_hi; lo1 &= a_hi;    // adjust and/or sum
             hi0 |= a_lo; hi1 &= a_lo;    // adjust and/or sum
@@ -195,7 +195,7 @@ uint32_t mm_sparse_bitsort(uint32_t *a, uint32_t len, uint32_t mask)
 
 
 /**********************************************************************
-*** sorting by alllocating memory for a vector
+*** sorting by allocating memory for a vector
 **********************************************************************/
 
 // %%EXPORT px

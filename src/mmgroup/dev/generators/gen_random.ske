@@ -13,10 +13,10 @@ The seed for such a random generator is given by an array of type
 
 The function ``gen_rng_seed(uint64_t *seed)`` fills an existing
 array ``seed`` of that type with random seed data. See description
-of that function for details. The idea is that in a mulithreading
+of that function for details. The idea is that in a multithreading
 environment every thread has its own random generator.
-There is also a function ``gen_rng_seed_no`` for a determistic
-intialization of the ``seed``. The user should call
+There is also a function ``gen_rng_seed_no`` for a deterministic
+initialization of the ``seed``. The user should call
 function ``gen_rng_seed_init`` for initialization.
 
 The function
@@ -394,7 +394,7 @@ void gen_rng_seed_init(void)
     seed_rand_data(data);
     for (i = 0; i < 2; ++i) {
         data[0] = i;
-        // The xoshiro256** random generator is weak when initalized
+        // The xoshiro256** random generator is weak when initialized
         // with many zero bits. So we'd better make sure the the words
         // of the MD5 output have reasonable Hamming weights.
         do {
@@ -801,10 +801,10 @@ double gen_rng_uniform(uint64_t *seed)
 
 
 /**
-  @brief Convert real number to an index with a given distibution.
+  @brief Convert real number to an index with a given distribution.
 
   Given a uniform random number ``0 <= x < 1``, the function returns
-  an integer ``0 <= i <= n`` with a distribution specifed by
+  an integer ``0 <= i <= n`` with a distribution specified by
   parameter ``dist``. Here ``dist`` must be an array of length ``n``,
   where ``dist[j]`` is the probability that ``i > j`` holds.  Thus
   the sequence of the entries of array ``dist`` must be increasing.
@@ -830,11 +830,11 @@ uint32_t gen_rng_uniform_to_dist(double x, uint32_t n, double *dist)
 
 
 /**
-  @brief Sample array of integers according to a given distibution.
+  @brief Sample array of integers according to a given distribution.
 
   Let ``a`` be an array of integers of length ``l_a``. The function
   fills the array ``a`` with random integers ``0 <= i <= n``
-  according to a given distibution. That distribution is described
+  according to a given distribution. That distribution is described
   by parameters ``dist`` and ``n`` in the same way as in
   function ``gen_rng_uniform_to_dist``.
 
@@ -864,5 +864,4 @@ void gen_rng_int_dist(uint64_t *seed, uint32_t n, double *dist, uint32_t *a, uin
 }
 #endif
 //  %%GEN c
-
 

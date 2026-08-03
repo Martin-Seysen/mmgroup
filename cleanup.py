@@ -95,7 +95,7 @@ def check_mmgroup_uninstalled():
         installed = False
     if installed:
         W1 = "A version of the 'mmgroup' package has been installed. "
-        W2 = "Please unstall 'mmgroup' before building a new 'mmgroup' version!"
+        W2 = "Please uninstall 'mmgroup' before building a new 'mmgroup' version!"
         print("\n")
         raise RuntimeError(W1+W2)
 
@@ -160,7 +160,7 @@ def del_ext(verbose = False):
                         if verbose:
                             print("failed")
     else:
-        s = "Dont't know how do delete python extensions in '%s' system"
+        s = "Don't know how do delete python extensions in '%s' system"
         print(s % os.name)
       
 
@@ -254,5 +254,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

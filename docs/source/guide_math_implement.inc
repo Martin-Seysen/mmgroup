@@ -263,12 +263,12 @@ be written as
 
 Here matrix :math:`D` is a diagonal matrix with an entry
 :math:`(-1)^{\left|\delta \right| /2}` in the row and column
-corrsponding to :math:`\delta`. Matrix :math:`H` is a Hadamard matrix
+corresponding to :math:`\delta`. Matrix :math:`H` is a Hadamard matrix
 with an entry :math:`(-1)^{\left|\delta \cap \epsilon \right|}` in
 the row and column corresponding to :math:`\delta` and
 :math:`\epsilon`, respectively.
     
-When implementing the muliplication with matrices :math:`D` and
+When implementing the multiplication with matrices :math:`D` and
 :math:`H` we have to be aware of the numbering of the entries 
 :math:`\delta` used in Section :ref:`mmrep-label`. Using that
 numbering, it turns out that matrix :math:`D` has diagonal entries
@@ -341,7 +341,7 @@ Remarks
 (3)  d with 0 <= d < 2048 refers to the Parker loop element d. 
      
 
-We group these basis vectrors into five boxes (labelled 1, ..., 5)
+We group these basis vectors into five boxes (labelled 1, ..., 5)
 with each box containing at most 24576 entries.
 Element :math:`\xi` permutes these boxes as follows:
 
@@ -378,7 +378,7 @@ This subdivision looks weird, but is has quite a few advantages:
     for the operator :math:`\xi`.
 
   * Boxes are permuted as above, so the operation of
-    :math:`\xi^{\pm 1}` can be stored in a set ot 5 tables
+    :math:`\xi^{\pm 1}` can be stored in a set of 5 tables
     encoding mappings between boxes.
 
 A similar, but finer subdivision of the whole space :math:`\rho`
@@ -387,8 +387,8 @@ A similar, but finer subdivision of the whole space :math:`\rho`
 
 We further subdivide a box into *clusters*, *rows*, and *columns*.
 Here a row always contains 32 columns; with either all or just the
-first 24 columns being used. A cluster contains a variable nubmer of
-rows, and a box contains a variable numer of clusters, as indicated
+first 24 columns being used. A cluster contains a variable number of
+rows, and a box contains a variable number of clusters, as indicated
 in the  following table. We also assign names to the boxes.
 
 
@@ -447,7 +447,7 @@ monomial operation of :math:`\xi^{\pm 1}`. In each array the first
 index (running from 0 to 4) indicates the stage of the computation.
 as shown in the previuos table.
  
-The following table decribes the entries of the arrays 
+The following table describes the entries of the arrays 
 PERM_TABLES, SIGN_TABLES, OFFSETS, and SHAPES in that class.
 
 .. table:: Arrays encoding the monomial operation  :math:`\xi^{\pm 1}`
@@ -464,7 +464,7 @@ PERM_TABLES, SIGN_TABLES, OFFSETS, and SHAPES in that class.
                             output entry (h,i,j) in stage s under :math:`\xi^{e+1}`; 
                             with [c, m, n] = SHAPES[s, 1].
 
-  OFFSETS     (5, 2, 2)     Entries (s, e, 0) and (s, e, 1) are the offests of the source
+  OFFSETS     (5, 2, 2)     Entries (s, e, 0) and (s, e, 1) are the offsets of the source
                             box and the destination box when computing :math:`\xi^{e+1}`
                             in stage s.
 

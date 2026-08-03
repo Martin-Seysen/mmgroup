@@ -150,7 +150,7 @@ uses the names of the 16 nodes of :math:`Y_{555}` given in the
 table above. It also uses names for remaining 10 nodes of
 :math:`P3`, and it states the incidences between all these nodes.
 We number the remaining nodes in the ATLAS (preserving their
-incidence relations) as indicated in the follwing table:
+incidence relations) as indicated in the following table:
 
 .. math::
 
@@ -165,4 +165,3 @@ incidence relations) as indicated in the follwing table:
 
 
 """
-

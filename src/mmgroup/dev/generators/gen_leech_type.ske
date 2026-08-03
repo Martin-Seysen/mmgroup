@@ -149,7 +149,7 @@ uint32_t gen_leech2_subtype(uint64_t v2)
 // in the Leech lattice modulo ``2``.
 // The type of a vector is half the length of the shortest 
 // representative of a vector in the Leech lattice.
-// The subtype decsribes the double coset of the vector in
+// The subtype describes the double coset of the vector in
 // in ``N_x \ Co_1 / N_x``, where ``Co``_1 is the automorphism 
 // group of the Leech lattice modulo ``2``, and ``N_x`` is the 
 // automorphism group of a vector ``(2,...,2)`` in the standard 
@@ -622,7 +622,6 @@ int32_t gen_leech2_start_type4(uint32_t v)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

@@ -20,7 +20,7 @@ characters of the representations
 :math:`299_x, 98280_x, 24_x \otimes 4096_x` of :math:`G_{x0}`.
 But actually, we just separate the classes of involutions
 in  :math:`G_{x0}`; and we generate a set of elements of
-:math:`G_{x0}` runnning through all classes of square roots 
+:math:`G_{x0}` running through all classes of square roots 
 of :math:`Q_{x0}`.
 
 According to [Wil13] there are five classes of involutions in
@@ -221,7 +221,7 @@ def iter_transversal(g):
     that the coset :math:`g Q_{x0}` in  :math:`{Co}_1` has 
     order 1 or 2. Then the function iterates over the subset
     of :math:`g Q_{x0}` containing representatives of all 
-    classes of :math:`G_{x0}` occuring in :math:`g Q_{x0}`,
+    classes of :math:`G_{x0}` occurring in :math:`g Q_{x0}`,
     as described in the header of this module.
     """
     if g == G():
@@ -259,7 +259,7 @@ def check_y12_involution_conjugates_to_its_negative():
     Then we check that all involutions in the coset
     :math:`g Q_{x0}` of :math:`G_{x0}` belong to the same 
     class of :math:`G_{x0}`, and that any such involution
-    is in the same class as its nagative. (Here negation
+    is in the same class as its negative. (Here negation
     means multiplication with the central involution
     of :math:`G_{x0}`).
     """
@@ -606,5 +606,4 @@ def print_invariants(file = None):
 
 if __name__ == "__main__":
     print_invariants(file = "involution_samples.py")
-
 

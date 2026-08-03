@@ -190,7 +190,7 @@ def find_tetrad_16_large(gc, sub):
     ``sub`` be a subset of ``gc`` of weight at most 4. If ``sub`` can
     be completed to an affine plane in ``gc`` then the function
     returns the four points of that affine plane as a tetrad. Otherwise
-    the function returns a tetrad corrsponding to an affine plane in
+    the function returns a tetrad corresponding to an affine plane in
     ``gc`` such that each plane in ``gc`` parallel to that tetrad
     intersects with ``sub`` in 0 or 2 points.  
     """ 
@@ -457,7 +457,7 @@ class Leech3VectorRecord:
         return self.mul_gen(0x60000000 + (e & 3))
 
     def str_vector(self):
-        """Return current vector as a strng""" 
+        """Return current vector as a string""" 
         return str_vector3(self.v)
 
 
@@ -728,7 +728,7 @@ def reduce_leech_mod3(a, verbose = 0):
 ###############################################################
 
 def binom(n, k):
-    """Binomial coefficent"""
+    """Binomial coefficient"""
     return math.factorial(n) // math.factorial(k) // math.factorial(n - k)
 
 def norms_24_mod_3():
@@ -898,7 +898,7 @@ def test_reduce_leech_mod3(ntests = 1000, verbose = 0):
         ok =  a_g == a1
         analyse_final(g, a1)
         if verbose >= 3 or not ok:
-            print("Vector expected %s, otained %s" %
+            print("Vector expected %s, obtained %s" %
                 (str_vector3(a1), str_vector3(a_g)))
             print("g:", [hex(x) for x in g]) 
             if not ok:

@@ -212,7 +212,7 @@ class TableGenerator(object):
         """Complain if there are any uncompleted directives
 
         This function also sets all relevant attriibutes such as
-        expected when enetering a new source file.
+        expected when entering a new source file.
         """
         ERR_DIRECTIVE = r"Directive %s has not been processed properly"
         if self.export_pending:
@@ -376,7 +376,7 @@ class TableGenerator(object):
         '// %%KWD1' of the block has already ben read by the function
         calling this method. 
 
-        'kwd' is the block keyword already read by the calling funtion.
+        'kwd' is the block keyword already read by the calling function.
         *source* is the iteratornthat provides the input lines.
 
         The function returns a triple
@@ -388,7 +388,7 @@ class TableGenerator(object):
         processed for code generation by a subsequent function.
 
         'prefix_lines' and 'postfix_lines' are lists of comment lines 
-        to be copied from the soure to the generated code file.
+        to be copied from the source to the generated code file.
 
         Here in the standard case, 'prefix_lines' is empty and 
         'postfix_lines' contains the END statement of the block.
@@ -645,7 +645,7 @@ class TableGenerator(object):
         """Generate a .c and  a .h file form a source.
 
         Here ``source`` must be an iterator that yields the lines
-        of the source file. This may be a readble object of class
+        of the source file. This may be a readable object of class
         ``_io.TextIOWrapper`` as returned by the built-in function
         ``open()``.
 
@@ -736,7 +736,7 @@ class TableGeneratorStream(TableGenerator):
     before switching to meson.
 
     It will contain the methods of class TableGenerator that
-    will be dprecated when bulding the project with meson.
+    will be deprecated when building the project with meson.
     """
     def __init__(self, *args, **kwds):
         super(TableGeneratorStream, self).__init__(*args, **kwds)
@@ -847,4 +847,3 @@ class TableGeneratorStream(TableGenerator):
             c_file.close()
         if h_filename and not isinstance(h_filename, file):
             h_file.close()
-

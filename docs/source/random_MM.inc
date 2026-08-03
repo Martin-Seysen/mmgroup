@@ -1,6 +1,6 @@
 .. comment
 
-   This ist the content of the following chapter in the API refernece:
+   This is the content of the following chapter in the API reference:
    Generating random elements of the Monster and of some of its subgroups
 
 In this section we present various subgroups of the Monster known by 
@@ -53,7 +53,7 @@ A function dealing with the name of a subgroup  may raise
 Caution:
 
 The user should check the corresponding entry 'Tested' in the tables
-in the follwing two subsections before using the name of a group!
+in the following two subsections before using the name of a group!
 Using a name of a group that is not supported might fail without notice!
   
 
@@ -179,5 +179,3 @@ subsets (or partitions) of :math:`\Omega` fixed by these groups.
     B      :math:`M_{22}:2`                     duad :math:`\{2,3\}`  
     2E_6   :math:`L_3(4):S_3`                   triad :math:`\{1,2,3\}` 
     ====== ==================================== ==========================================================================================================
-
-

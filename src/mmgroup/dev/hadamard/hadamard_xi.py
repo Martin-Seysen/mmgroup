@@ -49,7 +49,7 @@ class C_UintVarArray(C_UintVarPool):
         """Load a 'pool' from the array of variables
  
         Here 'pool' is an instance of class C_UintVarPool
-        modelling a pool of integer vriables. The function loads
+        modelling a pool of integer variables. The function loads
         all 'official' variables of the pool from the array, 
         starting at the index 'start'.
         """
@@ -65,7 +65,7 @@ class C_UintVarArray(C_UintVarPool):
         """Store a 'pool' to the array of variables
  
         Here 'pool' is an instance of class C_UintVarPool
-        modelling a pool of integer vriables. The function stores
+        modelling a pool of integer variables. The function stores
         all 'official' variables of the pool to the array, starting 
         at the index 'start'.
         """

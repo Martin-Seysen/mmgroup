@@ -26,7 +26,7 @@ from mmgroup.mm_op import mm_op_word_tag_A, mm_op_load_leech3matrix
 
 
 def rand_matrix_mod_n(n, dtype = np.int64):
-    """Create random 24 x 24 matrix of intgers modulo n"""
+    """Create random 24 x 24 matrix of integers modulo n"""
     return np.random.randint(0, n-1, size = (24, 24), dtype = dtype)
 
 def print_mod3(m1, m2 = None):
@@ -47,7 +47,7 @@ def matrix_to_rep_modp(m, p):
     """Convert 24 x 24 matrix to monster rep, part A, modulo p
 
     The function returns the first block of a vector of the monster
-    rep modulo p. Ths block corresponds to the entries of the
+    rep modulo p. This block corresponds to the entries of the
     vector with tag 'A'. 
     """
     assert p in (3, 15)
@@ -79,7 +79,7 @@ def from_array(m, load_mode = None):
 
     By default we convert the matrix directly.
 
-    The function returnes an numpy array that can be processed
+    The function returns an numpy array that can be processed
     with the function in file ``leech3matrix.c``.
     """
     a = np.zeros(72, dtype = np.uint64)
@@ -95,7 +95,7 @@ def from_array(m, load_mode = None):
             a[3*i] = s & 0xffffffffffffffff
             a[3*i+1] = (s >> 64) & 0xffffffff
     else:
-        err = "Loading from representation modulo % not suppoerted"
+        err = "Loading from representation modulo % not supported"
         raise ValueError(err % load_mode)
     return a
 
@@ -195,7 +195,7 @@ def test_leech3matrix_echelon(verbose = 0):
         mi2 = as_array(a2, high=1)
         prod2 = as_array(a2, high=0)
         if verbose:
-            print("reduced echelon, columms: ", hex(cols))
+            print("reduced echelon, columns: ", hex(cols))
             print_mod3(prod2, mi2)
         assert ((mi2 @ m - prod2) % 3 == 0).all()
 
@@ -280,7 +280,7 @@ def load_leech3matrix(p, v):
     if p in [3, 15]:
         mm_op_load_leech3matrix(p, v, a)
     else:
-        err = "Computation of kernel vector not supporte for modulus %s"
+        err = "Computation of kernel vector not supported for modulus %s"
         raise ValueError(err % p)
     return a
 
@@ -429,5 +429,3 @@ def test_leech3matrix_vmul():
         v3prod_vector = vector_mod_3_to_24(v3prod)
         v3_ref = (v @ m['A']) % 3
         assert (v3prod_vector == v3_ref).all()
-
-

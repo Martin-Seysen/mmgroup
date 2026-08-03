@@ -84,7 +84,7 @@ static int32_t inline err(
 /// @cond DO_NOT_DOCUMENT 
 
 // Standard vector in the Leech lattice mod 2 in Leech lattice encoding
-// The standard fram \Omega
+// The standard frame \Omega
 #define OMEGA  0x800000
 // The standard type-2 vector \beta
 #define BETA  0x200 
@@ -119,7 +119,7 @@ int32_t xi_reduce_odd_type4(uint32_t v)
     tab ^= ((tab >> 5) & 0x3ff) ^ ((tab & 0x1f) << 10);
     tab &= 0x739c;
     // Now all three bit fields are nonzero iff the syndrome bits
-    // are in three differnt columns. Next add 32 - 4 to each bit
+    // are in three different columns. Next add 32 - 4 to each bit
     // field in order to produce a carry if the field is nonzero.
     tab += 0x739c;
     // Next we isolate the three carry bits 
@@ -132,7 +132,7 @@ int32_t xi_reduce_odd_type4(uint32_t v)
     scalar = (v >> 22) & 1;
     // Exponent for element \xi of G_x0 is 2 - scalar
     exp = 2 - scalar;
-    // Return exponent for \xi in the lower 4 bits of the retrun value;
+    // Return exponent for \xi in the lower 4 bits of the return value;
     // Return 0 in bit 8 if all syndrome bits of v are in the same
     // MOG column and 1 in bit 8 otherwise.
     return ((tab != 0) << 8) + exp;
@@ -384,7 +384,7 @@ uint32_t find_octad_permutation(uint32_t v, uint32_t *p_res)
   parameter ``v`` in Leech lattice encoding. Then the function 
   constructs a \f$g \in G_{x0}\f$ that maps \f$v\f$ to the 
   standard short vector \f$v_0\f$. Here \f$v_0\f$ is the short 
-  vector the Leech lattice propotional  to  \f$e_2 - e_3\f$, 
+  vector the Leech lattice proportional  to  \f$e_2 - e_3\f$, 
   where \f$e_i\f$ is  the \f$i\f$-th basis vector
   of \f$\{0,1\}^{24}\f$.
   
@@ -517,7 +517,7 @@ int32_t gen_leech2_reduce_type2(uint32_t v, uint32_t *pg_out)
 
 /** @brief Workhorse for function gen_leech2_reduce_type2_ortho
    
-  This function takes the same input paramaters ``v`` and ``pg_out``
+  This function takes the same input parameters ``v`` and ``pg_out``
   as function ``gen_leech2_reduce_type2_ortho``. It takes an
   additional parameter ``vtype`` that  must be the subtype of the 
   vector ``v`` in the Leech lattices modulo 2. This function 
@@ -645,7 +645,7 @@ reduce_type2_ortho(uint32_t v, uint32_t vtype, uint32_t *pg_out)
   
   In the real Leech lattice, (the origin of) the vector \f$v\f$ must
   be orthogonal to the standard short vector \f$v_0\f$. Here \f$v_0\f$
-  is the short vector in the Leech  lattice  propotional
+  is the short vector in the Leech  lattice  proportional
   to  \f$e_2 - e_3\f$, where \f$e_i\f$ is  the \f$i\f$-th basis vector
   of \f$\{0,1\}^{24}\f$.
    
@@ -693,7 +693,7 @@ int32_t gen_leech2_reduce_type2_ortho(uint32_t v, uint32_t *pg_out)
 
 /** @brief Workhorse for function gen_leech2_reduce_type4
    
-  This function takes the same input paramaters ``v`` and ``pg_out``
+  This function takes the same input parameters ``v`` and ``pg_out``
   as function ``gen_leech2_reduce_type4``. It takes an
   additional parameter ``vtype`` that  must be the subtype of the 
   vector ``v`` in the Leech lattices modulo 2. This function 
@@ -978,7 +978,7 @@ int32_t type23_excess(uint64_t v1, uint64_t v2, uint64_t v3)
   last hexadecimal digit of the computed subtype. The result \f$s\f$
   does not depend on the choices made in the description given above.
 
-  After reordering \f$t_1, t_2, t_3\f$, the possibilties for
+  After reordering \f$t_1, t_2, t_3\f$, the possibilities for
   tuples \f$(t_1, t_2, t_3, s)\f$ with a relevant component \f$s\f$
   are (4,2,2,0), (4,3,3,4), (4,3,3,6), (4,4,4,0), (4,4,4,4),
   (4,4,4,6).
@@ -1017,7 +1017,7 @@ int32_t type23_excess(uint64_t v1, uint64_t v2, uint64_t v3)
   least two of these vectors must be of type 3, and that all
   vectors  \f$(v'_1 \pm v'_2 \pm v'_3)/2\f$ (with all possible
   combinations of signs) are in the Leech lattice and of type at
-  most 3. The 3-dimensional lattices satifying these properties
+  most 3. The 3-dimensional lattices satisfying these properties
   can be shown to be S-lattices, as defined in ``[CCN+85]``.
   Note that the S-lattices are also known.
 
@@ -1068,7 +1068,5 @@ int32_t gen_leech2_pair_type(uint64_t v1, uint64_t v2)
 #ifdef __cplusplus
 }
 #endif
-
-
 
 

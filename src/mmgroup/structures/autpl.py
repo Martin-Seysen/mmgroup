@@ -294,7 +294,7 @@ autpl_conversions = {
 def autpl_from_obj(d = 0, p = 0, unique = 1):
     """Try to convert tuple (d, p) to a Parker loop automorphism.
 
-    Parameter ``d`` decribes a element of the Golay cocode as in the
+    Parameter ``d`` describes a element of the Golay cocode as in the
     constructor of class ``Cocode``. It may be of type ``int``, ``str``
     or an instance of class ``Cocode``. Pt defaults to ``0``.
 
@@ -438,7 +438,7 @@ class AutPL(AbstractGroupWord):
                             Any other string is illegal.
 
       class |AutPL|         A deep copy of the given automorphism 
-                            in |AutPL| is returned. Then parmeter ``p``
+                            in |AutPL| is returned. Then parameter ``p``
                             must be set to its default value.
 
       ===================== ==================================================
@@ -651,4 +651,3 @@ class AutPlGroup(AbstractGroup):
 StdAutPlGroup = AutPlGroup()   # This is the only instance of AutPlGroup
 
 AutPL.group = StdAutPlGroup
-

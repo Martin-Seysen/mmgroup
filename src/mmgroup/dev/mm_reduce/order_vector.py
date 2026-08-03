@@ -326,7 +326,7 @@ def check_v(v, verbose = 0):
 
 
 #######################################################################
-# Seach for the relevant data
+# Search for the relevant data
 #######################################################################
 
 m_vect = re.compile("MV<([0-9]+)")
@@ -512,7 +512,7 @@ class OrderVectorMod15:
         elif isinstance(order_vector_data, dict):
             d = deepcopy(order_vector_data)
             d, self.order_vector = order_vector_from_data_dict(d)
-            d["DIAG_VA"] = 0 # compatibilty with old stuff
+            d["DIAG_VA"] = 0 # compatibility with old stuff
             self.tag_data = flatten_order_vector_dict(d)
         else:
             a = np.array(order_vector_data, dtype = np.uint32)
@@ -553,7 +553,7 @@ class OrderVectorMod15:
 
     @classmethod
     def enum_comments(cls, prefix = "OFS_"):
-        """Crreate a strin describing an enum in C"""
+        """Crreate a string describing an enum in C"""
         s = []
         for name, (ofs, _) in cls.TAG_DATA.items():
             if name in ENUM_COMMENTS:

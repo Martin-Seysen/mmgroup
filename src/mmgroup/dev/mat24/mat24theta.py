@@ -63,7 +63,7 @@ def theta_basis_vectors(verbose = 0):
     for the basis vectors b_0,...,b_11. Here all values 
     theta(b_i) are computed by function theta_to_basis_vector(v).
 
-    We also check that these values theta(b_i) are consisten.
+    We also check that these values theta(b_i) are consistent.
     """
     basis = Mat24Tables.basis[12:]
     thetas = [theta_to_basis_vector(v) for v in basis] 
@@ -167,6 +167,5 @@ def make_autpl_qf_table(theta_table, bitwidth=32):
         return ["0x%xULL" % x for x in t]
     raise ValueError("Illegal  bitwidth for table 'qf_table'")
         
-
 
 

@@ -1,4 +1,4 @@
-"""An exprimental free group with relations
+"""An experimental free group with relations
 
 
 """ 
@@ -94,4 +94,3 @@ class FreeGroup(AutoGroup):
         x = "".join((str(atom.tag) for atom in word.iter_generators()))
         return x if x else "<1>"
 		
-

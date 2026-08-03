@@ -45,7 +45,7 @@ file ``gen_ufind_lin2_aux.h``.
 #define MMGROUP_GENERATORS_INTERN
 #include "mmgroup_generators.h"
 #include "clifford12.h"
-// The following file contains the stuctures for internal use by
+// The following file contains the structures for internal use by
 // the functions in file(s) gen_ufind_lin2*.c  
 #include "gen_ufind_lin2_aux.h"
 /// @endcond 
@@ -141,9 +141,9 @@ element of \f$G\f$ that maps a vector in \f$V\f$ to a (chosen)
 representative of its orbit.
 
 You may use function ``gen_ufind_lin2_add`` to add
-generators  ``g_i, 0 <= i < k`` to the arrray ``a``. These generators
+generators  ``g_i, 0 <= i < k`` to the array ``a``. These generators
 are sored as ``n`` times ``n`` bit matrices acting on \f$V\f$ by right
-multiplication. The maximum number of generators allowd is given by
+multiplication. The maximum number of generators allowed is given by
 parameter ``n_g``.
 
 The required length of the orbit array ``a`` may be computed by calling
@@ -331,7 +331,7 @@ Generator \f$g\f$ must given as an ``n`` times ``n`` bit
 matrix \f$A\f$ acting on \f$V\f$ by right multiplication. Here
 ``n`` is given by ``n = gen_ufind_lin2_dim()``. Row ``j``
 (with 0 <= j < n) of bit matrix \f$A\f$ must be encoded as a bit
-vector in the entry ``g[j]`` of the array referred by parmameter ``g``
+vector in the entry ``g[j]`` of the array referred by parameter ``g``
 in the usual way. The length ``l_g`` of the array referred by ``g``
 must be at least ``n``.
 
@@ -468,7 +468,7 @@ compute a Schreier vector, encoded as in the description of
 array ``p_s->p_t`` in file ``gen_ufind2_lin2_aux.h``.
 
 The function returns the number of orbits found in case of success,
-and a neagtive value in case of failure.
+and a negative value in case of failure.
 */
 static inline int32_t
 compute_schreier_vector(lin2_type *p_s)
@@ -553,7 +553,7 @@ error_overflow:
 
 
 /************************************************************************
-* Finalize the initalization of an orbit array
+* Finalize the initialization of an orbit array
 ************************************************************************/
 
 
@@ -599,7 +599,7 @@ static inline int32_t finalize_initalization(uint32_t *a, lin2_type *p_s)
     p_s->n_max_g = p_s->n_g;
     status = store_lin2_info(p_s, a);
     if (status < 0) lin2_error(a, status);
-    // Compute checkum in orbit array
+    // Compute checksum in orbit array
     a_length =  gen_ufind_lin2_size(p_s->n, p_s->n_g);
     a[a_length - 2] = magic_content(a);
     for (i = 0; i < a_length - 1; ++i) a_sum += a[i];
@@ -694,7 +694,7 @@ uint32_t *a, uint64_t *bitmap, uint32_t n_entries, uint32_t n_orbits, uint32_t *
 // to be computed. Before calling this function, the
 // function  ``gen_ufind_lin2_compress`` computes a bitmap marking
 // all bit vector to be stored in array ``c``. Parameter ``bitmap``
-// must point to this bitmap. Paraeters ``n_entries`` and ``n_orbits``
+// must point to this bitmap. Parameters ``n_entries`` and ``n_orbits``
 // must be the numbers of bit vectors and orbits to be stored  in
 // the orbit array ``c``.
 //
@@ -1307,7 +1307,7 @@ Let ``a`` be an array that stores a group acting on a vector space
 as described in function ``gen_ufind_lin2_init``. Some information
 to be stored in ``a`` is computed on demand only. Before writing the
 array ``a`` to a file, it may be useful to store the maximum possible
-amount of infomation in ``a``. This function performs that task.
+amount of information in ``a``. This function performs that task.
 */
 // %%EXPORT px
 int32_t gen_ufind_lin2_finalize(uint32_t *a)
@@ -1555,7 +1555,5 @@ uint64_t gen_ufind_lin2_find_next_bit_set(uint32_t n, uint64_t *bitmap, uint32_t
 #ifdef __cplusplus
 }
 #endif
-
-
 
 

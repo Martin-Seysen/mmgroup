@@ -201,7 +201,7 @@ and the source distribution has a name like  ``mmgroup-0.0.8.zip``.
 Uploading the version to **pypi** 
 ..................................
 
-You may upload the new version with the following commend:
+You may upload the new version with the following command:
 
 
  .. code-block:: text
@@ -221,5 +221,4 @@ Description of module ``build_ext_steps.py``
 
 
 .. automodule:: mmgroup.generate_c.build_ext_steps
-
 

@@ -196,7 +196,7 @@ def hash_unique(hlist):
     Let ``hlist`` be the list of the 24 hash values computed by
     function ``hash_mat24``. The function returns a dictionary
     mapping these hash values to the corresponding row indices.
-    Duplicate entries occuring in that list are dropped.
+    Duplicate entries occurring in that list are dropped.
     """
     num = defaultdict(int)
     index = {}
@@ -239,7 +239,7 @@ def find_umbral_heptad(ilist):
             v_hd = v_tl & -v_tl        # get next bit v_hd of v
             v_dec = v ^ v_hd           # v_dec = v \setminus v_hd
             syn = mat24.syndrome(v_dec, 0)
-            if syn & v_dec != syn:     # if syndrom of v_dec is not
+            if syn & v_dec != syn:     # if syndrome of v_dec is not
                v = v_dec               # a subset of v_dec then
                bw -= 1                 # delete bit v_dec from v
                break
@@ -275,8 +275,8 @@ def nicely_hashable(a, verbose = 0):
 
     N_x0 = 2^(1+24+11).Mat_24
 
-    acting on 'A'. So the h[i] can be used to detect tha action of
-    the factor group Mat_24, privided that the are sufficiently
+    acting on 'A'. So the h[i] can be used to detect the action of
+    the factor group Mat_24, provided that the are sufficiently
     disjoint. More specifically, there must be an *umbral heptad*,
     which is a subset of size 7 of the set {0,...,23} of which M_24
     acts, that is not contained in an octad.
@@ -614,7 +614,7 @@ def find_vector_p_mod3(p, verbose = 0):
     The function returns the tuple ``(g_p, v_p, gA, yx)``.
 
     Here ``yx`` is a list of entries of vector ``w`` (in sparse
-    notation) that can be used to idetify a ``g`` in math:`G_{x0}`
+    notation) that can be used to identify a ``g`` in math:`G_{x0}`
     from ``v * v``, see function ``check_v``.
     """
     if import_pending:
@@ -721,7 +721,7 @@ def assemble_vector_mod3(p, s_g, s_v, s_gA):
 
     The function computes the order vector ``v`` from the input ``p``
     passed to function ``find_vector_p_mod3`` and the results
-    ``s_g, s_v, s_gA`` returnd by that function. It returns ``v`` if
+    ``s_g, s_v, s_gA`` returned by that function. It returns ``v`` if
     ``v`` has the properties stated in function ``find_vector_p_mod3``
     and fails if this is not the case.
     """
@@ -760,8 +760,6 @@ if __name__ == "__main__":
     vhex = np.vectorize(hex)
     print("\nyx  =\n%s" % vhex(np.array(yx)))
     print()
-
-
 
 
 

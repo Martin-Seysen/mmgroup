@@ -445,7 +445,7 @@ be set.
       ---------------------- ----------------------------------------------
       ``('Axis', g)``        If a pair containing the string ``'Axis'`` and
                              a 2A involution ``g`` in the Monster group is 
-                             given then we contruct the axis corresponding
+                             given then we construct the axis corresponding
                              to that involution (with norm 8) as
                              described in :cite:`Con85`. Here ``g``
                              should be an instance of class |XLeech2| or
@@ -615,10 +615,10 @@ class MMVector(AbstractMmRepVector):
     ``i`` may also be a slice of integers in the same way as
     in a one-dimensional ``numpy`` array.
 
-    An instance ``x`` of class ``XLeech2`` correponding to a short
+    An instance ``x`` of class ``XLeech2`` corresponding to a short
     vector in the Leech lattice is mapped to a (possibly negated)
     basis vector of :math:`\rho_p`. In this case ``v[x]`` is
-    the co-ordinate of ``v`` with respect to that basis vector.
+    the coordinate of ``v`` with respect to that basis vector.
 
     The internal representation of a vector ``v`` in this class
     is not part of the public interface. Use ``v['E']`` to 
@@ -966,7 +966,7 @@ class MMSpace(AbstractMmRepSpace):
             mm_op_vector_add(v1.p, v1.data, v2.data)
             return v1
         else:
-            err = "Cannot add vectors modulo differnt numbers"
+            err = "Cannot add vectors modulo different numbers"
             raise ValueError(err)
  
     def imul_scalar(self, v1, a):
@@ -1223,7 +1223,7 @@ class MMSpace(AbstractMmRepSpace):
 
         The method converts an index referring to a basis
         vector in the representation of the Monster to a linear 
-        index. Starndard tuples as in the constuctor of a vector
+        index. Starndard tuples as in the constructor of a vector
         in that representation are accepted. Furthermore, the
         following tags or tuples are accepted as input:
 
@@ -1410,5 +1410,4 @@ def order_vector():
         from mmgroup.dev.mm_reduce.py_mm_order import ov
         mm_op_copy(15, ov.order_vector.data, v.data)
     return v
-
 

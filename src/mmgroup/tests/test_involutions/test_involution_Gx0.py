@@ -97,7 +97,7 @@ class N_x0_involution:
         as described in section
         **C functions dealing with the subgroup G_x0 of the monster**
         in  **The C interface of the mmgroup project**. So parameter
-        ``elem`` should be a ``numpy`` array of legnth 26 and 
+        ``elem`` should be a ``numpy`` array of length 26 and 
         dtype ``numpy.uint64``.
 
         The function succeeds if  :math:`g` is of order at most 2, 
@@ -233,7 +233,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
     as described in section
     **C functions dealing with the subgroup G_x0 of the monster**
     in  **The C interface of the mmgroup project**. So parameter
-    ``elem`` should be a ``numpy`` array of legnth 26 and 
+    ``elem`` should be a ``numpy`` array of length 26 and 
     dtype ``numpy.uint64``.
 
     The function succeeds if  :math:`g` is of order at most 2, 
@@ -300,7 +300,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
             # the shape of ``invol`` to :math:`y_d x_\delta`
             b[0] = 0x10000800
             invol.transform(b[:1])
-        # We temporarily transfrom ``invol`` with the triality
+        # We temporarily transform ``invol`` with the triality
         # element :math:`\tau^2`. This changes the shape of
         # ``invol`` to  :math:`x_d x_\delta.`
         b[0] = 0x50000002   # (this is t**2)
@@ -315,7 +315,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
         # it computes an even element ``b`` of  :math:`N_{x0}.
         gen_leech2_reduce_n(vy, b)
         invol.transform(b[:3])
-        # Reverse the transfromation of ``invol`` with :math:`\tau^2`. 
+        # Reverse the transformation of ``invol`` with :math:`\tau^2`. 
         # This changes the shape of ``invol`` back
         # to  :math:`x_d x_\delta`.
         b[0] = 0x50000001   # (this is t**1)
@@ -364,7 +364,7 @@ def xsp2co1_elem_conjugate_involution_in_Gx0_py(elem, guide, a):
         else:
             # Any other type of ``vx`` is illegal
             raise ValueError("Not an involution")
-        # The length of the output word my be atmost ten.
+        # The length of the output word my be at most ten.
         assert len_a  <= 10
         return len_a
 
@@ -677,4 +677,3 @@ if __name__ == "__main__":
     test_std_rep(100, 1)
     display_std_rep()
     display_involution_map()
-

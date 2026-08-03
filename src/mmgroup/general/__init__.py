@@ -1,4 +1,4 @@
-r"""We support abtract groups acting on certain sets.
+r"""We support abstract groups acting on certain sets.
 
 .. warning::
 
@@ -41,13 +41,13 @@ is acting on an elementary Abelian 2 group :math:`V`, we may
 compute the kernel of that action instead.
 
 The two types of actions mentioned above are desigend to
-compute in the managable 2-local subgroups of the Monster, especially
+compute in the manageable 2-local subgroups of the Monster, especially
 in the groups :math:`G_{x0}` of structure :math:`2^{1+24}.\mbox{Co}_1`,
 and in the group :math:`N_{0}` of structure
 :math:`2^{2+11+22}.(\mbox{M}_{24} \times \mbox{S}_{3})`.
 
 In principle the functionality in this module can be used for
-computing the order of a subgroup of such a managable subgroup,
+computing the order of a subgroup of such a manageable subgroup,
 or to perform a constructive membership test for such a subgroup.
 The current implementation should be considered as
 *under construction* and may be extended in future versions.

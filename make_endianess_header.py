@@ -1,4 +1,4 @@
-"""Detect endianess of local machine and write it into a header file"""
+"""Detect endianness of local machine and write it into a header file"""
 
 import sys
 import os
@@ -14,7 +14,7 @@ def _comment_endianess(endianess, mockup = False):
         return s + " endian"
     else:
         explain = "has not been" if mockup else "could not be"
-        return "Endianess %s detected for this machine!" % explain
+        return "Endianness %s detected for this machine!" % explain
 
 def get_endianess(mockup = False, verbose = 0):
     if mockup:
@@ -32,13 +32,13 @@ def get_endianess(mockup = False, verbose = 0):
     return endianess
 
 s = r"""// This header has been generated automatically. Do not edit!
-// It describes the endianess of the local machine.
+// It describes the endianness of the local machine.
 // Do not copy this file to a different machine!
 //
 #ifndef {0}_H_INCLUDED
 #define {0}_H_INCLUDED
-// ENDIANESS is #defined to be 0 for little and 1 for Big endian.
-// It is undefined if the endianess has not been detected.
+// ENDIANNESS is #defined to be 0 for little and 1 for Big endian.
+// It is undefined if the endianness has not been detected.
 
 """
 
@@ -63,7 +63,7 @@ def write_header(h_file, mockup = False, verbose = 0):
 
 def make_endianess_parser():
     description = ('Generate header file for the mmgroup project '
-    'that defines the endianess of the local machine. '
+    'that defines the endianness of the local machine. '
     )
 
     # epilog = ("Some more documentation will follow here later."
@@ -118,5 +118,4 @@ if __name__ == "__main__":
         parsed_args = make_endianess_parser().parse_args(sys.argv[1:])
         write_header(parsed_args.filename, parsed_args.mockup,
             parsed_args.verbose)
-
 

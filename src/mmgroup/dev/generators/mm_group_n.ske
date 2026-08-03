@@ -314,7 +314,7 @@ void mm_group_n_copy_element(uint32_t *g_1, uint32_t *g_2)
 
 
 /**
- @brief Multiply elemnts of the group  \f$ N_0\f$.
+ @brief Multiply elements of the group  \f$ N_0\f$.
 
  Put \f$g_3 = g_1 \cdot g_2\f$. Elements  \f$g_1, g_2, g_3\f$
  of \f$N_0\f$ are given as an array of five 32-bit integers.
@@ -764,7 +764,7 @@ uint32_t mm_group_n_to_word_std(uint32_t *g, uint32_t *w)
   \f$g = \tau^{-e} q \tau^e\f$. Here  \f$\tau\f$ is the triality
   element in \f$N_0\f$.
 
-  In case of succes we return the element  \f$q\f$ in bits
+  In case of success we return the element  \f$q\f$ in bits
   24,...,0 of the return value in **Leech lattice encoding**
   and we return the number \f$e\f$ in bits 26,...,25 of the
   return value. In case of failure we return -1.
@@ -882,7 +882,7 @@ uint32_t mm_group_split_word_n(uint32_t *word, uint32_t length, uint32_t *g)
  length ``l2`` of generators of the monster group, we compute
  the product ``w3`` = ``w1 * w2**e``. Here ``**`` means
  exponentiation; negative exponents are supported.
- The word ``w1`` is replaced by the word ``w3``. The funcion
+ The word ``w1`` is replaced by the word ``w3``. The function
  returns the length of the word ``w3``.
 
  A word representing ``w2**e`` is appended to word ``w1`` and
@@ -965,7 +965,7 @@ void mm_group_invert_word(uint32_t *w, uint32_t l)
  We check if the word ``w1`` of length ``l1`` of generators of the
  monster group is in the subroup  \f$N_0\f$. If this is the case
  then we store the word ``w1`` as an element of \f$N_0\f$ in
- the array ``g_out`` of five 32-bit integers as desribed above.
+ the array ``g_out`` of five 32-bit integers as described above.
  The function returns the following status information:
 
 

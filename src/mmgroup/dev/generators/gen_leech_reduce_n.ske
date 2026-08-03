@@ -183,7 +183,7 @@ void op_y_x(uint32_t v, uint16_t *table, uint32_t *out)
   The user may call function ``gen_leech2_op_word`` in
   file ``gen_leech.c`` for computing \f$v_1 = v^r\f$. There is
   a faster alternative for  computing \f$v_1\f$ described in the
-  documetnation of function ``gen_leech2_reduce_n``.
+  documentation of function ``gen_leech2_reduce_n``.
 
   The representative \f$v_1\f$ depends on the **subtype** of \f$v\f$
   only, with one exception listed below. Here the subtype can be
@@ -323,7 +323,6 @@ int32_t gen_leech2_reduce_n_rep(uint32_t subtype)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

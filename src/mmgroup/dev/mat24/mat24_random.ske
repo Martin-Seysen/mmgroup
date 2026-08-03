@@ -8,7 +8,7 @@
  Equivalent python function are coded in
  module ``mmgroup.tests.test_mat24.test_mat24_rand``.
 
- A subgroup of \f$M_{24}\f$ is decribed by an integer of
+ A subgroup of \f$M_{24}\f$ is described by an integer of
  type ``uint_32_t`` encoding a bit mask. Each bit in that mask
  encodes a certain subgroup of  \f$M_{24}\f$. By combining several
  bits with bitwise pr we may evcode the intersection of the
@@ -124,7 +124,7 @@ enum mat24_rand_flags {
 // Modify an intersection ``mode`` of subgroups of \f$M_{24}\f$
 // encoded as a combination of flags of type ``enum mat24_rand_flags``
 // as follows: If ``mode`` is in subgroup ``mode_subgroup`` then
-// modifiy ``mode`` such that ``mode`` is also in ``mode_of``. Here
+// modify ``mode`` such that ``mode`` is also in ``mode_of``. Here
 // ``mode_subgroup`` and ``mode_of`` are also encoded as
 // combinations of flags of type ``enum mat24_rand_flags``.
 #define subgroup(mode, mode_subgroup, mode_of) \
@@ -162,7 +162,7 @@ uint32_t mat24_complete_rand_mode(uint32_t u_mode)
         subgroup(u_mode, RAND_t | RAND_2, RAND_o | RAND_l); // (1)
         subgroup(u_mode, RAND_l | RAND_3, RAND_o | RAND_s); // (2)
         subgroup(u_mode, RAND_t | RAND_3, RAND_o | RAND_s); // (2)
-        subgroup(u_mode, RAND_o | RAND_t | RAND_d, RAND_l); // exlained below
+        subgroup(u_mode, RAND_o | RAND_t | RAND_d, RAND_l); // explained below
     }    
     return u_mode;
 
@@ -281,7 +281,7 @@ typedef struct rand_pi_s{
 
 static inline
 /**
- @brief Intialize a structure of type ``rand_pi_type``
+ @brief Initialize a structure of type ``rand_pi_type``
 
  Here parameter ``mode`` describes the sungroup of ``M_24`` to be used.
  Parameter ``rand`` is taken as a *seed* for the (rather limited) 
@@ -373,7 +373,7 @@ uint8_t find_bit24(uint32_t *p_bitmap, uint32_t *p_r, uint32_t mask)
 /**
  @brief Set a single bit position in structure ``rand_pi_type``
 
- The function sets the bit postion at index ``index`` in the structure
+ The function sets the bit position at index ``index`` in the structure
  of type ``rand_pi_type`` referred by the pointer ``p_pi``. Therefore
  a bit position is selected from the mask ``mask``, excluding all
  previously set bit positions. The bit position is selected at random
@@ -477,7 +477,7 @@ We want to generate a (uniform) random element ``x`` in a subgroup
 ``H`` of the Mathieu group ``M_24`` described by a parameter ``mode``
 as defined above. Let ``H2 = {3, 2, 1, 0, 5, 4, 8}`` be a fixed array
 of seven points of the set of size 24 on which ``M_24`` acts. Then the
-functio n``mat24_perm_rand_local`` computes an array ``h`` containing
+function n``mat24_perm_rand_local`` computes an array ``h`` containing
 seven such points, so that the mapping ``H2 -> h`` defines a unique
 permutation in ``x`` in ``M_24``. Here we make sure that ``x`` is in
 also ``H``. Function ``mat24_perm_from_heptads`` may be used to
@@ -730,7 +730,6 @@ int32_t mat24_m24num_rand_adjust_xy(uint32_t u_mode, uint32_t v)
 }
 #endif
 // %%GEN c
-
 
 
 

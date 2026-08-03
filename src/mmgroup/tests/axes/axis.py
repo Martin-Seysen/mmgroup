@@ -313,7 +313,7 @@ class Axis:
     An instance of this class is an arbitrary 2A axis ``a`` of the
     Monster group with entries taken modulo 15. Attribute ``a.v15``
     of type |MMVector| is the vector in the representation of the
-    Monster corrsponding to the axis. Apart from that vector we also
+    Monster corresponding to the axis. Apart from that vector we also
     maintain a property ``a.g`` of class |MM| such that the axis
     is ``a.v15`` equal to the product ``a.v15_start * a.g``. Here
     ``a.v15_start`` is the standard 2A axis :math:`v^+` defined in
@@ -324,7 +324,7 @@ class Axis:
 
     The constructor may of this class may be:
 
-    * An element :math:`g` of the Monster. Then we constuct the
+    * An element :math:`g` of the Monster. Then we construct the
       axis :math:`v^+ \cdot g`.
 
     * The string ``'i'`` followed by a 2A involution :math:`g` in
@@ -691,7 +691,7 @@ class Axis:
         ``M`` is invariant under the action of the normal subgroup
         :math:`2^{2+11+22}` of :math:`N_{xyz}`.
 
-        The function also computes a matrix ``H`` corrsponding to the
+        The function also computes a matrix ``H`` corresponding to the
         matrix ``M`` sorted in a  suitable way such that the sorted
         matrix ``H`` is invariant under :math:`N_{xyz}`. The function
         returns the triple ``(M, h, H)`` where the 63-bit integer ``h``
@@ -785,7 +785,7 @@ class Axis:
         r"""Equivalent to (self.g**e).mmdata for e = +-1
 
         This is faster than the standard procedure and makes
-        no attempt to reduce the returnd data.
+        no attempt to reduce the returned data.
         """
         assert abs(e) == 1
         data = np.concatenate((self.g0.mmdata, self.g1.mmdata))
@@ -1140,6 +1140,5 @@ def set_axis_group(group = None, shorten = True):
 
 if not MM_INITIALIZED:
     set_axis_group()
-
 
 

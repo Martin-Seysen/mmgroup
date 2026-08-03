@@ -38,7 +38,7 @@
 
 
 /** 
-  @brief Table of legal moduli ``p``, terminted by zero
+  @brief Table of legal moduli ``p``, terminated by zero
 
 */
 // %%EXPORT_TABLE p
@@ -277,10 +277,10 @@ int32_t mm_op_pi(uint32_t p, uint_mmv_t *v_in, uint32_t delta, uint32_t pi, uint
   on a vector ``v_in`` in the representation \f$\rho_p\f$ of
   the monster.
 
-  The integers ``f`` and ``e`` occuring in the generators \f$y_f\f$
+  The integers ``f`` and ``e`` occurring in the generators \f$y_f\f$
   and  \f$x_e\f$ encode elements of the Parker loop. The integer
   ``eps`` encodes the element \f$\epsilon\f$ of the Golay cocode
-  occuring in the generator  \f$x_\epsilon\f$,  as indicated in the
+  occurring in the generator  \f$x_\epsilon\f$,  as indicated in the
   header of this file. The function computes this operation of
   the element of the monster (given by parameters ``f, e, eps``)
   on the input  vector ``v_in`` and  stores the result in the output 
@@ -552,7 +552,6 @@ int32_t mm_op_mul_std_axis(uint32_t p, uint_mmv_t *v)
 //  %%GEN h
 /// @endcond 
 //  %%GEN c
-
 
 
 

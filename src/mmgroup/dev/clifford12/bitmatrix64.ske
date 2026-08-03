@@ -787,8 +787,8 @@ static int32_t restore_cap_h(uint64_t *ma, uint64_t *m,
 int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, uint32_t j0, uint32_t n)
 {
     
-    uint64_t m1a[64];          // local copy of ``m1`` as decribed below
-    uint64_t m2a[64];          // local copy of ``m2`` as decribed below
+    uint64_t m1a[64];          // local copy of ``m1`` as described below
+    uint64_t m2a[64];          // local copy of ``m2`` as described below
     uint64_t rows_used1 = 0;   // bit list of used rows in ``m1a``
     uint64_t rows_used2 = 0;   // bit list of used rows in ``m2a``
     uint64_t rows_equ = 0;     // bit list indicating rows that are
@@ -804,7 +804,7 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
     uint64_t v1 = 0, v2 = 0;   // row of ``m1`` (or ``m2``) used for pivoting
     uint64_t mask;             // mask for relevant columns
 
-    // Adjust ``j0`` and ``n`` to the maximal number of colums 
+    // Adjust ``j0`` and ``n`` to the maximal number of columns 
     if (j0 > 64) j0 = 64;
     if (n > j0) n = j0;
     if (n == 0) return 0;
@@ -925,12 +925,12 @@ int32_t bitmatrix64_cap_h(uint64_t *m1, uint64_t *m2, uint32_t i1, uint32_t i2, 
   #endif
   
     // Restore the rows of ``m1`` from the used rows of ``m1a``; put
-    // the rows equal to corresponing rows of ``m2a`` at the bottom.
+    // the rows equal to corresponding rows of ``m2a`` at the bottom.
     res = restore_cap_h(m1a, m1, rows_used1, rows_equ, i1);
     // Abort in case of failure
     if (res < 0) return res;
     // Restore the rows of ``m2`` from the used rows of ``m2a``; put
-    // the rows equal to corresponing rows of ``m1a`` at the bottom.
+    // the rows equal to corresponding rows of ``m1a`` at the bottom.
     return restore_cap_h(m2a, m2, rows_used2, rows_equ, i2);
 }
 
@@ -967,7 +967,7 @@ int32_t bitmatrix64_inv(uint64_t *m, uint32_t i)
 
 
 /*************************************************************************
-*** Solve a linar bit equation 
+*** Solve a linear bit equation 
 *************************************************************************/
 
 /**
@@ -1017,7 +1017,6 @@ int64_t bitmatrix64_solve_equation(uint64_t *m, uint32_t i, uint32_t j)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

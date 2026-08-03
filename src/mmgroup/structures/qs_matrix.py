@@ -110,7 +110,7 @@ class QStateMatrix(QState12):
         2^{e/2} \cdot w \, , \quad  e \in \mathbb{Z}, \;
         w \in \mathbb{C}, \, w^8 = 1   \; .
 
-    Divison by such a scalar is legal.
+    Division by such a scalar is legal.
    
     A matrix of type ``QStateMatrix`` may be indexed with square
     brackets as in ``numpy`` in order to obtain entries, rows, 
@@ -136,7 +136,7 @@ class QStateMatrix(QState12):
     
     Officially, we support matrices with ``rows, cols <= 12``
     only. Methods of this class might work for slightly 
-    larger matrices. Any attempt to constuct a too large
+    larger matrices. Any attempt to construct a too large
     matrix raises ValueError.
     """
     UNDEF_ROW = 255
@@ -207,7 +207,7 @@ class QStateMatrix(QState12):
         :param new_shape:
     
             This shape of the reshaped matrix. It must be a pair of
-            integers. A pair ``(n0, n1)`` correponds to a complex
+            integers. A pair ``(n0, n1)`` corresponds to a complex
             ``2**n0`` times ``2**n1`` matrix.            
     
         :type new_shape: 
@@ -316,7 +316,7 @@ class QStateMatrix(QState12):
         
         Computing ``qs.gate_ctrl_not(1 << jc, 1 << j)``, 
         for ``jc != j``, corresponds to applying a controlled not  
-        gate  to qubit ``j``  contolled by qubit ``jc``. 
+        gate  to qubit ``j``  controlled by qubit ``jc``. 
         This operation is unitary if and only if the scalar
         product of ``j`` and ``jc`` is zero.
         """
@@ -355,7 +355,7 @@ class QStateMatrix(QState12):
             
         Apply a Hadamard gate to all qubits ``j`` of the state ``qs``
         (referred by ``self``) with  ``v & (1 << j) == 1``.
-        Aplying a Hadamard gate to gate ``j`` changes a state ``qs``
+        Applying a Hadamard gate to gate ``j`` changes a state ``qs``
         to a state ``1/sqrt(2) * qs'``, where
         ``qs'(..,x[j+1],x_j,x[j-1],..)`` = 
         ``qs(..,x[j+1],0,x[j-1],..)``
@@ -433,7 +433,7 @@ class QStateMatrix(QState12):
 
 
     def restrict_zero(self, j, nqb, copy = True):    
-        r"""Restrict ``nqb`` qubits starting at postion ``j`` to ``0``.
+        r"""Restrict ``nqb`` qubits starting at position ``j`` to ``0``.
                
         Let ``qs`` be the state of shape ``(n0+n1)``, and let 
         ``n = n0 + n1`. We change ``qs`` to the following 
@@ -598,7 +598,7 @@ class QStateMatrix(QState12):
         i.e. ``m.power(e)`` is the unit matrix, then ``e`` is 
         returned. Otherwise ``ValueError`` is raised.
         
-        The function might also succeed if ``e`` is slighty larger
+        The function might also succeed if ``e`` is slightly larger
         than ``max_order``. It has run time ``O(max_order**0.5)``.        
         """
         def as_tuple(matrix):
@@ -654,7 +654,7 @@ class QStateMatrix(QState12):
 
 
         Factors are ordered by bit positions, with the most significant 
-        bit position occuring first. 
+        bit position occurring first. 
         
         The function returns the bit vector corresponding to this 
         object as an integer.
@@ -990,7 +990,7 @@ def qs_from_signs(bmap, n):
     state vector is a (column) vector of shape ``(0, n)``. 
 
     If the array ``bmap``  does not correspond to any quadratic 
-    state vector then the function returnes None.
+    state vector then the function returns None.
     """
     res = qstate12_from_signs(bmap, n)
     return None if res is None else QStateMatrix(res)

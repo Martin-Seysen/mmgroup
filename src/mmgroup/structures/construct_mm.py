@@ -4,7 +4,7 @@ The main function ``iter_mm()`` in this module constructs an element
 of the Monster group from data structures as specifies in section
 **The Monster group** of the **API reference**. This function
 yields the entries of a numpy array of type ``np.uint32`` containing 
-internal represntation of the construted element.
+internal representation of the construted element.
 
 Functions or data structures in this module starting with an
 underscore (``_``) should not be imported by other modules.
@@ -251,7 +251,7 @@ def _iter_c(tag, r):
 ###########################################################################
 
 
-ERR_TAG_A = "Atom for tag 'a' must be a list of unsigend 32-bit integers"
+ERR_TAG_A = "Atom for tag 'a' must be a list of unsigned 32-bit integers"
 
 def _iter_a(tag, a):
     try:
@@ -316,7 +316,7 @@ def _iter_atom(tag = None, number = None):
 
 
 ###########################################################################
-# Converting the input of a construtor of a monster element to atoms
+# Converting the input of a constructor of a monster element to atoms
 ###########################################################################
 
 
@@ -518,7 +518,6 @@ def print_mm_string(tag = None, data = None, group = None):
     strings = iter_strings_from_atoms(iter_mm(group, tag, data))
     s = "*".join(strings)
     print(s if len(s) else "1")
-
 
 
 

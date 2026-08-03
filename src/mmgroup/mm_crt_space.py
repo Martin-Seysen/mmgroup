@@ -66,7 +66,7 @@ PRECISION = math.log(7 * 31 * 127 * 255) / math.log(2.0) - 4
 ######################################################################
 
 
-ERR_CRT_TYPE = "Connot construct MMVectorCRT object from type '%s'"
+ERR_CRT_TYPE = "Cannot construct MMVectorCRT object from type '%s'"
 
 
 class vsparse:
@@ -314,7 +314,7 @@ class MMVectorCRT(AbstractMmRepVector):
                 elif isinstance(x, str):
                     d += vsparse_from_str(x)
         else:
-            err = "Connot construct MMVectorCRT object from type '%s'"
+            err = "Cannot construct MMVectorCRT object from type '%s'"
             raise ValueError(err % type(tag))
         for p in (7, 31, 127, 255):
             self.data[p] = v = MMVector(p)
@@ -471,7 +471,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
 
     The construction of a vector in this space and the computation
     with such vectors works in the same way as in class |MMSpace|.
-    But there are som limitations:
+    But there are some limitations:
 
       * Vectors may be constructed as in class |MMSpace|, but
         the arguments of the constructor may be tuples only. 
@@ -742,7 +742,7 @@ class MMSpaceCRT(AbstractMmRepSpace):
 
 
     def vector_set_item(*args, **kwd):
-        err = "Item assigment not supported in space of type MMSpaceCRT"
+        err = "Item assignment not supported in space of type MMSpaceCRT"
         raise NotImplementedError(err) 
  
 

@@ -149,7 +149,7 @@ Internally, an element of  :math:`\mathbb{M}` is represented as a word
 in the generators given above. The user should be aware of the fact
 that multiplication with the ``*`` operator is a concatenation of such
 words, followed by (rather incomplete) reduction step. This means that 
-multplying words may still lead to an exponential growth of the word 
+multiplying words may still lead to an exponential growth of the word 
 length. 
 
 On can apply the method ``simplify`` to an element of the monster group.
@@ -698,7 +698,7 @@ class MM0(AbstractMMGroupWord):
         196833-dimensional rep :math:`198883_x` of the monster.
         The method tries to compute characters :math:`\chi_M(g^e)`
         for values :math:`e` dividing the order of :math:`g`. This 
-        method is very fast; but it may fail, as discusssed below.
+        method is very fast; but it may fail, as discussed below.
 
         The function returns a triple ``(o, chi, h)``, where ``o`` is
         the order of the element :math:`g`.
@@ -732,7 +732,7 @@ class MM0(AbstractMMGroupWord):
         algorithm to compute :math:`h`. 
  
         If :math:`o` is even and ``chi[o//2]`` is not ``None`` then we
-        asssert that :math:`h^{-1} g^{o/2} h` is equal to the standard
+        assert that :math:`h^{-1} g^{o/2} h` is equal to the standard
         2A or 2B involution. The standard 2A involution is 
         :math:`x_\delta`, where :math:`\delta` is the Golay cocode
         element :math:`(2,3)`. The standard 2B involution is the
@@ -974,7 +974,6 @@ class MM0Group(AbstractMMGroup):
 StdMM0Group = MM0Group()
 MM0.group = StdMM0Group
 load_group_name(StdMM0Group, "M0")
-
 
 
 

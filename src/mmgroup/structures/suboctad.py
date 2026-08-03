@@ -42,7 +42,7 @@ suboctad, see  function ``SubOctad`` for details.
 
 The raison d'etre of a  suboctad is indexing a basis vector in
 the representation  :math:`\rho`. For this purpose we need a pair 
-of integers refering to the octad and the suboctad. For an instance 
+of integers referring to the octad and the suboctad. For an instance 
 ``so`` of class |XLeech2| that pair is given as the pair of the
 last two integers in ``so.vector_tuple()``.
 
@@ -199,7 +199,7 @@ def Octad(octad):
       ===================== ================================================
 
     A complement of an octad is also accepted; then the corresponding 
-    Parker loop element is retured. The function raises ValueError
+    Parker loop element is returned. The function raises ValueError
     if  parameter ``octad`` does not evaluate to an octad or a
     complement of an octad.      
     """
@@ -377,7 +377,6 @@ def SubOctad(octad, suboctad = 0):
     if subtype == 0x42:
         result.value  ^= 0x800000
     return result
-
 
 
 
