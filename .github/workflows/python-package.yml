@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
         CIBW_ARCHS_MACOS: "x86_64"
-        CIBW_SKIP: "pp* *musllinux*"
+        CIBW_SKIP: "pp* *musllinux* cp315*"
         CIBW_BUILD_VERBOSITY: 1
         ARCHFLAGS: "-arch x86_64 -arch arm64"
         CIBW_ENVIRONMENT: "CFLAGS='-arch x86_64 -arch arm64' LDFLAGS='-arch x86_64 -arch arm64'"
@@ -88,7 +88,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
         CIBW_ARCHS_MACOS: "arm64"
-        CIBW_SKIP: "pp* *musllinux*"
+        CIBW_SKIP: "pp* *musllinux* cp315*"
         CIBW_BUILD_VERBOSITY: 1
         ARCHFLAGS: "-arch x86_64 -arch arm64"
         CIBW_ENVIRONMENT: "CFLAGS='-arch x86_64 -arch arm64' LDFLAGS='-arch x86_64 -arch arm64'"
@@ -122,6 +122,8 @@ jobs:
           overwrite: true
 
   build_wheels_windows:
+    env:
+        CIBW_SKIP: "*-win32 cp315*"
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
