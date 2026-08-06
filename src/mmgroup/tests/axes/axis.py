@@ -221,6 +221,24 @@ def find_short(v, value, radical = 0, verbose = 0):
 #################################################################
 
 
+ERR_REDUCE_STATUS = "Error in function %s, status = %d"
+MAX_LEN_REDUCE_WORD = 128
+
+
+def check_reduce_status(status, function_name):
+    """Check the status returned by a low-level reduction function
+
+    Functions such as ``mm_reduce_vector_vp`` return the length of a
+    word of generators, but a negative return value indicates a fatal
+    error instead. Report the two cases differently, so that an error
+    code is not displayed as if it were a word length.
+
+    The function returns ``status`` if it is a valid word length.
+    """
+    if status < 0:
+        raise ValueError(ERR_REDUCE_STATUS % (function_name, status))
+    assert status < MAX_LEN_REDUCE_WORD, hex(status)
+    return status
 
 
 def rebase_axis(v15):
@@ -235,7 +253,7 @@ def rebase_axis(v15):
     w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
     l_g = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
-    assert 0 <= l_g < 128, hex(l_g)
+    check_reduce_status(l_g, "mm_reduce_vector_vp")
     g0 = G('a', g[:l_g]) ** -1
     v_axis15 = Axis().v15
     if v_axis15 * g0 != v15:
@@ -880,9 +898,9 @@ def rebase_baby_axis(v15):
     w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
     l_g = mm_reduce_vector_shortcut(1, 1, V_PLUS, g)
-    assert 0 <= l_g < 128
+    check_reduce_status(l_g, "mm_reduce_vector_shortcut")
     l_g = mm_reduce_vector_vm(v0, v.data, g, w.data)
-    assert 0 <= l_g < 128, hex(l_g)
+    check_reduce_status(l_g, "mm_reduce_vector_vm")
     g0 = G('a', g[:l_g]) ** -1
     v_axis15 = Axis().v15
     v_axis_opp15 = BabyAxis().v15
