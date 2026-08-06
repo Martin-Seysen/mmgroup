@@ -399,6 +399,25 @@ def test_rand_op(n_tests = 3, f_mul = None, verbose = 0):
     print("Test passed")
 
 
+
+
+@pytest.mark.mm_op
+def test_rand_op_len0():
+    """Test method MMTestSpace.mul_exp() with neutral element g
+
+    A bug has been reported when muliplying a vector by a negative
+    power of the neutral element of the Monster. Bug has been
+    reproduced with this test and fixed at the C level.
+
+    The bug affects function mm_op_word in file mm_op_p_vector.c.
+    """
+    g = MMTestSpace(3).group()
+    for (p, e) in  [(3,-3), (31,-1), (127,0), (15,5)]:
+        space = MMTestSpace(p)
+        v = space("R")
+        v1 = v.copy()
+        assert v1.mul_exp(g, e) == v
+
 ########################################################################
 # tests operation on tag 'A' of the vector
 ########################################################################

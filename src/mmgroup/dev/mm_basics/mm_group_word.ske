@@ -69,7 +69,7 @@ void mm_group_iter_start(mm_group_iter_t *pit, uint32_t *g, int32_t len_g, int32
     pit->g = g;
     pit->e = e;
     if (len_g == 0) pit->e = 0;
-    if (e >= 0) {
+    if (pit->e >= 0) {
         pit->i_start = 0; pit->i_stop = len_g; pit->i_step = 1;
         pit->sign = 0;
     } else {
