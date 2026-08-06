@@ -36,4 +36,5 @@ repair-wheel-command = "export LD_LIBRARY_PATH=$(pwd)/src/mmgroup && printenv LD
 repair-wheel-command = "export DYLD_LIBRARY_PATH=$(pwd)/src/mmgroup && delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 
-
+[tool.cibuildwheel.windows]
+repair-wheel-command = ""
