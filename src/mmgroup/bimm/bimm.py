@@ -186,7 +186,7 @@ class BiMM(AbstractGroupWord):
  
 @singleton
 class BiMMGroup(AbstractGroup):
-    r"""Auxilary class for class ``BiMM`` 
+    r"""Auxiliary class for class ``BiMM`` 
 
     This makes the methods in class ``AbstractGroup`` available to
     instancs of class ``BiMM``.
@@ -397,4 +397,3 @@ def precompute_all():
     global precomputation_pending
     precompute_points_lines_list()
     precomputation_pending = False
-

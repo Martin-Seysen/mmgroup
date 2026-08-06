@@ -41,7 +41,7 @@
     Otherwise append entries ('t', 1 + (k & 1)),  ('c', f(k >> 1)).
  @endcode
 
- Function ``mm_compress_pc_expand_int`` performs this deconding
+ Function ``mm_compress_pc_expand_int`` performs this decoding
  algorithm. It accepts an integer of at most 255 bits length. Here
  an integer is encodes as an array of precisely four integers of
  type ``uint64_t`` with the lowest digit in array entry 0.
@@ -49,7 +49,7 @@
  From the deccoding algorithm we see that not all words of
  generators of the Monster can be encoded. So a word must be
  reduced before encoding it. The functions in file
- ``mm_shorten.c`` peform a suitable reduction of a word.
+ ``mm_shorten.c`` perform a suitable reduction of a word.
  Function ``gt_word_to_mm_compress`` in that file copies
  a word of generators into a variable of type
  ``mm_compress_type``. Then one may call function ``mm_compress_pc``
@@ -128,7 +128,7 @@ extern "C" {
 
   The product \f$y_f \, x_d \, x_{\delta} \, \pi\f$ is encdoded in 
   component `nx`, and the other generators are  encdoded in the 
-  entries of component `w`, as desribed in the procedures below.
+  entries of component `w`, as described in the procedures below.
 
   For background see
   section *Computations in the Leech lattice modulo 2*
@@ -178,7 +178,7 @@ Monster in an integer of at most 255 bit length.
 
  This function compresses vector ``i`` of the Leech lattice mod 2
  of even type from its natural 24-bit representation to a 23-bit 
- represention.    
+ representation.    
 
  Here vector ``i`` must be of type 0, 2, or 4 in the Leech lattice
  mod 2, and at least one of the bits 11,...,22 of ``i`` must be set. 
@@ -390,7 +390,7 @@ The function adds a word ``m`` of length ``len`` of Monster elements
 to a structure of type structure of type ``mm_compress_type``
 referred by ``pc``.
 Here ``m`` is encoded as an array of 32-bit integers as described in
-file ``mmgroup_generators.h``. In ``m`` the only allowd tags are
+file ``mmgroup_generators.h``. In ``m`` the only allowed tags are
 ``'d', 'p', x', 'y'``.
 
 The function returns the number of entries read from ``m``.
@@ -580,7 +580,7 @@ array ``m`` of length ``l_m``. That word is encoded as an array of
 The function returns the actual length of the data in array ``m``
 in case of success, and a negative value in case of failure. If
 the buffer for ``m`` is too short then the function fails.
-A length ``l_m = 80`` is sufficent in all cases.
+A length ``l_m = 80`` is sufficient in all cases.
 */
 // %%EXPORT px
 int32_t mm_compress_pc_expand_int(uint64_t *p_n, uint32_t *m, uint32_t l_m)
@@ -669,4 +669,3 @@ int32_t mm_compress_pc_expand_int(uint64_t *p_n, uint32_t *m, uint32_t l_m)
 #ifdef __cplusplus
 }
 #endif
-

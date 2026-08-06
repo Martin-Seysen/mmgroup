@@ -405,7 +405,7 @@ uint64_t gen_leech2to3_abs(uint64_t v2)
 /**
   @brief Map short vector from \f$\Lambda/3\Lambda\f$ to \f$\Lambda/2\Lambda\f$
 
-  Here parmeter \f$v_3\f$ is a short vector (i.e. a vector of type 2)
+  Here parameter \f$v_3\f$ is a short vector (i.e. a vector of type 2)
   in \f$\Lambda/3\Lambda\f$ in Leech lattice mod 3 encoding. 
 
   The function returns a short vector in \f$\Lambda/2\Lambda\f$
@@ -509,7 +509,7 @@ uint64_t gen_leech3to2(uint64_t v3)
     // Compute ``gcode`` and ``cocode`` for vector v3. Return 0 if we 
     // detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
     // has to be corrected by a term 0xffffff. At the end of the
-    // switch statemnt, ``gcode`` might not correspond to a Golay
+    // switch statement, ``gcode`` might not correspond to a Golay
     // code vector; this means that v3 is not of type 4.
     switch (w) {
         // Deal with type-4 vectors
@@ -842,7 +842,6 @@ uint64_t gen_leech3_op_vector_atom(uint64_t v3, uint32_t g)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

@@ -12,7 +12,7 @@ the generated .h file. The user may also specify a source file with an
 extension .h. Such a .h file usually contains global declarations;
 and it is also copied into the generated .h file.
  
-The user may also specifiy a set of python modules to be used for
+The user may also specify a set of python modules to be used for
 code generation with the ``--tables`` option. Any such module must
 have a class ``Tables`` containing information how to enter tables
 and code snippets into the generated C code. The structure of such a
@@ -30,7 +30,7 @@ The user may also create a .pxi file from the .pxd file with the
 ``--pxi`` option . Such a .pxi file will contains wrappers for the 
 C functions declared in the .pxi file. These wrappers can be used 
 directly from python by including the .pxi file into a .pyx file
-that defines a Cython extension. Note that this automatic wrappping
+that defines a Cython extension. Note that this automatic wrapping
 mechanism works for rather simple prototypes only.
 
 With the ``--pyx`` option, the user may simply copy a .pyx file from
@@ -56,7 +56,7 @@ In the following table we list the options available in the
                         generated from a file with the same name and
                         extension '.ske'. A SOURCE with extension '.h' is
                         copied into the common header file. Each SOURCE is
-                        seached in the path set by parameter '--source-
+                        searched in the path set by parameter '--source-
                         path'. Output is written to the directory set by
                         parameter '--out-dir'.
   --out-header [HEADER ...]
@@ -171,7 +171,7 @@ is an option
 
 ``--subst mm(?P<p>[0-9]+)_op mm_op``
 
-that primarily describes a subtitution of strings that maps both, 
+that primarily describes a substitution of strings that maps both, 
 ``mm3_op_pi``, and  ``mm7_op_pi`` to ``mm_op_pi``. So this
 substitution maps the name of a generated .c file to the name of a
 .ske file (without extension) from which that .c file is to be

@@ -391,7 +391,7 @@ def make_octad_tables(basis):
 
     suboctad_table[8*o+j] is the j-th entry of the octad with
     number o, for 0 <= o < 759. Here the entries of octad are the 
-    the postions of the bits being set in that octad o.
+    the positions of the bits being set in that octad o.
     """
     codewords = lin_table(basis[:11])
     oct_dec_table = numpy.zeros(759, dtype = uint16)
@@ -817,7 +817,7 @@ class Mat24Tables(object):
         The function returns the suboctad of ``octad`` with number u_sub
         in 'cocode' representation. Octad ``octad`` must be given in
         'gcode' representation. An exception is raised if ``octad`` is
-        not the nunber of an octad.
+        not the number of an octad.
         """
         u_sub = int(u_sub)
         octad = int(octad)
@@ -874,7 +874,7 @@ class Mat24Tables(object):
     
         See member function suboctad_to_cocode for documentation of 
         suboctads. The function returns 0 is the bit weight of a
-        suboctad is divisible by four and 1 othewise.
+        suboctad is divisible by four and 1 otherwise.
         """
         u_sub = int(u_sub)
         w = bw24(u_sub & 0x3f)
@@ -898,5 +898,4 @@ class Mat24Tables(object):
         u_sub1 &= u_sub2
         wp ^= (0x96 >> ((u_sub1 ^ (u_sub1 >> 3)) & 7)) 
         return wp & 1
-
 

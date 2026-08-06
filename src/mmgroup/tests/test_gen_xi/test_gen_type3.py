@@ -176,7 +176,7 @@ I_NUMV3 = 3.0**(-24)
 # such a weight with low probability.
 # Let P be a dictionary that maps y the probability that a random 
 # vector v in the Leech lattice mod 3 has type 3 and that 
-# DICT_P[weight(v)] is equal to y. Let P[0] be the probablity that
+# DICT_P[weight(v)] is equal to y. Let P[0] be the probability that
 # such a random vector y is not of type 3.
 BLOCKSIZE = 1000000  # Minimum of type-3 vectors needed for test 
 DICT_P = defaultdict(int)
@@ -262,7 +262,7 @@ def test_chisq_type3(verbose = 0):
 
 
 # Vectors in Leech lattice mod 3 that do not map to a vector of
-# type <= 4.  Source: Docmentation of the C interface, Section
+# type <= 4.  Source: Documentation of the C interface, Section
 # "C interface for file gen_leech_reduce_mod3.c".
 VECTORS_MOD3_LARGE = [
   0x10001ff, 0x111111, 0xe, 0x1f3, 0xf1, 0xeee000
@@ -280,7 +280,7 @@ def rand_Co1(n_xi):
 
 @pytest.mark.gen_xi
 def test_v3_type_gt_4(ntests = 20):
-    """Ckeck that gen_leech3to2() detects vectors of type > 4"""
+    """Check that gen_leech3to2() detects vectors of type > 4"""
     FAIL = 2**64 - 1
     for v in VECTORS_MOD3_LARGE:
         for n_xi in range(4):

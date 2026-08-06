@@ -79,7 +79,7 @@ def format_item(n, format = None):
     If format is one of  ``'int8', 'int16', 'int32', 'int64'`` then
     an integer is reduced modulo the appropriate power of two and
     formatted hexadecimal. Everything else is formatted 'as is'.
-    An argument ``n = None`` is interpreted as the NULL poiner in C.
+    An argument ``n = None`` is interpreted as the NULL pointer in C.
     """
     if format in UINT_FORMATS:
         fmt, mask = UINT_FORMATS[format]
@@ -232,7 +232,7 @@ class UserFormat(UserDirective):
 
     The code generator evaluates expressions in curly braces ``%{...}``
     in the source code with the python ``.format()`` function for
-    stings.
+    strings.
 
     It is desirable that ``%{int:2*3}`` evaluates to a string 
     representing the integer constant ``int(2*3)`` for some built-in 
@@ -331,7 +331,7 @@ class UserFormat(UserDirective):
         be prepended to the list of arguments passed to function f
         as in Class UserDirective.  
 
-        The instance of class UserDirective created here als has a
+        The instance of class UserDirective created here also has a
         __format__method that returns str(f(<expression>))  if a string 
         representing a valid python expression is passed to the 
         __format__ method. Here the expression string is evaluated
@@ -463,7 +463,7 @@ for name, f in safe_locals.items():
 #######################################################################
 
 
-# For background on module ast (abstact syntax tree) see e.g.:
+# For background on module ast (abstract syntax tree) see e.g.:
 # https://greentreesnakes.readthedocs.io/en/latest/tofrom.html
 
 
@@ -517,9 +517,9 @@ with warnings.catch_warnings():
 
 
 class EvalNodeVisitor(ast.NodeVisitor):
-    """Node visitor for Abstract Syntax Trees creeated by module  .ast 
+    """Node visitor for Abstract Syntax Trees created by module  .ast 
 
-    This vistor checks for all nodes of an AST whether they are secure 
+    This visitor checks for all nodes of an AST whether they are secure 
     for processing with function eval(). Method visit() raises TypeError
     if an insecure node id found in the AST.
 
@@ -532,7 +532,7 @@ class EvalNodeVisitor(ast.NodeVisitor):
     a discussion about the security of eval() see:
     https://nedbatchelder.com/blog/201206/eval_really_is_dangerous.html
 
-    Creating tuples in backets or dictionaries in curly brackets is also
+    Creating tuples in brackets or dictionaries in curly brackets is also
     illegal because the syntax gets messy when used in the code generator.
     """
     def visit(self, Node):
@@ -555,7 +555,7 @@ class EvalNodeVisitor(ast.NodeVisitor):
 def safe_eval(s,  locals_ = {}):
     """An attempt to create a secure version of function eval()
 
-    See function EvalNodeVisitor() for allowd python contructs.
+    See function EvalNodeVisitor() for allowed python constructs.
     """
     a_tree = ast.parse(s.strip(), mode="eval")
     vars_ = {}
@@ -715,7 +715,7 @@ class SaveDictFor(object):
    
     Method 'set_local' updates the names all local variables in
     the dictionary using values from an 'entry' onvtained from 
-    the <interable>.
+    the <iterable>.
 
     Method 'restore' restores the dictionary of current variables
     to state before calling the constructor.
@@ -744,7 +744,7 @@ class SaveDictFor(object):
         Here 'entry' is an item yielded from the <iterative> in the
         <expression> of the FOR directive. The dictionary of 
         current variables given in the constructor is updated
-        apropriately.
+        appropriately.
         """ 
         if not isinstance(self.local, tuple):
             self.dict[self.local] = entry
@@ -787,7 +787,7 @@ def eval_codegen_table(tables, expression):
 
     The function returns a triple (name, table, format_). If parameter
     'table' is a python identifier, then 'name' is set to the name of
-    that identifer, otherwise 'name' is set to the empty string.
+    that identifier, otherwise 'name' is set to the empty string.
     """ 
     ast_par_list = ast_untuple(expression)
     node = ast_par_list[0]
@@ -947,7 +947,7 @@ def eval_codegen_join(tables, expression):
         <infix> , <suffix>
 
     Both, <infix> and  <suffix> are evaluated to a string. If any 
-    of the evluated strings does no contain a '\n' character, 
+    of the evaluated strings does no contain a '\n' character, 
     a '\n' is appended to the string.
 
     'tables' is a list of local variables used for evaluating the
@@ -1149,7 +1149,7 @@ class named_table(object):
 
 
 #######################################################################
-# Suppport for generating doc strings
+# Support for generating doc strings
 #######################################################################
 
 
@@ -1177,7 +1177,7 @@ def py_doc_to_comment(s):
 
 
 #######################################################################
-# Support for formating a C code line
+# Support for formatting a C code line
 #######################################################################
 
 
@@ -1203,7 +1203,7 @@ def _do_format(line, format_args, format_kwds, terminal, matchobj):
 def format_line(line, dictionary=None, args = (), terminal = True):
     """Format a C code ``line``
 
-    The function scans  a ``line`` for occurences of a string 
+    The function scans  a ``line`` for occurrences of a string 
     with balanced curly braces and preceded by a '%' character.
     When such a string ``s``  is found, then ``s`` is substituted
     by ``s[1:].format(*args, **dictionary)``.
@@ -1257,8 +1257,6 @@ def line_as_comment(line):
     if line[-2:] == "\\\n": 
         line = line[:-2] +  "\\ //\n"
     return line
-
-
 
 
 

@@ -14,7 +14,7 @@ file pytest.ini in the root directory, see:
 https://pytest.org/en/7.4.x/reference/customize.html#pytest-ini
 
 Alternatively, we may register these markers in file conftest.py.
-Here file conftest.py may be loacated in the  installed
+Here file conftest.py may be located in the  installed
 python package mmgroup, see:
 
 https://pytest.org/en/7.4.x/how-to/writing_plugins.html#registering-custom-markers
@@ -33,7 +33,7 @@ markers = r"""
    compiler:   test requires a C compiler 
    demo:       test demonstration code for reduction algorithm
    extremely_slow:  marks tests as even slower than very slow
-   hadamard:   test exection of code generated for hadamard matrices
+   hadamard:   test execution of code generated for hadamard matrices
    involution: test module involution.c
    gen_xi:     test for functions gen_XXX in the generators module
    general:    test general group operations and union-find algorithm

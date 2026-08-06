@@ -326,7 +326,7 @@ class RandomAxis:
         """Return number of an axis.
 
         So for a axis ``a`` we have ``RandomAxis(a.number) == a``.
-        So an axis genrated with this class can be indentified by its
+        So an axis generated with this class can be identified by its
         number. This number has no meaning outside class 
         ``RandomAxis``.
 
@@ -358,7 +358,7 @@ class RandomAxis:
         r"""Return the 2A involution corresponding to the 2A axis
 
         The function returns the 2A involution ``g`` in the Monster
-        corrsponding the axis.
+        corresponding the axis.
 
         By default, ``g`` is an instance of class ``mmgroup.MM``. This
         may be changed by setting the optional parameter ``group``,
@@ -514,5 +514,4 @@ def rand_mm_element(group_name = "M", group = MM):
         return mm
     return group('a', mm)
         
-
 

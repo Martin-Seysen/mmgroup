@@ -75,7 +75,7 @@ static const uint_mmv_t MM%{P}_TBL_SCALPROD_LOW[] = {
 
 // %%EXPORT
 int32_t mm_op%{P}_neg_scalprod_d_i(uint_mmv_t* v)
-// negate entries d (x) i with sclar product equal to 1
+// negate entries d (x) i with scalar product equal to 1
 {
   // %%IF* GENERATE_CODE
     const uint_mmv_t* p0 = MM%{P}_TBL_SCALPROD_HIGH;
@@ -272,7 +272,7 @@ static void pi24_2048(
   ``mm_op%{P}_pi(v_in, delta, pi, v_out)`` is equivalent to
 
         mm_sub_op_pi_type s_op; // defined in mm_basics.h
-        // Borrow memory from v_out suficient for an array of 759
+        // Borrow memory from v_out sufficient for an array of 759
         // entries of type  ``mm_sub_op_pi64_type``
         s_op.tbl_perm64 = (mm_sub_op_pi64_type*)(v_out + MM_OP%{P}_OFS_X);
         mm_sub_prep_pi(delta, pi, &s_op);
@@ -620,4 +620,3 @@ int32_t mm_op%{P}_delta_tag_ABC(uint_mmv_t *v, uint32_t d, uint32_t mode)
 //  %%GEN h
 /// @endcond 
 //  %%GEN c
-

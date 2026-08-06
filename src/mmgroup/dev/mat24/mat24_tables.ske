@@ -76,7 +76,7 @@
 
 /**
   @def mat24_def_octad_to_gcode(o)
-  @brief Eqivalent to ``mat24_octad_to_gcode(o)``
+  @brief Equivalent to ``mat24_octad_to_gcode(o)``
 
   ``mat24_def_octad_to_gcode(o)`` returns the  number 
   of the Golay code word corresponding to octad ``o``. 
@@ -87,7 +87,7 @@
 
 /**
   @def  mat24_def_gcode_to_octad(v)
-  @brief Eqivalent to ``mat24_gcode_to_octad(v)``
+  @brief Equivalent to ``mat24_gcode_to_octad(v)``
 
   ``mat24_def_gcode_to_octad(v)`` returns the  number of the
   octad corresponding to Golay code vector ``v``, with ``v``
@@ -431,4 +431,3 @@ mat24_inline_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
 
 
 // %%GEN c
-

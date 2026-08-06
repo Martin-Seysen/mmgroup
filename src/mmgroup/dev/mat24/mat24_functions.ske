@@ -489,7 +489,7 @@ uint32_t mat24_cocode_all_syndromes(uint32_t c1, uint32_t *a_out)
   case the unique syndrome is returned.
 
   If the minimum weight of the syndrome is four then the six
-  possible syndroms form a partition of the the underlying set
+  possible syndromes form a partition of the the underlying set
   of 24 elements. In this case we return the syndrome of bit 
   weight four where the bit at position ``u_tetrad`` is  set.
   Therefore parameter ``u_tetrad`` must satisfy
@@ -601,7 +601,7 @@ uint32_t mat24_cocode_weight(uint32_t c1)
   case the unique syndrome is returned.
 
   If the minimum weight of the syndrome is four then the six
-  possible syndroms form a partition of the the underlying set
+  possible syndromes form a partition of the the underlying set
   of 24 elements. In this case we return the syndrome of bit 
   weight four where the bit at position ``u_tetrad`` is  set.
   Therefore parameter ``u_tetrad`` must
@@ -704,7 +704,7 @@ uint32_t mat24_cocode_to_sextet(uint32_t c1, uint8_t *a_out)
   is a (possibly complemented) octad; and let ``o`` be that octad.
   Let ``v2`` be another vector given in ``vector`` representation.
   If there is an octad containing the vector ``v2`` and
-  intersecting ``o`` in a tetrad then the functon returns such an
+  intersecting ``o`` in a tetrad then the function returns such an
   octad in ``vector`` representation. Otherwise the function
   returns 0. If ``v1`` is not a (possibly complemented) octad then
   the function fails and returns ``(uint32_t)(-1)``.
@@ -941,7 +941,7 @@ uint32_t mat24_suboctad_to_cocode(uint32_t u_sub, uint32_t u_octad)
   The function writes the list of entries of octad ``u_octad``
   (in ``octad`` representation) into the array ``a_out`` of
   length 8. The order of these entries is the order used for the
-  conversion of suboctads. It may differ from the natrual order.
+  conversion of suboctads. It may differ from the natural order.
 
   The function returns 0 if ``u_octad`` is the number of an
   octad and ``(uint32_t)(-1)`` otherwise.
@@ -959,7 +959,7 @@ uint32_t mat24_octad_entries(uint32_t u_octad, uint8_t *a_out)
   @brief Return parity of halved bit weight of the even suboctad
 
   Here parameter ``u_sub`` is the number of a suboctad. A suboctad
-  cooresponds to a subset of an octad of even parity. The function 
+  corresponds to a subset of an octad of even parity. The function 
   returns 0 is the bit weight of that subset is divisible by four 
   and 1 otherwise.
 
@@ -1119,7 +1119,7 @@ uint32_t mat24_cocode_as_subdodecad(uint32_t c1, uint32_t v1, uint32_t u_single)
     }
   done:
     // Here we arrive in case of success with result ``res ^ single``.
-    // Complement ``res`` inside dodecad ``vect1`` if neccesary. 
+    // Complement ``res`` inside dodecad ``vect1`` if necessary. 
     w = mat24_bw24(res);   // bit weight of ``res``
     if (w > 6 || (w == 6 && (res & (1 << lsb)) == 0)) res ^= vect1;
     return res ^ single;
@@ -1145,7 +1145,7 @@ uint32_t mat24_cocode_as_subdodecad(uint32_t c1, uint32_t v1, uint32_t u_single)
          
   where mat24_scalar_prod() computes the scalar product.
 
-  The function evluates the lower 12 bits of ``v1``  only. Thus
+  The function evaluates the lower 12 bits of ``v1``  only. Thus
   ``v1`` may also be an element of the Parker loop.
 */
 // %%EXPORT p
@@ -1339,7 +1339,7 @@ uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
 /** 
   @brief Complete permutation in the Mathieu group ``Mat24`` from 7 images
 
-  This is an auxilary function for function mat24_perm_from_heptads().
+  This is an auxiliary function for function mat24_perm_from_heptads().
   We use the terminology introduced in that function.
 
   The function completes the array ``p_io`` to a permutation ``p``
@@ -1350,10 +1350,10 @@ uint32_t mat24_ploop_solve(uint32_t *p_io, uint32_t u_len)
   ``i = 0,1,2,3,4,5,8``; the other entries of ``p_io`` are ignored.
 
   The set ``(p_io[i], i = 0,1,2,3,4,5,8)`` must be an umbral heptad 
-  with distiguished element ``p_io[8]``. Then the mapping
+  with distinguished element ``p_io[8]``. Then the mapping
   ``i -> p_io[i], i = 0,1,2,3,4,5,8`` is a feasible mapping between 
   umbral heptads; it extends to a unique permutation in ``Mat24``.
-  Note that ``8`` is the distingished element of the umbral heptad
+  Note that ``8`` is the distinguished element of the umbral heptad
   ``(0,1,2,3,4,5,8)``. 
 
   The function returns 0 if the mapping given on input can be
@@ -1538,10 +1538,10 @@ uint32_t mat24_perm_complete_octad(uint8_t *p_io)
   which is not a subset of an octad. The syndrome of an umbral heptad, 
   i.e. the smallest set equivalent to the heptad  modulo the Golay code, 
   is a singleton containing exactly one element of the umbral heptad. 
-  That element is called the distiguished element of the heptad. 
+  That element is called the distinguished element of the heptad. 
   A feasible mapping from an umbral heptad to another umbral heptad is
-  a mapping that maps the distiguished element of the first heptad to
-  the distiguished element of the second heptad.
+  a mapping that maps the distinguished element of the first heptad to
+  the distinguished element of the second heptad.
 
   It can be shown that a feasible mapping from an umbral heptad to 
   another umbral heptad extends to a unique element of the Mathieu 
@@ -2065,7 +2065,7 @@ void mat24_perm_to_matrix(uint8_t  *p1, uint32_t *m_out)
   Implementation idea:
 
   We could have reversed the operation of function 
-  mat24_perm_to_matrix(), but the following implememtation is
+  mat24_perm_to_matrix(), but the following implementation is
   faster:
 
   Converting rows of matrix ``m1`` from ``gcode`` to ``standard``
@@ -2204,9 +2204,9 @@ static uint32_t dodecad_to_heptad(uint8_t *d1, uint8_t *h_out)
   
   On input the function  takes two dodecads ``d1, d2`` as arrays
   of integers, and it computes a permutation ``p: i -> p_out[i]``
-  satisfying the properies given above. In case of success it stores
+  satisfying the properties given above. In case of success it stores
   ``p`` in the array ``p_out``. Only the first 9 elements
-  ``d1[i], d2[i], 0 <= i < 9`` of ``d1`` and ``d2`` are evalutated.
+  ``d1[i], d2[i], 0 <= i < 9`` of ``d1`` and ``d2`` are evaluated.
   There is at most one dodecad containing ``d1[i], 0 <= i < 9`` and
   at most one dodecad containing ``d2[i], 0 <= i < 9``, assuming
   ``d1[i] != d1[j]``  and  ``d2[i] != d2[j]`` for ``i != j``.
@@ -2218,7 +2218,7 @@ static uint32_t dodecad_to_heptad(uint8_t *d1, uint8_t *h_out)
   in case of failure.
 
   The implementation calls function dodecad_to_heptad() for
-  contructing (unique) heptads ``h1`` and ``h2`` from  ``d1`` and 
+  constructing (unique) heptads ``h1`` and ``h2`` from  ``d1`` and 
   ``d2``. Then it calls function mat24_perm_from_heptads() for 
   computing the unique permutation in ``Mat24`` that maps ``h1`` 
   to ``h2``.
@@ -2285,7 +2285,7 @@ uint32_t mat24_op_gcode_matrix(uint32_t v1, uint32_t *m1)
   of the Mathieu group Mat24) to the Golay code word ``v1``, 
   with ``v1`` given in ``gcode`` representation.
 
-  The function returnes the permuted Golay code  word in 
+  The function returns the permuted Golay code  word in 
   ``gcode`` representation.
 */
 // %%EXPORT p
@@ -2309,7 +2309,7 @@ uint32_t mat24_op_gcode_perm(uint32_t v1, uint8_t *p1)
   of the Mathieu group Mat24) to the Golay cocode element ``c1``, 
   with ``c1`` given in ``cocode`` representation.
 
-  The function returnes the permuted cocode  word in 
+  The function returns the permuted cocode  word in 
   ``cocode`` representation.
 */
 // %%EXPORT p
@@ -2772,7 +2772,7 @@ void mat24_perm_to_net(uint8_t *p1, uint32_t *a_out)
             j = i;           // j is a node not yet processed
             while (!(done & (1 << j))) // while node j not done
             {
-                done |= 1 << j;        // delare node j done
+                done |= 1 << j;        // declare node j done
                 j = p[j];              // j := permutation result p[j]
                 // route node p[j] thru '0' part of inner Benes network
                 // so we do: if (j & d): res1 |=  1 << (j & ~d)
@@ -3013,6 +3013,5 @@ void mat24_op_all_cocode(uint32_t c1, uint8_t *a_out)
 
 /// @endcond  
 //  End condition: Do not document C functions in the header file!
-
 
 

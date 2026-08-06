@@ -182,7 +182,7 @@ class Prime4600:
             s.add(x)
         assert s == set(range(1,p))
         if verbose:
-            print("Recommended prime: %d, multplier: %d" % (p, m))
+            print("Recommended prime: %d, multiplier: %d" % (p, m))
 
 
 class Tables:
@@ -203,4 +203,3 @@ class Tables:
 
 if __name__ == "__main__":
     Prime4600.check()
-

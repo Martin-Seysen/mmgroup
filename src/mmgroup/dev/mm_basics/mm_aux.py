@@ -15,7 +15,7 @@ integers of type uint8_t and there is also an internal representation.
 The internal representation is fairly close to the description of the 
 basis vectors of the representation in [Seysen20] , so that matrix 
 operations can take advantage of the internal structure of that 
-repesentation.
+representation.
 
 The purpose of this module is access to the internal representation 
 of such a vector and conversion between the external and the 
@@ -76,7 +76,7 @@ class MM_IO24:
 
     We use the code generation mechanism in class  
     make_c_tabels.TableGenerator. The generated functions take
-    an input parameter 'log_field_bits' coresponding to
+    an input parameter 'log_field_bits' corresponding to
     LOG_FIELD_BITS. This indicates the a bit field containing an
     entry contains 2**log_field_bits.
     """
@@ -130,8 +130,8 @@ class MM_IO24:
         two, entries 2*i-2 and  2*i-1 have the following values:
 
         Index  Table entry
-        2*i-2: A mask containg the value 1 in each field. 
-        2*i-1: A mask containg the value 2**i-1 in each field. 
+        2*i-2: A mask containing the value 1 in each field. 
+        2*i-1: A mask containing the value 2**i-1 in each field. 
 
         If i is a power of two then table entry 2*i-1 is mask containing 
         the  value 2**(i/2)-1 in each field.
@@ -170,7 +170,6 @@ class Tables(MM_IO24):
     def __init__(self, *args, **kwds):
         super().__init__()
         pass
-
 
 
 

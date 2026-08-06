@@ -7,7 +7,7 @@ We use the terminology defined in
 the document *The C interface of the mmgroup project*, 
 section *Description of the mmgroup.generators extension*.
 
-The tests in ths script are valid under the assumption that all
+The tests in this script are valid under the assumption that all
 tests in the scripts ``test_leech2.py``, ``test_gen_type2``, and
 ``test_gen_type4`` marked with ``@pytest.mark.gen_xi`` have been 
 passed. 
@@ -38,7 +38,7 @@ from mmgroup.generators import gen_leech2_start_type4
 from mmgroup.generators import gen_leech2_start_type24
 
 # Standard vector in the Leech lattice mod 2 in Leech lattice encoding
-# The standard fram \Omega
+# The standard frame \Omega
 OMEGA = 0x800000
 # The standard type-2 vector \beta
 BETA = 0x200 
@@ -110,7 +110,7 @@ def leech2_start_type4(v):
     In that function we take care of the special case that ``v + v0``
     is of type 2 for a specific short vector ``v0``. 
     
-    A simpler (but slower) implementation of thhis function is:
+    A simpler (but slower) implementation of this function is:
 
     If ``v ^ v0`` is of type 2 the return the subtype of ``v ^ v0``.
     Otherwise return the subtype of ``v``.
@@ -118,7 +118,7 @@ def leech2_start_type4(v):
     The function returns 0 if ``v`` is equal to  ``Omega`` and
     a negative value if ``v`` has not type 4.
 
-    This is a refernece implementation for function 
+    This is a reference implementation for function 
     ``gen_leech2_start_type4()`` in file ``gen_leech.c``.
     """
     if v & 0x7ff800 == 0:
@@ -316,4 +316,3 @@ def test_start_type24(ntests = 1000, verbose = 0):
         t_c = gen_leech2_start_type24(v)
         assert t_c == t_ref, (hex(t_c), hex(t_ref))
     
-

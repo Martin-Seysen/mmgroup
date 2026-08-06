@@ -20,10 +20,10 @@ Bit matrices are represented as lists of integers, where the i-th
 element of the list encodes the i-th row vector of the matrix. 
 Function bit_mat_mul() multiplies an arbitrary number of
 matrices. The first factor may also be a bitvector. In the same 
-way as an integer in binary representation can be preceeded by
+way as an integer in binary representation can be preceded by
 an arbitrary number of of zero bits (without changing its value),
 we assume that a list representing a matrix can be followed by
-an arbitrary number of zero entries so that multiplcation of
+an arbitrary number of zero entries so that multiplication of
 bit matrices is always possible.
 
 A permutation p is also represented as a list of integers.
@@ -105,7 +105,7 @@ def v2(*args):
    If several arguments ``x_1,...,x_n`` are given then 
    ``v2(x_1,...,x_n)`` is the minimum of all values ``v2(x_i)``.
 
-   The function raises ZeroDivisionError if all integers occuring as 
+   The function raises ZeroDivisionError if all integers occurring as 
    arguments (or contained in an argument) are zero.
    """
    x = 0
@@ -221,7 +221,7 @@ def bitparity(x):
 def reverse24(x, k=24):
     """reverses order of bits 0,...,k-1 of an integer. Default is k=24.
 
-    If any bits apart form bit 0,...,k-1 are set, an execption is raised.
+    If any bits apart form bit 0,...,k-1 are set, an exception is raised.
     """
     if x & -(1 << k):
         raise ValueError("Too high bits are set for bit reversal")
@@ -361,7 +361,7 @@ def lin_table(lst, dtype = uint32, t0 = 0):
     For all entries i,j of t we have t[i^j] ^ t[0] = t[i] ^ t[i].
     t[0] is set to the value t0 (default is 0).
     
-    The table ist returned as a numpy array of type 'dtype',
+    The table is returned as a numpy array of type 'dtype',
     with dtype = uint8, unit16 or uint 32.
     """
     if not 0 <= (reduce(__or__,lst,0) | t0) <= 1 << _maxbits[dtype]:
@@ -458,12 +458,12 @@ def bit_mat_det(a):
 
 
 def bit_mat_orthogonal_complement(a, ncolumns=None):
-    """return an orthognal complement of bit Matrix a.
+    """return an orthogonal complement of bit Matrix a.
 
     Optionally, the number of columns of a may be given.
     Here matrix 'a' is considered a matrix of row vectors generating a
     linear subspace W of V = GF(2)**ncolumns. The function returns a
-    matrix of row vetors generating the orthognal complement of W with
+    matrix of row vectors generating the orthogonal complement of W with
     respect to the standard Euclidean inner product in V.      
     """
     # This can be improved using the ideas in bit_mat_inverse !!
@@ -478,7 +478,7 @@ def bit_mat_orthogonal_complement(a, ncolumns=None):
 
 
 def bit_mat_rank(a):
-    """return the rank of a bit marix a"""
+    """return the rank of a bit matrix a"""
     return len(pivot_binary_high(a)[0])
 
 
@@ -559,7 +559,7 @@ def rand_perm(n):
 
 
 def unnumpy(obj):
-    """Change the stange numpy scalars in an object to python integers
+    """Change the strange numpy scalars in an object to python integers
 
     This change is done recursively in tuples or lists.
     """
@@ -588,5 +588,3 @@ except:
                 x = (x * (n + 1 - i)) // i
             return x
         return 1 if k == 0 else 0
-
-

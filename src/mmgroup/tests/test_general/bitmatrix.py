@@ -1,4 +1,4 @@
-"""Auxilary class an functions for testing the union-find algorithm.
+"""Auxiliary class an functions for testing the union-find algorithm.
 
 """
 
@@ -105,7 +105,7 @@ class BitMatrix:
     :math:`v \mapsto v \cdot a + b`. ``b`` defaults to 0.
 
     Instances of this class may be multiplied or raised to the
-    power of an integer. They may be left multipled with an
+    power of an integer. They may be left multiplied with an
     integer denoting a bit vector.
 
     The length of an instance is the dimension of matrix ``a``.
@@ -394,7 +394,6 @@ def do_test_orbit_array(g, g_list = None, chk = 0, verbose = 0):
         v1, v2 = rand_pair_orbit(g1)
         g_t = g1.map_v_G(v1, v2)
         assert v1 * g_t == v2 ,(i, v1, v2)
-
 
 
 

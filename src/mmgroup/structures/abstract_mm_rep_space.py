@@ -121,7 +121,7 @@ should return a numpy array containing the sparse representation.
 getitems_sparse:
 Support for reading components of a vector with __getitem__.
 This method takes an array of integers containing the descriptions
-of the basis vectors for which the co-ordinates are to be read.
+of the basis vectors for which the coordinates are to be read.
 Here the basis vectors must be given in sparse format.
 In that array, the function must update the fields containing 
 the coordinates.
@@ -129,8 +129,8 @@ the coordinates.
 setitems_sparse:
 Support for writing components of a vector with __setitem__.
 This method takes an array of integers containing the descriptions
-of the basis vectors for which the co-ordinates are to be written,
-and the co-ordinates.
+of the basis vectors for which the coordinates are to be written,
+and the coordinates.
 Here the basis vectors must be given in sparse format.
 
 
@@ -251,7 +251,7 @@ class AbstractMmRepVector(AbstractRepVector):
 
         The vector is to be interpreted as a vevtor of integers
         modulo ``p``. In case ``p == 0`` it is to be inerpreted
-        as a vector of rational numers
+        as a vector of rational numbers
         """
         raise NotImplementedError("Abstract method")
 
@@ -462,7 +462,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
 
         This method takes a numpy array 'a_sparse' of integers of dtype 
         numpy.uint32 containing the descriptions of the basis vectors for 
-        which the co-ordinates are to be read.  Here the basis vectors 
+        which the coordinates are to be read.  Here the basis vectors 
         must be given in sparse format. In that array, the function must 
         update the fields 'scalar' in each entry of the array with the 
         coordinate of the vector  v  corresponding to the basis vector
@@ -479,7 +479,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
 
         This method takes a numpy array 'a_sparse' of integers of dtype 
         numpy.uint32 containing the descriptions of the basis vectors for 
-        which the co-ordinates are to be written. The array must also
+        which the coordinates are to be written. The array must also
         contain the values to be written. Here the basis vectors and
         their values must be given in sparse format. The function must 
         update the corresponding coordinates of the vector v.
@@ -487,7 +487,7 @@ class AbstractMmRepSpace(AbstractRepSpace):
         Caution:
         If duplicate coordinates are given in a_sparse, these coordinates  
         may be updated in any order. The user is responsible for not 
-        assigning different values to the same co-ordinate.
+        assigning different values to the same coordinate.
 
         Here vector v is a standard vector in this space.
         """
@@ -860,7 +860,6 @@ MM_VECTOR_CONVERSIONS = {
 
 SPACES_BY_NAME = {
 }
-
 
 
 

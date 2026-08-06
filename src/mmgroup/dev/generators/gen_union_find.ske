@@ -173,7 +173,7 @@ Let ``S(length)`` be the set of integers ``i`` with ``0 <= i < length``;
 and let a partition of ``S(length)`` be stored in the array ``table``
 (of size ``length``) as described in function ``gen_ufind_init``.
 
-The function joins the sets in the partition containg the
+The function joins the sets in the partition containing the
 elements ``n1`` and ``n2``.
 
 The function returns 1 if the function unites two dijoint sets, 0 if not,
@@ -245,12 +245,12 @@ and let a partition of ``S(length)`` be stored in the array ``table``
 The function chooses the smallest element of a set in a partition
 as the representative of the set. Thus a subsequent call to
 function ``gen_ufind_find`` with parameter ``n`` returns the
-smallest element of the set containg ``n``.
+smallest element of the set containing ``n``.
 
 The function returns the number of the sets in the partition.
 A negative return value indicates a error the array ``table``.
 
-After a call to this function entry table[i] is interprated as follows:
+After a call to this function entry table[i] is interpreted as follows:
 
 \verbatim
 if (table[i] & 0x80000000) then the representative of i is i;
@@ -391,7 +391,7 @@ and let a partition of ``S(l_T)`` be stored in the array ``table``
 We assume that the partition stored in the array ``table``
 contains ``n_sets`` sets. Then we store a list of lists in the
 array ``map``, where each list corresponds to a set in
-the partition. We write some index infomation for interpreting
+the partition. We write some index information for interpreting
 these lists into the array ``ind`` of l ``l_ind``.
 
 Array ``map`` will contain the ``l_t`` elements of the
@@ -593,7 +593,6 @@ int32_t gen_ufind_union_affine(uint32_t *table, uint32_t n, uint32_t *g, uint32_
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

@@ -3,7 +3,7 @@ Warning!
 At present the process of generating C code is under construction.
 
 We plan to switch to the ``meson`` build system. Therefore a much more
-declarative style is required for describing an buld operations.
+declarative style is required for describing an build operations.
 Thus the description here is pertty much outdated!
 
 
@@ -31,5 +31,4 @@ directories obtained from methods ``tables()`` and ``directives()``
 of several table-providing classes. A simple example for a 
 table-providing class is the class ``Lsbit24Function``
 in module ``mmgroup.dev.mat24.mat24_aux``.
-
 

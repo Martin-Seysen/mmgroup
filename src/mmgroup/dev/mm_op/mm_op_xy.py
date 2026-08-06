@@ -24,7 +24,7 @@ class Perm64_xy(MM_Op):
     directives = {}
 
     def __init__(self, **kwds):
-        """Initialise for calulations with small integers modulo p
+        """Initialise for calculations with small integers modulo p
 
         p+1 must be a power of two. Calculations modulo p are described 
         in more detail in the base classes of this class.

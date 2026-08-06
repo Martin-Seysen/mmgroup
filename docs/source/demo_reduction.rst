@@ -145,7 +145,7 @@ references.
 .. code-block:: python
 
     from random import choice                   # returns a random entry of a list
-    from mmgroup.demo import Mm, Leech2, MmV15  # data strucures used
+    from mmgroup.demo import Mm, Leech2, MmV15  # data structures used
     from mmgroup.demo.reduce_sub import *       # functions used
 
 Here is the implementation of function **reduce_axis**.
@@ -257,7 +257,6 @@ Subfunctions for the reduction algorithm
 .. autofunction:: mmgroup.demo.reduce_sub.find_triality_element_for_axis
 
 .. autofunction:: mmgroup.demo.reduce_sub.find_in_Nx0
-
 
 
 

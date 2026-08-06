@@ -36,7 +36,7 @@ orbits of \f$2.\mbox{Co}_{1}\f$ on  \f$\Lambda / 3\Lambda\f$.
 
 A vector \f$v\f$ in \f$\Lambda / 3\Lambda\f$ is described by the
 entries (modulo 3) of any preimage of \f$v\f$ in \f$\Lambda\f$,
-using the natural co-ordinate frame of  \f$\Lambda\f$. The *support*
+using the natural coordinate frame of  \f$\Lambda\f$. The *support*
 of vector \f$v\f$ is the set of the nonzero co-ordiantes of \f$v\f$.
 The support of \f$v\f$ has a natural interpretation as a bit vector in
 the underlying space \f$\mbox{GF}_2^{24}\f$ of the Golay code used in
@@ -55,8 +55,8 @@ on  \f$\Lambda / 3\Lambda\f$.
    under the action of \f$\mbox{M}_{24}\f$, as described in [CS99],
    Ch. 10.2.6.
 
- * Column 5 contains the suport of \f$v\f$ as a bit vector. Here we use
-   the basis of the natural co-ordinate frame of \f$\Lambda\f$. This
+ * Column 5 contains the support of \f$v\f$ as a bit vector. Here we use
+   the basis of the natural coordinate frame of \f$\Lambda\f$. This
    basis corresponds to the basis of \f$\mbox{GF}_2^{24}\f$ described
    in the *mmgroup API reference*,
    section *The basis of the Golay code and of its cocode*.  We adopt
@@ -496,7 +496,7 @@ uint32_t find_tetrad_16_large(uint32_t gc, uint32_t sub)
     ``sub`` be a subset of ``gc`` of weight at most 4. If ``sub`` can
     be completed to an affine plane in ``gc`` then the function
     returns the four points of that affine plane as a tetrad. Otherwise
-    the function returns a tetrad corrsponding to an affine plane in
+    the function returns a tetrad corresponding to an affine plane in
     ``gc`` such that each plane in ``gc`` parallel to that tetrad
     intersects with ``sub`` in 0 or 2 points.
     */
@@ -1124,7 +1124,6 @@ done:
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

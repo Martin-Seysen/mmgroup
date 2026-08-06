@@ -215,7 +215,7 @@ def baby_axis_type(gv):
 
 
 f_text = """# This file has been generated automatically. Do not change!
-# It contains samples of the 10 cosets of 2A axes othogonal to the
+# It contains samples of the 10 cosets of 2A axes orthogonal to the
 # standard 2A axis wrt 2^{1+23}.Co_2.
 #
 
@@ -376,6 +376,5 @@ if __name__ == "__main__":
         assert orbit == axis.axis_type()
         assert axis.v_axis15 * axis.g == axis.v_axis15
         # print(orbit, axis.axis_type())
-
 
 

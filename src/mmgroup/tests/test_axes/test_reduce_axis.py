@@ -248,7 +248,7 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
             if not std_axis:
                 vt = v_leech2_adjust_sign(v, vt)
                 if verbose: 
-                    print("Function reduce_axis terminated successfullly")
+                    print("Function reduce_axis terminated successfully")
                 return r[:len_r], vt
             r1 = gen_leech2_reduce_type2(vt, r[len_r:])
             assert r1 >= 0
@@ -261,7 +261,7 @@ def reduce_axis(vector, std_axis = 1, verbose = 0):
                 len_r += 1
             assert mm_op_compare(15, v, V_START.data) == 0
             if verbose: 
-                print("Function reduce_axis terminated successfullly")
+                print("Function reduce_axis terminated successfully")
             return r[:len_r], 0x200
         else:
             raise ValueError("WTF1")
@@ -380,7 +380,7 @@ def reduce_baby_axis(vector, axis = v_start, verbose = 0):
             vt = v_leech2_adjust_sign(v, vt)
             assert (vt ^ axis) & 0x1ffffff == 0x1000000, (hex(vt), hex(axis))
             if verbose: 
-                print("Function reduce_baby_axis terminated successfullly")
+                print("Function reduce_baby_axis terminated successfully")
             return r[:len_r], axis
         else:
             raise ValueError("WTF1")
@@ -700,6 +700,5 @@ def test_reduce_G_x0(verbose = 0):
             if not ok:
                 err = "Function mm_reduce_G_x0 failed"
                 raise ValueError(err)
-
 
 

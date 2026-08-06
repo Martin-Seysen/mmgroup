@@ -1,4 +1,4 @@
-r"""Generate table for Griess algebra multuplication by standard axis
+r"""Generate table for Griess algebra multiplication by standard axis
 
 This module generates a table for multiplying a vector in the
 representation \rho by the standard axis v^+. Here v^+ is the axis
@@ -53,7 +53,7 @@ NUM_OCTADS = 759
 STD_COCODE = 0x200
 
 """
-By conincidence, if both, entries 2 and 3 are in a suboctad then
+By coincidence, if both, entries 2 and 3 are in a suboctad then
 these two entries are either in positions 0 and 1 or in positions
 2 and 3, in an unspecified order.
 """
@@ -123,6 +123,5 @@ if __name__ == "__main__":
         ref =  octad_to_std_axis_op(o) 
         assert value == ref, (o, value, ref) 
     1/0
-
 
 

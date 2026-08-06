@@ -265,14 +265,14 @@ Vector ``v4`` can be used in function ``gen_leech2_find_v4_2xx``
 for reducing the pair ``(v2, v3)`` to a standard pair of vectors.
 
 The function returns the value ``t * 0x1000000 + v4`` in case of
-succcess, with t as above. Parameter ``seed`` is a seed for a
+success, with t as above. Parameter ``seed`` is a seed for a
 random generator as described in module ``gen_random.c``. The
 function returns a negative value in case of failure.
 
 The function tries to find random vectors ``vx`` of type 2
 in the Leech lattice mod 2 such that both, ``vx + v2``,
 and ``vx + v3`` are of type 2. Then the
-vector ``v4 = v2 + v3 + vx`` satifies the required conditions.
+vector ``v4 = v2 + v3 + vx`` satisfies the required conditions.
 
 For finding ``vx`` we transform ``v2`` to the standard type-2 vector
 with a transformation ``tf``. Then we generate random type-2 vectors
@@ -351,7 +351,7 @@ file ``mmgroup_generators.h``. We have ``k <= 8``; so the
 array ``g`` must have size at least 8.
 
 The function returns the value ``k >= 0`` in case of
-succcess, and a negative value in case of failure.
+success, and a negative value in case of failure.
 
 Parameter ``v4`` must be a type-4 vector satisfying certain
 conditions as described in de documentation of
@@ -414,7 +414,7 @@ int32_t gen_leech2_reduce_2xx(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *g
     // Compute a permutation pi that maps [2,3] to img_pi[0], img_pi[1] 
     res = mat24_perm_from_map(COC_LIST, img_pi, 5 - t, pi);
     if (res < 1 || res > 3) return -14;
-    // Let ``atom`` be a generator corrsponding to pi**-1
+    // Let ``atom`` be a generator corresponding to pi**-1
     atom =  mat24_perm_to_m24num(pi) + 0xa0000000;
     // put v2 = v2 * pi**-1, v3 = v3 * pi**-1
     if (gen_leech2_op_word_leech2_many(va, 2, &atom, 1, 0) < 0) return -15;
@@ -425,7 +425,7 @@ int32_t gen_leech2_reduce_2xx(uint32_t v2, uint32_t v3, uint32_t v4, uint32_t *g
     // In the real Leech lattice we have now v2 = w2. We also have v3 = w3,
     // up to signs. We compute a mapping y (in ``gcode`` representation)
     // such that reflection with y corrects the sign of v3. Let ``atom``
-    // be a generator of G_x0 corrsponding to that reflection.
+    // be a generator of G_x0 corresponding to that reflection.
     if (t == 2) {
         y = (v2 & 0x800000) >> 14;
         if ((v2 ^ v3) & 0x800000) y ^= 0x100;
@@ -601,7 +601,7 @@ The function uses a random generator.  Parameter ``seed`` is a seed
 for a random generator as described in module ``gen_random.c``.
 
 The function returns the length of the  array ``a`` in case of
-succcess, and a negative value in case of failure.
+success, and a negative value in case of failure.
 */
 // %%EXPORT px
 int32_t gen_leech2_u4_2xx(uint32_t v2, uint32_t v3, uint64_t *seed, uint32_t *a)
@@ -629,7 +629,6 @@ int32_t gen_leech2_u4_2xx(uint32_t v2, uint32_t v3, uint64_t *seed, uint32_t *a)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

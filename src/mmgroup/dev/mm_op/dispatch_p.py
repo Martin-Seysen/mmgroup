@@ -149,7 +149,7 @@ Tables = DispatchP
 #################################################################
 
 
-# List of existing C functions obtained by excuting
+# List of existing C functions obtained by executing
 # function iter_find_export('...\src\mmgroup\dev\c_files')
 # at 2023-07-10. This will be used for creating legacy code.
 ALL_LEGACY_FUNCTIONS = {
@@ -289,4 +289,3 @@ def make_all_legacy_scripts(out_dir):
 
 if __name__ == "__main__":
     make_all_legacy_scripts(sys.argv[1])
-

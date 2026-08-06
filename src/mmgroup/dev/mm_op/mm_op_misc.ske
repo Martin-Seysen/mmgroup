@@ -35,7 +35,7 @@
   for a vector of the  representation \f$\rho_{%{P}}\f$ of the
   monster group in characteristic  %{P}.
 
-  Thes definition are used in all C files dealing with the 
+  These definition are used in all C files dealing with the 
   representation of the Monster modulo %{P}.
 */
 enum MM_OP%{P}_OFS  {

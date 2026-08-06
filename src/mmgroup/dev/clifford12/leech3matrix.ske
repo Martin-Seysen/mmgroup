@@ -206,7 +206,7 @@ extern "C" {
 
    This means that we look for the first row ``k`` with a nonzero
    entry in that column. Then we perform row operations with that row
-   in order to zero all aother rows >= i of the matrix. Finally, we
+   in order to zero all another rows >= i of the matrix. Finally, we
    exchange row ``i`` with row ``k``.
 */
 static inline uint32_t pivot3(uint64_t *p_a, uint64_t *p_end, uint32_t column)
@@ -333,7 +333,7 @@ found:
    column ``i`` has been used for pivoting.
 
    Parameter ``d`` should usually be ``0``. In case ``d > 0`` we make
-   no atttempt to zero an entry ``(i, j)`` if ``j >= d `` and the
+   no attempt to zero an entry ``(i, j)`` if ``j >= d `` and the
    leading coefficient of row ``i`` is in a column with idnex ``< d``.
 */
 // %%EXPORT px
@@ -363,7 +363,7 @@ uint64_t leech3matrix_reduced_echelon(uint64_t *a, uint32_t d)
 
 /// @cond DO_NOT_DOCUMENT
 
-/** @brief Stucture for computing intersection of kernel an image.
+/** @brief Structure for computing intersection of kernel an image.
 
    Here component ``a`` is a matrix ``a`` in  **matrix mod 3**
    encoding  as documented in the header of this file.
@@ -371,7 +371,7 @@ uint64_t leech3matrix_reduced_echelon(uint64_t *a, uint32_t d)
    with``Al`` in columns 0,...,23 and ``Ah`` in columns 24,...,47
    of ``a``.
 
-   Som more documentation shoud be added here!!!!!!!!
+   Some more documentation should be added here!!!!!!!!
 
 */
 typedef struct {
@@ -608,7 +608,7 @@ uint32_t _rank_matrix(uint64_t *a)
 
    ``len_img  +  0x100 * len_ker  +  0x10000 * len_isect``.
 
-   It returns -1 in case of failure. Such a failure sould be
+   It returns -1 in case of failure. Such a failure should be
    considered as a software bug.
 
    The typical use case for this function is to store an arbitrary
@@ -1012,7 +1012,5 @@ void leech3_vect_mod3_to_signs(uint64_t *v, uint64_t mult, uint32_t n, uint64_t 
 #ifdef __cplusplus
 }
 #endif
-
-
 
 

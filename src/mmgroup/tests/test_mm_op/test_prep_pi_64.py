@@ -42,7 +42,7 @@ def parse_a(a):
     the octad which is the preimage of octad i. 'sign' is the
     sign of the image of octad 'source'. 'fields' is a 6-tuple
     of 6-bit integers describing the mapping of the suboctads,
-    see documentaiton in file mm_tables.c.
+    see documentation in file mm_tables.c.
     """
     a1 = [None] * 759
     for i, row in enumerate(a):
@@ -64,13 +64,13 @@ def map_octad(oct, delta, pi):
 
     Here 'oct' is an octad given in ocatad representation,
     interpreted as a (positive) element of the Parker loop.
-    The pair (delta, pi), with delte a cocode element and pi
+    The pair (delta, pi), with delete a cocode element and pi
     the number of a permutation in Mat24, is an automorphism
     of the Parker loop. 
 
     The function returns a pair (sign, img_octad) representing
     an element of the Parker loop with a given sign. img_octad 
-    is the number of the correspondig octad in octad 
+    is the number of the corresponding octad in octad 
     representation.
 
     The return value is the image of the octad under the

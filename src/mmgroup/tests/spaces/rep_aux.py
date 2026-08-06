@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 from __future__ import  unicode_literals
 
 
-"""Auxilary functions for group representations"""
+"""Auxiliary functions for group representations"""
 
 import numpy as np 
 
@@ -43,4 +43,3 @@ def pm_diag_from_function(f, l):
     for i in range(l): 
         a[i,i] =  1 - 2 * (f(i) & 1)
     return a
-

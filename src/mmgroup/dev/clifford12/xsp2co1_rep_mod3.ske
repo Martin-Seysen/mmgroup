@@ -100,7 +100,7 @@ representation \f$4096_x\f$  and ``v3`` is a vector in the Leech
 lattice mod 3 in **Leech lattice mod 3 encoding**. The function stores
 the vector in the array ``rep`` of length 14 referred by ``p_rep``.
 
-In the standard repesentation \f$\rho_3\f$ of the Monster the unit
+In the standard representation \f$\rho_3\f$ of the Monster the unit
 vector at position ('Z', i, j) should be encoded with
 parameters ``i = i``, ``v3 = 1 << j``; and the unit vector
 at position ('Y', i, j) should be encoded with
@@ -143,7 +143,7 @@ in ``*p_v3``.
 Caution:
 
 The data pointer inside the structure ``qs`` points directly to the
-data in the arrray referred by ``p_rep``. 
+data in the array referred by ``p_rep``. 
 */
 static int32_t
 xsp2co1_rep_mod3_as_qs(uint64_t *p_rep, qstate12_type *pqs, uint64_t *p_v3)
@@ -183,7 +183,7 @@ replaces the vector ``v`` by that product. Here the group
 element \f$g\f$ is stored in the array referred by ``elem``
 in **G_x0 representation**.
 
-This function suceeds only if the factor of the tensor
+This function succeeds only if the factor of the tensor
 product ``v`` in  \f$24_x\f$ is a short vector (i.e. a vector of
 type 2) in the Leech lattice mod 3.
 */
@@ -251,7 +251,7 @@ int32_t xsp2co1_rep_mod3_mul_word(uint64_t *p_rep, uint32_t *a, uint32_t n)
   (mod 3) referred by ``p_rep``, as constructed by
   function ``xsp2co1_rep_mod3_from_qs``. 
 
-  Let ``w`` be a vector in the standard repesentation \f$\rho_3\f$ of
+  Let ``w`` be a vector in the standard representation \f$\rho_3\f$ of
   the Monster in the ``mm_op`` package, and let ``p_wz`` be a pointer
   to the position of the entry ('Z', 0, 0) of vector ``p_wz``. Then the
   function stores the vector ``v`` at the parts of vector ``w`` with
@@ -301,7 +301,7 @@ int32_t xsp2co1_rep_mod3_conv_mm_op(uint64_t *p_rep, uint64_t *p_wz)
   (mod 3) referred by ``p_rep``, as constructed by
   function ``xsp2co1_rep_mod3_from_qs``. 
 
-  Let ``w`` be a vector in the standard repesentation \f$\rho_3\f$ of
+  Let ``w`` be a vector in the standard representation \f$\rho_3\f$ of
   the Monster in the ``mm_op`` package, and let ``p_wz`` be a pointer
   to the position of the entry ('Z', 0, 0) of vector ``p_wz``. Then the
   function returns the scalar product of the vectors ``v`` and ``w``.
@@ -399,7 +399,6 @@ int32_t xsp2co1_rep_mod3_find_nonzero(uint64_t *p_rep)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

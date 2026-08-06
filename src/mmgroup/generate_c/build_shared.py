@@ -52,7 +52,7 @@ def shared_lib_name(name, mode, static=False, os_name=None, pymod=False, flat=Fa
     module separated by '.' characters. Default is False.
 
     If parameter ``flat`` is True then any information in parameter
-    ``name`` refering to a directory is removed. Default is False.
+    ``name`` referring to a directory is removed. Default is False.
     """
     if not os_name:
         os_name = os.name
@@ -222,7 +222,7 @@ def build_shared_lib_parser():
         nargs = '*',  metavar='PATH',
         action = 'extend', default = [],
         help = "Set path PATH[:PATH] in unix-like os shared library with linker "
-               "option -rpath. Ingnored in a non unix-like os."
+               "option -rpath. Ignored in a non unix-like os."
         )
 
     parser.add_argument('--mockup', nargs='?', const=1, default=0, type=int,
@@ -331,7 +331,7 @@ def make_source_object_pairs(cmdline_args):
     elif os.name == "nt":
         ext = '.obj'
     else:
-        ERR = "Dont't know object file extension in platform %s"
+        ERR = "Don't know object file extension in platform %s"
         raise ValueError(ERR % os.name)
     output = []
     for source in cmdline_args.sources:

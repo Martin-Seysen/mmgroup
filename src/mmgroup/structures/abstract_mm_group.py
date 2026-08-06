@@ -56,7 +56,7 @@ class AbstractMMGroupWord(AbstractGroupWord):
     'group = g'. If a class of type 'AbstractGroup' contains one 
     instance only, the corresponding subclass of this class may 
     contain a class attribute 'group' referring to that group. Then 
-    the user  may contruct elements of that group using the 
+    the user  may construct elements of that group using the 
     constructor of that subclass of this class.
     """
     __slots__ = []
@@ -75,7 +75,7 @@ class AbstractMMGroupWord(AbstractGroupWord):
         Note that all operators return reduced words. Functions return
         reduced words unless stated otherwise. However, reducing all
         words representing the same group element to the same word may 
-        be beyond the capabilties of a program. 
+        be beyond the capabilities of a program. 
         """
         return self.group.reduce(self)
 
@@ -84,7 +84,7 @@ class AbstractMMGroupWord(AbstractGroupWord):
         """Return the internal rpresentation of the element
 
         This method returns the internal representation of an element
-        of the monster group as a numpy array of unsigend 32-bit
+        of the monster group as a numpy array of unsigned 32-bit
         integers.
 
         The internal representation is described in section 
@@ -153,7 +153,7 @@ class AbstractMMGroup(AbstractGroup):
         Calling this function without any arguments should return
         the neutral element of this group.
         """
-        raise NotImplementedError("No atoms defined in abtract group")  
+        raise NotImplementedError("No atoms defined in abstract group")  
 
     def _mul(self, g1, g2):
         """Return product g1 * g2 of group elements g1 and g2.
@@ -297,5 +297,4 @@ class AbstractMMGroup(AbstractGroup):
 
 
 AbstractMMGroupWord.group = AbstractMMGroup
-
 

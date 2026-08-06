@@ -194,7 +194,7 @@ cdef class QState12(object):
         cl.qstate12_zero(&self.qs, 0)
 
     def __init__(self, rows, cols = None, data = None, mode = 0):
-        """Intitalize a quadratic state matrix
+        """Initialize a quadratic state matrix
         
         If ``rows`` is an integer then ``cols`` must also be
         an integer and a quadratic state matrix of shape        
@@ -364,7 +364,7 @@ cdef class QState12(object):
         return self
         
     def mul_scalar(self, int32_t e, int32_t phi=0):
-        """Multiply the state by a sclar factor in place
+        """Multiply the state by a scalar factor in place
         
         The factor is :math:`2^{e/2} \cdot \exp(\phi \pi i /4)` .           
         """
@@ -452,10 +452,10 @@ cdef class QState12(object):
     def echelon(self):
         """Convert state to (not reduced) echelon form
 
-        Only the first  ``n_reduce`` colums are converted to reduced
+        Only the first  ``n_reduce`` columns are converted to reduced
         echelon form
 
-        The function reutrns a list ``table`` with ``table[j] = i``
+        The function returns a list ``table`` with ``table[j] = i``
         if the leading coefficient of row ``i`` is in columng ``j``.
         We have  ``table[j] = -1``  if no such row exists.
         """
@@ -466,7 +466,7 @@ cdef class QState12(object):
         """Reduce a state to a standard form
         
         The representation of a state is not unique.  This function
-        changes a sate to a unique standard form where the bit matrix A
+        changes a state to a unique standard form where the bit matrix A
         of the internal representation of the state is in reduced
         echelon form, as described in the guide.
         
@@ -592,7 +592,7 @@ cdef class QState12(object):
         """For tests only!
 
         The function returns the same result as ``self.matrix(complex)``,
-        using a different metod for the calculation.
+        using a different method for the calculation.
         """
         cdef uint32_t n0, n1
         n0, n1 = self.shape
@@ -1124,7 +1124,7 @@ def qstate12_column_monomial_matrix(QState12 qs, uint32_t nqb, a):
     unit vector with index ``v``. For any bit vector ``v`` of 
     length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit 
     vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and 
-    ``|1 << v1>`` are defined via the corrresponding operators 
+    ``|1 << v1>`` are defined via the corresponding operators 
     ``<<`` and ``^`` in C.
   
     Then ``T``  maps
@@ -1197,7 +1197,7 @@ def qstate12_from_signs(bmap, uint32_t n):
     state vector is a (column) vector of shape ``(0, n)``. 
 
     If the array ``bmap``  does not correspond to any quadratic 
-    state vector then the function returnes None.
+    state vector then the function returns None.
     """
     cdef uint32_t n_out = 1 << (0 if n < 5 else n - 5)
     cdef uint64_t[:] bmap_view = bmap
@@ -1435,6 +1435,5 @@ def bitmatrix32_test_sort(uint32_t alg, a, uint32_t n_rept):
             
     
     
-
 
 

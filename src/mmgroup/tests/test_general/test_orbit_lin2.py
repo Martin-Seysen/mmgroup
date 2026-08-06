@@ -62,7 +62,7 @@ def make_affine_group(dim = 9):
 
 
 def do_test_affine(dim = 5, n_gen = 3, aff = True, verbose = 0):
-    r"""Test the union-find algorithm on the goup H
+    r"""Test the union-find algorithm on the group H
 
     Here the group H is acting as a permutation group of the basis
     vectors of GF(2)^8 as described in the documentation string

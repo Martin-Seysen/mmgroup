@@ -25,7 +25,7 @@ from mmgroup.generate_c import UserDirective, UserFormat
 
 
 class BitMatrixMulTransp(object):
-    """Generate code for multipling a bit vector with a bit matrix
+    """Generate code for multiplying a bit vector with a bit matrix
 
     The generated code multiplies several bit vectors ``v_i`` by the 
     transposed of some corresponding bit matrices ``m_i``.
@@ -212,7 +212,7 @@ class BitMatrixMulTransp(object):
         is equal to zero. This happens in case ``st >= self.lm``
 
         Though the code generation process is recursive, the generated 
-        code is very efficient and, obvioulsy, not recursive.
+        code is very efficient and, obviously, not recursive.
         """
         if st >= self.lm:   
             return None, ""
@@ -335,4 +335,3 @@ class BitMatrixMulTransp(object):
         return {
            "BITVMULTRANSP" : UserDirective(self.generate_c_mul_transp, "ss"),
         }
-

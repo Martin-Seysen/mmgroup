@@ -1,7 +1,7 @@
 
 
-In this section we decribe some typical bugs that may occur during the
-develpment process and that may be extremely hard to find.
+In this section we describe some typical bugs that may occur during the
+development process and that may be extremely hard to find.
 
 
 
@@ -10,7 +10,7 @@ develpment process and that may be extremely hard to find.
 
 After a long development session the local git repository might be corrupted
 for what reason ever. Here the best cure is to delete everything in the 
-repository (exept for subdirectory .git) and to checkout everythinh with git.
+repository (except for subdirectory .git) and to checkout everythinh with git.
 If you do not want to do so, you may cleanaup intermediate files as follows.
 
 First open a command shell, switch to the root directory of your local
@@ -75,7 +75,7 @@ https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autod
 The Cython extension ``mat24`` is not mocked up in *Sphinx*, but it
 is replaced by class ``mmgroup.dev.mat24.mat24_ref.Mat24`` instead.
 
-So instad of simply importing the extension ``mat24`` we have to do
+So instead of simply importing the extension ``mat24`` we have to do
 the following:
 
  .. code-block:: python
@@ -111,7 +111,7 @@ following commands in your shell:
      unset readthedocs  # in Windows use 'set readthedocs=' instead  
      # Reverse the effect of  'set readthedocs=True' 
      
-If you are lucky then the errors occuring on the *readthedocs* 
+If you are lucky then the errors occurring on the *readthedocs* 
 server will now also occur on your local host.
 
 .. warning:: 

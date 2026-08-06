@@ -145,7 +145,7 @@ int32_t mm_aux_index_sparse_to_extern(uint32_t i)
         case 2:  // tag B
         case 3:  // tag C
             if (i == j) return -1;
-            // Fall trough to case tag A
+            // Fall through to case tag A
         case 1:  // tag A
             if (i >= 24 || j >= 24) return -1;
             if (i == j) return i;
@@ -471,7 +471,7 @@ int32_t mm_aux_index_sparse_to_intern(uint32_t i)
         case 2:  // tag B
         case 3:  // tag C
             if (i == j) return -1;
-            // Fall trough to case tag A
+            // Fall through to case tag A
         case 1:  // tag A
             if (i >= 24 || j >= 24) return -1;
             return ((tag - 1) * 24 + i) * 32 + j;
@@ -639,7 +639,6 @@ int32_t mm_aux_index_check_intern(uint32_t i)
 }
 #endif
 //  %%GEN c
-
 
 
 

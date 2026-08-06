@@ -97,7 +97,7 @@ def py_gen_leech3to2_type4(x):
     # Compute ``gcode`` and ``cocode`` for vector x. Return 0 if we 
     # detect that is not of type 4. If ``omega`` is odd then ``gcode`` 
     # has to be corrected by a term ``Omega``. At the end of the
-    # switch statemnt, ``gcode`` might not correspond to a Golay
+    # switch statement, ``gcode`` might not correspond to a Golay
     # code vector; this means that x is not of type 4. If the scalar 
     # product of the result and ``Omega`` is one then we add a 
     # multiple of ``Omega`` to make that scalar product even.
@@ -379,7 +379,7 @@ I_NUMV3 = 3.0**(-24)
 # such a weight with low probability.
 # Let P be a dictionary that maps y the probability that a random 
 # vector v in the Leech lattice mod 3 has type 4 and that 
-# DICT_P[weight(v)] is equal to y. Let P[0] be the probablity that
+# DICT_P[weight(v)] is equal to y. Let P[0] be the probability that
 # such a random vector y is not of type 4.
 DICT_P = defaultdict(int)
 P = defaultdict(float)
@@ -475,7 +475,6 @@ def test_chisq_type4(n = 50000, verbose = 1):
             print("Chisq = %.3f, p = %.4f" % (chisq, p))
         if p >= p_min: return
     raise ValueError("Chisquare test failed") 
-
 
 
 

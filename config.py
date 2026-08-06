@@ -1,4 +1,4 @@
-"""Configutation for development"""
+"""Configuration for development"""
 
 import sys
 import os
@@ -38,10 +38,9 @@ EXTRA_COMPILE_ARGS.update({
 ###############################################################################
 # Extra link arguments for .c files to be used in setup.py
 EXTRA_LINK_ARGS = defaultdict(list)
-# Similiar to updating EXTRA_COMPILE_ARGS, we may update 
+# Similar to updating EXTRA_COMPILE_ARGS, we may update 
 # the EXTRA_LINK_ARGS dictionary with a list of pairs
 #     compiler : <list of options> .
-
 
 
 

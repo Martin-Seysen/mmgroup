@@ -431,7 +431,7 @@ r"""The C code generator generates code from a source file automatically.
     -----------------
 
     In versions up to 0.4 string formatting operator was ``{xxx}``
-    instead of ``%{xxx}``. This had the unpleasent effect that
+    instead of ``%{xxx}``. This had the unpleasant effect that
     valid C expressions have a different meaning in the input and
     and the output of the code generation process. This situation
     became unbearable after intoducing doxygen for documentation
@@ -439,4 +439,3 @@ r"""The C code generator generates code from a source file automatically.
     be coded in a reasonable way the old version.
 
 """
-

@@ -158,7 +158,7 @@ function ``xsp2co1_conv_conjugate_basis``  on an element
 ``x`` of \f$Q_{x0}\f$ (in Leech lattice encoding). It
 returns the converted element in in Leech lattice encoding.
 
-Note the remark about this function in the decription above.
+Note the remark about this function in the description above.
 */
 static inline uint32_t conv_pauli_vector_xspecial(uint32_t x)
 {  
@@ -299,7 +299,7 @@ determined by ortohonality of \f$g\f$.
 
 The function returns garbage if the input conditions for the 
 \f$x_g, v_0, w_0\f$ are not satisfied. It returns a negative
-value if two adjacent vectors \f$v_0\f$ are orthognal or
+value if two adjacent vectors \f$v_0\f$ are orthogonal or
 not short.
 */
 // %%EXPORT p
@@ -389,7 +389,7 @@ int32_t xsp2co1_elem_to_qs_i(uint64_t *elem, qstate12_type *pqs)
 @brief Simplified version of function ``xsp2co1_qs_to_elem_i``.
 
 In contrast to function ``xsp2co1_qs_to_elem_i``, the component
-\f$x_g\f$ in the result \f$x_g^{-1}\f$ constrcuted by that 
+\f$x_g\f$ in the result \f$x_g^{-1}\f$ constructed by that 
 function is not reduced.
 
 Caution:
@@ -550,7 +550,7 @@ void xsp2co1_copy_elem(uint64_t *elem1, uint64_t *elem2)
 
 
 /*************************************************************************
-*** Map element of G_{x0} to transformation of the Leech latice mod 2
+*** Map element of G_{x0} to transformation of the Leech lattice mod 2
 *************************************************************************/
 
 
@@ -645,7 +645,7 @@ int64_t xsp2co1_map_short3(qstate12_type *pqs, uint64_t src1,  uint64_t dest1, u
    \f$g_1 \cdot g_2 \f$ and stores the result in the array 
    ``elem3`` in **G_x0 representation**.
    
-   Any kind of overlapping beween the arrays ``elem1``, ``elem2``,
+   Any kind of overlapping between the arrays ``elem1``, ``elem2``,
    and ``elem3``  is allowed.  
 */
 // %%EXPORT px
@@ -680,7 +680,7 @@ int32_t xsp2co1_mul_elem(uint64_t *elem1, uint64_t *elem2, uint64_t *elem3)
    \f$g_1^{-1}\f$ and stores the result in the array 
    ``elem2`` in **G_x0 representation**.
    
-   Any kind of overlapping beween the arrays ``elem1`` and
+   Any kind of overlapping between the arrays ``elem1`` and
    ``elem2``  is allowed.  
 */
 // %%EXPORT px
@@ -714,7 +714,7 @@ int32_t xsp2co1_inv_elem(uint64_t *elem1, uint64_t *elem2)
    \f$g_2^{-1} \cdot g_1 \cdot g_2 \f$ and stores the result in 
    the array ``elem3`` in **G_x0 representation**.
    
-   Any kind of overlapping beween the arrays ``elem1``, ``elem2``,
+   Any kind of overlapping between the arrays ``elem1``, ``elem2``,
    and ``elem3``  is allowed.  
 */
 // %%EXPORT px
@@ -814,7 +814,7 @@ int32_t xsp2co1_xspecial_conjugate(uint64_t *elem, uint32_t n, uint64_t *ax, uin
 
 Let  \f$g \in G_{x0}\f$ be stored in the array ``elem``
 in **G_x0 representation**, and let \f$\Omega\f$ be the standard frame
-in the Leech latice. The function returns \f$g^{-1} \Omega g\f$
+in the Leech lattice. The function returns \f$g^{-1} \Omega g\f$
 in **Leech lattice encoding**, ignoring the sign of the result.
 */
 // %%EXPORT px
@@ -1103,7 +1103,7 @@ Essentially, the array ``aut`` obtained by function
 ``mat24_perm_to_autpl`` already encodes  \f$x_\pi\f$ as
 a monomial matrix acting on the basis vectors \f$(d')\f$ of
 the representation \f$4906_x\f$ of \f$G(4906_x)\f$.
-So we may use fucntion ``qstate12_monomial_column_matrix``
+So we may use function ``qstate12_monomial_column_matrix``
 to convert that monomial matrix to a quadratic state matrix
 in that basis. Then we use function 
 ``xsp2co1_conv_conjugate_basis`` from that basis to the
@@ -1246,7 +1246,7 @@ Generator \f$\xi\f$ is constructed as a product
 as in [Sey20], section 9.4.
 
 The python function ``mmgroup.tests.test_clifford.test_xs1_conjugate``
-checks the correctness of these implmentations of the generators 
+checks the correctness of these implementations of the generators 
 \f$\xi\f$ and \f$\xi^2\f$.
 */
 static inline
@@ -1566,7 +1566,5 @@ int32_t xsp2co1_set_elem_word_scan(uint64_t *elem, uint32_t *a, uint32_t n, uint
 #ifdef __cplusplus
 }
 #endif
-
-
 
 

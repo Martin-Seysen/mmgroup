@@ -90,7 +90,7 @@ def test_subdodecad(gc = mat24, verbose = 0):
         try:
             res = gc.cocode_as_subdodecad(c, d, i)
         except ValueError:
-            err = "Function cocode_as_subdodecad has rturned an error"
+            err = "Function cocode_as_subdodecad has returned an error"
             ok = False
         if ok:
             c_res = gc.vect_to_cocode(res) 

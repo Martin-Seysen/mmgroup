@@ -1,4 +1,4 @@
-r"""Inplementation of functions for general groups
+r"""Implementation of functions for general groups
 
 Here we implement classes and function for module 
 ``mmgroup.general``
@@ -127,7 +127,7 @@ class Orbit_Lin2:
     action of :math:`G`, and for finding an element of :math:`G` that
     maps an element of :math:`V` to a given element in its orbit.
 
-    After setting all generators, and before retriving any information
+    After setting all generators, and before retrieving any information
     about orbits, a set of Schreier vectors is computed (and stored
     inside an instance of this class) as described in :cite:`HE05`,
     Section 4.1.
@@ -261,7 +261,7 @@ class Orbit_Lin2:
         integers of equal length. Array ``reps`` stores an ordered list
         of representatives of the orbits on the vector space under the
         action of the group. These represetatives are vectors encoded as
-        integers as decribed in the constructor of of this class. Array
+        integers as described in the constructor of of this class. Array
         ``sizes`` stores the sizes of these orbits. Both arrays have
         length ``self.n_orbits()``.
         """
@@ -276,7 +276,7 @@ class Orbit_Lin2:
         Given a vector ``v`` in the vector space, the function returns
         the representative of the orbit of ``v`` under the the action
         of the group. Vector ``v`` and the returned representative are
-        encoded as integers as encoded as decribed in the constructor
+        encoded as integers as encoded as described in the constructor
         of this class.
         """
         return chk(gen_ufind_lin2_rep_v(self.a, v))
@@ -337,7 +337,7 @@ class Orbit_Lin2:
     def set_rand_parameters(self, *args, **kwds):
         r"""Set parameters for random generator for the group
 
-        These parameters are passed to the constuctor of class
+        These parameters are passed to the constructor of class
         ``Random_Subgroup``, for constructing random elements of the
         group  :math:`G` given by this instance.
 
@@ -423,9 +423,9 @@ class Orbit_Lin2:
         of the list. Then ``H[-1]`` stabilizes all vectors of the
         representation of ``G`` pointwise; and we put ``v[-1] = 0``
 
-        Parameter ``v_list`` is a list of perferred candidates
+        Parameter ``v_list`` is a list of preferred candidates
         used as vectors ``v[i]``. If no suitable candidate is in
-        that list then we select an arbitary candidate ``v[i]``.
+        that list then we select an arbitrary candidate ``v[i]``.
         If ``max_descent`` = True (default) then we select a
         candidate in a largest orbit; otherwise we select a
         candidate in a smallest orbit.
@@ -553,7 +553,7 @@ class Orbit_Elem2:
     homomorphism :math:`\rho`. A function ``map`` mapping a generator
     :math:`g` of the group :math:`G` to the element :math:`\rho(g)` of
     :math:`V` must be given in the constructor for  this class.
-    Elements of :math:`V` are implemented as unsigend 32-bit integers.
+    Elements of :math:`V` are implemented as unsigned 32-bit integers.
     Here an integer :math:`v` stands for a bit vector, where the bit
     of valence :math:`2^i` in the binary representation of :math:`v`
     is bit :math:`i` of the bit vector.
@@ -632,7 +632,7 @@ class Orbit_Elem2:
     def set_rand_parameters(self, *args, **kwds):
         r"""Set parameters for random generator for the group
 
-        These parameters are passed to the constuctor of class
+        These parameters are passed to the constructor of class
         ``Random_Subgroup``, for constructing random elements of the
         group  :math:`G` given by this instance.
 
@@ -682,7 +682,7 @@ class Orbit_Elem2:
         are given by parameter ``fields``, which is a list of length
         :math:`k` of pairs of integers :math:`(m,n), m \leq n`. An
         entry :math:`(m,n)` of parameter ``fields`` describes the
-        subgroup :math:`V(m,n)` of :math:`V` contaning all bit vectors
+        subgroup :math:`V(m,n)` of :math:`V` containing all bit vectors
         :math:`b`, where at most the bits with index :math:`\geq m` and
         :math:`<n` are set. This way the list ``fields`` describes a
         list :math:`V_0.V_1. \,\ldots \, .V_{k-1}` of subgroups of
@@ -719,7 +719,7 @@ class Random_Subgroup:
     The constructor takes a set ``generators`` of generators of the
     group. Parameters ``r`` and ``n`` specify the number of group
     elements kept internally and the number of initialization
-    steps, repectively, as in Algorithm  ``PrInitialize``.
+    steps, respectively, as in Algorithm  ``PrInitialize``.
 
     According :cite:`HE05`, ``r`` should be greater than 10, and
     ``n`` should be much greater than 50.

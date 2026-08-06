@@ -95,13 +95,13 @@ extern "C" {
 /// @cond DO_NOT_DOCUMENT 
 
 
-// Treshold for quicksort. An array with less than MIN_QS entries
+// Threshold for quicksort. An array with less than MIN_QS entries
 // is sorted with insertsort.
-#define MIN_QS 32 //  Treshold for quicksort
+#define MIN_QS 32 //  Threshold for quicksort
 
-// Treshold for quicksort. For an array with at least MIN_MEDIAN9
-// entries the pivoting element is coputed as the median of 9 samples.
-#define MIN_MEDIAN9 128  // Treshold for better median detection
+// Threshold for quicksort. For an array with at least MIN_MEDIAN9
+// entries the pivoting element is computed as the median of 9 samples.
+#define MIN_MEDIAN9 128  // Threshold for better median detection
 
 
 
@@ -112,7 +112,7 @@ extern "C" {
 // Exchange entry a[i] with a[j] if a[i] > a[j] using marco xchg
 #define swap(a, i, j) if (a[i] > a[j])  {xchg(a, i, j);}
 
-// Exchange a[i], a[j], a[k], such tha ta[i] <= a[j] <= a[k] holds
+// Exchange a[i], a[j], a[k], such that ta[i] <= a[j] <= a[k] holds
 #define swap3(a, i, j, k) swap(a, i, j) swap(a, j, k) swap(a, i, j)
 
 
@@ -225,7 +225,7 @@ static inline void adjust_heap%{N}(uint%{N}_t *a, uint32_t n, uint_fast32_t i)
 
     Here ``a`` is an array of ``n`` integers of type ``uint%{N}_t``.
     The array is sorted in place. The function is exported for 
-    debuging. You should use function ``bitvector%{N}_sort``.
+    debugging. You should use function ``bitvector%{N}_sort``.
 */
 // %%EXPORT px
 void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
@@ -321,13 +321,13 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
     }  
 
     // Create a stack. each entry of the stack is a triple
-    // (l, r, depth). Such an entry desribes the task to 
+    // (l, r, depth). Such an entry describes the task to 
     // sort the entries of the array ``a[l],...,a[r]``.
     // Parameter ``depth`` is the recursion depth, which 
     // is initialized roughly with ``d0 = 2 * lb(n / MIN_QS).
     // Initially, we put  ``(0, n-q, d0)`` on the stack.
     // At each recursion of quicksort we pop a task from the
-    // stack and we partion the interval ``a[l],...,a[r]``
+    // stack and we partition the interval ``a[l],...,a[r]``
     // into two parts. The we put the tasks for sorting
     // these partitions on the stack, with recursion level
     // depth decreased by one. If that depth reaches 0 then
@@ -354,7 +354,7 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
             #endif
         } else if (sp[2]) {
             // Use quicksort until max recursion depth reached. We
-            // compute the partiton as in the English Wikipedia article.
+            // compute the partition as in the English Wikipedia article.
 
             #ifdef BITVECTOR_SORT_STAT
             _bitvector_sort_stat[0] += r - l;
@@ -465,6 +465,4 @@ uint32_t bitvector%{N}_bsearch(uint%{N}_t *a, uint32_t n, uint%{N}_t v)
 #ifdef __cplusplus
 }
 #endif
-
-
 

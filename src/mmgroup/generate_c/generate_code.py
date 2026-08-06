@@ -69,7 +69,7 @@ def generate_code_parser():
              "extension '.c' a '.c' file is generated from a file with "
              "the same name and extension '.ske'. A SOURCE with "
              "extension '.h' is copied into the common header file. "
-             "Each SOURCE is seached in the path set by parameter "
+             "Each SOURCE is searched in the path set by parameter "
              "'--source-path'. Output is written to the directory set "
              "by parameter '--out-dir'."
     )
@@ -519,7 +519,7 @@ def load_tables(tg, tables, params, directives=True):
     Argument ``params`` should be a mapping from parameter
     names to values.
 
-    Then for each table class the parameters occuring in ``params``
+    Then for each table class the parameters occurring in ``params``
     are set to the values given by the mapping ``params``; and the 
     dictionary mapping these parameters to their values is passed 
     to the constructor of class ``table_class`` as keyword arguments.
@@ -564,7 +564,7 @@ m_split_kwd =  re.compile(r"\s*//\s*\%\%INCLUDE_HEADERS")
 class StringOutputFile():
     """Simulate a text stream open for output.
 
-    Suports method ``write`` for text streams only, writing
+    Supports method ``write`` for text streams only, writing
     data to a internal buffer.
 
     After writing, the stream can be read by standard iterator
@@ -922,7 +922,7 @@ def set_shared_libraries(parsed_args):
 
     The function returns ``True`` if it has changed the environment.
     If this is the case then the calling function should launch a
-    subprocess for further actions, since changing the enviroment
+    subprocess for further actions, since changing the environment
     affects subprocesses of the calling process only.
     """
     ld_args = getattr(parsed_args, 'library_path', [])
@@ -968,4 +968,3 @@ def parse_set_shared_libraries(args):
     path_parser.add_argument('--no-library-path', action = 'store_true')
     path_args = path_parser.parse_known_args(args)
     return set_shared_libraries(path_args[0])
-

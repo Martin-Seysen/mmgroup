@@ -3,7 +3,7 @@ r"""This module implements Norton's generators of the Monster.
 Norton :cite:`Nor02` has given a presentation of the Monster group
 that greatly simplifies a mapping from the *projecive plane*
 presentation of the Monster to the representation of the Monster
-in :cite:`Gri82` and :cite:`Con85`. Our implemention of the 
+in :cite:`Gri82` and :cite:`Con85`. Our implementation of the 
 Monster is based on the representation in :cite:`Con85`. So we may
 use the presentation in :cite:`Nor02` to construct a homomorphism
 from the  *projecive plane* representation of the Monster into our
@@ -95,7 +95,7 @@ def compute_P0(x):
 
     This defines a mapping from the pairs :math:`P_0 P_i` to
     :math:`Q_{x0}` up to sign. Here we simple map all these pairs
-    to elements of :math:`Q_{x0}` that by definition are considerd 
+    to elements of :math:`Q_{x0}` that by definition are considered 
     as *positive* in our construction of :math:`Q_{x0}`.    
     """
     if x == 0: return XLeech2()
@@ -181,7 +181,7 @@ def compute_StarP3(i, check = False):
 
     This defines a mapping from the stars :math:`P_i^*` to
     :math:`Q_{x0}` up to sign. Here we simple map all these 'stars'
-    to elements of :math:`Q_{x0}` that by definition are considerd 
+    to elements of :math:`Q_{x0}` that by definition are considered 
     as *positive* in our construction of :math:`Q_{x0}` .    
     """
     if i == 0:
@@ -215,7 +215,7 @@ def StarP3(x):
     'stars'`. It function returns that image as an instance of 
     class ``XLeech2``.
 
-    An integer 'x' is interpreted as a list of lenght 1.
+    An integer 'x' is interpreted as a list of length 1.
     """
     if precomputation_pending:
         precompute_all()
@@ -264,7 +264,7 @@ def MM_from_perm(perm, verbose = 0):
 
     The function maps automorphsm ``a`` into the subgroup ``G_x0``
     of the Monster. Therefore it uses the operation of ``a`` on the
-    points and stars for constructing the iamge ``g`` of ``a`` in 
+    points and stars for constructing the image ``g`` of ``a`` in 
     ``G_x0``.  Here ``a`` operates (by conjugation) on the 'points' 
     and 'stars', which are elements of the extraspecial subgroup 
     ``Q_x0`` of structure :math:`2^{1+24}` of ``G_x0``.
@@ -341,10 +341,10 @@ class Precomputed_AutP3:
     ``P3`` into the subgroup :math:`G_{x0}` of 
     structure :math:`2^{1+24}.\mabox{Co}_1` of the Monster. 
 
-    Method ``as_MM`` of ths class computes this mapping. Some of
+    Method ``as_MM`` of this class computes this mapping. Some of
     the images of this mapping will be remembered for reuse.
     """
-    # Store tranversal of a subgroup, see method ``_split_transveral``
+    # Store transversal of a subgroup, see method ``_split_transveral``
     MAX_IND = 2*13*13  # length of the following array ``transversal``
     transversal = np.zeros((MAX_IND, 27), dtype = np.uint8)
     # Enter the neutral element into cls.transversal[1]
@@ -358,7 +358,7 @@ class Precomputed_AutP3:
     }
     bad_orders = {}    # dict of 'bad' orders where elements cannot
                        # be distinguished from their negatives
-    # Record also some statistices
+    # Record also some statistics
     n_splits = 0       # No of calls to method _split_into_good_orders
     n_split_trials = 0 # No of trials in method _split_into_good_orders
 
@@ -376,7 +376,7 @@ class Precomputed_AutP3:
 
     @classmethod
     def _split_transveral(cls, g):
-        r"""Split inctance ``g`` of class ``AutP3`` into two factors
+        r"""Split instance ``g`` of class ``AutP3`` into two factors
 
         The method splits the element ``g`` of ``AutP3`` into a product
         ``f1 * f2`` where ``f1`` fixes the points 0 and 1, and ``f2`` 
@@ -400,7 +400,7 @@ class Precomputed_AutP3:
         the points ``i`` and ``j``. 
  
         For ``0 <= i, j < 13`` entry ``169+13*i+j`` stores the element
-        fixing ponts ``0`` and ``1`` that maps the points ``2`` 
+        fixing points ``0`` and ``1`` that maps the points ``2`` 
         and ``5`` to the points ``i`` and ``j``. 
 
         Each entry ``e`` of ``cls.transversal`` is an array of 27 
@@ -526,7 +526,7 @@ class Precomputed_AutP3:
         r"""Store an element of AutP3 as an element of the Monster group
     
         Given the integer ``t``, let  ``h``  be the instance 
-        ``h = AutP3('p', cls.tranversal[t, :13])   of class ``AutP3``
+        ``h = AutP3('p', cls.transversal[t, :13])   of class ``AutP3``
         The function maps the instance ``h`` to an  element :math:`g` 
         of the  subgroup :math:`G_{x0} = 2^{1.24}.\mbox{Co}_1` of the 
         Monster.  It returns a numpy array ``a`` such that the result 
@@ -610,7 +610,7 @@ def Norton_generators_stuv(check = True):
     if precomputation_pending:
         precompute_all()
     MM1 = MM()
-    # define genertors s, t, u
+    # define generators s, t, u
     s_AutP3 = AutP3(zip([1,2,5,9,8,7], [2,5,9,8,7,1]))
     s = AutP3_MM(s_AutP3)
     t_AutP3 = AutP3(zip([0,12,3,1,2,4], [12,3,0,2,4,1]))
@@ -684,6 +684,4 @@ def Norton_generators(check = False):
 
     NORTON_GENERATORS = s, t, u, v, x
     return NORTON_GENERATORS
-
-
 

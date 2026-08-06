@@ -187,7 +187,7 @@ class Mm(AbstractMMGroupWord):
 
 @singleton
 class MmGroup(AbstractMMGroup):
-    r"""An instance of this class cintains the opration for class Mm
+    r"""An instance of this class cintains the operation for class Mm
     """
     word_type = Mm
     group_name = "Mm"

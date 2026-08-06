@@ -182,7 +182,7 @@ has odd parity; fix it if i has even parity."""
     def load_vector_mul_diagonal(self, array_name, mask):
         """Load a vector v form an (external) array A of integers.
 
-        Here 'mask' is an integer of type uint_mmv_t wich must be
+        Here 'mask' is an integer of type uint_mmv_t which must be
         0 or (uint_mmv_t)(-1). If mask == -1 then the vector is 
         multiplied with the dagonal matrix D described in method
         make_diagonal_mask().
@@ -204,7 +204,7 @@ with diagonal matrix if %s == -1."""
     def store_vector_mul_diagonal(self, mask, array_name):
         """Store a vector v to an (external) array A of integers.
 
-        Here 'mask' is an integer of type uint_mmv_t wich must be
+        Here 'mask' is an integer of type uint_mmv_t which must be
         0 or (uint_mmv_t)(-1). If mask == -1 then the vector is 
         multiplied with the diagonal matrix D described in method
         make_diagonal_mask().
@@ -314,14 +314,14 @@ class HadamardOpT3(HadamardMatrixCode):
     def load_vector_mul_diagonal(self, array_name, mask):
         """Load vector v from tags A, B, C of rep 196884x.
 
-        Here 'mask' is an integer of type uint_mmv_t wich must be
+        Here 'mask' is an integer of type uint_mmv_t which must be
         0 or (uint_mmv_t)(-1). If mask == -1 then the vector v is 
         multiplied with the dagonal matrix D described in method
         make_diagonal_mask().
 
         'array_name' must a variable of type uint_mmv_t 
         referring to array A as in method load_vector_direct(). 
-        More specifically, A contains a set of componets of
+        More specifically, A contains a set of components of
         a vector for the rep 196884x with tag A.
         The function also loads the corresponding sets of 
         components of the vector with tags B and C.
@@ -344,14 +344,14 @@ Negate v[2] if %s == -1."""
     def store_vector_mul_diagonal(self, mask, array_name):
         """Store vector v to tags A, B, C of rep 196884x.
 
-        Here 'mask' is an integer of type uint_mmv_t wich must be
+        Here 'mask' is an integer of type uint_mmv_t which must be
         0 or (uint_mmv_t)(-1). If mask == -1 then the vector v is 
         multiplied with the dagonal matrix D described in method
         make_diagonal_mask().
 
         'array_name' must a variable of type uint_mmv_t 
         referring to array A as in method load_vector_direct(). 
-        More specifically, A contains a set of componets of
+        More specifically, A contains a set of components of
         a vector for the rep 196884x with tag A.
         The function also loads the corresponding sets of 
         components of the vector with tags B and C.
@@ -420,7 +420,7 @@ class HadamardOpT3A(HadamardMatrixCode):
     """Apply triality element to tags A, B, C
 
     This is a simplified version of class HadamardOpT3. It
-    computes the A part of the vector (multipled by a triality
+    computes the A part of the vector (multiplied by a triality
     element) only.
 
     Yet to be documented!!!!
@@ -481,14 +481,14 @@ class HadamardOpT3A(HadamardMatrixCode):
     def load_vector_mul_diagonal(self, array_name, mask):
         """Load vector v from tags A, B, C of rep 196884x.
 
-        Here 'mask' is an integer of type uint_mmv_t wich must be
+        Here 'mask' is an integer of type uint_mmv_t which must be
         0 or (uint_mmv_t)(-1). If mask == -1 then the vector v is 
         multiplied with the dagonal matrix D described in method
         make_diagonal_mask().
 
         'array_name' must a variable of type uint_mmv_t 
         referring to array A as in method load_vector_direct(). 
-        More specifically, A contains a set of componets of
+        More specifically, A contains a set of components of
         a vector for the rep 196884x with tag A.
         The function also loads the corresponding sets of 
         components of the vector with tags B and C.
@@ -512,7 +512,7 @@ Negate v[2] if %s == -1."""
 
         'array_name' must a variable of type uint_mmv_t 
         referring to array A as in method load_vector_direct(). 
-        More specifically, A contains a set of componets of
+        More specifically, A contains a set of components of
         a vector for the rep 196884x with tag A.
         The function also loads the corresponding sets of 
         components of the vector with tags B and C.

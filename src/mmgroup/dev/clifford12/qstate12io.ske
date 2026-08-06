@@ -155,7 +155,7 @@ typedef struct {
 /**
   @brief Initialize structure ``qstate12_support_type`` for reading a state
 
-  The function initializes a stucture of type ``qstate12_support_type``
+  The function initializes a structure of type ``qstate12_support_type``
   from a state of type ``pqs``. Then the nonzero matrix entries of
   that state may be obtained by subsequent calls to 
   function ``qstate12_support_next``.
@@ -348,7 +348,7 @@ int32_t qstate12_support_next(qstate12_support_type *psup)
 
   Then this function checks the data in the structure for certain
   properties (possibly modifying the data), depending of the  bits of
-  parameter ``flags`` as follws:
+  parameter ``flags`` as follows:
 
   Bit 0 set: Return an error if not all entries of ``qs`` are real.
 
@@ -1143,4 +1143,3 @@ int32_t qstate12_mul_matrix_mod3(qstate12_type *pqs, uint64_t *v, uint64_t w)
 #ifdef __cplusplus
 }
 #endif
-

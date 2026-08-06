@@ -278,7 +278,7 @@ mul_Zt = partial(mul_XYZt, 2)
 # (sign, (tag, i1, i2)), with (-1)**sign the sign of the monomial
 # operation. The dictionary comprises all unit vectors for tags
 # B, C and the unit vectors with tag T corresponding to even octads.
-# These are the firt 375 octads with tag T 
+# These are the first 375 octads with tag T 
 dict_BCT = [None, {}, {}]
 
 
@@ -864,4 +864,3 @@ SparseMmVector.space = StdSparseMmSpace
 
 def SparseMmV(p):
     return partial(SparseMmVector, p)
-

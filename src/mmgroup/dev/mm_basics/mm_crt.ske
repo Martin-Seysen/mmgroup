@@ -49,7 +49,7 @@ static const uint32_t TAB_255[256] = {
 // of the output vector is computed in case 0 <= i1 < 24 only.
 // Entries 32 * i0 + i1 with 24 <= i1 < 32 are set to zero.
 // The function returns min(24, v2(p_out)). Here v2(p_out) is
-// the minmum positions of the least significant bits of all
+// the minimum positions of the least significant bits of all
 // entries of the vector p_out. 
 //
 // Function mm_crt_v2_24() returns the same value as function 
@@ -177,7 +177,7 @@ uint32_t mm_crt_combine(uint_mmv_t *p7, uint_mmv_t *p31, uint_mmv_t *p127, uint_
 // the smallest possible absolute value modulo 7*31*127*255. Thus 
 // an entry of p_out may be negative.
 // The function returns min(24, v2(p_out)). Here v2(p_out) is the
-// minmum positions of the least significant bits of all entries 
+// minimum positions of the least significant bits of all entries 
 // of the vector p_out.   
 {
     uint_fast32_t res = 0;
@@ -212,7 +212,7 @@ uint32_t mm_crt_combine_bytes(uint8_t *p7, uint8_t *p31, uint8_t *p127, uint8_t 
 // the smallest possible absolute value modulo 7*31*127*255. Thus 
 // an entry of p_out may be negative.
 // The function returns min(24, v2(p_out)). Here v2(p_out) is the
-// minmum positions of the least significant bits of all entries 
+// minimum positions of the least significant bits of all entries 
 // of the vector p_out.   
 {
     uint_fast32_t i, a, res = 0x1000000;

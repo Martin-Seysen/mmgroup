@@ -43,14 +43,14 @@ We support a parser that reckognizes as string of shape
 
     tag_data1_data2[_ ...]
 
-as an atom. Such a parser can distinguish between atoms, idenifiers
+as an atom. Such a parser can distinguish between atoms, identifiers
 and numbers, where numbers are nonnegative integers.
 
-The grammar for distingushing between atoms, identifiers and numbers 
+The grammar for distinguishing between atoms, identifiers and numbers 
 in Extended Backus-Naur form is as follows:
 
 
-literal           =  atom | identifer | number ;
+literal           =  atom | identifier | number ;
 atom              =  tag, "_" , index, {"_",  index} ;
 identifier        =  (letter, (letter | digit), {alphanum}) ; 
 number            =  decimal number | hex number ; 
@@ -67,7 +67,7 @@ letter            =  "A" ... "Z" | "a" ... "z" ;
 digit             =  "0" ... "9" ;
 
 It turns out that the standard python parser reckognizes both,
-atoms and identifiers as python identifers. 
+atoms and identifiers as python identifiers. 
 
 Given a specific algebra, we may evaluate any python expression 
 (using e.g. the python eval function) in such a way that all
@@ -87,7 +87,7 @@ instance of a subclass of class AbstractXxx.
 Calling a specific algebra with a single argument converts this
 argument to an element of the algebra, as usual in python. If
 the specific algebra is an atomic algebra, that parameter may be 
-a python expression coded as a string. The idenifiers in that 
+a python expression coded as a string. The identifiers in that 
 string, which have the shape of an atom according to the grammar
 given above, are interpreted as atoms. This provides a simple
 mechanism for generating atoms of an algebra.
@@ -112,14 +112,14 @@ class AtomDict(object):
     - a dictionary 'identifiers'.
 
     For an instance a of this class and a string s, a[s]
-    parses the string a according to the grammer given above and
+    parses the string a according to the grammar given above and
     returns one of the following objects:
 
     - an integer
     - the result of a function f(tag, data1, data2,...)
     - an object referred by a valid python identifier.
 
-    If s is an integer recognized by the grammer given above
+    If s is an integer recognized by the grammar given above
     then a[s] returns that integer.
 
     If s is a string of shape  tag_data1_data2[_ ...] as described
@@ -164,7 +164,7 @@ class AtomDict(object):
             try:
                 return self.identifiers[s]
             except KeyError:
-                raise KeyError("Identifer %s not found in atom literal" %s)
+                raise KeyError("Identifier %s not found in atom literal" %s)
         elif self.match_number.fullmatch(s):
             return eval(s)
         raise ValueError("Syntax error in atom literal")
@@ -185,7 +185,7 @@ class AtomDict(object):
 #######################################################################
 
 
-# For background on module ast (abstact syntax tree) see e.g.:
+# For background on module ast (abstract syntax tree) see e.g.:
 # https://greentreesnakes.readthedocs.io/en/latest/tofrom.html
 
 
@@ -228,9 +228,9 @@ with warnings.catch_warnings():
 
 
 class EvalNodeVisitor(ast.NodeVisitor):
-    """Node visitor for Abstract Syntax Trees creeated by module  .ast 
+    """Node visitor for Abstract Syntax Trees created by module  .ast 
 
-    This vistor checks for all nodes of an AST whether they are secure 
+    This visitor checks for all nodes of an AST whether they are secure 
     for processing with function eval(). Method visit() raises TypeError
     if an insecure node id found in the AST.
 
@@ -243,7 +243,7 @@ class EvalNodeVisitor(ast.NodeVisitor):
     a discussion about the security of eval() see:
     https://nedbatchelder.com/blog/201206/eval_really_is_dangerous.html
 
-    Creating tuples in backets or dictionaries in curly brackets is also
+    Creating tuples in brackets or dictionaries in curly brackets is also
     illegal because the syntax gets messy when used in the code generator.
     """
     def visit(self, Node):
@@ -266,7 +266,7 @@ class EvalNodeVisitor(ast.NodeVisitor):
 def eval_atom_expression(s, atom_dict):
     """An attempt to create a secure version of function eval()
 
-    See function EvalNodeVisitor() for allowd python contructs.
+    See function EvalNodeVisitor() for allowed python constructs.
     """
     try:
         a_tree = ast.parse(s.strip(), mode="eval")
@@ -298,7 +298,7 @@ class TaggedAtom(object):
     operator_char = "*"
       
     def __init__(self, tag, *data):
-        """Construct an atom from a tag and a seqence of od data. 
+        """Construct an atom from a tag and a sequence of od data. 
 
         'tag' should be a single alphabetical character. All
         data should be nonnegative integers or alphanumeric

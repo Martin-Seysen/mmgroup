@@ -20,7 +20,7 @@ The default seed is (hopefully) thread save, and it is
 initialized from volatile sources such as the time, the process
 and the thread id, etc.
 
-A seed created by function ``rand_make_seed`` is initalized
+A seed created by function ``rand_make_seed`` is initialized
 from a fixed source (which is a 64-bit integer). 
 
 Each seed may be used by one thread only. In python a seed is
@@ -45,13 +45,13 @@ module ``mmgroup.generators``.
     random generator. The user must not modify that seed!
 
 
-.. py:function:: .rand_make_seed(valu )
+.. py:function:: .rand_make_seed(value )
     :noindex:
 
     Create a deterministic seed object for the random generator
 
     The function creates a seed object and returns that object.
-    It is intialized with parameter ``value``, which must be
+    It is initialized with parameter ``value``, which must be
     an unsigned 64-bit integer.
  
 

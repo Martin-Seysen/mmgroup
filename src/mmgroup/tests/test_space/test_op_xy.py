@@ -42,7 +42,7 @@ def as_suboctad(v1, d):
 def op_xy(v, eps, e, f):
     """Multiply unit vector v with group element
 
-    This function multplies a (multiple of a) unit vector v
+    This function multiplies a (multiple of a) unit vector v
     with the group element
 
         g  =  d_<eps> * (x_<e>)**(-1)  * (y_<f>)**(-1) .
@@ -194,7 +194,6 @@ def test_op_xy(verbose = 0):
     for v, eps, e, f in op_xy_testdata():
         one_test_op_xy(v, eps, e, f, verbose = verbose)
     print("passed")
-
 
 
 

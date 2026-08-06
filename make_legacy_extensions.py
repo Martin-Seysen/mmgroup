@@ -12,7 +12,7 @@ class MyArgumentParser(argparse.ArgumentParser):
 
 
 def generate_legacy_code_parser():
-    description = ("Generate python substitutes for legacy entensions"
+    description = ("Generate python substitutes for legacy extensions"
     )
 
     parser = MyArgumentParser(
@@ -22,7 +22,7 @@ def generate_legacy_code_parser():
     parser.add_argument('--out-dir', 
         metavar='OUT_DIR',
         action = 'store',
-        help="Generate python substitutes for legacy entensions"
+        help="Generate python substitutes for legacy extensions"
              "in directory OUT_DIR"
     )
     return parser
@@ -35,4 +35,3 @@ if __name__ == "__main__":
     parser = generate_legacy_code_parser()
     cmdline_args = parser.parse_args(sys.argv[1:])      
     make_all_legacy_scripts(cmdline_args.out_dir)
-

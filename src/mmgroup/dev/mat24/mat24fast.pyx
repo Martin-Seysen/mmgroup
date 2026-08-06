@@ -20,7 +20,7 @@ MAT24_ORDER =  244823040
 
 
 ###########################################################################
-# Detecting the endianess of the machine
+# Detecting the endianness of the machine
 ###########################################################################
 
 def check_endianess():
