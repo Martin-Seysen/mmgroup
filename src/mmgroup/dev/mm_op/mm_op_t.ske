@@ -19,7 +19,7 @@
  section **Description of the mmgroup.mm extension**
  in this document.
 
- We have \f$\tau^3 = 1\f$, and the opration of \f$\tau^e, e = 1,2\f$
+ We have \f$\tau^3 = 1\f$, and the operation of \f$\tau^e, e = 1,2\f$
  on \f$\rho\f$ is given in [Seysen19], section 8.1. The
  non-monomial part of the operation of \f$\tau^e\f$ can be decomposed
  into a product of monomial matrices and matrices containing
@@ -347,5 +347,4 @@ int32_t mm_op%{P}_t_ABC(uint_mmv_t *v,  uint32_t exp)
 //  %%GEN h
 /// @endcond 
 //  %%GEN c
-
 

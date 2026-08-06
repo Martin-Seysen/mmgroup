@@ -2,8 +2,8 @@
 
 Internal header file for files ``gen_ufind_lin2*.c``.
 
-This file is used in the mmgroup poject 'as is', without preprocessing
-by the code generator. The infomation stored in this file is not
+This file is used in the mmgroup project 'as is', without preprocessing
+by the code generator. The information stored in this file is not
 relevant for the public C interface of the mmgroup project, so we
 we do do export any documentation from this file.
 
@@ -20,7 +20,7 @@ internal structure of array ``a`` is documented in this headar file.
 
 
 /************************************************************************
-*  Stuctures for orbit arrays
+*  Structures for orbit arrays
 ************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT
@@ -117,7 +117,7 @@ Entries ``s.p_t`` and ``s.p_o`` in case ``s.status = LIN2_COMPRESSED``
   compressed array. An entry in that table stores the corresponding
   element of \f$V\f$ in bits 8,...,31. Bits 0,...,7 of that entry is
   the number ``k`` of a generator ``g`` of the group \f$G\f$; these
-  bits encode a Schreier vector as descibed above.
+  bits encode a Schreier vector as described above.
 
   Entry ``s.p_o`` contains a table of length ``2 * ps->n_orbits``,
   where ``ps->n_orbits`` is the the number of orbits of \f$G\f$
@@ -142,7 +142,7 @@ typedef struct {
    uint32_t *p_g;      // Pointer to list of generators of group in ``a``
 } lin2_type;
 
-#define LIN2_LEN_HEADER  6UL  // Length of header of structrue above
+#define LIN2_LEN_HEADER  6UL  // Length of header of structure above
 #define LIN2_MAX_STATUS  2UL  // Maximum good status
 #define LIN2_MAX_N      24UL  // Maximum dimension n of GF(2)^n
 #define LIN2_MAX_N_G   127UL  // Maximum No n_g of generators of group
@@ -184,7 +184,7 @@ uint32_t find_next_bit_set(uint64_t *bitmap, uint32_t start_index)
 
 
 /************************************************************************
-*  Auxiliary functions manipulating stuctures for orbit arrays
+*  Auxiliary functions manipulating structures for orbit arrays
 ************************************************************************/
 
 
@@ -459,7 +459,7 @@ Let ``S(l_t)`` be the set of integers ``i`` with ``0 <= i < l_t``,
 where ``l_t = 1 << dim``. Let a partition of ``S(l_T)`` into orbits
 be stored in the array ``table`` (of size ``l_t``) in the same way
 as in the description of the array referred by entry ``p_t`` of a
-structure of tye ``lin2_type``. Here we refer to the description of
+structure of type ``lin2_type``. Here we refer to the description of
 that structure in the header of this file in case of ``status == 2``.
 
 We store the partition of the set ``S(l_t)`` into orbits as a list of
@@ -477,7 +477,7 @@ of failure.
 
 This function is coded along the lines of
 function ``gen_ufind_partition`` in file ``gen_union_find.c``, which
-perfoms a similar task.
+performs a similar task.
 */
 static inline int32_t
 compute_partition(uint32_t *table, uint32_t dim, uint32_t *map, uint32_t l_ind)
@@ -594,5 +594,3 @@ cleanup:
 /// @endcond
 
 #endif // ifndef GEN_UFIND_LIN2_AUX_H
-
-

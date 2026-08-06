@@ -85,7 +85,7 @@ class Mat24(Mat24Tables):
     generator for generating C code containing the functionality
     of the  ``mmgroup.mat24`` extension. For details, see section 
     *How the code generator is used* in 
-    *The mmgroup guide for developpers*. 
+    *The mmgroup guide for developers*. 
     """
     ## Create tables for faster computetion
     MAT24_ORDER =  244823040 
@@ -533,7 +533,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
         representation), the function returns a Parker loop automorphism 
         m as a 12 x (12+13) matrix, i.e. in 'autpl' representation.
         m contains the 12 images of the basis vectors of the Parker loop
-        and a quadratic form for simplfying its operation on Pl.
+        and a quadratic form for simplifying its operation on Pl.
         """
         m = cls.perm_to_matrix(p1)
         for i in range(12):
@@ -568,7 +568,7 @@ Golay cocode vectors are to be understood modulo the Golay code.
 
         Here m1 is a Parker loop autmorphism (in autpl representation)
         and v1 is a cocde vector (in cocode representation).
-        The function returns the resluting cocode vector  v1 * m1.
+        The function returns the resulting cocode vector  v1 * m1.
         """
         v = v1
         t = v & 0x1000
@@ -619,4 +619,3 @@ class Tables(Mat24):
         self.tables["Mat24_doc_basis"] = Mat24.str_basis()
 
         
-

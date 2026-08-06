@@ -88,7 +88,7 @@ Special elements of the group :math:`Q_{x0}`
 We write :math:`\Omega` for the positive element of the Parker 
 loop such that :math:`\tilde{\Omega}` is the Golay code word
 :math:`(1,\ldots,1)` as in :cite:`Con85` and :cite:`Seysen20`.
-In this specifiction we also write :math:`\Omega` for the 
+In this specification we also write :math:`\Omega` for the 
 element :math:`x_{\Omega}` of :math:`Q_{x0}` and for the element 
 :math:`\tilde{x}_{\Omega}` of the Leech lattice modulo 2 if the 
 domain of :math:`\Omega` is clear from the context. Then
@@ -122,7 +122,7 @@ Computations in the Leech lattice modulo 3
 
 For the construction of the subgroup :math:`G_{x0}` of the monster
 we also require the automorphism group :math:`\mbox{Co}_0` of the
-**real** Leech lattice, as decribed in :cite:`Con85`. That group has 
+**real** Leech lattice, as described in :cite:`Con85`. That group has 
 a faithful representation as an automophism group of 
 :math:`\Lambda/3 \Lambda`, but not of :math:`\Lambda/2 \Lambda`. 
 Module ``gen_leech3.c`` provides functions for computing in the 
@@ -231,7 +231,7 @@ class GenXi(object):
 
     References
     ----------
-    see file refereces.txt
+    see file references.txt
     """
     tab_g_gray = numpy.zeros(64, dtype = numpy.uint8)
     tab_g_cocode = numpy.zeros(64, dtype = numpy.uint8)
@@ -340,7 +340,7 @@ class GenXi(object):
         """Convert short vector to Leech lattice encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
-        in Q_x are decribed in the header of this module. The function 
+        in Q_x are described in the header of this module. The function 
         returns the Leech lattice encoding of element x1 given in short
         vector encoding. 
 
@@ -397,7 +397,7 @@ class GenXi(object):
         """Convert Leech lattice to short vector encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
-        in Q_x are decribed in the header of this module. The function 
+        in Q_x are described in the header of this module. The function 
         returns the short vector encoding of element x1 given in Leech 
         lattice encoding. 
 
@@ -507,4 +507,3 @@ class GenXi(object):
             a[i >> 5] = sign
         table = (table & 0x7fff) % modulus
         return table, a
-

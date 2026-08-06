@@ -113,7 +113,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
 
     The constructor of this class works exactly as the constructor
     of class |MM|. Here all elements of the monster :math:`\mathbb{M}`
-    occuring in the constructor must lie in the subgroup :math:`G_{x0}`
+    occurring in the constructor must lie in the subgroup :math:`G_{x0}`
     of the monster. So in the constructor all tags are legal, except 
     for the tag ``'t'``. A instance of class  |MM| is accepted in the 
     constructor of this class and vice versa.
@@ -258,7 +258,7 @@ class Xsp2_Co1(AbstractMMGroupWord):
 
         Let ``v`` be an integer or a list of integers representing one
         or more elements of :math:`Q_{x0}`, as described in the
-        documenation of class ``XLeech2``. The function conjugates all
+        documentation of class ``XLeech2``. The function conjugates all
         these elements of :math:`Q_{x0}` with this element of
         :math:`G_{x0}` and returns the list of the elements, (or a
         single element, depending on the input). Here conjugated

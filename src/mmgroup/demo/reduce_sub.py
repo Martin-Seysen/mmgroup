@@ -131,7 +131,7 @@ def vect15_S(v, k):
     one-to-one correspondence with the shortest nonzero vectors of the
     Leech lattice, up to sign. The function returns the list of short
     Leech  lattice vectors such that the corresponding
-    co-ordinate of (part :math:`98280_x`  of) **v**  has absolute
+    coordinate of (part :math:`98280_x`  of) **v**  has absolute
     value **k** (modulo 15). 
 
     :return: List of short Leech lattice vectors as described above
@@ -330,7 +330,7 @@ def find_triality_element_for_axis(v, axis_orbits):
            raise ValueError
     
     The implementation used here is much faster, since it computes
-    fewer co-ordinates of the transformed axes. 
+    fewer coordinates of the transformed axes. 
     """
     # Implementation is technical in order to be fast
     assert isinstance(v, MmV15)

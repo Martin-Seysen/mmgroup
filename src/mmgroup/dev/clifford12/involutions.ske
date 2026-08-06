@@ -322,7 +322,7 @@ int32_t xsp2co1_involution_invariants(uint64_t *elem, uint64_t *invar)
         // (in the array ``data``) such that V[16],...V[23] spans
         // the orthogonal complement I_1 of \ker A_1. By
         // definition of function ``leech2_matrix_orthogonal`` 
-        // the vector v0 = V[0] is orthognal to (\ker A_1)^+, 
+        // the vector v0 = V[0] is orthogonal to (\ker A_1)^+, 
         // but not to vector \ker A_1. 
 
         // Thus v0 is in  (I_1)^+ but not in I_1.
@@ -538,7 +538,7 @@ static inline void expand_affine(
 
 /// @cond DO_NOT_DOCUMENT 
 
-// Standard type-2 vector correspnding to cocode word [2,3]
+// Standard type-2 vector corresponding to cocode word [2,3]
 #define STD_TYPE2 0x200
 
 
@@ -1032,7 +1032,7 @@ int32_t xsp2co1_elem_conjugate_involution(uint64_t *elem, uint32_t *a)
    // Finally, transform \f$g_3 = x_{\pm \Omega}\f$ to the central
    // element  \f$x_{-1}\f$. We have to conjugate \f$x_{\Omega}\f$ 
    // with \f$\tau\f$ and \f$x_{-\Omega}\f$ with \f$\tau^2\f$.
-   // So we append the approprate power of  \f$\tau\f$ to ``a``.
+   // So we append the appropriate power of  \f$\tau\f$ to ``a``.
    a[len++] = 0xd0000002 - ((v >> 24) & 1);
 
    // Return the length of the word in the array ``a``.

@@ -15,7 +15,7 @@ even be possible for all cases. As a first step towards this goal
 we will describe the intersections of some subgroups of the Mathieu 
 group :math:`M_{24}`. These subgroups of :math:`M_{24}` are involved
 in the subgroups of :math:`\mathbb{M}` in the amalgam.
-We will also give some information how to construct ramdom elements
+We will also give some information how to construct random elements
 of these subgroups of :math:`M_{24}` and of their intersections.
  
 TODO: This section is yet a fragment and will be completed in a 
@@ -211,5 +211,4 @@ following table.
 
 
 TODO: More details will be given in a future version.
-
 

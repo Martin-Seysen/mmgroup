@@ -33,8 +33,8 @@ For background see:
 import math
 from math import log, exp, fabs, lgamma
 
-ERR_INC_GAMMA_RANGE = "Invalid arguments in incomplete gamma funtion"
-ERR_INC_GAMMA_A_LARGE = "a is too large in incomplete gamma funtion"
+ERR_INC_GAMMA_RANGE = "Invalid arguments in incomplete gamma function"
+ERR_INC_GAMMA_A_LARGE = "a is too large in incomplete gamma function"
 
 ITMAX = 100
 EPS = 3.0e-7
@@ -130,7 +130,7 @@ def chisquare(f_obt, f_exp = None):
 
     The lists ``f_obt`` and ``f_exp`` describe the obtained
     and the expected distribution. ``f_exp`` defaults to the
-    uniform distibution.
+    uniform distribution.
 
     The function returns a pair ``(chisq, p)``. This function
     is equivalent to function ``scipy.stats.chisquare()``.
@@ -204,4 +204,3 @@ def do_test_chisquare():
 if __name__ == "__main__":
     do_test_gamma_p()
     do_test_chisquare()
-

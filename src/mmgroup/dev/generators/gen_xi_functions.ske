@@ -170,7 +170,7 @@ uint32_t gen_xi_op_xi(uint32_t x, uint32_t e)
 
 
 /**
-  @brief Similar to function ``gen_xi_op_xi``, ingoring sign 
+  @brief Similar to function ``gen_xi_op_xi``, ignoring sign 
   
   The function returns \f$\xi^{-e} x \xi^e\f$ for an element 
   \f$x\f$  of the group \f$Q_{x0}\f$. Input \f$x\f$ and the
@@ -375,7 +375,7 @@ uint32_t gen_xi_op_xi_short(uint32_t x, uint32_t u)
   The function creates a table ``ptab`` such that ``ptab[i]`` encodes
   \f$\xi^{-e} x \xi^e\f$, where \f$x = 2^{16} \cdot b + i\f$ 
   encodes a short vector in \f$Q_{x0}\f$ in *Short vector encoding*.
-  The length of the gererated table is 
+  The length of the generated table is 
   \f$l(b) =  2496, 23040, 24576, 32768, 32768\f$ for 
   \f$b = 1,2,3,4,5\f$. 
   
@@ -472,7 +472,6 @@ void gen_xi_split_table(uint16_t *ptab, uint32_t len, uint32_t mod, uint32_t *ps
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

@@ -151,7 +151,7 @@ that function.
 The relevant automorphsims :math:`a \in \mbox{AutP3}` are given as
 mappings between the 13 points and the 13 stars, where the stars 
 are  transformed in the same way as corresponding points. Using our 
-contruction of :math:`\phi` on the points and the stars, the image 
+construction of :math:`\phi` on the points and the stars, the image 
 :math:`\phi(a)`  can be given as an automorphism of  :math:`Q_{x0}` 
 in  :math:`G_{x0}`, where :math:`G_{x0}` operates on :math:`Q_{x0}` 
 by conjugation. Given such an automorphism :math:`\gamma` on 
@@ -225,7 +225,7 @@ Since :math:`\alpha = \prod_{i=0}^{12} P_i` commutes with all points
      a \in \mbox{AutP3} \, .
 
 It remains to compute :math:`\Phi(L_i)`. Here have to compute 
-:math:`\phi(L_i^\alpha)`. Therefore we will use the follwing fact: 
+:math:`\phi(L_i^\alpha)`. Therefore we will use the following fact: 
 
 It easy to show that the elements of the Bimonster
 :math:`\mathbb{M} \wr 2` that are conjugate to :math:`\alpha` are 
@@ -254,4 +254,3 @@ have
     \phi(\alpha \cdot L_i) = \phi(\alpha \cdot L_0)^{\phi(u)^i} \,.
 
 """
-

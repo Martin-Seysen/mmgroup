@@ -37,7 +37,7 @@ from mmgroup.tests.chisquare import chisquare
 def chisquare_crosscor(p, b1, b2 = None, d = 1, m = 0):
     """chi-square test over cross correlation
     
-    Let b1 and b2 be arrays of intgers (mod p) of the same length.
+    Let b1 and b2 be arrays of integers (mod p) of the same length.
     the we put a[i] = b1[i] + b2[i + d] (mod p), with idex i + d 
     wrapping around. b2 may be 0, indicating an array of zeros.
 
@@ -355,7 +355,6 @@ def test_large_all(verbose = 0):
         for p in characteristics():
             do_test_large_io(p, tag, verbose = verbose)
     print("Test passed")
-
 
 
 

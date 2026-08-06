@@ -140,7 +140,7 @@ def smask(value, fields, width):
     
     Any of the arguments 'value' and 'fields' may either be an 
     integer or anything iterable that yields a list of integers. 
-    Then this list is intepreted as a list of bit positions. A bit 
+    Then this list is interpreted as a list of bit positions. A bit 
     of the argument is set if its position occurs in that list and 
     cleared otherwise.
     """
@@ -275,7 +275,7 @@ class MM_Basics(object):
 ########################################################################
 
 
-# Auxilary function for defining methods like MM_Const().P_BITS(p) etc.
+# Auxiliary function for defining methods like MM_Const().P_BITS(p) etc.
 _attr_from_table = lambda name, p : MM_Basics.sizes(p)[name]
 
 
@@ -309,7 +309,7 @@ class MM_Const(MM_Basics):
 
         a >>= %{P_BITS:3};
 
-    That constant also availble in the form ``MM_Const().P_BITS(3)``.
+    That constant also available in the form ``MM_Const().P_BITS(3)``.
 
 
     Class ``MM_Const`` provides a string-formatting function ``shl`` 
@@ -377,12 +377,12 @@ class MM_Const(MM_Basics):
         table[index] = value      # store entry for p in table
     #print("pos", pos)
     #rint("tbl", lmap(hex,table))
-    T_NAME = "MMV_CONST_TAB"      # python name of contant table
+    T_NAME = "MMV_CONST_TAB"      # python name of constant table
     F_NAME = "MMV_CONST"        # function name "MMV_CONST"
     LOAD_F_NAME = "MMV_LOAD_CONST" # directive name "MMV_LOAD_CONST"
 
-    # Some more constants are definded as  dividend/INT_FIELDS
-    # with dividends for contant names given by:
+    # Some more constants are defined as  dividend/INT_FIELDS
+    # with dividends for constant names given by:
     dividend = {
         "V64_INTS": 64, 
         "V24_INTS": 32,
@@ -455,7 +455,7 @@ class MM_Const(MM_Basics):
         """Code generating for constants with names in self.dividend
 
         All these constants are defined as dividend/INT_FIELDS.
-        The dividents for these contant names are taken from
+        The dividents for these constant names are taken from
         dictionary cls.dividend. The constant INT_FIELDS is calculated
         by method  gen_get_const_expr() of this class.
         """
@@ -488,4 +488,3 @@ class Mockup_MM_Const(MM_Const):
 
 Tables = MM_Const
 MockupTables = Mockup_MM_Const
-

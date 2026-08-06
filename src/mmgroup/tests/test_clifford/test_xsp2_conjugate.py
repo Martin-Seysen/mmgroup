@@ -40,7 +40,7 @@ def rand_xsp2_vectors(length):
     return [randint(0, 0x1ffffff) for i in range(length)]
 
 def create_conjugate_data():  
-    # Testing with following test data verfies that generators
+    # Testing with following test data verifies that generators
     # :math:`\xi^e, e = 1,2` operate on the group :math:`Q_{x0}`
     # correctly. This verifies the correct implementation of 
     # these generator up to sign. The sign can be verified by
@@ -67,19 +67,19 @@ Gx0_ORDERS = set([x*y for x in Co_1_ORDERS for y in [1, 2, 4]])
 
 
 def conj_x_by_word(x, g_mm):
-    """Conugate x ith a word of elments in the Clifford group
+    """Conugate x ith a word of elements in the Clifford group
 
     Here :math:`x` is an element of the normal subgroup :math:`Q_x0`
     of :math:`G_x0`, and :math:`g_{mm}` is an element of the 
     subgroup :math:`G_x0` of the monster.
 
     :math:`x` is given as an integer in **Leech lattice
-    represention** and :math:`g_{mm}` is given as an element
+    representation** and :math:`g_{mm}` is given as an element
     of the group  object ``mmgroup.MM``, which is the standard 
     instance of the monster group.
 
     The function returns :math:`g_{mm}^{-1} x g_{mm}` as an
-    integer in **Leech lattice represention**.
+    integer in **Leech lattice representation**.
     """
     w_g = g_mm.mmdata
     return gen_leech2_op_word(x, w_g, len(w_g))
@@ -270,7 +270,7 @@ def radical(a):
 
     Here ``a`` is a list of vectors spanning a subspace of the
     Leech lattice mod 2. The radical of that space is the
-    intersection of the space with its orthognal complement.
+    intersection of the space with its orthogonal complement.
     """
     rad = np.zeros(24, dtype = np.uint64)
     a = np.array(a, dtype = np.uint32)
@@ -316,4 +316,3 @@ def test_xsp2co1_isotropic_type4_span(verbose = 0):
         if res:
             assert res == res_obtained
         check_isotropic_type4(v, a[:dim])
-

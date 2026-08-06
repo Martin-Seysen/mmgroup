@@ -203,7 +203,7 @@ cdef class GtWord():
         cdef uint64_t[:] a_view = a
         cdef res = mr.gt_word_compress(self.p_gt, &a_view[0])
         if res:
-             raise ValueError("Cound not convert element to int")
+             raise ValueError("Could not convert element to int")
         return (int(a[0]) + (int(a[1]) << 64) +
              (int(a[2]) << 128) + (int(a[3]) << 192))
 
@@ -274,6 +274,5 @@ cdef class GtWord():
 
 
         
-
 
 

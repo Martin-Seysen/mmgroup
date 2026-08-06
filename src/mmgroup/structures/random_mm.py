@@ -4,7 +4,7 @@ The main function ``iter_reandom_mm()`` in this module constructs an
 random element of the Monster group from data structures as specified 
 in section **The Monster group** of the **API reference**. This function
 yields the entries of a numpy array of type ``np.uint32`` containing 
-internal represntation of the constructed element.
+internal representation of the constructed element.
 """
 
 import collections
@@ -304,6 +304,5 @@ def iter_random_mm(s):
     else:
         flags = _parse_group_description(s)
         yield from _iter_rand_mm_(flags)
-
 
 

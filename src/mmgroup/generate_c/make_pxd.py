@@ -26,7 +26,7 @@ m_voidargs_function = re.compile(r"[^()]+\(\s*void\s*\)")
 def iter_exports_from_header(file):
     """Yield list of export tuples from a generated header file
 
-    Here ``file`` is the name of the heder file to be read.
+    Here ``file`` is the name of the header file to be read.
 
     The function yields triples ``(directive, args, prototype)``
     describing function to be exported, e.g. via a .pxd file.
@@ -160,7 +160,7 @@ def pxd_from_h(pxd_out, h_in, pxd_in = None, h_name = None, nogil = False):
  
          An optional name of a input .pxd file to be copied in the
          output .pxd file in front of the ``cdef`` statement. If
-         that parmeter is a string containing a newline character
+         that parameter is a string containing a newline character
          ``\n`` then that string is copied directly into the
          output .pxd file.
 
@@ -210,8 +210,6 @@ def c_file_list_from_h(h_in):
 if __name__ == "__main__":
     h_in = os.path.join('..', 'dev', 'c_files', 'clifford12.h')
     generate_pxd(sys.stdout, h_in, nogil=True)
-
-
 
 
 

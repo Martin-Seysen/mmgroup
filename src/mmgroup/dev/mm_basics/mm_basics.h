@@ -142,7 +142,7 @@ enum MM_SPACE_TAG {
 #define MM_SPACE_SHIFT_PAR2           8 
 // Mask for coordinate:  
 // Use y = x  & MM_SPACE_MASK_COORD
-// to set the coordiante in y to the value x.
+// to set the coordinate in y to the value x.
 // Caution: some special routines for modulus p = 2**k - 1
 // use only the lowest k bits of the coordinate.
 #define MM_SPACE_COORD_PAR1    0x1FFC000   
@@ -158,5 +158,4 @@ enum MM_SPACE_TAG {
 // %%GEN h
 
 #endif  // #ifndef MM_BASICS_H
-
 

@@ -26,7 +26,7 @@ described in module mm/mm_aux.py. Class HadamardMatrixCode is a
 subclass of class mm/mm_basics.MM_Op, which contains basic 
 operations for dealing with such a vector.
 
-Our hope is that an optimzing C compiler completely performs the 
+Our hope is that an optimizing C compiler completely performs the 
 relevant operations in registers, if sufficiently many of them 
 are present. Note that fewer operations are necessary if v consists 
 of 64-bit integers. On the other hand, modelling 64-bit integers on 
@@ -209,14 +209,14 @@ class C_UintVar(C_Expr):
 
     Such variables are also designed to be a member of a list of 
     variables. Each variable as an optional attribute 'index'
-    specifying the index of the varible in that list.
+    specifying the index of the variable in that list.
     """
     def __init__(self, c_type, name, index = None, var_number = None):
          """Create a C variable with a given type and 'name'.
 
          The type of the variable is the string given in the
          argument 'c_type'. 'index' is an optional argument
-         specifiying the index of the variable in a list.
+         specifying the index of the variable in a list.
          This list is kept by the code generating  process 
          only; and it is irrelevant for the C compiler.
 
@@ -262,7 +262,7 @@ class C_UintVar(C_Expr):
     def assign(self, value):
         """Generate C code computing 'self = value;' in a context
 
-        When calling the method, a conext must have been set with 
+        When calling the method, a context must have been set with 
         method ``self.set_context``.
 
         Similarly,
@@ -299,7 +299,7 @@ class C_UintVarPool:
     the pool with have names "r0", "r1", "r2",... .
 
     All variables in the pool are instances of class C_Expr,
-    so we may perfor C operations on them as decribed in 
+    so we may perform C operations on them as described in 
     class C_Expr.
 
     The pool has an 'official'  size equal to len(self),
@@ -337,7 +337,7 @@ class C_UintVarPool:
         r0, r1, r2, ... parameter 'name' should be "r%d"
         """
         self.a_size = 0      # Number of official variables
-        self.vars = []       # List of all veriables, Here 
+        self.vars = []       # List of all variables, Here 
                              # official variable are listed
                              # in their current order, followed
                              # by the temporary variables.
@@ -350,7 +350,7 @@ class C_UintVarPool:
         """Set a context for the variables in this pool.
 
         This means that we will apply method ``x.set_context(context)``
-        to any new variable ``x`` in htis pool
+        to any new variable ``x`` in this pool
         """
         self.context = context
         for v in self.vars:
@@ -395,7 +395,7 @@ class C_UintVarPool:
         """Exchange self[i] with self[j].
 
         i and j may also be variables in the pool (including
-        temporary variables) insted of their indices. Thus
+        temporary variables) instead of their indices. Thus
 
            v1 = self[1]; t = self.temp(0); self.xch(v1, t)
 
@@ -476,14 +476,14 @@ class HadamardMatrixCode(MM_Op):
     written back from the variables to memory.
 
     Matehmatically, a 2**n times 2**n times Hadamard matrix
-    is constucted as product of n matrices of shape
+    is constructed as product of n matrices of shape
 
        I2  (x) ... (x) I2 (x) H2 (x) (I2) (x) ... (x) (I2) , 
     
     where (x) denotes the Kronecker product, I2 is the 2 times 2 
     unit matrix, and H2 is the 2 times 2 Hadamard matrix. H2 
     occurs exactly once in each of the k factors of the matrix
-    product. In different factors, H2 occures at different 
+    product. In different factors, H2 occurs at different 
     positions. Note that all these k matrix factors commute. 
 
     The m-th matrix factor of H is implemented as a butterfly 
@@ -522,7 +522,7 @@ class HadamardMatrixCode(MM_Op):
 
         This method resets all information required for the 
         the code generation process, including the pool self.vars 
-        of variables, which is an intance of class C_UintVarPool.
+        of variables, which is an instance of class C_UintVarPool.
 
         If log_vlen is specified, self.LOG_VLEN is changed to log_vlen.        
         """
@@ -607,7 +607,7 @@ class HadamardMatrixCode(MM_Op):
             self.matrix_code.append("// " + s + "\n")
 
     def comment_vector(self):     
-        """Comment of represention of vector v in  variables"""
+        """Comment of representation of vector v in  variables"""
         vl = self.vars.var_number_list()
         vdata = ",".join(map(str,vl)) 
         if len(vl) > 10: vdata = "\n " + vdata 
@@ -696,7 +696,7 @@ class HadamardMatrixCode(MM_Op):
        
      
     def reduce_final(self, var, dest = None):
-        """Auxilary reduction function for method butterfly_op().
+        """Auxiliary reduction function for method butterfly_op().
    
         Performs reduction mod p after a butterfly operation for all 
         components ``var[i]`` stored in variable ``var``. The function 
@@ -714,7 +714,7 @@ class HadamardMatrixCode(MM_Op):
         dest.assign(var - t + (t >> self.P_BITS)) 
 
     def prereduce(self, var, dest = None):
-        """Auxilary reduction function for method butterfly_op().
+        """Auxiliary reduction function for method butterfly_op().
    
         Performs reduction mod p after a butterfly operation for all 
         components ``var[i]`` stored in variable ``var``. The function 
@@ -734,11 +734,11 @@ class HadamardMatrixCode(MM_Op):
 
 
     def reduce_butterfly(self, var, dest = None):
-        """Auxilary reduction function for method butterfly_op().
+        """Auxiliary reduction function for method butterfly_op().
 
-        This function sould be called after each bufferfly
+        This function should be called after each bufferfly
         operation for all participating variables ``var``.
-        The reduced C veriable ``var`` is stroed in the C
+        The reduced C variable ``var`` is stored in the C
         variable ``dest``.
         """
         if self.lazy:
@@ -750,11 +750,11 @@ class HadamardMatrixCode(MM_Op):
             self.reduce_final(var, dest)
 
     def reduce_butterfly_final_all(self):
-        """Finaly reduction function for method butterfly_op().
+        """Finally reduction function for method butterfly_op().
 
         This function should be called once after completing a
         Hadamard operation. At exit we have ``0 <= x <= p`` 
-        for all entrie participating on the Hadamard operation.
+        for all entries participating on the Hadamard operation.
         """
         if self.lazy:
             self.comment("Final reduction")
@@ -773,7 +773,7 @@ class HadamardMatrixCode(MM_Op):
         same level. A butterfly operation reduces the size of an 
         entry before overflow can occur.
 
-        This function sould be called after completing a sequence 
+        This function should be called after completing a sequence 
         of butterfly operations at the same level, in order to
         adjust the member ``self.shift_stage`` counting the
         excess bits of an entry.
@@ -814,7 +814,7 @@ class HadamardMatrixCode(MM_Op):
            
 
     def internal_butterfly(self, var, j):
-        """Auxilary function for method butterfly_op().
+        """Auxiliary function for method butterfly_op().
    
         Perform butterfly operation inside the single C variable 
         'var'.  For all components v[i] of v stored in var we put
@@ -849,7 +849,7 @@ class HadamardMatrixCode(MM_Op):
 
 
     def external_butterfly(self, v1, v2):
-        """Auxilary function for method butterfly_op().
+        """Auxiliary function for method butterfly_op().
    
         Perform butterfly operation on the two C variables v1
         and v2.  For all components v1[i], v2[i] of of v1, v2
@@ -878,7 +878,7 @@ class HadamardMatrixCode(MM_Op):
             self.reduce_butterfly(v1)
 
     def external_butterfly_all(self, j):
-        """Auxilary function for method butterfly_op().
+        """Auxiliary function for method butterfly_op().
    
         Performs a complete butterfly operation, where each single
         operation comprises two C variables.
@@ -942,7 +942,7 @@ class HadamardMatrixCode(MM_Op):
 
          for all i with i & y == 0.
 
-         The result is multipled with the fixed scalar ``2**shift`` 
+         The result is multiplied with the fixed scalar ``2**shift`` 
          (mod p). Here ``shift`` defaults to 0.
 
          Remerk on internal operation:
@@ -954,7 +954,7 @@ class HadamardMatrixCode(MM_Op):
          so that the user need not bother about this special case. 
 
          If parameter ``compress`` is True then compression is
-         always done, even if expnasion has bee done befor calling
+         always done, even if expnasion has bee done before calling
          this function.
          """
          operations &= (1 << self.LOG_VLEN) - 1
@@ -1083,7 +1083,7 @@ class HadamardMatrixCode(MM_Op):
         2*i + 2**self.LOG_VLEN.  If the optional argument
         'position' satisfies 1 <= position < self.LOG_VLEN
         then entry  2*i+1  is moved to position
-        2*i + 2**position  instead, overwriting the enty at
+        2*i + 2**position  instead, overwriting the entry at
         thas position. This may be useful in cases where 
         the entries at those positions are not nneded.
         """ 
@@ -1247,4 +1247,3 @@ we move bit field 2*i + 1  to bit field 2*i + %d.""" % (
         s = "".join([s00, s01] + self.matrix_code + [s1]) 
         self.reset_vars()
         return s
-

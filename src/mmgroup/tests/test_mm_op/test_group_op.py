@@ -236,7 +236,7 @@ def one_test_op(v, g, f_mul = None, verbose = 0):
     v.space, but with vectors given in sparse form.
 
     If f_mul is set to a function such that f_mul(v, g) = v * g
-    holds, an alternative implemetation of the group multiplication
+    holds, an alternative implementation of the group multiplication
     may be tested. This is useful for some low-level module tests. 
     """
     #print("test_op_case")
@@ -330,7 +330,7 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     If g operates non-monomially on v, it may be necessary to
     consider more basis vectors than given by the argument
     'basis_vectors'. Then function group_blocks() is used to
-    extend the set of basis vectors in suitable way if necesary.
+    extend the set of basis vectors in suitable way if necessary.
 
     The extension of basis vectors may fail if the structure of
     the matrix of g is too complicated. But that extension is
@@ -339,7 +339,7 @@ def one_test_rand_op(v, g, basis_vectors, f_mul = None, verbose = 0):
     of all atoms in g.
 
     If f_mul is set to a function such that f_mul(v, g) = v * g
-    holds, an alternative implemetation of the group multiplication
+    holds, an alternative implementation of the group multiplication
     may be tested in te same way as in function test_op_case(). 
     """
     #if isinstance(v, AbstractMmRepSpace):
@@ -453,7 +453,6 @@ def test_rand_op_tag_A(n_tests = 4, f_mul = None, verbose = 1):
                 assert res == 0
                 assert (v['A'] ==  a_g['A']).all()
     print("Test passed")
-
 
 
 

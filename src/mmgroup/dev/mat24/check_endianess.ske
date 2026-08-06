@@ -1,7 +1,7 @@
 /** @file check_endianess.c
 
  File ``check_endianess.c`` contains a function for checking the
- endianess of the hardware platform.
+ endianness of the hardware platform.
 */
 
 
@@ -10,10 +10,10 @@
 
 
 
-/** @brief Check endianess of the machine
+/** @brief Check endianness of the machine
 
 Return 0 if machine is little endian, 1 if it is Big endian,
-and -1 if endianess could not be detected.
+and -1 if endianness could not be detected.
 */
 // %%EXPORT px
 int32_t mat24_check_endianess(void)

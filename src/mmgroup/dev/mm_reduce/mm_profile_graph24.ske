@@ -3,7 +3,7 @@
 * **Functions exported from this module**
 
 The function ``mm_profile_graph24`` exported by this file is an
-auxiliary funtion of function ``mm_profile_mod3_hash`` in
+auxiliary function of function ``mm_profile_mod3_hash`` in
 file ``mm_profile_abc_mod3.c``. 
 
 * **Basic operation of this module**
@@ -22,11 +22,11 @@ Therefore we consider matrix \f$A\f$ as an undirected labelled graph,
 with vertices labelled by the diagonal elements and edges labelled by
 off-diagonal elements of \f$A\f$. Let \f$C_S(A)\f$ be the isomorphism
 group of \f$A\f$ under the action of \f$S_{24}\f$. Then \f$C_S(A)\f$
-is the isomrhism group of the labelled graph corrsponding to \f$A\f$.
+is the isomrhism group of the labelled graph corresponding to \f$A\f$.
 We may refine the given labelling of \f$A\f$ in a suitable way
 by assigning new labels without changing \f$C_S(A)\f$. E.g. we may
 augment the label of a vertex with information about the labels of
-the edges incident with that vertex, and vice versa. In priciple,
+the edges incident with that vertex, and vice versa. In principle,
 the process may be iterated; but this will take too much time. For
 our purposes we first augment the labels of the edges with the labels
 of the incident vertices. Then we augment the labels of the vertices
@@ -303,7 +303,7 @@ static inline void sort_rows(uint16_t *h, uint8_t *s)
     bitvector_insertsort(hash, DIM, uint32_t);
 
     // Sort hash values in array ``hash``, comparing also the
-    // rows in ``h`` referrred by the entries of ``hash``.
+    // rows in ``h`` referred by the entries of ``hash``.
     for (i = 1; i < DIM; ++i) {
         tmp = hash[i];
         hash_i = tmp & ~MASK_IND_BITS;
@@ -412,7 +412,7 @@ a matrix \f$B\f$ containing a refinement of the labelling given by
 matrix \f$A\f$ as described in the comment at the beginning of this
 file. We compute \f$B\f$ from \f$A\f$ in place. Here we do not
 change the lower 6 bits of an entry of \f$A\f$. The upper bits of
-an entry will contain a refinement of an original lable. Such 
+an entry will contain a refinement of an original label. Such 
 upper bit in matrix \f$A\f$ will be considered, but may be changed.
 
 Buffer ``b`` must have size ``2 * 24 * 24``. Entry ``(i,j)`` of

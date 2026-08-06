@@ -234,7 +234,7 @@ class pxdGenerator:
         elif isinstance(args, argparse.Namespace):
             self.s = args
         else:
-            ERR = "Cannot constuct class %s object from %s object"
+            ERR = "Cannot construct class %s object from %s object"
             raise TypeError(ERR % (self.__class__, type(args)))
         self.old_path = None
         check_args_parsed(self.s)
@@ -356,4 +356,3 @@ def example():
 
 if __name__ == "__main__":
     example()
-

@@ -61,7 +61,7 @@ extern "C" {
 
 /******************************************************************
 *** The following #defines determine which volatile input sources
-*** are used for seeding the volatile random genertor number 0
+*** are used for seeding the volatile random generator number 0
 ******************************************************************/
 
 
@@ -69,7 +69,7 @@ extern "C" {
 
 #define INT_BITS  %{INT_BITS} // must be 32 of 64
 
-// The following funtions are standard C functions.
+// The following functions are standard C functions.
 // They should usually be available on any operating system
 #define HAS_TIME  // function time() is present if #defined
 #define HAS_CLOCK // function clock() is present if #defined
@@ -454,5 +454,4 @@ uint32_t mm_rng_gen_modp(uint32_t p, uint8_t *seed, uint8_t *out, uint32_t len)
 }
 #endif
 //  %%GEN c
-
 

@@ -215,7 +215,7 @@ def test_matmul(verbose = 0):
         c1, c2 = m1.matrix(), m2.matrix()
         c3 = m3.matrix()
         c3_ref = c1 @ c2        
-        err = "Matrix multiplcation has failed"
+        err = "Matrix multiplication has failed"
         compare_complex(c3_ref, c3, err)
         if verbose:
             print("Product")
@@ -245,7 +245,7 @@ def large_matmul_testvectors():
 def test_large_matmul(verbose = 0):
     """Testlarge  matrix multiplication. 
     
-    For the mmgroup project wee have to multiply marices
+    For the mmgroup project we have to multiply matrices
     of type QStateMatrix with shape (12,12). So we'd
     better test this operation here!
     
@@ -308,7 +308,7 @@ def test_mul(verbose = 0):
             print(m3)
         c3 = m3[:,:]
         c3_ref = m1[:,:] * m2[:,:]
-        err = "Matrix multiplcation of entries has failed"
+        err = "Matrix multiplication of entries has failed"
         compare_complex(c3_ref, c3, err)
         err = "Matrix negation has failed"
         compare_complex(-(m1[:,:]), (-m1)[:,:], err)

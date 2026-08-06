@@ -166,7 +166,7 @@ def make_addition_tree(data, singleton = False, granularity = 8):
     for x in (dict):
         for y in dict[x]:
             if bitweight(y) > 1: assert y in dict.keys(), (hex(x),hex(y))
-    # Add singeltons to ``dict`` if requested
+    # Add singletons to ``dict`` if requested
     if singleton:
         while all_bits:
             entry = all_bits & -all_bits

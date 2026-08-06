@@ -9,7 +9,7 @@ the document *The C interface of the mmgroup project*,
 section *Description of the mmgroup.generators extension*.
 
 We also count the subtypes of all 0x1000000 vectors in the Leech
-lattice modulo 2 and comapare the result against the results in 
+lattice modulo 2 and compare the result against the results in 
 :cite:`Iva99`.
 """
 
@@ -43,7 +43,7 @@ from mmgroup.bitfunctions import binomial
 # Test computation of subtype Leech lattice vector
 #####################################################################
 
-# We test the computation of the subtype of a vetor in the 
+# We test the computation of the subtype of a vector in the 
 # Leech lattice with function gen_leech2_subtype().
 
 # Next we specify certain elements of the Parker loop
@@ -375,8 +375,6 @@ def test_subtype(verbose = 0):
          assert v2_subtype== v2ref_subtype, (v2_subtype, v2ref_subtype)
          types.add(v2_subtype)
     assert len(types) == 6
-
-
 
 
 

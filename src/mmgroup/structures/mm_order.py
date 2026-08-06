@@ -65,7 +65,7 @@ def check_mm_equal(g1, g2, mode = 0):
     If ``mode != 0`` or this is not possible we check if 
     ``v * g1 * g2**(-1) == v`` holds for the *ORDER_VECTOR* ``v``. 
 
-    We just check the data in ``g1`` and ``g2``, ingnoring
+    We just check the data in ``g1`` and ``g2``, ignoring
     ``g1.group`` and ``g2.group``.
     """
     assert isinstance(g1, (MM, MM0))
@@ -198,7 +198,6 @@ def check_mm_in_g_x0(g):
     g.reduced = 0
     g.reduce()
     return g
-
 
 
 

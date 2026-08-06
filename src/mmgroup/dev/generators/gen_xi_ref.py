@@ -175,7 +175,7 @@ class GenXi(object):
 
     References
     ----------
-    see file refereces.txt
+    see file references.txt
     """
     tab_g_gray = numpy.zeros(64, dtype = numpy.uint8)
     tab_g_cocode = numpy.zeros(64, dtype = numpy.uint8)
@@ -286,7 +286,7 @@ class GenXi(object):
         """Convert short vector to Leech lattice encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
-        in Q_x are decribed in the header of this module. The function 
+        in Q_x are described in the header of this module. The function 
         returns the Leech lattice encoding of element x1 given in short
         vector encoding. 
 
@@ -342,7 +342,7 @@ class GenXi(object):
         """Convert Leech lattice to short vector encoding.
 
         Both, Leech lattice and short vector encoding of a short vector 
-        in Q_x are decribed in the header of this module. The function 
+        in Q_x are described in the header of this module. The function 
         returns the short vector encoding of element x1 given in Leech 
         lattice encoding. 
 
@@ -452,5 +452,4 @@ class GenXi(object):
 
 class Tables(GenXi):
     pass
-
 

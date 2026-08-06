@@ -939,7 +939,7 @@ class GcVector:
         transversal, extraspecial, and penumbral vector of weight 12,
         respectively.
 
-        If the argument ``as_int`` of this funtion is ``True`` then
+        If the argument ``as_int`` of this function is ``True`` then
         the type is returned as an integer as in the C function
         ``mat24_vect_type`` in file ``mat24_functions.c``.
         """

@@ -25,7 +25,7 @@ commutator :math:`[a,b]`.
 
 In :cite:`Wil01`  Wilson has given explicit generators 
 :math:`a` (in class 2B) and :math:`b` (in class 3B) of the 
-Monster satifying the relations given above. It appears to be 
+Monster satisfying the relations given above. It appears to be 
 extremely difficult to translate these two generators from the
 language used in :cite:`Wil01`  to the language used in our
 *mmgroup* package. Since not all such pairs  :math:`a, b` must be 
@@ -137,4 +137,3 @@ activity takes just a few seconds for each pair.
 
 
 """
-

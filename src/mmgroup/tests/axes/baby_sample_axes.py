@@ -1,5 +1,5 @@
 # This file has been generated automatically. Do not change!
-# It contains samples of the 10 cosets of 2A axes othogonal to the
+# It contains samples of the 10 cosets of 2A axes orthogonal to the
 # standard 2A axis wrt 2^{1+23}.Co_2.
 #
 
@@ -108,4 +108,3 @@ Qx0_equations = [
 ),
 
 ]
-

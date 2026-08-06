@@ -158,8 +158,8 @@ typedef struct mm_order_find_Gx0_s  mm_order_find_Gx0_type;
    matrix making up part 'A' of the vector ``v1``. The 11
    entries of ``v1`` encoded here must all be 1 (mod 3). Also the
    positions of these entries are linear independent when considered
-   as Golay cocode vectors. From the corrsponding entries of ``v1``we
-   compute a bit vector by setting the bits where the correspnding
+   as Golay cocode vectors. From the corresponding entries of ``v1``we
+   compute a bit vector by setting the bits where the corresponding
    entry is 2 (mod 3). Multiplying that bit vector by the matrix in 
    part EQU_Y yields an element ``d`` of the Golay code, such that
    transforming the vector ``v`` with ``y_d`` yields a vector 
@@ -185,7 +185,7 @@ struct mm_order_data_Gx0_s {
     uint32_t EQU_Y[11]; ///< matrix to solve equation for y_e
     uint32_t X[24];     ///< Vector entries in parts B, C, T, X in sparse notation
     uint32_t EQU_X[24]; ///< matrix to solve equation for x_r (mod x_{-1}
-    uint32_t Z;         ///< Vector entriy in part Z on sparse notation
+    uint32_t Z;         ///< Vector entry in part Z on sparse notation
 };
 
 
@@ -200,7 +200,7 @@ typedef struct mm_order_data_Gx0_s  mm_order_data_Gx0_type;
 //  %%GEN c
 
 /************************************************************************
-** Tge structure for interpreting the standard oder vector
+** Tge structure for interpreting the standard order vector
 ************************************************************************/
 
 

@@ -7,7 +7,7 @@ of the subgroup
 :math:`G_{x0}` (of structure :math:`2^{1+24}.\mbox{Co}_1`)
 of the monster. 
 
-Represenation of :math:`G_{x0}` on the tensor product :math:`4096_x \otimes \Lambda`
+Representation of :math:`G_{x0}` on the tensor product :math:`4096_x \otimes \Lambda`
 ....................................................................................
 
 In :cite:`Seysen20`, section 7.4  and 9, the generators  
@@ -124,7 +124,7 @@ powers of two. A structure of type ``qstate12_type``
 representing a  :math:`c \in G(4096_x)` contains 
 a triple :math:`(e,A,Q)`. There :math:`e` is a signed integral  
 power of two, and :math:`(A,Q)` is a pair of bit 
-matrices with up to 25 rows and up to 49 colums, where the 
+matrices with up to 25 rows and up to 49 columns, where the 
 first 24 columns belong to matrix :math:`A`, and the remaining 
 columns belong to  matrix :math:`Q`.
 
@@ -216,7 +216,7 @@ to the numbering of the positive elemments of :math:`\mathcal{P}`.
 We may put :math:`(d \oplus 2^{12})' = -(d)'`, where 
 :math:`\oplus` means bitwise addition modulo 2; then that 
 correspondence holds for all values :math:`0 \leq d < 2^{13}`. 
-The exact defnition of the operator :math:`\oplus` on the Parker 
+The exact definition of the operator :math:`\oplus` on the Parker 
 loop :math:`\mathcal{P}` is given in section  :ref:`implement-gen-mm`.
 
 In this basis the operation of the extraspecial group 
@@ -251,7 +251,7 @@ the element with number ``0x800800``.
 Converting an element in **G_x0 representation** to a word of generators
 ........................................................................
 
-Perhaps the most inportant function in this module is function
+Perhaps the most important function in this module is function
 ``xsp2co1_elem_to_word``. This function converts an element of 
 the subgroup :math:`G_{x0}` from **G_x0 representation** to a 
 word :math:`w` of generators of the monster group. That word 

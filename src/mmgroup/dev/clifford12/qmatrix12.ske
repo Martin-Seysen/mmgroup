@@ -9,20 +9,20 @@
   C functions in this module are prefixed with ``qbstate12_``.
   Unless otherwise stated, these functions return an ``int32_t``,
   where a nonegative value is interpreted as success, and a negative
-  value is intepreted as failure. Error codes returned by functions
+  value is interpreted as failure. Error codes returned by functions
   in this module are documented in file ``clifford12.h``.
   
   A structure ``qs`` of type ``qstate12_type`` defines a function
   \f$f: \mathbb{F}_2^n \rightarrow \mathbb{C}\f$
   and also a \f$2^{n-k} \times 2^k\f$ matrix \f$M\f$ with entries
-  \f$M[i,j] = f(2^k \cdot i+j)\f$. Here we idenitfy the nonegative 
+  \f$M[i,j] = f(2^k \cdot i+j)\f$. Here we identify the nonegative 
   integers \f$ < 2^n\f$ with the bit vectors given by their
   binary representation. For the shape parameters \f$n, k\f$ of a
   state ``qs`` we have  \f$n\f$ = ``qs.ncols``,
   \f$k\f$ = ``qs.qstate1``. Thus indices of vectors and matrices
   start with 0, as usual in C and python.
   
-  While the functions in module ``qstate.c`` mostly ingnore the
+  While the functions in module ``qstate.c`` mostly ignore the
   shape parameter  \f$k\f$, the functions in this module use
   that shape parameter for determining the shape of a matrix.
   
@@ -134,7 +134,7 @@ int32_t qstate12_unit_matrix(qstate12_type *pqs, uint32_t nqb)
   unit vector with index ``v``. For any bit vector ``v`` of
   length ``nqb + 1`` let ``|v>`` be the (possibly negated) unit
   vector ``(-1)**v[nqb] * |v[0:nqb]>``.  ``|v1 ^ v2>`` and
-  ``|1 << v1>`` are defined via the corrresponding operators
+  ``|1 << v1>`` are defined via the corresponding operators
   ``<<`` and ``^`` in C. 
  
   Then ``T``  maps
@@ -592,7 +592,7 @@ shift_a(qstate12_type *pqs, uint32_t n, uint32_t i_lo, uint32_t i_hi)
 // Extract columns  ``0,...,n-1`` from matrix ``A`` of the state
 // ``qs`` referred by pqs. Then insert ``i_lo`` zero bits at lowest
 // bit positions and  ``i_hi`` zero bits at highest  bit positions.
-// Irrelevant bits in relvant data rows are set to zero.
+// Irrelevant bits in relevant data rows are set to zero.
 {
     uint64_t mask_a, mask_q, *m = pqs->data;
     uint_fast32_t shl_q, shr_q, i;
@@ -789,7 +789,7 @@ int32_t qstate12_matmul(qstate12_type *pqs1, qstate12_type *pqs2, qstate12_type 
 /// @cond DO_NOT_DOCUMENT 
 
 static inline uint64_t bit_rev(uint32_t length, uint64_t n)
-// Reverse lower ``length`` bit of interger ``n``.
+// Reverse lower ``length`` bit of integer ``n``.
 {
     uint32_t i;
     uint64_t v = 0;
@@ -1018,7 +1018,7 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
     // TODO: check it!!!!!
     for (j = pqs->nrows-1; j >= (int_fast32_t)fst_row; --j) {
         i = qstate12_find_masked_pivot(m, fst_row, j+pqs->ncols, kernel);
-        // if i >= 0 then i is the higest row with Q[i,j] = 1
+        // if i >= 0 then i is the highest row with Q[i,j] = 1
         if (i > 0) {
             // set v to column (or row) j of matrix Q
             v = ((m[j] >> pqs->ncols) & (0-2ULL)) +
@@ -1061,7 +1061,7 @@ int32_t reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 int32_t qstate12_reduce_matrix(qstate12_type *pqs, uint8_t *row_table)
 // This function converts the matrix ``qs`` referred by ``pqs``to 
 // **reduced matrix representation** It also computes a row table 
-// for that representation*. For backround fe refer to the 
+// for that representation*. For background fe refer to the 
 // **API reference**, section **Reducing a quadratic state matrix**.
 {
     int_fast32_t res;
@@ -1484,7 +1484,7 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
         // we left multiply ``qs`` with a sequence of not gates.
         v_out ^= (m0 ^ m[0]) & (((ONE << nqb) - 1) << nqb);
         
-        // Muliply Pauli group element ``v_out = (x,z)`` with
+        // Multiply Pauli group element ``v_out = (x,z)`` with
         // ``(-1)**<z,x>``, where ``<.,.>`` is the scalar product.
         mask = (ONE << nqb) - 1;
         f ^= bitparity64(v_out & (v_out >> nqb) & mask) << 1;
@@ -1514,7 +1514,6 @@ int32_t qstate12_pauli_conjugate(qstate12_type *pqs, uint32_t n, uint64_t *pv, u
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

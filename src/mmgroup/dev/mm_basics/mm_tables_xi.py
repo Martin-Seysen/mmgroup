@@ -2,14 +2,14 @@ r"""Generate tables for operation xi on the rep 196884x of the monster
 
 Class ``MM_TablesXi`` in this module contains the arrays PERM_TABLES,
 SIGN_TABLES, OFFSETS, SHAPES, as secribed in the
-**mmgroup guide for developpers**, section
+**mmgroup guide for developers**, section
 **Some mathematical aspects of the implementation**, subsection
 **Implementing generators of the Monster group**, subsubsection
 **Monomial operation of the generators \xi^e**.
 We adopt the terminology from that subsection.
 
 These arrays are computed by the methods of class ``Pre_MM_TablesXi``
-in this module. Her we use teh implementation of the operation of
+in this module. Her we use the implementation of the operation of
 generator :math:`\xi^{\pm ^}` in module ``mmgroup.generators``.
 """
 
@@ -227,5 +227,4 @@ class Tables:
      @property
      def directives(self):
          return self._load_tables().directives
-
 

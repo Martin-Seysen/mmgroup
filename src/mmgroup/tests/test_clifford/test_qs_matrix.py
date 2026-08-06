@@ -69,7 +69,7 @@ def eval_A_Q(ncols, data, v):
         q ^= q >> sh 
     # Mask out the relevant bits of the result ``a``
     a &= (1 << ncols) - 1
-    # Caclulate ``q`` as the doubled sum of the bits the lower 
+    # Calculate ``q`` as the doubled sum of the bits the lower 
     # triangular part of the bits of ``R``, plus the sum
     # of the diagonal bits of ``R``. 
     q = (2*q + diag) & 3
@@ -185,7 +185,7 @@ def compare_complex(c1, c2, text, qstate = None):
     """Check that two complex matrices are equal
     
     ``c1`` is the expected and ``c2`` is the obtained complex matrix.
-    ``qstate`` is an optiona state representing the matrix.
+    ``qstate`` is an optional state representing the matrix.
     """
     try:
         diff = np.amax(abs(c1 - c2), initial = 0.0)
@@ -489,6 +489,5 @@ def test_qs_errors(verbose = 0):
     with pytest.raises(ValueError):
        m.power(-1) 
     FORMAT_REDUCED = True
-
 
 

@@ -31,7 +31,7 @@ from mmgroup.tests.test_gen_xi.test_leech2_type import rand_n_elem
 from mmgroup.tests.test_gen_xi.test_leech2_type import xs_vector
 
 # Standard vector in the Leech lattice mod 2 in Leech lattice encoding
-# The standard fram \Omega
+# The standard frame \Omega
 OMEGA = 0x800000
 # The standard type-2 vector \beta
 BETA = 0x200 
@@ -65,7 +65,7 @@ def xi_reduce_odd_type4(v, verbose = 0):
     tab ^= ((tab >> 5) & 0x3ff) ^ ((tab & 0x1f) << 10);
     tab &= 0x739c;
     # Now all three bit fields are nonzero iff the syndrome bits
-    # are in three differnt columns. Next add 32 - 4 to each bit
+    # are in three different columns. Next add 32 - 4 to each bit
     # field in order to produce a carry if the field is nonzero.
     tab += 0x739c;
     # Next we isolate the three carry bits 
@@ -86,7 +86,7 @@ def xi_reduce_odd_type4(v, verbose = 0):
             hex(tab), exp,  hex(mat24.gcode_to_vect(w >> 12)),
             hex(gen_leech2_subtype(w))
             ))
-    # Return exponent for \xi in the lower 4 bits of the retrun value;
+    # Return exponent for \xi in the lower 4 bits of the return value;
     # Return 0 in bit 8 if all syndrome bits of v are in the same
     # MOG column and 1 in bit 8 otherwise.
     return ((tab != 0) << 8) + exp
@@ -267,7 +267,7 @@ def reduce_type2(v, verbose = 1):
     Let ``v \in \Lambda / 2 \Lambda`` of type 2 be given by 
     parameter ``v`` in Leech lattice encoding. 
 
-    Let ``beta`` be the short vector in the Leech  lattice propotional
+    Let ``beta`` be the short vector in the Leech  lattice proportional
     to  ``e_2 - e_3``, where ``e_i`` is  the ``i``-th basis vector
     of ``\{0,1\}^{24}``.
    
@@ -412,11 +412,11 @@ def reduce_type2_ortho(v, verbose = 0):
 
     In the real Leech lattice, (the origin of) the vector ``v`` must
     be orthogonal to the standard short vector ``beta``. Here ``beta``
-    is the short vector in the Leech  lattice  propotional
+    is the short vector in the Leech  lattice  proportional
     to  ``e_2 - e_3``, where ``e_i`` is  the ``i``-th basis vector
     of ``\{0,1\}^{24}``.
    
-    Let ``beta'`` be the short vector in the Leech lattice propotional
+    Let ``beta'`` be the short vector in the Leech lattice proportional
     to  ``e_2 + e_3``.  Then the function constructs a ``g \in G_{x0}`` 
     that maps ``v`` to ``beta'`` and fixes ``beta``.
  
@@ -711,7 +711,7 @@ def reduce_type4(v, verbose = 0):
     Let ``Omega`` be the type- vector in the Leech  lattice 
     corresponding to the standard coordinate frame in the Leech
     lattice. Let ``beta`` be the short vector in the Leech  
-    lattice propotional  to  ``e_2 - e_3``, where ``e_i`` is  
+    lattice proportional  to  ``e_2 - e_3``, where ``e_i`` is  
     the ``i``-th basis vector  of ``\{0,1\}^{24}``.
    
     Then the function constructs a ``g \in G_{x0}`` 
@@ -765,4 +765,3 @@ def test_reduce_type_4(ntests = 500, verbose = 0):
         a = a[:l]
         assert list(a) == list(op), ((a), (op))  
             
-

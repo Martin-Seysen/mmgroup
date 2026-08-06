@@ -297,7 +297,7 @@ def get_eval_dict(sp):
     centre),  such that ``y_d`` transforms ``v`` to a vector
     in ``v1`` * math:`Q_{x0}`. Output d["EVAL_Y"] is a list of
     11 pairs (i,j) corresponding to the positions of the entries in
-    part 'A' given by the 11 postions in ``sp``. Output d["EQU_Y"] 
+    part 'A' given by the 11 positions in ``sp``. Output d["EQU_Y"] 
     is an 11 times 11 bit matrix. Multiplying the vector of the signs
     of the 11 entries described above by that matrix yields ``d``.
 
@@ -350,7 +350,7 @@ def display_part_A(cls):
     print("Determinant of image of that part is %.3f"
              % np.linalg.det(A23))
     if not mmgroup_present:
-        s = "Cannot display more data, since mmgroup is not avialable"
+        s = "Cannot display more data, since mmgroup is not available"
         print(s)
         return
 
@@ -755,5 +755,4 @@ def py_test_Gx0(ntests = 50, test_C = True, verbose = 0):
 if __name__ == "__main__":
     ReduceGx0Data.display()
     py_test_Gx0(ntests = 50, test_C = 1, verbose = 2)
-
 

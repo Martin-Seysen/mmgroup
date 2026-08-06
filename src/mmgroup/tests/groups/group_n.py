@@ -24,7 +24,7 @@ r"""Wrapper for module mm_group_n.c for the subgroup N_0 of the monster
         automorphism group AutPl of the Parker loop Pl that maps all 
         basis vectors of Pl to positive elements of Pl.
         
- Elements tau, x_f, x_e, x_delta are defined as in [Seys19], setion 5. 
+ Elements tau, x_f, x_e, x_delta are defined as in [Seys19], section 5. 
  For the numbering of the elements of the Parker loop Pl, the Golay
  cocode C*, and the Mathieu group Mat24, see module mat24_functions.c.
  The basis of the Parker loop Pl is also given in that module.
@@ -138,7 +138,7 @@ class GroupN_Word(AbstractMMGroupWord):
         mm_group_n_reduce_element(self.data)
 
     ####################################################################
-    # Alternative multipication and division methods for tests
+    # Alternative multiplication and division methods for tests
     ####################################################################
 
     def mul(self, g):
@@ -314,4 +314,3 @@ class GroupN(AbstractMMGroup):
 StdGroupN = GroupN()
 GroupN_Word.group = StdGroupN
 load_group_name(StdGroupN)
-

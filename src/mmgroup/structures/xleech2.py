@@ -323,7 +323,7 @@ class XLeech2(AbstractGroupWord):
       class |MM|             Then ``value`` in an element of the monster
                              group. If that element is in the subgroup
                              :math:`Q_{x0}` of the monster, then it is
-                             converted to the coresponding instance of 
+                             converted to the corresponding instance of 
                              class |XLeech2|.
 
       ``'r'``                Create random element depending on the string,
@@ -340,7 +340,7 @@ class XLeech2(AbstractGroupWord):
                              corresponding to a unit vector 
                              in :math:`\rho_p` as described below.
 
-      Any other string ``s`` This is intepreted as the element ``MM('q', s)``
+      Any other string ``s`` This is interpreted as the element ``MM('q', s)``
                              of the Monster group.
       ====================== =================================================
 
@@ -378,7 +378,7 @@ class XLeech2(AbstractGroupWord):
     multiplication with the neutral element or with the central 
     involution :math:`x_{-1}`.
      
-    The opration  ``&`` denotes the scalar product of the vectors
+    The operation  ``&`` denotes the scalar product of the vectors
     in the Leech lattice modulo 2 obtained from an instance of this
     class, ignoring the sign.
 

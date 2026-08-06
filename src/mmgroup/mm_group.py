@@ -545,7 +545,7 @@ class MM(MM0):
 
         Finding an *optimal* or *shortest* representation of an
         element as a word of generators is beyond our current
-        capabilties. Also, the reduction process depends on many
+        capabilities. Also, the reduction process depends on many
         internal details. Thus a future version of this package may
         return a different *reduced* form of an element of the Monster.
         """
@@ -699,6 +699,5 @@ def MM_from_int(n):
         err = "There is no element of the Monster with that number"
         raise ValueError(err)
     return MM('a', g[:status])
-
 
 

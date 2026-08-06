@@ -608,7 +608,7 @@ def op_xi16_function(p, vector, exp, verbose = 0):
 def ref_op_xi16(p, vector, exp):
     """Generate reference vector for 16 1 14 operation on tag 'A'"""
     assert (vector[:4,:4] == vector[:4,:4].T).all()
-    # The previous assertion is a rather subtile symmetry condition
+    # The previous assertion is a rather subtle symmetry condition
     # required for the python reference implementation to work.
     # Function symmetrize_test_matrix(vector) forces that symmetry.
     exp = exp % 3

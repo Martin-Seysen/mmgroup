@@ -103,7 +103,7 @@ def test_orthogonal_complement():
         rao = bit_mat_rank(ao) 
         if ncols:
             assert ra + rao == ncols, (ra, rao, ncols, a, ao)
-    print( "Test of othogonal complement computation passed" )
+    print( "Test of orthogonal complement computation passed" )
 
 
 def v2_testcases():

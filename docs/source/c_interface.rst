@@ -14,9 +14,9 @@ Unless otherwise stated, each documented C function is wrapped by a
 Cython function with the same name and signature. 
 
 Note that almost all parameters of such a C function are declared as
-(signed or unsigend) integers, or as pointers to such integers. In
+(signed or unsigned) integers, or as pointers to such integers. In
 python, a ``numpy`` array of appropriate ``dtype`` may be passed as
-an argument to a parameter delared as a pointer to an integer.
+an argument to a parameter declared as a pointer to an integer.
   
 
 
@@ -426,21 +426,21 @@ Internal operation
 The source code for the functions in modules ``mm_aux.c``
 and ``mm_tables.c`` is located in subdirectory 
 ``src/mmgroup/dev/mm_basics``. The code generation process
-genrates ``.c`` files from the source files with extension
-``.ske`` in that subdirectory. Protoypes for the functions in 
+generates ``.c`` files from the source files with extension
+``.ske`` in that subdirectory. Prototypes for the functions in 
 these ``.c`` files can be found in file  ``mm_basics.h``.
 
 The source code for the functions in modules ``mm_op_p_vector.c``
 and ``mm_op_p_axis.c`` is located in subdirectory 
 ``src/mmgroup/dev/mm_op``. The code generation process
-genrates ``.c`` files from the source files with extension
-``.ske`` in that subdirectory. Protoypes for the functions in 
+generates ``.c`` files from the source files with extension
+``.ske`` in that subdirectory. Prototypes for the functions in 
 these files can be found in file  ``mm_o_p.h``.
 
-The code gerneration process for C files derived from the source
+The code generation process for C files derived from the source
 files in the ``src/mmgroup/dev/mm_basics`` directory is
 straightforward. In the remainder of this subsection we describe
-the code gerneration process for files derived form sources
+the code generation process for files derived form sources
 in the ``src/mmgroup/dev/mm_op`` directory.
 
 For reasons of efficiency a dedicated set of ``.c`` files is 
@@ -507,12 +507,12 @@ user is **strongly** discouraged from using these deprecated modules.
 He or she should use the ``mm_op`` extension instead!
 
 In older versions some python functions had to select the C function
-for the requested modulus, which has caused rather nasty problemes
+for the requested modulus, which has caused rather nasty problems
 in some cases.
 
 In the ``mm_op`` extension each documented ``.c`` function has
 been wrapped by a ``Cython`` function with the same name and
-the same signature. In the depreceated modules naming conventions
+the same signature. In the deprecated modules naming conventions
 are considerably more complicated.
 
 
@@ -641,7 +641,5 @@ paragraph:
              + generators
                  + mat24
  
-
-
 
 

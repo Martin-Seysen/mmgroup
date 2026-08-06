@@ -38,14 +38,14 @@ from mmgroup.structures.abstract_group import AbstractGroup
 The function implementing a rewrite rule may detect that it cannot
 improve the input word given to it as an argument.
 
-In this case it must throw the following excption AutoGroupMulError
+In this case it must throw the following exception AutoGroupMulError
 to indicate that the application of that rule has failed.
 
 A typical example is the case where a rule is applied to all 
 elements of a subgroup G to simplify these elements. Then it
 will try to simplify any element e of G and it will return the 
 empty word if e is the neutral element of G. But if e cannot be
-further simplfied, we must return an indication of failure to 
+further simplified, we must return an indication of failure to 
 prevent infinite reapplication of the same rule.
 """ 
 class AutoGroupMulError(Exception):
@@ -212,7 +212,7 @@ class AutoGroupWord(AbstractGroupWord):
     def to_list(self):
         """Deprecated!
 
-        For compatiblity with older functions only!
+        For compatibility with older functions only!
         """
         raise NotImplementedError("Deprecated")
         return [x.to_tuple() for x in self.seq]

@@ -1,6 +1,6 @@
 /** @file mm_order_vector.c
 
- File ``mm_order_vector`` contains the precomuted ``order_vector``
+ File ``mm_order_vector`` contains the precomputed ``order_vector``
  and data related to that ``order_vector``,
 
  It also contains functions for retrieving these data.
@@ -46,7 +46,7 @@ const uint32_t MM_ORDER_VECTOR_TAG_DATA[] = {
   @brief Load data from tables to a buffer
 
   The propose of this function is to provide the information for checking
-  the correctness of the precomuted order vector \f$v_1\f$ stored
+  the correctness of the precomputed order vector \f$v_1\f$ stored
   in this module.
   
   This function stores precomputed data in a buffer ``buf`` of
@@ -151,7 +151,7 @@ static inline void load64(uint32_t offset, uint_mmv_t *p_dest, uint32_t n)
   array referred by ``p_dest``. That array must must be sufficiently
   long to store a vector of the representation  \f$\rho_{15}\f$.
 
-  See [Sey22] for a decription of the properties of the vector \f$v_1\f$
+  See [Sey22] for a description of the properties of the vector \f$v_1\f$
   in the representation  \f$\rho_{15}\f$ of the monster group.
   
   The standard way to obtain the number of entries of type ``unint_mmv_t``
@@ -281,7 +281,7 @@ int32_t mm_order_compare_vector_part_A(uint_mmv_t *p_v)
 /** 
   @brief Return the hash value of the ordervector
 
-  The function returns the hash value of the precomuted order vector
+  The function returns the hash value of the precomputed order vector
   as given by function ``mm_aux_hash`` in file ``mm_aux.c``.
   
 */

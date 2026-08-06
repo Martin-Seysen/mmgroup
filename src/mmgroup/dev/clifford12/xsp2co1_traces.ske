@@ -281,7 +281,7 @@ static inline int32_t trace_98280_fast(uint64_t *elem)
   So this function performs the same action as
   function ``xsp2co1_traces_all`` in file ``xsp2co1_elem.c``,
   but it is considerably faster, since it uses precomputed
-  tables for som hard cases.
+  tables for some hard cases.
 */
 // %%EXPORT px
 int32_t xsp2co1_traces_fast(uint64_t *elem, int32_t *ptrace)

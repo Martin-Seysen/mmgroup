@@ -25,7 +25,7 @@ VERSION = '1.0.8' # 2026-05-13. Fixes and internal changes
 # VERSION = '0.0.4' # 2020-06-15. MSVC compiler is now supported
 # VERSION = '0.0.3' # 2020-06-10. bugfixes in code generator
 # VERSION = '0.0.2' # 2020-06-04. Order oracle added; bugfixes
-# VERSION = '0.0.1' # 2020-05-20. First releae
+# VERSION = '0.0.1' # 2020-05-20. First release
 
 # Version history must also be updated in the API Reference,
 # section 'Version history'.
@@ -50,7 +50,7 @@ from collections import defaultdict
 
 
 ######################################################################
-# Directories and inports relative to these driectories
+# Directories and imports relative to these directories
 ######################################################################
 
 ROOT_DIR = os.path.realpath(os.path.dirname(__file__))
@@ -277,7 +277,7 @@ SHARED_START = '''
 
 
 ####################################################################
-# Building the extenstions at stage 1
+# Building the extensions at stage 1
 ####################################################################
 
 DIR_DICT["DLL_NAME"] = "None" if STATIC_LIB else "MAT24"
@@ -435,7 +435,7 @@ if STAGE < 2:
             clifford12_extension,
         ]
     ext_modules +=  [CustomBuildStep(
-        'Generate header describing the endianess of the machine',
+        'Generate header describing the endianness of the machine',
         [sys.executable, 'make_endianess_header.py'
             ] + MAKE_ENDIANESS_ARGS.split()
     )]
@@ -788,6 +788,5 @@ setup(
     package_data = package_data,
     include_dirs=[np.get_include()],  # This gets all the required Numpy core files
 )
-
 
 

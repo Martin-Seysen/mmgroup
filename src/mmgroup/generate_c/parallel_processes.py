@@ -67,7 +67,7 @@ Error: Could not launch the following subprocess!
         """Poll a subprocess.
 
         The function returns ``None`` is the subprocess is still 
-        runnning. If the subprocess has terminated the method returns
+        running. If the subprocess has terminated the method returns
         returns its exit status as in method ``wait``.
         """
         if self.returncode is None:
@@ -78,7 +78,7 @@ Error: Could not launch the following subprocess!
         """Wait until subprocess has finished and return exit status
 
         Usually, the exit status is 0 if the process has terminated
-        successfully, and a nonzero integer oherwise.
+        successfully, and a nonzero integer otherwise.
         """
         if self.returncode is None:
              self.returncode = self.process.wait()
@@ -114,10 +114,10 @@ Error: Could not launch the following subprocess!
 
 
 class SimpleQutputQueue:
-      """Queue of terminated proceseses waiting to diplay their output
+      """Queue of terminated proceseses waiting to display their output
 
       Here we try to display the output of all successfully terminated
-      processs in the order in which they have been launched.
+      processes in the order in which they have been launched.
 
       Here process is is an instance of class ``SimpleSubProcess``;
       the order of the processes is given by attribute ``number``.     
@@ -127,7 +127,7 @@ class SimpleQutputQueue:
           self.processes = {}
       
       def display_finished(self):
-          """Dislay output of all processes with number <= self.next"""
+          """Display output of all processes with number <= self.next"""
           keys = sorted(self.processes.keys())
           for key in keys:
               if key <= self.next:
@@ -218,7 +218,7 @@ class SimpleProcessWorkers:
         """Wait until all processes have terminated.
 
         The function returns 0 if all processes have terminated
-        sucessfully. It stops and kills all other processes and
+        successfully. It stops and kills all other processes and
         returns -1 if any process has failed. 
         """
         for i in range(self.nprocesses):
@@ -283,7 +283,7 @@ class SimpleProcessWorkers:
         subprocess is launched with arguments given by that entry.
 
         The function waits until all subprocesses have terminated 
-        successfuly, or one of the processes fails.
+        successfully, or one of the processes fails.
 
         The function raises ValueError or CalledProcessError
         if a process fails.

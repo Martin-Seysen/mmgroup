@@ -313,10 +313,10 @@ static uint32_t KER_TABLE_YX[4] = {0, 0x1000, 0x1800, 0x800};
   on a vector ``v_in`` in the representation \f$\rho_{%{P}}\f$ of
   the monster.
 
-  The integers ``f`` and ``e`` occuring in the generators \f$y_f\f$
+  The integers ``f`` and ``e`` occurring in the generators \f$y_f\f$
   and  \f$x_e\f$ encode elements of the Parker loop. The integer
   ``eps`` encodes the element \f$\epsilon\f$ of the Golay cocode
-  occuring in the generator  \f$x_\epsilon\f$,  as indicated in the
+  occurring in the generator  \f$x_\epsilon\f$,  as indicated in the
   header of this file. The function computes this operation of
   the element of the monster (given by parameters ``f, e, eps``)
   on the input  vector ``v_in`` and  stores the result in the output 
@@ -435,4 +435,3 @@ int32_t mm_op%{P}_xy_tag_ABC(uint_mmv_t *v, uint32_t f, uint32_t e, uint32_t eps
 //  %%GEN h
 /// @endcond 
 //  %%GEN c
-

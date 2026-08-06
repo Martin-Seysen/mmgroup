@@ -108,7 +108,7 @@ class Lsbit24Function(object):
     ================  ==================================================
 
     This class is designed for cooperation with an instance of
-    class ``TableGenerator``. A similar class should provode at least 
+    class ``TableGenerator``. A similar class should provide at least 
     the member functions ``tables()`` and ``directives()``.
 
  
@@ -127,7 +127,7 @@ class Lsbit24Function(object):
     file generates a very efficient expression that evaluates to the 
     lsbit of ``x``. 
     Note that we use standard python formatting syntax, with 
-    ``MAT24_LSBIT`` refering to a member  function ``generate`` of class 
+    ``MAT24_LSBIT`` referring to a member  function ``generate`` of class 
     ``Lsbit24Function``that generates the appropriate C code for 
     computing the lsbit of the 24-bit integer ``x``.
  
@@ -188,7 +188,7 @@ class Lsbit24Function(object):
 
         When calling this function from python, names is the
         dictionary for translating python names of tables into
-        C names to be used by the generated code, see documention
+        C names to be used by the generated code, see documentation
         of this class.
 
         If 'arg_is_pwr2' then more efficient code is generated,
@@ -290,7 +290,7 @@ class MatrixToPerm(object):
     such that their XOR sum has also weight 12. Call these vectors
     c0 and c1. Then we calculate c0 & c1, c0 & ~c1, ~c0 & c1. These 3
     vectors, and the odd blackwhite vector and its complement form a 
-    set of 5 vectors. Any singelton vector in the MOG an be obtained 
+    set of 5 vectors. Any singleton vector in the MOG an be obtained 
     as an intersection of one of these 5 vectors with a vector that 
     has ones in exactly one column of the MOG.
 
@@ -300,7 +300,7 @@ class MatrixToPerm(object):
 
     If an image of the standard basis of the Golay code is given,
     we can perform these XOR, AND and coplement operations with the 
-    transformed basis vectores, yielding the transformed singletons.
+    transformed basis vectors, yielding the transformed singletons.
 
     These transformed singletons are just the images of an element
     of the Mathieu group Mat24 considered ad a permutation. 
@@ -356,7 +356,7 @@ class MatrixToPerm(object):
        
 
     def augment_colored_basis(self):
-        """Augment self.basis by addding some vectors to the basis.
+        """Augment self.basis by adding some vectors to the basis.
         
         The augmented vectors are XOR combinations of the basis vectors.
        
@@ -506,7 +506,7 @@ class MatrixToPerm(object):
 
 
     def generate_and(self, z, basis_name):
-        """Return C code for the expession self.and_basis(z)
+        """Return C code for the expression self.and_basis(z)
 
         basis_name is the name of the array for the basis         
         """
@@ -524,7 +524,7 @@ class MatrixToPerm(object):
         'in_name' is the name of the input array representing the transformed
         basis. Each entry of that input array represent a Golay code word.
         In contrast to function self.calculate(), the Golay code vectors in
-        the input array are given in 'gcode' represention, see documentation
+        the input array are given in 'gcode' representation, see documentation
         of class GolayCode. They are converted to vector representation first.
         
         'out_name' is the name of the output array representing the 
@@ -577,4 +577,3 @@ for (_i=0; _i < 12; ++_i) {0}[_i] =
             "MAT24_MATRIX_TO_PERM" : UserDirective(self.generate,"ssss", 1),
         }
  
-

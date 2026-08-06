@@ -193,7 +193,7 @@ int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
     uint32_t reduce = 0; // True if g gas to be reduced
 
     for (i = 0; i < len_g; ++i) {
-        // If both, tag t and l peviously have occcured
+        // If both, tag t and l peviously have occurred
         // then we must reduce g.
         reduce |= has_t;
         // Store current tag in ``tag``.
@@ -283,4 +283,3 @@ int32_t mm_group_prepare_op_ABC(uint32_t *g, uint32_t len_g, uint32_t *a)
 }
 #endif
 //  %%GEN c
-

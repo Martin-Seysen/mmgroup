@@ -49,7 +49,7 @@ def make_temp_dir(parent = None):
     imported with an "import" statement. Then a directory 'temp' 
     is created as a subdirectory of the directory of that module, 
     which is os.path.dirname(os.path.realpath(module.__file__)).
-    Futhermore, and empty file with name "__init__.py" is created
+    Furthermore, and empty file with name "__init__.py" is created
     in that subdirectory 'temp'. Then a python module foo.py
     written into that subdirectory can be imported as
     <parent>.temp.foo, with <parent> the module object 'parent'.

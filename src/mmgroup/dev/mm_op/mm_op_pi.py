@@ -79,7 +79,7 @@ class Perm24_Benes(MM_Op):
     // The following code permutes the small array 'source' and stores
     // the result to 'dest'. The result is negated if bit 0 of 'sign'
     // is set.
-    uint_mmv_t *soure, *dest, sign;
+    uint_mmv_t *source, *dest, sign;
 
     // Declare temporary variables t0, t1,...
     // %%PERM24_BENES_DECLARE "t"
@@ -101,14 +101,14 @@ class Perm24_Benes(MM_Op):
 """
 
     def __init__(self, p, prefer_benes_net = True):
-        """Initialise for calulations with small integers modulo p
+        """Initialise for calculations with small integers modulo p
 
         p+1 must be a power of two. Calculations modulo p are described 
         in more detail in the base classes of this class.
 
         If 'prefer_benes_net' then self.use_benes_net is set True
         whenever Benes networks may be used for a given p.
-        Ohterwise self.use_benes_net is set True only if using 
+        Otherwise self.use_benes_net is set True only if using 
         a Benes network is an obvious advantage compared to using
         the methods of class Perm24_Standard.
         """
@@ -131,7 +131,7 @@ class Perm24_Benes(MM_Op):
         return len(self.prep_table)
 
     def iter_shift_cases(self):
-        """Yield pairs (layer, offset) to be used for shift opration
+        """Yield pairs (layer, offset) to be used for shift operation
 
         Given a permutation  p1 of 24 entries, the C function 
         mat24_perm_to_net() computes a Benes network with 9 layers for 
@@ -182,7 +182,7 @@ class Perm24_Benes(MM_Op):
     def make_prep_table(self):
         """Return the table required by method prepare()
 
-        This is a compressed version of the table returend by method
+        This is a compressed version of the table returned by method
         iter_shift_cases() with each pair (layer, offset) stored in
         on byte. Here the lower four bits of that byte store the value 
         'layer' and the higher four bits of that byte store the value
@@ -194,7 +194,7 @@ class Perm24_Benes(MM_Op):
               for layer, offset in self.iter_shift_cases()]  
 
     def prep_declare(self):
-        """Delare local and static variables for self.prepare()"""
+        """Declare local and static variables for self.prepare()"""
         s = """uint_mmv_t tmp; 
 uint_fast8_t i;
 """
@@ -223,7 +223,7 @@ uint_fast8_t i;
         """Generates code for the precomputation needed for a permutation
 
         Given an array B describing a Benes network for a permutation 
-        of 24 elements, this method genrates code for the necessary
+        of 24 elements, this method generates code for the necessary
         precomputation for performing such permutations. The result of
         the precomputation is an array M of type uint_mmv_t[] and length
         at most 21, with the exact length given by 
@@ -261,7 +261,7 @@ uint_fast8_t i;
 
             (offset1, offset2, shift)
 
-        For the permuation of an array v of type uint_mmv_t[] representing 
+        For the permutation of an array v of type uint_mmv_t[] representing 
         the small integers in bit fields of length self.FIELD_BITS
         this means:
 
@@ -603,8 +603,6 @@ if __name__ == "__main__":
         print ("\ntest", p)
         a = SmallPerm24(p)
         a._test()
-
-
 
 
 

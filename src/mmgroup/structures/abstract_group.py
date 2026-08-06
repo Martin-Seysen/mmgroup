@@ -48,7 +48,7 @@ class AbstractGroupWord(object):
     'group = g'. If a subclass of class 'AbstractGroup' models one 
     group only, the corresponding subclass of this class may 
     contain a class attribute 'group' referring to that group. Then 
-    the user  may contruct elements of that group using the 
+    the user  may construct elements of that group using the 
     constructor of that subclass of this class.
     """
     __slots__ = []
@@ -56,8 +56,8 @@ class AbstractGroupWord(object):
         raise NotImplementedError("Abstract group")
 
     # There is no need to modify any methods below this line.
-    # You should overwrite the corresonding methods in the
-    # subclasses of class AbstractGroup insead.
+    # You should overwrite the corresponding methods in the
+    # subclasses of class AbstractGroup instead.
  
     def __eq__(self, other):
         if not isinstance(other, AbstractGroupWord):

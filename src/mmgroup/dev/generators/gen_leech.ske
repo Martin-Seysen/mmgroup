@@ -615,7 +615,7 @@ uint32_t op_y_nosign(uint32_t q0, uint32_t d)
   vector \f$l\f$ in the Leech lattice mod 2.
 
   Parameter \f$l\f$ is encoded in **Leech lattice encoding**,
-  igoring the sign. The function returns \f$l \cdot g\f$,
+  ignoring the sign. The function returns \f$l \cdot g\f$,
   in **Leech lattice encoding**, with the sign bit set to zero.
 
   The function is optimized for speed. It returns garbage if
@@ -692,7 +692,7 @@ uint32_t gen_leech2_op_word_leech2(uint32_t l, uint32_t *g, uint32_t n, uint32_t
 
   The function replaces each element  \f$l_j\f$ in the array ``m``
   by \f$l_j \cdot g\f$. Elements \f$l_j\f$ are encoded
-  in **Leech lattice encoding**, igoring the sign.
+  in **Leech lattice encoding**, ignoring the sign.
 
   The function is optimized for speed. It returns zero in case of
   success. It stores garbage in the array ``m`` and returns a
@@ -955,7 +955,6 @@ int32_t gen_leech2_map_std_subframe(uint32_t *g, uint32_t len_g, uint32_t *a)
 #ifdef __cplusplus
 }
 #endif
-
 
 
 

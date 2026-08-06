@@ -26,7 +26,7 @@ Function ``hint_for_complete_heptads`` prints an explanation
 of the implementation of function  ``mat24_perm_complete_heptad``,
 including some precalulated data required for that implementation.
 
-Function ``test_complete_octad`` test the correcteness of function
+Function ``test_complete_octad`` test the correctness of function
 ``mat24_perm_complete_heptad``. Here it suffices to check that
 the identity permutation is generated correctly from the required
 input values, and that the intersections of (possibly complemented)
@@ -90,7 +90,7 @@ def superoctads(contained, not_contained, partial = [], weight = 0):
       * All entries in the list ``contained ``must be contained 
         in the octad.
         
-      * No entry in the list ``not_contained`` may be containe 
+      * No entry in the list ``not_contained`` may be contained 
         in the octad.
 
       * Precisely ``weight`` entries of the list ``partial``
@@ -98,7 +98,7 @@ def superoctads(contained, not_contained, partial = [], weight = 0):
 
     Each parameter ``contained `, ``not_contained``, or ``weight``
     may be a list of different integers < 24 or a 24-bit integer
-    representing a bit vetor.    
+    representing a bit vector.    
     """
     if not isinstance(contained, int): 
         contained =  list_to_set24(contained)   
@@ -114,7 +114,7 @@ def superoctads(contained, not_contained, partial = [], weight = 0):
 def l_superoctads(contained, not_contained, partial, weight):
     """Return a specific list of octads
     
-    The function returns a spcific list of octads. Input parameters
+    The function returns a specific list of octads. Input parameters
     are as in function ``superoctads``, and also the same list of 
     octads is returns.
     
@@ -122,7 +122,7 @@ def l_superoctads(contained, not_contained, partial, weight):
     list of octad is represented as a sorted list of 8 integers
    
     THis function may be used for manually finding suitable octads 
-    satisfying certain requiremnts.
+    satisfying certain requirements.
     """
     l = superoctads(contained, not_contained, partial, weight)
     return [set24_to_list(v) for v in l]
@@ -206,7 +206,7 @@ def lsb24(x):
     return res
 
 def odd_syn(v):
-    """Return Golay cocode syndrom of a bit vector v
+    """Return Golay cocode syndrome of a bit vector v
 
     The bit vector v must have odd parity.
     """
@@ -511,7 +511,7 @@ def mat24_int_to_perm(n):
     # entry of that list to p[8].
     p[8] = p1[n & 15]
 
-    # Now we have assigned p[m], m = 0,1,2,3,4,5,8; and we procceed
+    # Now we have assigned p[m], m = 0,1,2,3,4,5,8; and we proceed
     # as in in function ``py_mat24_int_to_perm``.
     mat24_complete_heptad(p)
     return p
@@ -606,7 +606,7 @@ def mat24_perm_to_int(p1):
     bitmap |= (1 << ((syn >> 10) & 31))
 
     # Delete all bits at positions >= p1[8] from the bitmap. The the
-    # last digit of n ist the bit weight of that bit map.
+    # last digit of n is the bit weight of that bit map.
     d = gc.bw24(((1 << p1[8]) - 1) & bitmap)
     # Enter the last digit into n
     n = 16 * n + p1[8] - d

@@ -64,7 +64,7 @@ def display_mm_group_prepare_op_ABC(g):
     print("mm_group_prepare_op_ABC(g)=")
     print(g1)
     if g1 != g:
-        print(" This difffers from g!!")
+        print(" This differs from g!!")
     return g1
 
 
@@ -194,4 +194,3 @@ def test_benchmark_op_word():
 
 
     
-

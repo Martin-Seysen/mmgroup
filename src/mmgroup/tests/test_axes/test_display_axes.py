@@ -46,7 +46,7 @@ represententation of G. That 'A' part has a natural interpretation
 as a symmetric 24 times 24 matrix operating on Leech lattice.
 
 For each class of 2A axes we give a sample matrix A operating on
-the Leech lattice in standard cooordinates. The matrices displayed
+the Leech lattice in standard coordinates. The matrices displayed
 below and also their eigenvalues should be divided by 256.
 
 It turns out that for distinguishing between the classes of 2A axes
@@ -113,7 +113,7 @@ def analyze_xy(g):
 
 
 #######################################################################
-# Diplay information for axes
+# Display information for axes
 #######################################################################
 
 
@@ -155,5 +155,4 @@ def test_display_axes(verbose = 0):
 
 if  __name__ == "__main__":
     test_display_axes(verbose = 1)
-
 

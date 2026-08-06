@@ -77,7 +77,7 @@
 
 
 /** 
-   @brief Stucture to store a subword of generators of the Monster
+   @brief Structure to store a subword of generators of the Monster
 
    This structure is required in file ``mm_shorten.c``.
 
@@ -155,7 +155,7 @@ typedef struct gt_subword_buf_s gt_subword_buf_type;
 
 
 /** 
-   @brief Stucture to store a word of generators of the Monster
+   @brief Structure to store a word of generators of the Monster
 
    This structure is required in file ``mm_shorten.c``.
 
@@ -260,7 +260,7 @@ all memory  allocated by function ``_gt_word_new_subword``.
 
 In order to avoid memory leaks, only the three functions mentioned
 above will allocate or free memory for entries of the linked list.
-The following activities are out of the scope of these three funtions:
+The following activities are out of the scope of these three functions:
 
 allocating and deallocating the buffer referred by ``p_gt``,
 manipulating the doubly linked list in that buffer, recycling of
@@ -624,7 +624,7 @@ int32_t gt_word_seek(gt_word_type *p_gt, int32_t pos, uint32_t set)
   @brief Low-level function
 
   Try to append a prefix of word 'a' of length 'n' to the current subword.
-  Return number of atoms of 'a' sucessfully appended to that word.
+  Return number of atoms of 'a' successfully appended to that word.
   A negative return value inducates an error.
 */
 // %%EXPORT p
@@ -1023,10 +1023,10 @@ int32_t gt_word_reduce_input(gt_word_type *p_gt)
 
 
 /**
-@brief Append word of generators to strcture ``*p_gt``
+@brief Append word of generators to structure ``*p_gt``
 
 Append the word ``a`` of length ``n`` to the word in the buffer
-refered by ``p_gt``.
+referred by ``p_gt``.
 
 A negative return value inducates an error.
 
@@ -1192,7 +1192,7 @@ int32_t gt_word_store(gt_word_type *p_gt, uint32_t *pa, uint32_t maxlen)
 
 
 /**
-@brief Compress word in ``*p_gt`` to strcuture of type ``mm_compress_type``
+@brief Compress word in ``*p_gt`` to structure of type ``mm_compress_type``
 
 Yet to be tested and documented!!!
 
@@ -1326,7 +1326,7 @@ It returns the actual length of buffer buf, or a negative value
 if ``maxlen`` is too short. Entries of buffer ``buf`` are
 organized as follows:
 
-0:  component ``reduce_mode`` of the strcture
+0:  component ``reduce_mode`` of the structure
 
 1:  number N of records in the buffer
 
@@ -1414,4 +1414,3 @@ int32_t gt_word_len_pickle(gt_word_type* p_gt)
 #ifdef __cplusplus
 }
 #endif
-

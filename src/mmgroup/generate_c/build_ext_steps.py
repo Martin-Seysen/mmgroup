@@ -154,7 +154,7 @@ starting a python subprocess.
 
 The following functionality is deprecated:
 
-If the first entry of a list as descibed above is a python function
+If the first entry of a list as described above is a python function
 then that function is called.  Subsequent entries in the list are
 passed as arguments to the function.
 
@@ -273,7 +273,7 @@ class  BuildExtCmd(_build_ext):
     WARN_PY = "Executing a python function with class BuildExtCmd is deprecated!"
     user_options = _build_ext.user_options + [
         ("nprocesses=", None, 
-        "Number of prcesses used by class ParallelSteps"
+        "Number of processes used by class ParallelSteps"
         )
     ]
 
@@ -358,7 +358,7 @@ class  BuildExtCmd(_build_ext):
                 self.inplace = True     # Always build inplace
                 force = self.force      
                 self.force = True       # Always force building
-                # Run the corresponding mathod of the base class
+                # Run the corresponding method of the base class
                 super(BuildExtCmd, self).run() 
                 # Restore old attributes
                 self.extensions = extensions
@@ -418,6 +418,5 @@ class  BuildExtCmd(_build_ext):
         return package_dir
 
 ###########################################################################################
-
 
 

@@ -424,7 +424,7 @@ as follows:
    
  * Parameters with suffix ``_io`` refer to pointers in the C
    function and hence to iterables in the corresponding 
-   python function. Here the sufix ``_io`` means that
+   python function. Here the suffix ``_io`` means that
    the function may modify that iterable object.   
 
 
