@@ -200,7 +200,7 @@ typedef struct mm_order_data_Gx0_s  mm_order_data_Gx0_type;
 //  %%GEN c
 
 /************************************************************************
-** Tge structure for interpreting the standard order vector
+** The structure for interpreting the standard order vector
 ************************************************************************/
 
 

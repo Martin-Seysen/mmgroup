@@ -49,7 +49,7 @@ def eval_A_Q(ncols, data, v):
     v &= (1 << len(data)) - 1  
     # Sum up  :math:``v \cdot A`` in ``a``, the off-diagonal elements 
     # of ``R`` in ``q``, and the diagonal elements of ``R`` in ``diag``. 
-    # Since ``R`` is symmetric, we XOR  the lower triagular off-diagonal 
+    # Since ``R`` is symmetric, we XOR  the lower triangular off-diagonal 
     # elements of ``R`` in ``q`` and double the result.
     a = q = diag = 0
     for i, d in enumerate(data):

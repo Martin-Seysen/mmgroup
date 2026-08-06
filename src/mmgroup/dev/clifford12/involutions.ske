@@ -474,7 +474,7 @@ int32_t xsp2co1_involution_orthogonal(uint64_t *invar, uint32_t col)
    // Put T = P^T (P^T is the transposed of P)
    bitmatrix64_t(M, n, 24, T);
 
-   // Put M = (?, A * Q), where Q is the scalar poduct in the Leech e
+   // Put M = (?, A * Q), where Q is the scalar product in the Leech e
    // lattice  mod 2; i.e. exchange column i of A with column i + 12.
    bitmatrix64_rot_bits(M, n, 32, 64, 0); // M = (?, A)
    bitmatrix64_rot_bits(M, n, 12, 24, 0); // M = (?, A * Q)

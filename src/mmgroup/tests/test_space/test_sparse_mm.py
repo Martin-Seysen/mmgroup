@@ -4,7 +4,7 @@ We deal with the rational representation [Seys19] of the monster
 group MM, which is  based on the Conway's construction [Conw85] of 
 the monster, modulo various small integers p = 2**n-1, n <= 8.
 Here the integer p is called the modulus. See [Conw85], [Seys19], 
-for details. We also refert to the documentation of the C modules 
+for details. We also refer to the documentation of the C modules 
 mm_aux.c and mat24_functions.c in this package.
 """
 

@@ -405,7 +405,7 @@ def test_rand_op(n_tests = 3, f_mul = None, verbose = 0):
 def test_rand_op_len0():
     """Test method MMTestSpace.mul_exp() with neutral element g
 
-    A bug has been reported when muliplying a vector by a negative
+    A bug has been reported when multiplying a vector by a negative
     power of the neutral element of the Monster. Bug has been
     reproduced with this test and fixed at the C level.
 

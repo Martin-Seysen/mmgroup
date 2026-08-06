@@ -3,7 +3,7 @@
 
 This is yet a fragment.
 
-It implements the generation of random elements ofv arious subgroups
+It implements the generation of random elements of various subgroups
 of the Mathieu group :math:`M_{24}`. Here each subgroup is 
 describend by an integer ``mode``, where each bit in integer
 ``mode`` corresponds to a certain subgroup of  :math:`M_{24}`
