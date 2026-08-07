@@ -22,6 +22,7 @@ from mmgroup.generators import mm_group_invert_word
 from mmgroup.mm_op import mm_op_mul_std_axis, mm_op_word
 from mmgroup.tests.axes.axis import Axis
 from mmgroup.tests.axes.axis import G_AXIS, V_AXIS
+from mmgroup.tests.axes.axis import check_reduce_status
 from mmgroup.mm_reduce import mm_reduce_vector_vp
 
 characteristics()
@@ -62,7 +63,7 @@ def _fast_reduce_axis_v15(v15, e = 1):
     w = MMV(15)(0)
     g = np.zeros(256, dtype = np.uint32)
     l_g = mm_reduce_vector_vp(v0, v.data, 1, g, w.data)
-    assert 0 <= l_g < 128, hex(l_g)
+    check_reduce_status(l_g, "mm_reduce_vector_vp")
     assert abs(e) == 1
     if e == -1:
         mm_group_invert_word(g, l_g)

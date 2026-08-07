@@ -21,6 +21,25 @@ def import_all():
 
 
 
+@pytest.mark.axes
+def test_check_reduce_status():
+    """Test error reporting for the low-level reduction functions
+
+    A negative status is a fatal error code and must not be reported
+    as if it were the length of a word of generators.
+    """
+    from mmgroup.tests.axes.axis import check_reduce_status
+    for l_g in [0, 1, 127]:
+        assert check_reduce_status(l_g, "f") == l_g
+    for status in [-1, -0x2afa, -12000]:
+        with pytest.raises(ValueError) as excinfo:
+            check_reduce_status(status, "mm_reduce_vector_vp")
+        assert str(status) in str(excinfo.value)
+        assert "mm_reduce_vector_vp" in str(excinfo.value)
+    with pytest.raises(AssertionError):
+        check_reduce_status(128, "f")
+
+
 def product_axis_2A_test_multipliers():
     #yield MM()
     for i in range(3):
