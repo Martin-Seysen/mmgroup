@@ -119,6 +119,9 @@ from mmgroup.generators import mm_group_n_reduce_element
 from mmgroup.generators import mm_group_n_copy_element
 from mmgroup.generators import mm_group_n_right_coset_N_x0
 from mmgroup.generators import mm_group_n_to_word_std
+from mmgroup.generators import mm_group_n_mul_y, mm_group_n_mul_t
+from mmgroup.generators import mm_group_n_exp_element
+from mmgroup.generators import mm_group_n_order_element
 
 from mmgroup.mat24 import pow_ploop
 
@@ -272,6 +275,22 @@ class GroupN(AbstractMMGroup):
         for tag, data in reversed(g2.as_tuples()):
            self.divide_atom(g1, tag, data)
         return g1
+
+
+    ####################################################################
+    # alternative fast exponentiation
+    ####################################################################
+
+
+    def fast_exp(self, g1, e):
+        g2 = self.copy_word(g1)
+        mm_group_n_exp_element(g1.data, e, g2.data)
+        return g2
+
+    def fast_order(self, g1):
+        o = mm_group_n_order_element(g1.data)
+        assert o >= 1, o
+        return o
 
     ####################################################################
     # Low-level group operation

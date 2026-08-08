@@ -392,6 +392,46 @@ void mm_group_n_conjugate_element(uint32_t *g_1, uint32_t *g_2, uint32_t *g_3)
 
 
 
+/**
+ @brief Exponentiation of an element \f$g_1\f$ of \f$N_0\f$.
+
+ Put \f$g_2 = g_1^{e}\f$. Elements \f$g_1, g_2\f$ of \f$N_0\f$
+ are given as arrays of five 32-bit integers.
+
+ These arrays may overlap.
+*/
+// %%EXPORT px
+void mm_group_n_exp_element(uint32_t *g_1, int64_t e, uint32_t *g_2)
+{
+    uint32_t g[5], b[5];
+    uint64_t ee = e;
+    const uint32_t G_EXP = 64UL * 15UL * 7UL * 11UL * 23UL;
+    g[0] = g[1] = g[2] = g[3] = g[4] = 0; 
+    if (e < 0)  {
+        ee = -e; ee %= G_EXP;
+        if (ee) mm_group_n_mul_inv(g, g_1);
+    } else {
+        ee = e; ee %= G_EXP;
+        if (ee) mm_group_n_copy(g_1, g);
+    }
+    if (ee > 1) {
+        mm_group_n_copy(g, b);
+        int32_t i = 0;
+        while (ee >> i) ++i;
+        --i;
+        while (--i >= 0) {
+            mm_group_n_mul_element(g, g, g);
+            if ((ee >> i) & 1) mm_group_n_mul_element(g, b, g);
+        }
+    }
+    mm_group_n_copy(g, g_2);
+}
+
+
+
+
+
+
 
 /// @cond DO_NOT_DOCUMENT 
 
@@ -622,6 +662,37 @@ uint32_t mm_group_n_reduce_element(uint32_t *g)
     }
     return g[0] | g[1] | g[2] | g[3] | g[4];
 }
+
+
+/**
+ @brief Return order of an element \f$g_1\f$ of \f$N_0\f$.
+
+ The function returns the order of an element \f$g_1\f$ of \f$N_0\f$,
+ or a negative value in case of error.
+ \f$g_1\f$ is given as an array of five 32-bit integers.
+*/
+// %%EXPORT px
+int32_t mm_group_n_order_element(uint32_t *g_1)
+{
+    uint32_t g[5], i;
+    uint8_t p[24], dummy[12];
+    if (mat24_m24num_to_perm(g_1[I_pi], p)) return -2;
+    int32_t o = mat24_perm_cycles(p, dummy);
+    if (o < 1 || o > 23) return -3;
+    mm_group_n_exp_element(g_1, o, g);
+    if (g[I_t] % 3 &&  (g[I_d] & 0x800) == 0) {
+        mm_group_n_exp_element(g, 3, g);
+        o *= 3;
+    }
+    for (i = 0; i < 5; ++i) {
+        if (mm_group_n_reduce_element(g) == 0) return o;
+        mm_group_n_mul_element(g, g, g);
+        o <<= 1;
+    }
+    return -4;
+}
+
+
 
 
 
