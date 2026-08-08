@@ -735,27 +735,20 @@ setup(
     include_package_data=False,
     zip_safe=False,
     classifiers=[
-        # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 1 - Planning',
+        # complete classifier list: https://pypi.org/classifiers/
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
         #'Operating System :: Unix',
         'Operating System :: POSIX',
+        'Operating System :: MacOS',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        #'Programming Language :: Python :: 3.6',
-        #'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        # uncomment if you test on these interpreters:
-        # 'Programming Language :: Python :: Implementation :: IronPython',
-        # 'Programming Language :: Python :: Implementation :: Jython',
-        # 'Programming Language :: Python :: Implementation :: Stackless',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14', 
         'Topic :: Scientific/Engineering :: Mathematics',
     ],
     project_urls={
@@ -765,7 +758,7 @@ setup(
     keywords=[
         'sporadic group', 'monster group', 'finite simple group'
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     install_requires=[
          'numpy', 'regex',
     ],

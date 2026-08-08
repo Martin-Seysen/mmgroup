@@ -10,7 +10,7 @@ import argparse
 
 def _comment_endianess(endianess, mockup = False):
     if 0 <= endianess <= 1:
-        s = "Local machine is " + ['litte', 'Big'][endianess] 
+        s = "Local machine is " + ['little', 'Big'][endianess] 
         return s + " endian"
     else:
         explain = "has not been" if mockup else "could not be"

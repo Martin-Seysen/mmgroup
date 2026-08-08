@@ -8,7 +8,7 @@ of the subgroup
 of the monster. 
 
 Representation of :math:`G_{x0}` on the tensor product :math:`4096_x \otimes \Lambda`
-....................................................................................
+.....................................................................................
 
 In :cite:`Seysen20`, section 7.4  and 9, the generators  
 :math:`x_d, x_\delta, y_\delta, x_\pi, \xi` of :math:`G_{x0}`

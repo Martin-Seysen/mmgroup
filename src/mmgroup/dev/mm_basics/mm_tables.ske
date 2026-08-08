@@ -2,7 +2,7 @@
 
  File ``mm_tables.c`` contains functions for supporting the 
  operations \f$x_\epsilon x_\pi\f$ and \f$y_f x_e x_\epsilon\f$ on 
- the vectors of the 198884-dimesional representation  \f$\rho_p\f$
+ the vectors of the 198884-dimensional representation  \f$\rho_p\f$
  modulo a small number \f$p\f$. These operations are implemented
  in separate packages for the different values of \f$p\f$. But
  there are common preprocessing steps required for all

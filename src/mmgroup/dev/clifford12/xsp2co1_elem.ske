@@ -295,7 +295,7 @@ int32_t xsp2co1_power_word(uint32_t *a1, uint32_t n, int64_t e, uint32_t *a2)
 
     // Compute  ``elem ** e``
     res = xsp2co1_power_elem(elem, e, elem);
-    if (res) return res;
+    if (res < 0) return res;
 
     // Output result 
     return xsp2co1_elem_to_word(elem, a2);

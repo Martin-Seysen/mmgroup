@@ -133,17 +133,17 @@ also install the following programs:
   :widths: 20 30 50
 
 
-  ========== ============== ======================================================
-  Program    Purpose        Location 
-  ========== ============== ======================================================
-  miktex     Documentation  https://miktex.org/
-  Perl       Documentation  https://www.perl.org/get.html
-  doxygen    Documentation  https://www.doxygen.nl/download.html
-             of C files
+  =========== ============== ======================================================
+  Program     Purpose        Location 
+  =========== ============== ======================================================
+  miktex      Documentation  https://miktex.org/
+  Perl        Documentation  https://www.perl.org/get.html
+  doxygen     Documentation  https://www.doxygen.nl/download.html
+              of C files
   Ghostscript Documentation: https://ghostscript.com/releases/gsdnld.html
-             using TikZ in    
-             Sphinx
-  ========== ============== ======================================================
+              using TikZ in    
+              Sphinx
+  =========== ============== ======================================================
 
 
 

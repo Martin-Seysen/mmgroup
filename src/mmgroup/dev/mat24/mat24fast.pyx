@@ -413,6 +413,25 @@ def perm_to_m24num(p1):
     for i in range(24): p1a[i] = int(p1[i]) 
     return  mat24_perm_to_m24num(p_p1a)
 
+
+def perm_cycles(p1):
+    cdef uint8_t p1a[24]
+    cdef uint8_t *p_p1a = p1a
+    cdef uint8_t pc[12]
+    cdef uint8_t *p_pc = pc
+    cdef int i, lc = 0
+    for i in range(24): p1a[i] = int(p1[i])
+    cdef uint32_t res = mat24_perm_cycles(p_p1a, p_pc)
+    if res == 0:
+        err = "Illegal permutation in Mat24"
+        raise ValueError, err
+    pc[10] = 0
+    for lc in range(0, 12, 2):
+        if pc[lc] == 0:
+            break
+    return res, [pc[i] for i in range(lc)] 
+
+
 def perm_to_matrix(p1):
     cdef uint8_t p1a[24]
     cdef uint8_t *p_p1a = p1a
