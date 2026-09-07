@@ -41,8 +41,9 @@ def sort_testdata(dtype = 32):
   
     testdata = [ (4, 10), (10, 100), (100,10), (256, 20), (1299, 774), 
             (10, 10**9),
-          (1000000, 2**dtype-1), 
+          (1000000, 2**dtype-1),
     ]
+    #for i in range(10): testdata.append((10000000, 2**dtype-1))
     for length, maxval in testdata:
         yield   np.array( maxval * np.random.rand(length), dtype = d_t )
 

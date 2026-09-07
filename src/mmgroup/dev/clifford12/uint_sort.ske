@@ -151,6 +151,55 @@ memset(out, 0, len_out * sizeof(uint64_t));
 /// @endcond 
 
 /*************************************************************************
+** Least significant bit of a nonzero unsigned 64-bit integer
+*************************************************************************/
+
+/// @cond DO_NOT_DOCUMENT
+static inline uint64_t
+lsb_index(uint64_t x)
+{
+#if defined(_MSC_VER)
+    uint64_t index;
+
+#if defined(_M_X64) || defined(_M_ARM64)
+    _BitScanForward64(&index, x);
+#else
+    if ((uint32_t)x != 0)
+        _BitScanForward(&index, (uint32_t)x);
+    else
+        _BitScanForward(&index, (uint32_t)(x >> 32)), index += 32;
+#endif
+
+    return (uint64_t)index;
+
+#elif defined(__GNUC__) || defined(__clang__)
+    return (uint64_t)__builtin_ctzll(x);
+
+#else
+    /* Portable fallback */
+    static const uint64_t DEBRUIJN =
+        UINT64_C(0x03f79d71b4cb0a89);
+
+    static const unsigned char debruijn_table[64] = {
+         0,  1, 48,  2, 57, 49, 28,  3,
+        61, 58, 50, 42, 38, 29, 17,  4,
+        62, 55, 59, 36, 53, 51, 43, 22,
+        45, 39, 33, 30, 24, 18, 12,  5,
+        63, 47, 56, 27, 60, 41, 37, 16,
+        54, 35, 52, 21, 44, 32, 23, 11,
+        46, 26, 40, 15, 34, 20, 31, 10,
+        25, 14, 19,  9, 13,  8,  7,  6
+    };
+
+    uint64_t bit = x & (UINT64_C(0) - x);
+    return debruijn_table[(bit * DEBRUIJN) >> 58];
+#endif
+}
+/// @endcond 
+
+
+
+/*************************************************************************
 ** Generate sorting algorithms for unsigned 32-bit and 64-bit integers
 *************************************************************************/
 
@@ -262,8 +311,8 @@ void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
 /// @cond DO_NOT_DOCUMENT 
 
 static inline uint%{N}_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
-// Return approximate median of the list a of length n >= 32,
-// based on the median of 9 entries in the list.
+// Return position of approximate median of the list a of length
+// n >= 32, based on the median of 9 entries in the list.
 // We also change the list such that a[0] <= median and a[n-1] >= median.
 {
     uint%{N}_t m[9], temp;
@@ -286,10 +335,119 @@ static inline uint%{N}_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
     a[0] = m[0]; a[n >> 3] = m[1]; a[n >> 2] = m[2];
     a[3 * (n >> 3)] = m[3]; a[n >> 1] = m[4]; a[5 * (n >> 3)] = m[5];
     a[n - 1 - (n >> 2)] = m[6]; a[n - 1 - (n >> 3)] = m[7]; a[n - 1] = m[8];
-    return  m[4];
+    return  n >> 1;
 }
 
 /// @endcond 
+
+/*************************************************************************
+** Quicksort partition for unsigned  %{N}-bit integers
+*************************************************************************/
+
+
+static inline uint64_t
+make_left%{N}(uint%{N}_t *a, uint32_t len, uint32_t l, uint%{N}_t piv)
+{
+    uint64_t mask = UINT64_C(0);
+    uint%{N}_t *pa = a + l;
+    for (uint32_t i = 0; i < len; i += 8) {
+        uint64_t mask1 =  UINT64_C(0);
+        // %%FOR j in range(8)
+        mask1 |= ((uint64_t)(pa[%{j}] > piv)) << %{j};
+        // %%END FOR
+        pa += 8; mask |= mask1 << i;
+    }
+    return mask;
+}
+
+
+static inline uint64_t
+make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
+{
+    uint64_t mask = UINT64_C(0);
+    uint%{N}_t *pa = a + r;
+    for (uint32_t i = 0; i < len; i += 8) {
+        uint64_t mask1 =  UINT64_C(0);
+        // %%FOR j in range(8)
+        mask1 |= ((uint64_t)(pa[-%{j}] < piv)) << %{j};
+        // %%END FOR
+        pa -= 8; mask |= mask1 << i;
+    }
+    return mask;
+}
+
+
+
+// Let piv be the input a[ipiv], with l <= ipiv <= r. Then we
+// partition the array a[l]...a[r] (including a[l] and a[r]) so that 
+// max (a[i] : i < y)   <=   a[y] <=  min(a[i] : i > y),
+// and return the index y with a[y] = piv.
+static inline uint32_t
+partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
+{
+    uint32_t;
+    uint%{N}_t temp, piv = a[ipiv];
+    a[ipiv] = a[r];
+    ipiv = r;
+    --r;
+
+    uint64_t maskL = 0, maskR = 0;
+    int32_t d = (r - l > 192) ? 64 : 32;
+    int32_t dbl_d = d + d;
+    while (r - l >= dbl_d ) {
+        if (maskL == 0) maskL = make_left%{N}(a, d, l, piv);
+        if (maskR == 0) maskR = make_right%{N}(a, d, r, piv);
+        while (maskL != 0 && maskR != 0) {
+                uint32_t iL = (uint32_t)(lsb_index(maskL));
+                uint32_t iR = (uint32_t)(lsb_index(maskR));
+                a[ipiv] = a[l+iL];
+                ipiv = r - iR;
+                a[l+iL] = a[ipiv];
+                maskL &= maskL - UINT64_C(1);
+                maskR &= maskR - UINT64_C(1);
+        }
+        if (maskL == 0)  l += d;
+        if (maskR == 0)  {
+            r -= d;
+            a[ipiv] = a[r + 1];
+            ipiv = r + 1;
+        }
+    }
+    if (maskL) l += lsb_index(maskL);
+    if (maskR && (maskR & 1ULL) == 0) {
+         uint32_t iR = lsb_index(maskR);
+         a[ipiv] = a[r - iR + 1];
+         ipiv = r - iR + 1;
+         r -= iR;
+    }
+    do {
+        //printf("<lr %d %d>\n", l, r);
+        while (l < r && a[l] <= piv) ++l;
+        while (r > l && a[r] >= piv) --r;
+        if (l == r) break;
+        a[ipiv] = a[l];
+        a[l] = a[r];
+        ipiv = r;
+        --r;
+    } while (1);
+    if  (a[r] > piv) {
+        a[ipiv] = a[r];
+        ipiv = r;
+    }
+    a[ipiv] = piv;
+    return ipiv;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 /*************************************************************************
 ** The final sorting algorithm for unsigned  %{N}-bit integers
@@ -310,8 +468,8 @@ static inline uint%{N}_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
 // %%EXPORT px
 void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 {
-    uint_fast32_t *sp, stack[3*64], l, r, i, j;
-    uint%{N}_t temp, piv;
+    uint_fast32_t *sp, stack[3*64], l, r, j;
+    uint%{N}_t temp, ipiv;
 
     // Use insertion sort for small arrays
     if (n < MIN_QS) {
@@ -363,34 +521,36 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 
             if (r - l < MIN_MEDIAN9) {
                 // Sort the first, middle and last element of array a.
-                i = l + ((r - l) >> 1);  // index of the middle element of a
-                // Sort a such that a[l] <= a[i] <= a[r] and use a[i] as pivot
-                swap3(a, l, i, r)
-                piv = a[i];        // pivot with middle element after sorting
+                j = l + ((r - l) >> 1);  // index of the middle element of a
+                // Sort a such that a[l] <= a[j] <= a[r] and use a[j] as pivot
+                swap3(a, l, j, r)
+                ipiv = j;        // pivot with middle element after sorting
             } else {
                 // find pivot as median of 9 entries of the list
-                piv = median_9_%{N}(a + l, r - l + 1);
+                ipiv = l + median_9_%{N}(a + l, r - l + 1);
             }
             // Partition array a[l],...,a[r] using the pivot element piv
             // We compute j such that partitions will be
             // a[l],...,a[j-1]  and   a[j+1],...,a[r].
-            i = l; // 1st element is already done
-            j = r; // last element is already done
-            do {
-                //printf("<lr %d %d %d %d>\n", l, r, i, j);
-                do {++i;} while (a[i] < piv);
-                do {--j;} while (a[j] > piv);
-                if (i >= j) break;
-                xchg(a, i, j);  
-            } while (1); 
-            // push a[j+1,...,r] for next round onto the stack
-            sp[0] = j+1;
-            // push a[l,...,i-1] for next round onto the stack
-            sp[3] = l;
-            sp[4] = j;
-            // decrement recursion depth counter for next round
-            sp[5] = sp[2] = sp[2] - 1;
-            sp += 6;  // increment stack pointer by two levels
+            j = partition%{N}(a, l, r, ipiv);
+            if (j > l && j < r) {
+                // push a[j+1,...,r] for next round onto the stack
+                sp[0] = j+1;
+                // push a[l,...,j-1] for next round onto the stack
+                sp[3] = l;
+                sp[4] = j-1;
+                // decrement recursion depth counter for next round
+                sp[5] = sp[2] = sp[2] - 1;
+                sp += 6;  // increment stack pointer by two levels
+            } else if (j <= l) {
+                sp[0] = j+1;
+                sp[2] = sp[2] - 1;
+                sp += 3;
+            } else {
+                sp[1] = j-1;
+                sp[2] = sp[2] - 1;
+                sp += 3;
+            }
         } else {
             // Use heapsort if max recursion depth exceeded 
             bitvector%{N}_heapsort(a + l, r - l + 1);
