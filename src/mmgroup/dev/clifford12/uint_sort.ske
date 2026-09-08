@@ -340,7 +340,8 @@ static inline uint32_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
 ** Quicksort partition for unsigned  %{N}-bit integers
 *************************************************************************/
 
-
+// Set bit i in return value if a[l+i] > piv for 0 <= i < len.
+// len must be <= 64 and divisible by 8.
 static inline uint64_t
 make_left%{N}(uint%{N}_t *a, uint32_t len, uint32_t l, uint%{N}_t piv)
 {
@@ -357,6 +358,8 @@ make_left%{N}(uint%{N}_t *a, uint32_t len, uint32_t l, uint%{N}_t piv)
 }
 
 
+// Set bit i in return value if a[r-i] < piv for 0 <= i < len.
+// len must be <= 64 and divisible by 8.
 static inline uint64_t
 make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
 {
@@ -377,23 +380,47 @@ make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
 // Let piv be the input a[ipiv], with l <= ipiv <= r. Then we
 // partition the array a[l]...a[r] (including a[l] and a[r]) so that 
 // max (a[i] : i < y)   <=   a[y] <=  min(a[i] : i > y),
-// and return the index y with a[y] = piv. l < r must hold.
+// and return the index y with a[y] = piv. l <= r must hold.
 static inline uint32_t
 partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
 {
+    // Move pivot element a[ipiv] to the rightmost position a[r],
+    // and store the value of the pivot element in piv. This way we
+    // obtain an empty position at index ipiv. This simplifies the
+    // exchanges required for the partitioning porcess.
+    // In the sequel we set l and r so that the part a[l],...,a[r]
+    // is yet to be processed. For the empty position ipiv we will
+    // have ipiv > r throughout the algorithm.
     uint%{N}_t piv = a[ipiv];
     a[ipiv] = a[r];
     ipiv = r;
     --r;
 
-    uint64_t maskL = 0, maskR = 0; 
-    uint32_t d = ((r - l) >> 1) & 0xfffffff8UL;
-    if (d >= 16) {
-        if (d > 64) d = (d >> 1) & 0xfffffff8UL;
-        d = d < 64 ? d : 64;
-        while (r - l >= d + d) {
+    // Use an optimized C implementation of the block-partitioning
+    // algorithm from Edelkamp & Weiß, "BlockQuicksort: How Branch
+    // Mispredictions don’t affect Quicksort", arXiv:1604.06697.
+    // We use a blocksize d <= 64, d = 0 (mod 8) that is fixed
+    // at the begining of the loop.
+    // When partitioning array a[l]...a[r], we use 64-bit bitmaps
+    // maskL and maskR to store the the offset arrays offsets_L
+    // and offsets_R described in the paper.
+    // Bit i in maskL is set if a[l+i] > piv. Bit i in maskR is set
+    // if a[r-i] < piv.
+    uint64_t maskL = 0, maskR = 0;
+    uint32_t n = r - l;
+    if (n >= 32) {
+        // Compute blocksize d
+        uint32_t d = (n >> 1) & 0xfffffff8UL;
+        if (d > 64) {
+            d = (d >> 1) & 0xfffffff8UL;
+            if (d > 64) d = 64;
+        }
+        // Main loop processing blocks of size d
+        do {
+            // Scan left or right block if block is empty
             if (maskL == 0) maskL = make_left%{N}(a, d, l, piv);
             if (maskR == 0) maskR = make_right%{N}(a, d, r, piv);
+            // Exchange elements in left and right block for partitioning
             while (maskL != 0 && maskR != 0) {
                 uint32_t iL = (uint32_t)(lsb_index(maskL));
                 uint32_t iR = (uint32_t)(lsb_index(maskR));
@@ -403,21 +430,29 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
                 maskL &= maskL - UINT64_C(1);
                 maskR &= maskR - UINT64_C(1);
             }
-            if (maskL == 0)  l += d;
-            if (maskR == 0)  {
+            // Advance left block if finished
+            if (maskL == 0) l += d;
+            // Advance right block if finished. Make sure that pivot
+            // position is before that block after finishing it.
+            if (maskR == 0) {
                 r -= d;
                 a[ipiv] = a[r + 1];
                 ipiv = r + 1;
             }
-        }
+        } while (d + d < r - l);  // end of main loop
+        // Move l up, bypassing entries <= pivot element
         if (maskL) l += lsb_index(maskL);
+        // Move r down, bypassing entries >= pivot element. Make sure
+        // that pivot position is before the processed part of the block.
         if (maskR && (maskR & 1ULL) == 0) {
-             uint32_t iR = lsb_index(maskR);
-             a[ipiv] = a[r - iR + 1];
-             ipiv = r - iR + 1;
-             r -= iR;
+            uint32_t iR = lsb_index(maskR);
+            a[ipiv] = a[r - iR + 1];
+            ipiv = r - iR + 1;
+            r -= iR;
         }
     }
+    // Partition the unprocessed elements a[l],...,a[r] with
+    // a final standard Hoare scan.
     do {
         while (l < r && a[l] <= piv) ++l;
         while (r > l && a[r] >= piv) --r;
@@ -431,6 +466,7 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
         a[ipiv] = a[r];
         ipiv = r;
     }
+    // Store pivot element at the final pivot position.
     a[ipiv] = piv;
     return ipiv;
 }
