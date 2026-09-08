@@ -101,7 +101,7 @@ extern "C" {
 
 // Threshold for quicksort. For an array with at least MIN_MEDIAN9
 // entries the pivoting element is computed as the median of 9 samples.
-#define MIN_MEDIAN9 128  // Threshold for better median detection
+#define MIN_MEDIAN9 64  // Threshold for better median detection
 
 
 
@@ -155,7 +155,7 @@ memset(out, 0, len_out * sizeof(uint64_t));
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT
-static inline uint64_t
+static inline uint32_t
 lsb_index(uint64_t x)
 {
 #if defined(_MSC_VER)
@@ -170,10 +170,10 @@ lsb_index(uint64_t x)
         _BitScanForward(&index, (uint32_t)(x >> 32)), index += 32;
 #endif
 
-    return (uint64_t)index;
+    return (uint32_t)index;
 
 #elif defined(__GNUC__) || defined(__clang__)
-    return (uint64_t)__builtin_ctzll(x);
+    return (uint32_t)__builtin_ctzll(x);
 
 #else
     /* Portable fallback */
@@ -308,34 +308,30 @@ void bitvector%{N}_heapsort(uint%{N}_t *a, uint32_t n)
 ** Median of nine %{N} bit integers
 *************************************************************************/
 
-/// @cond DO_NOT_DOCUMENT 
+/// @cond DO_NOT_DOCUMENT
 
-static inline uint%{N}_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
-// Return position of approximate median of the list a of length
-// n >= 32, based on the median of 9 entries in the list.
-// We also change the list such that a[0] <= median and a[n-1] >= median.
+static inline uint32_t 
+median_3_%{N}(uint%{N}_t *a, uint32_t i, uint32_t j, uint32_t k)
 {
-    uint%{N}_t m[9], temp;
-    m[0] = a[0]; m[1] = a[n >> 3]; m[2] = a[n >> 2];
-    m[3] = a[3 * (n >> 3)]; m[4] = a[n >> 1]; m[5] = a[5 * (n >> 3)];
-    m[6] = a[n - 1 - (n >> 2)]; m[7] = a[n - 1 - (n >> 3)]; m[8] = a[n - 1];
-    // Pruned network from Fig. 49 in  Donald E. Knuth, The Art of Computer
-    // Programming, Volume 3: Sorting and Searching, Ch. 5.3.4.
-    swap3(m, 0, 1, 2)
-    swap3(m, 3, 4, 5)
-    swap3(m, 6, 7, 8)
+     uint32_t t;
+     if (a[i] > a[j]) {
+         t = i; i = j; j = t;
+     }
+     if (a[j] <= a[k]) return j;
+     return  (a[i] <= a[k]) ?  k : i;
+}
+ 
 
-    swap3(m, 0, 3, 6)
-    swap3(m, 1, 4, 7)
-    swap3(m, 2, 5, 8)
-
-    swap(m, 1, 3) swap(m, 5, 7) swap(m, 2, 6)
-    swap(m, 4, 6) swap(m, 2, 4)
-
-    a[0] = m[0]; a[n >> 3] = m[1]; a[n >> 2] = m[2];
-    a[3 * (n >> 3)] = m[3]; a[n >> 1] = m[4]; a[5 * (n >> 3)] = m[5];
-    a[n - 1 - (n >> 2)] = m[6]; a[n - 1 - (n >> 3)] = m[7]; a[n - 1] = m[8];
-    return  n >> 1;
+static inline uint32_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
+// Return the position of an approximate median of a[0] ... a[n-1].
+// The estimate is obtained as the median of three medians of three
+// elements, with n >= 32.
+{
+    uint32_t m = n >> 1, d = n >> 3, i, j, k;
+    i = median_3_%{N}(a, 0, d, d + d);
+    j = median_3_%{N}(a, n - 1, n - 1 - d, n - 1 - d - d);
+    k = median_3_%{N}(a, m - d, m, m + d);
+    return  median_3_%{N}(a, i, j, k);
 }
 
 /// @endcond 
@@ -381,23 +377,24 @@ make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
 // Let piv be the input a[ipiv], with l <= ipiv <= r. Then we
 // partition the array a[l]...a[r] (including a[l] and a[r]) so that 
 // max (a[i] : i < y)   <=   a[y] <=  min(a[i] : i > y),
-// and return the index y with a[y] = piv.
+// and return the index y with a[y] = piv. l < r must hold.
 static inline uint32_t
 partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
 {
-    uint32_t;
-    uint%{N}_t temp, piv = a[ipiv];
+    uint%{N}_t piv = a[ipiv];
     a[ipiv] = a[r];
     ipiv = r;
     --r;
 
-    uint64_t maskL = 0, maskR = 0;
-    int32_t d = (r - l > 192) ? 64 : 32;
-    int32_t dbl_d = d + d;
-    while (r - l >= dbl_d ) {
-        if (maskL == 0) maskL = make_left%{N}(a, d, l, piv);
-        if (maskR == 0) maskR = make_right%{N}(a, d, r, piv);
-        while (maskL != 0 && maskR != 0) {
+    uint64_t maskL = 0, maskR = 0; 
+    uint32_t d = ((r - l) >> 1) & 0xfffffff8UL;
+    if (d >= 16) {
+        if (d > 64) d = (d >> 1) & 0xfffffff8UL;
+        d = d < 64 ? d : 64;
+        while (r - l >= d + d) {
+            if (maskL == 0) maskL = make_left%{N}(a, d, l, piv);
+            if (maskR == 0) maskR = make_right%{N}(a, d, r, piv);
+            while (maskL != 0 && maskR != 0) {
                 uint32_t iL = (uint32_t)(lsb_index(maskL));
                 uint32_t iR = (uint32_t)(lsb_index(maskR));
                 a[ipiv] = a[l+iL];
@@ -405,23 +402,23 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
                 a[l+iL] = a[ipiv];
                 maskL &= maskL - UINT64_C(1);
                 maskR &= maskR - UINT64_C(1);
+            }
+            if (maskL == 0)  l += d;
+            if (maskR == 0)  {
+                r -= d;
+                a[ipiv] = a[r + 1];
+                ipiv = r + 1;
+            }
         }
-        if (maskL == 0)  l += d;
-        if (maskR == 0)  {
-            r -= d;
-            a[ipiv] = a[r + 1];
-            ipiv = r + 1;
+        if (maskL) l += lsb_index(maskL);
+        if (maskR && (maskR & 1ULL) == 0) {
+             uint32_t iR = lsb_index(maskR);
+             a[ipiv] = a[r - iR + 1];
+             ipiv = r - iR + 1;
+             r -= iR;
         }
-    }
-    if (maskL) l += lsb_index(maskL);
-    if (maskR && (maskR & 1ULL) == 0) {
-         uint32_t iR = lsb_index(maskR);
-         a[ipiv] = a[r - iR + 1];
-         ipiv = r - iR + 1;
-         r -= iR;
     }
     do {
-        //printf("<lr %d %d>\n", l, r);
         while (l < r && a[l] <= piv) ++l;
         while (r > l && a[r] >= piv) --r;
         if (l == r) break;
@@ -468,8 +465,7 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
 // %%EXPORT px
 void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
 {
-    uint_fast32_t *sp, stack[3*64], l, r, j;
-    uint%{N}_t temp, ipiv;
+    uint_fast32_t *sp, stack[3*64], l, r, j, ipiv;
 
     // Use insertion sort for small arrays
     if (n < MIN_QS) {
@@ -520,13 +516,9 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
             #endif
 
             if (r - l < MIN_MEDIAN9) {
-                // Sort the first, middle and last element of array a.
-                j = l + ((r - l) >> 1);  // index of the middle element of a
-                // Sort a such that a[l] <= a[j] <= a[r] and use a[j] as pivot
-                swap3(a, l, j, r)
-                ipiv = j;        // pivot with middle element after sorting
+                ipiv =  median_3_%{N}(a, l, (l+r) >> 1, r); 
             } else {
-                // find pivot as median of 9 entries of the list
+                // find pivot as median of medians of 3 entries of the list
                 ipiv = l + median_9_%{N}(a + l, r - l + 1);
             }
             // Partition array a[l],...,a[r] using the pivot element piv
@@ -540,7 +532,8 @@ void bitvector%{N}_sort(uint%{N}_t *a, uint32_t n)
                 sp[3] = l;
                 sp[4] = j-1;
                 // decrement recursion depth counter for next round
-                sp[5] = sp[2] = sp[2] - 1;
+                sp[2] = sp[2] - 1;
+                sp[5] = sp[2];
                 sp += 6;  // increment stack pointer by two levels
             } else if (j <= l) {
                 sp[0] = j+1;
