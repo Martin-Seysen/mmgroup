@@ -155,8 +155,8 @@ memset(out, 0, len_out * sizeof(uint64_t));
 *************************************************************************/
 
 /// @cond DO_NOT_DOCUMENT
-static inline uint32_t
-lsb_index(uint64_t x)
+// return index of least significant bit of x for x != 0
+static inline uint_fast32_t lsb_index(uint64_t x)
 {
 #if defined(_MSC_VER)
     uint64_t index;
@@ -164,16 +164,16 @@ lsb_index(uint64_t x)
 #if defined(_M_X64) || defined(_M_ARM64)
     _BitScanForward64(&index, x);
 #else
-    if ((uint32_t)x != 0)
-        _BitScanForward(&index, (uint32_t)x);
+    if ((uint_fast32_t)x != 0)
+        _BitScanForward(&index, (uint_fast32_t)x);
     else
-        _BitScanForward(&index, (uint32_t)(x >> 32)), index += 32;
+        _BitScanForward(&index, (uint_fast32_t)(x >> 32)), index += 32;
 #endif
 
-    return (uint32_t)index;
+    return (uint_fast32_t)index;
 
 #elif defined(__GNUC__) || defined(__clang__)
-    return (uint32_t)__builtin_ctzll(x);
+    return (uint_fast32_t)__builtin_ctzll(x);
 
 #else
     /* Portable fallback */
@@ -340,14 +340,16 @@ static inline uint32_t median_9_%{N}(uint%{N}_t *a, uint32_t n)
 ** Quicksort partition for unsigned  %{N}-bit integers
 *************************************************************************/
 
+/// @cond DO_NOT_DOCUMENT
+
 // Set bit i in return value if a[l+i] > piv for 0 <= i < len.
 // len must be <= 64 and divisible by 8.
 static inline uint64_t
-make_left%{N}(uint%{N}_t *a, uint32_t len, uint32_t l, uint%{N}_t piv)
+make_left%{N}(uint%{N}_t *a, uint_fast32_t len, uint_fast32_t l, uint%{N}_t piv)
 {
     uint64_t mask = UINT64_C(0);
     uint%{N}_t *pa = a + l;
-    for (uint32_t i = 0; i < len; i += 8) {
+    for (uint_fast32_t i = 0; i < len; i += 8) {
         uint64_t mask1 =  UINT64_C(0);
         // %%FOR j in range(8)
         mask1 |= ((uint64_t)(pa[%{j}] > piv)) << %{j};
@@ -361,11 +363,11 @@ make_left%{N}(uint%{N}_t *a, uint32_t len, uint32_t l, uint%{N}_t piv)
 // Set bit i in return value if a[r-i] < piv for 0 <= i < len.
 // len must be <= 64 and divisible by 8.
 static inline uint64_t
-make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
+make_right%{N}(uint%{N}_t *a, uint_fast32_t len, uint_fast32_t r, uint%{N}_t piv)
 {
     uint64_t mask = UINT64_C(0);
     uint%{N}_t *pa = a + r;
-    for (uint32_t i = 0; i < len; i += 8) {
+    for (uint_fast32_t i = 0; i < len; i += 8) {
         uint64_t mask1 =  UINT64_C(0);
         // %%FOR j in range(8)
         mask1 |= ((uint64_t)(pa[-%{j}] < piv)) << %{j};
@@ -376,13 +378,12 @@ make_right%{N}(uint%{N}_t *a, uint32_t len, uint32_t r, uint%{N}_t piv)
 }
 
 
-
 // Let piv be the input a[ipiv], with l <= ipiv <= r. Then we
 // partition the array a[l]...a[r] (including a[l] and a[r]) so that 
 // max (a[i] : i < y)   <=   a[y] <=  min(a[i] : i > y),
 // and return the index y with a[y] = piv. l <= r must hold.
-static inline uint32_t
-partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
+static inline uint_fast32_t
+partition%{N}(uint%{N}_t *a, uint_fast32_t l, uint_fast32_t r, uint_fast32_t ipiv)
 {
     // Move pivot element a[ipiv] to the rightmost position a[r],
     // and store the value of the pivot element in piv. This way we
@@ -406,24 +407,20 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
     // and offsets_R described in the paper.
     // Bit i in maskL is set if a[l+i] > piv. Bit i in maskR is set
     // if a[r-i] < piv.
-    uint64_t maskL = 0, maskR = 0;
-    uint32_t n = r - l;
-    if (n >= 32) {
+    while ((r - l) >= 16) {
+        uint64_t maskL = 0, maskR = 0;
         // Compute blocksize d
-        uint32_t d = (n >> 1) & 0xfffffff8UL;
-        if (d > 64) {
-            d = (d >> 1) & 0xfffffff8UL;
-            if (d > 64) d = 64;
-        }
+        uint_fast32_t d = ((r - l) >> 1) & 0xfffffff8UL;
+        if (d > 64)  d = 64;
         // Main loop processing blocks of size d
         do {
             // Scan left or right block if block is empty
             if (maskL == 0) maskL = make_left%{N}(a, d, l, piv);
             if (maskR == 0) maskR = make_right%{N}(a, d, r, piv);
             // Exchange elements in left and right block for partitioning
-            while (maskL != 0 && maskR != 0) {
-                uint32_t iL = (uint32_t)(lsb_index(maskL));
-                uint32_t iR = (uint32_t)(lsb_index(maskR));
+            while (maskL && maskR) {
+                uint_fast32_t iL = (uint_fast32_t)(lsb_index(maskL));
+                uint_fast32_t iR = (uint_fast32_t)(lsb_index(maskR));
                 a[ipiv] = a[l+iL];
                 ipiv = r - iR;
                 a[l+iL] = a[ipiv];
@@ -445,7 +442,7 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
         // Move r down, bypassing entries >= pivot element. Make sure
         // that pivot position is before the processed part of the block.
         if (maskR && (maskR & 1ULL) == 0) {
-            uint32_t iR = lsb_index(maskR);
+            uint_fast32_t iR = lsb_index(maskR);
             a[ipiv] = a[r - iR + 1];
             ipiv = r - iR + 1;
             r -= iR;
@@ -474,6 +471,7 @@ partition%{N}(uint%{N}_t *a, uint32_t l, uint32_t r, uint32_t ipiv)
 
 
 
+/// @endcond
 
 
 

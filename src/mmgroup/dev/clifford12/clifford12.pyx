@@ -1421,15 +1421,17 @@ def bitmatrix64_inv(m):
 def bitmatrix32_test_sort(uint32_t alg, a, uint32_t n_rept):
     cdef uint32_t n = len(a), i, j
     cdef uint32_t[:] a_view = a
-    cdef uint32_t *b = <uint32_t *> malloc(n * sizeof(uint32_t));
-    if not b:
-        raise MemoryError()
+    cdef volatile uint32_t *pa = <uint32_t *> &a_view[0]
+    b_array = np.empty(n, dtype = np.uint32)
+    cdef uint32_t[:] b_view = b_array
+    cdef uint32_t *pb = <uint32_t *> &b_view[0];
     cdef double t0, t1
     t0 = time.perf_counter()
     for i in range(n_rept):
-        for j in range(n): b[j] = a_view[j]
-        if alg == 1: clifford12.bitvector32_sort(b, n)
-        elif alg == 2: clifford12.bitvector32_heapsort(b, n)
+        for j in range(n): pb[j] = pa[j]
+        if alg == 1: clifford12.bitvector32_sort(pb, n)
+        elif alg == 2: clifford12.bitvector32_heapsort(pb, n)
+        elif alg == 3: np.sort(b_array)
     t1 = time.perf_counter()
     return t1 - t0
             
