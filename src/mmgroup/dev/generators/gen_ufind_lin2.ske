@@ -959,7 +959,8 @@ compressed_lin2_rep_v(uint32_t *a, uint32_t v)
     mask = (1UL << s.n) - 1;
     l_b = s.n_vectors;  // We don't want an infinite loop
 
-    while (--l_b) {
+    while (l_b) {
+        --l_b;
         v &= mask;
         x = s.p_t[bitvector32_bsearch(s.p_t, s.n_vectors, v << 8)];
         g = x & 0xff;

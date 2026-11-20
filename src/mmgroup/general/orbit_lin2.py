@@ -326,13 +326,12 @@ class Orbit_Lin2:
         """
         w0 = self._map_v_word_a(v, img)
         gg = [self.gen, self.gen_inverse]
-        for g in w0:
+        for w in w0:
             obj = obj * gg[w & 1][w >> 1]
         return obj
     def mul_v_g(self, v, g):
         r"""Return product of vector ``v`` with group element ``g``"""
         a = self._map_generator(g)
-        rep = np.array(self.map(g), dtype = np.uint64)
         return gen_ufind_lin2_mul_affine(v, a, self.dim)
     def set_rand_parameters(self, *args, **kwds):
         r"""Set parameters for random generator for the group
@@ -409,7 +408,8 @@ class Orbit_Lin2:
         if self.random_parameters is not None:
             res.random_parameters = self.random_parameters
         if compress:
-            res = self.compress([v])
+            res._finalize()
+            res = res.compress([v])
         return res
     def stabilizer_chain(self, v_list = [],
             max_descent = True, n_gen = None, compress = False):
@@ -456,7 +456,7 @@ class Orbit_Lin2:
                  v = reps[i]
             H_new = H.stabilizer(v, n_gen, compress = False)
             if compress and len(res):
-                 H = H.compress()
+                 H = H.compress([v])
             res.append((H, v))
             H = H_new
     def order_kernel(self, n_gen = None):
@@ -745,20 +745,22 @@ class Random_Subgroup:
 
     def rand(self):
         r"""Return a random element of the group"""
-        rmax = 2 * len(self.x) - 1
-        s = randint(2, rmax)
-        t = randint(2, rmax - 2)
-        if (t >= s):
-            t += 2
+        m = len(self.x)
+        # Choose two different indices s1, t1 in 1,...,m-1, a random
+        # exponent e = +-1, and a random side for the multiplication.
+        s1 = randint(1, m - 1)
+        t1 = randint(1, m - 2)
+        if t1 >= s1:
+            t1 += 1
+        e = (-1) ** randint(0, 1)
+        right = randint(0, 1)
         if self.history is not None:
             if self.nsteps >= len(self.history):
                 self.history = np.pad(self.history,
                     ((0, self.nsteps), (0,0)))
-            self.history[nsteps] = s, t
-            nsteps += 1
-        e = -1 ** t
-        s1, t1 = s >> 1, t >> 1
-        if s & 1:
+            self.history[self.nsteps] = 2 * s1 + right, 2 * t1 + (e < 0)
+            self.nsteps += 1
+        if right:
             self.x[s1] = self.x[s1] * self.x[t1] ** e
             self.x[0] = self.x[0] * self.x[s1]
         else:
