@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-14]
+        os: [macOS-15]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
@@ -96,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-14]
+        os: [macOS-15]
 
     steps:
       # A reasonable refernce for the current checkout and python version is:
